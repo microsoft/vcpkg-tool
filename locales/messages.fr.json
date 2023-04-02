@@ -860,7 +860,7 @@
   "SpecifyTargetArch": "Spécifiez le triplet de l’architecture cible. Consultez « vcpkg help triplet ».\n(valeur par défaut : '{env_var}')",
   "StartCodeUnitInContinue": "unité de code de démarrage trouvée en position continue",
   "StoreOptionMissingSha": "L’option --store n’est pas valide sans sha512.",
-  "StoredBinariesToDestinations": "Stored binaries in {count} destinations.",
+  "StoredBinariesToDestinations": "Fichiers binaires stockés dans {count} destinations.",
   "StoredBinaryCache": "Cache binaire stocké : '{path}'",
   "SuccessfulyExported": "{package_name} exporté vers {path}",
   "SuggestGitPull": "Le résultat peut être obsolète. Exécutez « git pull » pour obtenir les derniers résultats.",

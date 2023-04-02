@@ -860,7 +860,7 @@
   "SpecifyTargetArch": "ターゲット アーキテクチャのトリプレットを指定します。'vcpkg help triplet' を参照してください。\n(既定値: '{env_var}')",
   "StartCodeUnitInContinue": "続行位置で開始コード単位が見つかりました",
   "StoreOptionMissingSha": "--store オプションは sha512 なしでは無効です",
-  "StoredBinariesToDestinations": "Stored binaries in {count} destinations.",
+  "StoredBinariesToDestinations": "{count} 個の宛先に格納されたバイナリ。",
   "StoredBinaryCache": "格納されたバイナリ キャッシュ: \"{path}\"",
   "SuccessfulyExported": "{package_name} を {path} にエクスポートしました",
   "SuggestGitPull": "結果は古い可能性があります。'git pull' を実行して最新の結果を取得してください。",

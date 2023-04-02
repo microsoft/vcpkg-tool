@@ -860,7 +860,7 @@
   "SpecifyTargetArch": "指定目標架構三元組。請參閱 'vcpkg help triplet'。\n(預設值: '{env_var}')",
   "StartCodeUnitInContinue": "在繼續位置找到開始字碼單位",
   "StoreOptionMissingSha": "--store 選項無效，沒有 sha512",
-  "StoredBinariesToDestinations": "Stored binaries in {count} destinations.",
+  "StoredBinariesToDestinations": "儲存在 {count} 個目的地的二進位檔。",
   "StoredBinaryCache": "儲存的二進位快取: \"{path}\"",
   "SuccessfulyExported": "已將 {package_name} 匯出至 {path}",
   "SuggestGitPull": "結果可能已過期。執行 `git pull` 以取得最新結果。",
