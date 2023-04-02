@@ -155,11 +155,8 @@ namespace
             const auto code =
                 cmd_execute(Command{"unzip"}.string_arg("-qqo").string_arg(archive), WorkingDirectory{to_path})
                     .value_or_exit(VCPKG_LINE_INFO);
-            Checks::msg_check_exit(VCPKG_LINE_INFO,
-                                   code == 0,
-                                   msgPackageFailedtWhileExtracting,
-                                   msg::value = "unzip",
-                                   msg::path = archive);
+            Checks::msg_check_exit(
+                VCPKG_LINE_INFO, code == 0, msgPackageFailedWhileExtracting, msg::value = "unzip", msg::path = archive);
         }
 #endif
         else if (ext == ".gz" || ext == ".bz2" || ext == ".tgz")
