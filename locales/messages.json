@@ -1265,6 +1265,8 @@
   "_SpecifyTargetArch.comment": "An example of {env_var} is VCPKG_DEFAULT_TRIPLET.",
   "StartCodeUnitInContinue": "found start code unit in continue position",
   "StoreOptionMissingSha": "--store option is invalid without a sha512",
+  "StoredBinariesToDestinations": "Stored binaries in {count} destinations.",
+  "_StoredBinariesToDestinations.comment": "An example of {count} is 42.",
   "StoredBinaryCache": "Stored binary cache: \"{path}\"",
   "_StoredBinaryCache.comment": "An example of {path} is /foo/bar.",
   "SuccessfulyExported": "Exported {package_name} to {path}",

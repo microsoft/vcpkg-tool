@@ -860,6 +860,7 @@
   "SpecifyTargetArch": "Hedef mimari üçlüsünü belirtin. Bkz. 'vcpkg help triplet'.\n(varsayılan: '{env_var}')",
   "StartCodeUnitInContinue": "devam konumunda başlangıç kodu birimi bulundu",
   "StoreOptionMissingSha": "--store seçeneği sha512 olmadan geçersiz",
+  "StoredBinariesToDestinations": "İkili dosyalar {count} hedefte depolandı.",
   "StoredBinaryCache": "İkili önbellek depolandı: \"{path}\"",
   "SuccessfulyExported": "{package_name}, {path} paketine aktarıldı",
   "SuggestGitPull": "Sonuç eski olabilir. En son sonuçları almak için `git pull` komutunu çalıştırın.",

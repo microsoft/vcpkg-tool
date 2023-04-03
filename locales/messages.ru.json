@@ -860,6 +860,7 @@
   "SpecifyTargetArch": "Укажите триплет целевой архитектуры. См. 'vcpkg help triplet'.\n(по умолчанию: '{env_var}')",
   "StartCodeUnitInContinue": "найдена единица начального кода в позиции продолжения",
   "StoreOptionMissingSha": "Параметр --store недопустим без sha512",
+  "StoredBinariesToDestinations": "Двоичные файлы хранятся в нескольких назначениях ({count}).",
   "StoredBinaryCache": "Сохраненный двоичный кэш: \"{path}\"",
   "SuccessfulyExported": "Пакет {package_name} экспортирован в папку {path}",
   "SuggestGitPull": "Результат может быть устаревшим. Чтобы получить последние результаты, запустите \"git pull\".",
