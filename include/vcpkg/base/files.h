@@ -142,6 +142,7 @@ namespace vcpkg
         ExpectedL<Unit> try_read_all(void* buffer, std::uint32_t size);
         ExpectedL<char> try_getc();
         ExpectedL<Unit> try_read_all_from(long long offset, void* buffer, std::uint32_t size);
+        std::string read_to_end(std::error_code& ec);
     };
 
     struct WriteFilePointer : FilePointer
@@ -330,6 +331,8 @@ namespace vcpkg
         WriteFilePointer open_for_write(const Path& file_path, Append append, LineInfo li);
         WriteFilePointer open_for_write(const Path& file_path, std::error_code& ec);
         WriteFilePointer open_for_write(const Path& file_path, LineInfo li);
+
+        ExpectedL<bool> check_update_required(const Path& version_path, StringView expected_version);
     };
 
     Filesystem& get_real_filesystem();

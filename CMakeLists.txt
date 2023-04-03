@@ -299,6 +299,7 @@ if (VCPKG_ARTIFACTS_DEVELOPMENT)
             "${VCPKG_ARTIFACTS_BINARY_DIR}/.npmrc"
             "${VCPKG_ARTIFACTS_BINARY_DIR}/mocha-config.yaml"
             "${VCPKG_ARTIFACTS_BINARY_DIR}/locales/messages.json"
+            "${VCPKG_ARTIFACTS_BINARY_DIR}/artifacts-development.txt"
         COMMAND
             "${CMAKE_COMMAND}" ARGS -E rm -rf "${VCPKG_ARTIFACTS_BINARY_DIR}"
         COMMAND
@@ -329,6 +330,9 @@ if (VCPKG_ARTIFACTS_DEVELOPMENT)
             "${NODEJS}" ARGS "${VCPKG_ARTIFACTS_SOURCE_DIR}/node_modules/typescript/bin/tsc"
                 -p "${VCPKG_ARTIFACTS_SOURCE_DIR}"
                 --outDir "${VCPKG_ARTIFACTS_BINARY_DIR}"
+        COMMAND
+            "${CMAKE_COMMAND}" ARGS -E touch
+                "${VCPKG_ARTIFACTS_BINARY_DIR}/artifacts-development.txt"
         DEPENDS
             ${VCPKG_ARTIFACTS_SOURCES}
             "${VCPKG_ARTIFACTS_SOURCE_DIR}/tsconfig.json"
@@ -351,6 +355,7 @@ if (VCPKG_ARTIFACTS_DEVELOPMENT)
             "${VCPKG_ARTIFACTS_BINARY_DIR}/.npmrc"
             "${VCPKG_ARTIFACTS_BINARY_DIR}/mocha-config.yaml"
             "${VCPKG_ARTIFACTS_BINARY_DIR}/locales/messages.json"
+            "${VCPKG_ARTIFACTS_BINARY_DIR}/artifacts-development.txt"
         )
     set_target_properties(vcpkg-artifacts-target
         PROPERTIES

@@ -73,6 +73,29 @@ namespace
 
 namespace vcpkg
 {
+    ExpectedL<Path> download_vcpkg_standalone_bundle(const DownloadManager& download_manager,
+                                                     Filesystem& fs,
+                                                     const Path& download_root)
+    {
+#if defined(VCPKG_STANDALONE_BUNDLE_SHA)
+        const auto bundle_tarball = download_root / "vcpkg-standalone-bundle-" VCPKG_BASE_VERSION_AS_STRING ".tar.gz";
+        msg::println(msgDownloadingVcpkgStandaloneBundle, msg::version = VCPKG_BASE_VERSION_AS_STRING);
+        const auto bundle_uri =
+            "https://github.com/microsoft/vcpkg-tool/releases/download/" VCPKG_BASE_VERSION_AS_STRING
+            "/vcpkg-standalone-bundle.tar.gz";
+        download_manager.download_file(
+            fs, bundle_uri, {}, bundle_tarball, MACRO_TO_STRING(VCPKG_STANDALONE_BUNDLE_SHA), null_sink);
+#else  // ^^^ VCPKG_STANDALONE_BUNDLE_SHA / !VCPKG_STANDALONE_BUNDLE_SHA vvv
+        const auto bundle_tarball = download_root / "vcpkg-standalone-bundle-latest.tar.gz";
+        msg::println(Color::warning, msgDownloadingVcpkgStandaloneBundleLatest);
+        fs.remove(bundle_tarball, VCPKG_LINE_INFO);
+        const auto bundle_uri =
+            "https://github.com/microsoft/vcpkg-tool/releases/latest/download/vcpkg-standalone-bundle.tar.gz";
+        download_manager.download_file(fs, bundle_uri, {}, bundle_tarball, nullopt, null_sink);
+#endif // ^^^ !VCPKG_STANDALONE_BUNDLE_SHA
+        return bundle_tarball;
+    }
+
     int run_configure_environment_command(const VcpkgPaths& paths, View<std::string> args)
     {
         msg::println_warning(msgVcpkgCeIsExperimental);
@@ -80,21 +103,62 @@ namespace vcpkg
 
         // if artifacts is deployed in development, with Visual Studio, or with the One Liner, it will be deployed here
         Path vcpkg_artifacts_path = get_exe_path_of_current_process();
-        vcpkg_artifacts_path.replace_filename("vcpkg-artifacts/main.js");
+        vcpkg_artifacts_path.replace_filename("vcpkg-artifacts");
         vcpkg_artifacts_path.make_preferred();
-        if (!fs.exists(vcpkg_artifacts_path, VCPKG_LINE_INFO))
+        Path vcpkg_artifacts_main_path = vcpkg_artifacts_path / "main.js";
+        // Official / Development / None
+        // cross with
+        // Git / OneLiner / VS
+        //
+        // Official Git: Check for matching version number, use if set
+        // Development Git: Use development copy
+        // None Git: Use latest copy, download every time
+        if (paths.try_provision_vcpkg_artifacts())
         {
-            // otherwise, if this is an official build we can try to extract a copy of vcpkg-artifacts out of the
-            // matching standalone bundle
-            // FIXME
-            // otherwise, fail
-            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgArtifactsNotInstalled);
+#if defined(VCPKG_STANDALONE_BUNDLE_SHA)
+            Path vcpkg_artifacts_version_path = vcpkg_artifacts_path / "version.txt";
+            bool out_of_date = fs.check_update_required(vcpkg_artifacts_version_path, VCPKG_BASE_VERSION_AS_STRING)
+                                   .value_or_exit(VCPKG_LINE_INFO);
+#else  // ^^^ VCPKG_STANDALONE_BUNDLE_SHA / !VCPKG_STANDALONE_BUNDLE_SHA vvv
+            bool out_of_date = !fs.exists(vcpkg_artifacts_path / "artifacts-development.txt", VCPKG_LINE_INFO);
+#endif // ^^^ !VCPKG_STANDALONE_BUNDLE_SHA
+            if (out_of_date)
+            {
+                fs.remove_all(vcpkg_artifacts_path, VCPKG_LINE_INFO);
+                auto temp = get_exe_path_of_current_process();
+                temp.replace_filename("vcpkg-artifacts-temp");
+                auto tarball = download_vcpkg_standalone_bundle(paths.get_download_manager(), fs, paths.downloads)
+                                   .value_or_exit(VCPKG_LINE_INFO);
+                extract_archive(fs, paths.get_tool_cache(), null_sink, tarball, temp);
+                fs.rename_with_retry(temp / "vcpkg-artifacts", vcpkg_artifacts_path, VCPKG_LINE_INFO);
+                fs.remove(tarball, VCPKG_LINE_INFO);
+                fs.remove_all(temp, VCPKG_LINE_INFO);
+#if defined(VCPKG_STANDALONE_BUNDLE_SHA)
+                fs.write_contents(vcpkg_artifacts_version_path, VCPKG_BASE_VERSION_AS_STRING, VCPKG_LINE_INFO);
+#endif // ^^^ VCPKG_STANDALONE_BUNDLE_SHA
+            }
+
+            if (!fs.exists(vcpkg_artifacts_main_path, VCPKG_LINE_INFO))
+            {
+                Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgArtifactsBootstrapFailed);
+            }
+        }
+        else if (!fs.exists(vcpkg_artifacts_path, VCPKG_LINE_INFO))
+        {
+            // Official OneLiner: Do nothing, should be handled by z-boostrap-standalone
+            // Development OneLiner: (N/A)
+            // None OneLiner: (N/A)
+            //
+            // Official VS: Do nothing, should be bundled by VS
+            // Development VS: (N/A)
+            // None VS: (N/A)
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgArtifactsNotInstalledReadonlyRoot);
         }
 
         auto temp_directory = fs.create_or_get_temp_directory(VCPKG_LINE_INFO);
 
         Command cmd_run(paths.get_tool_exe(Tools::NODE, stdout_sink));
-        cmd_run.string_arg(vcpkg_artifacts_path);
+        cmd_run.string_arg(vcpkg_artifacts_main_path);
         cmd_run.forwarded_args(args);
         if (Debug::g_debugging)
         {
