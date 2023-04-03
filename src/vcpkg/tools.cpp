@@ -305,7 +305,7 @@ namespace vcpkg
             (void)status_sink;
             Command cmd;
 #if !defined(_WIN32)
-            cmd.string_arg(cache.get_tool_path(Tools::MONO, status_sink));
+            cmd.string_arg(cache.get_mono(status_sink));
 #endif // ^^^ !_WIN32
             cmd.string_arg(exe_path);
             return run_to_extract_version(Tools::NUGET, exe_path, std::move(cmd))
@@ -689,7 +689,7 @@ namespace vcpkg
 
         const PathAndVersion& get_tar_pv(MessageSink& status_sink) const
         {
-            return m_tar_pv.get([&status_sink, this]() {
+            return m_tar_pv.get([this]() {
                 return PathAndVersion{find_system_tar(fs).value_or_exit(VCPKG_LINE_INFO), {}};
             });
         }
