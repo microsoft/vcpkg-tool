@@ -95,6 +95,7 @@ namespace vcpkg
     enum class BuildPolicy
     {
         EMPTY_PACKAGE,
+        DLLS_AS_PLUGINS,
         DLLS_WITHOUT_LIBS,
         DLLS_WITHOUT_EXPORTS,
         DLLS_IN_STATIC_LIBRARY,

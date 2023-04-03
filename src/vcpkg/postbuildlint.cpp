@@ -334,8 +334,13 @@ namespace vcpkg
         return LintStatus::SUCCESS;
     }
 
-    static LintStatus check_for_dlls_in_lib_dir(const Filesystem& fs, const Path& package_dir, MessageSink& msg_sink)
+    static LintStatus check_for_dlls_in_lib_dir(const Filesystem& fs,
+                                                const BuildPolicies& policies,
+                                                const Path& package_dir,
+                                                MessageSink& msg_sink)
     {
+        if (policies.is_enabled(BuildPolicy::DLLS_AS_PLUGINS)) return LintStatus::SUCCESS;
+
         std::vector<Path> dlls = fs.get_regular_files_recursive(package_dir / "lib", IgnoreErrors{});
         Util::erase_remove_if(dlls, NotExtensionCaseInsensitive{".dll"});
 
@@ -1321,8 +1326,8 @@ namespace vcpkg
         error_count += check_folder_lib_cmake(fs, package_dir, spec, msg_sink);
         error_count += check_for_misplaced_cmake_files(fs, package_dir, spec, msg_sink);
         error_count += check_folder_debug_lib_cmake(fs, package_dir, spec, msg_sink);
-        error_count += check_for_dlls_in_lib_dir(fs, package_dir, msg_sink);
-        error_count += check_for_dlls_in_lib_dir(fs, package_dir / "debug", msg_sink);
+        error_count += check_for_dlls_in_lib_dir(fs, build_info.policies, package_dir, msg_sink);
+        error_count += check_for_dlls_in_lib_dir(fs, build_info.policies, package_dir / "debug", msg_sink);
         error_count += check_for_copyright_file(fs, spec, paths, msg_sink);
         error_count += check_for_exes(fs, package_dir, msg_sink);
         error_count += check_for_exes(fs, package_dir / "debug", msg_sink);

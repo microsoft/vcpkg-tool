@@ -207,6 +207,7 @@ namespace vcpkg
     static constexpr StringLiteral NAME_DLLS_WITHOUT_LIBS = "PolicyDLLsWithoutLIBs";
     static constexpr StringLiteral NAME_DLLS_WITHOUT_EXPORTS = "PolicyDLLsWithoutExports";
     static constexpr StringLiteral NAME_DLLS_IN_STATIC_LIBRARY = "PolicyDLLsInStaticLibrary";
+    static constexpr StringLiteral NAME_DLLS_AS_PLUGINS = "PolicyDLLsAsPlugins";
     static constexpr StringLiteral NAME_MISMATCHED_NUMBER_OF_BINARIES = "PolicyMismatchedNumberOfBinaries";
     static constexpr StringLiteral NAME_ONLY_RELEASE_CRT = "PolicyOnlyReleaseCRT";
     static constexpr StringLiteral NAME_EMPTY_INCLUDE_FOLDER = "PolicyEmptyIncludeFolder";
@@ -238,6 +239,7 @@ namespace vcpkg
             case BuildPolicy::DLLS_WITHOUT_LIBS: return NAME_DLLS_WITHOUT_LIBS;
             case BuildPolicy::DLLS_WITHOUT_EXPORTS: return NAME_DLLS_WITHOUT_EXPORTS;
             case BuildPolicy::DLLS_IN_STATIC_LIBRARY: return NAME_DLLS_IN_STATIC_LIBRARY;
+            case BuildPolicy::DLLS_AS_PLUGINS: return NAME_DLLS_AS_PLUGINS;
             case BuildPolicy::MISMATCHED_NUMBER_OF_BINARIES: return NAME_MISMATCHED_NUMBER_OF_BINARIES;
             case BuildPolicy::ONLY_RELEASE_CRT: return NAME_ONLY_RELEASE_CRT;
             case BuildPolicy::EMPTY_INCLUDE_FOLDER: return NAME_EMPTY_INCLUDE_FOLDER;
@@ -260,6 +262,7 @@ namespace vcpkg
             case BuildPolicy::DLLS_WITHOUT_LIBS: return "VCPKG_POLICY_DLLS_WITHOUT_LIBS";
             case BuildPolicy::DLLS_WITHOUT_EXPORTS: return "VCPKG_POLICY_DLLS_WITHOUT_EXPORTS";
             case BuildPolicy::DLLS_IN_STATIC_LIBRARY: return "VCPKG_POLICY_DLLS_IN_STATIC_LIBRARY";
+            case BuildPolicy::DLLS_AS_PLUGINS: return "VCPKG_POLICY_DLLS_AS_PLUGINS";
             case BuildPolicy::MISMATCHED_NUMBER_OF_BINARIES: return "VCPKG_POLICY_MISMATCHED_NUMBER_OF_BINARIES";
             case BuildPolicy::ONLY_RELEASE_CRT: return "VCPKG_POLICY_ONLY_RELEASE_CRT";
             case BuildPolicy::EMPTY_INCLUDE_FOLDER: return "VCPKG_POLICY_EMPTY_INCLUDE_FOLDER";
