@@ -687,7 +687,7 @@ namespace vcpkg
         }
         const Path& get_nuget(MessageSink& status_sink) const override { return get_nuget_pv(status_sink).p; }
 
-        const PathAndVersion& get_tar_pv(MessageSink& status_sink) const
+        const PathAndVersion& get_tar_pv(MessageSink&) const
         {
             return m_tar_pv.get([this]() {
                 return PathAndVersion{find_system_tar(fs).value_or_exit(VCPKG_LINE_INFO), {}};
