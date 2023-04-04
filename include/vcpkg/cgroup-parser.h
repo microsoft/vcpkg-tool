@@ -3,6 +3,7 @@
 #include <vcpkg/base/fwd/stringview.h>
 
 #include <string>
+#include <vector>
 
 namespace vcpkg
 {

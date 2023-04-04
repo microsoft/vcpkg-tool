@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vcpkg/base/fwd/span.h>
+
 #include <vcpkg/base/lineinfo.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/stringview.h>
@@ -11,8 +13,6 @@
 
 #include <algorithm>
 #include <vector>
-
-#include "vcpkg/base/fwd/span.h"
 
 namespace vcpkg::Strings::details
 {

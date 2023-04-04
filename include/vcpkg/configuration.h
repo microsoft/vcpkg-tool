@@ -1,10 +1,13 @@
 #pragma once
 
+#include <vcpkg/base/fwd/message_sinks.h>
+
 #include <vcpkg/fwd/configuration.h>
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/json.h>
+#include <vcpkg/base/optional.h>
 
 #include <vcpkg/registries.h>
 

@@ -1,4 +1,5 @@
 #include <vcpkg/binarycaching.h>
+#include <vcpkg/cmakevars.h>
 #include <vcpkg/commands.setinstalled.h>
 #include <vcpkg/globalstate.h>
 #include <vcpkg/help.h>
@@ -6,6 +7,7 @@
 #include <vcpkg/install.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/portfileprovider.h>
+#include <vcpkg/registries.h>
 #include <vcpkg/remove.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkglib.h>

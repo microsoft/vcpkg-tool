@@ -1,3 +1,8 @@
+#include <vcpkg/base/lineinfo.h>
+#include <vcpkg/base/messages.h>
+#include <vcpkg/base/strings.h>
+#include <vcpkg/base/util.h>
+
 #include <vcpkg/commands.autocomplete.h>
 #include <vcpkg/commands.edit.h>
 #include <vcpkg/commands.integrate.h>
@@ -9,6 +14,9 @@
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
+
+#include <string>
+#include <vector>
 
 namespace vcpkg::Commands::Autocomplete
 {

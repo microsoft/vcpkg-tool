@@ -96,5 +96,6 @@ namespace vcpkg
                                      BuildResult result,
                                      const CiBaselineData& cidata,
                                      StringView cifile,
-                                     bool allow_unexpected_passing);
+                                     bool allow_unexpected_passing,
+                                     bool is_independent);
 }

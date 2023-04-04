@@ -1,17 +1,17 @@
 #pragma once
 
+#include <vcpkg/fwd/binaryparagraph.h>
+#include <vcpkg/fwd/install.h>
 #include <vcpkg/fwd/installedpaths.h>
+#include <vcpkg/fwd/vcpkgcmdarguments.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
 #include <vcpkg/base/chrono.h>
 #include <vcpkg/base/optional.h>
 
-#include <vcpkg/binaryparagraph.h>
 #include <vcpkg/build.h>
 #include <vcpkg/dependencies.h>
-#include <vcpkg/remove.h>
-#include <vcpkg/vcpkgcmdarguments.h>
-#include <vcpkg/vcpkgpaths.h>
+#include <vcpkg/packagespec.h>
 
 #include <chrono>
 #include <set>
@@ -20,12 +20,6 @@
 
 namespace vcpkg
 {
-    enum class KeepGoing
-    {
-        NO = 0,
-        YES
-    };
-
     struct SpecSummary
     {
         explicit SpecSummary(const InstallPlanAction& action);
@@ -80,12 +74,6 @@ namespace vcpkg
                                                     StatusParagraphs& status_db,
                                                     const CMakeVars::CMakeVarProvider& var_provider);
 
-    enum class InstallResult
-    {
-        FILE_CONFLICTS,
-        SUCCESS,
-    };
-
     void install_package_and_write_listfile(Filesystem& fs, const Path& source_dir, const InstallDir& destination_dir);
 
     void install_files_and_write_listfile(Filesystem& fs,
@@ -125,8 +113,7 @@ namespace vcpkg
                                StatusParagraphs& status_db,
                                BinaryCache& binary_cache,
                                const IBuildLogsRecorder& build_logs_recorder,
-                               const CMakeVars::CMakeVarProvider& var_provider,
-                               Remove::Purge purge = Remove::Purge::YES);
+                               const CMakeVars::CMakeVarProvider& var_provider);
 
         void perform_and_exit(const VcpkgCmdArguments& args,
                               const VcpkgPaths& paths,

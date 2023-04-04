@@ -205,7 +205,8 @@ namespace vcpkg
                                      BuildResult result,
                                      const CiBaselineData& cidata,
                                      StringView cifile,
-                                     bool allow_unexpected_passing)
+                                     bool allow_unexpected_passing,
+                                     bool is_independent)
     {
         switch (result)
         {
@@ -214,10 +215,19 @@ namespace vcpkg
             case BuildResult::FILE_CONFLICTS:
                 if (!cidata.expected_failures.contains(spec))
                 {
-                    return msg::format(msgCiBaselineRegression,
-                                       msg::spec = spec,
-                                       msg::build_result = to_string_locale_invariant(result),
-                                       msg::path = cifile);
+                    if (is_independent)
+                    {
+                        return msg::format(msgCiBaselineIndependentRegression,
+                                           msg::spec = spec,
+                                           msg::build_result = to_string_locale_invariant(result));
+                    }
+                    else
+                    {
+                        return msg::format(msgCiBaselineRegression,
+                                           msg::spec = spec,
+                                           msg::build_result = to_string_locale_invariant(result),
+                                           msg::path = cifile);
+                    }
                 }
                 break;
             case BuildResult::SUCCEEDED:
