@@ -176,6 +176,7 @@
   "ChecksUpdateVcpkg": "Das Aktualisieren von vcpkg durch erneutes Ausführen von „bootstrap-vcpkg“ kann diesen Fehler möglicherweise beheben.",
   "CiBaselineAllowUnexpectedPassingRequiresBaseline": "--allow-unexpected-passing kann nur verwendet werden, wenn eine Baseline über --ci-baseline bereitgestellt wird.",
   "CiBaselineDisallowedCascade": "REGRESSION: {spec} überlappend, muss aber übergeben werden. ({path}.)",
+  "CiBaselineIndependentRegression": "REGRESSION: Independent {spec} failed with {build_result}.",
   "CiBaselineRegression": "REGRESSION: {spec} ist mit {build_result} fehlgeschlagen. Falls erwartet, fügen Sie {spec}=fail zu {path} hinzu.",
   "CiBaselineRegressionHeader": "REGRESSIONEN:",
   "CiBaselineUnexpectedPass": "BESTANDEN, VON DER FEHLERLISTE ENTFERNEN: {spec} ({Pfad}).",

@@ -176,6 +176,7 @@
   "ChecksUpdateVcpkg": "zaktualizowanie pakietu vcpkg przez ponowne uruchomienie pakietu bootstrap-vcpkg może rozwiązać ten problem.",
   "CiBaselineAllowUnexpectedPassingRequiresBaseline": "Parametru --allow-unexpected-passing można użyć tylko wtedy, gdy punkt odniesienia jest dostarczany za pośrednictwem --ci-baseline.",
   "CiBaselineDisallowedCascade": "REGRESJA: {spec} kaskadowo, ale jest wymagana do przekazania. ({path}).",
+  "CiBaselineIndependentRegression": "REGRESSION: Independent {spec} failed with {build_result}.",
   "CiBaselineRegression": "REGRESJA: {spec} nie powiodło się z powodu {build_result}. Jeśli trzeba, dodaj {spec}=fail to {path}.",
   "CiBaselineRegressionHeader": "REGRESJE:",
   "CiBaselineUnexpectedPass": "PRZEKAZYWANIE, USUWANIE Z LISTY BŁĘDÓW: {spec} ({path}).",

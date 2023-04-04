@@ -176,6 +176,7 @@
   "ChecksUpdateVcpkg": "vcpkg’nin bootstrap-vcpkg’nin yeniden çalıştırılarak güncelleştirilmesi bu hatayı çözebilir.",
   "CiBaselineAllowUnexpectedPassingRequiresBaseline": "--allow-unexpected-passing yalnızca --ci-baseline aracılığıyla bir taban çizgisi sağlandıysa kullanılabilir.",
   "CiBaselineDisallowedCascade": "GERİLEME: {spec} basamaklandı ancak başarılı olması için gerileme gerekiyor. ({path}).",
+  "CiBaselineIndependentRegression": "REGRESSION: Independent {spec} failed with {build_result}.",
   "CiBaselineRegression": "GERİLEME: {spec}, {build_result} ile başarısız oldu. Bekleniyorsa, {spec}=fail öğesini {path} yoluna ekleyin.",
   "CiBaselineRegressionHeader": "GERİLEMELER:",
   "CiBaselineUnexpectedPass": "GEÇİRİLİYOR, HATA LİSTESİNDEN KALDIR: {spec} ({path}).",
