@@ -11,7 +11,7 @@
 
 #include <vcpkg/binarycaching.h>
 #include <vcpkg/build.h>
-#include <vcpkg/ci-baseline.h>
+#include <vcpkg/ci-feature-baseline.h>
 #include <vcpkg/cmakevars.h>
 #include <vcpkg/commands.setinstalled.h>
 #include <vcpkg/commands.test-features.h>
