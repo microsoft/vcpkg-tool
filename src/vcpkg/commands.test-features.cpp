@@ -86,7 +86,7 @@ namespace
             }
             else
             {
-                feature = Strings::concat("all_", ++counter);
+                feature = fmt::format("all_{}", ++counter);
             }
             auto new_base_path = base_path / Strings::concat(spec.package_spec.name(), '_', feature);
             filesystem.create_directory(new_base_path, VCPKG_LINE_INFO);
@@ -142,7 +142,7 @@ namespace vcpkg::Commands::TestFeatures
         []() { return create_example_string("test-features llvm"); },
         0,
         SIZE_MAX,
-        {CI_SWITCHES, CI_SETTINGS},
+        {CI_SWITCHES, CI_SETTINGS, {}},
         nullptr,
     };
 

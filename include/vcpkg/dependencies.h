@@ -109,6 +109,12 @@ namespace vcpkg
 
     struct ActionPlan
     {
+        ActionPlan() = default;
+        ActionPlan& operator=(const ActionPlan&) = default;
+        ActionPlan(const ActionPlan&) = default;
+        ActionPlan& operator=(ActionPlan&&) = default;
+        ActionPlan(ActionPlan&&) noexcept = default;
+
         bool empty() const { return remove_actions.empty() && already_installed.empty() && install_actions.empty(); }
         size_t size() const { return remove_actions.size() + already_installed.size() + install_actions.size(); }
         void print_unsupported_warnings();
