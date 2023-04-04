@@ -176,6 +176,7 @@
   "ChecksUpdateVcpkg": "bootstrap-vcpkg를 다시 실행하여 vcpkg를 업데이트하면 이 오류가 해결될 수 있습니다.",
   "CiBaselineAllowUnexpectedPassingRequiresBaseline": "--allow-unexpected-passing은 --ci-baseline을 통해 기준선을 제공하는 경우에만 사용할 수 있습니다.",
   "CiBaselineDisallowedCascade": "회귀: {spec} 단계식이지만 통과해야 합니다. ({path}).",
+  "CiBaselineIndependentRegression": "REGRESSION: Independent {spec} failed with {build_result}.",
   "CiBaselineRegression": "회귀: {spec}이(가) {build_result}(으)로 실패했습니다. 필요한 경우 {spec}=fail를 {path}에 추가합니다.",
   "CiBaselineRegressionHeader": "회귀:",
   "CiBaselineUnexpectedPass": "통과, FAIL LIST에서 제거: {spec}({path}).",

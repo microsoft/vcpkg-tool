@@ -176,6 +176,7 @@
   "ChecksUpdateVcpkg": "aktualizace vcpkg opětovným spuštěním bootstrap-vcpkg může tuto chybu vyřešit.",
   "CiBaselineAllowUnexpectedPassingRequiresBaseline": "Parametr --allow-unexpected-passing lze použít pouze v případě, že je směrný plán poskytnut prostřednictvím parametru --ci-baseline.",
   "CiBaselineDisallowedCascade": "REGRESE: {spec} kaskádovité, ale je nutný úspěch. ({path}).",
+  "CiBaselineIndependentRegression": "REGRESSION: Independent {spec} failed with {build_result}.",
   "CiBaselineRegression": "REGRESE: Akce {spec} selhala s výsledkem: {build_result}. Pokud se to očekávalo, přidejte {spec}=fail do cesty {path}.",
   "CiBaselineRegressionHeader": "REGRESE:",
   "CiBaselineUnexpectedPass": "PŘEDÁVÁNÍ, ODEBRAT ZE SEZNAMU SELHÁNÍ: {spec} ({path}).",

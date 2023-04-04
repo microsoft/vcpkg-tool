@@ -176,6 +176,7 @@
   "ChecksUpdateVcpkg": "la mise à jour de vcpkg en réexécutant bootstrap-vcpkg peut résoudre cet échec.",
   "CiBaselineAllowUnexpectedPassingRequiresBaseline": "--allow-unexpected-passing ne peut être utilisé que si une ligne de base est fournie via --ci-baseline.",
   "CiBaselineDisallowedCascade": "RÉGRESSION : {spec} en cascade, mais il est nécessaire de passer. ({path}).",
+  "CiBaselineIndependentRegression": "REGRESSION: Independent {spec} failed with {build_result}.",
   "CiBaselineRegression": "RÉGRESSION : {spec} a échoué avec {build_result}. Si prévu, ajoutez {spec}=échec de la {path}.",
   "CiBaselineRegressionHeader": "RÉGRESSIONS :",
   "CiBaselineUnexpectedPass": "RÉUSSITE, SUPPRESSION DE LA LISTE D’ÉCHEC : {spec} ({path}).",
