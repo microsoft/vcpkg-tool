@@ -7,6 +7,7 @@
 #include <vcpkg/fwd/registries.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
+#include <vcpkg/base/path.h>
 #include <vcpkg/base/span.h>
 #include <vcpkg/base/stringview.h>
 
@@ -158,27 +159,5 @@ namespace vcpkg
     ExpectedL<std::map<std::string, Version, std::less<>>> get_builtin_baseline(const VcpkgPaths& paths);
 
     bool is_git_commit_sha(StringView sv);
-
-    struct VersionDbEntry
-    {
-        Version version;
-        VersionScheme scheme = VersionScheme::String;
-
-        // only one of these may be non-empty
-        std::string git_tree;
-        Path p;
-    };
-
-    // VersionDbType::Git => VersionDbEntry.git_tree is filled
-    // VersionDbType::Filesystem => VersionDbEntry.path is filled
-    enum class VersionDbType
-    {
-        Git,
-        Filesystem,
-    };
-
-    std::unique_ptr<Json::IDeserializer<std::vector<VersionDbEntry>>> make_version_db_deserializer(VersionDbType type,
-                                                                                                   const Path& root);
-
     size_t package_match_prefix(StringView name, StringView pattern);
 }
