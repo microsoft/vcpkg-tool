@@ -1,6 +1,7 @@
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/span.h>
+#include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 

@@ -1,9 +1,10 @@
 #include <vcpkg/base/fwd/message_sinks.h>
 
-#include <vcpkg/base/basic-checks.h>
+#include <vcpkg/base/checks.h>
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/strings.h>
+#include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.add.h>
 #include <vcpkg/configure-environment.h>
@@ -92,7 +93,7 @@ namespace vcpkg::Commands
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
-            auto& manifest_scf = *maybe_manifest_scf.value_or_exit(VCPKG_LINE_INFO);
+            auto& manifest_scf = *maybe_manifest_scf.value(VCPKG_LINE_INFO);
             for (const auto& spec : specs)
             {
                 auto dep = Util::find_if(manifest_scf.core_paragraph->dependencies, [&spec](Dependency& dep) {

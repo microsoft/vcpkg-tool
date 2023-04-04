@@ -16,6 +16,7 @@ include(CMakeDependentOption)
 
 option(BUILD_TESTING "Option for enabling testing" ON)
 option(VCPKG_DEVELOPMENT_WARNINGS "Option for turning on all warnings" ON)
+option(VCPKG_MSVC_ANALYZE "Option for turning on /analyze" ON)
 option(VCPKG_WARNINGS_AS_ERRORS "Set warnings to be errors" OFF)
 option(VCPKG_BUILD_TLS12_DOWNLOADER "Enable building the tls12-downloader" OFF)
 option(VCPKG_BUILD_FUZZING "Option for enabling vcpkg-fuzz support" OFF)
@@ -52,31 +53,15 @@ project(vcpkg
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 include(cmake/utilities.cmake)
 
-# =============
-# === Files ===
-# =============
-
-file(GLOB VCPKGLIB_SOURCES CONFIGURE_DEPENDS "src/vcpkg/*.cpp")
-file(GLOB VCPKGLIB_BASE_SOURCES CONFIGURE_DEPENDS "src/vcpkg/base/*.cpp")
-file(GLOB VCPKGLIB_INCLUDES CONFIGURE_DEPENDS "include/vcpkg/*.h" "include/vcpkg/fwd/*.h")
-file(GLOB VCPKGLIB_BASE_INCLUDES CONFIGURE_DEPENDS "include/vcpkg/base/*.h" "include/vcpkg/base/fwd/*.h")
-
-set(VCPKG_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg.cpp")
-
-file(GLOB VCPKG_TEST_SOURCES CONFIGURE_DEPENDS "src/vcpkg-test/*.cpp")
-file(GLOB VCPKG_TEST_INCLUDES CONFIGURE_DEPENDS "include/vcpkg-test/*.h")
-
-file(GLOB VCPKG_FUZZ_SOURCES CONFIGURE_DEPENDS "src/vcpkg-fuzz/*.cpp")
-
-set(TLS12_DOWNLOAD_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/tls12-download.c")
-
-file(GLOB LOCALE_RESOURCES CMAKE_CONFIGURE_DEPENDS "locales/*.json")
-
 # ========================
 # === System detection ===
 # ========================
 
 vcpkg_detect_compiler()
+
+if(MSVC AND NOT COMMAND target_precompile_headers)
+    message(FATAL_ERROR "CMake 3.16 (target_precompile_headers) is required to build with MSVC")
+endif()
 
 if(VCPKG_EMBED_GIT_SHA)
     find_package(Git REQUIRED)
@@ -135,7 +120,7 @@ if(MSVC)
         if(VCPKG_COMPILER STREQUAL "clang")
             string(APPEND CMAKE_C_FLAGS " -Wmissing-prototypes -Wno-missing-field-initializers")
             string(APPEND CMAKE_CXX_FLAGS " -Wmissing-prototypes -Wno-missing-field-initializers")
-        else()
+        elseif(VCPKG_MSVC_ANALYZE)
             # -wd6553 is to workaround a violation in the Windows SDK
             # c:\program files (x86)\windows kits\10\include\10.0.22000.0\um\winreg.h(780) : warning C6553: The annotation for function 'RegOpenKeyExW' on _Param_(3) does not apply to a value type.
             string(APPEND CMAKE_C_FLAGS " -analyze -analyze:stacksize 39000 -wd6553")
@@ -188,6 +173,8 @@ find_package(fmt REQUIRED)
 find_package(CMakeRC REQUIRED)
 
 # === Target: locale-resources ===
+
+file(GLOB LOCALE_RESOURCES CMAKE_CONFIGURE_DEPENDS "locales/*.json")
 cmrc_add_resource_library(locale-resources ALIAS cmakerc::locales NAMESPACE cmakerc ${LOCALE_RESOURCES})
 
 if(NOT MSVC)
@@ -203,6 +190,11 @@ if(NOT MSVC)
 endif()
 
 # === Target: vcpkglib ===
+
+file(GLOB VCPKGLIB_SOURCES CONFIGURE_DEPENDS "src/vcpkg/*.cpp")
+file(GLOB VCPKGLIB_BASE_SOURCES CONFIGURE_DEPENDS "src/vcpkg/base/*.cpp")
+file(GLOB VCPKGLIB_INCLUDES CONFIGURE_DEPENDS "include/vcpkg/*.h" "include/vcpkg/fwd/*.h")
+file(GLOB VCPKGLIB_BASE_INCLUDES CONFIGURE_DEPENDS "include/vcpkg/base/*.h" "include/vcpkg/base/fwd/*.h")
 
 add_library(vcpkglib OBJECT
     ${VCPKGLIB_BASE_SOURCES}
@@ -364,18 +356,9 @@ target_link_libraries(vcpkglib
         ${CPP_ATOMIC_LIBRARY}
 )
 
-if(MSVC)
-    get_target_property(_srcs vcpkglib SOURCES)
-
-    if(NOT CMAKE_GENERATOR MATCHES "Visual Studio .*")
-        set_property(SOURCE src/pch.cpp APPEND PROPERTY OBJECT_OUTPUTS "${CMAKE_CURRENT_BINARY_DIR}/pch.pch")
-        set_property(SOURCE ${_srcs} APPEND PROPERTY OBJECT_DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/pch.pch")
-    endif()
-
-    set_source_files_properties(src/pch.cpp PROPERTIES COMPILE_FLAGS "/Ycpch.h")
-    target_sources(vcpkglib PRIVATE src/pch.cpp)
-    target_compile_options(vcpkglib PRIVATE /Yupch.h /FIpch.h /Zm200)
-else()
+if(CMAKE_VERSION GREATER_EQUAL "3.16")
+    target_precompile_headers(vcpkglib PRIVATE "include/pch.h")
+elseif(NOT MSVC)
     target_compile_options(vcpkglib PRIVATE -include "${CMAKE_CURRENT_SOURCE_DIR}/include/pch.h")
 endif()
 
@@ -390,7 +373,7 @@ if(MINGW)
     target_link_libraries(vcpkglib PUBLIC winhttp bcrypt version ole32 uuid)
 endif()
 
-# === Target: vcpkg ===
+# === Target: vcpkg-ps1 ===
 add_custom_command(
     OUTPUT
         "${CMAKE_CURRENT_BINARY_DIR}/vcpkg.ps1"
@@ -399,10 +382,11 @@ add_custom_command(
     DEPENDS
         "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg-in-development.ps1"
     VERBATIM
-    )
-
+)
 add_custom_target(vcpkg-ps1 ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/vcpkg.ps1")
 
+# === Target: vcpkg ===
+set(VCPKG_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg.cpp")
 add_executable(vcpkg ${VCPKG_SOURCES} "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg.manifest")
 target_link_libraries(vcpkg PRIVATE vcpkglib)
 
@@ -443,6 +427,9 @@ endif()
 if (BUILD_TESTING)
     enable_testing()
 
+    file(GLOB VCPKG_TEST_SOURCES CONFIGURE_DEPENDS "src/vcpkg-test/*.cpp")
+    file(GLOB VCPKG_TEST_INCLUDES CONFIGURE_DEPENDS "include/vcpkg-test/*.h")
+
     add_executable(vcpkg-test
         ${VCPKG_TEST_SOURCES}
         ${VCPKG_TEST_INCLUDES}
@@ -451,6 +438,12 @@ if (BUILD_TESTING)
     target_link_libraries(vcpkg-test PRIVATE vcpkglib)
     if(ANDROID)
         target_link_libraries(vcpkg-test PRIVATE log)
+    endif()
+
+    if(CMAKE_VERSION GREATER_EQUAL "3.16")
+        target_precompile_headers(vcpkg-test REUSE_FROM vcpkglib)
+    elseif(NOT MSVC)
+       target_compile_options(vcpkg-test PRIVATE -include "${CMAKE_CURRENT_SOURCE_DIR}/include/pch.h")
     endif()
 
     add_test(NAME default COMMAND vcpkg-test --order rand --rng-seed time)
@@ -462,6 +455,7 @@ endif()
 
 # === Target: vcpkg-fuzz ===
 
+file(GLOB VCPKG_FUZZ_SOURCES CONFIGURE_DEPENDS "src/vcpkg-fuzz/*.cpp")
 if(VCPKG_BUILD_FUZZING)
     add_executable(vcpkg-fuzz ${VCPKG_FUZZ_SOURCES} "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg.manifest")
     target_link_libraries(vcpkg-fuzz PRIVATE vcpkglib)
@@ -470,6 +464,7 @@ endif()
 
 # === Target: tls12-download ===
 
+set(TLS12_DOWNLOAD_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/tls12-download.c")
 if(VCPKG_BUILD_TLS12_DOWNLOADER)
     add_executable(tls12-download ${TLS12_DOWNLOAD_SOURCES} "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg.manifest")
     set_property(TARGET tls12-download PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded")
@@ -487,7 +482,6 @@ find_program(CLANG_FORMAT clang-format PATHS "$ENV{PROGRAMFILES}/LLVM/bin")
 if(CLANG_FORMAT)
     # doing all of these formats in one line has a tendency to overflow the command line length
     add_custom_target(format
-        COMMAND "${CLANG_FORMAT}" -i -verbose ${CMAKE_CURRENT_SOURCE_DIR}/src/pch.cpp
         COMMAND "${CLANG_FORMAT}" -i -verbose ${VCPKGLIB_BASE_SOURCES}
         COMMAND "${CLANG_FORMAT}" -i -verbose ${VCPKGLIB_SOURCES}
         COMMAND "${CLANG_FORMAT}" -i -verbose ${CMAKE_CURRENT_SOURCE_DIR}/include/pch.h

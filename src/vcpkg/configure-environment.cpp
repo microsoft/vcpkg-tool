@@ -1,10 +1,11 @@
 #include <vcpkg/base/fwd/message_sinks.h>
 
-#include <vcpkg/base/basic-checks.h>
+#include <vcpkg/base/checks.h>
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/setup-messages.h>
 #include <vcpkg/base/system.debug.h>
+#include <vcpkg/base/system.h>
 #include <vcpkg/base/system.process.h>
 
 #include <vcpkg/archives.h>
@@ -189,11 +190,11 @@ namespace vcpkg
             .string_arg(temp_directory / (generate_random_UUID() + "_previous_environment.txt"));
         cmd_run.string_arg("--z-global-config").string_arg(paths.global_config());
 
-        if (auto maybe_file = msg::get_file())
+        auto maybe_file = msg::get_loaded_file();
+        if (!maybe_file.empty())
         {
-            auto file = maybe_file.get();
             auto temp_file = temp_directory / "messages.json";
-            fs.write_contents(temp_file, StringView{file->begin(), file->end()}, VCPKG_LINE_INFO);
+            fs.write_contents(temp_file, maybe_file, VCPKG_LINE_INFO);
             cmd_run.string_arg("--language").string_arg(temp_file);
         }
 

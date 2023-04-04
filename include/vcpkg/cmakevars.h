@@ -9,6 +9,9 @@
 
 #include <vcpkg/packagespec.h>
 
+#include <string>
+#include <unordered_map>
+
 namespace vcpkg::CMakeVars
 {
     struct CMakeVarProvider

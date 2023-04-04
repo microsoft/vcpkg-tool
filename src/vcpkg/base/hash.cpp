@@ -1,5 +1,6 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/expected.h>
+#include <vcpkg/base/files.h>
 #include <vcpkg/base/format.h>
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/strings.h>

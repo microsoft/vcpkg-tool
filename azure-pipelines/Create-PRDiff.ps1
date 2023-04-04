@@ -4,7 +4,7 @@ Param(
     [String]$DiffFile
 )
 
-Start-Process -FilePath 'git' -ArgumentList 'diff',':!ce' `
+Start-Process -FilePath 'git' -ArgumentList 'diff',':!ce/common/config/rush/.npmrc' `
     -NoNewWindow -Wait `
     -RedirectStandardOutput $DiffFile
 if (0 -ne (Get-Item -LiteralPath $DiffFile).Length)

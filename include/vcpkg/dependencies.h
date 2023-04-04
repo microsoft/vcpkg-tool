@@ -4,7 +4,6 @@
 #include <vcpkg/fwd/portfileprovider.h>
 
 #include <vcpkg/base/optional.h>
-#include <vcpkg/base/util.h>
 
 #include <vcpkg/build.h>
 #include <vcpkg/packagespec.h>
@@ -16,7 +15,6 @@
 namespace vcpkg
 {
     struct GraphRandomizer;
-    struct StatusParagraphs;
 
     enum class UnsupportedPortAction : bool
     {

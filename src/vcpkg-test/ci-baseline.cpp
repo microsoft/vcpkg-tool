@@ -1,6 +1,6 @@
 #include <catch2/catch.hpp>
 
-#include <vcpkg/base/basic-checks.h>
+#include <vcpkg/base/checks.h>
 #include <vcpkg/base/parse.h>
 
 #include <vcpkg/build.h>

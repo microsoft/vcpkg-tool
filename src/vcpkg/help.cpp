@@ -1,3 +1,5 @@
+#include <vcpkg/base/util.h>
+
 #include <vcpkg/binarycaching.h>
 #include <vcpkg/commands.create.h>
 #include <vcpkg/commands.dependinfo.h>
