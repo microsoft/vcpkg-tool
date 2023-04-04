@@ -79,6 +79,7 @@ namespace vcpkg
 
         static constexpr bool is_whitespace(char32_t ch) { return ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n'; }
         static constexpr bool is_lower_alpha(char32_t ch) { return ch >= 'a' && ch <= 'z'; }
+        static constexpr bool is_lower_digit(char ch) { return is_lower_alpha(ch) || is_ascii_digit(ch); }
         static constexpr bool is_upper_alpha(char32_t ch) { return ch >= 'A' && ch <= 'Z'; }
         static constexpr bool is_icase_alpha(char32_t ch) { return is_lower_alpha(ch) || is_upper_alpha(ch); }
         static constexpr bool is_ascii_digit(char32_t ch) { return ch >= '0' && ch <= '9'; }

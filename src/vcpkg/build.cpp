@@ -1,8 +1,8 @@
 #include <vcpkg/base/cache.h>
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/chrono.h>
+#include <vcpkg/base/file_sink.h>
 #include <vcpkg/base/hash.h>
-#include <vcpkg/base/json.h>
 #include <vcpkg/base/message_sinks.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/optional.h>
