@@ -143,8 +143,7 @@ namespace vcpkg::Test
         PackageSpec emplace(vcpkg::SourceControlFileAndLocation&& scfl);
     };
 
-    inline std::vector<FullPackageSpec> parse_test_fspecs(StringView sv,
-                                                          bool expect_default_used)
+    inline std::vector<FullPackageSpec> parse_test_fspecs(StringView sv, bool expect_default_used)
     {
         std::vector<FullPackageSpec> ret;
         ParserBase parser(sv, "test");
