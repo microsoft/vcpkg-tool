@@ -294,6 +294,7 @@ if (VCPKG_ARTIFACTS_DEVELOPMENT)
     add_custom_command(
         OUTPUT
             ${VCPKG_ARTIFACTS_BINARIES}
+            "${VCPKG_ARTIFACTS_BINARY_DIR}/package.json"
             "${VCPKG_ARTIFACTS_BINARY_DIR}/package-lock.json"
             "${VCPKG_ARTIFACTS_BINARY_DIR}/.npmrc"
             "${VCPKG_ARTIFACTS_BINARY_DIR}/mocha-config.yaml"
@@ -355,6 +356,7 @@ if (VCPKG_ARTIFACTS_DEVELOPMENT)
             "${VCPKG_ARTIFACTS_BINARY_DIR}/mocha-config.yaml"
             "${VCPKG_ARTIFACTS_BINARY_DIR}/locales/messages.json"
             "${VCPKG_ARTIFACTS_BINARY_DIR}/artifacts-development.txt"
+            npm-restore
         )
     set_target_properties(vcpkg-artifacts-target
         PROPERTIES
