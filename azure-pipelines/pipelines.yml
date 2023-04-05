@@ -22,7 +22,7 @@ jobs:
       inputs:
         command: 'custom'
         workingDir: 'vcpkg-artifacts'
-        customCommand: 'install'
+        customCommand: 'ci'
     - bash: |
         cmake '-DCMAKE_CXX_FLAGS=-fprofile-arcs -fPIC -O0 -fsanitize=undefined -fsanitize=address' -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_BENCHMARKING=ON -DVCPKG_BUILD_FUZZING=ON -DVCPKG_ARTIFACTS_DEVELOPMENT=ON -B build.amd64.debug
         make -j 2 -C build.amd64.debug
@@ -63,7 +63,7 @@ jobs:
       inputs:
         command: 'custom'
         workingDir: 'vcpkg-artifacts'
-        customCommand: 'install'
+        customCommand: 'ci'
     - bash: |
         cmake '-DCMAKE_CXX_FLAGS=-fsanitize=undefined -fsanitize=address' -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_BENCHMARKING=ON -DVCPKG_BUILD_FUZZING=ON -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13 -DVCPKG_ARTIFACTS_DEVELOPMENT=ON -B build.amd64.debug
         make -j 2 -C build.amd64.debug
@@ -121,7 +121,7 @@ jobs:
       inputs:
         command: 'custom'
         workingDir: 'vcpkg-artifacts'
-        customCommand: 'install'
+        customCommand: 'ci'
     - task: CodeQL3000Init@0
       displayName: 'CodeQL Initialize'
     - task: CmdLine@2

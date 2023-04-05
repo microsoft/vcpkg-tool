@@ -86,10 +86,10 @@ jobs:
       inputs:
         command: 'custom'
         workingDir: 'vcpkg-artifacts'
-        customCommand: 'install'
+        customCommand: 'ci'
         customRegistry: 'useFeed'
         customFeed: '0bdbc590-a062-4c3f-b0f6-9383f67865ee/105b4584-173c-41aa-8061-612294abe099'
-      displayName: Install vcpkg-artifacts Dev Dependencies
+      displayName: Restore vcpkg-artifacts Dev Dependencies
     - task: ComponentGovernanceComponentDetection@0
       displayName: Detect Components
       inputs:
@@ -107,10 +107,10 @@ jobs:
       inputs:
         command: 'custom'
         workingDir: 'vcpkg-artifacts'
-        customCommand: 'install --omit=dev'
+        customCommand: 'ci --omit=dev'
         customRegistry: 'useFeed'
         customFeed: '0bdbc590-a062-4c3f-b0f6-9383f67865ee/105b4584-173c-41aa-8061-612294abe099'
-      displayName: Install vcpkg-artifacts Prod Dependencies
+      displayName: Restore vcpkg-artifacts Prod Dependencies
     - script: | # This script must be kept in sync with vcpkg-artifacts-target in CMakeLists.txt
         rmdir /s /q "$(Build.BinariesDirectory)\vcpkg-artifacts\test"
         rmdir /s /q "$(Build.BinariesDirectory)\vcpkg-artifacts\test_resources"
@@ -120,7 +120,6 @@ jobs:
         copy "$(Build.SourcesDirectory)\vcpkg-artifacts\package.json" "$(Build.BinariesDirectory)\vcpkg-artifacts\package.json"
         copy "$(Build.SourcesDirectory)\vcpkg-artifacts\package-lock.json" "$(Build.BinariesDirectory)\vcpkg-artifacts\package-lock.json"
         copy "$(Build.SourcesDirectory)\vcpkg-artifacts\.npmrc" "$(Build.BinariesDirectory)\vcpkg-artifacts\.npmrc"
-        copy "$(Build.SourcesDirectory)\vcpkg-artifacts\mocha-config.yaml" "$(Build.BinariesDirectory)\vcpkg-artifacts\mocha-config.yaml"
         copy "$(Build.SourcesDirectory)\vcpkg-artifacts\locales\messages.json" "$(Build.BinariesDirectory)\vcpkg-artifacts\locales\messages.json"
       displayName: Delete Tests, Store Dependencies and Static Components for Signing
     - script: |

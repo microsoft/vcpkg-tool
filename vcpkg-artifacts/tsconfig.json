@@ -10,7 +10,7 @@
     "noPropertyAccessFromIndexSignature": true,
     "noImplicitThis": true,
     "inlineSourceMap": true,
-    "sourceRoot": "https://github.com/microsoft/vcpkg-tool/tree/main/vcpkg-artifacts",
+    "sourceRoot": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/vcpkg-artifacts",
     "declarationMap": true,
     "strict": true,
     "declaration": true,

@@ -234,22 +234,22 @@ if (VCPKG_ARTIFACTS_DEVELOPMENT)
     add_custom_command(
         OUTPUT
             "${VCPKG_ARTIFACTS_SOURCE_DIR}/node_modules"
-        COMMAND "${NPM}" ARGS "install"
+        COMMAND "${NPM}" ARGS "ci"
         WORKING_DIRECTORY
             "${VCPKG_ARTIFACTS_SOURCE_DIR}"
         COMMENT
             "Running npm install..."
         MAIN_DEPENDENCY
-            "${VCPKG_ARTIFACTS_SOURCE_DIR}/package.json"
+            "${VCPKG_ARTIFACTS_SOURCE_DIR}/package-lock.json"
         VERBATIM
         )
 
-    add_custom_target(npm-install
+    add_custom_target(npm-restore
         ALL
         DEPENDS
             "${VCPKG_ARTIFACTS_SOURCE_DIR}/node_modules"
             )
-    set_target_properties(npm-install
+    set_target_properties(npm-restore
         PROPERTIES
             ADDITIONAL_CLEAN_FILES "${VCPKG_ARTIFACTS_SOURCE_DIR}/node_modules"
     )
@@ -294,7 +294,6 @@ if (VCPKG_ARTIFACTS_DEVELOPMENT)
     add_custom_command(
         OUTPUT
             ${VCPKG_ARTIFACTS_BINARIES}
-            "${VCPKG_ARTIFACTS_BINARY_DIR}/package.json"
             "${VCPKG_ARTIFACTS_BINARY_DIR}/package-lock.json"
             "${VCPKG_ARTIFACTS_BINARY_DIR}/.npmrc"
             "${VCPKG_ARTIFACTS_BINARY_DIR}/mocha-config.yaml"
