@@ -143,16 +143,22 @@ namespace vcpkg::Test
         PackageSpec emplace(vcpkg::SourceControlFileAndLocation&& scfl);
     };
 
-    inline std::vector<FullPackageSpec> parse_test_fspecs(StringView sv, Triplet t = X86_WINDOWS)
+    inline std::vector<FullPackageSpec> parse_test_fspecs(StringView sv,
+                                                          bool expect_default_used)
     {
         std::vector<FullPackageSpec> ret;
         ParserBase parser(sv, "test");
+        bool default_triplet_used = false;
         while (!parser.at_eof())
         {
             auto opt = parse_qualified_specifier(parser);
             REQUIRE(opt.has_value());
-            ret.push_back(opt.get()->to_full_spec(t, ImplicitDefault::YES).value_or_exit(VCPKG_LINE_INFO));
+            ret.push_back(opt.get()
+                              ->to_full_spec(X86_WINDOWS, default_triplet_used, ImplicitDefault::YES)
+                              .value_or_exit(VCPKG_LINE_INFO));
         }
+
+        CHECK(default_triplet_used == expect_default_used);
         return ret;
     }
 

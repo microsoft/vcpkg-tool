@@ -92,11 +92,13 @@ TEST_CASE ("specifier parsing", "[specifier]")
     SECTION ("dont expand wildcards")
     {
         std::vector<FeatureSpec> specs;
-        const auto fspecs = Test::parse_test_fspecs("zlib[core,0,1]:x86-uwp openssl[*]:x86-uwp");
+        const auto fspecs = Test::parse_test_fspecs("zlib[core,0,1]:x86-uwp openssl[*]:x86-uwp", false);
         for (auto&& fs : fspecs)
+        {
             fs.expand_fspecs_to(specs);
-        Util::sort(specs);
+        }
 
+        Util::sort(specs);
         std::vector<FeatureSpec> spectargets{
             {{"openssl", Test::X86_UWP}, "core"},
             {{"openssl", Test::X86_UWP}, "default"},
@@ -105,6 +107,7 @@ TEST_CASE ("specifier parsing", "[specifier]")
             {{"zlib", Test::X86_UWP}, "0"},
             {{"zlib", Test::X86_UWP}, "1"},
         };
+
         Util::sort(spectargets);
         Test::check_ranges(specs, spectargets);
     }
