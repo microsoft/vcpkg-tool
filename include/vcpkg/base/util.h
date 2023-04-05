@@ -60,22 +60,6 @@ namespace vcpkg::Util
         {
             return container.find(item) != container.end();
         }
-
-        template<class Container, class Pred>
-        void erase_if(Container& container, Pred pred)
-        {
-            for (auto i = container.begin(), last = container.end(); i != last;)
-            {
-                if (pred(*i))
-                {
-                    i = container.erase(i);
-                }
-                else
-                {
-                    ++i;
-                }
-            }
-        }
     }
 
     // Treats the range [first, last) a range sorted by cmp, and copies any duplicate elements to
@@ -210,6 +194,28 @@ namespace vcpkg::Util
     void erase_remove_if(Container& cont, Pred pred)
     {
         cont.erase(std::remove_if(cont.begin(), cont.end(), pred), cont.end());
+    }
+
+    template<class Container, class Pred>
+    void erase_if(Container& container, Pred pred)
+    {
+        for (auto i = container.begin(), last = container.end(); i != last;)
+        {
+            if (pred(*i))
+            {
+                i = container.erase(i);
+            }
+            else
+            {
+                ++i;
+            }
+        }
+    }
+
+    template<class Pred, class... VectorArgs>
+    void erase_if(std::vector<VectorArgs...>& container, Pred pred)
+    {
+        Util::erase_remove_if(container, pred);
     }
 
     template<class Range, class F>
