@@ -179,7 +179,7 @@
   "ChecksUpdateVcpkg": "bootstrap-vcpkg を再実行して vcpkg を更新すると、このエラーが解決される可能性があります。",
   "CiBaselineAllowUnexpectedPassingRequiresBaseline": "--allow-unexpected-passing は、--ci-baseline を介してベースラインが指定されている場合にのみ使用できます。",
   "CiBaselineDisallowedCascade": "回帰: {spec} がカスケードされましたが、渡す必要があります。({path})。",
-  "CiBaselineIndependentRegression": "REGRESSION: Independent {spec} failed with {build_result}.",
+  "CiBaselineIndependentRegression": "回帰: 独立した {spec} が {build_result} で失敗しました。",
   "CiBaselineRegression": "回帰: {spec} は {build_result} で失敗しました。必要な場合は、{spec}=fail を {path} に追加します。",
   "CiBaselineRegressionHeader": "回帰:",
   "CiBaselineUnexpectedPass": "成功、失敗リストから削除: {spec} ({path})。",
