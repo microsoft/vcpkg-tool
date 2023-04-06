@@ -198,7 +198,7 @@ TEST_CASE ("payload smoke test", "[metrics]")
     "ver": 1,
     "name": "Microsoft.ApplicationInsights.Event",
     "time": "2022-08-29T15:46:24Z",
-    "sampleRate": 100.000000,
+    "sampleRate": 100,
     "seq": "0:0",
     "iKey": "b4e88960-4393-4dd9-ab8e-97e8fe6d7603",
     "flags": 0,
@@ -224,11 +224,11 @@ TEST_CASE ("payload smoke test", "[metrics]")
             "hello"
           ],
           "buildtimes": [
-            12.000000
+            12
           ]
         },
         "measurements": {
-          "elapsed_us": 12.000000
+          "elapsed_us": 12
         }
       }
     }
