@@ -6,15 +6,19 @@ $NuGetRoot = Join-Path $TestingRoot 'nuget'
 $NuGetRoot2 = Join-Path $TestingRoot 'nuget2'
 $ArchiveRoot = Join-Path $TestingRoot 'archives'
 $VersionFilesRoot = Join-Path $TestingRoot 'version-test'
-$commonArgs = @(
-    "--triplet",
-    $Triplet,
+$directoryArgs = @(
     "--x-buildtrees-root=$buildtreesRoot",
     "--x-install-root=$installRoot",
     "--x-packages-root=$packagesRoot",
     "--overlay-ports=$PSScriptRoot/e2e_ports/overlays",
     "--overlay-triplets=$PSScriptRoot/e2e_ports/triplets"
 )
+
+$commonArgs = @(
+    "--triplet",
+    $Triplet
+) + $directoryArgs
+
 $Script:CurrentTest = 'unassigned'
 
 function Refresh-TestRoot {

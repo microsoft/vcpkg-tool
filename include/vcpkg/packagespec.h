@@ -98,6 +98,8 @@ namespace vcpkg
         using std::vector<std::string>::vector;
     };
 
+    InternalFeatureSet internalize_feature_list(View<std::string> fs, ImplicitDefault id);
+
     ///
     /// <summary>
     /// Full specification of a package. Contains all information to reference
@@ -109,12 +111,10 @@ namespace vcpkg
         PackageSpec package_spec;
         InternalFeatureSet features;
 
-        FullPackageSpec() = default;
         FullPackageSpec(PackageSpec spec, InternalFeatureSet features)
             : package_spec(std::move(spec)), features(std::move(features))
         {
         }
-        FullPackageSpec(PackageSpec spec, View<std::string> features, ImplicitDefault id);
 
         /// Splats into individual FeatureSpec's
         void expand_fspecs_to(std::vector<FeatureSpec>& oFut) const;
@@ -135,9 +135,11 @@ namespace vcpkg
 
         /// @param id add "default" if "core" is not present
         /// @return nullopt on success. On failure, caller should supplement returned string with more context.
-        ExpectedL<FullPackageSpec> to_full_spec(Triplet default_triplet, ImplicitDefault id) const;
+        ExpectedL<FullPackageSpec> to_full_spec(Triplet default_triplet,
+                                                bool& default_triplet_used,
+                                                ImplicitDefault id) const;
 
-        ExpectedL<PackageSpec> to_package_spec(Triplet default_triplet) const;
+        ExpectedL<PackageSpec> to_package_spec(Triplet default_triplet, bool& default_triplet_used) const;
     };
 
     Optional<std::string> parse_feature_name(ParserBase& parser);

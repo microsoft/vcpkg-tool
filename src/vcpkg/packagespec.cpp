@@ -7,6 +7,23 @@
 #include <vcpkg/packagespec.h>
 #include <vcpkg/paragraphparser.h>
 
+namespace
+{
+    using namespace vcpkg;
+    Triplet resolve_triplet(const Optional<std::string>& specified_triplet,
+                            Triplet default_triplet,
+                            bool& default_triplet_used)
+    {
+        if (auto pspecified = specified_triplet.get())
+        {
+            return Triplet::from_canonical_name(*pspecified);
+        }
+
+        default_triplet_used = true;
+        return default_triplet;
+    }
+} // unnamed namespace
+
 namespace vcpkg
 {
     std::string FeatureSpec::to_string() const
@@ -26,7 +43,7 @@ namespace vcpkg
         return fmt::format("{}[{}]", package_name, feature_name);
     }
 
-    static InternalFeatureSet normalize_feature_list(View<std::string> fs, ImplicitDefault id)
+    InternalFeatureSet internalize_feature_list(View<std::string> fs, ImplicitDefault id)
     {
         InternalFeatureSet ret;
         bool core = false;
@@ -48,11 +65,6 @@ namespace vcpkg
             }
         }
         return ret;
-    }
-
-    FullPackageSpec::FullPackageSpec(PackageSpec spec, View<std::string> features, ImplicitDefault id)
-        : package_spec(std::move(spec)), features(normalize_feature_list(features, id))
-    {
     }
 
     void FullPackageSpec::expand_fspecs_to(std::vector<FeatureSpec>& out) const
@@ -80,31 +92,39 @@ namespace vcpkg
         return left.name() == right.name() && left.triplet() == right.triplet();
     }
 
-    ExpectedL<FullPackageSpec> ParsedQualifiedSpecifier::to_full_spec(Triplet default_triplet, ImplicitDefault id) const
+    ExpectedL<FullPackageSpec> ParsedQualifiedSpecifier::to_full_spec(Triplet default_triplet,
+                                                                      bool& default_triplet_used,
+                                                                      ImplicitDefault id) const
     {
         if (platform)
         {
             return msg::format_error(msgIllegalPlatformSpec);
         }
 
-        const Triplet t = triplet ? Triplet::from_canonical_name(*triplet.get()) : default_triplet;
-        const View<std::string> fs = !features.get() ? View<std::string>{} : *features.get();
-        return FullPackageSpec{{name, t}, fs, id};
+        View<std::string> fs{};
+        if (auto pfeatures = features.get())
+        {
+            fs = *pfeatures;
+        }
+
+        return FullPackageSpec{{name, resolve_triplet(triplet, default_triplet, default_triplet_used)},
+                               internalize_feature_list(fs, id)};
     }
 
-    ExpectedL<PackageSpec> ParsedQualifiedSpecifier::to_package_spec(Triplet default_triplet) const
+    ExpectedL<PackageSpec> ParsedQualifiedSpecifier::to_package_spec(Triplet default_triplet,
+                                                                     bool& default_triplet_used) const
     {
         if (platform)
         {
             return msg::format_error(msgIllegalPlatformSpec);
         }
+
         if (features)
         {
             return msg::format_error(msgIllegalFeatures);
         }
 
-        const Triplet t = triplet ? Triplet::from_canonical_name(*triplet.get()) : default_triplet;
-        return PackageSpec{name, t};
+        return PackageSpec{name, resolve_triplet(triplet, default_triplet, default_triplet_used)};
     }
 
     ExpectedL<ParsedQualifiedSpecifier> parse_qualified_specifier(StringView input)
