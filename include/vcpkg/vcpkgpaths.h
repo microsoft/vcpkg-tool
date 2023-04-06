@@ -89,6 +89,7 @@ namespace vcpkg
 
         const Path original_cwd;
         const Path root;
+        bool try_provision_vcpkg_artifacts() const;
 
     private:
         const std::unique_ptr<VcpkgPathsImpl> m_pimpl;
