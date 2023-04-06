@@ -1,6 +1,7 @@
 #include <catch2/catch.hpp>
 
 #include <vcpkg/base/message_sinks.h>
+#include <vcpkg/base/strings.h>
 
 #include <vcpkg/portlint.h>
 
