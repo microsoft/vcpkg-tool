@@ -141,4 +141,14 @@ if ($IsWindows) {
     if ($output.Contains($warningText)) {
         throw 'remove with arg should not emit the triplet warning'
     }
+
+    $env:VCPKG_DEFAULT_TRIPLET = 'x86-windows'
+    Refresh-TestRoot
+    $output = Run-VcpkgAndCaptureOutput -TestArgs ($directoryArgs + @('install', 'vcpkg-hello-world-1'))
+    Throw-IfFailed
+    if ($output.Contains($warningText)) {
+        throw 'install with environment variable set should not emit the triplet warning'
+    }
+
+    Remove-Item env:VCPKG_DEFAULT_TRIPLET
 }
