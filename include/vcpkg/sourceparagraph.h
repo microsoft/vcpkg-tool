@@ -214,9 +214,7 @@ namespace vcpkg
     std::string parse_spdx_license_expression(StringView sv, ParseMessages& messages);
 
     // Exposed for testing
-    ExpectedL<std::vector<Dependency>> parse_dependencies_list(
-        const std::string& str,
-        StringView origin = "<unknown>",
-        TextRowCol textrowcol = {},
-        ImplicitDefault implicit_defaults = ImplicitDefault::YES);
+    ExpectedL<std::vector<Dependency>> parse_dependencies_list(const std::string& str,
+                                                               StringView origin = "<unknown>",
+                                                               TextRowCol textrowcol = {});
 }

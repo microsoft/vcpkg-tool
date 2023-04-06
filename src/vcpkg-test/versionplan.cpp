@@ -25,7 +25,6 @@ TEST_CASE ("parse depends", "[dependencies]")
 TEST_CASE ("filter depends", "[dependencies]")
 {
     const std::vector<std::string> defaults{"core", "default"};
-    const std::vector<std::string> core{"core"};
 
     const std::unordered_map<std::string, std::string> x64_win_cmake_vars{{"VCPKG_TARGET_ARCHITECTURE", "x64"},
                                                                           {"VCPKG_CMAKE_SYSTEM_NAME", ""}};
@@ -49,16 +48,16 @@ TEST_CASE ("filter depends", "[dependencies]")
 
     SECTION ("arm-uwp")
     {
-        auto deps_ = parse_dependencies_list("liba (!uwp), libb, libc (uwp)", {}, {}, ImplicitDefault::NO);
+        auto deps_ = parse_dependencies_list("liba (!uwp), libb, libc (uwp)");
         REQUIRE(deps_);
         auto& deps = *deps_.get();
 
         auto v2 = filter_dependencies(deps, Test::ARM_UWP, Test::X86_WINDOWS, arm_uwp_cmake_vars);
         REQUIRE(v2.size() == 2);
         REQUIRE(v2.at(0).package_spec.name() == "libb");
-        REQUIRE(v2.at(0).features == core);
+        REQUIRE(v2.at(0).features == defaults);
         REQUIRE(v2.at(1).package_spec.name() == "libc");
-        REQUIRE(v2.at(1).features == core);
+        REQUIRE(v2.at(1).features == defaults);
     }
 }
 

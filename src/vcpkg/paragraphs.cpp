@@ -184,39 +184,35 @@ namespace vcpkg
     }
     ExpectedL<std::vector<Dependency>> parse_dependencies_list(const std::string& str,
                                                                StringView origin,
-                                                               TextRowCol textrowcol,
-                                                               ImplicitDefault implicit_defaults)
+                                                               TextRowCol textrowcol)
     {
         auto parser = ParserBase(str, origin, textrowcol);
-        auto opt = parse_list_until_eof<Dependency>(
-            msgExpectedDependenciesList, parser, [implicit_defaults](ParserBase& parser) {
-                auto loc = parser.cur_loc();
-                return parse_qualified_specifier(parser).then(
-                    [&](ParsedQualifiedSpecifier&& pqs) -> Optional<Dependency> {
-                        if (const auto triplet = pqs.triplet.get())
-                        {
-                            parser.add_error(msg::format(msgAddTripletExpressionNotAllowed,
-                                                         msg::package_name = pqs.name,
-                                                         msg::triplet = *triplet),
-                                             loc);
-                            return nullopt;
-                        }
-                        Dependency dependency{pqs.name, {}, pqs.platform.value_or({})};
-                        dependency.default_features = (implicit_defaults == ImplicitDefault::YES);
-                        for (const auto& feature : pqs.features.value_or({}))
-                        {
-                            if (feature == "core")
-                            {
-                                dependency.default_features = false;
-                            }
-                            else
-                            {
-                                dependency.features.emplace_back(feature);
-                            }
-                        }
-                        return dependency;
-                    });
+        auto opt = parse_list_until_eof<Dependency>(msgExpectedDependenciesList, parser, [](ParserBase& parser) {
+            auto loc = parser.cur_loc();
+            return parse_qualified_specifier(parser).then([&](ParsedQualifiedSpecifier&& pqs) -> Optional<Dependency> {
+                if (const auto triplet = pqs.triplet.get())
+                {
+                    parser.add_error(msg::format(msgAddTripletExpressionNotAllowed,
+                                                 msg::package_name = pqs.name,
+                                                 msg::triplet = *triplet),
+                                     loc);
+                    return nullopt;
+                }
+                Dependency dependency{pqs.name, {}, pqs.platform.value_or({})};
+                for (const auto& feature : pqs.features.value_or({}))
+                {
+                    if (feature == "core")
+                    {
+                        dependency.default_features = false;
+                    }
+                    else
+                    {
+                        dependency.features.emplace_back(feature);
+                    }
+                }
+                return dependency;
             });
+        });
         if (!opt) return {LocalizedString::from_raw(parser.get_error()->to_string()), expected_right_tag};
 
         return {std::move(opt).value_or_exit(VCPKG_LINE_INFO), expected_left_tag};
