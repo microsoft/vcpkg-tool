@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vcpkg/base/fwd/downloads.h>
+#include <vcpkg/base/fwd/files.h>
 #include <vcpkg/base/fwd/git.h>
 #include <vcpkg/base/fwd/system.process.h>
 
@@ -15,9 +16,8 @@
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
-#include <vcpkg/base/files.h>
 #include <vcpkg/base/optional.h>
-#include <vcpkg/base/stringview.h>
+#include <vcpkg/base/path.h>
 
 #include <vcpkg/triplet.h>
 
@@ -89,6 +89,7 @@ namespace vcpkg
 
         const Path original_cwd;
         const Path root;
+        bool try_provision_vcpkg_artifacts() const;
 
     private:
         const std::unique_ptr<VcpkgPathsImpl> m_pimpl;

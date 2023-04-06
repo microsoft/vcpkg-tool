@@ -6,13 +6,11 @@
 #include <vcpkg/fwd/packagespec.h>
 
 #include <vcpkg/base/expected.h>
-#include <vcpkg/base/json.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/span.h>
 
 #include <vcpkg/platform-expression.h>
 #include <vcpkg/triplet.h>
-#include <vcpkg/versions.h>
 
 namespace vcpkg
 {
@@ -112,10 +110,11 @@ namespace vcpkg
         InternalFeatureSet features;
 
         FullPackageSpec() = default;
-        explicit FullPackageSpec(PackageSpec spec, InternalFeatureSet features)
+        FullPackageSpec(PackageSpec spec, InternalFeatureSet features)
             : package_spec(std::move(spec)), features(std::move(features))
         {
         }
+        FullPackageSpec(PackageSpec spec, View<std::string> features, ImplicitDefault id);
 
         /// Splats into individual FeatureSpec's
         void expand_fspecs_to(std::vector<FeatureSpec>& oFut) const;
@@ -125,69 +124,6 @@ namespace vcpkg
             return l.package_spec == r.package_spec && l.features == r.features;
         }
         friend bool operator!=(const FullPackageSpec& l, const FullPackageSpec& r) { return !(l == r); }
-    };
-
-    struct DependencyConstraint
-    {
-        VersionConstraintKind type = VersionConstraintKind::None;
-        std::string value;
-        int port_version = 0;
-
-        friend bool operator==(const DependencyConstraint& lhs, const DependencyConstraint& rhs);
-        friend bool operator!=(const DependencyConstraint& lhs, const DependencyConstraint& rhs)
-        {
-            return !(lhs == rhs);
-        }
-
-        Optional<Version> try_get_minimum_version() const;
-    };
-
-    struct Dependency
-    {
-        struct Feature
-        {
-            std::string name;
-            PlatformExpression::Expr platform;
-            Feature(std::string name) : Feature(std::move(name), PlatformExpression::Expr::Empty()) { }
-            Feature(std::string name, PlatformExpression::Expr platform)
-                : name(std::move(name)), platform(std::move(platform))
-            {
-                Checks::check_exit(VCPKG_LINE_INFO,
-                                   !this->name.empty() && this->name != "core" && this->name != "default");
-            }
-            friend bool operator==(const Feature& lhs, const Feature& rhs);
-            friend bool operator!=(const Feature& lhs, const Feature& rhs);
-        };
-        std::string name;
-        // a list of "real" features without "core" or "default". Use member default_features instead.
-        std::vector<Feature> features;
-        PlatformExpression::Expr platform;
-        DependencyConstraint constraint;
-        bool host = false;
-
-        bool default_features = true;
-        bool has_platform_expressions() const;
-
-        Json::Object extra_info;
-
-        /// @param id adds "default" if `default_features` is false.
-        FullPackageSpec to_full_spec(View<std::string> features, Triplet target, Triplet host) const;
-
-        friend bool operator==(const Dependency& lhs, const Dependency& rhs);
-        friend bool operator!=(const Dependency& lhs, const Dependency& rhs) { return !(lhs == rhs); }
-    };
-
-    struct DependencyOverride
-    {
-        std::string name;
-        std::string version;
-        int port_version = 0;
-        VersionScheme version_scheme = VersionScheme::String;
-
-        Json::Object extra_info;
-
-        friend bool operator==(const DependencyOverride& lhs, const DependencyOverride& rhs);
-        friend bool operator!=(const DependencyOverride& lhs, const DependencyOverride& rhs) { return !(lhs == rhs); }
     };
 
     struct ParsedQualifiedSpecifier

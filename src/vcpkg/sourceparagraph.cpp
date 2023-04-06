@@ -19,6 +19,76 @@
 
 namespace vcpkg
 {
+
+    bool operator==(const DependencyConstraint& lhs, const DependencyConstraint& rhs)
+    {
+        if (lhs.type != rhs.type) return false;
+        if (lhs.value != rhs.value) return false;
+        return lhs.port_version == rhs.port_version;
+    }
+
+    Optional<Version> DependencyConstraint::try_get_minimum_version() const
+    {
+        if (type == VersionConstraintKind::None)
+        {
+            return nullopt;
+        }
+
+        return Version{
+            value,
+            port_version,
+        };
+    }
+
+    bool Dependency::has_platform_expressions() const
+    {
+        return !platform.is_empty() || Util::any_of(features, [](const auto f) { return !f.platform.is_empty(); });
+    }
+
+    FullPackageSpec Dependency::to_full_spec(View<std::string> feature_list, Triplet target, Triplet host_triplet) const
+    {
+        InternalFeatureSet internal_feature_list(feature_list.begin(), feature_list.end());
+        internal_feature_list.push_back("core");
+        if (default_features)
+        {
+            internal_feature_list.push_back("default");
+        }
+        return FullPackageSpec{{name, host ? host_triplet : target}, std::move(internal_feature_list)};
+    }
+
+    bool operator==(const Dependency& lhs, const Dependency& rhs)
+    {
+        if (lhs.name != rhs.name) return false;
+        if (lhs.features != rhs.features) return false;
+        if (!structurally_equal(lhs.platform, rhs.platform)) return false;
+        if (lhs.extra_info != rhs.extra_info) return false;
+        if (lhs.constraint != rhs.constraint) return false;
+        if (lhs.host != rhs.host) return false;
+
+        return true;
+    }
+    bool operator!=(const Dependency& lhs, const Dependency& rhs);
+
+    bool operator==(const DependencyOverride& lhs, const DependencyOverride& rhs)
+    {
+        if (lhs.version_scheme != rhs.version_scheme) return false;
+        if (lhs.port_version != rhs.port_version) return false;
+        if (lhs.name != rhs.name) return false;
+        if (lhs.version != rhs.version) return false;
+        return lhs.extra_info == rhs.extra_info;
+    }
+    bool operator!=(const DependencyOverride& lhs, const DependencyOverride& rhs);
+
+    bool operator==(const Dependency::Feature& lhs, const Dependency::Feature& rhs)
+    {
+        if (lhs.name != rhs.name) return false;
+        if (!structurally_equal(lhs.platform, rhs.platform)) return false;
+
+        return true;
+    }
+
+    bool operator!=(const Dependency::Feature& lhs, const Dependency::Feature& rhs) { return !(lhs == rhs); }
+
     struct UrlDeserializer : Json::StringDeserializer
     {
         LocalizedString type_name() const override { return msg::format(msgAUrl); }
