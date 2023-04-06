@@ -956,6 +956,7 @@ DECLARE_MESSAGE(FailedToParseCMakeConsoleOut,
 DECLARE_MESSAGE(FailedToParseBaseline, (msg::path), "", "Failed to parse baseline: {path}")
 DECLARE_MESSAGE(FailedToParseConfig, (msg::path), "", "Failed to parse configuration: {path}")
 DECLARE_MESSAGE(FailedToParseControl, (msg::path), "", "Failed to parse CONTROL file: {path}")
+DECLARE_MESSAGE(FailedToParseJson, (msg::path), "", "Failed to parse JSON file: {path}")
 DECLARE_MESSAGE(FailedToParseManifest, (msg::path), "", "Failed to parse manifest file: {path}")
 DECLARE_MESSAGE(FailedToParseNoTopLevelObj, (msg::path), "", "Failed to parse {path}, expected a top-level object.")
 DECLARE_MESSAGE(FailedToParseNoVersionsArray, (msg::path), "", "Failed to parse {path}, expected a 'versions' array.")
@@ -965,6 +966,7 @@ DECLARE_MESSAGE(FailedToParseSerializedBinParagraph,
                 "[sanity check] Failed to parse a serialized binary paragraph.\nPlease open an issue at "
                 "https://github.com/microsoft/vcpkg, "
                 "with the following output:\n{error_msg}\nSerialized Binary Paragraph:")
+DECLARE_MESSAGE(FailedToParseFileCacheSettings, (msg::path), "", "Failed to parse file cache settings file {path}:")
 DECLARE_MESSAGE(FailedToParseVersionsFile, (msg::path), "", "failed to parse versions file {path}")
 DECLARE_MESSAGE(FailedToParseVersionXML,
                 (msg::tool_name, msg::version),
@@ -1969,6 +1971,7 @@ DECLARE_MESSAGE(ParsePackagePatternError,
                 "\"{package_name}\" is not a valid package pattern. "
                 "Package patterns must use only one wildcard character (*) and it must be the last character in "
                 "the pattern (see {url} for more information)")
+DECLARE_MESSAGE(ParserWarnings, (msg::path), "", "The following warnings were generated while parsing {path}:")
 DECLARE_MESSAGE(PathMustBeAbsolute,
                 (msg::path),
                 "",

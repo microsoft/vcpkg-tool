@@ -566,25 +566,37 @@ namespace
                         auto obj = Json::parse_file(fs, settings_path, ec);
                         if (ec)
                         {
-                            msg::println_error(msgFailedToReadFile, msg::path = settings_path, msg::error_msg = ec);
+                            msg_sink.println_error(msgFailedToReadFile, msg::path = settings_path, msg::error_msg = ec);
                         }
                         else if (!obj.has_value())
                         {
-                            fmt::print("Failed to read settings file {}", obj.error()->to_string());
-                            // TODO handle errors:
+                            msg_sink.println_error(msg::format(msgFailedToParseJson, msg::path = settings_path)
+                                                       .append_raw('\n')
+                                                       .append_raw(obj.error()->to_string()));
                         }
                         else
                         {
                             FolderSettingsDeserializer instance;
                             Json::Reader reader;
                             maybe_settings = reader.visit(obj.get()->value, instance);
+                            if (!reader.warnings().empty())
+                            {
+                                auto warning_message = msg::format(msgParserWarnings, msg::path = settings_path);
+                                for (auto&& warning : reader.warnings())
+                                    warning_message.append_raw('\n').append(warning);
+                                msg_sink.println_warning(warning_message);
+                            }
                             if (maybe_settings.has_value())
                             {
-                                fmt::print("");
+                                Debug::println("Read settings file ", settings_path);
                             }
                             else
                             {
-                                // TODO handle errors:
+                                auto error_msg =
+                                    msg::format(msgFailedToParseFileCacheSettings, msg::path = settings_path);
+                                for (auto&& error : reader.errors())
+                                    error_msg.append_raw('\n').append(error);
+                                msg_sink.println_error(error_msg);
                             }
                         }
                     }
