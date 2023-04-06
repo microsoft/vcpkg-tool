@@ -42,7 +42,7 @@ namespace vcpkg
 
     FullPackageSpec Dependency::to_full_spec(Triplet target, Triplet host_triplet, ImplicitDefault id) const
     {
-        return FullPackageSpec{{name, host ? host_triplet : target}, features, id};
+        return FullPackageSpec{{name, host ? host_triplet : target}, internalize_feature_list(features, id)};
     }
 
     bool operator==(const Dependency& lhs, const Dependency& rhs)

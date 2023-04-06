@@ -43,7 +43,7 @@ namespace vcpkg
         return fmt::format("{}[{}]", package_name, feature_name);
     }
 
-    static InternalFeatureSet normalize_feature_list(View<std::string> fs, ImplicitDefault id)
+    InternalFeatureSet internalize_feature_list(View<std::string> fs, ImplicitDefault id)
     {
         InternalFeatureSet ret;
         bool core = false;
@@ -65,11 +65,6 @@ namespace vcpkg
             }
         }
         return ret;
-    }
-
-    FullPackageSpec::FullPackageSpec(PackageSpec spec, View<std::string> features, ImplicitDefault id)
-        : package_spec(std::move(spec)), features(normalize_feature_list(features, id))
-    {
     }
 
     void FullPackageSpec::expand_fspecs_to(std::vector<FeatureSpec>& out) const
@@ -106,9 +101,14 @@ namespace vcpkg
             return msg::format_error(msgIllegalPlatformSpec);
         }
 
-        const Triplet t = resolve_triplet(triplet, default_triplet, default_triplet_used);
-        const View<std::string> fs = !features.get() ? View<std::string>{} : *features.get();
-        return FullPackageSpec{{name, t}, fs, id};
+        View<std::string> fs{};
+        if (auto pfeatures = features.get())
+        {
+            fs = *pfeatures;
+        }
+
+        return FullPackageSpec{{name, resolve_triplet(triplet, default_triplet, default_triplet_used)},
+                               internalize_feature_list(fs, id)};
     }
 
     ExpectedL<PackageSpec> ParsedQualifiedSpecifier::to_package_spec(Triplet default_triplet,
@@ -118,6 +118,7 @@ namespace vcpkg
         {
             return msg::format_error(msgIllegalPlatformSpec);
         }
+
         if (features)
         {
             return msg::format_error(msgIllegalFeatures);
