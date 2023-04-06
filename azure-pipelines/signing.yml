@@ -361,7 +361,7 @@ jobs:
         filePath: vcpkg-init/mint-standalone-bundle.ps1
         arguments: '-DestinationDir "$(Build.ArtifactStagingDirectory)/vs-insertion/staging" -TempDir standalone-temp -SignedFilesRoot "$(Build.ArtifactStagingDirectory)\staging" -Deployment "VisualStudio" -VcpkgBaseVersion "$(VCPKG_BASE_VERSION)"'
     - task: CmdLine@2
-      displayName: 'Arrange Drop'
+      displayName: 'Arrange Drop and Symbols'
       inputs:
         failOnStderr: true
         script: |
@@ -395,6 +395,15 @@ jobs:
           move "$(Build.ArtifactStagingDirectory)\staging\macos\vcpkg" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-macos"
 
           copy "$(Build.SourcesDirectory)\azure-pipelines\vs-insertion\vcpkg.nuspec" "$(Build.ArtifactStagingDirectory)\vs-insertion\staging\vcpkg.nuspec"
+          
+          mkdir "$(Build.ArtifactStagingDirectory)\symbols"
+          copy "$(Build.ArtifactStagingDirectory)\drop\vcpkg.pdb" "$(Build.ArtifactStagingDirectory)\symbols\vcpkg.pdb"
+          copy "$(Build.ArtifactStagingDirectory)\drop\tls12-download.exe" "$(Build.ArtifactStagingDirectory)\symbols\tls12-download.exe"
+          copy "$(Build.ArtifactStagingDirectory)\drop\tls12-download.pdb" "$(Build.ArtifactStagingDirectory)\symbols\tls12-download.pdb"
+          copy "$(Build.ArtifactStagingDirectory)\drop\vcpkg-arm64.exe" "$(Build.ArtifactStagingDirectory)\symbols\vcpkg-arm64.exe"
+          copy "$(Build.ArtifactStagingDirectory)\drop\vcpkg-arm64.pdb" "$(Build.ArtifactStagingDirectory)\symbols\vcpkg-arm64.pdb"
+          copy "$(Build.ArtifactStagingDirectory)\drop\tls12-download-arm64.exe" "$(Build.ArtifactStagingDirectory)\symbols\tls12-download-arm64.exe"
+          copy "$(Build.ArtifactStagingDirectory)\drop\tls12-download-arm64.pdb" "$(Build.ArtifactStagingDirectory)\symbols\tls12-download-arm64.pdb"
     - task: AzureArtifacts.manifest-generator-task.manifest-generator-task.ManifestGeneratorTask@0
       displayName: 'Generate SBOMs'
       inputs:
@@ -475,6 +484,12 @@ jobs:
         PathtoPublish: '$(Build.ArtifactStagingDirectory)\drop'
         ArtifactName: 'Drop'
         publishLocation: 'Container'
+    # Publish symbols
+    - task: artifactSymbolTask@0
+      inputs:
+        symbolServiceURI: 'https://microsoft.artifacts.visualstudio.com/DefaultCollection'
+        requestName: '$(system.teamProject)/$(Build.BuildNumber)/$(Build.BuildId)'
+        sourcePath: '$(Build.ArtifactStagingDirectory)\symbols'
     # Publish everything to VS Insertion
     - task: NuGetCommand@2
       displayName: 'NuGet publish for VS Insertion'
