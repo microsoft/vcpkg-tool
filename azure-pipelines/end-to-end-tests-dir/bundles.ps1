@@ -13,8 +13,10 @@ if ($IsWindows) {
 }
 
 $OriginalVcpkgExe = $VcpkgExe
+$OriginalVcpkgPs1 = $VcpkgPs1
 $deployment = Join-Path $TestingRoot "deploy"
 $VcpkgExe = Join-Path $deployment (Get-Item $VcpkgExe).Name
+$VcpkgPs1 = Join-Path $deployment (Get-Item $VcpkgPs1).Name
 $bundle = Join-Path $deployment "vcpkg-bundle.json"
 $manifestdir = Join-Path $TestingRoot "manifest"
 $commonArgs = @(
@@ -26,6 +28,7 @@ function Refresh-Deploy {
     Refresh-TestRoot
     New-Item -ItemType Directory -Force $deployment | Out-Null
     Copy-Item $OriginalVcpkgExe $VcpkgExe
+    Copy-Item $OriginalVcpkgPs1 $VcpkgPs1
 }
 
 Refresh-Deploy

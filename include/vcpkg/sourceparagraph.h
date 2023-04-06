@@ -1,22 +1,26 @@
 #pragma once
 
-#include <vcpkg/base/fwd/json.h>
-
 #include <vcpkg/fwd/configuration.h>
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 
 #include <vcpkg/base/expected.h>
+#include <vcpkg/base/files.h>
+#include <vcpkg/base/json.h>
 #include <vcpkg/base/span.h>
-#include <vcpkg/base/system.h>
 
 #include <vcpkg/packagespec.h>
 #include <vcpkg/paragraphparser.h>
 #include <vcpkg/platform-expression.h>
-#include <vcpkg/versiondeserializers.h>
 #include <vcpkg/versions.h>
 
 namespace vcpkg
 {
+    struct ManifestAndPath
+    {
+        Json::Object manifest;
+        Path path;
+    };
+
     std::vector<FullPackageSpec> filter_dependencies(const std::vector<Dependency>& deps,
                                                      Triplet t,
                                                      Triplet host,

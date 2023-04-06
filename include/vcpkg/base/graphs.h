@@ -10,11 +10,6 @@
 
 namespace vcpkg
 {
-    DECLARE_MESSAGE(GraphCycleDetected,
-                    (msg::package_name),
-                    "A list of package names comprising the cycle will be printed after this message.",
-                    "Cycle detected within graph at {package_name}:");
-
     enum class ExplorationStatus
     {
         // We have not visited this vertex

@@ -35,14 +35,19 @@ namespace vcpkg
 
         std::string to_string() const;
     };
-} // namespace vcpkg
 
-VCPKG_FORMAT_WITH_TO_STRING(vcpkg::ParseError);
+    constexpr struct ParseErrorFormatter
+    {
+        LocalizedString operator()(const std::unique_ptr<ParseError>& up)
+        {
+            return LocalizedString::from_raw(up->to_string());
+        }
+    } parse_error_formatter;
+
+} // namespace vcpkg
 
 namespace vcpkg
 {
-    inline std::string to_string(const std::unique_ptr<ParseError>& up) { return up->to_string(); }
-
     struct SourceLoc
     {
         Unicode::Utf8Decoder it;

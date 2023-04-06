@@ -1,4 +1,5 @@
 #include <vcpkg/binarycaching.h>
+#include <vcpkg/cmakevars.h>
 #include <vcpkg/commands.setinstalled.h>
 #include <vcpkg/globalstate.h>
 #include <vcpkg/help.h>
@@ -6,6 +7,7 @@
 #include <vcpkg/install.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/portfileprovider.h>
+#include <vcpkg/registries.h>
 #include <vcpkg/remove.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkglib.h>
@@ -21,7 +23,9 @@ namespace vcpkg::Commands::SetInstalled
 
     static constexpr CommandSwitch INSTALL_SWITCHES[] = {
         {OPTION_DRY_RUN, []() { return msg::format(msgCmdSetInstalledOptDryRun); }},
-        {OPTION_NO_PRINT_USAGE, []() { return msg::format(msgCmdSetInstalledOptNoUsage); }}};
+        {OPTION_NO_PRINT_USAGE, []() { return msg::format(msgCmdSetInstalledOptNoUsage); }},
+        {OPTION_ONLY_DOWNLOADS, []() { return msg::format(msgHelpTxtOptOnlyDownloads); }},
+    };
     static constexpr CommandSetting INSTALL_SETTINGS[] = {
         {OPTION_WRITE_PACKAGES_CONFIG, []() { return msg::format(msgCmdSetInstalledOptWritePkgConfig); }},
     };
@@ -154,11 +158,12 @@ namespace vcpkg::Commands::SetInstalled
         // input sanitization
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
 
-        const std::vector<FullPackageSpec> specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
+        const std::vector<FullPackageSpec> specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
             return check_and_get_full_package_spec(
                 std::string(arg), default_triplet, COMMAND_STRUCTURE.get_example_text(), paths);
         });
-        print_default_triplet_warning(args, args.command_arguments);
+
+        print_default_triplet_warning(args, options.command_arguments);
 
         BinaryCache binary_cache{args, paths};
 

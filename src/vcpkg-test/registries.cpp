@@ -1,6 +1,7 @@
 #include <catch2/catch.hpp>
 
 #include <vcpkg/base/jsonreader.h>
+#include <vcpkg/base/strings.h>
 
 #include <vcpkg/configuration.h>
 #include <vcpkg/registries.h>
@@ -45,7 +46,7 @@ namespace
     }
 
     // test functions which parse string literals, so no concerns about failure
-    Json::Value parse_json(StringView sv) { return Json::parse(sv).value_or_exit(VCPKG_LINE_INFO).value; }
+    Json::Value parse_json(StringView sv) { return Json::parse(sv).value(VCPKG_LINE_INFO).value; }
 }
 
 TEST_CASE ("registry_set_selects_registry", "[registries]")

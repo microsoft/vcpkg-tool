@@ -1,7 +1,10 @@
+#include <vcpkg/base/fwd/message_sinks.h>
+
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.process.h>
+#include <vcpkg/base/util.h>
 
 #include <vcpkg/archives.h>
 #include <vcpkg/build.h>

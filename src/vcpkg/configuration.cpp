@@ -1,4 +1,7 @@
 #include <vcpkg/base/jsonreader.h>
+#include <vcpkg/base/message_sinks.h>
+#include <vcpkg/base/strings.h>
+#include <vcpkg/base/util.h>
 
 #include <vcpkg/configuration.h>
 #include <vcpkg/documentation.h>
@@ -854,7 +857,7 @@ namespace vcpkg
             return nullopt;
         }
 
-        auto conf_value = std::move(conf).value_or_exit(VCPKG_LINE_INFO).value;
+        auto conf_value = std::move(conf).value(VCPKG_LINE_INFO).value;
         if (!conf_value.is_object())
         {
             messageSink.println(msgFailedToParseNoTopLevelObj, msg::path = origin);

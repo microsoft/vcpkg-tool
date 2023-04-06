@@ -12,6 +12,34 @@
       "ctestCommandArgs": "",
       "variables": [
         {
+          "name": "VCPKG_BUILD_TLS12_DOWNLOADER",
+          "value": "True",
+          "type": "BOOL"
+        },
+        {
+          "name": "VCPKG_BUILD_BENCHMARKING",
+          "value": "True",
+          "type": "BOOL"
+        },
+        {
+          "name": "VCPKG_BUILD_FUZZING",
+          "value": "True",
+          "type": "BOOL"
+        }
+      ]
+    },
+    {
+      "name": "x64-Debug-WithArtifacts",
+      "generator": "Ninja",
+      "configurationType": "Debug",
+      "inheritEnvironments": [ "msvc_x64_x64" ],
+      "buildRoot": "${projectDir}\\out\\build\\${name}",
+      "installRoot": "${projectDir}\\out\\install\\${name}",
+      "cmakeCommandArgs": "",
+      "buildCommandArgs": "",
+      "ctestCommandArgs": "",
+      "variables": [
+        {
           "name": "VCPKG_ARTIFACTS_DEVELOPMENT",
           "value": "True",
           "type": "BOOL"
@@ -34,7 +62,7 @@
       ]
     },
     {
-      "name": "x64-Debug-NoArtifacts",
+      "name": "x64-Debug-NoAnalyze",
       "generator": "Ninja",
       "configurationType": "Debug",
       "inheritEnvironments": [ "msvc_x64_x64" ],
@@ -45,7 +73,7 @@
       "ctestCommandArgs": "",
       "variables": [
         {
-          "name": "VCPKG_ARTIFACTS_DEVELOPMENT",
+          "name": "VCPKG_MSVC_ANALYZE",
           "value": "False",
           "type": "BOOL"
         },
@@ -67,7 +95,7 @@
       ]
     },
     {
-      "name": "x64-Debug-Official-2022-11-10",
+      "name": "x64-Debug-Official-2023-03-28",
       "generator": "Ninja",
       "configurationType": "Debug",
       "inheritEnvironments": [ "msvc_x64_x64" ],
@@ -84,17 +112,17 @@
         },
         {
           "name": "VCPKG_BASE_VERSION",
-          "value": "2022-11-10",
+          "value": "2023-03-28",
           "type": "STRING"
         },
         {
           "name": "VCPKG_STANDALONE_BUNDLE_SHA",
-          "value": "edc1bad5689508953842d13b062a750791af57e0c6bb9d441d4545e81d99841dead2d33a5cb382b6cf50d2d32414ee617ada6e761c868fcbb28fa9bcb7bca6ba",
+          "value": "bdf19a9e602f237d3906321a13e883f72e8804e0bbbd4369b6fca3acdd98238371445c8cab2e7a155cf56db43a2f1e30060c71eaf4e3cb55d892d100a312ada5",
           "type": "STRING"
         },
         {
           "name": "VCPKG_CE_SHA",
-          "value": "b677e4d66e711e623a2765499cc5b662544c1df07a95b495f31a195f6e525c00cef0111dbb008b544d987fdcd1140fd69877908b3c3e7771231eaaa2cb1939ac",
+          "value": "ffae1cb2fee518aba585a45f5e25c4eedf6218126821ae75808b9575b0c9d9b096ddb28475979a9c1a5ce217d920a91e1b510433a9f5a0ab5c4a44f6ff82a210",
           "type": "STRING"
         },
         {
@@ -126,11 +154,6 @@
       "inheritEnvironments": [ "msvc_x64_x64" ],
       "variables": [
         {
-          "name": "VCPKG_ARTIFACTS_DEVELOPMENT",
-          "value": "True",
-          "type": "BOOL"
-        },
-        {
           "name": "VCPKG_BUILD_TLS12_DOWNLOADER",
           "value": "True",
           "type": "BOOL"
@@ -159,11 +182,6 @@
       "ctestCommandArgs": "",
       "variables": [
         {
-          "name": "VCPKG_ARTIFACTS_DEVELOPMENT",
-          "value": "True",
-          "type": "BOOL"
-        },
-        {
           "name": "VCPKG_BUILD_TLS12_DOWNLOADER",
           "value": "True",
           "type": "BOOL"
@@ -191,11 +209,6 @@
       "ctestCommandArgs": "",
       "inheritEnvironments": [ "msvc_x86_x64" ],
       "variables": [
-        {
-          "name": "VCPKG_ARTIFACTS_DEVELOPMENT",
-          "value": "True",
-          "type": "BOOL"
-        },
         {
           "name": "VCPKG_BUILD_TLS12_DOWNLOADER",
           "value": "True",

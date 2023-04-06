@@ -25,7 +25,7 @@ export async function installEspIdf(session: Session, events: Partial<UnpackEven
   const targetDirectory = targetLocation.fsPath;
 
   const extendedEnvironment: NodeJS.ProcessEnv = {
-    ... session.environment,
+    ... process.env,
     IDF_PATH: targetDirectory,
     IDF_TOOLS_PATH: dotEspidf.fsPath
   };
@@ -74,7 +74,7 @@ export async function activateEspIdf(session: Session, activation: Activation, t
   const targetDirectory = targetLocation.fsPath;
   const dotEspidf = targetLocation.join('.espressif');
   const extendedEnvironment: NodeJS.ProcessEnv = {
-    ... session.environment,
+    ... process.env,
     IDF_PATH: targetDirectory,
     IDF_TOOLS_PATH: dotEspidf.fsPath
   };

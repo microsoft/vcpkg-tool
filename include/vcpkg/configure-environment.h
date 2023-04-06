@@ -3,6 +3,7 @@
 #include <vcpkg/fwd/vcpkgpaths.h>
 
 #include <vcpkg/base/span.h>
+#include <vcpkg/base/stringview.h>
 
 #include <string>
 

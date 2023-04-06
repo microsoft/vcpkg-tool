@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vcpkg/base/fwd/span.h>
+
 #include <vcpkg/base/lineinfo.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/stringview.h>
@@ -11,8 +13,6 @@
 
 #include <algorithm>
 #include <vector>
-
-#include "vcpkg/base/fwd/span.h"
 
 namespace vcpkg::Strings::details
 {
@@ -105,6 +105,7 @@ namespace vcpkg::Strings
     bool case_insensitive_ascii_equals(StringView left, StringView right);
 
     void ascii_to_lowercase(char* first, char* last);
+    std::string ascii_to_lowercase(const std::string& s);
     std::string ascii_to_lowercase(std::string&& s);
 
     std::string ascii_to_uppercase(std::string&& s);
@@ -222,8 +223,11 @@ namespace vcpkg::Strings
     bool contains(StringView haystack, StringView needle);
     bool contains(StringView haystack, char needle);
 
-    // base 32 encoding, following IETC RFC 4648
+    // base 32 encoding, following IETF RFC 4648
     std::string b32_encode(std::uint64_t x) noexcept;
+
+    // percent encoding, following IETF RFC 3986
+    std::string percent_encode(StringView sv) noexcept;
 
     // Implements https://en.wikipedia.org/wiki/Levenshtein_distance with a "give-up" clause for large strings
     // Guarantees 0 for equal strings and nonzero for inequal strings.

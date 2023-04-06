@@ -1,3 +1,4 @@
+#include <vcpkg/base/strings.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.list.h>
@@ -10,6 +11,7 @@
 namespace vcpkg::Commands::List
 {
     static constexpr StringLiteral OPTION_FULLDESC = "x-full-desc"; // TODO: This should find a better home, eventually
+    static constexpr StringLiteral OPTION_JSON = "x-json";
 
     static void do_print_json(std::vector<const vcpkg::StatusParagraph*> installed_packages)
     {
@@ -75,8 +77,9 @@ namespace vcpkg::Commands::List
         }
     }
 
-    static constexpr std::array<CommandSwitch, 1> LIST_SWITCHES = {{
+    static constexpr std::array<CommandSwitch, 2> LIST_SWITCHES = {{
         {OPTION_FULLDESC, []() { return msg::format(msgHelpTextOptFullDesc); }},
+        {OPTION_JSON, []() { return msg::format(msgJsonSwitch); }},
     }};
 
     const CommandStructure COMMAND_STRUCTURE = {
@@ -94,9 +97,10 @@ namespace vcpkg::Commands::List
         const StatusParagraphs status_paragraphs = database_load_check(paths.get_filesystem(), paths.installed());
         auto installed_ipv = get_installed_ports(status_paragraphs);
 
+        const auto output_json = Util::Sets::contains(options.switches, OPTION_JSON);
         if (installed_ipv.empty())
         {
-            if (args.output_json())
+            if (output_json)
                 msg::write_unlocalized_text_to_stdout(Color::none, Json::stringify(Json::Object()));
             else
                 msg::println(msgNoInstalledPackages);
@@ -116,16 +120,16 @@ namespace vcpkg::Commands::List
 
         const auto enable_fulldesc = Util::Sets::contains(options.switches, OPTION_FULLDESC.to_string());
 
-        if (!args.command_arguments.empty())
+        if (!options.command_arguments.empty())
         {
-            auto& query = args.command_arguments[0];
+            auto& query = options.command_arguments[0];
             auto pghs = Util::filter(installed_packages, [query](const StatusParagraph* status_paragraph) {
                 return Strings::case_insensitive_ascii_contains(status_paragraph->package.displayname(), query);
             });
             installed_packages = pghs;
         }
 
-        if (args.output_json())
+        if (output_json)
         {
             do_print_json(installed_packages);
         }

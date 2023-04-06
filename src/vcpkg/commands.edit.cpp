@@ -1,4 +1,5 @@
 #include <vcpkg/base/strings.h>
+#include <vcpkg/base/system.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
@@ -156,7 +157,7 @@ namespace vcpkg::Commands::Edit
 
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
 
-        const std::vector<std::string>& ports = args.command_arguments;
+        const std::vector<std::string>& ports = options.command_arguments;
         for (auto&& port_name : ports)
         {
             const auto portpath = paths.builtin_ports_directory() / port_name;

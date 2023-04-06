@@ -1,8 +1,11 @@
-#include <vcpkg/base/basic-checks.h>
+#include <vcpkg/base/fwd/message_sinks.h>
+
+#include <vcpkg/base/checks.h>
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/setup-messages.h>
 #include <vcpkg/base/system.debug.h>
+#include <vcpkg/base/system.h>
 #include <vcpkg/base/system.process.h>
 
 #include <vcpkg/archives.h>
@@ -28,6 +31,12 @@ namespace
                             const Path& ce_base_path)
     {
         auto& fs = paths.get_filesystem();
+        if (!fs.is_regular_file(ce_tarball))
+        {
+            Debug::println("Download succeeded but file isn't present?");
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgFailedToProvisionCe);
+        }
+
         fs.remove_all(ce_base_path, VCPKG_LINE_INFO);
         fs.create_directories(ce_base_path, VCPKG_LINE_INFO);
         Path node_root = node_path.parent_path();
@@ -77,20 +86,34 @@ namespace
         }
 
         auto acquired_artifacts = pparsed->get("acquired_artifacts");
-        if (!acquired_artifacts)
+        if (acquired_artifacts)
+        {
+            if (acquired_artifacts->is_string())
+            {
+                get_global_metrics_collector().track_string(StringMetric::AcquiredArtifacts,
+                                                            acquired_artifacts->string(VCPKG_LINE_INFO));
+            }
+            Debug::println("Acquired artifacts was not a string.");
+        }
+        else
         {
             Debug::println("No artifacts acquired.");
-            return;
         }
 
-        if (!acquired_artifacts->is_string())
+        auto activated_artifacts = pparsed->get("activated_artifacts");
+        if (activated_artifacts)
         {
-            Debug::println("Acquired artifacts was not a string.");
-            return;
+            if (activated_artifacts->is_string())
+            {
+                get_global_metrics_collector().track_string(StringMetric::ActivatedArtifacts,
+                                                            activated_artifacts->string(VCPKG_LINE_INFO));
+            }
+            Debug::println("Activated artifacts was not a string.");
         }
-
-        get_global_metrics_collector().track_string(StringMetric::AcquiredArtifacts,
-                                                    acquired_artifacts->string(VCPKG_LINE_INFO));
+        else
+        {
+            Debug::println("No artifacts activated.");
+        }
     }
 }
 
@@ -167,11 +190,11 @@ namespace vcpkg
             .string_arg(temp_directory / (generate_random_UUID() + "_previous_environment.txt"));
         cmd_run.string_arg("--z-global-config").string_arg(paths.global_config());
 
-        if (auto maybe_file = msg::get_file())
+        auto maybe_file = msg::get_loaded_file();
+        if (!maybe_file.empty())
         {
-            auto file = maybe_file.get();
             auto temp_file = temp_directory / "messages.json";
-            fs.write_contents(temp_file, StringView{file->begin(), file->end()}, VCPKG_LINE_INFO);
+            fs.write_contents(temp_file, maybe_file, VCPKG_LINE_INFO);
             cmd_run.string_arg("--language").string_arg(temp_file);
         }
 
