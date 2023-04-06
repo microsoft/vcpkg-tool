@@ -1,4 +1,5 @@
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/strings.h>
 
 #include <vcpkg/binaryparagraph.h>
 #include <vcpkg/commands.cache.h>

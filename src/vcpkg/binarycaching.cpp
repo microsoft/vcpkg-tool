@@ -1,15 +1,18 @@
-#include <vcpkg/base/fwd/message_sinks.h>
-
 #include <vcpkg/base/api-stable-format.h>
 #include <vcpkg/base/checks.h>
+#include <vcpkg/base/chrono.h>
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/json.h>
+#include <vcpkg/base/jsonreader.h>
+#include <vcpkg/base/message_sinks.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.debug.h>
+#include <vcpkg/base/system.h>
 #include <vcpkg/base/system.process.h>
+#include <vcpkg/base/util.h>
 #include <vcpkg/base/xmlserializer.h>
 
 #include <vcpkg/archives.h>
@@ -513,45 +516,40 @@ namespace
             fmt::print("{:<25}{:>20}\n", key, value);
         }
 
-        void push_success(const InstallPlanAction& action) const override
+        size_t push_success(const BinaryProviderPushRequest& request, MessageSink& msg_sink) override
         {
             if (m_write_dirs.empty() && m_put_url_templates.empty())
             {
-                return;
+                return 0;
             }
 
-            const auto& abi_tag = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
-            auto& spec = action.spec;
+            const auto& abi_tag = request.info.package_abi;
+            auto& spec = request.info.spec;
             auto& fs = paths.get_filesystem();
             const auto archive_subpath = make_archive_subpath(abi_tag);
             const auto tmp_archive_path = make_temp_archive_path(paths.buildtrees(), spec);
-            auto compress_result = compress_directory_to_zip(
-                fs, paths.get_tool_cache(), stdout_sink, paths.package_dir(spec), tmp_archive_path);
+            auto compress_result =
+                compress_directory_to_zip(fs, paths.get_tool_cache(), msg_sink, request.package_dir, tmp_archive_path);
             if (!compress_result)
             {
-                msg::println(Color::warning,
-                             msg::format_warning(msgCompressFolderFailed, msg::path = paths.package_dir(spec))
-                                 .append_raw(' ')
-                                 .append_raw(compress_result.error()));
-                return;
+                msg_sink.println(Color::warning,
+                                 msg::format_warning(msgCompressFolderFailed, msg::path = request.package_dir)
+                                     .append_raw(' ')
+                                     .append_raw(compress_result.error()));
+                return 0;
             }
-            size_t http_remotes_pushed = 0;
+            int count_stored = 0;
             for (auto&& put_url_template : m_put_url_templates)
             {
-                auto url = put_url_template.instantiate_variables(action);
+                auto url = put_url_template.instantiate_variables(request.info);
                 auto maybe_success = put_file(fs, url, m_secrets, put_url_template.headers_for_put, tmp_archive_path);
                 if (maybe_success)
                 {
-                    http_remotes_pushed++;
+                    count_stored++;
                     continue;
                 }
 
-                msg::println(Color::warning, maybe_success.error());
-            }
-
-            if (!m_put_url_templates.empty())
-            {
-                msg::println(msgUploadedBinaries, msg::count = http_remotes_pushed, msg::vendor = "HTTP remotes");
+                msg_sink.println(Color::warning, maybe_success.error());
             }
 
             size_t index = 0;
@@ -724,14 +722,14 @@ namespace
 
                 if (ec)
                 {
-                    msg::println(Color::warning,
-                                 msg::format(msgFailedToStoreBinaryCache, msg::path = archive_path)
-                                     .append_raw('\n')
-                                     .append_raw(ec.message()));
+                    msg_sink.println(Color::warning,
+                                     msg::format(msgFailedToStoreBinaryCache, msg::path = archive_path)
+                                         .append_raw('\n')
+                                         .append_raw(ec.message()));
                 }
                 else
                 {
-                    msg::println(msgStoredBinaryCache, msg::path = archive_path);
+                    count_stored++;
                 }
             }
             // In the case of 1 write dir, the file will be moved instead of copied
@@ -739,6 +737,7 @@ namespace
             {
                 fs.remove(tmp_archive_path, IgnoreErrors{});
             }
+            return count_stored;
         }
 
         void precheck(View<InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
@@ -793,7 +792,7 @@ namespace
 
         RestoreResult try_restore(const InstallPlanAction&) const override { return RestoreResult::unavailable; }
 
-        void push_success(const InstallPlanAction&) const override { }
+        size_t push_success(const BinaryProviderPushRequest&, MessageSink&) override { return 0; }
 
         void prefetch(View<InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
         {
@@ -816,7 +815,7 @@ namespace
 
                     auto&& action = actions[idx];
                     clean_prepare_dir(fs, paths.package_dir(action.spec));
-                    auto uri = url_template.instantiate_variables(action);
+                    auto uri = url_template.instantiate_variables(BinaryPackageInformation{action, ""});
                     url_paths.emplace_back(std::move(uri), make_temp_archive_path(paths.buildtrees(), action.spec));
                     url_indices.push_back(idx);
                 }
@@ -880,7 +879,7 @@ namespace
                         continue;
                     }
 
-                    urls.push_back(url_template.instantiate_variables(actions[idx]));
+                    urls.push_back(url_template.instantiate_variables(BinaryPackageInformation{actions[idx], {}}));
                     url_indices.push_back(idx);
                 }
 
@@ -937,7 +936,7 @@ namespace
                 Strings::case_insensitive_ascii_equals(use_nuget_cache, "true") || use_nuget_cache == "1";
         }
 
-        ExpectedL<Unit> run_nuget_commandline(const Command& cmdline) const
+        ExpectedL<Unit> run_nuget_commandline(const Command& cmdline, MessageSink& msg_sink) const
         {
             if (m_interactive)
             {
@@ -954,12 +953,12 @@ namespace
             return cmd_execute_and_capture_output(cmdline).then([&](ExitCodeAndOutput&& res) -> ExpectedL<Unit> {
                 if (Debug::g_debugging)
                 {
-                    msg::write_unlocalized_text_to_stdout(Color::error, res.output);
+                    msg_sink.print(Color::error, res.output);
                 }
 
                 if (res.output.find("Authentication may require manual action.") != std::string::npos)
                 {
-                    msg::println(Color::warning, msgAuthenticationMayRequireManualAction, msg::vendor = "Nuget");
+                    msg_sink.println(Color::warning, msgAuthenticationMayRequireManualAction, msg::vendor = "Nuget");
                 }
 
                 if (res.exit_code == 0)
@@ -970,20 +969,20 @@ namespace
                 if (res.output.find("Response status code does not indicate success: 401 (Unauthorized)") !=
                     std::string::npos)
                 {
-                    msg::println(Color::warning,
-                                 msgFailedVendorAuthentication,
-                                 msg::vendor = "NuGet",
-                                 msg::url = docs::binarycaching_url);
+                    msg_sink.println(Color::warning,
+                                     msgFailedVendorAuthentication,
+                                     msg::vendor = "NuGet",
+                                     msg::url = docs::binarycaching_url);
                 }
                 else if (res.output.find("for example \"-ApiKey AzureDevOps\"") != std::string::npos)
                 {
                     auto real_cmdline = cmdline;
                     real_cmdline.string_arg("-ApiKey").string_arg("AzureDevOps");
                     return cmd_execute_and_capture_output(real_cmdline)
-                        .then([](ExitCodeAndOutput&& res) -> ExpectedL<Unit> {
+                        .then([&](ExitCodeAndOutput&& res) -> ExpectedL<Unit> {
                             if (Debug::g_debugging)
                             {
-                                msg::write_unlocalized_text_to_stdout(Color::error, res.output);
+                                msg_sink.print(Color::error, res.output);
                             }
 
                             if (res.exit_code == 0)
@@ -1138,7 +1137,7 @@ namespace
                 }
 
                 generate_packages_config(fs, packages_config, attempts);
-                run_nuget_commandline(cmdline);
+                run_nuget_commandline(cmdline, stdout_sink);
                 Util::erase_remove_if(attempts, [&](const NuGetPrefetchAttempt& nuget_ref) -> bool {
                     // note that we would like the nupkg downloaded to buildtrees, but nuget.exe downloads it to the
                     // output directory
@@ -1170,20 +1169,27 @@ namespace
 
         RestoreResult try_restore(const InstallPlanAction&) const override { return RestoreResult::unavailable; }
 
-        void push_success(const InstallPlanAction& action) const override
+        bool needs_nuspec_data() const override { return !m_write_sources.empty() || !m_write_configs.empty(); }
+
+        size_t push_success(const BinaryProviderPushRequest& request, MessageSink& msg_sink) override
         {
             if (m_write_sources.empty() && m_write_configs.empty())
             {
-                return;
+                return 0;
+            }
+            if (!request.info.nuspec.has_value())
+            {
+                Checks::unreachable(
+                    VCPKG_LINE_INFO,
+                    "request.info.nuspec must be non empty because needs_nuspec_data() should return true");
             }
 
-            auto& spec = action.spec;
+            auto& spec = request.info.spec;
 
-            NugetReference nuget_ref = make_nugetref(action, get_nuget_prefix());
+            NugetReference nuget_ref = make_nugetref(request.info, get_nuget_prefix());
             auto nuspec_path = paths.buildtrees() / spec.name() / (spec.triplet().to_string() + ".nuspec");
             auto& fs = paths.get_filesystem();
-            fs.write_contents(
-                nuspec_path, generate_nuspec(paths.package_dir(spec), action, nuget_ref), VCPKG_LINE_INFO);
+            fs.write_contents(nuspec_path, request.info.nuspec.value_or_exit(VCPKG_LINE_INFO), VCPKG_LINE_INFO);
 
             const auto& nuget_exe = paths.get_tool_exe("nuget", stdout_sink);
             Command cmdline;
@@ -1203,12 +1209,12 @@ namespace
                 cmdline.string_arg("-NonInteractive");
             }
 
-            if (!run_nuget_commandline(cmdline))
+            if (!run_nuget_commandline(cmdline, msg_sink))
             {
-                msg::println(Color::error, msgPackingVendorFailed, msg::vendor = "NuGet");
-                return;
+                msg_sink.println(Color::error, msgPackingVendorFailed, msg::vendor = "NuGet");
+                return 0;
             }
-
+            int count_stored = 0;
             auto nupkg_path = paths.buildtrees() / nuget_ref.nupkg_filename();
             for (auto&& write_src : m_write_sources)
             {
@@ -1229,18 +1235,23 @@ namespace
                 {
                     cmd.string_arg("-NonInteractive");
                 }
-                msg::println(
+                msg_sink.println(
                     msgUploadingBinariesToVendor, msg::spec = spec, msg::vendor = "NuGet", msg::path = write_src);
-                if (!run_nuget_commandline(cmd))
+                if (!run_nuget_commandline(cmd, msg_sink))
                 {
-                    msg::println(Color::error, msgPushingVendorFailed, msg::vendor = "NuGet", msg::path = write_src);
+                    msg_sink.println(
+                        Color::error, msgPushingVendorFailed, msg::vendor = "NuGet", msg::path = write_src);
+                }
+                else
+                {
+                    count_stored++;
                 }
             }
             for (auto&& write_cfg : m_write_configs)
             {
                 Command cmd;
 #ifndef _WIN32
-                cmd.string_arg(paths.get_tool_exe(Tools::MONO, stdout_sink));
+                cmd.string_arg(paths.get_tool_exe(Tools::MONO, msg_sink));
 #endif
                 cmd.string_arg(nuget_exe)
                     .string_arg("push")
@@ -1254,18 +1265,24 @@ namespace
                 {
                     cmd.string_arg("-NonInteractive");
                 }
-                msg::println(Color::error,
-                             msgUploadingBinariesUsingVendor,
-                             msg::spec = spec,
-                             msg::vendor = "NuGet config",
-                             msg::path = write_cfg);
-                if (!run_nuget_commandline(cmd))
+                msg_sink.println(Color::error,
+                                 msgUploadingBinariesUsingVendor,
+                                 msg::spec = spec,
+                                 msg::vendor = "NuGet config",
+                                 msg::path = write_cfg);
+                if (!run_nuget_commandline(cmd, msg_sink))
                 {
-                    msg::println(Color::error, msgPushingVendorFailed, msg::vendor = "NuGet", msg::path = write_cfg);
+                    msg_sink.println(
+                        Color::error, msgPushingVendorFailed, msg::vendor = "NuGet", msg::path = write_cfg);
+                }
+                else
+                {
+                    count_stored++;
                 }
             }
 
             fs.remove(nupkg_path, IgnoreErrors{});
+            return count_stored;
         }
 
         void precheck(View<InstallPlanAction>, View<CacheStatus*>) const override { }
@@ -1416,23 +1433,23 @@ namespace
 
         RestoreResult try_restore(const InstallPlanAction&) const override { return RestoreResult::unavailable; }
 
-        void push_success(const InstallPlanAction& action) const override
+        size_t push_success(const BinaryProviderPushRequest& request, MessageSink& msg_sink) override
         {
-            if (m_write_url.empty()) return;
+            if (m_write_url.empty()) return 0;
             const ElapsedTimer timer;
             auto& fs = paths.get_filesystem();
-            const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
-            auto& spec = action.spec;
+            const auto& abi = request.info.package_abi;
+            auto& spec = request.info.spec;
             const auto tmp_archive_path = make_temp_archive_path(paths.buildtrees(), spec);
             auto compression_result = compress_directory_to_zip(
-                paths.get_filesystem(), paths.get_tool_cache(), stdout_sink, paths.package_dir(spec), tmp_archive_path);
+                paths.get_filesystem(), paths.get_tool_cache(), msg_sink, paths.package_dir(spec), tmp_archive_path);
             if (!compression_result)
             {
-                vcpkg::msg::println(Color::warning,
-                                    msg::format_warning(msgCompressFolderFailed, msg::path = paths.package_dir(spec))
-                                        .append_raw(' ')
-                                        .append_raw(compression_result.error()));
-                return;
+                msg_sink.println(Color::warning,
+                                 msg::format_warning(msgCompressFolderFailed, msg::path = paths.package_dir(spec))
+                                     .append_raw(' ')
+                                     .append_raw(compression_result.error()));
+                return 0;
             }
 
             int64_t cache_size;
@@ -1468,11 +1485,7 @@ namespace
                     }
                 }
             }
-
-            msg::println(msgUploadedPackagesToVendor,
-                         msg::count = upload_count,
-                         msg::elapsed = timer.elapsed(),
-                         msg::vendor = "GHA");
+            return upload_count;
         }
 
         void precheck(View<InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
@@ -1601,22 +1614,22 @@ namespace
 
         RestoreResult try_restore(const InstallPlanAction&) const override { return RestoreResult::unavailable; }
 
-        void push_success(const InstallPlanAction& action) const override
+        size_t push_success(const BinaryProviderPushRequest& request, MessageSink& msg_sink) override
         {
-            if (m_write_prefixes.empty()) return;
+            if (m_write_prefixes.empty()) return 0;
             const ElapsedTimer timer;
-            const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
-            auto& spec = action.spec;
+            const auto& abi = request.info.package_abi;
+            auto& spec = request.info.spec;
             const auto tmp_archive_path = make_temp_archive_path(paths.buildtrees(), spec);
             auto compression_result = compress_directory_to_zip(
-                paths.get_filesystem(), paths.get_tool_cache(), stdout_sink, paths.package_dir(spec), tmp_archive_path);
+                paths.get_filesystem(), paths.get_tool_cache(), msg_sink, request.package_dir, tmp_archive_path);
             if (!compression_result)
             {
-                vcpkg::msg::println(Color::warning,
-                                    msg::format_warning(msgCompressFolderFailed, msg::path = paths.package_dir(spec))
-                                        .append_raw(' ')
-                                        .append_raw(compression_result.error()));
-                return;
+                msg_sink.println(Color::warning,
+                                 msg::format_warning(msgCompressFolderFailed, msg::path = request.package_dir)
+                                     .append_raw(' ')
+                                     .append_raw(compression_result.error()));
+                return 0;
             }
 
             size_t upload_count = 0;
@@ -1627,11 +1640,7 @@ namespace
                     ++upload_count;
                 }
             }
-
-            msg::println(msgUploadedPackagesToVendor,
-                         msg::count = upload_count,
-                         msg::elapsed = timer.elapsed(),
-                         msg::vendor = vendor());
+            return upload_count;
         }
 
         void precheck(View<InstallPlanAction> actions, View<CacheStatus*> cache_status) const override
@@ -1867,26 +1876,25 @@ namespace vcpkg
         return {};
     }
 
-    std::string UrlTemplate::instantiate_variables(const InstallPlanAction& action) const
+    std::string UrlTemplate::instantiate_variables(const BinaryPackageInformation& info) const
     {
         return api_stable_format(url_template,
                                  [&](std::string& out, StringView key) {
                                      if (key == "version")
                                      {
-                                         out += action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO)
-                                                    .source_control_file->core_paragraph->raw_version;
+                                         out += info.raw_version;
                                      }
                                      else if (key == "name")
                                      {
-                                         out += action.spec.name();
+                                         out += info.spec.name();
                                      }
                                      else if (key == "triplet")
                                      {
-                                         out += action.spec.triplet().canonical_name();
+                                         out += info.spec.triplet().canonical_name();
                                      }
                                      else if (key == "sha")
                                      {
-                                         out += action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi;
+                                         out += info.package_abi;
                                      }
                                      else
                                      {
@@ -1898,7 +1906,10 @@ namespace vcpkg
             .value_or_exit(VCPKG_LINE_INFO);
     }
 
+    BinaryCache::BinaryCache(Filesystem& filesystem) : filesystem(filesystem) { }
+
     BinaryCache::BinaryCache(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
+        : BinaryCache(paths.get_filesystem())
     {
         install_providers_for(args, paths);
     }
@@ -1917,6 +1928,7 @@ namespace vcpkg
                                std::make_move_iterator(providers.begin()),
                                std::make_move_iterator(providers.end()));
         }
+        needs_nuspec_data = Util::any_of(m_providers, [](auto& provider) { return provider->needs_nuspec_data(); });
     }
 
     void BinaryCache::install_providers_for(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
@@ -1981,17 +1993,27 @@ namespace vcpkg
         return RestoreResult::unavailable;
     }
 
-    void BinaryCache::push_success(const InstallPlanAction& action)
+    void BinaryCache::push_success(const InstallPlanAction& action, Path package_dir)
     {
-        const auto abi = action.package_abi().get();
-        if (abi)
+        if (action.package_abi().has_value())
         {
+            std::string nuspec;
+            if (needs_nuspec_data)
+            {
+                NugetReference nuget_ref = make_nugetref(action, get_nuget_prefix());
+                nuspec = generate_nuspec(package_dir, action, nuget_ref);
+            }
+            size_t num_destinations = 0;
+            BinaryProviderPushRequest request{BinaryPackageInformation{action, std::move(nuspec)}, package_dir};
             for (auto&& provider : m_providers)
             {
-                provider->push_success(action);
+                num_destinations += provider->push_success(request, stdout_sink);
             }
-
-            m_status[*abi].mark_restored();
+            stdout_sink.println(msgStoredBinariesToDestinations, msg::count = num_destinations);
+        }
+        if (action.build_options.clean_packages == CleanPackages::YES)
+        {
+            filesystem.remove_all(package_dir, VCPKG_LINE_INFO);
         }
     }
 
@@ -2161,6 +2183,15 @@ namespace vcpkg
         configs_to_read.clear();
         configs_to_write.clear();
         secrets.clear();
+    }
+
+    BinaryPackageInformation::BinaryPackageInformation(const InstallPlanAction& action, Optional<std::string> nuspec)
+        : package_abi(action.package_abi().value_or_exit(VCPKG_LINE_INFO))
+        , spec(action.spec)
+        , raw_version(action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO)
+                          .source_control_file->core_paragraph->raw_version)
+        , nuspec(std::move(nuspec))
+    {
     }
 }
 

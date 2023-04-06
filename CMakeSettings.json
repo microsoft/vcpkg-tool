@@ -12,11 +12,6 @@
       "ctestCommandArgs": "",
       "variables": [
         {
-          "name": "VCPKG_ARTIFACTS_DEVELOPMENT",
-          "value": "True",
-          "type": "BOOL"
-        },
-        {
           "name": "VCPKG_BUILD_TLS12_DOWNLOADER",
           "value": "True",
           "type": "BOOL"
@@ -34,7 +29,7 @@
       ]
     },
     {
-      "name": "x64-Debug-NoArtifacts",
+      "name": "x64-Debug-WithArtifacts",
       "generator": "Ninja",
       "configurationType": "Debug",
       "inheritEnvironments": [ "msvc_x64_x64" ],
@@ -46,7 +41,7 @@
       "variables": [
         {
           "name": "VCPKG_ARTIFACTS_DEVELOPMENT",
-          "value": "False",
+          "value": "True",
           "type": "BOOL"
         },
         {
@@ -67,7 +62,7 @@
       ]
     },
     {
-      "name": "x64-Debug-NoArtifacts-NoAnalyze",
+      "name": "x64-Debug-NoAnalyze",
       "generator": "Ninja",
       "configurationType": "Debug",
       "inheritEnvironments": [ "msvc_x64_x64" ],
@@ -83,11 +78,6 @@
           "type": "BOOL"
         },
         {
-          "name": "VCPKG_ARTIFACTS_DEVELOPMENT",
-          "value": "False",
-          "type": "BOOL"
-        },
-        {
           "name": "VCPKG_BUILD_TLS12_DOWNLOADER",
           "value": "True",
           "type": "BOOL"
@@ -105,7 +95,7 @@
       ]
     },
     {
-      "name": "x64-Debug-Official-2022-11-10",
+      "name": "x64-Debug-Official-2023-03-30",
       "generator": "Ninja",
       "configurationType": "Debug",
       "inheritEnvironments": [ "msvc_x64_x64" ],
@@ -122,17 +112,12 @@
         },
         {
           "name": "VCPKG_BASE_VERSION",
-          "value": "2022-11-10",
+          "value": "2023-03-30",
           "type": "STRING"
         },
         {
           "name": "VCPKG_STANDALONE_BUNDLE_SHA",
-          "value": "edc1bad5689508953842d13b062a750791af57e0c6bb9d441d4545e81d99841dead2d33a5cb382b6cf50d2d32414ee617ada6e761c868fcbb28fa9bcb7bca6ba",
-          "type": "STRING"
-        },
-        {
-          "name": "VCPKG_CE_SHA",
-          "value": "b677e4d66e711e623a2765499cc5b662544c1df07a95b495f31a195f6e525c00cef0111dbb008b544d987fdcd1140fd69877908b3c3e7771231eaaa2cb1939ac",
+          "value": "404fc75a9f7cdf205c3a6d5ce1134f6448f107e266bc5d7113722f8753eb9671a264235ba8bf2ca85989b28dfdb0109e5f7074591b07246129c5cbafa73f3442",
           "type": "STRING"
         },
         {
@@ -163,77 +148,6 @@
       "ctestCommandArgs": "",
       "inheritEnvironments": [ "msvc_x64_x64" ],
       "variables": [
-        {
-          "name": "VCPKG_ARTIFACTS_DEVELOPMENT",
-          "value": "True",
-          "type": "BOOL"
-        },
-        {
-          "name": "VCPKG_BUILD_TLS12_DOWNLOADER",
-          "value": "True",
-          "type": "BOOL"
-        },
-        {
-          "name": "VCPKG_BUILD_BENCHMARKING",
-          "value": "True",
-          "type": "BOOL"
-        },
-        {
-          "name": "VCPKG_BUILD_FUZZING",
-          "value": "True",
-          "type": "BOOL"
-        }
-      ]
-    },
-    {
-      "name": "x86-Debug",
-      "generator": "Ninja",
-      "configurationType": "Debug",
-      "inheritEnvironments": [ "msvc_x86_x64" ],
-      "buildRoot": "${projectDir}\\out\\build\\${name}",
-      "installRoot": "${projectDir}\\out\\install\\${name}",
-      "cmakeCommandArgs": "",
-      "buildCommandArgs": "",
-      "ctestCommandArgs": "",
-      "variables": [
-        {
-          "name": "VCPKG_ARTIFACTS_DEVELOPMENT",
-          "value": "True",
-          "type": "BOOL"
-        },
-        {
-          "name": "VCPKG_BUILD_TLS12_DOWNLOADER",
-          "value": "True",
-          "type": "BOOL"
-        },
-        {
-          "name": "VCPKG_BUILD_BENCHMARKING",
-          "value": "True",
-          "type": "BOOL"
-        },
-        {
-          "name": "VCPKG_BUILD_FUZZING",
-          "value": "True",
-          "type": "BOOL"
-        }
-      ]
-    },
-    {
-      "name": "x86-Release",
-      "generator": "Ninja",
-      "configurationType": "RelWithDebInfo",
-      "buildRoot": "${projectDir}\\out\\build\\${name}",
-      "installRoot": "${projectDir}\\out\\install\\${name}",
-      "cmakeCommandArgs": "",
-      "buildCommandArgs": "",
-      "ctestCommandArgs": "",
-      "inheritEnvironments": [ "msvc_x86_x64" ],
-      "variables": [
-        {
-          "name": "VCPKG_ARTIFACTS_DEVELOPMENT",
-          "value": "True",
-          "type": "BOOL"
-        },
         {
           "name": "VCPKG_BUILD_TLS12_DOWNLOADER",
           "value": "True",

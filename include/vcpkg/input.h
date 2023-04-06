@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vcpkg/fwd/vcpkgpaths.h>
+
 #include <vcpkg/packagespec.h>
 
 namespace vcpkg

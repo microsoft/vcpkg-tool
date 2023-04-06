@@ -10,6 +10,7 @@
 #include <vcpkg/install.h>
 #include <vcpkg/packagespec.h>
 #include <vcpkg/portfileprovider.h>
+#include <vcpkg/registries.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 
 #include <vector>

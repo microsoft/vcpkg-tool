@@ -1,4 +1,5 @@
 #include <vcpkg/base/hash.h>
+#include <vcpkg/base/strings.h>
 
 #include <vcpkg/commands.find.h>
 #include <vcpkg/configure-environment.h>
@@ -8,6 +9,7 @@
 #include <vcpkg/metrics.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/portfileprovider.h>
+#include <vcpkg/registries.h>
 #include <vcpkg/sourceparagraph.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkglib.h>

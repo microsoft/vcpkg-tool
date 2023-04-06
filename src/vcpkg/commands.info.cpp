@@ -1,5 +1,3 @@
-#include "pch.h"
-
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/stringview.h>
@@ -8,6 +6,7 @@
 #include <vcpkg/input.h>
 #include <vcpkg/install.h>
 #include <vcpkg/portfileprovider.h>
+#include <vcpkg/registries.h>
 #include <vcpkg/statusparagraphs.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkglib.h>

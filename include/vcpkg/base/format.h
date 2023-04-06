@@ -3,9 +3,8 @@
 #include <vcpkg/base/fwd/format.h>
 
 #include <vcpkg/base/fmt.h>
-#include <vcpkg/base/lineinfo.h>
-#include <vcpkg/base/pragmas.h>
-#include <vcpkg/base/stringview.h>
+
+#include <system_error>
 
 template<class Char>
 struct fmt::formatter<std::error_code, Char> : formatter<std::string, Char>

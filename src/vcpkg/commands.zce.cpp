@@ -1,4 +1,4 @@
-#include <vcpkg/base/basic-checks.h>
+#include <vcpkg/base/checks.h>
 
 #include <vcpkg/commands.zce.h>
 #include <vcpkg/configure-environment.h>

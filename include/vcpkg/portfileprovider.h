@@ -1,11 +1,11 @@
 #pragma once
 
 #include <vcpkg/fwd/portfileprovider.h>
+#include <vcpkg/fwd/registries.h>
 
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/util.h>
 
-#include <vcpkg/registries.h>
 #include <vcpkg/sourceparagraph.h>
 #include <vcpkg/versions.h>
 

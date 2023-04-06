@@ -23,6 +23,7 @@
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/platform-expression.h>
 #include <vcpkg/portfileprovider.h>
+#include <vcpkg/registries.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
@@ -255,9 +256,13 @@ namespace vcpkg::Commands::CI
             auto it_known = known.find(it->spec);
             const auto& abi = it->abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi;
             auto it_parent = std::find(parent_hashes.begin(), parent_hashes.end(), abi);
-            if (it_known == known.end() && it_parent == parent_hashes.end())
+            if (it_parent == parent_hashes.end())
             {
-                to_keep.insert(it->spec);
+                it->request_type = RequestType::USER_REQUESTED;
+                if (it_known == known.end())
+                {
+                    to_keep.insert(it->spec);
+                }
             }
 
             if (Util::Sets::contains(to_keep, it->spec))
@@ -291,11 +296,11 @@ namespace vcpkg::Commands::CI
                                   : SortedVector<std::string>(Strings::split(it_exclusions->second, ',')));
     }
 
-    static void print_baseline_regressions(const std::vector<SpecSummary>& results,
-                                           const std::map<PackageSpec, BuildResult>& known,
-                                           const CiBaselineData& cidata,
-                                           const std::string& ci_baseline_file_name,
-                                           bool allow_unexpected_passing)
+    static void print_regressions(const std::vector<SpecSummary>& results,
+                                  const std::map<PackageSpec, BuildResult>& known,
+                                  const CiBaselineData& cidata,
+                                  const std::string& ci_baseline_file_name,
+                                  bool allow_unexpected_passing)
     {
         bool has_error = false;
         LocalizedString output = msg::format(msgCiBaselineRegressionHeader);
@@ -303,7 +308,12 @@ namespace vcpkg::Commands::CI
         for (auto&& r : results)
         {
             auto result = r.build_result.value_or_exit(VCPKG_LINE_INFO).code;
-            auto msg = format_ci_result(r.get_spec(), result, cidata, ci_baseline_file_name, allow_unexpected_passing);
+            auto msg = format_ci_result(r.get_spec(),
+                                        result,
+                                        cidata,
+                                        ci_baseline_file_name,
+                                        allow_unexpected_passing,
+                                        !r.is_user_requested_install());
             if (!msg.empty())
             {
                 has_error = true;
@@ -312,7 +322,8 @@ namespace vcpkg::Commands::CI
         }
         for (auto&& r : known)
         {
-            auto msg = format_ci_result(r.first, r.second, cidata, ci_baseline_file_name, allow_unexpected_passing);
+            auto msg =
+                format_ci_result(r.first, r.second, cidata, ci_baseline_file_name, allow_unexpected_passing, true);
             if (!msg.empty())
             {
                 has_error = true;
@@ -508,12 +519,8 @@ namespace vcpkg::Commands::CI
 
             msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("\nTriplet: {}\n", target_triplet));
             summary.print();
-
-            if (baseline_iter != settings.end())
-            {
-                print_baseline_regressions(
-                    summary.results, split_specs->known, cidata, baseline_iter->second, allow_unexpected_passing);
-            }
+            print_regressions(
+                summary.results, split_specs->known, cidata, baseline_iter->second, allow_unexpected_passing);
 
             auto it_xunit = settings.find(OPTION_XUNIT);
             if (it_xunit != settings.end())
