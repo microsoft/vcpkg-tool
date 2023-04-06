@@ -1,5 +1,6 @@
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/system.debug.h>
+#include <vcpkg/base/system.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
@@ -77,6 +78,11 @@ namespace
                 name.erase(0, 2);
                 tag = StabilityTag::Experimental;
             }
+            else if (Strings::starts_with(name, "z-"))
+            {
+                name.erase(0, 2);
+                tag = StabilityTag::ImplementationDetail;
+            }
 
             if (switch_.helpmsg)
             {
@@ -105,6 +111,11 @@ namespace
                     name.erase(0, 2);
                     tag = StabilityTag::Experimental;
                 }
+                else if (Strings::starts_with(name, "z-"))
+                {
+                    name.erase(0, 2);
+                    tag = StabilityTag::ImplementationDetail;
+                }
 
                 if (option.helpmsg)
                 {
@@ -131,6 +142,11 @@ namespace
             {
                 name.erase(0, 2);
                 tag = StabilityTag::Experimental;
+            }
+            else if (Strings::starts_with(name, "z-"))
+            {
+                name.erase(0, 2);
+                tag = StabilityTag::ImplementationDetail;
             }
 
             std::vector<std::string> maybe_parse_result;
@@ -521,7 +537,10 @@ namespace vcpkg
         auto maybe_vcpkg_recursive_data = get_environment_variable(RECURSIVE_DATA_ENV);
         if (auto vcpkg_recursive_data = maybe_vcpkg_recursive_data.get())
         {
-            auto rec_doc = Json::parse(*vcpkg_recursive_data).value_or_exit(VCPKG_LINE_INFO).value;
+            auto rec_doc = Json::parse(*vcpkg_recursive_data)
+                               .map_error(parse_error_formatter)
+                               .value_or_exit(VCPKG_LINE_INFO)
+                               .value;
             const auto& obj = rec_doc.object(VCPKG_LINE_INFO);
 
             if (auto entry = obj.get(VCPKG_ROOT_ARG_NAME))

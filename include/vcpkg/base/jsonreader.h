@@ -3,16 +3,14 @@
 #include <vcpkg/base/fwd/json.h>
 
 #include <vcpkg/base/chrono.h>
+#include <vcpkg/base/files.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/span.h>
-#include <vcpkg/base/strings.h>
 #include <vcpkg/base/stringview.h>
 
 namespace vcpkg::Json
 {
-    struct Reader;
-
     template<class Type>
     struct IDeserializer
     {

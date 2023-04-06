@@ -9,6 +9,7 @@
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/pragmas.h>
 #include <vcpkg/base/sortedvector.h>
+#include <vcpkg/base/strings.h>
 
 #include <vcpkg/packagespec.h>
 #include <vcpkg/statusparagraph.h>

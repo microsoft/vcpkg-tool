@@ -1,3 +1,4 @@
+#include <vcpkg/base/strings.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.h>
@@ -7,6 +8,7 @@
 #include <vcpkg/installedpaths.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/portfileprovider.h>
+#include <vcpkg/registries.h>
 #include <vcpkg/remove.h>
 #include <vcpkg/update.h>
 #include <vcpkg/vcpkglib.h>

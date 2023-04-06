@@ -1,6 +1,7 @@
 #pragma once
 
-#include <vcpkg/base/files.h>
+#include <vcpkg/base/fwd/files.h>
+
 #include <vcpkg/base/stringview.h>
 
 #include <array>

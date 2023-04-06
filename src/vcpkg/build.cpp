@@ -8,6 +8,7 @@
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.debug.h>
+#include <vcpkg/base/system.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/system.proxy.h>
 #include <vcpkg/base/util.h>
@@ -29,6 +30,7 @@
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/postbuildlint.h>
+#include <vcpkg/registries.h>
 #include <vcpkg/spdx.h>
 #include <vcpkg/statusparagraphs.h>
 #include <vcpkg/tools.h>
@@ -140,7 +142,7 @@ namespace vcpkg::Build
         action->build_options.clean_packages = CleanPackages::NO;
 
         const ElapsedTimer build_timer;
-        const auto result = build_package(args, paths, *action, binary_cache, build_logs_recorder, status_db);
+        const auto result = build_package(args, paths, *action, build_logs_recorder, status_db);
         msg::print(msgElapsedForPackage, msg::spec = spec, msg::elapsed = build_timer);
         if (result.code == BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES)
         {
@@ -170,6 +172,7 @@ namespace vcpkg::Build
             msg::print(create_user_troubleshooting_message(*action, paths, nullopt));
             return 1;
         }
+        binary_cache.push_success(*action, paths.package_dir(action->spec));
 
         return 0;
     }
@@ -1289,7 +1292,6 @@ namespace vcpkg
     ExtendedBuildResult build_package(const VcpkgCmdArguments& args,
                                       const VcpkgPaths& paths,
                                       const InstallPlanAction& action,
-                                      BinaryCache& binary_cache,
                                       const IBuildLogsRecorder& build_logs_recorder,
                                       const StatusParagraphs& status_db)
     {
@@ -1340,10 +1342,6 @@ namespace vcpkg
             build_logs_recorder.record_build_result(paths, spec, result.code);
             filesystem.create_directories(abi_package_dir, VCPKG_LINE_INFO);
             filesystem.copy_file(abi_file, abi_file_in_package, CopyOptions::none, VCPKG_LINE_INFO);
-            if (result.code == BuildResult::SUCCEEDED)
-            {
-                binary_cache.push_success(action);
-            }
         }
 
         return result;
@@ -1515,6 +1513,19 @@ namespace vcpkg
             manifest);
     }
 
+    static std::string make_gh_issue_search_url(StringView spec_name)
+    {
+        return "https://github.com/microsoft/vcpkg/issues?q=is%3Aissue+is%3Aopen+in%3Atitle+" + spec_name.to_string();
+    }
+
+    static std::string make_gh_issue_open_url(StringView spec_name, const Path& path)
+    {
+        return Strings::concat("https://github.com/microsoft/vcpkg/issues/new?title=[",
+                               spec_name,
+                               "]+Build+error&body=Copy+issue+body+from+",
+                               Strings::percent_encode(path));
+    }
+
     LocalizedString create_user_troubleshooting_message(const InstallPlanAction& action,
                                                         const VcpkgPaths& paths,
                                                         const Optional<Path>& issue_body)
@@ -1526,23 +1537,17 @@ namespace vcpkg
         }
         const auto& spec_name = action.spec.name();
         LocalizedString result = msg::format(msgBuildTroubleshootingMessage1).append_raw('\n');
-        result.append_indent()
-            .append_raw("https://github.com/microsoft/vcpkg/issues?q=is%3Aissue+is%3Aopen+in%3Atitle+")
-            .append_raw(spec_name)
-            .append_raw('\n');
+        result.append_indent().append_raw(make_gh_issue_search_url(spec_name)).append_raw('\n');
         result.append(msgBuildTroubleshootingMessage2).append_raw('\n');
         if (issue_body.has_value())
         {
             auto path = issue_body.get()->generic_u8string();
-            result.append_indent().append_fmt_raw("https://github.com/microsoft/vcpkg/issues/"
-                                                  "new?title=[{}]+Build+error&body=Copy+issue+body+from+{}\n",
-                                                  spec_name,
-                                                  Strings::percent_encode(path));
+            result.append_indent().append_raw(make_gh_issue_open_url(spec_name, path)).append_raw("\n");
             if (!paths.get_filesystem().find_from_PATH("gh").empty())
             {
                 Command gh("gh");
                 gh.string_arg("issue").string_arg("create").string_arg("-R").string_arg("microsoft/vcpkg");
-                gh.string_arg("--title").string_arg(fmt::format("[{}] Build failue", spec_name));
+                gh.string_arg("--title").string_arg(fmt::format("[{}] Build failure", spec_name));
                 gh.string_arg("--body-file").string_arg(path);
 
                 result.append(msgBuildTroubleshootingMessageGH).append_raw('\n');
@@ -1551,10 +1556,11 @@ namespace vcpkg
         }
         else
         {
-            result.append_indent().append_fmt_raw(
-                "https://github.com/microsoft/vcpkg/issues/"
-                "new?template=report-package-build-failure.md&title=[{}]+Build+error\n",
-                spec_name);
+            result.append_indent()
+                .append_raw(
+                    "https://github.com/microsoft/vcpkg/issues/new?template=report-package-build-failure.md&title=[")
+                .append_raw(spec_name)
+                .append_raw("]+Build+error\n");
             result.append(msgBuildTroubleshootingMessage3, msg::package_name = spec_name).append_raw('\n');
             result.append_raw(paths.get_toolver_diagnostics()).append_raw('\n');
         }

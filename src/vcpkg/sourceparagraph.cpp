@@ -1257,8 +1257,7 @@ namespace vcpkg
             ret.append_raw('\n');
             for (auto&& err : reader.errors())
             {
-                ret.append_indent();
-                ret.append_fmt_raw("{}\n", err);
+                ret.append_indent().append(err).append_raw("\n");
             }
             ret.append(msgExtendedDocumentationAtUrl, msg::url = docs::registries_url);
             ret.append_raw('\n');

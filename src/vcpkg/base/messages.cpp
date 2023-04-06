@@ -20,7 +20,13 @@ namespace vcpkg
     const std::string& LocalizedString::to_string() const noexcept { return m_data; }
     std::string LocalizedString::extract_data() { return std::exchange(m_data, std::string{}); }
 
-    LocalizedString LocalizedString::from_raw(std::string&& s) noexcept { return LocalizedString(std::move(s)); }
+    template<class T, std::enable_if_t<std::is_same<char, T>::value, int>>
+    LocalizedString LocalizedString::from_raw(std::basic_string<T>&& s) noexcept
+    {
+        return LocalizedString(std::move(s));
+    }
+    template LocalizedString LocalizedString::from_raw<char>(std::basic_string<char>&& s) noexcept;
+    LocalizedString LocalizedString::from_raw(StringView s) { return LocalizedString(s); }
 
     LocalizedString& LocalizedString::append_raw(char c)
     {
@@ -99,6 +105,7 @@ namespace vcpkg
 namespace vcpkg::msg
 {
     template LocalizedString format<>(MessageT<>);
+    template void format_to<>(LocalizedString&, MessageT<>);
 }
 namespace
 {
@@ -203,14 +210,15 @@ namespace vcpkg
             return messages;
         }
 
-        LocalizedString detail::format_message_by_index(size_t index, fmt::format_args args)
+        void detail::format_message_by_index_to(LocalizedString& s, size_t index, fmt::format_args args)
         {
             if (index >= detail::number_of_messages) Checks::unreachable(VCPKG_LINE_INFO);
             try
             {
                 if (loaded_localization_data)
                 {
-                    return LocalizedString::from_raw(fmt::vformat(loaded_localization_data[index], args));
+                    fmt::vformat_to(std::back_inserter(s.m_data), loaded_localization_data[index], args);
+                    return;
                 }
             }
             catch (const fmt::format_error&)
@@ -220,8 +228,9 @@ namespace vcpkg
             const auto default_format_string = message_data[index].builtin_message;
             try
             {
-                return LocalizedString::from_raw(
-                    fmt::vformat({default_format_string.data(), default_format_string.size()}, args));
+                fmt::vformat_to(
+                    std::back_inserter(s.m_data), {default_format_string.data(), default_format_string.size()}, args);
+                return;
             }
             catch (const fmt::format_error&)
             {
@@ -232,6 +241,12 @@ namespace vcpkg
                             index,
                             default_format_string));
             Checks::exit_fail(VCPKG_LINE_INFO);
+        }
+        LocalizedString detail::format_message_by_index(size_t index, fmt::format_args args)
+        {
+            LocalizedString s;
+            format_message_by_index_to(s, index, args);
+            return s;
         }
     }
 

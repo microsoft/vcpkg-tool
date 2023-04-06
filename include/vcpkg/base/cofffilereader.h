@@ -1,9 +1,9 @@
 #pragma once
 
 #include <vcpkg/base/fwd/cofffilereader.h>
+#include <vcpkg/base/fwd/files.h>
 
 #include <vcpkg/base/expected.h>
-#include <vcpkg/base/files.h>
 
 #include <stdint.h>
 
