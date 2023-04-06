@@ -305,7 +305,7 @@ namespace
                 FolderSettings folder_settings;
                 double gb = 0;
                 r.optional_object_field(obj, MAX_SIZE_GB, gb, Json::PositiveNumberDeserializer::instance);
-                folder_settings.max_size_in_bytes = gb * std::giga::num;
+                folder_settings.max_size_in_bytes = static_cast<int64_t>(gb * std::giga::num);
                 DeletePolicyDeserializer instance;
                 r.required_object_field(LocalizedString::from_raw(DELETE_POLICY),
                                         obj,
@@ -333,7 +333,7 @@ namespace
                 {
                     if (key_value.first.front() != '$' && !Util::Vectors::contains(valid_fields, key_value.first))
                     {
-                        r.add_warning(LocalizedString::from_raw("test"), "unexpected field "); // TODO
+                        r.add_warning(LocalizedString::from_raw(key_value.first), "unknown field");
                     }
                 }
                 if (folder_settings.delete_policy != FolderSettings::DeletePolicy::None)
@@ -341,7 +341,8 @@ namespace
                     if (folder_settings.max_age.count() == 0 && folder_settings.keep_available_percentage == 0 &&
                         folder_settings.max_size_in_bytes == 0)
                     {
-                        r.add_generic_error(LocalizedString::from_raw("test"), LocalizedString::from_raw("")); // TODO
+                        r.add_generic_error(LocalizedString::from_raw("DeletePolicy"),
+                                            LocalizedString::from_raw("")); // TODO
                         folder_settings.delete_policy = FolderSettings::DeletePolicy::None;
                     }
                 }
