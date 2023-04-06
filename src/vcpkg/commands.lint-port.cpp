@@ -81,7 +81,7 @@ namespace vcpkg::Commands::LintPort
                 Checks::check_exit(VCPKG_LINE_INFO, !add_all);
                 continue;
             }
-            SourceControlFileAndLocation scf{std::move(maybe_scf.value_or_exit(VCPKG_LINE_INFO)),
+            SourceControlFileAndLocation scf{std::move(maybe_scf).value(VCPKG_LINE_INFO),
                                              paths.builtin_ports_directory() / port_name};
             Lint::Status s = Lint::check_license_expression(*scf.source_control_file, fix);
             s |= Lint::check_used_version_scheme(*scf.source_control_file, fix);

@@ -1,4 +1,5 @@
 #include <vcpkg/base/cmd-parser.h>
+#include <vcpkg/base/files.h>
 #include <vcpkg/base/strings.h>
 
 #include <stdint.h>
@@ -1007,6 +1008,7 @@ namespace vcpkg
             msg::write_unlocalized_text_to_stdout(Color::error, error.append_raw("\n"));
         }
 
+        example.append_raw('\n');
         append_options_table(example);
         msg::println(Color::none, example);
         Checks::exit_with_code(VCPKG_LINE_INFO, 1);

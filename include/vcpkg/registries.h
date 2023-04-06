@@ -1,15 +1,16 @@
 #pragma once
 
+#include <vcpkg/base/fwd/files.h>
+#include <vcpkg/base/fwd/json.h>
+
 #include <vcpkg/fwd/configuration.h>
 #include <vcpkg/fwd/registries.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
-#include <vcpkg/base/files.h>
-#include <vcpkg/base/jsonreader.h>
+#include <vcpkg/base/path.h>
 #include <vcpkg/base/span.h>
 #include <vcpkg/base/stringview.h>
 
-#include <vcpkg/versiondeserializers.h>
 #include <vcpkg/versions.h>
 
 #include <map>
@@ -158,50 +159,5 @@ namespace vcpkg
     ExpectedL<std::map<std::string, Version, std::less<>>> get_builtin_baseline(const VcpkgPaths& paths);
 
     bool is_git_commit_sha(StringView sv);
-
-    struct VersionDbEntry
-    {
-        Version version;
-        VersionScheme scheme = VersionScheme::String;
-
-        // only one of these may be non-empty
-        std::string git_tree;
-        Path p;
-    };
-
-    // VersionDbType::Git => VersionDbEntry.git_tree is filled
-    // VersionDbType::Filesystem => VersionDbEntry.path is filled
-    enum class VersionDbType
-    {
-        Git,
-        Filesystem,
-    };
-
-    struct VersionDbEntryDeserializer final : Json::IDeserializer<VersionDbEntry>
-    {
-        static constexpr StringLiteral GIT_TREE = "git-tree";
-        static constexpr StringLiteral PATH = "path";
-
-        LocalizedString type_name() const override;
-        View<StringView> valid_fields() const override;
-        Optional<VersionDbEntry> visit_object(Json::Reader& r, const Json::Object& obj) const override;
-        VersionDbEntryDeserializer(VersionDbType type, const Path& root) : type(type), registry_root(root) { }
-
-    private:
-        VersionDbType type;
-        Path registry_root;
-    };
-
-    struct VersionDbEntryArrayDeserializer final : Json::IDeserializer<std::vector<VersionDbEntry>>
-    {
-        virtual LocalizedString type_name() const override;
-        virtual Optional<std::vector<VersionDbEntry>> visit_array(Json::Reader& r,
-                                                                  const Json::Array& arr) const override;
-        VersionDbEntryArrayDeserializer(VersionDbType type, const Path& root) : underlying{type, root} { }
-
-    private:
-        VersionDbEntryDeserializer underlying;
-    };
-
     size_t package_match_prefix(StringView name, StringView pattern);
 }

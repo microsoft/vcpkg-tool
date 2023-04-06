@@ -153,7 +153,7 @@ namespace vcpkg
         return nullptr;
     }
 
-    static ExpectedL<DotVersion> try_parse_dot_version(StringView str)
+    static Optional<DotVersion> try_parse_dot_version(StringView str)
     {
         // Suggested regex by semver.org
         // ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)   (this part replaced here with dotted number parsing)
@@ -174,7 +174,7 @@ namespace vcpkg
             if (!cur || *cur != '.') break;
             ++cur;
         }
-        if (!cur) return LocalizedString{};
+        if (!cur) return nullopt;
         ret.version_string.assign(ret.original_string.c_str(), cur);
         if (*cur == 0) return ret;
 
@@ -189,7 +189,7 @@ namespace vcpkg
                 cur = skip_prerelease_identifier(cur);
                 if (!cur)
                 {
-                    return LocalizedString{};
+                    return nullopt;
                 }
                 ret.identifiers.emplace_back(start_identifier, cur);
                 if (*cur != '.') break;
@@ -200,12 +200,12 @@ namespace vcpkg
         if (*cur == 0) return ret;
 
         // build
-        if (*cur != '+') return LocalizedString{};
+        if (*cur != '+') return nullopt;
         ++cur;
         for (;;)
         {
             // Require non-empty identifier element
-            if (!ParserBase::is_alphanumdash(*cur)) return LocalizedString{};
+            if (!ParserBase::is_alphanumdash(*cur)) return nullopt;
             ++cur;
             while (ParserBase::is_alphanumdash(*cur))
             {
@@ -218,7 +218,7 @@ namespace vcpkg
             }
             else
             {
-                return LocalizedString{};
+                return nullopt;
             }
         }
     }
@@ -238,9 +238,9 @@ namespace vcpkg
 
     ExpectedL<DotVersion> DotVersion::try_parse_relaxed(StringView str)
     {
-        return try_parse_dot_version(str).map_error([&](LocalizedString&&) {
-            return msg::format(msg::msgErrorMessage).append(msg::format(msgVersionInvalidRelaxed, msg::version = str));
-        });
+        auto x = try_parse_dot_version(str);
+        if (auto p = x.get()) return std::move(*p);
+        return msg::format_error(msgVersionInvalidRelaxed, msg::version = str);
     }
 
     ExpectedL<DotVersion> DotVersion::try_parse_semver(StringView str)
@@ -254,7 +254,7 @@ namespace vcpkg
             }
         }
 
-        return msg::format(msg::msgErrorMessage).append(msg::format(msgVersionInvalidSemver, msg::version = str));
+        return msg::format_error(msgVersionInvalidSemver, msg::version = str);
     }
 
     static int uint64_comp(uint64_t a, uint64_t b) { return (a > b) - (a < b); }

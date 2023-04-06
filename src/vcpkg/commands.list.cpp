@@ -1,3 +1,4 @@
+#include <vcpkg/base/strings.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.list.h>

@@ -1,10 +1,6 @@
 #pragma once
 
 #include <vcpkg/fwd/dependencies.h>
-#include <vcpkg/fwd/vcpkgcmdarguments.h>
-#include <vcpkg/fwd/vcpkgpaths.h>
-
-#include <vcpkg/base/messages.h>
 
 #include <vcpkg/commands.interface.h>
 

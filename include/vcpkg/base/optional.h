@@ -2,7 +2,7 @@
 
 #include <vcpkg/base/fwd/optional.h>
 
-#include <vcpkg/base/basic-checks.h>
+#include <vcpkg/base/checks.h>
 #include <vcpkg/base/lineinfo.h>
 #include <vcpkg/base/pragmas.h>
 

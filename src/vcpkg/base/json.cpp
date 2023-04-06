@@ -1063,11 +1063,6 @@ namespace vcpkg::Json
 
     const BooleanDeserializer BooleanDeserializer::instance;
 
-    static constexpr bool is_lower_digit(char ch)
-    {
-        return ParserBase::is_lower_alpha(ch) || ParserBase::is_ascii_digit(ch);
-    }
-
     bool IdentifierDeserializer::is_ident(StringView sv)
     {
         // back-compat
@@ -1081,9 +1076,9 @@ namespace vcpkg::Json
         const auto last = sv.end();
         for (;;)
         {
-            if (cur == last || !is_lower_digit(*cur)) return false;
+            if (cur == last || !ParserBase::is_lower_digit(*cur)) return false;
             ++cur;
-            while (cur != last && is_lower_digit(*cur))
+            while (cur != last && ParserBase::is_lower_digit(*cur))
                 ++cur;
 
             if (cur == last) break;
@@ -1130,16 +1125,12 @@ namespace vcpkg::Json
     ParsedJson parse_file(vcpkg::LineInfo li, const Filesystem& fs, const Path& json_file)
     {
         std::error_code ec;
-        auto ret = parse_file(fs, json_file, ec);
+        auto ret = parse_file(fs, json_file, ec).map_error(parse_error_formatter);
         if (ec)
         {
             Checks::msg_exit_with_error(li, format_filesystem_call_error(ec, "read_contents", {json_file}));
         }
-        else if (!ret)
-        {
-            Checks::msg_exit_with_message(li, LocalizedString::from_raw(ret.error()->to_string()));
-        }
-        return ret.value_or_exit(li);
+        return std::move(ret).value_or_exit(VCPKG_LINE_INFO);
     }
 
     ExpectedT<ParsedJson, std::unique_ptr<ParseError>> parse(StringView json, StringView origin)
@@ -1531,84 +1522,4 @@ namespace vcpkg::Json
     }
 
     const PackageNameDeserializer PackageNameDeserializer::instance;
-
-    LocalizedString PackagePatternDeserializer::type_name() const { return msg::format(msgAPackagePattern); }
-
-    Optional<PackagePatternDeclaration> PackagePatternDeserializer::visit_string(Json::Reader& r, StringView sv) const
-    {
-        if (!is_package_pattern(sv))
-        {
-            r.add_generic_error(
-                type_name(),
-                msg::format(msgParsePackagePatternError, msg::package_name = sv, msg::url = docs::registries_url));
-        }
-
-        return PackagePatternDeclaration{
-            sv.to_string(),
-            r.path(),
-        };
-    }
-
-    bool PackagePatternDeserializer::is_package_pattern(StringView sv)
-    {
-        if (IdentifierDeserializer::is_ident(sv))
-        {
-            return true;
-        }
-
-        /*if (sv == "*")
-        {
-            return true;
-        }*/
-
-        // ([a-z0-9]+(-[a-z0-9]+)*)(\*?)
-        auto cur = sv.begin();
-        const auto last = sv.end();
-        for (;;)
-        {
-            // [a-z0-9]+
-            if (cur == last)
-            {
-                return false;
-            }
-
-            if (!is_lower_digit(*cur))
-            {
-                if (*cur != '*')
-                {
-                    return false;
-                }
-
-                return ++cur == last;
-            }
-
-            do
-            {
-                ++cur;
-                if (cur == last)
-                {
-                    return true;
-                }
-            } while (is_lower_digit(*cur));
-
-            switch (*cur)
-            {
-                case '-':
-                    // repeat outer [a-z0-9]+ again to match -[a-z0-9]+
-                    ++cur;
-                    continue;
-                case '*':
-                    // match last optional *
-                    ++cur;
-                    return cur == last;
-                default: return false;
-            }
-        }
-    }
-
-    const PackagePatternDeserializer PackagePatternDeserializer::instance;
-
-    LocalizedString PackagePatternArrayDeserializer::type_name() const { return msg::format(msgAPackagePatternArray); }
-
-    const PackagePatternArrayDeserializer PackagePatternArrayDeserializer::instance;
 }

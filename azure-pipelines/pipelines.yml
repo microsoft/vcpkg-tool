@@ -3,7 +3,7 @@ variables:
   value: true
 jobs:
 - job: linux_gcc_9
-  displayName: 'Ubuntu 20.04 with GCC 9, plus vcpkg-artifacts'
+  displayName: 'Ubuntu 20.04 with GCC 9'
   pool:
     vmImage: 'ubuntu-20.04'
   variables:
@@ -18,66 +18,31 @@ jobs:
       inputs:
         versionSpec: '18.x'
       displayName: 'Install Node.js'
-    - script: |
-        cd ce
-
-        npm install -g @microsoft/rush
-        rc=$?; if [ $rc -ne 0 ]; then exit $rc ; fi
-
-        rush update
-        rc=$?; if [ $rc -ne 0 ]; then exit $rc ; fi
-
-        rush rebuild
-        rc=$?; if [ $rc -ne 0 ]; then exit $rc ; fi
-
-        rush test
-        rc=$?; if [ $rc -ne 0 ]; then exit $rc ; fi
-
-        rush lint
-        rc=$?; if [ $rc -ne 0 ]; then exit $rc ; fi
-
-        if [ -n "$(git status --porcelain)" ]; then
-          echo "ERROR: Working directory is dirty. Are there test output files missing from the PR?"
-          git status
-          exit 1
-        fi
-      displayName: 'Rush install, build and test vcpkg-artifacts'
+    - task: Npm@1
+      inputs:
+        command: 'custom'
+        workingDir: 'vcpkg-artifacts'
+        customCommand: 'ci'
     - bash: |
-        cmake '-DCMAKE_CXX_FLAGS=-fprofile-arcs -ftest-coverage -fPIC -O0 -fsanitize=undefined -fsanitize=address' -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_BENCHMARKING=ON -DVCPKG_BUILD_FUZZING=ON -B build.amd64.debug
+        cmake '-DCMAKE_CXX_FLAGS=-fprofile-arcs -fPIC -O0 -fsanitize=undefined -fsanitize=address' -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_BENCHMARKING=ON -DVCPKG_BUILD_FUZZING=ON -DVCPKG_ARTIFACTS_DEVELOPMENT=ON -B build.amd64.debug
         make -j 2 -C build.amd64.debug
       displayName: "Build vcpkg with CMake"
       failOnStderr: true
     - bash: build.amd64.debug/vcpkg-test
-      displayName: 'Run vcpkg tests'
+      displayName: 'Run vcpkg unit tests'
       env:
         VCPKG_ROOT: UNIT_TESTS_SHOULD_NOT_USE_VCPKG_ROOT
+    - script: |
+        cd build.amd64.debug/vcpkg-artifacts
+        node node_modules/mocha/bin/mocha --config mocha-config.yaml
+      displayName: Run vcpkg-artifacts unit tests
     - task: PowerShell@2
       displayName: 'Run vcpkg end-to-end tests'
       inputs:
         filePath: 'azure-pipelines/end-to-end-tests.ps1'
         workingDirectory: '$(Build.SourcesDirectory)/build.amd64.debug'
         pwsh: true
-    - bash: |
-        sudo pip install gcovr
-      displayName: "Install coverage tools"
-    - bash: |
-        mkdir -p "$(Build.SourcesDirectory)/coverage"
-        cd build.amd64.debug
-        gcovr --xml --output "$(Build.SourcesDirectory)/coverage/coverage.xml" \
-          --root "$(Build.SourcesDirectory)" \
-          --exclude '(.+/)?CMakeFiles/' \
-          --exclude '(.+/)?catch2/' \
-          --exclude '(.+/)?vcpkg-fuzz/' \
-          --exclude '(.+/)?vcpkg-test/' \
-          --print-summary \
-          .
-      displayName: "Analyse test coverage"
-      failOnStderr: true
-    - task: PublishCodeCoverageResults@1
-      inputs:
-        codeCoverageTool: 'Cobertura'
-        summaryFileLocation: '$(Build.SourcesDirectory)/coverage/coverage.xml'
-      displayName: 'Publish test coverage results'
+        arguments: '-RunArtifactsTests'
 - job: osx
   displayName: 'OSX'
   pool:
@@ -90,13 +55,26 @@ jobs:
         git clone https://github.com/microsoft/vcpkg "$VCPKG_ROOT" -n
         git -C "$VCPKG_ROOT" checkout `cat vcpkg-init/vcpkg-scripts-sha.txt`
       displayName: "Clone vcpkg repo to serve as root"
+    - task: NodeTool@0
+      inputs:
+        versionSpec: '18.x'
+      displayName: 'Install Node.js'
+    - task: Npm@1
+      inputs:
+        command: 'custom'
+        workingDir: 'vcpkg-artifacts'
+        customCommand: 'ci'
     - bash: |
-        cmake '-DCMAKE_CXX_FLAGS=-fsanitize=undefined -fsanitize=address' -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_BENCHMARKING=ON -DVCPKG_BUILD_FUZZING=ON -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13 -B build.amd64.debug
+        cmake '-DCMAKE_CXX_FLAGS=-fsanitize=undefined -fsanitize=address' -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_BENCHMARKING=ON -DVCPKG_BUILD_FUZZING=ON -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13 -DVCPKG_ARTIFACTS_DEVELOPMENT=ON -B build.amd64.debug
         make -j 2 -C build.amd64.debug
       displayName: "Build vcpkg with CMake"
       failOnStderr: true
     - bash: build.amd64.debug/vcpkg-test
-      displayName: 'Run vcpkg tests'
+      displayName: 'Run vcpkg unit tests'
+    - script: |
+        cd build.amd64.debug/vcpkg-artifacts
+        node node_modules/mocha/bin/mocha --config mocha-config.yaml
+      displayName: Run vcpkg-artifacts unit tests
     - bash: brew install pkg-config
       displayName: 'Install pkgconfig'
     - task: PowerShell@2
@@ -105,6 +83,7 @@ jobs:
         filePath: 'azure-pipelines/end-to-end-tests.ps1'
         workingDirectory: '$(Build.SourcesDirectory)/build.amd64.debug'
         pwsh: true
+        arguments: '-RunArtifactsTests'
 - job: windows
   displayName: 'Windows'
   timeoutInMinutes: 120
@@ -116,9 +95,9 @@ jobs:
   - name: 'VCPKG_ROOT'
     value: $(Build.SourcesDirectory)\vcpkg-root
   - name: Codeql.BuildIdentifier
-    value: vcpkg_cpp
+    value: vcpkg_pr
   - name: Codeql.Language
-    value: cpp
+    value: cpp,javascript
   steps:
     - task: Powershell@2
       displayName: "Clone vcpkg repo to serve as root"
@@ -138,23 +117,21 @@ jobs:
       displayName: Use Node 18
       inputs:
         version: "18.x"
-    - task: npmAuthenticate@0
+    - task: Npm@1
       inputs:
-        workingFile: 'ce\common\config\rush\.npmrc'
-      # The working directory change is to get the above .npmrc used when installing rush
-    - script: npm install -g @microsoft/rush
-      displayName: Install Rush
-      workingDirectory: ce\common\config\rush
+        command: 'custom'
+        workingDir: 'vcpkg-artifacts'
+        customCommand: 'ci'
     - task: CodeQL3000Init@0
       displayName: 'CodeQL Initialize'
     - task: CmdLine@2
       displayName: "Build vcpkg with CMake"
       inputs:
         script: |
-          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=x86 -host_arch=x86
-          rmdir /s /q build.x86.debug > nul 2> nul
-          cmake.exe -G Ninja -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_BENCHMARKING=ON -DVCPKG_BUILD_FUZZING=ON -DVCPKG_BUILD_TLS12_DOWNLOADER=ON -DVCPKG_ARTIFACTS_DEVELOPMENT=ON -B build.x86.debug
-          ninja.exe -C build.x86.debug all generate-message-map
+          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=amd64 -host_arch=amd64
+          rmdir /s /q build.amd64.debug > nul 2> nul
+          cmake.exe -G Ninja -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_BENCHMARKING=ON -DVCPKG_BUILD_FUZZING=ON -DVCPKG_BUILD_TLS12_DOWNLOADER=ON -DVCPKG_ARTIFACTS_DEVELOPMENT=ON -B build.amd64.debug
+          ninja.exe -C build.amd64.debug all generate-message-map
         failOnStderr: true
     - task: CodeQL3000Finalize@0
       displayName: 'CodeQL Finalize'
@@ -170,14 +147,19 @@ jobs:
       inputs:
         PathtoPublish: '$(DiffFile)'
         ArtifactName: 'format.diff'
-    - script: build.x86.debug\vcpkg-test.exe
-      displayName: "Run vcpkg tests"
+    - script: build.amd64.debug\vcpkg-test.exe
+      displayName: "Run vcpkg unit tests"
       failOnStderr: true
       env:
         VCPKG_ROOT: UNIT_TESTS_SHOULD_NOT_USE_VCPKG_ROOT
+    - script: |
+        cd build.amd64.debug\vcpkg-artifacts
+        node node_modules\mocha\bin\mocha --config mocha-config.yaml
+      displayName: Run vcpkg-artifacts unit tests
     - task: PowerShell@2
       displayName: 'Run vcpkg end-to-end tests'
       inputs:
         filePath: 'azure-pipelines/end-to-end-tests.ps1'
-        workingDirectory: '$(Build.SourcesDirectory)/build.x86.debug'
+        workingDirectory: '$(Build.SourcesDirectory)/build.amd64.debug'
         pwsh: true
+        arguments: '-RunArtifactsTests'

@@ -113,7 +113,7 @@ IF EXIST "%~dp0.vcpkg-root" (
 )
 
 IF "%VCPKG_ROOT:~-1%"=="\" (
-  SET VCPKG_ROOT=%VCPKG_ROOT:0,-1%
+  SET VCPKG_ROOT=%VCPKG_ROOT:~0,-1%
 )
 
 IF "%VCPKG_ROOT%"=="" (

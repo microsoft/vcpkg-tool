@@ -306,7 +306,7 @@ namespace vcpkg
             return run_to_extract_version(Tools::NUGET, exe_path, std::move(cmd))
 #if !defined(_WIN32)
                 .map_error([](LocalizedString&& error) {
-                    return std::move(error.append_raw('\n').append(msg::format(msgMonoInstructions)));
+                    return std::move(error.append_raw('\n').append(msgMonoInstructions));
                 })
 #endif // ^^^ !_WIN32
 

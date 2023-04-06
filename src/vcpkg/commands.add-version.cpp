@@ -4,6 +4,7 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/git.h>
 #include <vcpkg/base/json.h>
+#include <vcpkg/base/strings.h>
 
 #include <vcpkg/commands.add-version.h>
 #include <vcpkg/configuration.h>
@@ -420,7 +421,7 @@ namespace vcpkg::Commands::AddVersion
                 continue;
             }
 
-            SourceControlFileAndLocation scf{std::move(maybe_scf.value_or_exit(VCPKG_LINE_INFO)),
+            SourceControlFileAndLocation scf{std::move(maybe_scf).value(VCPKG_LINE_INFO),
                                              paths.builtin_ports_directory() / port_name};
 
             if (!skip_formatting_check)

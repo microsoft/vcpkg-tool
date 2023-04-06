@@ -1,22 +1,71 @@
 #pragma once
 
-#include <vcpkg/base/fwd/json.h>
-
 #include <vcpkg/fwd/configuration.h>
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 
 #include <vcpkg/base/expected.h>
+#include <vcpkg/base/json.h>
+#include <vcpkg/base/path.h>
 #include <vcpkg/base/span.h>
-#include <vcpkg/base/system.h>
 
 #include <vcpkg/packagespec.h>
 #include <vcpkg/paragraphparser.h>
 #include <vcpkg/platform-expression.h>
-#include <vcpkg/versiondeserializers.h>
 #include <vcpkg/versions.h>
 
 namespace vcpkg
 {
+    struct ManifestAndPath
+    {
+        Json::Object manifest;
+        Path path;
+    };
+
+    struct DependencyConstraint
+    {
+        VersionConstraintKind type = VersionConstraintKind::None;
+        std::string value;
+        int port_version = 0;
+
+        friend bool operator==(const DependencyConstraint& lhs, const DependencyConstraint& rhs);
+        friend bool operator!=(const DependencyConstraint& lhs, const DependencyConstraint& rhs)
+        {
+            return !(lhs == rhs);
+        }
+
+        Optional<Version> try_get_minimum_version() const;
+    };
+
+    struct Dependency
+    {
+        std::string name;
+        std::vector<std::string> features;
+        PlatformExpression::Expr platform;
+        DependencyConstraint constraint;
+        bool host = false;
+
+        Json::Object extra_info;
+
+        /// @param id adds "default" if "core" not present.
+        FullPackageSpec to_full_spec(Triplet target, Triplet host, ImplicitDefault id) const;
+
+        friend bool operator==(const Dependency& lhs, const Dependency& rhs);
+        friend bool operator!=(const Dependency& lhs, const Dependency& rhs) { return !(lhs == rhs); }
+    };
+
+    struct DependencyOverride
+    {
+        std::string name;
+        std::string version;
+        int port_version = 0;
+        VersionScheme version_scheme = VersionScheme::String;
+
+        Json::Object extra_info;
+
+        friend bool operator==(const DependencyOverride& lhs, const DependencyOverride& rhs);
+        friend bool operator!=(const DependencyOverride& lhs, const DependencyOverride& rhs) { return !(lhs == rhs); }
+    };
+
     std::vector<FullPackageSpec> filter_dependencies(const std::vector<Dependency>& deps,
                                                      Triplet t,
                                                      Triplet host,
@@ -147,4 +196,9 @@ namespace vcpkg
     }
 
     std::string parse_spdx_license_expression(StringView sv, ParseMessages& messages);
+
+    // Exposed for testing
+    ExpectedL<std::vector<Dependency>> parse_dependencies_list(const std::string& str,
+                                                               StringView origin = "<unknown>",
+                                                               TextRowCol textrowcol = {});
 }

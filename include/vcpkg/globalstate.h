@@ -1,7 +1,5 @@
 #pragma once
 
-#include <vcpkg/base/chrono.h>
-
 #include <atomic>
 
 namespace vcpkg

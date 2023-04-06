@@ -1,5 +1,7 @@
 #include <catch2/catch.hpp>
 
+#include <vcpkg/base/json.h>
+
 #include <vcpkg/commands.new.h>
 
 static std::string empty_string;
