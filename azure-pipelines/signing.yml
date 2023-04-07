@@ -117,6 +117,8 @@ jobs:
         mkdir "$(Build.BinariesDirectory)\vcpkg-artifacts\locales"
         mkdir "$(Build.BinariesDirectory)\vcpkg-artifacts\node_modules"
         xcopy /F /E "$(Build.SourcesDirectory)\vcpkg-artifacts\node_modules" "$(Build.BinariesDirectory)\vcpkg-artifacts\node_modules"
+        :: to avoid signing 'semver' .ps1s
+        rmdir /s /q "$(Build.BinariesDirectory)\vcpkg-artifacts\node_modules\.bin"
         copy "$(Build.SourcesDirectory)\vcpkg-artifacts\package.json" "$(Build.BinariesDirectory)\vcpkg-artifacts\package.json"
         copy "$(Build.SourcesDirectory)\vcpkg-artifacts\package-lock.json" "$(Build.BinariesDirectory)\vcpkg-artifacts\package-lock.json"
         copy "$(Build.SourcesDirectory)\vcpkg-artifacts\.npmrc" "$(Build.BinariesDirectory)\vcpkg-artifacts\.npmrc"
