@@ -1141,6 +1141,33 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ArtifactsBootstrapFailed" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg-artifacts is not installed and could not be bootstrapped.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg-artifacts ist nicht installiert und konnte nicht mit dem Bootstrapping ausgeführt werden.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ArtifactsNotInstalledReadonlyRoot" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg-artifacts is not installed, and it can't be installed because VCPKG_ROOT is assumed to be readonly. Reinstalling vcpkg using the 'one liner' may fix this problem.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg-artifacts ist nicht installiert und kann nicht installiert werden, da VCPKG_ROOT als schreibgeschützt angenommen wird. Dieses Problem kann möglicherweise durch erneutes Installieren von vcpkg mithilfe des One Liners behoben werden.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ArtifactsNotOfficialWarning" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Using vcpkg-artifacts with an unofficial ]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Verwenden von vcpkg-artifacts mit einer inoffiziellen ]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ArtifactsOptionIncompatibility" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[--{option} has no effect on find artifact.]]></Val>
@@ -1857,6 +1884,15 @@
           <Val><![CDATA[REGRESSION: {spec} cascaded, but it is required to pass. ({path}).]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[REGRESSION: {spec} überlappend, muss aber übergeben werden. ({path}.)]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CiBaselineIndependentRegression" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[REGRESSION: Independent {spec} failed with {build_result}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[REGRESSION: Fehler bei unabhängigem {spec} mit {build_result}.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -3289,30 +3325,6 @@
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{url} wird herunterladen]]></Val>
           </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";DownloadingVcpkgCeBundle" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Downloading vcpkg-artifacts bundle {version}...]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[vcpkg-Artefaktspaket {version} wird heruntergeladen ...]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Downloading vcpkg-ce bundle {version}...]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";DownloadingVcpkgCeBundleLatest" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Downloading latest vcpkg-artifacts bundle...]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Neuestes vcpkg-Artefaktspaket {version} wird heruntergeladen ...]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Downloading latest vcpkg-ce bundle...]]></Val>
-          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
