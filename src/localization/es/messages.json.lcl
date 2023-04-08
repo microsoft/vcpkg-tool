@@ -1141,6 +1141,33 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ArtifactsBootstrapFailed" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg-artifacts is not installed and could not be bootstrapped.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg-artifacts no está instalado y no se pudo arrancar.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ArtifactsNotInstalledReadonlyRoot" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg-artifacts is not installed, and it can't be installed because VCPKG_ROOT is assumed to be readonly. Reinstalling vcpkg using the 'one liner' may fix this problem.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg-artifacts no está instalado y no se puede instalar porque se supone que VCPKG_ROOT es de solo lectura. La reinstalación de vcpkg mediante el "un liner" puede solucionar este problema.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ArtifactsNotOfficialWarning" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Using vcpkg-artifacts with an unofficial ]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Uso de vcpkg-artifacts con una invitación ]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ArtifactsOptionIncompatibility" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[--{option} has no effect on find artifact.]]></Val>
@@ -3298,30 +3325,6 @@
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Descargando {url}]]></Val>
           </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";DownloadingVcpkgCeBundle" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Downloading vcpkg-artifacts bundle {version}...]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Descargando paquete vcpkg-artifacts {version}...]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Downloading vcpkg-ce bundle {version}...]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";DownloadingVcpkgCeBundleLatest" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Downloading latest vcpkg-artifacts bundle...]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Descargando versión de paquete vcpkg-artifacts más reciente...]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Downloading latest vcpkg-ce bundle...]]></Val>
-          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
