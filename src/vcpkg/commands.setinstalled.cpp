@@ -20,11 +20,19 @@ namespace vcpkg::Commands::SetInstalled
     static constexpr StringLiteral OPTION_ONLY_DOWNLOADS = "only-downloads";
     static constexpr StringLiteral OPTION_WRITE_PACKAGES_CONFIG = "x-write-nuget-packages-config";
     static constexpr StringLiteral OPTION_NO_PRINT_USAGE = "no-print-usage";
+    static constexpr StringLiteral OPTION_USE_HEAD_VERSION = "head";
+    static constexpr StringLiteral OPTION_EDITABLE = "editable";
+    static constexpr StringLiteral OPTION_ENFORCE_PORT_CHECKS = "enforce-port-checks";
+    static constexpr StringLiteral OPTION_ALLOW_UNSUPPORTED_PORT = "allow-unsupported";
 
     static constexpr CommandSwitch INSTALL_SWITCHES[] = {
         {OPTION_DRY_RUN, []() { return msg::format(msgCmdSetInstalledOptDryRun); }},
         {OPTION_NO_PRINT_USAGE, []() { return msg::format(msgCmdSetInstalledOptNoUsage); }},
         {OPTION_ONLY_DOWNLOADS, []() { return msg::format(msgHelpTxtOptOnlyDownloads); }},
+        {OPTION_USE_HEAD_VERSION, []() { return msg::format(msgHelpTxtOptUseHeadVersion); }},
+        {OPTION_EDITABLE, []() { return msg::format(msgHelpTxtOptEditable); }},
+        {OPTION_ENFORCE_PORT_CHECKS, []() { return msg::format(msgHelpTxtOptEnforcePortChecks); }},
+        {OPTION_ALLOW_UNSUPPORTED_PORT, []() { return msg::format(msgHelpTxtOptAllowUnsupportedPort); }},
     };
     static constexpr CommandSetting INSTALL_SETTINGS[] = {
         {OPTION_WRITE_PACKAGES_CONFIG, []() { return msg::format(msgCmdSetInstalledOptWritePkgConfig); }},
@@ -177,6 +185,12 @@ namespace vcpkg::Commands::SetInstalled
                                          : KeepGoing::NO;
         const PrintUsage print_cmake_usage =
             Util::Sets::contains(options.switches, OPTION_NO_PRINT_USAGE) ? PrintUsage::NO : PrintUsage::YES;
+        const bool use_head_version = Util::Sets::contains(options.switches, (OPTION_USE_HEAD_VERSION));
+        const bool is_editable = Util::Sets::contains(options.switches, (OPTION_EDITABLE));
+        const auto unsupported_port_action = Util::Sets::contains(options.switches, OPTION_ALLOW_UNSUPPORTED_PORT)
+                                                 ? UnsupportedPortAction::Warn
+                                                 : UnsupportedPortAction::Error;
+        const bool prohibit_backcompat_features = Util::Sets::contains(options.switches, (OPTION_ENFORCE_PORT_CHECKS));
 
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();
@@ -195,11 +209,19 @@ namespace vcpkg::Commands::SetInstalled
         // We have a set of user-requested specs.
         // We need to know all the specs which are required to fulfill dependencies for those specs.
         // Therefore, we see what we would install into an empty installed tree, so we can use the existing code.
-        auto action_plan = create_feature_install_plan(provider, *cmake_vars, specs, {}, {host_triplet});
+        auto action_plan =
+            create_feature_install_plan(provider, *cmake_vars, specs, {}, {host_triplet, unsupported_port_action});
 
         for (auto&& action : action_plan.install_actions)
         {
             action.build_options = default_build_package_options;
+            action.build_options.backcompat_features =
+                (prohibit_backcompat_features ? BackcompatFeatures::PROHIBIT : BackcompatFeatures::ALLOW);
+            if (action.request_type == RequestType::USER_REQUESTED)
+            {
+                action.build_options.use_head_version = Util::Enum::to_enum<UseHeadVersion>(use_head_version);
+                action.build_options.editable = Util::Enum::to_enum<Editable>(is_editable);
+            }
         }
 
         perform_and_exit_ex(args,
