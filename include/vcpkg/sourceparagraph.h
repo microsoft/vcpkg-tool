@@ -179,6 +179,7 @@ namespace vcpkg
     struct SourceControlFileAndLocation
     {
         Version to_version() const { return source_control_file->to_version(); }
+        VersionScheme scheme() const { return source_control_file->core_paragraph->version_scheme; }
 
         std::unique_ptr<SourceControlFile> source_control_file;
         Path source_location;

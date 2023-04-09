@@ -14,12 +14,11 @@
 namespace vcpkg::Util
 {
     template<class Container>
-    using ElementT =
-        std::remove_reference_t<decltype(*std::declval<typename std::remove_reference_t<Container>::iterator>())>;
+    using ElementT = std::decay_t<decltype(*std::declval<Container>().begin())>;
 
     namespace Vectors
     {
-        template<class Container, class T = ElementT<Container>>
+        template<class Container, class T>
         void append(std::vector<T>* augend, const Container& addend)
         {
             augend->insert(augend->end(), addend.begin(), addend.end());
@@ -107,8 +106,8 @@ namespace vcpkg::Util
         }
     }
 
-    template<class Range, class Pred, class E = ElementT<Range>>
-    std::vector<E> filter(const Range& xs, Pred&& f)
+    template<class Range, class Pred, class E = ElementT<const Range&>>
+    std::vector<E> filter(const Range& xs, Pred f)
     {
         std::vector<E> ret;
 
