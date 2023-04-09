@@ -180,6 +180,7 @@ namespace vcpkg
     {
         Version to_version() const { return source_control_file->to_version(); }
         VersionScheme scheme() const { return source_control_file->core_paragraph->version_scheme; }
+        SchemedVersion schemed_version() const { return {scheme(), to_version()}; }
 
         std::unique_ptr<SourceControlFile> source_control_file;
         Path source_location;

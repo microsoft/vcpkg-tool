@@ -2339,8 +2339,7 @@ DECLARE_MESSAGE(UndeterminedToolChainForTriplet,
                 (msg::triplet, msg::system_name),
                 "",
                 "Unable to determine toolchain use for {triplet} with with CMAKE_SYSTEM_NAME {system_name}. Did "
-                "you mean to use "
-                "VCPKG_CHAINLOAD_TOOLCHAIN_FILE?")
+                "you mean to use VCPKG_CHAINLOAD_TOOLCHAIN_FILE?")
 DECLARE_MESSAGE(UnexpectedArgument,
                 (msg::option),
                 "Argument is literally what the user passed on the command line.",
@@ -2655,10 +2654,10 @@ DECLARE_MESSAGE(VersionGitEntryMissing,
                 "A list of versions, 1 per line, are printed after this message.",
                 "no version database entry for {package_name} at {version}.\nAvailable versions:")
 DECLARE_MESSAGE(VersionIncomparable1,
-                (msg::spec, msg::package_name, msg::expected, msg::actual),
+                (msg::spec, msg::constraint_origin, msg::expected, msg::actual),
                 "{expected} and {actual} are versions like 1.0",
-                "version conflict on {spec}: {package_name} required {expected} but vcpkg could not compare it to "
-                "{actual}.\nThe two versions used incomparable schemes:")
+                "version conflict on {spec}: {constraint_origin} required {expected} but vcpkg could not compare it to "
+                "the baseline version {actual}.\nThe two versions used incomparable schemes:")
 DECLARE_MESSAGE(VersionIncomparable2, (msg::version, msg::new_scheme), "", "\"{version}\" was of scheme {new_scheme}")
 DECLARE_MESSAGE(VersionIncomparable3,
                 (),
@@ -2689,23 +2688,17 @@ DECLARE_MESSAGE(
     "The names version, version-date, version-semver, and version-string are code and must not be localized",
     "expected a versioning field (one of version, version-date, version-semver, or version-string)")
 DECLARE_MESSAGE(VersionMissingRequiredFeature,
-                (msg::spec, msg::version, msg::feature),
+                (msg::version_spec, msg::feature, msg::constraint_origin),
                 "",
-                "{spec}@{version} does not have required feature {feature}")
+                "{version_spec} does not have required feature {feature} needed by {constraint_origin}")
 DECLARE_MESSAGE(VersionNotFound,
                 (msg::expected, msg::actual),
                 "{expected} and {actual} are versions",
                 "{expected} not available, only {actual} is available")
-DECLARE_MESSAGE(
-    VersionNotFoundDuringDiscovery,
-    (msg::spec, msg::version),
-    "",
-    "version was not found during discovery: {spec}@{version}\nThis is an internal vcpkg error. Please open "
-    "an issue on https://github.com/Microsoft/vcpkg with detailed steps to reproduce the problem.")
 DECLARE_MESSAGE(VersionNotFoundInVersionsFile,
                 (msg::version, msg::package_name),
                 "",
-                "Version {version} was not found in versions file.\n"
+                "Version {version} was not found in versions file for {package_name}.\n"
                 "Run:\n"
                 "vcpkg x-add-version {package_name}\n"
                 "to add the new port version.")
@@ -2763,10 +2756,7 @@ DECLARE_MESSAGE(VersionSpecMismatch,
                 "Failed to load port because versions are inconsistent. The file \"{path}\" contains the version "
                 "{actual_version}, but the version database indicates that it should be {expected_version}.")
 DECLARE_MESSAGE(VersionTableHeader, (), "", "Version")
-DECLARE_MESSAGE(VersionVerifiedOK,
-                (msg::package_name, msg::version, msg::commit_sha),
-                "",
-                "OK: {package_name}@{version} -> {commit_sha}")
+DECLARE_MESSAGE(VersionVerifiedOK, (msg::version_spec, msg::commit_sha), "", "OK: {version_spec} -> {commit_sha}")
 DECLARE_MESSAGE(VSExaminedInstances, (), "", "The following Visual Studio instances were considered:")
 DECLARE_MESSAGE(VSExaminedPaths, (), "", "The following paths were examined for Visual Studio instances:")
 DECLARE_MESSAGE(VSNoInstances, (), "", "Could not locate a complete Visual Studio instance")

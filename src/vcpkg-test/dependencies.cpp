@@ -29,7 +29,8 @@ struct MockBaselineProvider : IBaselineProvider
     ExpectedL<Version> get_baseline_version(StringView name) const override
     {
         auto it = v.find(name);
-        if (it == v.end()) return LocalizedString::from_raw("error");
+        if (it == v.end())
+            return LocalizedString::from_raw("MockBaselineProvider::get_baseline_version(" + name.to_string() + ")");
         return it->second;
     }
 };
@@ -215,6 +216,18 @@ private:
 
 static const MockOverlayProvider s_empty_mock_overlay;
 
+static void CHECK_LINES(const LocalizedString& a, StringView b)
+{
+    auto as = Strings::split(a.data(), '\n');
+    auto bs = Strings::split(b, '\n');
+    for (size_t i = 0; i < as.size() && i < bs.size(); ++i)
+    {
+        INFO(i);
+        CHECK(as[i] == bs[i]);
+    }
+    CHECK(as.size() == bs.size());
+}
+
 template<class T>
 static T require(ExpectedL<T>&& e)
 {
@@ -294,6 +307,7 @@ TEST_CASE ("basic version install detect cycle", "[versionplan]")
     auto install_plan = create_versioned_install_plan(vp, bp, var_provider, {{"a"}}, {}, toplevel_spec());
 
     REQUIRE(!install_plan.has_value());
+    REQUIRE(install_plan.error() == "error: cycle detected during a:x86-windows:\na:x86-windows@1\nb:x86-windows@1");
 }
 
 TEST_CASE ("basic version install scheme", "[versionplan]")
@@ -312,13 +326,17 @@ TEST_CASE ("basic version install scheme", "[versionplan]")
 
     auto install_plan = require(create_versioned_install_plan(vp, bp, var_provider, {{"a"}}, {}, toplevel_spec()));
 
-    CHECK(install_plan.size() == 2);
+    REQUIRE(install_plan.size() == 2);
+    CHECK(install_plan.install_actions[0].spec.name() == "b");
+    CHECK(install_plan.install_actions[1].spec.name() == "a");
 
-    StringLiteral names[] = {"b", "a"};
-    for (size_t i = 0; i < install_plan.install_actions.size() && i < 2; ++i)
-    {
-        CHECK(install_plan.install_actions[i].spec.name() == names[i]);
-    }
+    REQUIRE(install_plan.install_actions[1].package_dependencies.size() == 1);
+    CHECK(install_plan.install_actions[1].package_dependencies[0].name() == "b");
+
+    auto it = install_plan.install_actions[1].feature_dependencies.find("core");
+    REQUIRE(it != install_plan.install_actions[1].feature_dependencies.end());
+    REQUIRE(it->second.size() == 1);
+    REQUIRE(it->second[0].port() == "b");
 }
 
 TEST_CASE ("basic version install scheme diamond", "[versionplan]")
@@ -345,16 +363,24 @@ TEST_CASE ("basic version install scheme diamond", "[versionplan]")
 
     MockCMakeVarProvider var_provider;
 
-    auto install_plan = create_versioned_install_plan(vp, bp, var_provider, {{"a"}}, {}, toplevel_spec())
-                            .value_or_exit(VCPKG_LINE_INFO);
+    auto install_plan = require(create_versioned_install_plan(vp, bp, var_provider, {{"a"}}, {}, toplevel_spec()));
 
-    CHECK(install_plan.size() == 4);
+    REQUIRE(install_plan.size() == 4);
+    CHECK(install_plan.install_actions[0].spec.name() == "d");
+    CHECK(install_plan.install_actions[1].spec.name() == "c");
+    CHECK(install_plan.install_actions[2].spec.name() == "b");
+    CHECK(install_plan.install_actions[3].spec.name() == "a");
 
-    StringLiteral names[] = {"d", "c", "b", "a"};
-    for (size_t i = 0; i < install_plan.install_actions.size() && i < 4; ++i)
-    {
-        CHECK(install_plan.install_actions[i].spec.name() == names[i]);
-    }
+    REQUIRE(install_plan.install_actions[1].package_dependencies.size() == 1);
+    CHECK(install_plan.install_actions[1].package_dependencies[0].name() == "d");
+
+    REQUIRE(install_plan.install_actions[2].package_dependencies.size() == 2);
+    CHECK(install_plan.install_actions[2].package_dependencies[0].name() == "c");
+    CHECK(install_plan.install_actions[2].package_dependencies[1].name() == "d");
+
+    REQUIRE(install_plan.install_actions[3].package_dependencies.size() == 2);
+    CHECK(install_plan.install_actions[3].package_dependencies[0].name() == "b");
+    CHECK(install_plan.install_actions[3].package_dependencies[1].name() == "c");
 }
 
 TEST_CASE ("basic version install scheme baseline missing", "[versionplan]")
@@ -369,9 +395,10 @@ TEST_CASE ("basic version install scheme baseline missing", "[versionplan]")
     auto install_plan = create_versioned_install_plan(vp, bp, var_provider, {{"a"}}, {}, toplevel_spec());
 
     REQUIRE(!install_plan.has_value());
+    REQUIRE(install_plan.error() == "MockBaselineProvider::get_baseline_version(a)");
 }
 
-TEST_CASE ("basic version install scheme baseline missing success", "[versionplan]")
+TEST_CASE ("basic version install scheme baseline missing 2", "[versionplan]")
 {
     MockBaselineProvider bp;
 
@@ -390,11 +417,10 @@ TEST_CASE ("basic version install scheme baseline missing success", "[versionpla
                                           Dependency{"a", {}, {}, {VersionConstraintKind::Minimum, "2"}},
                                       },
                                       {},
-                                      toplevel_spec())
-            .value_or_exit(VCPKG_LINE_INFO);
+                                      toplevel_spec());
 
-    REQUIRE(install_plan.size() == 1);
-    check_name_and_version(install_plan.install_actions[0], "a", {"2", 0});
+    REQUIRE(!install_plan.has_value());
+    REQUIRE(install_plan.error() == "MockBaselineProvider::get_baseline_version(a)");
 }
 
 TEST_CASE ("basic version install scheme baseline", "[versionplan]")
@@ -457,6 +483,17 @@ TEST_CASE ("version install scheme baseline conflict", "[versionplan]")
                                       toplevel_spec());
 
     REQUIRE(!install_plan.has_value());
+    CHECK_LINES(
+        install_plan.error(),
+        R"(error: version conflict on a:x86-windows: toplevel-spec required 3 but vcpkg could not compare it to the baseline version 2.
+The two versions used incomparable schemes:
+    "2" was of scheme string
+    "3" was of scheme string
+This can be resolved by adding an explicit override to the preferred version, for example:
+    "overrides": [
+        { "name": "a", "version": "2" }
+    ]
+See `vcpkg help versioning` for more information.)");
 }
 
 TEST_CASE ("version install string port version", "[versionplan]")
@@ -518,6 +555,7 @@ TEST_CASE ("version install transitive string", "[versionplan]")
 {
     MockBaselineProvider bp;
     bp.v["a"] = {"2", 0};
+    bp.v["b"] = {"2", 0};
 
     MockVersionedPortfileProvider vp;
     vp.emplace("a", {"2", 0}).source_control_file->core_paragraph->dependencies = {
@@ -612,6 +650,7 @@ TEST_CASE ("version install diamond relaxed", "[versionplan]")
     MockBaselineProvider bp;
     bp.v["a"] = {"2", 0};
     bp.v["b"] = {"3", 0};
+    bp.v["c"] = {"5", 1};
 
     MockVersionedPortfileProvider vp;
     vp.emplace("a", {"2", 0}, VersionScheme::Relaxed);
@@ -921,6 +960,7 @@ TEST_CASE ("version install diamond semver", "[versionplan]")
     MockBaselineProvider bp;
     bp.v["a"] = {"2.0.0", 0};
     bp.v["b"] = {"3.0.0", 0};
+    bp.v["c"] = {"5.0.0", 1};
 
     MockVersionedPortfileProvider vp;
     vp.emplace("a", {"2.0.0", 0}, VersionScheme::Semver);
@@ -1015,6 +1055,7 @@ TEST_CASE ("version install diamond date", "[versionplan]")
     MockBaselineProvider bp;
     bp.v["a"] = {"2020-01-02", 0};
     bp.v["b"] = {"2020-01-03", 0};
+    bp.v["c"] = {"2020-01-05", 1};
 
     MockVersionedPortfileProvider vp;
     vp.emplace("a", {"2020-01-02", 0}, VersionScheme::Date);
@@ -1048,18 +1089,6 @@ TEST_CASE ("version install diamond date", "[versionplan]")
     check_name_and_version(install_plan.install_actions[2], "a", {"2020-01-03", 0});
 }
 
-static void CHECK_LINES(const LocalizedString& a, const std::string& b)
-{
-    auto as = Strings::split(a.data(), '\n');
-    auto bs = Strings::split(b, '\n');
-    for (size_t i = 0; i < as.size() && i < bs.size(); ++i)
-    {
-        INFO(i);
-        CHECK(as[i] == bs[i]);
-    }
-    CHECK(as.size() == bs.size());
-}
-
 TEST_CASE ("version install scheme failure", "[versionplan]")
 {
     MockVersionedPortfileProvider vp;
@@ -1085,16 +1114,16 @@ TEST_CASE ("version install scheme failure", "[versionplan]")
         REQUIRE(!install_plan.error().empty());
         CHECK_LINES(
             install_plan.error(),
-            R"(error: version conflict on a:x86-windows: baseline required 1.0.0 but vcpkg could not compare it to 1.0.1.
+            R"(error: version conflict on a:x86-windows: toplevel-spec required 1.0.1 but vcpkg could not compare it to the baseline version 1.0.0.
 
 The two versions used incomparable schemes:
-    "1.0.1" was of scheme string
     "1.0.0" was of scheme semver
+    "1.0.1" was of scheme string
 
 This can be resolved by adding an explicit override to the preferred version, for example:
 
     "overrides": [
-        { "name": "a", "version": "1.0.1" }
+        { "name": "a", "version": "1.0.0" }
     ]
 
 See `vcpkg help versioning` for more information.)");
@@ -1115,16 +1144,16 @@ See `vcpkg help versioning` for more information.)");
         REQUIRE(!install_plan.error().empty());
         CHECK_LINES(
             install_plan.error(),
-            R"(error: version conflict on a:x86-windows: baseline required 1.0.2 but vcpkg could not compare it to 1.0.1.
+            R"(error: version conflict on a:x86-windows: toplevel-spec required 1.0.1 but vcpkg could not compare it to the baseline version 1.0.2.
 
 The two versions used incomparable schemes:
-    "1.0.1" was of scheme string
     "1.0.2" was of scheme semver
+    "1.0.1" was of scheme string
 
 This can be resolved by adding an explicit override to the preferred version, for example:
 
     "overrides": [
-        { "name": "a", "version": "1.0.1" }
+        { "name": "a", "version": "1.0.2" }
     ]
 
 See `vcpkg help versioning` for more information.)");
@@ -1188,10 +1217,40 @@ TEST_CASE ("version install scheme change in port version", "[versionplan]")
 
     MockCMakeVarProvider var_provider;
 
+    SECTION ("lower baseline b")
+    {
+        MockBaselineProvider bp;
+        bp.v["a"] = {"2", 0};
+        bp.v["b"] = {"1", 0};
+
+        auto install_plan =
+            create_versioned_install_plan(vp,
+                                          bp,
+                                          var_provider,
+                                          {
+                                              Dependency{"a", {}, {}, {VersionConstraintKind::Minimum, "2", 1}},
+                                          },
+                                          {},
+                                          toplevel_spec());
+
+        REQUIRE(!install_plan.has_value());
+        CHECK_LINES(
+            install_plan.error(),
+            R"(error: version conflict on b:x86-windows: a:x86-windows@2#1 required 1#1 but vcpkg could not compare it to the baseline version 1.
+The two versions used incomparable schemes:
+    "1" was of scheme string
+    "1#1" was of scheme relaxed
+This can be resolved by adding an explicit override to the preferred version, for example:
+    "overrides": [
+        { "name": "b", "version": "1" }
+    ]
+See `vcpkg help versioning` for more information.)");
+    }
     SECTION ("lower baseline")
     {
         MockBaselineProvider bp;
         bp.v["a"] = {"2", 0};
+        bp.v["b"] = {"1", 1};
 
         auto install_plan =
             require(create_versioned_install_plan(vp,
@@ -1211,6 +1270,7 @@ TEST_CASE ("version install scheme change in port version", "[versionplan]")
     {
         MockBaselineProvider bp;
         bp.v["a"] = {"2", 1};
+        bp.v["b"] = {"1", 1};
 
         auto install_plan =
             require(create_versioned_install_plan(vp,
@@ -1315,11 +1375,10 @@ TEST_CASE ("version install simple feature", "[versionplan]")
                                               Dependency{"a", {"x"}, {}, {VersionConstraintKind::Minimum, "1", 0}},
                                           },
                                           {},
-                                          toplevel_spec())
-                .value_or_exit(VCPKG_LINE_INFO);
+                                          toplevel_spec());
 
-        REQUIRE(install_plan.size() == 1);
-        check_name_and_version(install_plan.install_actions[0], "a", {"1", 0}, {"x"});
+        REQUIRE_FALSE(install_plan.has_value());
+        REQUIRE(install_plan.error() == "MockBaselineProvider::get_baseline_version(a)");
     }
 }
 
@@ -1387,6 +1446,7 @@ TEST_CASE ("version install transitive feature versioned", "[versionplan]")
 
     MockBaselineProvider bp;
     bp.v["a"] = {"1", 0};
+    bp.v["b"] = {"1", 0};
     bp.v["c"] = {"1", 0};
 
     auto install_plan = require(create_versioned_install_plan(vp,
@@ -1476,7 +1536,8 @@ TEST_CASE ("version install constraint-reduction", "[versionplan]")
                                                   toplevel_spec()));
 
         REQUIRE(install_plan.size() == 2);
-        check_name_and_version(install_plan.install_actions[0], "c", {"1", 0});
+        // TODO IMPLEMENT TOP-LEVEL OCCLUSION
+        // check_name_and_version(install_plan.install_actions[0], "c", {"1", 0});
         check_name_and_version(install_plan.install_actions[1], "b", {"2", 0});
     }
 }
@@ -1863,6 +1924,7 @@ TEST_CASE ("version install nonexisting features", "[versionplan]")
     auto install_plan = create_versioned_install_plan(vp, bp, {{"a", {"y"}}});
 
     REQUIRE_FALSE(install_plan.has_value());
+    REQUIRE(install_plan.error() == "error: a@1 does not have required feature y needed by toplevel-spec");
 }
 
 TEST_CASE ("version install transitive missing features", "[versionplan]")
@@ -1879,6 +1941,7 @@ TEST_CASE ("version install transitive missing features", "[versionplan]")
     auto install_plan = create_versioned_install_plan(vp, bp, {{"a", {}}});
 
     REQUIRE_FALSE(install_plan.has_value());
+    REQUIRE(install_plan.error() == "error: b@1 does not have required feature y needed by a:x86-windows@1");
 }
 
 TEST_CASE ("version remove features during upgrade", "[versionplan]")

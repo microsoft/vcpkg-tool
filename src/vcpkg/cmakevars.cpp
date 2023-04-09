@@ -2,6 +2,7 @@
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/span.h>
 #include <vcpkg/base/strings.h>
+#include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
@@ -345,6 +346,7 @@ endfunction()
             return dep_resolution_vars.find(spec) == dep_resolution_vars.end();
         });
         if (specs.size() == 0) return;
+        Debug::println("Loading dep info for: ", Strings::join(" ", specs));
         std::vector<std::vector<std::pair<std::string, std::string>>> vars(specs.size());
         const auto file_path = create_dep_info_extraction_file(specs);
         if (specs.size() > 100)
