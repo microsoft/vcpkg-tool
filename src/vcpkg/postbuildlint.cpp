@@ -1427,7 +1427,7 @@ namespace vcpkg
             error_count += check_no_absolute_paths_in(
                 fs,
                 package_dir,
-                std::vector<Path>{package_dir, paths.installed().root(), paths.build_dir(spec)},
+                std::vector<Path>{package_dir, paths.installed().root(), paths.build_dir(spec), paths.downloads},
                 msg_sink);
         }
 
