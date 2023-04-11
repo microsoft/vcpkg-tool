@@ -106,10 +106,10 @@ namespace vcpkg::Util
         }
     }
 
-    template<class Range, class Pred, class E = ElementT<const Range&>>
-    std::vector<E> filter(const Range& xs, Pred f)
+    template<class Range, class Pred>
+    std::vector<ElementT<const Range&>> filter(const Range& xs, Pred f)
     {
-        std::vector<E> ret;
+        std::vector<ElementT<const Range&>> ret;
 
         for (auto&& x : xs)
         {
