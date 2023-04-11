@@ -131,14 +131,16 @@ namespace vcpkg
 
     StringLiteral to_string_locale_invariant(const BuildResult build_result);
     LocalizedString to_string(const BuildResult build_result);
-    LocalizedString create_user_troubleshooting_message(const InstallPlanAction& action,
+    LocalizedString create_user_troubleshooting_message(const VcpkgCmdArguments& args,
+                                                        const InstallPlanAction& action,
                                                         const VcpkgPaths& paths,
-                                                        const Optional<Path>& issue_body);
-    inline void print_user_troubleshooting_message(const InstallPlanAction& action,
+                                                        const ExtendedBuildResult& result);
+    inline void print_user_troubleshooting_message(const VcpkgCmdArguments& args,
+                                                   const InstallPlanAction& action,
                                                    const VcpkgPaths& paths,
-                                                   Optional<Path>&& issue_body)
+                                                   const ExtendedBuildResult& result)
     {
-        msg::println(Color::error, create_user_troubleshooting_message(action, paths, issue_body));
+        msg::println(Color::error, create_user_troubleshooting_message(args, action, paths, result));
     }
 
     /// <summary>
@@ -189,6 +191,10 @@ namespace vcpkg
         std::unique_ptr<BinaryControlFile> binary_control_file;
         Optional<vcpkg::Path> stdoutlog;
         std::vector<std::string> error_logs;
+        // if a package fails and a user has to do something for sure. For example installing the Windows SDK
+        Optional<std::string> user_required_interaction;
+        // if a package fails and a user can maybe solve this by following this commands (like `apt install ...`)
+        Optional<std::string> user_hints;
     };
 
     LocalizedString create_error_message(const ExtendedBuildResult& build_result, const PackageSpec& spec);

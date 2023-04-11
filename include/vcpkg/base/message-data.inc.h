@@ -335,6 +335,10 @@ DECLARE_MESSAGE(BuildResultSummaryLine,
                 "Displayed to show a count of results of a build_result in a summary.",
                 "{build_result}: {count}")
 DECLARE_MESSAGE(BuildTreesRootDir, (), "", "(Experimental) Specify the buildtrees root directory.")
+DECLARE_MESSAGE(BuildTroubleshootingFollowHints,
+                (),
+                "",
+                "Before reporting an issue see the following points to probably fix the build failue:")
 DECLARE_MESSAGE(BuildTroubleshootingMessage1,
                 (),
                 "First part of build troubleshooting message, printed before the URI to look for existing bugs.",
