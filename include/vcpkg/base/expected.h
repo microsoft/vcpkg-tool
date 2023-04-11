@@ -328,9 +328,9 @@ namespace vcpkg
 
     public:
         template<class F, class... Args>
-        typename std::invoke_result_t<F, const T&, Args&&...>::type then(F f, Args&&... args) const&
+        typename std::invoke_result<F, const T&, Args...>::type then(F f, Args&&... args) const&
         {
-            static_assert(IsThenCompatibleExpected<std::invoke_result_t<F, const T&, Args&&...>>::value,
+            static_assert(IsThenCompatibleExpected<typename std::invoke_result<F, const T&, Args...>::type>::value,
                           "then expects f to return an expected with the same error type");
             if (value_is_error)
             {
@@ -343,9 +343,9 @@ namespace vcpkg
         }
 
         template<class F, class... Args>
-        typename std::invoke_result<F, T&&, Args&&...>::type then(F f, Args&&... args) &&
+        typename std::invoke_result<F, T, Args...>::type then(F f, Args&&... args) &&
         {
-            static_assert(IsThenCompatibleExpected<std::invoke_result_t<F, T&&, Args&&...>>::value,
+            static_assert(IsThenCompatibleExpected<typename std::invoke_result<F, T, Args...>::type>::value,
                           "then expects f to return an expected with the same error type");
             if (value_is_error)
             {
