@@ -1538,8 +1538,7 @@ TEST_CASE ("version install constraint-reduction", "[versionplan]")
                                                   toplevel_spec()));
 
         REQUIRE(install_plan.size() == 2);
-        // TODO IMPLEMENT TOP-LEVEL OCCLUSION
-        // check_name_and_version(install_plan.install_actions[0], "c", {"1", 0});
+        check_name_and_version(install_plan.install_actions[0], "c", {"2", 0});
         check_name_and_version(install_plan.install_actions[1], "b", {"2", 0});
     }
 }
