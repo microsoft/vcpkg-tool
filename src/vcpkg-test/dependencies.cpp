@@ -1112,9 +1112,9 @@ TEST_CASE ("version install scheme failure", "[versionplan]")
                                           toplevel_spec());
 
         REQUIRE(!install_plan.error().empty());
-        CHECK_LINES(
-            install_plan.error(),
-            R"(error: version conflict on a:x86-windows: toplevel-spec required 1.0.1 but vcpkg could not compare it to the baseline version 1.0.0.
+        CHECK(
+            install_plan.error() ==
+            R"(erro: version conflict on a:x86-windows: toplevel-spec required 1.0.1 but vcpkg could not compare it to the baseline version 1.0.0.
 
 The two versions used incomparable schemes:
     "1.0.0" was of scheme semver
