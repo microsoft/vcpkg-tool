@@ -25,10 +25,6 @@ namespace vcpkg::Strings::details
     void append_internal(std::string& into, const char* v) { into.append(v); }
     void append_internal(std::string& into, const std::string& s) { into.append(s); }
     void append_internal(std::string& into, StringView s) { into.append(s.begin(), s.end()); }
-    void append_internal(std::string& into, LineInfo ln)
-    {
-        fmt::format_to(std::back_inserter(into), "{}:{}:", ln.file_name, ln.line_number);
-    }
 }
 
 vcpkg::ExpectedL<std::string> vcpkg::details::api_stable_format_impl(StringView sv,
