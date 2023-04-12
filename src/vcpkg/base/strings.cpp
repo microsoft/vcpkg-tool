@@ -84,13 +84,29 @@ vcpkg::ExpectedL<std::string> vcpkg::details::api_stable_format_impl(StringView 
     return {std::move(out), expected_left_tag};
 }
 
-namespace vcpkg::Strings::details
+namespace
 {
     // To disambiguate between two overloads
-    static bool is_space(const char c) { return std::isspace(static_cast<unsigned char>(c)) != 0; }
+    constexpr struct
+    {
+        bool operator()(char c) const noexcept { return std::isspace(static_cast<unsigned char>(c)) != 0; }
+    } is_space_char;
 
-    // Avoids C4244 warnings because of char<->int conversion that occur when using std::tolower()
-    static char toupper_char(const char c) { return (c < 'a' || c > 'z') ? c : c - 'a' + 'A'; }
+    constexpr struct
+    {
+        char operator()(char c) const noexcept { return (c < 'a' || c > 'z') ? c : c - 'a' + 'A'; }
+    } to_upper_char;
+
+    constexpr struct
+    {
+        char operator()(char c) const noexcept { return (c < 'A' || c > 'Z') ? c : c - 'A' + 'a'; }
+    } tolower_char;
+
+    constexpr struct
+    {
+        bool operator()(char a, char b) const noexcept { return tolower_char(a) == tolower_char(b); }
+    } icase_eq;
+
 }
 
 #if defined(_WIN32)
@@ -160,23 +176,22 @@ bool Strings::case_insensitive_ascii_equals(StringView left, StringView right)
     return std::equal(left.begin(), left.end(), right.begin(), right.end(), icase_eq);
 }
 
-void Strings::ascii_to_lowercase(char* first, char* last) { std::transform(first, last, first, tolower_char); }
+void Strings::inplace_ascii_to_lowercase(char* first, char* last) { std::transform(first, last, first, tolower_char); }
 
-std::string Strings::ascii_to_lowercase(const std::string& s)
+void Strings::inplace_ascii_to_lowercase(std::string& s)
 {
-    auto result = s;
-    return ascii_to_lowercase(std::move(result));
+    Strings::inplace_ascii_to_lowercase(s.data(), s.data() + s.size());
 }
 
-std::string Strings::ascii_to_lowercase(std::string&& s)
+std::string Strings::ascii_to_lowercase(std::string s)
 {
-    Strings::ascii_to_lowercase(s.data(), s.data() + s.size());
+    Strings::inplace_ascii_to_lowercase(s);
     return std::move(s);
 }
 
-std::string Strings::ascii_to_uppercase(std::string&& s)
+std::string Strings::ascii_to_uppercase(std::string s)
 {
-    std::transform(s.begin(), s.end(), s.begin(), &details::toupper_char);
+    std::transform(s.begin(), s.end(), s.begin(), to_upper_char);
     return std::move(s);
 }
 
@@ -210,7 +225,9 @@ std::string Strings::replace_all(const char* s, StringView search, StringView re
 
 std::string Strings::replace_all(StringView s, StringView search, StringView rep)
 {
-    return Strings::replace_all(s.to_string(), search, rep);
+    std::string ret = s.to_string();
+    Strings::inplace_replace_all(ret, search, rep);
+    return ret;
 }
 
 std::string Strings::replace_all(std::string&& s, StringView search, StringView rep)
@@ -241,14 +258,14 @@ void Strings::inplace_replace_all(std::string& s, char search, char rep) noexcep
 
 void Strings::inplace_trim(std::string& s)
 {
-    s.erase(std::find_if_not(s.rbegin(), s.rend(), details::is_space).base(), s.end());
-    s.erase(s.begin(), std::find_if_not(s.begin(), s.end(), details::is_space));
+    s.erase(std::find_if_not(s.rbegin(), s.rend(), is_space_char).base(), s.end());
+    s.erase(s.begin(), std::find_if_not(s.begin(), s.end(), is_space_char));
 }
 
 StringView Strings::trim(StringView sv)
 {
-    auto last = std::find_if_not(sv.rbegin(), sv.rend(), details::is_space).base();
-    auto first = std::find_if_not(sv.begin(), sv.end(), details::is_space);
+    auto last = std::find_if_not(sv.rbegin(), sv.rend(), is_space_char).base();
+    auto first = std::find_if_not(sv.begin(), sv.end(), is_space_char);
     return StringView(first, last);
 }
 
