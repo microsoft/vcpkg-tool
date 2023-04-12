@@ -111,10 +111,9 @@ namespace vcpkg
         , maintainers(spgh.maintainers)
         , feature()
         , default_features(spgh.default_features)
-        , dependencies()
+        , dependencies(Util::fmap(deps, [](const FeatureSpec& spec) { return spec.spec(); }))
         , abi(abi_tag)
     {
-        this->dependencies = Util::fmap(deps, [](const FeatureSpec& spec) { return spec.spec(); });
         canonicalize();
     }
 
@@ -129,10 +128,9 @@ namespace vcpkg
         , maintainers()
         , feature(fpgh.name)
         , default_features()
-        , dependencies()
+        , dependencies(Util::fmap(deps, [](const FeatureSpec& spec) { return spec.spec(); }))
         , abi()
     {
-        this->dependencies = Util::fmap(deps, [](const FeatureSpec& spec) { return spec.spec(); });
         canonicalize();
     }
 
@@ -146,7 +144,7 @@ namespace vcpkg
 
         for (auto& maintainer : this->maintainers)
         {
-            maintainer = Strings::trim(std::move(maintainer));
+            Strings::inplace_trim(maintainer);
         }
         if (all_empty(this->maintainers))
         {
@@ -155,7 +153,7 @@ namespace vcpkg
 
         for (auto& desc : this->description)
         {
-            desc = Strings::trim(std::move(desc));
+            Strings::inplace_trim(desc);
         }
         if (all_empty(this->description))
         {

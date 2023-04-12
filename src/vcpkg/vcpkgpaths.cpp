@@ -921,7 +921,8 @@ namespace vcpkg
         auto cmd = git_cmd_builder(this->root / ".git", this->root);
         cmd.string_arg("rev-parse").string_arg("HEAD");
         return flatten_out(cmd_execute_and_capture_output(cmd), Tools::GIT).map([](std::string&& output) {
-            return Strings::trim(std::move(output));
+            Strings::inplace_trim(output);
+            return std::move(output);
         });
     }
 
@@ -1204,7 +1205,8 @@ namespace vcpkg
                                     .string_arg(revision);
 
         return flatten_out(cmd_execute_and_capture_output(git_rev_parse), Tools::GIT).map([](std::string&& output) {
-            return Strings::trim(std::move(output));
+            Strings::inplace_trim(output);
+            return std::move(output);
         });
     }
     ExpectedL<Path> VcpkgPaths::git_checkout_object_from_remote_registry(StringView object) const

@@ -149,15 +149,6 @@ void Strings::to_utf8(std::string& output, const wchar_t* w, size_t size_in_char
 std::string Strings::to_utf8(const std::wstring& ws) { return to_utf8(ws.data(), ws.size()); }
 #endif
 
-std::string Strings::escape_string(std::string&& s, char char_to_escape, char escape_char)
-{
-    // Replace '\' with '\\' or '`' with '``'
-    auto ret = Strings::replace_all(std::move(s), {&escape_char, 1}, std::string{escape_char, escape_char});
-    // Replace '"' with '\"' or '`"'
-    ret = Strings::replace_all(std::move(ret), {&char_to_escape, 1}, std::string{escape_char, char_to_escape});
-    return ret;
-}
-
 const char* Strings::case_insensitive_ascii_search(StringView s, StringView pattern)
 {
     return std::search(s.begin(), s.end(), pattern.begin(), pattern.end(), icase_eq);
@@ -252,11 +243,10 @@ void Strings::inplace_replace_all(std::string& s, char search, char rep) noexcep
     std::replace(s.begin(), s.end(), search, rep);
 }
 
-std::string Strings::trim(std::string&& s)
+void Strings::inplace_trim(std::string& s)
 {
     s.erase(std::find_if_not(s.rbegin(), s.rend(), details::is_space).base(), s.end());
     s.erase(s.begin(), std::find_if_not(s.begin(), s.end(), details::is_space));
-    return std::move(s);
 }
 
 StringView Strings::trim(StringView sv)
@@ -266,14 +256,14 @@ StringView Strings::trim(StringView sv)
     return StringView(first, last);
 }
 
-void Strings::trim_all_and_remove_whitespace_strings(std::vector<std::string>* strings)
+void Strings::inplace_trim_all_and_remove_whitespace_strings(std::vector<std::string>& strings)
 {
-    for (std::string& s : *strings)
+    for (std::string& s : strings)
     {
-        s = trim(std::move(s));
+        inplace_trim(s);
     }
 
-    Util::erase_remove_if(*strings, [](const std::string& s) { return s.empty(); });
+    Util::erase_remove_if(strings, [](const std::string& s) { return s.empty(); });
 }
 
 std::vector<std::string> Strings::split(StringView s, const char delimiter)

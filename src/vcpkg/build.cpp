@@ -1507,7 +1507,7 @@ namespace vcpkg
             paths.get_filesystem().read_contents(build_result.stdoutlog.value_or_exit(VCPKG_LINE_INFO),
                                                  VCPKG_LINE_INFO),
             "\n```\n",
-            Strings::join("\n", Util::fmap(build_result.error_logs, create_log_details)),
+            Strings::join("\n", build_result.error_logs, create_log_details),
             "\n\n**Additional context**\n\n",
             manifest);
     }

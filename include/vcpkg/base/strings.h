@@ -20,16 +20,11 @@ namespace vcpkg::Strings::details
     void append_internal(std::string& into, const char* v);
     void append_internal(std::string& into, const std::string& s);
     void append_internal(std::string& into, StringView s);
-    void append_internal(std::string& into, LineInfo ln);
-
     template<class T, class = decltype(std::declval<const T&>().to_string(std::declval<std::string&>()))>
     void append_internal(std::string& into, const T& t)
     {
         t.to_string(into);
     }
-
-    // first looks up to_string on `T` using ADL; then, if that isn't found,
-    // uses the above definition which returns t.to_string()
     template<class T, class = void, class = decltype(to_string(std::declval<std::string&>(), std::declval<const T&>()))>
     void append_internal(std::string& into, const T& t)
     {
@@ -49,31 +44,25 @@ namespace vcpkg::Strings
         bool operator()(char a, char b) const noexcept { return tolower_char(a) == tolower_char(b); }
     } icase_eq;
 
-    template<class Arg>
-    std::string& append(std::string& into, const Arg& a)
+    template<class... Args>
+    std::string& append(std::string& into, const Args&... args)
     {
-        details::append_internal(into, a);
+        (void)(details::append_internal(into, args), ...);
         return into;
-    }
-    template<class Arg, class... Args>
-    std::string& append(std::string& into, const Arg& a, const Args&... args)
-    {
-        append(into, a);
-        return append(into, args...);
     }
 
     template<class... Args>
     [[nodiscard]] std::string concat(const Args&... args)
     {
         std::string ret;
-        append(ret, args...);
+        (void)(details::append_internal(ret, args), ...);
         return ret;
     }
 
     template<class... Args>
     [[nodiscard]] std::string concat(std::string&& first, const Args&... args)
     {
-        append(first, args...);
+        (void)(details::append_internal(first, args), ...);
         return std::move(first);
     }
 
@@ -98,8 +87,6 @@ namespace vcpkg::Strings
     std::string to_utf8(const std::wstring& ws);
 #endif
 
-    std::string escape_string(std::string&& s, char char_to_escape, char escape_char);
-
     const char* case_insensitive_ascii_search(StringView s, StringView pattern);
     bool case_insensitive_ascii_contains(StringView s, StringView pattern);
     bool case_insensitive_ascii_equals(StringView left, StringView right);
@@ -116,19 +103,19 @@ namespace vcpkg::Strings
     bool starts_with(StringView s, StringView pattern);
 
     template<class InputIterator, class Transformer>
-    std::string join(StringLiteral delimiter, InputIterator begin, InputIterator end, Transformer transformer)
+    std::string join(StringLiteral delimiter, InputIterator first, InputIterator last, Transformer transformer)
     {
-        if (begin == end)
+        if (first == last)
         {
             return std::string();
         }
 
         std::string output;
-        append(output, transformer(*begin));
-        for (auto it = std::next(begin); it != end; ++it)
+        append(output, transformer(*first));
+        for (++first; first != last; ++first)
         {
             output.append(delimiter.data(), delimiter.size());
-            append(output, transformer(*it));
+            append(output, transformer(*first));
         }
 
         return output;
@@ -137,24 +124,32 @@ namespace vcpkg::Strings
     template<class Container, class Transformer>
     std::string join(StringLiteral delimiter, const Container& v, Transformer transformer)
     {
-        const auto begin = std::begin(v);
-        const auto end = std::end(v);
-
-        return join(delimiter, begin, end, transformer);
+        return join(delimiter, std::begin(v), std::end(v), transformer);
     }
 
     template<class InputIterator>
-    std::string join(StringLiteral delimiter, InputIterator begin, InputIterator end)
+    std::string join(StringLiteral delimiter, InputIterator first, InputIterator last)
     {
-        using Element = decltype(*begin);
-        return join(delimiter, begin, end, [](const Element& x) -> const Element& { return x; });
+        if (first == last)
+        {
+            return std::string();
+        }
+
+        std::string output;
+        append(output, *first);
+        for (++first; first != last; ++first)
+        {
+            output.append(delimiter.data(), delimiter.size());
+            append(output, *first);
+        }
+
+        return output;
     }
 
     template<class Container>
     std::string join(StringLiteral delimiter, const Container& v)
     {
-        using Element = decltype(*std::begin(v));
-        return join(delimiter, v, [](const Element& x) -> const Element& { return x; });
+        return join(delimiter, std::begin(v), std::end(v));
     }
 
     [[nodiscard]] std::string replace_all(const char* s, StringView search, StringView rep);
@@ -165,11 +160,11 @@ namespace vcpkg::Strings
 
     void inplace_replace_all(std::string& s, char search, char rep) noexcept;
 
-    std::string trim(std::string&& s);
+    void inplace_trim(std::string& s);
 
     StringView trim(StringView sv);
 
-    void trim_all_and_remove_whitespace_strings(std::vector<std::string>* strings);
+    void inplace_trim_all_and_remove_whitespace_strings(std::vector<std::string>& strings);
 
     std::vector<std::string> split(StringView s, const char delimiter);
 
