@@ -626,8 +626,11 @@ namespace vcpkg
         {
             find_itr = action.feature_dependencies.find(feature);
             Checks::check_exit(VCPKG_LINE_INFO, find_itr != action.feature_dependencies.end());
-            const auto& fpgh = scfl.source_control_file->find_feature(feature).value_or_exit(VCPKG_LINE_INFO);
-            bcf->features.emplace_back(action.spec, fpgh, fspecs_to_pspecs(find_itr->second));
+            auto maybe_fpgh = scfl.source_control_file->find_feature(feature);
+            if (auto fpgh = maybe_fpgh.get())
+            {
+                bcf->features.emplace_back(action.spec, *fpgh, fspecs_to_pspecs(find_itr->second));
+            }
         }
         return bcf;
     }
