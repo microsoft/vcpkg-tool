@@ -5,6 +5,7 @@
 
 #include <vcpkg/cmakevars.h>
 #include <vcpkg/dependencies.h>
+#include <vcpkg/documentation.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/packagespec.h>
 #include <vcpkg/paragraphs.h>
@@ -1378,10 +1379,10 @@ namespace vcpkg
             std::map<std::string, std::vector<FeatureSpec>> compute_feature_dependencies(
                 const PackageNode& node, std::vector<DepSpec>& out_dep_specs) const;
 
-            LocalizedString format_incomparable_versions_message(const PackageSpec& on,
-                                                                 StringView from,
-                                                                 const SchemedVersion& baseline,
-                                                                 const SchemedVersion& target) const;
+            static LocalizedString format_incomparable_versions_message(const PackageSpec& on,
+                                                                        StringView from,
+                                                                        const SchemedVersion& baseline,
+                                                                        const SchemedVersion& target);
             std::vector<LocalizedString> m_errors;
         };
 
@@ -1643,30 +1644,40 @@ namespace vcpkg
         LocalizedString VersionedPackageGraph::format_incomparable_versions_message(const PackageSpec& on,
                                                                                     StringView from,
                                                                                     const SchemedVersion& baseline,
-                                                                                    const SchemedVersion& target) const
+                                                                                    const SchemedVersion& target)
         {
-            return msg::format_error(msgVersionIncomparable1,
-                                     msg::spec = on,
-                                     msg::constraint_origin = from,
-                                     msg::expected = target.version,
-                                     msg::actual = baseline.version)
-                .append_raw('\n')
-                .append_indent()
-                .append(msgVersionIncomparable2, msg::version = baseline.version, msg::new_scheme = baseline.scheme)
-                .append_raw('\n')
-                .append_indent()
-                .append(msgVersionIncomparable2, msg::version = target.version, msg::new_scheme = target.scheme)
-                .append_raw('\n')
-                .append(msgVersionIncomparable3)
-                .append_raw('\n')
-                .append_indent()
-                .append_raw("\"overrides\": [\n")
-                .append_indent(2)
+            LocalizedString doc = msg::format_error(msgVersionIncomparable1,
+                                                    msg::spec = on,
+                                                    msg::constraint_origin = from,
+                                                    msg::expected = target.version,
+                                                    msg::actual = baseline.version)
+                                      .append_raw("\n\n");
+            if (baseline.scheme == VersionScheme::String && target.scheme == VersionScheme::String)
+            {
+                doc.append(msgVersionIncomparableSchemeString).append_raw("\n\n");
+            }
+            else
+            {
+                doc.append(msgVersionIncomparableSchemes).append_raw('\n');
+                doc.append_indent()
+                    .append(msgVersionIncomparable2,
+                            msg::version_spec = Strings::concat(on.name(), '@', baseline.version),
+                            msg::new_scheme = baseline.scheme)
+                    .append_raw('\n');
+                doc.append_indent()
+                    .append(msgVersionIncomparable2,
+                            msg::version_spec = Strings::concat(on.name(), '@', target.version),
+                            msg::new_scheme = target.scheme)
+                    .append_raw("\n\n");
+            }
+            doc.append(msgVersionIncomparable3).append_raw("\n\n");
+            doc.append_indent().append_raw("\"overrides\": [\n");
+            doc.append_indent(2)
                 .append_raw(fmt::format(R"({{ "name": "{}", "version": "{}" }})", on.name(), baseline.version))
-                .append_raw('\n')
-                .append_indent()
-                .append_raw("]\n")
-                .append(msgVersionIncomparable4);
+                .append_raw('\n');
+            doc.append_indent().append_raw("]\n\n");
+            doc.append(msgVersionIncomparable4, msg::url = docs::versioning_url);
+            return doc;
         }
 
         std::map<std::string, std::vector<FeatureSpec>> VersionedPackageGraph::compute_feature_dependencies(

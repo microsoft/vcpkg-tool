@@ -485,15 +485,13 @@ TEST_CASE ("version install scheme baseline conflict", "[versionplan]")
     REQUIRE(!install_plan.has_value());
     CHECK_LINES(
         install_plan.error(),
-        R"(error: version conflict on a:x86-windows: toplevel-spec required 3 but vcpkg could not compare it to the baseline version 2.
-The two versions used incomparable schemes:
-    "2" was of scheme string
-    "3" was of scheme string
-This can be resolved by adding an explicit override to the preferred version, for example:
+        R"(error: version conflict on a:x86-windows: toplevel-spec required 3, which cannot be compared with the baseline version 2.
+Both versions have scheme string but different primary text.
+This can be resolved by adding an explicit override to the preferred version. For example:
     "overrides": [
         { "name": "a", "version": "2" }
     ]
-See `vcpkg help versioning` for more information.)");
+See `vcpkg help versioning` or https://learn.microsoft.com/vcpkg/users/versioning for more information.)");
 }
 
 TEST_CASE ("version install string port version", "[versionplan]")
@@ -1112,21 +1110,21 @@ TEST_CASE ("version install scheme failure", "[versionplan]")
                                           toplevel_spec());
 
         REQUIRE(!install_plan.error().empty());
-        CHECK(
-            install_plan.error() ==
-            R"(erro: version conflict on a:x86-windows: toplevel-spec required 1.0.1 but vcpkg could not compare it to the baseline version 1.0.0.
+        CHECK_LINES(
+            install_plan.error(),
+            R"(error: version conflict on a:x86-windows: toplevel-spec required 1.0.1, which cannot be compared with the baseline version 1.0.0.
 
-The two versions used incomparable schemes:
-    "1.0.0" was of scheme semver
-    "1.0.1" was of scheme string
+The versions have incomparable schemes:
+    a@1.0.0 has scheme semver
+    a@1.0.1 has scheme string
 
-This can be resolved by adding an explicit override to the preferred version, for example:
+This can be resolved by adding an explicit override to the preferred version. For example:
 
     "overrides": [
         { "name": "a", "version": "1.0.0" }
     ]
 
-See `vcpkg help versioning` for more information.)");
+See `vcpkg help versioning` or https://learn.microsoft.com/vcpkg/users/versioning for more information.)");
     }
     SECTION ("higher baseline")
     {
@@ -1144,19 +1142,19 @@ See `vcpkg help versioning` for more information.)");
         REQUIRE(!install_plan.error().empty());
         CHECK_LINES(
             install_plan.error(),
-            R"(error: version conflict on a:x86-windows: toplevel-spec required 1.0.1 but vcpkg could not compare it to the baseline version 1.0.2.
+            R"(error: version conflict on a:x86-windows: toplevel-spec required 1.0.1, which cannot be compared with the baseline version 1.0.2.
 
-The two versions used incomparable schemes:
-    "1.0.2" was of scheme semver
-    "1.0.1" was of scheme string
+The versions have incomparable schemes:
+    a@1.0.2 has scheme semver
+    a@1.0.1 has scheme string
 
-This can be resolved by adding an explicit override to the preferred version, for example:
+This can be resolved by adding an explicit override to the preferred version. For example:
 
     "overrides": [
         { "name": "a", "version": "1.0.2" }
     ]
 
-See `vcpkg help versioning` for more information.)");
+See `vcpkg help versioning` or https://learn.microsoft.com/vcpkg/users/versioning for more information.)");
     }
 }
 
@@ -1236,15 +1234,19 @@ TEST_CASE ("version install scheme change in port version", "[versionplan]")
         REQUIRE(!install_plan.has_value());
         CHECK_LINES(
             install_plan.error(),
-            R"(error: version conflict on b:x86-windows: a:x86-windows@2#1 required 1#1 but vcpkg could not compare it to the baseline version 1.
-The two versions used incomparable schemes:
-    "1" was of scheme string
-    "1#1" was of scheme relaxed
-This can be resolved by adding an explicit override to the preferred version, for example:
+            R"(error: version conflict on b:x86-windows: a:x86-windows@2#1 required 1#1, which cannot be compared with the baseline version 1.
+
+The versions have incomparable schemes:
+    b@1 has scheme string
+    b@1#1 has scheme relaxed
+
+This can be resolved by adding an explicit override to the preferred version. For example:
+
     "overrides": [
         { "name": "b", "version": "1" }
     ]
-See `vcpkg help versioning` for more information.)");
+
+See `vcpkg help versioning` or https://learn.microsoft.com/vcpkg/users/versioning for more information.)");
     }
     SECTION ("lower baseline")
     {

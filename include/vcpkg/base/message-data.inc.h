@@ -2656,14 +2656,19 @@ DECLARE_MESSAGE(VersionGitEntryMissing,
 DECLARE_MESSAGE(VersionIncomparable1,
                 (msg::spec, msg::constraint_origin, msg::expected, msg::actual),
                 "{expected} and {actual} are versions like 1.0",
-                "version conflict on {spec}: {constraint_origin} required {expected} but vcpkg could not compare it to "
-                "the baseline version {actual}.\nThe two versions used incomparable schemes:")
-DECLARE_MESSAGE(VersionIncomparable2, (msg::version, msg::new_scheme), "", "\"{version}\" was of scheme {new_scheme}")
+                "version conflict on {spec}: {constraint_origin} required {expected}, which cannot be compared with "
+                "the baseline version {actual}.")
+DECLARE_MESSAGE(VersionIncomparableSchemeString, (), "", "Both versions have scheme string but different primary text.")
+DECLARE_MESSAGE(VersionIncomparableSchemes, (), "", "The versions have incomparable schemes:")
+DECLARE_MESSAGE(VersionIncomparable2,
+                (msg::version_spec, msg::new_scheme),
+                "",
+                "{version_spec} has scheme {new_scheme}")
 DECLARE_MESSAGE(VersionIncomparable3,
                 (),
                 "This precedes a JSON document describing the fix",
-                "This can be resolved by adding an explicit override to the preferred version, for example:")
-DECLARE_MESSAGE(VersionIncomparable4, (), "", "See `vcpkg help versioning` for more information.")
+                "This can be resolved by adding an explicit override to the preferred version. For example:")
+DECLARE_MESSAGE(VersionIncomparable4, (msg::url), "", "See `vcpkg help versioning` or {url} for more information.")
 DECLARE_MESSAGE(VersionInDeclarationDoesNotMatch,
                 (msg::version),
                 "",
