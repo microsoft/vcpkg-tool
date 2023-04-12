@@ -49,13 +49,13 @@ namespace vcpkg::Commands::LintPort
         auto& fs = paths.get_filesystem();
 
         std::vector<std::string> port_names;
-        if (!args.forwardable_arguments.empty())
+        if (!parsed_args.command_arguments.empty())
         {
             if (add_all)
             {
                 msg::println_warning(msgAddVersionIgnoringOptionAll, msg::option = OPTION_ALL);
             }
-            port_names = args.forwardable_arguments;
+            port_names = parsed_args.command_arguments;
         }
         else
         {
