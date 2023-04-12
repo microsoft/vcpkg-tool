@@ -1177,20 +1177,16 @@ namespace vcpkg::Json
 
             void append_unicode_escape(char16_t code_unit) const
             {
+                buffer.append("\\u");
+
                 // AFAIK, there's no standard way of doing this?
                 constexpr const char hex_digit[16] = {
                     '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
 
-                const char seq[6] = {
-                    '\\',
-                    'u',
-                    hex_digit[(code_unit >> 12) & 0x0F],
-                    hex_digit[(code_unit >> 8) & 0x0F],
-                    hex_digit[(code_unit >> 4) & 0x0F],
-                    hex_digit[(code_unit >> 0) & 0x0F],
-                };
-
-                buffer.append(seq, 6);
+                buffer.push_back(hex_digit[(code_unit >> 12) & 0x0F]);
+                buffer.push_back(hex_digit[(code_unit >> 8) & 0x0F]);
+                buffer.push_back(hex_digit[(code_unit >> 4) & 0x0F]);
+                buffer.push_back(hex_digit[(code_unit >> 0) & 0x0F]);
             }
 
             // taken from the ECMAScript 2020 standard, 24.5.2.2: Runtime Semantics: QuoteJSONString
