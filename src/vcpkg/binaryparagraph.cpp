@@ -103,7 +103,7 @@ namespace vcpkg
     BinaryParagraph::BinaryParagraph(const SourceParagraph& spgh,
                                      Triplet triplet,
                                      const std::string& abi_tag,
-                                     const std::vector<FeatureSpec>& deps)
+                                     std::vector<PackageSpec> deps)
         : spec(spgh.name, triplet)
         , version(spgh.raw_version)
         , port_version(spgh.port_version)
@@ -111,24 +111,23 @@ namespace vcpkg
         , maintainers(spgh.maintainers)
         , feature()
         , default_features(spgh.default_features)
-        , dependencies(Util::fmap(deps, [](const FeatureSpec& spec) { return spec.spec(); }))
+        , dependencies(std::move(deps))
         , abi(abi_tag)
     {
         canonicalize();
     }
 
-    BinaryParagraph::BinaryParagraph(const SourceParagraph& spgh,
+    BinaryParagraph::BinaryParagraph(const PackageSpec& spec,
                                      const FeatureParagraph& fpgh,
-                                     Triplet triplet,
-                                     const std ::vector<FeatureSpec>& deps)
-        : spec(spgh.name, triplet)
+                                     std::vector<PackageSpec> deps)
+        : spec(spec)
         , version()
         , port_version()
         , description(fpgh.description)
         , maintainers()
         , feature(fpgh.name)
         , default_features()
-        , dependencies(Util::fmap(deps, [](const FeatureSpec& spec) { return spec.spec(); }))
+        , dependencies(std::move(deps))
         , abi()
     {
         canonicalize();

@@ -405,13 +405,13 @@ namespace vcpkg::Commands::CI
 
         const ElapsedTimer timer;
         // Install the default features for every package
-        const std::vector<FullPackageSpec> all_default_full_specs =
-            Util::fmap(provider.load_all_control_files(), [target_triplet](auto* scfl) {
-                return FullPackageSpec{
-                    PackageSpec{scfl->source_control_file->core_paragraph->name, target_triplet},
-                    InternalFeatureSet{"core", "default"},
-                };
-            });
+        std::vector<FullPackageSpec> all_default_full_specs;
+        for (auto scfl : provider.load_all_control_files())
+        {
+            all_default_full_specs.emplace_back(
+                PackageSpec{scfl->source_control_file->core_paragraph->name, target_triplet},
+                InternalFeatureSet{"core", "default"});
+        }
 
         CreateInstallPlanOptions serialize_options(host_triplet, UnsupportedPortAction::Warn);
 

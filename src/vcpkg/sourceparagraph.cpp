@@ -166,7 +166,9 @@ namespace vcpkg
     static void trim_all(std::vector<std::string>& arr)
     {
         for (auto& el : arr)
+        {
             Strings::inplace_trim(el);
+        }
     }
 
     namespace

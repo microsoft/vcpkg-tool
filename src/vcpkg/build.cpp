@@ -593,21 +593,42 @@ namespace vcpkg
 #endif
     }
 
-    static std::unique_ptr<BinaryControlFile> create_binary_control_file(
-        const SourceParagraph& source_paragraph,
-        Triplet triplet,
-        const BuildInfo& build_info,
-        const std::string& abi_tag,
-        const std::vector<FeatureSpec>& core_dependencies)
+    static std::vector<PackageSpec> fspecs_to_pspecs(View<FeatureSpec> fspecs)
     {
+        std::set<PackageSpec> set;
+        for (auto&& f : fspecs)
+            set.insert(f.spec());
+        std::vector<PackageSpec> ret{set.begin(), set.end()};
+        return ret;
+    }
+
+    static std::unique_ptr<BinaryControlFile> create_binary_control_file(const InstallPlanAction& action,
+                                                                         const BuildInfo& build_info)
+    {
+        const auto& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
+
         auto bcf = std::make_unique<BinaryControlFile>();
-        BinaryParagraph bpgh(source_paragraph, triplet, abi_tag, core_dependencies);
+
+        auto find_itr = action.feature_dependencies.find("core");
+        Checks::check_exit(VCPKG_LINE_INFO, find_itr != action.feature_dependencies.end());
+        BinaryParagraph bpgh(*scfl.source_control_file->core_paragraph,
+                             action.spec.triplet(),
+                             action.public_abi(),
+                             fspecs_to_pspecs(find_itr->second));
         if (const auto p_ver = build_info.version.get())
         {
             bpgh.version = *p_ver;
         }
-
         bcf->core_paragraph = std::move(bpgh);
+
+        bcf->features.reserve(action.feature_list.size());
+        for (auto&& feature : action.feature_list)
+        {
+            find_itr = action.feature_dependencies.find(feature);
+            Checks::check_exit(VCPKG_LINE_INFO, find_itr != action.feature_dependencies.end());
+            const auto& fpgh = scfl.source_control_file->find_feature(feature).value_or_exit(VCPKG_LINE_INFO);
+            bcf->features.emplace_back(action.spec, fpgh, fspecs_to_pspecs(find_itr->second));
+        }
         return bcf;
     }
 
@@ -990,32 +1011,12 @@ namespace vcpkg
             error_count = perform_post_build_lint_checks(
                 action.spec, paths, pre_build_info, build_info, scfl.source_location, combo_sink);
         };
-
-        auto find_itr = action.feature_dependencies.find("core");
-        Checks::check_exit(VCPKG_LINE_INFO, find_itr != action.feature_dependencies.end());
-
-        std::unique_ptr<BinaryControlFile> bcf = create_binary_control_file(
-            *scfl.source_control_file->core_paragraph, triplet, build_info, action.public_abi(), find_itr->second);
-
         if (error_count != 0 && action.build_options.backcompat_features == BackcompatFeatures::PROHIBIT)
         {
             return ExtendedBuildResult{BuildResult::POST_BUILD_CHECKS_FAILED};
         }
 
-        for (auto&& feature : action.feature_list)
-        {
-            for (auto&& f_pgh : scfl.source_control_file->feature_paragraphs)
-            {
-                if (f_pgh->name == feature)
-                {
-                    find_itr = action.feature_dependencies.find(feature);
-                    Checks::check_exit(VCPKG_LINE_INFO, find_itr != action.feature_dependencies.end());
-
-                    bcf->features.emplace_back(
-                        *scfl.source_control_file->core_paragraph, *f_pgh, triplet, find_itr->second);
-                }
-            }
-        }
+        std::unique_ptr<BinaryControlFile> bcf = create_binary_control_file(action, build_info);
 
         write_sbom(paths, action, abi_info.heuristic_resources);
         write_binary_control_file(paths, *bcf);
