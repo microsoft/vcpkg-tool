@@ -1529,11 +1529,6 @@ namespace vcpkg
                                                         const VcpkgPaths& paths,
                                                         const Optional<Path>& issue_body)
     {
-        std::string package = action.displayname();
-        if (auto scfl = action.source_control_file_and_location.get())
-        {
-            Strings::append(package, " -> ", scfl->to_version());
-        }
         const auto& spec_name = action.spec.name();
         LocalizedString result = msg::format(msgBuildTroubleshootingMessage1).append_raw('\n');
         result.append_indent().append_raw(make_gh_issue_search_url(spec_name)).append_raw('\n');
