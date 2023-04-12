@@ -14,7 +14,7 @@
 namespace vcpkg::Util
 {
     template<class Container>
-    using ElementT = std::decay_t<decltype(*std::declval<Container>().begin())>;
+    using ElementT = std::decay_t<decltype(*std::declval<Container&>().begin())>;
 
     namespace Vectors
     {
