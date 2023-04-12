@@ -218,11 +218,6 @@ bool Strings::starts_with(StringView s, StringView pattern)
     return std::equal(s.begin(), s.begin() + pattern.size(), pattern.begin(), pattern.end());
 }
 
-std::string Strings::replace_all(const char* s, StringView search, StringView rep)
-{
-    return Strings::replace_all(std::string(s), search, rep);
-}
-
 std::string Strings::replace_all(StringView s, StringView search, StringView rep)
 {
     std::string ret = s.to_string();

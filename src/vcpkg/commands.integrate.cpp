@@ -186,7 +186,7 @@ namespace vcpkg::Commands::Integrate
                                                    const std::string& nuget_id,
                                                    const std::string& nupkg_version)
     {
-        static constexpr auto CONTENT_TEMPLATE = R"(
+        static constexpr StringLiteral CONTENT_TEMPLATE = R"(
 <package>
     <metadata>
         <id>@NUGET_ID@</id>

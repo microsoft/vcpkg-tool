@@ -16,7 +16,8 @@ namespace vcpkg::Export::Chocolatey
     static std::string create_nuspec_dependencies(const BinaryParagraph& binary_paragraph,
                                                   const std::map<PackageSpec, std::string>& packages_version)
     {
-        static constexpr auto CONTENT_TEMPLATE = R"(<dependency id="@PACKAGE_ID@" version="[@PACKAGE_VERSION@]" />)";
+        static constexpr StringLiteral CONTENT_TEMPLATE =
+            R"(<dependency id="@PACKAGE_ID@" version="[@PACKAGE_VERSION@]" />)";
 
         std::string nuspec_dependencies;
         for (const auto& depend : binary_paragraph.dependencies)
@@ -38,7 +39,7 @@ namespace vcpkg::Export::Chocolatey
                                                    const std::map<PackageSpec, std::string>& packages_version,
                                                    const Options& chocolatey_options)
     {
-        static constexpr auto CONTENT_TEMPLATE = R"(<?xml version="1.0" encoding="utf-8"?>
+        static constexpr StringLiteral CONTENT_TEMPLATE = R"(<?xml version="1.0" encoding="utf-8"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
     <metadata>
         <id>@PACKAGE_ID@</id>
@@ -79,7 +80,7 @@ namespace vcpkg::Export::Chocolatey
 
     static std::string create_chocolatey_install_contents()
     {
-        static constexpr auto CONTENT_TEMPLATE = R"###(
+        static constexpr StringLiteral CONTENT_TEMPLATE = R"###(
 $ErrorActionPreference = 'Stop';
 
 $packageName= $env:ChocolateyPackageName
@@ -92,12 +93,12 @@ $whereToInstallCache = Join-Path $rootDir 'install.txt'
 Set-Content -Path $whereToInstallCache -Value $whereToInstall
 Copy-Item $installedDir -destination $whereToInstall -recurse -force
 )###";
-        return CONTENT_TEMPLATE;
+        return CONTENT_TEMPLATE.to_string();
     }
 
     static std::string create_chocolatey_uninstall_contents(const BinaryParagraph& binary_paragraph)
     {
-        static constexpr auto CONTENT_TEMPLATE = R"###(
+        static constexpr StringLiteral CONTENT_TEMPLATE = R"###(
 $ErrorActionPreference = 'Stop';
 
 $packageName= $env:ChocolateyPackageName

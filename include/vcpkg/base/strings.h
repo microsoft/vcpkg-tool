@@ -156,7 +156,6 @@ namespace vcpkg::Strings
         return join(delimiter, std::begin(v), std::end(v), details::identity_transformer);
     }
 
-    [[nodiscard]] std::string replace_all(const char* s, StringView search, StringView rep);
     [[nodiscard]] std::string replace_all(StringView s, StringView search, StringView rep);
     [[nodiscard]] std::string replace_all(std::string&& s, StringView search, StringView rep);
 
