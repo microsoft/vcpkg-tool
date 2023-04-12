@@ -43,54 +43,36 @@ namespace vcpkg::Strings::details
 
 namespace vcpkg::Strings
 {
-#if __cpp_fold_expressions >= 201603L
     template<class... Args>
     std::string& append(std::string& into, const Args&... args)
     {
-        (void)(details::append_internal(into, args), ...);
+        (void)((details::append_internal(into, args), 0) || ... || 0);
         return into;
     }
-#else
-    inline std::string& append(std::string& into) { return into; }
-    template<class Arg, class... Args>
-    std::string& append(std::string& into, const Arg& arg, const Args&... args)
-    {
-        details::append_internal(into, arg);
-        return ::vcpkg::Strings::append(into, args...);
-    }
-#endif
 
     template<class... Args>
     [[nodiscard]] std::string concat(const Args&... args)
     {
-        std::string ret;
-#if __cpp_fold_expressions >= 201603L
-        (void)(details::append_internal(ret, args), ...);
-#else
-        ::vcpkg::Strings::append(ret, args...);
-#endif
-        return ret;
+        std::string into;
+        (void)((details::append_internal(into, args), 0) || ... || 0);
+        return into;
     }
 
     template<class... Args>
-    [[nodiscard]] std::string concat(std::string&& first, const Args&... args)
+    [[nodiscard]] std::string concat(std::string&& into, const Args&... args)
     {
-#if __cpp_fold_expressions >= 201603L
-        (void)(details::append_internal(first, args), ...);
-#else
-        ::vcpkg::Strings::append(first, args...);
-#endif
-        return std::move(first);
+        (void)((details::append_internal(into, args), 0) || ... || 0);
+        return std::move(into);
     }
 
     template<class... Args, class = void>
-    std::string concat_or_view(const Args&... args)
+    [[nodiscard]] std::string concat_or_view(Args&&... args)
     {
-        return Strings::concat(args...);
+        return Strings::concat(static_cast<Args&&>(args)...);
     }
 
     template<class T, class = std::enable_if_t<std::is_convertible_v<T, StringView>>>
-    StringView concat_or_view(const T& v)
+    [[nodiscard]] StringView concat_or_view(const T& v)
     {
         return v;
     }
