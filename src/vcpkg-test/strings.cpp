@@ -232,3 +232,20 @@ TEST_CASE ("api_stable_format(sv,append_f)", "[strings]")
     });
     REQUIRE(*res.get() == "123hello456");
 }
+
+#if defined(_WIN32)
+TEST_CASE ("ascii to utf16", "[utf16]")
+{
+    SECTION ("ASCII to utf16")
+    {
+        auto str = vcpkg::Strings::to_utf16("abc");
+        REQUIRE(str == L"abc");
+    }
+
+    SECTION ("ASCII to utf16 with whitespace")
+    {
+        auto str = vcpkg::Strings::to_utf16("abc -x86-windows");
+        REQUIRE(str == L"abc -x86-windows");
+    }
+}
+#endif

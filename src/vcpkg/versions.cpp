@@ -61,13 +61,11 @@ namespace vcpkg
         Optional<uint64_t> as_numeric(StringView str)
         {
             uint64_t res = 0;
-            size_t digits = 0;
             for (auto&& ch : str)
             {
                 uint64_t digit_value = static_cast<unsigned char>(ch) - static_cast<unsigned char>('0');
                 if (digit_value > 9) return nullopt;
                 if (res > std::numeric_limits<uint64_t>::max() / 10 - digit_value) return nullopt;
-                ++digits;
                 res = res * 10 + digit_value;
             }
             return res;

@@ -181,12 +181,17 @@ namespace vcpkg::Build
     {
         // Build only takes a single package and all dependencies must already be installed
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
-        std::string first_arg = options.command_arguments[0];
-
         BinaryCache binary_cache{args, paths};
-        const FullPackageSpec spec = check_and_get_full_package_spec(
-            std::move(first_arg), default_triplet, COMMAND_STRUCTURE.get_example_text(), paths);
-        print_default_triplet_warning(args, {&options.command_arguments[0], 1});
+        bool default_triplet_used = false;
+        const FullPackageSpec spec = check_and_get_full_package_spec(options.command_arguments[0],
+                                                                     default_triplet,
+                                                                     default_triplet_used,
+                                                                     COMMAND_STRUCTURE.get_example_text(),
+                                                                     paths);
+        if (default_triplet_used)
+        {
+            print_default_triplet_warning(args);
+        }
 
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();
@@ -1530,11 +1535,6 @@ namespace vcpkg
                                                         const VcpkgPaths& paths,
                                                         const Optional<Path>& issue_body)
     {
-        std::string package = action.displayname();
-        if (auto scfl = action.source_control_file_and_location.get())
-        {
-            Strings::append(package, " -> ", scfl->to_version());
-        }
         const auto& spec_name = action.spec.name();
         LocalizedString result = msg::format(msgBuildTroubleshootingMessage1).append_raw('\n');
         result.append_indent().append_raw(make_gh_issue_search_url(spec_name)).append_raw('\n');
