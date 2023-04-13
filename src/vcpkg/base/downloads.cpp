@@ -1,8 +1,8 @@
 #include <vcpkg/base/api-stable-format.h>
 #include <vcpkg/base/cache.h>
 #include <vcpkg/base/downloads.h>
+#include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
-#include <vcpkg/base/json.h>
 #include <vcpkg/base/message_sinks.h>
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/strings.h>
@@ -757,7 +757,7 @@ namespace vcpkg
             cmd.string_arg("-H").string_arg(header);
         }
 
-        std::string non_progress_lines;
+        std::string non_progress_content;
         auto maybe_exit_code = cmd_execute_and_stream_lines(
             cmd,
             [&](StringView line) {
@@ -768,8 +768,8 @@ namespace vcpkg
                 }
                 else
                 {
-                    non_progress_lines.append(line.data(), line.size());
-                    non_progress_lines.push_back('\n');
+                    non_progress_content.append(line.data(), line.size());
+                    non_progress_content.push_back('\n');
                 }
             },
             default_working_directory,
@@ -784,7 +784,7 @@ namespace vcpkg
                 errors.push_back(
                     msg::format_error(msgDownloadFailedCurl, msg::url = sanitized_url, msg::exit_code = *exit_code)
                         .append_raw('\n')
-                        .append_raw(Strings::join("\n", non_progress_lines)));
+                        .append_raw(non_progress_content));
                 return false;
             }
 

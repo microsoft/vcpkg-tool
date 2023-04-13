@@ -29,8 +29,6 @@ namespace vcpkg::Unicode
         UnexpectedEof = 6,
     };
 
-    const std::error_category& utf8_category() noexcept;
-
     Utf8CodeUnitKind utf8_code_unit_kind(unsigned char code_unit) noexcept;
 
     constexpr int utf8_code_unit_count(Utf8CodeUnitKind kind) noexcept { return static_cast<int>(kind); }
@@ -104,11 +102,6 @@ namespace vcpkg::Unicode
 
     char32_t utf16_surrogates_to_code_point(char32_t leading, char32_t trailing);
 
-    inline std::error_code make_error_code(utf8_errc err) noexcept
-    {
-        return std::error_code(static_cast<int>(err), utf8_category());
-    }
-
     /*
         There are two ways to parse utf-8: we could allow unpaired surrogates (as in [wtf-8]) -- this is important
         for representing things like file paths on Windows. We could also require strict utf-8, as in the JSON
@@ -152,11 +145,7 @@ namespace vcpkg::Unicode
 
         char32_t operator*() const noexcept
         {
-            if (is_eof())
-            {
-                Checks::exit_with_message_and_line(VCPKG_LINE_INFO,
-                                                   "internal error: dereferenced Utf8Decoder at the end of a string.");
-            }
+            if (is_eof()) Checks::unreachable(VCPKG_LINE_INFO);
             return current_;
         }
 
@@ -192,12 +181,4 @@ namespace vcpkg::Unicode
     constexpr bool operator==(Utf8Decoder::sentinel s, const Utf8Decoder& d) { return d == s; }
     constexpr bool operator!=(const Utf8Decoder& d, Utf8Decoder::sentinel) { return !d.is_eof(); }
     constexpr bool operator!=(Utf8Decoder::sentinel s, const Utf8Decoder& d) { return d != s; }
-}
-
-namespace std
-{
-    template<>
-    struct is_error_code_enum<vcpkg::Unicode::utf8_errc> : std::true_type
-    {
-    };
 }

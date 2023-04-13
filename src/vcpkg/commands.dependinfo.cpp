@@ -10,6 +10,7 @@
 #include <vcpkg/install.h>
 #include <vcpkg/packagespec.h>
 #include <vcpkg/portfileprovider.h>
+#include <vcpkg/registries.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 
 #include <vector>
@@ -297,12 +298,16 @@ namespace vcpkg::Commands::DependInfo
         const SortMode sort_mode = get_sort_mode(options);
         const bool show_depth = Util::Sets::contains(options.switches, OPTION_SHOW_DEPTH);
 
+        bool default_triplet_used = false;
         const std::vector<FullPackageSpec> specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
             return check_and_get_full_package_spec(
-                std::string{arg}, default_triplet, COMMAND_STRUCTURE.get_example_text(), paths);
+                arg, default_triplet, default_triplet_used, COMMAND_STRUCTURE.get_example_text(), paths);
         });
 
-        print_default_triplet_warning(args, options.command_arguments);
+        if (default_triplet_used)
+        {
+            print_default_triplet_warning(args);
+        }
 
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();

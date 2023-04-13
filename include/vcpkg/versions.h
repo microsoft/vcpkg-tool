@@ -67,6 +67,12 @@ namespace vcpkg
         String
     };
 
+    struct SchemedVersion
+    {
+        VersionScheme scheme;
+        Version version;
+    };
+
     StringLiteral to_string_literal(VersionScheme scheme);
 
     struct VersionSpec

@@ -1,3 +1,4 @@
+#include <vcpkg/base/strings.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.h>
@@ -7,6 +8,7 @@
 #include <vcpkg/installedpaths.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/portfileprovider.h>
+#include <vcpkg/registries.h>
 #include <vcpkg/remove.h>
 #include <vcpkg/update.h>
 #include <vcpkg/vcpkglib.h>
@@ -223,12 +225,20 @@ namespace vcpkg::Remove
                 msg::println_error(msgInvalidOptionForRemove);
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
+
+            bool default_triplet_used = false;
             specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
-                return check_and_get_package_spec(
-                    std::string(arg), default_triplet, COMMAND_STRUCTURE.get_example_text(), paths);
+                return check_and_get_package_spec(std::string(arg),
+                                                  default_triplet,
+                                                  default_triplet_used,
+                                                  COMMAND_STRUCTURE.get_example_text(),
+                                                  paths);
             });
 
-            print_default_triplet_warning(args, options.command_arguments);
+            if (default_triplet_used)
+            {
+                print_default_triplet_warning(args);
+            }
         }
 
         const Purge purge = Util::Sets::contains(options.switches, OPTION_PURGE) ? Purge::YES : Purge::NO;

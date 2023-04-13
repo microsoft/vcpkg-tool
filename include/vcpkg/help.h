@@ -2,8 +2,6 @@
 
 #include <vcpkg/commands.interface.h>
 
-#include <string>
-
 namespace vcpkg::Help
 {
     extern const CommandStructure COMMAND_STRUCTURE;

@@ -1,9 +1,15 @@
 #pragma once
 
-#include <vcpkg/cmakevars.h>
+#include <vcpkg/base/fwd/optional.h>
+
+#include <vcpkg/fwd/binarycaching.h>
+#include <vcpkg/fwd/build.h>
+#include <vcpkg/fwd/cmakevars.h>
+#include <vcpkg/fwd/dependencies.h>
+#include <vcpkg/fwd/install.h>
+#include <vcpkg/fwd/portfileprovider.h>
+
 #include <vcpkg/commands.interface.h>
-#include <vcpkg/install.h>
-#include <vcpkg/portfileprovider.h>
 
 namespace vcpkg::Commands::SetInstalled
 {

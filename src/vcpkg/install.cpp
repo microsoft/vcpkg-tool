@@ -4,6 +4,7 @@
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/system.debug.h>
+#include <vcpkg/base/system.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/binarycaching.h>
@@ -20,6 +21,7 @@
 #include <vcpkg/installedpaths.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/paragraphs.h>
+#include <vcpkg/portfileprovider.h>
 #include <vcpkg/remove.h>
 #include <vcpkg/tools.h>
 #include <vcpkg/vcpkglib.h>
@@ -341,7 +343,7 @@ namespace vcpkg
                 else
                     msg::println(msgBuildingPackage, msg::spec = action.displayname());
 
-                auto result = build_package(args, paths, action, binary_cache, build_logs_recorder, status_db);
+                auto result = build_package(args, paths, action, build_logs_recorder, status_db);
 
                 if (BuildResult::DOWNLOADED == result.code)
                 {
@@ -379,8 +381,11 @@ namespace vcpkg
                 case InstallResult::FILE_CONFLICTS: code = BuildResult::FILE_CONFLICTS; break;
                 default: Checks::unreachable(VCPKG_LINE_INFO);
             }
-
-            if (action.build_options.clean_packages == CleanPackages::YES)
+            if (restore != RestoreResult::restored)
+            {
+                binary_cache.push_success(action, paths.package_dir(action.spec));
+            }
+            else if (action.build_options.clean_packages == CleanPackages::YES)
             {
                 fs.remove_all(paths.package_dir(action.spec), VCPKG_LINE_INFO);
             }
@@ -405,17 +410,24 @@ namespace vcpkg
         Checks::unreachable(VCPKG_LINE_INFO);
     }
 
+    static LocalizedString format_result_row(const SpecSummary& result)
+    {
+        return LocalizedString()
+            .append_indent()
+            .append_raw(result.get_spec().to_string())
+            .append_raw(": ")
+            .append(to_string(result.build_result.value_or_exit(VCPKG_LINE_INFO).code))
+            .append_raw(": ")
+            .append_raw(result.timing.to_string());
+    }
+
     void InstallSummary::print() const
     {
         msg::println(msgResultsHeader);
 
         for (const SpecSummary& result : this->results)
         {
-            msg::println(LocalizedString().append_indent().append_fmt_raw(
-                "{}: {}: {}",
-                result.get_spec(),
-                to_string(result.build_result.value_or_exit(VCPKG_LINE_INFO).code),
-                result.timing));
+            msg::println(format_result_row(result));
         }
 
         std::map<Triplet, BuildResultCounts> summary;
@@ -441,11 +453,7 @@ namespace vcpkg
         {
             if (result.build_result.value_or_exit(VCPKG_LINE_INFO).code != BuildResult::SUCCEEDED)
             {
-                msg::println(LocalizedString().append_indent().append_fmt_raw(
-                    "{}: {}: {}",
-                    result.get_spec(),
-                    to_string(result.build_result.value_or_exit(VCPKG_LINE_INFO).code),
-                    result.timing));
+                msg::println(format_result_row(result));
             }
         }
         msg::println();
@@ -890,8 +898,7 @@ namespace vcpkg
                     if (targets.empty()) continue;
 
                     msg.append_indent();
-                    msg.append_fmt_raw("find_package({} CONFIG REQUIRED)", package_name);
-                    msg.append_raw('\n');
+                    msg.append_raw("find_package(").append_raw(package_name).append_raw(" CONFIG REQUIRED)\n");
 
                     const auto omitted = (targets.size() > 4) ? (targets.size() - 4) : 0;
                     if (omitted)
@@ -902,10 +909,10 @@ namespace vcpkg
                             .append_raw('\n');
                     }
 
-                    msg.append_indent()
-                        .append_fmt_raw("target_link_libraries(main PRIVATE {})",
-                                        Strings::join(" ", targets.begin(), targets.end() - omitted))
-                        .append_raw("\n\n");
+                    msg.append_indent();
+                    msg.append_raw("target_link_libraries(main PRIVATE ")
+                        .append_raw(Strings::join(" ", targets.begin(), targets.end() - omitted))
+                        .append_raw(")\n\n");
                 }
 
                 ret.message = msg.extract_data();
@@ -996,7 +1003,8 @@ namespace vcpkg
                 print_usage(MANIFEST_COMMAND_STRUCTURE);
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
-            print_default_triplet_warning(args, {});
+
+            print_default_triplet_warning(args);
         }
         else
         {
@@ -1023,7 +1031,7 @@ namespace vcpkg
             }
         }
 
-        BinaryCache binary_cache;
+        BinaryCache binary_cache(paths.get_filesystem());
         if (!only_downloads)
         {
             binary_cache.install_providers_for(args, paths);
@@ -1069,7 +1077,7 @@ namespace vcpkg
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
-            auto manifest_scf = std::move(maybe_manifest_scf).value_or_exit(VCPKG_LINE_INFO);
+            auto manifest_scf = std::move(maybe_manifest_scf).value(VCPKG_LINE_INFO);
             const auto& manifest_core = *manifest_scf->core_paragraph;
             auto registry_set = paths.make_registry_set();
             manifest_scf
@@ -1190,12 +1198,16 @@ namespace vcpkg
         PathsPortFileProvider provider(
             fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
 
+        bool default_triplet_used = false;
         const std::vector<FullPackageSpec> specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
             return check_and_get_full_package_spec(
-                std::string(arg), default_triplet, COMMAND_STRUCTURE.get_example_text(), paths);
+                arg, default_triplet, default_triplet_used, COMMAND_STRUCTURE.get_example_text(), paths);
         });
 
-        print_default_triplet_warning(args, options.command_arguments);
+        if (default_triplet_used)
+        {
+            print_default_triplet_warning(args);
+        }
 
         // create the plan
         msg::println(msgComputingInstallPlan);

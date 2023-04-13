@@ -75,7 +75,4 @@ namespace vcpkg
     ExpectedL<std::vector<ParsedQualifiedSpecifier>> parse_qualified_specifier_list(const std::string& str,
                                                                                     StringView origin = "<unknown>",
                                                                                     TextRowCol textrowcol = {});
-    ExpectedL<std::vector<Dependency>> parse_dependencies_list(const std::string& str,
-                                                               StringView origin = "<unknown>",
-                                                               TextRowCol textrowcol = {});
 }

@@ -3,8 +3,10 @@
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/stringview.h>
 
+#include <memory>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 namespace vcpkg::PlatformExpression
 {
