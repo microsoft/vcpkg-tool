@@ -1,5 +1,6 @@
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/system.debug.h>
+#include <vcpkg/base/system.h>
 
 #include <vcpkg/binarycaching.h>
 #include <vcpkg/cmakevars.h>
@@ -152,6 +153,11 @@ namespace vcpkg::Commands::SetInstalled
             }
         }
 
+        if (graph_deps)
+        {
+            create_dependency_graph_json(action_plan);
+        }
+
         // currently (or once) installed specifications
         auto status_db = database_load_check(fs, paths.installed());
         std::vector<PackageSpec> specs_to_remove;
@@ -228,11 +234,6 @@ namespace vcpkg::Commands::SetInstalled
                     Install::print_usage_information(it->get()->package, printed_usages, fs, paths.installed());
                 }
             }
-        }
-
-        if (graph_deps)
-        {
-            create_dependency_graph_json(action_plan);
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);
