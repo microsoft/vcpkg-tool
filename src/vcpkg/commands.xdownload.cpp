@@ -82,7 +82,7 @@ namespace vcpkg::Commands::X_Download
             {
                 Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgImproperShaLength, msg::value = *p);
             }
-            Strings::ascii_to_lowercase(p->data(), p->data() + p->size());
+            Strings::inplace_ascii_to_lowercase(p->data(), p->data() + p->size());
         }
 
         return sha;

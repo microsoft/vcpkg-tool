@@ -48,7 +48,6 @@ namespace vcpkg
                                                     const LocalizedString& example_text,
                                                     const VcpkgPaths& paths)
     {
-        Strings::ascii_to_lowercase(full_package_spec_as_string);
         auto expected_spec = parse_qualified_specifier(full_package_spec_as_string)
                                  .then(&ParsedQualifiedSpecifier::to_full_spec,
                                        default_triplet,
