@@ -103,7 +103,7 @@ namespace vcpkg::Export
             std::vector<const ExportPlanAction*> cont = it->second;
             std::sort(cont.begin(), cont.end(), &ExportPlanAction::compare_by_name);
             const std::string as_string = Strings::join("\n", cont, [](const ExportPlanAction* p) {
-                return to_output_string(p->request_type, p->spec.to_string(), default_build_package_options);
+                return to_output_string(p->request_type, p->spec.to_string());
             });
 
             switch (plan_type)

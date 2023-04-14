@@ -380,34 +380,22 @@ namespace vcpkg
         };
     }
 
-    static std::string to_output_string(RequestType request_type,
-                                        const ZStringView s,
-                                        const BuildPackageOptions& options,
-                                        const SourceControlFileAndLocation* scfl,
-                                        const InstalledPackageView* ipv,
-                                        const Path& builtin_ports_dir)
+    static std::string to_output_string(const InstallPlanAction& action, const Path& builtin_ports_dir)
     {
-        std::string ret;
-        switch (request_type)
-        {
-            case RequestType::AUTO_SELECTED: Strings::append(ret, "  * "); break;
-            case RequestType::USER_REQUESTED: Strings::append(ret, "    "); break;
-            default: Checks::unreachable(VCPKG_LINE_INFO);
-        }
-        Strings::append(ret, s);
-        if (scfl)
+        std::string ret = to_output_string(action.request_type, action.displayname());
+        if (auto scfl = action.source_control_file_and_location.get())
         {
             Strings::append(ret, " -> ", scfl->to_version());
         }
-        else if (ipv)
+        else if (auto ipv = action.installed_package.get())
         {
             Strings::append(ret, " -> ", Version{ipv->core->package.version, ipv->core->package.port_version});
         }
-        if (options.use_head_version == UseHeadVersion::YES)
+        if (action.build_options.use_head_version == UseHeadVersion::YES)
         {
             Strings::append(ret, " (+HEAD)");
         }
-        if (scfl)
+        if (auto scfl = action.source_control_file_and_location.get())
         {
             if (!builtin_ports_dir.empty() &&
                 !Strings::case_insensitive_ascii_starts_with(scfl->source_location, builtin_ports_dir))
@@ -418,19 +406,33 @@ namespace vcpkg
         return ret;
     }
 
-    std::string to_output_string(RequestType request_type, const ZStringView s, const BuildPackageOptions& options)
+    std::string to_output_string(RequestType request_type, StringView s)
     {
-        return to_output_string(request_type, s, options, {}, {}, {});
+        std::string ret;
+        switch (request_type)
+        {
+            case RequestType::AUTO_SELECTED: Strings::append(ret, "  * "); break;
+            case RequestType::USER_REQUESTED: Strings::append(ret, "    "); break;
+            default: Checks::unreachable(VCPKG_LINE_INFO);
+        }
+        Strings::append(ret, s);
+        return ret;
     }
 
-    std::string to_output_string(RequestType request_type, const ZStringView s)
+    bool BasicAction::compare_by_name(const BasicAction* left, const BasicAction* right)
     {
-        return to_output_string(request_type, s, {}, {}, {}, {});
+        return left->spec.name() < right->spec.name();
     }
 
-    InstallPlanAction::InstallPlanAction() noexcept
-        : plan_type(InstallPlanType::UNKNOWN), request_type(RequestType::UNKNOWN), build_options{}
+    std::string PackageAction::displayname() const
     {
+        if (this->feature_list.empty())
+        {
+            return this->spec.to_string();
+        }
+
+        const std::string features = Strings::join(",", feature_list);
+        return fmt::format("{}[{}]:{}", this->spec.name(), features, this->spec.triplet());
     }
 
     InstallPlanAction::InstallPlanAction(const PackageSpec& spec,
@@ -439,7 +441,7 @@ namespace vcpkg
                                          Triplet host_triplet,
                                          std::map<std::string, std::vector<FeatureSpec>>&& dependencies,
                                          std::vector<LocalizedString>&& build_failure_messages)
-        : spec(spec)
+        : PackageAction(spec, {}, {})
         , source_control_file_and_location(scfl)
         , plan_type(InstallPlanType::BUILD_AND_INSTALL)
         , request_type(request_type)
@@ -465,30 +467,15 @@ namespace vcpkg
     }
 
     InstallPlanAction::InstallPlanAction(InstalledPackageView&& ipv, const RequestType& request_type)
-        : spec(ipv.spec())
+        : PackageAction(ipv.spec(), ipv.dependencies(), ipv.feature_list())
         , installed_package(std::move(ipv))
         , plan_type(InstallPlanType::ALREADY_INSTALLED)
         , request_type(request_type)
         , build_options{}
         , feature_dependencies(installed_package.get()->feature_dependencies())
-        , package_dependencies(installed_package.get()->dependencies())
     {
-        for (const auto& kv : feature_dependencies)
-        {
-            feature_list.emplace_back(kv.first);
-        }
     }
 
-    std::string InstallPlanAction::displayname() const
-    {
-        if (this->feature_list.empty())
-        {
-            return this->spec.to_string();
-        }
-
-        const std::string features = Strings::join(",", feature_list);
-        return fmt::format("{}[{}]:{}", this->spec.name(), features, this->spec.triplet());
-    }
     const std::string& InstallPlanAction::public_abi() const
     {
         switch (plan_type)
@@ -522,20 +509,10 @@ namespace vcpkg
         return *abi_info.value_or_exit(li).pre_build_info;
     }
 
-    bool InstallPlanAction::compare_by_name(const InstallPlanAction* left, const InstallPlanAction* right)
-    {
-        return left->spec.name() < right->spec.name();
-    }
-
-    RemovePlanAction::RemovePlanAction() noexcept
-        : plan_type(RemovePlanType::UNKNOWN), request_type(RequestType::UNKNOWN)
-    {
-    }
-
     RemovePlanAction::RemovePlanAction(const PackageSpec& spec,
                                        const RemovePlanType& plan_type,
                                        const RequestType& request_type)
-        : spec(spec), plan_type(plan_type), request_type(request_type)
+        : BasicAction{spec}, plan_type(plan_type), request_type(request_type)
     {
     }
 
@@ -567,28 +544,18 @@ namespace vcpkg
         }
     }
 
-    bool ExportPlanAction::compare_by_name(const ExportPlanAction* left, const ExportPlanAction* right)
-    {
-        return left->spec.name() < right->spec.name();
-    }
-
-    ExportPlanAction::ExportPlanAction() noexcept
-        : plan_type(ExportPlanType::UNKNOWN), request_type(RequestType::UNKNOWN)
-    {
-    }
-
     ExportPlanAction::ExportPlanAction(const PackageSpec& spec,
                                        InstalledPackageView&& installed_package,
-                                       const RequestType& request_type)
-        : spec(spec)
+                                       RequestType request_type)
+        : BasicAction{spec}
         , plan_type(ExportPlanType::ALREADY_BUILT)
         , request_type(request_type)
         , m_installed_package(std::move(installed_package))
     {
     }
 
-    ExportPlanAction::ExportPlanAction(const PackageSpec& spec, const RequestType& request_type)
-        : spec(spec), plan_type(ExportPlanType::NOT_BUILT), request_type(request_type)
+    ExportPlanAction::ExportPlanAction(const PackageSpec& spec, RequestType request_type)
+        : BasicAction{spec}, plan_type(ExportPlanType::NOT_BUILT), request_type(request_type)
     {
     }
 
@@ -607,11 +574,6 @@ namespace vcpkg
             return p_ip->dependencies();
         else
             return {};
-    }
-
-    bool RemovePlanAction::compare_by_name(const RemovePlanAction* left, const RemovePlanAction* right)
-    {
-        return left->spec.name() < right->spec.name();
     }
 
     std::vector<RemovePlanAction> create_remove_plan(const std::vector<PackageSpec>& specs,
@@ -1185,14 +1147,8 @@ namespace vcpkg
         std::sort(excluded.begin(), excluded.end(), &InstallPlanAction::compare_by_name);
 
         static auto actions_to_output_string = [&](const std::vector<const InstallPlanAction*>& v) {
-            return Strings::join("\n", v, [&](const InstallPlanAction* p) {
-                return to_output_string(p->request_type,
-                                        p->displayname(),
-                                        p->build_options,
-                                        p->source_control_file_and_location.get(),
-                                        p->installed_package.get(),
-                                        builtin_ports_dir);
-            });
+            return Strings::join(
+                "\n", v, [&](const InstallPlanAction* p) { return to_output_string(*p, builtin_ports_dir); });
         };
 
         if (!excluded.empty())
