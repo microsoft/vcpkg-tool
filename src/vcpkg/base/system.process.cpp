@@ -529,6 +529,17 @@ namespace vcpkg
         return res;
     }
 
+    void cmd_execute_parallel(LineInfo li, View<Command> cmd_lines, WorkingDirectory wd, const Environment& env)
+    {
+        auto results = cmd_execute_and_capture_output_parallel(cmd_lines, wd, env);
+        auto job = cmd_lines.begin();
+        for (auto&& result : results)
+        {
+            flatten_out(std::move(result), job->command_line()).value_or_exit(li);
+            ++job;
+        }
+    }
+
     ExpectedL<int> cmd_execute_clean(const Command& cmd_line, const WorkingDirectory& wd)
     {
         return cmd_execute(cmd_line, wd, get_clean_environment());

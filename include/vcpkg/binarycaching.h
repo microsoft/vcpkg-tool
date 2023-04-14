@@ -176,6 +176,7 @@ namespace vcpkg
     ExpectedL<DownloadManagerConfig> parse_download_configuration(const Optional<std::string>& arg);
 
     std::string generate_nuget_packages_config(const ActionPlan& action);
+    const ExpectedL<Path>& default_cache_path();
 
     LocalizedString format_help_topic_asset_caching();
     LocalizedString format_help_topic_binary_caching();

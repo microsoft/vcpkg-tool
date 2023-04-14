@@ -1859,7 +1859,6 @@ namespace vcpkg
     {
     }
 }
-
 namespace
 {
     ExpectedL<Path> default_cache_path_impl()
@@ -1894,13 +1893,16 @@ namespace
             return msg::format(msgDefaultBinaryCachePlatformCacheRequiresAbsolutePath, msg::path = p);
         });
     }
+}
 
-    const ExpectedL<Path>& default_cache_path()
-    {
-        static auto cachepath = default_cache_path_impl();
-        return cachepath;
-    }
+const ExpectedL<Path>& vcpkg::default_cache_path()
+{
+    static auto cachepath = default_cache_path_impl();
+    return cachepath;
+}
 
+namespace
+{
     struct BinaryConfigParser : ConfigSegmentsParser
     {
         BinaryConfigParser(StringView text, StringView origin, BinaryConfigParserState* state)

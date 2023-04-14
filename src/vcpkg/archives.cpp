@@ -293,6 +293,32 @@ namespace vcpkg
         fs.rename_with_retry(to_path_partial, to_path, VCPKG_LINE_INFO);
     }
 
+    Command extract_files_command(const VcpkgPaths& paths,
+                                  const Path& zip_file,
+                                  View<StringView> files,
+                                  const Path& destination_dir)
+    {
+#if defined(_WIN32)
+        auto&& seven_zip_exe = paths.get_tool_exe(Tools::SEVEN_ZIP);
+
+        auto cmd = Command{seven_zip_exe}
+                       .string_arg("x")
+                       .string_arg("-o" + destination_dir.native())
+                       .string_arg("-y")
+                       .path_arg(zip);
+        for (auto file : files)
+            cmd.string_arg(file);
+        return cmd;
+#else
+        (void)paths;
+        auto cmd = Command{"unzip"}.string_arg("-qq").string_arg("-n").string_arg(zip_file);
+        for (auto file : files)
+            cmd.string_arg(file);
+        cmd.string_arg("-d").string_arg(destination_dir.native());
+        return cmd;
+#endif
+    }
+
     ExpectedL<Unit> compress_directory_to_zip(
         Filesystem& fs, const ToolCache& tools, MessageSink& status_sink, const Path& source, const Path& destination)
     {
@@ -356,4 +382,14 @@ namespace vcpkg
 
         return filtered_results;
     }
+
+    void decompress_in_parallel(LineInfo li, View<Command> jobs)
+    {
+        auto results = decompress_in_parallel(jobs);
+        for (const auto& result : results)
+        {
+            result.value_or_exit(li);
+        }
+    }
+
 }

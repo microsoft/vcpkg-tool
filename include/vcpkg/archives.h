@@ -18,6 +18,11 @@ namespace vcpkg
     void extract_archive(
         Filesystem& fs, const ToolCache& tools, MessageSink& status_sink, const Path& archive, const Path& to_path);
 
+    Command extract_files_command(const VcpkgPaths& paths,
+                                  const Path& zip_file,
+                                  View<StringView> files,
+                                  const Path& destination_dir);
+
 #ifdef _WIN32
     // Extract the 7z archive part of a self extracting 7z installer
     void win32_extract_self_extracting_7z(Filesystem& fs, const Path& archive, const Path& to_path);
@@ -37,4 +42,5 @@ namespace vcpkg
                                        const Path& archive_path);
 
     std::vector<ExpectedL<Unit>> decompress_in_parallel(View<Command> jobs);
+    void decompress_in_parallel(LineInfo, View<Command> jobs);
 }

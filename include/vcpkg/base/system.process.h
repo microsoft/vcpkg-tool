@@ -139,6 +139,13 @@ namespace vcpkg
         const WorkingDirectory& wd = default_working_directory,
         const Environment& env = default_environment);
 
+    void cmd_execute_parallel(LineInfo li, View<Command> cmd_lines, WorkingDirectory wd, const Environment& env = {});
+
+    inline void cmd_execute_parallel(LineInfo li, View<Command> cmd_lines, const Environment& env = {})
+    {
+        cmd_execute_parallel(li, cmd_lines, WorkingDirectory{Path()}, env);
+    }
+
     ExpectedL<int> cmd_execute_and_stream_lines(const Command& cmd_line,
                                                 std::function<void(StringView)> per_line_cb,
                                                 const WorkingDirectory& wd = default_working_directory,
