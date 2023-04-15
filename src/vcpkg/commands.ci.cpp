@@ -404,15 +404,13 @@ namespace vcpkg::Commands::CI
         auto& var_provider = *var_provider_storage;
 
         const ElapsedTimer timer;
-        std::vector<std::string> all_port_names =
-            Util::fmap(provider.load_all_control_files(), Paragraphs::get_name_of_control_file);
         // Install the default features for every package
         std::vector<FullPackageSpec> all_default_full_specs;
-        all_default_full_specs.reserve(all_port_names.size());
-        for (auto&& port_name : all_port_names)
+        for (auto scfl : provider.load_all_control_files())
         {
-            all_default_full_specs.emplace_back(PackageSpec{std::move(port_name), target_triplet},
-                                                InternalFeatureSet{"core", "default"});
+            all_default_full_specs.emplace_back(
+                PackageSpec{scfl->source_control_file->core_paragraph->name, target_triplet},
+                InternalFeatureSet{"core", "default"});
         }
 
         CreateInstallPlanOptions serialize_options(host_triplet, UnsupportedPortAction::Warn);

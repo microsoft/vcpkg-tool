@@ -569,7 +569,7 @@ namespace vcpkg::Export::Prefab
                         ab.ndk = version.major();
 
                         Debug::print(fmt::format("Found module {} {}", module_name, ab.abi));
-                        module_name = Strings::trim(std::move(module_name));
+                        Strings::inplace_trim(module_name);
 
                         if (Strings::starts_with(module_name, "lib"))
                         {
