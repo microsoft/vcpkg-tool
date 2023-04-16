@@ -102,20 +102,20 @@ namespace vcpkg::Export
 
             std::vector<const ExportPlanAction*> cont = it->second;
             std::sort(cont.begin(), cont.end(), &ExportPlanAction::compare_by_name);
-            const std::string as_string = Strings::join("\n", cont, [](const ExportPlanAction* p) {
-                return to_output_string(p->request_type, p->spec.to_string());
-            });
+            LocalizedString msg;
+            if (plan_type == ExportPlanType::ALREADY_BUILT)
+                msg = msg::format(msgExportingAlreadyBuiltPackages);
+            else if (plan_type == ExportPlanType::NOT_BUILT)
+                msg = msg::format(msgPackagesToInstall);
+            else
+                Checks::unreachable(VCPKG_LINE_INFO);
 
-            switch (plan_type)
+            msg.append_raw('\n');
+            for (auto&& action : cont)
             {
-                case ExportPlanType::ALREADY_BUILT:
-                    msg::println(msg::format(msgExportingAlreadyBuiltPackages).append_raw("\n" + as_string));
-                    continue;
-                case ExportPlanType::NOT_BUILT:
-                    msg::println(msg::format(msgPackagesToInstall).append_raw("\n" + as_string));
-                    continue;
-                default: Checks::unreachable(VCPKG_LINE_INFO);
+                msg.append_raw(request_type_indent(action->request_type)).append_raw(action->spec).append_raw('\n');
             }
+            msg::print(msg);
         }
     }
 

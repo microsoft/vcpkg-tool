@@ -29,7 +29,7 @@ namespace vcpkg
         AUTO_SELECTED
     };
 
-    std::string to_output_string(RequestType request_type, StringView s);
+    [[nodiscard]] StringLiteral request_type_indent(RequestType request_type);
 
     enum class InstallPlanType
     {
@@ -48,13 +48,6 @@ namespace vcpkg
 
     struct PackageAction : BasicAction
     {
-        PackageAction(PackageSpec spec, std::vector<PackageSpec> package_dependencies, InternalFeatureSet feature_list)
-            : BasicAction{std::move(spec)}
-            , package_dependencies(std::move(package_dependencies))
-            , feature_list(std::move(feature_list))
-        {
-        }
-
         std::string displayname() const;
 
         std::vector<PackageSpec> package_dependencies;
@@ -81,6 +74,7 @@ namespace vcpkg
         bool has_package_abi() const;
         Optional<const std::string&> package_abi() const;
         const PreBuildInfo& pre_build_info(LineInfo li) const;
+        Version version() const;
 
         Optional<const SourceControlFileAndLocation&> source_control_file_and_location;
         Optional<InstalledPackageView> installed_package;

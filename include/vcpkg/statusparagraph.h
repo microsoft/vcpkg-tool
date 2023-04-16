@@ -62,6 +62,7 @@ namespace vcpkg
         std::vector<PackageSpec> dependencies() const;
         std::map<std::string, std::vector<FeatureSpec>> feature_dependencies() const;
         InternalFeatureSet feature_list() const;
+        Version version() const;
 
         std::vector<StatusParagraph> all_status_paragraphs() const;
 

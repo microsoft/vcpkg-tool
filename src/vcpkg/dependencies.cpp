@@ -380,43 +380,34 @@ namespace vcpkg
         };
     }
 
-    static std::string to_output_string(const InstallPlanAction& action, const Path& builtin_ports_dir)
+    static void format_plan_row(LocalizedString& out, const InstallPlanAction& action, const Path& builtin_ports_dir)
     {
-        std::string ret = to_output_string(action.request_type, action.displayname());
-        if (auto scfl = action.source_control_file_and_location.get())
-        {
-            Strings::append(ret, " -> ", scfl->to_version());
-        }
-        else if (auto ipv = action.installed_package.get())
-        {
-            Strings::append(ret, " -> ", Version{ipv->core->package.version, ipv->core->package.port_version});
-        }
+        out.append_raw(request_type_indent(action.request_type))
+            .append_raw(action.displayname())
+            .append_raw(" -> ")
+            .append_raw(action.version());
         if (action.build_options.use_head_version == UseHeadVersion::YES)
         {
-            Strings::append(ret, " (+HEAD)");
+            out.append_raw(" (+HEAD)");
         }
         if (auto scfl = action.source_control_file_and_location.get())
         {
             if (!builtin_ports_dir.empty() &&
                 !Strings::case_insensitive_ascii_starts_with(scfl->source_location, builtin_ports_dir))
             {
-                Strings::append(ret, " -- ", scfl->source_location);
+                out.append_raw(" -- ").append_raw(scfl->source_location);
             }
         }
-        return ret;
     }
 
-    std::string to_output_string(RequestType request_type, StringView s)
+    StringLiteral request_type_indent(RequestType request_type)
     {
-        std::string ret;
         switch (request_type)
         {
-            case RequestType::AUTO_SELECTED: Strings::append(ret, "  * "); break;
-            case RequestType::USER_REQUESTED: Strings::append(ret, "    "); break;
+            case RequestType::AUTO_SELECTED: return "  * ";
+            case RequestType::USER_REQUESTED: return "    ";
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
-        Strings::append(ret, s);
-        return ret;
     }
 
     bool BasicAction::compare_by_name(const BasicAction* left, const BasicAction* right)
@@ -435,13 +426,32 @@ namespace vcpkg
         return fmt::format("{}[{}]:{}", this->spec.name(), features, this->spec.triplet());
     }
 
+    static std::vector<PackageSpec> fdeps_to_pdeps(const PackageSpec& self,
+                                                   const std::map<std::string, std::vector<FeatureSpec>>& dependencies)
+    {
+        std::set<PackageSpec> specs;
+        for (auto&& p : dependencies)
+            for (auto&& q : p.second)
+                specs.insert(q.spec());
+        specs.erase(self);
+        return {specs.begin(), specs.end()};
+    }
+
+    static InternalFeatureSet fdeps_to_feature_list(const std::map<std::string, std::vector<FeatureSpec>>& fdeps)
+    {
+        InternalFeatureSet ret;
+        for (auto&& d : fdeps)
+            ret.push_back(d.first);
+        return ret;
+    }
+
     InstallPlanAction::InstallPlanAction(const PackageSpec& spec,
                                          const SourceControlFileAndLocation& scfl,
                                          const RequestType& request_type,
                                          Triplet host_triplet,
                                          std::map<std::string, std::vector<FeatureSpec>>&& dependencies,
                                          std::vector<LocalizedString>&& build_failure_messages)
-        : PackageAction(spec, {}, {})
+        : PackageAction{spec, fdeps_to_pdeps(spec, dependencies), fdeps_to_feature_list(dependencies)}
         , source_control_file_and_location(scfl)
         , plan_type(InstallPlanType::BUILD_AND_INSTALL)
         , request_type(request_type)
@@ -450,24 +460,10 @@ namespace vcpkg
         , build_failure_messages(std::move(build_failure_messages))
         , host_triplet(host_triplet)
     {
-        for (const auto& kv : feature_dependencies)
-        {
-            feature_list.emplace_back(kv.first);
-            for (const FeatureSpec& fspec : kv.second)
-            {
-                if (spec != fspec.spec())
-                {
-                    package_dependencies.emplace_back(fspec.spec());
-                }
-            }
-        }
-
-        Util::sort_unique_erase(package_dependencies);
-        Util::sort_unique_erase(feature_list);
     }
 
     InstallPlanAction::InstallPlanAction(InstalledPackageView&& ipv, const RequestType& request_type)
-        : PackageAction(ipv.spec(), ipv.dependencies(), ipv.feature_list())
+        : PackageAction{ipv.spec(), ipv.dependencies(), ipv.feature_list()}
         , installed_package(std::move(ipv))
         , plan_type(InstallPlanType::ALREADY_INSTALLED)
         , request_type(request_type)
@@ -507,6 +503,15 @@ namespace vcpkg
     const PreBuildInfo& InstallPlanAction::pre_build_info(LineInfo li) const
     {
         return *abi_info.value_or_exit(li).pre_build_info;
+    }
+    Version InstallPlanAction::version() const
+    {
+        if (auto scfl = source_control_file_and_location.get())
+            return scfl->to_version();
+        else if (auto ipv = installed_package.get())
+            return ipv->version();
+        else
+            Checks::unreachable(VCPKG_LINE_INFO);
     }
 
     RemovePlanAction::RemovePlanAction(const PackageSpec& spec,
@@ -1102,7 +1107,6 @@ namespace vcpkg
 
         std::set<PackageSpec> remove_specs;
         std::vector<const InstallPlanAction*> rebuilt_plans;
-        std::vector<const InstallPlanAction*> only_install_plans;
         std::vector<const InstallPlanAction*> new_plans;
         std::vector<const InstallPlanAction*> already_installed_plans;
         std::vector<const InstallPlanAction*> excluded;
@@ -1141,56 +1145,59 @@ namespace vcpkg
         already_installed_plans = Util::fmap(action_plan.already_installed, [](auto&& action) { return &action; });
 
         std::sort(rebuilt_plans.begin(), rebuilt_plans.end(), &InstallPlanAction::compare_by_name);
-        std::sort(only_install_plans.begin(), only_install_plans.end(), &InstallPlanAction::compare_by_name);
         std::sort(new_plans.begin(), new_plans.end(), &InstallPlanAction::compare_by_name);
         std::sort(already_installed_plans.begin(), already_installed_plans.end(), &InstallPlanAction::compare_by_name);
         std::sort(excluded.begin(), excluded.end(), &InstallPlanAction::compare_by_name);
 
-        static auto actions_to_output_string = [&](const std::vector<const InstallPlanAction*>& v) {
-            return Strings::join(
-                "\n", v, [&](const InstallPlanAction* p) { return to_output_string(*p, builtin_ports_dir); });
-        };
+        struct
+        {
+            LocalizedString operator()(msg::MessageT<> header, View<const InstallPlanAction*> actions)
+            {
+                LocalizedString msg;
+                msg.append(header).append_raw('\n');
+                for (auto action : actions)
+                {
+                    format_plan_row(msg, *action, builtin_ports_dir);
+                    msg.append_raw('\n');
+                }
+                return msg;
+            }
+            LocalizedString operator()(msg::MessageT<> header, const std::set<PackageSpec>& specs)
+            {
+                LocalizedString msg;
+                msg.append(header).append_raw('\n');
+                for (auto&& spec : specs)
+                {
+                    msg.append_raw(request_type_indent(RequestType::USER_REQUESTED)).append_raw(spec).append_raw('\n');
+                }
+                return msg;
+            }
+            const Path& builtin_ports_dir;
+        } format_plan{builtin_ports_dir};
 
         if (!excluded.empty())
         {
-            msg::println(
-                msg::format(msgExcludedPackages).append_raw('\n').append_raw(actions_to_output_string(excluded)));
+            msg::print(format_plan(msgExcludedPackages, excluded));
         }
 
         if (!already_installed_plans.empty())
         {
-            msg::println(msg::format(msgInstalledPackages)
-                             .append_raw('\n')
-                             .append_raw(actions_to_output_string(already_installed_plans)));
+            msg::print(format_plan(msgInstalledPackages, already_installed_plans));
         }
 
         if (!remove_specs.empty())
         {
-            auto message = msg::format(msgPackagesToRemove);
-            for (auto&& spec : remove_specs)
-            {
-                message.append_raw('\n').append_raw(to_output_string(RequestType::USER_REQUESTED, spec.to_string()));
-            }
-            msg::println(message);
+            msg::print(format_plan(msgPackagesToRemove, remove_specs));
         }
 
         if (!rebuilt_plans.empty())
         {
-            msg::println(
-                msg::format(msgPackagesToRebuild).append_raw('\n').append_raw(actions_to_output_string(rebuilt_plans)));
+            msg::print(format_plan(msgPackagesToRebuild, rebuilt_plans));
         }
 
         if (!new_plans.empty())
         {
-            msg::println(
-                msg::format(msgPackagesToInstall).append_raw('\n').append_raw(actions_to_output_string(new_plans)));
-        }
-
-        if (!only_install_plans.empty())
-        {
-            msg::println(msg::format(msgPackagesToInstallDirectly)
-                             .append_raw('\n')
-                             .append_raw(actions_to_output_string(only_install_plans)));
+            msg::print(format_plan(msgPackagesToInstall, new_plans));
         }
 
         if (has_non_user_requested_packages)
