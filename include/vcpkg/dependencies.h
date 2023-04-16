@@ -99,11 +99,6 @@ namespace vcpkg
 
     struct RemovePlanAction : BasicAction
     {
-        RemovePlanAction(const RemovePlanAction&) = delete;
-        RemovePlanAction(RemovePlanAction&&) = default;
-        RemovePlanAction& operator=(const RemovePlanAction&) = delete;
-        RemovePlanAction& operator=(RemovePlanAction&&) = default;
-
         RemovePlanAction(const PackageSpec& spec, const RemovePlanType& plan_type, const RequestType& request_type);
 
         RemovePlanType plan_type;
@@ -195,5 +190,13 @@ namespace vcpkg
                                                         Triplet host_triplet,
                                                         UnsupportedPortAction unsupported_port_action);
 
-    void print_plan(const ActionPlan& action_plan, const bool is_recursive = true, const Path& builtin_ports_dir = {});
+    struct FormattedPlan
+    {
+        bool has_removals = false;
+        LocalizedString text;
+    };
+
+    FormattedPlan format_plan(const ActionPlan& action_plan, const Path& builtin_ports_dir);
+
+    void print_plan(const ActionPlan& action_plan, const bool is_recursive, const Path& builtin_ports_dir);
 }

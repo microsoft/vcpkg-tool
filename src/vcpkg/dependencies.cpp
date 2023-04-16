@@ -417,7 +417,7 @@ namespace vcpkg
 
     std::string PackageAction::displayname() const
     {
-        if (this->feature_list.empty())
+        if (this->feature_list.empty_or_only_core())
         {
             return this->spec.to_string();
         }
@@ -1096,13 +1096,15 @@ namespace vcpkg
     {
     }
 
-    void print_plan(const ActionPlan& action_plan, const bool is_recursive, const Path& builtin_ports_dir)
+    FormattedPlan format_plan(const ActionPlan& action_plan, const Path& builtin_ports_dir)
     {
+        FormattedPlan ret;
         if (action_plan.remove_actions.empty() && action_plan.already_installed.empty() &&
             action_plan.install_actions.empty())
         {
-            msg::println(msgInstalledRequestedPackages);
-            return;
+            ret.text = msg::format(msgInstalledRequestedPackages);
+            ret.text.append_raw('\n');
+            return ret;
         }
 
         std::set<PackageSpec> remove_specs;
@@ -1138,10 +1140,6 @@ namespace vcpkg
                     new_plans.push_back(&install_action);
             }
         }
-        for (auto&& action : action_plan.already_installed)
-        {
-            if (action.request_type == RequestType::USER_REQUESTED) already_installed_plans.emplace_back(&action);
-        }
         already_installed_plans = Util::fmap(action_plan.already_installed, [](auto&& action) { return &action; });
 
         std::sort(rebuilt_plans.begin(), rebuilt_plans.end(), &InstallPlanAction::compare_by_name);
@@ -1151,62 +1149,65 @@ namespace vcpkg
 
         struct
         {
-            LocalizedString operator()(msg::MessageT<> header, View<const InstallPlanAction*> actions)
+            void operator()(LocalizedString& msg, msg::MessageT<> header, View<const InstallPlanAction*> actions)
             {
-                LocalizedString msg;
                 msg.append(header).append_raw('\n');
                 for (auto action : actions)
                 {
                     format_plan_row(msg, *action, builtin_ports_dir);
                     msg.append_raw('\n');
                 }
-                return msg;
             }
-            LocalizedString operator()(msg::MessageT<> header, const std::set<PackageSpec>& specs)
+            void operator()(LocalizedString& msg, msg::MessageT<> header, const std::set<PackageSpec>& specs)
             {
-                LocalizedString msg;
                 msg.append(header).append_raw('\n');
                 for (auto&& spec : specs)
                 {
                     msg.append_raw(request_type_indent(RequestType::USER_REQUESTED)).append_raw(spec).append_raw('\n');
                 }
-                return msg;
             }
             const Path& builtin_ports_dir;
         } format_plan{builtin_ports_dir};
 
         if (!excluded.empty())
         {
-            msg::print(format_plan(msgExcludedPackages, excluded));
+            format_plan(ret.text, msgExcludedPackages, excluded);
         }
 
         if (!already_installed_plans.empty())
         {
-            msg::print(format_plan(msgInstalledPackages, already_installed_plans));
+            format_plan(ret.text, msgInstalledPackages, already_installed_plans);
         }
 
         if (!remove_specs.empty())
         {
-            msg::print(format_plan(msgPackagesToRemove, remove_specs));
+            format_plan(ret.text, msgPackagesToRemove, remove_specs);
         }
 
         if (!rebuilt_plans.empty())
         {
-            msg::print(format_plan(msgPackagesToRebuild, rebuilt_plans));
+            format_plan(ret.text, msgPackagesToRebuild, rebuilt_plans);
         }
 
         if (!new_plans.empty())
         {
-            msg::print(format_plan(msgPackagesToInstall, new_plans));
+            format_plan(ret.text, msgPackagesToInstall, new_plans);
         }
 
         if (has_non_user_requested_packages)
         {
-            msg::println(msgPackagesToModify);
+            ret.text.append(msgPackagesToModify).append_raw('\n');
         }
 
-        bool have_removals = !remove_specs.empty() || !rebuilt_plans.empty();
-        if (have_removals && !is_recursive)
+        ret.has_removals = !remove_specs.empty() || !rebuilt_plans.empty();
+        return ret;
+    }
+
+    void print_plan(const ActionPlan& action_plan, const bool is_recursive, const Path& builtin_ports_dir)
+    {
+        auto formatted = format_plan(action_plan, builtin_ports_dir);
+        msg::print(formatted.text);
+        if (!is_recursive && formatted.has_removals)
         {
             msg::println_warning(msgPackagesToRebuildSuggestRecurse);
             Checks::exit_fail(VCPKG_LINE_INFO);
