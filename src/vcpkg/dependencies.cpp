@@ -451,7 +451,7 @@ namespace vcpkg
                                          Triplet host_triplet,
                                          std::map<std::string, std::vector<FeatureSpec>>&& dependencies,
                                          std::vector<LocalizedString>&& build_failure_messages)
-        : PackageAction{spec, fdeps_to_pdeps(spec, dependencies), fdeps_to_feature_list(dependencies)}
+        : PackageAction{{spec}, fdeps_to_pdeps(spec, dependencies), fdeps_to_feature_list(dependencies)}
         , source_control_file_and_location(scfl)
         , plan_type(InstallPlanType::BUILD_AND_INSTALL)
         , request_type(request_type)
@@ -463,7 +463,7 @@ namespace vcpkg
     }
 
     InstallPlanAction::InstallPlanAction(InstalledPackageView&& ipv, const RequestType& request_type)
-        : PackageAction{ipv.spec(), ipv.dependencies(), ipv.feature_list()}
+        : PackageAction{{ipv.spec()}, ipv.dependencies(), ipv.feature_list()}
         , installed_package(std::move(ipv))
         , plan_type(InstallPlanType::ALREADY_INSTALLED)
         , request_type(request_type)
