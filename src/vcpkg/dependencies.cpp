@@ -431,8 +431,12 @@ namespace vcpkg
     {
         std::set<PackageSpec> specs;
         for (auto&& p : dependencies)
+        {
             for (auto&& q : p.second)
+            {
                 specs.insert(q.spec());
+            }
+        }
         specs.erase(self);
         return {specs.begin(), specs.end()};
     }
@@ -441,7 +445,9 @@ namespace vcpkg
     {
         InternalFeatureSet ret;
         for (auto&& d : fdeps)
+        {
             ret.push_back(d.first);
+        }
         return ret;
     }
 
@@ -507,11 +513,17 @@ namespace vcpkg
     Version InstallPlanAction::version() const
     {
         if (auto scfl = source_control_file_and_location.get())
+        {
             return scfl->to_version();
+        }
         else if (auto ipv = installed_package.get())
+        {
             return ipv->version();
+        }
         else
+        {
             Checks::unreachable(VCPKG_LINE_INFO);
+        }
     }
 
     RemovePlanAction::RemovePlanAction(const PackageSpec& spec,

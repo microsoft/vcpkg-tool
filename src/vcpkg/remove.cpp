@@ -117,11 +117,17 @@ namespace vcpkg::Remove
 
             LocalizedString msg;
             if (plan_type == RemovePlanType::NOT_INSTALLED)
+            {
                 msg = msg::format(msgFollowingPackagesNotInstalled).append_raw('\n');
+            }
             else if (plan_type == RemovePlanType::REMOVE)
+            {
                 msg = msg::format(msgPackagesToRemove).append_raw('\n');
+            }
             else
+            {
                 Checks::unreachable(VCPKG_LINE_INFO);
+            }
 
             std::vector<const RemovePlanAction*> cont = it->second;
             std::sort(cont.begin(), cont.end(), &RemovePlanAction::compare_by_name);
