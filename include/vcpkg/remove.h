@@ -1,6 +1,10 @@
 #pragma once
 
+#include <vcpkg/base/fwd/files.h>
+
 #include <vcpkg/fwd/dependencies.h>
+#include <vcpkg/fwd/installedpaths.h>
+#include <vcpkg/fwd/packagespec.h>
 
 #include <vcpkg/commands.interface.h>
 
@@ -12,10 +16,10 @@ namespace vcpkg::Remove
         YES
     };
 
-    void perform_remove_plan_action(const VcpkgPaths& paths,
-                                    const RemovePlanAction& action,
-                                    const Purge purge,
-                                    StatusParagraphs* status_db);
+    void remove_package(Filesystem& fs,
+                        const InstalledPaths& installed,
+                        const PackageSpec& spec,
+                        StatusParagraphs& status_db);
 
     extern const CommandStructure COMMAND_STRUCTURE;
 

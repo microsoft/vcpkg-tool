@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vcpkg/fwd/dependencies.h>
 #include <vcpkg/fwd/portfileprovider.h>
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
@@ -7,11 +8,6 @@
 #include <vcpkg/commands.interface.h>
 #include <vcpkg/packagespec.h>
 #include <vcpkg/versions.h>
-
-namespace vcpkg
-{
-    struct StatusParagraphs;
-}
 
 namespace vcpkg::Update
 {

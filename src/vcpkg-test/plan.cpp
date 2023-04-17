@@ -914,8 +914,8 @@ TEST_CASE ("basic remove scheme", "[plan]")
     pghs.push_back(make_status_pgh("a"));
     StatusParagraphs status_db(std::move(pghs));
 
-    auto remove_plan = create_remove_plan({{"a", Test::X86_WINDOWS}}, status_db);
-
+    auto plan = create_remove_plan({{"a", Test::X86_WINDOWS}}, status_db);
+    auto& remove_plan = plan.remove;
     REQUIRE(remove_plan.size() == 1);
     REQUIRE(remove_plan.at(0).spec.name() == "a");
 }
@@ -927,7 +927,8 @@ TEST_CASE ("recurse remove scheme", "[plan]")
     pghs.push_back(make_status_pgh("b", "a"));
     StatusParagraphs status_db(std::move(pghs));
 
-    auto remove_plan = create_remove_plan({{"a", Test::X86_WINDOWS}}, status_db);
+    auto plan = create_remove_plan({{"a", Test::X86_WINDOWS}}, status_db);
+    auto& remove_plan = plan.remove;
 
     REQUIRE(remove_plan.size() == 2);
     REQUIRE(remove_plan.at(0).spec.name() == "b");
@@ -942,7 +943,8 @@ TEST_CASE ("features depend remove scheme", "[plan]")
     pghs.push_back(make_status_feature_pgh("b", "0", "a"));
     StatusParagraphs status_db(std::move(pghs));
 
-    auto remove_plan = create_remove_plan({{"a", Test::X86_WINDOWS}}, status_db);
+    auto plan = create_remove_plan({{"a", Test::X86_WINDOWS}}, status_db);
+    auto& remove_plan = plan.remove;
 
     REQUIRE(remove_plan.size() == 2);
     REQUIRE(remove_plan.at(0).spec.name() == "b");
@@ -958,7 +960,8 @@ TEST_CASE ("features depend remove scheme once removed", "[plan]")
     pghs.push_back(make_status_feature_pgh("opencv", "vtk", "vtk"));
     StatusParagraphs status_db(std::move(pghs));
 
-    auto remove_plan = create_remove_plan({{"expat", Test::X86_WINDOWS}}, status_db);
+    auto plan = create_remove_plan({{"expat", Test::X86_WINDOWS}}, status_db);
+    auto& remove_plan = plan.remove;
 
     REQUIRE(remove_plan.size() == 3);
     REQUIRE(remove_plan.at(0).spec.name() == "opencv");
@@ -975,7 +978,8 @@ TEST_CASE ("features depend remove scheme once removed x64", "[plan]")
     pghs.push_back(make_status_feature_pgh("opencv", "vtk", "vtk", "x64"));
     StatusParagraphs status_db(std::move(pghs));
 
-    auto remove_plan = create_remove_plan({{"expat", Triplet::from_canonical_name("x64")}}, status_db);
+    auto plan = create_remove_plan({{"expat", Triplet::from_canonical_name("x64")}}, status_db);
+    auto& remove_plan = plan.remove;
 
     REQUIRE(remove_plan.size() == 3);
     REQUIRE(remove_plan.at(0).spec.name() == "opencv");
@@ -990,7 +994,8 @@ TEST_CASE ("features depend core remove scheme", "[plan]")
     pghs.push_back(make_status_pgh("cpr", "curl[core]", "", "x64"));
     StatusParagraphs status_db(std::move(pghs));
 
-    auto remove_plan = create_remove_plan({{"curl", Triplet::from_canonical_name("x64")}}, status_db);
+    auto plan = create_remove_plan({{"curl", Triplet::from_canonical_name("x64")}}, status_db);
+    auto& remove_plan = plan.remove;
 
     REQUIRE(remove_plan.size() == 2);
     REQUIRE(remove_plan.at(0).spec.name() == "cpr");
@@ -1005,7 +1010,8 @@ TEST_CASE ("features depend core remove scheme 2", "[plan]")
     pghs.push_back(make_status_feature_pgh("curl", "b", "curl[a]", "x64"));
     StatusParagraphs status_db(std::move(pghs));
 
-    auto remove_plan = create_remove_plan({{"curl", Triplet::from_canonical_name("x64")}}, status_db);
+    auto plan = create_remove_plan({{"curl", Triplet::from_canonical_name("x64")}}, status_db);
+    auto& remove_plan = plan.remove;
 
     REQUIRE(remove_plan.size() == 1);
     REQUIRE(remove_plan.at(0).spec.name() == "curl");
@@ -1160,7 +1166,8 @@ TEST_CASE ("remove tool port scheme", "[plan]")
     pghs.push_back(make_status_pgh("a"));
     StatusParagraphs status_db(std::move(pghs));
 
-    auto remove_plan = create_remove_plan({{"a", Test::X86_WINDOWS}}, status_db);
+    auto plan = create_remove_plan({{"a", Test::X86_WINDOWS}}, status_db);
+    auto& remove_plan = plan.remove;
 
     REQUIRE(remove_plan.size() == 1);
     REQUIRE(remove_plan.at(0).spec.name() == "a");
