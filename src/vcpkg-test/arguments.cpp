@@ -1,5 +1,7 @@
 #include <catch2/catch.hpp>
 
+#include <vcpkg/base/strings.h>
+
 #include <vcpkg/vcpkgcmdarguments.h>
 
 #include <map>
@@ -96,9 +98,9 @@ TEST_CASE ("VcpkgCmdArguments from argument sequence with valued options", "[arg
         auto opts = v.parse_arguments(cmdstruct);
 
         REQUIRE(opts.settings["a"] == "b");
-        REQUIRE(v.command_arguments.size() == 1);
-        REQUIRE(v.command_arguments[0] == "argument");
-        REQUIRE(v.command == "command");
+        REQUIRE(opts.command_arguments.size() == 1);
+        REQUIRE(opts.command_arguments[0] == "argument");
+        REQUIRE(v.get_command() == "command");
     }
 
     SECTION ("case 2")
@@ -115,7 +117,7 @@ TEST_CASE ("VcpkgCmdArguments from argument sequence with valued options", "[arg
         REQUIRE(opts.settings.find("d") == opts.settings.end());
         REQUIRE(opts.switches.find("a") != opts.switches.end());
         REQUIRE(opts.settings.find("c") == opts.settings.end());
-        REQUIRE(v.command_arguments.size() == 0);
+        REQUIRE(opts.command_arguments.size() == 0);
     }
 }
 
@@ -135,7 +137,7 @@ TEST_CASE ("vcpkg_root parse with equal separator", "[arguments]")
 
 TEST_CASE ("Combine asset cache params", "[arguments]")
 {
-    std::vector<std::string> t = {vcpkg::Strings::concat("--", VcpkgCmdArguments::ASSET_SOURCES_ARG, "=x-azurl,value")};
+    std::vector<std::string> t = {"--x-asset-sources=x-azurl,value"};
     auto v = VcpkgCmdArguments::create_from_arg_sequence(nullptr, nullptr);
     REQUIRE(!v.asset_sources_template().has_value());
     v = VcpkgCmdArguments::create_from_arg_sequence(t.data(), t.data() + t.size());
@@ -150,4 +152,11 @@ TEST_CASE ("Combine asset cache params", "[arguments]")
     v = VcpkgCmdArguments::create_from_arg_sequence(t.data(), t.data() + t.size());
     v.imbue_from_fake_environment(envmap);
     REQUIRE(v.asset_sources_template() == "x-azurl,value1;x-azurl,value");
+}
+
+TEST_CASE ("Feature flag off", "[arguments]")
+{
+    std::vector<std::string> t = {"--feature-flags=-versions"};
+    auto v = VcpkgCmdArguments::create_from_arg_sequence(t.data(), t.data() + t.size());
+    CHECK(!v.versions_enabled());
 }

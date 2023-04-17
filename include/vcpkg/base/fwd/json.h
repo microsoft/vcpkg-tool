@@ -8,4 +8,7 @@ namespace vcpkg::Json
     struct Object;
     struct ParsedJson;
     struct Array;
+    struct Reader;
+    template<class Type>
+    struct IDeserializer;
 }

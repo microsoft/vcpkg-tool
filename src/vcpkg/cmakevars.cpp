@@ -1,6 +1,7 @@
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/span.h>
+#include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
@@ -91,25 +92,26 @@ namespace vcpkg::CMakeVars
         const auto& fs = paths.get_filesystem();
         std::string extraction_file;
 
-        Strings::append(extraction_file,
-                        "cmake_minimum_required(VERSION 3.5)\n"
-                        "macro(vcpkg_triplet_file VCPKG_TRIPLET_ID)\n",
-                        "set(_vcpkg_triplet_file_BACKUP_CURRENT_LIST_FILE \"${CMAKE_CURRENT_LIST_FILE}\")\n");
+        extraction_file.append("cmake_minimum_required(VERSION 3.5)\n"
+                               "macro(vcpkg_triplet_file VCPKG_TRIPLET_ID)\n"
+                               "set(_vcpkg_triplet_file_BACKUP_CURRENT_LIST_FILE \"${CMAKE_CURRENT_LIST_FILE}\")\n");
 
         for (auto&& p : emitted_triplets)
         {
             auto path_to_triplet = paths.get_triplet_file_path(p.first);
-            Strings::append(extraction_file, "if(VCPKG_TRIPLET_ID EQUAL ", p.second, ")\n");
-            Strings::append(
-                extraction_file, "set(CMAKE_CURRENT_LIST_FILE \"", path_to_triplet.generic_u8string(), "\")\n");
-            Strings::append(
-                extraction_file,
-                "get_filename_component(CMAKE_CURRENT_LIST_DIR \"${CMAKE_CURRENT_LIST_FILE}\" DIRECTORY)\n");
-            Strings::append(extraction_file, fs.read_contents(path_to_triplet, VCPKG_LINE_INFO));
-            Strings::append(extraction_file, "\nendif()\n");
+            fmt::format_to(std::back_inserter(extraction_file),
+                           "if(VCPKG_TRIPLET_ID EQUAL {})\n"
+                           "set(CMAKE_CURRENT_LIST_FILE \"{}\")\n"
+                           "get_filename_component(CMAKE_CURRENT_LIST_DIR \"${{CMAKE_CURRENT_LIST_FILE}}\" DIRECTORY)\n"
+                           "{}\n"
+                           "endif()\n",
+                           p.second,
+                           path_to_triplet.generic_u8string(),
+                           fs.read_contents(path_to_triplet, VCPKG_LINE_INFO));
         }
-        Strings::append(extraction_file,
-                        R"(
+
+        extraction_file.append(
+            R"(
 set(CMAKE_CURRENT_LIST_FILE "${_vcpkg_triplet_file_BACKUP_CURRENT_LIST_FILE}")
 get_filename_component(CMAKE_CURRENT_LIST_DIR "${CMAKE_CURRENT_LIST_FILE}" DIRECTORY)
 endmacro()
@@ -131,7 +133,7 @@ endmacro()
         }
         std::string extraction_file = create_extraction_file_prelude(paths, emitted_triplets);
 
-        Strings::append(extraction_file, R"(
+        extraction_file.append(R"(
 
 function(vcpkg_get_tags PORT FEATURES VCPKG_TRIPLET_ID VCPKG_ABI_SETTINGS_FILE)
     message("d8187afd-ea4a-4fc3-9aa4-a6782e1ed9af")
@@ -181,19 +183,15 @@ endfunction()
                 featurelist.append(f);
             }
 
-            Strings::append(extraction_file,
-                            "vcpkg_get_tags(\"",
-                            spec.package_spec.name(),
-                            "\" \"",
-                            featurelist,
-                            "\" \"",
-                            emitted_triplets[spec.package_spec.triplet()],
-                            "\" \"",
-                            spec_abi_setting.second,
-                            "\")\n");
+            fmt::format_to(std::back_inserter(extraction_file),
+                           "vcpkg_get_tags(\"{}\" \"{}\" \"{}\" \"{}\")\n",
+                           spec.package_spec.name(),
+                           featurelist,
+                           emitted_triplets[spec.package_spec.triplet()],
+                           spec_abi_setting.second);
         }
 
-        auto tags_path = paths.buildtrees() / Strings::concat(tag_extract_id++, ".vcpkg_tags.cmake");
+        auto tags_path = paths.buildtrees() / fmt::format("{}.vcpkg_tags.cmake", tag_extract_id++);
         fs.write_contents_and_dirs(tags_path, extraction_file, VCPKG_LINE_INFO);
         return tags_path;
     }
@@ -212,7 +210,7 @@ endfunction()
 
         std::string extraction_file = create_extraction_file_prelude(paths, emitted_triplets);
 
-        Strings::append(extraction_file, R"(
+        extraction_file.append(R"(
 
 function(vcpkg_get_dep_info PORT VCPKG_TRIPLET_ID)
     message("d8187afd-ea4a-4fc3-9aa4-a6782e1ed9af")
@@ -251,15 +249,13 @@ endfunction()
                 vcpkg_get_dep_info_name = spec_name;
             }
 
-            Strings::append(extraction_file,
-                            "vcpkg_get_dep_info(",
-                            vcpkg_get_dep_info_name,
-                            " ",
-                            emitted_triplets[spec.triplet()],
-                            ")\n");
+            fmt::format_to(std::back_inserter(extraction_file),
+                           "vcpkg_get_dep_info({} {})\n",
+                           vcpkg_get_dep_info_name,
+                           emitted_triplets[spec.triplet()]);
         }
 
-        auto dep_info_path = paths.buildtrees() / Strings::concat(dep_info_id++, ".vcpkg_dep_info.cmake");
+        auto dep_info_path = paths.buildtrees() / fmt::format("{}.vcpkg_dep_info.cmake", dep_info_id++);
         fs.write_contents_and_dirs(dep_info_path, extraction_file, VCPKG_LINE_INFO);
         return dep_info_path;
     }

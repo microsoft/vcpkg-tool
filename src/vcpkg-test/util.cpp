@@ -54,6 +54,21 @@ namespace vcpkg::Test
         return std::move(*m_pgh.get());
     }
 
+    ParseExpected<SourceControlFile> test_parse_control_file(
+        const std::vector<std::unordered_map<std::string, std::string>>& v)
+    {
+        std::vector<vcpkg::Paragraph> pghs;
+        for (auto&& p : v)
+        {
+            pghs.emplace_back();
+            for (auto&& kv : p)
+            {
+                pghs.back().emplace(kv.first, std::make_pair(kv.second, vcpkg::TextRowCol{}));
+            }
+        }
+        return vcpkg::SourceControlFile::parse_control_file("", std::move(pghs));
+    }
+
     std::unique_ptr<vcpkg::StatusParagraph> make_status_pgh(const char* name,
                                                             const char* depends,
                                                             const char* default_features,
@@ -105,6 +120,22 @@ namespace vcpkg::Test
 #else
         return "/tmp/vcpkg-test";
 #endif
+    }
+
+    std::vector<FullPackageSpec> parse_test_fspecs(StringView sv)
+    {
+        std::vector<FullPackageSpec> ret;
+        ParserBase parser(sv, "test");
+        while (!parser.at_eof())
+        {
+            auto opt = parse_qualified_specifier(parser);
+            REQUIRE(opt.has_value());
+            bool unused = false;
+            ret.push_back(
+                opt.get()->to_full_spec(X86_WINDOWS, unused, ImplicitDefault::YES).value_or_exit(VCPKG_LINE_INFO));
+        }
+
+        return ret;
     }
 
     const Path& base_temporary_directory() noexcept
@@ -179,7 +210,7 @@ namespace vcpkg::Test
         const size_t orig_path_len = path.size();
         for (size_t i = 0; i < l.size() && i < r.size(); ++i)
         {
-            Strings::append(path, '[', i, ']');
+            fmt::format_to(std::back_inserter(path), "[{}]", i);
             check_json_eq(r[i], l[i], path, ordered);
             path.resize(orig_path_len);
         }

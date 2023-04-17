@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vcpkg/base/fwd/stringview.h>
+
 #include <vcpkg/commands.interface.h>
 
 #define STRINGIFY(...) #__VA_ARGS__

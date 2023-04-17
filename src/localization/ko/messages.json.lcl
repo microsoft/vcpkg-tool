@@ -490,11 +490,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";ActivatingIndividualArtifacts" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";Activating$" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Activating individual artifacts]]></Val>
+          <Val><![CDATA[Activating: ${p0}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[개별 아티팩트 활성화]]></Val>
+            <Val><![CDATA[활성화 중: ${p0}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -526,6 +526,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[The first argument to '{command_line}' must be 'artifact' or 'port'.]A;]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AddHelp" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Adds the indicated port or artifact to the manifest associated with the current directory.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[현재 디렉터리에 연결된 매니페스트에 표시된 포트 또는 아티팩트 추가]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -651,10 +660,13 @@
       </Item>
       <Item ItemId=";AddVersionNewShaIs" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[new SHA: {value}]]></Val>
+          <Val><![CDATA[new SHA: {commit_sha}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[새 SHA: {value}]]></Val>
+            <Val><![CDATA[새 SHA: {commit_sha}]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[new SHA: {value}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -687,10 +699,13 @@
       </Item>
       <Item ItemId=";AddVersionOldShaIs" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[old SHA: {value}]]></Val>
+          <Val><![CDATA[old SHA: {commit_sha}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[이전 SHA: {value}]]></Val>
+            <Val><![CDATA[이전 SHA: {commit_sha}]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[old SHA: {value}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -699,15 +714,6 @@
           <Val><![CDATA[Use --{option} to bypass this check]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[--{option}을(를) 사용하여 이 검사를 바이패스합니다.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";AddVersionPortDoesNotExist" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[{package_name} does not exist]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{package_name}이(가) 없습니다.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1135,6 +1141,33 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ArtifactsBootstrapFailed" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg-artifacts is not installed and could not be bootstrapped.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg-artifacts가 설치되어 있지 않으며 부트스트랩할 수 없습니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ArtifactsNotInstalledReadonlyRoot" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg-artifacts is not installed, and it can't be installed because VCPKG_ROOT is assumed to be readonly. Reinstalling vcpkg using the 'one liner' may fix this problem.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg-artifacts가 설치되어 있지 않으며, VCPKG_ROOT가 읽기 전용으로 간주되어 vcpkg-artifacts를 설치할 수 없습니다. 'one liner'를 사용하여 vcpkg를 다시 설치하여 이 문제를 해결할 수 있습니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ArtifactsNotOfficialWarning" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Using vcpkg-artifacts with an unofficial ]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[비공식적으로 vcpkg-artifacts 사용 ]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ArtifactsOptionIncompatibility" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[--{option} has no effect on find artifact.]]></Val>
@@ -1288,11 +1321,29 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";BaselineFileNoDefaultFieldPath" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[baseline file at {path} was invalid (no "default" field)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{path}의 기준 파일이 잘못되었습니다("기본값" 필드 없음).]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";BaselineGitShowFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[while checking out baseline from commit '{commit_sha}', failed to `git show` versions/baseline.json. This may be fixed by fetching commits with `git fetch`.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA['{commit_sha}' 커밋에서 기준을 체크 아웃하는 동안 `git show` versions/baseline.json에 실패했습니다. 이 문제는 'git fetch'로 커밋을 페치하여 해결할 수 있습니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";BaselineMissing" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Baseline version not found. Run:]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit -m "Update version database"]A;to set {version} as the baseline version.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[기준 버전을 찾을 수 없습니다. 실행:]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit -m "Update version database"]A;{version}을(를) 기본 버전으로 설정합니다.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1321,18 +1372,6 @@
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{path}]A; 필요한 항목: {expected}, 실제 항목: {actual}]]></Val>
           </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";BothYesAndNoOptionSpecifiedError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[cannot specify both --no-{option} and --{option}.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[--no-{option} 및 --{option}을 둘 다 지정할 수 없습니다.]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[error: cannot specify both --no-{option} and --{option}.]]></Val>
-          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -1504,6 +1543,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[You can also use the prefilled template from {path}.]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";BuildTroubleshootingMessageGH" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[You can also sumbit an issue by running (GitHub cli must be installed):]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[실행하여 문제를 합산할 수도 있습니다(GitHub cli를 설치해야 합니다).]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -1750,11 +1798,38 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CacheHelp" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The argument should be a substring to search for or no argument to display all cached libraries.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[인수는 검색할 substring이거나 모든 캐시된 라이브러리를 표시할 인수가 없어야 합니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CannotRenameFilesAcrossFilesystems" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Cannot rename files across filesystems]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[파일 시스템 간에 파일 이름을 바꿀 수 없음]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CheckedOutGitSha" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Checked out Git SHA: {commit_sha}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Git SHA: {commit_sha} 체크 아웃됨]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CheckedOutObjectMissingManifest" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The checked-out object does not contain a CONTROL file or vcpkg.json file.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[체크 아웃된 개체에 CONTROL 파일 또는 vcpkg.json 파일이 없습니다.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1809,6 +1884,15 @@
           <Val><![CDATA[REGRESSION: {spec} cascaded, but it is required to pass. ({path}).]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[회귀: {spec} 단계식이지만 통과해야 합니다. ({path}).]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CiBaselineIndependentRegression" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[REGRESSION: Independent {spec} failed with {build_result}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[회귀: {build_result}(으)로 독립 {spec}이(가) 실패했습니다.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2293,15 +2377,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CmdGenerateMessageMapOptOutputComments" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[When generating the message map, include comments (the default)]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[메시지 맵을 생성할 때 주석 포함(기본값)]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";CmdInfoOptInstalled" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[(experimental) Report on installed packages instead of available]]></Val>
@@ -2602,6 +2677,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";Commands" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Commands:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[명령:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CommunityTriplets" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[VCPKG community triplets:]]></Val>
@@ -2665,18 +2749,6 @@
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[다음 파일은 {path}에 이미 설치되어 있으며 {spec}과(와) 충돌합니다.]]></Val>
           </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ConflictingValuesForOption" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[conflicting values specified for '--{option}'.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA['--{option}'에 충돌하는 값이 지정되었습니다.]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[conflicting values specified for '--{value}'.]]></Val>
-          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -2824,6 +2896,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CouldNotFindVersionDatabaseFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Couldn't find the versions database file: {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[버전 데이터베이스 파일을 찾을 수 없습니다. {path}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CreateFailureLogsDir" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Creating failure logs output directory {path}.]]></Val>
@@ -2944,6 +3025,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CycleDetectedDuring" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[cycle detected during {spec}:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{spec} 동안 검색된 주기:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";DateTableHeader" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Date]]></Val>
@@ -2962,20 +3052,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";DeactivatingProject" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";Deactivating$" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Deactivating project]]></Val>
+          <Val><![CDATA[Deactivating: ${p0}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[프로젝트 비활성화 중]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";DeactivatingProject$" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Deactivating project ${p0}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[${p0} 프로젝트 비활성화 중]]></Val>
+            <Val><![CDATA[비활성화 중: ${p0}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -3247,30 +3328,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";DownloadingVcpkgCeBundle" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Downloading vcpkg-artifacts bundle {version}...]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{version} vcpkg-artifacts 번들을 다운로드하는 중...]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Downloading vcpkg-ce bundle {version}...]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";DownloadingVcpkgCeBundleLatest" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Downloading latest vcpkg-artifacts bundle...]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[최신 vcpkg-artifacts 번들을 다운로드하는 중...]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Downloading latest vcpkg-ce bundle...]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";DownloadingVcpkgStandaloneBundle" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Downloading standalone bundle {version}.]]></Val>
@@ -3316,15 +3373,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";DuplicateCommandOption" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The option --{option} can only be passed once.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[--{option} 옵션은 한 번만 전달할 수 있습니다.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";DuplicateDefine$DuringActivationNewValueWillReplaceOld" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Duplicate define ${p0} during activation. New value will replace old.]]></Val>
@@ -3348,15 +3396,6 @@
           <Val><![CDATA[Duplicate location declared ${p0} during activation. New value will replace old.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[활성화 중에 ${p0} 중복 위치가 선언되었습니다. 새로운 가치는 오래된 것을 대체할 것입니다.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";DuplicateOptions" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA['--{value}' specified multiple times.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA['--{value}'이(가) 여러 번 지정되었습니다.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -3465,15 +3504,6 @@
           <Val><![CDATA[Embedding `vcpkg-configuration` in a manifest file is an EXPERIMENTAL feature.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[매니페스트 파일에 'vcpkg-configuration'을 포함하는 것은 실험적 기능입니다.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";EmptyArg" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The option --{option} must be passed a non-empty argument.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[--{option} 옵션은 비어 있지 않은 인수로 전달되어야 합니다.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -3768,10 +3798,13 @@
       </Item>
       <Item ItemId=";ErrorWhileWriting" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Error occured while writing {path}]]></Val>
+          <Val><![CDATA[Error occurred while writing {path}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{path}을(를) 쓰는 동안 오류가 발생했습니다.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Error occured while writing {path}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -3780,6 +3813,15 @@
           <Val><![CDATA[Found the following errors:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[다음 오류를 발견했습니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";Example" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[example:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[예:]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -3874,11 +3916,47 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ExpectedDefaultFeaturesList" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[expected ',' or end of text in default features list]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[기본 기능 목록에 ',' 또는 텍스트의 끝이 필요합니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ExpectedDependenciesList" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[expected ',' or end of text in dependencies list]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[종속성 목록에 ',' 또는 텍스트의 끝이 필요합니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ExpectedDigitsAfterDecimal" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Expected digits after the decimal point]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[소수점 뒤에 숫자가 필요합니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ExpectedEof" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[expected eof]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[eof가 필요합니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ExpectedExplicitTriplet" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[expected an explicit triplet]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[명시적 트리플렛이 필요합니다.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -3901,6 +3979,24 @@
           <Prev Cat="Text">
             <Val><![CDATA[expected 'fail' or 'skip' here]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ExpectedFeatureListTerminal" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[expected ',' or ']5D;' in feature list]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[기능 목록에 ',' 또는 ']5D;'가 필요합니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ExpectedFeatureName" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[expected feature name (must be lowercase, digits, '-')]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[기능 이름이 필요합니다(소문자, 숫자, '-'여야 함).]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -3931,6 +4027,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ExpectedPackageSpecifier" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[expected a package specifier]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[패키지 지정자가 필요합니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ExpectedPathToExist" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Expected {path} to exist after fetching]]></Val>
@@ -3942,10 +4047,13 @@
       </Item>
       <Item ItemId=";ExpectedPortName" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[expected a port name here]]></Val>
+          <Val><![CDATA[expected a port name here (must be lowercase, digits, '-')]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[여기에 포트 이름이 필요합니다.]]></Val>
+            <Val><![CDATA[여기에 포트 이름이 필요합니다(소문자, 숫자, '-'여야 함).]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[expected a port name here]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -3969,21 +4077,12 @@
       </Item>
       <Item ItemId=";ExpectedTripletName" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[expected a triplet name here]]></Val>
+          <Val><![CDATA[expected a triplet name here (must be lowercase, digits, '-')]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[여기에 삼중 이름이 필요합니다.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ExpectedValueForOption" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[expected value after --{option}.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[--{option} 이후의 예상 값입니다.]]></Val>
+            <Val><![CDATA[여기에 트리플렛 이름이 필요합니다(소문자, 숫자, '-'여야 함).]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[expected value after '{value}'.]]></Val>
+            <Val><![CDATA[expected a triplet name here]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -4096,11 +4195,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";FailedToActivateProject$" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";FailedToAcquireMutant" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Failed to activate project ${p0}]]></Val>
+          <Val><![CDATA[failed to acquire mutant {path}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[${p0} 프로젝트 활성화 실패]]></Val>
+            <Val><![CDATA[변이 {path}을(를) 가져오지 못했습니다.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4110,6 +4209,24 @@
           <Val><![CDATA[failed to check out `versions` from repo {package_name}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{package_name} 리포지토리에서 '버전'을 체크 아웃하지 못했습니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FailedToDeleteDueToFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[failed to remove_all({value}) due to {path}: ]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[다음 {path}(으)로 인해 remove_all({value}) 실패: ]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FailedToDeleteInsideDueToFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[failed to remove_all_inside({value}) due to {path}: ]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[다음 {path}(으)로 인해 remove_all_inside({value}) 실패: ]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4291,6 +4408,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";FailedToOpenAlgorithm" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[failed to open {value}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{value}을(를) 열지 못했습니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FailedToParseBaseline" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Failed to parse baseline: {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[기준을 구문 분석하지 못했습니다. {path}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";FailedToParseCMakeConsoleOut" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Failed to parse CMake console output to locate block start/end markers.]]></Val>
@@ -4302,28 +4437,25 @@
       </Item>
       <Item ItemId=";FailedToParseConfig" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Failed to parse configuration {path}]]></Val>
+          <Val><![CDATA[Failed to parse configuration: {path}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[구성 {path}을(를) 구문 분석하지 못했습니다.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Failed to parse configuration {path}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";FailedToParseControl" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Failed to parse control file: {path}]]></Val>
+          <Val><![CDATA[Failed to parse CONTROL file: {path}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[제어 파일 {path}을(를) 구문 분석하지 못했습니다.]]></Val>
           </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";FailedToParseJson" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Failed to parse JSON file: {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[JSON 파일을 구문 분석하지 못했습니다. {path}]]></Val>
-          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Failed to parse control file: {path}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -4341,6 +4473,15 @@
           <Val><![CDATA[Failed to parse {path}, expected a top-level object.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{path}을(를) 구문 분석하지 못했습니다. 최상위 개체가 필요합니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FailedToParseNoVersionsArray" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Failed to parse {path}, expected a 'versions' array.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{path}을(를) 구문 분석하지 못했습니다. 'version' 배열이 필요합니다.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4363,6 +4504,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";FailedToParseVersionsFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[failed to parse versions file {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[버전 파일 {path}을(를) 구문 분석하지 못했습니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";FailedToProvisionCe" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Failed to provision vcpkg-artifacts.]]></Val>
@@ -4372,15 +4522,6 @@
           <Prev Cat="Text">
             <Val><![CDATA[Failed to provision vcpkg-ce.]]></Val>
           </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";FailedToRead" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Failed to read {path}: {error_msg}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{path} 읽기 실패: {error_msg}]]></Val>
-          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -4606,6 +4747,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";FindHelp" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Searches for the indicated artifact or port. With no parameter after 'artifact' or 'port', displays everything.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[표시된 아티팩트 또는 포트를 검색합니다. '아티팩트' 또는 '포트' 뒤에 매개 변수가 없으면 모든 항목이 표시됩니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";FishCompletion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[vcpkg fish completion is already added at "{path}".]]></Val>
@@ -4689,6 +4839,15 @@
           <Val><![CDATA[Full path to the file in which MSBuild properties will be written.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[MSBuild 속성이 기록될 파일의 전체 경로입니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";GHAParametersMissing" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The GHA binary source requires the ACTIONS_RUNTIME_TOKEN and ACTIONS_CACHE_URL environment variables to be set. See {url} for details.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[GHA 이진 원본을 사용하려면 ACTIONS_RUNTIME_TOKEN 및 ACTIONS_CACHE_URL 환경 변수를 설정해야 합니다. 자세한 내용은 {url}을(를) 참조하세요.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -5346,10 +5505,13 @@
       </Item>
       <Item ItemId=";HelpTextOptFullDesc" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Do not truncate long text]]></Val>
+          <Val><![CDATA[Do not truncate long text.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[긴 텍스트를 자르지 않음]]></Val>
+            <Val><![CDATA[긴 텍스트를 자르지 않습니다.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Do not truncate long text]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -5382,37 +5544,49 @@
       </Item>
       <Item ItemId=";HelpTxtOptCleanAfterBuild" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Clean buildtrees, packages and downloads after building each package]]></Val>
+          <Val><![CDATA[Clean buildtrees, packages and downloads after building each package.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[각 패키지를 빌드한 후 빌드 트리, 패키지 및 다운로드 정리]]></Val>
+            <Val><![CDATA[각 패키지를 빌드한 후 빌드 트리, 패키지 및 다운로드를 정리합니다.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Clean buildtrees, packages and downloads after building each package]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";HelpTxtOptCleanBuildTreesAfterBuild" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Clean buildtrees after building each package]]></Val>
+          <Val><![CDATA[Clean buildtrees after building each package.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[각 패키지를 빌드한 후 빌드 트리 정리]]></Val>
+            <Val><![CDATA[각 패키지를 빌드한 후 빌드 트리를 정리합니다.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Clean buildtrees after building each package]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";HelpTxtOptCleanDownloadsAfterBuild" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Clean downloads after building each package]]></Val>
+          <Val><![CDATA[Clean downloads after building each package.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[각 패키지를 빌드한 후 다운로드 정리]]></Val>
+            <Val><![CDATA[각 패키지를 빌드한 후 다운로드를 정리합니다.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Clean downloads after building each package]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";HelpTxtOptCleanPkgAfterBuild" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Clean packages after building each package]]></Val>
+          <Val><![CDATA[Clean packages after building each package.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[각 패키지를 빌드한 후 패키지 정리]]></Val>
+            <Val><![CDATA[각 패키지를 빌드한 후 패키지를 정리합니다.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Clean packages after building each package]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -5445,10 +5619,13 @@
       </Item>
       <Item ItemId=";HelpTxtOptKeepGoing" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Continue installing packages on failure]]></Val>
+          <Val><![CDATA[Continue installing packages on failure.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[실패 시 패키지 설치 계속]]></Val>
+            <Val><![CDATA[실패 시 패키지를 계속 설치합니다.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Continue installing packages on failure]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -5472,10 +5649,13 @@
       </Item>
       <Item ItemId=";HelpTxtOptNoDownloads" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Do not download new sources]]></Val>
+          <Val><![CDATA[Do not download new sources.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[새 원본을 다운로드하지 않음]]></Val>
+            <Val><![CDATA[새 원본을 다운로드하지 않습니다.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Do not download new sources]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -5490,46 +5670,61 @@
       </Item>
       <Item ItemId=";HelpTxtOptOnlyBinCache" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Fail if cached binaries are not available]]></Val>
+          <Val><![CDATA[Fail if cached binaries are not available.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[캐시된 이진 파일을 사용할 수 없는 경우 실패]]></Val>
+            <Val><![CDATA[캐시된 이진 파일을 사용할 수 없는 경우 실패합니다.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Fail if cached binaries are not available]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";HelpTxtOptOnlyDownloads" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Download sources but don't build packages]]></Val>
+          <Val><![CDATA[Make a best-effort attempt to download sources without building.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[원본을 다운로드하지만 패키지를 빌드하지 않음]]></Val>
+            <Val><![CDATA[빌드하지 않고 원본을 다운로드하기 위해 최선을 다합니다.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Download sources but don't build packages]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";HelpTxtOptRecurse" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Allow removal of packages as part of installation]]></Val>
+          <Val><![CDATA[Allow removal of packages as part of installation.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[설치의 일부로 패키지 제거 허용]]></Val>
+            <Val><![CDATA[설치의 일부로 패키지 제거를 허용합니다.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Allow removal of packages as part of installation]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";HelpTxtOptUseAria2" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Use aria2 to perform download tasks]]></Val>
+          <Val><![CDATA[Use aria2 to perform download tasks.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[aria2를 사용하여 다운로드 작업 수행]]></Val>
+            <Val><![CDATA[aria2를 사용하여 다운로드 작업을 수행합니다.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Use aria2 to perform download tasks]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";HelpTxtOptUseHeadVersion" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Install the libraries on the command line using the latest upstream sources (classic mode)]]></Val>
+          <Val><![CDATA[Install the libraries on the command line using the latest upstream sources (classic mode).]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[최신 업스트림 소스(클래식 모드)를 사용하여 명령줄에 라이브러리를 설치합니다.]]></Val>
+            <Val><![CDATA[최신 업스트림 원본(클래식 모드)를 사용하여 명령줄에 라이브러리를 설치합니다.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Install the libraries on the command line using the latest upstream sources (classic mode)]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -5691,15 +5886,6 @@
           <Val><![CDATA[Incorrect archive file signature]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[잘못된 보관 파일 서명]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";IncorrectNumberOfArgs" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA['{command_name}' requires '{expected}' arguments, but '{actual}' were provided.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA['{command_name}'에는 '{expected}' 인수가 필요하지만 '{actual}'이(가) 제공되었습니다.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -5920,6 +6106,78 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";IntegrateBashHelp" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Enable bash tab-completion.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[bash 탭 완성을 사용하도록 설정합니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";IntegrateFishHelp" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Enable fish tab-completion.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[fish 탭 완성을 사용하도록 설정합니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";IntegrateInstallHelpLinux" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Make installed packages available user-wide.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[설치된 패키지를 사용자 전체가 사용할 수 있도록 합니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";IntegrateInstallHelpWindows" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Make installed packages available user-wide. Requires admin privileges on first use.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[설치된 패키지를 사용자 전체가 사용할 수 있도록 합니다. 처음 사용할 때 관리자 권한이 필요합니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";IntegratePowerShellHelp" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Enable PowerShell tab-completion.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[PowerShell 탭 완성을 사용하도록 설정합니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";IntegrateProjectHelp" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Generate a referencing NuGet package for individual VS project use.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[개별 VS 프로젝트 사용을 위해 참조하는 NuGet 패키지를 생성합니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";IntegrateRemoveHelp" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Remove user-wide integration.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[사용자 전체 통합을 제거합니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";IntegrateZshHelp" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Enable zsh tab-completion.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[zsh 탭 완성을 사용하도록 설정합니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";IntegrationFailed" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Integration was not applied.]]></Val>
@@ -5956,6 +6214,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";InvalidArchitecture" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid architecture: {value}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[잘못된 아키텍처: {value}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";InvalidArgument" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[invalid argument]]></Val>
@@ -5988,6 +6255,15 @@
           <Val><![CDATA[invalid argument: binary config '{binary_source}' requires at least a base-url and a SAS token]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[잘못된 인수: 이진 구성 '{binary_source}'에는 최소한의 기본 URL과 SAS 토큰이 필요함]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidArgumentRequiresNoWildcards" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[cannot fix Windows path case for path containing wildcards: {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[와일드카드가 포함된 경로의 Windows 경로 대/소문자를 수정할 수 없습니다. {path}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -6082,6 +6358,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";InvalidArgumentRequiresZeroOrOneArgument" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid argument: binary config '{binary_source}' requires 0 or 1 argument]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[잘못된 인수: 이진 구성 '{binary_source}'에는 0개 또는 1개의 인수가 필요함]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";InvalidArtifactId$" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Invalid artifact id '${p0}']]></Val>
@@ -6114,6 +6399,33 @@
           <Val><![CDATA[Invalid bundle definition.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[번들 정의가 잘못되었습니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidCharacterInFeatureList" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid character in feature name (must be lowercase, digits, '-', or '*')]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[기능 이름에 잘못된 문자가 있습니다(소문자, 숫자, '-' 또는 '*'여야 함).]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidCharacterInFeatureName" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid character in feature name (must be lowercase, digits, '-')]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[기능 이름에 잘못된 문자가 있습니다(소문자, 숫자, '-'여야 함).]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidCharacterInPackageName" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid character in package name (must be lowercase, digits, '-')]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[패키지 이름에 잘못된 문자가 있습니다(소문자, 숫자, '-'여야 함).]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -6163,6 +6475,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[Invalid commit id {value}]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidDefaultFeatureName" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA['default' is a reserved feature name]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA['기본값'은 예약된 기능 이름입니다.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -6261,6 +6582,33 @@
           <Val><![CDATA[Invalid {system_name} linkage type: [{value}]5D;]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[잘못된 {system_name} 연결 유형: [{value}]5D;]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidLogicExpressionUnexpectedCharacter" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid logic expression, unexpected character]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[논리식이 잘못되었습니다. 예기치 않은 문자입니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidLogicExpressionUsePipe" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid logic expression, use '|' instead of 'or']]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[논리식이 잘못되었습니다. 'or' 대신 '|'을 사용하세요.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidNoVersions" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[File contains no versions.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[파일에 버전이 없습니다.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -6583,6 +6931,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";LicenseExpressionString" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[<license string>]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[<license string>]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";LicenseExpressionUnknownException" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Unknown license exception identifier '{value}'. Known values are listed at https://spdx.org/licenses/exceptions-index.html]]></Val>
@@ -6633,6 +6990,15 @@
           <Val><![CDATA[Static Release (/MT)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[정적 릴리스(/MT)]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ListHelp" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The argument should be a substring to search for, or no argument to display all installed libraries.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[인수는 검색할 substring이거나 설치된 모든 라이브러리를 표시할 인수가 없어야 합니다.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -6745,6 +7111,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";MismatchedBinParagraphs" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The serialized binary paragraph was different from the original binary paragraph. Please open an issue at https://github.com/microsoft/vcpkg with the following output:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[직렬화된 이진 단락이 원래 이진 단락과 다릅니다. https://github.com/microsoft/vcpkg에서 다음 출력으로 문제를 여세요.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";MismatchedFiles" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[file to store does not match hash]]></Val>
@@ -6768,6 +7143,15 @@
           <Val><![CDATA[names did not match: '{package_name}' != '{actual}']]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[이름이 일치하지 않습니다. '{package_name}' != '{actual}']]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";MismatchedSpec" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Mismatched spec in port {path}: expected {expected}, actual {actual}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[포트 {path}의 사양이 일치하지 않습니다. {expected} 필요, 실제 {actual}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -6817,6 +7201,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";MissingClosingParen" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[missing closing )]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[닫는 )가 없습니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";MissingDependency" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Package {spec} is installed, but dependency {package_name} is not.]]></Val>
@@ -6853,6 +7246,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";MissingOrInvalidIdentifer" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[missing or invalid identifier]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[식별자가 없거나 잘못되었습니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";MissingPortSuggestPullRequest" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[If your port is not listed, please open an issue at and/or consider making a pull request.]]></Val>
@@ -6880,11 +7282,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";MissmatchedBinParagraphs" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";MixingBooleanOperationsNotAllowed" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The serialized binary paragraph was different from the original binary paragraph. Please open an issue at https://github.com/microsoft/vcpkg with the following output:]]></Val>
+          <Val><![CDATA[mixing & and | is not allowed; use () to specify order of operations]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[직렬화된 이진 단락이 원래 이진 단락과 다릅니다. https://github.com/microsoft/vcpkg에서 다음 출력으로 문제를 여세요.]]></Val>
+            <Val><![CDATA[& 및 |을 혼합하는 것은 허용되지 않습니다. 작업 순서를 지정하려면 ()를 사용하세요.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -6924,6 +7326,15 @@
           <Val><![CDATA[Multiple artifacts specified, but not an equal number of ${p0} switches]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[여러 아티팩트가 지정되었지만 동일한 수의 ${p0} 스위치가 아님]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";MultipleFeatures" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{package_name} declares {feature} multiple times; please ensure that features have distinct names]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{package_name}이(가) {feature}을(를) 여러 번 선언합니다. 기능에 고유한 이름이 있는지 확인하세요.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -7129,6 +7540,51 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";NonExactlyArgs" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the command '{command_name}' requires exactly {expected} arguments, but {actual} were provided]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA['{command_name}' 명령에는 인수가 정확히 {expected}개 필요하지만, {actual}개가 제공되었습니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";NonOneRemainingArgs" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the command '{command_name}' requires exactly one argument]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA['{command_name}' 명령에는 정확히 인수가 1개 필요합니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";NonRangeArgs" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the command '{command_name}' requires between {lower} and {upper} arguments, inclusive, but {actual} were provided]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA['{command_name}' 명령에는 {lower}개에서 {upper}개 사이 인수가 필요하지만, {actual}개가 제공되었습니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";NonZeroOrOneRemainingArgs" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the command '{command_name}' requires zero or one arguments]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA['{command_name}' 명령에는 인수가 0개 또는 1개가 필요합니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";NonZeroRemainingArgs" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the command '{command_name}' does not accept any additional arguments]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA['{command_name}' 명령은 추가 인수를 허용하지 않습니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";NoteMessage" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[note: ]]></Val>
@@ -7183,11 +7639,56 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";OptionRequiresANonDashesValue" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the option '{option}' requires a value; if you intended to set '{option}' to '{value}', use the equals form instead: {actual}={value}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA['{option}' 옵션에 값이 필요합니다. '{option}'을(를) '{value}'(으)로 설정하려면 대신 {actual}={value} equals 양식을 사용하세요.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";OptionRequiresAValue" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the option '{option}' requires a value]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA['{option}' 옵션에 값이 필요합니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";OptionRequiresOption" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[--{value} requires --{option}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[--{value}에 --{option} 필요]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";OptionUsedMultipleTimes" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the option '{option}' was specified multiple times]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA['{option}' 옵션을 여러 번 지정했습니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";OptionalCommand" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[optional command]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[선택적 명령]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";Options" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Options]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[옵션]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -7303,6 +7804,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";PackageInfoHelp" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Display detailed information on packages.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[패키지에 대한 자세한 정보를 표시합니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";PackageRootDir" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[(Experimental) Specify the packages root directory.]]></Val>
@@ -7392,6 +7902,51 @@
           <Val><![CDATA[trailing surrogate following leading surrogate (paired surrogates are invalid)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[선행 서로게이트 뒤에 오는 후행 서로게이트(쌍을 이루는 서로게이트는 유효하지 않음)]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ParagraphDuplicateField" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[duplicate field]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[중복된 필드]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ParagraphExactlyOne" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[There should be exactly one paragraph]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[정확히 하나의 단락이 있어야 합니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ParagraphExpectedColonAfterField" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[expected ':' after field name]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[필드 이름 뒤에 ':'이 필요합니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ParagraphExpectedFieldName" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[expected field name]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[필드 이름이 필요합니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ParagraphUnexpectedEndOfLine" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[unexpected end of line, to span a blank line use "  ."]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[예기치 않은 줄의 끝입니다. 빈 줄을 포괄하려면 " ."를 사용하세요.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -7867,6 +8422,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";PortDoesNotExist" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{package_name} does not exist]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{package_name}이(가) 없습니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PortMissingManifest" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{package_name} has no vcpkg.json or CONTROL file in {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{package_name}의 {path}에 vcpkg.json 또는 CONTROL 파일이 없습니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";PortNotInBaseline" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[the baseline does not contain an entry for port {package_name}]]></Val>
@@ -7911,6 +8484,15 @@
           <Val><![CDATA[The following {count} ports were added:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[다음 {count}개 포트가 추가되었습니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PortsDiffHelp" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The argument should be a branch/tag/hash to checkout.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[인수는 체크 아웃할 분기/태그/해시여야 합니다.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -7969,15 +8551,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";Project$Activated" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Project ${p0} activated]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[${p0} 프로젝트 활성화됨]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";ProvideExportType" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[At least one of the following options are required: --raw --nuget --ifw --zip --7zip --chocolatey --prefab.]]></Val>
@@ -7996,6 +8569,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[Pushing {vendor} to '{path}' failed. Use --debug for more information.]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";RegeneratesArtifactRegistry" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Regenerates an artifact registry.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[아티팩트 레지스트리를 다시 생성합니다.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -8031,6 +8613,15 @@
           <Val><![CDATA[Successfully created registry at {path}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{path}에 레지스트리를 만들었습니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";RegistryValueWrongType" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The registry value {path} was an unexpected type.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[레지스트리 값 {path}은(는) 예기치 않은 유형입니다.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -8083,6 +8674,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[Removing {spec}]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ResponseFileCode" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[@response_file]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[@response_file]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -8142,6 +8742,15 @@
           <Val><![CDATA[expected arguments: asset config 'x-script' requires exactly the exec template as an argument]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[필요한 인수: 자산 구성 'x-script'에는 인수로 정확히 exec 템플릿이 필요]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";SearchHelp" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The argument should be a substring to search for, or no argument to display all libraries.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[인수는 검색할 substring이거나 모든 라이브러리를 표시할 인수가 없어야 합니다.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -8311,6 +8920,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";StoredBinariesToDestinations" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Stored binaries in {count} destinations.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{count}개의 대상에 이진 파일 저장됨.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";StoredBinaryCache" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Stored binary cache: "{path}"]]></Val>
@@ -8386,6 +9004,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";SwitchUsedMultipleTimes" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the switch '{option}' was specified multiple times]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA['{option}' 전환을 여러 번 지정했습니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";Switches" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Switches]]></Val>
@@ -8418,6 +9045,15 @@
           <Val><![CDATA[Expected the SystemRoot environment variable to be always set on Windows.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Windows에서는 SystemRoot 환경 변수가 항상 설정되어야 합니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";SystemTargetsInstallFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[failed to install system targets file to {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{path}에 시스템 대상 파일을 설치하지 못했습니다.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -8791,6 +9427,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";UnexpectedArgument" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[unexpected argument: {option}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[예기치 못한 인수: {option}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";UnexpectedAssetCacheProvider" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[unknown asset provider type: valid source types are 'x-azurl', 'x-script', 'x-block-origin', and 'clear']]></Val>
@@ -9034,6 +9679,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";UnexpectedFeatureList" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[unexpected list of features]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[예기치 않은 기능 목록]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";UnexpectedField" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[unexpected field '{json_field}']]></Val>
@@ -9061,6 +9715,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";UnexpectedOption" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[unexpected option: {option}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[예기치 못한 옵션: {option}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedPlatformExpression" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[unexpected platform expression]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[예기치 않은 플랫폼 식]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";UnexpectedPortName" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[the port {expected} is declared as {actual} in {path}]]></Val>
@@ -9075,6 +9747,15 @@
           <Val><![CDATA[unexpected "port-version" without a versioning field]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[버전 관리 필드가 없는 예기치 않은 "port-version"]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedSwitch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[unexpected switch: {option}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[예기치 못한 전환: {option}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -9109,6 +9790,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[unknown binary provider type: valid providers are 'clear', 'default', 'nuget', 'nugetconfig', 'interactive', and 'files']]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnknownBooleanSetting" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[unknown boolean setting for {option}: "{value}". Valid values are '', '1', '0', 'ON', 'OFF', 'TRUE', and 'FALSE'.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{option}에 대한 알 수 없는 부울 설정입니다. "{value}". 유효한 값은 '', '1', '0', 'ON', 'OFF', 'TRUE' 및 'FALSE'입니다.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -9297,24 +9987,6 @@
           <Val><![CDATA[short options are not supported: '{value}']]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[짧은 옵션은 지원되지 않습니다: '{value}']]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";UnsupportedSupportsExpression" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[{package_name} is only supported on '{supports_expression}', which does not match {triplet}. This usually means that there are known build failures, or runtime problems, when building other platforms. To ignore this and attempt to build {package_name} anyway, rerun vcpkg with `--allow-unsupported`.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{package_name}은(는) {triplet}과(와) 일치하지 않는 '{supports_expression}'에서만 지원됩니다. 이것은 일반적으로 다른 플랫폼을 빌드할 때 알려진 빌드 실패 또는 런타임 문제가 있음을 의미합니다. 이를 무시하고 어쨌든 {package_name} 빌드를 시도하려면 `--allow-unsupported`로 vcpkg를 다시 실행하세요.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";UnsupportedSupportsExpressionWarning" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[{package_name} is only supported on '{supports_expression}', which does not match {triplet}. This usually means that there are known build failures, or runtime problems, when building other platforms. Proceeding anyway due to `--allow-unsupported`.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{package_name}은(는) {triplet}과(와) 일치하지 않는 '{supports_expression}'에서만 지원됩니다. 이것은 일반적으로 다른 플랫폼을 빌드할 때 알려진 빌드 실패 또는 런타임 문제가 있음을 의미합니다. `--allow-unsupported`로 인해 어쨌든 진행합니다.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -9652,14 +10324,14 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";VcpkgCeIsExperimental" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";VcpkgCeIsExperimental" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[vcpkg-ce ('configure environment') is experimental and may change at any time.]]></Val>
+          <Val><![CDATA[vcpkg-artifacts is experimental and may change at any time.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[vcpkg-ce('환경 구성')는 실험적이며 언제든지 변경될 수 있습니다.]]></Val>
+            <Val><![CDATA[vcpkg-artifacts는 실험적이며 언제든지 변경될 수 있습니다.]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[vcpkg-artifacts are experimental and may change at any time.]]></Val>
+            <Val><![CDATA[vcpkg-ce ('configure environment') is experimental and may change at any time.]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -9790,6 +10462,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";VersionBaselineMismatch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The latest version is {expected}, but the baseline file contains {actual}.]A;Run:]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit -m "Update version database"]A;to update the baseline version.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[최신 버전은 {expected}이지만 기본 파일에는 {actual}이(가) 포함되어 있습니다.]A;실행:]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit -m "Update version database"]A;기본 버전을 업데이트합니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionBuiltinPortTreeEntryMissing" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[no version database entry for {package_name} at {expected}; using the checked out ports tree version ({actual}).]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{expected}에서 {package_name}에 대한 버전 데이터베이스 항목이 없습니다. 체크 아웃된 포트 트리 버전({actual})을 사용합니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";VersionCommandHeader" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[vcpkg package management program version {version}]A;]A;See LICENSE.txt for license information.]]></Val>
@@ -9810,9 +10500,21 @@
       </Item>
       <Item ItemId=";VersionConstraintPortVersionMustBePositiveInteger" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[port-version (after the '#') in "version>=" must be a positive integer]]></Val>
+          <Val><![CDATA[port-version (after the '#') in "version>=" must be a non-negative integer]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA["version>="의 port-version('#' 이후)은 양의 정수여야 합니다.]]></Val>
+            <Val><![CDATA["version>="의 port-version('#' 이후)은 음수가 아닌 정수여야 함]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[port-version (after the '#') in "version>=" must be a positive integer]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionConstraintUnresolvable" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Cannot resolve a minimum constraint for dependency {package_name} from {spec}.]A;The dependency was not found in the baseline, indicating that the package did not exist at that time. This may be fixed by providing an explicit override version via the "overrides" field or by updating the baseline.]A;See `vcpkg help versioning` for more information.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{spec}에서 종속성 {package_name}에 대한 최소 제약 조건을 확인할 수 없습니다.]A;기준선에서 종속성을 찾을 수 없었으며 당시 패키지가 없었음을 나타냅니다. 이는 "재정의" 필드를 통해 명시적 재정의 버전을 제공하거나 기준을 업데이트하여 해결할 수 있습니다.]A;자세한 내용은 'vcpkg 도움말 버전 관리'를 참조하세요.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -9822,6 +10524,78 @@
           <Val><![CDATA[dependency {spec} was expected to be at least version {expected_version}, but is currently {actual_version}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{spec} 종속성은 최소 버전 {expected_version}이어야 하지만 현재 {expected_version}입니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionDatabaseEntryMissing" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[no version entry for {package_name} at {version}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{version}의 {package_name}에 대한 버전 항목이 없습니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionDatabaseFileMissing" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{package_name} is missing a version database file at {path}]A;Run:]A;vcpkg x-add-version {package_name}]A;to create the versions file.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{package_name}은(는) {path}에 버전 데이터베이스 파일이 없습니다.]A;실행:]A;vcpkg x-add-version {package_name}]A;버전 파일을 만듭니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionGitEntryMissing" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[no version database entry for {package_name} at {version}.]A;Available versions:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{version}의 {package_name}에 대한 버전 데이터베이스 항목이 없습니다.]A;사용 가능한 버전:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionInDeclarationDoesNotMatch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The version declared in file does not match checked-out version: {version}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[파일에 선언된 버전이 체크 아웃된 버전과 일치하지 않습니다. {version}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionIncomparable1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[version conflict on {spec}: {package_name} required {expected} but vcpkg could not compare it to {actual}.]A;The two versions used incomparable schemes:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{spec}의 버전 충돌: {package_name}에 {expected}이(가) 필요하지만 vcpkg는 {actual}에 비교할 수 없습니다.]A;비교할 수 없는 스키마를 사용한 두 버전은 다음과 같습니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionIncomparable2" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA["{version}" was of scheme {new_scheme}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA["{version}"은(는) 스키마 {new_scheme}입니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionIncomparable3" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[This can be resolved by adding an explicit override to the preferred version, for example:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[이는 기본 설정 버전에 명시적 재정의를 추가하여 해결할 수 있습니다. 예:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionIncomparable4" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[See `vcpkg help versioning` for more information.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[자세한 내용은 'vcpkg 도움말 버전 관리'를 참조하세요.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -9862,6 +10636,42 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";VersionMissingRequiredFeature" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{spec}@{version} does not have required feature {feature}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{spec}@{version}에 필수 기능 {feature}이(가) 없습니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionNotFound" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{expected} not available, only {actual} is available]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{expected}을(를) 사용할 수 없습니다. {actual}만 사용할 수 있습니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionNotFoundDuringDiscovery" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[version was not found during discovery: {spec}@{version}]A;This is an internal vcpkg error. Please open an issue on https://github.com/Microsoft/vcpkg with detailed steps to reproduce the problem.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[검색하는 동안 버전을 찾을 수 없었습니다. {spec}@{version}]A;내부 vcpkg 오류입니다. 문제를 재현하기위한 자세한 단계와 함께 https://github.com/microsoft/vcpkg에서 문제를 열어주세요.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionNotFoundInVersionsFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Version {version} was not found in versions file.]A;Run:]A;vcpkg x-add-version {package_name}]A;to add the new port version.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[버전 파일에서 버전 {version}을(를) 찾을 수 없습니다.]A;실행:]A;vcpkg x-add-version {package_name}]A;새 포트 버전을 추가합니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";VersionRejectedDueToBaselineMissing" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[{path} was rejected because it uses "{json_field}" and does not have a "builtin-baseline". This can be fixed by removing the uses of "{json_field}" or adding a "builtin-baseline".]A;See `vcpkg help versioning` for more information.]]></Val>
@@ -9876,6 +10686,33 @@
           <Val><![CDATA[{path} was rejected because it uses "{json_field}" and the `versions` feature flag is disabled. This can be fixed by removing "{json_field}" or enabling the `versions` feature flag.]A;See `vcpkg help versioning` for more information.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{path}에서 "{json_field}"를 사용하고 `versions` 기능 플래그가 비활성화되어 있으므로 {path}가 거부되었습니다. 이 문제는 "{json_field}"를 제거하거나 `versions` 기능 플래그를 활성화하여 해결할 수 있습니다.]A;자세한 내용은 `vcpkg help versioning`를 참조하세요.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionSchemeMismatch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The version database declares {version} as {expected}, but {path} declares it as {actual}. Versions must be unique, even if they are declared with different schemes.]A;Run:]A;vcpkg x-add-version {package_name} --overwrite-version]A;to overwrite the scheme declared in the version database with that declared in the port.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[버전 데이터베이스는 {version}을(를) {expected}(으)로 선언하지만 {path}은(는) {actual}(으)로 선언합니다. 버전은 서로 다른 체계로 선언된 경우에도 고유해야 합니다.]A;실행:]A;vcpkg x-add-version {package_name} --overwrite-version]A;버전 데이터베이스에 선언된 체계를 포트에 선언된 스키마로 덮어씁니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionShaMismatch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{version} is declared with {expected}, but the local port has a different SHA {actual}.]A;Please update the port's version fields and then run:]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit -m "Update version database"]A;to add the new version.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{version}이(가) {expected}(으)로 선언되었지만, 로컬 포트에 다른 SHA {actual}이(가) 있습니다.]A;포트의 버전 필드를 업데이트한 다음 실행:]A;vcpkg x-add-version {package_name}]A;git add version]A;git commit -m "Update version database"]A;새 버전을 추가하세요.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionShaMissing" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[while validating {package_name}, missing Git SHA.]A;Run:]A;git add "{path}"]A;git commit -m "wip"]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit --amend -m "[{package_name}]5D; Add new port"]A;to commit the new port and create its version file.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{package_name} 유효성을 검사하는 동안 Git SHA가 누락되었습니다.]A;실행:]A;git add "{path}"]A;git commit -m "wip"]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit --amend -m "[{package_name}]5D; Add new port"]A;새 포트를 커밋하고 해당 버전 파일을 만듭니다.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -9915,6 +10752,15 @@
           <Val><![CDATA[Version]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[버전]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionVerifiedOK" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[OK: {package_name}@{version} -> {commit_sha}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[OK: {package_name}@{version} -> {commit_sha}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10000,11 +10846,38 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";WhileLoadingLocalPort" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[while attempting to load local port {package_name}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[로컬 포트 {package_name}을(를) 로드하는 동안]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";WhileLoadingPortFromGitTree" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[while trying to load port from: {commit_sha}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{commit_sha}에서 포트를 로드하는 동안]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";WhileLookingForSpec" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[while looking for {spec}:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{spec}을(를) 찾는 동안:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";WhileParsingVersionsForPort" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[while parsing versions for {package_name} from {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{path}에서 {package_name}의 버전을 구문 분석하는 동안]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10023,6 +10896,15 @@
           <Val><![CDATA[While resolving dependencies of the project file ${p0}, ${p1} did not specify a registry.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[프로젝트 파일 ${p0}의 종속성을 확인하는 동안 ${p1}에서 레지스트리를 지정하지 않았습니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";WhileValidatingVersion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[while validating version: {version}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{version} 버전 유효성을 검사하는 동안]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10116,6 +10998,15 @@
           <Val><![CDATA[enables verbose mode, displays verbose messsages about the process]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[자세한 정보 표시 모드를 사용하도록 설정하고 프로세스에 대한 자세한 메시지를 표시합니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";error" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[error:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[오류:]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10233,6 +11124,24 @@
           <Val><![CDATA[may not rename across filesystems]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[파일 시스템 간에 이름을 바꿀 수 없습니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";noPostscriptFileRerunWithTheVcpkgShellFunctionRatherThanExecutable" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[no postscript file: rerun with the vcpkg shell function rather than executable]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[포스트스크립트 파일 없음: 실행 파일이 아닌 vcpkg 셸 함수로 다시 실행]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";nothingIsActivatedNoChangesHaveBeenMade" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[nothing is activated, no changes have been made]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[활성화된 항목이 없음. 변경 내용이 없음]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10422,6 +11331,15 @@
           <Val><![CDATA[version should be of type 'string', found '${p0}']]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[버전은 'string' 형식이어야 하는데 '${p0}'이(가) 있습니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";warning" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[warning:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[경고:]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />

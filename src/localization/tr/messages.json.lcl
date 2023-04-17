@@ -490,11 +490,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";ActivatingIndividualArtifacts" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";Activating$" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Activating individual artifacts]]></Val>
+          <Val><![CDATA[Activating: ${p0}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Tek tek yapıtlar etkinleştiriliyor]]></Val>
+            <Val><![CDATA[Etkinleştiriliyor: ${p0}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -526,6 +526,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[The first argument to '{command_line}' must be 'artifact' or 'port'.]A;]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AddHelp" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Adds the indicated port or artifact to the manifest associated with the current directory.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Belirtilen bağlantı noktasını ya da yapıtı geçerli dizinle ilişkili bildirime ekle.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -651,10 +660,13 @@
       </Item>
       <Item ItemId=";AddVersionNewShaIs" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[new SHA: {value}]]></Val>
+          <Val><![CDATA[new SHA: {commit_sha}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[yeni SHA: {value}]]></Val>
+            <Val><![CDATA[yeni SHA: {commit_sha}]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[new SHA: {value}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -687,10 +699,13 @@
       </Item>
       <Item ItemId=";AddVersionOldShaIs" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[old SHA: {value}]]></Val>
+          <Val><![CDATA[old SHA: {commit_sha}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[eski SHA: {value}]]></Val>
+            <Val><![CDATA[eski SHA: {commit_sha}]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[old SHA: {value}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -699,15 +714,6 @@
           <Val><![CDATA[Use --{option} to bypass this check]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Bu denetimi atlamak için --{option} seçeneğini kullanın]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";AddVersionPortDoesNotExist" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[{package_name} does not exist]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{package_name} yok]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1135,6 +1141,33 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ArtifactsBootstrapFailed" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg-artifacts is not installed and could not be bootstrapped.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Vcpkg yapıtları yüklü değil ve önyükleme yapılamadı.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ArtifactsNotInstalledReadonlyRoot" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg-artifacts is not installed, and it can't be installed because VCPKG_ROOT is assumed to be readonly. Reinstalling vcpkg using the 'one liner' may fix this problem.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Vcpkg yapıtları yüklü değil ve VCPKG_ROOT salt okunur varsayıldığından yüklenemiyor. Vcpkg paket yöneticisinin 'tek satırlık' kod kullanılarak yeniden yüklenmesi bu sorunu çözebilir.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ArtifactsNotOfficialWarning" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Using vcpkg-artifacts with an unofficial ]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Resmi olmayan uyarı içeren vcpkg yapıtlarını kullanma ]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ArtifactsOptionIncompatibility" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[--{option} has no effect on find artifact.]]></Val>
@@ -1288,11 +1321,29 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";BaselineFileNoDefaultFieldPath" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[baseline file at {path} was invalid (no "default" field)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{path} öğesindeki ana hat geçersizdi ("varsayılan" alan yok)]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";BaselineGitShowFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[while checking out baseline from commit '{commit_sha}', failed to `git show` versions/baseline.json. This may be fixed by fetching commits with `git fetch`.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA['{commit_sha}' işlemesinden temeli kullanıma alırken `git show` versions/baseline.json başarısız oldu. Bu, `git fetch` ile işlemeler getirilerek düzeltilebilir.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";BaselineMissing" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Baseline version not found. Run:]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit -m "Update version database"]A;to set {version} as the baseline version.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Temel sürüm bulunamadı. Çalıştır:]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit -m "Update version database"]A;yazarak {version} sürümünü temel sürüm olarak ayarlayın.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1321,18 +1372,6 @@
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{path}]A; Beklenen: {expected}, ancak bulunan: {actual}]]></Val>
           </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";BothYesAndNoOptionSpecifiedError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[cannot specify both --no-{option} and --{option}.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[--no-{option} ve --{option} birlikte belirtilemiyor.]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[error: cannot specify both --no-{option} and --{option}.]]></Val>
-          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -1504,6 +1543,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[You can also use the prefilled template from {path}.]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";BuildTroubleshootingMessageGH" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[You can also sumbit an issue by running (GitHub cli must be installed):]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Ayrıca çalıştırarak bir sorunu bildirebilirsiniz (GitHub cli yüklü olmalıdır):]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -1750,11 +1798,38 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CacheHelp" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The argument should be a substring to search for or no argument to display all cached libraries.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Bağımsız değişken aranılacak bir alt dize olmalıdır ya da tüm önbelleğe alınmış kitaplıkları görüntülemek için bağımsız değişken olmamalıdır.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CannotRenameFilesAcrossFilesystems" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Cannot rename files across filesystems]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Dosyalar dosya sistemleri arasında yeniden adlandırılamaz]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CheckedOutGitSha" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Checked out Git SHA: {commit_sha}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Git SHA kullanıma alındı: {commit_sha}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CheckedOutObjectMissingManifest" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The checked-out object does not contain a CONTROL file or vcpkg.json file.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Kullanıma alınmış nesne DENETİM dosyası ya da vcpkg.json dosyası içermiyor.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1809,6 +1884,15 @@
           <Val><![CDATA[REGRESSION: {spec} cascaded, but it is required to pass. ({path}).]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[GERİLEME: {spec} basamaklandı ancak başarılı olması için gerileme gerekiyor. ({path}).]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CiBaselineIndependentRegression" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[REGRESSION: Independent {spec} failed with {build_result}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[REGRESSION: Bağımsız {spec}, {build_result} ile başarısız oldu.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2293,15 +2377,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CmdGenerateMessageMapOptOutputComments" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[When generating the message map, include comments (the default)]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[İleti eşlemesi oluşturulurken açıklamaları dahil et (varsayılan)]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";CmdInfoOptInstalled" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[(experimental) Report on installed packages instead of available]]></Val>
@@ -2602,6 +2677,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";Commands" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Commands:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Komutlar:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CommunityTriplets" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[VCPKG community triplets:]]></Val>
@@ -2665,18 +2749,6 @@
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Aşağıdaki dosyalar zaten {path} yolunda yüklü ve {spec} ile çakışıyor]]></Val>
           </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ConflictingValuesForOption" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[conflicting values specified for '--{option}'.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA['--{option}' için belirtilen çakışan değerler.]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[conflicting values specified for '--{value}'.]]></Val>
-          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -2824,6 +2896,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CouldNotFindVersionDatabaseFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Couldn't find the versions database file: {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Sürümler veritabanı dosyası bulunamadı: {path}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CreateFailureLogsDir" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Creating failure logs output directory {path}.]]></Val>
@@ -2944,6 +3025,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CycleDetectedDuring" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[cycle detected during {spec}:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{spec} işlemi sırasında algılanan döngü:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";DateTableHeader" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Date]]></Val>
@@ -2962,20 +3052,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";DeactivatingProject" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";Deactivating$" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Deactivating project]]></Val>
+          <Val><![CDATA[Deactivating: ${p0}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Proje devre dışı bırakılıyor]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";DeactivatingProject$" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Deactivating project ${p0}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[${p0} projesi devre dışı bırakılıyor]]></Val>
+            <Val><![CDATA[Devre dışı bırakılıyor: ${p0}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -3247,30 +3328,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";DownloadingVcpkgCeBundle" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Downloading vcpkg-artifacts bundle {version}...]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[vcpkg-artifacts paketi {version} indiriliyor...]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Downloading vcpkg-ce bundle {version}...]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";DownloadingVcpkgCeBundleLatest" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Downloading latest vcpkg-artifacts bundle...]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[En son vcpkg-artifacts paketi indiriliyor...]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Downloading latest vcpkg-ce bundle...]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";DownloadingVcpkgStandaloneBundle" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Downloading standalone bundle {version}.]]></Val>
@@ -3316,15 +3373,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";DuplicateCommandOption" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The option --{option} can only be passed once.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[--{option} seçeneği yalnızca bir kez geçirilebilir.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";DuplicateDefine$DuringActivationNewValueWillReplaceOld" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Duplicate define ${p0} during activation. New value will replace old.]]></Val>
@@ -3348,15 +3396,6 @@
           <Val><![CDATA[Duplicate location declared ${p0} during activation. New value will replace old.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Etkinleştirme sırasında yinelenen konum ${p0} bildirildi. Yeni değer eskinin yerini alacak.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";DuplicateOptions" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA['--{value}' specified multiple times.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA['--{value}' birden çok kez belirtildi.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -3465,15 +3504,6 @@
           <Val><![CDATA[Embedding `vcpkg-configuration` in a manifest file is an EXPERIMENTAL feature.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Bildirim dosyasına 'vcpkg-configuration' eklemek DENEYSEL bir özelliktir.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";EmptyArg" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The option --{option} must be passed a non-empty argument.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[--{option} seçeneğine boş olmayan bir bağımsız değişken geçirilmeli.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -3768,10 +3798,13 @@
       </Item>
       <Item ItemId=";ErrorWhileWriting" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Error occured while writing {path}]]></Val>
+          <Val><![CDATA[Error occurred while writing {path}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{path} yazılırken hata oluştu]]></Val>
+            <Val><![CDATA[{path} yazılırken hata oluştu.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Error occured while writing {path}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -3780,6 +3813,15 @@
           <Val><![CDATA[Found the following errors:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Aşağıdaki hataları bulundu:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";Example" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[example:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[örnek:]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -3874,11 +3916,47 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ExpectedDefaultFeaturesList" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[expected ',' or end of text in default features list]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[varsayılan özellikler listesinde ',' veya metin sonu bekleniyor]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ExpectedDependenciesList" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[expected ',' or end of text in dependencies list]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[bağımlılıklar listesinde ',' ya da metin sonu bekleniyor]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ExpectedDigitsAfterDecimal" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Expected digits after the decimal point]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Ondalık noktadan sonra beklenen rakamlar]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ExpectedEof" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[expected eof]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[eof bekleniyor]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ExpectedExplicitTriplet" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[expected an explicit triplet]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[açık bir üçlü bekleniyordu]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -3901,6 +3979,24 @@
           <Prev Cat="Text">
             <Val><![CDATA[expected 'fail' or 'skip' here]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ExpectedFeatureListTerminal" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[expected ',' or ']5D;' in feature list]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[özellik listesinde ',' veya ']5D;' bekleniyor]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ExpectedFeatureName" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[expected feature name (must be lowercase, digits, '-')]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[özellik adı bekleniyor (küçük harf, rakam, '-' olmalıdır)]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -3931,6 +4027,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ExpectedPackageSpecifier" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[expected a package specifier]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[paket tanımlayıcısı bekleniyor]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ExpectedPathToExist" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Expected {path} to exist after fetching]]></Val>
@@ -3942,10 +4047,13 @@
       </Item>
       <Item ItemId=";ExpectedPortName" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[expected a port name here]]></Val>
+          <Val><![CDATA[expected a port name here (must be lowercase, digits, '-')]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[burada bir bağlantı noktası adı bekleniyordu]]></Val>
+            <Val><![CDATA[burada bir bağlantı noktası adı bekleniyor (küçük harf, rakam, '-' olmalıdır)]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[expected a port name here]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -3969,21 +4077,12 @@
       </Item>
       <Item ItemId=";ExpectedTripletName" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[expected a triplet name here]]></Val>
+          <Val><![CDATA[expected a triplet name here (must be lowercase, digits, '-')]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[burada üçlü ad bekleniyordu]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ExpectedValueForOption" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[expected value after --{option}.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA['{option}' değerinden sonra beklenen değer.]]></Val>
+            <Val><![CDATA[burada bir üçlü ad bekleniyor (küçük harf, rakam, '-' olmalıdır)]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[expected value after '{value}'.]]></Val>
+            <Val><![CDATA[expected a triplet name here]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -4096,11 +4195,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";FailedToActivateProject$" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";FailedToAcquireMutant" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Failed to activate project ${p0}]]></Val>
+          <Val><![CDATA[failed to acquire mutant {path}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[${p0} projesi etkinleştirilemedi]]></Val>
+            <Val><![CDATA[değişken {path} alınamadı]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4110,6 +4209,24 @@
           <Val><![CDATA[failed to check out `versions` from repo {package_name}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[depo kaynağından 'sürümler' kullanıma alınamadı{package_name}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FailedToDeleteDueToFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[failed to remove_all({value}) due to {path}: ]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[bu {path} nedeniyle remove_all({value}) başarısız oldu: ]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FailedToDeleteInsideDueToFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[failed to remove_all_inside({value}) due to {path}: ]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[bu {path} nedeniyle remove_all_inside({value}) başarısız oldu: ]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4291,6 +4408,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";FailedToOpenAlgorithm" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[failed to open {value}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{value} açılamadı]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FailedToParseBaseline" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Failed to parse baseline: {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Temel hat ayrıştırılamadı: {path}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";FailedToParseCMakeConsoleOut" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Failed to parse CMake console output to locate block start/end markers.]]></Val>
@@ -4302,28 +4437,25 @@
       </Item>
       <Item ItemId=";FailedToParseConfig" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Failed to parse configuration {path}]]></Val>
+          <Val><![CDATA[Failed to parse configuration: {path}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{path} yapılandırması ayrıştırılamadı]]></Val>
+            <Val><![CDATA[Yapılandırma ayrıştırılamadı: {path}]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Failed to parse configuration {path}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";FailedToParseControl" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Failed to parse control file: {path}]]></Val>
+          <Val><![CDATA[Failed to parse CONTROL file: {path}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Denetim dosyası ayrıştırılamadı: {path}]]></Val>
           </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";FailedToParseJson" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Failed to parse JSON file: {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[JSON dosyası ayrıştırılamadı: {path}]]></Val>
-          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Failed to parse control file: {path}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -4341,6 +4473,15 @@
           <Val><![CDATA[Failed to parse {path}, expected a top-level object.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{path} ayrıştırılamadı, üst düzey bir nesne bekleniyordu.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FailedToParseNoVersionsArray" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Failed to parse {path}, expected a 'versions' array.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{path} ayrıştırılamadı, bir 'versions' dizisi bekleniyor.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4363,6 +4504,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";FailedToParseVersionsFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[failed to parse versions file {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{path} sürüm dosyası ayrıştırılamıyor]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";FailedToProvisionCe" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Failed to provision vcpkg-artifacts.]]></Val>
@@ -4372,15 +4522,6 @@
           <Prev Cat="Text">
             <Val><![CDATA[Failed to provision vcpkg-ce.]]></Val>
           </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";FailedToRead" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Failed to read {path}: {error_msg}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{path} okunamadı: {error_msg}]]></Val>
-          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -4606,6 +4747,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";FindHelp" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Searches for the indicated artifact or port. With no parameter after 'artifact' or 'port', displays everything.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Belirtilen yapıtı veya bağlantı noktasını arar. 'artifact' veya 'port' sonrasında parametre yoksa, her şeyi görüntüler.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";FishCompletion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[vcpkg fish completion is already added at "{path}".]]></Val>
@@ -4689,6 +4839,15 @@
           <Val><![CDATA[Full path to the file in which MSBuild properties will be written.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[MSBuild özelliklerinin yazılacağı dosyanın tam yolu.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";GHAParametersMissing" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The GHA binary source requires the ACTIONS_RUNTIME_TOKEN and ACTIONS_CACHE_URL environment variables to be set. See {url} for details.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[GHA ikili kaynağı, ACTIONS_RUNTIME_TOKEN ve ACTIONS_CACHE_URL ortam değişkenlerinin ayarlanmasını gerektiriyor. Ayrıntılar için {url} adresine gidin.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -5346,10 +5505,13 @@
       </Item>
       <Item ItemId=";HelpTextOptFullDesc" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Do not truncate long text]]></Val>
+          <Val><![CDATA[Do not truncate long text.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Uzun metni kesme]]></Val>
+            <Val><![CDATA[Uzun metni kesme.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Do not truncate long text]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -5382,37 +5544,49 @@
       </Item>
       <Item ItemId=";HelpTxtOptCleanAfterBuild" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Clean buildtrees, packages and downloads after building each package]]></Val>
+          <Val><![CDATA[Clean buildtrees, packages and downloads after building each package.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Her paketi oluşturduktan sonra derleme ağaçlarını, paketleri ve indirmeleri temizle]]></Val>
+            <Val><![CDATA[Her paketi oluşturduktan sonra derleme ağaçlarını, paketleri ve indirmeleri temizle.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Clean buildtrees, packages and downloads after building each package]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";HelpTxtOptCleanBuildTreesAfterBuild" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Clean buildtrees after building each package]]></Val>
+          <Val><![CDATA[Clean buildtrees after building each package.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Her paketi oluşturduktan sonra derleme ağaçlarını temizle]]></Val>
+            <Val><![CDATA[Her paketi oluşturduktan sonra derleme ağaçlarını temizle.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Clean buildtrees after building each package]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";HelpTxtOptCleanDownloadsAfterBuild" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Clean downloads after building each package]]></Val>
+          <Val><![CDATA[Clean downloads after building each package.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Her paketi oluşturduktan sonra indirmeleri temizle]]></Val>
+            <Val><![CDATA[Her paketi oluşturduktan sonra indirmeleri temizle.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Clean downloads after building each package]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";HelpTxtOptCleanPkgAfterBuild" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Clean packages after building each package]]></Val>
+          <Val><![CDATA[Clean packages after building each package.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Her paketi oluşturduktan sonra paketleri temizle]]></Val>
+            <Val><![CDATA[Her paketi oluşturduktan sonra paketleri temizle.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Clean packages after building each package]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -5445,10 +5619,13 @@
       </Item>
       <Item ItemId=";HelpTxtOptKeepGoing" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Continue installing packages on failure]]></Val>
+          <Val><![CDATA[Continue installing packages on failure.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Hatada paketleri yüklemeye devam et]]></Val>
+            <Val><![CDATA[Hata durumunda paketleri yüklemeye devam et.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Continue installing packages on failure]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -5472,10 +5649,13 @@
       </Item>
       <Item ItemId=";HelpTxtOptNoDownloads" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Do not download new sources]]></Val>
+          <Val><![CDATA[Do not download new sources.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Yeni kaynakları indirme]]></Val>
+            <Val><![CDATA[Yeni kaynakları indirme.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Do not download new sources]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -5490,46 +5670,61 @@
       </Item>
       <Item ItemId=";HelpTxtOptOnlyBinCache" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Fail if cached binaries are not available]]></Val>
+          <Val><![CDATA[Fail if cached binaries are not available.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Önbelleğe alınan ikili dosyalar kullanılamıyorsa işlem başarısız olsun]]></Val>
+            <Val><![CDATA[Önbelleğe alınan ikili dosyalar kullanılamıyorsa işlem başarısız olsun.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Fail if cached binaries are not available]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";HelpTxtOptOnlyDownloads" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Download sources but don't build packages]]></Val>
+          <Val><![CDATA[Make a best-effort attempt to download sources without building.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Kaynakları indir ancak paketleri oluşturma]]></Val>
+            <Val><![CDATA[Kaynakları derlemeden indirmek için en yüksek eforlu denemeyi gerçekleştir.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Download sources but don't build packages]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";HelpTxtOptRecurse" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Allow removal of packages as part of installation]]></Val>
+          <Val><![CDATA[Allow removal of packages as part of installation.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Yüklemenin parçası olarak paketlerin kaldırılmasına izin ver]]></Val>
+            <Val><![CDATA[Yüklemenin parçası olarak paketlerin kaldırılmasına izin ver.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Allow removal of packages as part of installation]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";HelpTxtOptUseAria2" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Use aria2 to perform download tasks]]></Val>
+          <Val><![CDATA[Use aria2 to perform download tasks.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[İndirme görevlerini gerçekleştirmek için aria2 kullan]]></Val>
+            <Val><![CDATA[İndirme görevlerini gerçekleştirmek için aria2 kullan.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Use aria2 to perform download tasks]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";HelpTxtOptUseHeadVersion" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Install the libraries on the command line using the latest upstream sources (classic mode)]]></Val>
+          <Val><![CDATA[Install the libraries on the command line using the latest upstream sources (classic mode).]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Kitaplıkları en son yukarı akış kaynaklarını kullanarak komut satırında yükle (klasik mod)]]></Val>
+            <Val><![CDATA[Komut satırındaki kitaplıkları en son yukarı akış kaynaklarını kullanarak yükle (klasik mod).]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Install the libraries on the command line using the latest upstream sources (classic mode)]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -5691,15 +5886,6 @@
           <Val><![CDATA[Incorrect archive file signature]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Yanlış arşiv dosyası imzası]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";IncorrectNumberOfArgs" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA['{command_name}' requires '{expected}' arguments, but '{actual}' were provided.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA['{command_name}' komutu, '{expected}' bağımsız değişkenleri gerektiriyor, ancak '{actual}' sağlandı.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -5920,6 +6106,78 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";IntegrateBashHelp" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Enable bash tab-completion.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Bash sekmesi tamamlamayı etkinleştirin.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";IntegrateFishHelp" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Enable fish tab-completion.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Balık sekmesi tamamlamayı etkinleştirin.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";IntegrateInstallHelpLinux" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Make installed packages available user-wide.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Yüklü paketleri kullanıcı genelinde kullanılabilir hale getirin.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";IntegrateInstallHelpWindows" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Make installed packages available user-wide. Requires admin privileges on first use.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Yüklü paketleri kullanıcı genelinde kullanılabilir hale getirin. İlk kullanımda yönetici ayrıcalıkları gerektirir.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";IntegratePowerShellHelp" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Enable PowerShell tab-completion.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[PowerShell sekme tamamlamayı etkinleştirin.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";IntegrateProjectHelp" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Generate a referencing NuGet package for individual VS project use.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Bireysel VS proje kullanımı için bir referanslama NuGet paketi oluşturun.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";IntegrateRemoveHelp" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Remove user-wide integration.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Kullanıcı genelinde tümleştirmeyi kaldırın.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";IntegrateZshHelp" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Enable zsh tab-completion.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Zsh sekmesi tamamlamayı etkinleştirin.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";IntegrationFailed" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Integration was not applied.]]></Val>
@@ -5956,6 +6214,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";InvalidArchitecture" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid architecture: {value}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[geçersiz mimari: {value}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";InvalidArgument" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[invalid argument]]></Val>
@@ -5988,6 +6255,15 @@
           <Val><![CDATA[invalid argument: binary config '{binary_source}' requires at least a base-url and a SAS token]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[geçersiz bağımsız değişken: ikili yapılandırma “{binary_source}” en az bir temel url ve bir SAS belirteci gerektirir]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidArgumentRequiresNoWildcards" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[cannot fix Windows path case for path containing wildcards: {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[joker karakterler içeren yol için Windows yol durumu düzeltilemedi: {path}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -6082,6 +6358,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";InvalidArgumentRequiresZeroOrOneArgument" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid argument: binary config '{binary_source}' requires 0 or 1 argument]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[geçersiz bağımsız değişken: “{binary_source}” ikili yapılandırması 0 veya 1 bağımsız değişken gerektirir]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";InvalidArtifactId$" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Invalid artifact id '${p0}']]></Val>
@@ -6114,6 +6399,33 @@
           <Val><![CDATA[Invalid bundle definition.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Paket grubu tanımı geçersiz.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidCharacterInFeatureList" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid character in feature name (must be lowercase, digits, '-', or '*')]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[özellik adında geçersiz karakter (küçük harf, rakam, '-' ya da '*' olmalıdır)]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidCharacterInFeatureName" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid character in feature name (must be lowercase, digits, '-')]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[özellik adında geçersiz karakter (küçük harf, rakam, '-' olmalıdır)]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidCharacterInPackageName" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid character in package name (must be lowercase, digits, '-')]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[paket adında geçersiz karakter (küçük harf, rakam, '-' ya da '*' olmalıdır)]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -6163,6 +6475,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[Invalid commit id {value}]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidDefaultFeatureName" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA['default' is a reserved feature name]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA['default' ayrılmış bir özellik adıdır]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -6261,6 +6582,33 @@
           <Val><![CDATA[Invalid {system_name} linkage type: [{value}]5D;]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Geçersiz {system_name} bağlantı türü: [{value}]5D;]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidLogicExpressionUnexpectedCharacter" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid logic expression, unexpected character]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[geçersiz mantıksal ifade, beklenmeyen karakter]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidLogicExpressionUsePipe" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid logic expression, use '|' instead of 'or']]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[geçersiz mantıksal ifade, 'ya da' yerine '|' kullanın]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidNoVersions" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[File contains no versions.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Dosyada sürüm yok.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -6583,6 +6931,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";LicenseExpressionString" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[<license string>]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[<license string>]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";LicenseExpressionUnknownException" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Unknown license exception identifier '{value}'. Known values are listed at https://spdx.org/licenses/exceptions-index.html]]></Val>
@@ -6633,6 +6990,15 @@
           <Val><![CDATA[Static Release (/MT)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Statik Yayın (/MT)]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ListHelp" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The argument should be a substring to search for, or no argument to display all installed libraries.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Bağımsız değişken aranılacak bir alt dize olmalıdır ya da yüklü tüm kitaplıkları görüntülemek için bağımsız değişken olmamalıdır.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -6745,6 +7111,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";MismatchedBinParagraphs" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The serialized binary paragraph was different from the original binary paragraph. Please open an issue at https://github.com/microsoft/vcpkg with the following output:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Seri hale getirilmiş ikili paragraf, özgün ikili paragraftan farklı. Lütfen {url} konumunda, aşağıdaki çıkışla bir sorun açın:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";MismatchedFiles" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[file to store does not match hash]]></Val>
@@ -6768,6 +7143,15 @@
           <Val><![CDATA[names did not match: '{package_name}' != '{actual}']]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[adlar eşleşmedi: '{package_name}' != '{actual}']]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";MismatchedSpec" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Mismatched spec in port {path}: expected {expected}, actual {actual}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{path} bağlantı noktasında eşleşmeyen belirtim: beklenen {expected}, gerçek {actual}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -6817,6 +7201,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";MissingClosingParen" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[missing closing )]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[kapatma ayracı eksik]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";MissingDependency" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Package {spec} is installed, but dependency {package_name} is not.]]></Val>
@@ -6856,6 +7249,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";MissingOrInvalidIdentifer" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[missing or invalid identifier]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[eksik ya da geçersiz tanımlayıcı]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";MissingPortSuggestPullRequest" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[If your port is not listed, please open an issue at and/or consider making a pull request.]]></Val>
@@ -6883,11 +7285,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";MissmatchedBinParagraphs" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";MixingBooleanOperationsNotAllowed" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The serialized binary paragraph was different from the original binary paragraph. Please open an issue at https://github.com/microsoft/vcpkg with the following output:]]></Val>
+          <Val><![CDATA[mixing & and | is not allowed; use () to specify order of operations]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Seri hale getirilmiş ikili paragraf, özgün ikili paragraftan farklı. Lütfen {url} konumunda, aşağıdaki çıkışla bir sorun açın:]]></Val>
+            <Val><![CDATA[& ve | öğelerinin karıştırılmasına izin verilmiyor; işlem sırasını belirtmek için () kullanın]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -6927,6 +7329,15 @@
           <Val><![CDATA[Multiple artifacts specified, but not an equal number of ${p0} switches]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Birden çok yapıt belirtildi, ancak eşit sayıda ${p0} anahtarı belirtilmedi]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";MultipleFeatures" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{package_name} declares {feature} multiple times; please ensure that features have distinct names]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{package_name}, {feature} ögesini birden çok tanımlıyor; lütfen özelliklerin farklı adlara sahip olduğundan emin olun]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -7132,6 +7543,51 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";NonExactlyArgs" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the command '{command_name}' requires exactly {expected} arguments, but {actual} were provided]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA['{command_name}' komutu tam olarak {expected} bağımsız değişken gerektirir ancak {actual} bağımsız değişken sağlandı]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";NonOneRemainingArgs" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the command '{command_name}' requires exactly one argument]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA['{command_name}' komutu, tam olarak bir bağımsız değişken gerektirir]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";NonRangeArgs" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the command '{command_name}' requires between {lower} and {upper} arguments, inclusive, but {actual} were provided]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA['{command_name}' komutu {lower} ile {upper} bağımsız değişkeni (bunlar dahil) arasında olmalıdır, ancak {actual} sağlandı]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";NonZeroOrOneRemainingArgs" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the command '{command_name}' requires zero or one arguments]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA['{command_name}' komutu, sıfır veya bir bağımsız değişken gerektirir]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";NonZeroRemainingArgs" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the command '{command_name}' does not accept any additional arguments]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA['{command_name}' komutu başka bağımsız değişken kabul etmez]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";NoteMessage" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[note: ]]></Val>
@@ -7186,11 +7642,56 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";OptionRequiresANonDashesValue" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the option '{option}' requires a value; if you intended to set '{option}' to '{value}', use the equals form instead: {actual}={value}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA['{option}' seçeneği bir değer gerektirir; '{option}' değerini '{value}' olarak ayarlamayı amaçlıyorsanız bunun yerine eşittir formunu kullanın: {actual}={value}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";OptionRequiresAValue" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the option '{option}' requires a value]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA['{option}' seçeneği bir değer gerektirir]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";OptionRequiresOption" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[--{value} requires --{option}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[--{value} şunu gerektirir: --{option}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";OptionUsedMultipleTimes" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the option '{option}' was specified multiple times]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA['{option}' seçeneği birden çok kez belirtildi]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";OptionalCommand" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[optional command]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[isteğe bağlı komut]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";Options" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Options]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Seçenekler]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -7306,6 +7807,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";PackageInfoHelp" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Display detailed information on packages.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Paketler hakkında ayrıntılı bilgi görüntüleyin.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";PackageRootDir" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[(Experimental) Specify the packages root directory.]]></Val>
@@ -7395,6 +7905,51 @@
           <Val><![CDATA[trailing surrogate following leading surrogate (paired surrogates are invalid)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Baştaki vekilin ardından sondaki vekil (eşleştirilmiş vekiller geçersiz)]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ParagraphDuplicateField" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[duplicate field]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[yinelenen alanlar]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ParagraphExactlyOne" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[There should be exactly one paragraph]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Tam olarak bir paragraf olması gerekir]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ParagraphExpectedColonAfterField" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[expected ':' after field name]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[alan adından sonra ':' bekleniyor]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ParagraphExpectedFieldName" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[expected field name]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[alan adı bekleniyor]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ParagraphUnexpectedEndOfLine" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[unexpected end of line, to span a blank line use "  ."]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[beklenmeyen satır sonu, boş satırı uzatmak için " ." kullanın]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -7870,6 +8425,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";PortDoesNotExist" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{package_name} does not exist]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{package_name} yok]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PortMissingManifest" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{package_name} has no vcpkg.json or CONTROL file in {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{package_name} içinde vcpkg.json ya da {path} içindeki DENETİM dosyası yok]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";PortNotInBaseline" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[the baseline does not contain an entry for port {package_name}]]></Val>
@@ -7914,6 +8487,15 @@
           <Val><![CDATA[The following {count} ports were added:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Aşağıdaki {count} bağlantı noktası eklendi:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PortsDiffHelp" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The argument should be a branch/tag/hash to checkout.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Bağımsız değişken, sonuçlandırma için bir dal/etiket/karma olmalıdır.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -7972,15 +8554,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";Project$Activated" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Project ${p0} activated]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[${p0} projesi etkinleştirildi]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";ProvideExportType" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[At least one of the following options are required: --raw --nuget --ifw --zip --7zip --chocolatey --prefab.]]></Val>
@@ -7999,6 +8572,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[Pushing {vendor} to '{path}' failed. Use --debug for more information.]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";RegeneratesArtifactRegistry" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Regenerates an artifact registry.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Bir yapıt kayıt defterini yeniden üretir.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -8034,6 +8616,15 @@
           <Val><![CDATA[Successfully created registry at {path}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Kayıt defteri {path} yolunda başarıyla oluşturuldu]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";RegistryValueWrongType" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The registry value {path} was an unexpected type.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{path} kayıt defteri değeri beklenmeyen bir türdü.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -8086,6 +8677,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[Removing {spec}]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ResponseFileCode" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[@response_file]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[@response_file]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -8145,6 +8745,15 @@
           <Val><![CDATA[expected arguments: asset config 'x-script' requires exactly the exec template as an argument]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[beklenen bağımsız değişkenler: varlık yapılandırması 'x-script', bağımsız değişken olarak tam olarak exec şablonunu gerektirir]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";SearchHelp" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The argument should be a substring to search for, or no argument to display all libraries.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Bağımsız değişken aranılacak bir alt dize olmalıdır ya da tüm kitaplıkları görüntülemek için bağımsız değişken olmamalıdır.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -8314,6 +8923,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";StoredBinariesToDestinations" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Stored binaries in {count} destinations.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[İkili dosyalar {count} hedefte depolandı.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";StoredBinaryCache" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Stored binary cache: "{path}"]]></Val>
@@ -8389,6 +9007,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";SwitchUsedMultipleTimes" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the switch '{option}' was specified multiple times]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA['{option}' geçişi birden çok kez belirtildi]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";Switches" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Switches]]></Val>
@@ -8421,6 +9048,15 @@
           <Val><![CDATA[Expected the SystemRoot environment variable to be always set on Windows.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[SystemRoot ortam değişkeninin her zaman Windows'ta ayarlanması bekleniyor.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";SystemTargetsInstallFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[failed to install system targets file to {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{path} öğesine sistem hedefleri dosyası yüklenemedi]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -8794,6 +9430,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";UnexpectedArgument" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[unexpected argument: {option}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[beklenmeyen bağımsız değişken: {option}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";UnexpectedAssetCacheProvider" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[unknown asset provider type: valid source types are 'x-azurl', 'x-script', 'x-block-origin', and 'clear']]></Val>
@@ -9037,6 +9682,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";UnexpectedFeatureList" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[unexpected list of features]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[beklenmeyen özellikler listesi]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";UnexpectedField" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[unexpected field '{json_field}']]></Val>
@@ -9064,6 +9718,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";UnexpectedOption" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[unexpected option: {option}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[beklenmeyen seçenek: {option}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedPlatformExpression" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[unexpected platform expression]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[beklenmeyen platform ifadesi]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";UnexpectedPortName" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[the port {expected} is declared as {actual} in {path}]]></Val>
@@ -9078,6 +9750,15 @@
           <Val><![CDATA[unexpected "port-version" without a versioning field]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[sürüm oluşturma alanı olmadan "port-version" beklenmiyordu]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedSwitch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[unexpected switch: {option}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[beklenmeyen geçiş: {option}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -9112,6 +9793,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[unknown binary provider type: valid providers are 'clear', 'default', 'nuget', 'nugetconfig', 'interactive', and 'files']]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnknownBooleanSetting" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[unknown boolean setting for {option}: "{value}". Valid values are '', '1', '0', 'ON', 'OFF', 'TRUE', and 'FALSE'.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{option} "{value}" için bilinmeyen boole ayarı. Geçerli değerler: '', '1', '0', 'ON', 'OFF', 'TRUE' ve 'FALSE'.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -9300,24 +9990,6 @@
           <Val><![CDATA[short options are not supported: '{value}']]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[kısa seçenekler desteklenmiyor: '{value}']]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";UnsupportedSupportsExpression" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[{package_name} is only supported on '{supports_expression}', which does not match {triplet}. This usually means that there are known build failures, or runtime problems, when building other platforms. To ignore this and attempt to build {package_name} anyway, rerun vcpkg with `--allow-unsupported`.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{package_name}, yalnızca {triplet} ile eşleşmeyen '{supports_expression}' üzerinde desteklenir. Bu genellikle diğer platformları oluştururken bilinen derleme hataları veya çalışma zamanı sorunları olduğu anlamına gelir. Yine de bunu yoksaymak ve {package_name} paketini derlemeyi denemek için vcpkg'yi '--allow-unsupported' ile yeniden çalıştırın.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";UnsupportedSupportsExpressionWarning" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[{package_name} is only supported on '{supports_expression}', which does not match {triplet}. This usually means that there are known build failures, or runtime problems, when building other platforms. Proceeding anyway due to `--allow-unsupported`.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{package_name}, yalnızca {triplet} ile eşleşmeyen '{supports_expression}' üzerinde desteklenir. Bu genellikle diğer platformları oluştururken bilinen derleme hataları veya çalışma zamanı sorunları olduğu anlamına gelir. '--allow-unsupported' nedeniyle yine de devam ediliyor.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -9655,14 +10327,14 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";VcpkgCeIsExperimental" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";VcpkgCeIsExperimental" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[vcpkg-ce ('configure environment') is experimental and may change at any time.]]></Val>
+          <Val><![CDATA[vcpkg-artifacts is experimental and may change at any time.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[vcpkg-ce ('ortamı yapılandır') deneyseldir ve herhangi bir zamanda değişiklik olabilir.]]></Val>
+            <Val><![CDATA[vcpkg-artifacts deneyseldir ve herhangi bir zamanda değişebilir.]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[vcpkg-artifacts are experimental and may change at any time.]]></Val>
+            <Val><![CDATA[vcpkg-ce ('configure environment') is experimental and may change at any time.]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -9793,6 +10465,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";VersionBaselineMismatch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The latest version is {expected}, but the baseline file contains {actual}.]A;Run:]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit -m "Update version database"]A;to update the baseline version.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[En son sürüm {expected}, ancak temel dosya {actual} içeriyor.]A;Çalıştır:]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit -m "Update version database"]A;yazarak temel sürümü güncelleştirin.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionBuiltinPortTreeEntryMissing" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[no version database entry for {package_name} at {expected}; using the checked out ports tree version ({actual}).]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[({actual}) kullanıma alınmış bağlantı noktaları ağacı sürümü kullanan {expected} öğesinde {package_name} için sürüm veritabanı girişi yok.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";VersionCommandHeader" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[vcpkg package management program version {version}]A;]A;See LICENSE.txt for license information.]]></Val>
@@ -9813,9 +10503,21 @@
       </Item>
       <Item ItemId=";VersionConstraintPortVersionMustBePositiveInteger" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[port-version (after the '#') in "version>=" must be a positive integer]]></Val>
+          <Val><![CDATA[port-version (after the '#') in "version>=" must be a non-negative integer]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA["version>=" içinde ('#' karakterinden sonra gelen) port-version pozitif bir tamsayı olmalıdır]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[port-version (after the '#') in "version>=" must be a positive integer]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionConstraintUnresolvable" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Cannot resolve a minimum constraint for dependency {package_name} from {spec}.]A;The dependency was not found in the baseline, indicating that the package did not exist at that time. This may be fixed by providing an explicit override version via the "overrides" field or by updating the baseline.]A;See `vcpkg help versioning` for more information.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{spec} öğesinden {package_name} bağımlılığı için minimum kısıtlama çözümlenemiyor.]A;Bağımlılık, paketin o anda var olmadığını gösteren temelde bulunamadı. Bu, "geçersiz kılmalar" alanı aracılığıyla ya da temelin güncelleştirilmesi yoluyla açık bir geçersiz kılma sürümü sağlanarak düzeltilebilir.]A;Daha fazla bilgi için 'vcpkg yardım sürümü oluşturma' bölümüne bakın.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -9825,6 +10527,78 @@
           <Val><![CDATA[dependency {spec} was expected to be at least version {expected_version}, but is currently {actual_version}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{spec} bağımlılığının en az {expected_version} sürümü olması bekleniyordu, ancak şu anda {actual_version}.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionDatabaseEntryMissing" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[no version entry for {package_name} at {version}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{version} öğesinde {package_name} için sürüm girdisi yok.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionDatabaseFileMissing" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{package_name} is missing a version database file at {path}]A;Run:]A;vcpkg x-add-version {package_name}]A;to create the versions file.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{path} öğesinde {package_name} sürüm veritabanı dosyası eksik]A;Çalıştır:]A;vcpkg x-add-version {package_name}]A;yazarak sürümler dosyasını oluşturun.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionGitEntryMissing" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[no version database entry for {package_name} at {version}.]A;Available versions:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{version} sürümünde {package_name} için bir sürüm veritabanı girişi yok.]A;Kullanılabilir sürümler:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionInDeclarationDoesNotMatch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The version declared in file does not match checked-out version: {version}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Dosyada tanımlanan sürüm kullanıma alınan sürümle eşleşmiyor: {version}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionIncomparable1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[version conflict on {spec}: {package_name} required {expected} but vcpkg could not compare it to {actual}.]A;The two versions used incomparable schemes:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{spec}: {package_name} öğesinde sürüm çakışması, {expected} gerekli ancak vcpkg bunu {actual} ile karşılaştıramadı.]A;Karşılaştırılamaz düzenleri kullanan iki sürüm:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionIncomparable2" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA["{version}" was of scheme {new_scheme}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA["{version}" was of scheme {new_scheme}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionIncomparable3" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[This can be resolved by adding an explicit override to the preferred version, for example:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Bu, tercih edilen sürüme açık bir geçersiz kılma ekleyerek çözülebilir, örneğin:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionIncomparable4" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[See `vcpkg help versioning` for more information.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Daha fazla bilgi için 'vcpkg yardım sürümü oluşturma' bölümüne bakın.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -9865,6 +10639,42 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";VersionMissingRequiredFeature" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{spec}@{version} does not have required feature {feature}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{spec}@{version} gerekli {feature} özelliğine sahip değil]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionNotFound" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{expected} not available, only {actual} is available]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{expected} kullanılamıyor, yalnızca {actual} kullanılabilir]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionNotFoundDuringDiscovery" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[version was not found during discovery: {spec}@{version}]A;This is an internal vcpkg error. Please open an issue on https://github.com/Microsoft/vcpkg with detailed steps to reproduce the problem.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[keşif sırasında sürüm bulunamadı: {spec}@{version}]A;Bu bir iç vcpkg hatasıdır. Lütfen sorunu yeniden oluşturmak için https://github.com/Microsoft/vcpkg adresinde ayrıntılı aşamalardan geçerek bir konu açın.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionNotFoundInVersionsFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Version {version} was not found in versions file.]A;Run:]A;vcpkg x-add-version {package_name}]A;to add the new port version.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{version} sürümü sürüm dosyasında bulunamadı.]A;Çalıştır:]A;vcpkg x-add-version {package_name}]A;yazarak yeni bağlantı noktası sürümünü ekleyin.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";VersionRejectedDueToBaselineMissing" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[{path} was rejected because it uses "{json_field}" and does not have a "builtin-baseline". This can be fixed by removing the uses of "{json_field}" or adding a "builtin-baseline".]A;See `vcpkg help versioning` for more information.]]></Val>
@@ -9879,6 +10689,33 @@
           <Val><![CDATA[{path} was rejected because it uses "{json_field}" and the `versions` feature flag is disabled. This can be fixed by removing "{json_field}" or enabling the `versions` feature flag.]A;See `vcpkg help versioning` for more information.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{path}, "{json_field}" kullandığı ve `versions` özellik işareti devre dışı bırakıldığı için reddedildi. Bu, "{json_field}" kaldırılarak veya `versions` özellik bayrağı etkinleştirilerek düzeltilebilir.]A;Daha fazla bilgi için `vcpkg yardım sürümü oluşturma` konusuna bakın.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionSchemeMismatch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The version database declares {version} as {expected}, but {path} declares it as {actual}. Versions must be unique, even if they are declared with different schemes.]A;Run:]A;vcpkg x-add-version {package_name} --overwrite-version]A;to overwrite the scheme declared in the version database with that declared in the port.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Sürüm veritabanı, {version} öğesini {expected} olarak tanımlıyor, ancak {path} bunu bir {actual} olarak tanımlıyor. Farklı düzenlerle tanımlanmış olsalar bile sürümler benzersiz olmalıdır.]A;Çalıştır:]A;vcpkg x-add-version {package_name} --overwrite-version]A;yazarak sürüm veritabanında tanımlanan düzeni bağlantı noktasında tanımlanan düzenin üzerine yazın.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionShaMismatch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{version} is declared with {expected}, but the local port has a different SHA {actual}.]A;Please update the port's version fields and then run:]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit -m "Update version database"]A;to add the new version.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{version}, {expected} ile tanımlanmış, ancak yerel bağlantı noktasında farklı bir SHA {actual} mevcut.]A;Lütfen bağlantı noktasının sürüm alanlarını güncelleştirin ve sonra şu komutu çalıştırın:]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit -m "Update version database"]A;ve yeni sürümü ekleyin.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionShaMissing" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[while validating {package_name}, missing Git SHA.]A;Run:]A;git add "{path}"]A;git commit -m "wip"]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit --amend -m "[{package_name}]5D; Add new port"]A;to commit the new port and create its version file.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{package_name} doğrulanırken, Git SHA eksik.]A;Çalıştır:]A;git add "{path}"]A;git commit -m "wip"]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit --amend -m "[{package_name}]5D; Add new port"]A;yazarak yeni bağlantı noktasını yürütün ve bu bağlantı noktasının sürüm dosyasını oluşturun.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -9918,6 +10755,15 @@
           <Val><![CDATA[Version]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Sürüm]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionVerifiedOK" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[OK: {package_name}@{version} -> {commit_sha}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[OK: {package_name}@{version} -> {commit_sha}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10003,11 +10849,38 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";WhileLoadingLocalPort" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[while attempting to load local port {package_name}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{package_name} yerel bağlantı noktası yüklenmeye çalışılırken]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";WhileLoadingPortFromGitTree" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[while trying to load port from: {commit_sha}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{commit_sha} öğesinden bağlantı noktası yüklenmeye çalışılırken]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";WhileLookingForSpec" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[while looking for {spec}:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{spec} aranırken:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";WhileParsingVersionsForPort" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[while parsing versions for {package_name} from {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{path} öğesinden {package_name} için sürümler ayrıştırılırken]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10026,6 +10899,15 @@
           <Val><![CDATA[While resolving dependencies of the project file ${p0}, ${p1} did not specify a registry.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[${p0} proje dosyasının bağımlılıkları çözümlenirken, ${p1} kayıt defteri belirtmedi.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";WhileValidatingVersion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[while validating version: {version}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[sürüm doğrulanırken: {version}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10119,6 +11001,15 @@
           <Val><![CDATA[enables verbose mode, displays verbose messsages about the process]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[ayrıntılı modu etkinleştirir, işlemle ilgili ayrıntılı iletileri görüntüler]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";error" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[error:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[hata:]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10236,6 +11127,24 @@
           <Val><![CDATA[may not rename across filesystems]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[dosya sistemleri arasında yeniden adlandırılamaz]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";noPostscriptFileRerunWithTheVcpkgShellFunctionRatherThanExecutable" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[no postscript file: rerun with the vcpkg shell function rather than executable]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[postscript dosyası yok: yürütülebilir dosya yerine vcpkg kabuk işleviyle yeniden çalıştırın]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";nothingIsActivatedNoChangesHaveBeenMade" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[nothing is activated, no changes have been made]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[hiçbir şey etkinleştirilmedi, hiçbir değişiklik yapılmadı]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10425,6 +11334,15 @@
           <Val><![CDATA[version should be of type 'string', found '${p0}']]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[sürüm 'string' türünde olmalıdır, '${p0}' bulundu]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";warning" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[warning:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[uyarı:]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />

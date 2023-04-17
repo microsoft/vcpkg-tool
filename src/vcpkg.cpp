@@ -3,12 +3,14 @@
 #include <vcpkg/base/chrono.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/json.h>
+#include <vcpkg/base/jsonreader.h>
 #include <vcpkg/base/pragmas.h>
 #include <vcpkg/base/setup-messages.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
 #include <vcpkg/base/system.process.h>
+#include <vcpkg/base/util.h>
 
 #include <vcpkg/bundlesettings.h>
 #include <vcpkg/cgroup-parser.h>
@@ -40,10 +42,10 @@ using namespace vcpkg;
 
 namespace
 {
-    void invalid_command(const std::string& cmd)
+    void invalid_command(const VcpkgCmdArguments& args)
     {
-        msg::println(Color::error, msgVcpkgInvalidCommand, msg::command_name = cmd);
-        print_usage();
+        msg::println_error(msgVcpkgInvalidCommand, msg::command_name = args.get_command());
+        print_command_list_usage();
         Checks::exit_fail(VCPKG_LINE_INFO);
     }
 
@@ -93,15 +95,15 @@ namespace
         // track version on each invocation
         get_global_metrics_collector().track_string(StringMetric::VcpkgVersion, Commands::Version::version.to_string());
 
-        if (args.command.empty())
+        if (args.get_command().empty())
         {
-            print_usage();
+            print_command_list_usage();
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
         static const auto find_command = [&](auto&& commands) {
             auto it = Util::find_if(commands, [&](auto&& commandc) {
-                return Strings::case_insensitive_ascii_equals(commandc.name, args.command);
+                return Strings::case_insensitive_ascii_equals(commandc.name, args.get_command());
             });
             using std::end;
             if (it != end(commands))
@@ -145,7 +147,7 @@ namespace
             return command_function->function->perform_and_exit(args, paths, default_triplet, host_triplet);
         }
 
-        return invalid_command(args.command);
+        return invalid_command(args);
     }
 
     const ElapsedTimer g_total_time;
@@ -173,27 +175,20 @@ namespace vcpkg::Checks
 
         if (debugging)
         {
-            msg::write_unlocalized_text_to_stdout(Color::none,
-                                                  Strings::concat("[DEBUG] Time in subprocesses: ",
-                                                                  get_subproccess_stats(),
-                                                                  " us\n",
-                                                                  "[DEBUG] Time in parsing JSON: ",
-                                                                  Json::get_json_parsing_stats(),
-                                                                  " us\n",
-                                                                  "[DEBUG] Time in JSON reader: ",
-                                                                  Json::Reader::get_reader_stats(),
-                                                                  " us\n",
-                                                                  "[DEBUG] Time in filesystem: ",
-                                                                  get_filesystem_stats(),
-                                                                  " us\n",
-                                                                  "[DEBUG] Time in loading ports: ",
-                                                                  Paragraphs::get_load_ports_stats(),
-                                                                  " us\n",
-                                                                  "[DEBUG] Exiting after ",
-                                                                  g_total_time.to_string(),
-                                                                  " (",
-                                                                  static_cast<int64_t>(elapsed_us_inner),
-                                                                  " us)\n"));
+            auto exit_debug_msg = fmt::format("[DEBUG] Time in subprocesses: {}us\n"
+                                              "[DEBUG] Time in parsing JSON: {}us\n"
+                                              "[DEBUG] Time in JSON reader: {}us\n"
+                                              "[DEBUG] Time in filesystem: {}us\n"
+                                              "[DEBUG] Time in loading ports: {}us\n"
+                                              "[DEBUG] Exiting after {} ({}us)\n",
+                                              get_subproccess_stats(),
+                                              Json::get_json_parsing_stats(),
+                                              Json::Reader::get_reader_stats(),
+                                              get_filesystem_stats(),
+                                              Paragraphs::get_load_ports_stats(),
+                                              g_total_time.to_string(),
+                                              static_cast<int64_t>(elapsed_us_inner));
+            msg::write_unlocalized_text_to_stdout(Color::none, exit_debug_msg);
         }
     }
 }

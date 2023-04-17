@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <package>
   <metadata>
-    <id>VS.Redist.Vcpkg.x86</id>
+    <id>VS.Redist.Vcpkg.amd64</id>
     <version>1.0.0-$version$</version>
     <description>C++ Library Manager for Windows, Linux, and MacOS</description>
     <authors>Microsoft</authors>

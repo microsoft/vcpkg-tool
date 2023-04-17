@@ -1,4 +1,5 @@
 #include <vcpkg/binarycaching.h>
+#include <vcpkg/cmakevars.h>
 #include <vcpkg/commands.setinstalled.h>
 #include <vcpkg/globalstate.h>
 #include <vcpkg/help.h>
@@ -6,6 +7,7 @@
 #include <vcpkg/install.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/portfileprovider.h>
+#include <vcpkg/registries.h>
 #include <vcpkg/remove.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkglib.h>
@@ -18,10 +20,16 @@ namespace vcpkg::Commands::SetInstalled
     static constexpr StringLiteral OPTION_ONLY_DOWNLOADS = "only-downloads";
     static constexpr StringLiteral OPTION_WRITE_PACKAGES_CONFIG = "x-write-nuget-packages-config";
     static constexpr StringLiteral OPTION_NO_PRINT_USAGE = "no-print-usage";
+    static constexpr StringLiteral OPTION_ENFORCE_PORT_CHECKS = "enforce-port-checks";
+    static constexpr StringLiteral OPTION_ALLOW_UNSUPPORTED_PORT = "allow-unsupported";
 
     static constexpr CommandSwitch INSTALL_SWITCHES[] = {
         {OPTION_DRY_RUN, []() { return msg::format(msgCmdSetInstalledOptDryRun); }},
-        {OPTION_NO_PRINT_USAGE, []() { return msg::format(msgCmdSetInstalledOptNoUsage); }}};
+        {OPTION_NO_PRINT_USAGE, []() { return msg::format(msgCmdSetInstalledOptNoUsage); }},
+        {OPTION_ONLY_DOWNLOADS, []() { return msg::format(msgHelpTxtOptOnlyDownloads); }},
+        {OPTION_ENFORCE_PORT_CHECKS, []() { return msg::format(msgHelpTxtOptEnforcePortChecks); }},
+        {OPTION_ALLOW_UNSUPPORTED_PORT, []() { return msg::format(msgHelpTxtOptAllowUnsupportedPort); }},
+    };
     static constexpr CommandSetting INSTALL_SETTINGS[] = {
         {OPTION_WRITE_PACKAGES_CONFIG, []() { return msg::format(msgCmdSetInstalledOptWritePkgConfig); }},
     };
@@ -153,12 +161,16 @@ namespace vcpkg::Commands::SetInstalled
     {
         // input sanitization
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
-
-        const std::vector<FullPackageSpec> specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
+        bool default_triplet_used = false;
+        const std::vector<FullPackageSpec> specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
             return check_and_get_full_package_spec(
-                std::string(arg), default_triplet, COMMAND_STRUCTURE.get_example_text(), paths);
+                arg, default_triplet, default_triplet_used, COMMAND_STRUCTURE.get_example_text(), paths);
         });
-        print_default_triplet_warning(args, args.command_arguments);
+
+        if (default_triplet_used)
+        {
+            print_default_triplet_warning(args);
+        }
 
         BinaryCache binary_cache{args, paths};
 
@@ -169,6 +181,10 @@ namespace vcpkg::Commands::SetInstalled
                                          : KeepGoing::NO;
         const PrintUsage print_cmake_usage =
             Util::Sets::contains(options.switches, OPTION_NO_PRINT_USAGE) ? PrintUsage::NO : PrintUsage::YES;
+        const auto unsupported_port_action = Util::Sets::contains(options.switches, OPTION_ALLOW_UNSUPPORTED_PORT)
+                                                 ? UnsupportedPortAction::Warn
+                                                 : UnsupportedPortAction::Error;
+        const bool prohibit_backcompat_features = Util::Sets::contains(options.switches, (OPTION_ENFORCE_PORT_CHECKS));
 
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();
@@ -187,11 +203,14 @@ namespace vcpkg::Commands::SetInstalled
         // We have a set of user-requested specs.
         // We need to know all the specs which are required to fulfill dependencies for those specs.
         // Therefore, we see what we would install into an empty installed tree, so we can use the existing code.
-        auto action_plan = create_feature_install_plan(provider, *cmake_vars, specs, {}, {host_triplet});
+        auto action_plan =
+            create_feature_install_plan(provider, *cmake_vars, specs, {}, {host_triplet, unsupported_port_action});
 
         for (auto&& action : action_plan.install_actions)
         {
             action.build_options = default_build_package_options;
+            action.build_options.backcompat_features =
+                (prohibit_backcompat_features ? BackcompatFeatures::PROHIBIT : BackcompatFeatures::ALLOW);
         }
 
         perform_and_exit_ex(args,

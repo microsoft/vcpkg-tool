@@ -11,23 +11,22 @@
   </ItemGroup>
 
   <ItemGroup>
-    <FilesToSign Include="$(IntermediateOutputPath)\ce\**\*.js" Exclude="$(IntermediateOutputPath)\ce\**\node_modules\**\*.js">
+    <FilesToSign Include="$(IntermediateOutputPath)\vcpkg-artifacts\**\*.js" Exclude="$(IntermediateOutputPath)\vcpkg-artifacts\**\node_modules\**\*.js">
       <Authenticode>Microsoft400</Authenticode>
     </FilesToSign>
-    <FilesToSign Include="$(IntermediateOutputPath)\ce\**\node_modules\**\*.js"
-                 Exclude="$(IntermediateOutputPath)\ce\common\temp\node_modules\.pnpm\**\node_modules\fast-xml-parser\src\xmlbuilder\prettifyJs2Xml.js">
+    <FilesToSign Include="$(IntermediateOutputPath)\vcpkg-artifacts\node_modules\**\*.js">
       <Authenticode>3PartyScriptsSHA2</Authenticode>
     </FilesToSign>
     <FilesToSign Include="$(IntermediateOutputPath)\vcpkg-init.ps1">
       <Authenticode>Microsoft400</Authenticode>
     </FilesToSign>
-    <FilesToSign Include="$(IntermediateOutputPath)\applocal.ps1">
+    <FilesToSign Include="$(IntermediateOutputPath)\scripts\applocal.ps1">
       <Authenticode>Microsoft400</Authenticode>
     </FilesToSign>
-    <FilesToSign Include="$(IntermediateOutputPath)\addPoshVcpkgToPowershellProfile.ps1">
+    <FilesToSign Include="$(IntermediateOutputPath)\scripts\addPoshVcpkgToPowershellProfile.ps1">
       <Authenticode>Microsoft400</Authenticode>
     </FilesToSign>
-    <FilesToSign Include="$(IntermediateOutputPath)\posh-vcpkg.psm1">
+    <FilesToSign Include="$(IntermediateOutputPath)\scripts\posh-vcpkg.psm1">
       <Authenticode>Microsoft400</Authenticode>
     </FilesToSign>
   </ItemGroup>

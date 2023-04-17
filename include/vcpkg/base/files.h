@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vcpkg/base/fwd/files.h>
 #include <vcpkg/base/fwd/format.h>
 #include <vcpkg/base/fwd/span.h>
 
@@ -8,7 +9,7 @@
 #include <vcpkg/base/file-contents.h>
 #include <vcpkg/base/lineinfo.h>
 #include <vcpkg/base/messages.h>
-#include <vcpkg/base/pragmas.h>
+#include <vcpkg/base/path.h>
 #include <vcpkg/base/stringview.h>
 
 #include <stdio.h>
@@ -16,14 +17,10 @@
 
 #include <initializer_list>
 #include <memory>
+#include <string>
 #include <system_error>
 #include <utility>
-
-#if defined(_WIN32)
-#define VCPKG_PREFERRED_SEPARATOR "\\"
-#else // ^^^ _WIN32 / !_WIN32 vvv
-#define VCPKG_PREFERRED_SEPARATOR "/"
-#endif // _WIN32
+#include <vector>
 
 namespace vcpkg
 {
@@ -40,61 +37,6 @@ namespace vcpkg
 
     private:
         std::error_code ec;
-    };
-
-    struct Path
-    {
-        Path();
-        Path(const Path&);
-        Path(Path&&);
-        Path& operator=(const Path&);
-        Path& operator=(Path&&);
-
-        Path(const StringView sv);
-        Path(const std::string& s);
-        Path(std::string&& s);
-        Path(const char* s);
-        Path(const char* first, size_t size);
-
-        const std::string& native() const& noexcept;
-        std::string&& native() && noexcept;
-        operator StringView() const noexcept;
-
-        const char* c_str() const noexcept;
-
-        std::string generic_u8string() const;
-
-        bool empty() const noexcept;
-
-        Path operator/(StringView sv) const&;
-        Path operator/(StringView sv) &&;
-        Path operator+(StringView sv) const&;
-        Path operator+(StringView sv) &&;
-
-        Path& operator/=(StringView sv);
-        Path& operator+=(StringView sv);
-
-        void replace_filename(StringView sv);
-        void remove_filename();
-        void make_preferred();
-        void clear();
-        Path lexically_normal() const;
-
-        // Sets *this to parent_path, returns whether anything was removed
-        bool make_parent_path();
-
-        StringView parent_path() const;
-        StringView filename() const;
-        StringView extension() const;
-        StringView stem() const;
-
-        bool is_absolute() const;
-        bool is_relative() const;
-
-        friend const char* to_printf_arg(const Path& p) noexcept;
-
-    private:
-        std::string m_str;
     };
 
     bool is_symlink(FileType s);
@@ -139,13 +81,14 @@ namespace vcpkg
         ExpectedL<Unit> try_read_all(void* buffer, std::uint32_t size);
         ExpectedL<char> try_getc();
         ExpectedL<Unit> try_read_all_from(long long offset, void* buffer, std::uint32_t size);
+        std::string read_to_end(std::error_code& ec);
     };
 
     struct WriteFilePointer : FilePointer
     {
         WriteFilePointer() noexcept;
         WriteFilePointer(WriteFilePointer&&) noexcept;
-        explicit WriteFilePointer(const Path& file_path, std::error_code& ec);
+        explicit WriteFilePointer(const Path& file_path, Append append, std::error_code& ec);
         WriteFilePointer& operator=(WriteFilePointer&& other) noexcept;
         size_t write(const void* buffer, size_t element_size, size_t element_count) const noexcept;
         int put(int c) const noexcept;
@@ -323,8 +266,12 @@ namespace vcpkg
         ReadFilePointer open_for_read(const Path& file_path, LineInfo li) const;
         ExpectedL<ReadFilePointer> try_open_for_read(const Path& file_path) const;
 
-        virtual WriteFilePointer open_for_write(const Path& file_path, std::error_code& ec) = 0;
+        virtual WriteFilePointer open_for_write(const Path& file_path, Append append, std::error_code& ec) = 0;
+        WriteFilePointer open_for_write(const Path& file_path, Append append, LineInfo li);
+        WriteFilePointer open_for_write(const Path& file_path, std::error_code& ec);
         WriteFilePointer open_for_write(const Path& file_path, LineInfo li);
+
+        ExpectedL<bool> check_update_required(const Path& version_path, StringView expected_version);
     };
 
     Filesystem& get_real_filesystem();

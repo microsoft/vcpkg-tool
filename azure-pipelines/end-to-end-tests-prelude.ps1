@@ -6,15 +6,19 @@ $NuGetRoot = Join-Path $TestingRoot 'nuget'
 $NuGetRoot2 = Join-Path $TestingRoot 'nuget2'
 $ArchiveRoot = Join-Path $TestingRoot 'archives'
 $VersionFilesRoot = Join-Path $TestingRoot 'version-test'
-$commonArgs = @(
-    "--triplet",
-    $Triplet,
+$directoryArgs = @(
     "--x-buildtrees-root=$buildtreesRoot",
     "--x-install-root=$installRoot",
     "--x-packages-root=$packagesRoot",
     "--overlay-ports=$PSScriptRoot/e2e_ports/overlays",
     "--overlay-triplets=$PSScriptRoot/e2e_ports/triplets"
 )
+
+$commonArgs = @(
+    "--triplet",
+    $Triplet
+) + $directoryArgs
+
 $Script:CurrentTest = 'unassigned'
 
 function Refresh-TestRoot {
@@ -99,9 +103,9 @@ function Run-VcpkgAndCaptureOutput {
         [Parameter(ValueFromRemainingArguments)]
         [string[]]$TestArgs
     )
-    $Script:CurrentTest = "$VcpkgExe $($testArgs -join ' ')"
+    $Script:CurrentTest = "$VcpkgPs1 $($testArgs -join ' ')"
     if (!$EndToEndTestSilent) { Write-Host -ForegroundColor red $Script:CurrentTest }
-    $result = (& $VcpkgExe @testArgs) | Out-String
+    $result = (& "$VcpkgPs1" @testArgs) | Out-String
     if (!$EndToEndTestSilent) { Write-Host -ForegroundColor Gray $result }
     $result
 }

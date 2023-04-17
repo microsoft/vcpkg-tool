@@ -1,10 +1,15 @@
+#include <vcpkg/base/fwd/message_sinks.h>
+
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/git.h>
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/jsonreader.h>
+#include <vcpkg/base/lazy.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/system.debug.h>
+#include <vcpkg/base/system.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
@@ -77,7 +82,7 @@ namespace
                                            LocalizedString::from_raw(manifest_opt.error()->to_string()));
         }
 
-        auto manifest_value = std::move(manifest_opt).value_or_exit(VCPKG_LINE_INFO).value;
+        auto manifest_value = std::move(manifest_opt).value(VCPKG_LINE_INFO).value;
         if (!manifest_value.is_object())
         {
             msg::println_error(msgFailedToParseNoTopLevelObj, msg::path = manifest_path);
@@ -514,6 +519,9 @@ namespace vcpkg
                        const Path& root,
                        const Path& original_cwd)
             : VcpkgPathsImplStage1(fs, args, bundle, root, original_cwd)
+            , m_global_config(bundle.read_only ? get_user_configuration_home().value_or_exit(VCPKG_LINE_INFO) /
+                                                     "vcpkg-configuration.json"
+                                               : root / "vcpkg-configuration.json")
             , m_config_dir(m_manifest_dir.empty() ? root : m_manifest_dir)
             , m_manifest_path(m_manifest_dir.empty() ? Path{} : m_manifest_dir / "vcpkg.json")
             , m_registries_work_tree_dir(m_registries_cache / "git")
@@ -590,6 +598,7 @@ namespace vcpkg
             }
         }
 
+        const Path m_global_config;
         const Path m_config_dir;
         const Path m_manifest_path;
         const Path m_registries_work_tree_dir;
@@ -789,6 +798,8 @@ namespace vcpkg
     const Optional<Path>& VcpkgPaths::maybe_buildtrees() const { return m_pimpl->buildtrees; }
     const Optional<Path>& VcpkgPaths::maybe_packages() const { return m_pimpl->packages; }
 
+    const Path& VcpkgPaths::global_config() const { return m_pimpl->m_global_config; }
+
     const InstalledPaths& VcpkgPaths::installed() const
     {
         if (auto i = m_pimpl->m_installed.get())
@@ -821,6 +832,16 @@ namespace vcpkg
 
     Path VcpkgPaths::baselines_output() const { return buildtrees() / "versioning_" / "baselines"; }
     Path VcpkgPaths::versions_output() const { return buildtrees() / "versioning_" / "versions"; }
+    bool VcpkgPaths::try_provision_vcpkg_artifacts() const
+    {
+        switch (m_pimpl->m_bundle.deployment)
+        {
+            case DeploymentKind::Git: return true;
+            case DeploymentKind::OneLiner: return false;     // handled by z-boostrap-standalone
+            case DeploymentKind::VisualStudio: return false; // bundled in VS itself
+            default: Checks::unreachable(VCPKG_LINE_INFO);
+        }
+    }
 
     std::string VcpkgPaths::get_toolver_diagnostics() const
     {
@@ -900,7 +921,8 @@ namespace vcpkg
         auto cmd = git_cmd_builder(this->root / ".git", this->root);
         cmd.string_arg("rev-parse").string_arg("HEAD");
         return flatten_out(cmd_execute_and_capture_output(cmd), Tools::GIT).map([](std::string&& output) {
-            return Strings::trim(std::move(output));
+            Strings::inplace_trim(output);
+            return std::move(output);
         });
     }
 
@@ -1183,7 +1205,8 @@ namespace vcpkg
                                     .string_arg(revision);
 
         return flatten_out(cmd_execute_and_capture_output(git_rev_parse), Tools::GIT).map([](std::string&& output) {
-            return Strings::trim(std::move(output));
+            Strings::inplace_trim(output);
+            return std::move(output);
         });
     }
     ExpectedL<Path> VcpkgPaths::git_checkout_object_from_remote_registry(StringView object) const

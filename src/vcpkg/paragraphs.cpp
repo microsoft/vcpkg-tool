@@ -1,3 +1,6 @@
+#include <vcpkg/base/fwd/message_sinks.h>
+
+#include <vcpkg/base/chrono.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/parse.h>

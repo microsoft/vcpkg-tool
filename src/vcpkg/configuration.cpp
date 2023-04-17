@@ -1,4 +1,7 @@
 #include <vcpkg/base/jsonreader.h>
+#include <vcpkg/base/message_sinks.h>
+#include <vcpkg/base/strings.h>
+#include <vcpkg/base/util.h>
 
 #include <vcpkg/configuration.h>
 #include <vcpkg/documentation.h>
@@ -10,6 +13,44 @@ namespace
 {
     using namespace vcpkg;
 
+    /// <summary>
+    /// Deserializes a list of package names and patterns along with their respective in-file declaration locations.
+    /// </summary>
+    struct PackagePatternDeserializer final : Json::IDeserializer<PackagePatternDeclaration>
+    {
+        virtual LocalizedString type_name() const override;
+        virtual Optional<PackagePatternDeclaration> visit_string(Json::Reader&, StringView sv) const override;
+
+        static const PackagePatternDeserializer instance;
+    };
+
+    struct PackagePatternArrayDeserializer final : Json::ArrayDeserializer<PackagePatternDeserializer>
+    {
+        virtual LocalizedString type_name() const override;
+        static const PackagePatternArrayDeserializer instance;
+    };
+    LocalizedString PackagePatternDeserializer::type_name() const { return msg::format(msgAPackagePattern); }
+
+    Optional<PackagePatternDeclaration> PackagePatternDeserializer::visit_string(Json::Reader& r, StringView sv) const
+    {
+        if (!is_package_pattern(sv))
+        {
+            r.add_generic_error(
+                type_name(),
+                msg::format(msgParsePackagePatternError, msg::package_name = sv, msg::url = docs::registries_url));
+        }
+
+        return PackagePatternDeclaration{
+            sv.to_string(),
+            r.path(),
+        };
+    }
+
+    const PackagePatternDeserializer PackagePatternDeserializer::instance;
+
+    LocalizedString PackagePatternArrayDeserializer::type_name() const { return msg::format(msgAPackagePatternArray); }
+
+    const PackagePatternArrayDeserializer PackagePatternArrayDeserializer::instance;
     struct RegistryImplementationKindDeserializer : Json::StringDeserializer
     {
         LocalizedString type_name() const override { return msg::format(msgARegistryImplementationKind); }
@@ -292,7 +333,7 @@ namespace
             {
                 auto& declarations = config->package_declarations.emplace();
                 r.required_object_field(
-                    type_name(), obj, PACKAGES, declarations, Json::PackagePatternArrayDeserializer::instance);
+                    type_name(), obj, PACKAGES, declarations, PackagePatternArrayDeserializer::instance);
                 config->packages.emplace(Util::fmap(declarations, [](auto&& decl) { return decl.pattern; }));
             }
         }
@@ -854,7 +895,7 @@ namespace vcpkg
             return nullopt;
         }
 
-        auto conf_value = std::move(conf).value_or_exit(VCPKG_LINE_INFO).value;
+        auto conf_value = std::move(conf).value(VCPKG_LINE_INFO).value;
         if (!conf_value.is_object())
         {
             messageSink.println(msgFailedToParseNoTopLevelObj, msg::path = origin);
@@ -1028,5 +1069,62 @@ namespace vcpkg
         std::vector<std::string> out;
         find_unknown_fields_impl(config.ce_metadata, out, "$");
         return out;
+    }
+
+    bool is_package_pattern(StringView sv)
+    {
+        if (Json::IdentifierDeserializer::is_ident(sv))
+        {
+            return true;
+        }
+
+        /*if (sv == "*")
+        {
+            return true;
+        }*/
+
+        // ([a-z0-9]+(-[a-z0-9]+)*)(\*?)
+        auto cur = sv.begin();
+        const auto last = sv.end();
+        for (;;)
+        {
+            // [a-z0-9]+
+            if (cur == last)
+            {
+                return false;
+            }
+
+            if (!ParserBase::is_lower_digit(*cur))
+            {
+                if (*cur != '*')
+                {
+                    return false;
+                }
+
+                return ++cur == last;
+            }
+
+            do
+            {
+                ++cur;
+                if (cur == last)
+                {
+                    return true;
+                }
+            } while (ParserBase::is_lower_digit(*cur));
+
+            switch (*cur)
+            {
+                case '-':
+                    // repeat outer [a-z0-9]+ again to match -[a-z0-9]+
+                    ++cur;
+                    continue;
+                case '*':
+                    // match last optional *
+                    ++cur;
+                    return cur == last;
+                default: return false;
+            }
+        }
     }
 }

@@ -5,6 +5,7 @@
 #include <vcpkg/help.h>
 #include <vcpkg/input.h>
 #include <vcpkg/portfileprovider.h>
+#include <vcpkg/registries.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 
 namespace vcpkg::Commands::BuildExternal
@@ -26,11 +27,19 @@ namespace vcpkg::Commands::BuildExternal
 
         BinaryCache binary_cache{args, paths};
 
-        const FullPackageSpec spec = check_and_get_full_package_spec(
-            std::string(args.command_arguments.at(0)), default_triplet, COMMAND_STRUCTURE.get_example_text(), paths);
+        bool default_triplet_used = false;
+        const FullPackageSpec spec = check_and_get_full_package_spec(options.command_arguments[0],
+                                                                     default_triplet,
+                                                                     default_triplet_used,
+                                                                     COMMAND_STRUCTURE.get_example_text(),
+                                                                     paths);
+        if (default_triplet_used)
+        {
+            print_default_triplet_warning(args);
+        }
 
         auto overlays = paths.overlay_ports;
-        overlays.insert(overlays.begin(), args.command_arguments.at(1));
+        overlays.insert(overlays.begin(), options.command_arguments[1]);
 
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();
