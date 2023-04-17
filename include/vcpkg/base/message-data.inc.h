@@ -457,8 +457,6 @@ DECLARE_MESSAGE(CmdAddVersionOptSkipVersionFormatChk, (), "", "Skips the version
 DECLARE_MESSAGE(CmdAddVersionOptVerbose, (), "", "Print success messages instead of just errors.")
 DECLARE_MESSAGE(CmdContactOptSurvey, (), "", "Launch default browser to the current vcpkg survey")
 DECLARE_MESSAGE(CmdDependInfoOptDepth, (), "", "Show recursion depth in output")
-DECLARE_MESSAGE(CmdDependInfoOptDGML, (), "", "Creates graph on basis of dgml")
-DECLARE_MESSAGE(CmdDependInfoOptDot, (), "", "Creates graph on basis of dot")
 DECLARE_MESSAGE(CmdDependInfoOptMaxRecurse, (), "", "Set max recursion depth, a value of -1 indicates no limit")
 DECLARE_MESSAGE(CmdDependInfoOptSort,
                 (),
