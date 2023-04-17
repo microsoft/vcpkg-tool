@@ -1582,10 +1582,7 @@ DECLARE_MESSAGE(InvalidCommandArgSort,
                 (),
                 "",
                 "Value of --sort must be one of 'lexicographical', 'topological', 'reverse'.")
-DECLARE_MESSAGE(InvalidCommandArgFormat,
-                (),
-                "",
-                "Value of --format must be one of 'list', 'dot', 'dgml', 'mermaid'.")
+DECLARE_MESSAGE(InvalidCommandArgFormat, (), "", "Value of --format must be one of 'list', 'dot', 'dgml', 'mermaid'.")
 DECLARE_MESSAGE(InvalidCommentStyle,
                 (),
                 "",
