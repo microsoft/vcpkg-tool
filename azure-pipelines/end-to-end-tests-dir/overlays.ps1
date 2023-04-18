@@ -34,4 +34,10 @@ $manifestRoot = "$e2eProjects/overlays-project-with-config"
 $overlayTripletsBeforeUpdate = Get-Content "$manifestRoot/vcpkg-configuration.json" | ConvertFrom-Json
 Run-Vcpkg x-update-baseline --x-manifest-root=$manifestRoot
 $overlayTripletsAfterUpdate = Get-Content "$manifestRoot/vcpkg-configuration.json" | ConvertFrom-Json
-Throw-IfNotEqual $overlayTripletsBeforeUpdate."overlay-triplets" $overlayTripletsAfterUpdate."overlay-triplets"
+
+$sortedBeforeUpdate = ($overlayTripletsBeforeUpdate."overlay-triplets" | Sort-Object) -join ""
+$sortedAfterUpdate = ($overlayTripletsAfterUpdate."overlay-triplets" | Sort-Object) -join ""
+
+if ($sortedBeforeUpdate -ne $sortedAfterUpdate) {
+	Throw "Overlay triplets paths changed after x-update-baseline"
+}
