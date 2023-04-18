@@ -634,6 +634,7 @@ namespace vcpkg
         , buildsystems(scripts / "buildsystems")
         , buildsystems_msbuild_targets(buildsystems / "msbuild" / "vcpkg.targets")
         , buildsystems_msbuild_props(buildsystems / "msbuild" / "vcpkg.props")
+        , buildsystems_osx(scripts / "buildsystems" / "osx")
         , ports_cmake(filesystem.almost_canonical(scripts / "ports.cmake", VCPKG_LINE_INFO))
         , triplets(filesystem.almost_canonical(root / "triplets", VCPKG_LINE_INFO))
         , community_triplets(filesystem.almost_canonical(triplets / "community", VCPKG_LINE_INFO))
