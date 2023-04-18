@@ -673,7 +673,8 @@ namespace vcpkg
             }
 
             overlay_ports = merge_overlays(args.cli_overlay_ports, overlay_port_paths, args.env_overlay_ports);
-            overlay_triplets = merge_overlays(args.cli_overlay_triplets, overlay_triplet_paths, args.env_overlay_triplets);
+            overlay_triplets =
+                merge_overlays(args.cli_overlay_triplets, overlay_triplet_paths, args.env_overlay_triplets);
         }
 
         for (const std::string& triplet : this->overlay_triplets)
