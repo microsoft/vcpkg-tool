@@ -173,7 +173,9 @@ namespace vcpkg::Strings
 
     std::vector<std::string> split(StringView s, const char delimiter);
 
-    std::vector<std::string> split_paths(StringView s);
+    [[nodiscard]] std::vector<std::string> split_keep_empty(StringView s, const char delimiter);
+
+    [[nodiscard]] std::vector<std::string> split_paths(StringView s);
 
     const char* find_first_of(StringView searched, StringView candidates);
 
