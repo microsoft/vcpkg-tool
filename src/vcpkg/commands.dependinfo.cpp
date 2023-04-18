@@ -19,14 +19,6 @@ namespace vcpkg::Commands::DependInfo
 {
     namespace
     {
-        struct PackageDependInfo
-        {
-            std::string package;
-            int depth;
-            std::unordered_set<std::string> features;
-            std::vector<std::string> dependencies;
-        };
-
         // invariant: prefix_buf is equivalent on exitv (but may have been reallocated)
         void print_dep_tree(std::string& prefix_buf,
                             const std::string& currDepend,
@@ -190,75 +182,6 @@ namespace vcpkg::Commands::DependInfo
             return List;
         }
 
-        std::string create_dot_as_string(const std::vector<PackageDependInfo>& depend_info)
-        {
-            int empty_node_count = 0;
-
-            std::string s;
-            s.append("digraph G{ rankdir=LR; edge [minlen=3]; overlap=false;");
-
-            for (const auto& package : depend_info)
-            {
-                if (package.dependencies.empty())
-                {
-                    empty_node_count++;
-                    continue;
-                }
-
-                const std::string name = Strings::replace_all(std::string{package.package}, "-", "_");
-                fmt::format_to(std::back_inserter(s), "{};", name);
-                for (const auto& d : package.dependencies)
-                {
-                    const std::string dependency_name = Strings::replace_all(std::string{d}, "-", "_");
-                    fmt::format_to(std::back_inserter(s), "{} -> {};", name, dependency_name);
-                }
-            }
-
-            fmt::format_to(std::back_inserter(s), "empty [label=\"{} singletons...\"]; }}", empty_node_count);
-            return s;
-        }
-
-        std::string create_dgml_as_string(const std::vector<PackageDependInfo>& depend_info)
-        {
-            std::string s;
-            s.append("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
-            s.append("<DirectedGraph xmlns=\"http://schemas.microsoft.com/vs/2009/dgml\">");
-
-            std::string nodes, links;
-            for (const auto& package : depend_info)
-            {
-                const std::string name = package.package;
-                fmt::format_to(std::back_inserter(nodes), "<Node Id=\"{}\" />", name);
-
-                // Iterate over dependencies.
-                for (const auto& d : package.dependencies)
-                {
-                    fmt::format_to(std::back_inserter(links), "<Link Source=\"{}\" Target=\"{}\" />", name, d);
-                }
-            }
-
-            fmt::format_to(std::back_inserter(s), "<Nodes>{}</Nodes>", nodes);
-            fmt::format_to(std::back_inserter(s), "<Links>{}</Links>", links);
-            s.append("</DirectedGraph>");
-            return s;
-        }
-
-        std::string create_mermaid_as_string(const std::vector<PackageDependInfo>& depend_info)
-        {
-            std::string s;
-            s.append("flowchart TD;");
-
-            for (const auto& package : depend_info)
-            {
-                for (const auto& dependency : package.dependencies)
-                {
-                    s.append(fmt::format(" {} --> {};", package.package, dependency));
-                }
-            }
-
-            return s;
-        }
-
         std::string create_graph_as_string(OutputFormat output_format,
                                            const std::vector<PackageDependInfo>& depend_info)
         {
@@ -332,6 +255,75 @@ namespace vcpkg::Commands::DependInfo
             Util::erase_remove_if(out, [](auto&& info) { return info.depth < 0; });
             return out;
         }
+    }
+
+    std::string create_dot_as_string(const std::vector<PackageDependInfo>& depend_info)
+    {
+        int empty_node_count = 0;
+
+        std::string s;
+        s.append("digraph G{ rankdir=LR; edge [minlen=3]; overlap=false;");
+
+        for (const auto& package : depend_info)
+        {
+            if (package.dependencies.empty())
+            {
+                empty_node_count++;
+                continue;
+            }
+
+            const std::string name = Strings::replace_all(std::string{package.package}, "-", "_");
+            fmt::format_to(std::back_inserter(s), "{};", name);
+            for (const auto& d : package.dependencies)
+            {
+                const std::string dependency_name = Strings::replace_all(std::string{d}, "-", "_");
+                fmt::format_to(std::back_inserter(s), "{} -> {};", name, dependency_name);
+            }
+        }
+
+        fmt::format_to(std::back_inserter(s), "empty [label=\"{} singletons...\"]; }}", empty_node_count);
+        return s;
+    }
+
+    std::string create_dgml_as_string(const std::vector<PackageDependInfo>& depend_info)
+    {
+        std::string s;
+        s.append("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
+        s.append("<DirectedGraph xmlns=\"http://schemas.microsoft.com/vs/2009/dgml\">");
+
+        std::string nodes, links;
+        for (const auto& package : depend_info)
+        {
+            const std::string name = package.package;
+            fmt::format_to(std::back_inserter(nodes), "<Node Id=\"{}\" />", name);
+
+            // Iterate over dependencies.
+            for (const auto& d : package.dependencies)
+            {
+                fmt::format_to(std::back_inserter(links), "<Link Source=\"{}\" Target=\"{}\" />", name, d);
+            }
+        }
+
+        fmt::format_to(std::back_inserter(s), "<Nodes>{}</Nodes>", nodes);
+        fmt::format_to(std::back_inserter(s), "<Links>{}</Links>", links);
+        s.append("</DirectedGraph>");
+        return s;
+    }
+
+    std::string create_mermaid_as_string(const std::vector<PackageDependInfo>& depend_info)
+    {
+        std::string s;
+        s.append("flowchart TD;");
+
+        for (const auto& package : depend_info)
+        {
+            for (const auto& dependency : package.dependencies)
+            {
+                s.append(fmt::format(" {} --> {};", package.package, dependency));
+            }
+        }
+
+        return s;
     }
 
     const CommandStructure COMMAND_STRUCTURE = {
