@@ -209,3 +209,15 @@ try {
     Run-Vcpkg deactivate
     Pop-Location
 }
+
+$output = Run-VcpkgAndCaptureOutput x-update-registry microsoft
+Throw-IfFailed
+Test-Match $output "Updating registry data from microsoft"
+
+$output = Run-VcpkgAndCaptureOutput x-update-registry https://aka.ms/vcpkg-ce-default
+Throw-IfFailed
+Test-Match $output "Updating registry data from microsoft"
+
+$output = Run-VcpkgAndCaptureOutput x-update-registry https://example.com
+Throw-IfNotFailed
+Test-Match $output "\[https://example.com/\] could not be updated; it could be malformed\."

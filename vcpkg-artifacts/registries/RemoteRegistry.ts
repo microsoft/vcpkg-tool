@@ -11,8 +11,8 @@ import { i } from '../i18n';
 import { Session } from '../session';
 import { isGithubRepo } from '../util/checks';
 import { Uri } from '../util/uri';
-import { ArtifactIndex } from './artifact-index';
 import { ArtifactRegistry } from './ArtifactRegistry';
+import { ArtifactIndex } from './artifact-index';
 import { Index } from './indexer';
 
 export class RemoteRegistry extends ArtifactRegistry {
@@ -76,8 +76,12 @@ export class RemoteRegistry extends ArtifactRegistry {
     }
   }
 
-  async update() {
-    this.session.channels.message(i`Updating registry data from ${this.location.toString()}`);
+  async update(displayName?: string) {
+    if (!displayName) {
+      displayName = this.location.toString();
+    }
+
+    this.session.channels.message(i`Updating registry data from ${displayName}`);
 
     let locations = [this.location];
 
@@ -86,7 +90,7 @@ export class RemoteRegistry extends ArtifactRegistry {
       locations = [this.location.join('archive/refs/heads/main.zip'), this.location.join('archive/refs/heads/master.zip')];
     }
 
-    const file = await acquireArtifactFile(this.session, locations, `${this.safeName}-registry.zip`, {});
+    const file = await acquireArtifactFile(this.session, locations, `${this.safeName}-registry.zip`, {}, {force: true});
     if (await file.exists()) {
       await unpackZip(this.session, file, this.cacheFolder, {}, { strip: -1 });
       await file.delete();
