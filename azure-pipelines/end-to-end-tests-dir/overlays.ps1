@@ -28,3 +28,10 @@ Run-Vcpkg install --x-manifest-root=$manifestRoot `
     --overlay-triplets=$manifestRoot/my-triplets `
     --x-install-root=$installRoot
 Throw-IfNotFailed
+
+# Test overlay_triplet paths remain relative to the manifest root after x-update-baseline
+$manifestRoot = "$e2eProjects/overlays-project-with-config"
+$overlayTripletsBeforeUpdate = Get-Content "$manifestRoot/vcpkg-configuration.json" | ConvertFrom-Json
+Run-Vcpkg x-update-baseline --x-manifest-root=$manifestRoot
+$overlayTripletsAfterUpdate = Get-Content "$manifestRoot/vcpkg-configuration.json" | ConvertFrom-Json
+Throw-IfNotEqual $overlayTripletsBeforeUpdate."overlay-triplets" $overlayTripletsAfterUpdate."overlay-triplets"
