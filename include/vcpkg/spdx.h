@@ -1,8 +1,11 @@
 #pragma once
 
-#include <vcpkg/base/span.h>
+#include <vcpkg/base/fwd/files.h>
+#include <vcpkg/base/fwd/json.h>
 
-#include <vcpkg/dependencies.h>
+#include <vcpkg/fwd/dependencies.h>
+
+#include <vcpkg/base/span.h>
 
 #include <string>
 

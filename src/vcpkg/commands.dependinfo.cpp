@@ -10,6 +10,7 @@
 #include <vcpkg/install.h>
 #include <vcpkg/packagespec.h>
 #include <vcpkg/portfileprovider.h>
+#include <vcpkg/registries.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 
 #include <vector>
@@ -179,7 +180,7 @@ namespace vcpkg::Commands::DependInfo
                 }
             }
 
-            fmt::format_to(std::back_inserter(s), "empty [label=\"{} singletons...\"]; }", empty_node_count);
+            fmt::format_to(std::back_inserter(s), "empty [label=\"{} singletons...\"]; }}", empty_node_count);
             return s;
         }
 
@@ -230,8 +231,7 @@ namespace vcpkg::Commands::DependInfo
             auto iter = dependencies_map.find(package);
             if (iter == dependencies_map.end())
             {
-                Debug::println("Not found in dependency graph: ", package);
-                Checks::unreachable(VCPKG_LINE_INFO);
+                Checks::unreachable(VCPKG_LINE_INFO, fmt::format("Not found in dependency graph: {}", package));
             }
 
             PackageDependInfo& info = iter->second;
@@ -298,9 +298,10 @@ namespace vcpkg::Commands::DependInfo
         const SortMode sort_mode = get_sort_mode(options);
         const bool show_depth = Util::Sets::contains(options.switches, OPTION_SHOW_DEPTH);
 
-        const std::vector<FullPackageSpec> specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
+        bool default_triplet_used = false;
+        const std::vector<FullPackageSpec> specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
             return check_and_get_full_package_spec(
-                std::string{arg}, default_triplet, COMMAND_STRUCTURE.get_example_text(), paths);
+                arg, default_triplet, default_triplet_used, COMMAND_STRUCTURE.get_example_text(), paths);
         });
 
         auto& fs = paths.get_filesystem();
@@ -319,8 +320,7 @@ namespace vcpkg::Commands::DependInfo
 
         if (!action_plan.remove_actions.empty())
         {
-            Debug::println("Only install actions should exist in the plan");
-            Checks::unreachable(VCPKG_LINE_INFO);
+            Checks::unreachable(VCPKG_LINE_INFO, "Only install actions should exist in the plan");
         }
 
         std::vector<const InstallPlanAction*> install_actions =

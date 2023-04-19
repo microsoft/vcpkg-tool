@@ -1,12 +1,13 @@
 #pragma once
 
 #include <vcpkg/base/fwd/downloads.h>
+#include <vcpkg/base/fwd/files.h>
 #include <vcpkg/base/fwd/messages.h>
 
 #include <vcpkg/base/expected.h>
-#include <vcpkg/base/files.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/span.h>
+#include <vcpkg/base/stringview.h>
 
 #include <string>
 #include <vector>
@@ -37,7 +38,8 @@ namespace vcpkg
                             StringView url,
                             const std::vector<std::string>& secrets,
                             View<std::string> headers,
-                            const Path& file);
+                            const Path& file,
+                            StringView request = "PUT");
     std::vector<int> url_heads(View<std::string> urls, View<std::string> headers, View<std::string> secrets);
 
     struct DownloadManagerConfig

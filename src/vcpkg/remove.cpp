@@ -1,3 +1,4 @@
+#include <vcpkg/base/strings.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.h>
@@ -7,6 +8,7 @@
 #include <vcpkg/installedpaths.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/portfileprovider.h>
+#include <vcpkg/registries.h>
 #include <vcpkg/remove.h>
 #include <vcpkg/update.h>
 #include <vcpkg/vcpkglib.h>
@@ -16,7 +18,6 @@ namespace vcpkg::Remove
 {
     using Update::OutdatedPackage;
 
-    REGISTER_MESSAGE(RemovingPackage);
     static void remove_package(Filesystem& fs,
                                const InstalledPaths& installed,
                                const PackageSpec& spec,
@@ -114,22 +115,27 @@ namespace vcpkg::Remove
                 continue;
             }
 
+            LocalizedString msg;
+            if (plan_type == RemovePlanType::NOT_INSTALLED)
+            {
+                msg = msg::format(msgFollowingPackagesNotInstalled).append_raw('\n');
+            }
+            else if (plan_type == RemovePlanType::REMOVE)
+            {
+                msg = msg::format(msgPackagesToRemove).append_raw('\n');
+            }
+            else
+            {
+                Checks::unreachable(VCPKG_LINE_INFO);
+            }
+
             std::vector<const RemovePlanAction*> cont = it->second;
             std::sort(cont.begin(), cont.end(), &RemovePlanAction::compare_by_name);
-            const std::string as_string = Strings::join("\n", cont, [](const RemovePlanAction* p) {
-                return to_output_string(p->request_type, p->spec.to_string());
-            });
-
-            switch (plan_type)
+            for (auto p : cont)
             {
-                case RemovePlanType::NOT_INSTALLED:
-                    msg::println(msg::format(msgFollowingPackagesNotInstalled).append_raw(as_string));
-                    continue;
-                case RemovePlanType::REMOVE:
-                    msg::println(msg::format(msgPackagesToRemove).append_raw('\n').append_raw(as_string));
-                    continue;
-                default: Checks::unreachable(VCPKG_LINE_INFO);
+                msg.append_raw(request_type_indent(p->request_type)).append_raw(p->spec).append_raw('\n');
             }
+            msg::print(msg);
         }
     }
 
@@ -157,14 +163,12 @@ namespace vcpkg::Remove
     }
 
     static constexpr StringLiteral OPTION_PURGE = "purge";
-    static constexpr StringLiteral OPTION_NO_PURGE = "no-purge";
     static constexpr StringLiteral OPTION_RECURSE = "recurse";
     static constexpr StringLiteral OPTION_DRY_RUN = "dry-run";
     static constexpr StringLiteral OPTION_OUTDATED = "outdated";
 
-    static constexpr std::array<CommandSwitch, 5> SWITCHES = {{
+    static constexpr std::array<CommandSwitch, 4> SWITCHES = {{
         {OPTION_PURGE, nullptr},
-        {OPTION_NO_PURGE, nullptr},
         {OPTION_RECURSE, []() { return msg::format(msgCmdRemoveOptRecurse); }},
         {OPTION_DRY_RUN, []() { return msg::format(msgCmdRemoveOptDryRun); }},
         {OPTION_OUTDATED, []() { return msg::format(msgCmdRemoveOptOutdated); }},
@@ -198,7 +202,7 @@ namespace vcpkg::Remove
         std::vector<PackageSpec> specs;
         if (Util::Sets::contains(options.switches, OPTION_OUTDATED))
         {
-            if (args.command_arguments.size() != 0)
+            if (options.command_arguments.size() != 0)
             {
                 msg::println_error(msgInvalidOptionForRemove);
                 Checks::exit_fail(VCPKG_LINE_INFO);
@@ -221,26 +225,23 @@ namespace vcpkg::Remove
         }
         else
         {
-            if (args.command_arguments.size() < 1)
+            if (options.command_arguments.size() < 1)
             {
                 msg::println_error(msgInvalidOptionForRemove);
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
-            specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
-                return check_and_get_package_spec(
-                    std::string(arg), default_triplet, COMMAND_STRUCTURE.get_example_text(), paths);
+
+            bool default_triplet_used = false;
+            specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
+                return check_and_get_package_spec(std::string(arg),
+                                                  default_triplet,
+                                                  default_triplet_used,
+                                                  COMMAND_STRUCTURE.get_example_text(),
+                                                  paths);
             });
         }
 
-        const bool no_purge = Util::Sets::contains(options.switches, OPTION_NO_PURGE);
-        if (no_purge && Util::Sets::contains(options.switches, OPTION_PURGE))
-        {
-            msg::println_error(msgMutuallyExclusiveOption, msg::value = "no-purge", msg::option = "purge");
-            msg::write_unlocalized_text_to_stdout(Color::none, COMMAND_STRUCTURE.get_example_text());
-            Checks::exit_fail(VCPKG_LINE_INFO);
-        }
-        const Purge purge = no_purge ? Purge::NO : Purge::YES;
-
+        const Purge purge = Util::Sets::contains(options.switches, OPTION_PURGE) ? Purge::YES : Purge::NO;
         const bool is_recursive = Util::Sets::contains(options.switches, OPTION_RECURSE);
         const bool dry_run = Util::Sets::contains(options.switches, OPTION_DRY_RUN);
 

@@ -1,12 +1,14 @@
 #include <vcpkg/base/cache.h>
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/chrono.h>
+#include <vcpkg/base/file_sink.h>
 #include <vcpkg/base/hash.h>
-#include <vcpkg/base/json.h>
+#include <vcpkg/base/message_sinks.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.debug.h>
+#include <vcpkg/base/system.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/system.proxy.h>
 #include <vcpkg/base/util.h>
@@ -28,6 +30,7 @@
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/postbuildlint.h>
+#include <vcpkg/registries.h>
 #include <vcpkg/spdx.h>
 #include <vcpkg/statusparagraphs.h>
 #include <vcpkg/tools.h>
@@ -49,11 +52,6 @@ namespace
     };
 
     static const NullBuildLogsRecorder null_build_logs_recorder_instance;
-}
-
-namespace vcpkg
-{
-    REGISTER_MESSAGE(ElapsedForPackage);
 }
 
 namespace vcpkg::Build
@@ -144,7 +142,7 @@ namespace vcpkg::Build
         action->build_options.clean_packages = CleanPackages::NO;
 
         const ElapsedTimer build_timer;
-        const auto result = build_package(args, paths, *action, binary_cache, build_logs_recorder, status_db);
+        const auto result = build_package(args, paths, *action, build_logs_recorder, status_db);
         msg::print(msgElapsedForPackage, msg::spec = spec, msg::elapsed = build_timer);
         if (result.code == BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES)
         {
@@ -171,9 +169,10 @@ namespace vcpkg::Build
                 msg::print(Color::warning, warnings);
             }
             msg::println_error(create_error_message(result, spec));
-            msg::print(create_user_troubleshooting_message(*action, paths));
+            msg::print(create_user_troubleshooting_message(*action, paths, nullopt));
             return 1;
         }
+        binary_cache.push_success(*action, paths.package_dir(action->spec));
 
         return 0;
     }
@@ -182,11 +181,14 @@ namespace vcpkg::Build
     {
         // Build only takes a single package and all dependencies must already be installed
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
-        std::string first_arg = args.command_arguments[0];
-
         BinaryCache binary_cache{args, paths};
-        const FullPackageSpec spec = check_and_get_full_package_spec(
-            std::move(first_arg), default_triplet, COMMAND_STRUCTURE.get_example_text(), paths);
+
+        bool default_triplet_used = false;
+        const FullPackageSpec spec = check_and_get_full_package_spec(options.command_arguments[0],
+                                                                     default_triplet,
+                                                                     default_triplet_used,
+                                                                     COMMAND_STRUCTURE.get_example_text(),
+                                                                     paths);
 
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();
@@ -588,21 +590,45 @@ namespace vcpkg
 #endif
     }
 
-    static std::unique_ptr<BinaryControlFile> create_binary_control_file(
-        const SourceParagraph& source_paragraph,
-        Triplet triplet,
-        const BuildInfo& build_info,
-        const std::string& abi_tag,
-        const std::vector<FeatureSpec>& core_dependencies)
+    static std::vector<PackageSpec> fspecs_to_pspecs(View<FeatureSpec> fspecs)
     {
+        std::set<PackageSpec> set;
+        for (auto&& f : fspecs)
+            set.insert(f.spec());
+        std::vector<PackageSpec> ret{set.begin(), set.end()};
+        return ret;
+    }
+
+    static std::unique_ptr<BinaryControlFile> create_binary_control_file(const InstallPlanAction& action,
+                                                                         const BuildInfo& build_info)
+    {
+        const auto& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
+
         auto bcf = std::make_unique<BinaryControlFile>();
-        BinaryParagraph bpgh(source_paragraph, triplet, abi_tag, core_dependencies);
+
+        auto find_itr = action.feature_dependencies.find("core");
+        Checks::check_exit(VCPKG_LINE_INFO, find_itr != action.feature_dependencies.end());
+        BinaryParagraph bpgh(*scfl.source_control_file->core_paragraph,
+                             action.spec.triplet(),
+                             action.public_abi(),
+                             fspecs_to_pspecs(find_itr->second));
         if (const auto p_ver = build_info.version.get())
         {
             bpgh.version = *p_ver;
         }
-
         bcf->core_paragraph = std::move(bpgh);
+
+        bcf->features.reserve(action.feature_list.size());
+        for (auto&& feature : action.feature_list)
+        {
+            find_itr = action.feature_dependencies.find(feature);
+            Checks::check_exit(VCPKG_LINE_INFO, find_itr != action.feature_dependencies.end());
+            auto maybe_fpgh = scfl.source_control_file->find_feature(feature);
+            if (auto fpgh = maybe_fpgh.get())
+            {
+                bcf->features.emplace_back(action.spec, *fpgh, fspecs_to_pspecs(find_itr->second));
+            }
+        }
         return bcf;
     }
 
@@ -978,34 +1004,19 @@ namespace vcpkg
         }
 
         const BuildInfo build_info = read_build_info(fs, paths.build_info_file_path(action.spec));
-        const size_t error_count =
-            perform_post_build_lint_checks(action.spec, paths, pre_build_info, build_info, scfl.source_location);
-
-        auto find_itr = action.feature_dependencies.find("core");
-        Checks::check_exit(VCPKG_LINE_INFO, find_itr != action.feature_dependencies.end());
-
-        std::unique_ptr<BinaryControlFile> bcf = create_binary_control_file(
-            *scfl.source_control_file->core_paragraph, triplet, build_info, action.public_abi(), find_itr->second);
-
+        size_t error_count = 0;
+        {
+            FileSink file_sink{fs, stdoutlog, Append::YES};
+            CombiningSink combo_sink{stdout_sink, file_sink};
+            error_count = perform_post_build_lint_checks(
+                action.spec, paths, pre_build_info, build_info, scfl.source_location, combo_sink);
+        };
         if (error_count != 0 && action.build_options.backcompat_features == BackcompatFeatures::PROHIBIT)
         {
             return ExtendedBuildResult{BuildResult::POST_BUILD_CHECKS_FAILED};
         }
 
-        for (auto&& feature : action.feature_list)
-        {
-            for (auto&& f_pgh : scfl.source_control_file->feature_paragraphs)
-            {
-                if (f_pgh->name == feature)
-                {
-                    find_itr = action.feature_dependencies.find(feature);
-                    Checks::check_exit(VCPKG_LINE_INFO, find_itr != action.feature_dependencies.end());
-
-                    bcf->features.emplace_back(
-                        *scfl.source_control_file->core_paragraph, *f_pgh, triplet, find_itr->second);
-                }
-            }
-        }
+        std::unique_ptr<BinaryControlFile> bcf = create_binary_control_file(action, build_info);
 
         write_sbom(paths, action, abi_info.heuristic_resources);
         write_binary_control_file(paths, *bcf);
@@ -1243,8 +1254,9 @@ namespace vcpkg
                         auto status_it = status_db.find(pspec);
                         if (status_it == status_db.end())
                         {
-                            Debug::println("Failed to find dependency abi for %s -> %s", action.spec, pspec);
-                            Checks::unreachable(VCPKG_LINE_INFO);
+                            Checks::unreachable(
+                                VCPKG_LINE_INFO,
+                                fmt::format("Failed to find dependency abi for {} -> {}", action.spec, pspec));
                         }
 
                         dependency_abis.emplace_back(pspec.name(), status_it->get()->package.abi);
@@ -1280,7 +1292,6 @@ namespace vcpkg
     ExtendedBuildResult build_package(const VcpkgCmdArguments& args,
                                       const VcpkgPaths& paths,
                                       const InstallPlanAction& action,
-                                      BinaryCache& binary_cache,
                                       const IBuildLogsRecorder& build_logs_recorder,
                                       const StatusParagraphs& status_db)
     {
@@ -1331,10 +1342,6 @@ namespace vcpkg
             build_logs_recorder.record_build_result(paths, spec, result.code);
             filesystem.create_directories(abi_package_dir, VCPKG_LINE_INFO);
             filesystem.copy_file(abi_file, abi_file_in_package, CopyOptions::none, VCPKG_LINE_INFO);
-            if (result.code == BuildResult::SUCCEEDED)
-            {
-                binary_cache.push_success(action);
-            }
         }
 
         return result;
@@ -1443,11 +1450,11 @@ namespace vcpkg
     {
         const auto& fs = paths.get_filesystem();
         const auto create_log_details = [&fs](vcpkg::Path&& path) {
-            static constexpr auto MAX_LOG_LENGTH = 20'000;
+            static constexpr auto MAX_LOG_LENGTH = 50'000;
             static constexpr auto START_BLOCK_LENGTH = 3'000;
             static constexpr auto START_BLOCK_MAX_LENGTH = 5'000;
-            static constexpr auto END_BLOCK_LENGTH = 13'000;
-            static constexpr auto END_BLOCK_MAX_LENGTH = 15'000;
+            static constexpr auto END_BLOCK_LENGTH = 43'000;
+            static constexpr auto END_BLOCK_MAX_LENGTH = 45'000;
             auto log = fs.read_contents(path, VCPKG_LINE_INFO);
             if (log.size() > MAX_LOG_LENGTH)
             {
@@ -1495,37 +1502,63 @@ namespace vcpkg
             "\n-",
             paths.get_toolver_diagnostics(),
             "\n**To Reproduce**\n\n",
-            Strings::concat("`vcpkg ", args.command, " ", Strings::join(" ", args.command_arguments), "`\n"),
+            Strings::concat(
+                "`vcpkg ", args.get_command(), " ", Strings::join(" ", args.get_forwardable_arguments()), "`\n"),
             "\n**Failure logs**\n\n```\n",
             paths.get_filesystem().read_contents(build_result.stdoutlog.value_or_exit(VCPKG_LINE_INFO),
                                                  VCPKG_LINE_INFO),
             "\n```\n",
-            Strings::join("\n", Util::fmap(build_result.error_logs, create_log_details)),
+            Strings::join("\n", build_result.error_logs, create_log_details),
             "\n\n**Additional context**\n\n",
             manifest);
     }
 
-    LocalizedString create_user_troubleshooting_message(const InstallPlanAction& action, const VcpkgPaths& paths)
+    static std::string make_gh_issue_search_url(StringView spec_name)
     {
-        std::string package = action.displayname();
-        if (auto scfl = action.source_control_file_and_location.get())
-        {
-            Strings::append(package, " -> ", scfl->to_version());
-        }
+        return "https://github.com/microsoft/vcpkg/issues?q=is%3Aissue+is%3Aopen+in%3Atitle+" + spec_name.to_string();
+    }
+
+    static std::string make_gh_issue_open_url(StringView spec_name, const Path& path)
+    {
+        return Strings::concat("https://github.com/microsoft/vcpkg/issues/new?title=[",
+                               spec_name,
+                               "]+Build+error&body=Copy+issue+body+from+",
+                               Strings::percent_encode(path));
+    }
+
+    LocalizedString create_user_troubleshooting_message(const InstallPlanAction& action,
+                                                        const VcpkgPaths& paths,
+                                                        const Optional<Path>& issue_body)
+    {
         const auto& spec_name = action.spec.name();
         LocalizedString result = msg::format(msgBuildTroubleshootingMessage1).append_raw('\n');
-        result.append_indent()
-            .append_raw("https://github.com/microsoft/vcpkg/issues?q=is%3Aissue+is%3Aopen+in%3Atitle+")
-            .append_raw(spec_name)
-            .append_raw('\n');
+        result.append_indent().append_raw(make_gh_issue_search_url(spec_name)).append_raw('\n');
         result.append(msgBuildTroubleshootingMessage2).append_raw('\n');
-        result.append_indent()
-            .append_fmt_raw("https://github.com/microsoft/vcpkg/issues/"
-                            "new?template=report-package-build-failure.md&title=[{}]+Build+error",
-                            spec_name)
-            .append_raw('\n');
-        result.append(msgBuildTroubleshootingMessage3, msg::package_name = spec_name).append_raw('\n');
-        result.append_raw(paths.get_toolver_diagnostics()).append_raw('\n');
+        if (issue_body.has_value())
+        {
+            auto path = issue_body.get()->generic_u8string();
+            result.append_indent().append_raw(make_gh_issue_open_url(spec_name, path)).append_raw("\n");
+            if (!paths.get_filesystem().find_from_PATH("gh").empty())
+            {
+                Command gh("gh");
+                gh.string_arg("issue").string_arg("create").string_arg("-R").string_arg("microsoft/vcpkg");
+                gh.string_arg("--title").string_arg(fmt::format("[{}] Build failure", spec_name));
+                gh.string_arg("--body-file").string_arg(path);
+
+                result.append(msgBuildTroubleshootingMessageGH).append_raw('\n');
+                result.append_indent().append_raw(gh.command_line());
+            }
+        }
+        else
+        {
+            result.append_indent()
+                .append_raw(
+                    "https://github.com/microsoft/vcpkg/issues/new?template=report-package-build-failure.md&title=[")
+                .append_raw(spec_name)
+                .append_raw("]+Build+error\n");
+            result.append(msgBuildTroubleshootingMessage3, msg::package_name = spec_name).append_raw('\n');
+            result.append_raw(paths.get_toolver_diagnostics()).append_raw('\n');
+        }
 
         return result;
     }

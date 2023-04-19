@@ -1,10 +1,6 @@
 #pragma once
 
 #include <vcpkg/fwd/dependencies.h>
-#include <vcpkg/fwd/vcpkgcmdarguments.h>
-#include <vcpkg/fwd/vcpkgpaths.h>
-
-#include <vcpkg/base/messages.h>
 
 #include <vcpkg/commands.interface.h>
 
@@ -15,11 +11,6 @@ namespace vcpkg::Remove
         NO = 0,
         YES
     };
-
-    DECLARE_MESSAGE(RemovingPackage,
-                    (msg::action_index, msg::count, msg::spec),
-                    "",
-                    "Removing {action_index}/{count} {spec}");
 
     void perform_remove_plan_action(const VcpkgPaths& paths,
                                     const RemovePlanAction& action,

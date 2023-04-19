@@ -1,3 +1,7 @@
+#include <vcpkg/base/fwd/message_sinks.h>
+
+#include <vcpkg/base/messages.h>
+#include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.process.h>
 
 #include <vcpkg/commands.h>

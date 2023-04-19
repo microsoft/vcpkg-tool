@@ -1,7 +1,7 @@
 #pragma once
 
-#include <vcpkg/base/expected.h>
-#include <vcpkg/base/json.h>
+#include <vcpkg/base/fwd/expected.h>
+#include <vcpkg/base/fwd/json.h>
 
 #include <vcpkg/commands.interface.h>
 

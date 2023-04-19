@@ -11,12 +11,6 @@ namespace vcpkg
     const Json::IDeserializer<Version>& get_version_deserializer_instance();
     const Json::IDeserializer<Version>& get_versiontag_deserializer_instance();
 
-    struct SchemedVersion
-    {
-        VersionScheme scheme;
-        Version version;
-    };
-
     Optional<SchemedVersion> visit_optional_schemed_deserializer(const LocalizedString& parent_type,
                                                                  Json::Reader& r,
                                                                  const Json::Object& obj,
