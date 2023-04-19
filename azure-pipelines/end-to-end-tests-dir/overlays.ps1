@@ -35,9 +35,9 @@ $overlayTripletsBeforeUpdate = Get-Content "$manifestRoot/vcpkg-configuration.js
 Run-Vcpkg x-update-baseline --x-manifest-root=$manifestRoot
 $overlayTripletsAfterUpdate = Get-Content "$manifestRoot/vcpkg-configuration.json" | ConvertFrom-Json
 
-$sortedBeforeUpdate = ($overlayTripletsBeforeUpdate."overlay-triplets" | Sort-Object) -join ""
-$sortedAfterUpdate = ($overlayTripletsAfterUpdate."overlay-triplets" | Sort-Object) -join ""
+$pathsBeforeUpdate = $overlayTripletsBeforeUpdate."overlay-triplets" -join ""
+$pathsAfterUpdate = $overlayTripletsAfterUpdate."overlay-triplets"  -join ""
 
-if ($sortedBeforeUpdate -ne $sortedAfterUpdate) {
+if ($pathsBeforeUpdate -ne $pathsAfterUpdate) {
 	Throw "Overlay triplets paths changed after x-update-baseline"
 }
