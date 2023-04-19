@@ -662,17 +662,19 @@ namespace vcpkg
                 return (m_pimpl->m_config.directory / overlay_path).native();
             };
 
+            std::vector<std::string> overlay_triplet_paths;
+            std::vector<std::string> overlay_port_paths;
+
             if (!m_pimpl->m_config.directory.empty())
             {
                 auto& config = m_pimpl->m_config.config;
-                Util::transform(config.overlay_ports, resolve_relative_to_config);
-                Util::transform(config.overlay_triplets, resolve_relative_to_config);
+                overlay_triplet_paths = Util::fmap(config.overlay_triplets, resolve_relative_to_config);
+                overlay_port_paths = Util::fmap(config.overlay_ports, resolve_relative_to_config);
             }
 
-            overlay_ports =
-                merge_overlays(args.cli_overlay_ports, m_pimpl->m_config.config.overlay_ports, args.env_overlay_ports);
-            overlay_triplets = merge_overlays(
-                args.cli_overlay_triplets, m_pimpl->m_config.config.overlay_triplets, args.env_overlay_triplets);
+            overlay_ports = merge_overlays(args.cli_overlay_ports, overlay_port_paths, args.env_overlay_ports);
+            overlay_triplets =
+                merge_overlays(args.cli_overlay_triplets, overlay_triplet_paths, args.env_overlay_triplets);
         }
 
         for (const std::string& triplet : this->overlay_triplets)
