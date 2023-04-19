@@ -31,13 +31,15 @@ Throw-IfNotFailed
 
 # Test overlay_triplet paths remain relative to the manifest root after x-update-baseline
 $manifestRoot = "$e2eProjects/overlays-project-with-config"
-$overlayTripletsBeforeUpdate = Get-Content "$manifestRoot/vcpkg-configuration.json" | ConvertFrom-Json
+$configurationBefore = Get-Content "$manifestRoot/vcpkg-configuration.json" | ConvertFrom-Json
 Run-Vcpkg x-update-baseline --x-manifest-root=$manifestRoot
-$overlayTripletsAfterUpdate = Get-Content "$manifestRoot/vcpkg-configuration.json" | ConvertFrom-Json
+$configurationAfter = Get-Content "$manifestRoot/vcpkg-configuration.json" | ConvertFrom-Json
 
-$pathsBeforeUpdate = $overlayTripletsBeforeUpdate."overlay-triplets" -join ""
-$pathsAfterUpdate = $overlayTripletsAfterUpdate."overlay-triplets"  -join ""
+$overlaysBefore = $configurationBefore."overlay-triplets"
+$overlaysAfter = $configurationAfter."overlay-triplets"
 
-if ($pathsBeforeUpdate -ne $pathsAfterUpdate) {
+$notEqual = @(Compare-Object $overlaysBefore $overlaysAfter -SyncWindow 0).Length -ne 0
+
+if ($notEqual) {
 	Throw "Overlay triplets paths changed after x-update-baseline"
 }
