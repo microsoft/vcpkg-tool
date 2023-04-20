@@ -103,7 +103,6 @@ namespace vcpkg
         const Path buildsystems;
         const Path buildsystems_msbuild_targets;
         const Path buildsystems_msbuild_props;
-        const Path buildsystems_osx;
         const Path ports_cmake;
         const Path triplets;
         const Path community_triplets;
