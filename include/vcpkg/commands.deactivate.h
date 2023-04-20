@@ -1,11 +1,9 @@
 #pragma once
 
-#include <vcpkg/commands.interface.h>
+#include <vcpkg/fwd/vcpkgcmdarguments.h>
+#include <vcpkg/fwd/vcpkgpaths.h>
 
 namespace vcpkg::Commands
 {
-    struct DeactivateCommand : PathsCommand
-    {
-        void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const override;
-    };
+    void deactivate_command_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths);
 }

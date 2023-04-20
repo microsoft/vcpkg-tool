@@ -2,10 +2,10 @@
 #include <vcpkg/base/strings.h>
 
 #include <vcpkg/commands.find.h>
+#include <vcpkg/commands.help.h>
 #include <vcpkg/configure-environment.h>
 #include <vcpkg/dependencies.h>
 #include <vcpkg/globalstate.h>
-#include <vcpkg/help.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/portfileprovider.h>
@@ -219,7 +219,7 @@ namespace vcpkg::Commands
         Checks::exit_with_code(VCPKG_LINE_INFO, run_configure_environment_command(paths, ce_args));
     }
 
-    void FindCommand::perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const
+    void find_command_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
         const ParsedArguments options = args.parse_arguments(FindCommandStructure);
         const bool full_description = Util::Sets::contains(options.switches, OPTION_FULLDESC);

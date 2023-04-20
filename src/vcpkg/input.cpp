@@ -1,7 +1,7 @@
 #include <vcpkg/base/strings.h>
 
 #include <vcpkg/commands.h>
-#include <vcpkg/help.h>
+#include <vcpkg/commands.help.h>
 #include <vcpkg/input.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/packagespec.h>

@@ -13,7 +13,7 @@ namespace
 
 namespace vcpkg::Commands
 {
-    void DeactivateCommand::perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const
+    void deactivate_command_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
         (void)args.parse_arguments(COMMAND_STRUCTURE);
         Checks::exit_with_code(VCPKG_LINE_INFO,
