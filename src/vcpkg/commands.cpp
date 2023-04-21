@@ -18,6 +18,7 @@
 #include <vcpkg/commands.deactivate.h>
 #include <vcpkg/commands.dependinfo.h>
 #include <vcpkg/commands.edit.h>
+#include <vcpkg/commands.extract.h>
 #include <vcpkg/commands.env.h>
 #include <vcpkg/commands.fetch.h>
 #include <vcpkg/commands.find.h>
