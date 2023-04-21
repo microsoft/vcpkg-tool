@@ -254,6 +254,7 @@ namespace vcpkg::Export
             Path{"scripts/buildsystems/msbuild/vcpkg.props"},
             Path{"scripts/buildsystems/msbuild/vcpkg-general.xml"},
             Path{"scripts/buildsystems/vcpkg.cmake"},
+            Path{"scripts/buildsystems/osx/applocal.py"},
             Path{"scripts/cmake/vcpkg_get_windows_sdk.cmake"},
         };
 
