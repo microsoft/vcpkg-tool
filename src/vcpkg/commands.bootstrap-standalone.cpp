@@ -13,7 +13,7 @@
 
 namespace vcpkg::Commands
 {
-    void bootstrap_standalone_and_exit(const VcpkgCmdArguments& args, Filesystem& fs)
+    void bootstrap_standalone_command_and_exit(const VcpkgCmdArguments& args, Filesystem& fs)
     {
         DownloadManager download_manager{{}};
         const auto maybe_vcpkg_root_env = args.vcpkg_root_dir_env.get();

@@ -55,10 +55,10 @@
 namespace vcpkg::Commands
 {
     static constexpr PackageNameAndFunction<BasicCommandFn> basic_commands_storage[] = {
-        {"bootstrap-standalone", bootstrap_standalone_and_exit},
+        {"bootstrap-standalone", bootstrap_standalone_command_and_exit},
         {"contact", Contact::perform_and_exit},
         {"x-download", download_command_and_exit},
-        {"x-generate-default-message-map", generate_default_message_map_and_exit},
+        {"x-generate-default-message-map", generate_default_message_map_command_and_exit},
         {"hash", Hash::perform_and_exit},
         {"x-init-registry", InitRegistry::perform_and_exit},
         {"version", Version::perform_and_exit},

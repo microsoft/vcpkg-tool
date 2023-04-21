@@ -6,5 +6,5 @@
 
 namespace vcpkg::Commands
 {
-    void bootstrap_standalone_and_exit(const VcpkgCmdArguments& args, Filesystem& fs);
+    void bootstrap_standalone_command_and_exit(const VcpkgCmdArguments& args, Filesystem& fs);
 }
