@@ -155,7 +155,7 @@ TEST_CASE ("edit distance", "[strings]")
 
 TEST_CASE ("replace_all", "[strings]")
 {
-    REQUIRE(vcpkg::Strings::replace_all("literal", "ter", "x") == "lixal");
+    REQUIRE(vcpkg::Strings::replace_all(vcpkg::StringView("literal"), "ter", "x") == "lixal");
 }
 
 TEST_CASE ("inplace_replace_all", "[strings]")

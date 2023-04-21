@@ -167,7 +167,7 @@ namespace vcpkg
     {
         for (auto& el : arr)
         {
-            el = Strings::trim(std::move(el));
+            Strings::inplace_trim(el);
         }
     }
 

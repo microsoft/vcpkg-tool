@@ -115,22 +115,27 @@ namespace vcpkg::Remove
                 continue;
             }
 
+            LocalizedString msg;
+            if (plan_type == RemovePlanType::NOT_INSTALLED)
+            {
+                msg = msg::format(msgFollowingPackagesNotInstalled).append_raw('\n');
+            }
+            else if (plan_type == RemovePlanType::REMOVE)
+            {
+                msg = msg::format(msgPackagesToRemove).append_raw('\n');
+            }
+            else
+            {
+                Checks::unreachable(VCPKG_LINE_INFO);
+            }
+
             std::vector<const RemovePlanAction*> cont = it->second;
             std::sort(cont.begin(), cont.end(), &RemovePlanAction::compare_by_name);
-            const std::string as_string = Strings::join("\n", cont, [](const RemovePlanAction* p) {
-                return to_output_string(p->request_type, p->spec.to_string());
-            });
-
-            switch (plan_type)
+            for (auto p : cont)
             {
-                case RemovePlanType::NOT_INSTALLED:
-                    msg::println(msg::format(msgFollowingPackagesNotInstalled).append_raw(as_string));
-                    continue;
-                case RemovePlanType::REMOVE:
-                    msg::println(msg::format(msgPackagesToRemove).append_raw('\n').append_raw(as_string));
-                    continue;
-                default: Checks::unreachable(VCPKG_LINE_INFO);
+                msg.append_raw(request_type_indent(p->request_type)).append_raw(p->spec).append_raw('\n');
             }
+            msg::print(msg);
         }
     }
 

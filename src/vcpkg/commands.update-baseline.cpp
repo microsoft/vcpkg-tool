@@ -64,6 +64,7 @@ namespace vcpkg::Commands
         const bool dry_run = Util::Sets::contains(options.switches, OPTION_DRY_RUN);
 
         auto configuration = paths.get_configuration();
+
         const bool has_manifest = paths.get_manifest().has_value();
         auto manifest = has_manifest ? *paths.get_manifest().get() : ManifestAndPath{};
 

@@ -43,6 +43,8 @@ namespace vcpkg
         return fmt::format("{}[{}]", package_name, feature_name);
     }
 
+    bool InternalFeatureSet::empty_or_only_core() const { return empty() || (size() == 1 && *begin() == "core"); }
+
     InternalFeatureSet internalize_feature_list(View<std::string> fs, ImplicitDefault id)
     {
         InternalFeatureSet ret;

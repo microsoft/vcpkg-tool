@@ -205,7 +205,7 @@ namespace vcpkg
             const auto listfile_path = installed.listfile_path(pgh->package);
             std::vector<std::string> installed_files_of_current_pgh =
                 fs.read_lines(listfile_path).value_or_exit(VCPKG_LINE_INFO);
-            Strings::trim_all_and_remove_whitespace_strings(&installed_files_of_current_pgh);
+            Strings::inplace_trim_all_and_remove_whitespace_strings(installed_files_of_current_pgh);
             upgrade_to_slash_terminated_sorted_format(fs, &installed_files_of_current_pgh, listfile_path);
 
             // Remove the directories
