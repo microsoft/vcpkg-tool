@@ -85,6 +85,7 @@ namespace vcpkg::Commands
         {"create", Create::perform_and_exit},
         {"deactivate", deactivate_command_and_exit},
         {"edit", Edit::perform_and_exit},
+        {"x-extract", extract_command_and_exit},
         {"fetch", Fetch::perform_and_exit},
         {"x-generate-msbuild-props", generate_msbuild_props_command_and_exit},
         {"find", find_command_and_exit},
