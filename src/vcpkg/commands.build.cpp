@@ -849,21 +849,18 @@ namespace vcpkg
         }
         else if (cmake_system_name == "WindowsStore")
         {
-            // HACK: remove once we have fully shipped a uwp toolchain
-            static bool have_uwp_triplet =
-                m_paths.get_filesystem().exists(m_paths.scripts / "toolchains/uwp.cmake", IgnoreErrors{});
-            if (have_uwp_triplet)
+            return m_paths.scripts / "toolchains/uwp.cmake";
+        }
+        else if (cmake_system_name.empty() || cmake_system_name == "Windows")
+        {
+            if (target_is_xbox)
             {
-                return m_paths.scripts / "toolchains/uwp.cmake";
+                return m_paths.scripts / "toolchains/xbox.cmake";
             }
             else
             {
                 return m_paths.scripts / "toolchains/windows.cmake";
             }
-        }
-        else if (cmake_system_name.empty() || cmake_system_name == "Windows")
-        {
-            return m_paths.scripts / "toolchains/windows.cmake";
         }
         else
         {
@@ -1676,6 +1673,7 @@ namespace vcpkg
             PUBLIC_ABI_OVERRIDE,
             LOAD_VCVARS_ENV,
             DISABLE_COMPILER_TRACKING,
+            TARGET_IS_XBOX,
         };
 
         static const std::vector<std::pair<std::string, VcpkgTripletVar>> VCPKG_OPTIONS = {
@@ -1693,6 +1691,7 @@ namespace vcpkg
             // Note: this value must come after VCPKG_CHAINLOAD_TOOLCHAIN_FILE because its default depends upon it.
             {"VCPKG_LOAD_VCVARS_ENV", VcpkgTripletVar::LOAD_VCVARS_ENV},
             {"VCPKG_DISABLE_COMPILER_TRACKING", VcpkgTripletVar::DISABLE_COMPILER_TRACKING},
+            {"VCPKG_TARGET_IS_XBOX", VcpkgTripletVar::TARGET_IS_XBOX},
         };
 
         std::string empty;
@@ -1766,6 +1765,17 @@ namespace vcpkg
                     else
                     {
                         disable_compiler_tracking =
+                            from_cmake_bool(variable_value, kv.first).value_or_exit(VCPKG_LINE_INFO);
+                    }
+                    break;
+                case VcpkgTripletVar::TARGET_IS_XBOX:
+                    if (variable_value.empty())
+                    {
+                        target_is_xbox = false;
+                    }
+                    else
+                    {
+                        target_is_xbox =
                             from_cmake_bool(variable_value, kv.first).value_or_exit(VCPKG_LINE_INFO);
                     }
                     break;

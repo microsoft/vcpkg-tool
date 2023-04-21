@@ -543,7 +543,19 @@ namespace vcpkg::PlatformExpression
                         case Identifier::uwp:
                             return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "WindowsStore");
                         case Identifier::xbox:
-                            // This identifier is intended to be enabled via VCPKG_DEP_INFO_OVERRIDE_VARS
+                            if (true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", ""))
+                            {
+                                auto is_xbox = context.find("VCPKG_TARGET_IS_XBOX");
+                                if (is_xbox != context.end())
+                                {
+                                    if (is_xbox->second == "1" ||
+                                        Strings::case_insensitive_ascii_equals(is_xbox->second, "on") ||
+                                        Strings::case_insensitive_ascii_equals(is_xbox->second, "true"))
+                                    {
+                                        return true;
+                                    }
+                                }
+                            }
                             return false;
                         case Identifier::android: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "Android");
                         case Identifier::emscripten:

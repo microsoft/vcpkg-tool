@@ -156,6 +156,7 @@ namespace vcpkg
         Triplet triplet;
         bool load_vcvars_env = false;
         bool disable_compiler_tracking = false;
+        bool target_is_xbox = false;
         std::string target_architecture;
         std::string cmake_system_name;
         std::string cmake_system_version;
