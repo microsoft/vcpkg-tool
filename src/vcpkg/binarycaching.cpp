@@ -17,7 +17,7 @@
 #include <vcpkg/archives.h>
 #include <vcpkg/binarycaching.h>
 #include <vcpkg/binarycaching.private.h>
-#include <vcpkg/build.h>
+#include <vcpkg/commands.build.h>
 #include <vcpkg/dependencies.h>
 #include <vcpkg/documentation.h>
 #include <vcpkg/metrics.h>

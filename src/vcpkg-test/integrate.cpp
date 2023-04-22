@@ -1,6 +1,6 @@
 #include <catch2/catch.hpp>
 
-#include <vcpkg/install.h>
+#include <vcpkg/commands.install.h>
 
 using namespace vcpkg;
 namespace Integrate = vcpkg::Commands::Integrate;

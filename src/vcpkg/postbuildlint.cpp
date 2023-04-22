@@ -6,7 +6,7 @@
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
-#include <vcpkg/build.h>
+#include <vcpkg/commands.build.h>
 #include <vcpkg/installedpaths.h>
 #include <vcpkg/packagespec.h>
 #include <vcpkg/postbuildlint.h>

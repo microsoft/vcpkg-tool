@@ -7,12 +7,12 @@
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/archives.h>
-#include <vcpkg/build.h>
 #include <vcpkg/cmakevars.h>
+#include <vcpkg/commands.build.h>
+#include <vcpkg/commands.export.h>
 #include <vcpkg/commands.h>
-#include <vcpkg/export.h>
+#include <vcpkg/commands.install.h>
 #include <vcpkg/export.prefab.h>
-#include <vcpkg/install.h>
 #include <vcpkg/installedpaths.h>
 #include <vcpkg/tools.h>
 #include <vcpkg/vcpkgpaths.h>

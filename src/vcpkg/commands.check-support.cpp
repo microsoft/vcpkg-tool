@@ -202,12 +202,4 @@ namespace vcpkg::Commands
             msg::write_unlocalized_text_to_stdout(Color::none, Json::stringify(json_to_print));
         }
     }
-
-    void CheckSupport::CheckSupportCommand::perform_and_exit(const VcpkgCmdArguments& args,
-                                                             const VcpkgPaths& paths,
-                                                             Triplet default_triplet,
-                                                             Triplet host_triplet) const
-    {
-        return CheckSupport::perform_and_exit(args, paths, default_triplet, host_triplet);
-    }
 }
