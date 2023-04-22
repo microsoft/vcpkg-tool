@@ -312,8 +312,9 @@ namespace vcpkg::Commands::Integrate
                 default: Checks::unreachable(VCPKG_LINE_INFO);
             }
 
-            Checks::msg_exit_with_error(
-                VCPKG_LINE_INFO, msgSystemTargetsInstallFailed, msg::path = SYSTEM_WIDE_TARGETS_FILE);
+            Checks::msg_check_exit(VCPKG_LINE_INFO,
+                                   fs.exists(SYSTEM_WIDE_TARGETS_FILE, IgnoreErrors{}),
+                                   msgSystemTargetsInstallFailed, msg::path = SYSTEM_WIDE_TARGETS_FILE);
         }
     }
 #endif
