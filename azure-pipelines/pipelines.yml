@@ -24,7 +24,7 @@ jobs:
         workingDir: 'vcpkg-artifacts'
         customCommand: 'ci'
     - bash: |
-        cmake '-DCMAKE_CXX_FLAGS=-fprofile-arcs -fPIC -O0 -fsanitize=undefined -fsanitize=address' -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_BENCHMARKING=ON -DVCPKG_BUILD_FUZZING=ON -DVCPKG_ARTIFACTS_DEVELOPMENT=ON -B build.amd64.debug
+        cmake '-DCMAKE_CXX_FLAGS=-fprofile-arcs -fPIC -O0 -fsanitize=undefined -fsanitize=address' '-DCMAKE_EXE_LINKER_FLAGS=-static-libasan' -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_BENCHMARKING=ON -DVCPKG_BUILD_FUZZING=ON -DVCPKG_ARTIFACTS_DEVELOPMENT=ON -B build.amd64.debug
         make -j 2 -C build.amd64.debug
       displayName: "Build vcpkg with CMake"
       failOnStderr: true
