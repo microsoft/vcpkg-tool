@@ -17,5 +17,5 @@ namespace vcpkg::Commands
                                     Optional<StringView> filter,
                                     View<std::string> overlay_ports);
     void perform_find_artifact_and_exit(const VcpkgPaths& paths, Optional<StringView> filter);
-    void find_command_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths);
+    void command_find_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths);
 }

@@ -56,7 +56,7 @@ namespace vcpkg::Commands
                 .append(new_baseline_res.error()));
     }
 
-    void update_baseline_command_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
+    void command_update_baseline_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
         auto options = args.parse_arguments(COMMAND_STRUCTURE);
 

@@ -55,57 +55,57 @@
 namespace vcpkg::Commands
 {
     static constexpr PackageNameAndFunction<BasicCommandFn> basic_commands_storage[] = {
-        {"bootstrap-standalone", bootstrap_standalone_command_and_exit},
+        {"bootstrap-standalone", command_bootstrap_standalone_and_exit},
         {"contact", Contact::perform_and_exit},
-        {"x-download", download_command_and_exit},
-        {"x-generate-default-message-map", generate_default_message_map_command_and_exit},
+        {"x-download", command_download_and_exit},
+        {"x-generate-default-message-map", command_generate_default_message_map_and_exit},
         {"hash", Hash::perform_and_exit},
         {"x-init-registry", InitRegistry::perform_and_exit},
         {"version", Version::perform_and_exit},
 #if defined(_WIN32)
         {"x-upload-metrics", UploadMetrics::perform_and_exit},
-        {"z-applocal", z_applocal_command_and_exit},
+        {"z-applocal", command_z_applocal_and_exit},
 #endif // defined(_WIN32)
-        {"z-preregister-telemetry", z_preregister_telemetry_and_exit},
+        {"z-preregister-telemetry", command_z_preregister_telemetry_and_exit},
     };
 
-    constexpr Span<const PackageNameAndFunction<BasicCommandFn>> basic_commands = basic_commands_storage;
+    constexpr View<PackageNameAndFunction<BasicCommandFn>> basic_commands = basic_commands_storage;
 
     static constexpr PackageNameAndFunction<PathsCommandFn> paths_commands_storage[] = {
-        {"acquire", acquire_command_and_exit},
-        {"acquire-project", acquire_project_command_and_exit},
-        {"activate", activate_command_and_exit},
-        {"add", add_command_and_exit},
+        {"acquire", command_acquire_and_exit},
+        {"acquire-project", command_acquire_project_and_exit},
+        {"activate", command_activate_and_exit},
+        {"add", command_add_and_exit},
         {"x-add-version", AddVersion::perform_and_exit},
         {"autocomplete", Autocomplete::perform_and_exit},
         {"cache", Cache::perform_and_exit},
         {"x-ci-clean", CIClean::perform_and_exit},
         {"x-ci-verify-versions", CIVerifyVersions::perform_and_exit},
         {"create", Create::perform_and_exit},
-        {"deactivate", deactivate_command_and_exit},
+        {"deactivate", command_deactivate_and_exit},
         {"edit", Edit::perform_and_exit},
         {"fetch", Fetch::perform_and_exit},
-        {"x-generate-msbuild-props", generate_msbuild_props_command_and_exit},
-        {"find", find_command_and_exit},
+        {"x-generate-msbuild-props", command_generate_msbuild_props_and_exit},
+        {"find", command_find_and_exit},
         {"format-manifest", FormatManifest::perform_and_exit},
         {"/?", Help::perform_and_exit},
         {"help", Help::perform_and_exit},
         {"integrate", Integrate::perform_and_exit},
         {"list", List::perform_and_exit},
-        {"new", new_command_and_exit},
+        {"new", command_new_and_exit},
         {"owns", Owns::perform_and_exit},
         {"x-package-info", PackageInfo::perform_and_exit},
         {"portsdiff", PortsDiff::perform_and_exit},
-        {"x-regenerate", regenerate_command_and_exit},
-        {"search", search_command_and_exit},
+        {"x-regenerate", command_regenerate_and_exit},
+        {"search", command_search_and_exit},
         {"update", Update::perform_and_exit},
-        {"x-update-baseline", update_baseline_command_and_exit},
-        {"use", use_command_and_exit},
+        {"x-update-baseline", command_update_baseline_and_exit},
+        {"use", command_use_and_exit},
         {"x-vsinstances", VSInstances::perform_and_exit},
-        {"z-ce", z_ce_command_and_exit},
+        {"z-ce", command_z_ce_and_exit},
     };
 
-    constexpr Span<const PackageNameAndFunction<PathsCommandFn>> paths_commands = paths_commands_storage;
+    constexpr View<PackageNameAndFunction<PathsCommandFn>> paths_commands = paths_commands_storage;
 
     static constexpr PackageNameAndFunction<TripletCommandFn> triplet_commands_storage[] = {
         {"build", Build::perform_and_exit},
@@ -122,5 +122,5 @@ namespace vcpkg::Commands
         {"z-print-config", ZPrintConfig::perform_and_exit},
     };
 
-    constexpr Span<const PackageNameAndFunction<TripletCommandFn>> triplet_commands = triplet_commands_storage;
+    constexpr View<PackageNameAndFunction<TripletCommandFn>> triplet_commands = triplet_commands_storage;
 }

@@ -23,7 +23,7 @@ namespace vcpkg::Commands
         nullptr,
     };
 
-    void search_command_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
+    void command_search_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
         const ParsedArguments options = args.parse_arguments(SearchCommandStructure);
         const bool full_description = Util::Sets::contains(options.switches, OPTION_FULLDESC);

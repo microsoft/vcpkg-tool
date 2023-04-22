@@ -5,5 +5,5 @@
 
 namespace vcpkg::Commands
 {
-    void generate_msbuild_props_command_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths);
+    void command_generate_msbuild_props_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths);
 }

@@ -5,5 +5,5 @@
 
 namespace vcpkg::Commands
 {
-    void deactivate_command_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths);
+    void command_deactivate_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths);
 }

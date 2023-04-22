@@ -27,7 +27,7 @@ namespace vcpkg::Commands
         T function;
     };
 
-    extern const Span<const PackageNameAndFunction<BasicCommandFn>> basic_commands;
-    extern const Span<const PackageNameAndFunction<PathsCommandFn>> paths_commands;
-    extern const Span<const PackageNameAndFunction<TripletCommandFn>> triplet_commands;
+    extern const View<PackageNameAndFunction<BasicCommandFn>> basic_commands;
+    extern const View<PackageNameAndFunction<PathsCommandFn>> paths_commands;
+    extern const View<PackageNameAndFunction<TripletCommandFn>> triplet_commands;
 }
