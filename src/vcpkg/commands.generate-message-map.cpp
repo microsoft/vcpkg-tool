@@ -124,7 +124,7 @@ namespace vcpkg::Commands
         return res;
     }
 
-    void GenerateDefaultMessageMapCommand::perform_and_exit(const VcpkgCmdArguments& args, Filesystem& fs) const
+    void command_generate_default_message_map_and_exit(const VcpkgCmdArguments& args, Filesystem& fs)
     {
         auto parsed_args = args.parse_arguments(COMMAND_STRUCTURE);
         const bool output_comments = !Util::Sets::contains(parsed_args.switches, OPTION_NO_OUTPUT_COMMENTS);

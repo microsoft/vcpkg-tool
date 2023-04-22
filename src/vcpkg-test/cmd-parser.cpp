@@ -175,6 +175,13 @@ TEST_CASE ("Response file parameters can be processed", "[cmd_parser]")
         replace_response_file_parameters(multi_insert_last, FakeReadLines{xy}).value_or_exit(VCPKG_LINE_INFO);
         CHECK(multi_insert_last == std::vector<std::string>{"a", "b", "x", "y"});
     }
+
+    const std::vector<std::string> blanks{"x", "", "    ", "\r", "y"};
+    {
+        std::vector<std::string> insert_middle_blanks{"a", "@filename", "b"};
+        replace_response_file_parameters(insert_middle_blanks, FakeReadLines{blanks}).value_or_exit(VCPKG_LINE_INFO);
+        CHECK(insert_middle_blanks == std::vector<std::string>{"a", "x", "y", "b"});
+    }
 }
 
 TEST_CASE ("Arguments can be parsed as switches", "[cmd_parser]")
