@@ -3,16 +3,16 @@
 
 #include <vcpkg/binarycaching.h>
 #include <vcpkg/cmakevars.h>
+#include <vcpkg/commands.help.h>
+#include <vcpkg/commands.install.h>
+#include <vcpkg/commands.update.h>
 #include <vcpkg/commands.upgrade.h>
 #include <vcpkg/dependencies.h>
 #include <vcpkg/globalstate.h>
-#include <vcpkg/help.h>
 #include <vcpkg/input.h>
-#include <vcpkg/install.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/registries.h>
 #include <vcpkg/statusparagraphs.h>
-#include <vcpkg/update.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
@@ -212,13 +212,5 @@ namespace vcpkg::Commands::Upgrade
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);
-    }
-
-    void UpgradeCommand::perform_and_exit(const VcpkgCmdArguments& args,
-                                          const VcpkgPaths& paths,
-                                          Triplet default_triplet,
-                                          Triplet host_triplet) const
-    {
-        Upgrade::perform_and_exit(args, paths, default_triplet, host_triplet);
     }
 }

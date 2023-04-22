@@ -10,15 +10,15 @@
 #include <vcpkg/base/xmlserializer.h>
 
 #include <vcpkg/binarycaching.h>
-#include <vcpkg/build.h>
 #include <vcpkg/ci-baseline.h>
 #include <vcpkg/cmakevars.h>
+#include <vcpkg/commands.build.h>
 #include <vcpkg/commands.ci.h>
+#include <vcpkg/commands.help.h>
+#include <vcpkg/commands.install.h>
 #include <vcpkg/dependencies.h>
 #include <vcpkg/globalstate.h>
-#include <vcpkg/help.h>
 #include <vcpkg/input.h>
-#include <vcpkg/install.h>
 #include <vcpkg/packagespec.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/platform-expression.h>
@@ -557,13 +557,5 @@ namespace vcpkg::Commands::CI
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);
-    }
-
-    void CICommand::perform_and_exit(const VcpkgCmdArguments& args,
-                                     const VcpkgPaths& paths,
-                                     Triplet default_triplet,
-                                     Triplet host_triplet) const
-    {
-        CI::perform_and_exit(args, paths, default_triplet, host_triplet);
     }
 }

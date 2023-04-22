@@ -483,9 +483,4 @@ namespace vcpkg::Commands::AddVersion
         }
         Checks::exit_success(VCPKG_LINE_INFO);
     }
-
-    void AddVersionCommand::perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const
-    {
-        AddVersion::perform_and_exit(args, paths);
-    }
 }

@@ -5,7 +5,7 @@
 
 #include <vcpkg/base/optional.h>
 
-#include <vcpkg/build.h>
+#include <vcpkg/commands.build.h>
 #include <vcpkg/packagespec.h>
 
 #include <functional>
