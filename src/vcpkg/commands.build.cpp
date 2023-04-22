@@ -1775,8 +1775,7 @@ namespace vcpkg
                     }
                     else
                     {
-                        target_is_xbox =
-                            from_cmake_bool(variable_value, kv.first).value_or_exit(VCPKG_LINE_INFO);
+                        target_is_xbox = from_cmake_bool(variable_value, kv.first).value_or_exit(VCPKG_LINE_INFO);
                     }
                     break;
             }
