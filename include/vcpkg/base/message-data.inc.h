@@ -887,6 +887,7 @@ DECLARE_MESSAGE(ExportUnsupportedInManifest,
                 "vcpkg export does not support manifest mode, in order to allow for future design considerations. "
                 "You may use export in classic mode by running vcpkg outside of a manifest-based project.")
 DECLARE_MESSAGE(ExtendedDocumentationAtUrl, (msg::url), "", "Extended documentation available at '{url}'.")
+DECLARE_MESSAGE(ExtractHelp, (), "", "Extracts archive to a given location.")
 DECLARE_MESSAGE(ExtractingTool, (msg::tool_name), "", "Extracting {tool_name}...")
 DECLARE_MESSAGE(FailedPostBuildChecks,
                 (msg::count, msg::path),

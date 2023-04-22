@@ -9,7 +9,7 @@
 namespace vcpkg::Commands
 {
     const CommandStructure ExtractCommandStructure = {
-        [] { return create_example_string("x-extract path/to/archive path/to/destination"); },
+        [] { return msg::format(msgExtractHelp); },
         2,
         2,
         {{}, {}, {}},
