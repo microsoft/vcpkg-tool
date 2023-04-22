@@ -167,7 +167,7 @@ namespace
                                    msg::path = archive);
         }
 #endif
-        else if (ext == ".gz" || ext == ".bz2" || ext == ".tgz")
+        else if (ext == ".gz" || ext == ".bz2" || ext == ".tgz" || ".xz")
         {
             vcpkg::extract_tar(tools.get_tool_path(Tools::TAR, status_sink), archive, to_path);
         }
