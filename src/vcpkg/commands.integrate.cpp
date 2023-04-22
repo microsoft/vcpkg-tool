@@ -314,7 +314,8 @@ namespace vcpkg::Commands::Integrate
 
             Checks::msg_check_exit(VCPKG_LINE_INFO,
                                    fs.exists(SYSTEM_WIDE_TARGETS_FILE, IgnoreErrors{}),
-                                   msgSystemTargetsInstallFailed, msg::path = SYSTEM_WIDE_TARGETS_FILE);
+                                   msgSystemTargetsInstallFailed,
+                                   msg::path = SYSTEM_WIDE_TARGETS_FILE);
         }
     }
 #endif
