@@ -272,9 +272,7 @@ namespace vcpkg::Commands::Integrate
                 switch (user_choice)
                 {
                     case ElevationPromptChoice::YES: break;
-                    case ElevationPromptChoice::NO:
-                        msg::println_warning(msgPreviousIntegrationFileRemains);
-                        break;
+                    case ElevationPromptChoice::NO: msg::println_warning(msgPreviousIntegrationFileRemains); break;
                     default: Checks::unreachable(VCPKG_LINE_INFO);
                 }
             }
