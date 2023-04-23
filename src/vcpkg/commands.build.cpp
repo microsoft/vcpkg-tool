@@ -931,12 +931,18 @@ namespace vcpkg
         }
 
         const ElapsedTimer timer;
-        auto command = vcpkg::make_cmake_cmd(paths, paths.ports_cmake, get_cmake_build_args(args, paths, action));
+        auto buildpath = paths.build_dir(action.spec);
+        const auto user_required_path =
+            buildpath / Strings::concat("required-user-interaction-", action.spec.triplet(), ".txt");
+        const auto user_hints_path = buildpath / Strings::concat("user-hints-", action.spec.triplet(), ".txt");
+        auto build_args = get_cmake_build_args(args, paths, action);
+        build_args.emplace_back("Z_VCPKG_REQUIRED_USER_INTERACTION_ON_BUILD_FAILURE_FILE", user_required_path);
+        build_args.emplace_back("Z_VCPKG_USER_HINTS_ON_BUILD_FAILURE_FILE", user_hints_path);
+        auto command = vcpkg::make_cmake_cmd(paths, paths.ports_cmake, std::move(build_args));
 
         const auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
         auto env = paths.get_action_env(abi_info);
 
-        auto buildpath = paths.build_dir(action.spec);
         fs.create_directory(buildpath, VCPKG_LINE_INFO);
         env.add_entry("GIT_CEILING_DIRECTORIES", fs.absolute(buildpath.parent_path(), VCPKG_LINE_INFO));
         auto stdoutlog = buildpath / ("stdout-" + action.spec.triplet().canonical_name() + ".log");
@@ -996,13 +1002,10 @@ namespace vcpkg
                 Util::erase_remove_if(error_logs, [](const auto& line) { return line.empty(); });
             }
             ExtendedBuildResult result{BuildResult::BUILD_FAILED, stdoutlog, std::move(error_logs)};
-            const auto user_required_path =
-                buildpath / Strings::concat("required-user-interaction-", action.spec.triplet(), ".txt");
             if (fs.exists(user_required_path, VCPKG_LINE_INFO))
             {
                 result.user_required_interaction = fs.read_contents(user_required_path, VCPKG_LINE_INFO);
             }
-            const auto user_hints_path = buildpath / Strings::concat("user-hints-", action.spec.triplet(), ".txt");
             if (fs.exists(user_hints_path, VCPKG_LINE_INFO))
             {
                 result.user_hints = fs.read_contents(user_hints_path, VCPKG_LINE_INFO);
