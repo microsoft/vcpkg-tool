@@ -4,9 +4,8 @@
 #include <vcpkg/fwd/portfileprovider.h>
 
 #include <vcpkg/base/optional.h>
-#include <vcpkg/base/util.h>
 
-#include <vcpkg/build.h>
+#include <vcpkg/commands.build.h>
 #include <vcpkg/packagespec.h>
 
 #include <functional>
@@ -16,7 +15,6 @@
 namespace vcpkg
 {
     struct GraphRandomizer;
-    struct StatusParagraphs;
 
     enum class UnsupportedPortAction : bool
     {
@@ -31,8 +29,7 @@ namespace vcpkg
         AUTO_SELECTED
     };
 
-    std::string to_output_string(RequestType request_type, const ZStringView s, const BuildPackageOptions& options);
-    std::string to_output_string(RequestType request_type, const ZStringView s);
+    [[nodiscard]] StringLiteral request_type_indent(RequestType request_type);
 
     enum class InstallPlanType
     {
@@ -42,11 +39,23 @@ namespace vcpkg
         EXCLUDED
     };
 
-    struct InstallPlanAction
+    struct BasicAction
     {
-        static bool compare_by_name(const InstallPlanAction* left, const InstallPlanAction* right);
+        static bool compare_by_name(const BasicAction* left, const BasicAction* right);
 
-        InstallPlanAction() noexcept;
+        PackageSpec spec;
+    };
+
+    struct PackageAction : BasicAction
+    {
+        std::string displayname() const;
+
+        std::vector<PackageSpec> package_dependencies;
+        InternalFeatureSet feature_list;
+    };
+
+    struct InstallPlanAction : PackageAction
+    {
         InstallPlanAction(const InstallPlanAction&) = delete;
         InstallPlanAction(InstallPlanAction&&) = default;
         InstallPlanAction& operator=(const InstallPlanAction&) = delete;
@@ -61,13 +70,11 @@ namespace vcpkg
                           std::map<std::string, std::vector<FeatureSpec>>&& dependencies,
                           std::vector<LocalizedString>&& build_failure_messages);
 
-        std::string displayname() const;
         const std::string& public_abi() const;
         bool has_package_abi() const;
         Optional<const std::string&> package_abi() const;
         const PreBuildInfo& pre_build_info(LineInfo li) const;
-
-        PackageSpec spec;
+        Version version() const;
 
         Optional<const SourceControlFileAndLocation&> source_control_file_and_location;
         Optional<InstalledPackageView> installed_package;
@@ -77,9 +84,7 @@ namespace vcpkg
         BuildPackageOptions build_options;
 
         std::map<std::string, std::vector<FeatureSpec>> feature_dependencies;
-        std::vector<PackageSpec> package_dependencies;
         std::vector<LocalizedString> build_failure_messages;
-        InternalFeatureSet feature_list;
         Triplet host_triplet;
 
         Optional<AbiInfo> abi_info;
@@ -92,19 +97,10 @@ namespace vcpkg
         REMOVE
     };
 
-    struct RemovePlanAction
+    struct RemovePlanAction : BasicAction
     {
-        static bool compare_by_name(const RemovePlanAction* left, const RemovePlanAction* right);
-
-        RemovePlanAction() noexcept;
-        RemovePlanAction(const RemovePlanAction&) = delete;
-        RemovePlanAction(RemovePlanAction&&) = default;
-        RemovePlanAction& operator=(const RemovePlanAction&) = delete;
-        RemovePlanAction& operator=(RemovePlanAction&&) = default;
-
         RemovePlanAction(const PackageSpec& spec, const RemovePlanType& plan_type, const RequestType& request_type);
 
-        PackageSpec spec;
         RemovePlanType plan_type;
         RequestType request_type;
     };
@@ -128,23 +124,17 @@ namespace vcpkg
         ALREADY_BUILT
     };
 
-    struct ExportPlanAction
+    struct ExportPlanAction : BasicAction
     {
-        static bool compare_by_name(const ExportPlanAction* left, const ExportPlanAction* right);
-
-        ExportPlanAction() noexcept;
         ExportPlanAction(const ExportPlanAction&) = delete;
         ExportPlanAction(ExportPlanAction&&) = default;
         ExportPlanAction& operator=(const ExportPlanAction&) = delete;
         ExportPlanAction& operator=(ExportPlanAction&&) = default;
 
-        ExportPlanAction(const PackageSpec& spec,
-                         InstalledPackageView&& installed_package,
-                         const RequestType& request_type);
+        ExportPlanAction(const PackageSpec& spec, InstalledPackageView&& installed_package, RequestType request_type);
 
-        ExportPlanAction(const PackageSpec& spec, const RequestType& request_type);
+        ExportPlanAction(const PackageSpec& spec, RequestType request_type);
 
-        PackageSpec spec;
         ExportPlanType plan_type;
         RequestType request_type;
 
@@ -200,5 +190,13 @@ namespace vcpkg
                                                         Triplet host_triplet,
                                                         UnsupportedPortAction unsupported_port_action);
 
-    void print_plan(const ActionPlan& action_plan, const bool is_recursive = true, const Path& builtin_ports_dir = {});
+    struct FormattedPlan
+    {
+        bool has_removals = false;
+        LocalizedString text;
+    };
+
+    FormattedPlan format_plan(const ActionPlan& action_plan, const Path& builtin_ports_dir);
+
+    void print_plan(const ActionPlan& action_plan, const bool is_recursive, const Path& builtin_ports_dir);
 }

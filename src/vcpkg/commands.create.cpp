@@ -4,8 +4,8 @@
 
 #include <vcpkg/buildenvironment.h>
 #include <vcpkg/commands.create.h>
+#include <vcpkg/commands.help.h>
 #include <vcpkg/commands.version.h>
-#include <vcpkg/help.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
@@ -61,10 +61,5 @@ namespace vcpkg::Commands::Create
     void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
         Checks::exit_with_code(VCPKG_LINE_INFO, perform(args, paths));
-    }
-
-    void CreateCommand::perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const
-    {
-        Create::perform_and_exit(args, paths);
     }
 }

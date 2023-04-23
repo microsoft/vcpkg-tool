@@ -6,7 +6,7 @@
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
-#include <vcpkg/build.h>
+#include <vcpkg/commands.build.h>
 #include <vcpkg/installedpaths.h>
 #include <vcpkg/packagespec.h>
 #include <vcpkg/postbuildlint.h>
@@ -394,8 +394,8 @@ namespace vcpkg
                                         1); // The +1 is needed to remove the "/"
             const Path relative_path = found_relative_native;
             msg_sink.print(Color::none,
-                           fmt::format("\n    configure_file(\"${CURRENT_BUILDTREES_DIR}/{}/{}\" "
-                                       "\"${CURRENT_PACKAGES_DIR}/share/{}/copyright\" COPYONLY)\n",
+                           fmt::format("\n    configure_file(\"${{CURRENT_BUILDTREES_DIR}}/{}/{}\" "
+                                       "\"${{CURRENT_PACKAGES_DIR}}/share/{}/copyright\" COPYONLY)\n",
                                        relative_path.generic_u8string(),
                                        found_file.filename(),
                                        spec.name()));
@@ -1427,7 +1427,7 @@ namespace vcpkg
             error_count += check_no_absolute_paths_in(
                 fs,
                 package_dir,
-                std::vector<Path>{package_dir, paths.installed().root(), paths.build_dir(spec)},
+                std::vector<Path>{package_dir, paths.installed().root(), paths.build_dir(spec), paths.downloads},
                 msg_sink);
         }
 

@@ -1,3 +1,4 @@
+#include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/util.h>
 
@@ -15,7 +16,7 @@ namespace vcpkg::Commands::Hash
         nullptr,
     };
 
-    void HashCommand::perform_and_exit(const VcpkgCmdArguments& args, Filesystem& fs) const
+    void perform_and_exit(const VcpkgCmdArguments& args, Filesystem& fs)
     {
         const auto parsed = args.parse_arguments(COMMAND_STRUCTURE);
 

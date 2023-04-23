@@ -2,6 +2,7 @@
 
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/chrono.h>
+#include <vcpkg/base/files.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>

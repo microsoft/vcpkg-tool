@@ -2,46 +2,24 @@
 
 As part of Microsoft's commitment to global-ready products, our developer tools are localized into 14 different languages.
 For this effort, vcpkg has hooks that allow our localization team to translate all messages shown to the user.
-As a developer on vcpkg, the only thing you have to consider is the messages in the C++ source files,
-and `locales/messages.json` -- everything else will be generated and modified by the localization team.
 
-## Declaring a Message
+All localized messages start in `include/vcpkg/base/message-data.inc.h`. After modifying those messages, you will need to regenerate `locales/messages.json` using  `vcpkg x-generate-default-message-map` and include the updated file in your PR. After merging the PR, the localization team will modify all the language-specific files under `locales/`.
 
-The process of writing a user-visible message starts with declaring it.
-Most user-facing messages can be declared in [`messages.h`] and registered in [`messages.cpp`]:
+## Creating a New Message
 
-```messages.h
-DECLARE_MESSAGE(<message-name>, <parameters>, <comment>, <english-message>);
-```
-```messages.cpp
-REGISTER_MESSAGE(<message-name>);
+Messages are defined by calls to `DECLARE_MESSAGE` `include/vcpkg/base/message-data.inc.h`.
+
+```cpp
+DECLARE_MESSAGE(<message-name>, <parameters>, <comment>, <english-message>)
 ```
 
-If you need to declare a message in a header file
-(for example, if a templated function uses it),
-then you need to first declare it in the header:
+For example:
 
-```cxx
-DECLARE_MESSAGE(<message-name>, <parameters>, <comment>, <english-message>);
+```cpp
+DECLARE_MESSAGE(AddVersionVersionAlreadyInFile, (msg::version, msg::path), "", "version {version} is already in {path}")
 ```
 
-and then register it in the corresponding source file:
-
-```cxx
-REGISTER_MESSAGE(<message-name>);
-```
-
-An example of this lies in [`graphs.h`] and [`graphs.cpp`].
-
-[`sourceparagraph.cpp`]: https://github.com/microsoft/vcpkg-tool/blob/13a09ef0359e259627d46560a22a6e182730da7b/src/vcpkg/sourceparagraph.cpp#L24-L28
-[`graphs.h`]: https://github.com/microsoft/vcpkg-tool/blob/ca8099607bfa71adac301b56c601fd71d8ccab9b/include/vcpkg/base/graphs.h#L13
-[`graphs.cpp`]: https://github.com/microsoft/vcpkg-tool/blob/ca8099607bfa71adac301b56c601fd71d8ccab9b/src/vcpkg/base/graphs.cpp#L5
-
-### Message Names
-
-Message names should be descriptive and unique, and must be `CamelCase`.
-When referring to a message in `msg::format`, you must add `msg` to the front of it; for example,
-`DECLARE_MESSAGE(MyMessage, ...)` can be referred to as `msgMyMessage`.
+The messages are sorted alphabetically by `<message-name>`. The `<message-name>` should be descriptive, unique, and `CamelCase`.
 
 ### Parameters
 
@@ -50,6 +28,8 @@ For example, `"Installing {package_name}:{triplet}"` should have the parameter l
 This allows us to make sure that we don't have format errors, where one forgets a placeholder,
 or adds an extra one.
 Each parameter in the list should be used in the message.
+
+Parameters are defined in `include/vcpkg/base/message-args.inc.h`.
 
 ### Comment
 
@@ -77,13 +57,45 @@ Messages in vcpkg are written in American English. They should not contain:
 They should also not be simple, locale-invariant messages -- something like, for example,
 `{file}:{line}:{column}: ` should be done with `LocalizedString::from_raw(fmt::format("{}:{}:{}", file, line, column))`.
 
-Other than that, all messages that are printed to the user must be localizeable.
-However, that's as far as you need to go -- once you've done the writing of the message, and the `x-generate-default-message-map` stuff,
-you can rest easy not modifying anything else.
+## Using Messages
 
-### Putting it All Together
+For each message `MyMessage`, `include/base/messages.h` will declare a `::vcpkg::msgMyMessage` object of some `MessageT` type. Many functions accept `MessageT` objects as arguments, however the primary method is `msg::format()`:
+
+```cpp
+LocalizedString make_my_info(const Path& p) {
+    return msg::format(msgMyMessage, msg::path = p);
+}
+```
+
+## Declaring Message-Forwarding Functions
+
+There are three macros defined by `include/base/messages.h` that aid in creating perfect message forwarders: `VCPKG_DECL_MSG_TEMPLATE`, `VCPKG_DECL_MSG_ARGS`, and `VCPKG_EXPAND_MSG_ARGS`. These work similarly to `class...Args`, `Args&&...args`, and `std::forward<Args>(args)...` respectively.
+
+For example:
+
+```cpp
+template<VCPKG_DECL_MSG_TEMPLATE>
+void add_info_message(VCPKG_DECL_MSG_ARGS) {
+  m_info.append(VCPKG_EXPAND_MSG_ARGS).append_raw('\n');
+}
+```
+
+We discourage creating new Message-forwarding functions and encourage accepting a `LocalizedString` instead.
+
+## Example
 
 Let's create a vcpkg hello world command to show off how one can use the messages API.
+
+```cpp
+// include/vcpkg/base/message-data.inc.h
+
+// note that we add additional context in the comment here
+DECLARE_MESSAGE(World, (), "We will say hello to 'world' if no name is given", "world")
+// here, `{value}` is a placeholder that doesn't have example text, so we need to give it ourselves
+DECLARE_MESSAGE(Hello, (msg::value), "example for {value} is 'world'", "Hello, {value}!")
+// here, `{triplet}` _already has_ example text, so it's fine to not give a comment
+DECLARE_MESSAGE(MyTripletIs, (msg::triplet), "", "My triplet is {triplet}.")
+```
 
 ```cxx
 // commands.hello-world.cpp
@@ -95,7 +107,6 @@ Let's create a vcpkg hello world command to show off how one can use the message
 
 namespace
 {
-    // boilerplate
     const CommandStructure HELLO_WORLD_COMMAND_STRUCTURE = {
         create_example_string("hello-world <name>"),
         0,
@@ -103,13 +114,6 @@ namespace
         {{}, {}, {}},
         nullptr,
     };
-
-    // note that we add additional context in the comment here
-    DECLARE_MESSAGE(World, (), "We will say hello to 'world' if no name is given", "world");
-    // here, `{value}` is a placeholder that doesn't have example text, so we need to give it ourselves
-    DECLARE_MESSAGE(Hello, (msg::value), "example for {value} is 'world'", "Hello, {value}!");
-    // here, `{triplet}` _already has_ example text, so it's fine to not give a comment
-    DECLARE_MESSAGE(MyTripletIs, (msg::triplet), "", "My triplet is {triplet}.");
 }
 
 namespace vcpkg::Commands
@@ -136,6 +140,7 @@ namespace vcpkg::Commands
     }
 }
 ```
+
 ## Selecting a Language
 
 vcpkg chooses a language through the `VSLANG` environment variable, which should be set to a valid LCID (locale identifier, 4-byte value representing a language). If `VSLANG` is not set or is set to an invalid LCID, we default to English. That said, if you wish to change the language, then set `VSLANG` to any of the following LCIDs:

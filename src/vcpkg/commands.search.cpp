@@ -1,8 +1,8 @@
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.find.h>
+#include <vcpkg/commands.help.h>
 #include <vcpkg/commands.search.h>
-#include <vcpkg/help.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
@@ -23,7 +23,7 @@ namespace vcpkg::Commands
         nullptr,
     };
 
-    void SearchCommand::perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const
+    void command_search_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
         const ParsedArguments options = args.parse_arguments(SearchCommandStructure);
         const bool full_description = Util::Sets::contains(options.switches, OPTION_FULLDESC);
