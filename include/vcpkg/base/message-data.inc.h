@@ -1369,7 +1369,7 @@ DECLARE_MESSAGE(
     HelpUpdateBaseline,
     (),
     "",
-    "The best approach to keep your libraries up to date, the best approach is to update your baseline reference. "
+    "The best approach to keep your libraries up to date is to update your baseline reference. "
     "This will "
     "ensure all packages, including transitive ones, are updated. However if you need to update a package "
     "independently, you can use a \"version>=\" constraint.")
