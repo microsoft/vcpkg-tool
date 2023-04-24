@@ -521,7 +521,7 @@ namespace
 
 namespace vcpkg::Commands
 {
-    void z_applocal_command_and_exit(const VcpkgCmdArguments& args, Filesystem&)
+    void command_z_applocal_and_exit(const VcpkgCmdArguments& args, Filesystem&)
     {
         static constexpr StringLiteral OPTION_TARGET_BINARY = "target-binary";
         static constexpr StringLiteral OPTION_INSTALLED_DIR = "installed-bin-dir";

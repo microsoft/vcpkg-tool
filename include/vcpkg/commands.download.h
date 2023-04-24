@@ -6,5 +6,5 @@
 
 namespace vcpkg::Commands
 {
-    void download_command_and_exit(const VcpkgCmdArguments& args, Filesystem& fs);
+    void command_download_and_exit(const VcpkgCmdArguments& args, Filesystem& fs);
 }

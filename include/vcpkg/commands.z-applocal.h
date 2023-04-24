@@ -7,6 +7,6 @@
 
 namespace vcpkg::Commands
 {
-    void z_applocal_command_and_exit(const VcpkgCmdArguments& args, Filesystem& fs);
+    void command_z_applocal_and_exit(const VcpkgCmdArguments& args, Filesystem& fs);
 }
 #endif

@@ -33,7 +33,7 @@ namespace
 
 namespace vcpkg::Commands
 {
-    void z_preregister_telemetry_and_exit(const VcpkgCmdArguments& args, Filesystem& fs)
+    void command_z_preregister_telemetry_and_exit(const VcpkgCmdArguments& args, Filesystem& fs)
     {
         (void)args;
         (void)fs;

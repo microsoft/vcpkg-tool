@@ -5,5 +5,5 @@
 
 namespace vcpkg::Commands
 {
-    void z_ce_command_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths);
+    void command_z_ce_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths);
 }

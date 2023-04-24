@@ -312,8 +312,10 @@ namespace vcpkg::Commands::Integrate
                 default: Checks::unreachable(VCPKG_LINE_INFO);
             }
 
-            Checks::msg_exit_with_error(
-                VCPKG_LINE_INFO, msgSystemTargetsInstallFailed, msg::path = SYSTEM_WIDE_TARGETS_FILE);
+            Checks::msg_check_exit(VCPKG_LINE_INFO,
+                                   fs.exists(SYSTEM_WIDE_TARGETS_FILE, IgnoreErrors{}),
+                                   msgSystemTargetsInstallFailed,
+                                   msg::path = SYSTEM_WIDE_TARGETS_FILE);
         }
     }
 #endif
@@ -327,14 +329,14 @@ namespace vcpkg::Commands::Integrate
         fs.write_contents(user_configuration_home / vcpkg_path_txt, paths.root.generic_u8string(), VCPKG_LINE_INFO);
 
 #if defined(_WIN32)
-        integrate_install_msbuild14(fs);
-
         fs.write_contents(user_configuration_home / vcpkg_user_props,
                           create_appdata_shortcut(paths.buildsystems_msbuild_props),
                           VCPKG_LINE_INFO);
         fs.write_contents(user_configuration_home / vcpkg_user_targets,
                           create_appdata_shortcut(paths.buildsystems_msbuild_targets),
                           VCPKG_LINE_INFO);
+
+        integrate_install_msbuild14(fs);
 #endif
         msg::println(Color::success, msgAppliedUserIntegration);
 

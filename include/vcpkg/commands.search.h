@@ -7,5 +7,5 @@ namespace vcpkg::Commands
 {
     extern const CommandStructure SearchCommandStructure;
 
-    void search_command_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths);
+    void command_search_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths);
 }

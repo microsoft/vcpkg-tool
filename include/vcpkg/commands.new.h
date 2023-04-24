@@ -15,5 +15,5 @@ namespace vcpkg::Commands
                                                      bool option_version_date,
                                                      bool option_version_string);
 
-    void new_command_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths);
+    void command_new_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths);
 }

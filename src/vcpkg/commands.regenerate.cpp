@@ -39,7 +39,7 @@ namespace
 
 namespace vcpkg::Commands
 {
-    void regenerate_command_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
+    void command_regenerate_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
         std::vector<std::string> forwarded_args;
         forwarded_args.emplace_back("regenerate");

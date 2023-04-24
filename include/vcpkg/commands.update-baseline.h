@@ -5,5 +5,5 @@
 
 namespace vcpkg::Commands
 {
-    void update_baseline_command_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths);
+    void command_update_baseline_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths);
 }
