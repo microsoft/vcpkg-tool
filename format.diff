@@ -1,0 +1,84 @@
+diff --git a/locales/messages.json b/locales/messages.json
+index 1d6c2531..3a25a817 100644
+--- a/locales/messages.json
++++ b/locales/messages.json
+@@ -551,6 +551,7 @@
+   "_ExportingPackage.comment": "An example of {package_name} is zlib.",
+   "ExtendedDocumentationAtUrl": "Extended documentation available at '{url}'.",
+   "_ExtendedDocumentationAtUrl.comment": "An example of {url} is https://github.com/microsoft/vcpkg.",
++  "ExtractHelp": "Extracts archive to a given location.",
+   "ExtractingTool": "Extracting {tool_name}...",
+   "_ExtractingTool.comment": "An example of {tool_name} is aria2.",
+   "FailedPostBuildChecks": "Found {count} post-build check problem(s). To submit these ports to curated catalogs, please first correct the portfile: {path}",
+@@ -1586,8 +1587,6 @@
+   "_optionsShouldBeASequenceFound$.comment": "\n'${p0}' is a parameter of type 'string'\n",
+   "DuplicateKeysDetectedInManifest$": "Duplicate keys detected in manifest: '${p0}'",
+   "_DuplicateKeysDetectedInManifest$.comment": "\n'${p0}' is a parameter of type 'string'\n",
+-  "in$Skipping$BecauseItIsA$": "in ${p0} skipping ${p1} because it is a ${p2}",
+-  "_in$Skipping$BecauseItIsA$.comment": "\n'${p0}' (aka 'archiveUri.fsPath') is a parameter of type 'string'\n\n'${p1}' (aka 'header.name') is a parameter of type 'string'\n\n'${p2}' (aka 'header?.type || ''') is a parameter of type 'string'\n",
+   "noPostscriptFileRerunWithTheVcpkgShellFunctionRatherThanExecutable": "no postscript file: rerun with the vcpkg shell function rather than executable",
+   "DuplicateDefine$DuringActivationNewValueWillReplaceOld": "Duplicate define ${p0} during activation. New value will replace old.",
+   "_DuplicateDefine$DuringActivationNewValueWillReplaceOld.comment": "\n'${p0}' is a parameter of type 'string'\n",
+diff --git a/src/vcpkg/commands.cpp b/src/vcpkg/commands.cpp
+index 75477982..fe145cb4 100644
+--- a/src/vcpkg/commands.cpp
++++ b/src/vcpkg/commands.cpp
+@@ -85,7 +85,7 @@ namespace vcpkg::Commands
+         {"create", Create::perform_and_exit},
+         {"deactivate", command_deactivate_and_exit},
+         {"edit", Edit::perform_and_exit},
+- 		{"x-extract", extract_command_and_exit},
++        {"x-extract", extract_command_and_exit},
+         {"fetch", Fetch::perform_and_exit},
+         {"x-generate-msbuild-props", command_generate_msbuild_props_and_exit},
+         {"find", command_find_and_exit},
+diff --git a/src/vcpkg/commands.extract.cpp b/src/vcpkg/commands.extract.cpp
+index 6cb25a3c..388b8aff 100644
+--- a/src/vcpkg/commands.extract.cpp
++++ b/src/vcpkg/commands.extract.cpp
+@@ -1,8 +1,8 @@
+ #include <vcpkg/base/fwd/message_sinks.h>
+ 
+ #include <vcpkg/archives.h>
+-#include <vcpkg/commands.h>
+ #include <vcpkg/commands.extract.h>
++#include <vcpkg/commands.h>
+ #include <vcpkg/vcpkgcmdarguments.h>
+ #include <vcpkg/vcpkgpaths.h>
+ 
+@@ -18,12 +18,13 @@ namespace vcpkg::Commands
+ 
+     void extract_command_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
+     {
+-         auto& fs = paths.get_filesystem();
+-         auto parse_args = args.parse_arguments(ExtractCommandStructure);
++        auto& fs = paths.get_filesystem();
++        auto parse_args = args.parse_arguments(ExtractCommandStructure);
+ 
+-         auto archive_path = parse_args.command_arguments[0];
+-         auto destination_path = parse_args.command_arguments[1];
++        auto archive_path = parse_args.command_arguments[0];
++        auto destination_path = parse_args.command_arguments[1];
+ 
+-         extract_archive(fs, paths.get_tool_cache(), null_sink, Path{archive_path}, Path{destination_path});
+-         Checks::exit_success(VCPKG_LINE_INFO);
+-    }}
+\ No newline at end of file
++        extract_archive(fs, paths.get_tool_cache(), null_sink, Path{archive_path}, Path{destination_path});
++        Checks::exit_success(VCPKG_LINE_INFO);
++    }
++}
+\ No newline at end of file
+diff --git a/vcpkg-artifacts/locales/messages.json b/vcpkg-artifacts/locales/messages.json
+index 0a06df40..6e440dc9 100644
+--- a/vcpkg-artifacts/locales/messages.json
++++ b/vcpkg-artifacts/locales/messages.json
+@@ -43,8 +43,6 @@
+   "_optionsShouldBeASequenceFound$.comment": "\n'${p0}' is a parameter of type 'string'\n",
+   "DuplicateKeysDetectedInManifest$": "Duplicate keys detected in manifest: '${p0}'",
+   "_DuplicateKeysDetectedInManifest$.comment": "\n'${p0}' is a parameter of type 'string'\n",
+-  "in$Skipping$BecauseItIsA$": "in ${p0} skipping ${p1} because it is a ${p2}",
+-  "_in$Skipping$BecauseItIsA$.comment": "\n'${p0}' (aka 'archiveUri.fsPath') is a parameter of type 'string'\n\n'${p1}' (aka 'header.name') is a parameter of type 'string'\n\n'${p2}' (aka 'header?.type || ''') is a parameter of type 'string'\n",
+   "noPostscriptFileRerunWithTheVcpkgShellFunctionRatherThanExecutable": "no postscript file: rerun with the vcpkg shell function rather than executable",
+   "DuplicateDefine$DuringActivationNewValueWillReplaceOld": "Duplicate define ${p0} during activation. New value will replace old.",
+   "_DuplicateDefine$DuringActivationNewValueWillReplaceOld.comment": "\n'${p0}' is a parameter of type 'string'\n",

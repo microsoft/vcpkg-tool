@@ -43,8 +43,6 @@
   "_optionsShouldBeASequenceFound$.comment": "\n'${p0}' is a parameter of type 'string'\n",
   "DuplicateKeysDetectedInManifest$": "Duplicate keys detected in manifest: '${p0}'",
   "_DuplicateKeysDetectedInManifest$.comment": "\n'${p0}' is a parameter of type 'string'\n",
-  "in$Skipping$BecauseItIsA$": "in ${p0} skipping ${p1} because it is a ${p2}",
-  "_in$Skipping$BecauseItIsA$.comment": "\n'${p0}' (aka 'archiveUri.fsPath') is a parameter of type 'string'\n\n'${p1}' (aka 'header.name') is a parameter of type 'string'\n\n'${p2}' (aka 'header?.type || ''') is a parameter of type 'string'\n",
   "noPostscriptFileRerunWithTheVcpkgShellFunctionRatherThanExecutable": "no postscript file: rerun with the vcpkg shell function rather than executable",
   "DuplicateDefine$DuringActivationNewValueWillReplaceOld": "Duplicate define ${p0} during activation. New value will replace old.",
   "_DuplicateDefine$DuringActivationNewValueWillReplaceOld.comment": "\n'${p0}' is a parameter of type 'string'\n",
