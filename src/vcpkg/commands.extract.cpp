@@ -25,4 +25,5 @@ namespace vcpkg::Commands
          auto destination_path = parse_args.command_arguments[1];
 
          extract_archive(fs, paths.get_tool_cache(), null_sink, Path{archive_path}, Path{destination_path});
+         Checks::exit_success(VCPKG_LINE_INFO);
     }}

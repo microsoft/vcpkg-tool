@@ -4,7 +4,7 @@
 import { strict } from 'assert';
 import { createHash } from 'crypto';
 import { parse } from 'yaml';
-import { unpackZip } from '../archivers/ZipUnpacker';
+import { vcpkgExtract } from '../vcpkg';
 import { registryIndexFile } from '../constants';
 import { acquireArtifactFile } from '../fs/acquire';
 import { i } from '../i18n';
@@ -88,7 +88,8 @@ export class RemoteRegistry extends ArtifactRegistry {
 
     const file = await acquireArtifactFile(this.session, locations, `${this.safeName}-registry.zip`, {});
     if (await file.exists()) {
-      await unpackZip(this.session, file, this.cacheFolder, {}, { strip: -1 });
+      const targetLocation = this.cacheFolder.fsPath;
+      await vcpkgExtract(this.session, file.path, targetLocation);
       await file.delete();
     }
   }
