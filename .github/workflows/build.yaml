@@ -1,6 +1,7 @@
 name: Build
 
 on:
+  push:
   pull_request:
 
 permissions:
@@ -21,7 +22,6 @@ jobs:
         uses: github/codeql-action/init@v2
         with:
           languages: cpp, javascript
-          category: vcpkg_pr
       - name: "Clone vcpkg repo to serve as root"
         shell: pwsh
         run: |
