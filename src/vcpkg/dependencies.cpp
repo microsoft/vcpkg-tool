@@ -463,8 +463,8 @@ namespace vcpkg
         , request_type(request_type)
         , build_options{}
         , feature_dependencies(std::move(dependencies))
-        , build_failure_messages(std::move(build_failure_messages))
         , host_triplet(host_triplet)
+        , build_failure_messages(std::move(build_failure_messages))
     {
     }
 
@@ -718,6 +718,12 @@ namespace vcpkg
         pgraph.install(feature_specs, options.unsupported_port_action);
 
         auto res = pgraph.serialize(options.randomizer);
+
+        for (auto&& action : res.install_actions)
+        {
+            if (action.source_control_file_and_location.has_value())
+                action.package_dir = options.packages_dir / action.spec.dir();
+        }
 
         return res;
     }
@@ -2047,16 +2053,23 @@ namespace vcpkg
                                                         const std::vector<Dependency>& deps,
                                                         const std::vector<DependencyOverride>& overrides,
                                                         const PackageSpec& toplevel,
-                                                        Triplet host_triplet,
-                                                        UnsupportedPortAction unsupported_port_action)
+                                                        const CreateInstallPlanOptions& options)
     {
-        VersionedPackageGraph vpg(provider, bprovider, oprovider, var_provider, host_triplet);
+        VersionedPackageGraph vpg(provider, bprovider, oprovider, var_provider, options.host_triplet);
         for (auto&& o : overrides)
         {
             vpg.add_override(o.name, {o.version, o.port_version});
         }
 
         vpg.add_roots(deps, toplevel);
-        return vpg.finalize_extract_plan(toplevel, unsupported_port_action);
+        auto ret = vpg.finalize_extract_plan(toplevel, options.unsupported_port_action);
+        if (auto plan = ret.get())
+        {
+            for (auto&& action : plan->install_actions)
+            {
+                action.package_dir = options.packages_dir / action.spec.dir();
+            }
+        }
+        return ret;
     }
 }
