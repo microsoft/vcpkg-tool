@@ -293,6 +293,20 @@ std::vector<std::string> Strings::split(StringView s, const char delimiter)
     }
 }
 
+std::vector<std::string> Strings::split_keep_empty(StringView s, const char delimiter)
+{
+    std::vector<std::string> output;
+    auto first = s.begin();
+    const auto last = s.end();
+    do
+    {
+        auto next = std::find_if(first, last, [=](const char c) { return c == delimiter; });
+        output.emplace_back(first, next);
+        if (next == last) return output;
+        first = next + 1;
+    } while (1);
+}
+
 std::vector<std::string> Strings::split_paths(StringView s)
 {
 #if defined(_WIN32)
