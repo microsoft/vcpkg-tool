@@ -147,8 +147,8 @@ flowchart TD
 ```
 
 * [vcpkg Signed Binaries (from GitHub)](https://devdiv.visualstudio.com/DevDiv/_build?definitionId=17772&_a=summary) Uses the azure-pipelines/signing.yml file in the vcpkg-tool repo.
-* [devdiv/VS NuGet Feed](https://devdiv.visualstudio.com/DefaultCollection/DevDiv/_artifacts/feed/VS/NuGet/VS.Redist.Vcpkg.x86/)
-* [devdiv/VS-CoreXtFeeds NuGet Feed](https://devdiv.visualstudio.com/DefaultCollection/DevDiv/_artifacts/feed/VS-CoreXtFeeds/NuGet/VS.Redist.Vcpkg.x86/)
+* [devdiv/VS NuGet Feed](https://devdiv.visualstudio.com/DefaultCollection/DevDiv/_artifacts/feed/VS/NuGet/VS.Redist.Vcpkg.amd64/)
+* [devdiv/VS-CoreXtFeeds NuGet Feed](https://devdiv.visualstudio.com/DefaultCollection/DevDiv/_artifacts/feed/VS-CoreXtFeeds/NuGet/VS.Redist.Vcpkg.amd64/)
 * [devdiv VS Repo](https://devdiv.visualstudio.com/DefaultCollection/DevDiv/_git/VS)
   * Run VcpkgInsertionUtility at `$/src/vc/projbld/Vcpkg/VcpkgInsertionUtility/run.cmd`
 * [vscode-embedded-tools Repo](https://devdiv.visualstudio.com/DefaultCollection/DevDiv/_git/vscode-embedded-tools)

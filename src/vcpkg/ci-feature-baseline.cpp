@@ -1,7 +1,6 @@
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/util.h>
 
-#include <vcpkg/build.h>
 #include <vcpkg/ci-feature-baseline.h>
 #include <vcpkg/cmakevars.h>
 

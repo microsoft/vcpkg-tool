@@ -2,7 +2,7 @@
 
 #include <vcpkg/fwd/binaryparagraph.h>
 
-#include <vcpkg/base/files.h>
+#include <vcpkg/base/path.h>
 
 #include <vcpkg/packagespec.h>
 #include <vcpkg/triplet.h>

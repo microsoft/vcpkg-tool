@@ -3,8 +3,8 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/parse.h>
 
-#include <vcpkg/build.h>
 #include <vcpkg/ci-baseline.h>
+#include <vcpkg/commands.build.h>
 #include <vcpkg/triplet.h>
 
 #include <ostream>

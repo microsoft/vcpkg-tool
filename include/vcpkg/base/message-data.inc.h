@@ -167,6 +167,13 @@ DECLARE_MESSAGE(ARegistryPathMustStartWithDollar,
                 "",
                 "A registry path must start with `$` to mean the registry root; for example, `$/foo/bar`.")
 DECLARE_MESSAGE(ARelaxedVersionString, (), "", "a relaxed version string")
+DECLARE_MESSAGE(ArtifactsBootstrapFailed, (), "", "vcpkg-artifacts is not installed and could not be bootstrapped.")
+DECLARE_MESSAGE(ArtifactsNotInstalledReadonlyRoot,
+                (),
+                "",
+                "vcpkg-artifacts is not installed, and it can't be installed because VCPKG_ROOT is assumed to be "
+                "readonly. Reinstalling vcpkg using the 'one liner' may fix this problem.")
+DECLARE_MESSAGE(ArtifactsNotOfficialWarning, (), "", "Using vcpkg-artifacts with an unofficial ")
 DECLARE_MESSAGE(ArtifactsOptionIncompatibility, (msg::option), "", "--{option} has no effect on find artifact.")
 DECLARE_MESSAGE(AssetCacheProviderAcceptsNoArguments,
                 (msg::value),
@@ -736,11 +743,6 @@ DECLARE_MESSAGE(DownloadWinHttpError,
                 (msg::system_api, msg::exit_code, msg::url),
                 "",
                 "{url}: {system_api} failed with exit code {exit_code}")
-DECLARE_MESSAGE(DownloadingVcpkgCeBundle, (msg::version), "", "Downloading vcpkg-artifacts bundle {version}...")
-DECLARE_MESSAGE(DownloadingVcpkgCeBundleLatest,
-                (),
-                "This message is normally displayed only in development.",
-                "Downloading latest vcpkg-artifacts bundle...")
 DECLARE_MESSAGE(DownloadingVcpkgStandaloneBundle, (msg::version), "", "Downloading standalone bundle {version}.")
 DECLARE_MESSAGE(DownloadingVcpkgStandaloneBundleLatest, (), "", "Downloading latest standalone bundle.")
 DECLARE_MESSAGE(DownloadRootsDir, (msg::env_var), "", "Specify the downloads root directory.\n(default: {env_var})")

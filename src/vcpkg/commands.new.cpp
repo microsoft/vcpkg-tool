@@ -1,4 +1,5 @@
 #include <vcpkg/base/checks.h>
+#include <vcpkg/base/files.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.new.h>
@@ -127,7 +128,7 @@ namespace vcpkg::Commands
         return std::move(manifest);
     }
 
-    void NewCommand::perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const
+    void command_new_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
         auto& fs = paths.get_filesystem();
         const auto& current_configuration = paths.get_configuration();

@@ -1,10 +1,11 @@
+#include <vcpkg/base/files.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.edit.h>
-#include <vcpkg/help.h>
+#include <vcpkg/commands.help.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/registries.h>
 #include <vcpkg/vcpkgcmdarguments.h>
@@ -268,10 +269,5 @@ namespace vcpkg::Commands::Edit
 #endif // ^^^ _WIN32
 
         Checks::exit_with_code(VCPKG_LINE_INFO, cmd_execute(cmd_line).value_or_exit(VCPKG_LINE_INFO));
-    }
-
-    void EditCommand::perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const
-    {
-        Edit::perform_and_exit(args, paths);
     }
 }

@@ -1063,11 +1063,6 @@ namespace vcpkg::Json
 
     const BooleanDeserializer BooleanDeserializer::instance;
 
-    static constexpr bool is_lower_digit(char ch)
-    {
-        return ParserBase::is_lower_alpha(ch) || ParserBase::is_ascii_digit(ch);
-    }
-
     bool IdentifierDeserializer::is_ident(StringView sv)
     {
         // back-compat
@@ -1081,9 +1076,9 @@ namespace vcpkg::Json
         const auto last = sv.end();
         for (;;)
         {
-            if (cur == last || !is_lower_digit(*cur)) return false;
+            if (cur == last || !ParserBase::is_lower_digit(*cur)) return false;
             ++cur;
-            while (cur != last && is_lower_digit(*cur))
+            while (cur != last && ParserBase::is_lower_digit(*cur))
                 ++cur;
 
             if (cur == last) break;
@@ -1182,16 +1177,20 @@ namespace vcpkg::Json
 
             void append_unicode_escape(char16_t code_unit) const
             {
-                buffer.append("\\u");
-
                 // AFAIK, there's no standard way of doing this?
                 constexpr const char hex_digit[16] = {
                     '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
 
-                buffer.push_back(hex_digit[(code_unit >> 12) & 0x0F]);
-                buffer.push_back(hex_digit[(code_unit >> 8) & 0x0F]);
-                buffer.push_back(hex_digit[(code_unit >> 4) & 0x0F]);
-                buffer.push_back(hex_digit[(code_unit >> 0) & 0x0F]);
+                const char seq[6] = {
+                    '\\',
+                    'u',
+                    hex_digit[(code_unit >> 12) & 0x0F],
+                    hex_digit[(code_unit >> 8) & 0x0F],
+                    hex_digit[(code_unit >> 4) & 0x0F],
+                    hex_digit[(code_unit >> 0) & 0x0F],
+                };
+
+                buffer.append(seq, 6);
             }
 
             // taken from the ECMAScript 2020 standard, 24.5.2.2: Runtime Semantics: QuoteJSONString
@@ -1527,84 +1526,4 @@ namespace vcpkg::Json
     }
 
     const PackageNameDeserializer PackageNameDeserializer::instance;
-
-    LocalizedString PackagePatternDeserializer::type_name() const { return msg::format(msgAPackagePattern); }
-
-    Optional<PackagePatternDeclaration> PackagePatternDeserializer::visit_string(Json::Reader& r, StringView sv) const
-    {
-        if (!is_package_pattern(sv))
-        {
-            r.add_generic_error(
-                type_name(),
-                msg::format(msgParsePackagePatternError, msg::package_name = sv, msg::url = docs::registries_url));
-        }
-
-        return PackagePatternDeclaration{
-            sv.to_string(),
-            r.path(),
-        };
-    }
-
-    bool PackagePatternDeserializer::is_package_pattern(StringView sv)
-    {
-        if (IdentifierDeserializer::is_ident(sv))
-        {
-            return true;
-        }
-
-        /*if (sv == "*")
-        {
-            return true;
-        }*/
-
-        // ([a-z0-9]+(-[a-z0-9]+)*)(\*?)
-        auto cur = sv.begin();
-        const auto last = sv.end();
-        for (;;)
-        {
-            // [a-z0-9]+
-            if (cur == last)
-            {
-                return false;
-            }
-
-            if (!is_lower_digit(*cur))
-            {
-                if (*cur != '*')
-                {
-                    return false;
-                }
-
-                return ++cur == last;
-            }
-
-            do
-            {
-                ++cur;
-                if (cur == last)
-                {
-                    return true;
-                }
-            } while (is_lower_digit(*cur));
-
-            switch (*cur)
-            {
-                case '-':
-                    // repeat outer [a-z0-9]+ again to match -[a-z0-9]+
-                    ++cur;
-                    continue;
-                case '*':
-                    // match last optional *
-                    ++cur;
-                    return cur == last;
-                default: return false;
-            }
-        }
-    }
-
-    const PackagePatternDeserializer PackagePatternDeserializer::instance;
-
-    LocalizedString PackagePatternArrayDeserializer::type_name() const { return msg::format(msgAPackagePatternArray); }
-
-    const PackagePatternArrayDeserializer PackagePatternArrayDeserializer::instance;
 }
