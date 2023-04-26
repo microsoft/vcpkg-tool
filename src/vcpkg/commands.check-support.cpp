@@ -113,12 +113,16 @@ namespace vcpkg::Commands
         const bool use_json = Util::Sets::contains(options.switches, OPTION_JSON);
         Json::Array json_to_print; // only used when `use_json`
 
+        bool default_triplet_used = false;
         const std::vector<FullPackageSpec> specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
             return check_and_get_full_package_spec(
-                std::string(arg), default_triplet, COMMAND_STRUCTURE.get_example_text(), paths);
+                arg, default_triplet, default_triplet_used, COMMAND_STRUCTURE.get_example_text(), paths);
         });
 
-        print_default_triplet_warning(args, options.command_arguments);
+        if (default_triplet_used)
+        {
+            print_default_triplet_warning(args);
+        }
 
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();
@@ -197,13 +201,5 @@ namespace vcpkg::Commands
         {
             msg::write_unlocalized_text_to_stdout(Color::none, Json::stringify(json_to_print));
         }
-    }
-
-    void CheckSupport::CheckSupportCommand::perform_and_exit(const VcpkgCmdArguments& args,
-                                                             const VcpkgPaths& paths,
-                                                             Triplet default_triplet,
-                                                             Triplet host_triplet) const
-    {
-        return CheckSupport::perform_and_exit(args, paths, default_triplet, host_triplet);
     }
 }

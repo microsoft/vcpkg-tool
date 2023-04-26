@@ -121,9 +121,4 @@ namespace vcpkg::Commands::LintPort
         }
         Checks::exit_success(VCPKG_LINE_INFO);
     }
-
-    void LintPortCommand::perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const
-    {
-        LintPort::perform_and_exit(args, paths);
-    }
 }

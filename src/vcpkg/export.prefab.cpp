@@ -7,12 +7,12 @@
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/archives.h>
-#include <vcpkg/build.h>
 #include <vcpkg/cmakevars.h>
+#include <vcpkg/commands.build.h>
+#include <vcpkg/commands.export.h>
 #include <vcpkg/commands.h>
-#include <vcpkg/export.h>
+#include <vcpkg/commands.install.h>
 #include <vcpkg/export.prefab.h>
-#include <vcpkg/install.h>
 #include <vcpkg/installedpaths.h>
 #include <vcpkg/tools.h>
 #include <vcpkg/vcpkgpaths.h>
@@ -569,7 +569,7 @@ namespace vcpkg::Export::Prefab
                         ab.ndk = version.major();
 
                         Debug::print(fmt::format("Found module {} {}", module_name, ab.abi));
-                        module_name = Strings::trim(std::move(module_name));
+                        Strings::inplace_trim(module_name);
 
                         if (Strings::starts_with(module_name, "lib"))
                         {

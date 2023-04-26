@@ -179,7 +179,7 @@
   "ChecksUpdateVcpkg": "обновление vcpkg путем повторного запуска bootstrap-vcpkg может устранить этот сбой.",
   "CiBaselineAllowUnexpectedPassingRequiresBaseline": "--allow-unexpected-passing-passing можно использовать, только если указан базовый план с помощью --ci-baseline.",
   "CiBaselineDisallowedCascade": "Регрессия: значение {spec} является каскадным, но необходима его передача ({path}).",
-  "CiBaselineIndependentRegression": "REGRESSION: Independent {spec} failed with {build_result}.",
+  "CiBaselineIndependentRegression": "РЕГРЕССИЯ: сбой независимого объекта {spec} с {build_result}.",
   "CiBaselineRegression": "РЕГРЕССИЯ: {spec} с ошибкой {build_result}. Если требуется, добавьте {spec}=fail в {path}.",
   "CiBaselineRegressionHeader": "РЕГРЕССИИ:",
   "CiBaselineUnexpectedPass": "ПЕРЕДАЧА, УДАЛЕНИЕ ИЗ СПИСКА СБОЕВ: {spec} ({path}).",
