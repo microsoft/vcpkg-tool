@@ -15,6 +15,8 @@ namespace vcpkg
     // Extract `archive` to `to_path` using `cmake_tool`. (CMake's built in tar)
     void extract_tar_cmake(const Path& cmake_tool, const Path& archive, const Path& to_path);
     // Extract `archive` to `to_path`, deleting `to_path` first.
+    void set_directory_to_archive_contents(
+        Filesystem& fs, const ToolCache& tools, MessageSink& status_sink, const Path& archive, const Path& to_path);
     void extract_archive(
         Filesystem& fs, const ToolCache& tools, MessageSink& status_sink, const Path& archive, const Path& to_path);
 

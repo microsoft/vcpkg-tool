@@ -127,7 +127,11 @@ namespace
     }
 #endif // ^^^ _WIN32
 
-    void extract_archive_to_empty(
+}
+
+namespace vcpkg
+{
+    void extract_archive(
         Filesystem& fs, const ToolCache& tools, MessageSink& status_sink, const Path& archive, const Path& to_path)
     {
         const auto ext = archive.extension();
@@ -151,7 +155,7 @@ namespace
             const Path stem = filename.stem();
             const Path to_archive = Path(archive.parent_path()) / stem;
             win32_extract_self_extracting_7z(fs, archive, to_archive);
-            extract_archive_to_empty(fs, tools, status_sink, to_archive, to_path);
+            extract_archive(fs, tools, status_sink, to_archive, to_path);
         }
 #else
         (void)fs;
@@ -187,13 +191,9 @@ namespace
 
         fs.remove_all(to_path_partial, VCPKG_LINE_INFO);
         fs.create_directories(to_path_partial, VCPKG_LINE_INFO);
-        extract_archive_to_empty(fs, tools, status_sink, archive, to_path_partial);
+        extract_archive(fs, tools, status_sink, archive, to_path_partial);
         return to_path_partial;
     }
-}
-
-namespace vcpkg
-{
 #ifdef _WIN32
     void win32_extract_self_extracting_7z(Filesystem& fs, const Path& archive, const Path& to_path)
     {
@@ -285,7 +285,7 @@ namespace vcpkg
                                msg::path = archive);
     }
 
-    void extract_archive(
+    void set_directory_to_archive_contents(
         Filesystem& fs, const ToolCache& tools, MessageSink& status_sink, const Path& archive, const Path& to_path)
     {
         fs.remove_all(to_path, VCPKG_LINE_INFO);
