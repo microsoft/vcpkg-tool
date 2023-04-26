@@ -300,11 +300,6 @@ namespace vcpkg::Commands::Integrate
         elevated_cmd_execute(param);
         fs.remove_all(tmp_dir, VCPKG_LINE_INFO);
 
-        Checks::msg_check_exit(VCPKG_LINE_INFO,
-                               !fs.exists(SYSTEM_WIDE_TARGETS_FILE, IgnoreErrors{}),
-                               msgSystemTargetsInstallFailed,
-                               msg::path = SYSTEM_WIDE_TARGETS_FILE);
-
         if (!fs.exists(SYSTEM_WIDE_TARGETS_FILE, IgnoreErrors{}))
         {
             msg::println_warning(msg::format(msgSystemTargetsInstallFailed, msg::path = SYSTEM_WIDE_TARGETS_FILE));
