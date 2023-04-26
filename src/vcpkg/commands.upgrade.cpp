@@ -59,7 +59,6 @@ namespace vcpkg::Commands::Upgrade
                                                  ? UnsupportedPortAction::Warn
                                                  : UnsupportedPortAction::Error;
 
-        BinaryCache binary_cache{args, paths};
         StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
 
         // Load ports from ports dirs
@@ -87,7 +86,7 @@ namespace vcpkg::Commands::Upgrade
                 var_provider,
                 Util::fmap(outdated_packages, [](const Update::OutdatedPackage& package) { return package.spec; }),
                 status_db,
-                {host_triplet, unsupported_port_action});
+                {host_triplet, paths.packages(), unsupported_port_action});
         }
         else
         {
@@ -181,8 +180,11 @@ namespace vcpkg::Commands::Upgrade
 
             if (to_upgrade.empty()) Checks::exit_success(VCPKG_LINE_INFO);
 
-            action_plan = create_upgrade_plan(
-                provider, var_provider, to_upgrade, status_db, {host_triplet, unsupported_port_action});
+            action_plan = create_upgrade_plan(provider,
+                                              var_provider,
+                                              to_upgrade,
+                                              status_db,
+                                              {host_triplet, paths.packages(), unsupported_port_action});
         }
 
         Checks::check_exit(VCPKG_LINE_INFO, !action_plan.empty());
@@ -203,8 +205,8 @@ namespace vcpkg::Commands::Upgrade
 
         var_provider.load_tag_vars(action_plan, provider, host_triplet);
 
-        const InstallSummary summary = Install::perform(
-            args, action_plan, keep_going, paths, status_db, binary_cache, null_build_logs_recorder(), var_provider);
+        const InstallSummary summary =
+            Install::perform(args, action_plan, keep_going, paths, status_db, null_build_logs_recorder(), var_provider);
 
         if (keep_going == KeepGoing::YES)
         {

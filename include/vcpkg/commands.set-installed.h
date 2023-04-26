@@ -24,7 +24,6 @@ namespace vcpkg::Commands::SetInstalled
     void perform_and_exit_ex(const VcpkgCmdArguments& args,
                              const VcpkgPaths& paths,
                              const PathsPortFileProvider& provider,
-                             BinaryCache& binary_cache,
                              const CMakeVars::CMakeVarProvider& cmake_vars,
                              ActionPlan action_plan,
                              DryRun dry_run,

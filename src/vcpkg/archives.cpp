@@ -293,21 +293,16 @@ namespace vcpkg
         fs.rename_with_retry(to_path_partial, to_path, VCPKG_LINE_INFO);
     }
 
-    ExpectedL<Unit> compress_directory_to_zip(
-        Filesystem& fs, const ToolCache& tools, MessageSink& status_sink, const Path& source, const Path& destination)
+    ExpectedL<Unit> ZipTool::compress_directory_to_zip(const Path& source, const Path& destination) const
     {
-        fs.remove(destination, VCPKG_LINE_INFO);
+        fs->remove(destination, VCPKG_LINE_INFO);
 #if defined(_WIN32)
-        auto&& seven_zip_exe = tools.get_tool_path(Tools::SEVEN_ZIP, status_sink);
-
         return flatten(cmd_execute_and_capture_output(
-                           Command{seven_zip_exe}.string_arg("a").string_arg(destination).string_arg(source / "*"),
+                           Command{seven_zip}.string_arg("a").string_arg(destination).string_arg(source / "*"),
                            default_working_directory,
                            get_clean_environment()),
                        Tools::SEVEN_ZIP);
 #else
-        (void)tools;
-        (void)status_sink;
         return flatten(cmd_execute_and_capture_output(Command{"zip"}
                                                           .string_arg("--quiet")
                                                           .string_arg("-y")
@@ -321,22 +316,21 @@ namespace vcpkg
 #endif
     }
 
-    Command decompress_zip_archive_cmd(const ToolCache& tools,
-                                       MessageSink& status_sink,
-                                       const Path& dst,
-                                       const Path& archive_path)
+    ZipTool::ZipTool(RemoveFilesystem& fs, const ToolCache& cache, MessageSink& status_sink)
+        : fs(&fs), seven_zip(cache.get_tool_path(Tools::SEVEN_ZIP, status_sink))
+    {
+    }
+
+    Command ZipTool::decompress_zip_archive_cmd(const Path& dst, const Path& archive_path) const
     {
         Command cmd;
 #if defined(_WIN32)
-        auto&& seven_zip_exe = tools.get_tool_path(Tools::SEVEN_ZIP, status_sink);
-        cmd.string_arg(seven_zip_exe)
+        cmd.string_arg(seven_zip)
             .string_arg("x")
             .string_arg(archive_path)
             .string_arg("-o" + dst.native())
             .string_arg("-y");
 #else
-        (void)tools;
-        (void)status_sink;
         cmd.string_arg("unzip").string_arg("-qq").string_arg(archive_path).string_arg("-d" + dst.native());
 #endif
         return cmd;

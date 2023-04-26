@@ -5,6 +5,7 @@
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/statusparagraph.h>
+#include <vcpkg/tools.h>
 
 #include <stdlib.h>
 
@@ -265,5 +266,4 @@ namespace vcpkg::Test
         std::string path = "$";
         check_json_eq(l, r, path, true);
     }
-
 }

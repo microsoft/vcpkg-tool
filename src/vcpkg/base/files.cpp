@@ -1534,8 +1534,6 @@ namespace vcpkg
 
     int WriteFilePointer::put(int c) const noexcept { return ::fputc(c, m_fs); }
 
-    ILineReader::~ILineReader() = default;
-
     std::string Filesystem::read_contents(const Path& file_path, LineInfo li) const
     {
         std::error_code ec;
@@ -1715,7 +1713,7 @@ namespace vcpkg
         }
     }
 
-    bool Filesystem::remove(const Path& target, LineInfo li)
+    bool RemoveFilesystem::remove(const Path& target, LineInfo li)
     {
         std::error_code ec;
         auto r = this->remove(target, ec);
@@ -1907,7 +1905,7 @@ namespace vcpkg
         }
     }
 
-    void Filesystem::remove_all(const Path& base, LineInfo li)
+    void RemoveFilesystem::remove_all(const Path& base, LineInfo li)
     {
         std::error_code ec;
         Path failure_point;
@@ -1924,7 +1922,7 @@ namespace vcpkg
         }
     }
 
-    void Filesystem::remove_all(const Path& base, std::error_code& ec)
+    void RemoveFilesystem::remove_all(const Path& base, std::error_code& ec)
     {
         Path failure_point;
         this->remove_all(base, ec, failure_point);

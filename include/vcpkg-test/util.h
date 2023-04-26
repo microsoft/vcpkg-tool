@@ -4,11 +4,14 @@
 
 #include <catch2/catch.hpp>
 
+#include <vcpkg/base/fwd/files.h>
+
+#include <vcpkg/fwd/tools.h>
+
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/format.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/pragmas.h>
-#include <vcpkg/base/sortedvector.h>
 #include <vcpkg/base/strings.h>
 
 #include <vcpkg/packagespec.h>

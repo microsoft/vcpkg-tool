@@ -97,7 +97,6 @@ namespace vcpkg
                                const KeepGoing keep_going,
                                const VcpkgPaths& paths,
                                StatusParagraphs& status_db,
-                               BinaryCache& binary_cache,
                                const IBuildLogsRecorder& build_logs_recorder,
                                const CMakeVars::CMakeVarProvider& var_provider);
 

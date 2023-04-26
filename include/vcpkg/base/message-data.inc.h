@@ -2282,7 +2282,10 @@ DECLARE_MESSAGE(SpecifyTargetArch,
                 "Specify the target architecture triplet. See 'vcpkg help triplet'.\n(default: '{env_var}')")
 DECLARE_MESSAGE(StartCodeUnitInContinue, (), "", "found start code unit in continue position")
 DECLARE_MESSAGE(StoredBinaryCache, (msg::path), "", "Stored binary cache: \"{path}\"")
-DECLARE_MESSAGE(StoredBinariesToDestinations, (msg::count), "", "Stored binaries in {count} destinations.")
+DECLARE_MESSAGE(StoredBinariesToDestinations,
+                (msg::count, msg::elapsed),
+                "",
+                "Stored binaries in {count} destinations in {elapsed}.")
 DECLARE_MESSAGE(StoreOptionMissingSha, (), "", "--store option is invalid without a sha512")
 DECLARE_MESSAGE(SuccessfulyExported, (msg::package_name, msg::path), "", "Exported {package_name} to {path}")
 DECLARE_MESSAGE(SuggestGitPull, (), "", "The result may be outdated. Run `git pull` to get the latest results.")
