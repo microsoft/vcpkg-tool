@@ -96,6 +96,8 @@ namespace vcpkg
     struct InternalFeatureSet : std::vector<std::string>
     {
         using std::vector<std::string>::vector;
+
+        bool empty_or_only_core() const;
     };
 
     InternalFeatureSet internalize_feature_list(View<std::string> fs, ImplicitDefault id);

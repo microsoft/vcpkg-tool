@@ -104,7 +104,7 @@ namespace vcpkg
                                      const std::vector<std::string>& default_features,
                                      Triplet triplet,
                                      const std::string& abi_tag,
-                                     const std::vector<FeatureSpec>& deps)
+                                     std::vector<PackageSpec> deps)
         : spec(spgh.name, triplet)
         , version(spgh.raw_version)
         , port_version(spgh.port_version)
@@ -112,28 +112,25 @@ namespace vcpkg
         , maintainers(spgh.maintainers)
         , feature()
         , default_features(default_features)
-        , dependencies()
+        , dependencies(std::move(deps))
         , abi(abi_tag)
     {
-        this->dependencies = Util::fmap(deps, [](const FeatureSpec& spec) { return spec.spec(); });
         canonicalize();
     }
 
-    BinaryParagraph::BinaryParagraph(const SourceParagraph& spgh,
+    BinaryParagraph::BinaryParagraph(const PackageSpec& spec,
                                      const FeatureParagraph& fpgh,
-                                     Triplet triplet,
-                                     const std ::vector<FeatureSpec>& deps)
-        : spec(spgh.name, triplet)
+                                     std::vector<PackageSpec> deps)
+        : spec(spec)
         , version()
         , port_version()
         , description(fpgh.description)
         , maintainers()
         , feature(fpgh.name)
         , default_features()
-        , dependencies()
+        , dependencies(std::move(deps))
         , abi()
     {
-        this->dependencies = Util::fmap(deps, [](const FeatureSpec& spec) { return spec.spec(); });
         canonicalize();
     }
 
@@ -147,7 +144,7 @@ namespace vcpkg
 
         for (auto& maintainer : this->maintainers)
         {
-            maintainer = Strings::trim(std::move(maintainer));
+            Strings::inplace_trim(maintainer);
         }
         if (all_empty(this->maintainers))
         {
@@ -156,7 +153,7 @@ namespace vcpkg
 
         for (auto& desc : this->description)
         {
-            desc = Strings::trim(std::move(desc));
+            Strings::inplace_trim(desc);
         }
         if (all_empty(this->description))
         {

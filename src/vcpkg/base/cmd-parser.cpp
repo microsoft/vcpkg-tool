@@ -360,6 +360,7 @@ namespace vcpkg
             auto maybe_response_file_lines = response_file_source.read_lines(file_name);
             if (auto response_file_lines = maybe_response_file_lines.get())
             {
+                Strings::inplace_trim_all_and_remove_whitespace_strings(*response_file_lines);
                 if (response_file_lines->empty())
                 {
                     first = inputs.erase(first);

@@ -2298,3 +2298,122 @@ TEST_CASE ("respect platform expressions in default features", "[versionplan]")
         CHECK(install_plan.install_actions[0].feature_list.size() == 2);
     }
 }
+
+TEST_CASE ("formatting plan 1", "[dependencies]")
+{
+    std::vector<std::unique_ptr<StatusParagraph>> status_paragraphs;
+    status_paragraphs.push_back(vcpkg::Test::make_status_pgh("d"));
+    status_paragraphs.push_back(vcpkg::Test::make_status_pgh("e"));
+    StatusParagraphs status_db(std::move(status_paragraphs));
+
+    MockVersionedPortfileProvider vp;
+    auto& scfl_a = vp.emplace("a", {"1", 0});
+    auto& scfl_b = vp.emplace("b", {"1", 0});
+    auto& scfl_c = vp.emplace("c", {"1", 0});
+    auto& scfl_f = vp.emplace("f", {"1", 0});
+
+    const RemovePlanAction remove_b({"b", Test::X64_OSX}, RemovePlanType::REMOVE, RequestType::USER_REQUESTED);
+    const RemovePlanAction remove_a({"a", Test::X64_OSX}, RemovePlanType::NOT_INSTALLED, RequestType::USER_REQUESTED);
+    const RemovePlanAction remove_c({"c", Test::X64_OSX}, RemovePlanType::REMOVE, RequestType::AUTO_SELECTED);
+    InstallPlanAction install_a(
+        {"a", Test::X64_OSX}, scfl_a, RequestType::AUTO_SELECTED, Test::X64_ANDROID, {}, {}, {});
+    InstallPlanAction install_b(
+        {"b", Test::X64_OSX}, scfl_b, RequestType::AUTO_SELECTED, Test::X64_ANDROID, {{"1", {}}}, {}, {});
+    InstallPlanAction install_c(
+        {"c", Test::X64_OSX}, scfl_c, RequestType::USER_REQUESTED, Test::X64_ANDROID, {}, {}, {});
+    InstallPlanAction install_f(
+        {"f", Test::X64_OSX}, scfl_f, RequestType::USER_REQUESTED, Test::X64_ANDROID, {}, {}, {});
+    install_f.plan_type = InstallPlanType::EXCLUDED;
+
+    InstallPlanAction already_installed_d(
+        status_db.get_installed_package_view({"d", Test::X86_WINDOWS}).value_or_exit(VCPKG_LINE_INFO),
+        RequestType::AUTO_SELECTED);
+    InstallPlanAction already_installed_e(
+        status_db.get_installed_package_view({"e", Test::X86_WINDOWS}).value_or_exit(VCPKG_LINE_INFO),
+        RequestType::USER_REQUESTED);
+
+    ActionPlan plan;
+    {
+        auto formatted = format_plan(plan, "/builtin");
+        CHECK_FALSE(formatted.has_removals);
+        CHECK(formatted.text == "All requested packages are currently installed.\n");
+    }
+
+    plan.remove_actions.push_back(remove_b);
+    {
+        auto formatted = format_plan(plan, "/builtin");
+        CHECK(formatted.has_removals);
+        CHECK(formatted.text == "The following packages will be removed:\n"
+                                "    b:x64-osx\n");
+    }
+
+    plan.remove_actions.push_back(remove_a);
+    {
+        auto formatted = format_plan(plan, "/builtin");
+        CHECK(formatted.text == "The following packages will be removed:\n"
+                                "    a:x64-osx\n"
+                                "    b:x64-osx\n");
+    }
+
+    plan.install_actions.push_back(std::move(install_c));
+    {
+        auto formatted = format_plan(plan, "/builtin");
+        CHECK(formatted.text == "The following packages will be removed:\n"
+                                "    a:x64-osx\n"
+                                "    b:x64-osx\n"
+                                "The following packages will be built and installed:\n"
+                                "    c:x64-osx -> 1 -- c\n");
+    }
+
+    plan.remove_actions.push_back(remove_c);
+    {
+        auto formatted = format_plan(plan, "c");
+        CHECK(formatted.text == "The following packages will be removed:\n"
+                                "    a:x64-osx\n"
+                                "    b:x64-osx\n"
+                                "The following packages will be rebuilt:\n"
+                                "    c:x64-osx -> 1\n");
+    }
+
+    plan.install_actions.push_back(std::move(install_b));
+    {
+        auto formatted = format_plan(plan, "c");
+        CHECK(formatted.text == "The following packages will be removed:\n"
+                                "    a:x64-osx\n"
+                                "The following packages will be rebuilt:\n"
+                                "  * b[1]:x64-osx -> 1 -- b\n"
+                                "    c:x64-osx -> 1\n"
+                                "Additional packages (*) will be modified to complete this operation.\n");
+    }
+
+    plan.install_actions.push_back(std::move(install_a));
+    plan.already_installed.push_back(std::move(already_installed_d));
+    plan.already_installed.push_back(std::move(already_installed_e));
+    {
+        auto formatted = format_plan(plan, "b");
+        CHECK(formatted.has_removals);
+        CHECK(formatted.text == "The following packages are already installed:\n"
+                                "  * d:x86-windows -> 1\n"
+                                "    e:x86-windows -> 1\n"
+                                "The following packages will be rebuilt:\n"
+                                "  * a:x64-osx -> 1 -- a\n"
+                                "  * b[1]:x64-osx -> 1\n"
+                                "    c:x64-osx -> 1 -- c\n"
+                                "Additional packages (*) will be modified to complete this operation.\n");
+    }
+
+    plan.install_actions.push_back(std::move(install_f));
+    {
+        auto formatted = format_plan(plan, "b");
+        CHECK(formatted.text == "The following packages are excluded:\n"
+                                "    f:x64-osx -> 1 -- f\n"
+                                "The following packages are already installed:\n"
+                                "  * d:x86-windows -> 1\n"
+                                "    e:x86-windows -> 1\n"
+                                "The following packages will be rebuilt:\n"
+                                "  * a:x64-osx -> 1 -- a\n"
+                                "  * b[1]:x64-osx -> 1\n"
+                                "    c:x64-osx -> 1 -- c\n"
+                                "Additional packages (*) will be modified to complete this operation.\n");
+    }
+}

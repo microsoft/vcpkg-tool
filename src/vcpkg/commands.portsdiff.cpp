@@ -2,8 +2,8 @@
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
+#include <vcpkg/commands.help.h>
 #include <vcpkg/commands.portsdiff.h>
-#include <vcpkg/help.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/tools.h>
 #include <vcpkg/vcpkgcmdarguments.h>
@@ -193,10 +193,5 @@ namespace vcpkg::Commands::PortsDiff
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);
-    }
-
-    void PortsDiffCommand::perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const
-    {
-        PortsDiff::perform_and_exit(args, paths);
     }
 }

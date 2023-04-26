@@ -464,9 +464,13 @@ Description: a spiffy compression library wrapper
     auto maybe_scf = SourceControlFile::parse_control_file("", std::move(*pghs.get()));
     REQUIRE(maybe_scf.has_value());
     SourceControlFileAndLocation scfl{std::move(*maybe_scf.get()), Path()};
-    plan.install_actions.emplace_back();
-    plan.install_actions[0].spec = PackageSpec("zlib", Test::X64_ANDROID);
-    plan.install_actions[0].source_control_file_and_location = scfl;
+    plan.install_actions.emplace_back(PackageSpec("zlib", Test::X64_ANDROID),
+                                      scfl,
+                                      RequestType::USER_REQUESTED,
+                                      Test::ARM64_WINDOWS,
+                                      std::map<std::string, std::vector<FeatureSpec>>{},
+                                      std::vector<LocalizedString>{},
+                                      std::vector<std::string>{});
     plan.install_actions[0].abi_info = AbiInfo{};
     plan.install_actions[0].abi_info.get()->package_abi = "packageabi";
 
@@ -487,9 +491,13 @@ Description: a spiffy compression library wrapper
     auto maybe_scf2 = SourceControlFile::parse_control_file("", std::move(*pghs2.get()));
     REQUIRE(maybe_scf2.has_value());
     SourceControlFileAndLocation scfl2{std::move(*maybe_scf2.get()), Path()};
-    plan.install_actions.emplace_back();
-    plan.install_actions[1].spec = PackageSpec("zlib2", Test::X64_ANDROID);
-    plan.install_actions[1].source_control_file_and_location = scfl2;
+    plan.install_actions.emplace_back(PackageSpec("zlib2", Test::X64_ANDROID),
+                                      scfl2,
+                                      RequestType::USER_REQUESTED,
+                                      Test::ARM64_WINDOWS,
+                                      std::map<std::string, std::vector<FeatureSpec>>{},
+                                      std::vector<LocalizedString>{},
+                                      std::vector<std::string>{});
     plan.install_actions[1].abi_info = AbiInfo{};
     plan.install_actions[1].abi_info.get()->package_abi = "packageabi2";
 

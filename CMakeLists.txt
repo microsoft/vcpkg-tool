@@ -396,8 +396,8 @@ target_link_libraries(vcpkglib
     PUBLIC
         fmt::fmt
         cmakerc::locales
-    PRIVATE
         Threads::Threads
+    PRIVATE
         ${CPP_ATOMIC_LIBRARY}
 )
 

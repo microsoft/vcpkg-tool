@@ -3,7 +3,7 @@
 
 #include <vcpkg/binaryparagraph.h>
 #include <vcpkg/commands.cache.h>
-#include <vcpkg/help.h>
+#include <vcpkg/commands.help.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
@@ -67,10 +67,5 @@ namespace vcpkg::Commands::Cache
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);
-    }
-
-    void CacheCommand::perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const
-    {
-        Cache::perform_and_exit(args, paths);
     }
 }

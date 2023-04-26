@@ -1,6 +1,6 @@
 #include <catch2/catch.hpp>
 
-#include <vcpkg/build.h>
+#include <vcpkg/commands.build.h>
 #include <vcpkg/xunitwriter.h>
 
 #include <ostream>
