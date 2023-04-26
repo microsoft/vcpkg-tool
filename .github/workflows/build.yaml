@@ -1,0 +1,69 @@
+name: Build
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: '${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}'
+  cancel-in-progress: true
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    env:
+      VCPKG_ROOT: ${{ github.workspace }}\vcpkg-root
+      DiffFile: ${{ github.workspace }}\out\format.diff
+    steps:
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: cpp, javascript
+          category: vcpkg_pr
+      - name: "Clone vcpkg repo to serve as root"
+        shell: pwsh
+        run: |
+          $sha = (Get-Content vcpkg-init/vcpkg-scripts-sha.txt -Raw).Trim()
+          git clone https://github.com/microsoft/vcpkg $env:VCPKG_ROOT -n
+          git -C "$env:VCPKG_ROOT" checkout $sha
+      - name: 'Format C++'
+        shell: pwsh
+        run: ./azure-pipelines/Format-CxxCode.ps1
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "18.x"
+          cache: 'npm'
+          cache-dependency-path: vcpkg-artifacts/package-lock.json
+      - run: cd vcpkg-artifacts && npm ci
+      - name: Configure and Build
+        uses: lukka/run-cmake@v10
+        with:
+          workflowPreset: windows-ci
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
+      - name: Create Diff
+        shell: pwsh
+        run: azure-pipelines/Create-PRDiff.ps1 -DiffFile $env:DiffFile
+      - name: Publish Format and Messages File Diff
+        uses: actions/upload-artifact@v3
+        if: ${{ failure() }}
+        with:
+          name: 'format.diff'
+          path: ${{ env.DiffFile }}
+      - name: Run vcpkg unit tests
+        uses: lukka/run-cmake@v10
+        env:
+          VCPKG_ROOT: UNIT_TESTS_SHOULD_NOT_USE_VCPKG_ROOT
+        with:
+          testPreset: ci
+      - name: Run vcpkg-artifacts unit tests
+        run: |
+          cd build.amd64.debug\vcpkg-artifacts
+          node node_modules\mocha\bin\mocha --config mocha-config.yaml
+      - name: Run vcpkg end-to-end tests
+        shell: pwsh
+        run: |
+          cd build.amd64.debug
+          ../azure-pipelines/end-to-end-tests.ps1 -RunArtifactsTests
