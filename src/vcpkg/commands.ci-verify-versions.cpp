@@ -227,8 +227,7 @@ namespace vcpkg::Commands::CIVerifyVersions
 
         return {
             msg::format(msgVersionVerifiedOK,
-                        msg::package_name = port_name,
-                        msg::version = entry.first.version,
+                        msg::version_spec = Strings::concat(port_name, '@', entry.first.version),
                         msg::commit_sha = entry.second),
             expected_left_tag,
         };
