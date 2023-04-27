@@ -1365,14 +1365,12 @@ DECLARE_MESSAGE(
     "",
     "Writes out a NuGet packages.config-formatted file for use with external binary caching.\nSee `vcpkg help "
     "binarycaching` for more information.")
-DECLARE_MESSAGE(
-    HelpUpdateBaseline,
-    (),
-    "",
-    "The best approach to keep your libraries up to date, the best approach is to update your baseline reference. "
-    "This will "
-    "ensure all packages, including transitive ones, are updated. However if you need to update a package "
-    "independently, you can use a \"version>=\" constraint.")
+DECLARE_MESSAGE(HelpUpdateBaseline,
+                (),
+                "",
+                "The best approach to keep your libraries up to date is to update your baseline reference. This will "
+                "ensure all packages, including transitive ones, are updated. However if you need to update a package "
+                "independently, you can use a \"version>=\" constraint.")
 DECLARE_MESSAGE(HelpUpdateCommand, (), "", "List packages that can be updated.")
 DECLARE_MESSAGE(HelpUpgradeCommand, (), "", "Rebuild all outdated packages.")
 DECLARE_MESSAGE(HelpVersionCommand, (), "", "Display version information.")

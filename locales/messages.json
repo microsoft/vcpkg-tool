@@ -788,7 +788,7 @@
   "HelpTxtOptUseAria2": "Use aria2 to perform download tasks.",
   "HelpTxtOptUseHeadVersion": "Install the libraries on the command line using the latest upstream sources (classic mode).",
   "HelpTxtOptWritePkgConfig": "Writes out a NuGet packages.config-formatted file for use with external binary caching.\nSee `vcpkg help binarycaching` for more information.",
-  "HelpUpdateBaseline": "The best approach to keep your libraries up to date, the best approach is to update your baseline reference. This will ensure all packages, including transitive ones, are updated. However if you need to update a package independently, you can use a \"version>=\" constraint.",
+  "HelpUpdateBaseline": "The best approach to keep your libraries up to date is to update your baseline reference. This will ensure all packages, including transitive ones, are updated. However if you need to update a package independently, you can use a \"version>=\" constraint.",
   "HelpUpdateCommand": "List packages that can be updated.",
   "HelpUpgradeCommand": "Rebuild all outdated packages.",
   "HelpVersionCommand": "Display version information.",
