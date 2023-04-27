@@ -1,5 +1,6 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/graphs.h>
+#include <vcpkg/base/optional.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/util.h>
 
@@ -13,6 +14,9 @@
 #include <vcpkg/statusparagraphs.h>
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
+
+#include <unordered_map>
+#include <unordered_set>
 
 namespace vcpkg
 {
@@ -593,6 +597,18 @@ namespace vcpkg
             return {};
     }
 
+    bool RemovePlan::empty() const { return not_installed.empty() && remove.empty(); }
+
+    bool RemovePlan::has_non_user_requested() const
+    {
+        constexpr struct
+        {
+            bool operator()(const RemovePlanAction& a) const { return a.request_type != RequestType::USER_REQUESTED; }
+        } non_user_requested;
+
+        return Util::find_if(remove, non_user_requested) != remove.end();
+    }
+
     RemovePlan create_remove_plan(const std::vector<PackageSpec>& specs, const StatusParagraphs& status_db)
     {
         struct RemoveAdjacencyProvider final : AdjacencyProvider<PackageSpec, PackageSpec>
@@ -637,8 +653,8 @@ namespace vcpkg
             {
                 // installed
                 plan.remove.emplace_back(step,
-                                         requested.find(step) == requested.end() ? RequestType::AUTO_SELECTED
-                                                                                 : RequestType::USER_REQUESTED);
+                                         Util::Sets::contains(requested, step) ? RequestType::USER_REQUESTED
+                                                                               : RequestType::AUTO_SELECTED);
             }
             else
             {

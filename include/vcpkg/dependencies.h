@@ -157,6 +157,9 @@ namespace vcpkg
 
     struct RemovePlan
     {
+        bool empty() const;
+        bool has_non_user_requested() const;
+
         std::vector<NotInstalledAction> not_installed;
         std::vector<RemovePlanAction> remove;
     };

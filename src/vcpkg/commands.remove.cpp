@@ -103,25 +103,20 @@ namespace vcpkg::Remove
         }
     }
 
-    constexpr struct AddressOf
+    constexpr struct OpAddressOf
     {
-        template<class T>
-        const T* operator()(const T& t) const
-        {
-            return &t;
-        }
         template<class T>
         T* operator()(T& t) const
         {
             return &t;
         }
-    } address_of;
+    } op_address_of;
 
     static void print_plan(const RemovePlan& plan)
     {
         if (!plan.not_installed.empty())
         {
-            std::vector<const NotInstalledAction*> not_installed = Util::fmap(plan.not_installed, address_of);
+            std::vector<const NotInstalledAction*> not_installed = Util::fmap(plan.not_installed, op_address_of);
             Util::sort(not_installed, &BasicAction::compare_by_name);
             LocalizedString msg;
             msg.append(msgFollowingPackagesNotInstalled).append_raw("\n");
@@ -133,7 +128,7 @@ namespace vcpkg::Remove
         }
         if (!plan.remove.empty())
         {
-            std::vector<const RemovePlanAction*> remove = Util::fmap(plan.remove, address_of);
+            std::vector<const RemovePlanAction*> remove = Util::fmap(plan.remove, op_address_of);
             Util::sort(remove, &BasicAction::compare_by_name);
             LocalizedString msg;
             msg.append(msgPackagesToRemove).append_raw("\n");
@@ -239,19 +234,14 @@ namespace vcpkg::Remove
 
         const auto plan = create_remove_plan(specs, status_db);
 
-        if (plan.remove.empty() && plan.not_installed.empty())
+        if (plan.empty())
         {
             Checks::unreachable(VCPKG_LINE_INFO, "Remove plan cannot be empty");
         }
 
         print_plan(plan);
 
-        const bool has_non_user_requested_packages =
-            Util::find_if(plan.remove, [](const RemovePlanAction& package) -> bool {
-                return package.request_type != RequestType::USER_REQUESTED;
-            }) != plan.remove.cend();
-
-        if (has_non_user_requested_packages)
+        if (plan.has_non_user_requested())
         {
             msg::println_warning(msgAdditionalPackagesToRemove);
 
