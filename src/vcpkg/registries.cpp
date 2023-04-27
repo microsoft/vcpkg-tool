@@ -7,6 +7,7 @@
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/util.h>
 
+#include <vcpkg/documentation.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/registries.h>
@@ -880,7 +881,7 @@ namespace
             error_msg.append_indent().append_raw(version.to_string()).append_raw('\n');
         }
 
-        error_msg.append(msgVersionIncomparable4);
+        error_msg.append(msgVersionIncomparable4, msg::url = docs::versioning_url);
         return error_msg;
     }
 
