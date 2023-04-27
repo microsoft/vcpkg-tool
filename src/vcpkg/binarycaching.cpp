@@ -276,7 +276,6 @@ namespace
             for (size_t i = 0; i < actions.size(); ++i)
             {
                 const auto& action = *actions[i];
-                const auto& spec = action.spec;
                 const auto& abi_tag = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
                 const auto archive_subpath = make_archive_subpath(abi_tag);
                 auto archive_path = archives_root_dir / archive_subpath;

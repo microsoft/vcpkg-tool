@@ -468,8 +468,8 @@ namespace vcpkg
         , request_type(request_type)
         , build_options{}
         , feature_dependencies(std::move(dependencies))
-        , host_triplet(host_triplet)
         , build_failure_messages(std::move(build_failure_messages))
+        , host_triplet(host_triplet)
     {
     }
 
