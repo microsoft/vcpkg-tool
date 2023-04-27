@@ -18,12 +18,12 @@ namespace vcpkg::Remove
 {
     using Update::OutdatedPackage;
 
-    static void remove_package(Filesystem& fs,
-                               const InstalledPaths& installed,
-                               const PackageSpec& spec,
-                               StatusParagraphs* status_db)
+    void remove_package(Filesystem& fs,
+                        const InstalledPaths& installed,
+                        const PackageSpec& spec,
+                        StatusParagraphs& status_db)
     {
-        auto maybe_ipv = status_db->get_installed_package_view(spec);
+        auto maybe_ipv = status_db.get_installed_package_view(spec);
 
         Checks::msg_check_exit(VCPKG_LINE_INFO, maybe_ipv.has_value(), msgPackageAlreadyRemoved, msg::spec = spec);
 
@@ -99,66 +99,44 @@ namespace vcpkg::Remove
             spgh.state = InstallState::NOT_INSTALLED;
             write_update(fs, installed, spgh);
 
-            status_db->insert(std::make_unique<StatusParagraph>(std::move(spgh)));
+            status_db.insert(std::make_unique<StatusParagraph>(std::move(spgh)));
         }
     }
 
-    static void print_plan(const std::map<RemovePlanType, std::vector<const RemovePlanAction*>>& group_by_plan_type)
+    constexpr struct OpAddressOf
     {
-        static constexpr std::array<RemovePlanType, 2> ORDER = {RemovePlanType::NOT_INSTALLED, RemovePlanType::REMOVE};
-
-        for (const RemovePlanType plan_type : ORDER)
+        template<class T>
+        T* operator()(T& t) const
         {
-            const auto it = group_by_plan_type.find(plan_type);
-            if (it == group_by_plan_type.cend())
-            {
-                continue;
-            }
+            return &t;
+        }
+    } op_address_of;
 
+    static void print_plan(const RemovePlan& plan)
+    {
+        if (!plan.not_installed.empty())
+        {
+            std::vector<const NotInstalledAction*> not_installed = Util::fmap(plan.not_installed, op_address_of);
+            Util::sort(not_installed, &BasicAction::compare_by_name);
             LocalizedString msg;
-            if (plan_type == RemovePlanType::NOT_INSTALLED)
+            msg.append(msgFollowingPackagesNotInstalled).append_raw("\n");
+            for (auto p : not_installed)
             {
-                msg = msg::format(msgFollowingPackagesNotInstalled).append_raw('\n');
-            }
-            else if (plan_type == RemovePlanType::REMOVE)
-            {
-                msg = msg::format(msgPackagesToRemove).append_raw('\n');
-            }
-            else
-            {
-                Checks::unreachable(VCPKG_LINE_INFO);
-            }
-
-            std::vector<const RemovePlanAction*> cont = it->second;
-            std::sort(cont.begin(), cont.end(), &RemovePlanAction::compare_by_name);
-            for (auto p : cont)
-            {
-                msg.append_raw(request_type_indent(p->request_type)).append_raw(p->spec).append_raw('\n');
+                msg.append_raw(request_type_indent(RequestType::USER_REQUESTED)).append_raw(p->spec).append_raw("\n");
             }
             msg::print(msg);
         }
-    }
-
-    void perform_remove_plan_action(const VcpkgPaths& paths,
-                                    const RemovePlanAction& action,
-                                    const Purge purge,
-                                    StatusParagraphs* status_db)
-    {
-        Filesystem& fs = paths.get_filesystem();
-
-        const std::string display_name = action.spec.to_string();
-
-        switch (action.plan_type)
+        if (!plan.remove.empty())
         {
-            case RemovePlanType::NOT_INSTALLED: break;
-            case RemovePlanType::REMOVE: remove_package(fs, paths.installed(), action.spec, status_db); break;
-            case RemovePlanType::UNKNOWN:
-            default: Checks::unreachable(VCPKG_LINE_INFO);
-        }
-
-        if (purge == Purge::YES)
-        {
-            fs.remove_all(paths.packages() / action.spec.dir(), VCPKG_LINE_INFO);
+            std::vector<const RemovePlanAction*> remove = Util::fmap(plan.remove, op_address_of);
+            Util::sort(remove, &BasicAction::compare_by_name);
+            LocalizedString msg;
+            msg.append(msgPackagesToRemove).append_raw("\n");
+            for (auto p : remove)
+            {
+                msg.append_raw(request_type_indent(p->request_type)).append_raw(p->spec).append_raw("\n");
+            }
+            msg::print(msg);
         }
     }
 
@@ -254,23 +232,16 @@ namespace vcpkg::Remove
         const bool is_recursive = Util::Sets::contains(options.switches, OPTION_RECURSE);
         const bool dry_run = Util::Sets::contains(options.switches, OPTION_DRY_RUN);
 
-        const std::vector<RemovePlanAction> remove_plan = create_remove_plan(specs, status_db);
+        const auto plan = create_remove_plan(specs, status_db);
 
-        if (remove_plan.empty())
+        if (plan.empty())
         {
             Checks::unreachable(VCPKG_LINE_INFO, "Remove plan cannot be empty");
         }
 
-        std::map<RemovePlanType, std::vector<const RemovePlanAction*>> group_by_plan_type;
-        Util::group_by(remove_plan, &group_by_plan_type, [](const RemovePlanAction& p) { return p.plan_type; });
-        print_plan(group_by_plan_type);
+        print_plan(plan);
 
-        const bool has_non_user_requested_packages =
-            Util::find_if(remove_plan, [](const RemovePlanAction& package) -> bool {
-                return package.request_type != RequestType::USER_REQUESTED;
-            }) != remove_plan.cend();
-
-        if (has_non_user_requested_packages)
+        if (plan.has_non_user_requested())
         {
             msg::println_warning(msgAdditionalPackagesToRemove);
 
@@ -281,22 +252,26 @@ namespace vcpkg::Remove
             }
         }
 
-        for (const auto& action : remove_plan)
+        std::map<std::string, PackageSpec> not_installed_names;
+        for (auto&& action : plan.not_installed)
         {
-            if (action.plan_type == RemovePlanType::NOT_INSTALLED && action.request_type == RequestType::USER_REQUESTED)
+            // Only keep one spec per name
+            not_installed_names.emplace(action.spec.name(), action.spec);
+        }
+        if (!not_installed_names.empty())
+        {
+            // The user requested removing a package that was not installed. If the port is installed for another
+            // triplet, warn the user that they may have meant that other package.
+            for (const auto& package : status_db)
             {
-                // The user requested removing a package that was not installed. If the port is installed for another
-                // triplet, warn the user that they may have meant that other package.
-                const auto& action_spec = action.spec;
-                const auto& action_package_name = action_spec.name();
-                for (const auto& package : status_db)
+                if (package->is_installed() && !package->package.is_feature())
                 {
-                    if (package->is_installed() && !package->package.is_feature() &&
-                        package->package.spec.name() == action_package_name)
+                    auto it = not_installed_names.find(package->package.spec.name());
+                    if (it != not_installed_names.end())
                     {
                         msg::println_warning(msgRemovePackageConflict,
-                                             msg::package_name = action_package_name,
-                                             msg::spec = action.spec,
+                                             msg::package_name = it->first,
+                                             msg::spec = it->second,
                                              msg::triplet = package->package.spec.triplet());
                     }
                 }
@@ -308,15 +283,27 @@ namespace vcpkg::Remove
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 
-        // note that we try to "remove" things that aren't installed to trigger purge actions
-        for (std::size_t idx = 0; idx < remove_plan.size(); ++idx)
+        Filesystem& fs = paths.get_filesystem();
+        if (purge == Purge::YES)
         {
-            const RemovePlanAction& action = remove_plan[idx];
+            for (auto&& action : plan.not_installed)
+            {
+                fs.remove_all(paths.packages() / action.spec.dir(), VCPKG_LINE_INFO);
+            }
+        }
+
+        for (std::size_t idx = 0; idx < plan.remove.size(); ++idx)
+        {
+            const RemovePlanAction& action = plan.remove[idx];
             msg::println(msgRemovingPackage,
                          msg::action_index = idx + 1,
-                         msg::count = remove_plan.size(),
+                         msg::count = plan.remove.size(),
                          msg::spec = action.spec);
-            perform_remove_plan_action(paths, action, purge, &status_db);
+            remove_package(fs, paths.installed(), action.spec, status_db);
+            if (purge == Purge::YES)
+            {
+                fs.remove_all(paths.packages() / action.spec.dir(), VCPKG_LINE_INFO);
+            }
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);

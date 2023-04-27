@@ -536,10 +536,12 @@ namespace vcpkg
         const size_t action_count = action_plan.remove_actions.size() + action_plan.install_actions.size();
         size_t action_index = 1;
 
+        auto& fs = paths.get_filesystem();
         for (auto&& action : action_plan.remove_actions)
         {
             TrackedPackageInstallGuard this_install(action_index++, action_count, results, action);
-            Remove::perform_remove_plan_action(paths, action, Remove::Purge::YES, &status_db);
+            Remove::remove_package(fs, paths.installed(), action.spec, status_db);
+            fs.remove_all(paths.packages() / action.spec.dir(), VCPKG_LINE_INFO);
             results.back().build_result.emplace(BuildResult::REMOVED);
         }
 
