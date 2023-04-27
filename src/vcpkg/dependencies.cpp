@@ -1,5 +1,6 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/graphs.h>
+#include <vcpkg/base/optional.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/util.h>
 
@@ -13,6 +14,9 @@
 #include <vcpkg/statusparagraphs.h>
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
+
+#include <unordered_map>
+#include <unordered_set>
 
 namespace vcpkg
 {
@@ -575,15 +579,14 @@ namespace vcpkg
         }
     }
 
-    RemovePlanAction::RemovePlanAction(const PackageSpec& spec,
-                                       const RemovePlanType& plan_type,
-                                       const RequestType& request_type)
-        : BasicAction{spec}, plan_type(plan_type), request_type(request_type)
+    NotInstalledAction::NotInstalledAction(const PackageSpec& spec) : BasicAction{spec} { }
+
+    RemovePlanAction::RemovePlanAction(const PackageSpec& spec, RequestType request_type)
+        : BasicAction{spec}, request_type(request_type)
     {
     }
 
-    template<class Message>
-    static LocalizedString create_unsupported_message(Message m,
+    static LocalizedString create_unsupported_message(decltype(msgUnsupportedFeatureSupportsExpression) m,
                                                       const FeatureSpec& spec,
                                                       const PlatformExpression::Expr& expr)
     {
@@ -642,62 +645,71 @@ namespace vcpkg
             return {};
     }
 
-    std::vector<RemovePlanAction> create_remove_plan(const std::vector<PackageSpec>& specs,
-                                                     const StatusParagraphs& status_db)
+    bool RemovePlan::empty() const { return not_installed.empty() && remove.empty(); }
+
+    bool RemovePlan::has_non_user_requested() const
     {
-        struct RemoveAdjacencyProvider final : AdjacencyProvider<PackageSpec, RemovePlanAction>
+        constexpr struct
         {
-            const StatusParagraphs& status_db;
-            const std::vector<InstalledPackageView>& installed_ports;
-            const std::unordered_set<PackageSpec>& specs_as_set;
+            bool operator()(const RemovePlanAction& a) const { return a.request_type != RequestType::USER_REQUESTED; }
+        } non_user_requested;
 
-            RemoveAdjacencyProvider(const StatusParagraphs& status_db,
-                                    const std::vector<InstalledPackageView>& installed_ports,
-                                    const std::unordered_set<PackageSpec>& specs_as_set)
-                : status_db(status_db), installed_ports(installed_ports), specs_as_set(specs_as_set)
-            {
-            }
+        return Util::find_if(remove, non_user_requested) != remove.end();
+    }
 
-            std::vector<PackageSpec> adjacency_list(const RemovePlanAction& plan) const override
+    RemovePlan create_remove_plan(const std::vector<PackageSpec>& specs, const StatusParagraphs& status_db)
+    {
+        struct RemoveAdjacencyProvider final : AdjacencyProvider<PackageSpec, PackageSpec>
+        {
+            std::unordered_map<PackageSpec, std::vector<PackageSpec>> rev_edges;
+
+            std::vector<PackageSpec> adjacency_list(const PackageSpec& spec) const override
             {
-                if (plan.plan_type == RemovePlanType::NOT_INSTALLED)
+                auto it = rev_edges.find(spec);
+                if (it != rev_edges.end())
                 {
+                    return it->second;
+                }
+                else
+                {
+                    // not installed
                     return {};
                 }
-
-                const PackageSpec& spec = plan.spec;
-                std::vector<PackageSpec> dependents;
-                for (auto&& ipv : installed_ports)
-                {
-                    auto deps = ipv.dependencies();
-
-                    if (std::find(deps.begin(), deps.end(), spec) == deps.end()) continue;
-
-                    dependents.push_back(ipv.spec());
-                }
-
-                return dependents;
             }
 
-            RemovePlanAction load_vertex_data(const PackageSpec& spec) const override
-            {
-                const RequestType request_type = specs_as_set.find(spec) != specs_as_set.end()
-                                                     ? RequestType::USER_REQUESTED
-                                                     : RequestType::AUTO_SELECTED;
-                const StatusParagraphs::const_iterator it = status_db.find_installed(spec);
-                if (it == status_db.end())
-                {
-                    return RemovePlanAction{spec, RemovePlanType::NOT_INSTALLED, request_type};
-                }
-                return RemovePlanAction{spec, RemovePlanType::REMOVE, request_type};
-            }
+            PackageSpec load_vertex_data(const PackageSpec& s) const override { return s; }
 
             std::string to_string(const PackageSpec& spec) const override { return spec.to_string(); }
         };
 
-        auto installed_ports = get_installed_ports(status_db);
-        const std::unordered_set<PackageSpec> specs_as_set(specs.cbegin(), specs.cend());
-        return topological_sort(specs, RemoveAdjacencyProvider{status_db, installed_ports, specs_as_set}, {});
+        RemoveAdjacencyProvider p;
+        for (auto&& a : get_installed_ports(status_db))
+        {
+            p.rev_edges.emplace(a.spec(), std::initializer_list<PackageSpec>{});
+            for (auto&& b : a.dependencies())
+            {
+                p.rev_edges[b].push_back(a.spec());
+            }
+        }
+        auto remove_order = topological_sort(specs, p, nullptr);
+
+        const std::unordered_set<PackageSpec> requested(specs.cbegin(), specs.cend());
+        RemovePlan plan;
+        for (auto&& step : remove_order)
+        {
+            if (p.rev_edges.find(step) != p.rev_edges.end())
+            {
+                // installed
+                plan.remove.emplace_back(step,
+                                         Util::Sets::contains(requested, step) ? RequestType::USER_REQUESTED
+                                                                               : RequestType::AUTO_SELECTED);
+            }
+            else
+            {
+                plan.not_installed.emplace_back(step);
+            }
+        }
+        return plan;
     }
 
     std::vector<ExportPlanAction> create_export_plan(const std::vector<PackageSpec>& specs,
@@ -1044,7 +1056,7 @@ namespace vcpkg
 
         for (auto&& p_cluster : remove_toposort)
         {
-            plan.remove_actions.emplace_back(p_cluster->m_spec, RemovePlanType::REMOVE, p_cluster->request_type);
+            plan.remove_actions.emplace_back(p_cluster->m_spec, p_cluster->request_type);
         }
 
         for (auto&& p_cluster : insert_toposort)
