@@ -96,11 +96,11 @@ TEST_CASE ("qualified dependency", "[dependencies]")
         vcpkg::create_feature_install_plan(map_port, var_provider, Test::parse_test_fspecs("a"), {}, create_options);
     REQUIRE(plan.install_actions.size() == 2);
     REQUIRE(plan.install_actions.at(0).feature_list == std::vector<std::string>{"core"});
-    REQUIRE(plan.install_actions[0].package_dir == "pkg/b_x86-windows");
+    REQUIRE(plan.install_actions[0].package_dir == "pkg" VCPKG_PREFERRED_SEPARATOR "b_x86-windows");
 
     auto plan2 = vcpkg::create_feature_install_plan(
         map_port, var_provider, Test::parse_test_fspecs("a:x64-linux"), {}, create_options);
     REQUIRE(plan2.install_actions.size() == 2);
     REQUIRE(plan2.install_actions[0].feature_list == std::vector<std::string>{"b1", "core"});
-    REQUIRE(plan2.install_actions[0].package_dir == "pkg/b_x64-linux");
+    REQUIRE(plan2.install_actions[0].package_dir == "pkg" VCPKG_PREFERRED_SEPARATOR "b_x64-linux");
 }
