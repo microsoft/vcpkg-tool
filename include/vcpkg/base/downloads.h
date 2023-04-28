@@ -38,8 +38,13 @@ namespace vcpkg
                             StringView url,
                             const std::vector<std::string>& secrets,
                             View<std::string> headers,
-                            const Path& file,
-                            StringView request = "PUT");
+                            const Path& file);
+    ExpectedL<int> patch_file_in_pieces(Filesystem& fs,
+                                        StringView url,
+                                        View<std::string> headers,
+                                        const Path& file,
+                                        int64_t file_size,
+                                        unsigned int chunk_size = 450 * 1024 * 1024);
     std::vector<int> url_heads(View<std::string> urls, View<std::string> headers, View<std::string> secrets);
 
     struct DownloadManagerConfig

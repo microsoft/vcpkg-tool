@@ -1130,13 +1130,9 @@ namespace
                 if (auto cacheId = reserve_cache_entry(abi, cache_size))
                 {
                     std::vector<std::string> headers{
-                        m_token_header,
-                        m_accept_header.to_string(),
-                        "Content-Type: application/octet-stream",
-                        "Content-Range: bytes 0-" + std::to_string(cache_size) + "/*",
-                    };
+                        m_token_header, m_accept_header.to_string(), "Content-Type: application/octet-stream"};
                     auto url = m_write_url + "/" + std::to_string(*cacheId.get());
-                    if (put_file(fs, url, {}, headers, tmp_archive_path, "PATCH"))
+                    if (patch_file_in_pieces(fs, url, headers, tmp_archive_path, cache_size))
                     {
                         Json::Object commit;
                         commit.insert("size", std::to_string(cache_size));

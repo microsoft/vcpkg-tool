@@ -12,6 +12,8 @@
 #include <vcpkg/base/system.proxy.h>
 #include <vcpkg/base/util.h>
 
+#include <vcpkg/archives.h>
+
 namespace vcpkg
 {
     static std::string replace_secrets(std::string input, View<std::string> secrets)
@@ -520,8 +522,7 @@ namespace vcpkg
                             StringView url,
                             const std::vector<std::string>& secrets,
                             View<std::string> headers,
-                            const Path& file,
-                            StringView request)
+                            const Path& file)
     {
         static constexpr StringLiteral guid_marker = "9a1db05f-a65d-419b-aa72-037fb4d0672e";
 
@@ -550,7 +551,7 @@ namespace vcpkg
         }
 
         Command cmd;
-        cmd.string_arg("curl").string_arg("-X").string_arg(request);
+        cmd.string_arg("curl").string_arg("-X").string_arg("PUT");
         for (auto&& header : headers)
         {
             cmd.string_arg("-H").string_arg(header);
@@ -577,6 +578,47 @@ namespace vcpkg
         }
 
         return res;
+    }
+
+    ExpectedL<int> patch_file_in_pieces(Filesystem& fs,
+                                        StringView url,
+                                        View<std::string> headers,
+                                        const Path& file,
+                                        int64_t file_size,
+                                        unsigned int chunk_size)
+    {
+        Command base_cmd;
+        base_cmd.string_arg("curl").string_arg("-X").string_arg("PATCH");
+        for (auto&& header : headers)
+        {
+            base_cmd.string_arg("-H").string_arg(header);
+        }
+        base_cmd.string_arg(url);
+
+        split_archive(fs, file, file_size, chunk_size);
+
+        int counter = 0;
+        for (int64_t i = 0; i < file_size; i += chunk_size, ++counter)
+        {
+            const int64_t end = std::min(i + chunk_size, file_size) - 1;
+            const std::string range = std::to_string(i) + "-" + std::to_string(end);
+
+            auto cmd = base_cmd;
+            cmd.string_arg("-H").string_arg("Content-Range: bytes " + range + "/" + std::to_string(file_size));
+            cmd.string_arg("-T").string_arg(file + std::to_string(counter));
+
+            auto res = cmd_execute_and_capture_output(cmd);
+            if (auto pres = res.get())
+            {
+                if (pres->exit_code == 0) continue;
+
+                Debug::print(pres->output, '\n');
+                return msg::format_error(
+                    msgCurlFailedToPut, msg::exit_code = pres->exit_code, msg::url = url.to_string());
+            }
+        }
+
+        return 0;
     }
 
 #if defined(_WIN32)

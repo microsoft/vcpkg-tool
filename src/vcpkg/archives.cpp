@@ -356,4 +356,21 @@ namespace vcpkg
 
         return filtered_results;
     }
+
+    ExpectedL<Unit> split_archive(Filesystem& fs, const Path& path, int64_t file_size, int64_t chunk_size)
+    {
+        auto file = fs.open_for_read(path, VCPKG_LINE_INFO);
+
+        std::vector<unsigned char> buffer(chunk_size);
+        for (int64_t begin = 0, i = 0; begin < file_size; begin += chunk_size, ++i)
+        {
+            auto bytes_read = file.read(buffer.data(), sizeof(unsigned char), chunk_size);
+            if (!bytes_read) break;
+
+            auto chunk_file = fs.open_for_write(path + std::to_string(i), VCPKG_LINE_INFO);
+            chunk_file.write(buffer.data(), sizeof(unsigned char), bytes_read);
+        }
+
+        return {Unit{}};
+    }
 }
