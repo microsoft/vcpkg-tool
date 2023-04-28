@@ -735,7 +735,9 @@ namespace vcpkg
         for (auto&& action : res.install_actions)
         {
             if (action.source_control_file_and_location.has_value())
-                action.package_dir = options.packages_dir / action.spec.dir();
+            {
+                action.package_dir.emplace(options.packages_dir / action.spec.dir());
+            }
         }
 
         return res;
@@ -1923,7 +1925,10 @@ namespace vcpkg
         {
             for (auto&& action : plan->install_actions)
             {
-                action.package_dir = options.packages_dir / action.spec.dir();
+                if (action.source_control_file_and_location.has_value())
+                {
+                    action.package_dir.emplace(options.packages_dir / action.spec.dir());
+                }
             }
         }
         return ret;

@@ -85,8 +85,8 @@ namespace vcpkg
 
     inline std::ostream& operator<<(std::ostream& os, const Path& value) { return os << value.native(); }
 
-    template<class T, class = decltype(std::declval<std::ostream&>() << std::declval<const T&>())>
-    inline std::ostream& operator<<(std::ostream& os, const Optional<T>& value)
+    template<class T>
+    inline auto operator<<(std::ostream& os, const Optional<T>& value) -> decltype(os << *(value.get()))
     {
         if (auto v = value.get())
         {

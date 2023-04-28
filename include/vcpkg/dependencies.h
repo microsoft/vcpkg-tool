@@ -7,6 +7,7 @@
 
 #include <vcpkg/commands.build.h>
 #include <vcpkg/packagespec.h>
+#include <vcpkg/statusparagraph.h>
 
 #include <functional>
 #include <map>
@@ -146,10 +147,6 @@ namespace vcpkg
 
     struct CreateInstallPlanOptions
     {
-        CreateInstallPlanOptions(GraphRandomizer* r, Triplet t, const Path& p)
-            : randomizer(r), host_triplet(t), packages_dir(p)
-        {
-        }
         CreateInstallPlanOptions(Triplet t, const Path& p, UnsupportedPortAction action = UnsupportedPortAction::Error)
             : host_triplet(t), packages_dir(p), unsupported_port_action(action)
         {
@@ -158,7 +155,7 @@ namespace vcpkg
         GraphRandomizer* randomizer = nullptr;
         Triplet host_triplet;
         Path packages_dir;
-        UnsupportedPortAction unsupported_port_action = UnsupportedPortAction::Warn;
+        UnsupportedPortAction unsupported_port_action;
     };
 
     struct RemovePlan
