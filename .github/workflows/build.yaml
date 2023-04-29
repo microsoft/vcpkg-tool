@@ -1,0 +1,119 @@
+name: Build
+
+on:
+  workflow_call:
+    inputs:
+      codeql:
+        type: boolean
+      format:
+        type: boolean
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-2022
+            preset: windows-ci
+          - os: ubuntu-20.04
+            preset: linux-ci
+          - os: macos-12
+            preset: macos-ci
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "18.x"
+          cache: 'npm'
+          cache-dependency-path: vcpkg-artifacts/package-lock.json
+      - name: '[CI Only] Initialize CodeQL'
+        if: inputs.codeql
+        uses: github/codeql-action/init@v2
+        with:
+          languages: cpp, javascript
+      - uses: lukka/get-cmake@v3.26.3
+        with:
+          cmakeVersion: 3.22.1 # ubuntu 22.04
+          ninjaVersion: 1.11.1
+      - name: Enable Problem Matchers
+        run: echo "::add-matcher::.github/workflows/matchers.json"
+      - name: Configure and Build
+        if: matrix.preset != 'windows-ci'
+        run: |
+          cmake --preset ${{ matrix.preset }}
+          cmake --build --preset ${{ matrix.preset }} -- -k0
+      - name: Configure and Build (Windows)
+        if: matrix.preset == 'windows-ci'
+        shell: cmd
+        run: |
+          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=amd64 -host_arch=amd64
+          IF %ERRORLEVEL% NEQ 0 exit /B %ERRORLEVEL%
+          cl /Bv
+          set CXX=cl
+          set CC=cl
+          cmake --preset ${{ matrix.preset }}
+          IF %ERRORLEVEL% NEQ 0 exit /B %ERRORLEVEL%
+          cmake --build --preset ${{ matrix.preset }} -- -k0
+      - name: '[CI Only] Perform CodeQL Analysis'
+        if: inputs.codeql
+        uses: github/codeql-action/analyze@v2
+      - name: '[PR Only] Regenerate Message Map'
+        if: matrix.preset == 'windows-ci' && inputs.format
+        run: cmake --build --preset ${{ matrix.preset }} --target generate-message-map
+      - name: '[PR Only] Format C++'
+        if: matrix.preset == 'windows-ci' && inputs.format
+        shell: pwsh
+        run: ./azure-pipelines/Format-CxxCode.ps1
+      - name: '[PR Only] Create Diff'
+        if: matrix.preset == 'windows-ci' && inputs.format
+        id: diff
+        shell: pwsh
+        run: |
+          git add -u
+          git restore --staged vcpkg-artifacts/.npmrc
+          git diff --cached --stat --exit-code
+          if ($LASTEXITCODE -ne 0) {
+            git config user.name $(git log -1 --pretty=format:'%an')
+            git config user.email $(git log -1 --pretty=format:'%ae')
+            git commit -m "Format and regenerate messages"
+            git format-patch HEAD~ --output=out/format.patch
+            echo "::group::Diff"
+            get-content out/format.patch
+            echo "::endgroup::"
+            echo "::error::You must reformat the sources or regenerate the message map. See the format.patch artifact for more information.%0AOne-liner to apply and push the patch from the root of your vcpkg-tool repo:%0Agh run -R ${{ github.repository }} download ${{ github.run_id }} -n format.patch && git am format.patch && rm format.patch && git push"
+            exit 1
+          }
+      - name: '[PR Only] Publish Format and Messages File Diff'
+        uses: actions/upload-artifact@v3
+        if: inputs.format && failure() && steps.diff.outcome == 'failure' && matrix.preset == 'windows-ci'
+        with:
+          name: format.patch
+          path: out/format.patch
+      - name: Run vcpkg unit tests
+        run: ctest --preset ${{ matrix.preset }} --output-on-failure 2>&1
+      - name: Run vcpkg-artifacts unit tests
+        run: |
+          cd out/build/${{ matrix.preset }}/vcpkg-artifacts
+          node node_modules/mocha/bin/mocha --config mocha-config.yaml
+      - name: Get microsoft/vcpkg pinned sha into VCPKG_SHA
+        id: vcpkg_sha
+        shell: pwsh
+        run: |
+          "VCPKG_SHA="+(Get-Content vcpkg-init/vcpkg-scripts-sha.txt -Raw).Trim() >> $env:GITHUB_OUTPUT
+      - name: Checkout microsoft/vcpkg for end-to-end tests
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          path: ${{ github.workspace }}/vcpkg-root
+          repository: microsoft/vcpkg
+          ref: ${{ steps.vcpkg_sha.outputs.VCPKG_SHA }}
+      - name: Run vcpkg end-to-end tests
+        shell: pwsh
+        run: |
+          cd out/build/${{ matrix.preset }}
+          ${{ github.workspace }}/azure-pipelines/end-to-end-tests.ps1 -RunArtifactsTests
+        env:
+          VCPKG_ROOT: ${{ github.workspace }}/vcpkg-root
