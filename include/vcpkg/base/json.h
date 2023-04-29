@@ -9,6 +9,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <limits.h>
 
 #include <memory>
 #include <string>
@@ -27,26 +28,26 @@ namespace vcpkg::Json
 
         constexpr JsonStyle() noexcept = default;
 
-        static JsonStyle with_tabs() noexcept { return JsonStyle{-1}; }
-        static JsonStyle with_spaces(int indent) noexcept
+        static JsonStyle with_tabs() noexcept { return JsonStyle{SIZE_MAX}; }
+        static JsonStyle with_spaces(size_t indent) noexcept
         {
-            vcpkg::Checks::check_exit(VCPKG_LINE_INFO, indent >= 0);
+            vcpkg::Checks::check_exit(VCPKG_LINE_INFO, indent != SIZE_MAX);
             return JsonStyle{indent};
         }
 
-        void set_tabs() noexcept { this->indent = -1; }
-        void set_spaces(int indent_) noexcept
+        void set_tabs() noexcept { this->indent = SIZE_MAX; }
+        void set_spaces(size_t indent_) noexcept
         {
-            vcpkg::Checks::check_exit(VCPKG_LINE_INFO, indent >= 0);
+            vcpkg::Checks::check_exit(VCPKG_LINE_INFO, indent != SIZE_MAX);
             this->indent = indent_;
         }
 
-        bool use_tabs() const noexcept { return indent == -1; }
-        bool use_spaces() const noexcept { return indent >= 0; }
+        bool use_tabs() const noexcept { return indent == SIZE_MAX; }
+        bool use_spaces() const noexcept { return indent != SIZE_MAX; }
 
-        int spaces() const noexcept
+        size_t spaces() const noexcept
         {
-            vcpkg::Checks::check_exit(VCPKG_LINE_INFO, indent >= 0);
+            vcpkg::Checks::check_exit(VCPKG_LINE_INFO, indent != SIZE_MAX);
             return indent;
         }
 
@@ -61,9 +62,9 @@ namespace vcpkg::Json
         }
 
     private:
-        constexpr explicit JsonStyle(int indent) : indent(indent) { }
-        // -1 for tab, >=0 gives # of spaces
-        int indent = 2;
+        constexpr explicit JsonStyle(size_t indent) : indent(indent) { }
+        // SIZE_MAX for tab, >=0 gives # of spaces
+        size_t indent = 2;
     };
 
     enum class ValueKind : int
