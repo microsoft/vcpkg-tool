@@ -202,8 +202,8 @@ namespace vcpkg::Commands::SetInstalled
         // We have a set of user-requested specs.
         // We need to know all the specs which are required to fulfill dependencies for those specs.
         // Therefore, we see what we would install into an empty installed tree, so we can use the existing code.
-        auto action_plan =
-            create_feature_install_plan(provider, *cmake_vars, specs, {}, {host_triplet, unsupported_port_action});
+        auto action_plan = create_feature_install_plan(
+            provider, *cmake_vars, specs, {}, {host_triplet, paths.packages(), unsupported_port_action});
 
         for (auto&& action : action_plan.install_actions)
         {

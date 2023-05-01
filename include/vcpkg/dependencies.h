@@ -7,6 +7,7 @@
 
 #include <vcpkg/commands.build.h>
 #include <vcpkg/packagespec.h>
+#include <vcpkg/statusparagraph.h>
 
 #include <functional>
 #include <map>
@@ -87,7 +88,9 @@ namespace vcpkg
         std::vector<LocalizedString> build_failure_messages;
         Triplet host_triplet;
 
+        // only valid with source_control_file_and_location
         Optional<AbiInfo> abi_info;
+        Optional<Path> package_dir;
     };
 
     struct NotInstalledAction : BasicAction
@@ -144,15 +147,15 @@ namespace vcpkg
 
     struct CreateInstallPlanOptions
     {
-        CreateInstallPlanOptions(GraphRandomizer* r, Triplet t) : randomizer(r), host_triplet(t) { }
-        CreateInstallPlanOptions(Triplet t, UnsupportedPortAction action = UnsupportedPortAction::Error)
-            : host_triplet(t), unsupported_port_action(action)
+        CreateInstallPlanOptions(Triplet t, const Path& p, UnsupportedPortAction action = UnsupportedPortAction::Error)
+            : host_triplet(t), packages_dir(p), unsupported_port_action(action)
         {
         }
 
         GraphRandomizer* randomizer = nullptr;
         Triplet host_triplet;
-        UnsupportedPortAction unsupported_port_action = UnsupportedPortAction::Warn;
+        Path packages_dir;
+        UnsupportedPortAction unsupported_port_action;
     };
 
     struct RemovePlan
@@ -177,13 +180,13 @@ namespace vcpkg
                                            const CMakeVars::CMakeVarProvider& var_provider,
                                            View<FullPackageSpec> specs,
                                            const StatusParagraphs& status_db,
-                                           const CreateInstallPlanOptions& options = {Triplet{}});
+                                           const CreateInstallPlanOptions& options);
 
     ActionPlan create_upgrade_plan(const PortFileProvider& provider,
                                    const CMakeVars::CMakeVarProvider& var_provider,
                                    const std::vector<PackageSpec>& specs,
                                    const StatusParagraphs& status_db,
-                                   const CreateInstallPlanOptions& options = {Triplet{}});
+                                   const CreateInstallPlanOptions& options);
 
     ExpectedL<ActionPlan> create_versioned_install_plan(const IVersionedPortfileProvider& vprovider,
                                                         const IBaselineProvider& bprovider,
@@ -192,8 +195,7 @@ namespace vcpkg
                                                         const std::vector<Dependency>& deps,
                                                         const std::vector<DependencyOverride>& overrides,
                                                         const PackageSpec& toplevel,
-                                                        Triplet host_triplet,
-                                                        UnsupportedPortAction unsupported_port_action);
+                                                        const CreateInstallPlanOptions& options);
 
     struct FormattedPlan
     {

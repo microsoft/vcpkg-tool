@@ -320,7 +320,7 @@ namespace vcpkg::Commands::DependInfo
         // All actions in the plan should be install actions, as there's no installed packages to remove.
         StatusParagraphs status_db;
         auto action_plan = create_feature_install_plan(
-            provider, var_provider, specs, status_db, {host_triplet, UnsupportedPortAction::Warn});
+            provider, var_provider, specs, status_db, {host_triplet, paths.packages(), UnsupportedPortAction::Warn});
         action_plan.print_unsupported_warnings();
 
         if (!action_plan.remove_actions.empty())
