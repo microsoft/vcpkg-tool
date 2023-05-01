@@ -5,8 +5,6 @@ on:
     inputs:
       codeql:
         type: boolean
-      format:
-        type: boolean
 
 jobs:
   build:
