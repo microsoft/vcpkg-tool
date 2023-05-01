@@ -16,6 +16,7 @@
 #include <vcpkg/commands.ci.h>
 #include <vcpkg/commands.help.h>
 #include <vcpkg/commands.install.h>
+#include <vcpkg/commands.set-installed.h>
 #include <vcpkg/dependencies.h>
 #include <vcpkg/globalstate.h>
 #include <vcpkg/input.h>
@@ -507,6 +508,13 @@ namespace vcpkg::Commands::CI
         else
         {
             StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
+            auto already_installed = SetInstalled::adjust_action_plan_to_status_db(action_plan, status_db);
+            Util::erase_if(already_installed,
+                           [&](auto& spec) { return Util::Sets::contains(split_specs->known, spec); });
+            if (!already_installed.empty())
+            {
+                msg::println_warning(msgCISkipInstallation, msg::list = Strings::join(", ", already_installed));
+            }
             auto summary = Install::perform(
                 args, action_plan, KeepGoing::YES, paths, status_db, binary_cache, build_logs_recorder, var_provider);
 

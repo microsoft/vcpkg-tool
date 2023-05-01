@@ -423,6 +423,10 @@ DECLARE_MESSAGE(CISettingsVerifyGitTree,
                 "",
                 "Verify that each git tree object matches its declared version (this is very slow)")
 DECLARE_MESSAGE(CISettingsVerifyVersion, (), "", "Print result for each port instead of just errors.")
+DECLARE_MESSAGE(CISkipInstallation,
+                (msg::list),
+                "{list} is a list of packages",
+                "The following packages are already installed and not build again: {list}")
 DECLARE_MESSAGE(CISwitchOptAllowUnexpectedPassing,
                 (),
                 "",
