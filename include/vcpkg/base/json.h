@@ -7,9 +7,9 @@
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/stringview.h>
 
+#include <limits.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <limits.h>
 
 #include <memory>
 #include <string>
