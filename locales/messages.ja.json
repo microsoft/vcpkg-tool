@@ -162,6 +162,7 @@
   "CISettingsOptXUnit": "結果を XUnit 形式で出力するファイル (内部)",
   "CISettingsVerifyGitTree": "各 Git ツリー オブジェクトが宣言されたバージョンと一致することを確認します (これは非常に低速です)",
   "CISettingsVerifyVersion": "エラーだけでなく、各ポートの結果を出力します。",
+  "CISkipInstallation": "The following packages are already installed and not build again: {list}",
   "CISwitchOptAllowUnexpectedPassing": "「合格、失敗リストから削除 」の結果を出力しないことを示します。",
   "CISwitchOptDryRun": "プランを実行せずに印刷する",
   "CISwitchOptRandomize": "インストール順序をランダム化する",

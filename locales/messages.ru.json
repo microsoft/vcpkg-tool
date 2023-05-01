@@ -162,6 +162,7 @@
   "CISettingsOptXUnit": "Файл для вывода результатов в формате XUnit (внутренний)",
   "CISettingsVerifyGitTree": "Проверьте, каждый ли объект дерева git соответствует объявленной версии (это очень медленно)",
   "CISettingsVerifyVersion": "Печать результатов для каждого порта, а не только для ошибок.",
+  "CISkipInstallation": "The following packages are already installed and not build again: {list}",
   "CISwitchOptAllowUnexpectedPassing": "Указывает, что результаты \"Передача, удаление из списка сбоев\" не должны выдаваться.",
   "CISwitchOptDryRun": "Распечатать план без исполнения",
   "CISwitchOptRandomize": "Произвольный порядок установки",

@@ -162,6 +162,7 @@
   "CISettingsOptXUnit": "Soubor pro výstup výsledků ve formátu XUnit (interní)",
   "CISettingsVerifyGitTree": "Umožňuje ověřit, že každý objekt stromu git odpovídá jeho deklarované verzi (je to velmi pomalé).",
   "CISettingsVerifyVersion": "Místo chyb umožňuje vytisknout výsledek pro každý port.",
+  "CISkipInstallation": "The following packages are already installed and not build again: {list}",
   "CISwitchOptAllowUnexpectedPassing": "Udává, že výsledky „Předávání, odebrání ze seznamu selhání“ by se neměly generovat.",
   "CISwitchOptDryRun": "Vytisknout plán bez provedení",
   "CISwitchOptRandomize": "Náhodně uspořádat pořadí instalace",

@@ -162,6 +162,7 @@
   "CISettingsOptXUnit": "Sonuçların XUnit biçiminde çıkarılacağı dosya (dahili)",
   "CISettingsVerifyGitTree": "Her git ağacı nesnesinin bildirilen sürümüyle eşleştiğini doğrulayın (bu çok yavaştır)",
   "CISettingsVerifyVersion": "Her bağlantı noktası için yalnızca hatalar yerine sonuç yazdır.",
+  "CISkipInstallation": "The following packages are already installed and not build again: {list}",
   "CISwitchOptAllowUnexpectedPassing": "'Geçiriliyor, başarısız listesinden kaldır' sonuçlarının yayılmaması gerektiğini belirtir.",
   "CISwitchOptDryRun": "Planı yürütmeden yazdır",
   "CISwitchOptRandomize": "Yükleme sırasını rastgele seç",
