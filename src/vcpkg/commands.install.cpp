@@ -329,7 +329,8 @@ namespace vcpkg
             auto restore = binary_cache.try_restore(action);
             if (restore == RestoreResult::restored)
             {
-                auto maybe_bcf = Paragraphs::try_load_cached_package(fs, paths.package_dir(action.spec), action.spec);
+                auto maybe_bcf = Paragraphs::try_load_cached_package(
+                    fs, action.package_dir.value_or_exit(VCPKG_LINE_INFO), action.spec);
                 bcf = std::make_unique<BinaryControlFile>(std::move(maybe_bcf).value_or_exit(VCPKG_LINE_INFO));
             }
             else if (action.build_options.build_missing == BuildMissing::NO)
@@ -527,10 +528,12 @@ namespace vcpkg
         const size_t action_count = action_plan.remove_actions.size() + action_plan.install_actions.size();
         size_t action_index = 1;
 
+        auto& fs = paths.get_filesystem();
         for (auto&& action : action_plan.remove_actions)
         {
             TrackedPackageInstallGuard this_install(action_index++, action_count, results, action);
-            Remove::perform_remove_plan_action(paths, action, Remove::Purge::YES, &status_db);
+            Remove::remove_package(fs, paths.installed(), action.spec, status_db);
+            fs.remove_all(paths.packages() / action.spec.dir(), VCPKG_LINE_INFO);
             results.back().build_result.emplace(BuildResult::REMOVED);
         }
 
@@ -1148,7 +1151,7 @@ namespace vcpkg
                                                               dependencies,
                                                               manifest_core.overrides,
                                                               toplevel,
-                                                              create_options)
+                                                              {host_triplet, paths.packages(), unsupported_port_action})
                                     .value_or_exit(VCPKG_LINE_INFO);
 
             install_plan.print_unsupported_warnings();
@@ -1198,7 +1201,8 @@ namespace vcpkg
         StatusParagraphs status_db = database_load_check(fs, paths.installed());
 
         // Note: action_plan will hold raw pointers to SourceControlFileLocations from this map
-        auto action_plan = create_feature_install_plan(provider, var_provider, specs, status_db, create_options);
+        auto action_plan = create_feature_install_plan(
+            provider, var_provider, specs, status_db, {host_triplet, paths.packages(), unsupported_port_action});
 
         action_plan.print_unsupported_warnings();
         for (auto&& action : action_plan.install_actions)

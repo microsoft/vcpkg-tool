@@ -32,11 +32,8 @@ namespace vcpkg
 
     struct ZipTool
     {
-#if defined _WIN32
+        // On Windows, acquires 7zip in the constructor
         ZipTool(RemoveFilesystem& fs, const ToolCache& tools, MessageSink& status_sink);
-#else
-        ZipTool(RemoveFilesystem& fs);
-#endif
 
     private:
         RemoveFilesystem* fs;

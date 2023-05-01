@@ -91,8 +91,7 @@ namespace vcpkg::Commands::SetInstalled
                 specs_installed.emplace(status_pgh->package.spec);
             }
         }
-
-        action_plan.remove_actions = create_remove_plan(specs_to_remove, status_db);
+        action_plan.remove_actions = create_remove_plan(specs_to_remove, status_db).remove;
 
         for (const auto& action : action_plan.remove_actions)
         {

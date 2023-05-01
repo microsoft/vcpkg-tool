@@ -7,6 +7,7 @@
 
 #include <vcpkg/commands.build.h>
 #include <vcpkg/packagespec.h>
+#include <vcpkg/statusparagraph.h>
 
 #include <functional>
 #include <map>
@@ -92,18 +93,15 @@ namespace vcpkg
         Optional<Path> package_dir;
     };
 
-    enum class RemovePlanType
+    struct NotInstalledAction : BasicAction
     {
-        UNKNOWN,
-        NOT_INSTALLED,
-        REMOVE
+        NotInstalledAction(const PackageSpec& spec);
     };
 
     struct RemovePlanAction : BasicAction
     {
-        RemovePlanAction(const PackageSpec& spec, const RemovePlanType& plan_type, const RequestType& request_type);
+        RemovePlanAction(const PackageSpec& spec, RequestType rt);
 
-        RemovePlanType plan_type;
         RequestType request_type;
     };
 
@@ -149,10 +147,6 @@ namespace vcpkg
 
     struct CreateInstallPlanOptions
     {
-        CreateInstallPlanOptions(GraphRandomizer* r, Triplet t, const Path& p)
-            : randomizer(r), host_triplet(t), packages_dir(p)
-        {
-        }
         CreateInstallPlanOptions(Triplet t, const Path& p, UnsupportedPortAction action = UnsupportedPortAction::Error)
             : host_triplet(t), packages_dir(p), unsupported_port_action(action)
         {
@@ -161,11 +155,19 @@ namespace vcpkg
         GraphRandomizer* randomizer = nullptr;
         Triplet host_triplet;
         Path packages_dir;
-        UnsupportedPortAction unsupported_port_action = UnsupportedPortAction::Warn;
+        UnsupportedPortAction unsupported_port_action;
     };
 
-    std::vector<RemovePlanAction> create_remove_plan(const std::vector<PackageSpec>& specs,
-                                                     const StatusParagraphs& status_db);
+    struct RemovePlan
+    {
+        bool empty() const;
+        bool has_non_user_requested() const;
+
+        std::vector<NotInstalledAction> not_installed;
+        std::vector<RemovePlanAction> remove;
+    };
+
+    RemovePlan create_remove_plan(const std::vector<PackageSpec>& specs, const StatusParagraphs& status_db);
 
     std::vector<ExportPlanAction> create_export_plan(const std::vector<PackageSpec>& specs,
                                                      const StatusParagraphs& status_db);

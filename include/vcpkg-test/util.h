@@ -85,6 +85,21 @@ namespace vcpkg
     {
         return os << "LL" << std::quoted(value.data());
     }
+
+    inline std::ostream& operator<<(std::ostream& os, const Path& value) { return os << value.native(); }
+
+    template<class T>
+    inline auto operator<<(std::ostream& os, const Optional<T>& value) -> decltype(os << *(value.get()))
+    {
+        if (auto v = value.get())
+        {
+            return os << *v;
+        }
+        else
+        {
+            return os << "nullopt";
+        }
+    }
 }
 
 namespace vcpkg::Test

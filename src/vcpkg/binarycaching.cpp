@@ -1804,7 +1804,7 @@ namespace vcpkg
             .value_or_exit(VCPKG_LINE_INFO);
     }
 
-    ExpectedL<BinaryProviders> make_binary_providers(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
+    static ExpectedL<BinaryProviders> make_binary_providers(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
         BinaryProviders ret;
         if (args.binary_caching_enabled())

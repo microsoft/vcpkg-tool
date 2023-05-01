@@ -317,8 +317,14 @@ namespace vcpkg
     }
 
     ZipTool::ZipTool(RemoveFilesystem& fs, const ToolCache& cache, MessageSink& status_sink)
-        : fs(&fs), seven_zip(cache.get_tool_path(Tools::SEVEN_ZIP, status_sink))
+        : fs(&fs)
+#if defined(_WIN32)
+        , seven_zip(cache.get_tool_path(Tools::SEVEN_ZIP, status_sink))
+#endif
     {
+        // Unused on non-Windows
+        (void)cache;
+        (void)status_sink;
     }
 
     Command ZipTool::decompress_zip_archive_cmd(const Path& dst, const Path& archive_path) const
