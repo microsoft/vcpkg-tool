@@ -2,10 +2,10 @@
 #include <vcpkg/base/system.h>
 #include <vcpkg/base/system.process.h>
 
-#include <vcpkg/build.h>
 #include <vcpkg/cmakevars.h>
+#include <vcpkg/commands.build.h>
 #include <vcpkg/commands.env.h>
-#include <vcpkg/help.h>
+#include <vcpkg/commands.help.h>
 #include <vcpkg/installedpaths.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/registries.h>
@@ -128,13 +128,5 @@ namespace vcpkg::Commands::Env
         exit_interactive_subprocess();
 #endif
         Checks::exit_with_code(VCPKG_LINE_INFO, rc.value_or_exit(VCPKG_LINE_INFO));
-    }
-
-    void EnvCommand::perform_and_exit(const VcpkgCmdArguments& args,
-                                      const VcpkgPaths& paths,
-                                      Triplet default_triplet,
-                                      Triplet host_triplet) const
-    {
-        Env::perform_and_exit(args, paths, default_triplet, host_triplet);
     }
 }

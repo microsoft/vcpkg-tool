@@ -10,15 +10,16 @@
 #include <vcpkg/base/xmlserializer.h>
 
 #include <vcpkg/binarycaching.h>
-#include <vcpkg/build.h>
 #include <vcpkg/ci-baseline.h>
 #include <vcpkg/cmakevars.h>
+#include <vcpkg/commands.build.h>
 #include <vcpkg/commands.ci.h>
+#include <vcpkg/commands.help.h>
+#include <vcpkg/commands.install.h>
+#include <vcpkg/commands.set-installed.h>
 #include <vcpkg/dependencies.h>
 #include <vcpkg/globalstate.h>
-#include <vcpkg/help.h>
 #include <vcpkg/input.h>
-#include <vcpkg/install.h>
 #include <vcpkg/packagespec.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/platform-expression.h>
@@ -346,7 +347,7 @@ namespace vcpkg::Commands::CI
     {
         msg::println_warning(msgInternalCICommand);
 
-        print_default_triplet_warning(args, {});
+        print_default_triplet_warning(args);
 
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
         const auto& settings = options.settings;
@@ -404,18 +405,16 @@ namespace vcpkg::Commands::CI
         auto& var_provider = *var_provider_storage;
 
         const ElapsedTimer timer;
-        std::vector<std::string> all_port_names =
-            Util::fmap(provider.load_all_control_files(), Paragraphs::get_name_of_control_file);
         // Install the default features for every package
         std::vector<FullPackageSpec> all_default_full_specs;
-        all_default_full_specs.reserve(all_port_names.size());
-        for (auto&& port_name : all_port_names)
+        for (auto scfl : provider.load_all_control_files())
         {
-            all_default_full_specs.emplace_back(PackageSpec{std::move(port_name), target_triplet},
-                                                InternalFeatureSet{"core", "default"});
+            all_default_full_specs.emplace_back(
+                PackageSpec{scfl->source_control_file->core_paragraph->name, target_triplet},
+                InternalFeatureSet{"core", "default"});
         }
 
-        CreateInstallPlanOptions serialize_options(host_triplet, UnsupportedPortAction::Warn);
+        CreateInstallPlanOptions serialize_options(host_triplet, paths.packages(), UnsupportedPortAction::Warn);
 
         struct RandomizerInstance : GraphRandomizer
         {
@@ -509,6 +508,13 @@ namespace vcpkg::Commands::CI
         else
         {
             StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
+            auto already_installed = SetInstalled::adjust_action_plan_to_status_db(action_plan, status_db);
+            Util::erase_if(already_installed,
+                           [&](auto& spec) { return Util::Sets::contains(split_specs->known, spec); });
+            if (!already_installed.empty())
+            {
+                msg::println_warning(msgCISkipInstallation, msg::list = Strings::join(", ", already_installed));
+            }
             auto summary = Install::perform(
                 args, action_plan, KeepGoing::YES, paths, status_db, binary_cache, build_logs_recorder, var_provider);
 
@@ -559,13 +565,5 @@ namespace vcpkg::Commands::CI
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);
-    }
-
-    void CICommand::perform_and_exit(const VcpkgCmdArguments& args,
-                                     const VcpkgPaths& paths,
-                                     Triplet default_triplet,
-                                     Triplet host_triplet) const
-    {
-        CI::perform_and_exit(args, paths, default_triplet, host_triplet);
     }
 }

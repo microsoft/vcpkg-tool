@@ -3,16 +3,16 @@
 
 #include <vcpkg/binarycaching.h>
 #include <vcpkg/cmakevars.h>
+#include <vcpkg/commands.help.h>
+#include <vcpkg/commands.install.h>
+#include <vcpkg/commands.update.h>
 #include <vcpkg/commands.upgrade.h>
 #include <vcpkg/dependencies.h>
 #include <vcpkg/globalstate.h>
-#include <vcpkg/help.h>
 #include <vcpkg/input.h>
-#include <vcpkg/install.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/registries.h>
 #include <vcpkg/statusparagraphs.h>
-#include <vcpkg/update.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
@@ -70,14 +70,8 @@ namespace vcpkg::Commands::Upgrade
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
 
-        // input sanitization
-        const std::vector<PackageSpec> specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
-            return check_and_get_package_spec(
-                std::string(arg), default_triplet, COMMAND_STRUCTURE.get_example_text(), paths);
-        });
-
         ActionPlan action_plan;
-        if (specs.empty())
+        if (options.command_arguments.empty())
         {
             // If no packages specified, upgrade all outdated packages.
             auto outdated_packages = Update::find_outdated_packages(provider, status_db);
@@ -93,11 +87,24 @@ namespace vcpkg::Commands::Upgrade
                 var_provider,
                 Util::fmap(outdated_packages, [](const Update::OutdatedPackage& package) { return package.spec; }),
                 status_db,
-                {host_triplet, unsupported_port_action});
+                {host_triplet, paths.packages(), unsupported_port_action});
         }
         else
         {
-            print_default_triplet_warning(args, options.command_arguments);
+            // input sanitization
+            bool default_triplet_used = false;
+            const std::vector<PackageSpec> specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
+                return check_and_get_package_spec(std::string(arg),
+                                                  default_triplet,
+                                                  default_triplet_used,
+                                                  COMMAND_STRUCTURE.get_example_text(),
+                                                  paths);
+            });
+
+            if (default_triplet_used)
+            {
+                print_default_triplet_warning(args);
+            }
 
             std::vector<PackageSpec> not_installed;
             std::vector<PackageSpec> no_control_file;
@@ -174,8 +181,11 @@ namespace vcpkg::Commands::Upgrade
 
             if (to_upgrade.empty()) Checks::exit_success(VCPKG_LINE_INFO);
 
-            action_plan = create_upgrade_plan(
-                provider, var_provider, to_upgrade, status_db, {host_triplet, unsupported_port_action});
+            action_plan = create_upgrade_plan(provider,
+                                              var_provider,
+                                              to_upgrade,
+                                              status_db,
+                                              {host_triplet, paths.packages(), unsupported_port_action});
         }
 
         Checks::check_exit(VCPKG_LINE_INFO, !action_plan.empty());
@@ -205,13 +215,5 @@ namespace vcpkg::Commands::Upgrade
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);
-    }
-
-    void UpgradeCommand::perform_and_exit(const VcpkgCmdArguments& args,
-                                          const VcpkgPaths& paths,
-                                          Triplet default_triplet,
-                                          Triplet host_triplet) const
-    {
-        Upgrade::perform_and_exit(args, paths, default_triplet, host_triplet);
     }
 }

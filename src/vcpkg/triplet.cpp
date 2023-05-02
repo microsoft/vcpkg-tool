@@ -33,7 +33,7 @@ namespace vcpkg
     Triplet Triplet::from_canonical_name(std::string triplet_as_string)
     {
         static std::unordered_set<TripletInstance> g_triplet_instances;
-        Strings::ascii_to_lowercase(triplet_as_string.data(), triplet_as_string.data() + triplet_as_string.size());
+        Strings::inplace_ascii_to_lowercase(triplet_as_string);
         const auto p = g_triplet_instances.emplace(std::move(triplet_as_string));
         return &*p.first;
     }
@@ -115,30 +115,15 @@ namespace vcpkg
         return system_triplet();
     }
 
-    void print_default_triplet_warning(const VcpkgCmdArguments& args, View<std::string> specs)
+    void print_default_triplet_warning(const VcpkgCmdArguments& args)
     {
         (void)args;
-        (void)specs;
-#if defined(_WIN32)
         // The triplet is not set by --triplet or VCPKG_DEFAULT_TRIPLET
+#if defined(_WIN32)
         if (!args.triplet.has_value())
         {
-            if (specs.size() == 0)
-            {
-                msg::println_warning(msgDefaultTriplet, msg::triplet = default_host_triplet(args));
-                return;
-            }
-            for (auto&& arg : specs)
-            {
-                const std::string as_lowercase = Strings::ascii_to_lowercase(std::string{arg});
-                auto maybe_qpkg = parse_qualified_specifier(as_lowercase);
-                if (maybe_qpkg.has_value() && !maybe_qpkg.get()->triplet.has_value())
-                {
-                    msg::println_warning(msgDefaultTriplet, msg::triplet = default_host_triplet(args));
-                    return;
-                }
-            }
+            msg::println_warning(msgDefaultTriplet, msg::triplet = default_host_triplet(args));
         }
-#endif
+#endif // ^^^ _WIN32
     }
 }

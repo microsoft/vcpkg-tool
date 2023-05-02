@@ -4,10 +4,10 @@
 
 #include <vcpkg/cmakevars.h>
 #include <vcpkg/commands.dependinfo.h>
+#include <vcpkg/commands.help.h>
+#include <vcpkg/commands.install.h>
 #include <vcpkg/dependencies.h>
-#include <vcpkg/help.h>
 #include <vcpkg/input.h>
-#include <vcpkg/install.h>
 #include <vcpkg/packagespec.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/registries.h>
@@ -298,12 +298,16 @@ namespace vcpkg::Commands::DependInfo
         const SortMode sort_mode = get_sort_mode(options);
         const bool show_depth = Util::Sets::contains(options.switches, OPTION_SHOW_DEPTH);
 
+        bool default_triplet_used = false;
         const std::vector<FullPackageSpec> specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
             return check_and_get_full_package_spec(
-                std::string{arg}, default_triplet, COMMAND_STRUCTURE.get_example_text(), paths);
+                arg, default_triplet, default_triplet_used, COMMAND_STRUCTURE.get_example_text(), paths);
         });
 
-        print_default_triplet_warning(args, options.command_arguments);
+        if (default_triplet_used)
+        {
+            print_default_triplet_warning(args);
+        }
 
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();
@@ -316,7 +320,7 @@ namespace vcpkg::Commands::DependInfo
         // All actions in the plan should be install actions, as there's no installed packages to remove.
         StatusParagraphs status_db;
         auto action_plan = create_feature_install_plan(
-            provider, var_provider, specs, status_db, {host_triplet, UnsupportedPortAction::Warn});
+            provider, var_provider, specs, status_db, {host_triplet, paths.packages(), UnsupportedPortAction::Warn});
         action_plan.print_unsupported_warnings();
 
         if (!action_plan.remove_actions.empty())
@@ -408,13 +412,5 @@ namespace vcpkg::Commands::DependInfo
             }
         }
         Checks::exit_success(VCPKG_LINE_INFO);
-    }
-
-    void DependInfoCommand::perform_and_exit(const VcpkgCmdArguments& args,
-                                             const VcpkgPaths& paths,
-                                             Triplet default_triplet,
-                                             Triplet host_triplet) const
-    {
-        DependInfo::perform_and_exit(args, paths, default_triplet, host_triplet);
     }
 }

@@ -6,7 +6,7 @@
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
-#include <vcpkg/build.h>
+#include <vcpkg/commands.build.h>
 #include <vcpkg/installedpaths.h>
 #include <vcpkg/packagespec.h>
 #include <vcpkg/postbuildlint.h>
@@ -1427,7 +1427,7 @@ namespace vcpkg
             error_count += check_no_absolute_paths_in(
                 fs,
                 package_dir,
-                std::vector<Path>{package_dir, paths.installed().root(), paths.build_dir(spec)},
+                std::vector<Path>{package_dir, paths.installed().root(), paths.build_dir(spec), paths.downloads},
                 msg_sink);
         }
 
