@@ -99,8 +99,8 @@ namespace vcpkg::Build
         var_provider.load_dep_info_vars({{spec}}, host_triplet);
 
         StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
-        auto action_plan =
-            create_feature_install_plan(provider, var_provider, {&full_spec, 1}, status_db, {host_triplet});
+        auto action_plan = create_feature_install_plan(
+            provider, var_provider, {&full_spec, 1}, status_db, {host_triplet, paths.packages()});
 
         var_provider.load_tag_vars(action_plan, provider, host_triplet);
 
@@ -172,7 +172,7 @@ namespace vcpkg::Build
             msg::print(create_user_troubleshooting_message(args, *action, paths, result));
             return 1;
         }
-        binary_cache.push_success(*action, paths.package_dir(action->spec));
+        binary_cache.push_success(*action);
 
         return 0;
     }
@@ -627,7 +627,7 @@ namespace vcpkg
         return bcf;
     }
 
-    static void write_binary_control_file(const VcpkgPaths& paths, const BinaryControlFile& bcf)
+    static void write_binary_control_file(Filesystem& fs, const Path& package_dir, const BinaryControlFile& bcf)
     {
         std::string start = Strings::serialize(bcf.core_paragraph);
         for (auto&& feature : bcf.features)
@@ -635,8 +635,8 @@ namespace vcpkg
             start.push_back('\n');
             start += Strings::serialize(feature);
         }
-        const auto binary_control_file = paths.package_dir(bcf.core_paragraph.spec) / "CONTROL";
-        paths.get_filesystem().write_contents(binary_control_file, start, VCPKG_LINE_INFO);
+        const auto binary_control_file = package_dir / "CONTROL";
+        fs.write_contents(binary_control_file, start, VCPKG_LINE_INFO);
     }
 
     static void get_generic_cmake_build_args(const VcpkgPaths& paths,
@@ -894,7 +894,8 @@ namespace vcpkg
         const auto now = CTime::now_string();
         const auto& abi = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
 
-        const auto json_path = paths.package_dir(action.spec) / "share" / action.spec.name() / "vcpkg.spdx.json";
+        const auto json_path =
+            action.package_dir.value_or_exit(VCPKG_LINE_INFO) / "share" / action.spec.name() / "vcpkg.spdx.json";
         fs.write_contents_and_dirs(
             json_path,
             create_spdx_sbom(
@@ -1029,7 +1030,7 @@ namespace vcpkg
         std::unique_ptr<BinaryControlFile> bcf = create_binary_control_file(action, build_info);
 
         write_sbom(paths, action, abi_info.heuristic_resources);
-        write_binary_control_file(paths, *bcf);
+        write_binary_control_file(paths.get_filesystem(), action.package_dir.value_or_exit(VCPKG_LINE_INFO), *bcf);
         return {BuildResult::SUCCEEDED, std::move(bcf)};
     }
 
@@ -1347,7 +1348,7 @@ namespace vcpkg
         if (abi_info.abi_tag_file)
         {
             auto& abi_file = *abi_info.abi_tag_file.get();
-            const auto abi_package_dir = paths.package_dir(spec) / "share" / spec.name();
+            const auto abi_package_dir = action.package_dir.value_or_exit(VCPKG_LINE_INFO) / "share" / spec.name();
             const auto abi_file_in_package = abi_package_dir / "vcpkg_abi_info.txt";
             build_logs_recorder.record_build_result(paths, spec, result.code);
             filesystem.create_directories(abi_package_dir, VCPKG_LINE_INFO);

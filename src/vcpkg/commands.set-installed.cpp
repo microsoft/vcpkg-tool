@@ -42,6 +42,46 @@ namespace vcpkg::Commands::SetInstalled
         nullptr,
     };
 
+    std::set<PackageSpec> adjust_action_plan_to_status_db(ActionPlan& action_plan, const StatusParagraphs& status_db)
+    {
+        std::set<std::string> all_abis;
+        for (const auto& action : action_plan.install_actions)
+        {
+            all_abis.insert(action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi);
+        }
+
+        std::vector<PackageSpec> specs_to_remove;
+        std::set<PackageSpec> specs_installed;
+        for (auto&& status_pgh : status_db)
+        {
+            if (!status_pgh->is_installed()) continue;
+            if (status_pgh->package.is_feature()) continue;
+
+            const auto& abi = status_pgh->package.abi;
+            if (abi.empty() || !Util::Sets::contains(all_abis, abi))
+            {
+                specs_to_remove.push_back(status_pgh->package.spec);
+            }
+            else
+            {
+                specs_installed.emplace(status_pgh->package.spec);
+            }
+        }
+        action_plan.remove_actions = create_remove_plan(specs_to_remove, status_db).remove;
+
+        for (const auto& action : action_plan.remove_actions)
+        {
+            // This should not technically be needed, however ensuring that all specs to be removed are not included in
+            // `specs_installed` acts as a sanity check
+            specs_installed.erase(action.spec);
+        }
+
+        Util::erase_remove_if(action_plan.install_actions, [&](const InstallPlanAction& ipa) {
+            return Util::Sets::contains(specs_installed, ipa.spec);
+        });
+        return specs_installed;
+    }
+
     void perform_and_exit_ex(const VcpkgCmdArguments& args,
                              const VcpkgPaths& paths,
                              const PathsPortFileProvider& provider,
@@ -60,12 +100,9 @@ namespace vcpkg::Commands::SetInstalled
         cmake_vars.load_tag_vars(action_plan, provider, host_triplet);
         compute_all_abis(paths, action_plan, cmake_vars, {});
 
-        std::set<std::string> all_abis;
-
         std::vector<PackageSpec> user_requested_specs;
         for (const auto& action : action_plan.install_actions)
         {
-            all_abis.insert(action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi);
             if (action.request_type == RequestType::USER_REQUESTED)
             {
                 // save for reporting usage later
@@ -75,36 +112,7 @@ namespace vcpkg::Commands::SetInstalled
 
         // currently (or once) installed specifications
         auto status_db = database_load_check(fs, paths.installed());
-        std::vector<PackageSpec> specs_to_remove;
-        std::set<PackageSpec> specs_installed;
-        for (auto&& status_pgh : status_db)
-        {
-            if (!status_pgh->is_installed()) continue;
-            if (status_pgh->package.is_feature()) continue;
-
-            const auto& abi = status_pgh->package.abi;
-            if (abi.empty() || !Util::Sets::contains(all_abis, abi))
-            {
-                specs_to_remove.push_back(status_pgh->package.spec);
-            }
-            else
-            {
-                specs_installed.emplace(status_pgh->package.spec);
-            }
-        }
-
-        action_plan.remove_actions = create_remove_plan(specs_to_remove, status_db);
-
-        for (const auto& action : action_plan.remove_actions)
-        {
-            // This should not technically be needed, however ensuring that all specs to be removed are not included in
-            // `specs_installed` acts as a sanity check
-            specs_installed.erase(action.spec);
-        }
-
-        Util::erase_remove_if(action_plan.install_actions, [&](const InstallPlanAction& ipa) {
-            return Util::Sets::contains(specs_installed, ipa.spec);
-        });
+        adjust_action_plan_to_status_db(action_plan, status_db);
 
         print_plan(action_plan, true, paths.builtin_ports_directory());
 
@@ -203,8 +211,8 @@ namespace vcpkg::Commands::SetInstalled
         // We have a set of user-requested specs.
         // We need to know all the specs which are required to fulfill dependencies for those specs.
         // Therefore, we see what we would install into an empty installed tree, so we can use the existing code.
-        auto action_plan =
-            create_feature_install_plan(provider, *cmake_vars, specs, {}, {host_triplet, unsupported_port_action});
+        auto action_plan = create_feature_install_plan(
+            provider, *cmake_vars, specs, {}, {host_triplet, paths.packages(), unsupported_port_action});
 
         for (auto&& action : action_plan.install_actions)
         {

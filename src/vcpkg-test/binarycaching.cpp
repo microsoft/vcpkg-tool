@@ -393,9 +393,10 @@ Description:
                               std::map<std::string, std::vector<FeatureSpec>>{},
                               std::vector<LocalizedString>{});
     InstallPlanAction& ipa_without_abi = install_plan.back();
+    ipa_without_abi.package_dir = "pkgs/someheadpackage";
 
     // test that the binary cache does the right thing. See also CHECKs etc. in KnowNothingBinaryProvider
-    uut.push_success(ipa_without_abi, {}); // should have no effects
+    uut.push_success(ipa_without_abi); // should have no effects
     CHECK(uut.try_restore(ipa_without_abi) == RestoreResult::unavailable);
     uut.prefetch(install_plan); // should have no effects
 }
