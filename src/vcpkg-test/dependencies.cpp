@@ -256,8 +256,7 @@ static ExpectedL<ActionPlan> create_versioned_install_plan(const IVersionedPortf
                                          deps,
                                          overrides,
                                          toplevel,
-                                         Test::ARM_UWP,
-                                         UnsupportedPortAction::Error);
+                                         {Test::ARM_UWP, "pkgs", UnsupportedPortAction::Error});
 }
 
 static ExpectedL<ActionPlan> create_versioned_install_plan(const IVersionedPortfileProvider& provider,
@@ -275,8 +274,7 @@ static ExpectedL<ActionPlan> create_versioned_install_plan(const IVersionedPortf
                                          deps,
                                          overrides,
                                          toplevel,
-                                         Test::ARM_UWP,
-                                         UnsupportedPortAction::Error);
+                                         {Test::ARM_UWP, "pkgs", UnsupportedPortAction::Error});
 }
 
 TEST_CASE ("basic version install single", "[versionplan]")
