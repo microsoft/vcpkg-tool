@@ -87,7 +87,7 @@ namespace vcpkg::Commands::Upgrade
                 var_provider,
                 Util::fmap(outdated_packages, [](const Update::OutdatedPackage& package) { return package.spec; }),
                 status_db,
-                {host_triplet, unsupported_port_action});
+                {host_triplet, paths.packages(), unsupported_port_action});
         }
         else
         {
@@ -181,8 +181,11 @@ namespace vcpkg::Commands::Upgrade
 
             if (to_upgrade.empty()) Checks::exit_success(VCPKG_LINE_INFO);
 
-            action_plan = create_upgrade_plan(
-                provider, var_provider, to_upgrade, status_db, {host_triplet, unsupported_port_action});
+            action_plan = create_upgrade_plan(provider,
+                                              var_provider,
+                                              to_upgrade,
+                                              status_db,
+                                              {host_triplet, paths.packages(), unsupported_port_action});
         }
 
         Checks::check_exit(VCPKG_LINE_INFO, !action_plan.empty());
