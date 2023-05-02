@@ -8,6 +8,7 @@
 #include <vcpkg/triplet.h>
 
 #include <memory>
+#include <numeric>
 #include <unordered_map>
 #include <vector>
 

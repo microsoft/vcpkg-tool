@@ -314,11 +314,12 @@ namespace vcpkg::Commands::Integrate
     {
         auto& fs = paths.get_filesystem();
 
+        const auto cmake_toolchain = paths.buildsystems / "vcpkg.cmake";
+        auto message = msg::format(msgCMakeToolChainFile, msg::path = cmake_toolchain.generic_u8string());
+
         auto user_configuration_home = get_user_configuration_home().value_or_exit(VCPKG_LINE_INFO);
         fs.create_directories(user_configuration_home, VCPKG_LINE_INFO);
         fs.write_contents(user_configuration_home / vcpkg_path_txt, paths.root.generic_u8string(), VCPKG_LINE_INFO);
-
-        auto install_complete = true;
 
 #if defined(_WIN32)
         fs.write_contents(user_configuration_home / vcpkg_user_props,
@@ -328,24 +329,17 @@ namespace vcpkg::Commands::Integrate
                           create_appdata_shortcut(paths.buildsystems_msbuild_targets),
                           VCPKG_LINE_INFO);
 
-        install_complete = integrate_install_msbuild14(fs);
-#endif
-        if (install_complete)
+        if (!integrate_install_msbuild14(fs))
         {
-            msg::println(Color::success, msgAppliedUserIntegration);
-        }
-        else
-        {
-            msg::println_warning(msgIntegrationFailed);
+            message.append_raw("\n\n").append(msgAutomaticLinkingForMSBuild15AndLater);
+            msg::println(message);
+            Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgIntegrationFailedMSBuild14);
         }
 
-        const auto cmake_toolchain = paths.buildsystems / "vcpkg.cmake";
-
-        auto message = msg::format(msgCMakeToolChainFile, msg::path = cmake_toolchain.generic_u8string());
-#if defined(_WIN32)
         message.append_raw("\n\n").append(msgAutomaticLinkingForMSBuildProjects);
 #endif
 
+        msg::println(Color::success, msgAppliedUserIntegration);
         msg::println(message);
         Checks::exit_success(VCPKG_LINE_INFO);
     }
