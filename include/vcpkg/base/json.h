@@ -63,7 +63,7 @@ namespace vcpkg::Json
 
     private:
         constexpr explicit JsonStyle(size_t indent) : indent(indent) { }
-        // SIZE_MAX for tab, >=0 gives # of spaces
+        // SIZE_MAX for tab, otherwise # of spaces
         size_t indent = 2;
     };
 
