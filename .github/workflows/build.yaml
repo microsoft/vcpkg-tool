@@ -27,17 +27,17 @@ jobs:
           node-version: "18.x"
           cache: 'npm'
           cache-dependency-path: vcpkg-artifacts/package-lock.json
-      - name: '[CI Only] Initialize CodeQL'
-        if: inputs.codeql
-        uses: github/codeql-action/init@v2
-        with:
-          languages: cpp, javascript
       - uses: lukka/get-cmake@v3.26.3
         with:
           cmakeVersion: 3.22.1 # ubuntu 22.04
           ninjaVersion: 1.11.1
       - name: Enable Problem Matchers
         run: echo "::add-matcher::.github/workflows/matchers.json"
+      - name: '[CI Only] Initialize CodeQL'
+        if: inputs.codeql
+        uses: github/codeql-action/init@v2
+        with:
+          languages: cpp, javascript
       - name: Configure and Build
         if: matrix.preset != 'windows-ci'
         run: |
@@ -58,38 +58,6 @@ jobs:
       - name: '[CI Only] Perform CodeQL Analysis'
         if: inputs.codeql
         uses: github/codeql-action/analyze@v2
-      - name: '[PR Only] Regenerate Message Map'
-        if: matrix.preset == 'windows-ci' && inputs.format
-        run: cmake --build --preset ${{ matrix.preset }} --target generate-message-map
-      - name: '[PR Only] Format C++'
-        if: matrix.preset == 'windows-ci' && inputs.format
-        shell: pwsh
-        run: ./azure-pipelines/Format-CxxCode.ps1
-      - name: '[PR Only] Create Diff'
-        if: matrix.preset == 'windows-ci' && inputs.format
-        id: diff
-        shell: pwsh
-        run: |
-          git add -u
-          git restore --staged vcpkg-artifacts/.npmrc
-          git diff --cached --stat --exit-code
-          if ($LASTEXITCODE -ne 0) {
-            git config user.name $(git log -1 --pretty=format:'%an')
-            git config user.email $(git log -1 --pretty=format:'%ae')
-            git commit -m "Format and regenerate messages"
-            git format-patch HEAD~ --output=out/format.patch
-            echo "::group::Diff"
-            get-content out/format.patch
-            echo "::endgroup::"
-            echo "::error::You must reformat the sources or regenerate the message map. See the format.patch artifact for more information.%0AOne-liner to apply and push the patch from the root of your vcpkg-tool repo:%0Agh run -R ${{ github.repository }} download ${{ github.run_id }} -n format.patch && git am format.patch && rm format.patch && git push"
-            exit 1
-          }
-      - name: '[PR Only] Publish Format and Messages File Diff'
-        uses: actions/upload-artifact@v3
-        if: inputs.format && failure() && steps.diff.outcome == 'failure' && matrix.preset == 'windows-ci'
-        with:
-          name: format.patch
-          path: out/format.patch
       - name: Run vcpkg unit tests
         run: ctest --preset ${{ matrix.preset }} --output-on-failure 2>&1
       - name: Run vcpkg-artifacts unit tests
