@@ -386,6 +386,8 @@ namespace vcpkg
             // Environment variables used by wrapper scripts to allow us to set environment variables in parent shells
             "Z_VCPKG_POSTSCRIPT",
             "Z_VCPKG_UNDO",
+            // Ensures that the escape hatch persists to recursive vcpkg invocations like x-download
+            "VCPKG_KEEP_ENV_VARS",
         };
 
         const Optional<std::string> keep_vars = get_environment_variable("VCPKG_KEEP_ENV_VARS");

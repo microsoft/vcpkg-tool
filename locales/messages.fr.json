@@ -162,6 +162,7 @@
   "CISettingsOptXUnit": "Fichier pour générer des résultats au format XUnit (interne)",
   "CISettingsVerifyGitTree": "Vérifier que chaque objet d’arborescence Git correspond à sa version déclarée (ce qui est très lent)",
   "CISettingsVerifyVersion": "Imprimer le résultat pour chaque port au lieu de seulement les erreurs.",
+  "CISkipInstallation": "The following packages are already installed and not build again: {list}",
   "CISwitchOptAllowUnexpectedPassing": "Indique que les résultats « Passage, suppression de la liste d’échecs » ne doivent pas être émis.",
   "CISwitchOptDryRun": "Imprimer le plan sans exécution",
   "CISwitchOptRandomize": "Rendre aléatoire l’ordre d’installation",

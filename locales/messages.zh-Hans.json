@@ -162,6 +162,7 @@
   "CISettingsOptXUnit": "用于以 XUnit 格式输出结果的文件(内部)",
   "CISettingsVerifyGitTree": "验证每个 git 树对象是否与其声明的版本匹配(速度非常慢)",
   "CISettingsVerifyVersion": "打印每个端口的结果，而不仅仅是错误。",
+  "CISkipInstallation": "The following packages are already installed and not build again: {list}",
   "CISwitchOptAllowUnexpectedPassing": "指示不应发出“正在传递，请从失败列表中移除”结果。",
   "CISwitchOptDryRun": "打印出计划而不执行",
   "CISwitchOptRandomize": "实现安装顺序的随机化",
