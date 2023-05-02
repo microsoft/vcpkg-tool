@@ -203,6 +203,11 @@ DECLARE_MESSAGE(AutomaticLinkingForMSBuildProjects,
                 "",
                 "All MSBuild C++ projects can now #include any installed libraries. Linking will be handled "
                 "automatically. Installing new libraries will make them instantly available.")
+DECLARE_MESSAGE(AutomaticLinkingForVS2017AndLater,
+                (),
+                "",
+                "Visual Studio 2017 and later can now #include any installed libraries. Linking will be handled "
+                "automatically. Installing new libraries will make them instantly available.")
 DECLARE_MESSAGE(AutoSettingEnvVar,
                 (msg::env_var, msg::url),
                 "An example of env_var is \"HTTP(S)_PROXY\""
@@ -215,7 +220,7 @@ DECLARE_MESSAGE(AVcpkgRepositoryCommit, (), "", "a vcpkg repository commit")
 DECLARE_MESSAGE(AVersionDatabaseEntry, (), "", "a version database entry")
 DECLARE_MESSAGE(AVersionObject, (), "", "a version object")
 DECLARE_MESSAGE(AVersionOfAnyType, (), "", "a version of any type")
-DECLARE_MESSAGE(AVersionConstraint, (), "", "a version constriant")
+DECLARE_MESSAGE(AVersionConstraint, (), "", "a version constraint")
 DECLARE_MESSAGE(AzUrlAssetCacheRequiresBaseUrl,
                 (),
                 "",
@@ -1478,7 +1483,7 @@ DECLARE_MESSAGE(IntegrateZshHelp,
                 (),
                 "'zsh' is a terminal program which should be unlocalized.",
                 "Enable zsh tab-completion.")
-DECLARE_MESSAGE(IntegrationFailed, (), "", "Integration was not applied.")
+DECLARE_MESSAGE(IntegrationFailedVS2015, (), "", "Integration was not applied for Visual Studio 2015.")
 DECLARE_MESSAGE(InternalCICommand,
                 (),
                 "",
