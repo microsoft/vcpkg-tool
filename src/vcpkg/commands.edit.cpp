@@ -248,7 +248,7 @@ namespace vcpkg::Commands::Edit
             msg::println_error(msg::format(msgErrorVsCodeNotFound, msg::env_var = "EDITOR")
                                    .append_raw('\n')
                                    .append(msgErrorVsCodeNotFoundPathExamined));
-            print_paths(candidate_paths);
+            print_paths(stdout_sink, candidate_paths);
             msg::println(msgInfoSetEnvVar, msg::env_var = "EDITOR");
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
