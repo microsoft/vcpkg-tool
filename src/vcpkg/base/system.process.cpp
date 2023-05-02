@@ -266,16 +266,18 @@ namespace vcpkg
         HANDLE process_handle = GetCurrentProcess();
         while (true)
         {
-            NtQueryInformationProcess(
+            auto has_error = NtQueryInformationProcess(
                 process_handle, ProcessBasicInformation, &process_info, sizeof(process_info), NULL);
-            if (!process_info.inherited_from_unique_process_id) break;
+            if (has_error) break;
 
             process_handle = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION,
                                          true,
                                          static_cast<DWORD>(process_info.inherited_from_unique_process_id));
             if (!process_handle) break;
+
             const int bytes = GetProcessImageFileNameW(process_handle, process_name_buf, _MAX_PATH);
             if (bytes == 0) break;
+
             ret.emplace_back(Path(Strings::to_utf8(process_name_buf)).filename().to_string());
         }
 #endif
