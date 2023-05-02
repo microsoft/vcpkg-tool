@@ -162,6 +162,7 @@
   "CISettingsOptXUnit": "以 XUnit 格式輸出結果的檔案 (內部)",
   "CISettingsVerifyGitTree": "請確認每個 GIT 樹狀目錄物件是否符合其宣告的版本 (這會非常緩慢)",
   "CISettingsVerifyVersion": "列印每個連接埠的結果，而非只列印錯誤。",
+  "CISkipInstallation": "The following packages are already installed and not build again: {list}",
   "CISwitchOptAllowUnexpectedPassing": "表示不應該發出「從失敗清單中傳遞、移除」結果。",
   "CISwitchOptDryRun": "列印出計畫而不執行",
   "CISwitchOptRandomize": "隨機化安裝順序",
