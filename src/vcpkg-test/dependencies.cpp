@@ -248,8 +248,7 @@ static ExpectedL<ActionPlan> create_versioned_install_plan(const IVersionedPortf
                                          deps,
                                          overrides,
                                          toplevel,
-                                         Test::ARM_UWP,
-                                         UnsupportedPortAction::Error);
+                                         {Test::ARM_UWP, "pkgs", UnsupportedPortAction::Error});
 }
 
 static ExpectedL<ActionPlan> create_versioned_install_plan(const IVersionedPortfileProvider& provider,
@@ -267,8 +266,7 @@ static ExpectedL<ActionPlan> create_versioned_install_plan(const IVersionedPortf
                                          deps,
                                          overrides,
                                          toplevel,
-                                         Test::ARM_UWP,
-                                         UnsupportedPortAction::Error);
+                                         {Test::ARM_UWP, "pkgs", UnsupportedPortAction::Error});
 }
 
 TEST_CASE ("basic version install single", "[versionplan]")
@@ -2377,9 +2375,9 @@ TEST_CASE ("formatting plan 1", "[dependencies]")
     auto& scfl_c = vp.emplace("c", {"1", 0});
     auto& scfl_f = vp.emplace("f", {"1", 0});
 
-    const RemovePlanAction remove_b({"b", Test::X64_OSX}, RemovePlanType::REMOVE, RequestType::USER_REQUESTED);
-    const RemovePlanAction remove_a({"a", Test::X64_OSX}, RemovePlanType::NOT_INSTALLED, RequestType::USER_REQUESTED);
-    const RemovePlanAction remove_c({"c", Test::X64_OSX}, RemovePlanType::REMOVE, RequestType::AUTO_SELECTED);
+    const RemovePlanAction remove_b({"b", Test::X64_OSX}, RequestType::USER_REQUESTED);
+    const RemovePlanAction remove_a({"a", Test::X64_OSX}, RequestType::USER_REQUESTED);
+    const RemovePlanAction remove_c({"c", Test::X64_OSX}, RequestType::AUTO_SELECTED);
     InstallPlanAction install_a({"a", Test::X64_OSX}, scfl_a, RequestType::AUTO_SELECTED, Test::X64_ANDROID, {}, {});
     InstallPlanAction install_b(
         {"b", Test::X64_OSX}, scfl_b, RequestType::AUTO_SELECTED, Test::X64_ANDROID, {{"1", {}}}, {});

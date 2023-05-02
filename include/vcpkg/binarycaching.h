@@ -155,7 +155,7 @@ namespace vcpkg
         RestoreResult try_restore(const InstallPlanAction& action);
 
         /// Called upon a successful build of `action` to store those contents in the binary cache.
-        void push_success(const InstallPlanAction& action, Path package_dir);
+        void push_success(const InstallPlanAction& action);
 
         /// Gives the IBinaryProvider an opportunity to batch any downloading or server communication for
         /// executing `actions`.

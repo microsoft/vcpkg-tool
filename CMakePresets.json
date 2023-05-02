@@ -1,0 +1,192 @@
+{
+    "version": 3,
+    "configurePresets": [
+        {
+            "name": "official",
+            "hidden": true,
+            "cacheVariables": {
+                "VCPKG_OFFICIAL_BUILD": true,
+                "VCPKG_BASE_VERSION": "2023-03-30",
+                "VCPKG_STANDALONE_BUNDLE_SHA": "404fc75a9f7cdf205c3a6d5ce1134f6448f107e266bc5d7113722f8753eb9671a264235ba8bf2ca85989b28dfdb0109e5f7074591b07246129c5cbafa73f3442"
+            }
+        },
+        {
+            "name": "base",
+            "hidden": true,
+            "generator": "Ninja",
+            "binaryDir": "out\\build\\${presetName}",
+            "installDir": "out\\install\\${presetName}",
+            "cacheVariables": {
+                "VCPKG_BUILD_BENCHMARKING": true,
+                "VCPKG_BUILD_FUZZING": true
+            }
+        },
+        {
+            "name": "debug",
+            "hidden": true,
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "release",
+            "hidden": true,
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+            }
+        },
+        {
+            "name": "windows",
+            "hidden": true,
+            "cacheVariables": {
+                "VCPKG_BUILD_TLS12_DOWNLOADER": true
+            },
+            "vendor": {
+                "microsoft.com/VisualStudioSettings/CMake/1.0": {
+                    "hostOS": [
+                        "Windows"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "artifacts",
+            "hidden": true,
+            "cacheVariables": {
+                "VCPKG_ARTIFACTS_DEVELOPMENT": true
+            }
+        },
+        {
+            "name": "windows-x64",
+            "hidden": true,
+            "inherits": "windows",
+            "architecture": {
+                "value": "x64",
+                "strategy": "external"
+            }
+        },
+        {
+            "name": "Win-x64-Debug",
+            "inherits": [
+                "base",
+                "windows-x64",
+                "debug"
+            ]
+        },
+        {
+            "name": "Win-x64-Debug-WithArtifacts",
+            "inherits": [
+                "Win-x64-Debug",
+                "artifacts"
+            ]
+        },
+        {
+            "name": "Win-x64-Debug-NoAnalyze",
+            "inherits": "Win-x64-Debug",
+            "cacheVariables": {
+                "VCPKG_MSVC_ANALYZE": false
+            }
+        },
+        {
+            "name": "Win-x64-Debug-Official",
+            "inherits": [
+                "Win-x64-Debug",
+                "official"
+            ]
+        },
+        {
+            "name": "Win-x64-Release",
+            "inherits": [
+                "base",
+                "windows-x64",
+                "release"
+            ]
+        },
+        {
+            "name": "windows-ci",
+            "inherits": "Win-x64-Debug-WithArtifacts",
+            "cacheVariables": {
+                "VCPKG_WARNINGS_AS_ERRORS": true
+            }
+        },
+        {
+            "name": "linux",
+            "hidden": true,
+            "vendor": {
+                "microsoft.com/VisualStudioSettings/CMake/1.0": {
+                    "hostOS": [
+                        "Linux"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "linux-ci",
+            "inherits": [
+                "base",
+                "debug",
+                "artifacts",
+                "linux"
+            ],
+            "cacheVariables": {
+                "CMAKE_CXX_FLAGS": "-fprofile-arcs -fPIC -O0 -fsanitize=undefined -fsanitize=address",
+                "CMAKE_EXE_LINKER_FLAGS": "-static-libasan",
+                "VCPKG_WARNINGS_AS_ERRORS": true
+            }
+        },
+        {
+            "name": "macos",
+            "hidden": true,
+            "vendor": {
+                "microsoft.com/VisualStudioSettings/CMake/1.0": {
+                    "hostOS": [
+                        "MacOS"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "macos-ci",
+            "inherits": [
+                "base",
+                "debug",
+                "artifacts",
+                "macos"
+            ],
+            "cacheVariables": {
+                "CMAKE_CXX_FLAGS": "-fsanitize=undefined -fsanitize=address",
+                "CMAKE_OSX_DEPLOYMENT_TARGET": "10.13",
+                "CMAKE_EXE_LINKER_FLAGS": "-static-libsan",
+                "VCPKG_WARNINGS_AS_ERRORS": true
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "windows-ci",
+            "configurePreset": "windows-ci"
+        },
+        {
+            "name": "linux-ci",
+            "configurePreset": "linux-ci"
+        },
+        {
+            "name": "macos-ci",
+            "configurePreset": "macos-ci"
+        }
+    ],
+    "testPresets": [
+        {
+            "name": "windows-ci",
+            "configurePreset": "windows-ci"
+        },
+        {
+            "name": "linux-ci",
+            "configurePreset": "linux-ci"
+        },
+        {
+            "name": "macos-ci",
+            "configurePreset": "macos-ci"
+        }
+    ]
+}
