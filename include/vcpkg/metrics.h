@@ -62,6 +62,7 @@ namespace vcpkg
         DetectedCiEnvironment,
         InstallPlan_1,
         ListFile,
+        ProcessTree,
         RegistriesDefaultRegistryKind,
         RegistriesKindsUsed,
         Title,
