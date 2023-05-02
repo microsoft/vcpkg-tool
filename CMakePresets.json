@@ -123,6 +123,7 @@
         {
             "name": "linux-with-artifacts",
             "inherits": [
+                "base",
                 "linux",
                 "artifacts"
             ]
