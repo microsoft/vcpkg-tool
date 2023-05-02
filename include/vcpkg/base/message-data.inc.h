@@ -198,15 +198,15 @@ DECLARE_MESSAGE(AuthenticationMayRequireManualAction,
                 "",
                 "One or more {vendor} credential providers requested manual action. Add the binary source "
                 "'interactive' to allow interactivity.")
-DECLARE_MESSAGE(AutomaticLinkingForMSBuild15AndLater,
-                (),
-                "",
-                "Visual Studio 2017 and later can now #include any installed libraries. Linking will be handled "
-                "automatically. Installing new libraries will make them instantly available.")
 DECLARE_MESSAGE(AutomaticLinkingForMSBuildProjects,
                 (),
                 "",
                 "All MSBuild C++ projects can now #include any installed libraries. Linking will be handled "
+                "automatically. Installing new libraries will make them instantly available.")
+DECLARE_MESSAGE(AutomaticLinkingForVS2017AndLater,
+                (),
+                "",
+                "Visual Studio 2017 and later can now #include any installed libraries. Linking will be handled "
                 "automatically. Installing new libraries will make them instantly available.")
 DECLARE_MESSAGE(AutoSettingEnvVar,
                 (msg::env_var, msg::url),
@@ -1483,7 +1483,7 @@ DECLARE_MESSAGE(IntegrateZshHelp,
                 (),
                 "'zsh' is a terminal program which should be unlocalized.",
                 "Enable zsh tab-completion.")
-DECLARE_MESSAGE(IntegrationFailedMSBuild14, (), "", "Integration was not applied for Visual Studio 2015.")
+DECLARE_MESSAGE(IntegrationFailedVS2015, (), "", "Integration was not applied for Visual Studio 2015.")
 DECLARE_MESSAGE(InternalCICommand,
                 (),
                 "",

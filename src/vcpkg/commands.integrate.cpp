@@ -331,9 +331,9 @@ namespace vcpkg::Commands::Integrate
 
         if (!integrate_install_msbuild14(fs))
         {
-            message.append_raw("\n\n").append(msgAutomaticLinkingForMSBuild15AndLater);
+            message.append_raw("\n\n").append(msgAutomaticLinkingForVS2017AndLater);
             msg::println(message);
-            Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgIntegrationFailedMSBuild14);
+            Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgIntegrationFailedVS2015);
         }
 
         message.append_raw("\n\n").append(msgAutomaticLinkingForMSBuildProjects);
