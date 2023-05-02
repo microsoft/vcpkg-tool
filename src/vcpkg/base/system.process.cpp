@@ -24,7 +24,10 @@ extern char** environ;
 #endif
 
 #if defined(_WIN32)
+#include <Psapi.h>
+#include <winternl.h>
 #pragma comment(lib, "Advapi32")
+#pragma comment(lib, "Ntdll")
 #else
 #include <spawn.h>
 #endif
@@ -243,6 +246,38 @@ namespace vcpkg
         auto written = readlink("/proc/self/exe", buf.data(), buf.size());
         Checks::check_exit(VCPKG_LINE_INFO, written != -1, "Could not determine current executable path.");
         return Path(buf.data(), written);
+#endif
+    }
+
+    void get_parent_process_list(std::vector<std::string>& ret)
+    {
+#if defined(_WIN32)
+        struct ProcessInformation
+        {
+            NTSTATUS exit_status;
+            PPEB peb_base_address;
+            ULONG_PTR affinity_mask;
+            KPRIORITY base_priority;
+            ULONG_PTR unique_process_id;
+            ULONG_PTR inherited_from_unique_process_id;
+        } process_info;
+
+        wchar_t process_name_buf[_MAX_PATH];
+        HANDLE process_handle = GetCurrentProcess();
+        while (true)
+        {
+            NtQueryInformationProcess(
+                process_handle, ProcessBasicInformation, &process_info, sizeof(process_info), NULL);
+            if (!process_info.inherited_from_unique_process_id) break;
+
+            process_handle = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION,
+                                         true,
+                                         static_cast<DWORD>(process_info.inherited_from_unique_process_id));
+            if (!process_handle) break;
+            const int bytes = GetProcessImageFileNameW(process_handle, process_name_buf, _MAX_PATH);
+            if (bytes == 0) break;
+            ret.emplace_back(Path(Strings::to_utf8(process_name_buf)).filename().to_string());
+        }
 #endif
     }
 

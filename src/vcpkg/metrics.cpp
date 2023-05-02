@@ -368,6 +368,12 @@ namespace vcpkg
         result.os_version.append(get_os_version_string());
 
         result.session_id = generate_random_UUID();
+
+        std::vector<std::string> process_list;
+        get_parent_process_list(process_list);
+        result.parent_process_list =
+            Strings::join(";", process_list, [](auto&& s) { return Hash::get_string_sha256(s); });
+
         return result;
     }
 

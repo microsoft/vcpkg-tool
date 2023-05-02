@@ -160,6 +160,8 @@ namespace vcpkg
     void exit_interactive_subprocess();
 #endif
 
+    void get_parent_process_list(std::vector<std::string>& ret);
+
     bool succeeded(const ExpectedL<int>& maybe_exit) noexcept;
 
     // If exit code is 0, returns a 'success' ExpectedL.
