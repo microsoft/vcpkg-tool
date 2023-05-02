@@ -260,13 +260,12 @@ namespace vcpkg::Commands::TestFeatures
             }
         }
         fmt::print("compute {} install plans\n", specs_to_test.size());
+        CreateInstallPlanOptions install_plan_options{host_triplet, paths.packages(), UnsupportedPortAction::Warn};
         auto install_plans = Util::fmap(specs_to_test, [&](auto& spec) {
-            return std::make_pair(spec,
-                                  create_feature_install_plan(provider,
-                                                              var_provider,
-                                                              Span<FullPackageSpec>(&spec, 1),
-                                                              {},
-                                                              {host_triplet, UnsupportedPortAction::Warn}));
+            return std::make_pair(
+                spec,
+                create_feature_install_plan(
+                    provider, var_provider, Span<FullPackageSpec>(&spec, 1), {}, install_plan_options));
         });
 
         Util::stable_sort(install_plans, [](const auto& left, const auto& right) {

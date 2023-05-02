@@ -63,7 +63,7 @@
     "unbzip2-stream": "1.4.3",
     "vscode-uri": "3.0.3",
     "xml-writer": "1.7.0",
-    "yaml": "^2.2.1"
+    "yaml": "^2.2.2"
   },
   "bundleDependencies": [
     "@snyk/nuget-semver",

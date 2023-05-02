@@ -428,7 +428,7 @@ namespace vcpkg::Commands::CI
                 InternalFeatureSet{"core", "default"});
         }
 
-        CreateInstallPlanOptions serialize_options(host_triplet, UnsupportedPortAction::Warn);
+        CreateInstallPlanOptions serialize_options(host_triplet, paths.packages(), UnsupportedPortAction::Warn);
 
         struct RandomizerInstance : GraphRandomizer
         {
@@ -521,7 +521,13 @@ namespace vcpkg::Commands::CI
         else
         {
             StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
-            SetInstalled::adjust_action_plan_to_status_db(action_plan, status_db);
+            auto already_installed = SetInstalled::adjust_action_plan_to_status_db(action_plan, status_db);
+            Util::erase_if(already_installed,
+                           [&](auto& spec) { return Util::Sets::contains(split_specs->known, spec); });
+            if (!already_installed.empty())
+            {
+                msg::println_warning(msgCISkipInstallation, msg::list = Strings::join(", ", already_installed));
+            }
 
             const IBuildLogsRecorder& build_logs_recorder =
                 build_logs_recorder_storage ? *(build_logs_recorder_storage.get()) : null_build_logs_recorder();
