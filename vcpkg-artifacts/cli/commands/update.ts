@@ -11,6 +11,7 @@ import { RemoteFileUnavailable } from '../../util/exceptions';
 import { Command } from '../command';
 import { count } from '../format';
 import { error, log, writeException } from '../styling';
+import { All } from '../switches/all';
 import { Project } from '../switches/project';
 
 async function updateRegistry(registry: Registry, displayName: string) : Promise<boolean> {
@@ -38,6 +39,7 @@ export class UpdateCommand extends Command {
   seeAlso = [];
   argumentsHelp = [];
   project: Project = new Project(this);
+  all = new All(this);
 
   get summary() {
     return i`update the registry from the remote`;
@@ -52,6 +54,21 @@ export class UpdateCommand extends Command {
   override async run() {
     const resolver = session.globalRegistryResolver.with(
       await buildRegistryResolver(session, (await this.project.manifest)?.metadata.registries));
+    
+    if (this.all.active) {
+      for (const registryUri of session.registryDatabase.getAllUris()) {
+        if (schemeOf(registryUri) != 'https') { continue; }
+        const parsed = session.fileSystem.parseUri(registryUri);
+        const displayName = resolver.getRegistryDisplayName(parsed);
+        const loaded = resolver.getRegistryByUri(parsed);
+        if (loaded) {
+          if (!await updateRegistry(loaded, displayName)) {
+            return false;
+          }
+        }
+      }
+    }
+
     for (const registryInput of this.inputs) {
       const registryByName = resolver.getRegistryByName(registryInput);
       if (registryByName) {

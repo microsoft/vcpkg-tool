@@ -103,6 +103,10 @@ export class RegistryDatabase {
     await loaded.load();
     return loaded;
   }
+
+  getAllUris() {
+    return Array.from(this.#uriToRegistry.keys());
+  }
 }
 
 // When a registry resolver is used to map a URI back to some form of for-display-purposes-only name.

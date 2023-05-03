@@ -1839,6 +1839,7 @@
   "InstantlyActivatesAnArtifactOutsideOfTheProject": "Instantly activates an artifact outside of the project",
   "ThisWillInstantlyActivateAnArtifact": "This will instantly activate an artifact .",
   "NoArtifactsAreBeingAcquired": "No artifacts are being acquired",
+  "UpdateAllKnownArtifactRegistries": "Update all known artifact registries",
   "removesAllFilesInTheLocalCache": "removes all files in the local cache",
   "enablesDebugModeDisplaysInternalMesssagesAboutHow$Works": "enables debug mode, displays internal messsages about how ${p0} works",
   "_enablesDebugModeDisplaysInternalMesssagesAboutHow$Works.comment": "\n'${p0}' is a parameter - it is expecting a value like: \"vcpkg\"",
