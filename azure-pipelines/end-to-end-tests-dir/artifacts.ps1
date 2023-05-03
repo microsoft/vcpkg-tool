@@ -205,6 +205,36 @@ try {
     Test-Activations -Three
     Test-Match $output "Deactivating: artifacts-test:vcpkg-test-artifact-1"
     Test-Match $output "Activating: $ProjectRegex"
+
+    # test "no postscript" warning:
+    #  can't deactivate without postscript:
+    $output = Run-VcpkgAndCaptureOutput -ForceExe deactivate
+    Throw-IfNotFailed
+    Test-Match $output "no postscript file: rerun with the vcpkg shell function rather than executable"
+
+    $output = Run-VcpkgAndCaptureOutput deactivate
+    Throw-IfFailed
+    Test-NoDeactivationWarning $output $ProjectRegex
+
+    #  can't activate without postscript:
+    $output = Run-VcpkgAndCaptureOutput -ForceExe activate
+    Throw-IfNotFailed
+    Test-Match $output "no postscript file: rerun with the vcpkg shell function rather than executable"
+    Test-Activations
+
+    #  unless --json passed
+    $output = Run-VcpkgAndCaptureOutput -ForceExe activate --json (Join-Path $Project 'result.json')
+    Throw-IfFailed
+    Test-Match $output "Activating: $ProjectRegex"
+    Test-NoMatch $output "no postscript file: rerun with the vcpkg shell function rather than executable"
+    Test-Activations # no shell activation
+
+    #  or --msbuild-props passed
+    $output = Run-VcpkgAndCaptureOutput -ForceExe activate --msbuild-props (Join-Path $Project 'result.props')
+    Throw-IfFailed
+    Test-Match $output "Activating: $ProjectRegex"
+    Test-NoMatch $output "no postscript file: rerun with the vcpkg shell function rather than executable"
+    Test-Activations # no shell activation
 } finally {
     Run-Vcpkg deactivate
     Pop-Location

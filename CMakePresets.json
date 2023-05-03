@@ -121,6 +121,14 @@
             }
         },
         {
+            "name": "linux-with-artifacts",
+            "inherits": [
+                "base",
+                "linux",
+                "artifacts"
+            ]
+        },
+        {
             "name": "linux-ci",
             "inherits": [
                 "base",
