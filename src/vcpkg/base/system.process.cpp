@@ -25,9 +25,10 @@ extern char** environ;
 
 #if defined(_WIN32)
 #include <Psapi.h>
-#include <winternl.h>
+// #include <winternl.h>
+#include <TlHelp32.h>
 #pragma comment(lib, "Advapi32")
-#pragma comment(lib, "Ntdll")
+// #pragma comment(lib, "Ntdll")
 #else
 #include <spawn.h>
 #endif
@@ -252,34 +253,38 @@ namespace vcpkg
     void get_parent_process_list(std::vector<std::string>& ret)
     {
 #if defined(_WIN32)
-        struct ProcessInformation
+        // Enumerate all processes in the system snapshot.
+        auto snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+        if (snapshot == INVALID_HANDLE_VALUE) return;
+
+        std::map<DWORD, DWORD> pid_ppid_map;
+        std::map<DWORD, std::string> pid_exe_path_map;
+
+        PROCESSENTRY32W entry;
+        memset(&entry, 0, sizeof(entry));
+        entry.dwSize = sizeof(entry);
+        if (Process32FirstW(snapshot, &entry))
         {
-            NTSTATUS exit_status;
-            PPEB peb_base_address;
-            ULONG_PTR affinity_mask;
-            KPRIORITY base_priority;
-            ULONG_PTR unique_process_id;
-            ULONG_PTR inherited_from_unique_process_id;
-        } process_info;
+            do
+            {
+                pid_ppid_map.emplace(entry.th32ProcessID, entry.th32ParentProcessID);
+                pid_exe_path_map.emplace(entry.th32ProcessID, Strings::to_utf8(entry.szExeFile));
+            } while (Process32NextW(snapshot, &entry));
+        }
+        CloseHandle(snapshot);
 
-        wchar_t process_name_buf[_MAX_PATH];
-        HANDLE process_handle = GetCurrentProcess();
-        while (true)
+        // Find hierarchy of current process
+        auto it = pid_ppid_map.find(GetCurrentProcessId());
+        if (it != pid_ppid_map.end())
         {
-            auto has_error = NtQueryInformationProcess(
-                process_handle, ProcessBasicInformation, &process_info, sizeof(process_info), NULL);
-            if (has_error) break;
-
-            process_handle = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION,
-                                         true,
-                                         static_cast<DWORD>(process_info.inherited_from_unique_process_id));
-            if (!process_handle) break;
-
-            const int bytes = GetProcessImageFileNameW(process_handle, process_name_buf, _MAX_PATH);
-            CloseHandle(process_handle);
-
-            if (bytes == 0) break;
-            ret.emplace_back(Path(Strings::to_utf8(process_name_buf)).filename().to_string());
+            // skip the vcpkg process
+            it = pid_ppid_map.find(it->second);
+            while (it != pid_ppid_map.end())
+            {
+                auto name = pid_exe_path_map[it->first];
+                ret.push_back(name);
+                it = pid_ppid_map.find(it->second);
+            }
         }
 #else
         (void)ret;
