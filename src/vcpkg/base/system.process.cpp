@@ -262,7 +262,6 @@ namespace vcpkg
             ULONG_PTR inherited_from_unique_process_id;
         } process_info;
 
-
         wchar_t process_name_buf[_MAX_PATH];
         HANDLE process_handle = GetCurrentProcess();
         while (true)
@@ -282,6 +281,8 @@ namespace vcpkg
             if (bytes == 0) break;
             ret.emplace_back(Path(Strings::to_utf8(process_name_buf)).filename().to_string());
         }
+#else
+        (void)ret;
 #endif
     }
 
