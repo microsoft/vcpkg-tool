@@ -59,42 +59,22 @@ namespace
 
     void copy_port_files(Filesystem& fs, StringView port_name, const Path& source, const Path& destination)
     {
-        std::error_code ec;
         if (!fs.exists(source, VCPKG_LINE_INFO))
         {
             Checks::msg_exit_with_error(
                 VCPKG_LINE_INFO, msgExportPortFilesMissing, msg::package_name = port_name, msg::path = source);
         }
 
-        auto port_files = fs.get_regular_files_recursive(source, ec);
-        if (ec)
+        auto prefix_len = source.generic_u8string().size() + 1;
+        auto port_files = fs.get_regular_files_recursive(source, VCPKG_LINE_INFO);
+        for (StringView port_file : port_files)
         {
-            Checks::msg_exit_with_error(
-                VCPKG_LINE_INFO, msgExportPortFilesMissing, msg::package_name = port_name, msg::path = source);
-        }
+            const auto rel_file_path = port_file.substr(prefix_len);
+            const auto src_path = source / rel_file_path;
+            const auto dst_path = destination / rel_file_path;
 
-        for (const auto& file : Util::fmap(port_files, [&source](StringView&& str) -> Path {
-                 return str.substr(source.generic_u8string().size() + 1);
-             }))
-        {
-            const auto src_path = source / file;
-            const auto dst_path = destination / file;
-
-            fs.create_directories(dst_path.parent_path(), ec);
-            if (ec)
-            {
-                Checks::msg_exit_with_error(
-                    VCPKG_LINE_INFO, msgExportPortFailedToCreateDirectory, msg::path = dst_path.parent_path());
-            }
-
-            fs.copy_file(src_path, dst_path, CopyOptions::overwrite_existing, ec);
-            if (ec)
-            {
-                Checks::msg_exit_with_error(VCPKG_LINE_INFO,
-                                            msgExportPortFailedToCopyFiles,
-                                            msg::package_name = port_name,
-                                            msg::path = dst_path);
-            }
+            fs.create_directories(dst_path.parent_path(), VCPKG_LINE_INFO);
+            fs.copy_file(src_path, dst_path, CopyOptions::overwrite_existing, VCPKG_LINE_INFO);
         }
     }
 
@@ -127,21 +107,15 @@ namespace
         const auto db_file = paths.builtin_registry_versions / fmt::format("{}-/{}.json", port_name[0], port_name);
 
         auto& fs = paths.get_filesystem();
-        if (!fs.exists(db_file, VCPKG_LINE_INFO))
-        {
-            msg::println_error(msgExportPortVersionsDbFileMissing, msg::package_name = port_name, msg::path = db_file);
-            Checks::exit_fail(VCPKG_LINE_INFO);
-        }
-
         auto contents = fs.read_contents(db_file, VCPKG_LINE_INFO);
         auto maybe_db = parse_git_versions_file(contents, db_file);
         if (!maybe_db)
         {
-            msg::println_error(maybe_db.error());
+            msg::println(maybe_db.error());
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
-        auto db = std::move(maybe_db.value_or_exit(VCPKG_LINE_INFO));
+        auto db = std::move(maybe_db).value_or_exit(VCPKG_LINE_INFO);
         for (auto&& entry : db)
         {
             if (entry.version == version)
@@ -239,7 +213,7 @@ namespace vcpkg::Commands::ExportPort
         }
 
         auto& fs = paths.get_filesystem();
-        const Path final_path = fs.absolute(destination, VCPKG_LINE_INFO).lexically_normal();
+        const Path final_path = destination.lexically_normal();
 
         if (force)
         {
