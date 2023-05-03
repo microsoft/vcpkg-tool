@@ -142,6 +142,7 @@ namespace vcpkg
 
         Optional<const ManifestAndPath&> get_manifest() const;
         bool manifest_mode_enabled() const;
+        ExpectedL<std::string> get_relative_manifest_dir() const;
         const ConfigurationAndSource& get_configuration() const;
         std::unique_ptr<RegistrySet> make_registry_set() const;
 

@@ -758,20 +758,19 @@ namespace vcpkg
 
     const Path VcpkgPaths::get_triplet_file_path(Triplet triplet) const
     {
-        return m_pimpl->m_triplets_cache.get_lazy(
-            triplet, [&]() -> auto{
-                for (const auto& triplet_dir : m_pimpl->triplets_dirs)
+        return m_pimpl->m_triplets_cache.get_lazy(triplet, [&]() -> auto {
+            for (const auto& triplet_dir : m_pimpl->triplets_dirs)
+            {
+                auto path = triplet_dir / (triplet.canonical_name() + ".cmake");
+                if (this->get_filesystem().exists(path, IgnoreErrors{}))
                 {
-                    auto path = triplet_dir / (triplet.canonical_name() + ".cmake");
-                    if (this->get_filesystem().exists(path, IgnoreErrors{}))
-                    {
-                        return path;
-                    }
+                    return path;
                 }
+            }
 
-                Checks::msg_exit_with_message(
-                    VCPKG_LINE_INFO, msgTripletFileNotFound, msg::triplet = triplet.canonical_name());
-            });
+            Checks::msg_exit_with_message(
+                VCPKG_LINE_INFO, msgTripletFileNotFound, msg::triplet = triplet.canonical_name());
+        });
     }
 
     LockFile& VcpkgPaths::get_installed_lockfile() const
@@ -1270,6 +1269,17 @@ namespace vcpkg
     }
 
     bool VcpkgPaths::manifest_mode_enabled() const { return !m_pimpl->m_manifest_dir.empty(); }
+
+    ExpectedL<std::string> VcpkgPaths::get_relative_manifest_dir() const
+    {
+        auto manifest_dir = get_manifest();
+        if (auto p = manifest_dir.get())
+        {
+            Command cmd = git_cmd_builder({}, {}).string_arg("ls-files").string_arg("--full-name").string_arg(p->path);
+            auto maybe_output = flatten_out(cmd_execute_and_capture_output(cmd), Tools::GIT);
+            return maybe_output;
+        }
+    }
 
     const ConfigurationAndSource& VcpkgPaths::get_configuration() const { return m_pimpl->m_config; }
 

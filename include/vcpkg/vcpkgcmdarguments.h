@@ -77,6 +77,7 @@ namespace vcpkg
         bool compiler_tracking;
         bool binary_caching;
         bool versions;
+        bool dependency_graph;
     };
 
     struct VcpkgCmdArguments
@@ -167,9 +168,27 @@ namespace vcpkg
         constexpr static StringLiteral ASSET_SOURCES_ENV = "X_VCPKG_ASSET_SOURCES";
         constexpr static StringLiteral ASSET_SOURCES_ARG = "asset-sources";
 
+        constexpr static StringLiteral GITHUB_REF_ENV = "GITHUB_REF";
+        Optional<std::string> github_ref;
+        constexpr static StringLiteral GITHUB_SHA_ENV = "GITHUB_SHA";
+        Optional<std::string> github_sha;
+        constexpr static StringLiteral GITHUB_REPOSITORY_ENV = "GITHUB_REPOSITORY";
+        Optional<std::string> github_repository;
+        constexpr static StringLiteral GITHUB_TOKEN_ENV = "GITHUB_TOKEN";
+        Optional<std::string> github_token;
+        constexpr static StringLiteral GITHUB_JOB_ENV = "GITHUB_JOB";
+        Optional<std::string> github_job;
+        constexpr static StringLiteral GITHUB_WORKFLOW_ENV = "GITHUB_WORKFLOW";
+        Optional<std::string> github_workflow;
+        constexpr static StringLiteral DEPENDENCY_GRAPH_VERSION_ENV = "DEPENDENCY_GRAPH_VERSION";
+        Optional<std::string> dependency_graph_version;
+
         // feature flags
         constexpr static StringLiteral FEATURE_FLAGS_ENV = "VCPKG_FEATURE_FLAGS";
         constexpr static StringLiteral FEATURE_FLAGS_ARG = "feature-flags";
+
+        constexpr static StringLiteral DEPENDENCY_GRAPH_FEATURE = "dependencygraph";
+        Optional<bool> dependency_graph_feature = nullopt;
 
         constexpr static StringLiteral FEATURE_PACKAGES_SWITCH = "featurepackages";
         Optional<bool> feature_packages = nullopt;
@@ -186,6 +205,7 @@ namespace vcpkg
 
         constexpr static StringLiteral RECURSIVE_DATA_ENV = "X_VCPKG_RECURSIVE_DATA";
 
+        bool dependency_graph_enabled() const { return dependency_graph_feature.value_or(false); }
         bool binary_caching_enabled() const { return binary_caching.value_or(true); }
         bool compiler_tracking_enabled() const { return compiler_tracking.value_or(true); }
         bool registries_enabled() const { return registries_feature.value_or(true); }
@@ -197,6 +217,7 @@ namespace vcpkg
             f.compiler_tracking = compiler_tracking_enabled();
             f.registries = registries_enabled();
             f.versions = versions_enabled();
+            f.dependency_graph = dependency_graph_enabled();
             return f;
         }
         const Optional<StringLiteral>& detected_ci_environment() const { return m_detected_ci_environment; }
@@ -219,6 +240,7 @@ namespace vcpkg
         void debug_print_feature_flags() const;
         void track_feature_flag_metrics() const;
         void track_environment_metrics() const;
+        void track_github_repository_env() const;
 
         Optional<std::string> asset_sources_template() const;
 

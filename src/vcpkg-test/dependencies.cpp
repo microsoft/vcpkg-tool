@@ -2,6 +2,7 @@
 
 #include <vcpkg/base/graphs.h>
 
+#include <vcpkg/commands.setinstalled.h>
 #include <vcpkg/dependencies.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/sourceparagraph.h>
@@ -2326,4 +2327,60 @@ TEST_CASE ("formatting plan 1", "[dependencies]")
                                 "    c:x64-osx -> 1 -- c\n"
                                 "Additional packages (*) will be modified to complete this operation.\n");
     }
+}
+
+TEST_CASE ("dependency graph API snapshot")
+{
+    MockVersionedPortfileProvider vp;
+    auto& scfl_a = vp.emplace("a", {"1", 0});
+    InstallPlanAction install_a(
+        {"a", Test::X64_WINDOWS}, scfl_a, RequestType::AUTO_SELECTED, Test::X64_ANDROID, {}, {});
+
+    ActionPlan plan;
+    plan.install_actions.push_back(std::move(install_a));
+    std::map<std::string, std::string, std::less<>> envmap = {
+        {VcpkgCmdArguments::GITHUB_JOB_ENV.to_string(), "123"},
+        {VcpkgCmdArguments::GITHUB_REF_ENV.to_string(), "refs/heads/main"},
+        {VcpkgCmdArguments::GITHUB_REPOSITORY_ENV.to_string(), "owner/repo"},
+        {VcpkgCmdArguments::GITHUB_SHA_ENV.to_string(), "abc123"},
+        {VcpkgCmdArguments::GITHUB_TOKEN_ENV.to_string(), "abc"},
+        {VcpkgCmdArguments::GITHUB_WORKFLOW_ENV.to_string(), "test"},
+        {VcpkgCmdArguments::DEPENDENCY_GRAPH_VERSION_ENV.to_string(), "3"},
+    };
+    auto v = VcpkgCmdArguments::create_from_arg_sequence(nullptr, nullptr);
+    v.imbue_from_fake_environment(envmap);
+    auto manifest_path = Path{};
+    auto obj = vcpkg::Commands::SetInstalled::create_dependency_graph_snapshot(v, plan, manifest_path);
+
+    auto version = obj.get("version")->integer(VCPKG_LINE_INFO);
+    auto job = obj.get("job")->object(VCPKG_LINE_INFO);
+    auto id = job.get("id")->string(VCPKG_LINE_INFO);
+    auto correlator = job.get("correlator")->string(VCPKG_LINE_INFO);
+    auto sha = obj.get("sha")->string(VCPKG_LINE_INFO);
+    auto ref = obj.get("ref")->string(VCPKG_LINE_INFO);
+    auto detector = obj.get("detector")->object(VCPKG_LINE_INFO);
+    auto name = detector.get("name")->string(VCPKG_LINE_INFO);
+    auto detector_version = detector.get("version")->string(VCPKG_LINE_INFO);
+    auto url = detector.get("url")->string(VCPKG_LINE_INFO);
+    auto manifests = obj.get("manifests")->object(VCPKG_LINE_INFO);
+    auto manifest1 = manifests.get("vcpkg.json")->object(VCPKG_LINE_INFO);
+    auto name1 = manifest1.get("name")->string(VCPKG_LINE_INFO);
+    auto resolved1 = manifest1.get("resolved")->object(VCPKG_LINE_INFO);
+    auto dependency_a = resolved1.get("pkg:github/vcpkg/a@1")->object(VCPKG_LINE_INFO);
+    auto package_url_a = dependency_a.get("package_url")->string(VCPKG_LINE_INFO);
+    auto relationship_a = dependency_a.get("relationship")->string(VCPKG_LINE_INFO);
+    auto dependencies_a = dependency_a.get("dependencies")->array(VCPKG_LINE_INFO);
+
+    CHECK(static_cast<int>(version) == 3);
+    CHECK(id == "123");
+    CHECK(correlator == "test-123");
+    CHECK(sha == "abc123");
+    CHECK(ref == "refs/heads/main");
+    CHECK(name == "vcpkg");
+    CHECK(detector_version == "1.0.0");
+    CHECK(url == "https://github.com/microsoft/vcpkg");
+    CHECK(name1 == "vcpkg.json");
+    CHECK(package_url_a == "pkg:github/vcpkg/a@1");
+    CHECK(relationship_a == "direct");
+    CHECK(dependencies_a.size() == 0);
 }

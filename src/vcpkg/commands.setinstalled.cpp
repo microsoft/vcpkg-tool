@@ -46,25 +46,81 @@ namespace vcpkg::Commands::SetInstalled
         nullptr,
     };
 
-    static void create_dependency_graph_json(const ActionPlan& action_plan)
+    static void send_snapshot_to_api(const VcpkgCmdArguments& args, Json::Object snapshot)
     {
-        auto gh_ref = get_environment_variable("GITHUB_REF").value_or_exit(VCPKG_LINE_INFO);
-        auto gh_sha = get_environment_variable("GITHUB_SHA").value_or_exit(VCPKG_LINE_INFO);
-        auto gh_owner = get_environment_variable("GITHUB_OWNER").value_or_exit(VCPKG_LINE_INFO);
-        auto gh_repo = get_environment_variable("GITHUB_REPO").value_or_exit(VCPKG_LINE_INFO);
-        auto gh_token = get_environment_variable("GITHUB_TOKEN").value_or_exit(VCPKG_LINE_INFO);
+        static constexpr StringLiteral guid_marker = "fcfad8a3-bb68-4a54-ad00-dab1ff671ed2";
+
+        Command cmd;
+        cmd.string_arg("curl");
+        cmd.string_arg("-w").string_arg("\\n" + guid_marker.to_string() + "%{http_code}");
+        cmd.string_arg("-X").string_arg("POST");
+        cmd.string_arg("-H").string_arg("Accept: application/vnd.github+json");
+
+        std::string res = "Authorization: Bearer " + *args.github_token.get();
+        cmd.string_arg("-H").string_arg(res);
+        cmd.string_arg("-H").string_arg("X-GitHub-Api-Version: 2022-11-28");
+        cmd.string_arg(Strings::concat(
+            "https://api.github.com/repos/", *args.github_repository.get(), "/dependency-graph/snapshots"));
+        cmd.string_arg("-d").string_arg(Json::stringify(snapshot));
+
+        int code = 0;
+        auto result = cmd_execute_and_stream_lines(cmd, [&code](StringView line) {
+            if (Strings::starts_with(line, guid_marker))
+            {
+                code = std::strtol(line.data() + guid_marker.size(), nullptr, 10);
+            }
+            else
+            {
+                Debug::println(line);
+            }
+        });
+
+        if (auto pres = result.get())
+        {
+            MetricsSubmission submission;
+            if (*pres != 0 || (code >= 100 && code < 200) || code >= 300)
+            {
+                submission.track_bool(BoolMetric::DependencyGraphSuccess, false);
+            }
+            else
+            {
+                submission.track_bool(BoolMetric::DependencyGraphSuccess, true);
+            }
+            // get_global_metrics_collector().track_submission(std::move(submission));
+        }
+    }
+
+    Json::Object create_dependency_graph_snapshot(const VcpkgCmdArguments& args,
+                                                  const ActionPlan& action_plan,
+                                                  const Path& manifest_path)
+    {
+        auto gh_ref = args.github_ref.value_or_exit(VCPKG_LINE_INFO);
+        auto gh_sha = args.github_sha.value_or_exit(VCPKG_LINE_INFO);
+        auto gh_repo = args.github_repository.value_or_exit(VCPKG_LINE_INFO);
+        auto gh_token = args.github_token.value_or_exit(VCPKG_LINE_INFO);
+        auto gh_job_id = args.github_job.value_or_exit(VCPKG_LINE_INFO);
+        auto gh_workflow = args.github_workflow.value_or_exit(VCPKG_LINE_INFO);
 
         Json::Object detector;
         detector.insert("name", Json::Value::string("vcpkg"));
-        detector.insert("url", Json::Value::string(Strings::concat("https://github.com/", gh_owner, "/", gh_repo)));
-        detector.insert("version", Json::Value::string("0.0.1"));
+        detector.insert("url", Json::Value::string(Strings::concat("https://github.com/microsoft/vcpkg")));
+        detector.insert("version", Json::Value::string("1.0.0"));
+
         Json::Object job;
-        job.insert("id", Json::Value::string("job_id"));
-        job.insert("correlator", Json::Value::string("workflow_job_id"));
+        job.insert("id", Json::Value::string(gh_job_id));
+        job.insert("correlator", Json::Value::string(gh_workflow + "-" + gh_job_id));
 
         Json::Object snapshot;
         snapshot.insert("job", job);
-        snapshot.insert("version", Json::Value::integer(0));
+        if (auto v = args.dependency_graph_version.get())
+        {
+            snapshot.insert("version", Json::Value::integer(std::stoi(*v)));
+        }
+        else
+        {
+            snapshot.insert("version", Json::Value::integer(0));
+        }
+
         snapshot.insert("sha", Json::Value::string(gh_sha));
         snapshot.insert("ref", Json::Value::string(gh_ref));
         snapshot.insert("scanned", Json::Value::string(CTime::now_string()));
@@ -109,20 +165,12 @@ namespace vcpkg::Commands::SetInstalled
         manifests.insert("vcpkg.json", manifest);
         snapshot.insert("manifests", manifests);
 
+        manifest_path;
+
+        // Command showcmd = git_cmd_builder()
+
         Debug::print(Json::stringify(snapshot));
-
-        Command cmd;
-        cmd.string_arg("curl").string_arg("-X").string_arg("POST");
-        cmd.string_arg("-H").string_arg("Accept: application/vnd.github+json");
-
-        std::string res = "Authorization: Bearer " + gh_token;
-        cmd.string_arg("-H").string_arg(res);
-        cmd.string_arg("-H").string_arg("X-GitHub-Api-Version: 2022-11-28");
-        cmd.string_arg(
-            Strings::concat("https://api.github.com/repos/", gh_owner, "/", gh_repo, "/dependency-graph/snapshots"));
-        cmd.string_arg("-d").string_arg(Json::stringify(snapshot));
-
-        cmd_execute_and_stream_lines(cmd, [](StringView line) { Debug::println(line); });
+        return snapshot;
     }
 
     void perform_and_exit_ex(const VcpkgCmdArguments& args,
@@ -136,8 +184,7 @@ namespace vcpkg::Commands::SetInstalled
                              Triplet host_triplet,
                              const KeepGoing keep_going,
                              const bool only_downloads,
-                             const PrintUsage print_cmake_usage,
-                             const bool graph_deps)
+                             const PrintUsage print_cmake_usage)
     {
         auto& fs = paths.get_filesystem();
 
@@ -157,9 +204,10 @@ namespace vcpkg::Commands::SetInstalled
             }
         }
 
-        if (graph_deps)
+        if (paths.manifest_mode_enabled() && paths.get_feature_flags().dependency_graph)
         {
-            create_dependency_graph_json(action_plan);
+            auto snapshot = create_dependency_graph_snapshot(args, action_plan, paths.get_relative_manifest_dir());
+            send_snapshot_to_api(args, snapshot);
         }
 
         // currently (or once) installed specifications
@@ -313,8 +361,7 @@ namespace vcpkg::Commands::SetInstalled
                             host_triplet,
                             keep_going,
                             only_downloads,
-                            print_cmake_usage,
-                            false);
+                            print_cmake_usage);
     }
 
     void SetInstalledCommand::perform_and_exit(const VcpkgCmdArguments& args,

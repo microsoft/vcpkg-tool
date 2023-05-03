@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vcpkg/base/fwd/optional.h>
-
+#include <vcpkg/base/fwd/json.h>
 #include <vcpkg/fwd/binarycaching.h>
 #include <vcpkg/fwd/build.h>
 #include <vcpkg/fwd/cmakevars.h>
@@ -25,12 +25,13 @@ namespace vcpkg::Commands::SetInstalled
                              Triplet host_triplet,
                              const KeepGoing keep_going,
                              const bool only_downloads,
-                             const PrintUsage print_cmake_usage,
-                             const bool graph_deps);
+                             const PrintUsage print_cmake_usage);
     void perform_and_exit(const VcpkgCmdArguments& args,
                           const VcpkgPaths& paths,
                           Triplet default_triplet,
                           Triplet host_triplet);
+
+    Json::Object create_dependency_graph_snapshot(const VcpkgCmdArguments& args, const ActionPlan& action_plan, ExpectedL<std::string> dir);
 
     struct SetInstalledCommand : TripletCommand
     {
