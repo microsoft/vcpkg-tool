@@ -199,7 +199,8 @@ namespace vcpkg
         }
 
         // workaround some systems which only keep the lower 7 bits
-        if (result < 0 || result > 127) {
+        if (result < 0 || result > 127)
+        {
             result = 1;
         }
 
