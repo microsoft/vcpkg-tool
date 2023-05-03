@@ -625,12 +625,9 @@ namespace vcpkg
     REGISTER_MESSAGE(ExportingAlreadyBuiltPackages);
     REGISTER_MESSAGE(ExportingMaintenanceTool);
     REGISTER_MESSAGE(ExportingPackage);
-    REGISTER_MESSAGE(ExportPortFailedToCopyFiles);
-    REGISTER_MESSAGE(ExportPortFailedToCreateDirectory);
     REGISTER_MESSAGE(ExportPortFilesMissing);
     REGISTER_MESSAGE(ExportPortPathExistsAndNotEmpty);
     REGISTER_MESSAGE(ExportPortVersionNotFound);
-    REGISTER_MESSAGE(ExportPortVersionsDbFileMissing);
     REGISTER_MESSAGE(ExportPortSuccess);
     REGISTER_MESSAGE(ExportPortSuccessFromRegistry);
     REGISTER_MESSAGE(ExportPortSuccessUnversioned);

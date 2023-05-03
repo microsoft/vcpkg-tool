@@ -1260,11 +1260,6 @@ namespace vcpkg
                     "The following packages are already built and will be exported:");
     DECLARE_MESSAGE(ExportingMaintenanceTool, (), "", "Exporting maintenance tool...");
     DECLARE_MESSAGE(ExportingPackage, (msg::package_name), "", "Exporting {package_name}...");
-    DECLARE_MESSAGE(ExportPortFailedToCopyFiles,
-                    (msg::package_name, msg::path),
-                    "",
-                    "Failed to export files for package {package_name} to destination {path}");
-    DECLARE_MESSAGE(ExportPortFailedToCreateDirectory, (msg::path), "", "Failed to create destination path: {path}");
     DECLARE_MESSAGE(ExportPortFilesMissing,
                     (msg::package_name, msg::path),
                     "",
@@ -1277,12 +1272,6 @@ namespace vcpkg
                     "Export path {path} is not empty.\n"
                     "Use option --force to overwrite existing files.");
     DECLARE_MESSAGE(ExportPortVersionNotFound, (msg::version), "", "Version {version} not found");
-    DECLARE_MESSAGE(ExportPortVersionsDbFileMissing,
-                    (msg::package_name, msg::path),
-                    "",
-                    "Versions database file for {package_name} is missing.\n"
-                    "Expected file {path} to exist.\n"
-                    "Make sure that the port name is correct.");
     DECLARE_MESSAGE(ExportPortSuccess,
                     (msg::path, msg::package_name, msg::version),
                     "",
