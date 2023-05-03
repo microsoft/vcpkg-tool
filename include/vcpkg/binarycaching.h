@@ -146,7 +146,7 @@ namespace vcpkg
 
     struct BinaryCache
     {
-        BinaryCache(Filesystem& filesystem);
+        BinaryCache(const Filesystem& filesystem);
         explicit BinaryCache(const VcpkgCmdArguments& args, const VcpkgPaths& paths);
 
         void install_providers(std::vector<std::unique_ptr<IBinaryProvider>>&& providers);
@@ -171,7 +171,7 @@ namespace vcpkg
         std::unordered_map<std::string, CacheStatus> m_status;
         std::vector<std::unique_ptr<IBinaryProvider>> m_providers;
         bool needs_nuspec_data = false;
-        Filesystem& filesystem;
+        const Filesystem& filesystem;
     };
 
     ExpectedL<DownloadManagerConfig> parse_download_configuration(const Optional<std::string>& arg);

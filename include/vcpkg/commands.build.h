@@ -243,7 +243,7 @@ namespace vcpkg
         BuildPolicies policies;
     };
 
-    BuildInfo read_build_info(const Filesystem& fs, const Path& filepath);
+    BuildInfo read_build_info(const ReadOnlyFilesystem& fs, const Path& filepath);
 
     struct AbiEntry
     {
@@ -303,7 +303,7 @@ namespace vcpkg
         Cache<Path, TripletMapEntry> m_triplet_cache;
         Cache<Path, std::string> m_toolchain_cache;
 
-        const TripletMapEntry& get_triplet_cache(const Filesystem& fs, const Path& p) const;
+        const TripletMapEntry& get_triplet_cache(const ReadOnlyFilesystem& fs, const Path& p) const;
 
 #if defined(_WIN32)
         struct EnvMapEntry

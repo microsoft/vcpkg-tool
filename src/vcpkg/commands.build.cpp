@@ -485,14 +485,14 @@ namespace vcpkg
 
     static const std::string& get_toolchain_cache(Cache<Path, std::string>& cache,
                                                   const Path& tcfile,
-                                                  const Filesystem& fs)
+                                                  const ReadOnlyFilesystem& fs)
     {
         return cache.get_lazy(tcfile, [&]() {
             return Hash::get_file_hash(fs, tcfile, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO);
         });
     }
 
-    const EnvCache::TripletMapEntry& EnvCache::get_triplet_cache(const Filesystem& fs, const Path& p) const
+    const EnvCache::TripletMapEntry& EnvCache::get_triplet_cache(const ReadOnlyFilesystem& fs, const Path& p) const
     {
         return m_triplet_cache.get_lazy(p, [&]() -> TripletMapEntry {
             return TripletMapEntry{Hash::get_file_hash(fs, p, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO)};
@@ -624,7 +624,7 @@ namespace vcpkg
         return bcf;
     }
 
-    static void write_binary_control_file(Filesystem& fs, const Path& package_dir, const BinaryControlFile& bcf)
+    static void write_binary_control_file(const Filesystem& fs, const Path& package_dir, const BinaryControlFile& bcf)
     {
         std::string start = Strings::serialize(bcf.core_paragraph);
         for (auto&& feature : bcf.features)
@@ -783,7 +783,7 @@ namespace vcpkg
             variables.emplace_back("VCPKG_DOWNLOAD_MODE", "true");
         }
 
-        const Filesystem& fs = paths.get_filesystem();
+        const ReadOnlyFilesystem& fs = paths.get_filesystem();
 
         std::vector<std::string> port_configs;
         for (const PackageSpec& dependency : action.package_dependencies)
@@ -1625,7 +1625,7 @@ namespace vcpkg
         return build_info;
     }
 
-    BuildInfo read_build_info(const Filesystem& fs, const Path& filepath)
+    BuildInfo read_build_info(const ReadOnlyFilesystem& fs, const Path& filepath)
     {
         auto pghs = Paragraphs::get_single_paragraph(fs, filepath);
         if (!pghs)

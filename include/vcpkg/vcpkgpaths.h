@@ -55,7 +55,7 @@ namespace vcpkg
 
     struct VcpkgPaths
     {
-        VcpkgPaths(Filesystem& filesystem, const VcpkgCmdArguments& args, const BundleSettings& bundle);
+        VcpkgPaths(const Filesystem& filesystem, const VcpkgCmdArguments& args, const BundleSettings& bundle);
         VcpkgPaths(const VcpkgPaths&) = delete;
         VcpkgPaths& operator=(const VcpkgPaths&) = delete;
         ~VcpkgPaths();
@@ -112,7 +112,7 @@ namespace vcpkg
 
         std::string get_toolver_diagnostics() const;
 
-        Filesystem& get_filesystem() const;
+        const Filesystem& get_filesystem() const;
         const DownloadManager& get_download_manager() const;
         const ToolCache& get_tool_cache() const;
         const Path& get_tool_exe(StringView tool, MessageSink& status_messages) const;

@@ -197,7 +197,7 @@ namespace
         return nuget_prefix;
     }
 
-    static void clean_prepare_dir(Filesystem& fs, const Path& dir)
+    static void clean_prepare_dir(const Filesystem& fs, const Path& dir)
     {
         fs.remove_all(dir, VCPKG_LINE_INFO);
         if (!fs.create_directories(dir, VCPKG_LINE_INFO))
@@ -670,7 +670,7 @@ namespace
             size_t result_index;
         };
 
-        static void generate_packages_config(Filesystem& fs,
+        static void generate_packages_config(const Filesystem& fs,
                                              const Path& packages_config,
                                              const std::vector<NuGetPrefetchAttempt>& attempts)
         {
@@ -1574,7 +1574,7 @@ namespace vcpkg
             .value_or_exit(VCPKG_LINE_INFO);
     }
 
-    BinaryCache::BinaryCache(Filesystem& filesystem) : filesystem(filesystem) { }
+    BinaryCache::BinaryCache(const Filesystem& filesystem) : filesystem(filesystem) { }
 
     BinaryCache::BinaryCache(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
         : BinaryCache(paths.get_filesystem())
@@ -1874,7 +1874,7 @@ namespace
             get_global_metrics_collector().track_define(DefineMetric::VcpkgDefaultBinaryCache);
             Path path = std::move(*p_str);
             path.make_preferred();
-            if (!get_real_filesystem().is_directory(path))
+            if (!real_filesystem.is_directory(path))
             {
                 return msg::format(msgDefaultBinaryCacheRequiresDirectory, msg::path = path);
             }

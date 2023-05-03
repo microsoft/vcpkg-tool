@@ -19,7 +19,7 @@ namespace
 
     WriteFilePointer maybe_create_log(const std::map<std::string, std::string, std::less<>>& settings,
                                       StringLiteral setting,
-                                      Filesystem& fs)
+                                      const Filesystem& fs)
     {
         const auto entry = settings.find(setting);
         if (entry == settings.end())
@@ -60,7 +60,7 @@ namespace
 
     struct AppLocalInvocation
     {
-        AppLocalInvocation(Filesystem& fs,
+        AppLocalInvocation(const Filesystem& fs,
                            const Path& deployment_dir,
                            const Path& installed_bin_dir,
                            WriteFilePointer&& tlog_file,
@@ -505,7 +505,7 @@ namespace
             return did_deploy;
         }
 
-        Filesystem& m_fs;
+        const Filesystem& m_fs;
         Path m_deployment_dir;
         Path m_installed_bin_dir;
         Path m_installed_bin_parent;
@@ -521,7 +521,7 @@ namespace
 
 namespace vcpkg::Commands
 {
-    void command_z_applocal_and_exit(const VcpkgCmdArguments& args, Filesystem&)
+    void command_z_applocal_and_exit(const VcpkgCmdArguments& args, const Filesystem&)
     {
         static constexpr StringLiteral OPTION_TARGET_BINARY = "target-binary";
         static constexpr StringLiteral OPTION_INSTALLED_DIR = "installed-bin-dir";
@@ -546,8 +546,6 @@ namespace vcpkg::Commands
             {{}, SETTINGS, {}},
             nullptr};
 
-        auto& fs = get_real_filesystem();
-
         auto parsed = args.parse_arguments(COMMAND_STRUCTURE);
         const auto target_binary = parsed.settings.find(OPTION_TARGET_BINARY);
         Checks::check_exit(
@@ -557,12 +555,12 @@ namespace vcpkg::Commands
                            target_installed_bin_dir != parsed.settings.end(),
                            "The --installed-bin-dir setting is required.");
 
-        const auto target_binary_path = fs.almost_canonical(target_binary->second, VCPKG_LINE_INFO);
-        AppLocalInvocation invocation(fs,
+        const auto target_binary_path = real_filesystem.almost_canonical(target_binary->second, VCPKG_LINE_INFO);
+        AppLocalInvocation invocation(real_filesystem,
                                       target_binary_path.parent_path(),
                                       target_installed_bin_dir->second,
-                                      maybe_create_log(parsed.settings, OPTION_TLOG_FILE, fs),
-                                      maybe_create_log(parsed.settings, OPTION_COPIED_FILES_LOG, fs));
+                                      maybe_create_log(parsed.settings, OPTION_TLOG_FILE, real_filesystem),
+                                      maybe_create_log(parsed.settings, OPTION_COPIED_FILES_LOG, real_filesystem));
         invocation.resolve(target_binary_path);
         Checks::exit_success(VCPKG_LINE_INFO);
     }

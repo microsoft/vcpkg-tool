@@ -252,7 +252,7 @@ namespace vcpkg::Commands::Integrate
     static constexpr StringLiteral vcpkg_user_props = "vcpkg.user.props";
     static constexpr StringLiteral vcpkg_user_targets = "vcpkg.user.targets";
 
-    static bool integrate_install_msbuild14(Filesystem& fs)
+    static bool integrate_install_msbuild14(const Filesystem& fs)
     {
         std::array<Path, 2> OLD_SYSTEM_TARGET_FILES = {
             get_program_files_32_bit().value_or_exit(VCPKG_LINE_INFO) /
@@ -344,7 +344,7 @@ namespace vcpkg::Commands::Integrate
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 
-    static void integrate_remove(Filesystem& fs)
+    static void integrate_remove(const Filesystem& fs)
     {
         bool was_deleted = false;
         auto user_configuration_home = get_user_configuration_home().value_or_exit(VCPKG_LINE_INFO);

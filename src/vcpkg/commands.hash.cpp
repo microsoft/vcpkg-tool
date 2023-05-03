@@ -16,7 +16,7 @@ namespace vcpkg::Commands::Hash
         nullptr,
     };
 
-    void perform_and_exit(const VcpkgCmdArguments& args, Filesystem& fs)
+    void perform_and_exit(const VcpkgCmdArguments& args, const Filesystem& fs)
     {
         const auto parsed = args.parse_arguments(COMMAND_STRUCTURE);
 

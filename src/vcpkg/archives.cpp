@@ -127,8 +127,11 @@ namespace
     }
 #endif // ^^^ _WIN32
 
-    void extract_archive_to_empty(
-        Filesystem& fs, const ToolCache& tools, MessageSink& status_sink, const Path& archive, const Path& to_path)
+    void extract_archive_to_empty(const Filesystem& fs,
+                                  const ToolCache& tools,
+                                  MessageSink& status_sink,
+                                  const Path& archive,
+                                  const Path& to_path)
     {
         const auto ext = archive.extension();
 #if defined(_WIN32)
@@ -177,8 +180,11 @@ namespace
         }
     }
 
-    Path extract_archive_to_temp_subdirectory(
-        Filesystem& fs, const ToolCache& tools, MessageSink& status_sink, const Path& archive, const Path& to_path)
+    Path extract_archive_to_temp_subdirectory(const Filesystem& fs,
+                                              const ToolCache& tools,
+                                              MessageSink& status_sink,
+                                              const Path& archive,
+                                              const Path& to_path)
     {
         Path to_path_partial = to_path + ".partial";
 #if defined(_WIN32)
@@ -195,7 +201,7 @@ namespace
 namespace vcpkg
 {
 #ifdef _WIN32
-    void win32_extract_self_extracting_7z(Filesystem& fs, const Path& archive, const Path& to_path)
+    void win32_extract_self_extracting_7z(const Filesystem& fs, const Path& archive, const Path& to_path)
     {
         constexpr static const char header_7z[] = "7z\xBC\xAF\x27\x1C";
 
@@ -228,8 +234,11 @@ namespace vcpkg
     //     (user) cmake.exe unpacks cmake.zip -> (vcpkg) cmake.exe unpacks 7z.7z
     // 3) As a last resource, install 7zip using a MSI installer
     //     msiexec installs 7zip.msi -> 7zip unpacks cmake.zip -> cmake.exe unpacks 7z.7z
-    void win32_extract_bootstrap_zip(
-        Filesystem& fs, const ToolCache& tools, MessageSink& status_sink, const Path& archive, const Path& to_path)
+    void win32_extract_bootstrap_zip(const Filesystem& fs,
+                                     const ToolCache& tools,
+                                     MessageSink& status_sink,
+                                     const Path& archive,
+                                     const Path& to_path)
     {
         fs.remove_all(to_path, VCPKG_LINE_INFO);
         Path to_path_partial = to_path + ".partial." + std::to_string(GetCurrentProcessId());
@@ -285,16 +294,22 @@ namespace vcpkg
                                msg::path = archive);
     }
 
-    void extract_archive(
-        Filesystem& fs, const ToolCache& tools, MessageSink& status_sink, const Path& archive, const Path& to_path)
+    void extract_archive(const Filesystem& fs,
+                         const ToolCache& tools,
+                         MessageSink& status_sink,
+                         const Path& archive,
+                         const Path& to_path)
     {
         fs.remove_all(to_path, VCPKG_LINE_INFO);
         Path to_path_partial = extract_archive_to_temp_subdirectory(fs, tools, status_sink, archive, to_path);
         fs.rename_with_retry(to_path_partial, to_path, VCPKG_LINE_INFO);
     }
 
-    ExpectedL<Unit> compress_directory_to_zip(
-        Filesystem& fs, const ToolCache& tools, MessageSink& status_sink, const Path& source, const Path& destination)
+    ExpectedL<Unit> compress_directory_to_zip(const Filesystem& fs,
+                                              const ToolCache& tools,
+                                              MessageSink& status_sink,
+                                              const Path& source,
+                                              const Path& destination)
     {
         fs.remove(destination, VCPKG_LINE_INFO);
 #if defined(_WIN32)

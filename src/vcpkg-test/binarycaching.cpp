@@ -369,7 +369,7 @@ Dependencies:
 TEST_CASE ("Provider nullptr checks", "[BinaryCache]")
 {
     // create a binary cache to test
-    BinaryCache uut(get_real_filesystem());
+    BinaryCache uut(real_filesystem);
     std::vector<std::unique_ptr<IBinaryProvider>> providers;
     providers.emplace_back(std::make_unique<KnowNothingBinaryProvider>());
     uut.install_providers(std::move(providers));
