@@ -3,6 +3,7 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/chrono.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/parse.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
@@ -250,6 +251,31 @@ namespace vcpkg
 #endif
     }
 
+    Optional<ProcessStat> try_parse_process_stat_file(StringView text, StringView origin)
+    {
+        ParserBase p(text, origin);
+
+        p.match_while(ParserBase::is_ascii_digit); // pid
+
+        p.skip_whitespace();
+        p.require_character('(');
+        auto executable = p.match_until([](char32_t c) { return c == ')'; }).to_string();
+        p.next();
+
+        p.skip_whitespace();
+        p.next(); // state
+
+        p.skip_whitespace();
+        auto ppid_str = p.match_while(ParserBase::is_ascii_digit);
+        auto maybe_ppid = Strings::strto<int>(ppid_str);
+        if (!maybe_ppid)
+        {
+            return nullopt;
+        }
+
+        return ProcessStat{maybe_ppid.value_or_exit(VCPKG_LINE_INFO), executable};
+    }
+
     void get_parent_process_list(std::vector<std::string>& ret)
     {
 #if defined(_WIN32)
@@ -285,6 +311,34 @@ namespace vcpkg
                 ret.push_back(name);
                 it = pid_ppid_map.find(it->second);
             }
+        }
+#elif defined(__linux__)
+        auto& fs = get_real_filesystem();
+        auto get_process_stat = [&](int pid) -> Optional<ProcessStat> {
+            const auto stat_file = fmt::format("/proc/{}/stat", pid);
+            if (!fs.exists(stat_file, IgnoreErrors{})) return nullopt;
+
+            std::error_code ec;
+            auto contents = fs.read_contents(stat_file, ec);
+            if (ec) return nullopt;
+
+            return try_parse_process_stat_file(contents, stat_file);
+        };
+
+        auto vcpkg_pid = getpid();
+        auto maybe_vcpkg_stat = get_process_stat(vcpkg_pid);
+        if (!maybe_vcpkg_stat) return;
+
+        auto vcpkg_stat = maybe_vcpkg_stat.value_or_exit(VCPKG_LINE_INFO);
+        auto pid = vcpkg_stat.ppid;
+        while (pid != 0)
+        {
+            auto maybe_stat = get_process_stat(pid);
+            if (!maybe_stat) break;
+
+            auto stat = maybe_stat.value_or_exit(VCPKG_LINE_INFO);
+            ret.push_back(stat.executable_name);
+            pid = stat.ppid;
         }
 #else
         (void)ret;
