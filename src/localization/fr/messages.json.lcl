@@ -1708,6 +1708,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CISkipInstallation" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The following packages are already installed and not build again: {list}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Les packages suivants sont déjà installés et ne sont pas générés de nouveau : {list}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CISwitchOptAllowUnexpectedPassing" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Indicates that 'Passing, remove from fail list' results should not be emitted.]]></Val>
@@ -5739,10 +5748,13 @@
       </Item>
       <Item ItemId=";HelpUpdateBaseline" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The best approach to keep your libraries up to date, the best approach is to update your baseline reference. This will ensure all packages, including transitive ones, are updated. However if you need to update a package independently, you can use a "version>=" constraint.]]></Val>
+          <Val><![CDATA[The best approach to keep your libraries up to date is to update your baseline reference. This will ensure all packages, including transitive ones, are updated. However if you need to update a package independently, you can use a "version>=" constraint.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[La meilleure approche pour maintenir vos bibliothèques à jour consiste à mettre à jour votre référence de base. Cela permet de s’assurer que tous les packages, y compris les packages transitifs, sont mis à jour. Toutefois, si vous devez mettre à jour un package indépendamment, vous pouvez utiliser une contrainte « version>= ».]]></Val>
+            <Val><![CDATA[La meilleure approche pour maintenir vos bibliothèques à jour consiste à mettre à jour votre référence de base. Cela garantira que tous les packages, y compris les packages transitifs, sont mis à jour. Cependant, si vous avez besoin de mettre à jour un package indépendamment, vous pouvez utiliser une contrainte "version>=".]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The best approach to keep your libraries up to date, the best approach is to update your baseline reference. This will ensure all packages, including transitive ones, are updated. However if you need to update a package independently, you can use a "version>=" constraint.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -10566,36 +10578,66 @@
       </Item>
       <Item ItemId=";VersionIncomparable1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[version conflict on {spec}: {package_name} required {expected} but vcpkg could not compare it to {actual}.]A;The two versions used incomparable schemes:]]></Val>
+          <Val><![CDATA[version conflict on {spec}: {constraint_origin} required {expected}, which cannot be compared with the baseline version {actual}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[conflit de version sur {spec} : {package_name} {expected} requis, mais vcpkg n’a pas pu le comparer à {actual}.]A;Les deux versions utilisaient des schémas plus petits :]]></Val>
+            <Val><![CDATA[conflit de version sur {spec} : {constraint_origin} requis {expected}, qui ne peut pas être comparé à la version de référence {actual}.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[version conflict on {spec}: {package_name} required {expected} but vcpkg could not compare it to {actual}.]A;The two versions used incomparable schemes:]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";VersionIncomparable2" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA["{version}" was of scheme {new_scheme}]]></Val>
+          <Val><![CDATA[{version_spec} has scheme {new_scheme}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA["{version}" était du schéma {new_scheme}]]></Val>
+            <Val><![CDATA[{version_spec} a le schéma {new_scheme}]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA["{version}" was of scheme {new_scheme}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";VersionIncomparable3" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[This can be resolved by adding an explicit override to the preferred version, for example:]]></Val>
+          <Val><![CDATA[This can be resolved by adding an explicit override to the preferred version. For example:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Pour résoudre ce problème, ajoutez un remplacement explicite à la version par défaut, par exemple :]]></Val>
+            <Val><![CDATA[Cela peut être résolu en ajoutant un remplacement explicite à la version préférée. Par exemple:]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[This can be resolved by adding an explicit override to the preferred version, for example:]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionIncomparable4" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[See `vcpkg help versioning` or {url} for more information.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Voir `vcpkg help versioning` ou {url} pour plus d'informations.]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[See `vcpkg help versioning` for more information.]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionIncomparableSchemeString" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Both versions have scheme string but different primary text.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Les deux versions ont une chaîne de schéma mais un texte principal différent.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";VersionIncomparable4" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";VersionIncomparableSchemes" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[See `vcpkg help versioning` for more information.]]></Val>
+          <Val><![CDATA[The versions have incomparable schemes:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Pour plus d’informations, consultez « vcpkg help versioning ».]]></Val>
+            <Val><![CDATA[Les versions ont des schémas incomparables :]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10638,10 +10680,13 @@
       </Item>
       <Item ItemId=";VersionMissingRequiredFeature" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[{spec}@{version} does not have required feature {feature}]]></Val>
+          <Val><![CDATA[{version_spec} does not have required feature {feature} needed by {constraint_origin}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{spec}@{version} n’a pas la fonctionnalité {feature} requise]]></Val>
+            <Val><![CDATA[{version_spec} n'a pas la fonctionnalité requise {feature} requise par {constraint_origin}]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[{spec}@{version} does not have required feature {feature}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -10654,21 +10699,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";VersionNotFoundDuringDiscovery" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[version was not found during discovery: {spec}@{version}]A;This is an internal vcpkg error. Please open an issue on https://github.com/Microsoft/vcpkg with detailed steps to reproduce the problem.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[version introuvable lors de la découverte : {spec}@{version}]A;Il s’agit d’une erreur vcpkg interne. Ouvrez un problème sur https://github.com/Microsoft/vcpkg avec des étapes détaillées pour reproduire le problème.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";VersionNotFoundInVersionsFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Version {version} was not found in versions file.]A;Run:]A;vcpkg x-add-version {package_name}]A;to add the new port version.]]></Val>
+          <Val><![CDATA[Version {version} was not found in versions file for {package_name}.]A;Run:]A;vcpkg x-add-version {package_name}]A;to add the new port version.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[La {version} de version est introuvable dans le fichier de versions.]A;Courir:]A;{package_name} x-add-version vcpkg]A;pour ajouter la nouvelle version du port.]]></Val>
+            <Val><![CDATA[La version {version} n'a pas été trouvée dans le fichier de versions pour {package_name}.]A;Run :]A;vcpkg x-add-version {package_name}]A;pour ajouter la nouvelle version du port.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Version {version} was not found in versions file.]A;Run:]A;vcpkg x-add-version {package_name}]A;to add the new port version.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -10758,10 +10797,13 @@
       </Item>
       <Item ItemId=";VersionVerifiedOK" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[OK: {package_name}@{version} -> {commit_sha}]]></Val>
+          <Val><![CDATA[OK: {version_spec} -> {commit_sha}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[OK : {package_name}@{version} -> {commit_sha}]]></Val>
+            <Val><![CDATA[OK : {version_spec} -> {commit_sha}]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[OK: {package_name}@{version} -> {commit_sha}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>

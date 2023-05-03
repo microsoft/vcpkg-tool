@@ -5739,10 +5739,13 @@
       </Item>
       <Item ItemId=";HelpUpdateBaseline" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The best approach to keep your libraries up to date, the best approach is to update your baseline reference. This will ensure all packages, including transitive ones, are updated. However if you need to update a package independently, you can use a "version>=" constraint.]]></Val>
+          <Val><![CDATA[The best approach to keep your libraries up to date is to update your baseline reference. This will ensure all packages, including transitive ones, are updated. However if you need to update a package independently, you can use a "version>=" constraint.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[라이브러리를 최신 상태로 유지하는 가장 좋은 방법은 기준 참조를 업데이트하는 것입니다. 이렇게 하면 전이 패키지를 포함한 모든 패키지가 업데이트됩니다. 그러나 패키지를 독립적으로 업데이트해야 하는 경우 "version>=" 제약 조건을 사용할 수 있습니다.]]></Val>
+            <Val><![CDATA[라이브러리를 최신 상태로 유지하는 가장 좋은 방법은 기준 참조를 업데이트하는 것입니다. 이렇게 하면 전이 패키지를 포함한 모든 패키지가 업데이트됩니다. 하지만 패키지를 독립적으로 업데이트해야 하는 경우 "version>=" 제약 조건을 사용할 수 있습니다.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The best approach to keep your libraries up to date, the best approach is to update your baseline reference. This will ensure all packages, including transitive ones, are updated. However if you need to update a package independently, you can use a "version>=" constraint.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -10566,36 +10569,66 @@
       </Item>
       <Item ItemId=";VersionIncomparable1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[version conflict on {spec}: {package_name} required {expected} but vcpkg could not compare it to {actual}.]A;The two versions used incomparable schemes:]]></Val>
+          <Val><![CDATA[version conflict on {spec}: {constraint_origin} required {expected}, which cannot be compared with the baseline version {actual}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{spec}의 버전 충돌: {package_name}에 {expected}이(가) 필요하지만 vcpkg는 {actual}에 비교할 수 없습니다.]A;비교할 수 없는 스키마를 사용한 두 버전은 다음과 같습니다.]]></Val>
+            <Val><![CDATA[{spec}의 버전 충돌: {constraint_origin}에 {expected}이(가) 필요하므로 기준 버전 {actual}과(와) 비교할 수 없습니다.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[version conflict on {spec}: {package_name} required {expected} but vcpkg could not compare it to {actual}.]A;The two versions used incomparable schemes:]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";VersionIncomparable2" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA["{version}" was of scheme {new_scheme}]]></Val>
+          <Val><![CDATA[{version_spec} has scheme {new_scheme}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA["{version}"은(는) 스키마 {new_scheme}입니다.]]></Val>
+            <Val><![CDATA[{version_spec}에 {new_scheme} 체계가 있음]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA["{version}" was of scheme {new_scheme}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";VersionIncomparable3" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[This can be resolved by adding an explicit override to the preferred version, for example:]]></Val>
+          <Val><![CDATA[This can be resolved by adding an explicit override to the preferred version. For example:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[이는 기본 설정 버전에 명시적 재정의를 추가하여 해결할 수 있습니다. 예:]]></Val>
+            <Val><![CDATA[이 문제는 기본 설정 버전에 명시적 재정의를 추가하여 해결할 수 있습니다. 예:]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[This can be resolved by adding an explicit override to the preferred version, for example:]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionIncomparable4" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[See `vcpkg help versioning` or {url} for more information.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[자세한 내용은 'vcpkg 도움말 버전 관리' 또는 {url}을(를) 참조하세요.]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[See `vcpkg help versioning` for more information.]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionIncomparableSchemeString" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Both versions have scheme string but different primary text.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[두 버전 모두 체계 문자열이 있지만 기본 텍스트가 다릅니다.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";VersionIncomparable4" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";VersionIncomparableSchemes" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[See `vcpkg help versioning` for more information.]]></Val>
+          <Val><![CDATA[The versions have incomparable schemes:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[자세한 내용은 'vcpkg 도움말 버전 관리'를 참조하세요.]]></Val>
+            <Val><![CDATA[버전에 호환되지 않는 체계가 있습니다.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10638,10 +10671,13 @@
       </Item>
       <Item ItemId=";VersionMissingRequiredFeature" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[{spec}@{version} does not have required feature {feature}]]></Val>
+          <Val><![CDATA[{version_spec} does not have required feature {feature} needed by {constraint_origin}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{spec}@{version}에 필수 기능 {feature}이(가) 없습니다.]]></Val>
+            <Val><![CDATA[{version_spec}에 {constraint_origin}에 필요한 기능 {feature}이(가) 없음]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[{spec}@{version} does not have required feature {feature}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -10654,21 +10690,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";VersionNotFoundDuringDiscovery" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[version was not found during discovery: {spec}@{version}]A;This is an internal vcpkg error. Please open an issue on https://github.com/Microsoft/vcpkg with detailed steps to reproduce the problem.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[검색하는 동안 버전을 찾을 수 없었습니다. {spec}@{version}]A;내부 vcpkg 오류입니다. 문제를 재현하기위한 자세한 단계와 함께 https://github.com/microsoft/vcpkg에서 문제를 열어주세요.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";VersionNotFoundInVersionsFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Version {version} was not found in versions file.]A;Run:]A;vcpkg x-add-version {package_name}]A;to add the new port version.]]></Val>
+          <Val><![CDATA[Version {version} was not found in versions file for {package_name}.]A;Run:]A;vcpkg x-add-version {package_name}]A;to add the new port version.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[버전 파일에서 버전 {version}을(를) 찾을 수 없습니다.]A;실행:]A;vcpkg x-add-version {package_name}]A;새 포트 버전을 추가합니다.]]></Val>
+            <Val><![CDATA[{package_name}의 버전 파일에서 버전 {version}을(를) 찾을 수 없습니다.]A;실행:]A;vcpkg x-add-version {package_name}]A;새 포트 버전을 추가합니다.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Version {version} was not found in versions file.]A;Run:]A;vcpkg x-add-version {package_name}]A;to add the new port version.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -10758,10 +10788,13 @@
       </Item>
       <Item ItemId=";VersionVerifiedOK" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[OK: {package_name}@{version} -> {commit_sha}]]></Val>
+          <Val><![CDATA[OK: {version_spec} -> {commit_sha}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[OK: {package_name}@{version} -> {commit_sha}]]></Val>
+            <Val><![CDATA[확인: {version_spec} -> {commit_sha}]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[OK: {package_name}@{version} -> {commit_sha}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
