@@ -133,6 +133,7 @@ namespace vcpkg
         {StringMetric::CommandName, "command_name", "z-preregister-telemetry"},
         {StringMetric::DeploymentKind, "deployment_kind", "Git"},
         {StringMetric::DetectedCiEnvironment, "detected_ci_environment", "Generic"},
+        {StringMetric::GithubRepo, "github_repo_hash", "0000000011111111aaaaaaaabbbbbbbbccccccccddddddddeeeeeeeeffffffff"},
         // spec:triplet:version,...
         {StringMetric::InstallPlan_1, "installplan_1", plan_example},
         {StringMetric::ListFile, "listfile", "update to new format"},
