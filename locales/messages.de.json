@@ -163,7 +163,7 @@
   "CISettingsOptXUnit": "Datei, die Ergebnisse im XUnit-Format ausgibt (intern)",
   "CISettingsVerifyGitTree": "Vergewissern Sie sich, dass jedes Git-Strukturobjekt mit seiner deklarierten Version übereinstimmt (dies ist sehr langsam).",
   "CISettingsVerifyVersion": "Druckergebnis für jeden Port anstatt nur Fehler.",
-  "CISkipInstallation": "The following packages are already installed and not build again: {list}",
+  "CISkipInstallation": "Die folgenden Pakete sind bereits installiert und werden nicht erneut erstellt: {list}",
   "CISwitchOptAllowUnexpectedPassing": "Gibt an, dass die Ergebnisse \"Passing, remove from fail list\" (Bestanden, von der Fehlerliste entfernen) nicht ausgegeben werden sollen.",
   "CISwitchOptDryRun": "Plan ohne Ausführung drucken",
   "CISwitchOptRandomize": "Zufällige Installationsreihenfolge",
