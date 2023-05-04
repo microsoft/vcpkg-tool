@@ -255,15 +255,34 @@ namespace vcpkg
     {
         ParserBase p(text, origin);
 
-        p.match_while(ParserBase::is_ascii_digit); // pid
+        p.match_while(ParserBase::is_ascii_digit); // pid %d (ignored)
 
         p.skip_whitespace();
         p.require_character('(');
-        auto executable = p.match_until([](char32_t c) { return c == ')'; }).to_string();
-        p.next();
+        // From: https://man7.org/linux/man-pages/man5/procfs.5.html
+        //
+        //  /proc/[pid]/stat
+        //
+        //  (2) comm  %s
+        //  The filename of the executable, in parentheses.
+        //  Strings longer than TASK_COMM_LEN (16) characters (including the terminating null byte) are silently
+        //  truncated.  This is visible whether or not the executable is swapped out.
+        const auto start = p.it().pointer_to_current();
+        const auto end = p.it().end();
+        size_t len = 0, last_seen = 0;
+        for (auto it = p.it(); len < 17 && it != end; ++len, ++it)
+        {
+            if (*it == ')') last_seen = len;
+        }
+        auto executable = StringView(start, last_seen);
+        for (size_t i = 0; i < last_seen; ++i)
+        {
+            p.next();
+        }
+        p.require_character(')');
 
         p.skip_whitespace();
-        p.next(); // state
+        p.next(); // state %c (ignored)
 
         p.skip_whitespace();
         auto ppid_str = p.match_while(ParserBase::is_ascii_digit);
@@ -272,7 +291,7 @@ namespace vcpkg
         {
             return ProcessStat{
                 *ppid,
-                executable,
+                executable.to_string(),
             };
         }
         return nullopt;
