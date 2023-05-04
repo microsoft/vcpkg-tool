@@ -268,16 +268,19 @@ namespace vcpkg
         p.skip_whitespace();
         auto ppid_str = p.match_while(ParserBase::is_ascii_digit);
         auto maybe_ppid = Strings::strto<int>(ppid_str);
-        if (!maybe_ppid)
+        if (auto ppid = maybe_ppid.get())
         {
-            return nullopt;
+            return ProcessStat{
+                *ppid,
+                executable,
+            };
         }
-
-        return ProcessStat{maybe_ppid.value_or_exit(VCPKG_LINE_INFO), executable};
+        return nullopt;
     }
 
     void get_parent_process_list(std::vector<std::string>& ret)
     {
+        ret.clear();
 #if defined(_WIN32)
         // Enumerate all processes in the system snapshot.
         auto snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
@@ -301,47 +304,43 @@ namespace vcpkg
 
         // Find hierarchy of current process
         auto it = pid_ppid_map.find(GetCurrentProcessId());
-        if (it != pid_ppid_map.end())
+        if (it == pid_ppid_map.end()) return;
+        while (true)
         {
-            // skip the vcpkg process
             it = pid_ppid_map.find(it->second);
-            while (it != pid_ppid_map.end())
-            {
-                auto name = pid_exe_path_map[it->first];
-                ret.push_back(name);
-                it = pid_ppid_map.find(it->second);
-            }
+            if (it == pid_ppid_map.end()) break;
+            ret.push_back(pid_exe_path_map[it->first]);
         }
 #elif defined(__linux__)
         auto& fs = get_real_filesystem();
-        auto get_process_stat = [&](int pid) -> Optional<ProcessStat> {
-            const auto stat_file = fmt::format("/proc/{}/stat", pid);
-            if (!fs.exists(stat_file, IgnoreErrors{})) return nullopt;
 
-            std::error_code ec;
-            auto contents = fs.read_contents(stat_file, ec);
-            if (ec) return nullopt;
+        std::error_code ec;
+        auto vcpkg_stat_filepath = fmt::format("/proc/{}/stat", getpid());
+        auto vcpkg_stat_contents = fs.read_contents(vcpkg_stat_filepath, ec);
+        if (ec) return;
 
-            return try_parse_process_stat_file(contents, stat_file);
-        };
-
-        auto vcpkg_pid = getpid();
-        auto maybe_vcpkg_stat = get_process_stat(vcpkg_pid);
-        if (!maybe_vcpkg_stat) return;
-
-        auto vcpkg_stat = maybe_vcpkg_stat.value_or_exit(VCPKG_LINE_INFO);
-        auto pid = vcpkg_stat.ppid;
-        while (pid != 0)
+        auto maybe_vcpkg_stat = try_parse_process_stat_file(vcpkg_stat_contents, vcpkg_stat_filepath);
+        if (auto vcpkg_stat = maybe_vcpkg_stat.get())
         {
-            auto maybe_stat = get_process_stat(pid);
-            if (!maybe_stat) break;
+            auto pid = vcpkg_stat->ppid;
+            while (pid != 0)
+            {
+                auto stat_filepath = fmt::format("/proc/{}/stat", pid);
+                auto contents = fs.read_contents(stat_filepath, ec);
+                if (ec) break;
 
-            auto stat = maybe_stat.value_or_exit(VCPKG_LINE_INFO);
-            ret.push_back(stat.executable_name);
-            pid = stat.ppid;
+                auto maybe_stat = try_parse_process_stat_file(contents, stat_filepath);
+                if (auto stat = maybe_stat.get())
+                {
+                    ret.push_back(stat->executable_name);
+                    pid = stat->ppid;
+                }
+                else
+                {
+                    break;
+                }
+            }
         }
-#else
-        (void)ret;
 #endif
     }
 
