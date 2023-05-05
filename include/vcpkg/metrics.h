@@ -63,6 +63,7 @@ namespace vcpkg
         GithubRepo,
         InstallPlan_1,
         ListFile,
+        ProcessTree,
         RegistriesDefaultRegistryKind,
         RegistriesKindsUsed,
         Title,
@@ -174,6 +175,7 @@ namespace vcpkg
         std::string submission_time;
         std::string os_version;
         std::string session_id;
+        std::string parent_process_list;
 
         static MetricsSessionData from_system();
     };

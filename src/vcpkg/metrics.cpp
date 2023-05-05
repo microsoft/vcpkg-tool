@@ -139,6 +139,8 @@ namespace vcpkg
         // spec:triplet:version,...
         {StringMetric::InstallPlan_1, "installplan_1", plan_example},
         {StringMetric::ListFile, "listfile", "update to new format"},
+        // hashed list of parent process names ;-separated (parent_process;grandparent_process;...)
+        {StringMetric::ProcessTree, "process_tree", "0000000011111111aaaaaaaabbbbbbbbccccccccddddddddeeeeeeeeffffffff"},
         {StringMetric::RegistriesDefaultRegistryKind, "registries-default-registry-kind", "builtin-files"},
         {StringMetric::RegistriesKindsUsed, "registries-kinds-used", "git,filesystem"},
         {StringMetric::Title, "title", "title"},
@@ -371,6 +373,12 @@ namespace vcpkg
         result.os_version.append(get_os_version_string());
 
         result.session_id = generate_random_UUID();
+
+        std::vector<std::string> process_list;
+        get_parent_process_list(process_list);
+        result.parent_process_list =
+            Strings::join(";", process_list, [](auto&& s) { return Hash::get_string_sha256(s); });
+
         return result;
     }
 
@@ -445,6 +453,9 @@ namespace vcpkg
         {
             measurements.insert_or_replace("elapsed_us", Json::Value::number(submission.elapsed_us));
         }
+
+        properties.insert_or_replace(get_metric_name(StringMetric::ProcessTree, all_string_metrics),
+                                     Json::Value::string(session.parent_process_list));
 
         return Json::stringify(arr);
     }
