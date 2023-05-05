@@ -26,6 +26,8 @@ namespace vcpkg
         std::set<std::string> no_separate_feature_test;
         std::set<std::string> cascade_features;
         std::vector<std::vector<std::string>> fail_configurations;
+        // A list of sets of features of which excatly one must be selected
+        std::vector<std::vector<std::string>> options;
         bool will_fail(const InternalFeatureSet& internal_feature_set) const;
     };
 

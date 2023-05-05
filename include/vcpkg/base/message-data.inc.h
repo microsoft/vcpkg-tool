@@ -995,6 +995,10 @@ DECLARE_MESSAGE(FailedVendorAuthentication,
                 "",
                 "One or more {vendor} credential providers failed to authenticate. See '{url}' for more details "
                 "on how to provide credentials.")
+DECLARE_MESSAGE(FeatureBaselineExpectedFeatures,
+                (msg::value),
+                "{value} is a keyword ",
+                "When using '{value}' a list of features must be specified.")
 DECLARE_MESSAGE(FeedbackAppreciated, (), "", "Thank you for your feedback!")
 DECLARE_MESSAGE(FilesContainAbsolutePath1,
                 (),

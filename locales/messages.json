@@ -630,6 +630,8 @@
   "_FailedToWriteManifest.comment": "An example of {path} is /foo/bar.",
   "FailedVendorAuthentication": "One or more {vendor} credential providers failed to authenticate. See '{url}' for more details on how to provide credentials.",
   "_FailedVendorAuthentication.comment": "An example of {vendor} is Azure. An example of {url} is https://github.com/microsoft/vcpkg.",
+  "FeatureBaselineExpectedFeatures": "When using '{value}' a list of features must be specified.",
+  "_FeatureBaselineExpectedFeatures.comment": "{value} is a keyword ",
   "FeedbackAppreciated": "Thank you for your feedback!",
   "FetchingBaselineInfo": "Fetching baseline information from {package_name}...",
   "_FetchingBaselineInfo.comment": "An example of {package_name} is zlib.",

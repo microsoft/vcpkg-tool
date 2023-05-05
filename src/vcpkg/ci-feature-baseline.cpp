@@ -76,7 +76,9 @@ namespace vcpkg
             static constexpr StringLiteral SKIP = "skip";
             static constexpr StringLiteral CASCADE = "cascade";
             static constexpr StringLiteral NO_TEST = "no-separate-feature-test";
+            static constexpr StringLiteral OPTIONS = "options";
             static constexpr CiFeatureBaselineState NO_TEST_STATE = static_cast<CiFeatureBaselineState>(100);
+            static constexpr CiFeatureBaselineState OPTIONS_STATE = static_cast<CiFeatureBaselineState>(101);
             CiFeatureBaselineState state;
             if (parser.try_match_keyword(FAIL))
             {
@@ -93,6 +95,10 @@ namespace vcpkg
             else if (parser.try_match_keyword(NO_TEST))
             {
                 state = NO_TEST_STATE;
+            }
+            else if (parser.try_match_keyword(OPTIONS))
+            {
+                state = OPTIONS_STATE;
             }
             else
             {
@@ -148,9 +154,20 @@ namespace vcpkg
                     {
                         result.ports[spec.name].no_separate_feature_test.insert(features.begin(), features.end());
                     }
+                    else if (state == OPTIONS_STATE)
+                    {
+                        result.ports[spec.name].options.push_back(features);
+                    }
                 }
                 else
                 {
+                    if (state == NO_TEST_STATE || state == OPTIONS_STATE)
+                    {
+                        parser.add_error(msg::format(msgFeatureBaselineExpectedFeatures,
+                                                     msg::value = (state == NO_TEST_STATE ? NO_TEST : OPTIONS)),
+                                         cur_loc);
+                        break;
+                    }
                     result.ports[spec.name].state = state;
                 }
             }

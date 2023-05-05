@@ -233,6 +233,10 @@ namespace vcpkg::Commands::TestFeatures
             if (test_feature_core && !Util::Sets::contains(baseline.skip_features, "core"))
             {
                 specs_to_test.emplace_back(package_spec, InternalFeatureSet{{"core"}});
+                for (const auto& option_set : baseline.options)
+                {
+                    specs_to_test.back().features.push_back(option_set.front());
+                }
             }
             InternalFeatureSet all_features{{"core"}};
             for (const auto& feature : port->feature_paragraphs)
@@ -244,12 +248,24 @@ namespace vcpkg::Commands::TestFeatures
                     // will them simply cascade too
                     if (!Util::Sets::contains(baseline.cascade_features, feature->name))
                     {
-                        all_features.push_back(feature->name);
+                        if (Util::all_of(baseline.options, [&](const auto& options) {
+                                return !Util::contains(options, feature->name) || options.front() == feature->name;
+                            }))
+                        {
+                            all_features.push_back(feature->name);
+                        }
                     }
                     if (test_features_seperatly &&
                         !Util::Sets::contains(baseline.no_separate_feature_test, feature->name))
                     {
                         specs_to_test.emplace_back(package_spec, InternalFeatureSet{{"core", feature->name}});
+                        for (const auto& options : baseline.options)
+                        {
+                            if (!Util::contains(options, feature->name))
+                            {
+                                specs_to_test.back().features.push_back(options.front());
+                            }
+                        }
                     }
                 }
             }
