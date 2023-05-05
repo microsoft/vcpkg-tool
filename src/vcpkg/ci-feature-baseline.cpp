@@ -75,10 +75,19 @@ namespace vcpkg
             static constexpr StringLiteral FAIL = "fail";
             static constexpr StringLiteral SKIP = "skip";
             static constexpr StringLiteral CASCADE = "cascade";
+            static constexpr StringLiteral PASS = "pass";
             static constexpr StringLiteral NO_TEST = "no-separate-feature-test";
             static constexpr StringLiteral OPTIONS = "options";
-            static constexpr CiFeatureBaselineState NO_TEST_STATE = static_cast<CiFeatureBaselineState>(100);
-            static constexpr CiFeatureBaselineState OPTIONS_STATE = static_cast<CiFeatureBaselineState>(101);
+            static constexpr StringLiteral FEATURE_FAIL = "feature-fails";
+            static constexpr StringLiteral COMBINATION_FAIL = "combination-fails";
+            static constexpr int first_free = static_cast<int>(CiFeatureBaselineState::FirstFree);
+            static constexpr CiFeatureBaselineState NO_TEST_STATE = static_cast<CiFeatureBaselineState>(first_free);
+            static constexpr CiFeatureBaselineState OPTIONS_STATE = static_cast<CiFeatureBaselineState>(first_free + 1);
+            static constexpr CiFeatureBaselineState FEATURE_FAIL_STATE =
+                static_cast<CiFeatureBaselineState>(first_free + 2);
+            static constexpr CiFeatureBaselineState COMBINATION_FAIL_STATE =
+                static_cast<CiFeatureBaselineState>(first_free + 3);
+            const StringLiteral names[] = {FAIL, SKIP, CASCADE, PASS, NO_TEST, OPTIONS, FEATURE_FAIL, COMBINATION_FAIL};
             CiFeatureBaselineState state;
             if (parser.try_match_keyword(FAIL))
             {
@@ -99,6 +108,14 @@ namespace vcpkg
             else if (parser.try_match_keyword(OPTIONS))
             {
                 state = OPTIONS_STATE;
+            }
+            else if (parser.try_match_keyword(FEATURE_FAIL))
+            {
+                state = FEATURE_FAIL_STATE;
+            }
+            else if (parser.try_match_keyword(COMBINATION_FAIL))
+            {
+                state = COMBINATION_FAIL_STATE;
             }
             else
             {
@@ -121,14 +138,32 @@ namespace vcpkg
                 parser.add_error(msg::format(msgUnknownBaselineFileContent));
                 break;
             }
-            if (state != CiFeatureBaselineState::Fail && spec.features.has_value())
+            if (spec.features.has_value())
             {
-                const bool contains_core = Util::contains(*spec.features.get(), "core");
-                if (contains_core)
+                if (state == CiFeatureBaselineState::Fail)
                 {
-                    parser.add_error(msg::format(msgNoCoreFeatureAllowedInNonFailBaselineEntry), cur_loc);
+                    parser.add_error(msg::format(msgFeatureBaselineNoFeaturesForFail), cur_loc);
                     break;
                 }
+                if (state != COMBINATION_FAIL_STATE && state != OPTIONS_STATE)
+                {
+                    const bool contains_core = Util::contains(*spec.features.get(), "core");
+                    if (contains_core)
+                    {
+                        parser.add_error(msg::format(msgNoCoreFeatureAllowedInNonFailBaselineEntry,
+                                                     msg::value = names[static_cast<int>(state)]),
+                                         cur_loc);
+                        break;
+                    }
+                }
+            }
+            else if (state == NO_TEST_STATE || state == OPTIONS_STATE || state == FEATURE_FAIL_STATE ||
+                     state == COMBINATION_FAIL_STATE)
+            {
+                parser.add_error(
+                    msg::format(msgFeatureBaselineExpectedFeatures, msg::value = (names[static_cast<int>(state)])),
+                    cur_loc);
+                break;
             }
 
             if (respect_entry(spec, triplet, host_triplet, var_provider))
@@ -144,11 +179,15 @@ namespace vcpkg
                     {
                         result.ports[spec.name].cascade_features.insert(features.begin(), features.end());
                     }
-                    else if (state == CiFeatureBaselineState::Fail)
+                    else if (state == COMBINATION_FAIL_STATE)
                     {
                         features.emplace_back("core");
                         result.ports[spec.name].fail_configurations.push_back(
                             Util::sort_unique_erase(std::move(features)));
+                    }
+                    else if (state == FEATURE_FAIL_STATE)
+                    {
+                        result.ports[spec.name].failing_features.insert(features.begin(), features.end());
                     }
                     else if (state == NO_TEST_STATE)
                     {
@@ -161,13 +200,6 @@ namespace vcpkg
                 }
                 else
                 {
-                    if (state == NO_TEST_STATE || state == OPTIONS_STATE)
-                    {
-                        parser.add_error(msg::format(msgFeatureBaselineExpectedFeatures,
-                                                     msg::value = (state == NO_TEST_STATE ? NO_TEST : OPTIONS)),
-                                         cur_loc);
-                        break;
-                    }
                     result.ports[spec.name].state = state;
                 }
             }
@@ -192,6 +224,12 @@ namespace vcpkg
 
     bool CiFeatureBaselineEntry::will_fail(const InternalFeatureSet& internal_feature_set) const
     {
+        if (!failing_features.empty() && Util::any_of(internal_feature_set, [&](const auto& feature) {
+                return Util::Sets::contains(failing_features, feature);
+            }))
+        {
+            return true;
+        }
         if (std::is_sorted(internal_feature_set.begin(), internal_feature_set.end()))
         {
             return Util::Vectors::contains(fail_configurations, internal_feature_set);
@@ -218,6 +256,7 @@ namespace vcpkg
             case CiFeatureBaselineState::Pass: out += "pass"; return;
             case CiFeatureBaselineState::Cascade: out += "cascade"; return;
             case CiFeatureBaselineState::Skip: out += "skip"; return;
+            case CiFeatureBaselineState::FirstFree:;
         }
         Checks::unreachable(VCPKG_LINE_INFO);
     }

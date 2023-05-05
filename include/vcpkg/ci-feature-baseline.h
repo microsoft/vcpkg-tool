@@ -17,6 +17,7 @@ namespace vcpkg
         Fail,
         Cascade,
         Pass,
+        FirstFree // only a marker for the last enum entry
     };
 
     struct CiFeatureBaselineEntry
@@ -25,6 +26,7 @@ namespace vcpkg
         std::set<std::string> skip_features;
         std::set<std::string> no_separate_feature_test;
         std::set<std::string> cascade_features;
+        std::set<std::string> failing_features;
         std::vector<std::vector<std::string>> fail_configurations;
         // A list of sets of features of which excatly one must be selected
         std::vector<std::vector<std::string>> options;
