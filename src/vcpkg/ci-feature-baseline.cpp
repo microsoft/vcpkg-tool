@@ -71,6 +71,7 @@ namespace vcpkg
 
             parser.skip_tabs_spaces();
 
+            auto cur_loc = parser.cur_loc();
             static constexpr StringLiteral FAIL = "fail";
             static constexpr StringLiteral SKIP = "skip";
             static constexpr StringLiteral CASCADE = "cascade";
@@ -113,6 +114,15 @@ namespace vcpkg
             {
                 parser.add_error(msg::format(msgUnknownBaselineFileContent));
                 break;
+            }
+            if (state != CiFeatureBaselineState::Fail && spec.features.has_value())
+            {
+                const bool contains_core = Util::contains(*spec.features.get(), "core");
+                if (contains_core)
+                {
+                    parser.add_error(msg::format(msgNoCoreFeatureAllowedInNonFailBaselineEntry), cur_loc);
+                    break;
+                }
             }
 
             if (respect_entry(spec, triplet, host_triplet, var_provider))

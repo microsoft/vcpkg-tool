@@ -1853,6 +1853,10 @@ DECLARE_MESSAGE(NewSpecifyNameVersionOrApplication,
 DECLARE_MESSAGE(NewVersionCannotBeEmpty, (), "", "--version cannot be empty.")
 DECLARE_MESSAGE(NoArgumentsForOption, (msg::option), "", "The option --{option} does not accept an argument.")
 DECLARE_MESSAGE(NoCachedPackages, (), "", "No packages are cached.")
+DECLARE_MESSAGE(NoCoreFeatureAllowedInNonFailBaselineEntry,
+                (),
+                "",
+                "'core' is not allowed in the list of features if the entry is not of type ' = fail'")
 DECLARE_MESSAGE(NoError, (), "", "no error")
 DECLARE_MESSAGE(NoInstalledPackages,
                 (),

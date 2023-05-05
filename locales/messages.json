@@ -1045,6 +1045,7 @@
   "NoArgumentsForOption": "The option --{option} does not accept an argument.",
   "_NoArgumentsForOption.comment": "An example of {option} is editable.",
   "NoCachedPackages": "No packages are cached.",
+  "NoCoreFeatureAllowedInNonFailBaselineEntry": "'core' is not allowed in the list of features if the entry is not of type ' = fail'",
   "NoError": "no error",
   "NoInstalledPackages": "No packages are installed. Did you mean `search`?",
   "_NoInstalledPackages.comment": "The name 'search' is the name of a command that is not localized.",
