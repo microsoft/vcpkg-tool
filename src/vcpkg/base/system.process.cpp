@@ -26,10 +26,8 @@ extern char** environ;
 
 #if defined(_WIN32)
 #include <Psapi.h>
-// #include <winternl.h>
 #include <TlHelp32.h>
 #pragma comment(lib, "Advapi32")
-// #pragma comment(lib, "Ntdll")
 #else
 #include <spawn.h>
 #endif
@@ -274,7 +272,6 @@ namespace vcpkg
         {
             if (*it == ')') last_seen = len;
         }
-        auto executable = StringView(start, last_seen);
         for (size_t i = 0; i < last_seen; ++i)
         {
             p.next();
@@ -291,7 +288,7 @@ namespace vcpkg
         {
             return ProcessStat{
                 *ppid,
-                executable.to_string(),
+                std::string(start, last_seen),
             };
         }
         return nullopt;
