@@ -1155,7 +1155,7 @@ namespace vcpkg
                                                               dependencies,
                                                               manifest_core.overrides,
                                                               toplevel,
-                                                              {host_triplet, paths.packages(), unsupported_port_action})
+                                                              create_options)
                                     .value_or_exit(VCPKG_LINE_INFO);
 
             install_plan.print_unsupported_warnings();
@@ -1205,8 +1205,7 @@ namespace vcpkg
         StatusParagraphs status_db = database_load_check(fs, paths.installed());
 
         // Note: action_plan will hold raw pointers to SourceControlFileLocations from this map
-        auto action_plan = create_feature_install_plan(
-            provider, var_provider, specs, status_db, {host_triplet, paths.packages(), unsupported_port_action});
+        auto action_plan = create_feature_install_plan(provider, var_provider, specs, status_db, create_options);
 
         action_plan.print_unsupported_warnings();
         for (auto&& action : action_plan.install_actions)
@@ -1280,7 +1279,7 @@ namespace vcpkg
 
         track_install_plan(action_plan);
 
-        BinaryCache binary_cache(args, paths);
+        BinaryCache binary_cache = only_downloads ? BinaryCache(paths.get_filesystem()) : BinaryCache(args, paths);
         binary_cache.prefetch(action_plan.install_actions);
         const InstallSummary summary = Install::execute_plan(
             args, action_plan, keep_going, paths, status_db, binary_cache, null_build_logs_recorder());

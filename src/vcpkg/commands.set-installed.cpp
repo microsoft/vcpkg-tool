@@ -137,7 +137,7 @@ namespace vcpkg::Commands::SetInstalled
 
         track_install_plan(action_plan);
 
-        BinaryCache binary_cache(args, paths);
+        BinaryCache binary_cache = only_downloads ? BinaryCache(paths.get_filesystem()) : BinaryCache(args, paths);
         binary_cache.prefetch(action_plan.install_actions);
         const auto summary = Install::execute_plan(
             args, action_plan, keep_going, paths, status_db, binary_cache, null_build_logs_recorder());
