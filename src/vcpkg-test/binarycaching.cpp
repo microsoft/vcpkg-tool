@@ -19,13 +19,7 @@ using namespace vcpkg;
 
 struct KnowNothingBinaryProvider : IReadBinaryProvider
 {
-    RestoreResult try_restore(const InstallPlanAction& action) const override
-    {
-        CHECK(action.has_package_abi());
-        return RestoreResult::unavailable;
-    }
-
-    void prefetch(View<const InstallPlanAction*> actions, Span<RestoreResult> out_status) const override
+    void fetch(View<const InstallPlanAction*> actions, Span<RestoreResult> out_status) const override
     {
         REQUIRE(actions.size() == out_status.size());
         for (size_t idx = 0; idx < out_status.size(); ++idx)
@@ -376,8 +370,7 @@ Description:
     ipa_without_abi.package_dir = "pkgs/someheadpackage";
 
     // test that the binary cache does the right thing. See also CHECKs etc. in KnowNothingBinaryProvider
-    CHECK(uut.try_restore(ipa_without_abi) == RestoreResult::unavailable);
-    uut.prefetch(install_plan); // should have no effects
+    uut.fetch(install_plan); // should have no effects
 }
 
 TEST_CASE ("XmlSerializer", "[XmlSerializer]")

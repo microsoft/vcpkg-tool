@@ -82,18 +82,13 @@ namespace vcpkg
     {
         virtual ~IReadBinaryProvider() = default;
 
-        /// Attempts to restore the package referenced by `action` into the packages directory.
-        ///
-        /// Prerequisite: action has a package_abi()
-        virtual RestoreResult try_restore(const InstallPlanAction& action) const = 0;
-
         /// Gives the IBinaryProvider an opportunity to batch any downloading or server communication for executing
         /// `actions`.
         ///
         /// IBinaryProvider should set out_status[i] to RestoreResult::restored for each fetched package.
         ///
         /// Prerequisites: actions[i].package_abi(), out_status.size() == actions.size()
-        virtual void prefetch(View<const InstallPlanAction*> actions, Span<RestoreResult> out_status) const = 0;
+        virtual void fetch(View<const InstallPlanAction*> actions, Span<RestoreResult> out_status) const = 0;
 
         /// Checks whether the `actions` are present in the cache, without restoring them.
         ///
@@ -182,12 +177,11 @@ namespace vcpkg
         ReadOnlyBinaryCache(BinaryProviders&& providers);
         ReadOnlyBinaryCache(const VcpkgCmdArguments& args, const VcpkgPaths& paths, const LineInfo& info);
 
-        /// Attempts to restore the package referenced by `action` into the packages directory.
-        RestoreResult try_restore(const InstallPlanAction& action);
-
         /// Gives the IBinaryProvider an opportunity to batch any downloading or server communication for
         /// executing `actions`.
-        void prefetch(View<InstallPlanAction> actions);
+        void fetch(View<InstallPlanAction> actions);
+
+        bool is_restored(const InstallPlanAction& ipa) const;
 
         /// Checks whether the `actions` are present in the cache, without restoring them. Used by CI to determine
         /// missing packages.

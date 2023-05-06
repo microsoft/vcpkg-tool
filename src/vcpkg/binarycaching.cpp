@@ -281,7 +281,7 @@ namespace
     {
         ZipReadBinaryProvider(ZipTool zip, Filesystem& fs) : m_zip(std::move(zip)), m_fs(fs) { }
 
-        void prefetch(View<const InstallPlanAction*> actions, Span<RestoreResult> out_status) const override
+        void fetch(View<const InstallPlanAction*> actions, Span<RestoreResult> out_status) const override
         {
             const ElapsedTimer timer;
             std::vector<Optional<ZipResource>> zip_paths(actions.size(), nullopt);
@@ -329,28 +329,6 @@ namespace
             {
                 m_fs.remove(r.path, IgnoreErrors{});
             }
-        }
-
-        RestoreResult try_restore(const InstallPlanAction& action) const override
-        {
-            // Note: this method is almost never called -- it will only be called if another provider promised to
-            // restore a package but then failed at runtime
-            auto p_action = &action;
-            Optional<ZipResource> z;
-            acquire_zips({&p_action, 1}, {&z, 1});
-            if (auto p = z.get())
-            {
-                const auto& package_dir = action.package_dir.value_or_exit(VCPKG_LINE_INFO);
-                auto cmd = m_zip.decompress_zip_archive_cmd(package_dir, p->path);
-                auto result = decompress_in_parallel({&cmd, 1});
-                post_decompress(*p, result[0].has_value());
-                if (result[0])
-                {
-                    msg::println(msgRestoredPackage, msg::path = vendor());
-                    return RestoreResult::restored;
-                }
-            }
-            return RestoreResult::unavailable;
         }
 
         // Download/find the zip files corresponding with a set of actions
@@ -701,15 +679,12 @@ namespace
             return std::move(xml.buf);
         }
 
-        // Individual package restore is too expensive with NuGet, so it is not implemented
-        RestoreResult try_restore(const InstallPlanAction&) const override { return RestoreResult::unavailable; }
-
         // Prechecking is too expensive with NuGet, so it is not implemented
         void precheck(View<const InstallPlanAction*>, Span<CacheAvailability>) const override { }
 
         StringView vendor() const override { return "NuGet"; }
 
-        void prefetch(View<const InstallPlanAction*> actions, Span<RestoreResult> out_status) const override
+        void fetch(View<const InstallPlanAction*> actions, Span<RestoreResult> out_status) const override
         {
             auto packages_config = m_buildtrees / "packages.config";
             auto refs =
@@ -2005,55 +1980,7 @@ namespace vcpkg
 
     ReadOnlyBinaryCache::ReadOnlyBinaryCache(BinaryProviders&& providers) : m_config(std::move(providers)) { }
 
-    RestoreResult ReadOnlyBinaryCache::try_restore(const InstallPlanAction& action)
-    {
-        const auto abi = action.package_abi().get();
-        if (!abi)
-        {
-            // e.g. this is a `--head` package
-            return RestoreResult::unavailable;
-        }
-
-        auto& cache_status = m_status[*abi];
-        if (cache_status.is_restored())
-        {
-            return RestoreResult::restored;
-        }
-
-        const auto available = cache_status.get_available_provider();
-        if (available)
-        {
-            switch (available->try_restore(action))
-            {
-                case RestoreResult::unavailable:
-                    // Even though that provider thought it had it, it didn't; perhaps
-                    // due to intermittent network problems etc.
-                    // Try other providers below
-                    break;
-                case RestoreResult::restored: cache_status.mark_restored(); return RestoreResult::restored;
-                default: Checks::unreachable(VCPKG_LINE_INFO);
-            }
-        }
-
-        for (auto&& provider : m_config.read)
-        {
-            if (provider.get() == available || cache_status.is_unavailable(provider.get()))
-            {
-                continue; // this one was already tried or knows the package is unavailable
-            }
-
-            switch (provider->try_restore(action))
-            {
-                case RestoreResult::restored: cache_status.mark_restored(); return RestoreResult::restored;
-                case RestoreResult::unavailable: cache_status.mark_unavailable(provider.get()); break;
-                default: Checks::unreachable(VCPKG_LINE_INFO);
-            }
-        }
-
-        return RestoreResult::unavailable;
-    }
-
-    void ReadOnlyBinaryCache::prefetch(View<InstallPlanAction> actions)
+    void ReadOnlyBinaryCache::fetch(View<InstallPlanAction> actions)
     {
         std::vector<const InstallPlanAction*> action_ptrs;
         std::vector<RestoreResult> restores;
@@ -2067,19 +1994,19 @@ namespace vcpkg
             {
                 if (actions[i].package_abi())
                 {
-                    CacheStatus* status = &m_status[*actions[i].package_abi().get()];
-                    if (status->should_attempt_restore(provider.get()))
+                    CacheStatus& status = m_status[*actions[i].package_abi().get()];
+                    if (status.should_attempt_restore(provider.get()))
                     {
                         action_ptrs.push_back(&actions[i]);
                         restores.push_back(RestoreResult::unavailable);
-                        statuses.push_back(status);
+                        statuses.push_back(&status);
                     }
                 }
             }
             if (action_ptrs.empty()) continue;
 
             ElapsedTimer timer;
-            provider->prefetch(action_ptrs, restores);
+            provider->fetch(action_ptrs, restores);
             size_t num_restored = 0;
             for (size_t i = 0; i < restores.size(); ++i)
             {
@@ -2098,6 +2025,16 @@ namespace vcpkg
                          msg::elapsed = timer.elapsed(),
                          msg::value = provider->vendor());
         }
+    }
+
+    bool ReadOnlyBinaryCache::is_restored(const InstallPlanAction& action) const
+    {
+        if (auto abi = action.package_abi().get())
+        {
+            auto it = m_status.find(*abi);
+            if (it != m_status.end()) return it->second.is_restored();
+        }
+        return false;
     }
 
     std::vector<CacheAvailability> ReadOnlyBinaryCache::precheck(View<InstallPlanAction> actions)
@@ -2141,10 +2078,9 @@ namespace vcpkg
             }
         }
 
-        std::vector<CacheAvailability> ret = Util::fmap(statuses, [](CacheStatus* s) {
+        return Util::fmap(statuses, [](CacheStatus* s) {
             return s->get_available_provider() ? CacheAvailability::available : CacheAvailability::unavailable;
         });
-        return ret;
     }
 
     BinaryCache::BinaryCache(RemoveFilesystem& fs) : m_fs(fs) { }
@@ -2171,7 +2107,7 @@ namespace vcpkg
             bool restored = m_status[*action.package_abi().get()].is_restored();
             // Purge all status information on push_success (cache invalidation)
             // - push_success may delete packages/ (invalidate restore)
-            // - push_success may make the package available from providers (invalidate valid)
+            // - push_success may make the package available from providers (invalidate unavailable)
             m_status.erase(*action.package_abi().get());
             if (!restored && !m_config.write.empty())
             {

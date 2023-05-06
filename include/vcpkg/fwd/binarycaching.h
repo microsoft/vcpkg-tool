@@ -22,7 +22,6 @@ namespace vcpkg
         restored,  // the cache contains the ABI and it has been restored to the packages tree
     };
 
-    struct CacheStatus;
     struct IReadBinaryProvider;
     struct IWriteBinaryProvider;
     struct BinaryCache;
