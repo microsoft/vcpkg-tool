@@ -2364,7 +2364,7 @@ std::string vcpkg::format_version_for_nugetref(StringView version, StringView ab
 std::string vcpkg::generate_nuspec(const Path& package_dir,
                                    const InstallPlanAction& action,
                                    StringView id_prefix,
-                                   NuGetRepoInfo rinfo)
+                                   const NuGetRepoInfo& rinfo)
 {
     auto& spec = action.spec;
     auto& scf = *action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_control_file;

@@ -36,5 +36,5 @@ namespace vcpkg
     std::string generate_nuspec(const Path& package_dir,
                                 const InstallPlanAction& action,
                                 StringView id_prefix,
-                                NuGetRepoInfo repo_info);
+                                const NuGetRepoInfo& repo_info);
 }

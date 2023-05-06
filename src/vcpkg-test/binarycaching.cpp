@@ -168,18 +168,6 @@ TEST_CASE ("CacheStatus operations", "[BinaryCache]")
     REQUIRE(assignee.is_restored());
 }
 
-#define REQUIRE_EQUAL_TEXT(lhs, rhs)                                                                                   \
-    {                                                                                                                  \
-        auto lhs_lines = Strings::split((lhs), '\n');                                                                  \
-        auto rhs_lines = Strings::split((rhs), '\n');                                                                  \
-        for (size_t i = 0; i < lhs_lines.size() && i < rhs_lines.size(); ++i)                                          \
-        {                                                                                                              \
-            INFO("on line: " << i);                                                                                    \
-            REQUIRE(lhs_lines[i] == rhs_lines[i]);                                                                     \
-        }                                                                                                              \
-        REQUIRE(lhs_lines.size() == rhs_lines.size());                                                                 \
-    }
-
 TEST_CASE ("format_version_for_nugetref semver-ish", "[format_version_for_nugetref]")
 {
     REQUIRE(format_version_for_nugetref("0.0.0", "abitag") == "0.0.0-vcpkgabitag");
@@ -255,9 +243,8 @@ Build-Depends: bzip
 
     REQUIRE(ref.nupkg_filename() == "zlib2_x64-windows.1.5.0-vcpkgpackageabi.nupkg");
 
-    {
-        auto nuspec = generate_nuspec(pkgPath, ipa, "", {});
-        std::string expected = R"(<package>
+    REQUIRE_LINES(generate_nuspec(pkgPath, ipa, "", {}),
+                  R"(<package>
   <metadata>
     <id>zlib2_x64-windows</id>
     <version>1.5.0-vcpkgpackageabi</version>
@@ -276,16 +263,14 @@ Dependencies:
 </description>
     <packageTypes><packageType name="vcpkg"/></packageTypes>
   </metadata>
-  <files><file src=")" + pkgPathWild +
-                               R"(" target=""/></files>
+  <files><file src=")" +
+                      pkgPathWild +
+                      R"(" target=""/></files>
 </package>
-)";
-        REQUIRE_EQUAL_TEXT(nuspec, expected);
-    }
+)");
 
-    {
-        auto nuspec = generate_nuspec(pkgPath, ipa, "", {"urlvalue"});
-        std::string expected = R"(<package>
+    REQUIRE_LINES(generate_nuspec(pkgPath, ipa, "", {"urlvalue"}),
+                  R"(<package>
   <metadata>
     <id>zlib2_x64-windows</id>
     <version>1.5.0-vcpkgpackageabi</version>
@@ -305,15 +290,13 @@ Dependencies:
     <packageTypes><packageType name="vcpkg"/></packageTypes>
     <repository type="git" url="urlvalue"/>
   </metadata>
-  <files><file src=")" + pkgPathWild +
-                               R"(" target=""/></files>
+  <files><file src=")" +
+                      pkgPathWild +
+                      R"(" target=""/></files>
 </package>
-)";
-        REQUIRE_EQUAL_TEXT(nuspec, expected);
-    }
-    {
-        auto nuspec = generate_nuspec(pkgPath, ipa, "", {"urlvalue", "branchvalue", "commitvalue"});
-        std::string expected = R"(<package>
+)");
+    REQUIRE_LINES(generate_nuspec(pkgPath, ipa, "", {"urlvalue", "branchvalue", "commitvalue"}),
+                  R"(<package>
   <metadata>
     <id>zlib2_x64-windows</id>
     <version>1.5.0-vcpkgpackageabi</version>
@@ -333,12 +316,11 @@ Dependencies:
     <packageTypes><packageType name="vcpkg"/></packageTypes>
     <repository type="git" url="urlvalue" branch="branchvalue" commit="commitvalue"/>
   </metadata>
-  <files><file src=")" + pkgPathWild +
-                               R"(" target=""/></files>
+  <files><file src=")" +
+                      pkgPathWild +
+                      R"(" target=""/></files>
 </package>
-)";
-        REQUIRE_EQUAL_TEXT(nuspec, expected);
-    }
+)");
 }
 
 TEST_CASE ("Provider nullptr checks", "[BinaryCache]")
@@ -471,7 +453,7 @@ Description: a spiffy compression library wrapper
     plan.install_actions[1].abi_info.get()->package_abi = "packageabi2";
 
     packageconfig = generate_nuget_packages_config(plan, "");
-    REQUIRE(packageconfig == R"(<?xml version="1.0" encoding="utf-8"?>
+    REQUIRE_LINES(packageconfig, R"(<?xml version="1.0" encoding="utf-8"?>
 <packages>
   <package id="zlib_x64-android" version="1.5.0-vcpkgpackageabi"/>
   <package id="zlib2_x64-android" version="1.52.0-vcpkgpackageabi2"/>
