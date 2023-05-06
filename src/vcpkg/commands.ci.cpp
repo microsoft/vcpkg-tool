@@ -30,7 +30,7 @@
 #include <vcpkg/vcpkgpaths.h>
 #include <vcpkg/xunitwriter.h>
 
-#include <stdio.h>
+#include <random>
 
 using namespace vcpkg;
 
@@ -514,8 +514,9 @@ namespace vcpkg::Commands::CI
             {
                 msg::println_warning(msgCISkipInstallation, msg::list = Strings::join(", ", already_installed));
             }
-            auto summary = Install::perform(
-                args, action_plan, KeepGoing::YES, paths, status_db, build_logs_recorder, var_provider);
+            binary_cache.fetch(action_plan.install_actions);
+            auto summary = Install::execute_plan(
+                args, action_plan, KeepGoing::YES, paths, status_db, binary_cache, build_logs_recorder);
 
             for (auto&& result : summary.results)
             {

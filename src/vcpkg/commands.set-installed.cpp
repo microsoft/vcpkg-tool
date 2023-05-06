@@ -123,6 +123,10 @@ namespace vcpkg::Commands::SetInstalled
             fs.write_contents(pkgsconfig_path, pkgsconfig_contents, VCPKG_LINE_INFO);
             msg::println(msgWroteNuGetPkgConfInfo, msg::path = pkgsconfig_path);
         }
+        else if (dry_run != DryRun::Yes)
+        {
+            compute_all_abis(paths, action_plan, cmake_vars, status_db);
+        }
 
         if (dry_run == DryRun::Yes)
         {
@@ -133,8 +137,10 @@ namespace vcpkg::Commands::SetInstalled
 
         track_install_plan(action_plan);
 
-        const auto summary =
-            Install::perform(args, action_plan, keep_going, paths, status_db, null_build_logs_recorder(), cmake_vars);
+        BinaryCache binary_cache(args, paths, VCPKG_LINE_INFO);
+        binary_cache.fetch(action_plan.install_actions);
+        const auto summary = Install::execute_plan(
+            args, action_plan, keep_going, paths, status_db, binary_cache, null_build_logs_recorder());
 
         if (keep_going == KeepGoing::YES && summary.failed())
         {

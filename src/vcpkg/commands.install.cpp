@@ -514,13 +514,13 @@ namespace vcpkg
         TrackedPackageInstallGuard& operator=(const TrackedPackageInstallGuard&) = delete;
     };
 
-    InstallSummary Install::perform(const VcpkgCmdArguments& args,
-                                    ActionPlan& action_plan,
-                                    const KeepGoing keep_going,
-                                    const VcpkgPaths& paths,
-                                    StatusParagraphs& status_db,
-                                    const IBuildLogsRecorder& build_logs_recorder,
-                                    const CMakeVars::CMakeVarProvider& var_provider)
+    InstallSummary Install::execute_plan(const VcpkgCmdArguments& args,
+                                         ActionPlan& action_plan,
+                                         const KeepGoing keep_going,
+                                         const VcpkgPaths& paths,
+                                         StatusParagraphs& status_db,
+                                         BinaryCache& binary_cache,
+                                         const IBuildLogsRecorder& build_logs_recorder)
     {
         const ElapsedTimer timer;
         std::vector<SpecSummary> results;
@@ -536,7 +536,6 @@ namespace vcpkg
             results.back().build_result.emplace(BuildResult::REMOVED);
         }
 
-        BinaryCache binary_cache(args, paths, VCPKG_LINE_INFO);
         for (auto&& action : action_plan.already_installed)
         {
             results.emplace_back(action);
@@ -544,8 +543,6 @@ namespace vcpkg
                 perform_install_plan_action(args, paths, action, status_db, binary_cache, build_logs_recorder));
         }
 
-        compute_all_abis(paths, action_plan, var_provider, status_db);
-        binary_cache.fetch(action_plan.install_actions);
         for (auto&& action : action_plan.install_actions)
         {
             TrackedPackageInstallGuard this_install(action_index++, action_count, results, action);
@@ -1261,6 +1258,10 @@ namespace vcpkg
             fs.write_contents(pkgsconfig_path, pkgsconfig_contents, VCPKG_LINE_INFO);
             msg::println(msgWroteNuGetPkgConfInfo, msg::path = pkgsconfig_path);
         }
+        else if (!dry_run)
+        {
+            compute_all_abis(paths, action_plan, var_provider, status_db);
+        }
 
         if (dry_run)
         {
@@ -1271,8 +1272,10 @@ namespace vcpkg
 
         track_install_plan(action_plan);
 
-        const InstallSummary summary =
-            Install::perform(args, action_plan, keep_going, paths, status_db, null_build_logs_recorder(), var_provider);
+        BinaryCache binary_cache(args, paths, VCPKG_LINE_INFO);
+        binary_cache.fetch(action_plan.install_actions);
+        const InstallSummary summary = Install::execute_plan(
+            args, action_plan, keep_going, paths, status_db, binary_cache, null_build_logs_recorder());
 
         if (keep_going == KeepGoing::YES)
         {
