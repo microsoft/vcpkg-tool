@@ -33,7 +33,6 @@ namespace vcpkg
 
     NugetReference make_nugetref(const InstallPlanAction& action, StringView prefix);
 
-    NuGetRepoInfo get_nuget_repo_info_from_env();
     std::string generate_nuspec(const Path& package_dir,
                                 const InstallPlanAction& action,
                                 StringView id_prefix,

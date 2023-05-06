@@ -257,6 +257,21 @@ namespace
         std::vector<Path> m_dirs;
     };
 
+    enum class ToRemove
+    {
+        nothing,
+        remove_always,
+        remove_on_fail,
+    };
+
+    struct ZipResource
+    {
+        ZipResource(Path&& p, ToRemove t) : path(std::move(p)), to_remove(t) { }
+
+        Path path;
+        ToRemove to_remove;
+    };
+
     // This middleware class contains logic for BinaryProviders that operate on zip files.
     // Derived classes must implement:
     // - acquire_zips()
@@ -269,7 +284,7 @@ namespace
         void prefetch(View<const InstallPlanAction*> actions, Span<RestoreResult> out_status) const override
         {
             const ElapsedTimer timer;
-            std::vector<Optional<Path>> zip_paths(actions.size(), nullopt);
+            std::vector<Optional<ZipResource>> zip_paths(actions.size(), nullopt);
             acquire_zips(actions, zip_paths);
 
             std::vector<Command> jobs;
@@ -279,7 +294,7 @@ namespace
                 if (!zip_paths[i]) continue;
                 const auto& pkg_path = actions[i]->package_dir.value_or_exit(VCPKG_LINE_INFO);
                 clean_prepare_dir(m_fs, pkg_path);
-                jobs.push_back(m_zip.decompress_zip_archive_cmd(pkg_path, *zip_paths[i].get()));
+                jobs.push_back(m_zip.decompress_zip_archive_cmd(pkg_path, zip_paths[i].get()->path));
                 action_idxs.push_back(i);
             }
 
@@ -291,14 +306,15 @@ namespace
                 const auto& zip_path = zip_paths[i].value_or_exit(VCPKG_LINE_INFO);
                 if (job_results[j])
                 {
-                    Debug::print("Restored ", zip_path, '\n');
+                    Debug::print("Restored ", zip_path.path, '\n');
                     out_status[i] = RestoreResult::restored;
                 }
                 else
                 {
-                    Debug::print("Failed to decompress archive package: ", zip_path, '\n');
+                    Debug::print("Failed to decompress archive package: ", zip_path.path, '\n');
                 }
-                post_decompress(*actions[i], zip_path, job_results[j].has_value());
+
+                post_decompress(zip_path, job_results[j].has_value());
             }
             size_t num_restored = std::count(out_status.begin(), out_status.end(), RestoreResult::restored);
             msg::println(msgRestoredPackagesFromVendor,
@@ -307,19 +323,27 @@ namespace
                          msg::value = vendor());
         }
 
+        void post_decompress(const ZipResource& r, bool succeeded) const
+        {
+            if ((!succeeded && r.to_remove == ToRemove::remove_on_fail) || r.to_remove == ToRemove::remove_always)
+            {
+                m_fs.remove(r.path, IgnoreErrors{});
+            }
+        }
+
         RestoreResult try_restore(const InstallPlanAction& action) const override
         {
             // Note: this method is almost never called -- it will only be called if another provider promised to
             // restore a package but then failed at runtime
             auto p_action = &action;
-            Optional<Path> zip_path;
-            acquire_zips({&p_action, 1}, {&zip_path, 1});
-            if (auto path = zip_path.get())
+            Optional<ZipResource> z;
+            acquire_zips({&p_action, 1}, {&z, 1});
+            if (auto p = z.get())
             {
                 const auto& package_dir = action.package_dir.value_or_exit(VCPKG_LINE_INFO);
-                auto cmd = m_zip.decompress_zip_archive_cmd(package_dir, *path);
+                auto cmd = m_zip.decompress_zip_archive_cmd(package_dir, p->path);
                 auto result = decompress_in_parallel({&cmd, 1});
-                post_decompress(action, *path, result[0].has_value());
+                post_decompress(*p, result[0].has_value());
                 if (result[0])
                 {
                     msg::println(msgRestoredPackage, msg::path = vendor());
@@ -330,12 +354,8 @@ namespace
         }
 
         // Download/find the zip files corresponding with a set of actions
-        virtual void acquire_zips(View<const InstallPlanAction*> actions, Span<Optional<Path>> out_zip_paths) const = 0;
-
-        // Called for each zip file after `acquire_zips()`, should implement cleanup policies
-        virtual void post_decompress(const InstallPlanAction& action,
-                                     const Path& archive_path,
-                                     bool succeeded) const = 0;
+        virtual void acquire_zips(View<const InstallPlanAction*> actions,
+                                  Span<Optional<ZipResource>> out_zips) const = 0;
 
     protected:
         ZipTool m_zip;
@@ -349,7 +369,8 @@ namespace
         {
         }
 
-        void acquire_zips(View<const InstallPlanAction*> actions, Span<Optional<Path>> out_zip_paths) const override
+        void acquire_zips(View<const InstallPlanAction*> actions,
+                          Span<Optional<ZipResource>> out_zip_paths) const override
         {
             for (size_t i = 0; i < actions.size(); ++i)
             {
@@ -357,17 +378,11 @@ namespace
                 auto archive_path = m_dir / files_archive_subpath(abi_tag);
                 if (m_fs.exists(archive_path, IgnoreErrors{}))
                 {
-                    out_zip_paths[i] = std::move(archive_path);
+                    auto to_remove = actions[i]->build_options.purge_decompress_failure == PurgeDecompressFailure::YES
+                                         ? ToRemove::remove_on_fail
+                                         : ToRemove::nothing;
+                    out_zip_paths[i].emplace(std::move(archive_path), to_remove);
                 }
-            }
-        }
-
-        void post_decompress(const InstallPlanAction& action, const Path& archive_path, bool succeeded) const override
-        {
-            if (!succeeded && action.build_options.purge_decompress_failure == PurgeDecompressFailure::YES)
-            {
-                Debug::print("Failed to decompress archive package; purging: ", archive_path, '\n');
-                m_fs.remove(archive_path, IgnoreErrors{});
             }
         }
 
@@ -443,7 +458,8 @@ namespace
         {
         }
 
-        void acquire_zips(View<const InstallPlanAction*> actions, Span<Optional<Path>> out_zip_paths) const override
+        void acquire_zips(View<const InstallPlanAction*> actions,
+                          Span<Optional<ZipResource>> out_zip_paths) const override
         {
             std::vector<std::pair<std::string, Path>> url_paths;
             for (size_t idx = 0; idx < actions.size(); ++idx)
@@ -459,14 +475,9 @@ namespace
             {
                 if (codes[i] == 200)
                 {
-                    out_zip_paths[i] = url_paths[i].second;
+                    out_zip_paths[i].emplace(std::move(url_paths[i].second), ToRemove::remove_always);
                 }
             }
-        }
-
-        void post_decompress(const InstallPlanAction&, const Path& archive_path, bool) const override
-        {
-            m_fs.remove(archive_path, VCPKG_LINE_INFO);
         }
 
         void precheck(View<const InstallPlanAction*> actions, Span<CacheAvailability> out_status) const override
@@ -850,7 +861,8 @@ namespace
             return json.get()->get("archiveLocation")->string(VCPKG_LINE_INFO).to_string();
         }
 
-        void acquire_zips(View<const InstallPlanAction*> actions, Span<Optional<Path>> out_zip_paths) const override
+        void acquire_zips(View<const InstallPlanAction*> actions,
+                          Span<Optional<ZipResource>> out_zip_paths) const override
         {
             std::vector<std::pair<std::string, Path>> url_paths;
             std::vector<size_t> url_indices;
@@ -870,14 +882,9 @@ namespace
             {
                 if (codes[i] == 200)
                 {
-                    out_zip_paths[url_indices[i]] = url_paths[i].second;
+                    out_zip_paths[url_indices[i]].emplace(std::move(url_paths[i].second), ToRemove::remove_always);
                 }
             }
-        }
-
-        void post_decompress(const InstallPlanAction&, const Path& archive_path, bool) const override
-        {
-            m_fs.remove(archive_path, VCPKG_LINE_INFO);
         }
 
         void precheck(View<const InstallPlanAction*>, Span<CacheAvailability>) const override { }
@@ -1006,7 +1013,8 @@ namespace
             return Strings::concat(prefix, abi, ".zip");
         }
 
-        void acquire_zips(View<const InstallPlanAction*> actions, Span<Optional<Path>> out_zip_paths) const override
+        void acquire_zips(View<const InstallPlanAction*> actions,
+                          Span<Optional<ZipResource>> out_zip_paths) const override
         {
             for (size_t idx = 0; idx < actions.size(); ++idx)
             {
@@ -1016,18 +1024,13 @@ namespace
                 auto res = m_tool->download_file(make_object_path(m_prefix, abi), tmp);
                 if (res)
                 {
-                    out_zip_paths[idx] = std::move(tmp);
+                    out_zip_paths[idx].emplace(std::move(tmp), ToRemove::remove_always);
                 }
                 else
                 {
                     stdout_sink.println_warning(res.error());
                 }
             }
-        }
-
-        virtual void post_decompress(const InstallPlanAction&, const Path& archive_path, bool) const
-        {
-            m_fs.remove(archive_path, IgnoreErrors{});
         }
 
         void precheck(View<const InstallPlanAction*> actions, Span<CacheAvailability> cache_status) const override
@@ -1804,6 +1807,32 @@ namespace vcpkg
             .value_or_exit(VCPKG_LINE_INFO);
     }
 
+    static NuGetRepoInfo get_nuget_repo_info_from_env(const VcpkgCmdArguments& args)
+    {
+        if (auto p = args.vcpkg_nuget_repository.get())
+        {
+            get_global_metrics_collector().track_define(DefineMetric::VcpkgNugetRepository);
+            return {std::move(*p)};
+        }
+
+        auto gh_repo = get_environment_variable("GITHUB_REPOSITORY").value_or("");
+        if (gh_repo.empty())
+        {
+            return {};
+        }
+
+        auto gh_server = get_environment_variable("GITHUB_SERVER_URL").value_or("");
+        if (gh_server.empty())
+        {
+            return {};
+        }
+
+        get_global_metrics_collector().track_define(DefineMetric::GitHubRepository);
+        return {Strings::concat(gh_server, '/', gh_repo, ".git"),
+                get_environment_variable("GITHUB_REF").value_or(""),
+                get_environment_variable("GITHUB_SHA").value_or("")};
+    }
+
     static ExpectedL<BinaryProviders> make_binary_providers(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
         BinaryProviders ret;
@@ -1866,7 +1895,7 @@ namespace vcpkg
             s.nuget_prefix = args.nuget_id_prefix.value_or("");
             if (!s.nuget_prefix.empty()) s.nuget_prefix.push_back('_');
             s.use_nuget_cache = args.use_nuget_cache.value_or(false);
-            s.nuget_repo_info = get_nuget_repo_info_from_env();
+            s.nuget_repo_info = get_nuget_repo_info_from_env(args);
 
             auto& fs = paths.get_filesystem();
             auto& tools = paths.get_tool_cache();
@@ -2394,33 +2423,6 @@ std::string vcpkg::format_version_for_nugetref(StringView version, StringView ab
     }
 
     return Strings::concat("0.0.0-vcpkg", abi_tag);
-}
-
-NuGetRepoInfo vcpkg::get_nuget_repo_info_from_env()
-{
-    auto vcpkg_nuget_repository = get_environment_variable("VCPKG_NUGET_REPOSITORY");
-    if (auto p = vcpkg_nuget_repository.get())
-    {
-        get_global_metrics_collector().track_define(DefineMetric::VcpkgNugetRepository);
-        return {std::move(*p)};
-    }
-
-    auto gh_repo = get_environment_variable("GITHUB_REPOSITORY").value_or("");
-    if (gh_repo.empty())
-    {
-        return {};
-    }
-
-    auto gh_server = get_environment_variable("GITHUB_SERVER_URL").value_or("");
-    if (gh_server.empty())
-    {
-        return {};
-    }
-
-    get_global_metrics_collector().track_define(DefineMetric::GitHubRepository);
-    return {Strings::concat(gh_server, '/', gh_repo, ".git"),
-            get_environment_variable("GITHUB_REF").value_or(""),
-            get_environment_variable("GITHUB_SHA").value_or("")};
 }
 
 std::string vcpkg::generate_nuspec(const Path& package_dir,
