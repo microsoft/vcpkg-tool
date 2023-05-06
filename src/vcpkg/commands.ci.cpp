@@ -30,7 +30,7 @@
 #include <vcpkg/vcpkgpaths.h>
 #include <vcpkg/xunitwriter.h>
 
-#include <stdio.h>
+#include <random>
 
 using namespace vcpkg;
 
@@ -352,8 +352,6 @@ namespace vcpkg::Commands::CI
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
         const auto& settings = options.settings;
 
-        BinaryCache binary_cache{args, paths};
-
         ExclusionsMap exclusions_map;
         parse_exclusions(settings, OPTION_EXCLUDE, target_triplet, exclusions_map);
         parse_exclusions(settings, OPTION_HOST_EXCLUDE, host_triplet, exclusions_map);
@@ -434,6 +432,7 @@ namespace vcpkg::Commands::CI
         }
 
         auto action_plan = compute_full_plan(paths, provider, var_provider, all_default_full_specs, serialize_options);
+        BinaryCache binary_cache(args, paths);
         const auto precheck_results = binary_cache.precheck(action_plan.install_actions);
         auto split_specs =
             compute_action_statuses(ExclusionPredicate{&exclusions_map}, var_provider, precheck_results, action_plan);
@@ -515,8 +514,9 @@ namespace vcpkg::Commands::CI
             {
                 msg::println_warning(msgCISkipInstallation, msg::list = Strings::join(", ", already_installed));
             }
-            auto summary = Install::perform(
-                args, action_plan, KeepGoing::YES, paths, status_db, binary_cache, build_logs_recorder, var_provider);
+            binary_cache.prefetch(action_plan.install_actions);
+            auto summary = Install::execute_plan(
+                args, action_plan, KeepGoing::YES, paths, status_db, binary_cache, build_logs_recorder);
 
             for (auto&& result : summary.results)
             {

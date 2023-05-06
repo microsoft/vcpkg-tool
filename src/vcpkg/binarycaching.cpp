@@ -2499,8 +2499,8 @@ ExpectedL<DownloadManagerConfig> vcpkg::parse_download_configuration(const Optio
                                  s.script};
 }
 
-ExpectedL<BinaryConfigParserState> vcpkg::create_binary_providers_from_configs_pure(const std::string& env_string,
-                                                                                    View<std::string> args)
+ExpectedL<BinaryConfigParserState> vcpkg::parse_binary_provider_configs(const std::string& env_string,
+                                                                        View<std::string> args)
 {
     if (!env_string.empty())
     {
@@ -2558,7 +2558,7 @@ ExpectedL<std::vector<std::unique_ptr<IBinaryProvider>>> vcpkg::create_binary_pr
         }
     }
 
-    auto sRawHolder = create_binary_providers_from_configs_pure(env_string, args);
+    auto sRawHolder = parse_binary_provider_configs(env_string, args);
     if (!sRawHolder)
     {
         return sRawHolder.error();

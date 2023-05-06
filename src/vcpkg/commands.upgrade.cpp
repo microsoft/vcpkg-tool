@@ -59,7 +59,6 @@ namespace vcpkg::Commands::Upgrade
                                                  ? UnsupportedPortAction::Warn
                                                  : UnsupportedPortAction::Error;
 
-        BinaryCache binary_cache{args, paths};
         StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
 
         // Load ports from ports dirs
@@ -206,8 +205,11 @@ namespace vcpkg::Commands::Upgrade
 
         var_provider.load_tag_vars(action_plan, provider, host_triplet);
 
-        const InstallSummary summary = Install::perform(
-            args, action_plan, keep_going, paths, status_db, binary_cache, null_build_logs_recorder(), var_provider);
+        BinaryCache binary_cache(args, paths);
+        binary_cache.prefetch(action_plan.install_actions);
+        compute_all_abis(paths, action_plan, var_provider, status_db);
+        const InstallSummary summary = Install::execute_plan(
+            args, action_plan, keep_going, paths, status_db, binary_cache, null_build_logs_recorder());
 
         if (keep_going == KeepGoing::YES)
         {

@@ -25,8 +25,6 @@ namespace vcpkg::Commands::BuildExternal
     {
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
 
-        BinaryCache binary_cache{args, paths};
-
         bool default_triplet_used = false;
         const FullPackageSpec spec = check_and_get_full_package_spec(options.command_arguments[0],
                                                                      default_triplet,
@@ -44,6 +42,6 @@ namespace vcpkg::Commands::BuildExternal
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();
         PathsPortFileProvider provider(fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, overlays));
-        Build::perform_and_exit_ex(args, spec, host_triplet, provider, binary_cache, null_build_logs_recorder(), paths);
+        Build::perform_and_exit_ex(args, spec, host_triplet, provider, null_build_logs_recorder(), paths);
     }
 }
