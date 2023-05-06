@@ -121,6 +121,14 @@
             }
         },
         {
+            "name": "linux-with-artifacts",
+            "inherits": [
+                "base",
+                "linux",
+                "artifacts"
+            ]
+        },
+        {
             "name": "linux-ci",
             "inherits": [
                 "base",
@@ -154,9 +162,7 @@
                 "macos"
             ],
             "cacheVariables": {
-                "CMAKE_CXX_FLAGS": "-fsanitize=undefined -fsanitize=address",
                 "CMAKE_OSX_DEPLOYMENT_TARGET": "10.13",
-                "CMAKE_EXE_LINKER_FLAGS": "-static-libsan",
                 "VCPKG_WARNINGS_AS_ERRORS": true
             }
         }
