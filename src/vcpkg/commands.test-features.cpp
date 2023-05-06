@@ -418,7 +418,6 @@ namespace vcpkg::Commands::TestFeatures
                         }
                         [[fallthrough]];
                     case BuildResult::POST_BUILD_CHECKS_FAILED:
-                    case BuildResult::FILE_CONFLICTS:
                         known_failures.insert(result.get_abi().value_or_exit(VCPKG_LINE_INFO));
                         break;
                     default: break;
@@ -441,6 +440,10 @@ namespace vcpkg::Commands::TestFeatures
                 case BuildResult::CACHE_MISSING:
                 case BuildResult::REMOVED:
                 case BuildResult::EXCLUDED:
+                    if (auto abi = summary.results.back().get_abi().get())
+                    {
+                        known_failures.insert(*abi);
+                    }
                     handle_result(std::move(spec), CiFeatureBaselineState::Fail, baseline, logs_dir, time_to_install);
                     break;
             }
