@@ -235,7 +235,10 @@ namespace vcpkg::Commands::TestFeatures
                 specs_to_test.emplace_back(package_spec, InternalFeatureSet{{"core"}});
                 for (const auto& option_set : baseline.options)
                 {
-                    specs_to_test.back().features.push_back(option_set.front());
+                    if (option_set.front() != "core")
+                    {
+                        specs_to_test.back().features.push_back(option_set.front());
+                    }
                 }
             }
             InternalFeatureSet all_features{{"core"}};
@@ -262,7 +265,7 @@ namespace vcpkg::Commands::TestFeatures
                         specs_to_test.emplace_back(package_spec, InternalFeatureSet{{"core", feature->name}});
                         for (const auto& options : baseline.options)
                         {
-                            if (!Util::contains(options, feature->name))
+                            if (options.front() != "core" && !Util::contains(options, feature->name))
                             {
                                 specs_to_test.back().features.push_back(options.front());
                             }
