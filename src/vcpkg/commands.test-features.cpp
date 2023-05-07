@@ -263,11 +263,11 @@ namespace vcpkg::Commands::TestFeatures
                         !Util::Sets::contains(baseline.no_separate_feature_test, feature->name))
                     {
                         specs_to_test.emplace_back(package_spec, InternalFeatureSet{{"core", feature->name}});
-                        for (const auto& options : baseline.options)
+                        for (const auto& option_set : baseline.options)
                         {
-                            if (options.front() != "core" && !Util::contains(options, feature->name))
+                            if (option_set.front() != "core" && !Util::contains(option_set, feature->name))
                             {
-                                specs_to_test.back().features.push_back(options.front());
+                                specs_to_test.back().features.push_back(option_set.front());
                             }
                         }
                     }
