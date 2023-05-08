@@ -77,11 +77,9 @@ export class RemoteRegistry extends ArtifactRegistry {
   }
 
   async update(displayName?: string) {
-    if (!displayName) {
-      displayName = this.location.toString();
-    }
+    const displayNameStr = displayName ?? this.location.toString();
 
-    this.session.channels.message(i`Updating registry data from ${displayName}`);
+    this.session.channels.message(i`Updating registry data from ${displayNameStr}`);
 
     let locations = [this.location];
 

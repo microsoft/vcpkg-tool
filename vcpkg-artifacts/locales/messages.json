@@ -178,7 +178,7 @@
   "UnknownRegistry$in$TheFollowingAreKnown$": "Unknown registry ${p0} (in ${p1}). The following are known: ${p2}",
   "_UnknownRegistry$in$TheFollowingAreKnown$.comment": "\n'${p0}' is a parameter of type 'string | undefined'\n\n'${p1}' is a parameter of type 'string'\n\n'${p2}' is a parameter of type 'string'\n",
   "UpdatingRegistryDataFrom$": "Updating registry data from ${p0}",
-  "_UpdatingRegistryDataFrom$.comment": "\n'${p0}' is a parameter of type 'string | undefined'\n",
+  "_UpdatingRegistryDataFrom$.comment": "\n'${p0}' is a parameter of type 'string'\n",
   "$MustBeAString": "${p0} must be a string",
   "_$MustBeAString.comment": "\n'${p0}' is a parameter of type 'string'\n",
   "$MustBeABool": "${p0} must be a bool",
