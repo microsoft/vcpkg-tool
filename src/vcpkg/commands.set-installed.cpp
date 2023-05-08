@@ -117,15 +117,10 @@ namespace vcpkg::Commands::SetInstalled
 
         if (auto p_pkgsconfig = maybe_pkgsconfig.get())
         {
-            compute_all_abis(paths, action_plan, cmake_vars, status_db);
             auto pkgsconfig_path = paths.original_cwd / *p_pkgsconfig;
             auto pkgsconfig_contents = generate_nuget_packages_config(action_plan);
             fs.write_contents(pkgsconfig_path, pkgsconfig_contents, VCPKG_LINE_INFO);
             msg::println(msgWroteNuGetPkgConfInfo, msg::path = pkgsconfig_path);
-        }
-        else if (dry_run != DryRun::Yes)
-        {
-            compute_all_abis(paths, action_plan, cmake_vars, status_db);
         }
 
         if (dry_run == DryRun::Yes)
