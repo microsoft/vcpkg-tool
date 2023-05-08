@@ -28,7 +28,7 @@ export interface Registry extends ArtifactSearchable {
 
   load(force?: boolean): Promise<void>;
   save(): Promise<void>;
-  update(): Promise<void>;
+  update(displayName?: string): Promise<void>;
   regenerate(normalize?: boolean): Promise<void>;
 }
 
@@ -102,6 +102,10 @@ export class RegistryDatabase {
     this.#uriToRegistry.set(locationUriStr, loaded);
     await loaded.load();
     return loaded;
+  }
+
+  getAllUris() {
+    return Array.from(this.#uriToRegistry.keys());
   }
 }
 

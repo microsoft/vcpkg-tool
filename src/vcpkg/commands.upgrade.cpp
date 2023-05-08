@@ -206,8 +206,8 @@ namespace vcpkg::Commands::Upgrade
         var_provider.load_tag_vars(action_plan, provider, host_triplet);
 
         BinaryCache binary_cache(args, paths, VCPKG_LINE_INFO);
-        binary_cache.fetch(action_plan.install_actions);
         compute_all_abis(paths, action_plan, var_provider, status_db);
+        binary_cache.fetch(action_plan.install_actions);
         const InstallSummary summary = Install::execute_plan(
             args, action_plan, keep_going, paths, status_db, binary_cache, null_build_logs_recorder());
 

@@ -93,7 +93,7 @@ namespace vcpkg
                                      const InstalledPaths& installed);
 
         InstallSummary execute_plan(const VcpkgCmdArguments& args,
-                                    ActionPlan& action_plan,
+                                    const ActionPlan& action_plan,
                                     const KeepGoing keep_going,
                                     const VcpkgPaths& paths,
                                     StatusParagraphs& status_db,
@@ -106,5 +106,5 @@ namespace vcpkg
                               Triplet host_triplet);
     } // namespace vcpkg::Install
 
-    void track_install_plan(ActionPlan& plan);
+    void track_install_plan(const ActionPlan& plan);
 }
