@@ -1,3 +1,4 @@
+#include <vcpkg/base/hash.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
@@ -481,6 +482,7 @@ namespace vcpkg
         from_env(get_env, DEFAULT_VISUAL_STUDIO_PATH_ENV, default_visual_studio_path);
         from_env(get_env, ASSET_SOURCES_ENV, asset_sources_template_env);
         from_env(get_env, REGISTRIES_CACHE_DIR_ENV, registries_cache_dir);
+        from_env(get_env, GITHUB_REPOSITORY_ENV, gh_repo_env);
 
         // detect whether we are running in a CI environment
         for (auto&& ci_env_var : KNOWN_CI_VARIABLES)
@@ -672,11 +674,20 @@ namespace vcpkg
 
     void VcpkgCmdArguments::track_environment_metrics() const
     {
+        MetricsSubmission submission;
         if (auto ci_env = m_detected_ci_environment.get())
         {
             Debug::println("Detected CI environment: ", *ci_env);
-            get_global_metrics_collector().track_string(StringMetric::DetectedCiEnvironment, *ci_env);
+            submission.track_string(StringMetric::DetectedCiEnvironment, *ci_env);
         }
+
+        if (auto gh_repo = gh_repo_env.get())
+        {
+            auto gh_repo_hash = Hash::get_string_hash(*gh_repo, Hash::Algorithm::Sha256);
+            Debug::println("Github repo: ", gh_repo_hash);
+            submission.track_string(StringMetric::GithubRepo, gh_repo_hash);
+        }
+        get_global_metrics_collector().track_submission(std::move(submission));
     }
 
     Optional<std::string> VcpkgCmdArguments::asset_sources_template() const

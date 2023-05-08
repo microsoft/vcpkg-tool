@@ -596,11 +596,11 @@ export class Activation {
     return [env, undo];
   }
 
-  async activate(thisStackEntries: Array<string>, msbuildFile: Uri | undefined, json: Uri | undefined) {
+  async activate(thisStackEntries: Array<string>, msbuildFile: Uri | undefined, json: Uri | undefined) : Promise<boolean> {
     const postscriptFile = this.postscriptFile;
     if (!postscriptFile && !msbuildFile && !json) {
       displayNoPostScriptError(this.channels);
-      return;
+      return false;
     }
 
     async function transformtoRecord<T, U = T> (
@@ -635,6 +635,10 @@ export class Activation {
       await json.writeUTF8(contents);
     }
 
+    const newUndoStack = this.undoFile?.stack ?? [];
+    Array.prototype.push.apply(newUndoStack, thisStackEntries);
+    this.channels.message(i`Activating: ${newUndoStack.join(' + ')}`);
+
     if (postscriptFile) {
       // preserve undo environment variables for anything this particular activation did not touch
       const oldEnvironment = this.undoFile?.environment;
@@ -661,10 +665,6 @@ export class Activation {
         }
       }
 
-      const newUndoStack = this.undoFile?.stack ?? [];
-      Array.prototype.push.apply(newUndoStack, thisStackEntries);
-      this.channels.message(i`Activating: ${newUndoStack.join(' + ')}`);
-
       // generate shell script
       await writePostscript(this.channels, postscriptFile, variables, aliases);
 
@@ -685,8 +685,9 @@ export class Activation {
       this.channels.debug(`--------[START UNDO FILE]--------\n${undoStringified}\n--------[END UNDO FILE]---------`);
       await this.nextUndoEnvironmentFile.writeUTF8(undoStringified);
     }
-  }
 
+    return true;
+  }
 }
 
 function generateCmdScript(variables: Record<string, string | undefined>, aliases: Record<string, string>): string {
@@ -751,7 +752,7 @@ function printDeactivatingMessage(channels: Channels, stack: Array<string>) {
 }
 
 
-export async function deactivate(session: Session, warnIfNoActivation: boolean) {
+export async function deactivate(session: Session, warnIfNoActivation: boolean) : Promise<boolean> {
   const undoVariableValue = process.env[undoVariableName];
   if (!undoVariableValue) {
     if (warnIfNoActivation) {

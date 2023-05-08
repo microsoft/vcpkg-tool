@@ -167,6 +167,9 @@ namespace vcpkg
         constexpr static StringLiteral ASSET_SOURCES_ENV = "X_VCPKG_ASSET_SOURCES";
         constexpr static StringLiteral ASSET_SOURCES_ARG = "asset-sources";
 
+        constexpr static StringLiteral GITHUB_REPOSITORY_ENV = "GITHUB_REPOSITORY";
+        Optional<std::string> gh_repo_env;
+
         // feature flags
         constexpr static StringLiteral FEATURE_FLAGS_ENV = "VCPKG_FEATURE_FLAGS";
         constexpr static StringLiteral FEATURE_FLAGS_ARG = "feature-flags";

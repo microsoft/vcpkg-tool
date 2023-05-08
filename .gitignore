@@ -7,6 +7,7 @@
 /.vs
 /CMakeSettings.json
 /out
+/OneLocBuild
 .DS_Store
 CMakeLists.txt.user
 .cache

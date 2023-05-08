@@ -429,10 +429,13 @@
       </Item>
       <Item ItemId=";AVersionConstraint" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[a version constriant]]></Val>
+          <Val><![CDATA[a version constraint]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[バージョンの制約]]></Val>
+            <Val><![CDATA[バージョン制約]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[a version constriant]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -1254,6 +1257,15 @@
           <Val><![CDATA[All MSBuild C++ projects can now #include any installed libraries. Linking will be handled automatically. Installing new libraries will make them instantly available.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[すべての MSBuild C++ プロジェクトで、インストールされているすべてのライブラリの #include を実行できるようになりました。リンクは自動的に処理されます。新しいライブラリをインストールすると、すぐに利用できるようになります。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AutomaticLinkingForVS2017AndLater" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Visual Studio 2017 and later can now #include any installed libraries. Linking will be handled automatically. Installing new libraries will make them instantly available.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Visual Studio 2017 以降では、インストールされている任意のライブラリを #include できるようになりました。リンクは自動的に処理されます。新しいライブラリをインストールすると、すぐに使用できるようになります。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -6190,11 +6202,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";IntegrationFailed" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";IntegrationFailedVS2015" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Integration was not applied.]]></Val>
+          <Val><![CDATA[Integration was not applied for Visual Studio 2015.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[統合は適用されませんでした。]]></Val>
+            <Val><![CDATA[Visual Studio 2015 には統合が適用されませんでした。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />

@@ -426,21 +426,21 @@ jobs:
         ArtifactName: 'vs-insertion'
         publishLocation: 'Container'
     # Do compliance checks.
-    - task: BinSkim@3
+    - task: BinSkim@4
       inputs:
         InputType: 'CommandLine'
         arguments: 'analyze "$(Build.ArtifactStagingDirectory)\drop\vcpkg.exe" "$(Build.ArtifactStagingDirectory)\drop\tls12-download.exe" "$(Build.ArtifactStagingDirectory)\vcpkg-arm64.exe" "$(Build.ArtifactStagingDirectory)\tls12-download-arm64.exe"'
-    - task: PoliCheck@1
+    - task: PoliCheck@2
       inputs:
         inputType: 'Basic'
         targetType: 'F'
         targetArgument: '$(Build.ArtifactStagingDirectory)\drop'
         result: 'PoliCheck.xml'
-    - task: securedevelopmentteam.vss-secure-development-tools.build-task-credscan.CredScan@2
+    - task: securedevelopmentteam.vss-secure-development-tools.build-task-credscan.CredScan@3
       displayName: Run CredScan
       inputs:
         toolMajorVersion: V2
-    - task: securedevelopmentteam.vss-secure-development-tools.build-task-postanalysis.PostAnalysis@1
+    - task: securedevelopmentteam.vss-secure-development-tools.build-task-postanalysis.PostAnalysis@2
       displayName: Check for compliance errors
       # To avoid spurious warnings about missing logs, explicitly declare what we scanned.
       inputs:
@@ -449,7 +449,7 @@ jobs:
         PoliCheck: true
     # Trust Services Automation (TSA) can automatically open bugs for compliance issues.
     # https://www.1eswiki.com/wiki/Trust_Services_Automation_(TSA)
-    - task: securedevelopmentteam.vss-secure-development-tools.build-task-uploadtotsa.TSAUpload@1
+    - task: securedevelopmentteam.vss-secure-development-tools.build-task-uploadtotsa.TSAUpload@2
       displayName: Upload logs to TSA
       inputs:
         tsaVersion: TsaV2
