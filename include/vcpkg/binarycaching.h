@@ -138,8 +138,9 @@ namespace vcpkg
         void clear();
     };
 
-    ExpectedL<BinaryConfigParserState> create_binary_providers_from_configs_pure(const std::string& env_string,
-                                                                                 View<std::string> args);
+    ExpectedL<BinaryConfigParserState> parse_binary_provider_configs(const std::string& env_string,
+                                                                     View<std::string> args);
+
     ExpectedL<std::vector<std::unique_ptr<IBinaryProvider>>> create_binary_providers_from_configs(
         const VcpkgPaths& paths, View<std::string> args);
 

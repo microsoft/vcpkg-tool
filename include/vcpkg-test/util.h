@@ -4,11 +4,14 @@
 
 #include <catch2/catch.hpp>
 
+#include <vcpkg/base/fwd/files.h>
+
+#include <vcpkg/fwd/tools.h>
+
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/format.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/pragmas.h>
-#include <vcpkg/base/sortedvector.h>
 #include <vcpkg/base/strings.h>
 
 #include <vcpkg/packagespec.h>
@@ -176,10 +179,10 @@ namespace vcpkg::Test
     const Path& base_temporary_directory() noexcept;
 
     Optional<std::string> diff_lines(StringView a, StringView b);
+}
 
 #define REQUIRE_LINES(a, b)                                                                                            \
     do                                                                                                                 \
     {                                                                                                                  \
         if (auto delta = ::vcpkg::Test::diff_lines((a), (b))) FAIL(*delta.get());                                      \
     } while (0)
-}

@@ -5,6 +5,7 @@
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/statusparagraph.h>
+#include <vcpkg/tools.h>
 
 #include <stdlib.h>
 
