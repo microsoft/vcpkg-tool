@@ -25,7 +25,6 @@ namespace vcpkg
 
     enum class RequestType
     {
-        UNKNOWN,
         USER_REQUESTED,
         AUTO_SELECTED
     };
@@ -55,14 +54,24 @@ namespace vcpkg
         InternalFeatureSet feature_list;
     };
 
+    struct AlreadyInstalledAction : PackageAction
+    {
+        AlreadyInstalledAction(InstalledPackageView&& spghs);
+
+        const std::string& public_abi() const;
+        Version version() const;
+
+        InstalledPackageView installed_package;
+        UseHeadVersion use_head = UseHeadVersion::NO;
+        std::map<std::string, std::vector<FeatureSpec>> feature_dependencies;
+    };
+
     struct InstallPlanAction : PackageAction
     {
         InstallPlanAction(const InstallPlanAction&) = delete;
         InstallPlanAction(InstallPlanAction&&) = default;
         InstallPlanAction& operator=(const InstallPlanAction&) = delete;
         InstallPlanAction& operator=(InstallPlanAction&&) = default;
-
-        InstallPlanAction(InstalledPackageView&& spghs, const RequestType& request_type);
 
         InstallPlanAction(const PackageSpec& spec,
                           const SourceControlFileAndLocation& scfl,
@@ -72,25 +81,25 @@ namespace vcpkg
                           std::vector<LocalizedString>&& build_failure_messages);
 
         const std::string& public_abi() const;
-        bool has_package_abi() const;
         Optional<const std::string&> package_abi() const;
         const PreBuildInfo& pre_build_info(LineInfo li) const;
         Version version() const;
 
-        Optional<const SourceControlFileAndLocation&> source_control_file_and_location;
-        Optional<InstalledPackageView> installed_package;
+        // Never Null
+        const SourceControlFileAndLocation* source_control_file_and_location;
 
-        InstallPlanType plan_type;
+        bool is_excluded = false;
         RequestType request_type;
-        BuildPackageOptions build_options;
 
         std::map<std::string, std::vector<FeatureSpec>> feature_dependencies;
         std::vector<LocalizedString> build_failure_messages;
         Triplet host_triplet;
 
-        // only valid with source_control_file_and_location
-        Optional<AbiInfo> abi_info;
-        Optional<Path> package_dir;
+        BuildPackageOptions build_options;
+        Path package_dir;
+
+        // This is filled by compute_all_abis
+        AbiInfo abi_info;
     };
 
     struct NotInstalledAction : BasicAction
@@ -112,7 +121,7 @@ namespace vcpkg
         void print_unsupported_warnings();
 
         std::vector<RemovePlanAction> remove_actions;
-        std::vector<InstallPlanAction> already_installed;
+        std::vector<AlreadyInstalledAction> already_installed;
         std::vector<InstallPlanAction> install_actions;
         std::map<FeatureSpec, PlatformExpression::Expr> unsupported_features;
     };

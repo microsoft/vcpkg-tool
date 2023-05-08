@@ -99,7 +99,6 @@ static void check_name_and_features(const InstallPlanAction& ipa,
                                     std::initializer_list<StringLiteral> features)
 {
     CHECK(ipa.spec.name() == name);
-    CHECK(ipa.source_control_file_and_location.has_value());
     {
         INFO("ipa.feature_list = [" << Strings::join(", ", ipa.feature_list) << "]");
         INFO("features = [" << Strings::join(", ", features) << "]");
@@ -119,11 +118,9 @@ static void check_name_and_version(const InstallPlanAction& ipa,
                                    std::initializer_list<StringLiteral> features = {})
 {
     check_name_and_features(ipa, name, features);
-    if (auto scfl = ipa.source_control_file_and_location.get())
-    {
-        CHECK(scfl->source_control_file->core_paragraph->raw_version == v.text());
-        CHECK(scfl->source_control_file->core_paragraph->port_version == v.port_version());
-    }
+    const auto& pgh = ipa.source_control_file_and_location->source_control_file->core_paragraph;
+    CHECK(pgh->raw_version == v.text());
+    CHECK(pgh->port_version == v.port_version());
 }
 
 static void check_semver_version(const ExpectedL<DotVersion>& maybe_version,
@@ -2383,14 +2380,12 @@ TEST_CASE ("formatting plan 1", "[dependencies]")
         {"b", Test::X64_OSX}, scfl_b, RequestType::AUTO_SELECTED, Test::X64_ANDROID, {{"1", {}}}, {});
     InstallPlanAction install_c({"c", Test::X64_OSX}, scfl_c, RequestType::USER_REQUESTED, Test::X64_ANDROID, {}, {});
     InstallPlanAction install_f({"f", Test::X64_OSX}, scfl_f, RequestType::USER_REQUESTED, Test::X64_ANDROID, {}, {});
-    install_f.plan_type = InstallPlanType::EXCLUDED;
+    install_f.is_excluded = true;
 
-    InstallPlanAction already_installed_d(
-        status_db.get_installed_package_view({"d", Test::X86_WINDOWS}).value_or_exit(VCPKG_LINE_INFO),
-        RequestType::AUTO_SELECTED);
-    InstallPlanAction already_installed_e(
-        status_db.get_installed_package_view({"e", Test::X86_WINDOWS}).value_or_exit(VCPKG_LINE_INFO),
-        RequestType::USER_REQUESTED);
+    AlreadyInstalledAction already_installed_d(
+        status_db.get_installed_package_view({"d", Test::X86_WINDOWS}).value_or_exit(VCPKG_LINE_INFO));
+    AlreadyInstalledAction already_installed_e(
+        status_db.get_installed_package_view({"e", Test::X86_WINDOWS}).value_or_exit(VCPKG_LINE_INFO));
 
     ActionPlan plan;
     {

@@ -22,19 +22,31 @@ namespace vcpkg
 {
     struct SpecSummary
     {
-        explicit SpecSummary(const InstallPlanAction& action);
-        explicit SpecSummary(const RemovePlanAction& action);
+        explicit SpecSummary(std::chrono::system_clock::time_point start,
+                             ElapsedTime elapsed,
+                             const InstallPlanAction& action,
+                             ExtendedBuildResult result);
+        explicit SpecSummary(std::chrono::system_clock::time_point start, const AlreadyInstalledAction& action);
+        explicit SpecSummary(std::chrono::system_clock::time_point start,
+                             ElapsedTime elapsed,
+                             const RemovePlanAction& action);
 
-        const BinaryParagraph* get_binary_paragraph() const;
+        const BinaryParagraph* get_binary_paragraph() const { return m_bpgh.get(); }
         const PackageSpec& get_spec() const { return m_spec; }
-        bool is_user_requested_install() const;
-        Optional<ExtendedBuildResult> build_result;
-        vcpkg::ElapsedTime timing;
-        std::chrono::system_clock::time_point start_time;
+        bool is_user_requested_install() const { return is_user_requested; }
+        BuildResult code() const { return m_code; }
+        vcpkg::ElapsedTime timing() const { return m_timing; }
+        std::chrono::system_clock::time_point start_time() const { return m_start_time; }
 
     private:
-        const InstallPlanAction* m_install_action;
+        std::chrono::system_clock::time_point m_start_time;
+        vcpkg::ElapsedTime m_timing;
+
+        Optional<ExtendedBuildResult> build_result;
+        BuildResult m_code;
+        Optional<const BinaryParagraph&> m_bpgh;
         PackageSpec m_spec;
+        bool is_user_requested = false;
     };
 
     struct InstallSummary

@@ -98,6 +98,7 @@ namespace vcpkg
         using std::vector<std::string>::vector;
 
         bool empty_or_only_core() const;
+        bool contains(StringView feature) const;
     };
 
     InternalFeatureSet internalize_feature_list(View<std::string> fs, ImplicitDefault id);

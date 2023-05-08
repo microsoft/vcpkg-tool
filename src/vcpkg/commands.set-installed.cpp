@@ -47,7 +47,7 @@ namespace vcpkg::Commands::SetInstalled
         std::set<std::string> all_abis;
         for (const auto& action : action_plan.install_actions)
         {
-            all_abis.insert(action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi);
+            all_abis.insert(action.abi_info.package_abi);
         }
 
         std::vector<PackageSpec> specs_to_remove;

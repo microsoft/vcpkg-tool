@@ -44,6 +44,7 @@ namespace vcpkg
     }
 
     bool InternalFeatureSet::empty_or_only_core() const { return empty() || (size() == 1 && *begin() == "core"); }
+    bool InternalFeatureSet::contains(StringView feature) const { return std::find(begin(), end(), feature) != end(); }
 
     InternalFeatureSet internalize_feature_list(View<std::string> fs, ImplicitDefault id)
     {

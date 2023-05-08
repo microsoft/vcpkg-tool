@@ -125,9 +125,9 @@ namespace vcpkg::Build
 
         Checks::check_exit(VCPKG_LINE_INFO, action != nullptr);
         ASSUME(action != nullptr);
-        auto& scf = *action->source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_control_file;
         const auto& spec_name = spec.name();
-        const auto& core_paragraph_name = scf.core_paragraph->name;
+        const auto& core_paragraph_name =
+            action->source_control_file_and_location->source_control_file->core_paragraph->name;
         if (spec_name != core_paragraph_name)
         {
             Checks::msg_exit_with_error(VCPKG_LINE_INFO,
@@ -597,7 +597,7 @@ namespace vcpkg
     static std::unique_ptr<BinaryControlFile> create_binary_control_file(const InstallPlanAction& action,
                                                                          const BuildInfo& build_info)
     {
-        const auto& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
+        const auto& scfl = *action.source_control_file_and_location;
 
         auto bcf = std::make_unique<BinaryControlFile>();
 
@@ -737,7 +737,7 @@ namespace vcpkg
                                                            const VcpkgPaths& paths,
                                                            const InstallPlanAction& action)
     {
-        auto& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
+        auto& scfl = *action.source_control_file_and_location;
         auto& scf = *scfl.source_control_file;
 
         std::string all_features;
@@ -776,10 +776,7 @@ namespace vcpkg
         }
 
         get_generic_cmake_build_args(
-            paths,
-            action.spec.triplet(),
-            action.abi_info.value_or_exit(VCPKG_LINE_INFO).toolset.value_or_exit(VCPKG_LINE_INFO),
-            variables);
+            paths, action.spec.triplet(), action.abi_info.toolset.value_or_exit(VCPKG_LINE_INFO), variables);
 
         if (Util::Enum::to_bool(action.build_options.only_downloads))
         {
@@ -879,8 +876,7 @@ namespace vcpkg
                            std::vector<Json::Value> heuristic_resources)
     {
         auto& fs = paths.get_filesystem();
-        const auto& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
-        const auto& scf = *scfl.source_control_file;
+        const auto& scf = *action.source_control_file_and_location->source_control_file;
 
         auto doc_ns = Strings::concat("https://spdx.org/spdxdocs/",
                                       scf.core_paragraph->name,
@@ -892,10 +888,9 @@ namespace vcpkg
                                       generate_random_UUID());
 
         const auto now = CTime::now_string();
-        const auto& abi = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
+        const auto& abi = action.abi_info;
 
-        const auto json_path =
-            action.package_dir.value_or_exit(VCPKG_LINE_INFO) / "share" / action.spec.name() / "vcpkg.spdx.json";
+        const auto json_path = action.package_dir / "share" / action.spec.name() / "vcpkg.spdx.json";
         fs.write_contents_and_dirs(
             json_path,
             create_spdx_sbom(
@@ -911,7 +906,7 @@ namespace vcpkg
         const auto& pre_build_info = action.pre_build_info(VCPKG_LINE_INFO);
 
         auto& fs = paths.get_filesystem();
-        auto&& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
+        auto&& scfl = *action.source_control_file_and_location;
 
         Triplet triplet = action.spec.triplet();
         const auto& triplet_file_path = paths.get_triplet_file_path(triplet);
@@ -934,8 +929,7 @@ namespace vcpkg
         const ElapsedTimer timer;
         auto command = vcpkg::make_cmake_cmd(paths, paths.ports_cmake, get_cmake_build_args(args, paths, action));
 
-        const auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
-        auto env = paths.get_action_env(abi_info);
+        auto env = paths.get_action_env(action.abi_info);
 
         auto buildpath = paths.build_dir(action.spec);
         fs.create_directory(buildpath, VCPKG_LINE_INFO);
@@ -1014,8 +1008,8 @@ namespace vcpkg
 
         std::unique_ptr<BinaryControlFile> bcf = create_binary_control_file(action, build_info);
 
-        write_sbom(paths, action, abi_info.heuristic_resources);
-        write_binary_control_file(paths.get_filesystem(), action.package_dir.value_or_exit(VCPKG_LINE_INFO), *bcf);
+        write_sbom(paths, action, action.abi_info.heuristic_resources);
+        write_binary_control_file(paths.get_filesystem(), action.package_dir, *bcf);
         return {BuildResult::SUCCEEDED, std::move(bcf)};
     }
 
@@ -1104,11 +1098,10 @@ namespace vcpkg
 
         std::vector<AbiEntry> abi_tag_entries(dependency_abis.begin(), dependency_abis.end());
 
-        const auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
-        const auto& triplet_abi = paths.get_triplet_info(abi_info);
+        const auto& triplet_abi = paths.get_triplet_info(action.abi_info);
         abi_tag_entries.emplace_back("triplet", triplet.canonical_name());
         abi_tag_entries.emplace_back("triplet_abi", triplet_abi);
-        abi_entries_from_abi_info(abi_info, abi_tag_entries);
+        abi_entries_from_abi_info(action.abi_info, abi_tag_entries);
 
         // If there is an unusually large number of files in the port then
         // something suspicious is going on.  Rather than hash all of them
@@ -1118,7 +1111,7 @@ namespace vcpkg
         std::string portfile_cmake_contents;
         std::vector<Path> files;
         std::vector<std::string> hashes;
-        auto&& port_dir = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_location;
+        auto&& port_dir = action.source_control_file_and_location->source_location;
         size_t port_file_count = 0;
         Path abs_port_file;
         for (auto& port_file : fs.get_regular_files_recursive_lexically_proximate(port_dir, VCPKG_LINE_INFO))
@@ -1233,7 +1226,7 @@ namespace vcpkg
         for (auto it = action_plan.install_actions.begin(); it != action_plan.install_actions.end(); ++it)
         {
             auto& action = *it;
-            if (action.abi_info.has_value()) continue;
+            if (action.abi_info.pre_build_info) continue;
 
             std::vector<AbiEntry> dependency_abis;
             if (!Util::Enum::to_bool(action.build_options.only_downloads))
@@ -1264,8 +1257,7 @@ namespace vcpkg
                 }
             }
 
-            action.abi_info = AbiInfo();
-            auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
+            auto& abi_info = action.abi_info;
 
             abi_info.pre_build_info = std::make_unique<PreBuildInfo>(
                 paths, action.spec.triplet(), var_provider.get_tag_vars(action.spec).value_or_exit(VCPKG_LINE_INFO));
@@ -1293,15 +1285,14 @@ namespace vcpkg
     {
         auto& filesystem = paths.get_filesystem();
         auto& spec = action.spec;
-        const std::string& name = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO)
-                                      .source_control_file->core_paragraph->name;
 
         std::vector<FeatureSpec> missing_fspecs;
         for (const auto& kv : action.feature_dependencies)
         {
             for (const FeatureSpec& fspec : kv.second)
             {
-                if (!status_db.is_installed(fspec) && !(fspec.port() == name && fspec.triplet() == spec.triplet()))
+                if (!status_db.is_installed(fspec) &&
+                    !(fspec.port() == spec.name() && fspec.triplet() == spec.triplet()))
                 {
                     missing_fspecs.emplace_back(fspec);
                 }
@@ -1327,17 +1318,15 @@ namespace vcpkg
             }
         }
 
-        auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
         ExtendedBuildResult result =
             do_build_package_and_clean_buildtrees(args, paths, action, all_dependencies_satisfied);
-        if (abi_info.abi_tag_file)
+        if (auto abi_file = action.abi_info.abi_tag_file.get())
         {
-            auto& abi_file = *abi_info.abi_tag_file.get();
-            const auto abi_package_dir = action.package_dir.value_or_exit(VCPKG_LINE_INFO) / "share" / spec.name();
+            const auto abi_package_dir = action.package_dir / "share" / spec.name();
             const auto abi_file_in_package = abi_package_dir / "vcpkg_abi_info.txt";
             build_logs_recorder.record_build_result(paths, spec, result.code);
             filesystem.create_directories(abi_package_dir, VCPKG_LINE_INFO);
-            filesystem.copy_file(abi_file, abi_file_in_package, CopyOptions::none, VCPKG_LINE_INFO);
+            filesystem.copy_file(*abi_file, abi_file_in_package, CopyOptions::none, VCPKG_LINE_INFO);
         }
 
         return result;
@@ -1479,13 +1468,12 @@ namespace vcpkg
                                   })
                                   .value_or("");
 
-        const auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
-        const auto& compiler_info = abi_info.compiler_info.value_or_exit(VCPKG_LINE_INFO);
+        const auto& compiler_info = action.abi_info.compiler_info.value_or_exit(VCPKG_LINE_INFO);
         return Strings::concat(
             "Package: ",
             action.displayname(),
             " -> ",
-            action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).to_version(),
+            action.source_control_file_and_location->to_version(),
             "\n\n**Host Environment**",
             "\n\n- Host: ",
             to_zstring_view(get_host_processor()),

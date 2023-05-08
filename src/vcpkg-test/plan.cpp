@@ -30,22 +30,26 @@ static void features_check(InstallPlanAction& plan,
                            std::vector<std::string> expected_features,
                            Triplet triplet = Test::X86_WINDOWS)
 {
-    const auto& feature_list = plan.feature_list;
+    auto feature_list = plan.feature_list;
+    std::sort(feature_list.begin(), feature_list.end());
+    std::sort(expected_features.begin(), expected_features.end());
 
-    REQUIRE(plan.spec.triplet().to_string() == triplet.to_string());
-    REQUIRE(pkg_name == plan.spec.name());
-    REQUIRE(feature_list.size() == expected_features.size());
+    CHECK(plan.spec.triplet().to_string() == triplet.to_string());
+    CHECK(pkg_name == plan.spec.name());
+    CHECK(feature_list == expected_features);
+    CHECK(feature_list.size() == expected_features.size());
 
     for (auto&& feature_name : expected_features)
     {
+        INFO(feature_name);
         // TODO: see if this can be simplified
         if (feature_name == "core" || feature_name.empty())
         {
-            REQUIRE((Util::find(feature_list, "core") != feature_list.end() ||
-                     Util::find(feature_list, "") != feature_list.end()));
+            CHECK((Util::find(feature_list, "core") != feature_list.end() ||
+                   Util::find(feature_list, "") != feature_list.end()));
             continue;
         }
-        REQUIRE(Util::find(feature_list, feature_name) != feature_list.end());
+        CHECK(feature_list.contains(feature_name));
     }
 }
 
@@ -173,8 +177,6 @@ TEST_CASE ("existing package scheme", "[plan]")
     REQUIRE(install_plan.size() == 1);
     const auto p = &install_plan.already_installed.at(0);
     REQUIRE(p->spec.name() == "a");
-    REQUIRE(p->plan_type == InstallPlanType::ALREADY_INSTALLED);
-    REQUIRE(p->request_type == RequestType::USER_REQUESTED);
 }
 
 TEST_CASE ("user requested package scheme", "[plan]")
@@ -194,12 +196,10 @@ TEST_CASE ("user requested package scheme", "[plan]")
     REQUIRE(install_plan.size() == 2);
     const auto p = &install_plan.install_actions.at(0);
     REQUIRE(p->spec.name() == "b");
-    REQUIRE(p->plan_type == InstallPlanType::BUILD_AND_INSTALL);
     REQUIRE(p->request_type == RequestType::AUTO_SELECTED);
 
     const auto p2 = &install_plan.install_actions.at(1);
     REQUIRE(p2->spec.name() == "a");
-    REQUIRE(p2->plan_type == InstallPlanType::BUILD_AND_INSTALL);
     REQUIRE(p2->request_type == RequestType::USER_REQUESTED);
 }
 
@@ -264,7 +264,7 @@ TEST_CASE ("basic feature test 1", "[plan]")
         REQUIRE(plan.size() == 4);
         remove_plan_check(plan.remove_actions.at(0), "a");
         remove_plan_check(plan.remove_actions.at(1), "b");
-        features_check(plan.install_actions.at(0), "b", {"b1", "core", "b1"});
+        features_check(plan.install_actions.at(0), "b", {"b1", "core", "b2"});
         features_check(plan.install_actions.at(1), "a", {"a1", "core"});
     }
 

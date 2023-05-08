@@ -48,10 +48,9 @@ namespace vcpkg
 
         ElapsedTimer() noexcept;
 
-        ElapsedTime elapsed() const
-        {
-            return ElapsedTime(clock::now() - time_point(duration(this->m_start_tick.load())));
-        }
+        time_point start() const { return time_point(duration(this->m_start_tick.load())); }
+
+        ElapsedTime elapsed() const { return ElapsedTime(clock::now() - start()); }
 
         double microseconds() const { return elapsed().as<std::chrono::duration<double, std::micro>>().count(); }
         uint64_t us_64() const { return elapsed().as<std::chrono::duration<uint64_t, std::micro>>().count(); }

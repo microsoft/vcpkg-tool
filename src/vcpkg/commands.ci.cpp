@@ -32,6 +32,8 @@
 
 #include <stdio.h>
 
+#include <random>
+
 using namespace vcpkg;
 
 namespace
@@ -143,11 +145,10 @@ namespace vcpkg::Commands::CI
         return supports_expression.evaluate(context);
     }
 
-    static bool supported_for_triplet(const CMakeVars::CMakeVarProvider& var_provider,
-                                      const InstallPlanAction* install_plan)
+    static bool supported_for_triplet(const CMakeVars::CMakeVarProvider& var_provider, const InstallPlanAction& action)
     {
-        auto&& scfl = install_plan->source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
-        return supported_for_triplet(var_provider, *scfl.source_control_file, install_plan->spec);
+        return supported_for_triplet(
+            var_provider, *action.source_control_file_and_location->source_control_file, action.spec);
     }
 
     static bool supported_for_triplet(const CMakeVars::CMakeVarProvider& var_provider,
@@ -208,7 +209,7 @@ namespace vcpkg::Commands::CI
             auto&& action = action_plan.install_actions[action_idx];
 
             auto p = &action;
-            ret->abi_map.emplace(action.spec, action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi);
+            ret->abi_map.emplace(action.spec, action.abi_info.package_abi);
             ret->features.emplace(action.spec, action.feature_list);
 
             if (is_excluded(p->spec))
@@ -217,7 +218,7 @@ namespace vcpkg::Commands::CI
                 ret->known.emplace(p->spec, BuildResult::EXCLUDED);
                 will_fail.emplace(p->spec);
             }
-            else if (!supported_for_triplet(var_provider, p))
+            else if (!supported_for_triplet(var_provider, action))
             {
                 // This treats unsupported ports as if they are excluded
                 // which means the ports dependent on it will be cascaded due to missing dependencies
@@ -255,7 +256,7 @@ namespace vcpkg::Commands::CI
         for (auto it = action_plan.install_actions.rbegin(); it != action_plan.install_actions.rend(); ++it)
         {
             auto it_known = known.find(it->spec);
-            const auto& abi = it->abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi;
+            const auto& abi = it->abi_info.package_abi;
             auto it_parent = std::find(parent_hashes.begin(), parent_hashes.end(), abi);
             if (it_parent == parent_hashes.end())
             {
@@ -270,7 +271,7 @@ namespace vcpkg::Commands::CI
             {
                 if (it_known != known.end() && it_known->second == BuildResult::EXCLUDED)
                 {
-                    it->plan_type = InstallPlanType::EXCLUDED;
+                    it->is_excluded = true;
                 }
                 else
                 {
@@ -308,9 +309,8 @@ namespace vcpkg::Commands::CI
         output.append_raw('\n');
         for (auto&& r : results)
         {
-            auto result = r.build_result.value_or_exit(VCPKG_LINE_INFO).code;
             auto msg = format_ci_result(r.get_spec(),
-                                        result,
+                                        r.code(),
                                         cidata,
                                         ci_baseline_file_name,
                                         allow_unexpected_passing,
@@ -457,7 +457,7 @@ namespace vcpkg::Commands::CI
                 msg += fmt::format("{:>40}: {:>8}: {}\n",
                                    action.spec,
                                    split_specs->action_state_string[i],
-                                   action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi);
+                                   action.abi_info.package_abi);
             }
 
             msg::write_unlocalized_text_to_stdout(Color::none, msg);
@@ -473,7 +473,7 @@ namespace vcpkg::Commands::CI
                     obj.insert("name", Json::Value::string(action.spec.name()));
                     obj.insert("triplet", Json::Value::string(action.spec.triplet().canonical_name()));
                     obj.insert("state", Json::Value::string(split_specs->action_state_string[i]));
-                    obj.insert("abi", Json::Value::string(action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi));
+                    obj.insert("abi", Json::Value::string(action.abi_info.package_abi));
                     arr.push_back(std::move(obj));
                 }
                 filesystem.write_contents(output_hash_json, Json::stringify(arr), VCPKG_LINE_INFO);
@@ -538,9 +538,12 @@ namespace vcpkg::Commands::CI
                 {
                     const auto& spec = result.get_spec();
                     auto& port_features = split_specs->features.at(spec);
-                    auto code = result.build_result.value_or_exit(VCPKG_LINE_INFO).code;
-                    xunitTestResults.add_test_results(
-                        spec, code, result.timing, result.start_time, split_specs->abi_map.at(spec), port_features);
+                    xunitTestResults.add_test_results(spec,
+                                                      result.code(),
+                                                      result.timing(),
+                                                      result.start_time(),
+                                                      split_specs->abi_map.at(spec),
+                                                      port_features);
                 }
 
                 // Adding results for ports that were not built because they have known states

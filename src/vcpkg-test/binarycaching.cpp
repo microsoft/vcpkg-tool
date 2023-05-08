@@ -20,7 +20,7 @@ struct KnowNothingBinaryProvider : IBinaryProvider
 {
     RestoreResult try_restore(const InstallPlanAction& action) const override
     {
-        CHECK(action.has_package_abi());
+        CHECK(action.package_abi());
         return RestoreResult::unavailable;
     }
 
@@ -35,7 +35,7 @@ struct KnowNothingBinaryProvider : IBinaryProvider
         REQUIRE(actions.size() == cache_status.size());
         for (size_t idx = 0; idx < cache_status.size(); ++idx)
         {
-            CHECK(actions[idx].has_package_abi() == (cache_status[idx] != nullptr));
+            CHECK(actions[idx].package_abi().has_value() == (cache_status[idx] != nullptr));
         }
     }
     void precheck(View<InstallPlanAction> actions, View<CacheStatus* const> cache_status) const override
@@ -262,15 +262,14 @@ Build-Depends: bzip
                           {{"a", {}}, {"b", {}}},
                           {});
 
-    ipa.abi_info = AbiInfo{};
-    ipa.abi_info.get()->package_abi = "packageabi";
+    ipa.abi_info.package_abi = "packageabi";
     std::string tripletabi("tripletabi");
-    ipa.abi_info.get()->triplet_abi = tripletabi;
+    ipa.abi_info.triplet_abi = tripletabi;
     CompilerInfo compiler_info;
     compiler_info.hash = "compilerhash";
     compiler_info.id = "compilerid";
     compiler_info.version = "compilerversion";
-    ipa.abi_info.get()->compiler_info = compiler_info;
+    ipa.abi_info.compiler_info = compiler_info;
 
     NugetReference ref2 = make_nugetref(ipa, "prefix_");
 
@@ -398,7 +397,7 @@ Description:
     // test that the binary cache does the right thing. See also CHECKs etc. in KnowNothingBinaryProvider
     uut.push_success(ipa_without_abi); // should have no effects
     CHECK(uut.try_restore(ipa_without_abi) == RestoreResult::unavailable);
-    uut.prefetch(install_plan); // should have no effects
+    uut.prefetch(install_plan);        // should have no effects
 }
 
 TEST_CASE ("XmlSerializer", "[XmlSerializer]")
@@ -469,8 +468,7 @@ Description: a spiffy compression library wrapper
                                       Test::ARM64_WINDOWS,
                                       std::map<std::string, std::vector<FeatureSpec>>{},
                                       std::vector<LocalizedString>{});
-    plan.install_actions[0].abi_info = AbiInfo{};
-    plan.install_actions[0].abi_info.get()->package_abi = "packageabi";
+    plan.install_actions[0].abi_info.package_abi = "packageabi";
 
     packageconfig = generate_nuget_packages_config(plan);
     REQUIRE(packageconfig == R"(<?xml version="1.0" encoding="utf-8"?>
@@ -495,8 +493,7 @@ Description: a spiffy compression library wrapper
                                       Test::ARM64_WINDOWS,
                                       std::map<std::string, std::vector<FeatureSpec>>{},
                                       std::vector<LocalizedString>{});
-    plan.install_actions[1].abi_info = AbiInfo{};
-    plan.install_actions[1].abi_info.get()->package_abi = "packageabi2";
+    plan.install_actions[1].abi_info.package_abi = "packageabi2";
 
     packageconfig = generate_nuget_packages_config(plan);
     REQUIRE(packageconfig == R"(<?xml version="1.0" encoding="utf-8"?>

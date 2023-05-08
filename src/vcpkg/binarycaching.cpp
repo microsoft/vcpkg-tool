@@ -281,10 +281,9 @@ namespace
                 auto archive_path = archives_root_dir / archive_subpath;
                 if (fs.exists(archive_path, IgnoreErrors{}))
                 {
-                    const auto& pkg_path = action.package_dir.value_or_exit(VCPKG_LINE_INFO);
-                    clean_prepare_dir(fs, pkg_path);
-                    jobs.push_back(
-                        decompress_zip_archive_cmd(paths.get_tool_cache(), stdout_sink, pkg_path, archive_path));
+                    clean_prepare_dir(fs, action.package_dir);
+                    jobs.push_back(decompress_zip_archive_cmd(
+                        paths.get_tool_cache(), stdout_sink, action.package_dir, archive_path));
                     action_idxs.push_back(i);
                     archive_paths.push_back(std::move(archive_path));
                 }
@@ -478,7 +477,7 @@ namespace
                     }
 
                     auto&& action = actions[idx];
-                    clean_prepare_dir(fs, action.package_dir.value_or_exit(VCPKG_LINE_INFO));
+                    clean_prepare_dir(fs, action.package_dir);
                     auto uri = url_template.instantiate_variables(BinaryPackageInformation{action, ""});
                     url_paths.emplace_back(std::move(uri), make_temp_archive_path(paths.buildtrees(), action.spec));
                     url_indices.push_back(idx);
@@ -498,11 +497,10 @@ namespace
                     if (codes[i] == 200)
                     {
                         action_idxs.push_back(i);
-                        jobs.push_back(decompress_zip_archive_cmd(
-                            paths.get_tool_cache(),
-                            stdout_sink,
-                            actions[url_indices[i]].package_dir.value_or_exit(VCPKG_LINE_INFO),
-                            url_paths[i].second));
+                        jobs.push_back(decompress_zip_archive_cmd(paths.get_tool_cache(),
+                                                                  stdout_sink,
+                                                                  actions[url_indices[i]].package_dir,
+                                                                  url_paths[i].second));
                     }
                 }
                 auto job_results = decompress_in_parallel(jobs);
@@ -712,7 +710,7 @@ namespace
 
                 const auto& action = actions[idx];
                 const auto& spec = action.spec;
-                fs.remove_all(action.package_dir.value_or_exit(VCPKG_LINE_INFO), VCPKG_LINE_INFO);
+                fs.remove_all(action.package_dir, VCPKG_LINE_INFO);
                 attempts.push_back({spec, make_nugetref(action, get_nuget_prefix()), idx});
             }
 
@@ -1048,7 +1046,7 @@ namespace
                     auto url = lookup_cache_entry(action.package_abi().value_or_exit(VCPKG_LINE_INFO));
                     if (url.empty()) continue;
 
-                    clean_prepare_dir(fs, action.package_dir.value_or_exit(VCPKG_LINE_INFO));
+                    clean_prepare_dir(fs, action.package_dir);
                     url_paths.emplace_back(std::move(url), make_temp_archive_path(paths.buildtrees(), action.spec));
                     url_indices.push_back(idx);
                 }
@@ -1067,11 +1065,10 @@ namespace
                     if (codes[i] == 200)
                     {
                         action_idxs.push_back(i);
-                        jobs.push_back(decompress_zip_archive_cmd(
-                            paths.get_tool_cache(),
-                            stdout_sink,
-                            actions[url_indices[i]].package_dir.value_or_exit(VCPKG_LINE_INFO),
-                            url_paths[i].second));
+                        jobs.push_back(decompress_zip_archive_cmd(paths.get_tool_cache(),
+                                                                  stdout_sink,
+                                                                  actions[url_indices[i]].package_dir,
+                                                                  url_paths[i].second));
                     }
                 }
                 auto job_results = decompress_in_parallel(jobs);
@@ -1229,7 +1226,7 @@ namespace
                     }
 
                     auto&& action = actions[idx];
-                    clean_prepare_dir(fs, action.package_dir.value_or_exit(VCPKG_LINE_INFO));
+                    clean_prepare_dir(fs, action.package_dir);
                     url_paths.emplace_back(
                         make_object_path(prefix, action.package_abi().value_or_exit(VCPKG_LINE_INFO)),
                         make_temp_archive_path(paths.buildtrees(), action.spec));
@@ -1248,10 +1245,8 @@ namespace
                     auto&& action = actions[url_indices[idx]];
                     auto&& url_path = url_paths[idx];
                     if (!download_file(url_path.first, url_path.second)) continue;
-                    jobs.push_back(decompress_zip_archive_cmd(paths.get_tool_cache(),
-                                                              stdout_sink,
-                                                              action.package_dir.value_or_exit(VCPKG_LINE_INFO),
-                                                              url_path.second));
+                    jobs.push_back(decompress_zip_archive_cmd(
+                        paths.get_tool_cache(), stdout_sink, action.package_dir, url_path.second));
                     idxs.push_back(idx);
                 }
 
@@ -1663,17 +1658,16 @@ namespace vcpkg
 
     void BinaryCache::push_success(const InstallPlanAction& action)
     {
-        const auto& package_dir = action.package_dir.value_or_exit(VCPKG_LINE_INFO);
         if (action.package_abi().has_value())
         {
             std::string nuspec;
             if (needs_nuspec_data)
             {
                 NugetReference nuget_ref = make_nugetref(action, get_nuget_prefix());
-                nuspec = generate_nuspec(package_dir, action, nuget_ref);
+                nuspec = generate_nuspec(action.package_dir, action, nuget_ref);
             }
             size_t num_destinations = 0;
-            BinaryProviderPushRequest request{BinaryPackageInformation{action, std::move(nuspec)}, package_dir};
+            BinaryProviderPushRequest request{BinaryPackageInformation{action, std::move(nuspec)}, action.package_dir};
             for (auto&& provider : m_providers)
             {
                 num_destinations += provider->push_success(request, stdout_sink);
@@ -1682,7 +1676,7 @@ namespace vcpkg
         }
         if (action.build_options.clean_packages == CleanPackages::YES)
         {
-            filesystem.remove_all(package_dir, VCPKG_LINE_INFO);
+            filesystem.remove_all(action.package_dir, VCPKG_LINE_INFO);
         }
     }
 
@@ -1857,8 +1851,7 @@ namespace vcpkg
     BinaryPackageInformation::BinaryPackageInformation(const InstallPlanAction& action, Optional<std::string> nuspec)
         : package_abi(action.package_abi().value_or_exit(VCPKG_LINE_INFO))
         , spec(action.spec)
-        , raw_version(action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO)
-                          .source_control_file->core_paragraph->raw_version)
+        , raw_version(action.source_control_file_and_location->source_control_file->core_paragraph->raw_version)
         , nuspec(std::move(nuspec))
     {
     }
@@ -2685,24 +2678,21 @@ std::string vcpkg::generate_nuspec(const Path& package_dir,
                                    const vcpkg::NugetReference& ref,
                                    details::NuGetRepoInfo rinfo)
 {
-    auto& spec = action.spec;
-    auto& scf = *action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_control_file;
-    auto& version = scf.core_paragraph->raw_version;
-    const auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
-    const auto& compiler_info = abi_info.compiler_info.value_or_exit(VCPKG_LINE_INFO);
+    const auto& pgh = *action.source_control_file_and_location->source_control_file->core_paragraph;
+    const auto& compiler_info = action.abi_info.compiler_info.value_or_exit(VCPKG_LINE_INFO);
     std::string description =
         Strings::concat("NOT FOR DIRECT USE. Automatically generated cache package.\n\n",
-                        Strings::join("\n    ", scf.core_paragraph->description),
+                        Strings::join("\n    ", pgh.description),
                         "\n\nVersion: ",
-                        version,
+                        pgh.raw_version,
                         "\nTriplet: ",
-                        spec.triplet().to_string(),
+                        action.spec.triplet().to_string(),
                         "\nCXX Compiler id: ",
                         compiler_info.id,
                         "\nCXX Compiler version: ",
                         compiler_info.version,
                         "\nTriplet/Compiler hash: ",
-                        abi_info.triplet_abi.value_or_exit(VCPKG_LINE_INFO),
+                        action.abi_info.triplet_abi.value_or_exit(VCPKG_LINE_INFO),
                         "\nFeatures:",
                         Strings::join(",", action.feature_list, [](const std::string& s) { return " " + s; }),
                         "\nDependencies:\n");
@@ -2717,9 +2707,9 @@ std::string vcpkg::generate_nuspec(const Path& package_dir,
     xml.open_tag("metadata").line_break();
     xml.simple_tag("id", ref.id).line_break();
     xml.simple_tag("version", ref.version).line_break();
-    if (!scf.core_paragraph->homepage.empty())
+    if (!pgh.homepage.empty())
     {
-        xml.simple_tag("projectUrl", scf.core_paragraph->homepage);
+        xml.simple_tag("projectUrl", pgh.homepage);
     }
 
     xml.simple_tag("authors", "vcpkg").line_break();

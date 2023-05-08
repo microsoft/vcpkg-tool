@@ -147,8 +147,8 @@ namespace vcpkg::Commands
             for (const auto& action : action_plan.install_actions)
             {
                 const auto& spec = action.spec;
-                const auto& supports_expression = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO)
-                                                      .source_control_file->core_paragraph->supports_expression;
+                const auto& supports_expression =
+                    action.source_control_file_and_location->source_control_file->core_paragraph->supports_expression;
 
                 PlatformExpression::Context context = cmake_vars->get_tag_vars(spec).value_or_exit(VCPKG_LINE_INFO);
 

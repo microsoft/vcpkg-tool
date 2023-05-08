@@ -33,8 +33,8 @@ namespace vcpkg
         }
 
         template<class Range,
-                 class = decltype(std::declval<Range>().data()),
-                 class = std::enable_if_t<!std::is_same_v<std::decay_t<Range>, Span>>>
+                 std::enable_if_t<std::is_constructible_v<pointer, decltype(std::declval<Range>().data())>, int> = 0,
+                 std::enable_if_t<!std::is_same_v<std::decay_t<Range>, Span>, int> = 0>
         constexpr Span(Range&& v) noexcept : Span(v.data(), v.size())
         {
             static_assert(std::is_same_v<typename std::decay_t<Range>::value_type, value_type>,

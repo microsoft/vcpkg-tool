@@ -26,7 +26,7 @@ namespace vcpkg
 
         struct ClusterInstalled
         {
-            ClusterInstalled(const InstalledPackageView& ipv) : ipv(ipv)
+            ClusterInstalled(InstalledPackageView&& i) : ipv(std::move(i))
             {
                 original_features.emplace("core");
                 for (auto&& feature : ipv.features)
@@ -55,8 +55,8 @@ namespace vcpkg
         /// </summary>
         struct Cluster
         {
-            Cluster(const InstalledPackageView& ipv, ExpectedL<const SourceControlFileAndLocation&>&& scfl)
-                : m_spec(ipv.spec()), m_scfl(std::move(scfl)), m_installed(ipv)
+            Cluster(InstalledPackageView&& ipv, ExpectedL<const SourceControlFileAndLocation&>&& scfl)
+                : m_spec(ipv.spec()), m_scfl(std::move(scfl)), m_installed(std::move(ipv))
             {
             }
 
@@ -354,15 +354,14 @@ namespace vcpkg
                 return it->second;
             }
 
-            Cluster& insert(const InstalledPackageView& ipv)
+            Cluster& insert(InstalledPackageView&& ipv)
             {
-                ExpectedL<const SourceControlFileAndLocation&> maybe_scfl =
-                    m_port_provider.get_control_file(ipv.spec().name());
-
+                auto spec = ipv.spec();
+                auto maybe_scfl = m_port_provider.get_control_file(spec.name());
                 return m_graph
                     .emplace(std::piecewise_construct,
-                             std::forward_as_tuple(ipv.spec()),
-                             std::forward_as_tuple(ipv, std::move(maybe_scfl)))
+                             std::forward_as_tuple(std::move(spec)),
+                             std::forward_as_tuple(std::move(ipv), std::move(maybe_scfl)))
                     .first->second;
             }
 
@@ -395,13 +394,10 @@ namespace vcpkg
         {
             out.append_raw(" (+HEAD)");
         }
-        if (auto scfl = action.source_control_file_and_location.get())
+        const auto& loc = action.source_control_file_and_location->source_location;
+        if (!builtin_ports_dir.empty() && !Strings::case_insensitive_ascii_starts_with(loc, builtin_ports_dir))
         {
-            if (!builtin_ports_dir.empty() &&
-                !Strings::case_insensitive_ascii_starts_with(scfl->source_location, builtin_ports_dir))
-            {
-                out.append_raw(" -- ").append_raw(scfl->source_location);
-            }
+            out.append_raw(" -- ").append_raw(loc);
         }
     }
 
@@ -430,6 +426,17 @@ namespace vcpkg
         const std::string features = Strings::join(",", feature_list);
         return fmt::format("{}[{}]:{}", this->spec.name(), features, this->spec.triplet());
     }
+
+    AlreadyInstalledAction::AlreadyInstalledAction(InstalledPackageView&& ipv)
+        : PackageAction{{ipv.spec()}, ipv.dependencies(), ipv.feature_list()}
+        , installed_package(std::move(ipv))
+        , feature_dependencies(installed_package.feature_dependencies())
+    {
+    }
+
+    const std::string& AlreadyInstalledAction::public_abi() const { return installed_package.core->package.abi; }
+
+    Version AlreadyInstalledAction::version() const { return installed_package.version(); }
 
     static std::vector<PackageSpec> fdeps_to_pdeps(const PackageSpec& self,
                                                    const std::map<std::string, std::vector<FeatureSpec>>& dependencies)
@@ -463,73 +470,33 @@ namespace vcpkg
                                          std::map<std::string, std::vector<FeatureSpec>>&& dependencies,
                                          std::vector<LocalizedString>&& build_failure_messages)
         : PackageAction{{spec}, fdeps_to_pdeps(spec, dependencies), fdeps_to_feature_list(dependencies)}
-        , source_control_file_and_location(scfl)
-        , plan_type(InstallPlanType::BUILD_AND_INSTALL)
+        , source_control_file_and_location(&scfl)
         , request_type(request_type)
-        , build_options{}
         , feature_dependencies(std::move(dependencies))
         , build_failure_messages(std::move(build_failure_messages))
         , host_triplet(host_triplet)
-    {
-    }
-
-    InstallPlanAction::InstallPlanAction(InstalledPackageView&& ipv, const RequestType& request_type)
-        : PackageAction{{ipv.spec()}, ipv.dependencies(), ipv.feature_list()}
-        , installed_package(std::move(ipv))
-        , plan_type(InstallPlanType::ALREADY_INSTALLED)
-        , request_type(request_type)
         , build_options{}
-        , feature_dependencies(installed_package.get()->feature_dependencies())
     {
     }
 
     const std::string& InstallPlanAction::public_abi() const
     {
-        switch (plan_type)
-        {
-            case InstallPlanType::ALREADY_INSTALLED:
-                return installed_package.value_or_exit(VCPKG_LINE_INFO).core->package.abi;
-            case InstallPlanType::BUILD_AND_INSTALL:
-            {
-                auto&& i = abi_info.value_or_exit(VCPKG_LINE_INFO);
-                if (auto o = i.pre_build_info->public_abi_override.get())
-                    return *o;
-                else
-                    return i.package_abi;
-            }
-            default: Checks::unreachable(VCPKG_LINE_INFO);
-        }
-    }
-    bool InstallPlanAction::has_package_abi() const
-    {
-        const auto p = abi_info.get();
-        return p && !p->package_abi.empty();
+        if (auto o = pre_build_info(VCPKG_LINE_INFO).public_abi_override.get())
+            return *o;
+        else
+            return abi_info.package_abi;
     }
     Optional<const std::string&> InstallPlanAction::package_abi() const
     {
-        const auto p = abi_info.get();
-        if (!p || p->package_abi.empty()) return nullopt;
-        return p->package_abi;
+        if (abi_info.package_abi.empty()) return nullopt;
+        return abi_info.package_abi;
     }
     const PreBuildInfo& InstallPlanAction::pre_build_info(LineInfo li) const
     {
-        return *abi_info.value_or_exit(li).pre_build_info;
+        Checks::check_exit(li, abi_info.pre_build_info != nullptr);
+        return *abi_info.pre_build_info;
     }
-    Version InstallPlanAction::version() const
-    {
-        if (auto scfl = source_control_file_and_location.get())
-        {
-            return scfl->to_version();
-        }
-        else if (auto ipv = installed_package.get())
-        {
-            return ipv->version();
-        }
-        else
-        {
-            Checks::unreachable(VCPKG_LINE_INFO);
-        }
-    }
+    Version InstallPlanAction::version() const { return source_control_file_and_location->to_version(); }
 
     NotInstalledAction::NotInstalledAction(const PackageSpec& spec) : BasicAction{spec} { }
 
@@ -734,10 +701,7 @@ namespace vcpkg
 
         for (auto&& action : res.install_actions)
         {
-            if (action.source_control_file_and_location.has_value())
-            {
-                action.package_dir.emplace(options.packages_dir / action.spec.dir());
-            }
+            action.package_dir = options.packages_dir / action.spec.dir();
         }
 
         return res;
@@ -1075,10 +1039,12 @@ namespace vcpkg
                                                   std::move(computed_edges),
                                                   std::move(constraint_violations));
             }
-            else if (p_cluster->request_type == RequestType::USER_REQUESTED && p_cluster->m_installed.has_value())
+            else if (auto installed = p_cluster->m_installed.get())
             {
-                auto&& installed = p_cluster->m_installed.value_or_exit(VCPKG_LINE_INFO);
-                plan.already_installed.emplace_back(InstalledPackageView(installed.ipv), p_cluster->request_type);
+                if (p_cluster->request_type == RequestType::USER_REQUESTED)
+                {
+                    plan.already_installed.emplace_back(InstalledPackageView(installed->ipv));
+                }
             }
         }
         plan.unsupported_features = m_unsupported_features;
@@ -1091,31 +1057,30 @@ namespace vcpkg
     {
         std::unique_ptr<ClusterGraph> graph = std::make_unique<ClusterGraph>(port_provider, host_triplet);
 
-        auto installed_ports = get_installed_ports(status_db);
-
-        for (auto&& ipv : installed_ports)
+        std::unordered_map<PackageSpec, std::unordered_set<PackageSpec>> rev_edges;
+        for (auto&& ipv : get_installed_ports(status_db))
         {
-            graph->insert(ipv);
-        }
-
-        // Populate the graph with "remove edges", which are the reverse of the Build-Depends edges.
-        for (auto&& ipv : installed_ports)
-        {
-            auto deps = ipv.dependencies();
-
-            for (auto&& dep : deps)
+            for (auto&& dep : ipv.dependencies())
             {
-                auto p_installed = graph->get(dep).m_installed.get();
-                if (p_installed == nullptr)
-                {
-                    Checks::msg_exit_with_error(
-                        VCPKG_LINE_INFO,
-                        msg::format(msgCorruptedDatabase)
-                            .append_raw('\n')
-                            .append(msgMissingDependency, msg::spec = ipv.spec(), msg::package_name = dep));
-                }
+                rev_edges[dep].insert(ipv.spec());
+            }
 
-                p_installed->remove_edges.emplace(ipv.spec());
+            graph->insert(std::move(ipv));
+        }
+        for (auto&& p : rev_edges)
+        {
+            if (auto p_installed = graph->get(p.first).m_installed.get())
+            {
+                p_installed->remove_edges = std::move(p.second);
+            }
+            else
+            {
+                Checks::check_exit(VCPKG_LINE_INFO, !p.second.empty());
+                Checks::msg_exit_with_error(
+                    VCPKG_LINE_INFO,
+                    msg::format(msgCorruptedDatabase)
+                        .append_raw('\n')
+                        .append(msgMissingDependency, msg::spec = *p.second.begin(), msg::package_name = p.first));
             }
         }
         return graph;
@@ -1143,7 +1108,7 @@ namespace vcpkg
         std::set<PackageSpec> remove_specs;
         std::vector<const InstallPlanAction*> rebuilt_plans;
         std::vector<const InstallPlanAction*> new_plans;
-        std::vector<const InstallPlanAction*> already_installed_plans;
+        std::vector<const AlreadyInstalledAction*> already_installed_plans;
         std::vector<const InstallPlanAction*> excluded;
 
         const bool has_non_user_requested_packages =
@@ -1157,28 +1122,27 @@ namespace vcpkg
         }
         for (auto&& install_action : action_plan.install_actions)
         {
-            // remove plans are guaranteed to come before install plans, so we know the plan will be contained
-            // if at all.
             auto it = remove_specs.find(install_action.spec);
             if (it != remove_specs.end())
             {
                 remove_specs.erase(it);
                 rebuilt_plans.push_back(&install_action);
             }
+            else if (install_action.is_excluded)
+            {
+                excluded.push_back(&install_action);
+            }
             else
             {
-                if (install_action.plan_type == InstallPlanType::EXCLUDED)
-                    excluded.push_back(&install_action);
-                else
-                    new_plans.push_back(&install_action);
+                new_plans.push_back(&install_action);
             }
         }
         already_installed_plans = Util::fmap(action_plan.already_installed, [](auto&& action) { return &action; });
 
-        std::sort(rebuilt_plans.begin(), rebuilt_plans.end(), &InstallPlanAction::compare_by_name);
-        std::sort(new_plans.begin(), new_plans.end(), &InstallPlanAction::compare_by_name);
-        std::sort(already_installed_plans.begin(), already_installed_plans.end(), &InstallPlanAction::compare_by_name);
-        std::sort(excluded.begin(), excluded.end(), &InstallPlanAction::compare_by_name);
+        std::sort(rebuilt_plans.begin(), rebuilt_plans.end(), &PackageAction::compare_by_name);
+        std::sort(new_plans.begin(), new_plans.end(), &PackageAction::compare_by_name);
+        std::sort(already_installed_plans.begin(), already_installed_plans.end(), &PackageAction::compare_by_name);
+        std::sort(excluded.begin(), excluded.end(), &PackageAction::compare_by_name);
 
         struct
         {
@@ -1189,6 +1153,18 @@ namespace vcpkg
                 {
                     format_plan_row(msg, *action, builtin_ports_dir);
                     msg.append_raw('\n');
+                }
+            }
+            void operator()(LocalizedString& msg, msg::MessageT<> header, View<const AlreadyInstalledAction*> actions)
+            {
+                msg.append(header).append_raw('\n');
+                for (auto&& action : actions)
+                {
+                    msg.append_raw(request_type_indent(RequestType::USER_REQUESTED))
+                        .append_raw(action->displayname())
+                        .append_raw(" -> ")
+                        .append_raw(action->version())
+                        .append_raw('\n');
                 }
             }
             void operator()(LocalizedString& msg, msg::MessageT<> header, const std::set<PackageSpec>& specs)
@@ -1808,9 +1784,7 @@ namespace vcpkg
                         .append_raw('\n')
                         .append_raw(Strings::join("\n", stack, [](const Frame& p) {
                             return Strings::concat(
-                                p.ipa.spec,
-                                '@',
-                                p.ipa.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).to_version());
+                                p.ipa.spec, '@', p.ipa.source_control_file_and_location->to_version());
                         }));
                 }
                 return Unit{};
@@ -1838,9 +1812,7 @@ namespace vcpkg
                         auto dep = std::move(back.deps.back());
                         back.deps.pop_back();
                         const auto origin = Strings::concat(
-                            back.ipa.spec,
-                            "@",
-                            back.ipa.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).to_version());
+                            back.ipa.spec, "@", back.ipa.source_control_file_and_location->to_version());
                         x = push(dep, origin);
                         if (!x.has_value())
                         {
@@ -1857,7 +1829,7 @@ namespace vcpkg
             // Evaluate supports over the produced plan
             for (auto&& action : ret.install_actions)
             {
-                const auto& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
+                const auto& scfl = *action.source_control_file_and_location;
                 const auto& vars = m_var_provider.get_or_load_dep_info_vars(action.spec, m_host_triplet);
                 // Evaluate core supports condition
                 const auto& supports_expr = scfl.source_control_file->core_paragraph->supports_expression;
@@ -1925,10 +1897,7 @@ namespace vcpkg
         {
             for (auto&& action : plan->install_actions)
             {
-                if (action.source_control_file_and_location.has_value())
-                {
-                    action.package_dir.emplace(options.packages_dir / action.spec.dir());
-                }
+                action.package_dir = options.packages_dir / action.spec.dir();
             }
         }
         return ret;

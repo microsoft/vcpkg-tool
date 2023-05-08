@@ -13,6 +13,7 @@
 #include <vcpkg/registries.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 
+#include <unordered_set>
 #include <vector>
 
 namespace vcpkg::Commands::DependInfo
@@ -249,29 +250,25 @@ namespace vcpkg::Commands::DependInfo
             }
         }
 
-        std::vector<PackageDependInfo> extract_depend_info(const std::vector<const InstallPlanAction*>& install_actions,
+        std::vector<PackageDependInfo> extract_depend_info(const std::vector<const PackageAction*>& actions,
                                                            const int max_depth)
         {
             std::map<std::string, PackageDependInfo> package_dependencies;
-            for (const InstallPlanAction* pia : install_actions)
+            for (auto action : actions)
             {
-                const InstallPlanAction& install_action = *pia;
+                PackageDependInfo info{
+                    action->spec.name(),
+                    -1,
+                    std::unordered_set<std::string>{action->feature_list.begin(), action->feature_list.end()},
+                    Util::fmap(action->package_dependencies, [](const PackageSpec& spec) { return spec.name(); }),
+                };
 
-                const std::vector<std::string> dependencies = Util::fmap(
-                    install_action.package_dependencies, [](const PackageSpec& spec) { return spec.name(); });
+                info.features.erase("core");
 
-                std::unordered_set<std::string> features{install_action.feature_list.begin(),
-                                                         install_action.feature_list.end()};
-                features.erase("core");
-
-                std::string port_name = install_action.spec.name();
-
-                PackageDependInfo info{port_name, -1, features, dependencies};
-                package_dependencies.emplace(port_name, std::move(info));
+                package_dependencies.emplace(action->spec.name(), std::move(info));
             }
 
-            const InstallPlanAction& init = *install_actions.back();
-            assign_depth_to_dependencies(init.spec.name(), 0, max_depth, package_dependencies);
+            assign_depth_to_dependencies(actions.back()->spec.name(), 0, max_depth, package_dependencies);
 
             std::vector<PackageDependInfo> out =
                 Util::fmap(package_dependencies, [](auto&& kvpair) -> PackageDependInfo { return kvpair.second; });
@@ -328,8 +325,8 @@ namespace vcpkg::Commands::DependInfo
             Checks::unreachable(VCPKG_LINE_INFO, "Only install actions should exist in the plan");
         }
 
-        std::vector<const InstallPlanAction*> install_actions =
-            Util::fmap(action_plan.already_installed, [&](const auto& action) { return &action; });
+        auto install_actions = Util::fmap(action_plan.already_installed,
+                                          [&](const auto& action) -> const PackageAction* { return &action; });
         for (auto&& action : action_plan.install_actions)
             install_actions.push_back(&action);
 
@@ -337,13 +334,6 @@ namespace vcpkg::Commands::DependInfo
 
         if (Util::Sets::contains(options.switches, OPTION_DOT) || Util::Sets::contains(options.switches, OPTION_DGML))
         {
-            const std::vector<const SourceControlFile*> source_control_files =
-                Util::fmap(install_actions, [](const InstallPlanAction* install_action) {
-                    const SourceControlFileAndLocation& scfl =
-                        install_action->source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
-                    return const_cast<const SourceControlFile*>(scfl.source_control_file.get());
-                });
-
             std::string graph_as_string = create_graph_as_string(options.switches, depend_info);
             graph_as_string.push_back('\n');
             msg::write_unlocalized_text_to_stdout(Color::none, graph_as_string);

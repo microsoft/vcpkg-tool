@@ -22,8 +22,7 @@ TEST_CASE ("spdx maximum serialization", "[spdx]")
     cpgh.version_scheme = VersionScheme::Relaxed;
 
     InstallPlanAction ipa(spec, scfl, RequestType::USER_REQUESTED, Test::X86_WINDOWS, {}, {});
-    auto& abi = *(ipa.abi_info = AbiInfo{}).get();
-    abi.package_abi = "ABIHASH";
+    ipa.abi_info.package_abi = "ABIHASH";
 
     const auto sbom =
         create_spdx_sbom(ipa,
@@ -176,8 +175,7 @@ TEST_CASE ("spdx minimum serialization", "[spdx]")
     cpgh.version_scheme = VersionScheme::String;
 
     InstallPlanAction ipa(spec, scfl, RequestType::USER_REQUESTED, Test::X86_WINDOWS, {}, {});
-    auto& abi = *(ipa.abi_info = AbiInfo{}).get();
-    abi.package_abi = "deadbeef";
+    ipa.abi_info.package_abi = "deadbeef";
 
     const auto sbom = create_spdx_sbom(ipa,
                                        std::vector<Path>{"vcpkg.json", "portfile.cmake"},
@@ -304,8 +302,7 @@ TEST_CASE ("spdx concat resources", "[spdx]")
     cpgh.version_scheme = VersionScheme::String;
 
     InstallPlanAction ipa(spec, scfl, RequestType::USER_REQUESTED, Test::X86_WINDOWS, {}, {});
-    auto& abi = *(ipa.abi_info = AbiInfo{}).get();
-    abi.package_abi = "deadbeef";
+    ipa.abi_info.package_abi = "deadbeef";
 
     auto doc1 = Json::parse(R"json(
 {

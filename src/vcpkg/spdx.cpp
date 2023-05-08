@@ -136,7 +136,7 @@ std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
     Checks::check_exit(VCPKG_LINE_INFO, relative_paths.size() == hashes.size());
 
     const std::string noassert = "NOASSERTION";
-    const auto& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
+    const auto& scfl = *action.source_control_file_and_location;
     const auto& cpgh = *scfl.source_control_file->core_paragraph;
     const StringView abi = action.package_abi() ? StringView(*action.package_abi().get()) : "NONE";
 
