@@ -85,7 +85,6 @@ namespace vcpkg::Commands::SetInstalled
     void perform_and_exit_ex(const VcpkgCmdArguments& args,
                              const VcpkgPaths& paths,
                              const PathsPortFileProvider& provider,
-                             BinaryCache& binary_cache,
                              const CMakeVars::CMakeVarProvider& cmake_vars,
                              ActionPlan action_plan,
                              DryRun dry_run,
@@ -118,7 +117,6 @@ namespace vcpkg::Commands::SetInstalled
 
         if (auto p_pkgsconfig = maybe_pkgsconfig.get())
         {
-            compute_all_abis(paths, action_plan, cmake_vars, status_db);
             auto pkgsconfig_path = paths.original_cwd / *p_pkgsconfig;
             auto pkgsconfig_contents = generate_nuget_packages_config(action_plan);
             fs.write_contents(pkgsconfig_path, pkgsconfig_contents, VCPKG_LINE_INFO);
@@ -134,8 +132,10 @@ namespace vcpkg::Commands::SetInstalled
 
         track_install_plan(action_plan);
 
-        const auto summary = Install::perform(
-            args, action_plan, keep_going, paths, status_db, binary_cache, null_build_logs_recorder(), cmake_vars);
+        BinaryCache binary_cache = only_downloads ? BinaryCache(paths.get_filesystem()) : BinaryCache(args, paths);
+        binary_cache.prefetch(action_plan.install_actions);
+        const auto summary = Install::execute_plan(
+            args, action_plan, keep_going, paths, status_db, binary_cache, null_build_logs_recorder());
 
         if (keep_going == KeepGoing::YES && summary.failed())
         {
@@ -180,8 +180,6 @@ namespace vcpkg::Commands::SetInstalled
             print_default_triplet_warning(args);
         }
 
-        BinaryCache binary_cache{args, paths};
-
         const bool dry_run = Util::Sets::contains(options.switches, OPTION_DRY_RUN);
         const bool only_downloads = Util::Sets::contains(options.switches, OPTION_ONLY_DOWNLOADS);
         const KeepGoing keep_going = Util::Sets::contains(options.switches, OPTION_KEEP_GOING) || only_downloads
@@ -224,7 +222,6 @@ namespace vcpkg::Commands::SetInstalled
         perform_and_exit_ex(args,
                             paths,
                             provider,
-                            binary_cache,
                             *cmake_vars,
                             std::move(action_plan),
                             dry_run ? DryRun::Yes : DryRun::No,

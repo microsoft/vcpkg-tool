@@ -60,13 +60,11 @@ namespace vcpkg::Build
                              const FullPackageSpec& full_spec,
                              Triplet host_triplet,
                              const PathsPortFileProvider& provider,
-                             BinaryCache& binary_cache,
                              const IBuildLogsRecorder& build_logs_recorder,
                              const VcpkgPaths& paths)
     {
-        Checks::exit_with_code(
-            VCPKG_LINE_INFO,
-            perform_ex(args, full_spec, host_triplet, provider, binary_cache, build_logs_recorder, paths));
+        Checks::exit_with_code(VCPKG_LINE_INFO,
+                               perform_ex(args, full_spec, host_triplet, provider, build_logs_recorder, paths));
     }
 
     const CommandStructure COMMAND_STRUCTURE = {
@@ -89,7 +87,6 @@ namespace vcpkg::Build
                    const FullPackageSpec& full_spec,
                    Triplet host_triplet,
                    const PathsPortFileProvider& provider,
-                   BinaryCache& binary_cache,
                    const IBuildLogsRecorder& build_logs_recorder,
                    const VcpkgPaths& paths)
     {
@@ -141,6 +138,7 @@ namespace vcpkg::Build
         action->build_options.clean_buildtrees = CleanBuildtrees::NO;
         action->build_options.clean_packages = CleanPackages::NO;
 
+        BinaryCache binary_cache(args, paths);
         const ElapsedTimer build_timer;
         const auto result = build_package(args, paths, *action, build_logs_recorder, status_db);
         msg::print(msgElapsedForPackage, msg::spec = spec, msg::elapsed = build_timer);
@@ -181,7 +179,6 @@ namespace vcpkg::Build
     {
         // Build only takes a single package and all dependencies must already be installed
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
-        BinaryCache binary_cache{args, paths};
         bool default_triplet_used = false;
         const FullPackageSpec spec = check_and_get_full_package_spec(options.command_arguments[0],
                                                                      default_triplet,
@@ -197,7 +194,7 @@ namespace vcpkg::Build
         auto registry_set = paths.make_registry_set();
         PathsPortFileProvider provider(
             fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
-        return perform_ex(args, spec, host_triplet, provider, binary_cache, null_build_logs_recorder(), paths);
+        return perform_ex(args, spec, host_triplet, provider, null_build_logs_recorder(), paths);
     }
 } // namespace vcpkg::Build
 
