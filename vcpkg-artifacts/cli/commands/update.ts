@@ -2,15 +2,36 @@
 // Licensed under the MIT License.
 
 import { buildRegistryResolver } from '../../artifacts/artifact';
+import { schemeOf } from '../../fs/unified-filesystem';
 import { i } from '../../i18n';
 import { session } from '../../main';
+import { RemoteRegistry } from '../../registries/RemoteRegistry';
 import { Registry } from '../../registries/registries';
 import { RemoteFileUnavailable } from '../../util/exceptions';
 import { Command } from '../command';
-import { CommandLine } from '../command-line';
 import { count } from '../format';
 import { error, log, writeException } from '../styling';
+import { All } from '../switches/all';
 import { Project } from '../switches/project';
+
+async function updateRegistry(registry: Registry, displayName: string) : Promise<boolean> {
+  try {
+    await registry.update(displayName);
+    await registry.load();
+    log(i`Updated ${displayName}. It contains ${count(registry.count)} metadata files.`);
+  } catch (e) {
+    if (e instanceof RemoteFileUnavailable) {
+      log(i`Unable to download ${displayName}.`);
+    } else {
+      log(i`${displayName} could not be updated; it could be malformed.`);
+      writeException(e);
+    }
+
+    return false;
+  }
+
+  return true;
+}
 
 export class UpdateCommand extends Command {
   readonly command = 'update';
@@ -18,6 +39,7 @@ export class UpdateCommand extends Command {
   seeAlso = [];
   argumentsHelp = [];
   project: Project = new Project(this);
+  all = new All(this);
 
   get summary() {
     return i`update the registry from the remote`;
@@ -32,54 +54,53 @@ export class UpdateCommand extends Command {
   override async run() {
     const resolver = session.globalRegistryResolver.with(
       await buildRegistryResolver(session, (await this.project.manifest)?.metadata.registries));
-    for (const registryName of this.inputs) {
-      const registry = resolver.getRegistryByName(registryName);
-      if (registry) {
-        try {
-          log(i`Downloading registry data`);
-          await registry.update();
-          await registry.load();
-          log(i`Updated ${registryName}. registry contains ${count(registry.count)} metadata files`);
-        } catch (e) {
-          if (e instanceof RemoteFileUnavailable) {
-            log(i`Unable to download registry snapshot`);
+    
+    if (this.all.active) {
+      for (const registryUri of session.registryDatabase.getAllUris()) {
+        if (schemeOf(registryUri) != 'https') { continue; }
+        const parsed = session.fileSystem.parseUri(registryUri);
+        const displayName = resolver.getRegistryDisplayName(parsed);
+        const loaded = resolver.getRegistryByUri(parsed);
+        if (loaded) {
+          if (!await updateRegistry(loaded, displayName)) {
             return false;
           }
-          writeException(e);
-          return false;
         }
-      } else {
-        error(i`Unable to find registry ${registryName}`);
       }
     }
 
-    return true;
-  }
+    for (const registryInput of this.inputs) {
+      const registryByName = resolver.getRegistryByName(registryInput);
+      if (registryByName) {
+        // if it matched a name, it's a name
+        if (!await updateRegistry(registryByName, registryInput)) {
+          return false;
+        }
 
-  static async update(registry: Registry) {
-    log(i`Artifact registry data is not loaded`);
-    log(i`Attempting to update artifact registry`);
-    const update = new UpdateCommand(new CommandLine([]));
+        continue;
+      }
+      
+      const scheme = schemeOf(registryInput);
+      switch (scheme) {
+        case 'https':
+          const registryInputAsUri = session.fileSystem.parseUri(registryInput);
+          const registryByUri = resolver.getRegistryByUri(registryInputAsUri)
+            ?? new RemoteRegistry(session, registryInputAsUri);
+          if (!await updateRegistry(registryByUri, resolver.getRegistryDisplayName(registryInputAsUri))) {
+            return false;
+          }
 
-    let success = true;
-    try {
-      success = await update.run();
-    } catch (e) {
-      writeException(e);
-      success = false;
-    }
-    if (!success) {
-      error(i`Unable to load registry index`);
+          continue;
+
+        case 'file':
+          error(i`The x-update-registry command downloads new registry information and thus cannot be used with local registries. Did you mean x-regenerate ${registryInput}?`);
+          return false;
+      }
+
+      error(i`Unable to find registry ${registryInput}.`);
       return false;
     }
-    try {
-      await registry.load();
-    } catch (e) {
-      writeException(e);
-      // it just doesn't want to load.
-      error(i`Unable to load registry index`);
-      return false;
-    }
+
     return true;
   }
 }

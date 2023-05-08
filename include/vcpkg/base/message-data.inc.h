@@ -566,6 +566,15 @@ DECLARE_MESSAGE(CmdUpdateBaselineOptInitial,
                 (),
                 "",
                 "add a `builtin-baseline` to a vcpkg.json that doesn't already have it")
+DECLARE_MESSAGE(CmdUpdateRegistryAll, (), "", "Update all known artifact registries")
+DECLARE_MESSAGE(CmdUpdateRegistryAllExcludesTargets,
+                (),
+                "",
+                "Update registry --all cannot be used with a list of artifact registries")
+DECLARE_MESSAGE(CmdUpdateRegistryAllOrTargets,
+                (),
+                "",
+                "Update registry requires either a list of artifact registry names or URiIs to update, or --all.")
 DECLARE_MESSAGE(CmdUpgradeOptAllowUnsupported,
                 (),
                 "",
