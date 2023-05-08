@@ -174,4 +174,12 @@ namespace vcpkg::Test
     void check_json_eq_ordered(const Json::Array& l, const Json::Array& r);
 
     const Path& base_temporary_directory() noexcept;
+
+    Optional<std::string> diff_lines(StringView a, StringView b);
+
+#define REQUIRE_LINES(a, b)                                                                                            \
+    do                                                                                                                 \
+    {                                                                                                                  \
+        if (auto delta = ::vcpkg::Test::diff_lines((a), (b))) FAIL(*delta.get());                                      \
+    } while (0)
 }
