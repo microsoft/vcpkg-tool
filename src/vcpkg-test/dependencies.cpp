@@ -2365,7 +2365,7 @@ TEST_CASE ("formatting plan 1", "[dependencies]")
                   "The following packages are excluded:\n"
                   "    f:x64-osx -> 1 -- f\n"
                   "The following packages are already installed:\n"
-                  "    d:x86-windows -> 1\n"
+                  "  * d:x86-windows -> 1\n"
                   "    e:x86-windows -> 1\n"
                   "The following packages will be rebuilt:\n"
                   "  * a:x64-osx -> 1 -- a\n"
