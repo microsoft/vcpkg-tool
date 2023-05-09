@@ -328,11 +328,9 @@ namespace vcpkg
             ret.push_back(pid_exe_path_map[it->first]);
         }
 #elif defined(__linux__)
-        auto& fs = get_real_filesystem();
-
         std::error_code ec;
         auto vcpkg_stat_filepath = fmt::format("/proc/{}/stat", getpid());
-        auto vcpkg_stat_contents = fs.read_contents(vcpkg_stat_filepath, ec);
+        auto vcpkg_stat_contents = real_filesystem.read_contents(vcpkg_stat_filepath, ec);
         if (ec) return;
 
         auto maybe_vcpkg_stat = try_parse_process_stat_file(vcpkg_stat_contents, vcpkg_stat_filepath);
@@ -342,7 +340,7 @@ namespace vcpkg
             while (pid != 0)
             {
                 auto stat_filepath = fmt::format("/proc/{}/stat", pid);
-                auto contents = fs.read_contents(stat_filepath, ec);
+                auto contents = real_filesystem.read_contents(stat_filepath, ec);
                 if (ec) break;
 
                 auto maybe_stat = try_parse_process_stat_file(contents, stat_filepath);
