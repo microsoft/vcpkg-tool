@@ -14,6 +14,7 @@
 #include <vcpkg/archives.h>
 #include <vcpkg/packagespec.h>
 
+#include <chrono>
 #include <iterator>
 #include <set>
 #include <string>
@@ -98,8 +99,8 @@ namespace vcpkg
         /// Prerequisites: actions[i].package_abi(), out_status.size() == actions.size()
         virtual void precheck(View<const InstallPlanAction*> actions, Span<CacheAvailability> out_status) const = 0;
 
-        /// <returns>A user-visible vendor string identifying this provider</returns>
-        virtual StringView vendor() const = 0;
+        virtual LocalizedString restored_message(size_t count,
+                                                 std::chrono::high_resolution_clock::duration elapsed) const = 0;
     };
 
     struct UrlTemplate
@@ -175,7 +176,6 @@ namespace vcpkg
     {
         ReadOnlyBinaryCache() = default;
         ReadOnlyBinaryCache(BinaryProviders&& providers);
-        ReadOnlyBinaryCache(const VcpkgCmdArguments& args, const VcpkgPaths& paths, const LineInfo& info);
 
         /// Gives the IBinaryProvider an opportunity to batch any downloading or server communication for
         /// executing `actions`.
@@ -196,16 +196,20 @@ namespace vcpkg
 
     struct BinaryCache : ReadOnlyBinaryCache
     {
-        BinaryCache(RemoveFilesystem& fs);
-        BinaryCache(const VcpkgCmdArguments& args, const VcpkgPaths& paths, const LineInfo& info);
-        BinaryCache(BinaryProviders&& providers, RemoveFilesystem& fs, const ToolCache& tools);
+        static ExpectedL<BinaryCache> make(const VcpkgCmdArguments& args, const VcpkgPaths& paths, MessageSink& sink);
+
+        BinaryCache(Filesystem& fs);
+        BinaryCache(const BinaryCache&) = delete;
+        BinaryCache(BinaryCache&&) = default;
         ~BinaryCache();
 
         /// Called upon a successful build of `action` to store those contents in the binary cache.
         void push_success(const InstallPlanAction& action);
 
     private:
-        RemoveFilesystem& m_fs;
+        BinaryCache(BinaryProviders&& providers, Filesystem& fs);
+
+        Filesystem& m_fs;
         Optional<ZipTool> m_zip_tool;
         bool m_needs_nuspec_data = false;
         bool m_needs_zip_file = false;

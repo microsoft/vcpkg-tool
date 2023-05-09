@@ -615,7 +615,8 @@ namespace vcpkg::Export::Prefab
             Debug::print(
                 fmt::format("Exporting AAR and POM\n\tAAR path {}\n\tPOM path {}", exported_archive_path, pom_path));
 
-            ZipTool zip(paths.get_filesystem(), paths.get_tool_cache(), stdout_sink);
+            auto zip = ZipTool::make(paths.get_filesystem(), paths.get_tool_cache(), stdout_sink)
+                           .value_or_exit(VCPKG_LINE_INFO);
 
             auto compress_result = zip.compress_directory_to_zip(package_directory, exported_archive_path);
             if (!compress_result)

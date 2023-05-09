@@ -37,7 +37,10 @@ struct KnowNothingBinaryProvider : IReadBinaryProvider
         }
     }
 
-    StringView vendor() const override { return "KnowNothing"; }
+    LocalizedString restored_message(size_t, std::chrono::high_resolution_clock::duration) const override
+    {
+        return LocalizedString::from_raw("Nothing");
+    }
 };
 
 TEST_CASE ("CacheStatus operations", "[BinaryCache]")

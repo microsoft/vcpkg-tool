@@ -217,23 +217,16 @@ namespace
 
         size_t push_success(const BinaryPackageWriteInfo& request, MessageSink& msg_sink) override
         {
-            if (!request.zip_path) return 0;
             const auto& zip_path = request.zip_path.value_or_exit(VCPKG_LINE_INFO);
             const auto archive_subpath = files_archive_subpath(request.package_abi);
 
-            int count_stored = 0;
+            size_t count_stored = 0;
             for (const auto& archives_root_dir : m_dirs)
             {
                 const auto archive_path = archives_root_dir / archive_subpath;
                 std::error_code ec;
+                m_fs.create_directories(archive_path.parent_path(), IgnoreErrors{});
                 m_fs.copy_file(zip_path, archive_path, CopyOptions::overwrite_existing, ec);
-                if (ec)
-                {
-                    ec.clear();
-                    m_fs.create_directories(archive_path.parent_path(), IgnoreErrors{});
-                    m_fs.copy_file(zip_path, archive_path, CopyOptions::overwrite_existing, ec);
-                }
-
                 if (ec)
                 {
                     msg_sink.println(Color::warning,
@@ -257,25 +250,24 @@ namespace
         std::vector<Path> m_dirs;
     };
 
-    enum class ToRemove
+    enum class RemoveWhen
     {
         nothing,
-        remove_always,
-        remove_on_fail,
+        always,
+        on_fail,
     };
 
     struct ZipResource
     {
-        ZipResource(Path&& p, ToRemove t) : path(std::move(p)), to_remove(t) { }
+        ZipResource(Path&& p, RemoveWhen t) : path(std::move(p)), to_remove(t) { }
 
         Path path;
-        ToRemove to_remove;
+        RemoveWhen to_remove;
     };
 
     // This middleware class contains logic for BinaryProviders that operate on zip files.
     // Derived classes must implement:
     // - acquire_zips()
-    // - post_decompress()
     // - IReadBinaryProvider::precheck()
     struct ZipReadBinaryProvider : IReadBinaryProvider
     {
@@ -316,22 +308,20 @@ namespace
 
                 post_decompress(zip_path, job_results[j].has_value());
             }
-            size_t num_restored = std::count(out_status.begin(), out_status.end(), RestoreResult::restored);
-            msg::println(msgRestoredPackagesFromVendor,
-                         msg::count = num_restored,
-                         msg::elapsed = timer.elapsed(),
-                         msg::value = vendor());
         }
 
         void post_decompress(const ZipResource& r, bool succeeded) const
         {
-            if ((!succeeded && r.to_remove == ToRemove::remove_on_fail) || r.to_remove == ToRemove::remove_always)
+            if ((!succeeded && r.to_remove == RemoveWhen::on_fail) || r.to_remove == RemoveWhen::always)
             {
                 m_fs.remove(r.path, IgnoreErrors{});
             }
         }
 
-        // Download/find the zip files corresponding with a set of actions
+        // For every action denoted by actions, at corresponding indicies in out_zips, stores a ZipResource indicating
+        // the downloaded location.
+        //
+        // Leaving an Optional disengaged indicates that the cache does not contain the requested zip.
         virtual void acquire_zips(View<const InstallPlanAction*> actions,
                                   Span<Optional<ZipResource>> out_zips) const = 0;
 
@@ -357,8 +347,8 @@ namespace
                 if (m_fs.exists(archive_path, IgnoreErrors{}))
                 {
                     auto to_remove = actions[i]->build_options.purge_decompress_failure == PurgeDecompressFailure::YES
-                                         ? ToRemove::remove_on_fail
-                                         : ToRemove::nothing;
+                                         ? RemoveWhen::on_fail
+                                         : RemoveWhen::nothing;
                     out_zip_paths[i].emplace(std::move(archive_path), to_remove);
                 }
             }
@@ -380,8 +370,14 @@ namespace
                 cache_status[idx] = any_available ? CacheAvailability::available : CacheAvailability::unavailable;
             }
         }
-
-        StringView vendor() const override { return m_dir; }
+        LocalizedString restored_message(size_t count,
+                                         std::chrono::high_resolution_clock::duration elapsed) const override
+        {
+            return msg::format(msgRestoredPackagesFromFiles,
+                               msg::count = count,
+                               msg::elapsed = ElapsedTime(elapsed),
+                               msg::path = m_dir);
+        }
 
     private:
         Path m_dir;
@@ -443,8 +439,8 @@ namespace
             for (size_t idx = 0; idx < actions.size(); ++idx)
             {
                 auto&& action = *actions[idx];
-                auto uri = m_url_template.instantiate_variables(BinaryPackageReadInfo{action});
-                url_paths.emplace_back(std::move(uri), make_temp_archive_path(m_buildtrees, action.spec));
+                url_paths.emplace_back(m_url_template.instantiate_variables(BinaryPackageReadInfo{action}),
+                                       make_temp_archive_path(m_buildtrees, action.spec));
             }
 
             auto codes = download_files(m_fs, url_paths, m_url_template.headers);
@@ -453,7 +449,7 @@ namespace
             {
                 if (codes[i] == 200)
                 {
-                    out_zip_paths[i].emplace(std::move(url_paths[i].second), ToRemove::remove_always);
+                    out_zip_paths[i].emplace(std::move(url_paths[i].second), RemoveWhen::always);
                 }
             }
         }
@@ -473,7 +469,11 @@ namespace
             }
         }
 
-        StringView vendor() const override { return "HTTP servers"; }
+        LocalizedString restored_message(size_t count,
+                                         std::chrono::high_resolution_clock::duration elapsed) const override
+        {
+            return msg::format(msgRestoredPackagesFromHTTP, msg::count = count, msg::elapsed = ElapsedTime(elapsed));
+        }
 
         Path m_buildtrees;
         UrlTemplate m_url_template;
@@ -682,7 +682,11 @@ namespace
         // Prechecking is too expensive with NuGet, so it is not implemented
         void precheck(View<const InstallPlanAction*>, Span<CacheAvailability>) const override { }
 
-        StringView vendor() const override { return "NuGet"; }
+        LocalizedString restored_message(size_t count,
+                                         std::chrono::high_resolution_clock::duration elapsed) const override
+        {
+            return msg::format(msgRestoredPackagesFromNuGet, msg::count = count, msg::elapsed = ElapsedTime(elapsed));
+        }
 
         void fetch(View<const InstallPlanAction*> actions, Span<RestoreResult> out_status) const override
         {
@@ -857,14 +861,18 @@ namespace
             {
                 if (codes[i] == 200)
                 {
-                    out_zip_paths[url_indices[i]].emplace(std::move(url_paths[i].second), ToRemove::remove_always);
+                    out_zip_paths[url_indices[i]].emplace(std::move(url_paths[i].second), RemoveWhen::always);
                 }
             }
         }
 
         void precheck(View<const InstallPlanAction*>, Span<CacheAvailability>) const override { }
 
-        StringView vendor() const override { return "GitHub Actions Cache"; }
+        LocalizedString restored_message(size_t count,
+                                         std::chrono::high_resolution_clock::duration elapsed) const override
+        {
+            return msg::format(msgRestoredPackagesFromGHA, msg::count = count, msg::elapsed = ElapsedTime(elapsed));
+        }
 
         static constexpr StringLiteral m_accept_header = "Accept: application/json;api-version=6.0-preview.1";
 
@@ -963,7 +971,8 @@ namespace
     {
         virtual ~IObjectStorageTool() = default;
 
-        virtual StringLiteral vendor() const = 0;
+        virtual LocalizedString restored_message(size_t count,
+                                                 std::chrono::high_resolution_clock::duration elapsed) const = 0;
         virtual ExpectedL<Unit> stat(StringView url) const = 0;
         virtual ExpectedL<Unit> download_file(StringView object, const Path& archive) const = 0;
         virtual ExpectedL<Unit> upload_file(StringView object, const Path& archive) const = 0;
@@ -999,7 +1008,7 @@ namespace
                 auto res = m_tool->download_file(make_object_path(m_prefix, abi), tmp);
                 if (res)
                 {
-                    out_zip_paths[idx].emplace(std::move(tmp), ToRemove::remove_always);
+                    out_zip_paths[idx].emplace(std::move(tmp), RemoveWhen::always);
                 }
                 else
                 {
@@ -1025,7 +1034,11 @@ namespace
             }
         }
 
-        StringView vendor() const override { return m_tool->vendor(); }
+        LocalizedString restored_message(size_t count,
+                                         std::chrono::high_resolution_clock::duration elapsed) const override
+        {
+            return m_tool->restored_message(count, elapsed);
+        }
 
         Path m_buildtrees;
         std::string m_prefix;
@@ -1074,7 +1087,11 @@ namespace
     {
         GcsStorageTool(const ToolCache& cache, MessageSink& sink) : m_tool(cache.get_tool_path(Tools::GSUTIL, sink)) { }
 
-        StringLiteral vendor() const override { return "GCS"; }
+        LocalizedString restored_message(size_t count,
+                                         std::chrono::high_resolution_clock::duration elapsed) const override
+        {
+            return msg::format(msgRestoredPackagesFromGCS, msg::count = count, msg::elapsed = ElapsedTime(elapsed));
+        }
 
         Command command() const { return m_tool; }
 
@@ -1106,7 +1123,11 @@ namespace
         {
         }
 
-        StringLiteral vendor() const override { return "AWS"; }
+        LocalizedString restored_message(size_t count,
+                                         std::chrono::high_resolution_clock::duration elapsed) const override
+        {
+            return msg::format(msgRestoredPackagesFromAWS, msg::count = count, msg::elapsed = ElapsedTime(elapsed));
+        }
 
         Command command() const { return m_tool; }
 
@@ -1153,7 +1174,11 @@ namespace
     {
         CosStorageTool(const ToolCache& cache, MessageSink& sink) : m_tool(cache.get_tool_path(Tools::COSCLI, sink)) { }
 
-        StringLiteral vendor() const override { return "COS"; }
+        LocalizedString restored_message(size_t count,
+                                         std::chrono::high_resolution_clock::duration elapsed) const override
+        {
+            return msg::format(msgRestoredPackagesFromCOS, msg::count = count, msg::elapsed = ElapsedTime(elapsed));
+        }
 
         Command command() const { return m_tool; }
 
@@ -1878,70 +1903,21 @@ namespace vcpkg
 
             ret.nuget_prefix = s.nuget_prefix;
 
-            Optional<ZipTool> lazy_zip_tool;
-            auto zip_tool = [&]() -> const ZipTool& {
-                if (!lazy_zip_tool) lazy_zip_tool.emplace(fs, tools, stdout_sink);
-                return *lazy_zip_tool.get();
-            };
-
-            std::shared_ptr<const GcsStorageTool> lazy_gcs_tool;
-            auto gcs_tool = [&]() -> const std::shared_ptr<const GcsStorageTool>& {
-                if (!lazy_gcs_tool) lazy_gcs_tool = std::make_shared<GcsStorageTool>(tools, stdout_sink);
-                return lazy_gcs_tool;
-            };
-
-            std::shared_ptr<const AwsStorageTool> lazy_aws_tool;
-            auto aws_tool = [&]() -> const std::shared_ptr<const AwsStorageTool>& {
-                if (!lazy_aws_tool)
-                    lazy_aws_tool = std::make_shared<AwsStorageTool>(tools, stdout_sink, s.aws_no_sign_request);
-                return lazy_aws_tool;
-            };
-
-            std::shared_ptr<const CosStorageTool> lazy_cos_tool;
-            auto cos_tool = [&]() -> const std::shared_ptr<const CosStorageTool>& {
-                if (!lazy_cos_tool) lazy_cos_tool = std::make_shared<CosStorageTool>(tools, stdout_sink);
-                return lazy_cos_tool;
-            };
-            Optional<NugetBaseBinaryProvider> lazy_nuget_base;
-            auto nuget_base = [&]() -> const NugetBaseBinaryProvider& {
-                if (!lazy_nuget_base)
-                    lazy_nuget_base.emplace(
-                        fs, NuGetTool(tools, stdout_sink, s), paths.packages(), buildtrees, s.nuget_prefix);
-                return *lazy_nuget_base.get();
-            };
-
-            for (auto&& dir : s.archives_to_read)
-                ret.read.push_back(std::make_unique<FilesReadBinaryProvider>(zip_tool(), fs, std::move(dir)));
-            if (!s.archives_to_write.empty())
-                ret.write.push_back(std::make_unique<FilesWriteBinaryProvider>(fs, std::move(s.archives_to_write)));
-
-            for (auto&& url : s.url_templates_to_get)
-                ret.read.push_back(
-                    std::make_unique<HttpGetBinaryProvider>(zip_tool(), fs, buildtrees, std::move(url), s.secrets));
-            if (!s.url_templates_to_put.empty())
-                ret.write.push_back(
-                    std::make_unique<HTTPPutBinaryProvider>(fs, std::move(s.url_templates_to_put), s.secrets));
-
-            for (auto&& prefix : s.gcs_read_prefixes)
-                ret.read.push_back(
-                    std::make_unique<ObjectStorageProvider>(zip_tool(), fs, buildtrees, std::move(prefix), gcs_tool()));
-            if (!s.gcs_write_prefixes.empty())
-                ret.write.push_back(
-                    std::make_unique<ObjectStoragePushProvider>(std::move(s.gcs_write_prefixes), gcs_tool()));
-
-            for (auto&& prefix : s.aws_read_prefixes)
-                ret.read.push_back(
-                    std::make_unique<ObjectStorageProvider>(zip_tool(), fs, buildtrees, std::move(prefix), aws_tool()));
-            if (!s.aws_write_prefixes.empty())
-                ret.write.push_back(
-                    std::make_unique<ObjectStoragePushProvider>(std::move(s.aws_write_prefixes), aws_tool()));
-
-            for (auto&& prefix : s.cos_read_prefixes)
-                ret.read.push_back(
-                    std::make_unique<ObjectStorageProvider>(zip_tool(), fs, buildtrees, std::move(prefix), cos_tool()));
-            if (!s.cos_write_prefixes.empty())
-                ret.write.push_back(
-                    std::make_unique<ObjectStoragePushProvider>(std::move(s.cos_write_prefixes), cos_tool()));
+            std::shared_ptr<const GcsStorageTool> gcs_tool;
+            if (!s.gcs_read_prefixes.empty() || !s.gcs_write_prefixes.empty())
+            {
+                gcs_tool = std::make_shared<GcsStorageTool>(tools, stdout_sink);
+            }
+            std::shared_ptr<const AwsStorageTool> aws_tool;
+            if (!s.aws_read_prefixes.empty() || !s.aws_write_prefixes.empty())
+            {
+                aws_tool = std::make_shared<AwsStorageTool>(tools, stdout_sink, s.aws_no_sign_request);
+            }
+            std::shared_ptr<const CosStorageTool> cos_tool;
+            if (!s.cos_read_prefixes.empty() || !s.cos_write_prefixes.empty())
+            {
+                cos_tool = std::make_shared<CosStorageTool>(tools, stdout_sink);
+            }
 
             if (s.gha_read || s.gha_write)
             {
@@ -1949,33 +1925,104 @@ namespace vcpkg
                     return msg::format_error(msgGHAParametersMissing,
                                              msg::url =
                                                  "https://learn.microsoft.com/en-us/vcpkg/users/binarycaching#gha");
-                const auto& url = *args.actions_cache_url.get();
-                const auto& token = *args.actions_runtime_token.get();
-                if (s.gha_read)
-                    ret.read.push_back(std::make_unique<GHABinaryProvider>(zip_tool(), fs, buildtrees, url, token));
-                if (s.gha_write) ret.write.push_back(std::make_unique<GHABinaryPushProvider>(fs, url, token));
             }
 
-            if (!s.sources_to_read.empty())
-                ret.read.push_back(
-                    std::make_unique<NugetReadBinaryProvider>(nuget_base(), nuget_sources_arg(s.sources_to_read)));
-            for (auto&& config : s.configs_to_read)
-                ret.read.push_back(
-                    std::make_unique<NugetReadBinaryProvider>(nuget_base(), nuget_configfile_arg(config)));
-            if (!s.sources_to_write.empty() || !s.configs_to_write.empty())
+            if (!s.archives_to_read.empty() || !s.url_templates_to_get.empty() || !s.gcs_read_prefixes.empty() ||
+                !s.aws_read_prefixes.empty() || !s.cos_read_prefixes.empty() || s.gha_read)
             {
-                ret.write.push_back(std::make_unique<NugetBinaryPushProvider>(
-                    nuget_base(), std::move(s.sources_to_write), std::move(s.configs_to_write)));
+                auto maybe_zip_tool = ZipTool::make(fs, tools, stdout_sink);
+                if (!maybe_zip_tool.has_value())
+                {
+                    return std::move(maybe_zip_tool).error();
+                }
+                const auto& zip_tool = *maybe_zip_tool.get();
+
+                for (auto&& dir : s.archives_to_read)
+                {
+                    ret.read.push_back(std::make_unique<FilesReadBinaryProvider>(zip_tool, fs, std::move(dir)));
+                }
+
+                for (auto&& url : s.url_templates_to_get)
+                {
+                    ret.read.push_back(
+                        std::make_unique<HttpGetBinaryProvider>(zip_tool, fs, buildtrees, std::move(url), s.secrets));
+                }
+
+                for (auto&& prefix : s.gcs_read_prefixes)
+                {
+                    ret.read.push_back(
+                        std::make_unique<ObjectStorageProvider>(zip_tool, fs, buildtrees, std::move(prefix), gcs_tool));
+                }
+
+                for (auto&& prefix : s.aws_read_prefixes)
+                {
+                    ret.read.push_back(
+                        std::make_unique<ObjectStorageProvider>(zip_tool, fs, buildtrees, std::move(prefix), aws_tool));
+                }
+
+                for (auto&& prefix : s.cos_read_prefixes)
+                {
+                    ret.read.push_back(
+                        std::make_unique<ObjectStorageProvider>(zip_tool, fs, buildtrees, std::move(prefix), cos_tool));
+                }
+
+                if (s.gha_read)
+                {
+                    const auto& url = *args.actions_cache_url.get();
+                    const auto& token = *args.actions_runtime_token.get();
+                    ret.read.push_back(std::make_unique<GHABinaryProvider>(zip_tool, fs, buildtrees, url, token));
+                }
+            }
+            if (!s.archives_to_write.empty())
+            {
+                ret.write.push_back(std::make_unique<FilesWriteBinaryProvider>(fs, std::move(s.archives_to_write)));
+            }
+            if (!s.url_templates_to_put.empty())
+            {
+                ret.write.push_back(
+                    std::make_unique<HTTPPutBinaryProvider>(fs, std::move(s.url_templates_to_put), s.secrets));
+            }
+            if (!s.gcs_write_prefixes.empty())
+            {
+                ret.write.push_back(
+                    std::make_unique<ObjectStoragePushProvider>(std::move(s.gcs_write_prefixes), gcs_tool));
+            }
+            if (!s.aws_write_prefixes.empty())
+            {
+                ret.write.push_back(
+                    std::make_unique<ObjectStoragePushProvider>(std::move(s.aws_write_prefixes), aws_tool));
+            }
+            if (!s.cos_write_prefixes.empty())
+            {
+                ret.write.push_back(
+                    std::make_unique<ObjectStoragePushProvider>(std::move(s.cos_write_prefixes), cos_tool));
+            }
+            if (s.gha_write)
+            {
+                const auto& url = *args.actions_cache_url.get();
+                const auto& token = *args.actions_runtime_token.get();
+                ret.write.push_back(std::make_unique<GHABinaryPushProvider>(fs, url, token));
+            }
+
+            if (!s.sources_to_read.empty() || !s.configs_to_read.empty() || !s.sources_to_write.empty() ||
+                !s.configs_to_write.empty())
+            {
+                NugetBaseBinaryProvider nuget_base(
+                    fs, NuGetTool(tools, stdout_sink, s), paths.packages(), buildtrees, s.nuget_prefix);
+                if (!s.sources_to_read.empty())
+                    ret.read.push_back(
+                        std::make_unique<NugetReadBinaryProvider>(nuget_base, nuget_sources_arg(s.sources_to_read)));
+                for (auto&& config : s.configs_to_read)
+                    ret.read.push_back(
+                        std::make_unique<NugetReadBinaryProvider>(nuget_base, nuget_configfile_arg(config)));
+                if (!s.sources_to_write.empty() || !s.configs_to_write.empty())
+                {
+                    ret.write.push_back(std::make_unique<NugetBinaryPushProvider>(
+                        nuget_base, std::move(s.sources_to_write), std::move(s.configs_to_write)));
+                }
             }
         }
         return std::move(ret);
-    }
-
-    ReadOnlyBinaryCache::ReadOnlyBinaryCache(const VcpkgCmdArguments& args,
-                                             const VcpkgPaths& paths,
-                                             const LineInfo& info)
-        : ReadOnlyBinaryCache(make_binary_providers(args, paths).value_or_exit(info))
-    {
     }
 
     ReadOnlyBinaryCache::ReadOnlyBinaryCache(BinaryProviders&& providers) : m_config(std::move(providers)) { }
@@ -2020,10 +2067,8 @@ namespace vcpkg
                     ++num_restored;
                 }
             }
-            msg::println(msgRestoredPackagesFromVendor,
-                         msg::count = num_restored,
-                         msg::elapsed = timer.elapsed(),
-                         msg::value = provider->vendor());
+            msg::println(provider->restored_message(
+                num_restored, timer.elapsed().as<std::chrono::high_resolution_clock::duration>()));
         }
     }
 
@@ -2067,13 +2112,14 @@ namespace vcpkg
 
             for (size_t i = 0; i < action_ptrs.size(); ++i)
             {
+                auto&& this_status = m_status[*action_ptrs[i]->package_abi().get()];
                 if (cache_result[i] == CacheAvailability::available)
                 {
-                    m_status[*action_ptrs[i]->package_abi().get()].mark_available(provider.get());
+                    this_status.mark_available(provider.get());
                 }
                 else if (cache_result[i] == CacheAvailability::unavailable)
                 {
-                    m_status[*action_ptrs[i]->package_abi().get()].mark_unavailable(provider.get());
+                    this_status.mark_unavailable(provider.get());
                 }
             }
         }
@@ -2083,20 +2129,33 @@ namespace vcpkg
         });
     }
 
-    BinaryCache::BinaryCache(RemoveFilesystem& fs) : m_fs(fs) { }
+    BinaryCache::BinaryCache(Filesystem& fs) : m_fs(fs) { }
 
-    BinaryCache::BinaryCache(const VcpkgCmdArguments& args, const VcpkgPaths& paths, const LineInfo& info)
-        : BinaryCache(
-              make_binary_providers(args, paths).value_or_exit(info), paths.get_filesystem(), paths.get_tool_cache())
+    ExpectedL<BinaryCache> BinaryCache::make(const VcpkgCmdArguments& args, const VcpkgPaths& paths, MessageSink& sink)
     {
+        return make_binary_providers(args, paths).then([&](BinaryProviders&& p) -> ExpectedL<BinaryCache> {
+            BinaryCache b(std::move(p), paths.get_filesystem());
+            b.m_needs_nuspec_data = Util::any_of(b.m_config.write, [](auto&& p) { return p->needs_nuspec_data(); });
+            b.m_needs_zip_file = Util::any_of(b.m_config.write, [](auto&& p) { return p->needs_zip_file(); });
+            if (b.m_needs_zip_file)
+            {
+                auto maybe_zt = ZipTool::make(paths.get_filesystem(), paths.get_tool_cache(), sink);
+                if (auto z = maybe_zt.get())
+                {
+                    b.m_zip_tool.emplace(std::move(*z));
+                }
+                else
+                {
+                    return std::move(maybe_zt).error();
+                }
+            }
+            return std::move(b);
+        });
     }
 
-    BinaryCache::BinaryCache(BinaryProviders&& providers, RemoveFilesystem& fs, const ToolCache& tools)
+    BinaryCache::BinaryCache(BinaryProviders&& providers, Filesystem& fs)
         : ReadOnlyBinaryCache(std::move(providers)), m_fs(fs)
     {
-        m_needs_nuspec_data = Util::any_of(m_config.write, [](auto&& p) { return p->needs_nuspec_data(); });
-        m_needs_zip_file = Util::any_of(m_config.write, [](auto&& p) { return p->needs_zip_file(); });
-        if (m_needs_zip_file) m_zip_tool.emplace(fs, tools, stdout_sink);
     }
     BinaryCache::~BinaryCache() { }
 
@@ -2141,7 +2200,10 @@ namespace vcpkg
                 size_t num_destinations = 0;
                 for (auto&& provider : m_config.write)
                 {
-                    num_destinations += provider->push_success(request, stdout_sink);
+                    if (!provider->needs_zip_file() || request.zip_path.has_value())
+                    {
+                        num_destinations += provider->push_success(request, stdout_sink);
+                    }
                 }
                 if (request.zip_path)
                 {

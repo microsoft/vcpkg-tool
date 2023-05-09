@@ -107,23 +107,10 @@ namespace vcpkg
         virtual ExpectedL<std::vector<std::string>> read_lines(const Path& file_path) const = 0;
 
     protected:
-        ~ILineReader() = default;
+        ~ILineReader();
     };
 
-    struct RemoveFilesystem
-    {
-        virtual bool remove(const Path& target, std::error_code& ec) = 0;
-        bool remove(const Path& target, LineInfo li);
-
-        virtual void remove_all(const Path& base, std::error_code& ec, Path& failure_point) = 0;
-        void remove_all(const Path& base, std::error_code& ec);
-        void remove_all(const Path& base, LineInfo li);
-
-    protected:
-        ~RemoveFilesystem() = default;
-    };
-
-    struct Filesystem : ILineReader, RemoveFilesystem
+    struct Filesystem : ILineReader
     {
         virtual std::string read_contents(const Path& file_path, std::error_code& ec) const = 0;
         std::string read_contents(const Path& file_path, LineInfo li) const;
@@ -177,6 +164,13 @@ namespace vcpkg
                                     const Path& new_path,
                                     StringLiteral temp_suffix,
                                     std::error_code& ec) = 0;
+
+        virtual bool remove(const Path& target, std::error_code& ec) = 0;
+        bool remove(const Path& target, LineInfo li);
+
+        virtual void remove_all(const Path& base, std::error_code& ec, Path& failure_point) = 0;
+        void remove_all(const Path& base, std::error_code& ec);
+        void remove_all(const Path& base, LineInfo li);
 
         void remove_all_inside(const Path& base, std::error_code& ec, Path& failure_point);
         void remove_all_inside(const Path& base, std::error_code& ec);

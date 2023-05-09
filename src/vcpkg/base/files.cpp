@@ -174,7 +174,7 @@ namespace
         if (last - first >= 4 && is_slash(first[3]) && (last - first == 4 || !is_slash(first[4])) // \xx\$
             && ((is_slash(first[1]) && (first[2] == '?' || first[2] == '.'))                      // \\?\$ or \\.\$
                 || (first[1] == '?' && first[2] == '?')))
-        { // \??\$
+        {                                                                                         // \??\$
             return first + 3;
         }
 
@@ -260,7 +260,7 @@ namespace
         }
 
         if (*extension == '.')
-        { // we might have found the end of stem
+        {     // we might have found the end of stem
             if (filename == extension - 1 && extension[-1] == '.')
             { // dotdot special case
                 return ads;
@@ -293,9 +293,9 @@ namespace
 #if defined(_WIN32)
         const auto ads = std::find(filename, last, ':'); // strip alternate data streams in intra-filename decomposition
         const auto extension = find_extension(filename, ads);
-#else  // ^^^ _WIN32 / !_WIN32 vvv
+#else                                                    // ^^^ _WIN32 / !_WIN32 vvv
         const auto extension = find_extension(filename, last);
-#endif // _WIN32
+#endif                                                   // _WIN32
         return StringView(filename, static_cast<size_t>(extension - filename));
     }
 
@@ -1535,6 +1535,8 @@ namespace vcpkg
 
     int WriteFilePointer::put(int c) const noexcept { return ::fputc(c, m_fs); }
 
+    ILineReader::~ILineReader() = default;
+
     std::string Filesystem::read_contents(const Path& file_path, LineInfo li) const
     {
         std::error_code ec;
@@ -1714,7 +1716,7 @@ namespace vcpkg
         }
     }
 
-    bool RemoveFilesystem::remove(const Path& target, LineInfo li)
+    bool Filesystem::remove(const Path& target, LineInfo li)
     {
         std::error_code ec;
         auto r = this->remove(target, ec);
@@ -1906,7 +1908,7 @@ namespace vcpkg
         }
     }
 
-    void RemoveFilesystem::remove_all(const Path& base, LineInfo li)
+    void Filesystem::remove_all(const Path& base, LineInfo li)
     {
         std::error_code ec;
         Path failure_point;
@@ -1923,7 +1925,7 @@ namespace vcpkg
         }
     }
 
-    void RemoveFilesystem::remove_all(const Path& base, std::error_code& ec)
+    void Filesystem::remove_all(const Path& base, std::error_code& ec)
     {
         Path failure_point;
         this->remove_all(base, ec, failure_point);
@@ -2878,7 +2880,7 @@ namespace vcpkg
             StatsTimer t(g_us_filesystem_stats);
 #if defined(_WIN32)
             return stdfs::create_directories(to_stdfs_path(new_directory), ec);
-#else // ^^^ _WIN32 // !_WIN32 vvv
+#else  // ^^^ _WIN32 // !_WIN32 vvv
             ec.clear();
             if (new_directory.empty())
             {
