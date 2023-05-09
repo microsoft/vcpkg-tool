@@ -733,13 +733,6 @@ namespace
 
         size_t push_success(const BinaryPackageWriteInfo& request, MessageSink& msg_sink) override
         {
-            if (!request.nuspec.has_value())
-            {
-                Checks::unreachable(
-                    VCPKG_LINE_INFO,
-                    "request.info.nuspec must be non empty because needs_nuspec_data() should return true");
-            }
-
             auto& spec = request.spec;
 
             auto nuspec_path = m_buildtrees / spec.name() / spec.triplet().canonical_name() + ".nuspec";
@@ -984,11 +977,11 @@ namespace
                               Filesystem& fs,
                               const Path& buildtrees,
                               std::string&& prefix,
-                              std::shared_ptr<const IObjectStorageTool> tool)
+                              const std::shared_ptr<const IObjectStorageTool>& tool)
             : ZipReadBinaryProvider(std::move(zip), fs)
             , m_buildtrees(buildtrees)
             , m_prefix(std::move(prefix))
-            , m_tool(std::move(tool))
+            , m_tool(tool)
         {
         }
 
@@ -2161,13 +2154,13 @@ namespace vcpkg
 
     void BinaryCache::push_success(const InstallPlanAction& action)
     {
-        if (action.package_abi().has_value())
+        if (auto abi = action.package_abi().get())
         {
-            bool restored = m_status[*action.package_abi().get()].is_restored();
+            bool restored = m_status[*abi].is_restored();
             // Purge all status information on push_success (cache invalidation)
             // - push_success may delete packages/ (invalidate restore)
             // - push_success may make the package available from providers (invalidate unavailable)
-            m_status.erase(*action.package_abi().get());
+            m_status.erase(*abi);
             if (!restored && !m_config.write.empty())
             {
                 ElapsedTimer timer;
@@ -2183,17 +2176,17 @@ namespace vcpkg
                     Path zip_path = request.package_dir + ".zip";
                     auto compress_result = m_zip_tool.value_or_exit(VCPKG_LINE_INFO)
                                                .compress_directory_to_zip(request.package_dir, zip_path);
-                    if (!compress_result)
+                    if (compress_result)
+                    {
+                        request.zip_path = std::move(zip_path);
+                    }
+                    else
                     {
                         stdout_sink.println(
                             Color::warning,
                             msg::format_warning(msgCompressFolderFailed, msg::path = request.package_dir)
                                 .append_raw(' ')
                                 .append_raw(compress_result.error()));
-                    }
-                    else
-                    {
-                        request.zip_path = std::move(zip_path);
                     }
                 }
 
