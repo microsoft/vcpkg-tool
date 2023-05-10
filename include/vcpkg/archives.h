@@ -32,19 +32,18 @@ namespace vcpkg
 
     struct ZipTool
     {
-        static ExpectedL<ZipTool> make(Filesystem& fs, const ToolCache& tools, MessageSink& status_sink);
+        static ExpectedL<ZipTool> make(const ToolCache& tools, MessageSink& status_sink);
 
     private:
         ZipTool() = default;
 
-        Filesystem* fs = nullptr;
 #if defined _WIN32
         Path seven_zip;
 #endif
 
     public:
         // Compress the source directory into the destination file.
-        ExpectedL<Unit> compress_directory_to_zip(const Path& source, const Path& destination) const;
+        ExpectedL<Unit> compress_directory_to_zip(Filesystem& fs, const Path& source, const Path& destination) const;
 
         Command decompress_zip_archive_cmd(const Path& dst, const Path& archive_path) const;
     };

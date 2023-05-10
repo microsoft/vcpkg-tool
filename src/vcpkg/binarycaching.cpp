@@ -752,7 +752,7 @@ namespace
                 return 0;
             }
 
-            int count_stored = 0;
+            size_t count_stored = 0;
             auto nupkg_path = m_buildtrees / make_nugetref(request, m_nuget_prefix).nupkg_filename();
             for (auto&& write_src : m_sources)
             {
@@ -1923,7 +1923,7 @@ namespace vcpkg
             if (!s.archives_to_read.empty() || !s.url_templates_to_get.empty() || !s.gcs_read_prefixes.empty() ||
                 !s.aws_read_prefixes.empty() || !s.cos_read_prefixes.empty() || s.gha_read)
             {
-                auto maybe_zip_tool = ZipTool::make(fs, tools, stdout_sink);
+                auto maybe_zip_tool = ZipTool::make(tools, stdout_sink);
                 if (!maybe_zip_tool.has_value())
                 {
                     return std::move(maybe_zip_tool).error();
@@ -2132,7 +2132,7 @@ namespace vcpkg
             b.m_needs_zip_file = Util::any_of(b.m_config.write, [](auto&& p) { return p->needs_zip_file(); });
             if (b.m_needs_zip_file)
             {
-                auto maybe_zt = ZipTool::make(paths.get_filesystem(), paths.get_tool_cache(), sink);
+                auto maybe_zt = ZipTool::make(paths.get_tool_cache(), sink);
                 if (auto z = maybe_zt.get())
                 {
                     b.m_zip_tool.emplace(std::move(*z));
@@ -2175,7 +2175,7 @@ namespace vcpkg
                 {
                     Path zip_path = request.package_dir + ".zip";
                     auto compress_result = m_zip_tool.value_or_exit(VCPKG_LINE_INFO)
-                                               .compress_directory_to_zip(request.package_dir, zip_path);
+                                               .compress_directory_to_zip(m_fs, request.package_dir, zip_path);
                     if (compress_result)
                     {
                         request.zip_path = std::move(zip_path);

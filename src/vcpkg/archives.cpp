@@ -293,9 +293,11 @@ namespace vcpkg
         fs.rename_with_retry(to_path_partial, to_path, VCPKG_LINE_INFO);
     }
 
-    ExpectedL<Unit> ZipTool::compress_directory_to_zip(const Path& source, const Path& destination) const
+    ExpectedL<Unit> ZipTool::compress_directory_to_zip(Filesystem& fs,
+                                                       const Path& source,
+                                                       const Path& destination) const
     {
-        fs->remove(destination, VCPKG_LINE_INFO);
+        fs.remove(destination, VCPKG_LINE_INFO);
 #if defined(_WIN32)
         return flatten(cmd_execute_and_capture_output(
                            Command{seven_zip}.string_arg("a").string_arg(destination).string_arg(source / "*"),
@@ -316,10 +318,9 @@ namespace vcpkg
 #endif
     }
 
-    ExpectedL<ZipTool> ZipTool::make(Filesystem& fs, const ToolCache& cache, MessageSink& status_sink)
+    ExpectedL<ZipTool> ZipTool::make(const ToolCache& cache, MessageSink& status_sink)
     {
         ZipTool ret;
-        ret.fs = &fs;
 #if defined(_WIN32)
         ret.seven_zip = cache.get_tool_path(Tools::SEVEN_ZIP, status_sink);
 #endif
