@@ -118,7 +118,7 @@ namespace vcpkg::Commands::SetInstalled
         if (auto p_pkgsconfig = maybe_pkgsconfig.get())
         {
             auto pkgsconfig_path = paths.original_cwd / *p_pkgsconfig;
-            auto pkgsconfig_contents = generate_nuget_packages_config(action_plan);
+            auto pkgsconfig_contents = generate_nuget_packages_config(action_plan, args.nuget_id_prefix.value_or(""));
             fs.write_contents(pkgsconfig_path, pkgsconfig_contents, VCPKG_LINE_INFO);
             msg::println(msgWroteNuGetPkgConfInfo, msg::path = pkgsconfig_path);
         }
@@ -132,8 +132,9 @@ namespace vcpkg::Commands::SetInstalled
 
         track_install_plan(action_plan);
 
-        BinaryCache binary_cache = only_downloads ? BinaryCache(paths.get_filesystem()) : BinaryCache(args, paths);
-        binary_cache.prefetch(action_plan.install_actions);
+        auto binary_cache = only_downloads ? BinaryCache(paths.get_filesystem())
+                                           : BinaryCache::make(args, paths, stdout_sink).value_or_exit(VCPKG_LINE_INFO);
+        binary_cache.fetch(action_plan.install_actions);
         const auto summary = Install::execute_plan(
             args, action_plan, keep_going, paths, status_db, binary_cache, null_build_logs_recorder());
 
