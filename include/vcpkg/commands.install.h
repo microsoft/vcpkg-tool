@@ -104,14 +104,13 @@ namespace vcpkg
                                      const Filesystem& fs,
                                      const InstalledPaths& installed);
 
-        InstallSummary perform(const VcpkgCmdArguments& args,
-                               ActionPlan& action_plan,
-                               const KeepGoing keep_going,
-                               const VcpkgPaths& paths,
-                               StatusParagraphs& status_db,
-                               BinaryCache& binary_cache,
-                               const IBuildLogsRecorder& build_logs_recorder,
-                               const CMakeVars::CMakeVarProvider& var_provider);
+        InstallSummary execute_plan(const VcpkgCmdArguments& args,
+                                    const ActionPlan& action_plan,
+                                    const KeepGoing keep_going,
+                                    const VcpkgPaths& paths,
+                                    StatusParagraphs& status_db,
+                                    BinaryCache& binary_cache,
+                                    const IBuildLogsRecorder& build_logs_recorder);
 
         void perform_and_exit(const VcpkgCmdArguments& args,
                               const VcpkgPaths& paths,
@@ -119,5 +118,5 @@ namespace vcpkg
                               Triplet host_triplet);
     } // namespace vcpkg::Install
 
-    void track_install_plan(ActionPlan& plan);
+    void track_install_plan(const ActionPlan& plan);
 }
