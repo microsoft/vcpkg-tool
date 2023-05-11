@@ -1783,8 +1783,7 @@ namespace vcpkg
                     return msg::format_error(msgCycleDetectedDuring, msg::spec = dep.spec)
                         .append_raw('\n')
                         .append_raw(Strings::join("\n", stack, [](const Frame& p) {
-                            return Strings::concat(
-                                p.ipa.spec, '@', p.ipa.source_control_file_and_location->to_version());
+                            return Strings::concat(p.ipa.spec, '@', p.ipa.version());
                         }));
                 }
                 return Unit{};
@@ -1811,8 +1810,7 @@ namespace vcpkg
                     {
                         auto dep = std::move(back.deps.back());
                         back.deps.pop_back();
-                        const auto origin = Strings::concat(
-                            back.ipa.spec, "@", back.ipa.source_control_file_and_location->to_version());
+                        const auto origin = Strings::concat(back.ipa.spec, "@", back.ipa.version());
                         x = push(dep, origin);
                         if (!x.has_value())
                         {

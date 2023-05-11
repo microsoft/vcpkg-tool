@@ -301,6 +301,35 @@ namespace vcpkg
         return InstallResult::SUCCESS;
     }
 
+    static ExtendedBuildResult ensure_install_plan_action_built(const VcpkgCmdArguments& args,
+                                                                const VcpkgPaths& paths,
+                                                                const InstallPlanAction& action,
+                                                                const StatusParagraphs& status_db,
+                                                                const BinaryCache& binary_cache,
+                                                                const IBuildLogsRecorder& build_logs_recorder)
+    {
+        if (binary_cache.is_restored(action))
+        {
+            auto maybe_bcf =
+                Paragraphs::try_load_cached_package(paths.get_filesystem(), action.package_dir, action.spec);
+            return {BuildResult::SUCCEEDED,
+                    std::make_unique<BinaryControlFile>(std::move(maybe_bcf).value_or_exit(VCPKG_LINE_INFO))};
+        }
+        else if (action.build_options.build_missing == BuildMissing::NO)
+        {
+            return ExtendedBuildResult{BuildResult::CACHE_MISSING};
+        }
+        else
+        {
+            if (action.build_options.use_head_version == UseHeadVersion::YES)
+                msg::println(msgBuildingFromHead, msg::spec = action.displayname());
+            else
+                msg::println(msgBuildingPackage, msg::spec = action.displayname());
+
+            return build_package(args, paths, action, build_logs_recorder, status_db);
+        }
+    }
+
     static ExtendedBuildResult perform_install_plan_action(const VcpkgCmdArguments& args,
                                                            const VcpkgPaths& paths,
                                                            const InstallPlanAction& action,
@@ -314,74 +343,51 @@ namespace vcpkg
             return ExtendedBuildResult{BuildResult::EXCLUDED};
         }
 
-        auto& fs = paths.get_filesystem();
-
-        std::unique_ptr<BinaryControlFile> bcf;
-        if (binary_cache.is_restored(action))
+        auto result =
+            ensure_install_plan_action_built(args, paths, action, status_db, binary_cache, build_logs_recorder);
+        if (result.code == BuildResult::DOWNLOADED)
         {
-            auto maybe_bcf = Paragraphs::try_load_cached_package(fs, action.package_dir, action.spec);
-            bcf = std::make_unique<BinaryControlFile>(std::move(maybe_bcf).value_or_exit(VCPKG_LINE_INFO));
+            msg::println(Color::success, msgDownloadedSources, msg::spec = action.displayname());
         }
-        else if (action.build_options.build_missing == BuildMissing::NO)
+        else if (result.code == BuildResult::CACHE_MISSING)
         {
-            return ExtendedBuildResult{BuildResult::CACHE_MISSING};
+        }
+        else if (result.code == BuildResult::SUCCEEDED)
+        {
+            Checks::check_exit(VCPKG_LINE_INFO, result.binary_control_file != nullptr);
+
+            const auto install_result = install_package(paths, *result.binary_control_file, &status_db);
+            if (install_result == InstallResult::FILE_CONFLICTS)
+            {
+                result.code = BuildResult::FILE_CONFLICTS;
+            }
+            binary_cache.push_success(action);
+
+            if (action.build_options.clean_downloads == CleanDownloads::YES)
+            {
+                auto& fs = paths.get_filesystem();
+                for (auto& p : fs.get_regular_files_non_recursive(paths.downloads, IgnoreErrors{}))
+                {
+                    fs.remove(p, VCPKG_LINE_INFO);
+                }
+            }
         }
         else
         {
-            if (action.build_options.use_head_version == UseHeadVersion::YES)
-                msg::println(msgBuildingFromHead, msg::spec = action.displayname());
-            else
-                msg::println(msgBuildingPackage, msg::spec = action.displayname());
-
-            auto result = build_package(args, paths, action, build_logs_recorder, status_db);
-
-            if (BuildResult::DOWNLOADED == result.code)
+            LocalizedString warnings;
+            for (auto&& msg : action.build_failure_messages)
             {
-                msg::println(Color::success, msgDownloadedSources, msg::spec = action.displayname());
-                return result;
+                warnings.append(msg).append_raw('\n');
             }
 
-            if (result.code != BuildResult::SUCCEEDED)
+            if (!warnings.data().empty())
             {
-                LocalizedString warnings;
-                for (auto&& msg : action.build_failure_messages)
-                {
-                    warnings.append(msg).append_raw('\n');
-                }
-
-                if (!warnings.data().empty())
-                {
-                    msg::print(Color::warning, warnings);
-                }
-
-                msg::println_error(create_error_message(result, action.spec));
-                return result;
+                msg::print(Color::warning, warnings);
             }
 
-            bcf = std::move(result.binary_control_file);
+            msg::println_error(create_error_message(result, action.spec));
         }
-        // Build or restore succeeded and `bcf` is populated with the control file.
-        Checks::check_exit(VCPKG_LINE_INFO, bcf != nullptr);
-
-        const auto install_result = install_package(paths, *bcf, &status_db);
-        BuildResult code;
-        switch (install_result)
-        {
-            case InstallResult::SUCCESS: code = BuildResult::SUCCEEDED; break;
-            case InstallResult::FILE_CONFLICTS: code = BuildResult::FILE_CONFLICTS; break;
-            default: Checks::unreachable(VCPKG_LINE_INFO);
-        }
-        binary_cache.push_success(action);
-
-        if (action.build_options.clean_downloads == CleanDownloads::YES)
-        {
-            for (auto& p : fs.get_regular_files_non_recursive(paths.downloads, IgnoreErrors{}))
-            {
-                fs.remove(p, VCPKG_LINE_INFO);
-            }
-        }
-
-        return {code, std::move(bcf)};
+        return result;
     }
 
     static LocalizedString format_result_row(const SpecSummary& result)
