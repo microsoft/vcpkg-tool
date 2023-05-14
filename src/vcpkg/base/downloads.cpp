@@ -616,7 +616,7 @@ namespace vcpkg
             }
         }
 
-        for(int64_t j = 0; j < counter; ++j)
+        for (int64_t j = 0; j < counter; ++j)
         {
             fs.remove(fmt::format("{}{}", file, j), VCPKG_LINE_INFO);
         }
