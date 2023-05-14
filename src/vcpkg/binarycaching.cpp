@@ -876,7 +876,7 @@ namespace
 
     struct GHABinaryPushProvider : IWriteBinaryProvider
     {
-        GHABinaryPushProvider(const Filesystem& fs, const std::string& url, const std::string& token)
+        GHABinaryPushProvider(Filesystem& fs, const std::string& url, const std::string& token)
             : m_fs(fs), m_url(url + "_apis/artifactcache/caches"), m_token_header("Authorization: Bearer " + token)
         {
         }
@@ -928,23 +928,13 @@ namespace
             if (auto cacheId = reserve_cache_entry(abi, cache_size))
             {
                 std::vector<std::string> headers{
-                    m_token_header,
-                    m_accept_header.to_string(),
-                    "Content-Type: application/octet-stream",
-                    "Content-Range: bytes 0-" + std::to_string(cache_size) + "/*",
-                };
+                    m_token_header, m_accept_header.to_string(), "Content-Type: application/octet-stream"};
                 auto url = m_url + "/" + std::to_string(*cacheId.get());
-                if (put_file(m_fs, url, {}, headers, zip_path, "PATCH"))
+                if (patch_file_in_pieces(m_fs, url, headers, zip_path, cache_size))
                 {
-                    std::vector<std::string> headers{
-                        m_token_header, m_accept_header.to_string(), "Content-Type: application/octet-stream"};
-                    auto url = m_write_url + "/" + std::to_string(*cacheId.get());
-                    if (patch_file_in_pieces(fs, url, headers, tmp_archive_path, cache_size))
-                    {
-                        Json::Object commit;
-                        commit.insert("size", std::to_string(cache_size));
-                        auto cmd = command().string_arg(url).string_arg("-d").string_arg(stringify(commit));
-
+                    Json::Object commit;
+                    commit.insert("size", std::to_string(cache_size));
+                    auto cmd = command().string_arg(url).string_arg("-d").string_arg(stringify(commit));
                     auto res = cmd_execute_and_capture_output(cmd);
                     if (res.has_value() && !res.get()->exit_code)
                     {
@@ -960,7 +950,7 @@ namespace
 
         static constexpr StringLiteral m_accept_header = "Accept: application/json;api-version=6.0-preview.1";
 
-        const Filesystem& m_fs;
+        Filesystem& m_fs;
         std::string m_url;
         std::string m_token_header;
     };
