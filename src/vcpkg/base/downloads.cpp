@@ -602,23 +602,24 @@ namespace vcpkg
         for (int64_t i = 0; i < file_size; i += chunk_size, ++counter)
         {
             const int64_t end = std::min(i + chunk_size, file_size) - 1;
-            const std::string range = std::to_string(i) + "-" + std::to_string(end);
+            const std::string range = fmt::format("{}-{}", i, end);
 
             auto cmd = base_cmd;
-            cmd.string_arg("-H").string_arg("Content-Range: bytes " + range + "/" + std::to_string(file_size));
-            cmd.string_arg("-T").string_arg(file + std::to_string(counter));
+            cmd.string_arg("-H").string_arg(fmt::format("Content-Range: bytes {}/{}", range, file_size));
+            cmd.string_arg("-T").string_arg(fmt::format("{}{}", file, counter));
 
             auto res = cmd_execute_and_capture_output(cmd);
-            if (auto pres = res.get())
+            if (!res.get() || res.get()->exit_code)
             {
-                if (pres->exit_code == 0) continue;
-
-                Debug::print(pres->output, '\n');
                 return msg::format_error(
-                    msgCurlFailedToPut, msg::exit_code = pres->exit_code, msg::url = url.to_string());
+                    msgCurlFailedToPut, msg::exit_code = res.get()->exit_code, msg::url = url.to_string());
             }
         }
 
+        for(int64_t j = 0; j < counter; ++j)
+        {
+            fs.remove(fmt::format("{}{}", file, j), VCPKG_LINE_INFO);
+        }
         return 0;
     }
 
