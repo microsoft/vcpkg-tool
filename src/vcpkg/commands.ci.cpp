@@ -16,6 +16,7 @@
 #include <vcpkg/commands.ci.h>
 #include <vcpkg/commands.help.h>
 #include <vcpkg/commands.install.h>
+#include <vcpkg/commands.set-installed.h>
 #include <vcpkg/dependencies.h>
 #include <vcpkg/globalstate.h>
 #include <vcpkg/input.h>
@@ -29,7 +30,7 @@
 #include <vcpkg/vcpkgpaths.h>
 #include <vcpkg/xunitwriter.h>
 
-#include <stdio.h>
+#include <random>
 
 using namespace vcpkg;
 
@@ -351,8 +352,6 @@ namespace vcpkg::Commands::CI
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
         const auto& settings = options.settings;
 
-        BinaryCache binary_cache{args, paths};
-
         ExclusionsMap exclusions_map;
         parse_exclusions(settings, OPTION_EXCLUDE, target_triplet, exclusions_map);
         parse_exclusions(settings, OPTION_HOST_EXCLUDE, host_triplet, exclusions_map);
@@ -413,7 +412,7 @@ namespace vcpkg::Commands::CI
                 InternalFeatureSet{"core", "default"});
         }
 
-        CreateInstallPlanOptions serialize_options(host_triplet, UnsupportedPortAction::Warn);
+        CreateInstallPlanOptions serialize_options(host_triplet, paths.packages(), UnsupportedPortAction::Warn);
 
         struct RandomizerInstance : GraphRandomizer
         {
@@ -433,6 +432,7 @@ namespace vcpkg::Commands::CI
         }
 
         auto action_plan = compute_full_plan(paths, provider, var_provider, all_default_full_specs, serialize_options);
+        auto binary_cache = BinaryCache::make(args, paths, stdout_sink).value_or_exit(VCPKG_LINE_INFO);
         const auto precheck_results = binary_cache.precheck(action_plan.install_actions);
         auto split_specs =
             compute_action_statuses(ExclusionPredicate{&exclusions_map}, var_provider, precheck_results, action_plan);
@@ -507,8 +507,16 @@ namespace vcpkg::Commands::CI
         else
         {
             StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
-            auto summary = Install::perform(
-                args, action_plan, KeepGoing::YES, paths, status_db, binary_cache, build_logs_recorder, var_provider);
+            auto already_installed = SetInstalled::adjust_action_plan_to_status_db(action_plan, status_db);
+            Util::erase_if(already_installed,
+                           [&](auto& spec) { return Util::Sets::contains(split_specs->known, spec); });
+            if (!already_installed.empty())
+            {
+                msg::println_warning(msgCISkipInstallation, msg::list = Strings::join(", ", already_installed));
+            }
+            binary_cache.fetch(action_plan.install_actions);
+            auto summary = Install::execute_plan(
+                args, action_plan, KeepGoing::YES, paths, status_db, binary_cache, build_logs_recorder);
 
             for (auto&& result : summary.results)
             {

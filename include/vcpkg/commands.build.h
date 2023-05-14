@@ -43,14 +43,12 @@ namespace vcpkg
                        const FullPackageSpec& full_spec,
                        Triplet host_triplet,
                        const PathsPortFileProvider& provider,
-                       BinaryCache& binary_cache,
                        const IBuildLogsRecorder& build_logs_recorder,
                        const VcpkgPaths& paths);
         void perform_and_exit_ex(const VcpkgCmdArguments& args,
                                  const FullPackageSpec& full_spec,
                                  Triplet host_triplet,
                                  const PathsPortFileProvider& provider,
-                                 BinaryCache& binary_cache,
                                  const IBuildLogsRecorder& build_logs_recorder,
                                  const VcpkgPaths& paths);
 

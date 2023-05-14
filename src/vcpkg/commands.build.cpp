@@ -60,13 +60,11 @@ namespace vcpkg::Build
                              const FullPackageSpec& full_spec,
                              Triplet host_triplet,
                              const PathsPortFileProvider& provider,
-                             BinaryCache& binary_cache,
                              const IBuildLogsRecorder& build_logs_recorder,
                              const VcpkgPaths& paths)
     {
-        Checks::exit_with_code(
-            VCPKG_LINE_INFO,
-            perform_ex(args, full_spec, host_triplet, provider, binary_cache, build_logs_recorder, paths));
+        Checks::exit_with_code(VCPKG_LINE_INFO,
+                               perform_ex(args, full_spec, host_triplet, provider, build_logs_recorder, paths));
     }
 
     const CommandStructure COMMAND_STRUCTURE = {
@@ -89,7 +87,6 @@ namespace vcpkg::Build
                    const FullPackageSpec& full_spec,
                    Triplet host_triplet,
                    const PathsPortFileProvider& provider,
-                   BinaryCache& binary_cache,
                    const IBuildLogsRecorder& build_logs_recorder,
                    const VcpkgPaths& paths)
     {
@@ -99,8 +96,8 @@ namespace vcpkg::Build
         var_provider.load_dep_info_vars({{spec}}, host_triplet);
 
         StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
-        auto action_plan =
-            create_feature_install_plan(provider, var_provider, {&full_spec, 1}, status_db, {host_triplet});
+        auto action_plan = create_feature_install_plan(
+            provider, var_provider, {&full_spec, 1}, status_db, {host_triplet, paths.packages()});
 
         var_provider.load_tag_vars(action_plan, provider, host_triplet);
 
@@ -141,6 +138,7 @@ namespace vcpkg::Build
         action->build_options.clean_buildtrees = CleanBuildtrees::NO;
         action->build_options.clean_packages = CleanPackages::NO;
 
+        auto binary_cache = BinaryCache::make(args, paths, stdout_sink).value_or_exit(VCPKG_LINE_INFO);
         const ElapsedTimer build_timer;
         const auto result = build_package(args, paths, *action, build_logs_recorder, status_db);
         msg::print(msgElapsedForPackage, msg::spec = spec, msg::elapsed = build_timer);
@@ -172,7 +170,7 @@ namespace vcpkg::Build
             msg::print(create_user_troubleshooting_message(*action, paths, nullopt));
             return 1;
         }
-        binary_cache.push_success(*action, paths.package_dir(action->spec));
+        binary_cache.push_success(*action);
 
         return 0;
     }
@@ -181,7 +179,6 @@ namespace vcpkg::Build
     {
         // Build only takes a single package and all dependencies must already be installed
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
-        BinaryCache binary_cache{args, paths};
         bool default_triplet_used = false;
         const FullPackageSpec spec = check_and_get_full_package_spec(options.command_arguments[0],
                                                                      default_triplet,
@@ -197,7 +194,7 @@ namespace vcpkg::Build
         auto registry_set = paths.make_registry_set();
         PathsPortFileProvider provider(
             fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
-        return perform_ex(args, spec, host_triplet, provider, binary_cache, null_build_logs_recorder(), paths);
+        return perform_ex(args, spec, host_triplet, provider, null_build_logs_recorder(), paths);
     }
 } // namespace vcpkg::Build
 
@@ -627,7 +624,7 @@ namespace vcpkg
         return bcf;
     }
 
-    static void write_binary_control_file(const VcpkgPaths& paths, const BinaryControlFile& bcf)
+    static void write_binary_control_file(Filesystem& fs, const Path& package_dir, const BinaryControlFile& bcf)
     {
         std::string start = Strings::serialize(bcf.core_paragraph);
         for (auto&& feature : bcf.features)
@@ -635,8 +632,8 @@ namespace vcpkg
             start.push_back('\n');
             start += Strings::serialize(feature);
         }
-        const auto binary_control_file = paths.package_dir(bcf.core_paragraph.spec) / "CONTROL";
-        paths.get_filesystem().write_contents(binary_control_file, start, VCPKG_LINE_INFO);
+        const auto binary_control_file = package_dir / "CONTROL";
+        fs.write_contents(binary_control_file, start, VCPKG_LINE_INFO);
     }
 
     static void get_generic_cmake_build_args(const VcpkgPaths& paths,
@@ -894,7 +891,8 @@ namespace vcpkg
         const auto now = CTime::now_string();
         const auto& abi = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
 
-        const auto json_path = paths.package_dir(action.spec) / "share" / action.spec.name() / "vcpkg.spdx.json";
+        const auto json_path =
+            action.package_dir.value_or_exit(VCPKG_LINE_INFO) / "share" / action.spec.name() / "vcpkg.spdx.json";
         fs.write_contents_and_dirs(
             json_path,
             create_spdx_sbom(
@@ -1014,7 +1012,7 @@ namespace vcpkg
         std::unique_ptr<BinaryControlFile> bcf = create_binary_control_file(action, build_info);
 
         write_sbom(paths, action, abi_info.heuristic_resources);
-        write_binary_control_file(paths, *bcf);
+        write_binary_control_file(paths.get_filesystem(), action.package_dir.value_or_exit(VCPKG_LINE_INFO), *bcf);
         return {BuildResult::SUCCEEDED, std::move(bcf)};
     }
 
@@ -1332,7 +1330,7 @@ namespace vcpkg
         if (abi_info.abi_tag_file)
         {
             auto& abi_file = *abi_info.abi_tag_file.get();
-            const auto abi_package_dir = paths.package_dir(spec) / "share" / spec.name();
+            const auto abi_package_dir = action.package_dir.value_or_exit(VCPKG_LINE_INFO) / "share" / spec.name();
             const auto abi_file_in_package = abi_package_dir / "vcpkg_abi_info.txt";
             build_logs_recorder.record_build_result(paths, spec, result.code);
             filesystem.create_directories(abi_package_dir, VCPKG_LINE_INFO);

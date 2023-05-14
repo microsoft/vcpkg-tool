@@ -42,39 +42,14 @@ namespace vcpkg::Commands::SetInstalled
         nullptr,
     };
 
-    void perform_and_exit_ex(const VcpkgCmdArguments& args,
-                             const VcpkgPaths& paths,
-                             const PathsPortFileProvider& provider,
-                             BinaryCache& binary_cache,
-                             const CMakeVars::CMakeVarProvider& cmake_vars,
-                             ActionPlan action_plan,
-                             DryRun dry_run,
-                             const Optional<Path>& maybe_pkgsconfig,
-                             Triplet host_triplet,
-                             const KeepGoing keep_going,
-                             const bool only_downloads,
-                             const PrintUsage print_cmake_usage)
+    std::set<PackageSpec> adjust_action_plan_to_status_db(ActionPlan& action_plan, const StatusParagraphs& status_db)
     {
-        auto& fs = paths.get_filesystem();
-
-        cmake_vars.load_tag_vars(action_plan, provider, host_triplet);
-        compute_all_abis(paths, action_plan, cmake_vars, {});
-
         std::set<std::string> all_abis;
-
-        std::vector<PackageSpec> user_requested_specs;
         for (const auto& action : action_plan.install_actions)
         {
             all_abis.insert(action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi);
-            if (action.request_type == RequestType::USER_REQUESTED)
-            {
-                // save for reporting usage later
-                user_requested_specs.push_back(action.spec);
-            }
         }
 
-        // currently (or once) installed specifications
-        auto status_db = database_load_check(fs, paths.installed());
         std::vector<PackageSpec> specs_to_remove;
         std::set<PackageSpec> specs_installed;
         for (auto&& status_pgh : status_db)
@@ -104,14 +79,46 @@ namespace vcpkg::Commands::SetInstalled
         Util::erase_remove_if(action_plan.install_actions, [&](const InstallPlanAction& ipa) {
             return Util::Sets::contains(specs_installed, ipa.spec);
         });
+        return specs_installed;
+    }
+
+    void perform_and_exit_ex(const VcpkgCmdArguments& args,
+                             const VcpkgPaths& paths,
+                             const PathsPortFileProvider& provider,
+                             const CMakeVars::CMakeVarProvider& cmake_vars,
+                             ActionPlan action_plan,
+                             DryRun dry_run,
+                             const Optional<Path>& maybe_pkgsconfig,
+                             Triplet host_triplet,
+                             const KeepGoing keep_going,
+                             const bool only_downloads,
+                             const PrintUsage print_cmake_usage)
+    {
+        auto& fs = paths.get_filesystem();
+
+        cmake_vars.load_tag_vars(action_plan, provider, host_triplet);
+        compute_all_abis(paths, action_plan, cmake_vars, {});
+
+        std::vector<PackageSpec> user_requested_specs;
+        for (const auto& action : action_plan.install_actions)
+        {
+            if (action.request_type == RequestType::USER_REQUESTED)
+            {
+                // save for reporting usage later
+                user_requested_specs.push_back(action.spec);
+            }
+        }
+
+        // currently (or once) installed specifications
+        auto status_db = database_load_check(fs, paths.installed());
+        adjust_action_plan_to_status_db(action_plan, status_db);
 
         print_plan(action_plan, true, paths.builtin_ports_directory());
 
         if (auto p_pkgsconfig = maybe_pkgsconfig.get())
         {
-            compute_all_abis(paths, action_plan, cmake_vars, status_db);
             auto pkgsconfig_path = paths.original_cwd / *p_pkgsconfig;
-            auto pkgsconfig_contents = generate_nuget_packages_config(action_plan);
+            auto pkgsconfig_contents = generate_nuget_packages_config(action_plan, args.nuget_id_prefix.value_or(""));
             fs.write_contents(pkgsconfig_path, pkgsconfig_contents, VCPKG_LINE_INFO);
             msg::println(msgWroteNuGetPkgConfInfo, msg::path = pkgsconfig_path);
         }
@@ -125,8 +132,11 @@ namespace vcpkg::Commands::SetInstalled
 
         track_install_plan(action_plan);
 
-        const auto summary = Install::perform(
-            args, action_plan, keep_going, paths, status_db, binary_cache, null_build_logs_recorder(), cmake_vars);
+        auto binary_cache = only_downloads ? BinaryCache(paths.get_filesystem())
+                                           : BinaryCache::make(args, paths, stdout_sink).value_or_exit(VCPKG_LINE_INFO);
+        binary_cache.fetch(action_plan.install_actions);
+        const auto summary = Install::execute_plan(
+            args, action_plan, keep_going, paths, status_db, binary_cache, null_build_logs_recorder());
 
         if (keep_going == KeepGoing::YES && summary.failed())
         {
@@ -171,8 +181,6 @@ namespace vcpkg::Commands::SetInstalled
             print_default_triplet_warning(args);
         }
 
-        BinaryCache binary_cache{args, paths};
-
         const bool dry_run = Util::Sets::contains(options.switches, OPTION_DRY_RUN);
         const bool only_downloads = Util::Sets::contains(options.switches, OPTION_ONLY_DOWNLOADS);
         const KeepGoing keep_going = Util::Sets::contains(options.switches, OPTION_KEEP_GOING) || only_downloads
@@ -202,8 +210,8 @@ namespace vcpkg::Commands::SetInstalled
         // We have a set of user-requested specs.
         // We need to know all the specs which are required to fulfill dependencies for those specs.
         // Therefore, we see what we would install into an empty installed tree, so we can use the existing code.
-        auto action_plan =
-            create_feature_install_plan(provider, *cmake_vars, specs, {}, {host_triplet, unsupported_port_action});
+        auto action_plan = create_feature_install_plan(
+            provider, *cmake_vars, specs, {}, {host_triplet, paths.packages(), unsupported_port_action});
 
         for (auto&& action : action_plan.install_actions)
         {
@@ -215,7 +223,6 @@ namespace vcpkg::Commands::SetInstalled
         perform_and_exit_ex(args,
                             paths,
                             provider,
-                            binary_cache,
                             *cmake_vars,
                             std::move(action_plan),
                             dry_run ? DryRun::Yes : DryRun::No,
