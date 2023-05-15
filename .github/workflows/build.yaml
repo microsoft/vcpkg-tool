@@ -1,0 +1,85 @@
+name: Build
+
+on:
+  workflow_call:
+    inputs:
+      codeql:
+        type: boolean
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-2022
+            preset: windows-ci
+          - os: ubuntu-20.04
+            preset: linux-ci
+          - os: macos-12
+            preset: macos-ci
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "18.x"
+          cache: 'npm'
+          cache-dependency-path: vcpkg-artifacts/package-lock.json
+      - uses: lukka/get-cmake@v3.26.3
+        with:
+          cmakeVersion: 3.22.1 # ubuntu 22.04
+          ninjaVersion: 1.11.1
+      - name: Enable Problem Matchers
+        run: echo "::add-matcher::.github/workflows/matchers.json"
+      - name: '[CI Only] Initialize CodeQL'
+        if: inputs.codeql
+        uses: github/codeql-action/init@v2
+        with:
+          languages: cpp, javascript
+      - name: Configure and Build
+        if: matrix.preset != 'windows-ci'
+        run: |
+          cmake --preset ${{ matrix.preset }}
+          cmake --build --preset ${{ matrix.preset }} -- -k0
+      - name: Configure and Build (Windows)
+        if: matrix.preset == 'windows-ci'
+        shell: cmd
+        run: |
+          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=amd64 -host_arch=amd64
+          IF %ERRORLEVEL% NEQ 0 exit /B %ERRORLEVEL%
+          cl /Bv
+          set CXX=cl
+          set CC=cl
+          cmake --preset ${{ matrix.preset }}
+          IF %ERRORLEVEL% NEQ 0 exit /B %ERRORLEVEL%
+          cmake --build --preset ${{ matrix.preset }} -- -k0
+      - name: '[CI Only] Perform CodeQL Analysis'
+        if: inputs.codeql
+        uses: github/codeql-action/analyze@v2
+      - name: Run vcpkg unit tests
+        run: ctest --preset ${{ matrix.preset }} --output-on-failure 2>&1
+      - name: Run vcpkg-artifacts unit tests
+        run: |
+          cd out/build/${{ matrix.preset }}/vcpkg-artifacts
+          node node_modules/mocha/bin/mocha --config mocha-config.yaml
+      - name: Get microsoft/vcpkg pinned sha into VCPKG_SHA
+        id: vcpkg_sha
+        shell: pwsh
+        run: |
+          "VCPKG_SHA="+(Get-Content vcpkg-init/vcpkg-scripts-sha.txt -Raw).Trim() >> $env:GITHUB_OUTPUT
+      - name: Checkout microsoft/vcpkg for end-to-end tests
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          path: ${{ github.workspace }}/vcpkg-root
+          repository: microsoft/vcpkg
+          ref: ${{ steps.vcpkg_sha.outputs.VCPKG_SHA }}
+      - name: Run vcpkg end-to-end tests
+        shell: pwsh
+        run: |
+          cd out/build/${{ matrix.preset }}
+          ${{ github.workspace }}/azure-pipelines/end-to-end-tests.ps1 -RunArtifactsTests
+        env:
+          VCPKG_ROOT: ${{ github.workspace }}/vcpkg-root

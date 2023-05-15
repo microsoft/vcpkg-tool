@@ -303,7 +303,7 @@ namespace vcpkg
 
     static ExtendedBuildResult perform_install_plan_action(const VcpkgCmdArguments& args,
                                                            const VcpkgPaths& paths,
-                                                           InstallPlanAction& action,
+                                                           const InstallPlanAction& action,
                                                            StatusParagraphs& status_db,
                                                            BinaryCache& binary_cache,
                                                            const IBuildLogsRecorder& build_logs_recorder)
@@ -326,8 +326,7 @@ namespace vcpkg
         if (plan_type == InstallPlanType::BUILD_AND_INSTALL)
         {
             std::unique_ptr<BinaryControlFile> bcf;
-            auto restore = binary_cache.try_restore(action);
-            if (restore == RestoreResult::restored)
+            if (binary_cache.is_restored(action))
             {
                 auto maybe_bcf = Paragraphs::try_load_cached_package(
                     fs, action.package_dir.value_or_exit(VCPKG_LINE_INFO), action.spec);
@@ -382,14 +381,7 @@ namespace vcpkg
                 case InstallResult::FILE_CONFLICTS: code = BuildResult::FILE_CONFLICTS; break;
                 default: Checks::unreachable(VCPKG_LINE_INFO);
             }
-            if (restore != RestoreResult::restored)
-            {
-                binary_cache.push_success(action);
-            }
-            else if (action.build_options.clean_packages == CleanPackages::YES)
-            {
-                fs.remove_all(action.package_dir.value_or_exit(VCPKG_LINE_INFO), VCPKG_LINE_INFO);
-            }
+            binary_cache.push_success(action);
 
             if (action.build_options.clean_downloads == CleanDownloads::YES)
             {
@@ -522,14 +514,13 @@ namespace vcpkg
         TrackedPackageInstallGuard& operator=(const TrackedPackageInstallGuard&) = delete;
     };
 
-    InstallSummary Install::perform(const VcpkgCmdArguments& args,
-                                    ActionPlan& action_plan,
-                                    const KeepGoing keep_going,
-                                    const VcpkgPaths& paths,
-                                    StatusParagraphs& status_db,
-                                    BinaryCache& binary_cache,
-                                    const IBuildLogsRecorder& build_logs_recorder,
-                                    const CMakeVars::CMakeVarProvider& var_provider)
+    InstallSummary Install::execute_plan(const VcpkgCmdArguments& args,
+                                         const ActionPlan& action_plan,
+                                         const KeepGoing keep_going,
+                                         const VcpkgPaths& paths,
+                                         StatusParagraphs& status_db,
+                                         BinaryCache& binary_cache,
+                                         const IBuildLogsRecorder& build_logs_recorder)
     {
         const ElapsedTimer timer;
         std::vector<SpecSummary> results;
@@ -552,8 +543,6 @@ namespace vcpkg
                 perform_install_plan_action(args, paths, action, status_db, binary_cache, build_logs_recorder));
         }
 
-        compute_all_abis(paths, action_plan, var_provider, status_db);
-        binary_cache.prefetch(action_plan.install_actions);
         for (auto&& action : action_plan.install_actions)
         {
             TrackedPackageInstallGuard this_install(action_index++, action_count, results, action);
@@ -1031,12 +1020,6 @@ namespace vcpkg
             }
         }
 
-        BinaryCache binary_cache(paths.get_filesystem());
-        if (!only_downloads)
-        {
-            binary_cache.install_providers_for(args, paths);
-        }
-
         auto& fs = paths.get_filesystem();
 
         DownloadTool download_tool = DownloadTool::BUILT_IN;
@@ -1058,6 +1041,8 @@ namespace vcpkg
 
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
+
+        const CreateInstallPlanOptions create_options{host_triplet, paths.packages(), unsupported_port_action};
 
         if (auto manifest = paths.get_manifest().get())
         {
@@ -1172,7 +1157,7 @@ namespace vcpkg
                                                               dependencies,
                                                               manifest_core.overrides,
                                                               toplevel,
-                                                              {host_triplet, paths.packages(), unsupported_port_action})
+                                                              create_options)
                                     .value_or_exit(VCPKG_LINE_INFO);
 
             install_plan.print_unsupported_warnings();
@@ -1191,7 +1176,6 @@ namespace vcpkg
             Commands::SetInstalled::perform_and_exit_ex(args,
                                                         paths,
                                                         provider,
-                                                        binary_cache,
                                                         var_provider,
                                                         std::move(install_plan),
                                                         dry_run ? Commands::SetInstalled::DryRun::Yes
@@ -1223,8 +1207,7 @@ namespace vcpkg
         StatusParagraphs status_db = database_load_check(fs, paths.installed());
 
         // Note: action_plan will hold raw pointers to SourceControlFileLocations from this map
-        auto action_plan = create_feature_install_plan(
-            provider, var_provider, specs, status_db, {host_triplet, paths.packages(), unsupported_port_action});
+        auto action_plan = create_feature_install_plan(provider, var_provider, specs, status_db, create_options);
 
         action_plan.print_unsupported_warnings();
         for (auto&& action : action_plan.install_actions)
@@ -1280,9 +1263,13 @@ namespace vcpkg
             compute_all_abis(paths, action_plan, var_provider, status_db);
 
             auto pkgsconfig_path = paths.original_cwd / it_pkgsconfig->second;
-            auto pkgsconfig_contents = generate_nuget_packages_config(action_plan);
+            auto pkgsconfig_contents = generate_nuget_packages_config(action_plan, args.nuget_id_prefix.value_or(""));
             fs.write_contents(pkgsconfig_path, pkgsconfig_contents, VCPKG_LINE_INFO);
             msg::println(msgWroteNuGetPkgConfInfo, msg::path = pkgsconfig_path);
+        }
+        else if (!dry_run)
+        {
+            compute_all_abis(paths, action_plan, var_provider, status_db);
         }
 
         if (dry_run)
@@ -1294,8 +1281,11 @@ namespace vcpkg
 
         track_install_plan(action_plan);
 
-        const InstallSummary summary = Install::perform(
-            args, action_plan, keep_going, paths, status_db, binary_cache, null_build_logs_recorder(), var_provider);
+        auto binary_cache = only_downloads ? BinaryCache(paths.get_filesystem())
+                                           : BinaryCache::make(args, paths, stdout_sink).value_or_exit(VCPKG_LINE_INFO);
+        binary_cache.fetch(action_plan.install_actions);
+        const InstallSummary summary = Install::execute_plan(
+            args, action_plan, keep_going, paths, status_db, binary_cache, null_build_logs_recorder());
 
         if (keep_going == KeepGoing::YES)
         {
@@ -1384,7 +1374,7 @@ namespace vcpkg
         return m_install_action && m_install_action->request_type == RequestType::USER_REQUESTED;
     }
 
-    void track_install_plan(ActionPlan& plan)
+    void track_install_plan(const ActionPlan& plan)
     {
         Cache<Triplet, std::string> triplet_hashes;
 

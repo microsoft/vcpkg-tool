@@ -429,10 +429,13 @@
       </Item>
       <Item ItemId=";AVersionConstraint" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[a version constriant]]></Val>
+          <Val><![CDATA[a version constraint]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[版本限制]]></Val>
+            <Val><![CDATA[版本條件約束]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[a version constriant]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -1258,6 +1261,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";AutomaticLinkingForVS2017AndLater" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Visual Studio 2017 and later can now #include any installed libraries. Linking will be handled automatically. Installing new libraries will make them instantly available.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Visual Studio 2017 和更新版本現在可以將任何已安裝的程式庫透過 #include 納入。系統會自動處理連結。安裝新的程式庫會讓它們立即可供使用。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";Available$Commands" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Available ${p0} commands:]]></Val>
@@ -1704,6 +1716,15 @@
           <Val><![CDATA[Print result for each port instead of just errors.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[列印每個連接埠的結果，而非只列印錯誤。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CISkipInstallation" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The following packages are already installed and not build again: {list}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[下列封裝已安裝，且無法再次建置: {list}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -5739,10 +5760,13 @@
       </Item>
       <Item ItemId=";HelpUpdateBaseline" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The best approach to keep your libraries up to date, the best approach is to update your baseline reference. This will ensure all packages, including transitive ones, are updated. However if you need to update a package independently, you can use a "version>=" constraint.]]></Val>
+          <Val><![CDATA[The best approach to keep your libraries up to date is to update your baseline reference. This will ensure all packages, including transitive ones, are updated. However if you need to update a package independently, you can use a "version>=" constraint.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[將程式庫保持在最新的最佳做法是更新您的基準參考。這可確保所有套件 (包括可轉移套件) 都會更新。不過，如果您需要單獨更新套件，您可以使用 "version>=" 限制式。]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The best approach to keep your libraries up to date, the best approach is to update your baseline reference. This will ensure all packages, including transitive ones, are updated. However if you need to update a package independently, you can use a "version>=" constraint.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -6178,11 +6202,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";IntegrationFailed" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";IntegrationFailedVS2015" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Integration was not applied.]]></Val>
+          <Val><![CDATA[Integration was not applied for Visual Studio 2015.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[未套用整合。]]></Val>
+            <Val><![CDATA[整合並不適用 Visual Studio 2015。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10569,36 +10593,66 @@
       </Item>
       <Item ItemId=";VersionIncomparable1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[version conflict on {spec}: {package_name} required {expected} but vcpkg could not compare it to {actual}.]A;The two versions used incomparable schemes:]]></Val>
+          <Val><![CDATA[version conflict on {spec}: {constraint_origin} required {expected}, which cannot be compared with the baseline version {actual}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[版本的 {spec} 衝突: {package_name} 需要 {expected}，但 vcpkg 無法將其與 {actual} 比較。]A;這兩個版本使用的配置不相容:]]></Val>
+            <Val><![CDATA[{spec} 的版本衝突: {constraint_origin} 需要 {expected}，無法與基準版本 {actual} 進行比較。]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[version conflict on {spec}: {package_name} required {expected} but vcpkg could not compare it to {actual}.]A;The two versions used incomparable schemes:]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";VersionIncomparable2" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA["{version}" was of scheme {new_scheme}]]></Val>
+          <Val><![CDATA[{version_spec} has scheme {new_scheme}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA["{version}" 是配置 {new_scheme}]]></Val>
+            <Val><![CDATA[{version_spec} 有配置 {new_scheme}]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA["{version}" was of scheme {new_scheme}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";VersionIncomparable3" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[This can be resolved by adding an explicit override to the preferred version, for example:]]></Val>
+          <Val><![CDATA[This can be resolved by adding an explicit override to the preferred version. For example:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[若要解決此問題，請將明確覆寫新增至慣用版本，例如:]]></Val>
+            <Val><![CDATA[若要解決此問題，請將明確覆寫新增至慣用版本。例如:]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[This can be resolved by adding an explicit override to the preferred version, for example:]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionIncomparable4" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[See `vcpkg help versioning` or {url} for more information.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[如需詳細資訊，請參閱「vcpkg 說明版本設定」或 {url}。]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[See `vcpkg help versioning` for more information.]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionIncomparableSchemeString" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Both versions have scheme string but different primary text.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[兩個版本都有配置字串，但主要文字不同。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";VersionIncomparable4" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";VersionIncomparableSchemes" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[See `vcpkg help versioning` for more information.]]></Val>
+          <Val><![CDATA[The versions have incomparable schemes:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[如需詳細資訊，請參閱「vcpkg 說明版本設定」。]]></Val>
+            <Val><![CDATA[版本的配置不相容:]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10641,10 +10695,13 @@
       </Item>
       <Item ItemId=";VersionMissingRequiredFeature" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[{spec}@{version} does not have required feature {feature}]]></Val>
+          <Val><![CDATA[{version_spec} does not have required feature {feature} needed by {constraint_origin}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{spec}@{version} 沒有所需的功能 {feature}]]></Val>
+            <Val><![CDATA[{version_spec} 沒有 {constraint_origin} 所需的必要功能 {feature}]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[{spec}@{version} does not have required feature {feature}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -10657,21 +10714,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";VersionNotFoundDuringDiscovery" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[version was not found during discovery: {spec}@{version}]A;This is an internal vcpkg error. Please open an issue on https://github.com/Microsoft/vcpkg with detailed steps to reproduce the problem.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[在探索期間找不到版: {spec}@{version}]A;這是內部 vcpkg 錯誤。請在 https://github.com/Microsoft/vcpkg 上提出問題，並提供詳細步驟以重現問題。]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";VersionNotFoundInVersionsFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Version {version} was not found in versions file.]A;Run:]A;vcpkg x-add-version {package_name}]A;to add the new port version.]]></Val>
+          <Val><![CDATA[Version {version} was not found in versions file for {package_name}.]A;Run:]A;vcpkg x-add-version {package_name}]A;to add the new port version.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[在版本檔案中找不到版本 {version}。]A;執行:]A;vcpkg x-add-version {package_name}]A;以新增新連接埠版本。]]></Val>
+            <Val><![CDATA[在 {package_name} 版本檔案中找不到版本 {version}。]A;執行:]A;vcpkg x-add-version {package_name}]A;以新增新連接埠版本。]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Version {version} was not found in versions file.]A;Run:]A;vcpkg x-add-version {package_name}]A;to add the new port version.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -10761,10 +10812,13 @@
       </Item>
       <Item ItemId=";VersionVerifiedOK" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[OK: {package_name}@{version} -> {commit_sha}]]></Val>
+          <Val><![CDATA[OK: {version_spec} -> {commit_sha}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[OK: {package_name}@{version} -> {commit_sha}]]></Val>
+            <Val><![CDATA[確定: {version_spec} -> {commit_sha}]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[OK: {package_name}@{version} -> {commit_sha}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>

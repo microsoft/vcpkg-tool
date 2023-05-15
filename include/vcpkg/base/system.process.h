@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vcpkg/base/fwd/optional.h>
 #include <vcpkg/base/fwd/system.process.h>
 
 #include <vcpkg/base/expected.h>
@@ -159,6 +160,15 @@ namespace vcpkg
     void enter_interactive_subprocess();
     void exit_interactive_subprocess();
 #endif
+
+    struct ProcessStat
+    {
+        int ppid;
+        std::string executable_name;
+    };
+
+    Optional<ProcessStat> try_parse_process_stat_file(StringView text, StringView origin);
+    void get_parent_process_list(std::vector<std::string>& ret);
 
     bool succeeded(const ExpectedL<int>& maybe_exit) noexcept;
 
