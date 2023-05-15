@@ -46,8 +46,7 @@ namespace vcpkg::Commands::Upgrade
     {
         if (paths.manifest_mode_enabled())
         {
-            msg::println_error(msgUpgradeInManifest);
-            Checks::unreachable(VCPKG_LINE_INFO);
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgUpgradeInManifest);
         }
 
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
