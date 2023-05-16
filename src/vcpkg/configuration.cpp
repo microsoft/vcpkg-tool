@@ -532,8 +532,6 @@ namespace
         {
             StringView location;
             StringView registry;
-
-            LocationAndRegistry() = default;
         };
 
         // handle warnings from package pattern declarations
