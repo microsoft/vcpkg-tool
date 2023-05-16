@@ -37,6 +37,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";$CouldNotBeUpdatedItCouldBeMalformed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[${p0} could not be updated; it could be malformed.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[${p0} não pôde ser atualizado; ele pode estar malformado.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";$MatchedMoreThanOneResult$" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA['${p0}' matched more than one result (${p1}).]]></Val>
@@ -72,6 +81,18 @@
           </Tgt>
         </Str>
         <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";@TheXupdateregistryCommandDownloadsNewRegistryInformationAndThusCannotBeUsedWithLocalRegistriesDidYouMeanXregenera" ItemType="0" PsrId="306" Leaf="false">
+        <Disp Icon="Dir" LocTbl="false" />
+        <Item ItemId=";(...) te$" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+          <Str Cat="Text">
+            <Val><![CDATA[The x-update-registry command downloads new registry information and thus cannot be used with local registries. Did you mean x-regenerate ${p0}?]]></Val>
+            <Tgt Cat="Text" Stat="Loc" Orig="New">
+              <Val><![CDATA[O comando x-update-registry baixa novas informações do registro e, portanto, não pode ser usado com registros locais. Você quis dizer x-regenerate ${p0}?]]></Val>
+            </Tgt>
+          </Str>
+          <Disp Icon="Str" />
+        </Item>
       </Item>
       <Item ItemId=";@ThisAllowsTheConsumerToActivateTheToolsRequiredForAProjectIfTheToolsAreNotAlreadyInstalledThisWillForceThemToBeDo" ItemType="0" PsrId="306" Leaf="false">
         <Disp Icon="Dir" LocTbl="false" />
@@ -1135,15 +1156,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";ArtifactRegistryDataIsNotLoaded" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Artifact registry data is not loaded]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Os dados do registro de artefato não foram carregados]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";ArtifactsBootstrapFailed" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[vcpkg-artifacts is not installed and could not be bootstrapped.]]></Val>
@@ -1221,15 +1233,6 @@
           <Val><![CDATA[attempting to set builtin-baseline in vcpkg.json while overriding the default-registry in vcpkg-configuration.json.]A;the default-registry from vcpkg-configuration.json will be used.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[tentativa de definir a linha de base interna em vcpkg.json ao substituir o registro padrão em vcpkg-configuration.json.]A;o registro padrão de vcpkg-configuration.json será usado.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";AttemptingToUpdateArtifactRegistry" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Attempting to update artifact registry]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Tentando atualizar o registro de artefato]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1365,6 +1368,15 @@
           <Val><![CDATA[The baseline.json from commit `"{commit_sha}"` in the repo {url} was invalid (did not contain a "default" field).]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[O baseline.json do commit `"{commit_sha}"` no repositório {url} era inválido (não continha um campo "default").]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";BinaryCacheVendorHTTP" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[HTTP servers]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Servidores HTTP]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2614,6 +2626,33 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CmdUpdateRegistryAll" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Update all known artifact registries]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Atualizar todos os registros de artefato conhecidos]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdUpdateRegistryAllExcludesTargets" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Update registry --all cannot be used with a list of artifact registries]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Atualizar registro --all não pode ser usado com uma lista de registros de artefato]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdUpdateRegistryAllOrTargets" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Update registry requires either a list of artifact registry names or URiIs to update, or --all.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[O registro de atualização requer uma lista de nomes de registro de artefato ou URiIs para atualizar ou --all.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CmdUpgradeOptAllowUnsupported" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Instead of erroring on an unsupported port, continue with a warning.]]></Val>
@@ -3318,15 +3357,6 @@
           <Val><![CDATA[A suitable version of {tool_name} was not found (required v{version}) Downloading portable {tool_name} {version}...]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Uma versão adequada de {tool_name} não foi encontrada (v{version} exigida) Baixando {tool_name} {version} portátil...]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";DownloadingRegistryData" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Downloading registry data]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Baixando dados do registro]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -8710,27 +8740,66 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";RestoredPackage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";RestoredPackagesFromAWS" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Restored package from "{path}"]]></Val>
+          <Val><![CDATA[Restored {count} package(s) from AWS in {elapsed}. Use --debug to see more details.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Pacote restaurado de "{path}"]]></Val>
+            <Val><![CDATA[{count} pacote(s) restaurado(s) da AWS em {elapsed}. Use --debug para ver mais detalhes.]]></Val>
           </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Restored package from '{path}']]></Val>
-          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";RestoredPackagesFromVendor" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";RestoredPackagesFromCOS" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Restored {count} package(s) from {value} in {elapsed}. Use --debug to see more details.]]></Val>
+          <Val><![CDATA[Restored {count} package(s) from COS in {elapsed}. Use --debug to see more details.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{count} pacote(s) restaurado(s) de {value} em {elapsed}. Utilize --debug para ver mais detalhes.]]></Val>
+            <Val><![CDATA[{count} pacote(s) restaurado(s) do COS em {elapsed}. Use --debug para ver mais detalhes.]]></Val>
           </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Restored {count} package(s) from {vendor} in {elapsed}]]></Val>
-          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";RestoredPackagesFromFiles" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Restored {count} package(s) from {path} in {elapsed}. Use --debug to see more details.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{count} pacote(s) restaurado(s) de {path} em {elapsed}. Use --debug para ver mais detalhes.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";RestoredPackagesFromGCS" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Restored {count} package(s) from GCS in {elapsed}. Use --debug to see more details.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{count} pacote(s) restaurado(s) do GCS em {elapsed}. Use --debug para ver mais detalhes.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";RestoredPackagesFromGHA" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Restored {count} package(s) from GitHub Actions Cache in {elapsed}. Use --debug to see more details.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{count} pacote(s) restaurado(s) do GitHub Actions Cache em {elapsed}. Use --debug para ver mais detalhes.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";RestoredPackagesFromHTTP" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Restored {count} package(s) from HTTP servers in {elapsed}. Use --debug to see more details.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{count} pacote(s) restaurado(s) de servidores HTTP em {elapsed}. Use --debug para ver mais detalhes.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";RestoredPackagesFromNuGet" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Restored {count} package(s) from NuGet in {elapsed}. Use --debug to see more details.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{count} pacote(s) restaurado(s) do NuGet em {elapsed}. Use --debug para ver mais detalhes.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -8946,10 +9015,13 @@
       </Item>
       <Item ItemId=";StoredBinariesToDestinations" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Stored binaries in {count} destinations.]]></Val>
+          <Val><![CDATA[Stored binaries in {count} destinations in {elapsed}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Binários armazenados em {count} destinos.]]></Val>
+            <Val><![CDATA[Binários armazenados em {count} destinos em {elapsed}.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Stored binaries in {count} destinations.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -9343,11 +9415,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";UnableToDownloadRegistrySnapshot" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";UnableToDownload$" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Unable to download registry snapshot]]></Val>
+          <Val><![CDATA[Unable to download ${p0}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Não é possível baixar o instantâneo do registro]]></Val>
+            <Val><![CDATA[Não é possível baixar ${p0}.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -9381,19 +9453,13 @@
       </Item>
       <Item ItemId=";UnableToFindRegistry$" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Unable to find registry ${p0}]]></Val>
+          <Val><![CDATA[Unable to find registry ${p0}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Não é possível localizar o registro ${p0}]]></Val>
+            <Val><![CDATA[Não é possível localizar o registro ${p0}.]]></Val>
           </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";UnableToLoadRegistryIndex" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Unable to load registry index]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Não é possível carregar o índice do registro]]></Val>
-          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Unable to find registry ${p0}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -10057,6 +10123,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";UpdateAllKnownArtifactRegistries" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Update all known artifact registries]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Atualizar todos os registros de artefato conhecidos]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";UpdateBaselineAddBaselineNoManifest" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[the --{option} switch was passed, but there is no manifest file to add a `builtin-baseline` field to.]]></Val>
@@ -10123,11 +10198,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";Updated$RegistryContains$MetadataFiles" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";Updated$ItContains$MetadataFiles" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Updated ${p0}. registry contains ${p1} metadata files]]></Val>
+          <Val><![CDATA[Updated ${p0}. It contains ${p1} metadata files.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Atualizado ${p0}. o registro contém ${p1} arquivos de metadados]]></Val>
+            <Val><![CDATA[Atualizado ${p0}. Contém ${p1} arquivos de metadados.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
