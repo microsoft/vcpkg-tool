@@ -11,6 +11,7 @@
 
 #include <iostream>
 #include <memory>
+#include <numeric>
 #include <set>
 #include <vector>
 
