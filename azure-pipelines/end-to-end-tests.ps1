@@ -72,8 +72,9 @@ if ([string]::IsNullOrEmpty($VcpkgExe))
     }
 }
 
-$VcpkgExe = (Get-Item $VcpkgExe).FullName
-$VcpkgPs1 = Join-Path ((Get-Item $VcpkgExe).Directory) "vcpkg.ps1"
+$VcpkgItem = Get-Item $VcpkgExe
+$VcpkgExe = $VcpkgItem.FullName
+$VcpkgPs1 = Join-Path $VcpkgItem.Directory "vcpkg.ps1"
 
 [Array]$AllTests = Get-ChildItem $PSScriptRoot/end-to-end-tests-dir/*.ps1
 if ($Filter -ne $Null) {

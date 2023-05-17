@@ -1,3 +1,4 @@
+#include <vcpkg/base/hash.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
@@ -294,14 +295,14 @@ namespace vcpkg
             OVERLAY_PORTS_ARG,
             StabilityTag::Standard,
             args.cli_overlay_ports,
-            msg::format(msgSpecifyDirectoriesWhenSearching, msg::env_var = "VCPKG_OVERLAY_PORTS"));
+            msg::format(msgSpecifyDirectoriesWhenSearching, msg::env_var = OVERLAY_PORTS_ENV));
         args.parser.parse_multi_option(
             OVERLAY_TRIPLETS_ARG,
             StabilityTag::Standard,
             args.cli_overlay_triplets,
-            msg::format(msgSpecifyDirectoriesContaining, msg::env_var = "VCPKG_OVERLAY_TRIPLETS"));
+            msg::format(msgSpecifyDirectoriesContaining, msg::env_var = OVERLAY_TRIPLETS_ENV));
         args.parser.parse_multi_option(
-            BINARY_SOURCES_ARG, StabilityTag::Standard, args.binary_sources, msg::format(msgBinarySourcesArg));
+            BINARY_SOURCES_ARG, StabilityTag::Standard, args.cli_binary_sources, msg::format(msgBinarySourcesArg));
         args.parser.parse_multi_option(CMAKE_SCRIPT_ARG, StabilityTag::Standard, args.cmake_args);
 
         std::vector<std::string> feature_flags;
@@ -476,11 +477,23 @@ namespace vcpkg
 
         from_env(get_env, TRIPLET_ENV, triplet);
         from_env(get_env, HOST_TRIPLET_ENV, host_triplet);
-        vcpkg_root_dir_env = get_environment_variable(VCPKG_ROOT_DIR_ENV);
+        vcpkg_root_dir_env = get_env(VCPKG_ROOT_DIR_ENV);
         from_env(get_env, DOWNLOADS_ROOT_DIR_ENV, downloads_root_dir);
-        from_env(get_env, DEFAULT_VISUAL_STUDIO_PATH_ENV, default_visual_studio_path);
         from_env(get_env, ASSET_SOURCES_ENV, asset_sources_template_env);
         from_env(get_env, REGISTRIES_CACHE_DIR_ENV, registries_cache_dir);
+        from_env(get_env, DEFAULT_VISUAL_STUDIO_PATH_ENV, default_visual_studio_path);
+        from_env(get_env, BINARY_SOURCES_ENV, env_binary_sources);
+        from_env(get_env, ACTIONS_CACHE_URL_ENV, actions_cache_url);
+        from_env(get_env, ACTIONS_RUNTIME_TOKEN_ENV, actions_runtime_token);
+        from_env(get_env, NUGET_ID_PREFIX_ENV, nuget_id_prefix);
+        use_nuget_cache = get_env(VCPKG_USE_NUGET_CACHE_ENV).map([](const std::string& s) {
+            return Strings::case_insensitive_ascii_equals(s, "true") || s == "1";
+        });
+        from_env(get_env, VCPKG_NUGET_REPOSITORY_ENV, vcpkg_nuget_repository);
+        from_env(get_env, GITHUB_REPOSITORY_ENV, github_repository);
+        from_env(get_env, GITHUB_SERVER_URL_ENV, github_server_url);
+        from_env(get_env, GITHUB_REF_ENV, github_ref);
+        from_env(get_env, GITHUB_SHA_ENV, github_sha);
 
         // detect whether we are running in a CI environment
         for (auto&& ci_env_var : KNOWN_CI_VARIABLES)
@@ -619,7 +632,7 @@ namespace vcpkg
             StringView option;
             bool is_inconsistent;
         } possible_inconsistencies[] = {
-            {BINARY_CACHING_FEATURE, BINARY_SOURCES_ARG, !binary_sources.empty() && !binary_caching.value_or(true)},
+            {BINARY_CACHING_FEATURE, BINARY_SOURCES_ARG, !cli_binary_sources.empty() && !binary_caching.value_or(true)},
         };
         for (const auto& el : possible_inconsistencies)
         {
@@ -672,11 +685,20 @@ namespace vcpkg
 
     void VcpkgCmdArguments::track_environment_metrics() const
     {
+        MetricsSubmission submission;
         if (auto ci_env = m_detected_ci_environment.get())
         {
             Debug::println("Detected CI environment: ", *ci_env);
-            get_global_metrics_collector().track_string(StringMetric::DetectedCiEnvironment, *ci_env);
+            submission.track_string(StringMetric::DetectedCiEnvironment, *ci_env);
         }
+
+        if (auto gh_repo = github_repository.get())
+        {
+            auto gh_repo_hash = Hash::get_string_hash(*gh_repo, Hash::Algorithm::Sha256);
+            Debug::println("Github repo: ", gh_repo_hash);
+            submission.track_string(StringMetric::GithubRepo, gh_repo_hash);
+        }
+        get_global_metrics_collector().track_submission(std::move(submission));
     }
 
     Optional<std::string> VcpkgCmdArguments::asset_sources_template() const
@@ -726,6 +748,11 @@ namespace vcpkg
     constexpr StringLiteral VcpkgCmdArguments::OVERLAY_TRIPLETS_ARG;
 
     constexpr StringLiteral VcpkgCmdArguments::BINARY_SOURCES_ARG;
+    constexpr StringLiteral VcpkgCmdArguments::BINARY_SOURCES_ENV;
+    constexpr StringLiteral VcpkgCmdArguments::ACTIONS_CACHE_URL_ENV;
+    constexpr StringLiteral VcpkgCmdArguments::ACTIONS_RUNTIME_TOKEN_ENV;
+    constexpr StringLiteral VcpkgCmdArguments::NUGET_ID_PREFIX_ENV;
+    constexpr StringLiteral VcpkgCmdArguments::VCPKG_USE_NUGET_CACHE_ENV;
 
     constexpr StringLiteral VcpkgCmdArguments::DEBUG_SWITCH;
     constexpr StringLiteral VcpkgCmdArguments::DEBUG_ENV_SWITCH;

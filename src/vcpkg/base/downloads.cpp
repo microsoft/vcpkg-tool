@@ -435,6 +435,7 @@ namespace vcpkg
             url_heads_inner({urls.begin() + i, urls.end()}, headers, &ret, secrets);
         }
 
+        Checks::check_exit(VCPKG_LINE_INFO, ret.size() == urls.size());
         return ret;
     }
 

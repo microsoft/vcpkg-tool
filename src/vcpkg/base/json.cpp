@@ -1178,7 +1178,7 @@ namespace vcpkg::Json
             JsonStyle style;
             std::string& buffer;
 
-            void append_indent(int indent) const
+            void append_indent(size_t indent) const
             {
                 if (style.use_tabs())
                 {
@@ -1262,7 +1262,7 @@ namespace vcpkg::Json
                 buffer.push_back('"');
             }
 
-            void stringify_object(const Object& obj, int current_indent)
+            void stringify_object(const Object& obj, size_t current_indent)
             {
                 buffer.push_back('{');
                 if (obj.size() != 0)
@@ -1290,7 +1290,7 @@ namespace vcpkg::Json
                 buffer.push_back('}');
             }
 
-            void stringify_array(const Array& arr, int current_indent)
+            void stringify_array(const Array& arr, size_t current_indent)
             {
                 buffer.push_back('[');
                 if (arr.size() == 0)
@@ -1320,7 +1320,7 @@ namespace vcpkg::Json
                 }
             }
 
-            void stringify(const Value& value, int current_indent)
+            void stringify(const Value& value, size_t current_indent)
             {
                 switch (value.kind())
                 {

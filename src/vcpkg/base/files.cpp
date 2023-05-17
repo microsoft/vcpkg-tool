@@ -2,6 +2,7 @@
 
 #include <vcpkg/base/chrono.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/message_sinks.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/span.h>
 #include <vcpkg/base/system.debug.h>
@@ -3885,7 +3886,7 @@ namespace vcpkg
                std::string::npos;
     }
 
-    void print_paths(const std::vector<Path>& paths)
+    void print_paths(MessageSink& msg_sink, const std::vector<Path>& paths)
     {
         LocalizedString ls;
         ls.append_raw('\n');
@@ -3897,7 +3898,7 @@ namespace vcpkg
         }
 
         ls.append_raw('\n');
-        msg::print(ls);
+        msg_sink.print(ls);
     }
 
     IExclusiveFileLock::~IExclusiveFileLock() = default;
