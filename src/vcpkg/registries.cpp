@@ -1264,9 +1264,10 @@ namespace vcpkg
         return load_versions_file(
                    paths.get_filesystem(), VersionDbType::Git, paths.builtin_registry_versions, port_name)
             .map([&](std::vector<VersionDbEntry>&& versions) {
-                return Util::fmap(versions, [](const VersionDbEntry& entry) -> auto {
-                    return std::make_pair(SchemedVersion{entry.scheme, entry.version}, entry.git_tree);
-                });
+                return Util::fmap(
+                    versions, [](const VersionDbEntry& entry) -> auto{
+                        return std::make_pair(SchemedVersion{entry.scheme, entry.version}, entry.git_tree);
+                    });
             });
     }
 

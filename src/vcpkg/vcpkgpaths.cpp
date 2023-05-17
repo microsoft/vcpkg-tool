@@ -758,19 +758,20 @@ namespace vcpkg
 
     const Path VcpkgPaths::get_triplet_file_path(Triplet triplet) const
     {
-        return m_pimpl->m_triplets_cache.get_lazy(triplet, [&]() -> auto {
-            for (const auto& triplet_dir : m_pimpl->triplets_dirs)
-            {
-                auto path = triplet_dir / (triplet.canonical_name() + ".cmake");
-                if (this->get_filesystem().exists(path, IgnoreErrors{}))
+        return m_pimpl->m_triplets_cache.get_lazy(
+            triplet, [&]() -> auto{
+                for (const auto& triplet_dir : m_pimpl->triplets_dirs)
                 {
-                    return path;
+                    auto path = triplet_dir / (triplet.canonical_name() + ".cmake");
+                    if (this->get_filesystem().exists(path, IgnoreErrors{}))
+                    {
+                        return path;
+                    }
                 }
-            }
 
-            Checks::msg_exit_with_message(
-                VCPKG_LINE_INFO, msgTripletFileNotFound, msg::triplet = triplet.canonical_name());
-        });
+                Checks::msg_exit_with_message(
+                    VCPKG_LINE_INFO, msgTripletFileNotFound, msg::triplet = triplet.canonical_name());
+            });
     }
 
     LockFile& VcpkgPaths::get_installed_lockfile() const

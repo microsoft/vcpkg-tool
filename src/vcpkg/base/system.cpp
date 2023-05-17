@@ -183,7 +183,7 @@ namespace vcpkg
         if (hKernel32)
         {
             BOOL(__stdcall* const isWow64Process2)
-            (HANDLE /* hProcess */, USHORT* /* pProcessMachine */, USHORT* /*pNativeMachine*/) =
+            (HANDLE /* hProcess */, USHORT* /* pProcessMachine */, USHORT * /*pNativeMachine*/) =
                 reinterpret_cast<decltype(isWow64Process2)>(::GetProcAddress(hKernel32, "IsWow64Process2"));
             if (isWow64Process2)
             {
@@ -269,7 +269,7 @@ namespace vcpkg
         return CPUArchitecture::RISCV32;
 #elif defined(__riscv) && defined(__riscv_xlen) && (__riscv_xlen == 64)
         return CPUArchitecture::RISCV64;
-#else  // choose architecture
+#else // choose architecture
 #error "Unknown host architecture"
 #endif // choose architecture
 #endif // defined(_WIN32)

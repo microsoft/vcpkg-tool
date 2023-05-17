@@ -523,9 +523,9 @@ namespace vcpkg::Paragraphs
             const auto baseline_version = impl->get_baseline_version(port_name);
             if (!baseline_version) continue; // port is attributed to this registry, but it is not in the baseline
             const auto port_entry = impl->get_port_entry(port_name);
-            if (!port_entry) continue;       // port is attributed to this registry, but there is no version db
+            if (!port_entry) continue; // port is attributed to this registry, but there is no version db
             auto port_location = port_entry->get_version(*baseline_version.get());
-            if (!port_location) continue;    // baseline version was not in version db (registry consistency issue)
+            if (!port_location) continue; // baseline version was not in version db (registry consistency issue)
             auto maybe_spgh = try_load_port(fs, port_location.get()->path);
             if (const auto spgh = maybe_spgh.get())
             {
