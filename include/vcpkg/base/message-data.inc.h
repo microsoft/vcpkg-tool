@@ -260,6 +260,7 @@ DECLARE_MESSAGE(BaselineMissingDefault,
                 "",
                 "The baseline.json from commit `\"{commit_sha}\"` in the repo {url} was invalid (did not "
                 "contain a \"default\" field).")
+DECLARE_MESSAGE(BinaryCacheVendorHTTP, (), "", "HTTP servers")
 DECLARE_MESSAGE(BinarySourcesArg, (), "", "Add sources for binary caching. See 'vcpkg help binarycaching'.")
 DECLARE_MESSAGE(BinaryWithInvalidArchitecture,
                 (msg::path, msg::expected, msg::actual),
@@ -2235,12 +2236,34 @@ DECLARE_MESSAGE(ResponseFileCode,
                 "Explains to the user that they can use response files on the command line, 'response_file' must "
                 "have no spaces and be a legal file name.",
                 "@response_file")
-DECLARE_MESSAGE(RestoredPackage, (msg::path), "", "Restored package from \"{path}\"")
-DECLARE_MESSAGE(
-    RestoredPackagesFromVendor,
-    (msg::count, msg::elapsed, msg::value),
-    "{value} may be either a 'vendor' like 'Azure' or 'NuGet', or a file path like C:\\example or /usr/example",
-    "Restored {count} package(s) from {value} in {elapsed}. Use --debug to see more details.")
+DECLARE_MESSAGE(RestoredPackagesFromAWS,
+                (msg::count, msg::elapsed),
+                "",
+                "Restored {count} package(s) from AWS in {elapsed}. Use --debug to see more details.")
+DECLARE_MESSAGE(RestoredPackagesFromCOS,
+                (msg::count, msg::elapsed),
+                "",
+                "Restored {count} package(s) from COS in {elapsed}. Use --debug to see more details.")
+DECLARE_MESSAGE(RestoredPackagesFromFiles,
+                (msg::count, msg::elapsed, msg::path),
+                "",
+                "Restored {count} package(s) from {path} in {elapsed}. Use --debug to see more details.")
+DECLARE_MESSAGE(RestoredPackagesFromGCS,
+                (msg::count, msg::elapsed),
+                "",
+                "Restored {count} package(s) from GCS in {elapsed}. Use --debug to see more details.")
+DECLARE_MESSAGE(RestoredPackagesFromGHA,
+                (msg::count, msg::elapsed),
+                "",
+                "Restored {count} package(s) from GitHub Actions Cache in {elapsed}. Use --debug to see more details.")
+DECLARE_MESSAGE(RestoredPackagesFromHTTP,
+                (msg::count, msg::elapsed),
+                "",
+                "Restored {count} package(s) from HTTP servers in {elapsed}. Use --debug to see more details.")
+DECLARE_MESSAGE(RestoredPackagesFromNuGet,
+                (msg::count, msg::elapsed),
+                "",
+                "Restored {count} package(s) from NuGet in {elapsed}. Use --debug to see more details.")
 DECLARE_MESSAGE(ResultsHeader, (), "Displayed before a list of installation results.", "RESULTS")
 DECLARE_MESSAGE(ScriptAssetCacheRequiresScript,
                 (),
@@ -2303,7 +2326,10 @@ DECLARE_MESSAGE(SpecifyTargetArch,
                 "Specify the target architecture triplet. See 'vcpkg help triplet'.\n(default: '{env_var}')")
 DECLARE_MESSAGE(StartCodeUnitInContinue, (), "", "found start code unit in continue position")
 DECLARE_MESSAGE(StoredBinaryCache, (msg::path), "", "Stored binary cache: \"{path}\"")
-DECLARE_MESSAGE(StoredBinariesToDestinations, (msg::count), "", "Stored binaries in {count} destinations.")
+DECLARE_MESSAGE(StoredBinariesToDestinations,
+                (msg::count, msg::elapsed),
+                "",
+                "Stored binaries in {count} destinations in {elapsed}.")
 DECLARE_MESSAGE(StoreOptionMissingSha, (), "", "--store option is invalid without a sha512")
 DECLARE_MESSAGE(SuccessfulyExported, (msg::package_name, msg::path), "", "Exported {package_name} to {path}")
 DECLARE_MESSAGE(SuggestGitPull, (), "", "The result may be outdated. Run `git pull` to get the latest results.")
