@@ -496,7 +496,7 @@ jobs:
         packagesToPush: '$(Build.ArtifactStagingDirectory)/vs-insertion/drop/VS.Redist.Vcpkg.amd64.1.0.0-$(VCPKG_FULL_VERSION).nupkg'
         publishVstsFeed: '97a41293-2972-4f48-8c0e-05493ae82010'
     # Publish symbols
-    - task: MicroBuildArchiveSymbols@2
+    - task: MicroBuildArchiveSymbols@4
       displayName: 'Upload Symbols'
       inputs:
         SymbolsFeatureName: 'vcpkg'
