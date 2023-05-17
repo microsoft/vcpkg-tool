@@ -2099,7 +2099,7 @@ DECLARE_MESSAGE(PortBugKernel32FromXbox,
                 (),
                 "",
                 "The selected triplet targets Xbox, but the following DLLs link with kernel32. These DLLs cannot be "
-                "loaded on Xbox, where kernel32 is not present. This is typically caused by linking with kerne32.lib "
+                "loaded on Xbox, where kernel32 is not present. This is typically caused by linking with kernel32.lib "
                 "rather than a suitable umbrella library, such as onecore_apiset.lib or xgameplatform.lib.")
 DECLARE_MESSAGE(
     PortBugMergeLibCMakeDir,
