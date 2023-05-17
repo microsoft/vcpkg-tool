@@ -17,9 +17,9 @@
         "Type": "other",
         "other": {
           "name": "fmt",
-          "version": "9.1.0",
-          "downloadUrl": "https://github.com/fmtlib/fmt/archive/refs/tags/9.1.0.tar.gz",
-          "hash": "a18442042722dd48e20714ec034a12fcc0576c9af7be5188586970e2edf47529825bdc99af366b1d5891630c8dbf6f63bfa9f012e77ab3d3ed80d1a118e3b2be"
+          "version": "10.0.0",
+          "downloadUrl": "https://github.com/fmtlib/fmt/archive/refs/tags/10.0.0.tar.gz",
+          "hash": "6188508d74ca1ed75bf6441b152c07ca83971d3104b37f33784a7b55dfcc614d6243e77e0a14220018586fdb86207cc033eece834e7acd5e0907ed4c97403f3b"
         }
       },
       "DevelopmentDependency": false,

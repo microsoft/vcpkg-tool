@@ -9,7 +9,7 @@ if("$CACHE{VCPKG_FMT_URL}" MATCHES "^https://github.com/fmtlib/fmt/archive/refs/
     unset(VCPKG_FMT_URL CACHE) # Fix upgrade
 endif()
 if(NOT VCPKG_FMT_URL)
-    set(VCPKG_FMT_URL "https://github.com/fmtlib/fmt/archive/refs/tags/9.1.0.tar.gz")
+    set(VCPKG_FMT_URL "https://github.com/fmtlib/fmt/archive/refs/tags/10.0.0.tar.gz")
 endif()
 
 if(POLICY CMP0135)
@@ -33,7 +33,7 @@ include(FetchContent)
 FetchContent_Declare(
     fmt
     URL "${VCPKG_FMT_URL}"
-    URL_HASH "SHA512=a18442042722dd48e20714ec034a12fcc0576c9af7be5188586970e2edf47529825bdc99af366b1d5891630c8dbf6f63bfa9f012e77ab3d3ed80d1a118e3b2be"
+    URL_HASH "SHA512=6188508d74ca1ed75bf6441b152c07ca83971d3104b37f33784a7b55dfcc614d6243e77e0a14220018586fdb86207cc033eece834e7acd5e0907ed4c97403f3b"
 )
 
 if(NOT fmt_FIND_REQUIRED)
