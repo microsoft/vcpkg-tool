@@ -23,7 +23,11 @@ $manifestDir = "$TestingRoot/manifest-dir"
 Copy-Item -Path "$env:VCPKG_ROOT/ports" -Destination $manifestDir -recurse -Force -Filter vcpkg.json
 git init $manifestDir
 Throw-IfFailed
-git -C $manifestDir config user.name='vcpkg-test' user.email='my@example.com' core.autocrlf=false
+git -C $manifestDir config user.name vcpkg-test
+Throw-IfFailed
+git -C $manifestDir config user.email my@example.com
+Throw-IfFailed
+git -C $manifestDir config core.autocrlf false
 Throw-IfFailed
 git -C $manifestDir add .
 Throw-IfFailed
