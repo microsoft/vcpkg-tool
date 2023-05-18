@@ -19,8 +19,8 @@ export const defaultConfig =
     },
     {
       "kind": "artifact",
-      "name": "cmsis",
-      "location": "https://github.com/Open-CMSIS-Pack/vcpkg-ce-registry/archive/refs/heads/main.zip"
+      "name": "arm",
+      "location": "https://artifacts.keil.arm.com/vcpkg-ce-registry/registry.zip"
     }
   ]
 }
