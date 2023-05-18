@@ -28,9 +28,4 @@ namespace vcpkg::Commands::Fetch
         msg::write_unlocalized_text_to_stdout(Color::none, tool_path.native() + '\n');
         Checks::exit_success(VCPKG_LINE_INFO);
     }
-
-    void FetchCommand::perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const
-    {
-        Fetch::perform_and_exit(args, paths);
-    }
 }

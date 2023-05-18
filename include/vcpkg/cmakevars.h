@@ -14,21 +14,19 @@
 
 namespace vcpkg::CMakeVars
 {
+    using CMakeVars = std::unordered_map<std::string, std::string>;
+
     struct CMakeVarProvider
     {
         virtual ~CMakeVarProvider() = default;
 
-        virtual Optional<const std::unordered_map<std::string, std::string>&> get_generic_triplet_vars(
-            Triplet triplet) const = 0;
+        virtual Optional<const CMakeVars&> get_generic_triplet_vars(Triplet triplet) const = 0;
 
-        virtual Optional<const std::unordered_map<std::string, std::string>&> get_dep_info_vars(
-            const PackageSpec& spec) const = 0;
+        virtual Optional<const CMakeVars&> get_dep_info_vars(const PackageSpec& spec) const = 0;
 
-        const std::unordered_map<std::string, std::string>& get_or_load_dep_info_vars(const PackageSpec& spec,
-                                                                                      Triplet host_triplet) const;
+        const CMakeVars& get_or_load_dep_info_vars(const PackageSpec& spec, Triplet host_triplet) const;
 
-        virtual Optional<const std::unordered_map<std::string, std::string>&> get_tag_vars(
-            const PackageSpec& spec) const = 0;
+        virtual Optional<const CMakeVars&> get_tag_vars(const PackageSpec& spec) const = 0;
 
         virtual void load_generic_triplet_vars(Triplet triplet) const = 0;
 

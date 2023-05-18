@@ -40,9 +40,4 @@ namespace vcpkg::Commands::InitRegistry
         msg::println(msgRegistryCreated, msg::path = path);
         Checks::exit_success(VCPKG_LINE_INFO);
     }
-
-    void InitRegistryCommand::perform_and_exit(const VcpkgCmdArguments& args, Filesystem& fs) const
-    {
-        InitRegistry::perform_and_exit(args, fs);
-    }
 }

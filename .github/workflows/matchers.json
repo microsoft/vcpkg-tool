@@ -1,0 +1,44 @@
+{
+    "problemMatcher": [
+        {
+            "owner": "vcpkg-msvc",
+            "pattern": [
+                {
+                    "regexp": "^(.*?)\\((\\d+)\\):\\s+(?:fatal\\s+)?(warning|error)(?:\\s+[^:]*):\\s+(.*)$",
+                    "file": 1,
+                    "line": 2,
+                    "severity": 3,
+                    "message": 4
+                }
+            ]
+        },
+        {
+            "owner": "vcpkg-gcc",
+            "pattern": [
+                {
+                    "regexp": "^(.*?):(\\d+):(\\d*):?\\s+(?:fatal\\s+)?(warning|error):\\s+(.*)$",
+                    "file": 1,
+                    "line": 2,
+                    "column": 3,
+                    "severity": 4,
+                    "message": 5
+                }
+            ]
+        },
+        {
+            "owner": "vcpkg-catch",
+            "pattern": [
+                {
+                    "regexp": "^(.*?):(\\d+): FAILED:",
+                    "file": 1,
+                    "line": 2
+                },
+                {
+                    "regexp": "^(.*[^=-].*)$",
+                    "message": 1,
+                    "loop": true
+                }
+            ]
+        }
+    ]
+}

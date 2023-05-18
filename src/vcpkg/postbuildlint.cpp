@@ -6,7 +6,7 @@
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
-#include <vcpkg/build.h>
+#include <vcpkg/commands.build.h>
 #include <vcpkg/installedpaths.h>
 #include <vcpkg/packagespec.h>
 #include <vcpkg/postbuildlint.h>
@@ -185,7 +185,7 @@ namespace vcpkg
         {
             msg_sink.println_warning(msgPortBugRestrictedHeaderPaths,
                                      msg::env_var = to_cmake_variable(BuildPolicy::ALLOW_RESTRICTED_HEADERS));
-            print_paths(violations);
+            print_paths(msg_sink, violations);
             msg_sink.println(msgPortBugRestrictedHeaderPaths,
                              msg::env_var = to_cmake_variable(BuildPolicy::ALLOW_RESTRICTED_HEADERS));
             return LintStatus::PROBLEM_DETECTED;
@@ -312,7 +312,7 @@ namespace vcpkg
         if (!misplaced_cmake_files.empty())
         {
             msg_sink.println_warning(msgPortBugMisplacedCMakeFiles, msg::spec = spec.name());
-            print_paths(misplaced_cmake_files);
+            print_paths(msg_sink, misplaced_cmake_files);
             return LintStatus::PROBLEM_DETECTED;
         }
 
@@ -342,7 +342,7 @@ namespace vcpkg
         if (!dlls.empty())
         {
             msg_sink.println_warning(msgPortBugDllInLibDir);
-            print_paths(dlls);
+            print_paths(msg_sink, dlls);
             return LintStatus::PROBLEM_DETECTED;
         }
 
@@ -403,7 +403,7 @@ namespace vcpkg
         else if (potential_copyright_files.size() > 1)
         {
             msg_sink.println_warning(msgPortBugFoundCopyrightFiles);
-            print_paths(potential_copyright_files);
+            print_paths(msg_sink, potential_copyright_files);
         }
         return LintStatus::PROBLEM_DETECTED;
     }
@@ -416,7 +416,7 @@ namespace vcpkg
         if (!exes.empty())
         {
             msg_sink.println_warning(msgPortBugFoundExeInBinDir);
-            print_paths(exes);
+            print_paths(msg_sink, exes);
             return LintStatus::PROBLEM_DETECTED;
         }
 
@@ -502,7 +502,7 @@ namespace vcpkg
         if (!dlls_with_no_exports.empty())
         {
             msg_sink.println_warning(msgPortBugSetDllsWithoutExports);
-            print_paths(dlls_with_no_exports);
+            print_paths(msg_sink, dlls_with_no_exports);
             return LintStatus::PROBLEM_DETECTED;
         }
 
@@ -530,7 +530,7 @@ namespace vcpkg
         if (!dlls_with_improper_uwp_bit.empty())
         {
             msg_sink.println_warning(msgPortBugDllAppContainerBitNotSet);
-            print_paths(dlls_with_improper_uwp_bit);
+            print_paths(msg_sink, dlls_with_improper_uwp_bit);
             return LintStatus::PROBLEM_DETECTED;
         }
 
@@ -713,7 +713,7 @@ namespace vcpkg
             return LintStatus::SUCCESS;
         }
         msg_sink.println_warning(msgPortBugFoundDllInStaticBuild);
-        print_paths(dlls);
+        print_paths(msg_sink, dlls);
         return LintStatus::PROBLEM_DETECTED;
     }
 
@@ -736,7 +736,7 @@ namespace vcpkg
         else
         {
             msg_sink.println(msgPortBugFoundDebugBinaries, msg::count = debug_count);
-            print_paths(debug_binaries);
+            print_paths(msg_sink, debug_binaries);
         }
 
         if (release_count == 0)
@@ -746,7 +746,7 @@ namespace vcpkg
         else
         {
             msg_sink.println(msgPortBugFoundReleaseBinaries, msg::count = release_count);
-            print_paths(release_binaries);
+            print_paths(msg_sink, release_binaries);
         }
 
         return LintStatus::PROBLEM_DETECTED;
@@ -818,7 +818,7 @@ namespace vcpkg
         if (!empty_directories.empty())
         {
             msg_sink.println_warning(msgPortBugFoundEmptyDirectories, msg::path = dir);
-            print_paths(empty_directories);
+            print_paths(msg_sink, empty_directories);
 
             std::string dirs = "    file(REMOVE_RECURSE";
             for (auto&& empty_dir : empty_directories)
@@ -1168,7 +1168,7 @@ namespace vcpkg
         if (!misplaced_files.empty())
         {
             msg_sink.println_warning(msg::format(msgPortBugMisplacedFiles, msg::path = dir).append_raw('\n'));
-            print_paths(misplaced_files);
+            print_paths(msg_sink, misplaced_files);
             msg_sink.println_warning(msgPortBugMisplacedFilesCont);
             return LintStatus::PROBLEM_DETECTED;
         }

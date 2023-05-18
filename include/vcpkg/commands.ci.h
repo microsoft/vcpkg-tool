@@ -1,6 +1,8 @@
 #pragma once
 
-#include <vcpkg/commands.interface.h>
+#include <vcpkg/fwd/triplet.h>
+#include <vcpkg/fwd/vcpkgcmdarguments.h>
+#include <vcpkg/fwd/vcpkgpaths.h>
 
 namespace vcpkg::Commands::CI
 {
@@ -9,12 +11,4 @@ namespace vcpkg::Commands::CI
                           const VcpkgPaths& paths,
                           Triplet default_triplet,
                           Triplet host_triplet);
-
-    struct CICommand : TripletCommand
-    {
-        virtual void perform_and_exit(const VcpkgCmdArguments& args,
-                                      const VcpkgPaths& paths,
-                                      Triplet default_triplet,
-                                      Triplet host_triplet) const override;
-    };
 }

@@ -4,10 +4,10 @@
 
 #include <vcpkg/cmakevars.h>
 #include <vcpkg/commands.dependinfo.h>
+#include <vcpkg/commands.help.h>
+#include <vcpkg/commands.install.h>
 #include <vcpkg/dependencies.h>
-#include <vcpkg/help.h>
 #include <vcpkg/input.h>
-#include <vcpkg/install.h>
 #include <vcpkg/packagespec.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/registries.h>
@@ -320,7 +320,7 @@ namespace vcpkg::Commands::DependInfo
         // All actions in the plan should be install actions, as there's no installed packages to remove.
         StatusParagraphs status_db;
         auto action_plan = create_feature_install_plan(
-            provider, var_provider, specs, status_db, {host_triplet, UnsupportedPortAction::Warn});
+            provider, var_provider, specs, status_db, {host_triplet, paths.packages(), UnsupportedPortAction::Warn});
         action_plan.print_unsupported_warnings();
 
         if (!action_plan.remove_actions.empty())
@@ -412,13 +412,5 @@ namespace vcpkg::Commands::DependInfo
             }
         }
         Checks::exit_success(VCPKG_LINE_INFO);
-    }
-
-    void DependInfoCommand::perform_and_exit(const VcpkgCmdArguments& args,
-                                             const VcpkgPaths& paths,
-                                             Triplet default_triplet,
-                                             Triplet host_triplet) const
-    {
-        DependInfo::perform_and_exit(args, paths, default_triplet, host_triplet);
     }
 }

@@ -16,8 +16,8 @@
 #include <vcpkg/archives.h>
 #include <vcpkg/binarycaching.h>
 #include <vcpkg/binaryparagraph.h>
-#include <vcpkg/build.h>
 #include <vcpkg/bundlesettings.h>
+#include <vcpkg/commands.build.h>
 #include <vcpkg/commands.h>
 #include <vcpkg/commands.version.h>
 #include <vcpkg/configuration.h>

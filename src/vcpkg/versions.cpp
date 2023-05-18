@@ -401,6 +401,11 @@ namespace vcpkg
         return base == VerComp::eq ? integer_vercomp(a, b) : base;
     }
 
+    VerComp compare_versions(const SchemedVersion& a, const SchemedVersion& b)
+    {
+        return compare_versions(a.scheme, a.version, b.scheme, b.version);
+    }
+
     VerComp compare_versions(VersionScheme sa, const Version& a, VersionScheme sb, const Version& b)
     {
         return portversion_vercomp(compare_version_texts(sa, a, sb, b), a.port_version(), b.port_version());

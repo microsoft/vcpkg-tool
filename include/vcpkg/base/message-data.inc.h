@@ -203,6 +203,11 @@ DECLARE_MESSAGE(AutomaticLinkingForMSBuildProjects,
                 "",
                 "All MSBuild C++ projects can now #include any installed libraries. Linking will be handled "
                 "automatically. Installing new libraries will make them instantly available.")
+DECLARE_MESSAGE(AutomaticLinkingForVS2017AndLater,
+                (),
+                "",
+                "Visual Studio 2017 and later can now #include any installed libraries. Linking will be handled "
+                "automatically. Installing new libraries will make them instantly available.")
 DECLARE_MESSAGE(AutoSettingEnvVar,
                 (msg::env_var, msg::url),
                 "An example of env_var is \"HTTP(S)_PROXY\""
@@ -215,7 +220,7 @@ DECLARE_MESSAGE(AVcpkgRepositoryCommit, (), "", "a vcpkg repository commit")
 DECLARE_MESSAGE(AVersionDatabaseEntry, (), "", "a version database entry")
 DECLARE_MESSAGE(AVersionObject, (), "", "a version object")
 DECLARE_MESSAGE(AVersionOfAnyType, (), "", "a version of any type")
-DECLARE_MESSAGE(AVersionConstraint, (), "", "a version constriant")
+DECLARE_MESSAGE(AVersionConstraint, (), "", "a version constraint")
 DECLARE_MESSAGE(AzUrlAssetCacheRequiresBaseUrl,
                 (),
                 "",
@@ -255,6 +260,7 @@ DECLARE_MESSAGE(BaselineMissingDefault,
                 "",
                 "The baseline.json from commit `\"{commit_sha}\"` in the repo {url} was invalid (did not "
                 "contain a \"default\" field).")
+DECLARE_MESSAGE(BinaryCacheVendorHTTP, (), "", "HTTP servers")
 DECLARE_MESSAGE(BinarySourcesArg, (), "", "Add sources for binary caching. See 'vcpkg help binarycaching'.")
 DECLARE_MESSAGE(BinaryWithInvalidArchitecture,
                 (msg::path, msg::expected, msg::actual),
@@ -423,6 +429,10 @@ DECLARE_MESSAGE(CISettingsVerifyGitTree,
                 "",
                 "Verify that each git tree object matches its declared version (this is very slow)")
 DECLARE_MESSAGE(CISettingsVerifyVersion, (), "", "Print result for each port instead of just errors.")
+DECLARE_MESSAGE(CISkipInstallation,
+                (msg::list),
+                "{list} is a list of packages",
+                "The following packages are already installed and not build again: {list}")
 DECLARE_MESSAGE(CISwitchOptAllowUnexpectedPassing,
                 (),
                 "",
@@ -557,6 +567,15 @@ DECLARE_MESSAGE(CmdUpdateBaselineOptInitial,
                 (),
                 "",
                 "add a `builtin-baseline` to a vcpkg.json that doesn't already have it")
+DECLARE_MESSAGE(CmdUpdateRegistryAll, (), "", "Update all known artifact registries")
+DECLARE_MESSAGE(CmdUpdateRegistryAllExcludesTargets,
+                (),
+                "",
+                "Update registry --all cannot be used with a list of artifact registries")
+DECLARE_MESSAGE(CmdUpdateRegistryAllOrTargets,
+                (),
+                "",
+                "Update registry requires either a list of artifact registry names or URiIs to update, or --all.")
 DECLARE_MESSAGE(CmdUpgradeOptAllowUnsupported,
                 (),
                 "",
@@ -1365,14 +1384,12 @@ DECLARE_MESSAGE(
     "",
     "Writes out a NuGet packages.config-formatted file for use with external binary caching.\nSee `vcpkg help "
     "binarycaching` for more information.")
-DECLARE_MESSAGE(
-    HelpUpdateBaseline,
-    (),
-    "",
-    "The best approach to keep your libraries up to date, the best approach is to update your baseline reference. "
-    "This will "
-    "ensure all packages, including transitive ones, are updated. However if you need to update a package "
-    "independently, you can use a \"version>=\" constraint.")
+DECLARE_MESSAGE(HelpUpdateBaseline,
+                (),
+                "",
+                "The best approach to keep your libraries up to date is to update your baseline reference. This will "
+                "ensure all packages, including transitive ones, are updated. However if you need to update a package "
+                "independently, you can use a \"version>=\" constraint.")
 DECLARE_MESSAGE(HelpUpdateCommand, (), "", "List packages that can be updated.")
 DECLARE_MESSAGE(HelpUpgradeCommand, (), "", "Rebuild all outdated packages.")
 DECLARE_MESSAGE(HelpVersionCommand, (), "", "Display version information.")
@@ -1476,7 +1493,7 @@ DECLARE_MESSAGE(IntegrateZshHelp,
                 (),
                 "'zsh' is a terminal program which should be unlocalized.",
                 "Enable zsh tab-completion.")
-DECLARE_MESSAGE(IntegrationFailed, (), "", "Integration was not applied.")
+DECLARE_MESSAGE(IntegrationFailedVS2015, (), "", "Integration was not applied for Visual Studio 2015.")
 DECLARE_MESSAGE(InternalCICommand,
                 (),
                 "",
@@ -2214,12 +2231,34 @@ DECLARE_MESSAGE(ResponseFileCode,
                 "Explains to the user that they can use response files on the command line, 'response_file' must "
                 "have no spaces and be a legal file name.",
                 "@response_file")
-DECLARE_MESSAGE(RestoredPackage, (msg::path), "", "Restored package from \"{path}\"")
-DECLARE_MESSAGE(
-    RestoredPackagesFromVendor,
-    (msg::count, msg::elapsed, msg::value),
-    "{value} may be either a 'vendor' like 'Azure' or 'NuGet', or a file path like C:\\example or /usr/example",
-    "Restored {count} package(s) from {value} in {elapsed}. Use --debug to see more details.")
+DECLARE_MESSAGE(RestoredPackagesFromAWS,
+                (msg::count, msg::elapsed),
+                "",
+                "Restored {count} package(s) from AWS in {elapsed}. Use --debug to see more details.")
+DECLARE_MESSAGE(RestoredPackagesFromCOS,
+                (msg::count, msg::elapsed),
+                "",
+                "Restored {count} package(s) from COS in {elapsed}. Use --debug to see more details.")
+DECLARE_MESSAGE(RestoredPackagesFromFiles,
+                (msg::count, msg::elapsed, msg::path),
+                "",
+                "Restored {count} package(s) from {path} in {elapsed}. Use --debug to see more details.")
+DECLARE_MESSAGE(RestoredPackagesFromGCS,
+                (msg::count, msg::elapsed),
+                "",
+                "Restored {count} package(s) from GCS in {elapsed}. Use --debug to see more details.")
+DECLARE_MESSAGE(RestoredPackagesFromGHA,
+                (msg::count, msg::elapsed),
+                "",
+                "Restored {count} package(s) from GitHub Actions Cache in {elapsed}. Use --debug to see more details.")
+DECLARE_MESSAGE(RestoredPackagesFromHTTP,
+                (msg::count, msg::elapsed),
+                "",
+                "Restored {count} package(s) from HTTP servers in {elapsed}. Use --debug to see more details.")
+DECLARE_MESSAGE(RestoredPackagesFromNuGet,
+                (msg::count, msg::elapsed),
+                "",
+                "Restored {count} package(s) from NuGet in {elapsed}. Use --debug to see more details.")
 DECLARE_MESSAGE(ResultsHeader, (), "Displayed before a list of installation results.", "RESULTS")
 DECLARE_MESSAGE(ScriptAssetCacheRequiresScript,
                 (),
@@ -2282,7 +2321,10 @@ DECLARE_MESSAGE(SpecifyTargetArch,
                 "Specify the target architecture triplet. See 'vcpkg help triplet'.\n(default: '{env_var}')")
 DECLARE_MESSAGE(StartCodeUnitInContinue, (), "", "found start code unit in continue position")
 DECLARE_MESSAGE(StoredBinaryCache, (msg::path), "", "Stored binary cache: \"{path}\"")
-DECLARE_MESSAGE(StoredBinariesToDestinations, (msg::count), "", "Stored binaries in {count} destinations.")
+DECLARE_MESSAGE(StoredBinariesToDestinations,
+                (msg::count, msg::elapsed),
+                "",
+                "Stored binaries in {count} destinations in {elapsed}.")
 DECLARE_MESSAGE(StoreOptionMissingSha, (), "", "--store option is invalid without a sha512")
 DECLARE_MESSAGE(SuccessfulyExported, (msg::package_name, msg::path), "", "Exported {package_name} to {path}")
 DECLARE_MESSAGE(SuggestGitPull, (), "", "The result may be outdated. Run `git pull` to get the latest results.")
@@ -2339,8 +2381,7 @@ DECLARE_MESSAGE(UndeterminedToolChainForTriplet,
                 (msg::triplet, msg::system_name),
                 "",
                 "Unable to determine toolchain use for {triplet} with with CMAKE_SYSTEM_NAME {system_name}. Did "
-                "you mean to use "
-                "VCPKG_CHAINLOAD_TOOLCHAIN_FILE?")
+                "you mean to use VCPKG_CHAINLOAD_TOOLCHAIN_FILE?")
 DECLARE_MESSAGE(UnexpectedArgument,
                 (msg::option),
                 "Argument is literally what the user passed on the command line.",
@@ -2655,16 +2696,21 @@ DECLARE_MESSAGE(VersionGitEntryMissing,
                 "A list of versions, 1 per line, are printed after this message.",
                 "no version database entry for {package_name} at {version}.\nAvailable versions:")
 DECLARE_MESSAGE(VersionIncomparable1,
-                (msg::spec, msg::package_name, msg::expected, msg::actual),
+                (msg::spec, msg::constraint_origin, msg::expected, msg::actual),
                 "{expected} and {actual} are versions like 1.0",
-                "version conflict on {spec}: {package_name} required {expected} but vcpkg could not compare it to "
-                "{actual}.\nThe two versions used incomparable schemes:")
-DECLARE_MESSAGE(VersionIncomparable2, (msg::version, msg::new_scheme), "", "\"{version}\" was of scheme {new_scheme}")
+                "version conflict on {spec}: {constraint_origin} required {expected}, which cannot be compared with "
+                "the baseline version {actual}.")
+DECLARE_MESSAGE(VersionIncomparableSchemeString, (), "", "Both versions have scheme string but different primary text.")
+DECLARE_MESSAGE(VersionIncomparableSchemes, (), "", "The versions have incomparable schemes:")
+DECLARE_MESSAGE(VersionIncomparable2,
+                (msg::version_spec, msg::new_scheme),
+                "",
+                "{version_spec} has scheme {new_scheme}")
 DECLARE_MESSAGE(VersionIncomparable3,
                 (),
                 "This precedes a JSON document describing the fix",
-                "This can be resolved by adding an explicit override to the preferred version, for example:")
-DECLARE_MESSAGE(VersionIncomparable4, (), "", "See `vcpkg help versioning` for more information.")
+                "This can be resolved by adding an explicit override to the preferred version. For example:")
+DECLARE_MESSAGE(VersionIncomparable4, (msg::url), "", "See `vcpkg help versioning` or {url} for more information.")
 DECLARE_MESSAGE(VersionInDeclarationDoesNotMatch,
                 (msg::version),
                 "",
@@ -2689,23 +2735,17 @@ DECLARE_MESSAGE(
     "The names version, version-date, version-semver, and version-string are code and must not be localized",
     "expected a versioning field (one of version, version-date, version-semver, or version-string)")
 DECLARE_MESSAGE(VersionMissingRequiredFeature,
-                (msg::spec, msg::version, msg::feature),
+                (msg::version_spec, msg::feature, msg::constraint_origin),
                 "",
-                "{spec}@{version} does not have required feature {feature}")
+                "{version_spec} does not have required feature {feature} needed by {constraint_origin}")
 DECLARE_MESSAGE(VersionNotFound,
                 (msg::expected, msg::actual),
                 "{expected} and {actual} are versions",
                 "{expected} not available, only {actual} is available")
-DECLARE_MESSAGE(
-    VersionNotFoundDuringDiscovery,
-    (msg::spec, msg::version),
-    "",
-    "version was not found during discovery: {spec}@{version}\nThis is an internal vcpkg error. Please open "
-    "an issue on https://github.com/Microsoft/vcpkg with detailed steps to reproduce the problem.")
 DECLARE_MESSAGE(VersionNotFoundInVersionsFile,
                 (msg::version, msg::package_name),
                 "",
-                "Version {version} was not found in versions file.\n"
+                "Version {version} was not found in versions file for {package_name}.\n"
                 "Run:\n"
                 "vcpkg x-add-version {package_name}\n"
                 "to add the new port version.")
@@ -2763,10 +2803,7 @@ DECLARE_MESSAGE(VersionSpecMismatch,
                 "Failed to load port because versions are inconsistent. The file \"{path}\" contains the version "
                 "{actual_version}, but the version database indicates that it should be {expected_version}.")
 DECLARE_MESSAGE(VersionTableHeader, (), "", "Version")
-DECLARE_MESSAGE(VersionVerifiedOK,
-                (msg::package_name, msg::version, msg::commit_sha),
-                "",
-                "OK: {package_name}@{version} -> {commit_sha}")
+DECLARE_MESSAGE(VersionVerifiedOK, (msg::version_spec, msg::commit_sha), "", "OK: {version_spec} -> {commit_sha}")
 DECLARE_MESSAGE(VSExaminedInstances, (), "", "The following Visual Studio instances were considered:")
 DECLARE_MESSAGE(VSExaminedPaths, (), "", "The following paths were examined for Visual Studio instances:")
 DECLARE_MESSAGE(VSNoInstances, (), "", "Could not locate a complete Visual Studio instance")
