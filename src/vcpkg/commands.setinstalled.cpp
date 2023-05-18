@@ -92,7 +92,7 @@ namespace vcpkg::Commands::SetInstalled
 
     Json::Object create_dependency_graph_snapshot(const VcpkgCmdArguments& args,
                                                   const ActionPlan& action_plan,
-                                                  const Path& manifest_path)
+                                                  Optional<std::string> manifest_path)
     {
         auto gh_ref = args.github_ref.value_or_exit(VCPKG_LINE_INFO);
         auto gh_sha = args.github_sha.value_or_exit(VCPKG_LINE_INFO);
@@ -100,6 +100,7 @@ namespace vcpkg::Commands::SetInstalled
         auto gh_token = args.github_token.value_or_exit(VCPKG_LINE_INFO);
         auto gh_job_id = args.github_job.value_or_exit(VCPKG_LINE_INFO);
         auto gh_workflow = args.github_workflow.value_or_exit(VCPKG_LINE_INFO);
+        auto gh_run_id = args.github_run_id.value_or_exit(VCPKG_LINE_INFO);
 
         Json::Object detector;
         detector.insert("name", Json::Value::string("vcpkg"));
@@ -107,7 +108,7 @@ namespace vcpkg::Commands::SetInstalled
         detector.insert("version", Json::Value::string("1.0.0"));
 
         Json::Object job;
-        job.insert("id", Json::Value::string(gh_job_id));
+        job.insert("id", Json::Value::string(gh_run_id));
         job.insert("correlator", Json::Value::string(gh_workflow + "-" + gh_job_id));
 
         Json::Object snapshot;
@@ -129,6 +130,13 @@ namespace vcpkg::Commands::SetInstalled
         Json::Object manifests;
         Json::Object manifest;
         Json::Object resolved;
+        Json::Object file;
+
+        if (auto p = manifest_path.get())
+        {
+            file.insert("source_location", *p);
+        }
+        manifest.insert("file", file);
         manifest.insert("name", "vcpkg.json");
 
         std::unordered_map<std::string, std::string> map;
@@ -164,10 +172,6 @@ namespace vcpkg::Commands::SetInstalled
         manifest.insert("resolved", resolved);
         manifests.insert("vcpkg.json", manifest);
         snapshot.insert("manifests", manifests);
-
-        manifest_path;
-
-        // Command showcmd = git_cmd_builder()
 
         Debug::print(Json::stringify(snapshot));
         return snapshot;
@@ -206,7 +210,9 @@ namespace vcpkg::Commands::SetInstalled
 
         if (paths.manifest_mode_enabled() && paths.get_feature_flags().dependency_graph)
         {
-            auto snapshot = create_dependency_graph_snapshot(args, action_plan, paths.get_relative_manifest_dir());
+            auto gh_root_dir = args.github_workspace.value_or_exit(VCPKG_LINE_INFO);
+            auto snapshot =
+                create_dependency_graph_snapshot(args, action_plan, paths.relative_path_to_manifest(gh_root_dir));
             send_snapshot_to_api(args, snapshot);
         }
 

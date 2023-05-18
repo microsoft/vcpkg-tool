@@ -2340,17 +2340,18 @@ TEST_CASE ("dependency graph API snapshot")
     plan.install_actions.push_back(std::move(install_a));
     std::map<std::string, std::string, std::less<>> envmap = {
         {VcpkgCmdArguments::GITHUB_JOB_ENV.to_string(), "123"},
+        {VcpkgCmdArguments::GITHUB_RUN_ID_ENV.to_string(), "123"},
         {VcpkgCmdArguments::GITHUB_REF_ENV.to_string(), "refs/heads/main"},
         {VcpkgCmdArguments::GITHUB_REPOSITORY_ENV.to_string(), "owner/repo"},
         {VcpkgCmdArguments::GITHUB_SHA_ENV.to_string(), "abc123"},
         {VcpkgCmdArguments::GITHUB_TOKEN_ENV.to_string(), "abc"},
         {VcpkgCmdArguments::GITHUB_WORKFLOW_ENV.to_string(), "test"},
+        {VcpkgCmdArguments::GITHUB_WORKSPACE_ENV.to_string(), "/test/"},
         {VcpkgCmdArguments::DEPENDENCY_GRAPH_VERSION_ENV.to_string(), "3"},
     };
     auto v = VcpkgCmdArguments::create_from_arg_sequence(nullptr, nullptr);
     v.imbue_from_fake_environment(envmap);
-    auto manifest_path = Path{};
-    auto obj = vcpkg::Commands::SetInstalled::create_dependency_graph_snapshot(v, plan, manifest_path);
+    auto obj = vcpkg::Commands::SetInstalled::create_dependency_graph_snapshot(v, plan, "./vcpkg.json");
 
     auto version = obj.get("version")->integer(VCPKG_LINE_INFO);
     auto job = obj.get("job")->object(VCPKG_LINE_INFO);

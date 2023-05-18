@@ -172,6 +172,8 @@ namespace vcpkg
         Optional<std::string> github_ref;
         constexpr static StringLiteral GITHUB_SHA_ENV = "GITHUB_SHA";
         Optional<std::string> github_sha;
+        constexpr static StringLiteral GITHUB_RUN_ID_ENV = "GITHUB_RUN_ID";
+        Optional<std::string> github_run_id;
         constexpr static StringLiteral GITHUB_REPOSITORY_ENV = "GITHUB_REPOSITORY";
         Optional<std::string> github_repository;
         constexpr static StringLiteral GITHUB_TOKEN_ENV = "GITHUB_TOKEN";
@@ -180,6 +182,8 @@ namespace vcpkg
         Optional<std::string> github_job;
         constexpr static StringLiteral GITHUB_WORKFLOW_ENV = "GITHUB_WORKFLOW";
         Optional<std::string> github_workflow;
+        constexpr static StringLiteral GITHUB_WORKSPACE_ENV = "GITHUB_WORKSPACE";
+        Optional<std::string> github_workspace;
         constexpr static StringLiteral DEPENDENCY_GRAPH_VERSION_ENV = "DEPENDENCY_GRAPH_VERSION";
         Optional<std::string> dependency_graph_version;
 
