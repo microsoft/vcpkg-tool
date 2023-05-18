@@ -1693,21 +1693,10 @@ namespace vcpkg
             {"VCPKG_DISABLE_COMPILER_TRACKING", VcpkgTripletVar::DISABLE_COMPILER_TRACKING},
         };
 
-        std::string empty;
+        const std::string empty;
         for (auto&& kv : VCPKG_OPTIONS)
         {
-            const std::string& variable_value = [&]() -> const std::string& {
-                auto find_itr = cmakevars.find(kv.first);
-                if (find_itr == cmakevars.end())
-                {
-                    return empty;
-                }
-                else
-                {
-                    return find_itr->second;
-                }
-            }();
-
+            const std::string& variable_value = Util::value_or_default(cmakevars, kv.first, empty);
             switch (kv.second)
             {
                 case VcpkgTripletVar::TARGET_ARCHITECTURE: target_architecture = variable_value; break;

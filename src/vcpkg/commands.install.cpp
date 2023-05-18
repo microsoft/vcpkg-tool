@@ -849,10 +849,10 @@ namespace vcpkg
             bool has_targets_for_output = false;
             for (auto&& package : config_packages)
             {
-                const auto library_target_pair = library_targets.find(package.dir);
-                if (library_target_pair == library_targets.end()) continue;
+                const auto library_target_it = library_targets.find(package.dir);
+                if (library_target_it == library_targets.end()) continue;
 
-                auto& targets = library_target_pair->second;
+                auto& targets = library_target_it->second;
                 if (!targets.empty())
                 {
                     if (!package.name.empty()) has_targets_for_output = true;

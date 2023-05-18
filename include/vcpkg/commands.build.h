@@ -13,6 +13,7 @@
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.process.h>
+#include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.integrate.h>
 #include <vcpkg/packagespec.h>
@@ -214,12 +215,7 @@ namespace vcpkg
         BuildPolicies() = default;
         BuildPolicies(std::unordered_map<BuildPolicy, bool>&& map) : m_policies(std::move(map)) { }
 
-        bool is_enabled(BuildPolicy policy) const
-        {
-            const auto it = m_policies.find(policy);
-            if (it != m_policies.cend()) return it->second;
-            return false;
-        }
+        bool is_enabled(BuildPolicy policy) const { return Util::value_or_default(m_policies, policy, false); }
 
     private:
         std::unordered_map<BuildPolicy, bool> m_policies;
