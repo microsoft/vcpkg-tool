@@ -503,7 +503,6 @@ jobs:
         SymbolsProject: 'VS'
         SymbolsAgentPath: '$(Build.ArtifactStagingDirectory)\symbols'
         azureSubscription: 'Symbols Upload (DevDiv)'
-        PackageVersion: '$(VCPKG_FULL_VERSION)'
     # Publish everything to a GitHub Release
     - ${{ if eq(parameters.PublishTo, 'GitHub and NuGet') }}:
       - task: DownloadSecureFile@1
