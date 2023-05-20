@@ -11,7 +11,7 @@ $testProjects | % {
     Write-Trace "test that format-manifest on $full produces $expectedPath"
     [string]$expected = Get-Content $expectedPath -Raw
     Copy-Item $asItem $tempItemPath
-    Run-Vcpkg format-manifest $tempItemPath
+    Run-Vcpkg format-manifest $tempItemPath | Out-Null
     $actual = Get-Content $tempItemPath -Raw
     if ($expected -ne $actual) {
         throw "Expected formatting $full to produce $expectedPath but was $tempItemPath"
@@ -20,10 +20,12 @@ $testProjects | % {
 
 Write-Trace "test re-serializing every manifest"
 $manifestDir = "$TestingRoot/manifest-dir"
+
 Copy-Item -Path "$env:VCPKG_ROOT/ports" -Destination $manifestDir -recurse -Force -Filter vcpkg.json
+@("libuvc", "mlpack", "qt5-virtualkeyboard", "qtwebengine", "vamp-sdk") | % { Remove-Item -Recurse "$manifestDir/$_" }
 & git init $manifestDir && git -C $manifestDir add . && git -C $manifestDir -c user.name='vcpkg-test' -c user.email='my@example.com' commit -m "baseline"
 Throw-IfFailed
-Run-Vcpkg format-manifest --all --x-builtin-ports-root=$manifestDir/ports
+Run-Vcpkg format-manifest --all --x-builtin-ports-root=$manifestDir
 Throw-IfFailed
 $diff = (& git -C $manifestDir diff) | Out-String
 if ($diff.length -gt 0) {

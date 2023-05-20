@@ -31,6 +31,7 @@
 #include <vcpkg/commands.init-registry.h>
 #include <vcpkg/commands.install.h>
 #include <vcpkg/commands.integrate.h>
+#include <vcpkg/commands.lint-port.h>
 #include <vcpkg/commands.list.h>
 #include <vcpkg/commands.new.h>
 #include <vcpkg/commands.owns.h>
@@ -92,6 +93,7 @@ namespace vcpkg::Commands
         {"/?", Help::perform_and_exit},
         {"help", Help::perform_and_exit},
         {"integrate", Integrate::perform_and_exit},
+        {"x-lint-port", LintPort::perform_and_exit},
         {"list", List::perform_and_exit},
         {"new", command_new_and_exit},
         {"owns", Owns::perform_and_exit},

@@ -48,12 +48,20 @@ DECLARE_MESSAGE(AddVersionDetectLocalChangesError,
                 (),
                 "",
                 "skipping detection of local changes due to unexpected format in git status output")
+DECLARE_MESSAGE(AddVersionDisableCheck,
+                (msg::option),
+                "The -- before {option} must be preserved as they're part of the help message for the user.",
+                "Use --{option} to disable this check.")
 DECLARE_MESSAGE(AddVersionFileNotFound, (msg::path), "", "couldn't find required file {path}")
 DECLARE_MESSAGE(AddVersionFormatPortSuggestion, (msg::command_line), "", "Run `{command_line}` to format the file")
 DECLARE_MESSAGE(AddVersionIgnoringOptionAll,
                 (msg::option),
                 "The -- before {option} must be preserved as they're part of the help message for the user.",
                 "ignoring --{option} since a port name argument was provided")
+DECLARE_MESSAGE(AddVersionLintPort,
+                (msg::package_name),
+                "",
+                "You can run `./vcpkg x-lint-port --fix {package_name}` to fix these issues.")
 DECLARE_MESSAGE(AddVersionLoadPortFailed, (msg::package_name), "", "can't load port {package_name}")
 DECLARE_MESSAGE(AddVersionNewFile, (), "", "(new file)")
 DECLARE_MESSAGE(AddVersionNewShaIs, (msg::commit_sha), "", "new SHA: {commit_sha}")
@@ -74,11 +82,46 @@ DECLARE_MESSAGE(AddVersionPortFilesShaUnchanged,
                 "",
                 "checked-in files for {package_name} are unchanged from version {version}")
 DECLARE_MESSAGE(AddVersionPortHasImproperFormat, (msg::package_name), "", "{package_name} is not properly formatted")
-DECLARE_MESSAGE(AddVersionSuggestNewVersionScheme,
-                (msg::new_scheme, msg::old_scheme, msg::package_name, msg::option),
-                "The -- before {option} must be preserved as they're part of the help message for the user.",
+DECLARE_MESSAGE(LintDeprecatedFunction,
+                (msg::package_name, msg::actual, msg::expected),
+                "{actual} is the currently used deprecated function, {expected} is the function that should be used",
+                "The deprecated function \"{actual}\" is used inside the port \"{package_name}\". Use the function "
+                "\"{expected}\" instead.")
+DECLARE_MESSAGE(
+    LintDeprecatedLicenseExpressionWithReplacement,
+    (msg::package_name, msg::actual, msg::new_value),
+    "{actual} is the currently used license expression and {new_value} is the license expression that should be "
+    "used",
+    "The port \"{package_name}\" uses the deprecated license expression \"{actual}\". You shoud use the non "
+    "deprecated version \"{new_value}\".")
+DECLARE_MESSAGE(LintDeprecatedLicenseExpressionWithoutReplacement,
+                (msg::package_name, msg::actual, msg::new_value),
+                "{actual} is the currently used license, {new_value} is the suggested WITH expression",
+                "The port \"{package_name}\" uses the deprecated license expression \"{actual}\". "
+                "Use license expression including main license, \"WITH\" operator, and identifier: \"{new_value}\"")
+DECLARE_MESSAGE(LintMissingLicenseExpression,
+                (msg::package_name),
+                "",
+                "There is no license expression in port \"{package_name}\". You could use "
+                "https://tools.spdx.org/app/check_license/ to determine the right license expression.")
+DECLARE_MESSAGE(LintSuggestNewVersionScheme,
+                (msg::new_scheme, msg::old_scheme, msg::package_name),
+                "",
                 "Use the version scheme \"{new_scheme}\" instead of \"{old_scheme}\" in port "
-                "\"{package_name}\".\nUse --{option} to disable this check.")
+                "\"{package_name}\".")
+DECLARE_MESSAGE(LintVcpkgCheckFeatures,
+                (msg::package_name),
+                "",
+                "Calling `vcpkg_check_features` without the `FEATURES` keyword has been deprecated. Please add the "
+                "`FEATURES` keyword to the call inside the port {package_name}.")
+DECLARE_MESSAGE(LintPortErrorsFixed,
+                (msg::package_name),
+                "",
+                "Problems in the port \"{package_name}\" have been fixed.")
+DECLARE_MESSAGE(LintPortErrors,
+                (msg::package_name),
+                "",
+                "The port \"{package_name}\" should be fixed. See warning(s) above.")
 DECLARE_MESSAGE(AddVersionUnableToParseVersionsFile, (msg::path), "", "unable to parse versions file {path}")
 DECLARE_MESSAGE(AddVersionUncommittedChanges,
                 (msg::package_name),
@@ -464,6 +507,8 @@ DECLARE_MESSAGE(CmdAddVersionOptAll, (), "", "Process versions for all ports.")
 DECLARE_MESSAGE(CmdAddVersionOptOverwriteVersion, (), "", "Overwrite `git-tree` of an existing version.")
 DECLARE_MESSAGE(CmdAddVersionOptSkipFormatChk, (), "", "Skips the formatting check of vcpkg.json files.")
 DECLARE_MESSAGE(CmdAddVersionOptSkipVersionFormatChk, (), "", "Skips the version format check.")
+DECLARE_MESSAGE(CmdAddVersionOptSkipLicenseChk, (), "", "Skips the license expression check.")
+DECLARE_MESSAGE(CmdAddVersionOptSkipPortfileChk, (), "", "Skips the portfile.cmake check.")
 DECLARE_MESSAGE(CmdAddVersionOptVerbose, (), "", "Print success messages instead of just errors.")
 DECLARE_MESSAGE(CmdContactOptSurvey, (), "", "Launch default browser to the current vcpkg survey")
 DECLARE_MESSAGE(CmdDependInfoOptDepth, (), "", "Show recursion depth in output")
@@ -535,6 +580,9 @@ DECLARE_MESSAGE(
     "When generating the message map, exclude comments (useful for generating the English localization file)")
 DECLARE_MESSAGE(CmdInfoOptInstalled, (), "", "(experimental) Report on installed packages instead of available")
 DECLARE_MESSAGE(CmdInfoOptTransitive, (), "", "(experimental) Also report on dependencies of installed packages")
+DECLARE_MESSAGE(CmdLintPortOptAllPorts, (), "", "Checks all ports.")
+DECLARE_MESSAGE(CmdLintPortOptFix, (), "", "Tries to fix all problems that were found.")
+DECLARE_MESSAGE(CmdLintPortOptIncreaseVersion, (), "", "Increase the port-version of a port if a problem was fixed.")
 DECLARE_MESSAGE(CmdNewOptApplication, (), "", "Create an application manifest (don't require name or version).")
 DECLARE_MESSAGE(CmdNewOptSingleFile, (), "", "Embed vcpkg-configuration.json into vcpkg.json.")
 DECLARE_MESSAGE(CmdNewOptVersionDate, (), "", "Interpret --version as an ISO 8601 date. (YYYY-MM-DD)")
