@@ -8,6 +8,7 @@
 #include <vcpkg/triplet.h>
 
 #include <memory>
+#include <numeric>
 #include <unordered_map>
 #include <vector>
 
@@ -215,18 +216,6 @@ private:
 };
 
 static const MockOverlayProvider s_empty_mock_overlay;
-
-static void CHECK_LINES(const LocalizedString& a, StringView b)
-{
-    auto as = Strings::split(a.data(), '\n');
-    auto bs = Strings::split(b, '\n');
-    for (size_t i = 0; i < as.size() && i < bs.size(); ++i)
-    {
-        INFO(i);
-        CHECK(as[i] == bs[i]);
-    }
-    CHECK(as.size() == bs.size());
-}
 
 #define WITH_EXPECTED(id, expr)                                                                                        \
     auto id##_storage = (expr);                                                                                        \
@@ -479,14 +468,18 @@ TEST_CASE ("version install scheme baseline conflict", "[versionplan]")
                                       toplevel_spec());
 
     REQUIRE(!install_plan.has_value());
-    CHECK_LINES(
+    REQUIRE_LINES(
         install_plan.error(),
         R"(error: version conflict on a:x86-windows: toplevel-spec required 3, which cannot be compared with the baseline version 2.
+
 Both versions have scheme string but different primary text.
+
 This can be resolved by adding an explicit override to the preferred version. For example:
+
     "overrides": [
         { "name": "a", "version": "2" }
     ]
+
 See `vcpkg help versioning` or https://learn.microsoft.com/vcpkg/users/versioning for more information.)");
 }
 
@@ -1086,93 +1079,6 @@ TEST_CASE ("version install diamond date", "[versionplan]")
     check_name_and_version(install_plan.install_actions[1], "b", {"2020-01-03", 0});
     check_name_and_version(install_plan.install_actions[2], "a", {"2020-01-03", 0});
 }
-static Optional<std::string> diff_lines(StringView a, StringView b)
-{
-    auto lines_a = Strings::split_keep_empty(a, '\n');
-    auto lines_b = Strings::split_keep_empty(b, '\n');
-
-    std::vector<std::vector<size_t>> edits;
-    auto& first_row = edits.emplace_back();
-    first_row.resize(lines_b.size() + 1);
-    std::iota(first_row.begin(), first_row.end(), 0);
-    for (size_t i = 0; i < lines_a.size(); ++i)
-    {
-        edits.emplace_back().resize(lines_b.size() + 1);
-        edits[i + 1][0] = edits[i][0] + 1;
-        for (size_t j = 0; j < lines_b.size(); ++j)
-        {
-            size_t p = edits[i + 1][j] + 1;
-            size_t m = edits[i][j + 1] + 1;
-            if (m < p) p = m;
-            if (lines_a[i] == lines_b[j] && edits[i][j] < p) p = edits[i][j];
-            edits[i + 1][j + 1] = p;
-        }
-    }
-
-    size_t i = lines_a.size();
-    size_t j = lines_b.size();
-    if (edits[i][j] == 0) return nullopt;
-
-    std::vector<std::string> lines;
-
-    while (i > 0 && j > 0)
-    {
-        if (edits[i][j] == edits[i - 1][j - 1] && lines_a[i - 1] == lines_b[j - 1])
-        {
-            --j;
-            --i;
-            lines.emplace_back(" " + lines_a[i]);
-        }
-        else if (edits[i][j] == edits[i - 1][j] + 1)
-        {
-            --i;
-            lines.emplace_back("-" + lines_a[i]);
-        }
-        else
-        {
-            --j;
-            lines.emplace_back("+" + lines_b[j]);
-        }
-    }
-    for (; i > 0; --i)
-    {
-        lines.emplace_back("-" + lines_a[i - 1]);
-    }
-    for (; j > 0; --j)
-    {
-        lines.emplace_back("+" + lines_b[j - 1]);
-    }
-    std::string ret;
-    for (auto it = lines.rbegin(); it != lines.rend(); ++it)
-    {
-        ret.append(*it);
-        ret.push_back('\n');
-    }
-    return ret;
-}
-
-#define REQUIRE_LINES(a, b)                                                                                            \
-    do                                                                                                                 \
-    {                                                                                                                  \
-        if (auto delta = diff_lines((a), (b))) FAIL(*delta.get());                                                     \
-    } while (0)
-
-TEST_CASE ("diff algorithm", "[diff]")
-{
-    CHECK(!diff_lines("hello", "hello"));
-    CHECK(!diff_lines("hello\n", "hello\n"));
-    CHECK(!diff_lines("hello\n\nworld", "hello\n\nworld"));
-    {
-        auto a = diff_lines("hello\na\nworld", "hello\nworld");
-        REQUIRE(a);
-        CHECK(*a.get() == " hello\n-a\n world\n");
-    }
-    {
-        auto a = diff_lines("hello\nworld", "hello\na\nworld");
-        REQUIRE(a);
-        CHECK(*a.get() == " hello\n+a\n world\n");
-    }
-}
 
 TEST_CASE ("version install scheme failure", "[versionplan]")
 {
@@ -1319,7 +1225,7 @@ TEST_CASE ("version install scheme change in port version", "[versionplan]")
                                           toplevel_spec());
 
         REQUIRE(!install_plan.has_value());
-        CHECK_LINES(
+        REQUIRE_LINES(
             install_plan.error(),
             R"(error: version conflict on b:x86-windows: a:x86-windows@2#1 required 1#1, which cannot be compared with the baseline version 1.
 
@@ -2407,43 +2313,35 @@ TEST_CASE ("formatting plan 1", "[dependencies]")
     }
 
     plan.remove_actions.push_back(remove_a);
-    {
-        auto formatted = format_plan(plan, "/builtin");
-        CHECK(formatted.text == "The following packages will be removed:\n"
-                                "    a:x64-osx\n"
-                                "    b:x64-osx\n");
-    }
+    REQUIRE_LINES(format_plan(plan, "/builtin").text,
+                  "The following packages will be removed:\n"
+                  "    a:x64-osx\n"
+                  "    b:x64-osx\n");
 
     plan.install_actions.push_back(std::move(install_c));
-    {
-        auto formatted = format_plan(plan, "/builtin");
-        CHECK(formatted.text == "The following packages will be removed:\n"
-                                "    a:x64-osx\n"
-                                "    b:x64-osx\n"
-                                "The following packages will be built and installed:\n"
-                                "    c:x64-osx -> 1 -- c\n");
-    }
+    REQUIRE_LINES(format_plan(plan, "/builtin").text,
+                  "The following packages will be removed:\n"
+                  "    a:x64-osx\n"
+                  "    b:x64-osx\n"
+                  "The following packages will be built and installed:\n"
+                  "    c:x64-osx -> 1 -- c\n");
 
     plan.remove_actions.push_back(remove_c);
-    {
-        auto formatted = format_plan(plan, "c");
-        CHECK(formatted.text == "The following packages will be removed:\n"
-                                "    a:x64-osx\n"
-                                "    b:x64-osx\n"
-                                "The following packages will be rebuilt:\n"
-                                "    c:x64-osx -> 1\n");
-    }
+    REQUIRE_LINES(format_plan(plan, "c").text,
+                  "The following packages will be removed:\n"
+                  "    a:x64-osx\n"
+                  "    b:x64-osx\n"
+                  "The following packages will be rebuilt:\n"
+                  "    c:x64-osx -> 1\n");
 
     plan.install_actions.push_back(std::move(install_b));
-    {
-        auto formatted = format_plan(plan, "c");
-        CHECK(formatted.text == "The following packages will be removed:\n"
-                                "    a:x64-osx\n"
-                                "The following packages will be rebuilt:\n"
-                                "  * b[1]:x64-osx -> 1 -- b\n"
-                                "    c:x64-osx -> 1\n"
-                                "Additional packages (*) will be modified to complete this operation.\n");
-    }
+    REQUIRE_LINES(format_plan(plan, "c").text,
+                  "The following packages will be removed:\n"
+                  "    a:x64-osx\n"
+                  "The following packages will be rebuilt:\n"
+                  "  * b[1]:x64-osx -> 1 -- b\n"
+                  "    c:x64-osx -> 1\n"
+                  "Additional packages (*) will be modified to complete this operation.\n");
 
     plan.install_actions.push_back(std::move(install_a));
     plan.already_installed.push_back(std::move(already_installed_d));
@@ -2451,28 +2349,27 @@ TEST_CASE ("formatting plan 1", "[dependencies]")
     {
         auto formatted = format_plan(plan, "b");
         CHECK(formatted.has_removals);
-        CHECK(formatted.text == "The following packages are already installed:\n"
-                                "  * d:x86-windows -> 1\n"
-                                "    e:x86-windows -> 1\n"
-                                "The following packages will be rebuilt:\n"
-                                "  * a:x64-osx -> 1 -- a\n"
-                                "  * b[1]:x64-osx -> 1\n"
-                                "    c:x64-osx -> 1 -- c\n"
-                                "Additional packages (*) will be modified to complete this operation.\n");
+        REQUIRE_LINES(formatted.text,
+                      "The following packages are already installed:\n"
+                      "  * d:x86-windows -> 1\n"
+                      "    e:x86-windows -> 1\n"
+                      "The following packages will be rebuilt:\n"
+                      "  * a:x64-osx -> 1 -- a\n"
+                      "  * b[1]:x64-osx -> 1\n"
+                      "    c:x64-osx -> 1 -- c\n"
+                      "Additional packages (*) will be modified to complete this operation.\n");
     }
 
     plan.install_actions.push_back(std::move(install_f));
-    {
-        auto formatted = format_plan(plan, "b");
-        CHECK(formatted.text == "The following packages are excluded:\n"
-                                "    f:x64-osx -> 1 -- f\n"
-                                "The following packages are already installed:\n"
-                                "  * d:x86-windows -> 1\n"
-                                "    e:x86-windows -> 1\n"
-                                "The following packages will be rebuilt:\n"
-                                "  * a:x64-osx -> 1 -- a\n"
-                                "  * b[1]:x64-osx -> 1\n"
-                                "    c:x64-osx -> 1 -- c\n"
-                                "Additional packages (*) will be modified to complete this operation.\n");
-    }
+    REQUIRE_LINES(format_plan(plan, "b").text,
+                  "The following packages are excluded:\n"
+                  "    f:x64-osx -> 1 -- f\n"
+                  "The following packages are already installed:\n"
+                  "  * d:x86-windows -> 1\n"
+                  "    e:x86-windows -> 1\n"
+                  "The following packages will be rebuilt:\n"
+                  "  * a:x64-osx -> 1 -- a\n"
+                  "  * b[1]:x64-osx -> 1\n"
+                  "    c:x64-osx -> 1 -- c\n"
+                  "Additional packages (*) will be modified to complete this operation.\n");
 }

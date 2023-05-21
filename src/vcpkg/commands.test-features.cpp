@@ -161,7 +161,7 @@ namespace vcpkg::Commands::TestFeatures
         const auto test_features_seperatly =
             !Util::Sets::contains(options.switches, OPTION_DONT_TEST_FEATURES_SEPARATELY);
 
-        BinaryCache binary_cache{args, paths};
+        auto binary_cache = BinaryCache::make(args, paths, stdout_sink).value_or_exit(VCPKG_LINE_INFO);
 
         auto& filesystem = paths.get_filesystem();
         Optional<CiBuildLogsRecorder> build_logs_recorder_storage;
@@ -399,8 +399,8 @@ namespace vcpkg::Commands::TestFeatures
                                                                 ? *(feature_build_logs_recorder_storage.get())
                                                                 : null_build_logs_recorder();
             ElapsedTimer install_timer;
-            const auto summary = Install::perform(
-                args, install_plan, KeepGoing::YES, paths, status_db, binary_cache, build_logs_recorder, var_provider);
+            const auto summary = Install::execute_plan(
+                args, install_plan, KeepGoing::YES, paths, status_db, binary_cache, build_logs_recorder);
             binary_cache.clear_cache();
 
             for (const auto& result : summary.results)

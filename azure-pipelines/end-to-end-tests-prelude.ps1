@@ -100,12 +100,20 @@ function Run-VcpkgAndCaptureOutput {
         [Parameter(Mandatory = $false)]
         [Switch]$EndToEndTestSilent,
 
+        [Parameter(Mandatory = $false)]
+        [Switch]$ForceExe,
+
         [Parameter(ValueFromRemainingArguments)]
         [string[]]$TestArgs
     )
-    $Script:CurrentTest = "$VcpkgPs1 $($testArgs -join ' ')"
+    $thisVcpkg = $VcpkgPs1;
+    if ($ForceExe) {
+        $thisVcpkg = $VcpkgExe;
+    }
+
+    $Script:CurrentTest = "$thisVcpkg $($testArgs -join ' ')"
     if (!$EndToEndTestSilent) { Write-Host -ForegroundColor red $Script:CurrentTest }
-    $result = (& "$VcpkgPs1" @testArgs) | Out-String
+    $result = (& "$thisVcpkg" @testArgs) | Out-String
     if (!$EndToEndTestSilent) { Write-Host -ForegroundColor Gray $result }
     $result
 }
@@ -115,10 +123,13 @@ function Run-Vcpkg {
         [Parameter(Mandatory = $false)]
         [Switch]$EndToEndTestSilent,
 
+        [Parameter(Mandatory = $false)]
+        [Switch]$ForceExe,
+
         [Parameter(ValueFromRemainingArguments)]
         [string[]]$TestArgs
     )
-    Run-VcpkgAndCaptureOutput -EndToEndTestSilent:$EndToEndTestSilent @TestArgs | Out-Null
+    Run-VcpkgAndCaptureOutput -EndToEndTestSilent:$EndToEndTestSilent -ForceExe:$ForceExe @TestArgs | Out-Null
 }
 
 Refresh-TestRoot

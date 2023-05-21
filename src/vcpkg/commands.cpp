@@ -42,6 +42,7 @@
 #include <vcpkg/commands.set-installed.h>
 #include <vcpkg/commands.test-features.h>
 #include <vcpkg/commands.update-baseline.h>
+#include <vcpkg/commands.update-registry.h>
 #include <vcpkg/commands.update.h>
 #include <vcpkg/commands.upgrade.h>
 #include <vcpkg/commands.upload-metrics.h>
@@ -101,6 +102,7 @@ namespace vcpkg::Commands
         {"search", command_search_and_exit},
         {"update", Update::perform_and_exit},
         {"x-update-baseline", command_update_baseline_and_exit},
+        {"x-update-registry", command_update_registry_and_exit},
         {"use", command_use_and_exit},
         {"x-vsinstances", VSInstances::perform_and_exit},
         {"z-ce", command_z_ce_and_exit},

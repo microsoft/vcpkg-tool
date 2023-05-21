@@ -363,7 +363,7 @@ jobs:
         filePath: vcpkg-init/mint-standalone-bundle.ps1
         arguments: '-DestinationDir "$(Build.ArtifactStagingDirectory)/vs-insertion/staging" -TempDir standalone-temp -SignedFilesRoot "$(Build.ArtifactStagingDirectory)\staging" -Deployment "VisualStudio" -VcpkgBaseVersion "$(VCPKG_BASE_VERSION)"'
     - task: CmdLine@2
-      displayName: 'Arrange Drop'
+      displayName: 'Arrange Drop and Symbols'
       inputs:
         failOnStderr: true
         script: |
@@ -397,6 +397,16 @@ jobs:
           move "$(Build.ArtifactStagingDirectory)\staging\macos\vcpkg" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-macos"
 
           copy "$(Build.SourcesDirectory)\azure-pipelines\vs-insertion\vcpkg.nuspec" "$(Build.ArtifactStagingDirectory)\vs-insertion\staging\vcpkg.nuspec"
+
+          mkdir "$(Build.ArtifactStagingDirectory)\symbols"
+          copy "$(Build.ArtifactStagingDirectory)\drop\vcpkg.exe" "$(Build.ArtifactStagingDirectory)\symbols\vcpkg.exe"
+          copy "$(Build.ArtifactStagingDirectory)\drop\vcpkg.pdb" "$(Build.ArtifactStagingDirectory)\symbols\vcpkg.pdb"
+          copy "$(Build.ArtifactStagingDirectory)\drop\tls12-download.exe" "$(Build.ArtifactStagingDirectory)\symbols\tls12-download.exe"
+          copy "$(Build.ArtifactStagingDirectory)\drop\tls12-download.pdb" "$(Build.ArtifactStagingDirectory)\symbols\tls12-download.pdb"
+          copy "$(Build.ArtifactStagingDirectory)\drop\vcpkg-arm64.exe" "$(Build.ArtifactStagingDirectory)\symbols\vcpkg-arm64.exe"
+          copy "$(Build.ArtifactStagingDirectory)\drop\vcpkg-arm64.pdb" "$(Build.ArtifactStagingDirectory)\symbols\vcpkg-arm64.pdb"
+          copy "$(Build.ArtifactStagingDirectory)\drop\tls12-download-arm64.exe" "$(Build.ArtifactStagingDirectory)\symbols\tls12-download-arm64.exe"
+          copy "$(Build.ArtifactStagingDirectory)\drop\tls12-download-arm64.pdb" "$(Build.ArtifactStagingDirectory)\symbols\tls12-download-arm64.pdb"
     - task: AzureArtifacts.manifest-generator-task.manifest-generator-task.ManifestGeneratorTask@0
       displayName: 'Generate SBOMs'
       inputs:
@@ -426,21 +436,21 @@ jobs:
         ArtifactName: 'vs-insertion'
         publishLocation: 'Container'
     # Do compliance checks.
-    - task: BinSkim@3
+    - task: BinSkim@4
       inputs:
         InputType: 'CommandLine'
         arguments: 'analyze "$(Build.ArtifactStagingDirectory)\drop\vcpkg.exe" "$(Build.ArtifactStagingDirectory)\drop\tls12-download.exe" "$(Build.ArtifactStagingDirectory)\vcpkg-arm64.exe" "$(Build.ArtifactStagingDirectory)\tls12-download-arm64.exe"'
-    - task: PoliCheck@1
+    - task: PoliCheck@2
       inputs:
         inputType: 'Basic'
         targetType: 'F'
         targetArgument: '$(Build.ArtifactStagingDirectory)\drop'
         result: 'PoliCheck.xml'
-    - task: securedevelopmentteam.vss-secure-development-tools.build-task-credscan.CredScan@2
+    - task: securedevelopmentteam.vss-secure-development-tools.build-task-credscan.CredScan@3
       displayName: Run CredScan
       inputs:
         toolMajorVersion: V2
-    - task: securedevelopmentteam.vss-secure-development-tools.build-task-postanalysis.PostAnalysis@1
+    - task: securedevelopmentteam.vss-secure-development-tools.build-task-postanalysis.PostAnalysis@2
       displayName: Check for compliance errors
       # To avoid spurious warnings about missing logs, explicitly declare what we scanned.
       inputs:
@@ -449,7 +459,7 @@ jobs:
         PoliCheck: true
     # Trust Services Automation (TSA) can automatically open bugs for compliance issues.
     # https://www.1eswiki.com/wiki/Trust_Services_Automation_(TSA)
-    - task: securedevelopmentteam.vss-secure-development-tools.build-task-uploadtotsa.TSAUpload@1
+    - task: securedevelopmentteam.vss-secure-development-tools.build-task-uploadtotsa.TSAUpload@2
       displayName: Upload logs to TSA
       inputs:
         tsaVersion: TsaV2
@@ -485,6 +495,14 @@ jobs:
         command: push
         packagesToPush: '$(Build.ArtifactStagingDirectory)/vs-insertion/drop/VS.Redist.Vcpkg.amd64.1.0.0-$(VCPKG_FULL_VERSION).nupkg'
         publishVstsFeed: '97a41293-2972-4f48-8c0e-05493ae82010'
+    # Publish symbols
+    - task: MicroBuildArchiveSymbols@4
+      displayName: 'Upload Symbols'
+      inputs:
+        SymbolsFeatureName: 'vcpkg'
+        SymbolsProject: 'VS'
+        SymbolsAgentPath: '$(Build.ArtifactStagingDirectory)\symbols'
+        azureSubscription: 'Symbols Upload (DevDiv)'
     # Publish everything to a GitHub Release
     - ${{ if eq(parameters.PublishTo, 'GitHub and NuGet') }}:
       - task: DownloadSecureFile@1
