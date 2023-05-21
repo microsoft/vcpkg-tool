@@ -2979,7 +2979,7 @@ namespace vcpkg
 #if defined(_WIN32)
             stdfs::create_hard_link(to_stdfs_path(to), to_stdfs_path(from), ec);
 #else  // ^^^ _WIN32 // !_WIN32 vvv
-            if (::link(from.c_str(), to.c_str()) == 0)
+            if (::link(to.c_str(), from.c_str()) == 0)
             {
                 ec.clear();
             }

@@ -114,9 +114,22 @@ namespace vcpkg
                     if (fs.exists(target, IgnoreErrors{}))
                     {
                         msg::println_warning(msgOverwritingFile, msg::path = target);
+                        fs.remove_all(target, IgnoreErrors{});
+                    }
+                    static bool use_hard_link = true;
+                    if (use_hard_link)
+                    {
+                        fs.create_hard_link(file, target, ec);
+                        if (ec)
+                        {
+                            use_hard_link = false;
+                        }
+                    }
+                    if (!use_hard_link)
+                    {
+                        fs.copy_file(file, target, CopyOptions::overwrite_existing, ec);
                     }
 
-                    fs.copy_file(file, target, CopyOptions::overwrite_existing, ec);
                     if (ec)
                     {
                         msg::println_error(msgInstallFailed, msg::path = target, msg::error_msg = ec.message());
