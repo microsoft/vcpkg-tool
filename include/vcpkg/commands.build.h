@@ -155,6 +155,7 @@ namespace vcpkg
         Triplet triplet;
         bool load_vcvars_env = false;
         bool disable_compiler_tracking = false;
+        bool target_is_xbox = false;
         std::string target_architecture;
         std::string cmake_system_name;
         std::string cmake_system_version;
@@ -166,6 +167,7 @@ namespace vcpkg
         Optional<std::string> public_abi_override;
         std::vector<std::string> passthrough_env_vars;
         std::vector<std::string> passthrough_env_vars_tracked;
+        Optional<Path> gamedk_latest_path;
 
         Path toolchain_file() const;
         bool using_vcvars() const;

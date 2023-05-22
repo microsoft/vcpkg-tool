@@ -489,6 +489,17 @@ namespace vcpkg::PlatformExpression
             const Context& context;
             const std::map<std::string, bool>& override_ctxt;
 
+            bool true_if_exists_and_nonempty(const std::string& variable_name) const
+            {
+                auto iter = context.find(variable_name);
+                if (iter == context.end())
+                {
+                    return false;
+                }
+
+                return !iter->second.empty();
+            }
+
             bool true_if_exists_and_equal(const std::string& variable_name, const std::string& value) const
             {
                 auto iter = context.find(variable_name);
@@ -542,9 +553,7 @@ namespace vcpkg::PlatformExpression
                         case Identifier::osx: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "Darwin");
                         case Identifier::uwp:
                             return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "WindowsStore");
-                        case Identifier::xbox:
-                            // This identifier is intended to be enabled via VCPKG_DEP_INFO_OVERRIDE_VARS
-                            return false;
+                        case Identifier::xbox: return true_if_exists_and_nonempty("VCPKG_XBOX_CONSOLE_TARGET");
                         case Identifier::android: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "Android");
                         case Identifier::emscripten:
                             return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "Emscripten");
