@@ -803,6 +803,7 @@
   "PortBugInspectFiles": "{extension} dosyalarını incelemek için şu komutu kullanın:",
   "PortBugInvalidCrtLinkage": "Aşağıdaki ikili dosyalar {expected} CRT'yi kullanmalıdır.",
   "PortBugInvalidCrtLinkageEntry": "Şunları barındıran {path} bağlantıları:",
+  "PortBugKernel32FromXbox": "The selected triplet targets Xbox, but the following DLLs link with kernel32. These DLLs cannot be loaded on Xbox, where kernel32 is not present. This is typically caused by linking with kernel32.lib rather than a suitable umbrella library, such as onecore_apiset.lib or xgameplatform.lib.",
   "PortBugMergeLibCMakeDir": "/lib/cmake klasörü /debug/lib/cmake ile birleştirilmeli ve /share/{package_name}/cmake konumuna taşınmalıdır. Lütfen vcpkg-cmake-config bağlantı noktasından 'vcpkg_cmake_config_fixup()' yardımcı işlevini kullanın.",
   "PortBugMismatchedNumberOfBinaries": "Hata ayıklama ve yayın ikili dosyalarının sayısı eşleşmiyor.",
   "PortBugMisplacedCMakeFiles": "Aşağıdaki CMake dosyaları /share/{spec} dışında bulundu. Lütfen CMake dosyalarını /share/{spec} dosyasına yerleştirin.",
