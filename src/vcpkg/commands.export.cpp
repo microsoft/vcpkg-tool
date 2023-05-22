@@ -388,16 +388,10 @@ namespace vcpkg::Export
         ret.prefab = Util::Sets::contains(options.switches, OPTION_PREFAB);
         ret.prefab_options.enable_maven = Util::Sets::contains(options.switches, OPTION_PREFAB_ENABLE_MAVEN);
         ret.prefab_options.enable_debug = Util::Sets::contains(options.switches, OPTION_PREFAB_ENABLE_DEBUG);
-        ret.maybe_output = Util::maybe_value_copy(options.settings, OPTION_OUTPUT);
-        auto maybe_output_dir = Util::maybe_value(options.settings, OPTION_OUTPUT_DIR);
-        if (auto output_dir = maybe_output_dir.get())
-        {
-            ret.output_dir = paths.original_cwd / *output_dir;
-        }
-        else
-        {
-            ret.output_dir = paths.root;
-        }
+        ret.maybe_output = Util::lookup_value_copy(options.settings, OPTION_OUTPUT);
+        ret.output_dir = Util::lookup_value(options.settings, OPTION_OUTPUT_DIR)
+                             .map([&](const Path& p) { return paths.original_cwd / p; })
+                             .value_or(paths.root);
         ret.all_installed = Util::Sets::contains(options.switches, OPTION_ALL_INSTALLED);
 
         if (ret.all_installed)
@@ -445,7 +439,7 @@ namespace vcpkg::Export
             if (is_main_opt)
             {
                 for (auto&& opt : implying_opts)
-                    opt.out_opt = Util::maybe_value_copy(options.settings, opt.name);
+                    opt.out_opt = Util::lookup_value_copy(options.settings, opt.name);
             }
             else
             {

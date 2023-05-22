@@ -215,7 +215,7 @@ namespace vcpkg
         BuildPolicies() = default;
         BuildPolicies(std::unordered_map<BuildPolicy, bool>&& map) : m_policies(std::move(map)) { }
 
-        bool is_enabled(BuildPolicy policy) const { return Util::value_or_default(m_policies, policy, false); }
+        bool is_enabled(BuildPolicy policy) const { return Util::copy_or_default(m_policies, policy); }
 
     private:
         std::unordered_map<BuildPolicy, bool> m_policies;

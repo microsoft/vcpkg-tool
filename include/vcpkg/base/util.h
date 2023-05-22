@@ -139,7 +139,10 @@ namespace vcpkg::Util
     }
 
     template<class Map, class Key>
-    Optional<const typename Map::mapped_type&> maybe_value(const Map& map, Key&& key)
+    void value_or_default(const Map& map, Key&& key, typename Map::mapped_type&& default_value) = delete;
+
+    template<class Map, class Key>
+    Optional<const typename Map::mapped_type&> lookup_value(const Map& map, Key&& key)
     {
         const auto it = map.find(static_cast<Key&&>(key));
         if (it == map.end())
@@ -151,7 +154,7 @@ namespace vcpkg::Util
     }
 
     template<class Map, class Key>
-    Optional<typename Map::mapped_type> maybe_value_copy(const Map& map, Key&& key)
+    Optional<typename Map::mapped_type> lookup_value_copy(const Map& map, Key&& key)
     {
         const auto it = map.find(static_cast<Key&&>(key));
         if (it == map.end())
