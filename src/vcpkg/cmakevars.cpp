@@ -406,36 +406,18 @@ endfunction()
     Optional<const std::unordered_map<std::string, std::string>&> TripletCMakeVarProvider::get_generic_triplet_vars(
         Triplet triplet) const
     {
-        auto find_itr = generic_triplet_vars.find(triplet);
-        if (find_itr != generic_triplet_vars.end())
-        {
-            return find_itr->second;
-        }
-
-        return nullopt;
+        return Util::lookup_value(generic_triplet_vars, triplet);
     }
 
     Optional<const std::unordered_map<std::string, std::string>&> TripletCMakeVarProvider::get_dep_info_vars(
         const PackageSpec& spec) const
     {
-        auto find_itr = dep_resolution_vars.find(spec);
-        if (find_itr != dep_resolution_vars.end())
-        {
-            return find_itr->second;
-        }
-
-        return nullopt;
+        return Util::lookup_value(dep_resolution_vars, spec);
     }
 
     Optional<const std::unordered_map<std::string, std::string>&> TripletCMakeVarProvider::get_tag_vars(
         const PackageSpec& spec) const
     {
-        auto find_itr = tag_vars.find(spec);
-        if (find_itr != tag_vars.end())
-        {
-            return find_itr->second;
-        }
-
-        return nullopt;
+        return Util::lookup_value(tag_vars, spec);
     }
 }
