@@ -399,6 +399,7 @@ namespace vcpkg::Commands::TestFeatures
                                                                 ? *(feature_build_logs_recorder_storage.get())
                                                                 : null_build_logs_recorder();
             ElapsedTimer install_timer;
+            binary_cache.fetch(install_plan.install_actions);
             const auto summary = Install::execute_plan(
                 args, install_plan, KeepGoing::YES, paths, status_db, binary_cache, build_logs_recorder);
             binary_cache.clear_cache();
