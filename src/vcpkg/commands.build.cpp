@@ -1071,7 +1071,8 @@ namespace vcpkg
 
     static Optional<AbiTagAndFiles> compute_abi_tag(const VcpkgPaths& paths,
                                                     const InstallPlanAction& action,
-                                                    Span<const AbiEntry> dependency_abis)
+                                                    Span<const AbiEntry> dependency_abis,
+                                                    const PortAbiCache& cache)
     {
         auto& fs = paths.get_filesystem();
         Triplet triplet = action.spec.triplet();
@@ -1107,44 +1108,60 @@ namespace vcpkg
         abi_tag_entries.emplace_back("triplet_abi", triplet_abi);
         abi_entries_from_abi_info(abi_info, abi_tag_entries);
 
-        // If there is an unusually large number of files in the port then
-        // something suspicious is going on.  Rather than hash all of them
-        // just mark the port as no-hash
-        constexpr int max_port_file_count = 100;
-
-        std::string portfile_cmake_contents;
-        std::vector<Path> files;
-        std::vector<std::string> hashes;
         auto&& port_dir = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_location;
-        size_t port_file_count = 0;
-        Path abs_port_file;
-        for (auto& port_file : fs.get_regular_files_recursive_lexically_proximate(port_dir, VCPKG_LINE_INFO))
+        auto& cache_entry = cache.get(port_dir);
+        if (cache_entry.files.empty())
         {
-            if (port_file.filename() == ".DS_Store")
+            // If there is an unusually large number of files in the port then
+            // something suspicious is going on.  Rather than hash all of them
+            // just mark the port as no-hash
+            constexpr int max_port_file_count = 100;
+
+            std::string portfile_cmake_contents;
+
+            size_t port_file_count = 0;
+            Path abs_port_file;
+            for (auto& port_file : fs.get_regular_files_recursive_lexically_proximate(port_dir, VCPKG_LINE_INFO))
             {
-                continue;
+                if (port_file.filename() == ".DS_Store")
+                {
+                    continue;
+                }
+                abs_port_file = port_dir;
+                abs_port_file /= port_file;
+
+                if (port_file.extension() == ".cmake")
+                {
+                    portfile_cmake_contents += fs.read_contents(abs_port_file, VCPKG_LINE_INFO);
+                }
+
+                auto hash = vcpkg::Hash::get_file_hash(fs, abs_port_file, Hash::Algorithm::Sha256)
+                                .value_or_exit(VCPKG_LINE_INFO);
+                cache_entry.abi_entries.emplace_back(port_file, hash);
+                cache_entry.files.push_back(port_file);
+                cache_entry.hashes.push_back(std::move(hash));
+
+                ++port_file_count;
+                if (port_file_count > max_port_file_count)
+                {
+                    cache_entry.abi_entries.emplace_back("no_hash_max_portfile", "");
+                    break;
+                }
             }
-            abs_port_file = port_dir;
-            abs_port_file /= port_file;
 
-            if (port_file.extension() == ".cmake")
+            cache_entry.heuristic_resources = run_resource_heuristics(portfile_cmake_contents);
+
+            auto& helpers = paths.get_cmake_script_hashes();
+            for (auto&& helper : helpers)
             {
-                portfile_cmake_contents += fs.read_contents(abs_port_file, VCPKG_LINE_INFO);
-            }
-
-            auto hash =
-                vcpkg::Hash::get_file_hash(fs, abs_port_file, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO);
-            abi_tag_entries.emplace_back(port_file, hash);
-            files.push_back(port_file);
-            hashes.push_back(std::move(hash));
-
-            ++port_file_count;
-            if (port_file_count > max_port_file_count)
-            {
-                abi_tag_entries.emplace_back("no_hash_max_portfile", "");
-                break;
+                if (Strings::case_insensitive_ascii_contains(portfile_cmake_contents, helper.first))
+                {
+                    cache_entry.abi_entries.emplace_back(helper.first, helper.second);
+                }
             }
         }
+
+        Util::Vectors::append(&abi_tag_entries, cache_entry.abi_entries);
 
         abi_tag_entries.emplace_back("cmake", paths.get_tool_version(Tools::CMAKE, stdout_sink));
 
@@ -1152,15 +1169,6 @@ namespace vcpkg
 #if defined(_WIN32)
         abi_tag_entries.emplace_back("powershell", paths.get_tool_version("powershell-core", stdout_sink));
 #endif
-
-        auto& helpers = paths.get_cmake_script_hashes();
-        for (auto&& helper : helpers)
-        {
-            if (Strings::case_insensitive_ascii_contains(portfile_cmake_contents, helper.first))
-            {
-                abi_tag_entries.emplace_back(helper.first, helper.second);
-            }
-        }
 
         abi_tag_entries.emplace_back("ports.cmake", paths.get_ports_cmake_hash().to_string());
         abi_tag_entries.emplace_back("post_build_checks", "2");
@@ -1210,9 +1218,9 @@ namespace vcpkg
                 &triplet_abi,
                 Hash::get_file_hash(fs, abi_file_path, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO),
                 abi_file_path,
-                std::move(files),
-                std::move(hashes),
-                run_resource_heuristics(portfile_cmake_contents)};
+                cache_entry.files,
+                cache_entry.hashes,
+                cache_entry.heuristic_resources};
         }
 
         Debug::println(
@@ -1222,10 +1230,13 @@ namespace vcpkg
         return nullopt;
     }
 
+    PortAbiCache::AbiCacheEntry& PortAbiCache::get(const Path& port_dir) const { return items[port_dir.native()]; }
+
     void compute_all_abis(const VcpkgPaths& paths,
                           ActionPlan& action_plan,
                           const CMakeVars::CMakeVarProvider& var_provider,
-                          const StatusParagraphs& status_db)
+                          const StatusParagraphs& status_db,
+                          const PortAbiCache& cache)
     {
         for (auto it = action_plan.install_actions.begin(); it != action_plan.install_actions.end(); ++it)
         {
@@ -1268,7 +1279,7 @@ namespace vcpkg
                 paths, action.spec.triplet(), var_provider.get_tag_vars(action.spec).value_or_exit(VCPKG_LINE_INFO));
             abi_info.toolset = paths.get_toolset(*abi_info.pre_build_info);
 
-            auto maybe_abi_tag_and_file = compute_abi_tag(paths, action, dependency_abis);
+            auto maybe_abi_tag_and_file = compute_abi_tag(paths, action, dependency_abis, cache);
             if (auto p = maybe_abi_tag_and_file.get())
             {
                 abi_info.compiler_info = paths.get_compiler_info(abi_info);

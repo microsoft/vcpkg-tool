@@ -279,10 +279,26 @@ namespace vcpkg
         std::vector<Json::Value> heuristic_resources;
     };
 
+    struct PortAbiCache
+    {
+        struct AbiCacheEntry
+        {
+            std::vector<AbiEntry> abi_entries;
+            std::vector<Path> files;
+            std::vector<std::string> hashes;
+            Json::Value heuristic_resources;
+        };
+        AbiCacheEntry& get(const Path& port_dir) const;
+
+    private:
+        mutable std::unordered_map<std::string, AbiCacheEntry> items;
+    };
+
     void compute_all_abis(const VcpkgPaths& paths,
                           ActionPlan& action_plan,
                           const CMakeVars::CMakeVarProvider& var_provider,
-                          const StatusParagraphs& status_db);
+                          const StatusParagraphs& status_db,
+                          const PortAbiCache& cache = {});
 
     struct EnvCache
     {
