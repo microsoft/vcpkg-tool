@@ -280,19 +280,43 @@ namespace vcpkg::Commands::TestFeatures
             }
         }
         fmt::print("compute {} install plans\n", specs_to_test.size());
+
+        std::vector<FullPackageSpec> specs;
+        std::vector<const InstallPlanAction*> actions;
         CreateInstallPlanOptions install_plan_options{host_triplet, paths.packages(), UnsupportedPortAction::Warn};
         auto install_plans = Util::fmap(specs_to_test, [&](auto& spec) {
-            return std::make_pair(
-                spec,
-                create_feature_install_plan(
-                    provider, var_provider, Span<FullPackageSpec>(&spec, 1), {}, install_plan_options));
+            auto install_plan = create_feature_install_plan(
+                provider, var_provider, Span<FullPackageSpec>(&spec, 1), {}, install_plan_options);
+            if (install_plan.unsupported_features.empty())
+            {
+                for (auto& actions : install_plan.install_actions)
+                {
+                    specs.emplace_back(actions.spec, actions.feature_list);
+                }
+                actions.push_back(&install_plan.install_actions.back());
+            }
+            return std::make_pair(spec, std::move(install_plan));
         });
+        fmt::print("load {} tag vars\n", specs.size());
+        var_provider.load_tag_vars(specs, provider, host_triplet);
+
+        fmt::print("compute all abis ...\n");
+        StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
+        PortAbiCache cache;
+        for (auto& [spec, install_plan] : install_plans)
+        {
+            if (install_plan.unsupported_features.empty())
+            {
+                compute_all_abis(paths, install_plan, var_provider, status_db, cache);
+            }
+        }
+
+        fmt::print("Precheck binary cache ...\n");
+        binary_cache.precheck(actions);
 
         Util::stable_sort(install_plans, [](const auto& left, const auto& right) {
             return left.second.install_actions.size() < right.second.install_actions.size();
         });
-
-        StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
 
         // test port features
         std::unordered_set<std::string> known_failures;
@@ -353,8 +377,6 @@ namespace vcpkg::Commands::TestFeatures
                 handle_result(std::move(spec), CiFeatureBaselineState::Cascade, baseline);
                 continue;
             }
-            var_provider.load_tag_vars(install_plan, provider, host_triplet);
-            compute_all_abis(paths, install_plan, var_provider, status_db);
 
             if (auto iter = Util::find_if(install_plan.install_actions,
                                           [&known_failures](const auto& install_action) {
@@ -378,8 +400,9 @@ namespace vcpkg::Commands::TestFeatures
                 continue;
             }
 
-            if (binary_cache.precheck({&install_plan.install_actions.back(), 1}).front() ==
-                CacheAvailability::available)
+            const InstallPlanAction* action = &install_plan.install_actions.back();
+            std::array<const InstallPlanAction*, 1> actions = {action};
+            if (binary_cache.precheck(actions).front() == CacheAvailability::available)
             {
                 handle_result(std::move(spec), CiFeatureBaselineState::Pass, baseline);
                 continue;

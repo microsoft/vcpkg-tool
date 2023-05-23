@@ -187,7 +187,7 @@ namespace vcpkg
         /// Checks whether the `actions` are present in the cache, without restoring them. Used by CI to determine
         /// missing packages.
         /// Returns a vector where each index corresponds to the matching index in `actions`.
-        std::vector<CacheAvailability> precheck(View<InstallPlanAction> actions);
+        std::vector<CacheAvailability> precheck(View<const InstallPlanAction*> actions);
 
         void clear_cache();
 
