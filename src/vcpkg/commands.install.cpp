@@ -122,6 +122,9 @@ namespace vcpkg
                         fs.create_hard_link(file, target, ec);
                         if (ec)
                         {
+                            Debug::println("Install from packages to installed: Fallback to copy "
+                                           "instead creating hard links because of: ",
+                                           ec);
                             use_hard_link = false;
                         }
                     }
