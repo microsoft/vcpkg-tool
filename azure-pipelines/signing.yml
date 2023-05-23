@@ -457,29 +457,6 @@ jobs:
         BinSkim: true
         CredScan: true
         PoliCheck: true
-    # Trust Services Automation (TSA) can automatically open bugs for compliance issues.
-    # https://www.1eswiki.com/wiki/Trust_Services_Automation_(TSA)
-    - task: securedevelopmentteam.vss-secure-development-tools.build-task-uploadtotsa.TSAUpload@2
-      displayName: Upload logs to TSA
-      inputs:
-        tsaVersion: TsaV2
-        codebase: NewOrUpdate
-        codeBaseName: vcpkg
-        notificationAlias: vcpkg@microsoft.com
-        instanceUrlForTsaV2: DEVDIV
-        projectNameDEVDIV: DevDiv
-        areaPath: DevDiv\Cpp Language and Toolset\Acquisition and Release\Packaging\Vcpkg
-        iterationPath: DevDiv
-        # To avoid spurious warnings about missing logs, explicitly declare what we don't upload.
-        uploadAPIScan: false
-        uploadBinSkim: true
-        uploadFortifySCA: false
-        uploadFxCop: false
-        uploadModernCop: false
-        uploadPREfast: false
-        uploadRoslyn: false
-        uploadTSLint: false
-      condition: eq(variables['Build.SourceBranchName'], 'main')
     # Publish everything to a Drop
     - task: PublishBuildArtifacts@1
       displayName: 'Publish Drop'
