@@ -293,6 +293,36 @@ namespace vcpkg
         fs.rename_with_retry(to_path_partial, to_path, VCPKG_LINE_INFO);
     }
 
+    std::vector<std::pair<Path,Path>> strip_mapping(Filesystem& fs, const Path& path, int num_leading_dir) 
+    {
+        std::vector<std::pair<Path, Path>> result;
+
+        auto base_path = path;
+        auto proximate = fs.get_regular_files_recursive_lexically_proximate(path, VCPKG_LINE_INFO);
+
+        const auto& delim = "/";
+
+        for (const auto& file_path : proximate)
+        {
+            auto old_path = base_path / Path{file_path};
+
+            auto path_str = file_path.generic_u8string();
+            
+            for (int i = 0; i < num_leading_dir; ++i)
+            {
+                size_t pos = path_str.find(delim);
+                if (pos != std::string::npos)
+                {
+                   path_str = path_str.substr(pos + 1);
+                }
+            }
+            auto new_path = base_path / Path{path_str};
+
+            result.push_back({old_path, new_path});
+        }
+        return result;
+    }
+
     ExpectedL<Unit> compress_directory_to_zip(
         Filesystem& fs, const ToolCache& tools, MessageSink& status_sink, const Path& source, const Path& destination)
     {
