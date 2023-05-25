@@ -878,13 +878,11 @@ namespace
             payload.insert("version", abi);
             payload.insert("cacheSize", Json::Value::integer(cacheSize));
 
-            auto res =
-                invoke_http_request("POST",
-                                    std::vector<std::string>{"Content-Type: application/json",
-                                                             m_token_header,
-                                                             "Accept: application/json;api-version=6.0-preview.1"},
-                                    m_url,
-                                    std::string{stringify(payload)});
+            auto res = invoke_http_request(
+                "POST",
+                std::vector<std::string>{"Content-Type: application/json", m_token_header, m_accept_header.to_string()},
+                m_url,
+                std::string{stringify(payload)});
 
             auto maybe_json = Json::parse_object(res.get()->c_str());
             if (auto json = maybe_json.get())
@@ -926,8 +924,7 @@ namespace
                 {
                     Json::Object commit;
                     commit.insert("size", std::to_string(cache_size));
-                    auto res =
-                        invoke_http_request("POST", std::vector<std::string>{}, url, stringify(commit));
+                    auto res = invoke_http_request("POST", headers, url, stringify(commit));
                     if (auto p = res.get())
                     {
                         ++upload_count;
