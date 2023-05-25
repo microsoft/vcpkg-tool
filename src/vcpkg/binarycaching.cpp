@@ -929,7 +929,7 @@ namespace
                                                                             "Content-Type: application/json",
                                                                             m_token_header},
                                                    url,
-                                                   stringify(commit));
+                                                   std::string{stringify(commit)});
                     if (auto p = res.get())
                     {
                         ++upload_count;
