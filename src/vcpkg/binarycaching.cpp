@@ -904,7 +904,7 @@ namespace
             const ElapsedTimer timer;
             const auto& abi = request.package_abi;
 
-            auto cache_size = m_fs.file_size(make_temp_archive_path(zip_path, request.spec), VCPKG_LINE_INFO);
+            auto cache_size = m_fs.file_size(zip_path, VCPKG_LINE_INFO);
 
             size_t upload_count = 0;
             if (auto cacheId = reserve_cache_entry(request.spec.name(), abi, cache_size))
