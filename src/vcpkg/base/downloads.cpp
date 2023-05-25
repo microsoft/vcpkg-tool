@@ -595,10 +595,10 @@ namespace vcpkg
         return base_url + "?" + query;
     }
 
-    ExpectedL<std::string> invoke_http_request(const std::string& method,
-                                               const View<std::string>& headers,
-                                               const std::string& url,
-                                               const std::string& data)
+    ExpectedL<std::string> invoke_http_request(StringView method,
+                                               View<std::string>& headers,
+                                               StringView url,
+                                               StringView data)
     {
         Command cmd;
         cmd.string_arg("curl").string_arg("-s").string_arg("-L");
