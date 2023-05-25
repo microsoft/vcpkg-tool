@@ -583,20 +583,21 @@ namespace vcpkg
         return res;
     }
 
-    std::string format_url_query(const std::string& base_url, const std::vector<std::string>& query_params)
+    std::string format_url_query(StringView base_url, View<std::string> query_params)
     {
+        auto url = base_url.to_string();
         if (query_params.empty())
         {
-            return base_url;
+            return url;
         }
 
         std::string query = Strings::join("&", query_params);
 
-        return base_url + "?" + query;
+        return url + "?" + query;
     }
 
     ExpectedL<std::string> invoke_http_request(StringView method,
-                                               View<std::string>& headers,
+                                               View<std::string> headers,
                                                StringView url,
                                                StringView data)
     {

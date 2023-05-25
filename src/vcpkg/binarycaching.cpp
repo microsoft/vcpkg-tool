@@ -801,36 +801,25 @@ namespace
         {
         }
 
-        Command command() const
+        std::string lookup_cache_entry(StringView name, const std::string& abi) const
         {
-            Command cmd;
-            cmd.string_arg("curl")
-                .string_arg("-s")
-                .string_arg("-H")
-                .string_arg("Content-Type: application/json")
-                .string_arg("-H")
-                .string_arg(m_token_header)
-                .string_arg("-H")
-                .string_arg(m_accept_header);
-            return cmd;
-        }
-
-        std::string lookup_cache_entry(const std::string& abi) const
-        {
-            auto cmd = command()
-                           .string_arg(m_url)
-                           .string_arg("-G")
-                           .string_arg("-d")
-                           .string_arg("keys=vcpkg")
-                           .string_arg("-d")
-                           .string_arg("version=" + abi);
-
-            std::vector<std::string> lines;
-            auto res = cmd_execute_and_capture_output(cmd);
-            if (!res.has_value() || res.get()->exit_code) return {};
-            auto json = Json::parse_object(res.get()->output);
-            if (!json.has_value() || !json.get()->contains("archiveLocation")) return {};
-            return json.get()->get("archiveLocation")->string(VCPKG_LINE_INFO).to_string();
+            auto url = format_url_query(m_url, std::vector<std::string>{"keys=" + name + "-" + abi, "version=" + abi});
+            auto res =
+                invoke_http_request("GET",
+                                    std::vector<std::string>{"Content-Type: application/json",
+                                                             m_token_header,
+                                                             "Accept: application/json;api-version=6.0-preview.1"},
+                                    url);
+            auto maybe_json = Json::parse_object(res.get()->c_str());
+            if (auto json = maybe_json.get())
+            {
+                auto archive_location = json->get("archiveLocation");
+                if (archive_location && archive_location->is_string())
+                {
+                    return archive_location->string(VCPKG_LINE_INFO).to_string();
+                }
+            }
+            return {};
         }
 
         void acquire_zips(View<const InstallPlanAction*> actions,
@@ -841,7 +830,8 @@ namespace
             for (size_t idx = 0; idx < actions.size(); ++idx)
             {
                 auto&& action = *actions[idx];
-                auto url = lookup_cache_entry(action.package_abi().value_or_exit(VCPKG_LINE_INFO));
+                auto package_name = action.spec.name();
+                auto url = lookup_cache_entry(package_name, action.package_abi().value_or_exit(VCPKG_LINE_INFO));
                 if (url.empty()) continue;
 
                 url_paths.emplace_back(std::move(url), make_temp_archive_path(m_buildtrees, action.spec));
@@ -881,33 +871,32 @@ namespace
         {
         }
 
-        Command command() const
-        {
-            Command cmd;
-            cmd.string_arg("curl")
-                .string_arg("-s")
-                .string_arg("-H")
-                .string_arg("Content-Type: application/json")
-                .string_arg("-H")
-                .string_arg(m_token_header)
-                .string_arg("-H")
-                .string_arg(m_accept_header);
-            return cmd;
-        }
-
-        Optional<int64_t> reserve_cache_entry(const std::string& abi, int64_t cacheSize) const
+        Optional<int64_t> reserve_cache_entry(const std::string& name,const std::string& abi, int64_t cacheSize) const
         {
             Json::Object payload;
-            payload.insert("key", "vcpkg");
+            payload.insert("key", name + "-" + abi);
             payload.insert("version", abi);
             payload.insert("cacheSize", Json::Value::integer(cacheSize));
-            auto cmd = command().string_arg(m_url).string_arg("-d").string_arg(stringify(payload));
 
-            auto res = cmd_execute_and_capture_output(cmd);
-            if (!res.has_value() || res.get()->exit_code) return {};
-            auto json = Json::parse_object(res.get()->output);
-            if (!json.has_value() || !json.get()->contains("cacheId")) return {};
-            return json.get()->get("cacheId")->integer(VCPKG_LINE_INFO);
+            auto res =
+                invoke_http_request("POST",
+                                    std::vector<std::string>{"Content-Type: application/json",
+                                                             m_token_header,
+                                                             "Accept: application/json;api-version=6.0-preview.1"},
+                                    m_url,
+                                    std::string{stringify(payload)});
+
+            auto maybe_json = Json::parse_object(res.get()->c_str());
+            if (auto json = maybe_json.get())
+            {
+                auto cache_id = json->get("cacheId");
+                if (cache_id && cache_id->is_integer())
+                {
+                    return cache_id->integer(VCPKG_LINE_INFO);
+                }
+            }
+
+            return {};
         }
 
         size_t push_success(const BinaryPackageWriteInfo& request, MessageSink&) override
@@ -916,7 +905,6 @@ namespace
             const auto& zip_path = *request.zip_path.get();
             const ElapsedTimer timer;
             const auto& abi = request.package_abi;
-
             int64_t cache_size;
             {
                 auto archive = m_fs.open_for_read(zip_path, VCPKG_LINE_INFO);
@@ -925,7 +913,7 @@ namespace
             }
 
             size_t upload_count = 0;
-            if (auto cacheId = reserve_cache_entry(abi, cache_size))
+            if (auto cacheId = reserve_cache_entry(request.spec.name(), abi, cache_size))
             {
                 std::vector<std::string> headers{
                     m_token_header,
@@ -938,12 +926,15 @@ namespace
                 {
                     Json::Object commit;
                     commit.insert("size", std::to_string(cache_size));
-                    auto cmd = command().string_arg(url).string_arg("-d").string_arg(stringify(commit));
-
-                    auto res = cmd_execute_and_capture_output(cmd);
-                    if (res.has_value() && !res.get()->exit_code)
+                    auto res =
+                        invoke_http_request("POST", std::vector<std::string>{}, url, stringify(commit));
+                    if (auto p = res.get())
                     {
                         ++upload_count;
+                    }
+                    else
+                    {
+                        msg::println_error(res.error());
                     }
                 }
             }

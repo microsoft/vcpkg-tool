@@ -43,11 +43,11 @@ namespace vcpkg
                             StringView method = "PUT");
 
     ExpectedL<std::string> invoke_http_request(StringView method,
-                                               View<std::string>& headers,
+                                               View<std::string> headers,
                                                StringView url,
                                                StringView data = {});
 
-    std::string format_url_query(StringView base_url, View<std::string>& query_params);
+    std::string format_url_query(StringView base_url, View<std::string> query_params);
 
     std::vector<int> url_heads(View<std::string> urls, View<std::string> headers, View<std::string> secrets);
 
