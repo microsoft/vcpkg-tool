@@ -1,4 +1,9 @@
+#include <vcpkg/base/json.h>
+#include <vcpkg/base/strings.h>
+#include <vcpkg/base/util.h>
+
 #include <vcpkg/commands.version.h>
+#include <vcpkg/dependencies.h>
 #include <vcpkg/spdx.h>
 
 using namespace vcpkg;

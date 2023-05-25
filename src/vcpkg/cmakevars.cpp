@@ -1,6 +1,8 @@
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/span.h>
+#include <vcpkg/base/strings.h>
+#include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
@@ -165,6 +167,8 @@ VCPKG_ENV_PASSTHROUGH=${VCPKG_ENV_PASSTHROUGH}
 VCPKG_ENV_PASSTHROUGH_UNTRACKED=${VCPKG_ENV_PASSTHROUGH_UNTRACKED}
 VCPKG_LOAD_VCVARS_ENV=${VCPKG_LOAD_VCVARS_ENV}
 VCPKG_DISABLE_COMPILER_TRACKING=${VCPKG_DISABLE_COMPILER_TRACKING}
+VCPKG_XBOX_CONSOLE_TARGET=${VCPKG_XBOX_CONSOLE_TARGET}
+Z_VCPKG_GameDKLatest=$ENV{GameDKLatest}
 e1e74b5c-18cb-4474-a6bd-5c1c8bc81f3f
 8c504940-be29-4cba-9f8f-6cd83e9d87b7")
 endfunction()
@@ -338,9 +342,13 @@ endfunction()
                                              std::make_move_iterator(vars.front().end()));
     }
 
-    void TripletCMakeVarProvider::load_dep_info_vars(View<PackageSpec> specs, Triplet host_triplet) const
+    void TripletCMakeVarProvider::load_dep_info_vars(View<PackageSpec> original_specs, Triplet host_triplet) const
     {
+        std::vector<PackageSpec> specs = Util::filter(original_specs, [this](const PackageSpec& spec) {
+            return dep_resolution_vars.find(spec) == dep_resolution_vars.end();
+        });
         if (specs.size() == 0) return;
+        Debug::println("Loading dep info for: ", Strings::join(" ", specs));
         std::vector<std::vector<std::pair<std::string, std::string>>> vars(specs.size());
         const auto file_path = create_dep_info_extraction_file(specs);
         if (specs.size() > 100)
@@ -400,36 +408,18 @@ endfunction()
     Optional<const std::unordered_map<std::string, std::string>&> TripletCMakeVarProvider::get_generic_triplet_vars(
         Triplet triplet) const
     {
-        auto find_itr = generic_triplet_vars.find(triplet);
-        if (find_itr != generic_triplet_vars.end())
-        {
-            return find_itr->second;
-        }
-
-        return nullopt;
+        return Util::lookup_value(generic_triplet_vars, triplet);
     }
 
     Optional<const std::unordered_map<std::string, std::string>&> TripletCMakeVarProvider::get_dep_info_vars(
         const PackageSpec& spec) const
     {
-        auto find_itr = dep_resolution_vars.find(spec);
-        if (find_itr != dep_resolution_vars.end())
-        {
-            return find_itr->second;
-        }
-
-        return nullopt;
+        return Util::lookup_value(dep_resolution_vars, spec);
     }
 
     Optional<const std::unordered_map<std::string, std::string>&> TripletCMakeVarProvider::get_tag_vars(
         const PackageSpec& spec) const
     {
-        auto find_itr = tag_vars.find(spec);
-        if (find_itr != tag_vars.end())
-        {
-            return find_itr->second;
-        }
-
-        return nullopt;
+        return Util::lookup_value(tag_vars, spec);
     }
 }

@@ -4,14 +4,15 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.process.h>
+#include <vcpkg/base/util.h>
 
 #include <vcpkg/archives.h>
-#include <vcpkg/build.h>
 #include <vcpkg/cmakevars.h>
+#include <vcpkg/commands.build.h>
+#include <vcpkg/commands.export.h>
 #include <vcpkg/commands.h>
-#include <vcpkg/export.h>
+#include <vcpkg/commands.install.h>
 #include <vcpkg/export.prefab.h>
-#include <vcpkg/install.h>
 #include <vcpkg/installedpaths.h>
 #include <vcpkg/tools.h>
 #include <vcpkg/vcpkgpaths.h>
@@ -568,7 +569,7 @@ namespace vcpkg::Export::Prefab
                         ab.ndk = version.major();
 
                         Debug::print(fmt::format("Found module {} {}", module_name, ab.abi));
-                        module_name = Strings::trim(std::move(module_name));
+                        Strings::inplace_trim(module_name);
 
                         if (Strings::starts_with(module_name, "lib"))
                         {
@@ -614,8 +615,10 @@ namespace vcpkg::Export::Prefab
             Debug::print(
                 fmt::format("Exporting AAR and POM\n\tAAR path {}\n\tPOM path {}", exported_archive_path, pom_path));
 
-            auto compress_result = compress_directory_to_zip(
-                paths.get_filesystem(), paths.get_tool_cache(), stdout_sink, package_directory, exported_archive_path);
+            auto zip = ZipTool::make(paths.get_tool_cache(), stdout_sink).value_or_exit(VCPKG_LINE_INFO);
+
+            auto compress_result =
+                zip.compress_directory_to_zip(paths.get_filesystem(), package_directory, exported_archive_path);
             if (!compress_result)
             {
                 Checks::msg_exit_with_message(

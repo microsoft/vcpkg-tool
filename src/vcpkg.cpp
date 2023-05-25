@@ -3,20 +3,22 @@
 #include <vcpkg/base/chrono.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/json.h>
+#include <vcpkg/base/jsonreader.h>
 #include <vcpkg/base/pragmas.h>
 #include <vcpkg/base/setup-messages.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
 #include <vcpkg/base/system.process.h>
+#include <vcpkg/base/util.h>
 
 #include <vcpkg/bundlesettings.h>
 #include <vcpkg/cgroup-parser.h>
 #include <vcpkg/commands.contact.h>
 #include <vcpkg/commands.h>
+#include <vcpkg/commands.help.h>
 #include <vcpkg/commands.version.h>
 #include <vcpkg/globalstate.h>
-#include <vcpkg/help.h>
 #include <vcpkg/input.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/paragraphs.h>
@@ -116,10 +118,10 @@ namespace
 
         get_global_metrics_collector().track_bool(BoolMetric::DetectedContainer, detect_container(fs));
 
-        if (const auto command_function = find_command(Commands::get_available_basic_commands()))
+        if (const auto command_function = find_command(Commands::basic_commands))
         {
             get_global_metrics_collector().track_string(StringMetric::CommandName, command_function->name);
-            return command_function->function->perform_and_exit(args, fs);
+            return command_function->function(args, fs);
         }
 
         const VcpkgPaths paths(fs, args, bundle);
@@ -128,10 +130,10 @@ namespace
 
         fs.current_path(paths.root, VCPKG_LINE_INFO);
 
-        if (const auto command_function = find_command(Commands::get_available_paths_commands()))
+        if (const auto command_function = find_command(Commands::paths_commands))
         {
             get_global_metrics_collector().track_string(StringMetric::CommandName, command_function->name);
-            return command_function->function->perform_and_exit(args, paths);
+            return command_function->function(args, paths);
         }
 
         Triplet default_triplet = vcpkg::default_triplet(args);
@@ -139,10 +141,10 @@ namespace
         Triplet host_triplet = vcpkg::default_host_triplet(args);
         check_triplet(host_triplet, paths);
 
-        if (const auto command_function = find_command(Commands::get_available_triplet_commands()))
+        if (const auto command_function = find_command(Commands::triplet_commands))
         {
             get_global_metrics_collector().track_string(StringMetric::CommandName, command_function->name);
-            return command_function->function->perform_and_exit(args, paths, default_triplet, host_triplet);
+            return command_function->function(args, paths, default_triplet, host_triplet);
         }
 
         return invalid_command(args);

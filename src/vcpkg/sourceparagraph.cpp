@@ -19,6 +19,55 @@
 
 namespace vcpkg
 {
+
+    bool operator==(const DependencyConstraint& lhs, const DependencyConstraint& rhs)
+    {
+        if (lhs.type != rhs.type) return false;
+        if (lhs.value != rhs.value) return false;
+        return lhs.port_version == rhs.port_version;
+    }
+
+    Optional<Version> DependencyConstraint::try_get_minimum_version() const
+    {
+        if (type == VersionConstraintKind::None)
+        {
+            return nullopt;
+        }
+
+        return Version{
+            value,
+            port_version,
+        };
+    }
+
+    FullPackageSpec Dependency::to_full_spec(Triplet target, Triplet host_triplet, ImplicitDefault id) const
+    {
+        return FullPackageSpec{{name, host ? host_triplet : target}, internalize_feature_list(features, id)};
+    }
+
+    bool operator==(const Dependency& lhs, const Dependency& rhs)
+    {
+        if (lhs.name != rhs.name) return false;
+        if (lhs.features != rhs.features) return false;
+        if (!structurally_equal(lhs.platform, rhs.platform)) return false;
+        if (lhs.extra_info != rhs.extra_info) return false;
+        if (lhs.constraint != rhs.constraint) return false;
+        if (lhs.host != rhs.host) return false;
+
+        return true;
+    }
+    bool operator!=(const Dependency& lhs, const Dependency& rhs);
+
+    bool operator==(const DependencyOverride& lhs, const DependencyOverride& rhs)
+    {
+        if (lhs.version_scheme != rhs.version_scheme) return false;
+        if (lhs.port_version != rhs.port_version) return false;
+        if (lhs.name != rhs.name) return false;
+        if (lhs.version != rhs.version) return false;
+        return lhs.extra_info == rhs.extra_info;
+    }
+    bool operator!=(const DependencyOverride& lhs, const DependencyOverride& rhs);
+
     struct UrlDeserializer : Json::StringDeserializer
     {
         LocalizedString type_name() const override { return msg::format(msgAUrl); }
@@ -118,7 +167,7 @@ namespace vcpkg
     {
         for (auto& el : arr)
         {
-            el = Strings::trim(std::move(el));
+            Strings::inplace_trim(el);
         }
     }
 
@@ -1205,8 +1254,7 @@ namespace vcpkg
             ret.append_raw('\n');
             for (auto&& err : reader.errors())
             {
-                ret.append_indent();
-                ret.append_fmt_raw("{}\n", err);
+                ret.append_indent().append(err).append_raw("\n");
             }
             ret.append(msgExtendedDocumentationAtUrl, msg::url = docs::registries_url);
             ret.append_raw('\n');

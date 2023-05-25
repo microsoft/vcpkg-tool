@@ -2,6 +2,7 @@
 
 #include <vcpkg/base/chrono.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/message_sinks.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/span.h>
 #include <vcpkg/base/system.debug.h>
@@ -1469,6 +1470,33 @@ namespace vcpkg
         return try_seek_to(offset).then([&](Unit) { return try_read_all(buffer, size); });
     }
 
+    std::string ReadFilePointer::read_to_end(std::error_code& ec)
+    {
+        std::string output;
+        constexpr std::size_t buffer_size = 1024 * 32;
+        char buffer[buffer_size];
+        do
+        {
+            const auto this_read = this->read(buffer, 1, buffer_size);
+            if (this_read != 0)
+            {
+                output.append(buffer, this_read);
+            }
+            else if ((ec = this->error()))
+            {
+                return std::string();
+            }
+        } while (!this->eof());
+
+        if (Strings::starts_with(output, "\xEF\xBB\xBF"))
+        {
+            // remove byte-order mark from the beginning of the string
+            output.erase(output.begin(), output.begin() + 3);
+        }
+
+        return output;
+    }
+
     WriteFilePointer::WriteFilePointer() noexcept = default;
 
     WriteFilePointer::WriteFilePointer(WriteFilePointer&&) noexcept = default;
@@ -2086,6 +2114,30 @@ namespace vcpkg
         return open_for_write(file_path, Append::NO, li);
     }
 
+    ExpectedL<bool> Filesystem::check_update_required(const Path& version_path, StringView expected_version)
+    {
+        std::error_code ec;
+        auto read_handle = open_for_read(version_path, ec);
+        if (ec)
+        {
+            translate_not_found_to_success(ec);
+            if (ec)
+            {
+                return format_filesystem_call_error(ec, __func__, {version_path, expected_version});
+            }
+
+            return true;
+        }
+
+        auto actual_version = read_handle.read_to_end(ec);
+        if (ec)
+        {
+            return format_filesystem_call_error(ec, __func__, {version_path, expected_version});
+        }
+
+        return actual_version != expected_version;
+    }
+
     struct RealFilesystem final : Filesystem
     {
         virtual uint64_t file_size(const Path& file_path, std::error_code& ec) const override
@@ -2126,29 +2178,7 @@ namespace vcpkg
                 return std::string();
             }
 
-            std::string output;
-            constexpr std::size_t buffer_size = 1024 * 32;
-            char buffer[buffer_size];
-            do
-            {
-                const auto this_read = file.read(buffer, 1, buffer_size);
-                if (this_read != 0)
-                {
-                    output.append(buffer, this_read);
-                }
-                else if ((ec = file.error()))
-                {
-                    return std::string();
-                }
-            } while (!file.eof());
-
-            if (Strings::starts_with(output, "\xEF\xBB\xBF"))
-            {
-                // remove byte-order mark from the beginning of the string
-                output.erase(output.begin(), output.begin() + 3);
-            }
-
-            return output;
+            return file.read_to_end(ec);
         }
         virtual ExpectedL<std::vector<std::string>> read_lines(const Path& file_path) const override
         {
@@ -2946,7 +2976,8 @@ namespace vcpkg
             DWORD length_without_null = GetTempPathW(MAX_PATH + 1, temp_folder);
             Path temp_folder_path = Path(Strings::to_utf8(temp_folder, length_without_null)) / "vcpkg";
 #else  // ^^^ _WIN32 // !_WIN32 vvv
-            const Path temp_folder_path = "/tmp/vcpkg";
+            const Path temp_folder_path =
+                Path(get_environment_variable("TMPDIR").value_or(std::string("/tmp"))) / "vcpkg";
 #endif // ^^^ !_WIN32
 
             this->create_directories(temp_folder_path, ec);
@@ -3650,7 +3681,7 @@ namespace vcpkg
                std::string::npos;
     }
 
-    void print_paths(const std::vector<Path>& paths)
+    void print_paths(MessageSink& msg_sink, const std::vector<Path>& paths)
     {
         LocalizedString ls;
         ls.append_raw('\n');
@@ -3662,7 +3693,7 @@ namespace vcpkg
         }
 
         ls.append_raw('\n');
-        msg::print(ls);
+        msg_sink.print(ls);
     }
 
     IExclusiveFileLock::~IExclusiveFileLock() = default;

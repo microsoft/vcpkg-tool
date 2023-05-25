@@ -10,25 +10,27 @@
 #include <vcpkg/base/xmlserializer.h>
 
 #include <vcpkg/binarycaching.h>
-#include <vcpkg/build.h>
 #include <vcpkg/ci-baseline.h>
 #include <vcpkg/cmakevars.h>
+#include <vcpkg/commands.build.h>
 #include <vcpkg/commands.ci.h>
+#include <vcpkg/commands.help.h>
+#include <vcpkg/commands.install.h>
+#include <vcpkg/commands.set-installed.h>
 #include <vcpkg/dependencies.h>
 #include <vcpkg/globalstate.h>
-#include <vcpkg/help.h>
 #include <vcpkg/input.h>
-#include <vcpkg/install.h>
 #include <vcpkg/packagespec.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/platform-expression.h>
 #include <vcpkg/portfileprovider.h>
+#include <vcpkg/registries.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
 #include <vcpkg/xunitwriter.h>
 
-#include <stdio.h>
+#include <random>
 
 using namespace vcpkg;
 
@@ -255,9 +257,13 @@ namespace vcpkg::Commands::CI
             auto it_known = known.find(it->spec);
             const auto& abi = it->abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi;
             auto it_parent = std::find(parent_hashes.begin(), parent_hashes.end(), abi);
-            if (it_known == known.end() && it_parent == parent_hashes.end())
+            if (it_parent == parent_hashes.end())
             {
-                to_keep.insert(it->spec);
+                it->request_type = RequestType::USER_REQUESTED;
+                if (it_known == known.end())
+                {
+                    to_keep.insert(it->spec);
+                }
             }
 
             if (Util::Sets::contains(to_keep, it->spec))
@@ -291,11 +297,11 @@ namespace vcpkg::Commands::CI
                                   : SortedVector<std::string>(Strings::split(it_exclusions->second, ',')));
     }
 
-    static void print_baseline_regressions(const std::vector<SpecSummary>& results,
-                                           const std::map<PackageSpec, BuildResult>& known,
-                                           const CiBaselineData& cidata,
-                                           const std::string& ci_baseline_file_name,
-                                           bool allow_unexpected_passing)
+    static void print_regressions(const std::vector<SpecSummary>& results,
+                                  const std::map<PackageSpec, BuildResult>& known,
+                                  const CiBaselineData& cidata,
+                                  const std::string& ci_baseline_file_name,
+                                  bool allow_unexpected_passing)
     {
         bool has_error = false;
         LocalizedString output = msg::format(msgCiBaselineRegressionHeader);
@@ -303,7 +309,12 @@ namespace vcpkg::Commands::CI
         for (auto&& r : results)
         {
             auto result = r.build_result.value_or_exit(VCPKG_LINE_INFO).code;
-            auto msg = format_ci_result(r.get_spec(), result, cidata, ci_baseline_file_name, allow_unexpected_passing);
+            auto msg = format_ci_result(r.get_spec(),
+                                        result,
+                                        cidata,
+                                        ci_baseline_file_name,
+                                        allow_unexpected_passing,
+                                        !r.is_user_requested_install());
             if (!msg.empty())
             {
                 has_error = true;
@@ -312,7 +323,8 @@ namespace vcpkg::Commands::CI
         }
         for (auto&& r : known)
         {
-            auto msg = format_ci_result(r.first, r.second, cidata, ci_baseline_file_name, allow_unexpected_passing);
+            auto msg =
+                format_ci_result(r.first, r.second, cidata, ci_baseline_file_name, allow_unexpected_passing, true);
             if (!msg.empty())
             {
                 has_error = true;
@@ -335,12 +347,10 @@ namespace vcpkg::Commands::CI
     {
         msg::println_warning(msgInternalCICommand);
 
-        print_default_triplet_warning(args, {});
+        print_default_triplet_warning(args);
 
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
         const auto& settings = options.settings;
-
-        BinaryCache binary_cache{args, paths};
 
         ExclusionsMap exclusions_map;
         parse_exclusions(settings, OPTION_EXCLUDE, target_triplet, exclusions_map);
@@ -393,18 +403,16 @@ namespace vcpkg::Commands::CI
         auto& var_provider = *var_provider_storage;
 
         const ElapsedTimer timer;
-        std::vector<std::string> all_port_names =
-            Util::fmap(provider.load_all_control_files(), Paragraphs::get_name_of_control_file);
         // Install the default features for every package
         std::vector<FullPackageSpec> all_default_full_specs;
-        all_default_full_specs.reserve(all_port_names.size());
-        for (auto&& port_name : all_port_names)
+        for (auto scfl : provider.load_all_control_files())
         {
-            all_default_full_specs.emplace_back(PackageSpec{std::move(port_name), target_triplet},
-                                                InternalFeatureSet{"core", "default"});
+            all_default_full_specs.emplace_back(
+                PackageSpec{scfl->source_control_file->core_paragraph->name, target_triplet},
+                InternalFeatureSet{"core", "default"});
         }
 
-        CreateInstallPlanOptions serialize_options(host_triplet, UnsupportedPortAction::Warn);
+        CreateInstallPlanOptions serialize_options(host_triplet, paths.packages(), UnsupportedPortAction::Warn);
 
         struct RandomizerInstance : GraphRandomizer
         {
@@ -424,6 +432,7 @@ namespace vcpkg::Commands::CI
         }
 
         auto action_plan = compute_full_plan(paths, provider, var_provider, all_default_full_specs, serialize_options);
+        auto binary_cache = BinaryCache::make(args, paths, stdout_sink).value_or_exit(VCPKG_LINE_INFO);
         const auto precheck_results = binary_cache.precheck(action_plan.install_actions);
         auto split_specs =
             compute_action_statuses(ExclusionPredicate{&exclusions_map}, var_provider, precheck_results, action_plan);
@@ -498,8 +507,16 @@ namespace vcpkg::Commands::CI
         else
         {
             StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
-            auto summary = Install::perform(
-                args, action_plan, KeepGoing::YES, paths, status_db, binary_cache, build_logs_recorder, var_provider);
+            auto already_installed = SetInstalled::adjust_action_plan_to_status_db(action_plan, status_db);
+            Util::erase_if(already_installed,
+                           [&](auto& spec) { return Util::Sets::contains(split_specs->known, spec); });
+            if (!already_installed.empty())
+            {
+                msg::println_warning(msgCISkipInstallation, msg::list = Strings::join(", ", already_installed));
+            }
+            binary_cache.fetch(action_plan.install_actions);
+            auto summary = Install::execute_plan(
+                args, action_plan, KeepGoing::YES, paths, status_db, binary_cache, build_logs_recorder);
 
             for (auto&& result : summary.results)
             {
@@ -508,12 +525,8 @@ namespace vcpkg::Commands::CI
 
             msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("\nTriplet: {}\n", target_triplet));
             summary.print();
-
-            if (baseline_iter != settings.end())
-            {
-                print_baseline_regressions(
-                    summary.results, split_specs->known, cidata, baseline_iter->second, allow_unexpected_passing);
-            }
+            print_regressions(
+                summary.results, split_specs->known, cidata, baseline_iter->second, allow_unexpected_passing);
 
             auto it_xunit = settings.find(OPTION_XUNIT);
             if (it_xunit != settings.end())
@@ -552,13 +565,5 @@ namespace vcpkg::Commands::CI
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);
-    }
-
-    void CICommand::perform_and_exit(const VcpkgCmdArguments& args,
-                                     const VcpkgPaths& paths,
-                                     Triplet default_triplet,
-                                     Triplet host_triplet) const
-    {
-        CI::perform_and_exit(args, paths, default_triplet, host_triplet);
     }
 }

@@ -3,7 +3,9 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/parse.h>
 #include <vcpkg/base/system.debug.h>
+#include <vcpkg/base/system.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
@@ -184,7 +186,7 @@ namespace vcpkg::Commands::Integrate
                                                    const std::string& nuget_id,
                                                    const std::string& nupkg_version)
     {
-        static constexpr auto CONTENT_TEMPLATE = R"(
+        static constexpr StringLiteral CONTENT_TEMPLATE = R"(
 <package>
     <metadata>
         <id>@NUGET_ID@</id>
@@ -250,7 +252,7 @@ namespace vcpkg::Commands::Integrate
     static constexpr StringLiteral vcpkg_user_props = "vcpkg.user.props";
     static constexpr StringLiteral vcpkg_user_targets = "vcpkg.user.targets";
 
-    static void integrate_install_msbuild14(Filesystem& fs)
+    static bool integrate_install_msbuild14(Filesystem& fs)
     {
         std::array<Path, 2> OLD_SYSTEM_TARGET_FILES = {
             get_program_files_32_bit().value_or_exit(VCPKG_LINE_INFO) /
@@ -270,14 +272,12 @@ namespace vcpkg::Commands::Integrate
                 switch (user_choice)
                 {
                     case ElevationPromptChoice::YES: break;
-                    case ElevationPromptChoice::NO:
-                        msg::println_warning(msgPreviousIntegrationFileRemains);
-                        Checks::exit_fail(VCPKG_LINE_INFO);
+                    case ElevationPromptChoice::NO: msg::println_warning(msgPreviousIntegrationFileRemains); break;
                     default: Checks::unreachable(VCPKG_LINE_INFO);
                 }
             }
         }
-        bool should_install_system = true;
+
         std::error_code ec;
         std::string system_wide_file_contents = fs.read_contents(SYSTEM_WIDE_TARGETS_FILE, ec);
         if (!ec)
@@ -285,34 +285,28 @@ namespace vcpkg::Commands::Integrate
             auto opt = find_targets_file_version(system_wide_file_contents);
             if (opt.value_or(0) >= 1)
             {
-                should_install_system = false;
+                return true;
             }
         }
 
-        if (should_install_system)
+        const auto tmp_dir = fs.create_or_get_temp_directory(VCPKG_LINE_INFO);
+        const auto sys_src_path = tmp_dir / "vcpkg.system.targets";
+        fs.write_contents(sys_src_path, create_system_targets_shortcut(), VCPKG_LINE_INFO);
+
+        const std::string param = fmt::format(R"(/c "mkdir "{}" & copy "{}" "{}" /Y > nul")",
+                                              SYSTEM_WIDE_TARGETS_FILE.parent_path(),
+                                              sys_src_path,
+                                              SYSTEM_WIDE_TARGETS_FILE);
+        elevated_cmd_execute(param);
+        fs.remove_all(tmp_dir, VCPKG_LINE_INFO);
+
+        if (!fs.exists(SYSTEM_WIDE_TARGETS_FILE, IgnoreErrors{}))
         {
-            const auto tmp_dir = fs.create_or_get_temp_directory(VCPKG_LINE_INFO);
-            const auto sys_src_path = tmp_dir / "vcpkg.system.targets";
-            fs.write_contents(sys_src_path, create_system_targets_shortcut(), VCPKG_LINE_INFO);
-
-            const std::string param = fmt::format(R"(/c "mkdir "{}" & copy "{}" "{}" /Y > nul")",
-                                                  SYSTEM_WIDE_TARGETS_FILE.parent_path(),
-                                                  sys_src_path,
-                                                  SYSTEM_WIDE_TARGETS_FILE);
-            const ElevationPromptChoice user_choice = elevated_cmd_execute(param);
-            fs.remove_all(tmp_dir, VCPKG_LINE_INFO);
-            switch (user_choice)
-            {
-                case ElevationPromptChoice::YES: break;
-                case ElevationPromptChoice::NO:
-                    msg::println_warning(msgIntegrationFailed);
-                    Checks::exit_fail(VCPKG_LINE_INFO);
-                default: Checks::unreachable(VCPKG_LINE_INFO);
-            }
-
-            Checks::msg_exit_with_error(
-                VCPKG_LINE_INFO, msgSystemTargetsInstallFailed, msg::path = SYSTEM_WIDE_TARGETS_FILE);
+            msg::println_warning(msg::format(msgSystemTargetsInstallFailed, msg::path = SYSTEM_WIDE_TARGETS_FILE));
+            return false;
         }
+
+        return true;
     }
 #endif
 
@@ -320,29 +314,32 @@ namespace vcpkg::Commands::Integrate
     {
         auto& fs = paths.get_filesystem();
 
+        const auto cmake_toolchain = paths.buildsystems / "vcpkg.cmake";
+        auto message = msg::format(msgCMakeToolChainFile, msg::path = cmake_toolchain.generic_u8string());
+
         auto user_configuration_home = get_user_configuration_home().value_or_exit(VCPKG_LINE_INFO);
         fs.create_directories(user_configuration_home, VCPKG_LINE_INFO);
         fs.write_contents(user_configuration_home / vcpkg_path_txt, paths.root.generic_u8string(), VCPKG_LINE_INFO);
 
 #if defined(_WIN32)
-        integrate_install_msbuild14(fs);
-
         fs.write_contents(user_configuration_home / vcpkg_user_props,
                           create_appdata_shortcut(paths.buildsystems_msbuild_props),
                           VCPKG_LINE_INFO);
         fs.write_contents(user_configuration_home / vcpkg_user_targets,
                           create_appdata_shortcut(paths.buildsystems_msbuild_targets),
                           VCPKG_LINE_INFO);
-#endif
-        msg::println(Color::success, msgAppliedUserIntegration);
 
-        const auto cmake_toolchain = paths.buildsystems / "vcpkg.cmake";
+        if (!integrate_install_msbuild14(fs))
+        {
+            message.append_raw("\n\n").append(msgAutomaticLinkingForVS2017AndLater);
+            msg::println(message);
+            Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgIntegrationFailedVS2015);
+        }
 
-        auto message = msg::format(msgCMakeToolChainFile, msg::path = cmake_toolchain.generic_u8string());
-#if defined(_WIN32)
         message.append_raw("\n\n").append(msgAutomaticLinkingForMSBuildProjects);
 #endif
 
+        msg::println(Color::success, msgAppliedUserIntegration);
         msg::println(message);
         Checks::exit_success(VCPKG_LINE_INFO);
     }
@@ -645,10 +642,5 @@ namespace vcpkg::Commands::Integrate
 #endif
         Checks::msg_exit_maybe_upgrade(
             VCPKG_LINE_INFO, msgUnknownParameterForIntegrate, msg::value = parsed.command_arguments[0]);
-    }
-
-    void IntegrateCommand::perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const
-    {
-        Integrate::perform_and_exit(args, paths);
     }
 }

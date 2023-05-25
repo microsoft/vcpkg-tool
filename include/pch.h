@@ -2,12 +2,7 @@
 
 #include <vcpkg/base/system-headers.h>
 
-#if defined(_MSC_VER)
-// pch.h only is used for performance with MSVC
-#include <vcpkg/base/files.h>
-#include <vcpkg/base/format.h>
-#include <vcpkg/base/pragmas.h>
-#endif
+#include <vcpkg/base/fmt.h>
 
 #if defined(_WIN32)
 #include <process.h>

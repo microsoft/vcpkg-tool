@@ -1,8 +1,10 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/messages.h>
+#include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.update-baseline.h>
 #include <vcpkg/configuration.h>
+#include <vcpkg/sourceparagraph.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
@@ -54,7 +56,7 @@ namespace vcpkg::Commands
                 .append(new_baseline_res.error()));
     }
 
-    void UpdateBaselineCommand::perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const
+    void command_update_baseline_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
         auto options = args.parse_arguments(COMMAND_STRUCTURE);
 
@@ -62,6 +64,7 @@ namespace vcpkg::Commands
         const bool dry_run = Util::Sets::contains(options.switches, OPTION_DRY_RUN);
 
         auto configuration = paths.get_configuration();
+
         const bool has_manifest = paths.get_manifest().has_value();
         auto manifest = has_manifest ? *paths.get_manifest().get() : ManifestAndPath{};
 

@@ -67,6 +67,12 @@ namespace vcpkg
         String
     };
 
+    struct SchemedVersion
+    {
+        VersionScheme scheme;
+        Version version;
+    };
+
     StringLiteral to_string_literal(VersionScheme scheme);
 
     struct VersionSpec
@@ -137,6 +143,7 @@ namespace vcpkg
     // Try parsing with all version schemas and return 'unk' if none match
     VerComp compare_any(const Version& a, const Version& b);
 
+    VerComp compare_versions(const SchemedVersion& a, const SchemedVersion& b);
     VerComp compare_versions(VersionScheme sa, const Version& a, VersionScheme sb, const Version& b);
 
     enum class VersionConstraintKind
