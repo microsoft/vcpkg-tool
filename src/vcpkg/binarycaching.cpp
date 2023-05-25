@@ -924,7 +924,12 @@ namespace
                 {
                     Json::Object commit;
                     commit.insert("size", std::to_string(cache_size));
-                    auto res = invoke_http_request("POST", headers, url, stringify(commit));
+                    auto res = invoke_http_request("POST",
+                                                   std::vector<std::string>{m_accept_header.to_string(),
+                                                                            "Content-Type: application/json",
+                                                                            m_token_header},
+                                                   url,
+                                                   stringify(commit));
                     if (auto p = res.get())
                     {
                         ++upload_count;
