@@ -8281,6 +8281,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";PortBugKernel32FromXbox" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The selected triplet targets Xbox, but the following DLLs link with kernel32. These DLLs cannot be loaded on Xbox, where kernel32 is not present. This is typically caused by linking with kernel32.lib rather than a suitable umbrella library, such as onecore_apiset.lib or xgameplatform.lib.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Vybraný triplet cílí na Xbox, ale následující knihovny DLL jsou propojeny s kernel32. Tyto knihovny DLL nelze načíst na konzoli Xbox, kde není k dispozici kernel32. To je obvykle způsobeno propojením s kernel32.lib namísto vhodné knihovny umbrella, jako je onecore_apiset.lib nebo xgameplatform.lib.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";PortBugMergeLibCMakeDir" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[The /lib/cmake folder should be merged with /debug/lib/cmake and moved to /share/{package_name}/cmake. Please use the helper function `vcpkg_cmake_config_fixup()` from the port vcpkg-cmake-config.`]]></Val>
