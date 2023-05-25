@@ -909,8 +909,6 @@ namespace
             size_t upload_count = 0;
             if (auto cacheId = reserve_cache_entry(request.spec.name(), abi, cache_size))
             {
-                msg::write_unlocalized_text_to_stdout(Color::none, "reserve_cache_entry passed\n");
-
                 std::vector<std::string> custom_headers{
                     m_token_header,
                     m_accept_header.to_string(),
@@ -921,7 +919,6 @@ namespace
 
                 if (put_file(m_fs, url, {}, custom_headers, zip_path, "PATCH"))
                 {
-                    msg::write_unlocalized_text_to_stdout(Color::none, "put_file passed\n");
 
                     Json::Object commit;
                     commit.insert("size", std::to_string(cache_size));
