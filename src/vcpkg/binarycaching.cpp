@@ -806,9 +806,8 @@ namespace
             auto url = format_url_query(m_url, std::vector<std::string>{"keys=" + name + "-" + abi, "version=" + abi});
             auto res =
                 invoke_http_request("GET",
-                                    std::vector<std::string>{"Content-Type: application/json",
-                                                             m_token_header,
-                                                             "Accept: application/json;api-version=6.0-preview.1"},
+                                    std::vector<std::string>{
+                                        m_content_type_header.to_string(), m_token_header, m_accept_header.to_string()},
                                     url);
             auto maybe_json = Json::parse_object(res.get()->c_str());
             if (auto json = maybe_json.get())
@@ -857,11 +856,11 @@ namespace
             return msg::format(msgRestoredPackagesFromGHA, msg::count = count, msg::elapsed = ElapsedTime(elapsed));
         }
 
-        static constexpr StringLiteral m_accept_header = "Accept: application/json;api-version=6.0-preview.1";
-
         Path m_buildtrees;
         std::string m_url;
         std::string m_token_header;
+        static constexpr StringLiteral m_accept_header = "Accept: application/json;api-version=6.0-preview.1";
+        static constexpr StringLiteral m_content_type_header = "Content-Type: application/json";
     };
 
     struct GHABinaryPushProvider : IWriteBinaryProvider
@@ -913,23 +912,24 @@ namespace
             size_t upload_count = 0;
             if (auto cacheId = reserve_cache_entry(request.spec.name(), abi, cache_size))
             {
-                std::vector<std::string> headers{
+                std::vector<std::string> custom_headers{
                     m_token_header,
                     m_accept_header.to_string(),
                     "Content-Type: application/octet-stream",
                     "Content-Range: bytes 0-" + std::to_string(cache_size) + "/*",
                 };
+
                 auto url = m_url + "/" + std::to_string(*cacheId.get());
-                if (put_file(m_fs, url, {}, headers, zip_path, "PATCH"))
+                if (put_file(m_fs, url, {}, custom_headers, zip_path, "PATCH"))
                 {
                     Json::Object commit;
                     commit.insert("size", std::to_string(cache_size));
                     auto res = invoke_http_request("POST",
                                                    std::vector<std::string>{m_accept_header.to_string(),
-                                                                            "Content-Type: application/json",
+                                                                            m_content_type_header.to_string(),
                                                                             m_token_header},
                                                    url,
-                                                   std::string{stringify(commit)});
+                                                   stringify(commit));
                     if (auto p = res.get())
                     {
                         ++upload_count;
@@ -946,11 +946,11 @@ namespace
         bool needs_nuspec_data() const override { return false; }
         bool needs_zip_file() const override { return true; }
 
-        static constexpr StringLiteral m_accept_header = "Accept: application/json;api-version=6.0-preview.1";
-
         const Filesystem& m_fs;
         std::string m_url;
         std::string m_token_header;
+        static constexpr StringLiteral m_content_type_header = "Content-Type: application/json";
+        static constexpr StringLiteral m_accept_header = "Accept: application/json;api-version=6.0-preview.1";
     };
 
     struct IObjectStorageTool
