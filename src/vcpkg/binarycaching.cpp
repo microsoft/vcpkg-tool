@@ -877,11 +877,12 @@ namespace
             payload.insert("version", abi);
             payload.insert("cacheSize", Json::Value::integer(cacheSize));
 
-            auto res = invoke_http_request(
-                "POST",
-                std::vector<std::string>{"Content-Type: application/json", m_token_header, m_accept_header.to_string()},
-                m_url,
-                std::string{stringify(payload)});
+            auto res =
+                invoke_http_request("POST",
+                                    std::vector<std::string>{
+                                        m_content_type_header.to_string(), m_token_header, m_accept_header.to_string()},
+                                    m_url,
+                                    std::string{stringify(payload)});
 
             auto maybe_json = Json::parse_object(res.get()->c_str());
             if (auto json = maybe_json.get())
@@ -902,12 +903,8 @@ namespace
             const auto& zip_path = *request.zip_path.get();
             const ElapsedTimer timer;
             const auto& abi = request.package_abi;
-            int64_t cache_size;
-            {
-                auto archive = m_fs.open_for_read(zip_path, VCPKG_LINE_INFO);
-                archive.try_seek_to(0, SEEK_END);
-                cache_size = archive.tell();
-            }
+
+            auto cache_size = m_fs.file_size(make_temp_archive_path(zip_path, request.spec), VCPKG_LINE_INFO);
 
             size_t upload_count = 0;
             if (auto cacheId = reserve_cache_entry(request.spec.name(), abi, cache_size))
