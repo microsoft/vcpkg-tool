@@ -883,30 +883,32 @@ namespace
                                         m_content_type_header.to_string(), m_token_header, m_accept_header.to_string()},
                                     m_url,
                                     std::string{stringify(payload)});
-
-            auto maybe_json = Json::parse_object(res.get()->c_str());
-            if (auto json = maybe_json.get())
+            if (auto p = res.get())
             {
-                auto cache_id = json->get("cacheId");
-                if (cache_id && cache_id->is_integer())
+                auto maybe_json = Json::parse_object(*p);
+                if (auto json = maybe_json.get())
                 {
-                    return cache_id->integer(VCPKG_LINE_INFO);
+                    auto cache_id = json->get("cacheId");
+                    if (cache_id && cache_id->is_integer())
+                    {
+                        return cache_id->integer(VCPKG_LINE_INFO);
+                    }
                 }
             }
-
             return {};
         }
 
         size_t push_success(const BinaryPackageWriteInfo& request, MessageSink&) override
         {
             if (!request.zip_path) return 0;
+
             const auto& zip_path = *request.zip_path.get();
             const ElapsedTimer timer;
             const auto& abi = request.package_abi;
 
-            auto cache_size = m_fs.file_size(zip_path, VCPKG_LINE_INFO);
-
             size_t upload_count = 0;
+            auto cache_size = m_fs.file_size(zip_path, VCPKG_LINE_INFO);
+            
             if (auto cacheId = reserve_cache_entry(request.spec.name(), abi, cache_size))
             {
                 std::vector<std::string> custom_headers{
