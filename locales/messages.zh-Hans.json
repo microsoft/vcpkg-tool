@@ -803,7 +803,7 @@
   "PortBugInspectFiles": "要检查 {extension} 文件，请使用:",
   "PortBugInvalidCrtLinkage": "以下二进制文件应使用 {expected} CRT。",
   "PortBugInvalidCrtLinkageEntry": "{path} 链接，带有:",
-  "PortBugKernel32FromXbox": "The selected triplet targets Xbox, but the following DLLs link with kernel32. These DLLs cannot be loaded on Xbox, where kernel32 is not present. This is typically caused by linking with kernel32.lib rather than a suitable umbrella library, such as onecore_apiset.lib or xgameplatform.lib.",
+  "PortBugKernel32FromXbox": "所选三元组面向的是 Xbox，但下面的 DLL 与 kernel32 链接。无法在没有 kernel32 的 Xbox 上加载这些 DLL。出现此问题通常是因为与 kernel32.lib 链接，而不是与 onecore_apiset.lib 或 xgameplatform.lib 等适当的伞库(umbrella library)。",
   "PortBugMergeLibCMakeDir": "应将 /lib/cmake 文件夹与 /debug/lib/cmake 合并，然后将其移动到 /share/{package_name}/cmake。请使用端口 `vcpkg-cmake-config` 中的帮助程序函数 `vcpkg_cmake_config_fixup()`。",
   "PortBugMismatchedNumberOfBinaries": "调试和发布二进制文件的数量不匹配。",
   "PortBugMisplacedCMakeFiles": "在 /share/{spec} 外部找到以下 cmake 文件。请将 cmake 文件放在 /share/{spec} 中。",

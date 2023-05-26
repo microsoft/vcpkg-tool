@@ -803,7 +803,7 @@
   "PortBugInspectFiles": "Para inspecionar os arquivos {extension}, use:",
   "PortBugInvalidCrtLinkage": "Os binários a seguir devem usar o CRT {expected}.",
   "PortBugInvalidCrtLinkageEntry": "{path} é vinculado com:",
-  "PortBugKernel32FromXbox": "The selected triplet targets Xbox, but the following DLLs link with kernel32. These DLLs cannot be loaded on Xbox, where kernel32 is not present. This is typically caused by linking with kernel32.lib rather than a suitable umbrella library, such as onecore_apiset.lib or xgameplatform.lib.",
+  "PortBugKernel32FromXbox": "O trio selecionado tem como alvo o Xbox, mas as seguintes DLLs estão vinculadas ao kernel32. Essas DLLs não podem ser carregadas no Xbox, onde o kernel32 não está presente. Isso geralmente é causado pela vinculação com kernel32.lib em vez de uma biblioteca abrangente adequada, como onecore_apiset.lib ou xgameplatform.lib.",
   "PortBugMergeLibCMakeDir": "A pasta /lib/cmake deve ser mesclada com /debug/lib/cmake e movida para /share/{package_name}/cmake. Use a função auxiliar `vcpkg_cmake_config_fixup()` da porta vcpkg-cmake-config`.",
   "PortBugMismatchedNumberOfBinaries": "Número incompatível de binários de depuração e lançamento.",
   "PortBugMisplacedCMakeFiles": "Os seguintes arquivos cmake foram encontrados fora de /share/{spec}. Coloque arquivos cmake em /share/{spec}.",

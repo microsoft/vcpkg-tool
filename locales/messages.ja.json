@@ -803,7 +803,7 @@
   "PortBugInspectFiles": "{extension} ファイルを調べるには、次を使用します:",
   "PortBugInvalidCrtLinkage": "次のバイナリは {expected} CRT を使用する必要があります。",
   "PortBugInvalidCrtLinkageEntry": "{path} のリンク先:",
-  "PortBugKernel32FromXbox": "The selected triplet targets Xbox, but the following DLLs link with kernel32. These DLLs cannot be loaded on Xbox, where kernel32 is not present. This is typically caused by linking with kernel32.lib rather than a suitable umbrella library, such as onecore_apiset.lib or xgameplatform.lib.",
+  "PortBugKernel32FromXbox": "選択したトリプレットは Xbox をターゲットにしていますが、次の DLL は kernel32 とリンクしています。kernel32 が存在しない Xbox では、これらの DLL を読み込むことができません。これは通常、onecore_apiset.lib や xgameplatform.lib などの適切な包括ライブラリではなく kernel32.lib とリンクすることによって発生します。",
   "PortBugMergeLibCMakeDir": "/lib/cmake フォルダーを /debug/lib/cmake とマージし、/share/{package_name}/cmake に移動する必要があります。ポート vcpkg-cmake-config からヘルパー関数 'vcpkg_cmake_config_fixup()' を使用してください。",
   "PortBugMismatchedNumberOfBinaries": "デバッグ バイナリとリリース バイナリの数が一致しません。",
   "PortBugMisplacedCMakeFiles": "次の cmake ファイルが /share/{spec} の外部で見つかりました。/share/{spec} に cmake ファイルを配置してください。",
