@@ -870,7 +870,7 @@ namespace
         {
         }
 
-        Optional<int64_t> reserve_cache_entry(const std::string& name,const std::string& abi, int64_t cacheSize) const
+        Optional<int64_t> reserve_cache_entry(const std::string& name, const std::string& abi, int64_t cacheSize) const
         {
             Json::Object payload;
             payload.insert("key", name + "-" + abi);
@@ -908,7 +908,7 @@ namespace
 
             size_t upload_count = 0;
             auto cache_size = m_fs.file_size(zip_path, VCPKG_LINE_INFO);
-            
+
             if (auto cacheId = reserve_cache_entry(request.spec.name(), abi, cache_size))
             {
                 std::vector<std::string> custom_headers{
@@ -921,7 +921,6 @@ namespace
 
                 if (put_file(m_fs, url, {}, custom_headers, zip_path, "PATCH"))
                 {
-
                     Json::Object commit;
                     commit.insert("size", std::to_string(cache_size));
                     auto res = invoke_http_request("POST",

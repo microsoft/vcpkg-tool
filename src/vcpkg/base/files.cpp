@@ -2143,7 +2143,7 @@ namespace vcpkg
         virtual uint64_t file_size(const Path& file_path, std::error_code& ec) const override
         {
 #ifdef _WIN32
-           return stdfs::file_size(to_stdfs_path(file_path), ec);
+            return stdfs::file_size(to_stdfs_path(file_path), ec);
 #else
             struct stat st;
             if (stat(file_path.c_str(), &st) != 0)
