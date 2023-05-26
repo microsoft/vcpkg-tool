@@ -803,7 +803,7 @@
   "PortBugInspectFiles": "Pokud chcete zkontrolovat soubory {extension}, použijte:",
   "PortBugInvalidCrtLinkage": "Následující binární soubory by měly používat crt {expected}.",
   "PortBugInvalidCrtLinkageEntry": "{path} odkazuje na:",
-  "PortBugKernel32FromXbox": "The selected triplet targets Xbox, but the following DLLs link with kernel32. These DLLs cannot be loaded on Xbox, where kernel32 is not present. This is typically caused by linking with kernel32.lib rather than a suitable umbrella library, such as onecore_apiset.lib or xgameplatform.lib.",
+  "PortBugKernel32FromXbox": "Vybraný triplet cílí na Xbox, ale následující knihovny DLL jsou propojeny s kernel32. Tyto knihovny DLL nelze načíst na konzoli Xbox, kde není k dispozici kernel32. To je obvykle způsobeno propojením s kernel32.lib namísto vhodné knihovny umbrella, jako je onecore_apiset.lib nebo xgameplatform.lib.",
   "PortBugMergeLibCMakeDir": "Složka /lib/cmake by se měla sloučit s /debug/lib/cmake a přesunout do složky /share/{package_name}/cmake. Použijte pomocnou funkci vcpkg_cmake_config_fixup() z portu vcpkg-cmake-config.",
   "PortBugMismatchedNumberOfBinaries": "Neshoduje se počet binárních souborů ladění a vydání.",
   "PortBugMisplacedCMakeFiles": "Následující soubory cmake byly nalezeny mimo /share/{spec}. Umístěte prosím soubory cmake do složky /share/{spec}.",

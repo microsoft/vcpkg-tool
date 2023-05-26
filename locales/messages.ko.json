@@ -803,7 +803,7 @@
   "PortBugInspectFiles": "{extension} 파일을 검사하려면 다음을 사용하세요.",
   "PortBugInvalidCrtLinkage": "다음 이진 파일은 {expected} CRT를 사용해야 합니다.",
   "PortBugInvalidCrtLinkageEntry": "다음이 포함된 {path} 링크:",
-  "PortBugKernel32FromXbox": "The selected triplet targets Xbox, but the following DLLs link with kernel32. These DLLs cannot be loaded on Xbox, where kernel32 is not present. This is typically caused by linking with kernel32.lib rather than a suitable umbrella library, such as onecore_apiset.lib or xgameplatform.lib.",
+  "PortBugKernel32FromXbox": "선택한 삼중 항목은 Xbox를 대상으로 하지만 다음 DLL은 kernel32와 연결됩니다. 이러한 DLL은 kernel32가 없는 Xbox에서 로드할 수 없습니다. 이는 일반적으로 onecore_apiset.lib 또는 xgameplatform.lib와 같은 적절한 우산 라이브러리가 아닌 kernel32.lib와 연결하여 발생합니다.",
   "PortBugMergeLibCMakeDir": "/lib/cmake 폴더는 /debug/lib/cmake와 병합하고 /share/{package_name}/cmake로 이동해야 합니다. vcpkg-cmake-config 포트에서 `vcpkg_cmake_config_fixup()` 도우미 함수를 사용하세요.`",
   "PortBugMismatchedNumberOfBinaries": "디버그와 릴리스 이진 파일 수가 일치하지 않습니다.",
   "PortBugMisplacedCMakeFiles": "/share/{spec} 외부에서 다음 cmake 파일을 찾았습니다. cmake 파일을 /share/{spec}에 배치하세요.",
