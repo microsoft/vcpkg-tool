@@ -930,7 +930,7 @@ namespace
                                                                             m_token_header},
                                                    url,
                                                    stringify(commit));
-                    if (auto p = res.get())
+                    if (res.get())
                     {
                         ++upload_count;
                     }
