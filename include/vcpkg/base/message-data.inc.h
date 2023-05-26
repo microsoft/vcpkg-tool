@@ -483,7 +483,7 @@ DECLARE_MESSAGE(CmdDependInfoShowDepthFormatMismatch,
                 (),
                 "",
                 "--show-depth can only be used with `list` and `tree` formats.")
-DECLARE_MESSAGE(CmdDependInfoXtreeTree, (), "", "--sort=xtree can not be used with formats other than tree")
+DECLARE_MESSAGE(CmdDependInfoXtreeTree, (), "", "--sort=x-tree cannot be used with formats other than tree")
 DECLARE_MESSAGE(CmdDependInfoOptDepth, (), "", "Show recursion depth in `list` output.")
 DECLARE_MESSAGE(CmdDependInfoOptMaxRecurse, (), "", "Set max recursion depth. Default is no limit.")
 DECLARE_MESSAGE(CmdDependInfoOptSort,
@@ -1859,7 +1859,7 @@ DECLARE_MESSAGE(MultipleFeatures,
 DECLARE_MESSAGE(MutuallyExclusiveOption,
                 (msg::value, msg::option),
                 "{value} is a second {option} switch",
-                "--{value} can not be used with --{option}.")
+                "--{value} cannot be used with --{option}.")
 DECLARE_MESSAGE(NavigateToNPS, (msg::url), "", "Please navigate to {url} in your preferred browser.")
 DECLARE_MESSAGE(NewConfigurationAlreadyExists,
                 (msg::path),

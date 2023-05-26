@@ -214,7 +214,7 @@ TEST_CASE ("determine_depend_info_mode errors", "[depend-info]")
     {
         pa.settings.emplace("format", "list");
         pa.settings.emplace("sort", "x-tree");
-        expected.append_raw("--sort=xtree can not be used with formats other than tree");
+        expected.append_raw("--sort=x-tree cannot be used with formats other than tree");
     }
 
     SECTION ("show depth with graphs")
