@@ -273,12 +273,6 @@ namespace vcpkg
                 }
             }
 
-            // Use Windows 10 defaults on Windows 7
-            DWORD secure_protocols(WINHTTP_FLAG_SECURE_PROTOCOL_TLS1 | WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_1 |
-                                   WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2);
-            WinHttpSetOption(
-                ret.m_hSession.h, WINHTTP_OPTION_SECURE_PROTOCOLS, &secure_protocols, sizeof(secure_protocols));
-
             // Many open source mirrors such as https://download.gnome.org/ will redirect to http mirrors.
             // `curl.exe -L` does follow https -> http redirection.
             // Additionally, vcpkg hash checks the resulting archive.
