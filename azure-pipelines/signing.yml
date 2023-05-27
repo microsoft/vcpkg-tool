@@ -284,7 +284,7 @@ jobs:
         script: |
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=amd64 -host_arch=amd64
           cmake.exe --version
-          cmake.exe -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_BUILD_TLS12_DOWNLOADER=ON -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON "-DVCPKG_FMT_URL=$(fmt-tarball-url)" "-DVCPKG_CMAKERC_URL=$(cmakerc-tarball-url)" "-DVCPKG_BASE_VERSION=$(VCPKG_BASE_VERSION)" "-DVCPKG_STANDALONE_BUNDLE_SHA=$(VCPKG_STANDALONE_BUNDLE_SHA)" -B "$(Build.BinariesDirectory)\amd64"
+          cmake.exe -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON "-DVCPKG_FMT_URL=$(fmt-tarball-url)" "-DVCPKG_CMAKERC_URL=$(cmakerc-tarball-url)" "-DVCPKG_BASE_VERSION=$(VCPKG_BASE_VERSION)" "-DVCPKG_STANDALONE_BUNDLE_SHA=$(VCPKG_STANDALONE_BUNDLE_SHA)" -B "$(Build.BinariesDirectory)\amd64"
           ninja.exe -C "$(Build.BinariesDirectory)\amd64"
     - task: CmdLine@2
       displayName: "Build vcpkg arm64 with CMake"
@@ -293,7 +293,7 @@ jobs:
         script: |
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=arm64 -host_arch=amd64
           cmake.exe --version
-          cmake.exe -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_BUILD_TLS12_DOWNLOADER=ON -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON -DVCPKG_PDB_SUFFIX="-arm64" "-DVCPKG_FMT_URL=$(fmt-tarball-url)" "-DVCPKG_CMAKERC_URL=$(cmakerc-tarball-url)" "-DVCPKG_BASE_VERSION=$(VCPKG_BASE_VERSION)" "-DVCPKG_STANDALONE_BUNDLE_SHA=$(VCPKG_STANDALONE_BUNDLE_SHA)" -B "$(Build.BinariesDirectory)\arm64"
+          cmake.exe -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON -DVCPKG_PDB_SUFFIX="-arm64" "-DVCPKG_FMT_URL=$(fmt-tarball-url)" "-DVCPKG_CMAKERC_URL=$(cmakerc-tarball-url)" "-DVCPKG_BASE_VERSION=$(VCPKG_BASE_VERSION)" "-DVCPKG_STANDALONE_BUNDLE_SHA=$(VCPKG_STANDALONE_BUNDLE_SHA)" -B "$(Build.BinariesDirectory)\arm64"
           ninja.exe -C "$(Build.BinariesDirectory)\arm64"
     - task: CodeQL3000Finalize@0
       displayName: 'CodeQL Finalize'
@@ -385,12 +385,8 @@ jobs:
           copy "$(Build.ArtifactStagingDirectory)\drop\vcpkg.exe" "$(Build.ArtifactStagingDirectory)\vs-insertion\staging\vcpkg.exe"
 
           move "$(Build.BinariesDirectory)\amd64\vcpkg.pdb" "$(Build.ArtifactStagingDirectory)\drop\vcpkg.pdb"
-          move "$(Build.BinariesDirectory)\amd64\tls12-download.exe" "$(Build.ArtifactStagingDirectory)\drop\tls12-download.exe"
-          move "$(Build.BinariesDirectory)\amd64\tls12-download.pdb" "$(Build.ArtifactStagingDirectory)\drop\tls12-download.pdb"
           move "$(Build.BinariesDirectory)\arm64\vcpkg.exe" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-arm64.exe"
           move "$(Build.BinariesDirectory)\arm64\vcpkg-arm64.pdb" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-arm64.pdb"
-          move "$(Build.BinariesDirectory)\arm64\tls12-download.exe" "$(Build.ArtifactStagingDirectory)\drop\tls12-download-arm64.exe"
-          move "$(Build.BinariesDirectory)\arm64\tls12-download-arm64.pdb" "$(Build.ArtifactStagingDirectory)\drop\tls12-download-arm64.pdb"
 
           mkdir "$(Build.ArtifactStagingDirectory)\staging\macos"
           tar.exe -C "$(Build.ArtifactStagingDirectory)\staging\macos" -xf "$(Build.ArtifactStagingDirectory)\staging\vcpkg-macos.zip"
@@ -401,12 +397,8 @@ jobs:
           mkdir "$(Build.ArtifactStagingDirectory)\symbols"
           copy "$(Build.ArtifactStagingDirectory)\drop\vcpkg.exe" "$(Build.ArtifactStagingDirectory)\symbols\vcpkg.exe"
           copy "$(Build.ArtifactStagingDirectory)\drop\vcpkg.pdb" "$(Build.ArtifactStagingDirectory)\symbols\vcpkg.pdb"
-          copy "$(Build.ArtifactStagingDirectory)\drop\tls12-download.exe" "$(Build.ArtifactStagingDirectory)\symbols\tls12-download.exe"
-          copy "$(Build.ArtifactStagingDirectory)\drop\tls12-download.pdb" "$(Build.ArtifactStagingDirectory)\symbols\tls12-download.pdb"
           copy "$(Build.ArtifactStagingDirectory)\drop\vcpkg-arm64.exe" "$(Build.ArtifactStagingDirectory)\symbols\vcpkg-arm64.exe"
           copy "$(Build.ArtifactStagingDirectory)\drop\vcpkg-arm64.pdb" "$(Build.ArtifactStagingDirectory)\symbols\vcpkg-arm64.pdb"
-          copy "$(Build.ArtifactStagingDirectory)\drop\tls12-download-arm64.exe" "$(Build.ArtifactStagingDirectory)\symbols\tls12-download-arm64.exe"
-          copy "$(Build.ArtifactStagingDirectory)\drop\tls12-download-arm64.pdb" "$(Build.ArtifactStagingDirectory)\symbols\tls12-download-arm64.pdb"
     - task: AzureArtifacts.manifest-generator-task.manifest-generator-task.ManifestGeneratorTask@0
       displayName: 'Generate SBOMs'
       inputs:
@@ -439,7 +431,7 @@ jobs:
     - task: BinSkim@4
       inputs:
         InputType: 'CommandLine'
-        arguments: 'analyze "$(Build.ArtifactStagingDirectory)\drop\vcpkg.exe" "$(Build.ArtifactStagingDirectory)\drop\tls12-download.exe" "$(Build.ArtifactStagingDirectory)\vcpkg-arm64.exe" "$(Build.ArtifactStagingDirectory)\tls12-download-arm64.exe"'
+        arguments: 'analyze "$(Build.ArtifactStagingDirectory)\drop\vcpkg.exe" "$(Build.ArtifactStagingDirectory)\vcpkg-arm64.exe"'
     - task: PoliCheck@2
       inputs:
         inputType: 'Basic'

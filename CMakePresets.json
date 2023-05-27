@@ -38,9 +38,6 @@
         {
             "name": "windows",
             "hidden": true,
-            "cacheVariables": {
-                "VCPKG_BUILD_TLS12_DOWNLOADER": true
-            },
             "vendor": {
                 "microsoft.com/VisualStudioSettings/CMake/1.0": {
                     "hostOS": [

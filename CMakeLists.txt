@@ -18,7 +18,6 @@ option(BUILD_TESTING "Option for enabling testing" ON)
 option(VCPKG_DEVELOPMENT_WARNINGS "Option for turning on all warnings" ON)
 option(VCPKG_MSVC_ANALYZE "Option for turning on /analyze" ON)
 option(VCPKG_WARNINGS_AS_ERRORS "Set warnings to be errors" OFF)
-option(VCPKG_BUILD_TLS12_DOWNLOADER "Enable building the tls12-downloader" OFF)
 option(VCPKG_BUILD_FUZZING "Option for enabling vcpkg-fuzz support" OFF)
 option(VCPKG_EMBED_GIT_SHA "Option for to fill in the Git SHA version; off by default to avoid privacy concerns out of official builds" OFF)
 option(VCPKG_ADD_SOURCELINK "Option for enabling SourceLink in debug information on Windows/MSVC builds" "${VCPKG_EMBED_GIT_SHA}")
@@ -35,9 +34,6 @@ if(DEFINE_DISABLE_METRICS OR VCPKG_DISABLE_METRICS)
 endif()
 
 set(LANGUAGES "CXX")
-if(VCPKG_BUILD_TLS12_DOWNLOADER)
-    list(APPEND LANGUAGES "C")
-endif()
 
 project(vcpkg
     DESCRIPTION "vcpkg helps you manage C and C++ libraries on Windows, Linux and MacOS."
@@ -501,21 +497,6 @@ if(VCPKG_BUILD_FUZZING)
     target_link_libraries(vcpkg-fuzz PRIVATE vcpkglib)
 endif()
 
-
-# === Target: tls12-download ===
-
-set(TLS12_DOWNLOAD_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/tls12-download.c")
-if(VCPKG_BUILD_TLS12_DOWNLOADER)
-    add_executable(tls12-download ${TLS12_DOWNLOAD_SOURCES} "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg.manifest")
-    set_property(TARGET tls12-download PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded")
-    set_property(TARGET tls12-download APPEND PROPERTY LINK_OPTIONS "$<IF:$<CONFIG:Debug>,,/ENTRY:entry>")
-    target_link_libraries(tls12-download winhttp wintrust shell32)
-    if(VCPKG_PDB_SUFFIX)
-        set_property(TARGET tls12-download PROPERTY PDB_NAME "tls12-download${VCPKG_PDB_SUFFIX}")
-    endif()
-endif()
-
-
 # === Target: format ===
 
 find_program(CLANG_FORMAT clang-format PATHS "$ENV{PROGRAMFILES}/LLVM/bin")
@@ -534,7 +515,6 @@ if(CLANG_FORMAT)
         COMMAND "${CLANG_FORMAT}" -i -verbose ${VCPKG_TEST_INCLUDES}
 
         COMMAND "${CLANG_FORMAT}" -i -verbose ${VCPKG_FUZZ_SOURCES}
-        COMMAND "${CLANG_FORMAT}" -i -verbose ${TLS12_DOWNLOAD_SOURCES}
     )
 endif()
 
