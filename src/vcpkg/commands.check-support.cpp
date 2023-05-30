@@ -131,9 +131,10 @@ namespace vcpkg::Commands
         auto cmake_vars = CMakeVars::make_triplet_cmake_var_provider(paths);
 
         // for each spec in the user-requested specs, check all dependencies
+        CreateInstallPlanOptions create_options{host_triplet, paths.packages()};
         for (const auto& user_spec : specs)
         {
-            auto action_plan = create_feature_install_plan(provider, *cmake_vars, {&user_spec, 1}, {}, {host_triplet});
+            auto action_plan = create_feature_install_plan(provider, *cmake_vars, {&user_spec, 1}, {}, create_options);
 
             cmake_vars->load_tag_vars(action_plan, provider, host_triplet);
 
@@ -201,13 +202,5 @@ namespace vcpkg::Commands
         {
             msg::write_unlocalized_text_to_stdout(Color::none, Json::stringify(json_to_print));
         }
-    }
-
-    void CheckSupport::CheckSupportCommand::perform_and_exit(const VcpkgCmdArguments& args,
-                                                             const VcpkgPaths& paths,
-                                                             Triplet default_triplet,
-                                                             Triplet host_triplet) const
-    {
-        return CheckSupport::perform_and_exit(args, paths, default_triplet, host_triplet);
     }
 }

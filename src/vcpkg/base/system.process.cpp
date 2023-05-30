@@ -3,6 +3,7 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/chrono.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/parse.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
@@ -24,6 +25,8 @@ extern char** environ;
 #endif
 
 #if defined(_WIN32)
+#include <Psapi.h>
+#include <TlHelp32.h>
 #pragma comment(lib, "Advapi32")
 #else
 #include <spawn.h>
@@ -246,6 +249,117 @@ namespace vcpkg
 #endif
     }
 
+    Optional<ProcessStat> try_parse_process_stat_file(StringView text, StringView origin)
+    {
+        ParserBase p(text, origin);
+
+        p.match_while(ParserBase::is_ascii_digit); // pid %d (ignored)
+
+        p.skip_whitespace();
+        p.require_character('(');
+        // From: https://man7.org/linux/man-pages/man5/procfs.5.html
+        //
+        //  /proc/[pid]/stat
+        //
+        //  (2) comm  %s
+        //  The filename of the executable, in parentheses.
+        //  Strings longer than TASK_COMM_LEN (16) characters (including the terminating null byte) are silently
+        //  truncated.  This is visible whether or not the executable is swapped out.
+        const auto start = p.it().pointer_to_current();
+        const auto end = p.it().end();
+        size_t len = 0, last_seen = 0;
+        for (auto it = p.it(); len < 17 && it != end; ++len, ++it)
+        {
+            if (*it == ')') last_seen = len;
+        }
+        for (size_t i = 0; i < last_seen; ++i)
+        {
+            p.next();
+        }
+        p.require_character(')');
+
+        p.skip_whitespace();
+        p.next(); // state %c (ignored)
+
+        p.skip_whitespace();
+        auto ppid_str = p.match_while(ParserBase::is_ascii_digit);
+        auto maybe_ppid = Strings::strto<int>(ppid_str);
+        if (auto ppid = maybe_ppid.get())
+        {
+            return ProcessStat{
+                *ppid,
+                std::string(start, last_seen),
+            };
+        }
+        return nullopt;
+    }
+
+    void get_parent_process_list(std::vector<std::string>& ret)
+    {
+        ret.clear();
+#if defined(_WIN32)
+        // Enumerate all processes in the system snapshot.
+        auto snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+        if (snapshot == INVALID_HANDLE_VALUE) return;
+
+        std::map<DWORD, DWORD> pid_ppid_map;
+        std::map<DWORD, std::string> pid_exe_path_map;
+
+        PROCESSENTRY32W entry;
+        memset(&entry, 0, sizeof(entry));
+        entry.dwSize = sizeof(entry);
+        if (Process32FirstW(snapshot, &entry))
+        {
+            do
+            {
+                pid_ppid_map.emplace(entry.th32ProcessID, entry.th32ParentProcessID);
+                pid_exe_path_map.emplace(entry.th32ProcessID, Strings::to_utf8(entry.szExeFile));
+            } while (Process32NextW(snapshot, &entry));
+        }
+        CloseHandle(snapshot);
+
+        // Find hierarchy of current process
+        auto it = pid_ppid_map.find(GetCurrentProcessId());
+        if (it == pid_ppid_map.end()) return;
+        while (true)
+        {
+            it = pid_ppid_map.find(it->second);
+            if (it == pid_ppid_map.end()) break;
+            ret.push_back(pid_exe_path_map[it->first]);
+        }
+#elif defined(__linux__)
+        auto& fs = get_real_filesystem();
+
+        std::error_code ec;
+        auto vcpkg_stat_filepath = fmt::format("/proc/{}/stat", getpid());
+        auto vcpkg_stat_contents = fs.read_contents(vcpkg_stat_filepath, ec);
+        if (ec) return;
+
+        auto maybe_vcpkg_stat = try_parse_process_stat_file(vcpkg_stat_contents, vcpkg_stat_filepath);
+        if (auto vcpkg_stat = maybe_vcpkg_stat.get())
+        {
+            auto pid = vcpkg_stat->ppid;
+            while (pid != 0)
+            {
+                auto stat_filepath = fmt::format("/proc/{}/stat", pid);
+                auto contents = fs.read_contents(stat_filepath, ec);
+                if (ec) break;
+
+                auto maybe_stat = try_parse_process_stat_file(contents, stat_filepath);
+                if (auto stat = maybe_stat.get())
+                {
+                    ret.push_back(stat->executable_name);
+                    pid = stat->ppid;
+                }
+                else
+                {
+                    break;
+                }
+            }
+        }
+#endif
+    }
+
     CMakeVariable::CMakeVariable(const StringView varname, const char* varvalue)
         : s(format_cmake_variable(varname, varvalue))
     {
@@ -386,6 +500,12 @@ namespace vcpkg
             // Environment variables used by wrapper scripts to allow us to set environment variables in parent shells
             "Z_VCPKG_POSTSCRIPT",
             "Z_VCPKG_UNDO",
+            // Ensures that the escape hatch persists to recursive vcpkg invocations like x-download
+            "VCPKG_KEEP_ENV_VARS",
+            // Enables Xbox SDKs
+            "GameDKLatest",
+            "GRDKLatest",
+            "GXDKLatest",
         };
 
         const Optional<std::string> keep_vars = get_environment_variable("VCPKG_KEEP_ENV_VARS");

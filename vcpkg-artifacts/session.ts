@@ -162,7 +162,7 @@ export class Session {
         this.channels.debug(error?.message);
       }
       // check if it got made, because at an absolute minimum, we need a folder, so failing this is catastrophic.
-      strict.ok(await this.fileSystem.isDirectory(this.homeFolder), i`Fatal: The root folder '${this.homeFolder.fsPath}' can not be created`);
+      strict.ok(await this.fileSystem.isDirectory(this.homeFolder), i`Fatal: The root folder '${this.homeFolder.fsPath}' cannot be created`);
     }
 
     if (!await this.fileSystem.isFile(this.globalConfig)) {
@@ -172,7 +172,7 @@ export class Session {
         // if this throws, let it
       }
       // check if it got made, because at an absolute minimum, we need the config file, so failing this is catastrophic.
-      strict.ok(await this.fileSystem.isFile(this.globalConfig), i`Fatal: The global configuration file '${this.globalConfig.fsPath}' can not be created`);
+      strict.ok(await this.fileSystem.isFile(this.globalConfig), i`Fatal: The global configuration file '${this.globalConfig.fsPath}' cannot be created`);
     }
 
     // got past the checks, let's load the configuration.

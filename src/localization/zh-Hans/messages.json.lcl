@@ -37,6 +37,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";$CouldNotBeUpdatedItCouldBeMalformed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[${p0} could not be updated; it could be malformed.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[无法更新 ${p0}; 可能格式不正确。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";$MatchedMoreThanOneResult$" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA['${p0}' matched more than one result (${p1}).]]></Val>
@@ -72,6 +81,18 @@
           </Tgt>
         </Str>
         <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";@TheXupdateregistryCommandDownloadsNewRegistryInformationAndThusCannotBeUsedWithLocalRegistriesDidYouMeanXregenera" ItemType="0" PsrId="306" Leaf="false">
+        <Disp Icon="Dir" LocTbl="false" />
+        <Item ItemId=";(...) te$" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+          <Str Cat="Text">
+            <Val><![CDATA[The x-update-registry command downloads new registry information and thus cannot be used with local registries. Did you mean x-regenerate ${p0}?]]></Val>
+            <Tgt Cat="Text" Stat="Loc" Orig="New">
+              <Val><![CDATA[x-update-registry 命令下载新的注册表信息，因此不能与本地注册表一起使用。是否是说 x-regenerate ${p0}?]]></Val>
+            </Tgt>
+          </Str>
+          <Disp Icon="Str" />
+        </Item>
       </Item>
       <Item ItemId=";@ThisAllowsTheConsumerToActivateTheToolsRequiredForAProjectIfTheToolsAreNotAlreadyInstalledThisWillForceThemToBeDo" ItemType="0" PsrId="306" Leaf="false">
         <Disp Icon="Dir" LocTbl="false" />
@@ -429,10 +450,13 @@
       </Item>
       <Item ItemId=";AVersionConstraint" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[a version constriant]]></Val>
+          <Val><![CDATA[a version constraint]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[版本约束]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[a version constriant]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -1132,15 +1156,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";ArtifactRegistryDataIsNotLoaded" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Artifact registry data is not loaded]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[未加载项目注册表数据]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";ArtifactsBootstrapFailed" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[vcpkg-artifacts is not installed and could not be bootstrapped.]]></Val>
@@ -1222,15 +1237,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";AttemptingToUpdateArtifactRegistry" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Attempting to update artifact registry]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[正在尝试更新项目注册表]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";AuthenticationMayRequireManualAction" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[One or more {vendor} credential providers requested manual action. Add the binary source 'interactive' to allow interactivity.]]></Val>
@@ -1254,6 +1260,15 @@
           <Val><![CDATA[All MSBuild C++ projects can now #include any installed libraries. Linking will be handled automatically. Installing new libraries will make them instantly available.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[所有 MSBuild C++ 项目现在可以包含(#include)任何已安装的库。系统将自动处理链接。安装新库将使它们立即可用。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AutomaticLinkingForVS2017AndLater" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Visual Studio 2017 and later can now #include any installed libraries. Linking will be handled automatically. Installing new libraries will make them instantly available.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Visual Studio 2017 及更高版本现在可包含(#include)任何已安装的库。系统将自动处理链接。安装新库将使它们立即可用。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1353,6 +1368,15 @@
           <Val><![CDATA[The baseline.json from commit `"{commit_sha}"` in the repo {url} was invalid (did not contain a "default" field).]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[提交存储库 {url} 中的 `"{commit_sha}"` 中的 baseline.json 无效(不包含“default”字段)。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";BinaryCacheVendorHTTP" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[HTTP servers]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[HTTP 服务器]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1704,6 +1728,15 @@
           <Val><![CDATA[Print result for each port instead of just errors.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[打印每个端口的结果，而不仅仅是错误。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CISkipInstallation" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The following packages are already installed and not build again: {list}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[以下包已安装，并且不再生成: {list}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2593,6 +2626,33 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CmdUpdateRegistryAll" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Update all known artifact registries]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[更新所有已知项目注册表]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdUpdateRegistryAllExcludesTargets" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Update registry --all cannot be used with a list of artifact registries]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[更新注册表 --不能与项目注册表列表一起使用全部]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdUpdateRegistryAllOrTargets" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Update registry requires either a list of artifact registry names or URiIs to update, or --all.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[更新注册表需要项目注册表名称列表或要更新的 URiI 或 --全部。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CmdUpgradeOptAllowUnsupported" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Instead of erroring on an unsupported port, continue with a warning.]]></Val>
@@ -3297,15 +3357,6 @@
           <Val><![CDATA[A suitable version of {tool_name} was not found (required v{version}) Downloading portable {tool_name} {version}...]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[找不到合适的{tool_name}版本(所需版本为 {version})。正在下载可移植版本 {tool_name} {version}...]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";DownloadingRegistryData" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Downloading registry data]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[正在下载注册表数据]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -5739,10 +5790,13 @@
       </Item>
       <Item ItemId=";HelpUpdateBaseline" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The best approach to keep your libraries up to date, the best approach is to update your baseline reference. This will ensure all packages, including transitive ones, are updated. However if you need to update a package independently, you can use a "version>=" constraint.]]></Val>
+          <Val><![CDATA[The best approach to keep your libraries up to date is to update your baseline reference. This will ensure all packages, including transitive ones, are updated. However if you need to update a package independently, you can use a "version>=" constraint.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[使库保持最新的最佳方法是更新基线引用。这将确保更新所有包(包括可传递包)。但如果需要单独更新包，则可以使用 “version>=” 约束。]]></Val>
+            <Val><![CDATA[使库保持最新的最佳方法是更新基线引用。这将确保更新所有包 (包括可传递包)。但是，如果需要单独更新包，则可以使用“version>=”约束。]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The best approach to keep your libraries up to date, the best approach is to update your baseline reference. This will ensure all packages, including transitive ones, are updated. However if you need to update a package independently, you can use a "version>=" constraint.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -6178,11 +6232,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";IntegrationFailed" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";IntegrationFailedVS2015" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Integration was not applied.]]></Val>
+          <Val><![CDATA[Integration was not applied for Visual Studio 2015.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[未应用集成。]]></Val>
+            <Val><![CDATA[集成未应用于 Visual Studio 2015。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -8227,6 +8281,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";PortBugKernel32FromXbox" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The selected triplet targets Xbox, but the following DLLs link with kernel32. These DLLs cannot be loaded on Xbox, where kernel32 is not present. This is typically caused by linking with kernel32.lib rather than a suitable umbrella library, such as onecore_apiset.lib or xgameplatform.lib.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[所选三元组面向的是 Xbox，但下面的 DLL 与 kernel32 链接。无法在没有 kernel32 的 Xbox 上加载这些 DLL。出现此问题通常是因为与 kernel32.lib 链接，而不是与 onecore_apiset.lib 或 xgameplatform.lib 等适当的伞库(umbrella library)。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";PortBugMergeLibCMakeDir" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[The /lib/cmake folder should be merged with /debug/lib/cmake and moved to /share/{package_name}/cmake. Please use the helper function `vcpkg_cmake_config_fixup()` from the port vcpkg-cmake-config.`]]></Val>
@@ -8689,27 +8752,66 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";RestoredPackage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";RestoredPackagesFromAWS" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Restored package from "{path}"]]></Val>
+          <Val><![CDATA[Restored {count} package(s) from AWS in {elapsed}. Use --debug to see more details.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[从“{path}”还原的包]]></Val>
+            <Val><![CDATA[{elapsed} 后从 AWS 还原了 {count} 个包。使用 --debug 了解更多详细信息。]]></Val>
           </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Restored package from '{path}']]></Val>
-          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";RestoredPackagesFromVendor" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";RestoredPackagesFromCOS" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Restored {count} package(s) from {value} in {elapsed}. Use --debug to see more details.]]></Val>
+          <Val><![CDATA[Restored {count} package(s) from COS in {elapsed}. Use --debug to see more details.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[已从 {elapsed} 中的 {value} 还原 {count} 个包。使用 --debug 查看更多详细信息。]]></Val>
+            <Val><![CDATA[{elapsed} 后从 COS 还原了 {count} 个包。使用 --debug 了解更多详细信息。]]></Val>
           </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Restored {count} package(s) from {vendor} in {elapsed}]]></Val>
-          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";RestoredPackagesFromFiles" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Restored {count} package(s) from {path} in {elapsed}. Use --debug to see more details.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{elapsed} 后从 {path} 还原了 {count} 个包。使用 --debug 了解更多详细信息。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";RestoredPackagesFromGCS" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Restored {count} package(s) from GCS in {elapsed}. Use --debug to see more details.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{elapsed} 后从 GCS 还原了 {count} 个包。使用 --debug 了解更多详细信息。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";RestoredPackagesFromGHA" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Restored {count} package(s) from GitHub Actions Cache in {elapsed}. Use --debug to see more details.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{elapsed} 后从 GitHub Actions Cache 还原了 {count} 个包。使用 --debug 了解更多详细信息。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";RestoredPackagesFromHTTP" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Restored {count} package(s) from HTTP servers in {elapsed}. Use --debug to see more details.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{elapsed} 后从 HTTP 服务器还原了 {count} 个包。使用 --debug 了解更多详细信息。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";RestoredPackagesFromNuGet" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Restored {count} package(s) from NuGet in {elapsed}. Use --debug to see more details.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{elapsed} 后从 NuGet 还原了 {count} 个包。使用 --debug 了解更多详细信息。]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -8925,10 +9027,13 @@
       </Item>
       <Item ItemId=";StoredBinariesToDestinations" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Stored binaries in {count} destinations.]]></Val>
+          <Val><![CDATA[Stored binaries in {count} destinations in {elapsed}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[存储在 {count} 个目标中的二进制文件。]]></Val>
+            <Val><![CDATA[{elapsed} 后在 {count} 个目标中存储了二进制文件。]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Stored binaries in {count} destinations.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -9322,11 +9427,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";UnableToDownloadRegistrySnapshot" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";UnableToDownload$" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Unable to download registry snapshot]]></Val>
+          <Val><![CDATA[Unable to download ${p0}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[无法下载注册表快照]]></Val>
+            <Val><![CDATA[无法下载 ${p0}。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -9360,19 +9465,13 @@
       </Item>
       <Item ItemId=";UnableToFindRegistry$" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Unable to find registry ${p0}]]></Val>
+          <Val><![CDATA[Unable to find registry ${p0}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[无法找到注册表 ${p0}]]></Val>
+            <Val><![CDATA[无法找到注册表 ${p0}。]]></Val>
           </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";UnableToLoadRegistryIndex" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Unable to load registry index]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[无法加载注册表索引]]></Val>
-          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Unable to find registry ${p0}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -10036,6 +10135,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";UpdateAllKnownArtifactRegistries" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Update all known artifact registries]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[更新所有已知项目注册表]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";UpdateBaselineAddBaselineNoManifest" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[the --{option} switch was passed, but there is no manifest file to add a `builtin-baseline` field to.]]></Val>
@@ -10102,11 +10210,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";Updated$RegistryContains$MetadataFiles" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";Updated$ItContains$MetadataFiles" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Updated ${p0}. registry contains ${p1} metadata files]]></Val>
+          <Val><![CDATA[Updated ${p0}. It contains ${p1} metadata files.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[已更新 ${p0}。注册表包含 ${p1} 元数据文件]]></Val>
+            <Val><![CDATA[已更新 ${p0}。它包含 ${p1} 元数据文件。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10569,36 +10677,66 @@
       </Item>
       <Item ItemId=";VersionIncomparable1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[version conflict on {spec}: {package_name} required {expected} but vcpkg could not compare it to {actual}.]A;The two versions used incomparable schemes:]]></Val>
+          <Val><![CDATA[version conflict on {spec}: {constraint_origin} required {expected}, which cannot be compared with the baseline version {actual}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{spec} {package_name} 上的版本冲突需为 {expected}，但 vcpkg 无法将其与 {actual} 进行比较。]A;使用不兼容方案的两个版本:]]></Val>
+            <Val><![CDATA[{spec} 上的版本冲突:需要 {constraint_origin} {expected}，这无法与基线版本 {actual} 进行比较。]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[version conflict on {spec}: {package_name} required {expected} but vcpkg could not compare it to {actual}.]A;The two versions used incomparable schemes:]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";VersionIncomparable2" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA["{version}" was of scheme {new_scheme}]]></Val>
+          <Val><![CDATA[{version_spec} has scheme {new_scheme}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA["{version}" 属于方案 {new_scheme}]]></Val>
+            <Val><![CDATA[“{version_spec}”具有方案“{new_scheme}”]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA["{version}" was of scheme {new_scheme}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";VersionIncomparable3" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[This can be resolved by adding an explicit override to the preferred version, for example:]]></Val>
+          <Val><![CDATA[This can be resolved by adding an explicit override to the preferred version. For example:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[可以将显式替代添加到首选版本以解决此问题，例如:]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[This can be resolved by adding an explicit override to the preferred version, for example:]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionIncomparable4" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[See `vcpkg help versioning` or {url} for more information.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[有关详细信息，请参阅“vcpkg 帮助版本控制”或 {url}。]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[See `vcpkg help versioning` for more information.]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionIncomparableSchemeString" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Both versions have scheme string but different primary text.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[两个版本都有方案字符串，但主文本不同。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";VersionIncomparable4" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";VersionIncomparableSchemes" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[See `vcpkg help versioning` for more information.]]></Val>
+          <Val><![CDATA[The versions have incomparable schemes:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[有关详细信息，请参阅“vcpkg 帮助版本控制”。]]></Val>
+            <Val><![CDATA[这些版本具有不兼容的方案:]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10641,10 +10779,13 @@
       </Item>
       <Item ItemId=";VersionMissingRequiredFeature" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[{spec}@{version} does not have required feature {feature}]]></Val>
+          <Val><![CDATA[{version_spec} does not have required feature {feature} needed by {constraint_origin}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{spec}@{version} 没有所需的功能 {feature}]]></Val>
+            <Val><![CDATA[“{version_spec}”没有“{constraint_origin}”所需的功能“{feature}”]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[{spec}@{version} does not have required feature {feature}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -10657,21 +10798,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";VersionNotFoundDuringDiscovery" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[version was not found during discovery: {spec}@{version}]A;This is an internal vcpkg error. Please open an issue on https://github.com/Microsoft/vcpkg with detailed steps to reproduce the problem.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[发现期间找不到版本: {spec}@{version}]A;这是内部 vcpkg 错误。请在 https://github.com/Microsoft/vcpkg 上打开问题，其中包含重现该问题的详细步骤。]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";VersionNotFoundInVersionsFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Version {version} was not found in versions file.]A;Run:]A;vcpkg x-add-version {package_name}]A;to add the new port version.]]></Val>
+          <Val><![CDATA[Version {version} was not found in versions file for {package_name}.]A;Run:]A;vcpkg x-add-version {package_name}]A;to add the new port version.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[版本文件中找不到版本 {version}。]A;运行:]A;vcpkg x-add-version {package_name}]A;以新增端口版本。]]></Val>
+            <Val><![CDATA[“{package_name}”版本文件中找不到版本“{version}”。]A;运行:]A;vcpkg x-add-version {package_name}]A;以新增端口版本。]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Version {version} was not found in versions file.]A;Run:]A;vcpkg x-add-version {package_name}]A;to add the new port version.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -10761,10 +10896,13 @@
       </Item>
       <Item ItemId=";VersionVerifiedOK" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[OK: {package_name}@{version} -> {commit_sha}]]></Val>
+          <Val><![CDATA[OK: {version_spec} -> {commit_sha}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[确定: {package_name}@{version} -> {commit_sha}]]></Val>
+            <Val><![CDATA[确定:{version_spec} -> {commit_sha}]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[OK: {package_name}@{version} -> {commit_sha}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>

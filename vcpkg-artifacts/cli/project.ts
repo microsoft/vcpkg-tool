@@ -28,17 +28,16 @@ function trackActivationPlan(session: Session, resolved: Array<ResolvedArtifact>
 export async function activate(session: Session, allowStacking: boolean, stackEntries: Array<string>, artifacts: Array<ResolvedArtifact>, registries: RegistryDisplayContext, options?: ActivationOptions): Promise<boolean> {
   trackActivationPlan(session, artifacts);
   // install the items in the project
-  const success = await acquireArtifacts(session, artifacts, registries, options);
-  if (success) {
-    const activation = await Activation.start(session, allowStacking);
-    for (const artifact of artifacts) {
-      if (!await artifact.artifact.loadActivationSettings(activation)) {
-        return false;
-      }
-    }
-
-    await activation.activate(stackEntries, options?.msbuildProps, options?.json);
+  if (!await acquireArtifacts(session, artifacts, registries, options)) {
+    return false;
   }
 
-  return success;
+  const activation = await Activation.start(session, allowStacking);
+  for (const artifact of artifacts) {
+    if (!await artifact.artifact.loadActivationSettings(activation)) {
+      return false;
+    }
+  }
+
+  return await activation.activate(stackEntries, options?.msbuildProps, options?.json);
 }

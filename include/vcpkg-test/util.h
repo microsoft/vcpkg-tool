@@ -4,11 +4,14 @@
 
 #include <catch2/catch.hpp>
 
+#include <vcpkg/base/fwd/files.h>
+
+#include <vcpkg/fwd/tools.h>
+
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/format.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/pragmas.h>
-#include <vcpkg/base/sortedvector.h>
 #include <vcpkg/base/strings.h>
 
 #include <vcpkg/packagespec.h>
@@ -81,6 +84,21 @@ namespace vcpkg
     inline std::ostream& operator<<(std::ostream& os, const LocalizedString& value)
     {
         return os << "LL" << std::quoted(value.data());
+    }
+
+    inline std::ostream& operator<<(std::ostream& os, const Path& value) { return os << value.native(); }
+
+    template<class T>
+    inline auto operator<<(std::ostream& os, const Optional<T>& value) -> decltype(os << *(value.get()))
+    {
+        if (auto v = value.get())
+        {
+            return os << *v;
+        }
+        else
+        {
+            return os << "nullopt";
+        }
     }
 }
 
@@ -159,4 +177,12 @@ namespace vcpkg::Test
     void check_json_eq_ordered(const Json::Array& l, const Json::Array& r);
 
     const Path& base_temporary_directory() noexcept;
+
+    Optional<std::string> diff_lines(StringView a, StringView b);
 }
+
+#define REQUIRE_LINES(a, b)                                                                                            \
+    do                                                                                                                 \
+    {                                                                                                                  \
+        if (auto delta = ::vcpkg::Test::diff_lines((a), (b))) FAIL(*delta.get());                                      \
+    } while (0)
