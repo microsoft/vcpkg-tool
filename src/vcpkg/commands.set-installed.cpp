@@ -131,6 +131,7 @@ namespace vcpkg::Commands::SetInstalled
         paths.flush_lockfile();
 
         track_install_plan(action_plan);
+        Install::preclear_packages(paths, action_plan);
 
         auto binary_cache = only_downloads ? BinaryCache(paths.get_filesystem())
                                            : BinaryCache::make(args, paths, stdout_sink).value_or_exit(VCPKG_LINE_INFO);

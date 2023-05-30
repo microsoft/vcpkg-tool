@@ -514,6 +514,20 @@ namespace vcpkg
         TrackedPackageInstallGuard& operator=(const TrackedPackageInstallGuard&) = delete;
     };
 
+    void Install::preclear_packages(const VcpkgPaths& paths, const ActionPlan& action_plan)
+    {
+        auto& fs = paths.get_filesystem();
+        for (auto&& action : action_plan.remove_actions)
+        {
+            fs.remove_all(paths.package_dir(action.spec), VCPKG_LINE_INFO);
+        }
+
+        for (auto&& action : action_plan.install_actions)
+        {
+            fs.remove_all(paths.package_dir(action.spec), VCPKG_LINE_INFO);
+        }
+    }
+
     InstallSummary Install::execute_plan(const VcpkgCmdArguments& args,
                                          const ActionPlan& action_plan,
                                          const KeepGoing keep_going,
@@ -532,7 +546,6 @@ namespace vcpkg
         {
             TrackedPackageInstallGuard this_install(action_index++, action_count, results, action);
             Remove::remove_package(fs, paths.installed(), action.spec, status_db);
-            fs.remove_all(paths.packages() / action.spec.dir(), VCPKG_LINE_INFO);
             results.back().build_result.emplace(BuildResult::REMOVED);
         }
 
@@ -1270,6 +1283,7 @@ namespace vcpkg
         paths.flush_lockfile();
 
         track_install_plan(action_plan);
+        Install::preclear_packages(paths, action_plan);
 
         auto binary_cache = only_downloads ? BinaryCache(paths.get_filesystem())
                                            : BinaryCache::make(args, paths, stdout_sink).value_or_exit(VCPKG_LINE_INFO);
