@@ -2281,7 +2281,13 @@ namespace vcpkg
         }
     }
 
-    void CacheStatus::mark_unrestored() noexcept { m_status = CacheStatusState::available; }
+    void CacheStatus::mark_unrestored() noexcept
+    {
+        if (m_status == CacheStatusState::restored)
+        {
+            m_status = CacheStatusState::available;
+        }
+    }
 
     const IReadBinaryProvider* CacheStatus::get_available_provider() const noexcept
     {
