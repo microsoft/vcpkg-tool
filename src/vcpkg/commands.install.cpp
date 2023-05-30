@@ -285,7 +285,7 @@ namespace vcpkg
         const InstallDir install_dir =
             InstallDir::from_destination_root(paths.installed(), triplet, bcf.core_paragraph);
 
-        install_package_and_write_listfile(fs, paths.package_dir(bcf.core_paragraph.spec), install_dir);
+        install_package_and_write_listfile(fs, package_dir, install_dir);
 
         source_paragraph.state = InstallState::INSTALLED;
         write_update(fs, installed, source_paragraph);
@@ -524,7 +524,7 @@ namespace vcpkg
 
         for (auto&& action : action_plan.install_actions)
         {
-            fs.remove_all(paths.package_dir(action.spec), VCPKG_LINE_INFO);
+            fs.remove_all(action.package_dir.value_or_exit(VCPKG_LINE_INFO), VCPKG_LINE_INFO);
         }
     }
 
