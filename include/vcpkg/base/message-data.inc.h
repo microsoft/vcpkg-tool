@@ -466,16 +466,31 @@ DECLARE_MESSAGE(CmdAddVersionOptSkipFormatChk, (), "", "Skips the formatting che
 DECLARE_MESSAGE(CmdAddVersionOptSkipVersionFormatChk, (), "", "Skips the version format check.")
 DECLARE_MESSAGE(CmdAddVersionOptVerbose, (), "", "Print success messages instead of just errors.")
 DECLARE_MESSAGE(CmdContactOptSurvey, (), "", "Launch default browser to the current vcpkg survey")
-DECLARE_MESSAGE(CmdDependInfoOptDepth, (), "", "Show recursion depth in output")
-DECLARE_MESSAGE(CmdDependInfoOptDGML, (), "", "Creates graph on basis of dgml")
-DECLARE_MESSAGE(CmdDependInfoOptDot, (), "", "Creates graph on basis of dot")
-DECLARE_MESSAGE(CmdDependInfoOptMaxRecurse, (), "", "Set max recursion depth, a value of -1 indicates no limit")
-DECLARE_MESSAGE(CmdDependInfoOptSort,
+DECLARE_MESSAGE(CmdDependInfoFormatConflict,
                 (),
                 "",
-                "Set sort order for the list of dependencies, accepted values are: lexicographical, topological "
-                "(default), x-tree, "
-                "reverse")
+                "Conflicting formats specified. Only one of --format, --dgml, or --dot are accepted.")
+DECLARE_MESSAGE(CmdDependInfoFormatHelp,
+                (),
+                "The alternatives in ``s must not be localized.",
+                "Choose output format, one of `list`, `tree`, `dot`, or `dgml`.")
+DECLARE_MESSAGE(
+    CmdDependInfoFormatInvalid,
+    (msg::value),
+    "The alternatives in ``s must not be localized. {value} is what the user specified.",
+    "--format={value} is not a recognized format. --format must be one of `list`, `tree`, `dot`, or `dgml`.")
+DECLARE_MESSAGE(CmdDependInfoShowDepthFormatMismatch,
+                (),
+                "",
+                "--show-depth can only be used with `list` and `tree` formats.")
+DECLARE_MESSAGE(CmdDependInfoXtreeTree, (), "", "--sort=x-tree cannot be used with formats other than tree")
+DECLARE_MESSAGE(CmdDependInfoOptDepth, (), "", "Show recursion depth in `list` output.")
+DECLARE_MESSAGE(CmdDependInfoOptMaxRecurse, (), "", "Set max recursion depth. Default is no limit.")
+DECLARE_MESSAGE(CmdDependInfoOptSort,
+                (),
+                "The alternatives in ``s must not be localized, but the localized text can explain what each value "
+                "means. The value `reverse` means 'reverse-topological'.",
+                "Choose sort order for the `list` format, one of `lexicographical`, `topological` (default), `reverse`")
 DECLARE_MESSAGE(CmdEditOptAll, (), "", "Open editor into the port as well as the port-specific buildtree subfolder")
 DECLARE_MESSAGE(CmdEditOptBuildTrees, (), "", "Open editor into the port-specific buildtree subfolder")
 DECLARE_MESSAGE(CmdEnvOptions, (msg::path, msg::env_var), "", "Add installed {path} to {env_var}")
@@ -1844,7 +1859,7 @@ DECLARE_MESSAGE(MultipleFeatures,
 DECLARE_MESSAGE(MutuallyExclusiveOption,
                 (msg::value, msg::option),
                 "{value} is a second {option} switch",
-                "--{value} can not be used with --{option}.")
+                "--{value} cannot be used with --{option}.")
 DECLARE_MESSAGE(NavigateToNPS, (msg::url), "", "Please navigate to {url} in your preferred browser.")
 DECLARE_MESSAGE(NewConfigurationAlreadyExists,
                 (msg::path),
