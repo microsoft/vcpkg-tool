@@ -288,7 +288,7 @@ namespace vcpkg::Remove
         {
             for (auto&& action : plan.not_installed)
             {
-                fs.remove_all(paths.packages() / action.spec.dir(), VCPKG_LINE_INFO);
+                fs.remove_all(paths.package_dir(action.spec), VCPKG_LINE_INFO);
             }
         }
 
@@ -302,7 +302,7 @@ namespace vcpkg::Remove
             remove_package(fs, paths.installed(), action.spec, status_db);
             if (purge == Purge::YES)
             {
-                fs.remove_all(paths.packages() / action.spec.dir(), VCPKG_LINE_INFO);
+                fs.remove_all(paths.package_dir(action.spec), VCPKG_LINE_INFO);
             }
         }
 

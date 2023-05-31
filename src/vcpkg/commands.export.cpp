@@ -239,13 +239,6 @@ namespace vcpkg::Export
         return exported_archive_path;
     }
 
-    static Optional<std::string> maybe_lookup(std::map<std::string, std::string, std::less<>> const& m, StringView key)
-    {
-        const auto it = m.find(key);
-        if (it != m.end()) return it->second;
-        return nullopt;
-    }
-
     void export_integration_files(const Path& raw_exported_dir_path, const VcpkgPaths& paths)
     {
         const std::vector<Path> integration_files_relative_to_root = {
@@ -385,27 +378,21 @@ namespace vcpkg::Export
 
         const auto options = args.parse_arguments(COMMAND_STRUCTURE);
 
-        ret.dry_run = options.switches.find(OPTION_DRY_RUN) != options.switches.cend();
-        ret.raw = options.switches.find(OPTION_RAW) != options.switches.cend();
-        ret.nuget = options.switches.find(OPTION_NUGET) != options.switches.cend();
-        ret.ifw = options.switches.find(OPTION_IFW) != options.switches.cend();
-        ret.zip = options.switches.find(OPTION_ZIP) != options.switches.cend();
-        ret.seven_zip = options.switches.find(OPTION_SEVEN_ZIP) != options.switches.cend();
-        ret.chocolatey = options.switches.find(OPTION_CHOCOLATEY) != options.switches.cend();
-        ret.prefab = options.switches.find(OPTION_PREFAB) != options.switches.cend();
-        ret.prefab_options.enable_maven = options.switches.find(OPTION_PREFAB_ENABLE_MAVEN) != options.switches.cend();
-        ret.prefab_options.enable_debug = options.switches.find(OPTION_PREFAB_ENABLE_DEBUG) != options.switches.cend();
-        ret.maybe_output = maybe_lookup(options.settings, OPTION_OUTPUT);
-        auto maybe_output_dir = maybe_lookup(options.settings, OPTION_OUTPUT_DIR);
-        if (auto output_dir = maybe_output_dir.get())
-        {
-            ret.output_dir = paths.original_cwd / *output_dir;
-        }
-        else
-        {
-            ret.output_dir = paths.root;
-        }
-        ret.all_installed = options.switches.find(OPTION_ALL_INSTALLED) != options.switches.end();
+        ret.dry_run = Util::Sets::contains(options.switches, OPTION_DRY_RUN);
+        ret.raw = Util::Sets::contains(options.switches, OPTION_RAW);
+        ret.nuget = Util::Sets::contains(options.switches, OPTION_NUGET);
+        ret.ifw = Util::Sets::contains(options.switches, OPTION_IFW);
+        ret.zip = Util::Sets::contains(options.switches, OPTION_ZIP);
+        ret.seven_zip = Util::Sets::contains(options.switches, OPTION_SEVEN_ZIP);
+        ret.chocolatey = Util::Sets::contains(options.switches, OPTION_CHOCOLATEY);
+        ret.prefab = Util::Sets::contains(options.switches, OPTION_PREFAB);
+        ret.prefab_options.enable_maven = Util::Sets::contains(options.switches, OPTION_PREFAB_ENABLE_MAVEN);
+        ret.prefab_options.enable_debug = Util::Sets::contains(options.switches, OPTION_PREFAB_ENABLE_DEBUG);
+        ret.maybe_output = Util::lookup_value_copy(options.settings, OPTION_OUTPUT);
+        ret.output_dir = Util::lookup_value(options.settings, OPTION_OUTPUT_DIR)
+                             .map([&](const Path& p) { return paths.original_cwd / p; })
+                             .value_or(paths.root);
+        ret.all_installed = Util::Sets::contains(options.switches, OPTION_ALL_INSTALLED);
 
         if (ret.all_installed)
         {
@@ -452,13 +439,13 @@ namespace vcpkg::Export
             if (is_main_opt)
             {
                 for (auto&& opt : implying_opts)
-                    opt.out_opt = maybe_lookup(options.settings, opt.name);
+                    opt.out_opt = Util::lookup_value_copy(options.settings, opt.name);
             }
             else
             {
                 for (auto&& opt : implying_opts)
                     Checks::msg_check_exit(VCPKG_LINE_INFO,
-                                           !maybe_lookup(options.settings, opt.name),
+                                           !Util::Maps::contains(options.settings, opt.name),
                                            msgMutuallyExclusiveOption,
                                            msg::value = opt.name,
                                            msg::option = main_opt_name);

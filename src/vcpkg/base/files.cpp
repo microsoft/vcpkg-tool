@@ -2993,7 +2993,8 @@ namespace vcpkg
             DWORD length_without_null = GetTempPathW(MAX_PATH + 1, temp_folder);
             Path temp_folder_path = Path(Strings::to_utf8(temp_folder, length_without_null)) / "vcpkg";
 #else  // ^^^ _WIN32 // !_WIN32 vvv
-            const Path temp_folder_path = "/tmp/vcpkg";
+            const Path temp_folder_path =
+                Path(get_environment_variable("TMPDIR").value_or(std::string("/tmp"))) / "vcpkg";
 #endif // ^^^ !_WIN32
 
             this->create_directories(temp_folder_path, ec);

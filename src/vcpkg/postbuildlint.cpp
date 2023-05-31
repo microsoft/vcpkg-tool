@@ -354,7 +354,7 @@ namespace vcpkg
                                                const VcpkgPaths& paths,
                                                MessageSink& msg_sink)
     {
-        const auto packages_dir = paths.packages() / spec.dir();
+        const auto packages_dir = paths.package_dir(spec);
         const auto copyright_file = packages_dir / "share" / spec.name() / "copyright";
 
         switch (fs.status(copyright_file, IgnoreErrors{}))
@@ -485,13 +485,13 @@ namespace vcpkg
     }
 
     static LintStatus check_exports_of_dlls(const BuildPolicies& policies,
-                                            const std::vector<PostBuildCheckDllData>& dlls,
+                                            const std::vector<PostBuildCheckDllData>& dlls_data,
                                             MessageSink& msg_sink)
     {
         if (policies.is_enabled(BuildPolicy::DLLS_WITHOUT_EXPORTS)) return LintStatus::SUCCESS;
 
         std::vector<Path> dlls_with_no_exports;
-        for (const PostBuildCheckDllData& dll_data : dlls)
+        for (const PostBuildCheckDllData& dll_data : dlls_data)
         {
             if (!dll_data.has_exports)
             {
@@ -510,7 +510,7 @@ namespace vcpkg
     }
 
     static LintStatus check_uwp_bit_of_dlls(const std::string& expected_system_name,
-                                            const std::vector<PostBuildCheckDllData>& dlls,
+                                            const std::vector<PostBuildCheckDllData>& dlls_data,
                                             MessageSink& msg_sink)
     {
         if (expected_system_name != "WindowsStore")
@@ -519,7 +519,7 @@ namespace vcpkg
         }
 
         std::vector<Path> dlls_with_improper_uwp_bit;
-        for (const PostBuildCheckDllData& dll_data : dlls)
+        for (const PostBuildCheckDllData& dll_data : dlls_data)
         {
             if (!dll_data.has_appcontainer)
             {
@@ -594,12 +594,12 @@ namespace vcpkg
     }
 
     static LintStatus check_dll_architecture(const std::string& expected_architecture,
-                                             const std::vector<PostBuildCheckDllData>& dlls,
+                                             const std::vector<PostBuildCheckDllData>& dlls_data,
                                              MessageSink& msg_sink)
     {
         std::vector<FileAndArch> binaries_with_invalid_architecture;
 
-        for (const PostBuildCheckDllData& dll_data : dlls)
+        for (const PostBuildCheckDllData& dll_data : dlls_data)
         {
             const std::string actual_architecture = get_printable_architecture(dll_data.machine_type);
             if (expected_architecture == "arm64ec")
@@ -1119,7 +1119,7 @@ namespace vcpkg
         StringLiteral outdated_crt;
     };
 
-    static LintStatus check_outdated_crt_linkage_of_dlls(const std::vector<PostBuildCheckDllData>& dlls,
+    static LintStatus check_outdated_crt_linkage_of_dlls(const std::vector<PostBuildCheckDllData>& dlls_data,
                                                          const BuildInfo& build_info,
                                                          const PreBuildInfo& pre_build_info,
                                                          MessageSink& msg_sink)
@@ -1129,7 +1129,7 @@ namespace vcpkg
         const auto outdated_crts = get_outdated_dynamic_crts(pre_build_info.platform_toolset);
         std::vector<OutdatedDynamicCrtAndFile> dlls_with_outdated_crt;
 
-        for (const PostBuildCheckDllData& dll_data : dlls)
+        for (const PostBuildCheckDllData& dll_data : dlls_data)
         {
             for (const StringLiteral& outdated_crt : outdated_crts)
             {
@@ -1155,6 +1155,45 @@ namespace vcpkg
         }
 
         return LintStatus::SUCCESS;
+    }
+
+    static LintStatus check_bad_kernel32_from_xbox(const std::vector<PostBuildCheckDllData>& dlls_data,
+                                                   const PreBuildInfo& pre_build_info,
+                                                   MessageSink& msg_sink)
+    {
+        if (!pre_build_info.target_is_xbox)
+        {
+            return LintStatus::SUCCESS;
+        }
+
+        std::vector<const PostBuildCheckDllData*> bad_dlls;
+        for (auto&& dll_data : dlls_data)
+        {
+            for (auto&& dependency : dll_data.dependencies)
+            {
+                Debug::println("Dependency: ", dependency);
+                if (Strings::case_insensitive_ascii_equals("kernel32.dll", dependency))
+                {
+                    bad_dlls.push_back(&dll_data);
+                    break;
+                }
+            }
+        }
+
+        if (bad_dlls.empty())
+        {
+            return LintStatus::SUCCESS;
+        }
+
+        msg_sink.println(msgPortBugKernel32FromXbox);
+        for (auto&& bad_dll : bad_dlls)
+        {
+            msg_sink.println(LocalizedString{}.append_indent().append_raw(bad_dll->path));
+        }
+
+        msg_sink.println(msg::format(msgPortBugInspectFiles, msg::extension = "dll")
+                             .append_raw("\n    dumpbin.exe /dependents mylibfile.dll"));
+        return LintStatus::PROBLEM_DETECTED;
     }
 
     static LintStatus check_no_files_in_dir(const Filesystem& fs, const Path& dir, MessageSink& msg_sink)
@@ -1274,7 +1313,7 @@ namespace vcpkg
     static void operator+=(size_t& left, const LintStatus& right) { left += static_cast<size_t>(right); }
 
     static size_t perform_post_build_checks_dll_loads(const Filesystem& fs,
-                                                      std::vector<PostBuildCheckDllData>& dlls,
+                                                      std::vector<PostBuildCheckDllData>& dlls_data,
                                                       const std::vector<Path>& dll_files,
                                                       MessageSink& msg_sink)
     {
@@ -1284,7 +1323,7 @@ namespace vcpkg
             auto maybe_dll_data = try_load_dll_data(fs, dll);
             if (const auto dll_data = maybe_dll_data.get())
             {
-                dlls.emplace_back(std::move(*dll_data));
+                dlls_data.emplace_back(std::move(*dll_data));
             }
             else
             {
@@ -1371,6 +1410,12 @@ namespace vcpkg
             std::vector<Path> release_dlls = fs.get_regular_files_recursive(release_bin_dir, IgnoreErrors{});
             Util::erase_remove_if(release_dlls, NotExtensionCaseInsensitive{".dll"});
 
+            std::vector<PostBuildCheckDllData> dlls_data;
+            dlls_data.reserve(debug_dlls.size() + release_dlls.size());
+            error_count += perform_post_build_checks_dll_loads(fs, dlls_data, debug_dlls, msg_sink);
+            error_count += perform_post_build_checks_dll_loads(fs, dlls_data, release_dlls, msg_sink);
+            error_count += check_bad_kernel32_from_xbox(dlls_data, pre_build_info, msg_sink);
+
             switch (build_info.library_linkage)
             {
                 case LinkageType::DYNAMIC:
@@ -1384,16 +1429,12 @@ namespace vcpkg
                     error_count += check_lib_files_are_available_if_dlls_are_available(
                         build_info.policies, release_libs.size(), release_dlls.size(), release_lib_dir, msg_sink);
 
-                    std::vector<PostBuildCheckDllData> dlls;
-                    dlls.reserve(debug_dlls.size() + release_dlls.size());
-                    error_count += perform_post_build_checks_dll_loads(fs, dlls, debug_dlls, msg_sink);
-                    error_count += perform_post_build_checks_dll_loads(fs, dlls, release_dlls, msg_sink);
-                    error_count += check_exports_of_dlls(build_info.policies, dlls, msg_sink);
-                    error_count += check_uwp_bit_of_dlls(pre_build_info.cmake_system_name, dlls, msg_sink);
-                    error_count += check_outdated_crt_linkage_of_dlls(dlls, build_info, pre_build_info, msg_sink);
+                    error_count += check_exports_of_dlls(build_info.policies, dlls_data, msg_sink);
+                    error_count += check_uwp_bit_of_dlls(pre_build_info.cmake_system_name, dlls_data, msg_sink);
+                    error_count += check_outdated_crt_linkage_of_dlls(dlls_data, build_info, pre_build_info, msg_sink);
                     if (!build_info.policies.is_enabled(BuildPolicy::SKIP_ARCHITECTURE_CHECK))
                     {
-                        error_count += check_dll_architecture(pre_build_info.target_architecture, dlls, msg_sink);
+                        error_count += check_dll_architecture(pre_build_info.target_architecture, dlls_data, msg_sink);
                     }
                 }
                 break;
