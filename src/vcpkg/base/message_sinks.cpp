@@ -92,12 +92,26 @@ namespace vcpkg
 
     void BGMessageSink::print_published()
     {
-        std::lock_guard<std::mutex> lk(m_published_lock);
-        for (auto&& m : m_published)
+        std::vector<std::pair<Color, std::string>> tmp;
+        for (;;)
         {
-            out_sink.print(m.first, m.second);
+            {
+                std::lock_guard<std::mutex> lk(m_published_lock);
+                swap(tmp, m_published);
+            }
+
+            if (tmp.empty())
+            {
+                return;
+            }
+
+            for (auto&& m : tmp)
+            {
+                out_sink.print(m.first, m.second);
+            }
+
+            tmp.clear();
         }
-        m_published.clear();
     }
 
     void BGMessageSink::publish_directly_to_out_sink()
