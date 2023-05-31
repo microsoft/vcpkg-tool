@@ -39,7 +39,7 @@ struct BGThreadBatchQueue
 
     void wait_for_items(std::vector<WorkItem>& out)
     {
-        std::unique_lock<std::mutex> lock(m_mtx);
+        std::lock_guard<std::mutex> lock(m_mtx);
         m_cv.wait(lock, [this]() { return !m_tasks.empty() || !m_running; });
         m_tasks.pop(out);
     }
