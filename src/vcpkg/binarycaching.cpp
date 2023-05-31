@@ -2254,10 +2254,9 @@ namespace vcpkg
                 {
                     m_fs.remove(*action_to_push.request.zip_path.get(), IgnoreErrors{});
                 }
-                m_bg_msg_sink.println(
+                m_bg_msg_sink.print(
                     msgStoredBinariesToDestinations, msg::count = num_destinations, msg::elapsed = timer.elapsed());
 
-                // END
                 m_remaining_packages_to_push.fetch_sub(1);
                 if (m_actions_to_push.stopped())
                 {
