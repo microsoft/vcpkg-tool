@@ -134,6 +134,7 @@ endmacro()
         }
         std::string extraction_file = create_extraction_file_prelude(paths, emitted_triplets);
 
+        // The variables collected here are those necessary to perform builds.
         extraction_file.append(R"(
 
 function(vcpkg_get_tags PORT FEATURES VCPKG_TRIPLET_ID VCPKG_ABI_SETTINGS_FILE)
@@ -167,6 +168,8 @@ VCPKG_ENV_PASSTHROUGH=${VCPKG_ENV_PASSTHROUGH}
 VCPKG_ENV_PASSTHROUGH_UNTRACKED=${VCPKG_ENV_PASSTHROUGH_UNTRACKED}
 VCPKG_LOAD_VCVARS_ENV=${VCPKG_LOAD_VCVARS_ENV}
 VCPKG_DISABLE_COMPILER_TRACKING=${VCPKG_DISABLE_COMPILER_TRACKING}
+VCPKG_XBOX_CONSOLE_TARGET=${VCPKG_XBOX_CONSOLE_TARGET}
+Z_VCPKG_GameDKLatest=$ENV{GameDKLatest}
 e1e74b5c-18cb-4474-a6bd-5c1c8bc81f3f
 8c504940-be29-4cba-9f8f-6cd83e9d87b7")
 endfunction()
@@ -211,6 +214,8 @@ endfunction()
 
         std::string extraction_file = create_extraction_file_prelude(paths, emitted_triplets);
 
+        // The variables collected here are those necessary to perform dependency resolution.
+        // If a value affects platform expressions, it must be here.
         extraction_file.append(R"(
 
 function(vcpkg_get_dep_info PORT VCPKG_TRIPLET_ID)
@@ -229,6 +234,7 @@ CMAKE_HOST_SYSTEM_NAME=${CMAKE_HOST_SYSTEM_NAME}
 CMAKE_HOST_SYSTEM_PROCESSOR=${CMAKE_HOST_SYSTEM_PROCESSOR}
 CMAKE_HOST_SYSTEM_VERSION=${CMAKE_HOST_SYSTEM_VERSION}
 CMAKE_HOST_SYSTEM=${CMAKE_HOST_SYSTEM}
+VCPKG_XBOX_CONSOLE_TARGET=${VCPKG_XBOX_CONSOLE_TARGET}
 e1e74b5c-18cb-4474-a6bd-5c1c8bc81f3f
 8c504940-be29-4cba-9f8f-6cd83e9d87b7")
 endfunction()
@@ -406,36 +412,18 @@ endfunction()
     Optional<const std::unordered_map<std::string, std::string>&> TripletCMakeVarProvider::get_generic_triplet_vars(
         Triplet triplet) const
     {
-        auto find_itr = generic_triplet_vars.find(triplet);
-        if (find_itr != generic_triplet_vars.end())
-        {
-            return find_itr->second;
-        }
-
-        return nullopt;
+        return Util::lookup_value(generic_triplet_vars, triplet);
     }
 
     Optional<const std::unordered_map<std::string, std::string>&> TripletCMakeVarProvider::get_dep_info_vars(
         const PackageSpec& spec) const
     {
-        auto find_itr = dep_resolution_vars.find(spec);
-        if (find_itr != dep_resolution_vars.end())
-        {
-            return find_itr->second;
-        }
-
-        return nullopt;
+        return Util::lookup_value(dep_resolution_vars, spec);
     }
 
     Optional<const std::unordered_map<std::string, std::string>&> TripletCMakeVarProvider::get_tag_vars(
         const PackageSpec& spec) const
     {
-        auto find_itr = tag_vars.find(spec);
-        if (find_itr != tag_vars.end())
-        {
-            return find_itr->second;
-        }
-
-        return nullopt;
+        return Util::lookup_value(tag_vars, spec);
     }
 }
