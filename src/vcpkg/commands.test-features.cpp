@@ -282,7 +282,7 @@ namespace vcpkg::Commands::TestFeatures
         fmt::print("compute {} install plans\n", specs_to_test.size());
 
         std::vector<FullPackageSpec> specs;
-        std::vector<const InstallPlanAction*> actions;
+        std::vector<const InstallPlanAction*> actions_to_check;
         CreateInstallPlanOptions install_plan_options{host_triplet, paths.packages(), UnsupportedPortAction::Warn};
         auto install_plans = Util::fmap(specs_to_test, [&](auto& spec) {
             auto install_plan = create_feature_install_plan(
@@ -293,7 +293,7 @@ namespace vcpkg::Commands::TestFeatures
                 {
                     specs.emplace_back(actions.spec, actions.feature_list);
                 }
-                actions.push_back(&install_plan.install_actions.back());
+                actions_to_check.push_back(&install_plan.install_actions.back());
             }
             return std::make_pair(spec, std::move(install_plan));
         });
@@ -312,7 +312,7 @@ namespace vcpkg::Commands::TestFeatures
         }
 
         fmt::print("Precheck binary cache ...\n");
-        binary_cache.precheck(actions);
+        binary_cache.precheck(actions_to_check);
 
         Util::stable_sort(install_plans, [](const auto& left, const auto& right) {
             return left.second.install_actions.size() < right.second.install_actions.size();
