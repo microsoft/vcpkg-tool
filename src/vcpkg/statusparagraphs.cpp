@@ -1,6 +1,6 @@
 #include <vcpkg/base/checks.h>
 
-#include <vcpkg/install.h>
+#include <vcpkg/commands.install.h>
 #include <vcpkg/installedpaths.h>
 #include <vcpkg/statusparagraphs.h>
 #include <vcpkg/vcpkgpaths.h>

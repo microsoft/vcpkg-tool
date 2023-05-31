@@ -2,7 +2,6 @@
 
 #include <vcpkg/base/fwd/message_sinks.h>
 
-#include <vcpkg/base/files.h>
 #include <vcpkg/base/messages.h>
 
 #include <mutex>
@@ -71,17 +70,6 @@ namespace vcpkg
         ~MessageSink() = default;
     };
 
-    struct FileSink : MessageSink
-    {
-        Path m_log_file;
-        WriteFilePointer m_out_file;
-
-        FileSink(Filesystem& fs, StringView log_file, Append append_to_file)
-            : m_log_file(log_file), m_out_file(fs.open_for_write(m_log_file, append_to_file, VCPKG_LINE_INFO))
-        {
-        }
-        void print(Color c, StringView sv) override;
-    };
     struct CombiningSink : MessageSink
     {
         MessageSink& m_first;
@@ -90,7 +78,7 @@ namespace vcpkg
         void print(Color c, StringView sv) override;
     };
 
-    struct BGMessageSink : MessageSink
+    struct BGMessageSink final : MessageSink
     {
         BGMessageSink(MessageSink& out_sink) : out_sink(out_sink) { }
         ~BGMessageSink() { publish_directly_to_out_sink(); }

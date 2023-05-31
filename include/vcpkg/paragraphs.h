@@ -1,11 +1,12 @@
 #pragma once
 
+#include <vcpkg/fwd/binaryparagraph.h>
 #include <vcpkg/fwd/paragraphparser.h>
 #include <vcpkg/fwd/registries.h>
 
 #include <vcpkg/base/expected.h>
 
-#include <vcpkg/binaryparagraph.h>
+#include <vcpkg/sourceparagraph.h>
 
 namespace vcpkg::Paragraphs
 {

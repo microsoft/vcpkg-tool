@@ -225,7 +225,8 @@ TEST_CASE ("payload smoke test", "[metrics]")
           ],
           "buildtimes": [
             12.000000
-          ]
+          ],
+          "process_tree": ""
         },
         "measurements": {
           "elapsed_us": 12.000000

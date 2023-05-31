@@ -1,9 +1,9 @@
 #pragma once
 
 #include <vcpkg/base/fwd/cmd-parser.h>
+#include <vcpkg/base/fwd/files.h>
 
 #include <vcpkg/base/expected.h>
-#include <vcpkg/base/files.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/span.h>

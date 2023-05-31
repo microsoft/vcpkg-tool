@@ -7,6 +7,7 @@
 
 #include <stdint.h>
 
+#include <numeric>
 #include <string>
 #include <utility>
 #include <vector>
@@ -162,7 +163,7 @@ TEST_CASE ("edit distance", "[strings]")
 
 TEST_CASE ("replace_all", "[strings]")
 {
-    REQUIRE(vcpkg::Strings::replace_all("literal", "ter", "x") == "lixal");
+    REQUIRE(vcpkg::Strings::replace_all(vcpkg::StringView("literal"), "ter", "x") == "lixal");
 }
 
 TEST_CASE ("inplace_replace_all", "[strings]")
@@ -239,3 +240,20 @@ TEST_CASE ("api_stable_format(sv,append_f)", "[strings]")
     });
     REQUIRE(*res.get() == "123hello456");
 }
+
+#if defined(_WIN32)
+TEST_CASE ("ascii to utf16", "[utf16]")
+{
+    SECTION ("ASCII to utf16")
+    {
+        auto str = vcpkg::Strings::to_utf16("abc");
+        REQUIRE(str == L"abc");
+    }
+
+    SECTION ("ASCII to utf16 with whitespace")
+    {
+        auto str = vcpkg::Strings::to_utf16("abc -x86-windows");
+        REQUIRE(str == L"abc -x86-windows");
+    }
+}
+#endif

@@ -1,14 +1,22 @@
+#include <vcpkg/base/lineinfo.h>
+#include <vcpkg/base/messages.h>
+#include <vcpkg/base/strings.h>
+#include <vcpkg/base/util.h>
+
 #include <vcpkg/commands.autocomplete.h>
 #include <vcpkg/commands.edit.h>
+#include <vcpkg/commands.install.h>
 #include <vcpkg/commands.integrate.h>
+#include <vcpkg/commands.remove.h>
 #include <vcpkg/commands.upgrade.h>
-#include <vcpkg/install.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/paragraphs.h>
-#include <vcpkg/remove.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
+
+#include <string>
+#include <vector>
 
 namespace vcpkg::Commands::Autocomplete
 {
@@ -177,10 +185,5 @@ namespace vcpkg::Commands::Autocomplete
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);
-    }
-
-    void AutocompleteCommand::perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const
-    {
-        Autocomplete::perform_and_exit(args, paths);
     }
 }

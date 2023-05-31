@@ -3,18 +3,21 @@
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/git.h>
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/jsonreader.h>
+#include <vcpkg/base/lazy.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/system.debug.h>
+#include <vcpkg/base/system.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/archives.h>
 #include <vcpkg/binarycaching.h>
 #include <vcpkg/binaryparagraph.h>
-#include <vcpkg/build.h>
 #include <vcpkg/bundlesettings.h>
+#include <vcpkg/commands.build.h>
 #include <vcpkg/commands.h>
 #include <vcpkg/commands.version.h>
 #include <vcpkg/configuration.h>
@@ -79,7 +82,7 @@ namespace
                                            LocalizedString::from_raw(manifest_opt.error()->to_string()));
         }
 
-        auto manifest_value = std::move(manifest_opt).value_or_exit(VCPKG_LINE_INFO).value;
+        auto manifest_value = std::move(manifest_opt).value(VCPKG_LINE_INFO).value;
         if (!manifest_value.is_object())
         {
             msg::println_error(msgFailedToParseNoTopLevelObj, msg::path = manifest_path);
@@ -659,17 +662,19 @@ namespace vcpkg
                 return (m_pimpl->m_config.directory / overlay_path).native();
             };
 
+            std::vector<std::string> overlay_triplet_paths;
+            std::vector<std::string> overlay_port_paths;
+
             if (!m_pimpl->m_config.directory.empty())
             {
                 auto& config = m_pimpl->m_config.config;
-                Util::transform(config.overlay_ports, resolve_relative_to_config);
-                Util::transform(config.overlay_triplets, resolve_relative_to_config);
+                overlay_triplet_paths = Util::fmap(config.overlay_triplets, resolve_relative_to_config);
+                overlay_port_paths = Util::fmap(config.overlay_ports, resolve_relative_to_config);
             }
 
-            overlay_ports =
-                merge_overlays(args.cli_overlay_ports, m_pimpl->m_config.config.overlay_ports, args.env_overlay_ports);
-            overlay_triplets = merge_overlays(
-                args.cli_overlay_triplets, m_pimpl->m_config.config.overlay_triplets, args.env_overlay_triplets);
+            overlay_ports = merge_overlays(args.cli_overlay_ports, overlay_port_paths, args.env_overlay_ports);
+            overlay_triplets =
+                merge_overlays(args.cli_overlay_triplets, overlay_triplet_paths, args.env_overlay_triplets);
         }
 
         for (const std::string& triplet : this->overlay_triplets)
@@ -829,6 +834,16 @@ namespace vcpkg
 
     Path VcpkgPaths::baselines_output() const { return buildtrees() / "versioning_" / "baselines"; }
     Path VcpkgPaths::versions_output() const { return buildtrees() / "versioning_" / "versions"; }
+    bool VcpkgPaths::try_provision_vcpkg_artifacts() const
+    {
+        switch (m_pimpl->m_bundle.deployment)
+        {
+            case DeploymentKind::Git: return true;
+            case DeploymentKind::OneLiner: return false;     // handled by z-boostrap-standalone
+            case DeploymentKind::VisualStudio: return false; // bundled in VS itself
+            default: Checks::unreachable(VCPKG_LINE_INFO);
+        }
+    }
 
     std::string VcpkgPaths::get_toolver_diagnostics() const
     {
@@ -908,7 +923,8 @@ namespace vcpkg
         auto cmd = git_cmd_builder(this->root / ".git", this->root);
         cmd.string_arg("rev-parse").string_arg("HEAD");
         return flatten_out(cmd_execute_and_capture_output(cmd), Tools::GIT).map([](std::string&& output) {
-            return Strings::trim(std::move(output));
+            Strings::inplace_trim(output);
+            return std::move(output);
         });
     }
 
@@ -1191,7 +1207,8 @@ namespace vcpkg
                                     .string_arg(revision);
 
         return flatten_out(cmd_execute_and_capture_output(git_rev_parse), Tools::GIT).map([](std::string&& output) {
-            return Strings::trim(std::move(output));
+            Strings::inplace_trim(output);
+            return std::move(output);
         });
     }
     ExpectedL<Path> VcpkgPaths::git_checkout_object_from_remote_registry(StringView object) const
