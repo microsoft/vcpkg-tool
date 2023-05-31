@@ -3,6 +3,7 @@
 #include <vcpkg/base/fwd/message_sinks.h>
 
 #include <vcpkg/fwd/binarycaching.h>
+#include <vcpkg/fwd/build.h>
 #include <vcpkg/fwd/dependencies.h>
 #include <vcpkg/fwd/tools.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
@@ -225,7 +226,7 @@ namespace vcpkg
         struct ActionToPush
         {
             BinaryPackageWriteInfo request;
-            bool clean_after_push = false;
+            CleanPackages clean_after_push;
         };
 
         void push_thread_main();

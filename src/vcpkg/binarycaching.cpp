@@ -2180,10 +2180,8 @@ namespace vcpkg
                         generate_nuspec(request.package_dir, action, m_config.nuget_prefix, m_config.nuget_repo);
                 }
 
-                const auto clean_packages = action.build_options.clean_packages == CleanPackages::YES;
-
                 m_remaining_packages_to_push++;
-                m_actions_to_push.push(ActionToPush{std::move(request), clean_packages});
+                m_actions_to_push.push(ActionToPush{std::move(request), action.build_options.clean_packages});
                 return;
             }
         }
@@ -2268,7 +2266,7 @@ namespace vcpkg
                         fmt::format(" ({}/{})", count_pushed, count_pushed + m_remaining_packages_to_push.load())));
                 }
                 m_bg_msg_sink.println();
-                if (action_to_push.clean_after_push)
+                if (action_to_push.clean_after_push == CleanPackages::YES)
                 {
                     m_fs.remove_all(action_to_push.request.package_dir, VCPKG_LINE_INFO);
                 }
