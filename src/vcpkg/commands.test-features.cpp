@@ -400,12 +400,14 @@ namespace vcpkg::Commands::TestFeatures
                 continue;
             }
 
-            const InstallPlanAction* action = &install_plan.install_actions.back();
-            std::array<const InstallPlanAction*, 1> actions = {action};
-            if (binary_cache.precheck(actions).front() == CacheAvailability::available)
             {
-                handle_result(std::move(spec), CiFeatureBaselineState::Pass, baseline);
-                continue;
+                const InstallPlanAction* action = &install_plan.install_actions.back();
+                std::array<const InstallPlanAction*, 1> actions = {action};
+                if (binary_cache.precheck(actions).front() == CacheAvailability::available)
+                {
+                    handle_result(std::move(spec), CiFeatureBaselineState::Pass, baseline);
+                    continue;
+                }
             }
             msg::write_unlocalized_text_to_stdout(Color::none, Strings::concat("Test feature ", spec, '\n'));
             for (auto&& action : install_plan.install_actions)
