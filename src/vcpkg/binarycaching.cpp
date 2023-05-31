@@ -2205,7 +2205,8 @@ namespace vcpkg
         }
         m_bg_msg_sink.publish_directly_to_out_sink();
         m_actions_to_push.stop();
-        if (m_push_thread.joinable()) {
+        if (m_push_thread.joinable())
+        {
             m_push_thread.join();
         }
     }
