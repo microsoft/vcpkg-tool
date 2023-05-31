@@ -96,6 +96,12 @@ namespace vcpkg::Util
 
     namespace Maps
     {
+        template<class Container, class Key>
+        bool contains(const Container& container, Key&& item)
+        {
+            return container.find(static_cast<Key&&>(item)) != container.end();
+        }
+
         template<class K, class V1, class V2, class Func>
         void transform_values(const std::unordered_map<K, V1>& container, std::unordered_map<K, V2>& output, Func func)
         {
@@ -104,6 +110,59 @@ namespace vcpkg::Util
                     std::piecewise_construct, std::forward_as_tuple(p.first), std::forward_as_tuple(func(p.second)));
             });
         }
+    }
+
+    template<class Map, class Key>
+    typename Map::mapped_type copy_or_default(const Map& map, Key&& key)
+    {
+        const auto it = map.find(static_cast<Key&&>(key));
+        if (it == map.end())
+        {
+            return typename Map::mapped_type{};
+        }
+
+        return it->second;
+    }
+
+    template<class Map, class Key>
+    const typename Map::mapped_type& value_or_default(const Map& map,
+                                                      Key&& key,
+                                                      const typename Map::mapped_type& default_value)
+    {
+        const auto it = map.find(static_cast<Key&&>(key));
+        if (it == map.end())
+        {
+            return default_value;
+        }
+
+        return it->second;
+    }
+
+    template<class Map, class Key>
+    void value_or_default(const Map& map, Key&& key, typename Map::mapped_type&& default_value) = delete;
+
+    template<class Map, class Key>
+    Optional<const typename Map::mapped_type&> lookup_value(const Map& map, Key&& key)
+    {
+        const auto it = map.find(static_cast<Key&&>(key));
+        if (it == map.end())
+        {
+            return nullopt;
+        }
+
+        return it->second;
+    }
+
+    template<class Map, class Key>
+    Optional<typename Map::mapped_type> lookup_value_copy(const Map& map, Key&& key)
+    {
+        const auto it = map.find(static_cast<Key&&>(key));
+        if (it == map.end())
+        {
+            return nullopt;
+        }
+
+        return it->second;
     }
 
     template<class Range, class Pred>
