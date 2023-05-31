@@ -532,6 +532,7 @@ namespace vcpkg::Commands::CI
             const IBuildLogsRecorder& build_logs_recorder =
                 build_logs_recorder_storage ? *(build_logs_recorder_storage.get()) : null_build_logs_recorder();
 
+            Install::preclear_packages(paths, action_plan);
             binary_cache.fetch(action_plan.install_actions);
             auto summary = Install::execute_plan(
                 args, action_plan, KeepGoing::YES, paths, status_db, binary_cache, build_logs_recorder);

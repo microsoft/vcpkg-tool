@@ -354,7 +354,7 @@ namespace vcpkg
                                                const VcpkgPaths& paths,
                                                MessageSink& msg_sink)
     {
-        const auto packages_dir = paths.packages() / spec.dir();
+        const auto packages_dir = paths.package_dir(spec);
         const auto copyright_file = packages_dir / "share" / spec.name() / "copyright";
 
         switch (fs.status(copyright_file, IgnoreErrors{}))

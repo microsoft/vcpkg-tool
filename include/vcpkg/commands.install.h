@@ -100,6 +100,8 @@ namespace vcpkg
                                      const Filesystem& fs,
                                      const InstalledPaths& installed);
 
+        void preclear_packages(const VcpkgPaths& paths, const ActionPlan& action_plan);
+
         InstallSummary execute_plan(const VcpkgCmdArguments& args,
                                     const ActionPlan& action_plan,
                                     const KeepGoing keep_going,
