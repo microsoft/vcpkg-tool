@@ -15,12 +15,9 @@
 
 #include <vcpkg/archives.h>
 #include <vcpkg/packagespec.h>
-#include <vcpkg/sourceparagraph.h>
 
 #include <chrono>
-#include <condition_variable>
 #include <iterator>
-#include <queue>
 #include <set>
 #include <string>
 #include <thread>

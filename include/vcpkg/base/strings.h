@@ -161,7 +161,9 @@ namespace vcpkg::Strings
 
     [[nodiscard]] std::string::size_type find_last(StringView searched, char c);
 
-    std::vector<StringView> find_all_enclosed(StringView input, StringView left_delim, StringView right_delim);
+    [[nodiscard]] std::vector<StringView> find_all_enclosed(StringView input,
+                                                            StringView left_delim,
+                                                            StringView right_delim);
 
     [[nodiscard]] StringView find_exactly_one_enclosed(StringView input, StringView left_tag, StringView right_tag);
 
