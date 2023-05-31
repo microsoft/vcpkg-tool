@@ -202,11 +202,13 @@ namespace vcpkg
 
     struct BinaryCache : ReadOnlyBinaryCache
     {
-        static ExpectedL<BinaryCache> make(const VcpkgCmdArguments& args, const VcpkgPaths& paths, MessageSink& sink);
+        static ExpectedL<std::unique_ptr<BinaryCache>> make(const VcpkgCmdArguments& args,
+                                                            const VcpkgPaths& paths,
+                                                            MessageSink& sink);
 
         BinaryCache(Filesystem& fs);
         BinaryCache(const BinaryCache&) = delete;
-        BinaryCache(BinaryCache&&) = default;
+        BinaryCache(BinaryCache&&) = delete;
         ~BinaryCache();
 
         /// Called upon a successful build of `action` to store those contents in the binary cache.
@@ -231,9 +233,9 @@ namespace vcpkg
 
         void push_thread_main();
 
-        std::unique_ptr<BGMessageSink> m_bg_msg_sink;
-        std::unique_ptr<BGThreadBatchQueue<ActionToPush>> m_actions_to_push;
-        std::unique_ptr<std::atomic_int> m_remaining_packages_to_push = 0;
+        BGMessageSink m_bg_msg_sink;
+        BGThreadBatchQueue<ActionToPush> m_actions_to_push;
+        std::atomic_int m_remaining_packages_to_push = 0;
         std::thread m_push_thread;
     };
 

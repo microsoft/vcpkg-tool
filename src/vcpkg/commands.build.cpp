@@ -170,7 +170,7 @@ namespace vcpkg::Build
             msg::print(create_user_troubleshooting_message(*action, paths, nullopt));
             return 1;
         }
-        binary_cache.push_success(*action);
+        binary_cache->push_success(*action);
 
         return 0;
     }

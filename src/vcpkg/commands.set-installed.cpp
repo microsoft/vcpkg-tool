@@ -133,18 +133,18 @@ namespace vcpkg::Commands::SetInstalled
         track_install_plan(action_plan);
         Install::preclear_packages(paths, action_plan);
 
-        auto binary_cache = only_downloads ? BinaryCache(paths.get_filesystem())
+        auto binary_cache = only_downloads ? std::make_unique<BinaryCache>(paths.get_filesystem())
                                            : BinaryCache::make(args, paths, stdout_sink).value_or_exit(VCPKG_LINE_INFO);
-        binary_cache.fetch(action_plan.install_actions);
+        binary_cache->fetch(action_plan.install_actions);
         const auto summary = Install::execute_plan(
-            args, action_plan, keep_going, paths, status_db, binary_cache, null_build_logs_recorder());
+            args, action_plan, keep_going, paths, status_db, *binary_cache, null_build_logs_recorder());
 
         if (keep_going == KeepGoing::YES && summary.failed())
         {
             summary.print_failed();
             if (!only_downloads)
             {
-                binary_cache.wait_for_async_complete();
+                binary_cache->wait_for_async_complete();
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
         }
@@ -161,7 +161,7 @@ namespace vcpkg::Commands::SetInstalled
                 }
             }
         }
-        binary_cache.wait_for_async_complete();
+        binary_cache->wait_for_async_complete();
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 

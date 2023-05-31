@@ -2122,36 +2122,38 @@ namespace vcpkg
         });
     }
 
-    BinaryCache::BinaryCache(Filesystem& fs) : m_fs(fs) { }
+    BinaryCache::BinaryCache(Filesystem& fs) : m_fs(fs), m_bg_msg_sink(stdout_sink) { }
 
-    ExpectedL<BinaryCache> BinaryCache::make(const VcpkgCmdArguments& args, const VcpkgPaths& paths, MessageSink& sink)
+    ExpectedL<std::unique_ptr<BinaryCache>> BinaryCache::make(const VcpkgCmdArguments& args,
+                                                              const VcpkgPaths& paths,
+                                                              MessageSink& sink)
     {
-        return make_binary_providers(args, paths).then([&](BinaryProviders&& p) -> ExpectedL<BinaryCache> {
-            BinaryCache b(std::move(p), paths.get_filesystem());
-            b.m_needs_nuspec_data = Util::any_of(b.m_config.write, [](auto&& p) { return p->needs_nuspec_data(); });
-            b.m_needs_zip_file = Util::any_of(b.m_config.write, [](auto&& p) { return p->needs_zip_file(); });
-            if (b.m_needs_zip_file)
-            {
-                auto maybe_zt = ZipTool::make(paths.get_tool_cache(), sink);
-                if (auto z = maybe_zt.get())
+        return make_binary_providers(args, paths)
+            .then([&](BinaryProviders&& p) -> ExpectedL<std::unique_ptr<BinaryCache>> {
+                std::unique_ptr<BinaryCache> b(new BinaryCache(std::move(p), paths.get_filesystem()));
+                b->m_needs_nuspec_data =
+                    Util::any_of(b->m_config.write, [](auto&& p) { return p->needs_nuspec_data(); });
+                b->m_needs_zip_file = Util::any_of(b->m_config.write, [](auto&& p) { return p->needs_zip_file(); });
+                if (b->m_needs_zip_file)
                 {
-                    b.m_zip_tool.emplace(std::move(*z));
+                    auto maybe_zt = ZipTool::make(paths.get_tool_cache(), sink);
+                    if (auto z = maybe_zt.get())
+                    {
+                        b->m_zip_tool.emplace(std::move(*z));
+                    }
+                    else
+                    {
+                        return std::move(maybe_zt).error();
+                    }
                 }
-                else
-                {
-                    return std::move(maybe_zt).error();
-                }
-            }
-            return std::move(b);
-        });
+                return std::move(b);
+            });
     }
 
     BinaryCache::BinaryCache(BinaryProviders&& providers, Filesystem& fs)
         : ReadOnlyBinaryCache(std::move(providers))
         , m_fs(fs)
-        , m_bg_msg_sink(std::make_unique<BGMessageSink>(stdout_sink))
-        , m_actions_to_push(std::make_unique<BGThreadBatchQueue<ActionToPush>>())
-        , m_remaining_packages_to_push(std::make_unique<std::atomic_int>())
+        , m_bg_msg_sink(stdout_sink)
         , m_push_thread([this]() { push_thread_main(); })
 
     {
@@ -2180,8 +2182,8 @@ namespace vcpkg
 
                 const auto clean_packages = action.build_options.clean_packages == CleanPackages::YES;
 
-                m_remaining_packages_to_push->fetch_add(1);
-                m_actions_to_push->push(ActionToPush{std::move(request), clean_packages});
+                m_remaining_packages_to_push++;
+                m_actions_to_push.push(ActionToPush{std::move(request), clean_packages});
                 return;
             }
         }
@@ -2191,18 +2193,18 @@ namespace vcpkg
         }
     }
 
-    void BinaryCache::print_push_success_messages() { m_bg_msg_sink->print_published(); }
+    void BinaryCache::print_push_success_messages() { m_bg_msg_sink.print_published(); }
 
     void BinaryCache::wait_for_async_complete()
     {
         bool have_remaining_packages = m_remaining_packages_to_push > 0;
         if (have_remaining_packages)
         {
-            m_bg_msg_sink->print_published();
-            msg::println(msgWaitUntilPackagesUploaded, msg::count = m_remaining_packages_to_push->load());
+            m_bg_msg_sink.print_published();
+            msg::println(msgWaitUntilPackagesUploaded, msg::count = m_remaining_packages_to_push.load());
         }
-        m_bg_msg_sink->publish_directly_to_out_sink();
-        m_actions_to_push->stop();
+        m_bg_msg_sink.publish_directly_to_out_sink();
+        m_actions_to_push.stop();
         m_push_thread.join();
     }
 
@@ -2212,7 +2214,7 @@ namespace vcpkg
         int count_pushed = 0;
         while (true)
         {
-            m_actions_to_push->wait_for_items(my_tasks);
+            m_actions_to_push.wait_for_items(my_tasks);
             if (my_tasks.empty())
             {
                 break;
@@ -2232,7 +2234,7 @@ namespace vcpkg
                     }
                     else
                     {
-                        m_bg_msg_sink->println(
+                        m_bg_msg_sink.println(
                             Color::warning,
                             msg::format_warning(msgCompressFolderFailed, msg::path = action_to_push.request.package_dir)
                                 .append_raw(' ')
@@ -2252,18 +2254,18 @@ namespace vcpkg
                 {
                     m_fs.remove(*action_to_push.request.zip_path.get(), IgnoreErrors{});
                 }
-                m_bg_msg_sink->println(
+                m_bg_msg_sink.println(
                     msgStoredBinariesToDestinations, msg::count = num_destinations, msg::elapsed = timer.elapsed());
 
                 // END
-                m_remaining_packages_to_push->fetch_sub(1);
-                if (m_actions_to_push->stopped())
+                m_remaining_packages_to_push.fetch_sub(1);
+                if (m_actions_to_push.stopped())
                 {
                     count_pushed++;
-                    m_bg_msg_sink->print(LocalizedString::from_raw(
-                        fmt::format(" ({}/{})", count_pushed, count_pushed + m_remaining_packages_to_push->load())));
+                    m_bg_msg_sink.print(LocalizedString::from_raw(
+                        fmt::format(" ({}/{})", count_pushed, count_pushed + m_remaining_packages_to_push.load())));
                 }
-                m_bg_msg_sink->println();
+                m_bg_msg_sink.println();
                 if (action_to_push.clean_after_push)
                 {
                     m_fs.remove_all(action_to_push.request.package_dir, VCPKG_LINE_INFO);
