@@ -12,7 +12,7 @@ namespace vcpkg::Commands
     static constexpr StringLiteral OPTION_STRIP = "strip";
 
     constexpr std::array<CommandSetting, 1> EXTRACT_SETTINGS = {
-        {{OPTION_STRIP, []() { return msg::format(msgCmdDependInfoOptDot); }},
+        {{OPTION_STRIP, []() { return msg::format(msgStripOption); }},
         }};
     
     const CommandStructure ExtractCommandStructure = {
