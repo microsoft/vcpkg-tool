@@ -38,7 +38,7 @@ export abstract class ArtifactRegistry implements Registry {
     this.#loaded = loaded;
   }
 
-  abstract update(): Promise<void>;
+  abstract update(displayName?: string): Promise<void>;
 
   async regenerate(normalize?: boolean): Promise<void> {
     // reset the index to blank.

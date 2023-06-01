@@ -13,6 +13,7 @@
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.process.h>
+#include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.integrate.h>
 #include <vcpkg/packagespec.h>
@@ -43,14 +44,12 @@ namespace vcpkg
                        const FullPackageSpec& full_spec,
                        Triplet host_triplet,
                        const PathsPortFileProvider& provider,
-                       BinaryCache& binary_cache,
                        const IBuildLogsRecorder& build_logs_recorder,
                        const VcpkgPaths& paths);
         void perform_and_exit_ex(const VcpkgCmdArguments& args,
                                  const FullPackageSpec& full_spec,
                                  Triplet host_triplet,
                                  const PathsPortFileProvider& provider,
-                                 BinaryCache& binary_cache,
                                  const IBuildLogsRecorder& build_logs_recorder,
                                  const VcpkgPaths& paths);
 
@@ -156,6 +155,7 @@ namespace vcpkg
         Triplet triplet;
         bool load_vcvars_env = false;
         bool disable_compiler_tracking = false;
+        bool target_is_xbox = false;
         std::string target_architecture;
         std::string cmake_system_name;
         std::string cmake_system_version;
@@ -167,6 +167,7 @@ namespace vcpkg
         Optional<std::string> public_abi_override;
         std::vector<std::string> passthrough_env_vars;
         std::vector<std::string> passthrough_env_vars_tracked;
+        Optional<Path> gamedk_latest_path;
 
         Path toolchain_file() const;
         bool using_vcvars() const;
@@ -216,12 +217,7 @@ namespace vcpkg
         BuildPolicies() = default;
         BuildPolicies(std::unordered_map<BuildPolicy, bool>&& map) : m_policies(std::move(map)) { }
 
-        bool is_enabled(BuildPolicy policy) const
-        {
-            const auto it = m_policies.find(policy);
-            if (it != m_policies.cend()) return it->second;
-            return false;
-        }
+        bool is_enabled(BuildPolicy policy) const { return Util::copy_or_default(m_policies, policy); }
 
     private:
         std::unordered_map<BuildPolicy, bool> m_policies;

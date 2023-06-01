@@ -198,6 +198,12 @@ namespace vcpkg
             track_telemetry(fs, *telemetry_file_path);
         }
 
+        // workaround some systems which only keep the lower 7 bits
+        if (result < 0 || result > 127)
+        {
+            result = 1;
+        }
+
         return result;
     }
 

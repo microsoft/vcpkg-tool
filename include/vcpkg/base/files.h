@@ -2,6 +2,7 @@
 
 #include <vcpkg/base/fwd/files.h>
 #include <vcpkg/base/fwd/format.h>
+#include <vcpkg/base/fwd/message_sinks.h>
 #include <vcpkg/base/fwd/span.h>
 
 #include <vcpkg/base/checks.h>
@@ -280,7 +281,7 @@ namespace vcpkg
 
     bool has_invalid_chars_for_filesystem(const std::string& s);
 
-    void print_paths(const std::vector<Path>& paths);
+    void print_paths(MessageSink& msg_sink, const std::vector<Path>& paths);
 
 #if defined(_WIN32)
     Path win32_fix_path_case(const Path& source);
