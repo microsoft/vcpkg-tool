@@ -20,7 +20,8 @@ namespace vcpkg
     void set_directory_to_archive_contents(
         Filesystem& fs, const ToolCache& tools, MessageSink& status_sink, const Path& archive, const Path& to_path);
     std::vector<std::pair<Path, Path>> strip_mapping(Filesystem& fs, const Path& directory, int level);
-
+    Path extract_archive_to_temp_subdirectory(
+        Filesystem& fs, const ToolCache& tools, MessageSink& status_sink, const Path& archive, const Path& to_path);
 #ifdef _WIN32
     // Extract the 7z archive part of a self extracting 7z installer
     void win32_extract_self_extracting_7z(Filesystem& fs, const Path& archive, const Path& to_path);
