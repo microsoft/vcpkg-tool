@@ -1,4 +1,5 @@
 #include <vcpkg/base/fwd/message_sinks.h>
+
 #include <vcpkg/base/files.h>
 
 #include <vcpkg/archives.h>
@@ -11,10 +12,10 @@ namespace vcpkg::Commands
 {
     static constexpr StringLiteral OPTION_STRIP = "strip";
 
-    constexpr std::array<CommandSetting, 1> EXTRACT_SETTINGS = {
-        {{OPTION_STRIP, []() { return msg::format(msgStripOption); }},
-        }};
-    
+    constexpr std::array<CommandSetting, 1> EXTRACT_SETTINGS = {{
+        {OPTION_STRIP, []() { return msg::format(msgStripOption); }},
+    }};
+
     const CommandStructure ExtractCommandStructure = {
         [] { return msg::format(msgExtractHelp); },
         2,
@@ -24,7 +25,7 @@ namespace vcpkg::Commands
     };
 
     int get_strip_count(const ParsedArguments& options)
-    { 
+    {
         auto iter = options.settings.find(OPTION_STRIP);
         if (iter != options.settings.end())
         {

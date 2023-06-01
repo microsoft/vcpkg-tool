@@ -19,7 +19,7 @@ namespace vcpkg
     void extract_tar_cmake(const Path& cmake_tool, const Path& archive, const Path& to_path);
     void extract_archive(
         Filesystem& fs, const ToolCache& tools, MessageSink& status_sink, const Path& archive, const Path& to_path);
-     // set `to_path` to `archive` contents.
+    // set `to_path` to `archive` contents.
     void set_directory_to_archive_contents(
         Filesystem& fs, const ToolCache& tools, MessageSink& status_sink, const Path& archive, const Path& to_path);
     std::vector<std::pair<Path, Path>> strip_mapping(Filesystem& fs, const Path& directory, int level);
