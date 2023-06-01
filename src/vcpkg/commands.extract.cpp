@@ -24,7 +24,7 @@ namespace vcpkg::Commands
         nullptr,
     };
 
-    int get_strip_count(const ParsedArguments& options)
+    static int get_strip_count(const ParsedArguments& options)
     {
         auto iter = options.settings.find(OPTION_STRIP);
         if (iter != options.settings.end())
