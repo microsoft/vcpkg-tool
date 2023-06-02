@@ -93,6 +93,7 @@ namespace vcpkg
             const auto suffix = file.generic_u8string().substr(prefix_length + 1);
             const auto target = destination / suffix;
 
+            bool use_hard_link = true;
             auto this_output = Strings::concat(destination_subdirectory, "/", suffix);
             switch (status)
             {
@@ -116,7 +117,6 @@ namespace vcpkg
                         msg::println_warning(msgOverwritingFile, msg::path = target);
                         fs.remove_all(target, IgnoreErrors{});
                     }
-                    static bool use_hard_link = true;
                     if (use_hard_link)
                     {
                         fs.create_hard_link(file, target, ec);
