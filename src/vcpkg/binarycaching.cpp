@@ -544,7 +544,7 @@ namespace
                         auto entry = cache.file_data.top();
                         // check if the file was not used in the meantime
                         auto last_time = settings.last_time(m_fs, entry.path, IgnoreErrors{});
-                        if (last_time != entry.time)
+                        if (last_time > entry.time)
                         {
                             entry.time = last_time;
                             cache.file_data.push(std::move(entry));
