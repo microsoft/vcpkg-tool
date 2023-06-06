@@ -293,39 +293,62 @@ namespace vcpkg
         }
         return nullopt;
     }
+#if defined(_WIN32)
+    struct ToolHelpProcessSnapshot
+    {
+        ToolHelpProcessSnapshot() noexcept : snapshot(CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0)) { }
+        ToolHelpProcessSnapshot(const ToolHelpProcessSnapshot&) = delete;
+        ToolHelpProcessSnapshot& operator=(const ToolHelpProcessSnapshot&) = delete;
+        ~ToolHelpProcessSnapshot()
+        {
+            if (snapshot != INVALID_HANDLE_VALUE)
+            {
+                CloseHandle(snapshot);
+            }
+        }
+        explicit operator bool() const noexcept { return snapshot != INVALID_HANDLE_VALUE; }
+
+        BOOL Process32First(PPROCESSENTRY32W entry) const noexcept { return Process32FirstW(snapshot, entry); }
+        BOOL Process32Next(PPROCESSENTRY32W entry) const noexcept { return Process32NextW(snapshot, entry); }
+    private:
+        HANDLE snapshot;
+    };
+#endif // ^^^ _WIN32
 
     void get_parent_process_list(std::vector<std::string>& ret)
     {
         ret.clear();
 #if defined(_WIN32)
         // Enumerate all processes in the system snapshot.
-        auto snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-        if (snapshot == INVALID_HANDLE_VALUE) return;
-
         std::map<DWORD, DWORD> pid_ppid_map;
         std::map<DWORD, std::string> pid_exe_path_map;
 
-        PROCESSENTRY32W entry;
-        memset(&entry, 0, sizeof(entry));
-        entry.dwSize = sizeof(entry);
-        if (Process32FirstW(snapshot, &entry))
         {
-            do
+            ToolHelpProcessSnapshot snapshot;
+            if (!snapshot)
             {
-                pid_ppid_map.emplace(entry.th32ProcessID, entry.th32ParentProcessID);
-                pid_exe_path_map.emplace(entry.th32ProcessID, Strings::to_utf8(entry.szExeFile));
-            } while (Process32NextW(snapshot, &entry));
-        }
-        CloseHandle(snapshot);
+                return;
+            }
+
+            PROCESSENTRY32W entry{};
+            entry.dwSize = sizeof(entry);
+            if (snapshot.Process32First(&entry))
+            {
+                do
+                {
+                    pid_ppid_map.emplace(entry.th32ProcessID, entry.th32ParentProcessID);
+                    pid_exe_path_map.emplace(entry.th32ProcessID, Strings::to_utf8(entry.szExeFile));
+                } while (snapshot.Process32Next(&entry));
+            }
+        } // destroy snapshot
 
         // Find hierarchy of current process
-        auto it = pid_ppid_map.find(GetCurrentProcessId());
-        if (it == pid_ppid_map.end()) return;
-        while (true)
+        
+        DWORD next_parent = GetCurrentProcessId();
+        for (std::map<DWORD, DWORD>::iterator it; it = pid_ppid_map.find(next_parent), it != pid_ppid_map.end();)
         {
-            it = pid_ppid_map.find(it->second);
-            if (it == pid_ppid_map.end()) break;
             ret.push_back(pid_exe_path_map[it->first]);
+            next_parent = it->second;
         }
 #elif defined(__linux__)
         std::error_code ec;
