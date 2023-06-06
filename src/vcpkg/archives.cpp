@@ -131,58 +131,89 @@ namespace
 
 namespace vcpkg
 {
-    void extract_archive(
-        Filesystem& fs, const ToolCache& tools, MessageSink& status_sink, const Path& archive, const Path& to_path)
+    ExtractionType guess_extraction_type(const Path& archive)
     {
         const auto ext = archive.extension();
-#if defined(_WIN32)
         if (Strings::case_insensitive_ascii_equals(ext, ".nupkg"))
         {
-            win32_extract_nupkg(tools, status_sink, archive, to_path);
+            return ExtractionType::NUPKG;
         }
         else if (Strings::case_insensitive_ascii_equals(ext, ".msi"))
         {
-            win32_extract_msi(archive, to_path);
+            return ExtractionType::MSI;
         }
         else if (Strings::case_insensitive_ascii_equals(ext, ".zip") ||
                  Strings::case_insensitive_ascii_equals(ext, ".7z"))
         {
-            extract_tar_cmake(tools.get_tool_path(Tools::CMAKE, status_sink), archive, to_path);
+            return ExtractionType::ZIP;
         }
-        else if (Strings::case_insensitive_ascii_equals(ext, ".exe"))
+        else if (ext == ".gz" || ext == ".bz2" || ext == ".tgz" || ext == ".xz")
         {
-            const Path filename = archive.filename();
-            const Path stem = filename.stem();
-            const Path to_archive = Path(archive.parent_path()) / stem;
-            win32_extract_self_extracting_7z(fs, archive, to_archive);
-            extract_archive(fs, tools, status_sink, to_archive, to_path);
-        }
-#else
-        (void)fs;
-        if (ext == ".zip")
-        {
-            const auto code =
-                cmd_execute(Command{"unzip"}.string_arg("-qqo").string_arg(archive), WorkingDirectory{to_path})
-                    .value_or_exit(VCPKG_LINE_INFO);
-            Checks::msg_check_exit(VCPKG_LINE_INFO,
-                                   code == 0,
-                                   msgPackageFailedtWhileExtracting,
-                                   msg::value = "unzip",
-                                   msg::path = archive);
-        }
-#endif
-        else if (ext == ".gz" || ext == ".bz2" || ext == ".tgz" || ".xz")
-        {
-            vcpkg::extract_tar(tools.get_tool_path(Tools::TAR, status_sink), archive, to_path);
+            return ExtractionType::TAR;
         }
         else
         {
-            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, msgUnexpectedExtension, msg::extension = ext);
+            return ExtractionType::UNKNOWN;
         }
     }
 
-    Path extract_archive_to_temp_subdirectory(
-        Filesystem& fs, const ToolCache& tools, MessageSink& status_sink, const Path& archive, const Path& to_path)
+    void extract_archive(
+        Filesystem& fs, const ToolCache& tools, MessageSink& status_sink, const Path& archive, const Path& to_path, const ExtractionType& extraction_type)
+    { 
+        
+        ExtractionType ext_type = (extraction_type == ExtractionType::UNKNOWN) ? guess_extraction_type(archive) : extraction_type;
+
+#if defined(_WIN32)
+        switch (ext_type)
+        {
+            case ExtractionType::NUPKG: win32_extract_nupkg(tools, status_sink, archive, to_path); break;
+            case ExtractionType::MSI: win32_extract_msi(archive, to_path); break;
+            case ExtractionType::ZIP:
+                extract_tar_cmake(tools.get_tool_path(Tools::CMAKE, status_sink), archive, to_path);
+                break;
+            case ExtractionType::TAR:
+                vcpkg::extract_tar(tools.get_tool_path(Tools::TAR, status_sink), archive, to_path);
+                break;
+            default:
+                const Path filename = archive.filename();
+                const Path stem = filename.stem();
+                const Path to_archive = Path(archive.parent_path()) / stem;
+                win32_extract_self_extracting_7z(fs, archive, to_archive);
+                extract_archive(fs, tools, status_sink, to_archive, to_path, ext_type);
+                break;
+        }
+#else
+        (void)fs;
+        switch (ext_type)
+        {
+            case ExtractionType::ZIP:
+                const auto code =
+                    cmd_execute(Command{"unzip"}.string_arg("-qqo").string_arg(archive), WorkingDirectory{to_path})
+                        .value_or_exit(VCPKG_LINE_INFO);
+                Checks::msg_check_exit(VCPKG_LINE_INFO,
+                                       code == 0,
+                                       msgPackageFailedtWhileExtracting,
+                                       msg::value = "unzip",
+                                       msg::path = archive);
+                break;
+            case ExtractionType::TAR:
+                vcpkg::extract_tar(tools.get_tool_path(Tools::TAR, status_sink), archive, to_path);
+                break;
+        }
+#endif
+        if (ext_type == ExtractionType::UNKNOWN)
+        {
+            Checks::msg_exit_maybe_upgrade(
+                VCPKG_LINE_INFO, msgUnexpectedExtension, msg::extension = archive.extension());
+        }
+    }
+
+    Path extract_archive_to_temp_subdirectory(Filesystem& fs,
+                                              const ToolCache& tools,
+                                              MessageSink& status_sink,
+                                              const Path& archive,
+                                              const Path& to_path,
+                                              const ExtractionType& extraction_type)
     {
         Path to_path_partial = to_path + ".partial";
 #if defined(_WIN32)
@@ -191,7 +222,7 @@ namespace vcpkg
 
         fs.remove_all(to_path_partial, VCPKG_LINE_INFO);
         fs.create_directories(to_path_partial, VCPKG_LINE_INFO);
-        extract_archive(fs, tools, status_sink, archive, to_path_partial);
+        extract_archive(fs, tools, status_sink, archive, to_path_partial, extraction_type);
         return to_path_partial;
     }
 #ifdef _WIN32
@@ -285,11 +316,15 @@ namespace vcpkg
                                msg::path = archive);
     }
 
-    void set_directory_to_archive_contents(
-        Filesystem& fs, const ToolCache& tools, MessageSink& status_sink, const Path& archive, const Path& to_path)
+    void set_directory_to_archive_contents(Filesystem& fs,
+                                           const ToolCache& tools,
+                                           MessageSink& status_sink,
+                                           const Path& archive,
+                                           const Path& to_path,
+                                           const ExtractionType& extraction_type)
     {
         fs.remove_all(to_path, VCPKG_LINE_INFO);
-        Path to_path_partial = extract_archive_to_temp_subdirectory(fs, tools, status_sink, archive, to_path);
+        Path to_path_partial = extract_archive_to_temp_subdirectory(fs, tools, status_sink, archive, to_path, extraction_type);
         fs.rename_with_retry(to_path_partial, to_path, VCPKG_LINE_INFO);
     }
 

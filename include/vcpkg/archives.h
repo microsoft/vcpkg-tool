@@ -13,17 +13,38 @@
 
 namespace vcpkg
 {
+    enum ExtractionType
+    {
+        UNKNOWN,
+        TAR,
+        ZIP,
+        NUPKG,
+        MSI
+    };
+
     // Extract `archive` to `to_path` using `tar_tool`.
     void extract_tar(const Path& tar_tool, const Path& archive, const Path& to_path);
     // Extract `archive` to `to_path` using `cmake_tool`. (CMake's built in tar)
     void extract_tar_cmake(const Path& cmake_tool, const Path& archive, const Path& to_path);
-    void extract_archive(
-        Filesystem& fs, const ToolCache& tools, MessageSink& status_sink, const Path& archive, const Path& to_path);
+    void extract_archive(Filesystem& fs,
+                         const ToolCache& tools,
+                         MessageSink& status_sink,
+                         const Path& archive,
+                         const Path& to_path,
+                         const ExtractionType& extraction_type = {});
     // set `to_path` to `archive` contents.
-    void set_directory_to_archive_contents(
-        Filesystem& fs, const ToolCache& tools, MessageSink& status_sink, const Path& archive, const Path& to_path);
-    Path extract_archive_to_temp_subdirectory(
-        Filesystem& fs, const ToolCache& tools, MessageSink& status_sink, const Path& archive, const Path& to_path);
+    void set_directory_to_archive_contents(Filesystem& fs,
+                                           const ToolCache& tools,
+                                           MessageSink& status_sink,
+                                           const Path& archive,
+                                           const Path& to_path,
+                                           const ExtractionType& extraction_type = {});
+    Path extract_archive_to_temp_subdirectory(Filesystem& fs,
+                                              const ToolCache& tools,
+                                              MessageSink& status_sink,
+                                              const Path& archive,
+                                              const Path& to_path,
+                                              const ExtractionType& extraction_type = {});
 
 #ifdef _WIN32
     // Extract the 7z archive part of a self extracting 7z installer
