@@ -60,7 +60,6 @@ namespace vcpkg
         CommandName,
         DeploymentKind,
         DetectedCiEnvironment,
-        GithubRepo,
         InstallPlan_1,
         ListFile,
         ProcessTree,
