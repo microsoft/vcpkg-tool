@@ -2087,6 +2087,7 @@ namespace vcpkg
     {
         std::vector<CacheStatus*> statuses = Util::fmap(actions, [this](const auto& action) {
             Checks::check_exit(VCPKG_LINE_INFO, action && action->package_abi());
+            ASSUME(action);
             return &m_status[*action->package_abi().get()];
         });
 
