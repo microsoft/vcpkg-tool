@@ -157,11 +157,15 @@ namespace vcpkg
         }
     }
 
-    void extract_archive(
-        Filesystem& fs, const ToolCache& tools, MessageSink& status_sink, const Path& archive, const Path& to_path, const ExtractionType& extraction_type)
-    { 
-        
-        ExtractionType ext_type = (extraction_type == ExtractionType::UNKNOWN) ? guess_extraction_type(archive) : extraction_type;
+    void extract_archive(Filesystem& fs,
+                         const ToolCache& tools,
+                         MessageSink& status_sink,
+                         const Path& archive,
+                         const Path& to_path,
+                         const ExtractionType& extraction_type)
+    {
+        ExtractionType ext_type =
+            (extraction_type == ExtractionType::UNKNOWN) ? guess_extraction_type(archive) : extraction_type;
 
 #if defined(_WIN32)
         switch (ext_type)
@@ -324,7 +328,8 @@ namespace vcpkg
                                            const ExtractionType& extraction_type)
     {
         fs.remove_all(to_path, VCPKG_LINE_INFO);
-        Path to_path_partial = extract_archive_to_temp_subdirectory(fs, tools, status_sink, archive, to_path, extraction_type);
+        Path to_path_partial =
+            extract_archive_to_temp_subdirectory(fs, tools, status_sink, archive, to_path, extraction_type);
         fs.rename_with_retry(to_path_partial, to_path, VCPKG_LINE_INFO);
     }
 

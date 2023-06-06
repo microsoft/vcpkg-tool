@@ -117,8 +117,12 @@ namespace vcpkg::Commands
         return result;
     }
 
-    static void extract_and_strip(
-        Filesystem& fs, const VcpkgPaths& paths, int strip_count, Path archive_path, Path destination_path, ExtractionType& extraction_type)
+    static void extract_and_strip(Filesystem& fs,
+                                  const VcpkgPaths& paths,
+                                  int strip_count,
+                                  Path archive_path,
+                                  Path destination_path,
+                                  ExtractionType& extraction_type)
     {
         auto temp_dir = extract_archive_to_temp_subdirectory(
             fs, paths.get_tool_cache(), null_sink, archive_path, destination_path, extraction_type);

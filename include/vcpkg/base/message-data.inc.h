@@ -816,10 +816,11 @@ DECLARE_MESSAGE(ErrorInvalidClassicModeOption,
                 (msg::option),
                 "",
                 "The option --{option} is not supported in classic mode and no manifest was found.")
-DECLARE_MESSAGE(ErrorInvalidExtractTypeOption,
-                (msg::option, msg::value),
-                "{value} is the value passed to --{option}",
-                "--{option} can be one of \"tar\" or \"zip\" but was {value}")
+DECLARE_MESSAGE(
+    ErrorInvalidExtractTypeOption,
+    (msg::option, msg::value),
+    "{value} is the value passed to --{option}",
+    "--{option} was given an unexpected format \"{value}\". It can be one of \"zip\", \"tar\", \"nupkg\", or \"msi\".")
 DECLARE_MESSAGE(ErrorInvalidManifestModeOption,
                 (msg::option),
                 "",
@@ -856,7 +857,7 @@ DECLARE_MESSAGE(ErrorRequirePackagesList,
                 "`vcpkg install` requires a list of packages to install in classic mode.")
 DECLARE_MESSAGE(ErrorInvalidStripOption,
                 (msg::option, msg::value),
-                "{value} is the value given to --{OPTION}",
+                "{value} is the value given to --{option}",
                 "--{option} must be set to a positive integer. Was given \"{value}\"")
 DECLARE_MESSAGE(ErrorsFound, (), "", "Found the following errors:")
 DECLARE_MESSAGE(ErrorUnableToDetectCompilerInfo,

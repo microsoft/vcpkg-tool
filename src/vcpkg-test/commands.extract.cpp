@@ -50,7 +50,7 @@ const Path FILE_5 = {"C:\\to\\path\\archive\\folder2\\file5.txt"};
 const Path FILE_6 = {"C:\\to\\path\\archive\\folder2\\folder3\\file6.txt"};
 const Path FILE_7 = {"C:\\to\\path\\archive\\folder2\\folder3\\file7.txt"};
 
-void test_strip_map(const int strip, const std::vector<std::pair<Path, Path>>& expected)
+static void test_strip_map(const int strip, const std::vector<std::pair<Path, Path>>& expected)
 {
     auto map = strip_map(archive, strip);
     REQUIRE(map.size() == expected.size());
