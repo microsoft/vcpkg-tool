@@ -1392,6 +1392,8 @@
   "_UnexpectedPortName.comment": "{expected} is the expected port and {actual} is the port declared by the user. An example of {path} is /foo/bar.",
   "UnexpectedPortversion": "unexpected \"port-version\" without a versioning field",
   "_UnexpectedPortversion.comment": "'field' means a JSON key/value pair here",
+  "UnexpectedState": "{feature_spec} resulted in the unexpected state {actual} after {elapsed}",
+  "_UnexpectedState.comment": "{actual} is the actual state, e.g. 'pass', 'skip', ... An example of {feature_spec} is zlib[featurea,featureb]. An example of {elapsed} is 3.532 min.",
   "UnexpectedSwitch": "unexpected switch: {option}",
   "_UnexpectedSwitch.comment": "Switch is a command line switch like --switch An example of {option} is editable.",
   "UnexpectedToolOutput": "{tool_name} ({path}) produced unexpected output when attempting to determine the version:",

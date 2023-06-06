@@ -480,15 +480,13 @@ namespace vcpkg::Commands::TestFeatures
 
         for (const auto& result : unexpected_states)
         {
-            msg::write_unlocalized_text_to_stderr(Color::error,
-                                                  Strings::concat(result.spec,
-                                                                  " resulted in the unexpected state ",
-                                                                  result.actual_state,
-                                                                  " ",
-                                                                  result.logs_dir.value_or(""),
-                                                                  " after ",
-                                                                  result.build_time.to_string(),
-                                                                  '\n'));
+            msg::println(Color::error,
+                         msg::format(msgUnexpectedState,
+                                     msg::feature_spec = to_string(result.spec),
+                                     msg::actual = to_string(result.actual_state),
+                                     msg::elapsed = result.build_time)
+                             .append_raw(" ")
+                             .append_raw(result.logs_dir.value_or("")));
         }
 
         auto it_output_file = settings.find(OPTION_OUTPUT_FAILURE_ABIS);

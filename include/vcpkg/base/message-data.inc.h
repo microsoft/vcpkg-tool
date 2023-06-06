@@ -2479,6 +2479,10 @@ DECLARE_MESSAGE(UnexpectedPortversion,
                 (),
                 "'field' means a JSON key/value pair here",
                 "unexpected \"port-version\" without a versioning field")
+DECLARE_MESSAGE(UnexpectedState,
+                (msg::feature_spec, msg::actual, msg::elapsed),
+                "{actual} is the actual state, e.g. 'pass', 'skip', ...",
+                "{feature_spec} resulted in the unexpected state {actual} after {elapsed}")
 DECLARE_MESSAGE(UnexpectedSwitch,
                 (msg::option),
                 "Switch is a command line switch like --switch",
