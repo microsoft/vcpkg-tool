@@ -2050,47 +2050,83 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CmdDependInfoOptDGML" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";CmdDependInfoFormatConflict" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Creates graph on basis of dgml]]></Val>
+          <Val><![CDATA[Conflicting formats specified. Only one of --format, --dgml, or --dot are accepted.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[dgml に基づいてグラフを作成します]]></Val>
+            <Val><![CDATA[競合する複数の形式が指定されました。--format、--dgml、--dot はいずれか 1 つだけを使用できます。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdDependInfoFormatHelp" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Choose output format, one of `list`, `tree`, `dot`, or `dgml`.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[出力形式としては 'list'、'tree'、'dot'、'dgml' のいずれかを選択してください。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdDependInfoFormatInvalid" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[--format={value} is not a recognized format. --format must be one of `list`, `tree`, `dot`, or `dgml`.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[--format={value} は形式として認識できません。--format は、'list'、'tree'、'dot'、'dgml' のいずれかである必要があります。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdDependInfoOptDepth" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Show recursion depth in output]]></Val>
+          <Val><![CDATA[Show recursion depth in `list` output.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[再帰の深さを出力に表示する]]></Val>
+            <Val><![CDATA[再帰の深さを 'リスト' 出力に表示します。]]></Val>
           </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CmdDependInfoOptDot" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Creates graph on basis of dot]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[ドットに基づいてグラフを作成します]]></Val>
-          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Show recursion depth in output]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdDependInfoOptMaxRecurse" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Set max recursion depth, a value of -1 indicates no limit]]></Val>
+          <Val><![CDATA[Set max recursion depth. Default is no limit.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[再帰の深さの最大値を設定します。値 -1 は制限がないことを示します]]></Val>
+            <Val><![CDATA[再帰深度の最大値を設定します。既定値は制限なしです。]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Set max recursion depth, a value of -1 indicates no limit]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdDependInfoOptSort" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Choose sort order for the `list` format, one of `lexicographical`, `topological` (default), `reverse`]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA['リスト' 形式の並べ替え順序として、'lexicographical' (辞書順)、'topological' (位相順 - 既定)、'reverse' (逆位相順) のいずれかを選択してください]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Set sort order for the list of dependencies, accepted values are: lexicographical, topological (default), x-tree, reverse]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdDependInfoShowDepthFormatMismatch" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[--show-depth can only be used with `list` and `tree` formats.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[--show-depth は、'list' および 'tree' 形式でのみ使用できます。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CmdDependInfoOptSort" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";CmdDependInfoXtreeTree" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Set sort order for the list of dependencies, accepted values are: lexicographical, topological (default), x-tree, reverse]]></Val>
+          <Val><![CDATA[--sort=x-tree cannot be used with formats other than tree]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[依存関係の一覧の並べ替え順序を設定します。受け入れられる値は: 辞書式、トポロジカル (既定値)、x ツリー、逆順]]></Val>
+            <Val><![CDATA[--sort=x-tree はツリー以外の形式では使用できません]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4663,20 +4699,20 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";FatalTheGlobalConfigurationFile$CanNotBeCreated" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";FatalTheGlobalConfigurationFile$CannotBeCreated" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Fatal: The global configuration file '${p0}' can not be created]]></Val>
+          <Val><![CDATA[Fatal: The global configuration file '${p0}' cannot be created]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[致命的: グローバル構成ファイル '${p0}' を作成できません]]></Val>
+            <Val><![CDATA[致命的エラー: グローバル構成ファイル '${p0}' を作成できません]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";FatalTheRootFolder$CanNotBeCreated" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";FatalTheRootFolder$CannotBeCreated" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Fatal: The root folder '${p0}' can not be created]]></Val>
+          <Val><![CDATA[Fatal: The root folder '${p0}' cannot be created]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[致命的: ルート フォルダー '${p0}' を作成できません]]></Val>
+            <Val><![CDATA[致命的エラー: ルート フォルダー '${p0}' を作成できません]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -7407,10 +7443,13 @@
       </Item>
       <Item ItemId=";MutuallyExclusiveOption" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[--{value} can not be used with --{option}.]]></Val>
+          <Val><![CDATA[--{value} cannot be used with --{option}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[--{value} は --{option} と共に使用できません。]]></Val>
+            <Val><![CDATA[--{value} を --{option} と共に使用することはできません。]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[--{value} can not be used with --{option}.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
