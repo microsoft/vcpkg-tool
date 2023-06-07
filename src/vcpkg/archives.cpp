@@ -174,7 +174,7 @@ namespace vcpkg
 #if defined(_WIN32)
         switch (ext_type)
         {
-            case ExtractionType::UNKNOWN: // do nothing
+            case ExtractionType::UNKNOWN:
             case ExtractionType::NUPKG: win32_extract_nupkg(tools, status_sink, archive, to_path); break;
             case ExtractionType::MSI: win32_extract_msi(archive, to_path); break;
             case ExtractionType::ZIP:
