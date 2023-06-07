@@ -131,7 +131,7 @@ namespace
 
 namespace vcpkg
 {
-    ExtractionType guess_extraction_type(const Path& archive)
+    static const ExtractionType guess_extraction_type(const Path& archive)
     {
         const auto ext = archive.extension();
         if (Strings::case_insensitive_ascii_equals(ext, ".nupkg"))
@@ -151,6 +151,10 @@ namespace vcpkg
         {
             return ExtractionType::TAR;
         }
+        else if (Strings::case_insensitive_ascii_equals(ext, ".exe"))
+        {
+            return ExtractionType::EXE;
+        }
         else
         {
             return ExtractionType::UNKNOWN;
@@ -164,12 +168,13 @@ namespace vcpkg
                          const Path& to_path,
                          const ExtractionType& extraction_type)
     {
-        ExtractionType ext_type =
+        const auto ext_type =
             (extraction_type == ExtractionType::UNKNOWN) ? guess_extraction_type(archive) : extraction_type;
 
 #if defined(_WIN32)
         switch (ext_type)
         {
+            case ExtractionType::UNKNOWN:
             case ExtractionType::NUPKG: win32_extract_nupkg(tools, status_sink, archive, to_path); break;
             case ExtractionType::MSI: win32_extract_msi(archive, to_path); break;
             case ExtractionType::ZIP:
@@ -178,7 +183,7 @@ namespace vcpkg
             case ExtractionType::TAR:
                 vcpkg::extract_tar(tools.get_tool_path(Tools::TAR, status_sink), archive, to_path);
                 break;
-            default:
+            case ExtractionType::EXE:
                 const Path filename = archive.filename();
                 const Path stem = filename.stem();
                 const Path to_archive = Path(archive.parent_path()) / stem;
@@ -188,21 +193,21 @@ namespace vcpkg
         }
 #else
         (void)fs;
-        switch (ext_type)
+        if (ext_type == ExtractionType::TAR)
         {
-            case ExtractionType::ZIP:
-                const auto code =
-                    cmd_execute(Command{"unzip"}.string_arg("-qqo").string_arg(archive), WorkingDirectory{to_path})
-                        .value_or_exit(VCPKG_LINE_INFO);
-                Checks::msg_check_exit(VCPKG_LINE_INFO,
-                                       code == 0,
-                                       msgPackageFailedtWhileExtracting,
-                                       msg::value = "unzip",
-                                       msg::path = archive);
-                break;
-            case ExtractionType::TAR:
-                vcpkg::extract_tar(tools.get_tool_path(Tools::TAR, status_sink), archive, to_path);
-                break;
+            vcpkg::extract_tar(tools.get_tool_path(Tools::TAR, status_sink), archive, to_path);
+        }
+
+        if (ext_type == ExtractionType::ZIP)
+        {
+            const auto code =
+                cmd_execute(Command{"unzip"}.string_arg("-qqo").string_arg(archive), WorkingDirectory{to_path})
+                    .value_or_exit(VCPKG_LINE_INFO);
+            Checks::msg_check_exit(VCPKG_LINE_INFO,
+                                   code == 0,
+                                   msgPackageFailedtWhileExtracting,
+                                   msg::value = "unzip",
+                                   msg::path = archive);
         }
 #endif
         if (ext_type == ExtractionType::UNKNOWN)

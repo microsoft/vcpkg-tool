@@ -19,7 +19,8 @@ namespace vcpkg
         TAR,
         ZIP,
         NUPKG,
-        MSI
+        MSI,
+        EXE
     };
 
     // Extract `archive` to `to_path` using `tar_tool`.

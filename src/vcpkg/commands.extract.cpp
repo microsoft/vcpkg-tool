@@ -15,7 +15,7 @@ namespace vcpkg::Commands
     static constexpr StringLiteral OPTION_EXTRACT_TYPE = "extract-type";
 
     static constexpr std::array<CommandSetting, 2> EXTRACT_SETTINGS = {{
-        {OPTION_STRIP, []() { return msg::format(msgStripOption); }},
+        {OPTION_STRIP, []() { return msg::format(msgStripOption, msg::option = "strip"); }},
         {OPTION_EXTRACT_TYPE, []() { return msg::format(msgExtractTypeOption, msg::option = "extract-type"); }},
     }};
 

@@ -816,11 +816,11 @@ DECLARE_MESSAGE(ErrorInvalidClassicModeOption,
                 (msg::option),
                 "",
                 "The option --{option} is not supported in classic mode and no manifest was found.")
-DECLARE_MESSAGE(
-    ErrorInvalidExtractTypeOption,
-    (msg::option, msg::value),
-    "{value} is the value passed to --{option}",
-    "--{option} was given an unexpected format \"{value}\". It can be one of \"zip\", \"tar\", \"nupkg\", or \"msi\".")
+DECLARE_MESSAGE(ErrorInvalidExtractTypeOption,
+                (msg::option, msg::value),
+                "{value} is the value passed to --{option}",
+                "--{option} was given an unexpected format \"{value}\". It can be one of \"zip\", \"tar\", \"nupkg\", "
+                "\"msi\", or \"exe\".")
 DECLARE_MESSAGE(ErrorInvalidManifestModeOption,
                 (msg::option),
                 "",
@@ -932,10 +932,7 @@ DECLARE_MESSAGE(ExportUnsupportedInManifest,
 DECLARE_MESSAGE(ExtendedDocumentationAtUrl, (msg::url), "", "Extended documentation available at '{url}'.")
 DECLARE_MESSAGE(ExtractHelp, (), "", "Extracts an archive.")
 DECLARE_MESSAGE(ExtractingTool, (msg::tool_name), "", "Extracting {tool_name}...")
-DECLARE_MESSAGE(ExtractTypeOption,
-                (msg::option),
-                "",
-                "--{option} specifies a method of extraction. It's value can be one of \"tar\" or \"zip\"")
+DECLARE_MESSAGE(ExtractTypeOption, (msg::option), "", "--{option} specifies a method of extraction.")
 DECLARE_MESSAGE(FailedPostBuildChecks,
                 (msg::count, msg::path),
                 "",
@@ -2360,7 +2357,10 @@ DECLARE_MESSAGE(StoredBinariesToDestinations,
                 "",
                 "Stored binaries in {count} destinations in {elapsed}.")
 DECLARE_MESSAGE(StoreOptionMissingSha, (), "", "--store option is invalid without a sha512")
-DECLARE_MESSAGE(StripOption, (), "", "--strip specifies the number of leading directories to strip from all paths")
+DECLARE_MESSAGE(StripOption,
+                (msg::option),
+                "--{option} is a setting that can be passed to z-extract command.",
+                "--{option} specifies the number of leading directories to strip from all paths")
 DECLARE_MESSAGE(SuccessfulyExported, (msg::package_name, msg::path), "", "Exported {package_name} to {path}")
 DECLARE_MESSAGE(SuggestGitPull, (), "", "The result may be outdated. Run `git pull` to get the latest results.")
 DECLARE_MESSAGE(SuggestResolution,
