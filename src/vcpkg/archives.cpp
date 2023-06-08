@@ -131,7 +131,7 @@ namespace
 
 namespace vcpkg
 {
-    static const ExtractionType guess_extraction_type(const Path& archive)
+    static ExtractionType guess_extraction_type(const Path& archive)
     {
         const auto ext = archive.extension();
         if (Strings::case_insensitive_ascii_equals(ext, ".nupkg"))
