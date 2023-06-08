@@ -94,7 +94,12 @@ namespace vcpkg::Commands
         auto base_path = archive.base_path;
         auto proximate = archive.proximate;
 
-        const auto& delimiter = "\\";
+#if defined(_WIN32)
+        auto& delimiter = "\\";
+#else
+
+        auto& delimiter = "//";
+#endif
 
         for (const auto& file_path : proximate)
         {
