@@ -103,7 +103,7 @@ namespace vcpkg::Commands
 
         for (const auto& file_path : proximate)
         {
-            auto old_path = (base_path + Path{file_path}).generic_u8string();
+            auto old_path = Path{(base_path + Path{file_path}).generic_u8string()};
 
             auto path_str = file_path.native();
 
@@ -115,7 +115,7 @@ namespace vcpkg::Commands
                     path_str = path_str.substr(pos + 1);
                 }
             }
-            auto new_path = (base_path + Path{path_str}).generic_u8string();
+            auto new_path = Path{(base_path + Path{path_str})}.generic_u8string();
 
             result.push_back({old_path, new_path});
         }
