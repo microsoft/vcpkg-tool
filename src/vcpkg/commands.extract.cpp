@@ -103,7 +103,7 @@ namespace vcpkg::Commands
 
         for (const auto& file_path : proximate)
         {
-            auto old_path = base_path / Path{file_path};
+            auto old_path = base_path / Path{file_path.native()};
 
             auto path_str = file_path.native();
 
