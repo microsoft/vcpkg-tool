@@ -98,7 +98,7 @@ namespace vcpkg::Commands
         auto& delimiter = "\\";
 #else
 
-        auto& delimiter = "//";
+        auto& delimiter = "/";
 #endif
 
         for (const auto& file_path : proximate)
