@@ -31,24 +31,33 @@ using namespace vcpkg::Commands;
         |__ . . .
 
 */
-ExtractedArchive archive = {"C:\\to\\path\\",
+
+#if defined(_WIN32)
+const std::string DELIMITER = "\\";
+const std::string BASE_PATH = "C:\\to\\path\\";
+#else
+const std::string DELIMITER = "/";
+const std::string BASE_PATH = "/to/path/";
+#endif
+
+ExtractedArchive archive = {BASE_PATH,
                             {
-                                "archive\\folder1\\file1.txt",
-                                "archive\\folder1\\file2.txt",
-                                "archive\\folder1\\file3.txt",
-                                "archive\\folder2\\file4.txt",
-                                "archive\\folder2\\file5.txt",
-                                "archive\\folder2\\folder3\\file6.txt",
-                                "archive\\folder2\\folder3\\file7.txt",
+                                "archive" + DELIMITER + "folder1" + DELIMITER + "file1.txt",
+                                "archive" + DELIMITER + "folder1" + DELIMITER + "file2.txt",
+                                "archive" + DELIMITER + "folder1" + DELIMITER + "file3.txt",
+                                "archive" + DELIMITER + "folder2" + DELIMITER + "file4.txt",
+                                "archive" + DELIMITER + "folder2" + DELIMITER + "file5.txt",
+                                "archive" + DELIMITER + "folder2" + DELIMITER + "folder3" + DELIMITER + "file6.txt",
+                                "archive" + DELIMITER + "folder2" + DELIMITER + "folder3" + DELIMITER + "file7.txt",
                             }};
 
-const Path FILE_1 = {"C:\\to\\path\\archive\\folder1\\file1.txt"};
-const Path FILE_2 = {"C:\\to\\path\\archive\\folder1\\file2.txt"};
-const Path FILE_3 = {"C:\\to\\path\\archive\\folder1\\file3.txt"};
-const Path FILE_4 = {"C:\\to\\path\\archive\\folder2\\file4.txt"};
-const Path FILE_5 = {"C:\\to\\path\\archive\\folder2\\file5.txt"};
-const Path FILE_6 = {"C:\\to\\path\\archive\\folder2\\folder3\\file6.txt"};
-const Path FILE_7 = {"C:\\to\\path\\archive\\folder2\\folder3\\file7.txt"};
+const Path FILE_1 = {BASE_PATH + "archive" + DELIMITER + "folder1" + DELIMITER + "file1.txt"};
+const Path FILE_2 = {BASE_PATH + "archive" + DELIMITER + "folder1" + DELIMITER + "file2.txt"};
+const Path FILE_3 = {BASE_PATH + "archive" + DELIMITER + "folder1" + DELIMITER + "file3.txt"};
+const Path FILE_4 = {BASE_PATH + "archive" + DELIMITER + "folder2" + DELIMITER + "file4.txt"};
+const Path FILE_5 = {BASE_PATH + "archive" + DELIMITER + "folder2" + DELIMITER + "file5.txt"};
+const Path FILE_6 = {BASE_PATH + "archive" + DELIMITER + "folder2" + DELIMITER + "folder3" + DELIMITER + "file6.txt"};
+const Path FILE_7 = {BASE_PATH + "archive" + DELIMITER + "folder2" + DELIMITER + "folder3" + DELIMITER + "file7.txt"};
 
 static void test_strip_map(const int strip, const std::vector<std::pair<Path, Path>>& expected)
 {
@@ -63,38 +72,40 @@ static void test_strip_map(const int strip, const std::vector<std::pair<Path, Pa
 
 TEST_CASE ("Testing strip_map, strip = 1", "[z-extract]")
 {
-    std::vector<std::pair<Path, Path>> expected = {{FILE_1, "C:\\to\\path\\folder1\\file1.txt"},
-                                                   {FILE_2, "C:\\to\\path\\folder1\\file2.txt"},
-                                                   {FILE_3, "C:\\to\\path\\folder1\\file3.txt"},
-                                                   {FILE_4, "C:\\to\\path\\folder2\\file4.txt"},
-                                                   {FILE_5, "C:\\to\\path\\folder2\\file5.txt"},
-                                                   {FILE_6, "C:\\to\\path\\folder2\\folder3\\file6.txt"},
-                                                   {FILE_7, "C:\\to\\path\\folder2\\folder3\\file7.txt"}};
+    std::vector<std::pair<Path, Path>> expected = {
+        {FILE_1, BASE_PATH + "folder1" + DELIMITER + "file1.txt"},
+        {FILE_2, BASE_PATH + "folder1" + DELIMITER + "file2.txt"},
+        {FILE_3, BASE_PATH + "folder1" + DELIMITER + "file3.txt"},
+        {FILE_4, BASE_PATH + "folder2" + DELIMITER + "file4.txt"},
+        {FILE_5, BASE_PATH + "folder2" + DELIMITER + "file5.txt"},
+        {FILE_6, BASE_PATH + "folder2" + DELIMITER + "folder3" + DELIMITER + "file6.txt"},
+        {FILE_7, BASE_PATH + "folder2" + DELIMITER + "folder3" + DELIMITER + "file7.txt"}};
+
     test_strip_map(1, expected);
 }
 
 TEST_CASE ("Testing strip_map, strip = 2", "[z-extract]")
 {
-    std::vector<std::pair<Path, Path>> expected = {{FILE_1, "C:\\to\\path\\file1.txt"},
-                                                   {FILE_2, "C:\\to\\path\\file2.txt"},
-                                                   {FILE_3, "C:\\to\\path\\file3.txt"},
-                                                   {FILE_4, "C:\\to\\path\\file4.txt"},
-                                                   {FILE_5, "C:\\to\\path\\file5.txt"},
-                                                   {FILE_6, "C:\\to\\path\\folder3\\file6.txt"},
-                                                   {FILE_7, "C:\\to\\path\\folder3\\file7.txt"}};
+    std::vector<std::pair<Path, Path>> expected = {{FILE_1, BASE_PATH + "file1.txt"},
+                                                   {FILE_2, BASE_PATH + "file2.txt"},
+                                                   {FILE_3, BASE_PATH + "file3.txt"},
+                                                   {FILE_4, BASE_PATH + "file4.txt"},
+                                                   {FILE_5, BASE_PATH + "file5.txt"},
+                                                   {FILE_6, BASE_PATH + "folder3" + DELIMITER + "file6.txt"},
+                                                   {FILE_7, BASE_PATH + "folder3" + DELIMITER + "file7.txt"}};
 
     test_strip_map(2, expected);
 }
 
 TEST_CASE ("Testing strip_map, strip = 3 (Max archive depth)", "[z-extract]")
 {
-    std::vector<std::pair<Path, Path>> expected = {{FILE_1, "C:\\to\\path\\file1.txt"},
-                                                   {FILE_2, "C:\\to\\path\\file2.txt"},
-                                                   {FILE_3, "C:\\to\\path\\file3.txt"},
-                                                   {FILE_4, "C:\\to\\path\\file4.txt"},
-                                                   {FILE_5, "C:\\to\\path\\file5.txt"},
-                                                   {FILE_6, "C:\\to\\path\\file6.txt"},
-                                                   {FILE_7, "C:\\to\\path\\file7.txt"}};
+    std::vector<std::pair<Path, Path>> expected = {{FILE_1, BASE_PATH + "file1.txt"},
+                                                   {FILE_2, BASE_PATH + "file2.txt"},
+                                                   {FILE_3, BASE_PATH + "file3.txt"},
+                                                   {FILE_4, BASE_PATH + "file4.txt"},
+                                                   {FILE_5, BASE_PATH + "file5.txt"},
+                                                   {FILE_6, BASE_PATH + "file6.txt"},
+                                                   {FILE_7, BASE_PATH + "file7.txt"}};
 
     test_strip_map(3, expected);
 }
