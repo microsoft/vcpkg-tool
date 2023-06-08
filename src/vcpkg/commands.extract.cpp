@@ -105,7 +105,7 @@ namespace vcpkg::Commands
         {
             auto old_path = (base_path / Path{file_path}).generic_u8string();
 
-            auto path_str = file_path.native();
+            auto path_str = file_path.generic_u8string();
 
             for (int i = 0; i < num_leading_dir; ++i)
             {
