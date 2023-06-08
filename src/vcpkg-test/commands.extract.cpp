@@ -56,8 +56,8 @@ static void test_strip_map(const int strip, const std::vector<std::pair<Path, Pa
     REQUIRE(map.size() == expected.size());
     for (size_t i = 0; i < map.size(); ++i)
     {
-        REQUIRE(map[i].first.native() == expected[i].first.native());
-        REQUIRE(map[i].second.native() == expected[i].second.native());
+        REQUIRE(map[i].first.generic_u8string() == expected[i].first.generic_u8string());
+        REQUIRE(map[i].second.generic_u8string() == expected[i].second.generic_u8string());
     }
 }
 
