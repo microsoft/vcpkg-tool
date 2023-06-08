@@ -1,17 +1,20 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { LocalFileSystem } from '../../fs/local-filesystem';
-import { Session } from '../../session';
-import { Uri } from '../../util/uri';
 import { strict } from 'assert';
 import { statSync } from 'fs';
 import { rm } from 'fs/promises';
 import { join, resolve } from 'path';
+import { LocalFileSystem } from '../../fs/local-filesystem';
+import { Session } from '../../session';
+import { Uri } from '../../util/uri';
 import { uniqueTempFolder } from './uniqueTempFolder';
 
 
 require('../../exports');
+
+// Set the VCPKG_COMMAND environment variable
+process.env['VCPKG_COMMAND'] = resolve(__dirname, '..', '..', 'vcpkg.exe');
 
 function resourcesFolder(from = __dirname): string {
   for (;;) {
