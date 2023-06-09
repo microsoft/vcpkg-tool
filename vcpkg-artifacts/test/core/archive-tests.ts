@@ -2,15 +2,12 @@
 // Licensed under the MIT License.
 
 import { rejects, strict } from 'assert';
-import { resolve } from 'path';
 import { Uri } from '../../util/uri';
 import { vcpkgExtract } from '../../vcpkg';
 import { SuiteLocal } from './SuiteLocal';
 
 const isWindows = process.platform === 'win32';
 
-// Set the VCPKG_COMMAND environment variable
-process.env['VCPKG_COMMAND'] = resolve(__dirname, '..', '..', 'vcpkg.exe');
 
 describe('ZipUnpacker', () => {
   const local = new SuiteLocal();
