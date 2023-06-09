@@ -13,9 +13,6 @@ import { uniqueTempFolder } from './uniqueTempFolder';
 
 require('../../exports');
 
-// Set the VCPKG_COMMAND environment variable
-process.env['VCPKG_COMMAND'] = resolve(__dirname, '..', '..', 'vcpkg.exe');
-
 function resourcesFolder(from = __dirname): string {
   for (;;) {
     try {
