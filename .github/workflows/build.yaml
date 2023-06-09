@@ -62,7 +62,7 @@ jobs:
         run: ctest --preset ${{ matrix.preset }} --output-on-failure 2>&1
       - name: Run vcpkg-artifacts unit tests
         env:
-          VCPKG_COMMAND: /out/build/windows-ci/vcpkg.exe
+          VCPKG_COMMAND: /out/build/${{ matrix.preset }}/vcpkg.exe
         run: |
           cd out/build/${{ matrix.preset }}/vcpkg-artifacts
           node node_modules/mocha/bin/mocha --config mocha-config.yaml
