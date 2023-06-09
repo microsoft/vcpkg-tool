@@ -198,6 +198,7 @@
   "BuildResultSummaryLine": "{build_result}: {count}",
   "_BuildResultSummaryLine.comment": "Displayed to show a count of results of a build_result in a summary. An example of {build_result} is One of the BuildResultXxx messages (such as BuildResultSucceeded/SUCCEEDED). An example of {count} is 42.",
   "BuildTreesRootDir": "(Experimental) Specify the buildtrees root directory.",
+  "BuildTroubleshootingFollowHints": "Before reporting an issue see the following points to probably fix the build failue:",
   "BuildTroubleshootingMessage1": "Please ensure you're using the latest port files with `git pull` and `vcpkg update`.\nThen check for known issues at:",
   "_BuildTroubleshootingMessage1.comment": "First part of build troubleshooting message, printed before the URI to look for existing bugs.",
   "BuildTroubleshootingMessage2": "You can submit a new issue at:",

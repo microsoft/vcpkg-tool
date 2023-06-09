@@ -167,7 +167,7 @@ namespace vcpkg::Build
                 msg::print(Color::warning, warnings);
             }
             msg::println_error(create_error_message(result, spec));
-            msg::print(create_user_troubleshooting_message(*action, paths, nullopt));
+            msg::print(create_user_troubleshooting_message(args, *action, paths, result));
             return 1;
         }
         binary_cache.push_success(*action);
@@ -923,12 +923,18 @@ namespace vcpkg
         }
 
         const ElapsedTimer timer;
-        auto command = vcpkg::make_cmake_cmd(paths, paths.ports_cmake, get_cmake_build_args(args, paths, action));
+        auto buildpath = paths.build_dir(action.spec);
+        const auto user_required_path =
+            buildpath / Strings::concat("required-user-interaction-", action.spec.triplet(), ".txt");
+        const auto user_hints_path = buildpath / Strings::concat("user-hints-", action.spec.triplet(), ".txt");
+        auto build_args = get_cmake_build_args(args, paths, action);
+        build_args.emplace_back("Z_VCPKG_REQUIRED_USER_INTERACTION_ON_BUILD_FAILURE_FILE", user_required_path);
+        build_args.emplace_back("Z_VCPKG_USER_HINTS_ON_BUILD_FAILURE_FILE", user_hints_path);
+        auto command = vcpkg::make_cmake_cmd(paths, paths.ports_cmake, std::move(build_args));
 
         const auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
         auto env = paths.get_action_env(abi_info);
 
-        auto buildpath = paths.build_dir(action.spec);
         fs.create_directory(buildpath, VCPKG_LINE_INFO);
         env.add_entry("GIT_CEILING_DIRECTORIES", fs.absolute(buildpath.parent_path(), VCPKG_LINE_INFO));
         auto stdoutlog = buildpath / ("stdout-" + action.spec.triplet().canonical_name() + ".log");
@@ -987,7 +993,16 @@ namespace vcpkg
                 error_logs = fs.read_lines(logs).value_or_exit(VCPKG_LINE_INFO);
                 Util::erase_remove_if(error_logs, [](const auto& line) { return line.empty(); });
             }
-            return ExtendedBuildResult{BuildResult::BUILD_FAILED, stdoutlog, std::move(error_logs)};
+            ExtendedBuildResult result{BuildResult::BUILD_FAILED, stdoutlog, std::move(error_logs)};
+            if (fs.exists(user_required_path, VCPKG_LINE_INFO))
+            {
+                result.user_required_interaction = fs.read_contents(user_required_path, VCPKG_LINE_INFO);
+            }
+            if (fs.exists(user_hints_path, VCPKG_LINE_INFO))
+            {
+                result.user_hints = fs.read_contents(user_hints_path, VCPKG_LINE_INFO);
+            }
+            return result;
         }
 
         const BuildInfo build_info = read_build_info(fs, paths.build_info_file_path(action.spec));
@@ -1551,17 +1566,27 @@ namespace vcpkg
                                Strings::percent_encode(path));
     }
 
-    LocalizedString create_user_troubleshooting_message(const InstallPlanAction& action,
+    LocalizedString create_user_troubleshooting_message(const VcpkgCmdArguments& args,
+                                                        const InstallPlanAction& action,
                                                         const VcpkgPaths& paths,
-                                                        const Optional<Path>& issue_body)
+                                                        const ExtendedBuildResult& build_result)
     {
+        if (build_result.user_required_interaction.has_value())
+        {
+            return LocalizedString::from_raw(build_result.user_required_interaction.value_or_exit(VCPKG_LINE_INFO))
+                .append_raw('\n');
+        }
         const auto& spec_name = action.spec.name();
         LocalizedString result = msg::format(msgBuildTroubleshootingMessage1).append_raw('\n');
         result.append_indent().append_raw(make_gh_issue_search_url(spec_name)).append_raw('\n');
         result.append(msgBuildTroubleshootingMessage2).append_raw('\n');
-        if (issue_body.has_value())
+        if (build_result.stdoutlog.has_value())
         {
-            auto path = issue_body.get()->generic_u8string();
+            auto issue_body_path = paths.installed().root() / "vcpkg" / "issue_body.md";
+            paths.get_filesystem().write_contents(
+                issue_body_path, create_github_issue(args, build_result, paths, action), VCPKG_LINE_INFO);
+
+            auto path = issue_body_path.generic_u8string();
             result.append_indent().append_raw(make_gh_issue_open_url(spec_name, path)).append_raw("\n");
             if (!paths.get_filesystem().find_from_PATH("gh").empty())
             {
@@ -1583,6 +1608,14 @@ namespace vcpkg
                 .append_raw("]+Build+error\n");
             result.append(msgBuildTroubleshootingMessage3, msg::package_name = spec_name).append_raw('\n');
             result.append_raw(paths.get_toolver_diagnostics()).append_raw('\n');
+        }
+        if (build_result.user_hints.has_value())
+        {
+            result.append_raw('\n')
+                .append(msgBuildTroubleshootingFollowHints)
+                .append_raw('\n')
+                .append_raw(build_result.user_hints.value_or_exit(VCPKG_LINE_INFO))
+                .append_raw('\n');
         }
 
         return result;
