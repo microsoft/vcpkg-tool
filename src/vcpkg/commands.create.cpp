@@ -32,7 +32,7 @@ namespace vcpkg::Commands::Create
     int perform(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
         auto parsed = args.parse_arguments(COMMAND_STRUCTURE);
-        const std::string port_name = parsed.command_arguments[0];
+        const std::string& port_name = parsed.command_arguments[0];
         const std::string url = remove_trailing_url_slashes(parsed.command_arguments[1]);
 
         std::vector<CMakeVariable> cmake_args{

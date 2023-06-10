@@ -388,7 +388,7 @@ namespace vcpkg
         if (potential_copyright_files.size() == 1)
         {
             // if there is only one candidate, provide the cmake lines needed to place it in the proper location
-            const auto found_file = potential_copyright_files[0];
+            const auto& found_file = potential_copyright_files[0];
             auto found_relative_native = found_file.native();
             found_relative_native.erase(current_buildtrees_dir.native().size() +
                                         1); // The +1 is needed to remove the "/"

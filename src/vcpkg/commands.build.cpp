@@ -414,8 +414,8 @@ namespace vcpkg
                             auto kvp = Strings::split(s, '=');
                             if (kvp.size() == 2)
                             {
-                                auto protocol = kvp[0];
-                                auto address = kvp[1];
+                                auto& protocol = kvp[0];
+                                auto& address = kvp[1];
 
                                 /* Unlike Python's urllib implementation about this type of proxy configuration
                                  * (http=addr:port;https=addr:port)
@@ -658,7 +658,7 @@ namespace vcpkg
 
     static CompilerInfo load_compiler_info(const VcpkgPaths& paths, const AbiInfo& abi_info)
     {
-        auto triplet = abi_info.pre_build_info->triplet;
+        auto& triplet = abi_info.pre_build_info->triplet;
         msg::println(msgDetectCompilerHash, msg::triplet = triplet);
         auto buildpath = paths.buildtrees() / "detect_compiler";
 

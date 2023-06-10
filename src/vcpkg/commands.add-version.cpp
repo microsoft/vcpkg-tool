@@ -378,7 +378,7 @@ namespace vcpkg::Commands::AddVersion
 
         // Get tree-ish from local repository state.
         auto maybe_git_tree_map = paths.git_get_local_port_treeish_map();
-        auto git_tree_map = maybe_git_tree_map.value_or_exit(VCPKG_LINE_INFO);
+        auto& git_tree_map = maybe_git_tree_map.value_or_exit(VCPKG_LINE_INFO);
 
         // Find ports with uncommited changes
         std::set<std::string> changed_ports;
