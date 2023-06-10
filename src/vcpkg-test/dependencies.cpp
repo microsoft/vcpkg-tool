@@ -62,18 +62,9 @@ struct MockVersionedPortfileProvider : IVersionedPortfileProvider
                                           Version&& version,
                                           VersionScheme scheme = VersionScheme::String)
     {
-#if defined(__cpp_lib_map_try_emplace) && __cpp_lib_map_try_emplace >= 201411
-        auto it = v.try_emplace(name).first;
-#else // ^^^ has try_emplace / no try_emplace vvv
-        auto it = v.find(name);
-        if (it == v.end())
-        {
-            it = v.emplace(std::piecewise_construct, std::forward_as_tuple(name), std::forward_as_tuple()).first;
-        }
-#endif
-
-        auto it2 = it->second.find(version);
-        if (it2 == it->second.end())
+        auto&& version_map = v[name];
+        auto it2 = version_map.find(version);
+        if (it2 == version_map.end())
         {
             auto scf = std::make_unique<SourceControlFile>();
             auto core = std::make_unique<SourceParagraph>();
@@ -82,7 +73,7 @@ struct MockVersionedPortfileProvider : IVersionedPortfileProvider
             core->port_version = version.port_version();
             core->version_scheme = scheme;
             scf->core_paragraph = std::move(core);
-            it2 = it->second.emplace(version, SourceControlFileAndLocation{std::move(scf), name}).first;
+            it2 = version_map.emplace(version, SourceControlFileAndLocation{std::move(scf), name}).first;
         }
 
         return it2->second;

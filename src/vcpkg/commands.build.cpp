@@ -138,7 +138,7 @@ namespace vcpkg::Build
         action->build_options.clean_buildtrees = CleanBuildtrees::NO;
         action->build_options.clean_packages = CleanPackages::NO;
 
-        BinaryCache binary_cache(args, paths);
+        auto binary_cache = BinaryCache::make(args, paths, stdout_sink).value_or_exit(VCPKG_LINE_INFO);
         const ElapsedTimer build_timer;
         const auto result = build_package(args, paths, *action, build_logs_recorder, status_db);
         msg::print(msgElapsedForPackage, msg::spec = spec, msg::elapsed = build_timer);
@@ -846,17 +846,11 @@ namespace vcpkg
         }
         else if (cmake_system_name == "WindowsStore")
         {
-            // HACK: remove once we have fully shipped a uwp toolchain
-            static bool have_uwp_triplet =
-                m_paths.get_filesystem().exists(m_paths.scripts / "toolchains/uwp.cmake", IgnoreErrors{});
-            if (have_uwp_triplet)
-            {
-                return m_paths.scripts / "toolchains/uwp.cmake";
-            }
-            else
-            {
-                return m_paths.scripts / "toolchains/windows.cmake";
-            }
+            return m_paths.scripts / "toolchains/uwp.cmake";
+        }
+        else if (target_is_xbox)
+        {
+            return m_paths.scripts / "toolchains/xbox.cmake";
         }
         else if (cmake_system_name.empty() || cmake_system_name == "Windows")
         {
@@ -1037,7 +1031,38 @@ namespace vcpkg
         return result;
     }
 
-    static void abi_entries_from_abi_info(const AbiInfo& abi_info, std::vector<AbiEntry>& abi_tag_entries)
+    static std::string grdk_hash(const Filesystem& fs,
+                                 Cache<Path, Optional<std::string>>& grdk_cache,
+                                 const PreBuildInfo& pre_build_info)
+    {
+        if (auto game_dk_latest = pre_build_info.gamedk_latest_path.get())
+        {
+            const auto grdk_header_path = *game_dk_latest / "GRDK/gameKit/Include/grdk.h";
+            const auto maybe_header_hash = grdk_cache.get_lazy(grdk_header_path, [&]() -> Optional<std::string> {
+                auto maybe_hash = Hash::get_file_hash(fs, grdk_header_path, Hash::Algorithm::Sha256);
+                if (auto hash = maybe_hash.get())
+                {
+                    return std::move(*hash);
+                }
+                else
+                {
+                    return nullopt;
+                }
+            });
+
+            if (auto header_hash = maybe_header_hash.get())
+            {
+                return *header_hash;
+            }
+        }
+
+        return "none";
+    }
+
+    static void abi_entries_from_abi_info(const Filesystem& fs,
+                                          Cache<Path, Optional<std::string>>& grdk_cache,
+                                          const AbiInfo& abi_info,
+                                          std::vector<AbiEntry>& abi_tag_entries)
     {
         const auto& pre_build_info = *abi_info.pre_build_info;
         if (pre_build_info.public_abi_override)
@@ -1056,6 +1081,11 @@ namespace vcpkg
                     "ENV:" + env_var, Hash::get_string_hash(e.value_or_exit(VCPKG_LINE_INFO), Hash::Algorithm::Sha256));
             }
         }
+
+        if (abi_info.pre_build_info->target_is_xbox)
+        {
+            abi_tag_entries.emplace_back("grdk.h", grdk_hash(fs, grdk_cache, *abi_info.pre_build_info));
+        }
     }
 
     struct AbiTagAndFiles
@@ -1071,7 +1101,8 @@ namespace vcpkg
 
     static Optional<AbiTagAndFiles> compute_abi_tag(const VcpkgPaths& paths,
                                                     const InstallPlanAction& action,
-                                                    Span<const AbiEntry> dependency_abis)
+                                                    Span<const AbiEntry> dependency_abis,
+                                                    Cache<Path, Optional<std::string>>& grdk_cache)
     {
         auto& fs = paths.get_filesystem();
         Triplet triplet = action.spec.triplet();
@@ -1105,7 +1136,7 @@ namespace vcpkg
         const auto& triplet_abi = paths.get_triplet_info(abi_info);
         abi_tag_entries.emplace_back("triplet", triplet.canonical_name());
         abi_tag_entries.emplace_back("triplet_abi", triplet_abi);
-        abi_entries_from_abi_info(abi_info, abi_tag_entries);
+        abi_entries_from_abi_info(fs, grdk_cache, abi_info, abi_tag_entries);
 
         // If there is an unusually large number of files in the port then
         // something suspicious is going on.  Rather than hash all of them
@@ -1227,6 +1258,7 @@ namespace vcpkg
                           const CMakeVars::CMakeVarProvider& var_provider,
                           const StatusParagraphs& status_db)
     {
+        Cache<Path, Optional<std::string>> grdk_cache;
         for (auto it = action_plan.install_actions.begin(); it != action_plan.install_actions.end(); ++it)
         {
             auto& action = *it;
@@ -1268,7 +1300,7 @@ namespace vcpkg
                 paths, action.spec.triplet(), var_provider.get_tag_vars(action.spec).value_or_exit(VCPKG_LINE_INFO));
             abi_info.toolset = paths.get_toolset(*abi_info.pre_build_info);
 
-            auto maybe_abi_tag_and_file = compute_abi_tag(paths, action, dependency_abis);
+            auto maybe_abi_tag_and_file = compute_abi_tag(paths, action, dependency_abis, grdk_cache);
             if (auto p = maybe_abi_tag_and_file.get())
             {
                 abi_info.compiler_info = paths.get_compiler_info(abi_info);
@@ -1674,6 +1706,8 @@ namespace vcpkg
             PUBLIC_ABI_OVERRIDE,
             LOAD_VCVARS_ENV,
             DISABLE_COMPILER_TRACKING,
+            XBOX_CONSOLE_TARGET,
+            Z_VCPKG_GameDKLatest
         };
 
         static const std::vector<std::pair<std::string, VcpkgTripletVar>> VCPKG_OPTIONS = {
@@ -1691,23 +1725,14 @@ namespace vcpkg
             // Note: this value must come after VCPKG_CHAINLOAD_TOOLCHAIN_FILE because its default depends upon it.
             {"VCPKG_LOAD_VCVARS_ENV", VcpkgTripletVar::LOAD_VCVARS_ENV},
             {"VCPKG_DISABLE_COMPILER_TRACKING", VcpkgTripletVar::DISABLE_COMPILER_TRACKING},
+            {"VCPKG_XBOX_CONSOLE_TARGET", VcpkgTripletVar::XBOX_CONSOLE_TARGET},
+            {"Z_VCPKG_GameDKLatest", VcpkgTripletVar::Z_VCPKG_GameDKLatest},
         };
 
-        std::string empty;
+        const std::string empty;
         for (auto&& kv : VCPKG_OPTIONS)
         {
-            const std::string& variable_value = [&]() -> const std::string& {
-                auto find_itr = cmakevars.find(kv.first);
-                if (find_itr == cmakevars.end())
-                {
-                    return empty;
-                }
-                else
-                {
-                    return find_itr->second;
-                }
-            }();
-
+            const std::string& variable_value = Util::value_or_default(cmakevars, kv.first, empty);
             switch (kv.second)
             {
                 case VcpkgTripletVar::TARGET_ARCHITECTURE: target_architecture = variable_value; break;
@@ -1765,6 +1790,18 @@ namespace vcpkg
                     {
                         disable_compiler_tracking =
                             from_cmake_bool(variable_value, kv.first).value_or_exit(VCPKG_LINE_INFO);
+                    }
+                    break;
+                case VcpkgTripletVar::XBOX_CONSOLE_TARGET:
+                    if (!variable_value.empty())
+                    {
+                        target_is_xbox = true;
+                    }
+                    break;
+                case VcpkgTripletVar::Z_VCPKG_GameDKLatest:
+                    if (!variable_value.empty())
+                    {
+                        gamedk_latest_path.emplace(variable_value);
                     }
                     break;
             }

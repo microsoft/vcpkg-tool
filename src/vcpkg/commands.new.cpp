@@ -196,7 +196,8 @@ namespace vcpkg::Commands
             RegistryConfig default_ms_registry;
             default_ms_registry.kind.emplace("artifact");
             default_ms_registry.name.emplace("microsoft");
-            default_ms_registry.location.emplace("https://aka.ms/vcpkg-ce-default");
+            default_ms_registry.location.emplace(
+                "https://github.com/microsoft/vcpkg-ce-catalog/archive/refs/heads/main.zip");
             configuration.registries.emplace_back(std::move(default_ms_registry));
         }
 

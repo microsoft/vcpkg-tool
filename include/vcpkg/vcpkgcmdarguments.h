@@ -133,8 +133,28 @@ namespace vcpkg
         std::vector<std::string> cli_overlay_triplets;
         std::vector<std::string> env_overlay_triplets;
 
+        constexpr static StringLiteral BINARY_SOURCES_ENV = "VCPKG_BINARY_SOURCES";
         constexpr static StringLiteral BINARY_SOURCES_ARG = "binarysource";
-        std::vector<std::string> binary_sources;
+        std::vector<std::string> cli_binary_sources;
+        Optional<std::string> env_binary_sources;
+        constexpr static StringLiteral ACTIONS_CACHE_URL_ENV = "ACTIONS_CACHE_URL";
+        Optional<std::string> actions_cache_url;
+        constexpr static StringLiteral ACTIONS_RUNTIME_TOKEN_ENV = "ACTIONS_RUNTIME_TOKEN";
+        Optional<std::string> actions_runtime_token;
+        constexpr static StringLiteral NUGET_ID_PREFIX_ENV = "X_VCPKG_NUGET_ID_PREFIX";
+        Optional<std::string> nuget_id_prefix;
+        constexpr static StringLiteral VCPKG_USE_NUGET_CACHE_ENV = "VCPKG_USE_NUGET_CACHE";
+        Optional<bool> use_nuget_cache;
+        constexpr static StringLiteral VCPKG_NUGET_REPOSITORY_ENV = "VCPKG_NUGET_REPOSITORY";
+        Optional<std::string> vcpkg_nuget_repository;
+        constexpr static StringLiteral GITHUB_REPOSITORY_ENV = "GITHUB_REPOSITORY";
+        Optional<std::string> github_repository;
+        constexpr static StringLiteral GITHUB_SERVER_URL_ENV = "GITHUB_SERVER_URL";
+        Optional<std::string> github_server_url;
+        constexpr static StringLiteral GITHUB_REF_ENV = "GITHUB_REF";
+        Optional<std::string> github_ref;
+        constexpr static StringLiteral GITHUB_SHA_ENV = "GITHUB_SHA";
+        Optional<std::string> github_sha;
 
         constexpr static StringLiteral CMAKE_SCRIPT_ARG = "cmake-args";
         std::vector<std::string> cmake_args;
@@ -166,9 +186,6 @@ namespace vcpkg
 
         constexpr static StringLiteral ASSET_SOURCES_ENV = "X_VCPKG_ASSET_SOURCES";
         constexpr static StringLiteral ASSET_SOURCES_ARG = "asset-sources";
-
-        constexpr static StringLiteral GITHUB_REPOSITORY_ENV = "GITHUB_REPOSITORY";
-        Optional<std::string> gh_repo_env;
 
         // feature flags
         constexpr static StringLiteral FEATURE_FLAGS_ENV = "VCPKG_FEATURE_FLAGS";

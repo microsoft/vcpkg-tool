@@ -71,7 +71,7 @@ namespace vcpkg
             {
                 if (const ClusterInstalled* inst = m_installed.get())
                 {
-                    return inst->original_features.find(feature) != inst->original_features.end();
+                    return Util::Sets::contains(inst->original_features, feature);
                 }
                 return false;
             }
@@ -83,8 +83,7 @@ namespace vcpkg
                     return std::all_of(inst->ipv.core->package.default_features.begin(),
                                        inst->ipv.core->package.default_features.end(),
                                        [&](const std::string& feature) {
-                                           return inst->original_features.find(feature) !=
-                                                  inst->original_features.end();
+                                           return Util::Sets::contains(inst->original_features, feature);
                                        });
                 }
                 return false;
@@ -617,16 +616,7 @@ namespace vcpkg
 
             std::vector<PackageSpec> adjacency_list(const PackageSpec& spec) const override
             {
-                auto it = rev_edges.find(spec);
-                if (it != rev_edges.end())
-                {
-                    return it->second;
-                }
-                else
-                {
-                    // not installed
-                    return {};
-                }
+                return Util::copy_or_default(rev_edges, spec);
             }
 
             PackageSpec load_vertex_data(const PackageSpec& s) const override { return s; }
@@ -684,9 +674,8 @@ namespace vcpkg
 
             ExportPlanAction load_vertex_data(const PackageSpec& spec) const override
             {
-                const RequestType request_type = specs_as_set.find(spec) != specs_as_set.end()
-                                                     ? RequestType::USER_REQUESTED
-                                                     : RequestType::AUTO_SELECTED;
+                const RequestType request_type =
+                    Util::Sets::contains(specs_as_set, spec) ? RequestType::USER_REQUESTED : RequestType::AUTO_SELECTED;
 
                 auto maybe_ipv = status_db.get_installed_package_view(spec);
 
@@ -1498,7 +1487,7 @@ namespace vcpkg
         {
             ref.second.origins.insert(origin);
 
-            if (ref.second.considered.find(scfl) != ref.second.considered.end()) return;
+            if (Util::Sets::contains(ref.second.considered, scfl)) return;
             ref.second.considered.insert(scfl);
 
             auto features = ref.second.requested_features;
@@ -1539,7 +1528,7 @@ namespace vcpkg
                 return *it;
             }
 
-            if (m_failed_nodes.find(spec.name()) != m_failed_nodes.end())
+            if (Util::Maps::contains(m_failed_nodes, spec.name()))
             {
                 return nullopt;
             }
@@ -1592,7 +1581,7 @@ namespace vcpkg
 
             // Implicit defaults are disabled if spec has been mentioned at top-level.
             // Note that if top-level doesn't also mark that reference as `[core]`, defaults will be re-engaged.
-            it->second.default_features = m_user_requested.find(spec) == m_user_requested.end();
+            it->second.default_features = !Util::Maps::contains(m_user_requested, spec);
             it->second.requested_features.insert("core");
 
             require_scfl(*it, it->second.scfl, origin);
@@ -1791,9 +1780,8 @@ namespace vcpkg
                 {
                     // Newly inserted -> Add stack frame
                     std::vector<DepSpec> deps;
-                    RequestType request = m_user_requested.find(dep.spec) != m_user_requested.end()
-                                              ? RequestType::USER_REQUESTED
-                                              : RequestType::AUTO_SELECTED;
+                    RequestType request = Util::Sets::contains(m_user_requested, dep.spec) ? RequestType::USER_REQUESTED
+                                                                                           : RequestType::AUTO_SELECTED;
                     InstallPlanAction ipa(dep.spec,
                                           *node.second.scfl,
                                           request,

@@ -285,7 +285,7 @@ namespace vcpkg
         const InstallDir install_dir =
             InstallDir::from_destination_root(paths.installed(), triplet, bcf.core_paragraph);
 
-        install_package_and_write_listfile(fs, paths.package_dir(bcf.core_paragraph.spec), install_dir);
+        install_package_and_write_listfile(fs, package_dir, install_dir);
 
         source_paragraph.state = InstallState::INSTALLED;
         write_update(fs, installed, source_paragraph);
@@ -326,8 +326,7 @@ namespace vcpkg
         if (plan_type == InstallPlanType::BUILD_AND_INSTALL)
         {
             std::unique_ptr<BinaryControlFile> bcf;
-            auto restore = binary_cache.try_restore(action);
-            if (restore == RestoreResult::restored)
+            if (binary_cache.is_restored(action))
             {
                 auto maybe_bcf = Paragraphs::try_load_cached_package(
                     fs, action.package_dir.value_or_exit(VCPKG_LINE_INFO), action.spec);
@@ -382,14 +381,7 @@ namespace vcpkg
                 case InstallResult::FILE_CONFLICTS: code = BuildResult::FILE_CONFLICTS; break;
                 default: Checks::unreachable(VCPKG_LINE_INFO);
             }
-            if (restore != RestoreResult::restored)
-            {
-                binary_cache.push_success(action);
-            }
-            else if (action.build_options.clean_packages == CleanPackages::YES)
-            {
-                fs.remove_all(action.package_dir.value_or_exit(VCPKG_LINE_INFO), VCPKG_LINE_INFO);
-            }
+            binary_cache.push_success(action);
 
             if (action.build_options.clean_downloads == CleanDownloads::YES)
             {
@@ -522,6 +514,20 @@ namespace vcpkg
         TrackedPackageInstallGuard& operator=(const TrackedPackageInstallGuard&) = delete;
     };
 
+    void Install::preclear_packages(const VcpkgPaths& paths, const ActionPlan& action_plan)
+    {
+        auto& fs = paths.get_filesystem();
+        for (auto&& action : action_plan.remove_actions)
+        {
+            fs.remove_all(paths.package_dir(action.spec), VCPKG_LINE_INFO);
+        }
+
+        for (auto&& action : action_plan.install_actions)
+        {
+            fs.remove_all(action.package_dir.value_or_exit(VCPKG_LINE_INFO), VCPKG_LINE_INFO);
+        }
+    }
+
     InstallSummary Install::execute_plan(const VcpkgCmdArguments& args,
                                          const ActionPlan& action_plan,
                                          const KeepGoing keep_going,
@@ -540,7 +546,6 @@ namespace vcpkg
         {
             TrackedPackageInstallGuard this_install(action_index++, action_count, results, action);
             Remove::remove_package(fs, paths.installed(), action.spec, status_db);
-            fs.remove_all(paths.packages() / action.spec.dir(), VCPKG_LINE_INFO);
             results.back().build_result.emplace(BuildResult::REMOVED);
         }
 
@@ -857,10 +862,10 @@ namespace vcpkg
             bool has_targets_for_output = false;
             for (auto&& package : config_packages)
             {
-                const auto library_target_pair = library_targets.find(package.dir);
-                if (library_target_pair == library_targets.end()) continue;
+                const auto library_target_it = library_targets.find(package.dir);
+                if (library_target_it == library_targets.end()) continue;
 
-                auto& targets = library_target_pair->second;
+                auto& targets = library_target_it->second;
                 if (!targets.empty())
                 {
                     if (!package.name.empty()) has_targets_for_output = true;
@@ -1261,7 +1266,7 @@ namespace vcpkg
             compute_all_abis(paths, action_plan, var_provider, status_db);
 
             auto pkgsconfig_path = paths.original_cwd / it_pkgsconfig->second;
-            auto pkgsconfig_contents = generate_nuget_packages_config(action_plan);
+            auto pkgsconfig_contents = generate_nuget_packages_config(action_plan, args.nuget_id_prefix.value_or(""));
             fs.write_contents(pkgsconfig_path, pkgsconfig_contents, VCPKG_LINE_INFO);
             msg::println(msgWroteNuGetPkgConfInfo, msg::path = pkgsconfig_path);
         }
@@ -1278,9 +1283,11 @@ namespace vcpkg
         paths.flush_lockfile();
 
         track_install_plan(action_plan);
+        Install::preclear_packages(paths, action_plan);
 
-        BinaryCache binary_cache = only_downloads ? BinaryCache(paths.get_filesystem()) : BinaryCache(args, paths);
-        binary_cache.prefetch(action_plan.install_actions);
+        auto binary_cache = only_downloads ? BinaryCache(paths.get_filesystem())
+                                           : BinaryCache::make(args, paths, stdout_sink).value_or_exit(VCPKG_LINE_INFO);
+        binary_cache.fetch(action_plan.install_actions);
         const InstallSummary summary = Install::execute_plan(
             args, action_plan, keep_going, paths, status_db, binary_cache, null_build_logs_recorder());
 

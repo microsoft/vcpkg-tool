@@ -260,6 +260,7 @@ DECLARE_MESSAGE(BaselineMissingDefault,
                 "",
                 "The baseline.json from commit `\"{commit_sha}\"` in the repo {url} was invalid (did not "
                 "contain a \"default\" field).")
+DECLARE_MESSAGE(BinaryCacheVendorHTTP, (), "", "HTTP servers")
 DECLARE_MESSAGE(BinarySourcesArg, (), "", "Add sources for binary caching. See 'vcpkg help binarycaching'.")
 DECLARE_MESSAGE(BinaryWithInvalidArchitecture,
                 (msg::path, msg::expected, msg::actual),
@@ -465,16 +466,31 @@ DECLARE_MESSAGE(CmdAddVersionOptSkipFormatChk, (), "", "Skips the formatting che
 DECLARE_MESSAGE(CmdAddVersionOptSkipVersionFormatChk, (), "", "Skips the version format check.")
 DECLARE_MESSAGE(CmdAddVersionOptVerbose, (), "", "Print success messages instead of just errors.")
 DECLARE_MESSAGE(CmdContactOptSurvey, (), "", "Launch default browser to the current vcpkg survey")
-DECLARE_MESSAGE(CmdDependInfoOptDepth, (), "", "Show recursion depth in output")
-DECLARE_MESSAGE(CmdDependInfoOptDGML, (), "", "Creates graph on basis of dgml")
-DECLARE_MESSAGE(CmdDependInfoOptDot, (), "", "Creates graph on basis of dot")
-DECLARE_MESSAGE(CmdDependInfoOptMaxRecurse, (), "", "Set max recursion depth, a value of -1 indicates no limit")
-DECLARE_MESSAGE(CmdDependInfoOptSort,
+DECLARE_MESSAGE(CmdDependInfoFormatConflict,
                 (),
                 "",
-                "Set sort order for the list of dependencies, accepted values are: lexicographical, topological "
-                "(default), x-tree, "
-                "reverse")
+                "Conflicting formats specified. Only one of --format, --dgml, or --dot are accepted.")
+DECLARE_MESSAGE(CmdDependInfoFormatHelp,
+                (),
+                "The alternatives in ``s must not be localized.",
+                "Choose output format, one of `list`, `tree`, `dot`, or `dgml`.")
+DECLARE_MESSAGE(
+    CmdDependInfoFormatInvalid,
+    (msg::value),
+    "The alternatives in ``s must not be localized. {value} is what the user specified.",
+    "--format={value} is not a recognized format. --format must be one of `list`, `tree`, `dot`, or `dgml`.")
+DECLARE_MESSAGE(CmdDependInfoShowDepthFormatMismatch,
+                (),
+                "",
+                "--show-depth can only be used with `list` and `tree` formats.")
+DECLARE_MESSAGE(CmdDependInfoXtreeTree, (), "", "--sort=x-tree cannot be used with formats other than tree")
+DECLARE_MESSAGE(CmdDependInfoOptDepth, (), "", "Show recursion depth in `list` output.")
+DECLARE_MESSAGE(CmdDependInfoOptMaxRecurse, (), "", "Set max recursion depth. Default is no limit.")
+DECLARE_MESSAGE(CmdDependInfoOptSort,
+                (),
+                "The alternatives in ``s must not be localized, but the localized text can explain what each value "
+                "means. The value `reverse` means 'reverse-topological'.",
+                "Choose sort order for the `list` format, one of `lexicographical`, `topological` (default), `reverse`")
 DECLARE_MESSAGE(CmdEditOptAll, (), "", "Open editor into the port as well as the port-specific buildtree subfolder")
 DECLARE_MESSAGE(CmdEditOptBuildTrees, (), "", "Open editor into the port-specific buildtree subfolder")
 DECLARE_MESSAGE(CmdEnvOptions, (msg::path, msg::env_var), "", "Add installed {path} to {env_var}")
@@ -1843,7 +1859,7 @@ DECLARE_MESSAGE(MultipleFeatures,
 DECLARE_MESSAGE(MutuallyExclusiveOption,
                 (msg::value, msg::option),
                 "{value} is a second {option} switch",
-                "--{value} can not be used with --{option}.")
+                "--{value} cannot be used with --{option}.")
 DECLARE_MESSAGE(NavigateToNPS, (msg::url), "", "Please navigate to {url} in your preferred browser.")
 DECLARE_MESSAGE(NewConfigurationAlreadyExists,
                 (msg::path),
@@ -2094,7 +2110,12 @@ DECLARE_MESSAGE(PortBugInvalidCrtLinkageEntry,
                 (msg::path),
                 "See explanation in PortBugInvalidCrtLinkage",
                 "{path} links with:")
-
+DECLARE_MESSAGE(PortBugKernel32FromXbox,
+                (),
+                "",
+                "The selected triplet targets Xbox, but the following DLLs link with kernel32. These DLLs cannot be "
+                "loaded on Xbox, where kernel32 is not present. This is typically caused by linking with kernel32.lib "
+                "rather than a suitable umbrella library, such as onecore_apiset.lib or xgameplatform.lib.")
 DECLARE_MESSAGE(
     PortBugMergeLibCMakeDir,
     (msg::package_name),
@@ -2230,12 +2251,34 @@ DECLARE_MESSAGE(ResponseFileCode,
                 "Explains to the user that they can use response files on the command line, 'response_file' must "
                 "have no spaces and be a legal file name.",
                 "@response_file")
-DECLARE_MESSAGE(RestoredPackage, (msg::path), "", "Restored package from \"{path}\"")
-DECLARE_MESSAGE(
-    RestoredPackagesFromVendor,
-    (msg::count, msg::elapsed, msg::value),
-    "{value} may be either a 'vendor' like 'Azure' or 'NuGet', or a file path like C:\\example or /usr/example",
-    "Restored {count} package(s) from {value} in {elapsed}. Use --debug to see more details.")
+DECLARE_MESSAGE(RestoredPackagesFromAWS,
+                (msg::count, msg::elapsed),
+                "",
+                "Restored {count} package(s) from AWS in {elapsed}. Use --debug to see more details.")
+DECLARE_MESSAGE(RestoredPackagesFromCOS,
+                (msg::count, msg::elapsed),
+                "",
+                "Restored {count} package(s) from COS in {elapsed}. Use --debug to see more details.")
+DECLARE_MESSAGE(RestoredPackagesFromFiles,
+                (msg::count, msg::elapsed, msg::path),
+                "",
+                "Restored {count} package(s) from {path} in {elapsed}. Use --debug to see more details.")
+DECLARE_MESSAGE(RestoredPackagesFromGCS,
+                (msg::count, msg::elapsed),
+                "",
+                "Restored {count} package(s) from GCS in {elapsed}. Use --debug to see more details.")
+DECLARE_MESSAGE(RestoredPackagesFromGHA,
+                (msg::count, msg::elapsed),
+                "",
+                "Restored {count} package(s) from GitHub Actions Cache in {elapsed}. Use --debug to see more details.")
+DECLARE_MESSAGE(RestoredPackagesFromHTTP,
+                (msg::count, msg::elapsed),
+                "",
+                "Restored {count} package(s) from HTTP servers in {elapsed}. Use --debug to see more details.")
+DECLARE_MESSAGE(RestoredPackagesFromNuGet,
+                (msg::count, msg::elapsed),
+                "",
+                "Restored {count} package(s) from NuGet in {elapsed}. Use --debug to see more details.")
 DECLARE_MESSAGE(ResultsHeader, (), "Displayed before a list of installation results.", "RESULTS")
 DECLARE_MESSAGE(ScriptAssetCacheRequiresScript,
                 (),
@@ -2298,7 +2341,10 @@ DECLARE_MESSAGE(SpecifyTargetArch,
                 "Specify the target architecture triplet. See 'vcpkg help triplet'.\n(default: '{env_var}')")
 DECLARE_MESSAGE(StartCodeUnitInContinue, (), "", "found start code unit in continue position")
 DECLARE_MESSAGE(StoredBinaryCache, (msg::path), "", "Stored binary cache: \"{path}\"")
-DECLARE_MESSAGE(StoredBinariesToDestinations, (msg::count), "", "Stored binaries in {count} destinations.")
+DECLARE_MESSAGE(StoredBinariesToDestinations,
+                (msg::count, msg::elapsed),
+                "",
+                "Stored binaries in {count} destinations in {elapsed}.")
 DECLARE_MESSAGE(StoreOptionMissingSha, (), "", "--store option is invalid without a sha512")
 DECLARE_MESSAGE(SuccessfulyExported, (msg::package_name, msg::path), "", "Exported {package_name} to {path}")
 DECLARE_MESSAGE(SuggestGitPull, (), "", "The result may be outdated. Run `git pull` to get the latest results.")
