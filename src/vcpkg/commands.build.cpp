@@ -1713,7 +1713,7 @@ namespace vcpkg
             PUBLIC_ABI_OVERRIDE,
             LOAD_VCVARS_ENV,
             DISABLE_COMPILER_TRACKING,
-            HASH_ADDITIONAL_FILES
+            HASH_ADDITIONAL_FILES,
             XBOX_CONSOLE_TARGET,
             Z_VCPKG_GameDKLatest
         };
@@ -1733,7 +1733,7 @@ namespace vcpkg
             // Note: this value must come after VCPKG_CHAINLOAD_TOOLCHAIN_FILE because its default depends upon it.
             {"VCPKG_LOAD_VCVARS_ENV", VcpkgTripletVar::LOAD_VCVARS_ENV},
             {"VCPKG_DISABLE_COMPILER_TRACKING", VcpkgTripletVar::DISABLE_COMPILER_TRACKING},
-            {"VCPKG_HASH_ADDITIONAL_FILES", VcpkgTripletVar::HASH_ADDITIONAL_FILES}};
+            {"VCPKG_HASH_ADDITIONAL_FILES", VcpkgTripletVar::HASH_ADDITIONAL_FILES},
             {"VCPKG_XBOX_CONSOLE_TARGET", VcpkgTripletVar::XBOX_CONSOLE_TARGET},
             {"Z_VCPKG_GameDKLatest", VcpkgTripletVar::Z_VCPKG_GameDKLatest},
         };
