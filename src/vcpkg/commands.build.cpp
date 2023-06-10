@@ -1506,12 +1506,12 @@ namespace vcpkg
             manifest);
     }
 
-    static std::string make_gh_issue_search_url(StringView spec_name)
+    static std::string make_gh_issue_search_url(const std::string& spec_name)
     {
-        return "https://github.com/microsoft/vcpkg/issues?q=is%3Aissue+is%3Aopen+in%3Atitle+" + spec_name.to_string();
+        return "https://github.com/microsoft/vcpkg/issues?q=is%3Aissue+is%3Aopen+in%3Atitle+" + spec_name;
     }
 
-    static std::string make_gh_issue_open_url(StringView spec_name, const Path& path)
+    static std::string make_gh_issue_open_url(StringView spec_name, StringView path)
     {
         return Strings::concat("https://github.com/microsoft/vcpkg/issues/new?title=[",
                                spec_name,
@@ -1529,8 +1529,8 @@ namespace vcpkg
         result.append(msgBuildTroubleshootingMessage2).append_raw('\n');
         if (issue_body.has_value())
         {
-            auto path = issue_body.get()->generic_u8string();
-            result.append_indent().append_raw(make_gh_issue_open_url(spec_name, path)).append_raw("\n");
+            const auto path = issue_body.get()->generic_u8string();
+            result.append_indent().append_raw(make_gh_issue_open_url(spec_name, path)).append_raw('\n');
             if (!paths.get_filesystem().find_from_PATH("gh").empty())
             {
                 Command gh("gh");

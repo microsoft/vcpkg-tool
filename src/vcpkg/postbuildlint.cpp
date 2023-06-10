@@ -509,7 +509,7 @@ namespace vcpkg
         return LintStatus::SUCCESS;
     }
 
-    static LintStatus check_uwp_bit_of_dlls(const std::string& expected_system_name,
+    static LintStatus check_uwp_bit_of_dlls(StringView expected_system_name,
                                             const std::vector<PostBuildCheckDllData>& dlls,
                                             MessageSink& msg_sink)
     {

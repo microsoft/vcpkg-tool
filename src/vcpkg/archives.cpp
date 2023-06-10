@@ -148,7 +148,7 @@ namespace
         else if (Strings::case_insensitive_ascii_equals(ext, ".exe"))
         {
             const Path filename = archive.filename();
-            const Path stem = filename.stem();
+            auto stem = filename.stem();
             const Path to_archive = Path(archive.parent_path()) / stem;
             win32_extract_self_extracting_7z(fs, archive, to_archive);
             extract_archive_to_empty(fs, tools, status_sink, to_archive, to_path);

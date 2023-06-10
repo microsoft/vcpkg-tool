@@ -273,9 +273,9 @@ namespace vcpkg
         serialize_array(Fields::DEFAULT_FEATURES, pgh.default_features, out_str);
 
         // sanity check the serialized data
-        const auto my_paragraph = out_str.substr(initial_end);
+        auto my_paragraph = StringView{out_str}.substr(initial_end);
         auto parsed_paragraph = Paragraphs::parse_single_paragraph(
-            out_str.substr(initial_end), "vcpkg::serialize(const BinaryParagraph&, std::string&)");
+            StringView{out_str}.substr(initial_end), "vcpkg::serialize(const BinaryParagraph&, std::string&)");
         if (!parsed_paragraph)
         {
             Checks::msg_exit_maybe_upgrade(
