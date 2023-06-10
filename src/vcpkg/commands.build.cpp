@@ -911,7 +911,7 @@ namespace vcpkg
         auto&& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
 
         Triplet triplet = action.spec.triplet();
-        const auto& triplet_file_path = paths.get_triplet_file_path(triplet);
+        const auto triplet_file_path = paths.get_triplet_file_path(triplet);
 
         if (Strings::starts_with(triplet_file_path, paths.community_triplets))
         {
