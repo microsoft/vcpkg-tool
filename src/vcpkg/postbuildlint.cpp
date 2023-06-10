@@ -1015,10 +1015,10 @@ namespace vcpkg
                 "The lib ", lib.native(), " has directives: ", Strings::join(" ", lib_info.linker_directives));
 
             BuildTypeAndFile this_lib{lib};
-            constexpr static const StringLiteral static_release_crt = "/DEFAULTLIB:LIBCMT";
-            constexpr static const StringLiteral static_debug_crt = "/DEFAULTLIB:LIBCMTd";
-            constexpr static const StringLiteral dynamic_release_crt = "/DEFAULTLIB:MSVCRT";
-            constexpr static const StringLiteral dynamic_debug_crt = "/DEFAULTLIB:MSVCRTd";
+            constexpr static StringLiteral static_release_crt = "/DEFAULTLIB:LIBCMT";
+            constexpr static StringLiteral static_debug_crt = "/DEFAULTLIB:LIBCMTd";
+            constexpr static StringLiteral dynamic_release_crt = "/DEFAULTLIB:MSVCRT";
+            constexpr static StringLiteral dynamic_debug_crt = "/DEFAULTLIB:MSVCRTd";
 
             for (auto&& directive : lib_info.linker_directives)
             {

@@ -1167,7 +1167,7 @@ namespace vcpkg
         InternalFeatureSet sorted_feature_list = action.feature_list;
         // Check that no "default" feature is present. Default features must be resolved before attempting to calculate
         // a package ABI, so the "default" should not have made it here.
-        static constexpr auto default_literal = StringLiteral{"default"};
+        static constexpr StringLiteral default_literal{"default"};
         const bool has_no_pseudo_features = std::none_of(
             sorted_feature_list.begin(), sorted_feature_list.end(), [](StringView s) { return s == default_literal; });
         Checks::check_exit(VCPKG_LINE_INFO, has_no_pseudo_features);
