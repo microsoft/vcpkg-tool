@@ -1,5 +1,7 @@
 #include <vcpkg/base/strings.h>
+#include <vcpkg/base/system.h>
 
+#include <vcpkg/packagespec.h>
 #include <vcpkg/triplet.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 
@@ -31,7 +33,7 @@ namespace vcpkg
     Triplet Triplet::from_canonical_name(std::string triplet_as_string)
     {
         static std::unordered_set<TripletInstance> g_triplet_instances;
-        Strings::ascii_to_lowercase(triplet_as_string.data(), triplet_as_string.data() + triplet_as_string.size());
+        Strings::inplace_ascii_to_lowercase(triplet_as_string);
         const auto p = g_triplet_instances.emplace(std::move(triplet_as_string));
         return &*p.first;
     }
@@ -72,6 +74,14 @@ namespace vcpkg
         {
             return CPUArchitecture::PPC64LE;
         }
+        if (Strings::starts_with(this->canonical_name(), "riscv32-"))
+        {
+            return CPUArchitecture::RISCV32;
+        }
+        if (Strings::starts_with(this->canonical_name(), "riscv64-"))
+        {
+            return CPUArchitecture::RISCV64;
+        }
 
         return nullopt;
     }
@@ -79,7 +89,7 @@ namespace vcpkg
     static Triplet system_triplet()
     {
         auto host_proc = get_host_processor();
-        auto canonical_name = Strings::format("%s-%s", to_zstring_view(host_proc), get_host_os_name());
+        auto canonical_name = fmt::format("{}-{}", to_zstring_view(host_proc), get_host_os_name());
         return Triplet::from_canonical_name(std::move(canonical_name));
     }
 
@@ -103,5 +113,17 @@ namespace vcpkg
             return Triplet::from_canonical_name(*host_triplet);
         }
         return system_triplet();
+    }
+
+    void print_default_triplet_warning(const VcpkgCmdArguments& args)
+    {
+        (void)args;
+        // The triplet is not set by --triplet or VCPKG_DEFAULT_TRIPLET
+#if defined(_WIN32)
+        if (!args.triplet.has_value())
+        {
+            msg::println_warning(msgDefaultTriplet, msg::triplet = default_host_triplet(args));
+        }
+#endif // ^^^ _WIN32
     }
 }

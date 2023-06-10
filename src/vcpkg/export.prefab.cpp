@@ -1,16 +1,18 @@
+#include <vcpkg/base/fwd/message_sinks.h>
+
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/system.debug.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
+#include <vcpkg/base/util.h>
 
 #include <vcpkg/archives.h>
-#include <vcpkg/build.h>
 #include <vcpkg/cmakevars.h>
+#include <vcpkg/commands.build.h>
+#include <vcpkg/commands.export.h>
 #include <vcpkg/commands.h>
-#include <vcpkg/export.h>
+#include <vcpkg/commands.install.h>
 #include <vcpkg/export.prefab.h>
-#include <vcpkg/install.h>
 #include <vcpkg/installedpaths.h>
 #include <vcpkg/tools.h>
 #include <vcpkg/vcpkgpaths.h>
@@ -259,7 +261,7 @@ namespace vcpkg::Export::Prefab
                 VCPKG_LINE_INFO, is_supported(*build_info), msgExportPrefabRequiresAndroidTriplet);
         }
 
-        std::vector<VcpkgPaths::TripletFile> available_triplets = paths.get_available_triplets();
+        std::vector<TripletFile> available_triplets = paths.get_available_triplets();
 
         std::unordered_map<CPUArchitecture, std::string> required_archs = {{CPUArchitecture::ARM, "armeabi-v7a"},
                                                                            {CPUArchitecture::ARM64, "arm64-v8a"},
@@ -429,7 +431,7 @@ namespace vcpkg::Export::Prefab
 
             utils.create_directories(meta_dir, IgnoreErrors{});
 
-            const auto share_root = paths.packages() / Strings::format("%s_%s", name, action.spec.triplet());
+            const auto share_root = paths.packages() / fmt::format("{}_{}", name, action.spec.triplet());
 
             utils.copy_file(share_root / "share" / name / "copyright",
                             meta_dir / "LICENSE",
@@ -510,9 +512,8 @@ namespace vcpkg::Export::Prefab
             for (const auto& triplet : triplets)
             {
                 const auto listfile =
-                    paths.installed().vcpkg_dir_info() / Strings::format("%s_%s_%s", name, norm_version, triplet) +
-                    ".list";
-                const auto installed_dir = paths.packages() / Strings::format("%s_%s", name, triplet);
+                    paths.installed().vcpkg_dir_info() / fmt::format("{}_{}_{}.list", name, norm_version, triplet);
+                const auto installed_dir = paths.packages() / fmt::format("{}_{}", name, triplet);
                 if (!(utils.exists(listfile, IgnoreErrors{})))
                 {
                     msg::println_error(msgCorruptedInstallTree);
@@ -568,14 +569,14 @@ namespace vcpkg::Export::Prefab
                         ab.ndk = version.major();
 
                         Debug::print(fmt::format("Found module {} {}", module_name, ab.abi));
-                        module_name = Strings::trim(std::move(module_name));
+                        Strings::inplace_trim(module_name);
 
                         if (Strings::starts_with(module_name, "lib"))
                         {
                             module_name = module_name.substr(3);
                         }
                         auto module_dir = modules_directory / module_name;
-                        auto module_libs_dir = module_dir / "libs" / Strings::format("android.%s", ab.abi);
+                        auto module_libs_dir = module_dir / "libs" / fmt::format("android.{}", ab.abi);
                         utils.create_directories(module_libs_dir, IgnoreErrors{});
 
                         auto abi_path = module_libs_dir / "abi.json";
@@ -608,14 +609,16 @@ namespace vcpkg::Export::Prefab
                 }
             }
 
-            auto exported_archive_path = per_package_dir_path / Strings::format("%s-%s.aar", name, norm_version);
+            auto exported_archive_path = per_package_dir_path / fmt::format("{}-{}.aar", name, norm_version);
             auto pom_path = per_package_dir_path / "pom.xml";
 
             Debug::print(
                 fmt::format("Exporting AAR and POM\n\tAAR path {}\n\tPOM path {}", exported_archive_path, pom_path));
 
-            auto compress_result = compress_directory_to_zip(
-                paths.get_filesystem(), paths.get_tool_cache(), stdout_sink, package_directory, exported_archive_path);
+            auto zip = ZipTool::make(paths.get_tool_cache(), stdout_sink).value_or_exit(VCPKG_LINE_INFO);
+
+            auto compress_result =
+                zip.compress_directory_to_zip(paths.get_filesystem(), package_directory, exported_archive_path);
             if (!compress_result)
             {
                 Checks::msg_exit_with_message(

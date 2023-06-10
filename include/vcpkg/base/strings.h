@@ -1,9 +1,11 @@
 #pragma once
 
+#include <vcpkg/base/fwd/span.h>
+
 #include <vcpkg/base/lineinfo.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/stringview.h>
-#include <vcpkg/base/to_string.h>
+#include <vcpkg/base/to-string.h>
 
 #include <errno.h>
 #include <inttypes.h>
@@ -14,115 +16,65 @@
 
 namespace vcpkg::Strings::details
 {
-    // first looks up to_string on `T` using ADL; then, if that isn't found,
-    // uses the above definition which returns t.to_string()
-    template<class T, class = std::enable_if_t<!std::is_arithmetic_v<T>>>
-    auto to_printf_arg(const T& t) -> decltype(to_string(t))
-    {
-        return to_string(t);
-    }
-
-    inline const char* to_printf_arg(const std::string& s) { return s.c_str(); }
-
-    inline const char* to_printf_arg(const char* s) { return s; }
-
-    inline const wchar_t* to_printf_arg(const wchar_t* s) { return s; }
-
-    template<class T, class = std::enable_if_t<std::is_arithmetic_v<T>>>
-    T to_printf_arg(T s)
-    {
-        return s;
-    }
-
-    std::string format_internal(const char* fmtstr, ...);
-
-    inline void append_internal(std::string& into, char c) { into += c; }
-    template<class T, class = decltype(std::to_string(std::declval<T>()))>
-    inline void append_internal(std::string& into, T x)
-    {
-        into += std::to_string(x);
-    }
-    inline void append_internal(std::string& into, const char* v) { into.append(v); }
-    inline void append_internal(std::string& into, const std::string& s) { into.append(s); }
-    inline void append_internal(std::string& into, StringView s) { into.append(s.begin(), s.end()); }
-    inline void append_internal(std::string& into, LineInfo ln)
-    {
-        into.append(ln.file_name);
-        into.push_back(':');
-        into += std::to_string(ln.line_number);
-        into.push_back(':');
-    }
-
+    void append_internal(std::string& into, char c);
+    void append_internal(std::string& into, const char* v);
+    void append_internal(std::string& into, const std::string& s);
+    void append_internal(std::string& into, StringView s);
     template<class T, class = decltype(std::declval<const T&>().to_string(std::declval<std::string&>()))>
     void append_internal(std::string& into, const T& t)
     {
         t.to_string(into);
     }
-
     template<class T, class = void, class = decltype(to_string(std::declval<std::string&>(), std::declval<const T&>()))>
     void append_internal(std::string& into, const T& t)
     {
         to_string(into, t);
     }
+
+    static constexpr struct IdentityTransformer
+    {
+        template<class T>
+        T&& operator()(T&& t) const noexcept
+        {
+            return static_cast<T&&>(t);
+        }
+    } identity_transformer;
 }
 
 namespace vcpkg::Strings
 {
-    constexpr struct
+    template<class... Args>
+    std::string& append(std::string& into, const Args&... args)
     {
-        char operator()(char c) const noexcept { return (c < 'A' || c > 'Z') ? c : c - 'A' + 'a'; }
-    } tolower_char;
-
-    constexpr struct
-    {
-        bool operator()(char a, char b) const noexcept { return tolower_char(a) == tolower_char(b); }
-    } icase_eq;
-
-    template<class Arg>
-    std::string& append(std::string& into, const Arg& a)
-    {
-        details::append_internal(into, a);
+        (void)((details::append_internal(into, args), 0) || ... || 0);
         return into;
-    }
-    template<class Arg, class... Args>
-    std::string& append(std::string& into, const Arg& a, const Args&... args)
-    {
-        append(into, a);
-        return append(into, args...);
     }
 
     template<class... Args>
     [[nodiscard]] std::string concat(const Args&... args)
     {
-        std::string ret;
-        append(ret, args...);
-        return ret;
+        std::string into;
+        (void)((details::append_internal(into, args), 0) || ... || 0);
+        return into;
     }
 
     template<class... Args>
-    [[nodiscard]] std::string concat(std::string&& first, const Args&... args)
+    [[nodiscard]] std::string concat(std::string&& into, const Args&... args)
     {
-        append(first, args...);
-        return std::move(first);
+        (void)((details::append_internal(into, args), 0) || ... || 0);
+        return std::move(into);
     }
 
     template<class... Args, class = void>
-    std::string concat_or_view(const Args&... args)
+    [[nodiscard]] std::string concat_or_view(Args&&... args)
     {
-        return Strings::concat(args...);
+        return Strings::concat(static_cast<Args&&>(args)...);
     }
 
     template<class T, class = std::enable_if_t<std::is_convertible_v<T, StringView>>>
-    StringView concat_or_view(const T& v)
+    [[nodiscard]] StringView concat_or_view(const T& v)
     {
         return v;
-    }
-
-    template<class... Args>
-    std::string format(const char* fmtstr, const Args&... args)
-    {
-        using vcpkg::Strings::details::to_printf_arg;
-        return details::format_internal(fmtstr, to_printf_arg(to_printf_arg(args))...);
     }
 
 #if defined(_WIN32)
@@ -134,16 +86,14 @@ namespace vcpkg::Strings
     std::string to_utf8(const std::wstring& ws);
 #endif
 
-    std::string escape_string(std::string&& s, char char_to_escape, char escape_char);
-
     const char* case_insensitive_ascii_search(StringView s, StringView pattern);
     bool case_insensitive_ascii_contains(StringView s, StringView pattern);
     bool case_insensitive_ascii_equals(StringView left, StringView right);
 
-    void ascii_to_lowercase(char* first, char* last);
-    std::string ascii_to_lowercase(std::string&& s);
-
-    std::string ascii_to_uppercase(std::string&& s);
+    void inplace_ascii_to_lowercase(char* first, char* last);
+    void inplace_ascii_to_lowercase(std::string& s);
+    [[nodiscard]] std::string ascii_to_lowercase(std::string s);
+    [[nodiscard]] std::string ascii_to_uppercase(std::string s);
 
     bool case_insensitive_ascii_starts_with(StringView s, StringView pattern);
     bool case_insensitive_ascii_ends_with(StringView s, StringView pattern);
@@ -151,48 +101,43 @@ namespace vcpkg::Strings
     bool starts_with(StringView s, StringView pattern);
 
     template<class InputIterator, class Transformer>
-    std::string join(StringLiteral delimiter, InputIterator begin, InputIterator end, Transformer transformer)
+    [[nodiscard]] std::string join(StringLiteral delimiter,
+                                   InputIterator first,
+                                   InputIterator last,
+                                   Transformer transformer)
     {
-        if (begin == end)
-        {
-            return std::string();
-        }
-
         std::string output;
-        append(output, transformer(*begin));
-        for (auto it = std::next(begin); it != end; ++it)
+        if (first != last)
         {
-            output.append(delimiter.data(), delimiter.size());
-            append(output, transformer(*it));
+            Strings::append(output, transformer(*first));
+            for (++first; first != last; ++first)
+            {
+                output.append(delimiter.data(), delimiter.size());
+                Strings::append(output, transformer(*first));
+            }
         }
 
         return output;
     }
 
     template<class Container, class Transformer>
-    std::string join(StringLiteral delimiter, const Container& v, Transformer transformer)
+    [[nodiscard]] std::string join(StringLiteral delimiter, const Container& v, Transformer transformer)
     {
-        const auto begin = std::begin(v);
-        const auto end = std::end(v);
-
-        return join(delimiter, begin, end, transformer);
+        return join(delimiter, std::begin(v), std::end(v), transformer);
     }
 
     template<class InputIterator>
-    std::string join(StringLiteral delimiter, InputIterator begin, InputIterator end)
+    [[nodiscard]] std::string join(StringLiteral delimiter, InputIterator first, InputIterator last)
     {
-        using Element = decltype(*begin);
-        return join(delimiter, begin, end, [](const Element& x) -> const Element& { return x; });
+        return join(delimiter, first, last, details::identity_transformer);
     }
 
     template<class Container>
-    std::string join(StringLiteral delimiter, const Container& v)
+    [[nodiscard]] std::string join(StringLiteral delimiter, const Container& v)
     {
-        using Element = decltype(*std::begin(v));
-        return join(delimiter, v, [](const Element& x) -> const Element& { return x; });
+        return join(delimiter, std::begin(v), std::end(v), details::identity_transformer);
     }
 
-    [[nodiscard]] std::string replace_all(const char* s, StringView search, StringView rep);
     [[nodiscard]] std::string replace_all(StringView s, StringView search, StringView rep);
     [[nodiscard]] std::string replace_all(std::string&& s, StringView search, StringView rep);
 
@@ -200,28 +145,40 @@ namespace vcpkg::Strings
 
     void inplace_replace_all(std::string& s, char search, char rep) noexcept;
 
-    std::string trim(std::string&& s);
+    void inplace_trim(std::string& s);
 
-    StringView trim(StringView sv);
+    [[nodiscard]] StringView trim(StringView sv);
 
-    void trim_all_and_remove_whitespace_strings(std::vector<std::string>* strings);
+    void inplace_trim_all_and_remove_whitespace_strings(std::vector<std::string>& strings);
 
-    std::vector<std::string> split(StringView s, const char delimiter);
+    [[nodiscard]] std::vector<std::string> split(StringView s, const char delimiter);
 
-    std::vector<std::string> split_paths(StringView s);
+    [[nodiscard]] std::vector<std::string> split_keep_empty(StringView s, const char delimiter);
+
+    [[nodiscard]] std::vector<std::string> split_paths(StringView s);
 
     const char* find_first_of(StringView searched, StringView candidates);
 
-    std::vector<StringView> find_all_enclosed(StringView input, StringView left_delim, StringView right_delim);
+    [[nodiscard]] std::vector<StringView> find_all_enclosed(StringView input,
+                                                            StringView left_delim,
+                                                            StringView right_delim);
 
-    StringView find_exactly_one_enclosed(StringView input, StringView left_tag, StringView right_tag);
+    [[nodiscard]] StringView find_exactly_one_enclosed(StringView input, StringView left_tag, StringView right_tag);
 
-    Optional<StringView> find_at_most_one_enclosed(StringView input, StringView left_tag, StringView right_tag);
+    [[nodiscard]] Optional<StringView> find_at_most_one_enclosed(StringView input,
+                                                                 StringView left_tag,
+                                                                 StringView right_tag);
 
-    bool equals(StringView a, StringView b);
+    bool contains_any_ignoring_c_comments(const std::string& source, View<StringView> to_find);
+
+    bool contains_any_ignoring_hash_comments(StringView source, View<StringView> to_find);
+
+    bool contains_any(StringView source, View<StringView> to_find);
+
+    [[nodiscard]] bool equals(StringView a, StringView b);
 
     template<class T>
-    std::string serialize(const T& t)
+    [[nodiscard]] std::string serialize(const T& t)
     {
         std::string ret;
         serialize(t, ret);
@@ -235,9 +192,15 @@ namespace vcpkg::Strings
     template<>
     Optional<int> strto<int>(StringView);
     template<>
+    Optional<unsigned int> strto<unsigned int>(StringView);
+    template<>
     Optional<long> strto<long>(StringView);
     template<>
+    Optional<unsigned long> strto<unsigned long>(StringView);
+    template<>
     Optional<long long> strto<long long>(StringView);
+    template<>
+    Optional<unsigned long long> strto<unsigned long long>(StringView);
     template<>
     Optional<double> strto<double>(StringView);
 
@@ -246,8 +209,11 @@ namespace vcpkg::Strings
     bool contains(StringView haystack, StringView needle);
     bool contains(StringView haystack, char needle);
 
-    // base 32 encoding, following IETC RFC 4648
-    std::string b32_encode(std::uint64_t x) noexcept;
+    // base 32 encoding, following IETF RFC 4648
+    [[nodiscard]] std::string b32_encode(std::uint64_t x) noexcept;
+
+    // percent encoding, following IETF RFC 3986
+    [[nodiscard]] std::string percent_encode(StringView sv) noexcept;
 
     // Implements https://en.wikipedia.org/wiki/Levenshtein_distance with a "give-up" clause for large strings
     // Guarantees 0 for equal strings and nonzero for inequal strings.

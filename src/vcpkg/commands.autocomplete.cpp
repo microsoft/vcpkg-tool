@@ -1,16 +1,22 @@
-#include <vcpkg/base/system.print.h>
+#include <vcpkg/base/lineinfo.h>
+#include <vcpkg/base/messages.h>
+#include <vcpkg/base/strings.h>
+#include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.autocomplete.h>
 #include <vcpkg/commands.edit.h>
+#include <vcpkg/commands.install.h>
 #include <vcpkg/commands.integrate.h>
+#include <vcpkg/commands.remove.h>
 #include <vcpkg/commands.upgrade.h>
-#include <vcpkg/install.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/paragraphs.h>
-#include <vcpkg/remove.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
+
+#include <string>
+#include <vector>
 
 namespace vcpkg::Commands::Autocomplete
 {
@@ -26,21 +32,21 @@ namespace vcpkg::Commands::Autocomplete
     static std::vector<std::string> combine_port_with_triplets(StringView port,
                                                                const std::vector<std::string>& triplets)
     {
-        return Util::fmap(triplets,
-                          [&](const std::string& triplet) { return Strings::format("%s:%s", port, triplet); });
+        return Util::fmap(triplets, [&](const std::string& triplet) { return fmt::format("{}:{}", port, triplet); });
     }
 
     void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
         g_should_send_metrics = false;
 
+        auto&& command_arguments = args.get_forwardable_arguments();
         // Handles vcpkg <command>
-        if (args.command_arguments.size() <= 1)
+        if (command_arguments.size() <= 1)
         {
             StringView requested_command = "";
-            if (args.command_arguments.size() == 1)
+            if (command_arguments.size() == 1)
             {
-                requested_command = args.command_arguments[0];
+                requested_command = command_arguments[0];
             }
 
             // First try public commands
@@ -87,13 +93,13 @@ namespace vcpkg::Commands::Autocomplete
             output_sorted_results_and_exit(VCPKG_LINE_INFO, std::move(private_commands));
         }
 
-        // args.command_arguments.size() >= 2
-        const auto& command_name = args.command_arguments[0];
+        // command_arguments.size() >= 2
+        const auto& command_name = command_arguments[0];
 
         // Handles vcpkg install package:<triplet>
         if (command_name == "install")
         {
-            StringView last_arg = args.command_arguments.back();
+            StringView last_arg = command_arguments.back();
             auto colon = Util::find(last_arg, ':');
             if (colon != last_arg.end())
             {
@@ -136,7 +142,7 @@ namespace vcpkg::Commands::Autocomplete
         {
             if (command_name == command.name)
             {
-                StringView prefix = args.command_arguments.back();
+                StringView prefix = command_arguments.back();
                 std::vector<std::string> results;
 
                 const bool is_option = Strings::starts_with(prefix, "-");
@@ -179,10 +185,5 @@ namespace vcpkg::Commands::Autocomplete
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);
-    }
-
-    void AutocompleteCommand::perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const
-    {
-        Autocomplete::perform_and_exit(args, paths);
     }
 }

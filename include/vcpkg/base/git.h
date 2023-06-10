@@ -1,9 +1,13 @@
 #pragma once
 
+#include <vcpkg/base/fwd/git.h>
+
 #include <vcpkg/base/expected.h>
-#include <vcpkg/base/files.h>
+#include <vcpkg/base/path.h>
+#include <vcpkg/base/stringview.h>
 
 #include <set>
+#include <string>
 #include <vector>
 
 namespace vcpkg
@@ -43,7 +47,8 @@ namespace vcpkg
     std::string try_extract_port_name_from_path(StringView path);
 
     // Attempts to parse the git status output returns a parsing error message on failure
-    ExpectedL<std::vector<GitStatusLine>> parse_git_status_output(StringView git_status_output);
+    ExpectedL<std::vector<GitStatusLine>> parse_git_status_output(StringView git_status_output,
+                                                                  StringView git_command_line);
 
     // Run git status on a repository, optionaly a specific subpath can be queried
     ExpectedL<std::vector<GitStatusLine>> git_status(const GitConfig& config, StringView path = "");

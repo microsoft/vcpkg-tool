@@ -2,13 +2,13 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/json.h>
+#include <vcpkg/base/span.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
 #include <vcpkg/base/system.mac.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/uuid.h>
-#include <vcpkg/base/view.h>
 
 #include <vcpkg/commands.h>
 #include <vcpkg/commands.version.h>
@@ -76,10 +76,10 @@ namespace
 
         auto rootblock_ffi = static_cast<VS_FIXEDFILEINFO*>(rootblock);
 
-        return Strings::format("%d.%d.%d",
-                               static_cast<int>(HIWORD(rootblock_ffi->dwProductVersionMS)),
-                               static_cast<int>(LOWORD(rootblock_ffi->dwProductVersionMS)),
-                               static_cast<int>(HIWORD(rootblock_ffi->dwProductVersionLS)));
+        return fmt::format("{}.{}.{}",
+                           static_cast<int>(HIWORD(rootblock_ffi->dwProductVersionMS)),
+                           static_cast<int>(LOWORD(rootblock_ffi->dwProductVersionMS)),
+                           static_cast<int>(HIWORD(rootblock_ffi->dwProductVersionLS)));
 #else
         return "unknown";
 #endif
@@ -127,14 +127,17 @@ namespace vcpkg
     const constexpr std::array<StringMetricEntry, static_cast<size_t>(StringMetric::COUNT)> all_string_metrics{{
         // registryUri:id:version,...
         {StringMetric::AcquiredArtifacts, "acquired_artifacts", plan_example},
-        {StringMetric::BuildError, "build_error", "gsl:x64-windows"},
+        {StringMetric::ActivatedArtifacts, "activated_artifacts", plan_example},
         {StringMetric::CommandArgs, "command_args", "0000000011111111aaaaaaaabbbbbbbbccccccccddddddddeeeeeeeeffffffff"},
         {StringMetric::CommandContext, "command_context", "artifact"},
         {StringMetric::CommandName, "command_name", "z-preregister-telemetry"},
+        {StringMetric::DeploymentKind, "deployment_kind", "Git"},
         {StringMetric::DetectedCiEnvironment, "detected_ci_environment", "Generic"},
         // spec:triplet:version,...
         {StringMetric::InstallPlan_1, "installplan_1", plan_example},
         {StringMetric::ListFile, "listfile", "update to new format"},
+        // hashed list of parent process names ;-separated (parent_process;grandparent_process;...)
+        {StringMetric::ProcessTree, "process_tree", "0000000011111111aaaaaaaabbbbbbbbccccccccddddddddeeeeeeeeffffffff"},
         {StringMetric::RegistriesDefaultRegistryKind, "registries-default-registry-kind", "builtin-files"},
         {StringMetric::RegistriesKindsUsed, "registries-kinds-used", "git,filesystem"},
         {StringMetric::Title, "title", "title"},
@@ -367,6 +370,12 @@ namespace vcpkg
         result.os_version.append(get_os_version_string());
 
         result.session_id = generate_random_UUID();
+
+        std::vector<std::string> process_list;
+        get_parent_process_list(process_list);
+        result.parent_process_list =
+            Strings::join(";", process_list, [](auto&& s) { return Hash::get_string_sha256(s); });
+
         return result;
     }
 
@@ -441,6 +450,9 @@ namespace vcpkg
         {
             measurements.insert_or_replace("elapsed_us", Json::Value::number(submission.elapsed_us));
         }
+
+        properties.insert_or_replace(get_metric_name(StringMetric::ProcessTree, all_string_metrics),
+                                     Json::Value::string(session.parent_process_list));
 
         return Json::stringify(arr);
     }

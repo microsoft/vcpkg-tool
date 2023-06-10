@@ -1,10 +1,9 @@
 #include <vcpkg/base/chrono.h>
-#include <vcpkg/base/system.print.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.contact.h>
-#include <vcpkg/help.h>
+#include <vcpkg/commands.help.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 
@@ -13,11 +12,11 @@ namespace vcpkg::Commands::Contact
     static constexpr StringLiteral OPTION_SURVEY = "survey";
 
     static constexpr std::array<CommandSwitch, 1> SWITCHES = {{
-        {OPTION_SURVEY, "Launch default browser to the current vcpkg survey"},
+        {OPTION_SURVEY, []() { return msg::format(msgCmdContactOptSurvey); }},
     }};
 
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string("contact"),
+        [] { return create_example_string("contact"); },
         0,
         0,
         {SWITCHES, {}},
@@ -52,10 +51,5 @@ namespace vcpkg::Commands::Contact
             msg::println(msgEmailVcpkgTeam, msg::url = "vcpkg@microsoft.com");
         }
         Checks::exit_success(VCPKG_LINE_INFO);
-    }
-
-    void ContactCommand::perform_and_exit(const VcpkgCmdArguments& args, Filesystem& fs) const
-    {
-        Contact::perform_and_exit(args, fs);
     }
 }

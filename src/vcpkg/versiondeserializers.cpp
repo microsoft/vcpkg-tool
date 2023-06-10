@@ -1,3 +1,4 @@
+#include <vcpkg/base/strings.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/versiondeserializers.h>
@@ -15,13 +16,14 @@ namespace
 
     struct VersionDeserializer final : Json::IDeserializer<std::pair<std::string, Optional<int>>>
     {
-        VersionDeserializer(StringLiteral type, bool allow_hash_portversion)
+        VersionDeserializer(LocalizedString type, bool allow_hash_portversion)
             : m_type(type), m_allow_hash_portversion(allow_hash_portversion)
         {
         }
-        StringView type_name() const override { return m_type; }
 
-        Optional<std::pair<std::string, Optional<int>>> visit_string(Json::Reader& r, StringView sv) override
+        LocalizedString type_name() const override { return m_type; }
+
+        Optional<std::pair<std::string, Optional<int>>> visit_string(Json::Reader& r, StringView sv) const override
         {
             auto it = std::find(sv.begin(), sv.end(), '#');
             StringView pv(it, sv.end());
@@ -30,7 +32,7 @@ namespace
             {
                 if (pv.size() == 1)
                 {
-                    r.add_generic_error(type_name(), "'#' in version text must be followed by a port version");
+                    r.add_generic_error(type_name(), msg::format(msgVersionSharpMustBeFollowedByPortVersion));
                 }
                 else if (pv.size() > 1)
                 {
@@ -38,7 +40,7 @@ namespace
                     if (ret.second.value_or(-1) < 0)
                     {
                         r.add_generic_error(type_name(),
-                                            "port versions after '#' in version text must be non-negative integers");
+                                            msg::format(msgVersionSharpMustBeFollowedByPortVersionNonNegativeInteger));
                     }
                 }
             }
@@ -46,33 +48,32 @@ namespace
             {
                 if (pv.size() == 1)
                 {
-                    r.add_generic_error(type_name(), "invalid character '#' in version text");
+                    r.add_generic_error(type_name(), msg::format(msgInvalidSharpInVersion));
                 }
                 else if (pv.size() > 1)
                 {
                     r.add_generic_error(type_name(),
-                                        "invalid character '#' in version text. Did you mean \"port-version\": ",
-                                        pv.substr(1),
-                                        "?");
+                                        msg::format(msgInvalidSharpInVersionDidYouMean, msg::value = pv.substr(1)));
                 }
             }
             return ret;
         }
-        StringLiteral m_type;
+
+        LocalizedString m_type;
         bool m_allow_hash_portversion;
     };
 
     struct GenericVersionDeserializer : Json::IDeserializer<Version>
     {
         GenericVersionDeserializer(StringLiteral version_field) : m_version_field(version_field) { }
-        StringView type_name() const override { return "a version object"; }
+        LocalizedString type_name() const override { return msg::format(msgAVersionObject); }
 
-        Optional<Version> visit_object(Json::Reader& r, const Json::Object& obj) override
+        Optional<Version> visit_object(Json::Reader& r, const Json::Object& obj) const override
         {
             std::pair<std::string, Optional<int>> version;
             int port_version = 0;
 
-            static VersionDeserializer version_deserializer{"version", false};
+            static const VersionDeserializer version_deserializer{msg::format(msgAVersionOfAnyType), false};
 
             r.required_object_field(type_name(), obj, m_version_field, version, version_deserializer);
             r.optional_object_field(obj, PORT_VERSION, port_version, Json::NaturalNumberDeserializer::instance);
@@ -85,7 +86,7 @@ namespace
 
 namespace vcpkg
 {
-    Optional<SchemedVersion> visit_optional_schemed_deserializer(StringView parent_type,
+    Optional<SchemedVersion> visit_optional_schemed_deserializer(const LocalizedString& parent_type,
                                                                  Json::Reader& r,
                                                                  const Json::Object& obj,
                                                                  bool allow_hash_portversion)
@@ -93,10 +94,10 @@ namespace vcpkg
         VersionScheme version_scheme = VersionScheme::String;
         std::pair<std::string, Optional<int>> version;
 
-        VersionDeserializer version_exact_deserializer{"an exact version string", allow_hash_portversion};
-        VersionDeserializer version_relaxed_deserializer{"a relaxed version string", allow_hash_portversion};
-        VersionDeserializer version_semver_deserializer{"a semantic version string", allow_hash_portversion};
-        VersionDeserializer version_date_deserializer{"a date version string", allow_hash_portversion};
+        VersionDeserializer version_exact_deserializer{msg::format(msgAnExactVersionString), allow_hash_portversion};
+        VersionDeserializer version_relaxed_deserializer{msg::format(msgARelaxedVersionString), allow_hash_portversion};
+        VersionDeserializer version_semver_deserializer{msg::format(msgASemanticVersionString), allow_hash_portversion};
+        VersionDeserializer version_date_deserializer{msg::format(msgADateVersionString), allow_hash_portversion};
 
         bool has_exact = r.optional_object_field(obj, VERSION_STRING, version, version_exact_deserializer);
         bool has_relax = r.optional_object_field(obj, VERSION_RELAXED, version, version_relaxed_deserializer);
@@ -109,7 +110,7 @@ namespace vcpkg
 
         if (has_port_version && version.second)
         {
-            r.add_generic_error(parent_type, "\"port_version\" cannot be combined with an embedded '#' in the version");
+            r.add_generic_error(parent_type, msg::format(msgPortVersionMultipleSpecification));
         }
 
         if (num_versions == 0)
@@ -120,12 +121,12 @@ namespace vcpkg
             }
             else
             {
-                r.add_generic_error(parent_type, "unexpected \"port_version\" without a versioning field");
+                r.add_generic_error(parent_type, msg::format(msgUnexpectedPortversion));
             }
         }
         else if (num_versions > 1)
         {
-            r.add_generic_error(parent_type, "expected only one versioning field");
+            r.add_generic_error(parent_type, msg::format(msgExpectedOneVersioningField));
         }
         else
         {
@@ -139,7 +140,7 @@ namespace vcpkg
                 auto v = DotVersion::try_parse_relaxed(version.first);
                 if (!v)
                 {
-                    r.add_generic_error(parent_type, "'version' text was not a relaxed version:\n", v.error());
+                    r.add_generic_error(parent_type, std::move(v).error());
                 }
             }
             else if (has_semver)
@@ -148,7 +149,7 @@ namespace vcpkg
                 auto v = DotVersion::try_parse_semver(version.first);
                 if (!v)
                 {
-                    r.add_generic_error(parent_type, "'version-semver' text was not a semantic version:\n", v.error());
+                    r.add_generic_error(parent_type, std::move(v).error());
                 }
             }
             else if (has_date)
@@ -157,7 +158,7 @@ namespace vcpkg
                 auto v = DateVersion::try_parse(version.first);
                 if (!v)
                 {
-                    r.add_generic_error(parent_type, "'version-date' text was not a date version:\n", v.error());
+                    r.add_generic_error(parent_type, std::move(v).error());
                 }
             }
             else
@@ -169,7 +170,7 @@ namespace vcpkg
         return SchemedVersion{version_scheme, Version{std::move(version.first), port_version}};
     }
 
-    SchemedVersion visit_required_schemed_deserializer(StringView parent_type,
+    SchemedVersion visit_required_schemed_deserializer(const LocalizedString& parent_type,
                                                        Json::Reader& r,
                                                        const Json::Object& obj,
                                                        bool allow_hash_portversion)
@@ -181,22 +182,18 @@ namespace vcpkg
         }
         else
         {
-            r.add_generic_error(parent_type, "expected a versioning field (example: ", VERSION_STRING, ")");
+            r.add_generic_error(parent_type, msg::format(msgVersionMissing));
             return {};
         }
     }
 
     View<StringView> schemed_deserializer_fields()
     {
-        static const StringView t[] = {VERSION_RELAXED, VERSION_SEMVER, VERSION_STRING, VERSION_DATE, PORT_VERSION};
+        static constexpr StringView t[] = {VERSION_RELAXED, VERSION_SEMVER, VERSION_STRING, VERSION_DATE, PORT_VERSION};
         return t;
     }
 
-    void serialize_schemed_version(Json::Object& out_obj,
-                                   VersionScheme scheme,
-                                   StringView version,
-                                   int port_version,
-                                   bool always_emit_port_version)
+    void serialize_schemed_version(Json::Object& out_obj, VersionScheme scheme, StringView version, int port_version)
     {
         auto version_field = [](VersionScheme version_scheme) {
             switch (version_scheme)
@@ -211,21 +208,28 @@ namespace vcpkg
 
         out_obj.insert(version_field(scheme), Json::Value::string(version));
 
-        if (port_version != 0 || always_emit_port_version)
+        if (port_version != 0)
         {
             out_obj.insert(PORT_VERSION, Json::Value::integer(port_version));
         }
     }
 
-    Json::IDeserializer<Version>& get_version_deserializer_instance()
+    LocalizedString VersionConstraintStringDeserializer::type_name() const
     {
-        static GenericVersionDeserializer deserializer(VERSION_STRING);
+        return msg::format(msgAVersionConstraint);
+    }
+
+    const VersionConstraintStringDeserializer VersionConstraintStringDeserializer::instance;
+
+    const Json::IDeserializer<Version>& get_version_deserializer_instance()
+    {
+        static const GenericVersionDeserializer deserializer(VERSION_STRING);
         return deserializer;
     }
 
-    Json::IDeserializer<Version>& get_versiontag_deserializer_instance()
+    const Json::IDeserializer<Version>& get_versiontag_deserializer_instance()
     {
-        static GenericVersionDeserializer deserializer(BASELINE);
+        static const GenericVersionDeserializer deserializer(BASELINE);
         return deserializer;
     }
 }

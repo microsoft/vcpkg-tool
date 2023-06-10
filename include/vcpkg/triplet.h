@@ -1,20 +1,18 @@
 #pragma once
 
 #include <vcpkg/base/fwd/format.h>
+#include <vcpkg/base/fwd/system.h>
 
 #include <vcpkg/fwd/triplet.h>
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/stringview.h>
-#include <vcpkg/base/system.h>
 
 #include <string>
 
 namespace vcpkg
 {
-    struct TripletInstance;
-
     struct Triplet
     {
     public:
@@ -45,6 +43,7 @@ namespace vcpkg
 
     Triplet default_triplet(const VcpkgCmdArguments& args);
     Triplet default_host_triplet(const VcpkgCmdArguments& args);
+    void print_default_triplet_warning(const VcpkgCmdArguments& arg);
 }
 
 VCPKG_FORMAT_AS(vcpkg::Triplet, vcpkg::StringView);

@@ -1,10 +1,28 @@
 #include <vcpkg/base/checks.h>
+#include <vcpkg/base/format.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/packagespec.h>
 #include <vcpkg/paragraphparser.h>
+
+namespace
+{
+    using namespace vcpkg;
+    Triplet resolve_triplet(const Optional<std::string>& specified_triplet,
+                            Triplet default_triplet,
+                            bool& default_triplet_used)
+    {
+        if (auto pspecified = specified_triplet.get())
+        {
+            return Triplet::from_canonical_name(*pspecified);
+        }
+
+        default_triplet_used = true;
+        return default_triplet;
+    }
+} // unnamed namespace
 
 namespace vcpkg
 {
@@ -17,32 +35,17 @@ namespace vcpkg
     void FeatureSpec::to_string(std::string& out) const
     {
         if (feature().empty()) return spec().to_string(out);
-        Strings::append(out, port(), '[', feature(), "]:", triplet());
+        fmt::format_to(std::back_inserter(out), "{}[{}]:{}", port(), feature(), triplet());
     }
 
-    void FullPackageSpec::expand_fspecs_to(std::vector<FeatureSpec>& out) const
+    std::string format_name_only_feature_spec(StringView package_name, StringView feature_name)
     {
-        for (auto&& feature : features)
-        {
-            out.emplace_back(package_spec, feature);
-        }
+        return fmt::format("{}[{}]", package_name, feature_name);
     }
 
-    const std::string& PackageSpec::name() const { return this->m_name; }
+    bool InternalFeatureSet::empty_or_only_core() const { return empty() || (size() == 1 && *begin() == "core"); }
 
-    Triplet PackageSpec::triplet() const { return this->m_triplet; }
-
-    std::string PackageSpec::dir() const { return Strings::format("%s_%s", this->m_name, this->m_triplet); }
-
-    std::string PackageSpec::to_string() const { return Strings::format("%s:%s", this->name(), this->triplet()); }
-    void PackageSpec::to_string(std::string& s) const { Strings::append(s, this->name(), ':', this->triplet()); }
-
-    bool operator==(const PackageSpec& left, const PackageSpec& right)
-    {
-        return left.name() == right.name() && left.triplet() == right.triplet();
-    }
-
-    static InternalFeatureSet normalize_feature_list(View<std::string> fs, ImplicitDefault id)
+    InternalFeatureSet internalize_feature_list(View<std::string> fs, ImplicitDefault id)
     {
         InternalFeatureSet ret;
         bool core = false;
@@ -66,39 +69,72 @@ namespace vcpkg
         return ret;
     }
 
-    ExpectedS<FullPackageSpec> ParsedQualifiedSpecifier::to_full_spec(Triplet default_triplet, ImplicitDefault id) const
+    void FullPackageSpec::expand_fspecs_to(std::vector<FeatureSpec>& out) const
     {
-        if (platform)
+        for (auto&& feature : features)
         {
-            return {msg::format(msg::msgErrorMessage).append(msgIllegalPlatformSpec).data(), expected_right_tag};
+            out.emplace_back(package_spec, feature);
         }
-
-        const Triplet t = triplet ? Triplet::from_canonical_name(*triplet.get()) : default_triplet;
-        const View<std::string> fs = !features.get() ? View<std::string>{} : *features.get();
-        return FullPackageSpec{{name, t}, normalize_feature_list(fs, id)};
     }
 
-    ExpectedS<PackageSpec> ParsedQualifiedSpecifier::to_package_spec(Triplet default_triplet) const
+    const std::string& PackageSpec::name() const { return this->m_name; }
+
+    Triplet PackageSpec::triplet() const { return this->m_triplet; }
+
+    std::string PackageSpec::dir() const { return fmt::format("{}_{}", this->m_name, this->m_triplet); }
+
+    std::string PackageSpec::to_string() const { return fmt::format("{}:{}", this->name(), this->triplet()); }
+    void PackageSpec::to_string(std::string& s) const
+    {
+        fmt::format_to(std::back_inserter(s), "{}:{}", this->name(), this->triplet());
+    }
+
+    bool operator==(const PackageSpec& left, const PackageSpec& right)
+    {
+        return left.name() == right.name() && left.triplet() == right.triplet();
+    }
+
+    ExpectedL<FullPackageSpec> ParsedQualifiedSpecifier::to_full_spec(Triplet default_triplet,
+                                                                      bool& default_triplet_used,
+                                                                      ImplicitDefault id) const
     {
         if (platform)
         {
-            return {msg::format(msg::msgErrorMessage).append(msgIllegalPlatformSpec).data(), expected_right_tag};
+            return msg::format_error(msgIllegalPlatformSpec);
         }
+
+        View<std::string> fs{};
+        if (auto pfeatures = features.get())
+        {
+            fs = *pfeatures;
+        }
+
+        return FullPackageSpec{{name, resolve_triplet(triplet, default_triplet, default_triplet_used)},
+                               internalize_feature_list(fs, id)};
+    }
+
+    ExpectedL<PackageSpec> ParsedQualifiedSpecifier::to_package_spec(Triplet default_triplet,
+                                                                     bool& default_triplet_used) const
+    {
+        if (platform)
+        {
+            return msg::format_error(msgIllegalPlatformSpec);
+        }
+
         if (features)
         {
-            return {msg::format(msg::msgErrorMessage).append(msgIllegalFeatures).data(), expected_right_tag};
+            return msg::format_error(msgIllegalFeatures);
         }
 
-        const Triplet t = triplet ? Triplet::from_canonical_name(*triplet.get()) : default_triplet;
-        return PackageSpec{name, t};
+        return PackageSpec{name, resolve_triplet(triplet, default_triplet, default_triplet_used)};
     }
 
-    ExpectedS<ParsedQualifiedSpecifier> parse_qualified_specifier(StringView input)
+    ExpectedL<ParsedQualifiedSpecifier> parse_qualified_specifier(StringView input)
     {
         auto parser = ParserBase(input, "<unknown>");
         auto maybe_pqs = parse_qualified_specifier(parser);
-        if (!parser.at_eof()) parser.add_error("expected eof");
-        if (auto e = parser.get_error()) return e->to_string();
+        if (!parser.at_eof()) parser.add_error(msg::format(msgExpectedEof));
+        if (auto e = parser.get_error()) return LocalizedString::from_raw(e->to_string());
         return std::move(maybe_pqs).value_or_exit(VCPKG_LINE_INFO);
     }
 
@@ -111,19 +147,19 @@ namespace vcpkg
         const bool has_underscore = std::find(ret.begin(), ret.end(), '_') != ret.end() && ret != "vwebp_sdl";
         if (has_underscore || ParserBase::is_upper_alpha(ch))
         {
-            parser.add_error("invalid character in feature name (must be lowercase, digits, '-')");
+            parser.add_error(msg::format(msgInvalidCharacterInFeatureName));
             return nullopt;
         }
 
         if (ret == "default")
         {
-            parser.add_error("'default' is a reserved feature name");
+            parser.add_error(msg::format(msgInvalidDefaultFeatureName));
             return nullopt;
         }
 
         if (ret.empty())
         {
-            parser.add_error("expected feature name (must be lowercase, digits, '-')");
+            parser.add_error(msg::format(msgExpectedFeatureName));
             return nullopt;
         }
         return ret;
@@ -134,12 +170,12 @@ namespace vcpkg
         auto ch = parser.cur();
         if (ParserBase::is_upper_alpha(ch) || ch == '_')
         {
-            parser.add_error("invalid character in package name (must be lowercase, digits, '-')");
+            parser.add_error(msg::format(msgInvalidCharacterInPackageName));
             return nullopt;
         }
         if (ret.empty())
         {
-            parser.add_error("expected package name (must be lowercase, digits, '-')");
+            parser.add_error(msg::format(msgExpectedPortName));
             return nullopt;
         }
         return ret;
@@ -188,9 +224,14 @@ namespace vcpkg
                 else
                 {
                     if (skipped_space.size() > 0 || ParserBase::is_lineend(parser.cur()))
-                        parser.add_error("expected ',' or ']' in feature list");
+                    {
+                        parser.add_error(msg::format(msgExpectedFeatureListTerminal));
+                    }
                     else
-                        parser.add_error("invalid character in feature name (must be lowercase, digits, '-', or '*')");
+                    {
+                        parser.add_error(msg::format(msgInvalidCharacterInFeatureList));
+                    }
+
                     return nullopt;
                 }
             } while (true);
@@ -202,7 +243,7 @@ namespace vcpkg
             ret.triplet = parser.match_while(ParserBase::is_package_name_char).to_string();
             if (ret.triplet.get()->empty())
             {
-                parser.add_error("expected triplet name (must be lowercase, digits, '-')");
+                parser.add_error(msg::format(msgExpectedTripletName));
                 return nullopt;
             }
         }
@@ -220,7 +261,7 @@ namespace vcpkg
             }
             if (depth > 0)
             {
-                parser.add_error("unmatched open braces in platform specifier", loc);
+                parser.add_error(msg::format(msgMissingClosingParen), loc);
                 return nullopt;
             }
             platform_string.append((++loc.it).pointer_to_current(), parser.it().pointer_to_current());
@@ -232,8 +273,9 @@ namespace vcpkg
             }
             else
             {
-                parser.add_error(platform_opt.error(), loc);
+                parser.add_error(std::move(platform_opt).error(), loc);
             }
+
             parser.next();
         }
         // This makes the behavior of the parser more consistent -- otherwise, it will skip tabs and spaces only if
@@ -241,52 +283,4 @@ namespace vcpkg
         parser.skip_tabs_spaces();
         return ret;
     }
-
-    bool operator==(const DependencyConstraint& lhs, const DependencyConstraint& rhs)
-    {
-        if (lhs.type != rhs.type) return false;
-        if (lhs.value != rhs.value) return false;
-        return lhs.port_version == rhs.port_version;
-    }
-
-    Optional<Version> DependencyConstraint::try_get_minimum_version() const
-    {
-        if (type == VersionConstraintKind::None)
-        {
-            return nullopt;
-        }
-
-        return Version{
-            value,
-            port_version,
-        };
-    }
-
-    FullPackageSpec Dependency::to_full_spec(Triplet target, Triplet host_triplet, ImplicitDefault id) const
-    {
-        return FullPackageSpec{{name, host ? host_triplet : target}, normalize_feature_list(features, id)};
-    }
-
-    bool operator==(const Dependency& lhs, const Dependency& rhs)
-    {
-        if (lhs.name != rhs.name) return false;
-        if (lhs.features != rhs.features) return false;
-        if (!structurally_equal(lhs.platform, rhs.platform)) return false;
-        if (lhs.extra_info != rhs.extra_info) return false;
-        if (lhs.constraint != rhs.constraint) return false;
-        if (lhs.host != rhs.host) return false;
-
-        return true;
-    }
-    bool operator!=(const Dependency& lhs, const Dependency& rhs);
-
-    bool operator==(const DependencyOverride& lhs, const DependencyOverride& rhs)
-    {
-        if (lhs.version_scheme != rhs.version_scheme) return false;
-        if (lhs.port_version != rhs.port_version) return false;
-        if (lhs.name != rhs.name) return false;
-        if (lhs.version != rhs.version) return false;
-        return lhs.extra_info == rhs.extra_info;
-    }
-    bool operator!=(const DependencyOverride& lhs, const DependencyOverride& rhs);
 }

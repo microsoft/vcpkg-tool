@@ -1,15 +1,27 @@
 #pragma once
 
+#include <vcpkg/base/fwd/message_sinks.h>
+
 #include <vcpkg/fwd/configuration.h>
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 
-#include <vcpkg/base/files.h>
 #include <vcpkg/base/json.h>
+#include <vcpkg/base/optional.h>
+#include <vcpkg/base/path.h>
 
 #include <vcpkg/registries.h>
 
 namespace vcpkg
 {
+    /// <summary>
+    /// A registry package pattern (e.g.: boost*) and the in-file location where it was declared.
+    /// </summary>
+    struct PackagePatternDeclaration
+    {
+        std::string pattern;
+        std::string location;
+    };
+
     struct RegistryConfig
     {
         // Missing kind means "null"
@@ -21,6 +33,7 @@ namespace vcpkg
         Optional<std::string> reference;
         Optional<std::string> repo;
         Optional<std::vector<std::string>> packages;
+        Optional<std::vector<PackagePatternDeclaration>> package_declarations;
 
         Json::Value serialize() const;
 
@@ -73,5 +86,17 @@ namespace vcpkg
     };
 
     Json::IDeserializer<Configuration>& get_configuration_deserializer();
+    // Parse configuration from a file containing a valid vcpkg-configuration.json file
+    Optional<Configuration> parse_configuration(StringView contents,
+                                                StringView origin,
+                                                vcpkg::MessageSink& messageSink);
+    // Parse a configuration JSON object
+    Optional<Configuration> parse_configuration(const Json::Object& object,
+                                                StringView origin,
+                                                vcpkg::MessageSink& messageSink);
+
     std::vector<std::string> find_unknown_fields(const Configuration& config);
+
+    // Exposed for testing
+    bool is_package_pattern(StringView sv);
 }

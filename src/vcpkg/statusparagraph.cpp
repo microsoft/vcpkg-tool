@@ -6,7 +6,7 @@ namespace vcpkg
 {
     namespace BinaryParagraphRequiredField
     {
-        static const std::string STATUS = "Status";
+        static constexpr StringLiteral STATUS = "Status";
     }
 
     StatusParagraph::StatusParagraph() noexcept : want(Want::ERROR_STATE), state(InstallState::ERROR_STATE) { }
@@ -95,6 +95,18 @@ namespace vcpkg
 
         return deps;
     }
+
+    InternalFeatureSet InstalledPackageView::feature_list() const
+    {
+        InternalFeatureSet ret;
+        ret.emplace_back("core");
+        for (const auto& f : features)
+        {
+            ret.emplace_back(f->package.feature);
+        }
+        return ret;
+    }
+    Version InstalledPackageView::version() const { return {core->package.version, core->package.port_version}; }
 
     std::vector<PackageSpec> InstalledPackageView::dependencies() const
     {

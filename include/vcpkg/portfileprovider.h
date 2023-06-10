@@ -1,12 +1,11 @@
 #pragma once
 
 #include <vcpkg/fwd/portfileprovider.h>
-#include <vcpkg/fwd/vcpkgpaths.h>
+#include <vcpkg/fwd/registries.h>
 
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/util.h>
 
-#include <vcpkg/registries.h>
 #include <vcpkg/sourceparagraph.h>
 #include <vcpkg/versions.h>
 
@@ -15,7 +14,7 @@ namespace vcpkg
     struct PortFileProvider
     {
         virtual ~PortFileProvider() = default;
-        virtual ExpectedS<const SourceControlFileAndLocation&> get_control_file(const std::string& src_name) const = 0;
+        virtual ExpectedL<const SourceControlFileAndLocation&> get_control_file(const std::string& src_name) const = 0;
         virtual std::vector<const SourceControlFileAndLocation*> load_all_control_files() const = 0;
     };
 
@@ -24,7 +23,7 @@ namespace vcpkg
         explicit MapPortFileProvider(const std::unordered_map<std::string, SourceControlFileAndLocation>& map);
         MapPortFileProvider(const MapPortFileProvider&) = delete;
         MapPortFileProvider& operator=(const MapPortFileProvider&) = delete;
-        ExpectedS<const SourceControlFileAndLocation&> get_control_file(const std::string& src_name) const override;
+        ExpectedL<const SourceControlFileAndLocation&> get_control_file(const std::string& src_name) const override;
         std::vector<const SourceControlFileAndLocation*> load_all_control_files() const override;
 
     private:
@@ -36,7 +35,7 @@ namespace vcpkg
         virtual View<Version> get_port_versions(StringView port_name) const = 0;
         virtual ~IVersionedPortfileProvider() = default;
 
-        virtual ExpectedS<const SourceControlFileAndLocation&> get_control_file(
+        virtual ExpectedL<const SourceControlFileAndLocation&> get_control_file(
             const VersionSpec& version_spec) const = 0;
         virtual void load_all_control_files(std::map<std::string, const SourceControlFileAndLocation*>& out) const = 0;
     };
@@ -56,8 +55,10 @@ namespace vcpkg
 
     struct PathsPortFileProvider : PortFileProvider
     {
-        explicit PathsPortFileProvider(const vcpkg::VcpkgPaths& paths, std::unique_ptr<IOverlayProvider>&& overlay);
-        ExpectedS<const SourceControlFileAndLocation&> get_control_file(const std::string& src_name) const override;
+        explicit PathsPortFileProvider(const Filesystem& fs,
+                                       const RegistrySet& registry_set,
+                                       std::unique_ptr<IOverlayProvider>&& overlay);
+        ExpectedL<const SourceControlFileAndLocation&> get_control_file(const std::string& src_name) const override;
         std::vector<const SourceControlFileAndLocation*> load_all_control_files() const override;
 
     private:
@@ -66,11 +67,14 @@ namespace vcpkg
         std::unique_ptr<IOverlayProvider> m_overlay;
     };
 
-    std::unique_ptr<IBaselineProvider> make_baseline_provider(const vcpkg::VcpkgPaths& paths);
-    std::unique_ptr<IVersionedPortfileProvider> make_versioned_portfile_provider(const vcpkg::VcpkgPaths& paths);
-    std::unique_ptr<IOverlayProvider> make_overlay_provider(const vcpkg::VcpkgPaths& paths,
+    std::unique_ptr<IBaselineProvider> make_baseline_provider(const RegistrySet& registry_set);
+    std::unique_ptr<IVersionedPortfileProvider> make_versioned_portfile_provider(const Filesystem& fs,
+                                                                                 const RegistrySet& registry_set);
+    std::unique_ptr<IOverlayProvider> make_overlay_provider(const Filesystem& fs,
+                                                            const Path& original_cwd,
                                                             View<std::string> overlay_ports);
-    std::unique_ptr<IOverlayProvider> make_manifest_provider(const vcpkg::VcpkgPaths& paths,
+    std::unique_ptr<IOverlayProvider> make_manifest_provider(const Filesystem& fs,
+                                                             const Path& original_cwd,
                                                              View<std::string> overlay_ports,
                                                              const Path& manifest_path,
                                                              std::unique_ptr<SourceControlFile>&& manifest_scf);

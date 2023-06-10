@@ -1,6 +1,6 @@
 #include <vcpkg/base/checks.h>
 
-#include <vcpkg/install.h>
+#include <vcpkg/commands.install.h>
 #include <vcpkg/installedpaths.h>
 #include <vcpkg/statusparagraphs.h>
 #include <vcpkg/vcpkgpaths.h>
@@ -179,10 +179,12 @@ namespace vcpkg
         {
             iobj.insert("usage", Json::Value::string(std::move(usage.message)));
         }
-        auto owns_files = fs.read_lines(installed.listfile_path(ipv.core->package), VCPKG_LINE_INFO);
+        auto owns_files = fs.read_lines(installed.listfile_path(ipv.core->package)).value_or_exit(VCPKG_LINE_INFO);
         Json::Array owns;
         for (auto&& owns_file : owns_files)
+        {
             owns.push_back(Json::Value::string(std::move(owns_file)));
+        }
 
         iobj.insert("owns", std::move(owns));
         return Json::Value::object(std::move(iobj));

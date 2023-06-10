@@ -1,3 +1,5 @@
+#pragma once
+
 #include <vcpkg/base/fwd/span.h>
 #include <vcpkg/base/fwd/stringview.h>
 

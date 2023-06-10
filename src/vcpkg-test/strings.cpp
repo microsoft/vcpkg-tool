@@ -1,11 +1,13 @@
 #include <catch2/catch.hpp>
 
-#include <vcpkg/base/api_stable_format.h>
+#include <vcpkg/base/api-stable-format.h>
 #include <vcpkg/base/expected.h>
+#include <vcpkg/base/span.h>
 #include <vcpkg/base/strings.h>
 
 #include <stdint.h>
 
+#include <numeric>
 #include <string>
 #include <utility>
 #include <vector>
@@ -34,6 +36,18 @@ TEST_CASE ("b32 encoding", "[strings]")
     }
 }
 
+TEST_CASE ("percent encoding", "[strings]")
+{
+    std::string ascii(127, 0);
+    std::iota(ascii.begin(), ascii.end(), static_cast<char>(1));
+    REQUIRE(vcpkg::Strings::percent_encode(ascii) ==
+            "%01%02%03%04%05%06%07%08%09%0A%0B%0C%0D%0E%0F%10%11%12%13%14%15%16%17%18%19%1A%1B%1C%1D%1E%1F%20%21%22%23%"
+            "24%25%26%27%28%29%2A%2B%2C-.%2F0123456789%3A%3B%3C%3D%3E%3F%40ABCDEFGHIJKLMNOPQRSTUVWXYZ%5B%5C%5D%5E_%"
+            "60abcdefghijklmnopqrstuvwxyz%7B%7C%7D~%7F");
+    // U+1F44D THUMBS UP SIGN and U+1F30F EARTH GLOBE ASIA-AUSTRALIA
+    REQUIRE(vcpkg::Strings::percent_encode("\xF0\x9F\x91\x8d\xf0\x9f\x8c\x8f") == "%F0%9F%91%8D%F0%9F%8C%8F");
+}
+
 TEST_CASE ("split by char", "[strings]")
 {
     using vcpkg::Strings::split;
@@ -55,6 +69,75 @@ TEST_CASE ("find_first_of", "[strings]")
     REQUIRE(find_first_of("abcdefg", "gb") == std::string("bcdefg"));
 }
 
+TEST_CASE ("contains_any_ignoring_c_comments", "[strings]")
+{
+    using vcpkg::Strings::contains_any_ignoring_c_comments;
+    vcpkg::StringView to_find[] = {"abc", "wer"};
+    REQUIRE(contains_any_ignoring_c_comments(R"(abc)", to_find));
+    REQUIRE(contains_any_ignoring_c_comments(R"("abc")", to_find));
+    REQUIRE_FALSE(contains_any_ignoring_c_comments(R"("" //abc)", to_find));
+    REQUIRE_FALSE(contains_any_ignoring_c_comments(R"(/*abc*/ "")", to_find));
+    REQUIRE_FALSE(contains_any_ignoring_c_comments(R"(/**abc*/ "")", to_find));
+    REQUIRE_FALSE(contains_any_ignoring_c_comments(R"(/**abc**/ "")", to_find));
+    REQUIRE_FALSE(contains_any_ignoring_c_comments(R"(/*abc)", to_find));
+    // note that the line end is escaped making the single line comment include the abc
+    REQUIRE_FALSE(contains_any_ignoring_c_comments("// test \\\nabc", to_find));
+    // note that the comment start is in a string literal so it isn't a comment
+    REQUIRE(contains_any_ignoring_c_comments("\"//\" test abc", to_find));
+    // note that the comment is in a raw string literal so it isn't a comment
+    REQUIRE(contains_any_ignoring_c_comments(R"-(R"( // abc )")-", to_find));
+    // found after the raw string literal
+    REQUIRE(contains_any_ignoring_c_comments(R"-(R"( // )" abc)-", to_find));
+    // comment after the raw string literal
+    REQUIRE_FALSE(contains_any_ignoring_c_comments(R"-(R"( // )" // abc)-", to_find));
+    // the above, but with a d_char_sequence for the raw literal
+    REQUIRE(contains_any_ignoring_c_comments(R"-(R"hello( // abc )hello")-", to_find));
+    REQUIRE(contains_any_ignoring_c_comments(R"-(R"hello( // )hello" abc)-", to_find));
+    REQUIRE_FALSE(contains_any_ignoring_c_comments(R"-(R"hello( // )hello" // abc)-", to_find));
+    // the above, but with a d_char_sequence that is a needle
+    REQUIRE(contains_any_ignoring_c_comments(R"-(R"abc( // abc )abc")-", to_find));
+    REQUIRE(contains_any_ignoring_c_comments(R"-(R"abc( // )abc" abc)-", to_find));
+    REQUIRE(contains_any_ignoring_c_comments(R"-(R"abc( // )abc" // abc)-", to_find));
+    // raw literal termination edge cases
+    REQUIRE_FALSE(contains_any_ignoring_c_comments(R"-(R")-", to_find));    // ends input
+    REQUIRE_FALSE(contains_any_ignoring_c_comments(R"-(R"h)-", to_find));   // ends input d_char
+    REQUIRE_FALSE(contains_any_ignoring_c_comments(R"-(R"()-", to_find));   // ends input paren
+    REQUIRE_FALSE(contains_any_ignoring_c_comments(R"-(R"h()-", to_find));  // ends input paren d_char
+    REQUIRE_FALSE(contains_any_ignoring_c_comments(R"-(R"())-", to_find));  // ends input close paren
+    REQUIRE_FALSE(contains_any_ignoring_c_comments(R"-(R"()")-", to_find)); // ends input exactly
+    // raw literal termination edge cases (success)
+    REQUIRE(contains_any_ignoring_c_comments(R"-(abcR")-", to_find));    // ends input
+    REQUIRE(contains_any_ignoring_c_comments(R"-(abcR"h)-", to_find));   // ends input d_char
+    REQUIRE(contains_any_ignoring_c_comments(R"-(abcR"()-", to_find));   // ends input paren
+    REQUIRE(contains_any_ignoring_c_comments(R"-(abcR"h()-", to_find));  // ends input paren d_char
+    REQUIRE(contains_any_ignoring_c_comments(R"-(abcR"())-", to_find));  // ends input close paren
+    REQUIRE(contains_any_ignoring_c_comments(R"-(abcR"()")-", to_find)); // ends input exactly
+
+    REQUIRE(contains_any_ignoring_c_comments(R"-(R"()"abc)-", to_find));
+
+    REQUIRE(contains_any_ignoring_c_comments(R"-(R"hello( hello" // abc )")-", to_find));
+    REQUIRE(contains_any_ignoring_c_comments(R"(R"-( // abc )-")", to_find));
+    REQUIRE_FALSE(contains_any_ignoring_c_comments(R"(R"-( // hello )-" // abc)", to_find));
+    REQUIRE(contains_any_ignoring_c_comments(R"(R"-( /* abc */ )-")", to_find));
+    REQUIRE(contains_any_ignoring_c_comments(R"(R"-()- /* abc */ )-")", to_find));
+    REQUIRE(contains_any_ignoring_c_comments(R"(qwer )", to_find));
+    REQUIRE(contains_any_ignoring_c_comments("\"a\" \"g\" // er \n abc)", to_find));
+}
+
+TEST_CASE ("contains_any_ignoring_hash_comments", "[strings]")
+{
+    using vcpkg::Strings::contains_any_ignoring_hash_comments;
+    vcpkg::StringView to_find[] = {"abc", "wer"};
+    REQUIRE(contains_any_ignoring_hash_comments("abc", to_find));
+    REQUIRE(contains_any_ignoring_hash_comments("wer", to_find));
+    REQUIRE(contains_any_ignoring_hash_comments("wer # test", to_find));
+    REQUIRE(contains_any_ignoring_hash_comments("\n wer # \n test", to_find));
+    REQUIRE_FALSE(contains_any_ignoring_hash_comments("# wer", to_find));
+    REQUIRE_FALSE(contains_any_ignoring_hash_comments("\n# wer", to_find));
+    REQUIRE_FALSE(contains_any_ignoring_hash_comments("\n  # wer\n", to_find));
+    REQUIRE_FALSE(contains_any_ignoring_hash_comments("\n test # wer", to_find));
+}
+
 TEST_CASE ("edit distance", "[strings]")
 {
     using vcpkg::Strings::byte_edit_distance;
@@ -72,7 +155,7 @@ TEST_CASE ("edit distance", "[strings]")
 
 TEST_CASE ("replace_all", "[strings]")
 {
-    REQUIRE(vcpkg::Strings::replace_all("literal", "ter", "x") == "lixal");
+    REQUIRE(vcpkg::Strings::replace_all(vcpkg::StringView("literal"), "ter", "x") == "lixal");
 }
 
 TEST_CASE ("inplace_replace_all", "[strings]")
@@ -149,3 +232,20 @@ TEST_CASE ("api_stable_format(sv,append_f)", "[strings]")
     });
     REQUIRE(*res.get() == "123hello456");
 }
+
+#if defined(_WIN32)
+TEST_CASE ("ascii to utf16", "[utf16]")
+{
+    SECTION ("ASCII to utf16")
+    {
+        auto str = vcpkg::Strings::to_utf16("abc");
+        REQUIRE(str == L"abc");
+    }
+
+    SECTION ("ASCII to utf16 with whitespace")
+    {
+        auto str = vcpkg::Strings::to_utf16("abc -x86-windows");
+        REQUIRE(str == L"abc -x86-windows");
+    }
+}
+#endif

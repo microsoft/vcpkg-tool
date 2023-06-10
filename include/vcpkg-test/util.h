@@ -1,11 +1,18 @@
-#include <vcpkg/base/system_headers.h>
+#pragma once
+
+#include <vcpkg/base/system-headers.h>
 
 #include <catch2/catch.hpp>
 
+#include <vcpkg/base/fwd/files.h>
+
+#include <vcpkg/fwd/tools.h>
+
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/format.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/pragmas.h>
-#include <vcpkg/base/sortedvector.h>
+#include <vcpkg/base/strings.h>
 
 #include <vcpkg/packagespec.h>
 #include <vcpkg/statusparagraph.h>
@@ -29,11 +36,10 @@ namespace Catch
     {
         static std::string convert(vcpkg::FullPackageSpec const& value)
         {
-            return vcpkg::Strings::concat(value.package_spec.name(),
-                                          '[',
-                                          vcpkg::Strings::join(",", value.features),
-                                          "]:",
-                                          value.package_spec.triplet());
+            return fmt::format("{}[{}]:{}",
+                               value.package_spec.name(),
+                               vcpkg::Strings::join(",", value.features),
+                               value.package_spec.triplet());
         }
     };
 
@@ -42,7 +48,7 @@ namespace Catch
     {
         static std::string convert(vcpkg::FeatureSpec const& value)
         {
-            return vcpkg::Strings::concat(value.spec().name(), '[', value.feature(), "]:", value.spec().triplet());
+            return fmt::format("{}[{}]:{}", value.port(), value.feature(), value.triplet());
         }
     };
 
@@ -79,6 +85,21 @@ namespace vcpkg
     {
         return os << "LL" << std::quoted(value.data());
     }
+
+    inline std::ostream& operator<<(std::ostream& os, const Path& value) { return os << value.native(); }
+
+    template<class T>
+    inline auto operator<<(std::ostream& os, const Optional<T>& value) -> decltype(os << *(value.get()))
+    {
+        if (auto v = value.get())
+        {
+            return os << *v;
+        }
+        else
+        {
+            return os << "nullopt";
+        }
+    }
 }
 
 namespace vcpkg::Test
@@ -89,17 +110,8 @@ namespace vcpkg::Test
         const std::vector<std::pair<const char*, const char*>>& features = {},
         const std::vector<const char*>& default_features = {});
 
-    inline auto test_parse_control_file(const std::vector<std::unordered_map<std::string, std::string>>& v)
-    {
-        std::vector<vcpkg::Paragraph> pghs;
-        for (auto&& p : v)
-        {
-            pghs.emplace_back();
-            for (auto&& kv : p)
-                pghs.back().emplace(kv.first, std::make_pair(kv.second, vcpkg::TextRowCol{}));
-        }
-        return vcpkg::SourceControlFile::parse_control_file("", std::move(pghs));
-    }
+    ParseExpected<SourceControlFile> test_parse_control_file(
+        const std::vector<std::unordered_map<std::string, std::string>>& v);
 
     std::unique_ptr<vcpkg::StatusParagraph> make_status_pgh(const char* name,
                                                             const char* depends = "",
@@ -140,18 +152,7 @@ namespace vcpkg::Test
         PackageSpec emplace(vcpkg::SourceControlFileAndLocation&& scfl);
     };
 
-    inline std::vector<FullPackageSpec> parse_test_fspecs(StringView sv, Triplet t = X86_WINDOWS)
-    {
-        std::vector<FullPackageSpec> ret;
-        ParserBase parser(sv, "test");
-        while (!parser.at_eof())
-        {
-            auto opt = parse_qualified_specifier(parser);
-            REQUIRE(opt.has_value());
-            ret.push_back(opt.get()->to_full_spec(t, ImplicitDefault::YES).value_or_exit(VCPKG_LINE_INFO));
-        }
-        return ret;
-    }
+    std::vector<FullPackageSpec> parse_test_fspecs(StringView sv);
 
     template<class R1, class R2>
     void check_ranges(const R1& r1, const R2& r2)
@@ -176,4 +177,12 @@ namespace vcpkg::Test
     void check_json_eq_ordered(const Json::Array& l, const Json::Array& r);
 
     const Path& base_temporary_directory() noexcept;
+
+    Optional<std::string> diff_lines(StringView a, StringView b);
 }
+
+#define REQUIRE_LINES(a, b)                                                                                            \
+    do                                                                                                                 \
+    {                                                                                                                  \
+        if (auto delta = ::vcpkg::Test::diff_lines((a), (b))) FAIL(*delta.get());                                      \
+    } while (0)

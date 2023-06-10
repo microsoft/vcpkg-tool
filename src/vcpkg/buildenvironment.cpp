@@ -1,3 +1,5 @@
+#include <vcpkg/base/fwd/message_sinks.h>
+
 #include <vcpkg/buildenvironment.h>
 #include <vcpkg/installedpaths.h>
 #include <vcpkg/tools.h>

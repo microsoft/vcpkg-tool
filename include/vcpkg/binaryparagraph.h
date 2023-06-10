@@ -16,11 +16,8 @@ namespace vcpkg
         BinaryParagraph(const SourceParagraph& spgh,
                         Triplet triplet,
                         const std::string& abi_tag,
-                        const std::vector<FeatureSpec>& deps);
-        BinaryParagraph(const SourceParagraph& spgh,
-                        const FeatureParagraph& fpgh,
-                        Triplet triplet,
-                        const std::vector<FeatureSpec>& deps);
+                        std::vector<PackageSpec> deps);
+        BinaryParagraph(const PackageSpec& spec, const FeatureParagraph& fpgh, std::vector<PackageSpec> deps);
 
         void canonicalize();
 
@@ -43,7 +40,6 @@ namespace vcpkg
         std::vector<std::string> default_features;
         std::vector<PackageSpec> dependencies;
         std::string abi;
-        Type type = {Type::PORT};
     };
 
     bool operator==(const BinaryParagraph&, const BinaryParagraph&);
