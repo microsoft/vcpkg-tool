@@ -1037,7 +1037,7 @@ namespace vcpkg
         if (auto game_dk_latest = pre_build_info.gamedk_latest_path.get())
         {
             const auto grdk_header_path = *game_dk_latest / "GRDK/gameKit/Include/grdk.h";
-            const auto maybe_header_hash = grdk_cache.get_lazy(grdk_header_path, [&]() -> Optional<std::string> {
+            const auto& maybe_header_hash = grdk_cache.get_lazy(grdk_header_path, [&]() -> Optional<std::string> {
                 auto maybe_hash = Hash::get_file_hash(fs, grdk_header_path, Hash::Algorithm::Sha256);
                 if (auto hash = maybe_hash.get())
                 {
