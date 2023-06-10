@@ -285,7 +285,7 @@ namespace vcpkg
                     .append_raw(my_paragraph));
         }
 
-        auto binary_paragraph = BinaryParagraph(*parsed_paragraph.get());
+        auto binary_paragraph = BinaryParagraph(std::move(*parsed_paragraph.get()));
         if (binary_paragraph != pgh)
         {
             Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,

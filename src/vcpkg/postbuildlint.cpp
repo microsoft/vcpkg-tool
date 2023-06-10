@@ -1282,7 +1282,7 @@ namespace vcpkg
         for (const Path& dll : dll_files)
         {
             auto maybe_dll_data = try_load_dll_data(fs, dll);
-            if (const auto dll_data = maybe_dll_data.get())
+            if (auto dll_data = maybe_dll_data.get())
             {
                 dlls.emplace_back(std::move(*dll_data));
             }

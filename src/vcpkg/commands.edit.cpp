@@ -40,11 +40,11 @@ namespace
 
         for (auto&& keypath : REGKEYS)
         {
-            const ExpectedL<std::string> code_installpath =
+            ExpectedL<std::string> code_installpath =
                 get_registry_string(keypath.root, keypath.subkey, "InstallLocation");
-            if (const auto c = code_installpath.get())
+            if (auto c = code_installpath.get())
             {
-                const Path install_path = *c;
+                Path install_path = std::move(*c);
                 output.push_back(install_path / "Code - Insiders.exe");
                 output.push_back(install_path / "Code.exe");
             }
@@ -194,17 +194,17 @@ namespace vcpkg::Commands::Edit
             candidate_paths.push_back(*pf / VS_CODE);
         }
 
-        const auto& app_data = get_environment_variable("APPDATA");
-        if (const auto* ad = app_data.get())
+        auto app_data = get_environment_variable("APPDATA");
+        if (auto* ad = app_data.get())
         {
-            Path default_base = *ad;
+            Path default_base = std::move(*ad);
             default_base.replace_filename("Local\\Programs");
             candidate_paths.push_back(default_base / VS_CODE_INSIDERS);
             candidate_paths.push_back(default_base / VS_CODE);
         }
 
-        const std::vector<Path> from_registry = find_from_registry();
-        candidate_paths.insert(candidate_paths.end(), from_registry.cbegin(), from_registry.cend());
+        std::vector<Path> from_registry = find_from_registry();
+        candidate_paths.insert(candidate_paths.end(), from_registry.begin(), from_registry.end());
 
         const auto txt_default = get_registry_string(HKEY_CLASSES_ROOT, R"(.txt\ShellNew)", "ItemName");
         if (const auto entry = txt_default.get())

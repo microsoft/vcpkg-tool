@@ -362,7 +362,7 @@ namespace vcpkg
 
                 if (env_val)
                 {
-                    env[env_var] = env_val.value_or_exit(VCPKG_LINE_INFO);
+                    env[env_var] = std::move(env_val.value_or_exit(VCPKG_LINE_INFO));
                 }
             }
             static constexpr StringLiteral s_extra_vars[] = {
