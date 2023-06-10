@@ -297,7 +297,7 @@ namespace vcpkg
         }
     }
 
-    std::string format_binary_paragraph(BinaryParagraph paragraph)
+    std::string format_binary_paragraph(const BinaryParagraph& paragraph)
     {
         constexpr StringLiteral join_str = R"(", ")";
         return fmt::format(
