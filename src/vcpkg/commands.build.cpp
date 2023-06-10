@@ -509,7 +509,7 @@ namespace vcpkg
 
         const auto& fs = paths.get_filesystem();
 
-        const auto triplet_file_path = paths.get_triplet_file_path(abi_info.pre_build_info->triplet);
+        const auto& triplet_file_path = paths.get_triplet_file_path(abi_info.pre_build_info->triplet);
 
         auto&& toolchain_hash = get_toolchain_cache(m_toolchain_cache, abi_info.pre_build_info->toolchain_file(), fs);
 
@@ -531,7 +531,7 @@ namespace vcpkg
     {
         const auto& fs = paths.get_filesystem();
         Checks::check_exit(VCPKG_LINE_INFO, abi_info.pre_build_info != nullptr);
-        const auto triplet_file_path = paths.get_triplet_file_path(abi_info.pre_build_info->triplet);
+        const auto& triplet_file_path = paths.get_triplet_file_path(abi_info.pre_build_info->triplet);
 
         auto&& toolchain_hash = get_toolchain_cache(m_toolchain_cache, abi_info.pre_build_info->toolchain_file(), fs);
 
@@ -904,7 +904,7 @@ namespace vcpkg
         auto&& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
 
         Triplet triplet = action.spec.triplet();
-        const auto triplet_file_path = paths.get_triplet_file_path(triplet);
+        const auto& triplet_file_path = paths.get_triplet_file_path(triplet);
 
         if (Strings::starts_with(triplet_file_path, paths.community_triplets))
         {

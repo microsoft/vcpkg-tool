@@ -756,7 +756,7 @@ namespace vcpkg
         });
     }
 
-    Path VcpkgPaths::get_triplet_file_path(Triplet triplet) const
+    const Path& VcpkgPaths::get_triplet_file_path(Triplet triplet) const
     {
         return m_pimpl->m_triplets_cache.get_lazy(
             triplet, [&]() -> auto{
