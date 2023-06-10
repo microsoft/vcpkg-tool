@@ -30,8 +30,8 @@ namespace
             Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgCouldNotDeduceNugetIdAndVersion, msg::path = archive);
         }
 
-        auto nugetid = StringView{stem.begin(), dot_after_name};
-        auto version = StringView{dot_after_name + 1, stem.end()};
+        StringView nugetid{stem.begin(), dot_after_name};
+        StringView version{dot_after_name + 1, stem.end()};
 
         Command nuget_command{nuget_exe};
         nuget_command.string_arg("install")

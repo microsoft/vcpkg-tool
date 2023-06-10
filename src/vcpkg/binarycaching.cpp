@@ -2193,7 +2193,7 @@ namespace
                                                  msg::binary_source = "x-aws-config"));
                 }
 
-                auto no_sign_request = false;
+                bool no_sign_request = false;
                 if (segments[1].second == "no-sign-request")
                 {
                     no_sign_request = true;
