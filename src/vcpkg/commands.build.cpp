@@ -1146,8 +1146,13 @@ namespace vcpkg
         std::vector<Path> files;
         std::vector<std::string> hashes;
         size_t i = 0;
-        for (auto& file : abi_info.pre_build_info->hash_additional_files)
+        for (auto& filestr : abi_info.pre_build_info->hash_additional_files)
         {
+            Path file(filestr);
+            if(!file.is_relative() || fs.is_regular_file(file)) {
+                Checks::msg_exit_with_message(
+                            VCPKG_LINE_INFO, msgInvalidValueHashAdditionalFiles, msg::path = file);
+            }
             const auto hash =
                 vcpkg::Hash::get_file_hash(fs, file, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO);
             abi_tag_entries.emplace_back(fmt::format("additional_file_{}", i++), hash);
