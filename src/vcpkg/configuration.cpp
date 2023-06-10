@@ -532,8 +532,6 @@ namespace
         {
             StringView location;
             StringView registry;
-
-            LocationAndRegistry() = default;
         };
 
         // handle warnings from package pattern declarations
@@ -544,12 +542,7 @@ namespace
             {
                 for (auto&& pkg : *packages)
                 {
-                    auto it = patterns.find(pkg.pattern);
-                    if (it == patterns.end())
-                    {
-                        it = patterns.emplace(pkg.pattern, std::vector<LocationAndRegistry>{}).first;
-                    }
-                    it->second.emplace_back(LocationAndRegistry{
+                    patterns[pkg.pattern].emplace_back(LocationAndRegistry{
                         pkg.location,
                         reg.pretty_location(),
                     });

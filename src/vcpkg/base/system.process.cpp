@@ -502,6 +502,10 @@ namespace vcpkg
             "Z_VCPKG_UNDO",
             // Ensures that the escape hatch persists to recursive vcpkg invocations like x-download
             "VCPKG_KEEP_ENV_VARS",
+            // Enables Xbox SDKs
+            "GameDKLatest",
+            "GRDKLatest",
+            "GXDKLatest",
         };
 
         const Optional<std::string> keep_vars = get_environment_variable("VCPKG_KEEP_ENV_VARS");
