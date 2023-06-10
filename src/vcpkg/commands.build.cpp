@@ -358,11 +358,10 @@ namespace vcpkg
 
             for (auto&& env_var : abi_info.pre_build_info->passthrough_env_vars)
             {
-                auto env_val = get_environment_variable(env_var);
-
-                if (env_val)
+                auto maybe_env_val = get_environment_variable(env_var);
+                if (auto env_val = maybe_env_val.get())
                 {
-                    env[env_var] = std::move(env_val.value_or_exit(VCPKG_LINE_INFO));
+                    env[env_var] = std::move(*env_val);
                 }
             }
             static constexpr StringLiteral s_extra_vars[] = {

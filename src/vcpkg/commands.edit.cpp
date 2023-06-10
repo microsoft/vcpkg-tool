@@ -46,7 +46,7 @@ namespace
             {
                 Path install_path = std::move(*c);
                 output.push_back(install_path / "Code - Insiders.exe");
-                output.push_back(install_path / "Code.exe");
+                output.push_back(std::move(install_path) / "Code.exe");
             }
         }
         return output;
@@ -200,7 +200,7 @@ namespace vcpkg::Commands::Edit
             Path default_base = std::move(*ad);
             default_base.replace_filename("Local\\Programs");
             candidate_paths.push_back(default_base / VS_CODE_INSIDERS);
-            candidate_paths.push_back(default_base / VS_CODE);
+            candidate_paths.push_back(std::move(default_base) / VS_CODE);
         }
 
         std::vector<Path> from_registry = find_from_registry();
