@@ -1149,7 +1149,7 @@ namespace vcpkg
         for (auto& filestr : abi_info.pre_build_info->hash_additional_files)
         {
             Path file(filestr);
-            if (!file.is_relative() || !fs.is_regular_file(file))
+            if (file.is_relative() || !fs.is_regular_file(file))
             {
                 Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgInvalidValueHashAdditionalFiles, msg::path = file);
             }
