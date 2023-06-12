@@ -388,7 +388,7 @@ namespace vcpkg
         if (potential_copyright_files.size() == 1)
         {
             // if there is only one candidate, provide the cmake lines needed to place it in the proper location
-            const auto found_file = potential_copyright_files[0];
+            const auto& found_file = potential_copyright_files[0];
             auto found_relative_native = found_file.native();
             found_relative_native.erase(current_buildtrees_dir.native().size() +
                                         1); // The +1 is needed to remove the "/"
@@ -509,7 +509,7 @@ namespace vcpkg
         return LintStatus::SUCCESS;
     }
 
-    static LintStatus check_uwp_bit_of_dlls(const std::string& expected_system_name,
+    static LintStatus check_uwp_bit_of_dlls(StringView expected_system_name,
                                             const std::vector<PostBuildCheckDllData>& dlls_data,
                                             MessageSink& msg_sink)
     {
@@ -1015,10 +1015,10 @@ namespace vcpkg
                 "The lib ", lib.native(), " has directives: ", Strings::join(" ", lib_info.linker_directives));
 
             BuildTypeAndFile this_lib{lib};
-            constexpr static const StringLiteral static_release_crt = "/DEFAULTLIB:LIBCMT";
-            constexpr static const StringLiteral static_debug_crt = "/DEFAULTLIB:LIBCMTd";
-            constexpr static const StringLiteral dynamic_release_crt = "/DEFAULTLIB:MSVCRT";
-            constexpr static const StringLiteral dynamic_debug_crt = "/DEFAULTLIB:MSVCRTd";
+            constexpr static StringLiteral static_release_crt = "/DEFAULTLIB:LIBCMT";
+            constexpr static StringLiteral static_debug_crt = "/DEFAULTLIB:LIBCMTd";
+            constexpr static StringLiteral dynamic_release_crt = "/DEFAULTLIB:MSVCRT";
+            constexpr static StringLiteral dynamic_debug_crt = "/DEFAULTLIB:MSVCRTd";
 
             for (auto&& directive : lib_info.linker_directives)
             {
@@ -1321,7 +1321,7 @@ namespace vcpkg
         for (const Path& dll : dll_files)
         {
             auto maybe_dll_data = try_load_dll_data(fs, dll);
-            if (const auto dll_data = maybe_dll_data.get())
+            if (auto dll_data = maybe_dll_data.get())
             {
                 dlls_data.emplace_back(std::move(*dll_data));
             }

@@ -317,7 +317,7 @@ namespace vcpkg::Commands::Integrate
         const auto cmake_toolchain = paths.buildsystems / "vcpkg.cmake";
         auto message = msg::format(msgCMakeToolChainFile, msg::path = cmake_toolchain.generic_u8string());
 
-        auto user_configuration_home = get_user_configuration_home().value_or_exit(VCPKG_LINE_INFO);
+        auto& user_configuration_home = get_user_configuration_home().value_or_exit(VCPKG_LINE_INFO);
         fs.create_directories(user_configuration_home, VCPKG_LINE_INFO);
         fs.write_contents(user_configuration_home / vcpkg_path_txt, paths.root.generic_u8string(), VCPKG_LINE_INFO);
 
@@ -347,7 +347,7 @@ namespace vcpkg::Commands::Integrate
     static void integrate_remove(Filesystem& fs)
     {
         bool was_deleted = false;
-        auto user_configuration_home = get_user_configuration_home().value_or_exit(VCPKG_LINE_INFO);
+        auto& user_configuration_home = get_user_configuration_home().value_or_exit(VCPKG_LINE_INFO);
 #if defined(_WIN32)
         was_deleted |= fs.remove(user_configuration_home / vcpkg_user_props, VCPKG_LINE_INFO);
         was_deleted |= fs.remove(user_configuration_home / vcpkg_user_targets, VCPKG_LINE_INFO);

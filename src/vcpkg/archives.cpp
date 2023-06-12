@@ -30,8 +30,8 @@ namespace
             Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgCouldNotDeduceNugetIdAndVersion, msg::path = archive);
         }
 
-        auto nugetid = StringView{stem.begin(), dot_after_name};
-        auto version = StringView{dot_after_name + 1, stem.end()};
+        StringView nugetid{stem.begin(), dot_after_name};
+        StringView version{dot_after_name + 1, stem.end()};
 
         Command nuget_command{nuget_exe};
         nuget_command.string_arg("install")
@@ -148,7 +148,7 @@ namespace
         else if (Strings::case_insensitive_ascii_equals(ext, ".exe"))
         {
             const Path filename = archive.filename();
-            const Path stem = filename.stem();
+            auto stem = filename.stem();
             const Path to_archive = Path(archive.parent_path()) / stem;
             win32_extract_self_extracting_7z(fs, archive, to_archive);
             extract_archive_to_empty(fs, tools, status_sink, to_archive, to_path);
