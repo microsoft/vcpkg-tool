@@ -284,7 +284,7 @@ namespace vcpkg
         return ret;
     }
 
-    void MetricsUserConfig::try_write(Filesystem& fs) const
+    void MetricsUserConfig::try_write(const Filesystem& fs) const
     {
         const auto& maybe_user_dir = get_user_configuration_home();
         if (auto p_user_dir = maybe_user_dir.get())
@@ -330,7 +330,7 @@ namespace vcpkg
         return ret;
     }
 
-    MetricsUserConfig try_read_metrics_user(const Filesystem& fs)
+    MetricsUserConfig try_read_metrics_user(const ReadOnlyFilesystem& fs)
     {
         const auto& maybe_user_dir = get_user_configuration_home();
         if (auto p_user_dir = maybe_user_dir.get())
@@ -560,7 +560,7 @@ namespace vcpkg
     }
 #endif // ^^^ _WIN32
 
-    void flush_global_metrics(Filesystem& fs)
+    void flush_global_metrics(const Filesystem& fs)
     {
         if (!g_metrics_enabled.load())
         {

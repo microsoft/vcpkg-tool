@@ -1,4 +1,5 @@
 #include <vcpkg/base/chrono.h>
+#include <vcpkg/base/files.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
@@ -23,7 +24,7 @@ namespace vcpkg::Commands::Contact
         nullptr,
     };
 
-    void perform_and_exit(const VcpkgCmdArguments& args, Filesystem& fs)
+    void perform_and_exit(const VcpkgCmdArguments& args, const Filesystem& fs)
     {
         const ParsedArguments parsed_args = args.parse_arguments(COMMAND_STRUCTURE);
 

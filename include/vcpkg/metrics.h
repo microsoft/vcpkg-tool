@@ -158,7 +158,7 @@ namespace vcpkg
 
         void to_string(std::string&) const;
         std::string to_string() const;
-        void try_write(Filesystem& fs) const;
+        void try_write(const Filesystem& fs) const;
 
         // If *this is missing data normally provided by the system, fill it in;
         // otherwise, no effects.
@@ -167,7 +167,7 @@ namespace vcpkg
     };
 
     MetricsUserConfig try_parse_metrics_user(StringView content);
-    MetricsUserConfig try_read_metrics_user(const Filesystem& fs);
+    MetricsUserConfig try_read_metrics_user(const ReadOnlyFilesystem& fs);
 
     struct MetricsSessionData
     {
@@ -187,7 +187,7 @@ namespace vcpkg
     extern std::atomic<bool> g_should_print_metrics;
     extern std::atomic<bool> g_should_send_metrics;
 
-    void flush_global_metrics(Filesystem&);
+    void flush_global_metrics(const Filesystem&);
 #if defined(_WIN32)
     void winhttp_upload_metrics(StringView payload);
 #endif // ^^^ _WIN32

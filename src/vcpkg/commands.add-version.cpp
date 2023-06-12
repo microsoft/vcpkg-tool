@@ -124,7 +124,7 @@ namespace
         return output_object;
     }
 
-    static void write_baseline_file(Filesystem& fs,
+    static void write_baseline_file(const Filesystem& fs,
                                     const std::map<std::string, Version, std::less<>>& baseline_map,
                                     const Path& output_path)
     {
@@ -134,7 +134,7 @@ namespace
         fs.rename(new_path, output_path, VCPKG_LINE_INFO);
     }
 
-    static void write_versions_file(Filesystem& fs,
+    static void write_versions_file(const Filesystem& fs,
                                     const std::vector<VersionGitTree>& versions,
                                     const Path& output_path)
     {
