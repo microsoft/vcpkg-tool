@@ -372,12 +372,12 @@ namespace
             Path path;
             int64_t file_size;
             int64_t time;
-            bool operator<(const FileData& other) const { return time < other.time; }
+            bool operator>(const FileData& other) const { return time > other.time; }
         };
         struct FileCacheData
         {
             FolderSettings folder_settings;
-            std::priority_queue<FileData> file_data;
+            std::priority_queue<FileData, std::vector<FileData>, std::greater<FileData>> file_data;
             int64_t current_size = 0;
         };
         mutable std::vector<FileCacheData> file_cache_data;
