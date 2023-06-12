@@ -21,14 +21,6 @@ namespace vcpkg::Commands::DependInfo
 {
     namespace
     {
-        struct PackageDependInfo
-        {
-            std::string package;
-            int depth;
-            std::unordered_set<std::string> features;
-            std::vector<std::string> dependencies;
-        };
-
         // invariant: prefix_buf is equivalent on exitv (but may have been reallocated)
         void print_dep_tree(std::string& prefix_buf,
                             const std::string& currDepend,
@@ -104,59 +96,6 @@ namespace vcpkg::Commands::DependInfo
             {OPTION_FORMAT, [] { return msg::format(msgCmdDependInfoFormatHelp); }},
         }};
 
-        std::string create_dot_as_string(const std::vector<PackageDependInfo>& depend_info)
-        {
-            int empty_node_count = 0;
-
-            std::string s;
-            s.append("digraph G{ rankdir=LR; edge [minlen=3]; overlap=false;");
-
-            for (const auto& package : depend_info)
-            {
-                if (package.dependencies.empty())
-                {
-                    empty_node_count++;
-                    continue;
-                }
-
-                const std::string name = Strings::replace_all(std::string{package.package}, "-", "_");
-                fmt::format_to(std::back_inserter(s), "{};", name);
-                for (const auto& d : package.dependencies)
-                {
-                    const std::string dependency_name = Strings::replace_all(std::string{d}, "-", "_");
-                    fmt::format_to(std::back_inserter(s), "{} -> {};", name, dependency_name);
-                }
-            }
-
-            fmt::format_to(std::back_inserter(s), "empty [label=\"{} singletons...\"]; }}", empty_node_count);
-            return s;
-        }
-
-        std::string create_dgml_as_string(const std::vector<PackageDependInfo>& depend_info)
-        {
-            std::string s;
-            s.append("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
-            s.append("<DirectedGraph xmlns=\"http://schemas.microsoft.com/vs/2009/dgml\">");
-
-            std::string nodes, links;
-            for (const auto& package : depend_info)
-            {
-                const std::string name = package.package;
-                fmt::format_to(std::back_inserter(nodes), "<Node Id=\"{}\" />", name);
-
-                // Iterate over dependencies.
-                for (const auto& d : package.dependencies)
-                {
-                    fmt::format_to(std::back_inserter(links), "<Link Source=\"{}\" Target=\"{}\" />", name, d);
-                }
-            }
-
-            fmt::format_to(std::back_inserter(s), "<Nodes>{}</Nodes>", nodes);
-            fmt::format_to(std::back_inserter(s), "<Links>{}</Links>", links);
-            s.append("</DirectedGraph>");
-            return s;
-        }
-
         void assign_depth_to_dependencies(const std::string& package,
                                           const int depth,
                                           const int max_depth,
@@ -213,7 +152,7 @@ namespace vcpkg::Commands::DependInfo
             return out;
         }
 
-        // Try to emplace candiate into maybe_target. If that would be inconsistent, return true.
+        // Try to emplace candidate into maybe_target. If that would be inconsistent, return true.
         // An engaged maybe_target is consistent with candidate if the contained value equals candidate.
         template<typename T>
         bool emplace_inconsistent(Optional<T>& maybe_target, const T& candidate)
@@ -227,6 +166,75 @@ namespace vcpkg::Commands::DependInfo
             return false;
         }
     } // unnamed namespace
+
+    std::string create_dot_as_string(const std::vector<PackageDependInfo>& depend_info)
+    {
+        int empty_node_count = 0;
+
+        std::string s;
+        s.append("digraph G{ rankdir=LR; edge [minlen=3]; overlap=false;");
+
+        for (const auto& package : depend_info)
+        {
+            if (package.dependencies.empty())
+            {
+                empty_node_count++;
+                continue;
+            }
+
+            const std::string name = Strings::replace_all(std::string{package.package}, "-", "_");
+            fmt::format_to(std::back_inserter(s), "{};", name);
+            for (const auto& d : package.dependencies)
+            {
+                const std::string dependency_name = Strings::replace_all(std::string{d}, "-", "_");
+                fmt::format_to(std::back_inserter(s), "{} -> {};", name, dependency_name);
+            }
+        }
+
+        fmt::format_to(std::back_inserter(s), "empty [label=\"{} singletons...\"]; }}", empty_node_count);
+        return s;
+    }
+
+    std::string create_dgml_as_string(const std::vector<PackageDependInfo>& depend_info)
+    {
+        std::string s;
+        s.append("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
+        s.append("<DirectedGraph xmlns=\"http://schemas.microsoft.com/vs/2009/dgml\">");
+
+        std::string nodes, links;
+        for (const auto& package : depend_info)
+        {
+            const std::string name = package.package;
+            fmt::format_to(std::back_inserter(nodes), "<Node Id=\"{}\" />", name);
+
+            // Iterate over dependencies.
+            for (const auto& d : package.dependencies)
+            {
+                fmt::format_to(std::back_inserter(links), "<Link Source=\"{}\" Target=\"{}\" />", name, d);
+            }
+        }
+
+        fmt::format_to(std::back_inserter(s), "<Nodes>{}</Nodes>", nodes);
+        fmt::format_to(std::back_inserter(s), "<Links>{}</Links>", links);
+        s.append("</DirectedGraph>");
+        return s;
+    }
+
+    std::string create_mermaid_as_string(const std::vector<PackageDependInfo>& depend_info)
+    {
+        std::string s;
+        s.append("flowchart TD;");
+
+        for (const auto& package : depend_info)
+        {
+            for (const auto& dependency : package.dependencies)
+            {
+                s.append(fmt::format(" {} --> {};", package.package, dependency));
+            }
+        }
+
+        return s;
+    }
 
     const CommandStructure COMMAND_STRUCTURE = {
         [] { return create_example_string("depend-info sqlite3"); },
@@ -242,6 +250,7 @@ namespace vcpkg::Commands::DependInfo
         static constexpr StringLiteral OPTION_FORMAT_TREE = "tree";
         static constexpr StringLiteral OPTION_FORMAT_DOT = "dot";
         static constexpr StringLiteral OPTION_FORMAT_DGML = "dgml";
+        static constexpr StringLiteral OPTION_FORMAT_MERMAID = "mermaid";
 
         auto& settings = args.settings;
 
@@ -266,6 +275,10 @@ namespace vcpkg::Commands::DependInfo
                 else if (as_lower == OPTION_FORMAT_DGML)
                 {
                     maybe_format.emplace(DependInfoFormat::Dgml);
+                }
+                else if (as_lower == OPTION_FORMAT_MERMAID)
+                {
+                    maybe_format.emplace(DependInfoFormat::Mermaid);
                 }
                 else
                 {
@@ -359,7 +372,8 @@ namespace vcpkg::Commands::DependInfo
                     // ok
                     break;
                 case DependInfoFormat::Dot:
-                case DependInfoFormat::Dgml: return msg::format_error(msgCmdDependInfoShowDepthFormatMismatch);
+                case DependInfoFormat::Dgml:
+                case DependInfoFormat::Mermaid: return msg::format_error(msgCmdDependInfoShowDepthFormatMismatch);
                 default: Checks::unreachable(VCPKG_LINE_INFO);
             }
         }
@@ -424,6 +438,13 @@ namespace vcpkg::Commands::DependInfo
         if (strategy.format == DependInfoFormat::Dgml)
         {
             msg::write_unlocalized_text_to_stdout(Color::none, create_dgml_as_string(depend_info));
+            msg::write_unlocalized_text_to_stdout(Color::none, "\n");
+            Checks::exit_success(VCPKG_LINE_INFO);
+        }
+
+        if (strategy.format == DependInfoFormat::Mermaid)
+        {
+            msg::write_unlocalized_text_to_stdout(Color::none, create_mermaid_as_string(depend_info));
             msg::write_unlocalized_text_to_stdout(Color::none, "\n");
             Checks::exit_success(VCPKG_LINE_INFO);
         }

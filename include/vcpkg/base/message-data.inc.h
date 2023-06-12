@@ -473,12 +473,12 @@ DECLARE_MESSAGE(CmdDependInfoFormatConflict,
 DECLARE_MESSAGE(CmdDependInfoFormatHelp,
                 (),
                 "The alternatives in ``s must not be localized.",
-                "Choose output format, one of `list`, `tree`, `dot`, or `dgml`.")
+                "Choose output format, one of `list`, `tree`, `mermaid`, `dot`, or `dgml`.")
 DECLARE_MESSAGE(
     CmdDependInfoFormatInvalid,
     (msg::value),
     "The alternatives in ``s must not be localized. {value} is what the user specified.",
-    "--format={value} is not a recognized format. --format must be one of `list`, `tree`, `dot`, or `dgml`.")
+    "--format={value} is not a recognized format. --format must be one of `list`, `tree`, `mermaid`, `dot`, or `dgml`.")
 DECLARE_MESSAGE(CmdDependInfoShowDepthFormatMismatch,
                 (),
                 "",
