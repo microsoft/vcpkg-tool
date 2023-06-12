@@ -98,6 +98,7 @@ DECLARE_MESSAGE(AGitObjectSha, (), "", "a git object SHA")
 DECLARE_MESSAGE(AGitReference, (), "", "a git reference (for example, a branch)")
 DECLARE_MESSAGE(AGitRegistry, (), "", "a git registry")
 DECLARE_MESSAGE(AGitRepositoryUrl, (), "", "a git repository URL")
+DECLARE_MESSAGE(AllFeatureTestsPassed, (), "", "All feature tests passed.")
 DECLARE_MESSAGE(AllFormatArgsRawArgument,
                 (msg::value),
                 "example of {value} is 'foo {} bar'",

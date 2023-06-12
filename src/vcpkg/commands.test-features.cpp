@@ -408,7 +408,6 @@ namespace vcpkg::Commands::TestFeatures
                     continue;
                 }
             }
-            msg::write_unlocalized_text_to_stdout(Color::none, Strings::concat("Test feature ", spec, '\n'));
             for (auto&& action : install_plan.install_actions)
             {
                 action.build_options = backcompat_prohibiting_package_options;
@@ -487,6 +486,10 @@ namespace vcpkg::Commands::TestFeatures
                                      msg::elapsed = result.build_time)
                              .append_raw(" ")
                              .append_raw(result.logs_dir.value_or("")));
+        }
+        if (unexpected_states.empty())
+        {
+            msg::println(msgAllFeatureTestsPassed);
         }
 
         auto it_output_file = settings.find(OPTION_OUTPUT_FAILURE_ABIS);

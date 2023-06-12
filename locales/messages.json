@@ -102,6 +102,7 @@
   "_AddingCompletionEntry.comment": "An example of {path} is /foo/bar.",
   "AdditionalPackagesToExport": "Additional packages (*) need to be exported to complete this operation.",
   "AdditionalPackagesToRemove": "Additional packages (*) need to be removed to complete this operation.",
+  "AllFeatureTestsPassed": "All feature tests passed.",
   "AllFormatArgsRawArgument": "format string \"{value}\" contains a raw format argument",
   "_AllFormatArgsRawArgument.comment": "example of {value} is 'foo {} bar'",
   "AllFormatArgsUnbalancedBraces": "unbalanced brace in format string \"{value}\"",
