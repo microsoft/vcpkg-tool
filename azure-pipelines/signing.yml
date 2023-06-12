@@ -429,6 +429,11 @@ jobs:
       inputs:
         command: custom
         arguments: 'pack $(Build.ArtifactStagingDirectory)/vs-insertion/staging/vcpkg.nuspec -NoDefaultExcludes -OutputDirectory "$(Build.ArtifactStagingDirectory)/vs-insertion/drop" -Properties version=$(VCPKG_FULL_VERSION)'
+    - task: MSBuild@1
+      displayName: 'Sign VS Insertion NuGet Package'
+      inputs:
+        solution: 'azure-pipelines\nuget-package.signproj'
+        msbuildArguments: '/p:OutDir=$(Build.ArtifactStagingDirectory)\vs-insertion\drop /p:IntermediateOutputPath=$(Build.ArtifactStagingDirectory)\vs-insertion\drop'
     - task: PublishBuildArtifacts@1
       displayName: 'Publish nupkg as Artifact'
       inputs:
