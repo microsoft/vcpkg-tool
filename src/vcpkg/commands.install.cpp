@@ -93,6 +93,7 @@ namespace vcpkg
             const auto suffix = file.generic_u8string().substr(prefix_length + 1);
             const auto target = destination / suffix;
 
+            bool use_hard_link = true;
             auto this_output = Strings::concat(destination_subdirectory, "/", suffix);
             switch (status)
             {
@@ -114,9 +115,24 @@ namespace vcpkg
                     if (fs.exists(target, IgnoreErrors{}))
                     {
                         msg::println_warning(msgOverwritingFile, msg::path = target);
+                        fs.remove_all(target, IgnoreErrors{});
+                    }
+                    if (use_hard_link)
+                    {
+                        fs.create_hard_link(file, target, ec);
+                        if (ec)
+                        {
+                            Debug::println("Install from packages to installed: Fallback to copy "
+                                           "instead creating hard links because of: ",
+                                           ec.message());
+                            use_hard_link = false;
+                        }
+                    }
+                    if (!use_hard_link)
+                    {
+                        fs.copy_file(file, target, CopyOptions::overwrite_existing, ec);
                     }
 
-                    fs.copy_file(file, target, CopyOptions::overwrite_existing, ec);
                     if (ec)
                     {
                         msg::println_error(msgInstallFailed, msg::path = target, msg::error_msg = ec.message());
