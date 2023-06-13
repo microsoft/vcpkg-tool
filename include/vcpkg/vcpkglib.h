@@ -10,9 +10,9 @@
 
 namespace vcpkg
 {
-    StatusParagraphs database_load_check(Filesystem& fs, const InstalledPaths& installed);
+    StatusParagraphs database_load_check(const Filesystem& fs, const InstalledPaths& installed);
 
-    void write_update(Filesystem& fs, const InstalledPaths& installed, const StatusParagraph& p);
+    void write_update(const Filesystem& fs, const InstalledPaths& installed, const StatusParagraph& p);
 
     struct StatusParagraphAndAssociatedFiles
     {
@@ -21,7 +21,7 @@ namespace vcpkg
     };
 
     std::vector<InstalledPackageView> get_installed_ports(const StatusParagraphs& status_db);
-    std::vector<StatusParagraphAndAssociatedFiles> get_installed_files(Filesystem& fs,
+    std::vector<StatusParagraphAndAssociatedFiles> get_installed_files(const Filesystem& fs,
                                                                        const InstalledPaths& installed,
                                                                        const StatusParagraphs& status_db);
 

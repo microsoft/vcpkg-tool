@@ -143,7 +143,7 @@ namespace vcpkg::Export
                                 const Path& raw_exported_dir,
                                 const Path& output_dir)
     {
-        Filesystem& fs = paths.get_filesystem();
+        const Filesystem& fs = paths.get_filesystem();
         fs.create_directories(paths.buildsystems / "tmp", IgnoreErrors{});
 
         // This file will be placed in "build\native" in the nuget package. Therefore, go up two dirs.
@@ -251,7 +251,7 @@ namespace vcpkg::Export
             Path{"scripts/cmake/vcpkg_get_windows_sdk.cmake"},
         };
 
-        Filesystem& fs = paths.get_filesystem();
+        const Filesystem& fs = paths.get_filesystem();
         for (const Path& file : integration_files_relative_to_root)
         {
             const auto source = paths.root / file;
@@ -502,7 +502,7 @@ namespace vcpkg::Export
                                         const std::string& export_id,
                                         const VcpkgPaths& paths)
     {
-        Filesystem& fs = paths.get_filesystem();
+        const Filesystem& fs = paths.get_filesystem();
         const auto raw_exported_dir_path = opts.output_dir / export_id;
         fs.remove_all(raw_exported_dir_path, VCPKG_LINE_INFO);
 

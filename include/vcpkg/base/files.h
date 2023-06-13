@@ -106,8 +106,9 @@ namespace vcpkg
     {
         virtual ExpectedL<std::vector<std::string>> read_lines(const Path& file_path) const = 0;
 
-    protected:
-        ~ILineReader();
+        // Omitted to allow constexpr:
+        // protected:
+        //    ~ILineReader();
     };
 
     struct space_info
@@ -117,7 +118,7 @@ namespace vcpkg
         std::uintmax_t available;
     };
 
-    struct Filesystem : ILineReader
+    struct ReadOnlyFilesystem : ILineReader
     {
         virtual std::string read_contents(const Path& file_path, std::error_code& ec) const = 0;
         std::string read_contents(const Path& file_path, LineInfo li) const;
@@ -151,38 +152,6 @@ namespace vcpkg
         virtual std::vector<Path> get_regular_files_non_recursive(const Path& dir, std::error_code& ec) const = 0;
         std::vector<Path> get_regular_files_non_recursive(const Path& dir, LineInfo li) const;
 
-        virtual void write_lines(const Path& file_path, const std::vector<std::string>& lines, std::error_code& ec) = 0;
-        void write_lines(const Path& file_path, const std::vector<std::string>& lines, LineInfo li);
-
-        virtual void write_contents(const Path& file_path, StringView data, std::error_code& ec) = 0;
-        void write_contents(const Path& file_path, StringView data, LineInfo li);
-
-        void write_rename_contents(const Path& file_path, const Path& temp_name, StringView data, LineInfo li);
-        void write_contents_and_dirs(const Path& file_path, StringView data, LineInfo li);
-        virtual void write_contents_and_dirs(const Path& file_path, StringView data, std::error_code& ec) = 0;
-
-        virtual void rename(const Path& old_path, const Path& new_path, std::error_code& ec) = 0;
-        void rename(const Path& old_path, const Path& new_path, LineInfo li);
-
-        void rename_with_retry(const Path& old_path, const Path& new_path, std::error_code& ec);
-        void rename_with_retry(const Path& old_path, const Path& new_path, LineInfo li);
-
-        virtual void rename_or_copy(const Path& old_path,
-                                    const Path& new_path,
-                                    StringLiteral temp_suffix,
-                                    std::error_code& ec) = 0;
-
-        virtual bool remove(const Path& target, std::error_code& ec) = 0;
-        bool remove(const Path& target, LineInfo li);
-
-        virtual void remove_all(const Path& base, std::error_code& ec, Path& failure_point) = 0;
-        void remove_all(const Path& base, std::error_code& ec);
-        void remove_all(const Path& base, LineInfo li);
-
-        void remove_all_inside(const Path& base, std::error_code& ec, Path& failure_point);
-        void remove_all_inside(const Path& base, std::error_code& ec);
-        void remove_all_inside(const Path& base, LineInfo li);
-
         bool exists(const Path& target, std::error_code& ec) const;
         bool exists(const Path& target, LineInfo li) const;
 
@@ -192,47 +161,111 @@ namespace vcpkg
         virtual bool is_empty(const Path& target, std::error_code& ec) const = 0;
         bool is_empty(const Path& target, LineInfo li) const;
 
-        virtual bool create_directory(const Path& new_directory, std::error_code& ec) = 0;
-        bool create_directory(const Path& new_directory, LineInfo li);
-
-        virtual bool create_directories(const Path& new_directory, std::error_code& ec) = 0;
-        bool create_directories(const Path& new_directory, LineInfo);
-
-        virtual Path create_or_get_temp_directory(std::error_code& ec) = 0;
-        Path create_or_get_temp_directory(LineInfo);
-
-        virtual void create_symlink(const Path& to, const Path& from, std::error_code& ec) = 0;
-        void create_symlink(const Path& to, const Path& from, LineInfo);
-
-        virtual void create_directory_symlink(const Path& to, const Path& from, std::error_code& ec) = 0;
-        void create_directory_symlink(const Path& to, const Path& from, LineInfo);
-
-        virtual void create_hard_link(const Path& to, const Path& from, std::error_code& ec) = 0;
-        void create_hard_link(const Path& to, const Path& from, LineInfo);
-
-        void create_best_link(const Path& to, const Path& from, std::error_code& ec);
-        void create_best_link(const Path& to, const Path& from, LineInfo);
-
-        // copies regular files and directories, recursively.
-        // symlinks are followed and copied as if they were regular files or directories
-        //   (like std::filesystem::copy(..., std::filesystem::copy_options::recursive))
-        virtual void copy_regular_recursive(const Path& source, const Path& destination, std::error_code& ec) = 0;
-        void copy_regular_recursive(const Path& source, const Path& destination, LineInfo);
-
-        virtual bool copy_file(const Path& source,
-                               const Path& destination,
-                               CopyOptions options,
-                               std::error_code& ec) = 0;
-        bool copy_file(const Path& source, const Path& destination, CopyOptions options, LineInfo li);
-
-        virtual void copy_symlink(const Path& source, const Path& destination, std::error_code& ec) = 0;
-        void copy_symlink(const Path& source, const Path& destination, LineInfo li);
-
         virtual FileType status(const Path& target, std::error_code& ec) const = 0;
         FileType status(const Path& target, LineInfo li) const noexcept;
 
         virtual FileType symlink_status(const Path& target, std::error_code& ec) const = 0;
         FileType symlink_status(const Path& target, LineInfo li) const noexcept;
+
+        // absolute/system_complete + lexically_normal + fixup_win32_path_case
+        // we don't use real canonical due to issues like:
+        // https://github.com/microsoft/vcpkg/issues/16614 (canonical breaking on some older Windows Server containers)
+        // https://github.com/microsoft/vcpkg/issues/18208 (canonical removing subst despite our recommendation to use
+        // subst)
+        virtual Path almost_canonical(const Path& target, std::error_code& ec) const = 0;
+        Path almost_canonical(const Path& target, LineInfo li) const;
+
+        virtual Path current_path(std::error_code&) const = 0;
+        Path current_path(LineInfo li) const;
+
+        virtual Path absolute(const Path& target, std::error_code& ec) const = 0;
+        Path absolute(const Path& target, LineInfo li) const;
+
+        virtual std::vector<Path> find_from_PATH(View<StringView> stems) const = 0;
+        std::vector<Path> find_from_PATH(StringView stem) const;
+
+        virtual ReadFilePointer open_for_read(const Path& file_path, std::error_code& ec) const = 0;
+        ReadFilePointer open_for_read(const Path& file_path, LineInfo li) const;
+        ExpectedL<ReadFilePointer> try_open_for_read(const Path& file_path) const;
+
+        ExpectedL<bool> check_update_required(const Path& version_path, StringView expected_version) const;
+
+        // Omitted to allow constexpr:
+        // protected:
+        //    ~ReadOnlyFilesystem();
+    };
+
+    struct Filesystem : ReadOnlyFilesystem
+    {
+        virtual void write_lines(const Path& file_path,
+                                 const std::vector<std::string>& lines,
+                                 std::error_code& ec) const = 0;
+        void write_lines(const Path& file_path, const std::vector<std::string>& lines, LineInfo li) const;
+
+        virtual void write_contents(const Path& file_path, StringView data, std::error_code& ec) const = 0;
+        void write_contents(const Path& file_path, StringView data, LineInfo li) const;
+
+        void write_rename_contents(const Path& file_path, const Path& temp_name, StringView data, LineInfo li) const;
+        void write_contents_and_dirs(const Path& file_path, StringView data, LineInfo li) const;
+        virtual void write_contents_and_dirs(const Path& file_path, StringView data, std::error_code& ec) const = 0;
+
+        virtual void rename(const Path& old_path, const Path& new_path, std::error_code& ec) const = 0;
+        void rename(const Path& old_path, const Path& new_path, LineInfo li) const;
+
+        void rename_with_retry(const Path& old_path, const Path& new_path, std::error_code& ec) const;
+        void rename_with_retry(const Path& old_path, const Path& new_path, LineInfo li) const;
+
+        virtual void rename_or_copy(const Path& old_path,
+                                    const Path& new_path,
+                                    StringLiteral temp_suffix,
+                                    std::error_code& ec) const = 0;
+
+        virtual bool remove(const Path& target, std::error_code& ec) const = 0;
+        bool remove(const Path& target, LineInfo li) const;
+
+        virtual void remove_all(const Path& base, std::error_code& ec, Path& failure_point) const = 0;
+        void remove_all(const Path& base, std::error_code& ec) const;
+        void remove_all(const Path& base, LineInfo li) const;
+
+        void remove_all_inside(const Path& base, std::error_code& ec, Path& failure_point) const;
+        void remove_all_inside(const Path& base, std::error_code& ec) const;
+        void remove_all_inside(const Path& base, LineInfo li) const;
+
+        virtual bool create_directory(const Path& new_directory, std::error_code& ec) const = 0;
+        bool create_directory(const Path& new_directory, LineInfo li) const;
+
+        virtual bool create_directories(const Path& new_directory, std::error_code& ec) const = 0;
+        bool create_directories(const Path& new_directory, LineInfo) const;
+
+        virtual Path create_or_get_temp_directory(std::error_code& ec) const = 0;
+        Path create_or_get_temp_directory(LineInfo) const;
+
+        virtual void create_symlink(const Path& to, const Path& from, std::error_code& ec) const = 0;
+        void create_symlink(const Path& to, const Path& from, LineInfo) const;
+
+        virtual void create_directory_symlink(const Path& to, const Path& from, std::error_code& ec) const = 0;
+        void create_directory_symlink(const Path& to, const Path& from, LineInfo) const;
+
+        virtual void create_hard_link(const Path& to, const Path& from, std::error_code& ec) const = 0;
+        void create_hard_link(const Path& to, const Path& from, LineInfo) const;
+
+        void create_best_link(const Path& to, const Path& from, std::error_code& ec) const;
+        void create_best_link(const Path& to, const Path& from, LineInfo) const;
+
+        // copies regular files and directories, recursively.
+        // symlinks are followed and copied as if they were regular files or directories
+        //   (like std::filesystem::copy(..., std::filesystem::copy_options::recursive))
+        virtual void copy_regular_recursive(const Path& source, const Path& destination, std::error_code& ec) const = 0;
+        void copy_regular_recursive(const Path& source, const Path& destination, LineInfo) const;
+
+        virtual bool copy_file(const Path& source,
+                               const Path& destination,
+                               CopyOptions options,
+                               std::error_code& ec) const = 0;
+        bool copy_file(const Path& source, const Path& destination, CopyOptions options, LineInfo li) const;
+
+        virtual void copy_symlink(const Path& source, const Path& destination, std::error_code& ec) const = 0;
+        void copy_symlink(const Path& source, const Path& destination, LineInfo li) const;
 
         virtual int64_t last_write_time_now() const = 0;
 
@@ -253,22 +286,9 @@ namespace vcpkg
         virtual int64_t file_size(const Path& target, std::error_code& ec) const = 0;
         int64_t file_size(const Path& target, LineInfo li) const noexcept;
 
-        virtual Path absolute(const Path& target, std::error_code& ec) const = 0;
-        Path absolute(const Path& target, LineInfo li) const;
-
-        // absolute/system_complete + lexically_normal + fixup_win32_path_case
-        // we don't use real canonical due to issues like:
-        // https://github.com/microsoft/vcpkg/issues/16614 (canonical breaking on some older Windows Server containers)
-        // https://github.com/microsoft/vcpkg/issues/18208 (canonical removing subst despite our recommendation to use
-        // subst)
-        virtual Path almost_canonical(const Path& target, std::error_code& ec) const = 0;
-        Path almost_canonical(const Path& target, LineInfo li) const;
-
-        virtual Path current_path(std::error_code&) const = 0;
-        Path current_path(LineInfo li) const;
-
-        virtual void current_path(const Path& new_current_path, std::error_code&) = 0;
-        void current_path(const Path& new_current_path, LineInfo li);
+        using ReadOnlyFilesystem::current_path;
+        virtual void current_path(const Path& new_current_path, std::error_code&) const = 0;
+        void current_path(const Path& new_current_path, LineInfo li) const;
 
         // if the path does not exist, then (try_|)take_exclusive_file_lock attempts to create the file
         // (but not any path members above the file itself)
@@ -278,30 +298,21 @@ namespace vcpkg
 
         // waits forever for the file lock
         virtual std::unique_ptr<IExclusiveFileLock> take_exclusive_file_lock(const Path& lockfile,
-                                                                             std::error_code&) = 0;
-        std::unique_ptr<IExclusiveFileLock> take_exclusive_file_lock(const Path& lockfile, LineInfo li);
+                                                                             std::error_code&) const = 0;
+        std::unique_ptr<IExclusiveFileLock> take_exclusive_file_lock(const Path& lockfile, LineInfo li) const;
 
         // waits, at most, 1.5 seconds, for the file lock
         virtual std::unique_ptr<IExclusiveFileLock> try_take_exclusive_file_lock(const Path& lockfile,
-                                                                                 std::error_code&) = 0;
-        std::unique_ptr<IExclusiveFileLock> try_take_exclusive_file_lock(const Path& lockfile, LineInfo li);
+                                                                                 std::error_code&) const = 0;
+        std::unique_ptr<IExclusiveFileLock> try_take_exclusive_file_lock(const Path& lockfile, LineInfo li) const;
 
-        virtual std::vector<Path> find_from_PATH(View<StringView> stems) const = 0;
-        std::vector<Path> find_from_PATH(StringView stem) const;
-
-        virtual ReadFilePointer open_for_read(const Path& file_path, std::error_code& ec) const = 0;
-        ReadFilePointer open_for_read(const Path& file_path, LineInfo li) const;
-        ExpectedL<ReadFilePointer> try_open_for_read(const Path& file_path) const;
-
-        virtual WriteFilePointer open_for_write(const Path& file_path, Append append, std::error_code& ec) = 0;
-        WriteFilePointer open_for_write(const Path& file_path, Append append, LineInfo li);
-        WriteFilePointer open_for_write(const Path& file_path, std::error_code& ec);
-        WriteFilePointer open_for_write(const Path& file_path, LineInfo li);
-
-        ExpectedL<bool> check_update_required(const Path& version_path, StringView expected_version);
+        virtual WriteFilePointer open_for_write(const Path& file_path, Append append, std::error_code& ec) const = 0;
+        WriteFilePointer open_for_write(const Path& file_path, Append append, LineInfo li) const;
+        WriteFilePointer open_for_write(const Path& file_path, std::error_code& ec) const;
+        WriteFilePointer open_for_write(const Path& file_path, LineInfo li) const;
     };
 
-    Filesystem& get_real_filesystem();
+    extern const Filesystem& real_filesystem;
 
     extern const StringLiteral FILESYSTEM_INVALID_CHARACTERS;
 

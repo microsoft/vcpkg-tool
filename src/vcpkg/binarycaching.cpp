@@ -197,7 +197,7 @@ namespace
         return make_nugetref(info.spec, info.raw_version, info.package_abi, prefix);
     }
 
-    void clean_prepare_dir(Filesystem& fs, const Path& dir)
+    void clean_prepare_dir(const Filesystem& fs, const Path& dir)
     {
         fs.remove_all(dir, VCPKG_LINE_INFO);
         if (!fs.create_directories(dir, VCPKG_LINE_INFO))
@@ -226,7 +226,7 @@ namespace
             OldestModificationDateUpdateOnAccess,
         };
         DeletePolicy delete_policy = DeletePolicy::None;
-        int64_t filetime_now(Filesystem& fs)
+        int64_t filetime_now(const Filesystem& fs)
         {
             switch (delete_policy)
             {
@@ -236,7 +236,7 @@ namespace
                 default: Checks::unreachable(VCPKG_LINE_INFO);
             }
         }
-        int64_t last_time(Filesystem& fs, const Path& path, std::error_code& ec)
+        int64_t last_time(const Filesystem& fs, const Path& path, std::error_code& ec)
         {
             switch (delete_policy)
             {
@@ -382,7 +382,7 @@ namespace
         };
         mutable std::vector<FileCacheData> file_cache_data;
 
-        FilesWriteBinaryProvider(Filesystem& fs, std::vector<Path>&& dirs) : m_fs(fs), m_dirs(std::move(dirs)) { }
+        FilesWriteBinaryProvider(const Filesystem& fs, std::vector<Path>&& dirs) : m_fs(fs), m_dirs(std::move(dirs)) { }
 
         template<typename T>
         static void print(StringView key, T& value)
@@ -588,7 +588,7 @@ namespace
         bool needs_zip_file() const override { return true; }
 
     private:
-        Filesystem& m_fs;
+        const Filesystem& m_fs;
         std::vector<Path> m_dirs;
     };
 
@@ -613,7 +613,7 @@ namespace
     // - IReadBinaryProvider::precheck()
     struct ZipReadBinaryProvider : IReadBinaryProvider
     {
-        ZipReadBinaryProvider(ZipTool zip, Filesystem& fs) : m_zip(std::move(zip)), m_fs(fs) { }
+        ZipReadBinaryProvider(ZipTool zip, const Filesystem& fs) : m_zip(std::move(zip)), m_fs(fs) { }
 
         void fetch(View<const InstallPlanAction*> actions, Span<RestoreResult> out_status) const override
         {
@@ -669,12 +669,12 @@ namespace
 
     protected:
         ZipTool m_zip;
-        Filesystem& m_fs;
+        const Filesystem& m_fs;
     };
 
     struct FilesReadBinaryProvider : ZipReadBinaryProvider
     {
-        FilesReadBinaryProvider(ZipTool zip, Filesystem& fs, Path&& dir)
+        FilesReadBinaryProvider(ZipTool zip, const Filesystem& fs, Path&& dir)
             : ZipReadBinaryProvider(std::move(zip), fs), m_dir(std::move(dir))
         {
         }
@@ -763,7 +763,7 @@ namespace
     struct HttpGetBinaryProvider : ZipReadBinaryProvider
     {
         HttpGetBinaryProvider(ZipTool zip,
-                              Filesystem& fs,
+                              const Filesystem& fs,
                               const Path& buildtrees,
                               UrlTemplate&& url_template,
                               const std::vector<std::string>& secrets)
@@ -973,7 +973,7 @@ namespace
 
     struct NugetBaseBinaryProvider
     {
-        NugetBaseBinaryProvider(Filesystem& fs,
+        NugetBaseBinaryProvider(const Filesystem& fs,
                                 const NuGetTool& tool,
                                 const Path& packages,
                                 const Path& buildtrees,
@@ -986,7 +986,7 @@ namespace
         {
         }
 
-        Filesystem& m_fs;
+        const Filesystem& m_fs;
         NuGetTool m_cmd;
         Path m_packages;
         Path m_buildtrees;
@@ -1135,7 +1135,7 @@ namespace
     struct GHABinaryProvider : ZipReadBinaryProvider
     {
         GHABinaryProvider(
-            ZipTool zip, Filesystem& fs, const Path& buildtrees, const std::string& url, const std::string& token)
+            ZipTool zip, const Filesystem& fs, const Path& buildtrees, const std::string& url, const std::string& token)
             : ZipReadBinaryProvider(std::move(zip), fs)
             , m_buildtrees(buildtrees)
             , m_url(url + "_apis/artifactcache/cache")
@@ -1316,7 +1316,7 @@ namespace
     struct ObjectStorageProvider : ZipReadBinaryProvider
     {
         ObjectStorageProvider(ZipTool zip,
-                              Filesystem& fs,
+                              const Filesystem& fs,
                               const Path& buildtrees,
                               std::string&& prefix,
                               const std::shared_ptr<const IObjectStorageTool>& tool)
@@ -1546,7 +1546,7 @@ namespace
             get_global_metrics_collector().track_define(DefineMetric::VcpkgDefaultBinaryCache);
             Path path = std::move(*p_str);
             path.make_preferred();
-            if (!get_real_filesystem().is_directory(path))
+            if (!real_filesystem.is_directory(path))
             {
                 return msg::format(msgDefaultBinaryCacheRequiresDirectory, msg::path = path);
             }
@@ -1861,7 +1861,7 @@ namespace
                                                  msg::binary_source = "x-aws-config"));
                 }
 
-                auto no_sign_request = false;
+                bool no_sign_request = false;
                 if (segments[1].second == "no-sign-request")
                 {
                     no_sign_request = true;
@@ -2464,7 +2464,7 @@ namespace vcpkg
         });
     }
 
-    BinaryCache::BinaryCache(Filesystem& fs) : m_fs(fs) { }
+    BinaryCache::BinaryCache(const Filesystem& fs) : m_fs(fs) { }
 
     ExpectedL<BinaryCache> BinaryCache::make(const VcpkgCmdArguments& args, const VcpkgPaths& paths, MessageSink& sink)
     {
@@ -2488,7 +2488,7 @@ namespace vcpkg
         });
     }
 
-    BinaryCache::BinaryCache(BinaryProviders&& providers, Filesystem& fs)
+    BinaryCache::BinaryCache(BinaryProviders&& providers, const Filesystem& fs)
         : ReadOnlyBinaryCache(std::move(providers)), m_fs(fs)
     {
     }
