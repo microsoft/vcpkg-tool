@@ -124,7 +124,7 @@ namespace
         return output_object;
     }
 
-    static void write_baseline_file(Filesystem& fs,
+    static void write_baseline_file(const Filesystem& fs,
                                     const std::map<std::string, Version, std::less<>>& baseline_map,
                                     const Path& output_path)
     {
@@ -134,7 +134,7 @@ namespace
         fs.rename(new_path, output_path, VCPKG_LINE_INFO);
     }
 
-    static void write_versions_file(Filesystem& fs,
+    static void write_versions_file(const Filesystem& fs,
                                     const std::vector<VersionGitTree>& versions,
                                     const Path& output_path)
     {
@@ -378,7 +378,7 @@ namespace vcpkg::Commands::AddVersion
 
         // Get tree-ish from local repository state.
         auto maybe_git_tree_map = paths.git_get_local_port_treeish_map();
-        auto git_tree_map = maybe_git_tree_map.value_or_exit(VCPKG_LINE_INFO);
+        auto& git_tree_map = maybe_git_tree_map.value_or_exit(VCPKG_LINE_INFO);
 
         // Find ports with uncommited changes
         std::set<std::string> changed_ports;

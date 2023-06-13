@@ -103,8 +103,8 @@ namespace vcpkg::Commands::Autocomplete
             auto colon = Util::find(last_arg, ':');
             if (colon != last_arg.end())
             {
-                auto port_name = StringView{last_arg.begin(), colon};
-                auto triplet_prefix = StringView{colon + 1, last_arg.end()};
+                StringView port_name{last_arg.begin(), colon};
+                StringView triplet_prefix{colon + 1, last_arg.end()};
                 // TODO: Support autocomplete for ports in --overlay-ports
                 auto maybe_port =
                     Paragraphs::try_load_port(paths.get_filesystem(), paths.builtin_ports_directory() / port_name);

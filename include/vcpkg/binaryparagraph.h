@@ -53,5 +53,5 @@ namespace vcpkg
     };
 
     void serialize(const BinaryParagraph& pgh, std::string& out_str);
-    std::string format_binary_paragraph(BinaryParagraph paragraph);
+    std::string format_binary_paragraph(const BinaryParagraph& paragraph);
 }

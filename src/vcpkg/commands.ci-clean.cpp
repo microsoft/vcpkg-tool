@@ -10,7 +10,7 @@ using namespace vcpkg;
 
 namespace
 {
-    void clear_directory(Filesystem& fs, const Path& target)
+    void clear_directory(const Filesystem& fs, const Path& target)
     {
         if (fs.is_directory(target))
         {

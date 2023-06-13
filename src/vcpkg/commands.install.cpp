@@ -46,7 +46,9 @@ namespace vcpkg
 
     const Path& InstallDir::listfile() const { return this->m_listfile; }
 
-    void install_package_and_write_listfile(Filesystem& fs, const Path& source_dir, const InstallDir& destination_dir)
+    void install_package_and_write_listfile(const Filesystem& fs,
+                                            const Path& source_dir,
+                                            const InstallDir& destination_dir)
     {
         Checks::check_exit(VCPKG_LINE_INFO,
                            fs.exists(source_dir, IgnoreErrors{}),
@@ -55,7 +57,7 @@ namespace vcpkg
         Util::erase_remove_if(files, [](Path& path) { return path.filename() == ".DS_Store"; });
         install_files_and_write_listfile(fs, source_dir, files, destination_dir);
     }
-    void install_files_and_write_listfile(Filesystem& fs,
+    void install_files_and_write_listfile(const Filesystem& fs,
                                           const Path& source_dir,
                                           const std::vector<Path>& files,
                                           const InstallDir& destination_dir)
@@ -93,6 +95,7 @@ namespace vcpkg
             const auto suffix = file.generic_u8string().substr(prefix_length + 1);
             const auto target = destination / suffix;
 
+            bool use_hard_link = true;
             auto this_output = Strings::concat(destination_subdirectory, "/", suffix);
             switch (status)
             {
@@ -114,9 +117,24 @@ namespace vcpkg
                     if (fs.exists(target, IgnoreErrors{}))
                     {
                         msg::println_warning(msgOverwritingFile, msg::path = target);
+                        fs.remove_all(target, IgnoreErrors{});
+                    }
+                    if (use_hard_link)
+                    {
+                        fs.create_hard_link(file, target, ec);
+                        if (ec)
+                        {
+                            Debug::println("Install from packages to installed: Fallback to copy "
+                                           "instead creating hard links because of: ",
+                                           ec.message());
+                            use_hard_link = false;
+                        }
+                    }
+                    if (!use_hard_link)
+                    {
+                        fs.copy_file(file, target, CopyOptions::overwrite_existing, ec);
                     }
 
-                    fs.copy_file(file, target, CopyOptions::overwrite_existing, ec);
                     if (ec)
                     {
                         msg::println_error(msgInstallFailed, msg::path = target, msg::error_msg = ec.message());
@@ -177,7 +195,7 @@ namespace vcpkg
         return output;
     }
 
-    static SortedVector<std::string> build_list_of_package_files(const Filesystem& fs, const Path& package_dir)
+    static SortedVector<std::string> build_list_of_package_files(const ReadOnlyFilesystem& fs, const Path& package_dir)
     {
         std::vector<Path> package_file_paths = fs.get_files_recursive(package_dir, IgnoreErrors{});
         Util::erase_remove_if(package_file_paths, [](Path& path) { return path.filename() == ".DS_Store"; });
@@ -285,7 +303,7 @@ namespace vcpkg
         const InstallDir install_dir =
             InstallDir::from_destination_root(paths.installed(), triplet, bcf.core_paragraph);
 
-        install_package_and_write_listfile(fs, paths.package_dir(bcf.core_paragraph.spec), install_dir);
+        install_package_and_write_listfile(fs, package_dir, install_dir);
 
         source_paragraph.state = InstallState::INSTALLED;
         write_update(fs, installed, source_paragraph);
@@ -514,6 +532,20 @@ namespace vcpkg
         TrackedPackageInstallGuard& operator=(const TrackedPackageInstallGuard&) = delete;
     };
 
+    void Install::preclear_packages(const VcpkgPaths& paths, const ActionPlan& action_plan)
+    {
+        auto& fs = paths.get_filesystem();
+        for (auto&& action : action_plan.remove_actions)
+        {
+            fs.remove_all(paths.package_dir(action.spec), VCPKG_LINE_INFO);
+        }
+
+        for (auto&& action : action_plan.install_actions)
+        {
+            fs.remove_all(action.package_dir.value_or_exit(VCPKG_LINE_INFO), VCPKG_LINE_INFO);
+        }
+    }
+
     InstallSummary Install::execute_plan(const VcpkgCmdArguments& args,
                                          const ActionPlan& action_plan,
                                          const KeepGoing keep_going,
@@ -532,7 +564,6 @@ namespace vcpkg
         {
             TrackedPackageInstallGuard this_install(action_index++, action_count, results, action);
             Remove::remove_package(fs, paths.installed(), action.spec, status_db);
-            fs.remove_all(paths.packages() / action.spec.dir(), VCPKG_LINE_INFO);
             results.back().build_result.emplace(BuildResult::REMOVED);
         }
 
@@ -655,7 +686,7 @@ namespace vcpkg
     };
     void Install::print_usage_information(const BinaryParagraph& bpgh,
                                           std::set<std::string>& printed_usages,
-                                          const Filesystem& fs,
+                                          const ReadOnlyFilesystem& fs,
                                           const InstalledPaths& installed)
     {
         auto message = get_cmake_usage(fs, installed, bpgh).message;
@@ -742,7 +773,9 @@ namespace vcpkg
         return std::string(res);
     }
 
-    CMakeUsageInfo get_cmake_usage(const Filesystem& fs, const InstalledPaths& installed, const BinaryParagraph& bpgh)
+    CMakeUsageInfo get_cmake_usage(const ReadOnlyFilesystem& fs,
+                                   const InstalledPaths& installed,
+                                   const BinaryParagraph& bpgh)
     {
         CMakeUsageInfo ret;
 
@@ -849,10 +882,10 @@ namespace vcpkg
             bool has_targets_for_output = false;
             for (auto&& package : config_packages)
             {
-                const auto library_target_pair = library_targets.find(package.dir);
-                if (library_target_pair == library_targets.end()) continue;
+                const auto library_target_it = library_targets.find(package.dir);
+                if (library_target_it == library_targets.end()) continue;
 
-                auto& targets = library_target_pair->second;
+                auto& targets = library_target_it->second;
                 if (!targets.empty())
                 {
                     if (!package.name.empty()) has_targets_for_output = true;
@@ -1280,6 +1313,7 @@ namespace vcpkg
         paths.flush_lockfile();
 
         track_install_plan(action_plan);
+        Install::preclear_packages(paths, action_plan);
 
         auto binary_cache = only_downloads ? BinaryCache(paths.get_filesystem())
                                            : BinaryCache::make(args, paths, stdout_sink).value_or_exit(VCPKG_LINE_INFO);

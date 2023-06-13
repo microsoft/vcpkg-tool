@@ -18,7 +18,7 @@ namespace vcpkg::Remove
 {
     using Update::OutdatedPackage;
 
-    void remove_package(Filesystem& fs,
+    void remove_package(const Filesystem& fs,
                         const InstalledPaths& installed,
                         const PackageSpec& spec,
                         StatusParagraphs& status_db)
@@ -283,12 +283,12 @@ namespace vcpkg::Remove
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 
-        Filesystem& fs = paths.get_filesystem();
+        const Filesystem& fs = paths.get_filesystem();
         if (purge == Purge::YES)
         {
             for (auto&& action : plan.not_installed)
             {
-                fs.remove_all(paths.packages() / action.spec.dir(), VCPKG_LINE_INFO);
+                fs.remove_all(paths.package_dir(action.spec), VCPKG_LINE_INFO);
             }
         }
 
@@ -302,7 +302,7 @@ namespace vcpkg::Remove
             remove_package(fs, paths.installed(), action.spec, status_db);
             if (purge == Purge::YES)
             {
-                fs.remove_all(paths.packages() / action.spec.dir(), VCPKG_LINE_INFO);
+                fs.remove_all(paths.package_dir(action.spec), VCPKG_LINE_INFO);
             }
         }
 

@@ -60,9 +60,11 @@ namespace vcpkg
         const Path& listfile() const;
     };
 
-    void install_package_and_write_listfile(Filesystem& fs, const Path& source_dir, const InstallDir& destination_dir);
+    void install_package_and_write_listfile(const Filesystem& fs,
+                                            const Path& source_dir,
+                                            const InstallDir& destination_dir);
 
-    void install_files_and_write_listfile(Filesystem& fs,
+    void install_files_and_write_listfile(const Filesystem& fs,
                                           const Path& source_dir,
                                           const std::vector<Path>& files,
                                           const InstallDir& destination_dir);
@@ -81,7 +83,9 @@ namespace vcpkg
 
     std::vector<std::string> get_cmake_add_library_names(StringView cmake_file);
     std::string get_cmake_find_package_name(StringView dirname, StringView filename);
-    CMakeUsageInfo get_cmake_usage(const Filesystem& fs, const InstalledPaths& installed, const BinaryParagraph& bpgh);
+    CMakeUsageInfo get_cmake_usage(const ReadOnlyFilesystem& fs,
+                                   const InstalledPaths& installed,
+                                   const BinaryParagraph& bpgh);
 
     namespace Install
     {
@@ -89,8 +93,10 @@ namespace vcpkg
 
         void print_usage_information(const BinaryParagraph& bpgh,
                                      std::set<std::string>& printed_usages,
-                                     const Filesystem& fs,
+                                     const ReadOnlyFilesystem& fs,
                                      const InstalledPaths& installed);
+
+        void preclear_packages(const VcpkgPaths& paths, const ActionPlan& action_plan);
 
         InstallSummary execute_plan(const VcpkgCmdArguments& args,
                                     const ActionPlan& action_plan,

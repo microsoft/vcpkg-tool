@@ -514,6 +514,7 @@ namespace vcpkg::Commands::CI
             {
                 msg::println_warning(msgCISkipInstallation, msg::list = Strings::join(", ", already_installed));
             }
+            Install::preclear_packages(paths, action_plan);
             binary_cache.fetch(action_plan.install_actions);
             auto summary = Install::execute_plan(
                 args, action_plan, KeepGoing::YES, paths, status_db, binary_cache, build_logs_recorder);

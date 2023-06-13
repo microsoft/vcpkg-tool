@@ -328,11 +328,9 @@ namespace vcpkg
             ret.push_back(pid_exe_path_map[it->first]);
         }
 #elif defined(__linux__)
-        auto& fs = get_real_filesystem();
-
         std::error_code ec;
         auto vcpkg_stat_filepath = fmt::format("/proc/{}/stat", getpid());
-        auto vcpkg_stat_contents = fs.read_contents(vcpkg_stat_filepath, ec);
+        auto vcpkg_stat_contents = real_filesystem.read_contents(vcpkg_stat_filepath, ec);
         if (ec) return;
 
         auto maybe_vcpkg_stat = try_parse_process_stat_file(vcpkg_stat_contents, vcpkg_stat_filepath);
@@ -342,7 +340,7 @@ namespace vcpkg
             while (pid != 0)
             {
                 auto stat_filepath = fmt::format("/proc/{}/stat", pid);
-                auto contents = fs.read_contents(stat_filepath, ec);
+                auto contents = real_filesystem.read_contents(stat_filepath, ec);
                 if (ec) break;
 
                 auto maybe_stat = try_parse_process_stat_file(contents, stat_filepath);
@@ -502,6 +500,10 @@ namespace vcpkg
             "Z_VCPKG_UNDO",
             // Ensures that the escape hatch persists to recursive vcpkg invocations like x-download
             "VCPKG_KEEP_ENV_VARS",
+            // Enables Xbox SDKs
+            "GameDKLatest",
+            "GRDKLatest",
+            "GXDKLatest",
         };
 
         const Optional<std::string> keep_vars = get_environment_variable("VCPKG_KEEP_ENV_VARS");
@@ -716,8 +718,7 @@ namespace vcpkg
         {
             // this only fails if we can't get the current working directory of vcpkg, and we assume that we have that,
             // so it's fine anyways
-            working_directory =
-                Strings::to_utf16(get_real_filesystem().absolute(wd.working_directory, VCPKG_LINE_INFO));
+            working_directory = Strings::to_utf16(real_filesystem.absolute(wd.working_directory, VCPKG_LINE_INFO));
         }
 
         auto environment_block = env.get();
