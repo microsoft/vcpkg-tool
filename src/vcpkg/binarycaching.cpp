@@ -456,6 +456,7 @@ namespace
                                        "file-cache-settings.schema.json");
                             obj.sort_keys();
                             std::error_code ec;
+                            m_fs.create_directories(archives_root_dir, IgnoreErrors{});
                             m_fs.write_contents(settings_path, Json::stringify(obj), ec);
                             if (ec)
                             {
