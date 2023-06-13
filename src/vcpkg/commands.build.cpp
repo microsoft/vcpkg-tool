@@ -358,11 +358,10 @@ namespace vcpkg
 
             for (auto&& env_var : abi_info.pre_build_info->passthrough_env_vars)
             {
-                auto env_val = get_environment_variable(env_var);
-
-                if (env_val)
+                auto maybe_env_val = get_environment_variable(env_var);
+                if (auto env_val = maybe_env_val.get())
                 {
-                    env[env_var] = env_val.value_or_exit(VCPKG_LINE_INFO);
+                    env[env_var] = std::move(*env_val);
                 }
             }
             static constexpr StringLiteral s_extra_vars[] = {
@@ -414,8 +413,8 @@ namespace vcpkg
                             auto kvp = Strings::split(s, '=');
                             if (kvp.size() == 2)
                             {
-                                auto protocol = kvp[0];
-                                auto address = kvp[1];
+                                auto& protocol = kvp[0];
+                                auto& address = kvp[1];
 
                                 /* Unlike Python's urllib implementation about this type of proxy configuration
                                  * (http=addr:port;https=addr:port)
@@ -485,14 +484,14 @@ namespace vcpkg
 
     static const std::string& get_toolchain_cache(Cache<Path, std::string>& cache,
                                                   const Path& tcfile,
-                                                  const Filesystem& fs)
+                                                  const ReadOnlyFilesystem& fs)
     {
         return cache.get_lazy(tcfile, [&]() {
             return Hash::get_file_hash(fs, tcfile, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO);
         });
     }
 
-    const EnvCache::TripletMapEntry& EnvCache::get_triplet_cache(const Filesystem& fs, const Path& p) const
+    const EnvCache::TripletMapEntry& EnvCache::get_triplet_cache(const ReadOnlyFilesystem& fs, const Path& p) const
     {
         return m_triplet_cache.get_lazy(p, [&]() -> TripletMapEntry {
             return TripletMapEntry{Hash::get_file_hash(fs, p, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO)};
@@ -510,7 +509,7 @@ namespace vcpkg
 
         const auto& fs = paths.get_filesystem();
 
-        const auto triplet_file_path = paths.get_triplet_file_path(abi_info.pre_build_info->triplet);
+        const auto& triplet_file_path = paths.get_triplet_file_path(abi_info.pre_build_info->triplet);
 
         auto&& toolchain_hash = get_toolchain_cache(m_toolchain_cache, abi_info.pre_build_info->toolchain_file(), fs);
 
@@ -532,7 +531,7 @@ namespace vcpkg
     {
         const auto& fs = paths.get_filesystem();
         Checks::check_exit(VCPKG_LINE_INFO, abi_info.pre_build_info != nullptr);
-        const auto triplet_file_path = paths.get_triplet_file_path(abi_info.pre_build_info->triplet);
+        const auto& triplet_file_path = paths.get_triplet_file_path(abi_info.pre_build_info->triplet);
 
         auto&& toolchain_hash = get_toolchain_cache(m_toolchain_cache, abi_info.pre_build_info->toolchain_file(), fs);
 
@@ -624,7 +623,7 @@ namespace vcpkg
         return bcf;
     }
 
-    static void write_binary_control_file(Filesystem& fs, const Path& package_dir, const BinaryControlFile& bcf)
+    static void write_binary_control_file(const Filesystem& fs, const Path& package_dir, const BinaryControlFile& bcf)
     {
         std::string start = Strings::serialize(bcf.core_paragraph);
         for (auto&& feature : bcf.features)
@@ -658,7 +657,7 @@ namespace vcpkg
 
     static CompilerInfo load_compiler_info(const VcpkgPaths& paths, const AbiInfo& abi_info)
     {
-        auto triplet = abi_info.pre_build_info->triplet;
+        auto& triplet = abi_info.pre_build_info->triplet;
         msg::println(msgDetectCompilerHash, msg::triplet = triplet);
         auto buildpath = paths.buildtrees() / "detect_compiler";
 
@@ -783,7 +782,7 @@ namespace vcpkg
             variables.emplace_back("VCPKG_DOWNLOAD_MODE", "true");
         }
 
-        const Filesystem& fs = paths.get_filesystem();
+        const ReadOnlyFilesystem& fs = paths.get_filesystem();
 
         std::vector<std::string> port_configs;
         for (const PackageSpec& dependency : action.package_dependencies)
@@ -1038,7 +1037,7 @@ namespace vcpkg
         if (auto game_dk_latest = pre_build_info.gamedk_latest_path.get())
         {
             const auto grdk_header_path = *game_dk_latest / "GRDK/gameKit/Include/grdk.h";
-            const auto maybe_header_hash = grdk_cache.get_lazy(grdk_header_path, [&]() -> Optional<std::string> {
+            const auto& maybe_header_hash = grdk_cache.get_lazy(grdk_header_path, [&]() -> Optional<std::string> {
                 auto maybe_hash = Hash::get_file_hash(fs, grdk_header_path, Hash::Algorithm::Sha256);
                 if (auto hash = maybe_hash.get())
                 {
@@ -1206,7 +1205,7 @@ namespace vcpkg
         InternalFeatureSet sorted_feature_list = action.feature_list;
         // Check that no "default" feature is present. Default features must be resolved before attempting to calculate
         // a package ABI, so the "default" should not have made it here.
-        static constexpr auto default_literal = StringLiteral{"default"};
+        static constexpr StringLiteral default_literal{"default"};
         const bool has_no_pseudo_features = std::none_of(
             sorted_feature_list.begin(), sorted_feature_list.end(), [](StringView s) { return s == default_literal; });
         Checks::check_exit(VCPKG_LINE_INFO, has_no_pseudo_features);
@@ -1549,12 +1548,12 @@ namespace vcpkg
             manifest);
     }
 
-    static std::string make_gh_issue_search_url(StringView spec_name)
+    static std::string make_gh_issue_search_url(const std::string& spec_name)
     {
-        return "https://github.com/microsoft/vcpkg/issues?q=is%3Aissue+is%3Aopen+in%3Atitle+" + spec_name.to_string();
+        return "https://github.com/microsoft/vcpkg/issues?q=is%3Aissue+is%3Aopen+in%3Atitle+" + spec_name;
     }
 
-    static std::string make_gh_issue_open_url(StringView spec_name, const Path& path)
+    static std::string make_gh_issue_open_url(StringView spec_name, StringView path)
     {
         return Strings::concat("https://github.com/microsoft/vcpkg/issues/new?title=[",
                                spec_name,
@@ -1572,8 +1571,8 @@ namespace vcpkg
         result.append(msgBuildTroubleshootingMessage2).append_raw('\n');
         if (issue_body.has_value())
         {
-            auto path = issue_body.get()->generic_u8string();
-            result.append_indent().append_raw(make_gh_issue_open_url(spec_name, path)).append_raw("\n");
+            const auto path = issue_body.get()->generic_u8string();
+            result.append_indent().append_raw(make_gh_issue_open_url(spec_name, path)).append_raw('\n');
             if (!paths.get_filesystem().find_from_PATH("gh").empty())
             {
                 Command gh("gh");
@@ -1668,7 +1667,7 @@ namespace vcpkg
         return build_info;
     }
 
-    BuildInfo read_build_info(const Filesystem& fs, const Path& filepath)
+    BuildInfo read_build_info(const ReadOnlyFilesystem& fs, const Path& filepath)
     {
         auto pghs = Paragraphs::get_single_paragraph(fs, filepath);
         if (!pghs)

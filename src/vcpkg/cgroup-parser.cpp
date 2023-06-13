@@ -28,7 +28,7 @@ namespace vcpkg
         using P = ParserBase;
         constexpr auto is_separator_or_lineend = [](auto ch) { return ch == ':' || P::is_lineend(ch); };
 
-        auto parser = ParserBase(text, origin);
+        ParserBase parser{text, origin};
         parser.skip_whitespace();
 
         std::vector<ControlGroup> ret;

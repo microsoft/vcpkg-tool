@@ -6,7 +6,7 @@
 
 namespace vcpkg::Commands::Owns
 {
-    static void search_file(Filesystem& fs,
+    static void search_file(const Filesystem& fs,
                             const InstalledPaths& installed,
                             const std::string& file_substr,
                             const StatusParagraphs& status_db)

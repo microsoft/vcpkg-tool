@@ -48,6 +48,7 @@ namespace vcpkg
     struct IExclusiveFileLock;
     struct ILineReader;
     struct FileContents;
+    struct ReadOnlyFilesystem;
     struct Filesystem;
     struct NotExtensionCaseSensitive;
     struct NotExtensionCaseInsensitive;
