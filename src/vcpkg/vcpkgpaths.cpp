@@ -37,8 +37,11 @@ namespace
 {
     using namespace vcpkg;
 
-    Path process_input_directory_impl(
-        Filesystem& filesystem, const Path& root, const std::string* option, StringLiteral name, LineInfo li)
+    Path process_input_directory_impl(const ReadOnlyFilesystem& filesystem,
+                                      const Path& root,
+                                      const std::string* option,
+                                      StringLiteral name,
+                                      LineInfo li)
     {
         if (option)
         {
@@ -50,20 +53,23 @@ namespace
         }
     }
 
-    Path process_input_directory(
-        Filesystem& filesystem, const Path& root, const std::string* option, StringLiteral name, LineInfo li)
+    Path process_input_directory(const ReadOnlyFilesystem& filesystem,
+                                 const Path& root,
+                                 const std::string* option,
+                                 StringLiteral name,
+                                 LineInfo li)
     {
         auto result = process_input_directory_impl(filesystem, root, option, name, li);
         Debug::print("Using ", name, "-root: ", result, '\n');
         return result;
     }
 
-    Path process_output_directory(Filesystem& fs, const std::string* option, const Path& default_path)
+    Path process_output_directory(const ReadOnlyFilesystem& fs, const std::string* option, const Path& default_path)
     {
         return fs.almost_canonical(option ? Path(*option) : default_path, VCPKG_LINE_INFO);
     }
 
-    ManifestAndPath load_manifest(const Filesystem& fs, const Path& manifest_dir)
+    ManifestAndPath load_manifest(const ReadOnlyFilesystem& fs, const Path& manifest_dir)
     {
         std::error_code ec;
         auto manifest_path = manifest_dir / "vcpkg.json";
@@ -205,7 +211,7 @@ namespace
         return ret;
     }
 
-    Optional<Path> maybe_get_tmp_path(const Filesystem& fs,
+    Optional<Path> maybe_get_tmp_path(const ReadOnlyFilesystem& fs,
                                       const Optional<InstalledPaths>& installed,
                                       const Path& root,
                                       bool root_read_only,
@@ -235,7 +241,7 @@ namespace
         }
     }
 
-    Path compute_manifest_dir(const Filesystem& fs, const VcpkgCmdArguments& args, const Path& original_cwd)
+    Path compute_manifest_dir(const ReadOnlyFilesystem& fs, const VcpkgCmdArguments& args, const Path& original_cwd)
     {
         if (auto manifest_root_dir = args.manifest_root_dir.get())
         {
@@ -258,14 +264,14 @@ namespace
         Optional<vcpkg::LockFile> m_installed_lock;
     };
 
-    Path compute_registries_cache_root(const Filesystem& fs, const VcpkgCmdArguments& args)
+    Path compute_registries_cache_root(const ReadOnlyFilesystem& fs, const VcpkgCmdArguments& args)
     {
         Path ret;
         if (auto registries_cache_dir = args.registries_cache_dir.get())
         {
             get_global_metrics_collector().track_define(DefineMetric::X_VcpkgRegistriesCache);
             ret = *registries_cache_dir;
-            const auto status = get_real_filesystem().status(ret, VCPKG_LINE_INFO);
+            const auto status = real_filesystem.status(ret, VCPKG_LINE_INFO);
 
             if (!vcpkg::is_directory(status))
             {
@@ -291,7 +297,7 @@ namespace
     // 2. Are const (and therefore initialized in the initializer list)
     struct VcpkgPathsImplStage1 : VcpkgPathsImplStage0
     {
-        VcpkgPathsImplStage1(Filesystem& fs,
+        VcpkgPathsImplStage1(const Filesystem& fs,
                              const VcpkgCmdArguments& args,
                              const BundleSettings& bundle,
                              const Path& root,
@@ -314,7 +320,7 @@ namespace
             Debug::println("Using builtin-ports: ", m_builtin_ports);
         }
 
-        Filesystem& m_fs;
+        const Filesystem& m_fs;
         const FeatureFlagSettings m_ff_settings;
         const Path m_manifest_dir;
         const BundleSettings m_bundle;
@@ -325,8 +331,11 @@ namespace
         const Path m_registries_cache;
     };
 
-    Optional<InstalledPaths> compute_installed(
-        Filesystem& fs, const VcpkgCmdArguments& args, const Path& root, bool root_read_only, const Path& manifest_dir)
+    Optional<InstalledPaths> compute_installed(const ReadOnlyFilesystem& fs,
+                                               const VcpkgCmdArguments& args,
+                                               const Path& root,
+                                               bool root_read_only,
+                                               const Path& manifest_dir)
     {
         if (manifest_dir.empty())
         {
@@ -343,7 +352,7 @@ namespace
         return nullopt;
     }
 
-    Path compute_downloads_root(const Filesystem& fs,
+    Path compute_downloads_root(const ReadOnlyFilesystem& fs,
                                 const VcpkgCmdArguments& args,
                                 const Path& root,
                                 bool root_read_only)
@@ -366,7 +375,7 @@ namespace
     }
 
     // Guaranteed to return non-empty
-    Path determine_root(const Filesystem& fs, const Path& original_cwd, const VcpkgCmdArguments& args)
+    Path determine_root(const ReadOnlyFilesystem& fs, const Path& original_cwd, const VcpkgCmdArguments& args)
     {
         Path ret;
         if (auto vcpkg_root_dir_arg = args.vcpkg_root_dir_arg.get())
@@ -407,7 +416,7 @@ namespace
         return ret;
     }
 
-    Path preferred_current_path(const Filesystem& fs)
+    Path preferred_current_path(const ReadOnlyFilesystem& fs)
     {
 #if defined(_WIN32)
         return vcpkg::win32_fix_path_case(fs.current_path(VCPKG_LINE_INFO));
@@ -473,7 +482,7 @@ namespace
         return obj;
     }
 
-    vcpkg::LockFile load_lockfile(const Filesystem& fs, const Path& p)
+    vcpkg::LockFile load_lockfile(const ReadOnlyFilesystem& fs, const Path& p)
     {
         vcpkg::LockFile ret;
         std::error_code ec;
@@ -513,7 +522,7 @@ namespace vcpkg
 
     struct VcpkgPathsImpl : VcpkgPathsImplStage1
     {
-        VcpkgPathsImpl(Filesystem& fs,
+        VcpkgPathsImpl(const Filesystem& fs,
                        const VcpkgCmdArguments& args,
                        const BundleSettings bundle,
                        const Path& root,
@@ -620,7 +629,7 @@ namespace vcpkg
         ConfigurationAndSource m_config;
     };
 
-    VcpkgPaths::VcpkgPaths(Filesystem& filesystem, const VcpkgCmdArguments& args, const BundleSettings& bundle)
+    VcpkgPaths::VcpkgPaths(const Filesystem& filesystem, const VcpkgCmdArguments& args, const BundleSettings& bundle)
         : original_cwd(preferred_current_path(filesystem))
         , root(determine_root(filesystem, original_cwd, args))
         // this is used during the initialization of the below public members
@@ -713,7 +722,7 @@ namespace vcpkg
     {
         return m_pimpl->available_triplets.get_lazy([this]() -> std::vector<TripletFile> {
             std::vector<TripletFile> output;
-            Filesystem& fs = this->get_filesystem();
+            const Filesystem& fs = this->get_filesystem();
             for (auto&& triplets_dir : m_pimpl->triplets_dirs)
             {
                 for (auto&& path : fs.get_regular_files_non_recursive(triplets_dir, VCPKG_LINE_INFO))
@@ -756,7 +765,7 @@ namespace vcpkg
         });
     }
 
-    const Path VcpkgPaths::get_triplet_file_path(Triplet triplet) const
+    const Path& VcpkgPaths::get_triplet_file_path(Triplet triplet) const
     {
         return m_pimpl->m_triplets_cache.get_lazy(triplet, [&]() -> auto {
             for (const auto& triplet_dir : m_pimpl->triplets_dirs)
@@ -877,7 +886,7 @@ namespace vcpkg
         return ret;
     }
 
-    Filesystem& VcpkgPaths::get_filesystem() const { return m_pimpl->m_fs; }
+    const Filesystem& VcpkgPaths::get_filesystem() const { return m_pimpl->m_fs; }
     const DownloadManager& VcpkgPaths::get_download_manager() const { return *m_pimpl->m_download_manager; }
     const ToolCache& VcpkgPaths::get_tool_cache() const { return *m_pimpl->m_tool_cache; }
     const Path& VcpkgPaths::get_tool_exe(StringView tool, MessageSink& status_messages) const
@@ -955,7 +964,7 @@ namespace vcpkg
          * Since we are checking a git tree object, all files will be checked out to the root of `work-tree`.
          * Because of that, it makes sense to use the git hash as the name for the directory.
          */
-        Filesystem& fs = get_filesystem();
+        const Filesystem& fs = get_filesystem();
         auto destination = this->versions_output() / port_name / git_tree;
         if (fs.exists(destination, IgnoreErrors{}))
         {
@@ -1320,7 +1329,7 @@ namespace vcpkg
     }
 
 #if defined(_WIN32)
-    static const ToolsetsInformation& get_all_toolsets(VcpkgPathsImpl& impl, const Filesystem& fs)
+    static const ToolsetsInformation& get_all_toolsets(VcpkgPathsImpl& impl, const ReadOnlyFilesystem& fs)
     {
         return impl.toolsets.get_lazy(
             [&fs]() -> ToolsetsInformation { return VisualStudio::find_toolset_instances_preferred_first(fs); });

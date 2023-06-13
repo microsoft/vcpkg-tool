@@ -17,7 +17,7 @@ namespace vcpkg::Remove
         YES
     };
 
-    void remove_package(Filesystem& fs,
+    void remove_package(const Filesystem& fs,
                         const InstalledPaths& installed,
                         const PackageSpec& spec,
                         StatusParagraphs& status_db);

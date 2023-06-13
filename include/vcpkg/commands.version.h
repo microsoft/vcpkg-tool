@@ -23,5 +23,5 @@
 namespace vcpkg::Commands::Version
 {
     extern const StringLiteral version;
-    void perform_and_exit(const VcpkgCmdArguments& args, Filesystem& fs);
+    void perform_and_exit(const VcpkgCmdArguments& args, const Filesystem& fs);
 }

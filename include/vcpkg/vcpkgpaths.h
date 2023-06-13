@@ -55,7 +55,7 @@ namespace vcpkg
 
     struct VcpkgPaths
     {
-        VcpkgPaths(Filesystem& filesystem, const VcpkgCmdArguments& args, const BundleSettings& bundle);
+        VcpkgPaths(const Filesystem& filesystem, const VcpkgCmdArguments& args, const BundleSettings& bundle);
         VcpkgPaths(const VcpkgPaths&) = delete;
         VcpkgPaths& operator=(const VcpkgPaths&) = delete;
         ~VcpkgPaths();
@@ -70,7 +70,7 @@ namespace vcpkg
         const std::vector<TripletFile>& get_available_triplets() const;
         const std::map<std::string, std::string>& get_cmake_script_hashes() const;
         StringView get_ports_cmake_hash() const;
-        const Path get_triplet_file_path(Triplet triplet) const;
+        const Path& get_triplet_file_path(Triplet triplet) const;
 
         LockFile& get_installed_lockfile() const;
         void flush_lockfile() const;
@@ -112,7 +112,7 @@ namespace vcpkg
 
         std::string get_toolver_diagnostics() const;
 
-        Filesystem& get_filesystem() const;
+        const Filesystem& get_filesystem() const;
         const DownloadManager& get_download_manager() const;
         const ToolCache& get_tool_cache() const;
         const Path& get_tool_exe(StringView tool, MessageSink& status_messages) const;

@@ -15,12 +15,12 @@ export const defaultConfig =
     {
       "kind": "artifact",
       "name": "microsoft",
-      "location": "https://aka.ms/vcpkg-ce-default"
+      "location": "https://github.com/microsoft/vcpkg-ce-catalog/archive/refs/heads/main.zip"
     },
     {
       "kind": "artifact",
-      "name": "cmsis",
-      "location": "https://aka.ms/vcpkg-artifacts-cmsis"
+      "name": "arm",
+      "location": "https://artifacts.keil.arm.com/vcpkg-ce-registry/registry.zip"
     }
   ]
 }

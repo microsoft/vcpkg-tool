@@ -13,7 +13,7 @@
 
 namespace vcpkg::Commands
 {
-    using BasicCommandFn = void (*)(const VcpkgCmdArguments& args, Filesystem& fs);
+    using BasicCommandFn = void (*)(const VcpkgCmdArguments& args, const Filesystem& fs);
     using PathsCommandFn = void (*)(const VcpkgCmdArguments& args, const VcpkgPaths& paths);
     using TripletCommandFn = void (*)(const VcpkgCmdArguments& args,
                                       const VcpkgPaths& paths,

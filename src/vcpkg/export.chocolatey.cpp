@@ -157,7 +157,7 @@ if (Test-Path $installedDir)
                                msgOptionRequired,
                                msg::option = "x-maintainer");
 
-        Filesystem& fs = paths.get_filesystem();
+        const Filesystem& fs = paths.get_filesystem();
         const auto vcpkg_root_path = paths.root;
         const auto raw_exported_dir_path = vcpkg_root_path / "chocolatey";
         const auto exported_dir_path = vcpkg_root_path / "chocolatey_exports";
