@@ -72,7 +72,7 @@ namespace
             }
         }
 
-        CiBuildLogsRecorder create_for_feature_test(const FullPackageSpec& spec, Filesystem& filesystem) const
+        CiBuildLogsRecorder create_for_feature_test(const FullPackageSpec& spec, const Filesystem& filesystem) const
         {
             static int counter = 0;
             std::string feature;
