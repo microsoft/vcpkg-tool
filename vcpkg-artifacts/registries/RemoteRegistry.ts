@@ -4,13 +4,13 @@
 import { strict } from 'assert';
 import { createHash } from 'crypto';
 import { parse } from 'yaml';
-import { vcpkgExtract } from '../vcpkg';
 import { registryIndexFile } from '../constants';
 import { acquireArtifactFile } from '../fs/acquire';
 import { i } from '../i18n';
 import { Session } from '../session';
 import { isGithubRepo } from '../util/checks';
 import { Uri } from '../util/uri';
+import { vcpkgExtract } from '../vcpkg';
 import { ArtifactRegistry } from './ArtifactRegistry';
 import { ArtifactIndex } from './artifact-index';
 import { Index } from './indexer';
@@ -91,7 +91,7 @@ export class RemoteRegistry extends ArtifactRegistry {
     const file = await acquireArtifactFile(this.session, locations, `${this.safeName}-registry.zip`, {}, {force: true});
     if (await file.exists()) {
       const targetLocation = this.cacheFolder.fsPath;
-      await vcpkgExtract(this.session, file.path, targetLocation);
+      await vcpkgExtract(this.session, file.fsPath, targetLocation);
       await file.delete();
     }
   }
