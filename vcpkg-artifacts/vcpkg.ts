@@ -49,6 +49,10 @@ export function vcpkgExtract(session: Session, archive: string, target:string): 
     return output;
   }, (error) => 
  {
+    session.channels.warning('In vcpkgExtract...\n');
+    session.channels.warning('Command: ' + session.vcpkgCommand + '\n');
+    session.channels.warning('Archive: ' + archive + '\n');
+    session.channels.warning('Target: ' + target + '\n');
     session.channels.warning('Failed to extract: ' + archive + '\n');
     return Promise.reject(error);
   });
