@@ -192,7 +192,7 @@ namespace vcpkg
         // considered.
         virtual bool ignore_version() const { return false; }
 
-        virtual void add_system_paths(Filesystem& fs, std::vector<Path>& out_candidate_paths) const
+        virtual void add_system_paths(const ReadOnlyFilesystem& fs, std::vector<Path>& out_candidate_paths) const
         {
             (void)fs;
             (void)out_candidate_paths;
@@ -240,7 +240,7 @@ namespace vcpkg
         virtual std::array<int, 3> default_min_version() const override { return {3, 17, 1}; }
 
 #if defined(_WIN32)
-        virtual void add_system_paths(Filesystem&, std::vector<Path>& out_candidate_paths) const override
+        virtual void add_system_paths(const ReadOnlyFilesystem&, std::vector<Path>& out_candidate_paths) const override
         {
             const auto& program_files = get_program_files_platform_bitness();
             if (const auto pf = program_files.get())
@@ -346,7 +346,7 @@ namespace vcpkg
         virtual std::array<int, 3> default_min_version() const override { return {16, 12, 0}; }
 
 #if defined(_WIN32)
-        virtual void add_system_paths(Filesystem&, std::vector<Path>& out_candidate_paths) const override
+        virtual void add_system_paths(const ReadOnlyFilesystem&, std::vector<Path>& out_candidate_paths) const override
         {
             const auto& program_files = get_program_files_platform_bitness();
             if (const auto pf = program_files.get()) out_candidate_paths.push_back(*pf / "nodejs" / "node.exe");
@@ -373,7 +373,7 @@ namespace vcpkg
         virtual std::array<int, 3> default_min_version() const override { return {2, 7, 4}; }
 
 #if defined(_WIN32)
-        virtual void add_system_paths(Filesystem&, std::vector<Path>& out_candidate_paths) const override
+        virtual void add_system_paths(const ReadOnlyFilesystem&, std::vector<Path>& out_candidate_paths) const override
         {
             const auto& program_files = get_program_files_platform_bitness();
             if (const auto pf = program_files.get()) out_candidate_paths.push_back(*pf / "git" / "cmd" / "git.exe");
@@ -527,7 +527,7 @@ namespace vcpkg
         virtual std::array<int, 3> default_min_version() const override { return {3, 5, 0}; } // 3.5 added -m venv
 
 #if defined(_WIN32)
-        void add_system_paths_impl(Filesystem& fs,
+        void add_system_paths_impl(const ReadOnlyFilesystem& fs,
                                    std::vector<Path>& out_candidate_paths,
                                    const Path& program_files_root) const
         {
@@ -542,7 +542,7 @@ namespace vcpkg
             }
         }
 
-        virtual void add_system_paths(Filesystem& fs, std::vector<Path>& out_candidate_paths) const
+        virtual void add_system_paths(const ReadOnlyFilesystem& fs, std::vector<Path>& out_candidate_paths) const
         {
             const auto& program_files = get_program_files_platform_bitness();
             if (const auto pf = program_files.get())
@@ -602,7 +602,7 @@ namespace vcpkg
 
     struct ToolCacheImpl final : ToolCache
     {
-        Filesystem& fs;
+        const Filesystem& fs;
         const std::shared_ptr<const DownloadManager> downloader;
         const Path downloads;
         const Path xml_config;
@@ -612,7 +612,7 @@ namespace vcpkg
         vcpkg::Lazy<std::string> xml_config_contents;
         vcpkg::Cache<std::string, PathAndVersion> path_version_cache;
 
-        ToolCacheImpl(Filesystem& fs,
+        ToolCacheImpl(const Filesystem& fs,
                       const std::shared_ptr<const DownloadManager>& downloader,
                       Path downloads,
                       Path xml_config,
@@ -880,7 +880,7 @@ namespace vcpkg
         }
     };
 
-    ExpectedL<Path> find_system_tar(const Filesystem& fs)
+    ExpectedL<Path> find_system_tar(const ReadOnlyFilesystem& fs)
     {
         const auto tools = fs.find_from_PATH(Tools::TAR);
         if (tools.empty())
@@ -900,7 +900,7 @@ namespace vcpkg
         }
     }
 
-    ExpectedL<Path> find_system_cmake(const Filesystem& fs)
+    ExpectedL<Path> find_system_cmake(const ReadOnlyFilesystem& fs)
     {
         auto tools = fs.find_from_PATH(Tools::CMAKE);
         if (!tools.empty())
@@ -933,7 +933,7 @@ namespace vcpkg
             ;
     }
 
-    std::unique_ptr<ToolCache> get_tool_cache(Filesystem& fs,
+    std::unique_ptr<ToolCache> get_tool_cache(const Filesystem& fs,
                                               std::shared_ptr<const DownloadManager> downloader,
                                               Path downloads,
                                               Path xml_config,

@@ -328,7 +328,7 @@ namespace vcpkg
         return SplitURIView{scheme, {}, {sep + 1, uri.end()}};
     }
 
-    static ExpectedL<Unit> try_verify_downloaded_file_hash(const Filesystem& fs,
+    static ExpectedL<Unit> try_verify_downloaded_file_hash(const ReadOnlyFilesystem& fs,
                                                            StringView sanitized_url,
                                                            const Path& downloaded_path,
                                                            StringView sha512)
@@ -347,7 +347,7 @@ namespace vcpkg
         return Unit{};
     }
 
-    void verify_downloaded_file_hash(const Filesystem& fs,
+    void verify_downloaded_file_hash(const ReadOnlyFilesystem& fs,
                                      StringView url,
                                      const Path& downloaded_path,
                                      StringView sha512)
@@ -355,7 +355,7 @@ namespace vcpkg
         try_verify_downloaded_file_hash(fs, url, downloaded_path, sha512).value_or_exit(VCPKG_LINE_INFO);
     }
 
-    static ExpectedL<Unit> check_downloaded_file_hash(Filesystem& fs,
+    static ExpectedL<Unit> check_downloaded_file_hash(const ReadOnlyFilesystem& fs,
                                                       const Optional<std::string>& hash,
                                                       StringView sanitized_url,
                                                       const Path& download_part_path)
@@ -439,7 +439,7 @@ namespace vcpkg
         return ret;
     }
 
-    static void download_files_inner(Filesystem&,
+    static void download_files_inner(const Filesystem&,
                                      View<std::pair<std::string, Path>> url_pairs,
                                      View<std::string> headers,
                                      std::vector<int>* out)
@@ -490,7 +490,7 @@ namespace vcpkg
             }
         }
     }
-    std::vector<int> download_files(Filesystem& fs,
+    std::vector<int> download_files(const Filesystem& fs,
                                     View<std::pair<std::string, Path>> url_pairs,
                                     View<std::string> headers)
     {
@@ -517,7 +517,7 @@ namespace vcpkg
         return ret;
     }
 
-    ExpectedL<int> put_file(const Filesystem&,
+    ExpectedL<int> put_file(const ReadOnlyFilesystem&,
                             StringView url,
                             const std::vector<std::string>& secrets,
                             View<std::string> headers,
@@ -588,7 +588,7 @@ namespace vcpkg
         retry
     };
 
-    static WinHttpTrialResult download_winhttp_trial(Filesystem& fs,
+    static WinHttpTrialResult download_winhttp_trial(const Filesystem& fs,
                                                      WinHttpSession& s,
                                                      const Path& download_path_part_path,
                                                      SplitURIView split_uri,
@@ -645,7 +645,7 @@ namespace vcpkg
     /// <summary>
     /// Download a file using WinHTTP -- only supports HTTP and HTTPS
     /// </summary>
-    static bool download_winhttp(Filesystem& fs,
+    static bool download_winhttp(const Filesystem& fs,
                                  const Path& download_path_part_path,
                                  SplitURIView split_uri,
                                  const std::string& url,
@@ -699,7 +699,7 @@ namespace vcpkg
     }
 #endif
 
-    static bool try_download_file(vcpkg::Filesystem& fs,
+    static bool try_download_file(const Filesystem& fs,
                                   const std::string& url,
                                   View<std::string> headers,
                                   const Path& download_path,
@@ -808,7 +808,7 @@ namespace vcpkg
         return false;
     }
 
-    static Optional<const std::string&> try_download_file(vcpkg::Filesystem& fs,
+    static Optional<const std::string&> try_download_file(const Filesystem& fs,
                                                           View<std::string> urls,
                                                           View<std::string> headers,
                                                           const Path& download_path,
@@ -834,7 +834,7 @@ namespace vcpkg
         return s_headers;
     }
 
-    void DownloadManager::download_file(Filesystem& fs,
+    void DownloadManager::download_file(const Filesystem& fs,
                                         const std::string& url,
                                         View<std::string> headers,
                                         const Path& download_path,
@@ -844,7 +844,7 @@ namespace vcpkg
         this->download_file(fs, View<std::string>(&url, 1), headers, download_path, sha512, progress_sink);
     }
 
-    std::string DownloadManager::download_file(Filesystem& fs,
+    std::string DownloadManager::download_file(const Filesystem& fs,
                                                View<std::string> urls,
                                                View<std::string> headers,
                                                const Path& download_path,
@@ -962,7 +962,7 @@ namespace vcpkg
         Checks::exit_fail(VCPKG_LINE_INFO);
     }
 
-    ExpectedL<int> DownloadManager::put_file_to_mirror(const Filesystem& fs,
+    ExpectedL<int> DownloadManager::put_file_to_mirror(const ReadOnlyFilesystem& fs,
                                                        const Path& file_to_put,
                                                        StringView sha512) const
     {

@@ -21,7 +21,7 @@
 namespace
 {
     using namespace vcpkg;
-    void track_telemetry(Filesystem& fs, const Path& telemetry_file_path)
+    void track_telemetry(const Filesystem& fs, const Path& telemetry_file_path)
     {
         std::error_code ec;
         auto telemetry_file = fs.read_contents(telemetry_file_path, ec);
@@ -75,7 +75,7 @@ namespace
 namespace vcpkg
 {
     ExpectedL<Path> download_vcpkg_standalone_bundle(const DownloadManager& download_manager,
-                                                     Filesystem& fs,
+                                                     const Filesystem& fs,
                                                      const Path& download_root)
     {
 #if defined(VCPKG_STANDALONE_BUNDLE_SHA)

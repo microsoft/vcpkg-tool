@@ -88,7 +88,7 @@ namespace vcpkg::Commands
         return sha;
     }
 
-    void command_download_and_exit(const VcpkgCmdArguments& args, Filesystem& fs)
+    void command_download_and_exit(const VcpkgCmdArguments& args, const Filesystem& fs)
     {
         auto parsed = args.parse_arguments(COMMAND_STRUCTURE);
         DownloadManager download_manager{

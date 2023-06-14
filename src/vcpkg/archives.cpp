@@ -30,8 +30,8 @@ namespace
             Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgCouldNotDeduceNugetIdAndVersion, msg::path = archive);
         }
 
-        auto nugetid = StringView{stem.begin(), dot_after_name};
-        auto version = StringView{dot_after_name + 1, stem.end()};
+        StringView nugetid{stem.begin(), dot_after_name};
+        StringView version{dot_after_name + 1, stem.end()};
 
         Command nuget_command{nuget_exe};
         nuget_command.string_arg("install")
@@ -132,6 +132,7 @@ namespace
 namespace vcpkg
 {
     static ExtractionType guess_extraction_type(const Path& archive)
+
     {
         const auto ext = archive.extension();
         if (Strings::case_insensitive_ascii_equals(ext, ".nupkg"))
@@ -190,6 +191,7 @@ namespace vcpkg
                 win32_extract_self_extracting_7z(fs, archive, to_archive);
                 extract_archive(fs, tools, status_sink, to_archive, to_path, ext_type);
                 break;
+
         }
 #else
         (void)fs;
@@ -223,6 +225,7 @@ namespace vcpkg
                                               const Path& archive,
                                               const Path& to_path,
                                               const ExtractionType& extraction_type)
+
     {
         Path to_path_partial = to_path + ".partial";
 #if defined(_WIN32)
@@ -235,7 +238,7 @@ namespace vcpkg
         return to_path_partial;
     }
 #ifdef _WIN32
-    void win32_extract_self_extracting_7z(Filesystem& fs, const Path& archive, const Path& to_path)
+    void win32_extract_self_extracting_7z(const Filesystem& fs, const Path& archive, const Path& to_path)
     {
         constexpr static const char header_7z[] = "7z\xBC\xAF\x27\x1C";
 
@@ -268,8 +271,11 @@ namespace vcpkg
     //     (user) cmake.exe unpacks cmake.zip -> (vcpkg) cmake.exe unpacks 7z.7z
     // 3) As a last resource, install 7zip using a MSI installer
     //     msiexec installs 7zip.msi -> 7zip unpacks cmake.zip -> cmake.exe unpacks 7z.7z
-    void win32_extract_bootstrap_zip(
-        Filesystem& fs, const ToolCache& tools, MessageSink& status_sink, const Path& archive, const Path& to_path)
+    void win32_extract_bootstrap_zip(const Filesystem& fs,
+                                     const ToolCache& tools,
+                                     MessageSink& status_sink,
+                                     const Path& archive,
+                                     const Path& to_path)
     {
         fs.remove_all(to_path, VCPKG_LINE_INFO);
         Path to_path_partial = to_path + ".partial." + std::to_string(GetCurrentProcessId());
@@ -331,6 +337,7 @@ namespace vcpkg
                                            const Path& archive,
                                            const Path& to_path,
                                            const ExtractionType& extraction_type)
+
     {
         fs.remove_all(to_path, VCPKG_LINE_INFO);
         Path to_path_partial =
@@ -338,7 +345,7 @@ namespace vcpkg
         fs.rename_with_retry(to_path_partial, to_path, VCPKG_LINE_INFO);
     }
 
-    ExpectedL<Unit> ZipTool::compress_directory_to_zip(Filesystem& fs,
+    ExpectedL<Unit> ZipTool::compress_directory_to_zip(const Filesystem& fs,
                                                        const Path& source,
                                                        const Path& destination) const
     {
