@@ -162,6 +162,11 @@ namespace vcpkg::Commands
         auto strip_count = get_strip_count(parse_args);
         auto extraction_type = get_extraction_type(parse_args);
 
+        if (!fs.is_directory(destination_path))
+        {
+            fs.create_directories(destination_path, VCPKG_LINE_INFO);
+        }
+
         if (strip_count > 0)
         {
             extract_and_strip(fs, paths, strip_count, archive_path, destination_path, extraction_type);
