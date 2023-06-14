@@ -48,7 +48,6 @@ namespace vcpkg::Commands::SetInstalled
                           Triplet default_triplet,
                           Triplet host_triplet);
 
-    Json::Object create_dependency_graph_snapshot(const VcpkgCmdArguments& args,
-                                                  const ActionPlan& action_plan,
-                                                  Optional<std::string> manifest_path);
+    Optional<Json::Object> create_dependency_graph_snapshot(const VcpkgCmdArguments& args,
+                                                            const ActionPlan& action_plan);
 }

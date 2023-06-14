@@ -5,6 +5,7 @@
 #include <vcpkg/base/fwd/messages.h>
 
 #include <vcpkg/base/expected.h>
+#include <vcpkg/base/json.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/span.h>
 #include <vcpkg/base/stringview.h>
@@ -34,6 +35,10 @@ namespace vcpkg
     std::vector<int> download_files(const Filesystem& fs,
                                     View<std::pair<std::string, Path>> url_pairs,
                                     View<std::string> headers);
+
+    void send_snapshot_to_api(const std::string& github_token,
+                              const std::string& github_repository,
+                              const Json::Object& snapshot);
     ExpectedL<int> put_file(const ReadOnlyFilesystem&,
                             StringView url,
                             const std::vector<std::string>& secrets,

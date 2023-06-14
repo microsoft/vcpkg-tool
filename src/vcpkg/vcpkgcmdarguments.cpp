@@ -498,7 +498,6 @@ namespace vcpkg
         from_env(get_env, GITHUB_RUN_ID_ENV, github_run_id);
         from_env(get_env, GITHUB_TOKEN_ENV, github_token);
         from_env(get_env, GITHUB_WORKFLOW_ENV, github_workflow);
-        from_env(get_env, GITHUB_WORKSPACE_ENV, github_workspace);
         from_env(get_env, DEPENDENCY_GRAPH_VERSION_ENV, dependency_graph_version);
 
         // detect whether we are running in a CI environment
@@ -700,16 +699,6 @@ namespace vcpkg
         }
     }
 
-    void VcpkgCmdArguments::track_github_repository_env() const
-    {
-        Optional<std::string> repo_hash = github_repository.map(Hash::get_string_sha256);
-        if (auto gh_repo = repo_hash.get())
-        {
-            Debug::println("Detected Github Actions Repo: ", *gh_repo);
-            get_global_metrics_collector().track_string(StringMetric::GithubRepo, *gh_repo);
-        }
-    }
-
     Optional<std::string> VcpkgCmdArguments::asset_sources_template() const
     {
         std::string asset_sources_template = asset_sources_template_env.value_or("");
@@ -784,7 +773,6 @@ namespace vcpkg
     constexpr StringLiteral VcpkgCmdArguments::GITHUB_SHA_ENV;
     constexpr StringLiteral VcpkgCmdArguments::GITHUB_TOKEN_ENV;
     constexpr StringLiteral VcpkgCmdArguments::GITHUB_WORKFLOW_ENV;
-    constexpr StringLiteral VcpkgCmdArguments::GITHUB_WORKSPACE_ENV;
     constexpr StringLiteral VcpkgCmdArguments::DEPENDENCY_GRAPH_VERSION_ENV;
 
     constexpr StringLiteral VcpkgCmdArguments::FEATURE_FLAGS_ENV;

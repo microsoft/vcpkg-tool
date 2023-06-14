@@ -1279,22 +1279,6 @@ namespace vcpkg
 
     bool VcpkgPaths::manifest_mode_enabled() const { return !m_pimpl->m_manifest_dir.empty(); }
 
-    Optional<std::string> VcpkgPaths::relative_path_to_manifest(const std::string& git_root_dir) const
-    {
-        auto manifest_dir = get_manifest();
-        if (auto p = manifest_dir.get())
-        {
-            auto manifest_path = p->path.lexically_normal().native();
-            Path dir(git_root_dir);
-            auto git_root_path = dir.lexically_normal().native();
-            if (Strings::starts_with(manifest_path, git_root_path))
-            {
-                return "./" + manifest_path.substr(git_root_path.size());
-            }
-        }
-        return nullopt;
-    }
-
     const ConfigurationAndSource& VcpkgPaths::get_configuration() const { return m_pimpl->m_config; }
 
     std::unique_ptr<RegistrySet> VcpkgPaths::make_registry_set() const

@@ -1,3 +1,4 @@
+#include <vcpkg/base/downloads.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
@@ -46,135 +47,80 @@ namespace vcpkg::Commands::SetInstalled
         nullptr,
     };
 
-    static void send_snapshot_to_api(const VcpkgCmdArguments& args, Json::Object snapshot)
+    Optional<Json::Object> create_dependency_graph_snapshot(const VcpkgCmdArguments& args,
+                                                            const ActionPlan& action_plan)
     {
-        static constexpr StringLiteral guid_marker = "fcfad8a3-bb68-4a54-ad00-dab1ff671ed2";
+        if (args.github_ref.has_value() && args.github_sha.has_value() && args.github_job.has_value() &&
+            args.github_workflow.has_value() && args.github_run_id.has_value())
+        {
+            Json::Object detector;
+            detector.insert("name", Json::Value::string("vcpkg"));
+            detector.insert("url", Json::Value::string("https://github.com/microsoft/vcpkg"));
+            detector.insert("version", Json::Value::string("1.0.0"));
 
-        Command cmd;
-        cmd.string_arg("curl");
-        cmd.string_arg("-w").string_arg("\\n" + guid_marker.to_string() + "%{http_code}");
-        cmd.string_arg("-X").string_arg("POST");
-        cmd.string_arg("-H").string_arg("Accept: application/vnd.github+json");
+            Json::Object job;
+            job.insert("id", Json::Value::string(*args.github_run_id.get()));
+            job.insert("correlator", Json::Value::string(*args.github_workflow.get() + "-" + *args.github_job.get()));
 
-        std::string res = "Authorization: Bearer " + *args.github_token.get();
-        cmd.string_arg("-H").string_arg(res);
-        cmd.string_arg("-H").string_arg("X-GitHub-Api-Version: 2022-11-28");
-        cmd.string_arg(Strings::concat(
-            "https://api.github.com/repos/", *args.github_repository.get(), "/dependency-graph/snapshots"));
-        cmd.string_arg("-d").string_arg(Json::stringify(snapshot));
-
-        int code = 0;
-        auto result = cmd_execute_and_stream_lines(cmd, [&code](StringView line) {
-            if (Strings::starts_with(line, guid_marker))
+            Json::Object snapshot;
+            snapshot.insert("job", job);
+            if (auto v = args.dependency_graph_version.get())
             {
-                code = std::strtol(line.data() + guid_marker.size(), nullptr, 10);
+                snapshot.insert("version", Json::Value::integer(std::stoi(*v)));
             }
             else
             {
-                Debug::println(line);
+                snapshot.insert("version", Json::Value::integer(0));
             }
-        });
 
-        if (auto pres = result.get())
-        {
-            MetricsSubmission submission;
-            if (*pres != 0 || (code >= 100 && code < 200) || code >= 300)
+            snapshot.insert("sha", Json::Value::string(*args.github_sha.get()));
+            snapshot.insert("ref", Json::Value::string(*args.github_ref.get()));
+            snapshot.insert("scanned", Json::Value::string(CTime::now_string()));
+            snapshot.insert("detector", detector);
+
+            Json::Object manifest;
+            manifest.insert("name", "vcpkg.json");
+
+            std::unordered_map<std::string, std::string> map;
+            for (auto&& action : action_plan.install_actions)
             {
-                submission.track_bool(BoolMetric::DependencyGraphSuccess, false);
+                auto version =
+                    action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).to_version().to_string();
+                auto pkg_url = Strings::concat("pkg:github/vcpkg/", action.spec.name(), "@", version);
+                map.insert({action.spec.to_string(), pkg_url});
             }
-            else
+
+            Json::Object resolved;
+            for (auto&& action : action_plan.install_actions)
             {
-                submission.track_bool(BoolMetric::DependencyGraphSuccess, true);
-            }
-            get_global_metrics_collector().track_submission(std::move(submission));
-        }
-    }
-
-    Json::Object create_dependency_graph_snapshot(const VcpkgCmdArguments& args,
-                                                  const ActionPlan& action_plan,
-                                                  Optional<std::string> manifest_path)
-    {
-        auto gh_ref = args.github_ref.value_or_exit(VCPKG_LINE_INFO);
-        auto gh_sha = args.github_sha.value_or_exit(VCPKG_LINE_INFO);
-        auto gh_repo = args.github_repository.value_or_exit(VCPKG_LINE_INFO);
-        auto gh_token = args.github_token.value_or_exit(VCPKG_LINE_INFO);
-        auto gh_job_id = args.github_job.value_or_exit(VCPKG_LINE_INFO);
-        auto gh_workflow = args.github_workflow.value_or_exit(VCPKG_LINE_INFO);
-        auto gh_run_id = args.github_run_id.value_or_exit(VCPKG_LINE_INFO);
-
-        Json::Object detector;
-        detector.insert("name", Json::Value::string("vcpkg"));
-        detector.insert("url", Json::Value::string(Strings::concat("https://github.com/microsoft/vcpkg")));
-        detector.insert("version", Json::Value::string("1.0.0"));
-
-        Json::Object job;
-        job.insert("id", Json::Value::string(gh_run_id));
-        job.insert("correlator", Json::Value::string(gh_workflow + "-" + gh_job_id));
-
-        Json::Object snapshot;
-        snapshot.insert("job", job);
-        if (auto v = args.dependency_graph_version.get())
-        {
-            snapshot.insert("version", Json::Value::integer(std::stoi(*v)));
-        }
-        else
-        {
-            snapshot.insert("version", Json::Value::integer(0));
-        }
-
-        snapshot.insert("sha", Json::Value::string(gh_sha));
-        snapshot.insert("ref", Json::Value::string(gh_ref));
-        snapshot.insert("scanned", Json::Value::string(CTime::now_string()));
-        snapshot.insert("detector", detector);
-
-        Json::Object manifests;
-        Json::Object manifest;
-        Json::Object resolved;
-        Json::Object file;
-
-        if (auto p = manifest_path.get())
-        {
-            file.insert("source_location", *p);
-        }
-        manifest.insert("file", file);
-        manifest.insert("name", "vcpkg.json");
-
-        std::unordered_map<std::string, std::string> map;
-        for (auto&& action : action_plan.install_actions)
-        {
-            auto version =
-                action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).to_version().to_string();
-            auto pkg_url = Strings::concat("pkg:github/vcpkg/", action.spec.name(), "@", version);
-            map[action.spec.to_string()] = pkg_url;
-        }
-
-        for (auto&& action : action_plan.install_actions)
-        {
-            Json::Object resolved_item;
-            if (map.find(action.spec.to_string()) != map.end())
-            {
-                auto pkg_url = map[action.spec.to_string()];
-                resolved_item.insert("package_url", pkg_url);
-                resolved_item.insert("relationship", Json::Value::string("direct"));
-                Json::Array deps_list;
-                for (auto&& dep : action.package_dependencies)
+                Json::Object resolved_item;
+                if (map.find(action.spec.to_string()) != map.end())
                 {
-                    if (map.find(dep.to_string()) != map.end())
+                    auto pkg_url = map.at(action.spec.to_string());
+                    resolved_item.insert("package_url", pkg_url);
+                    resolved_item.insert("relationship", Json::Value::string("direct"));
+                    Json::Array deps_list;
+                    for (auto&& dep : action.package_dependencies)
                     {
-                        auto dep_pkg_url = map[dep.to_string()];
-                        deps_list.push_back(dep_pkg_url);
+                        if (map.find(dep.to_string()) != map.end())
+                        {
+                            auto dep_pkg_url = map.at(dep.to_string());
+                            deps_list.push_back(dep_pkg_url);
+                        }
                     }
+                    resolved_item.insert("dependencies", deps_list);
+                    resolved.insert(pkg_url, resolved_item);
                 }
-                resolved_item.insert("dependencies", deps_list);
-                resolved.insert(pkg_url, resolved_item);
             }
-        }
-        manifest.insert("resolved", resolved);
-        manifests.insert("vcpkg.json", manifest);
-        snapshot.insert("manifests", manifests);
+            manifest.insert("resolved", resolved);
+            Json::Object manifests;
+            manifests.insert("vcpkg.json", manifest);
+            snapshot.insert("manifests", manifests);
 
-        Debug::print(Json::stringify(snapshot));
-        return snapshot;
+            Debug::print(Json::stringify(snapshot));
+            return snapshot;
+        }
+        return nullopt;
     }
 
     std::set<PackageSpec> adjust_action_plan_to_status_db(ActionPlan& action_plan, const StatusParagraphs& status_db)
@@ -246,10 +192,11 @@ namespace vcpkg::Commands::SetInstalled
 
         if (paths.manifest_mode_enabled() && paths.get_feature_flags().dependency_graph)
         {
-            auto gh_root_dir = args.github_workspace.value_or_exit(VCPKG_LINE_INFO);
-            auto snapshot =
-                create_dependency_graph_snapshot(args, action_plan, paths.relative_path_to_manifest(gh_root_dir));
-            send_snapshot_to_api(args, snapshot);
+            auto snapshot = create_dependency_graph_snapshot(args, action_plan);
+            if (snapshot.has_value() && args.github_token.has_value() && args.github_repository.has_value())
+            {
+                send_snapshot_to_api(*args.github_token.get(), *args.github_repository.get(), *snapshot.get());
+            }
         }
 
         // currently (or once) installed specifications

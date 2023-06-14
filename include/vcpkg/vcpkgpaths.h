@@ -142,7 +142,6 @@ namespace vcpkg
 
         Optional<const ManifestAndPath&> get_manifest() const;
         bool manifest_mode_enabled() const;
-        Optional<std::string> relative_path_to_manifest(const std::string& git_root_dir) const;
         const ConfigurationAndSource& get_configuration() const;
         std::unique_ptr<RegistrySet> make_registry_set() const;
 

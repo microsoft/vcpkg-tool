@@ -1,11 +1,15 @@
 #include <catch2/catch.hpp>
 
+#include <vcpkg/fwd/packagespec.h>
+
+#include <vcpkg/base/files.h>
 #include <vcpkg/base/graphs.h>
+
+#include <vcpkg/commands.set-installed.h>
 #include <vcpkg/dependencies.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/sourceparagraph.h>
 #include <vcpkg/triplet.h>
-#include <vcpkg/commands.set-installed.h>
 
 #include <memory>
 #include <numeric>
@@ -2382,13 +2386,14 @@ TEST_CASE ("dependency graph API snapshot")
         {VcpkgCmdArguments::GITHUB_SHA_ENV.to_string(), "abc123"},
         {VcpkgCmdArguments::GITHUB_TOKEN_ENV.to_string(), "abc"},
         {VcpkgCmdArguments::GITHUB_WORKFLOW_ENV.to_string(), "test"},
-        {VcpkgCmdArguments::GITHUB_WORKSPACE_ENV.to_string(), "/test/"},
         {VcpkgCmdArguments::DEPENDENCY_GRAPH_VERSION_ENV.to_string(), "3"},
     };
     auto v = VcpkgCmdArguments::create_from_arg_sequence(nullptr, nullptr);
     v.imbue_from_fake_environment(envmap);
-    auto obj = vcpkg::Commands::SetInstalled::create_dependency_graph_snapshot(v, plan, "./vcpkg.json");
+    auto s = vcpkg::Commands::SetInstalled::create_dependency_graph_snapshot(v, plan);
 
+    CHECK(s.has_value());
+    auto obj = *s.get();
     auto version = obj.get("version")->integer(VCPKG_LINE_INFO);
     auto job = obj.get("job")->object(VCPKG_LINE_INFO);
     auto id = job.get("id")->string(VCPKG_LINE_INFO);

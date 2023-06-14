@@ -196,8 +196,6 @@ namespace vcpkg
         Optional<std::string> github_job;
         constexpr static StringLiteral GITHUB_WORKFLOW_ENV = "GITHUB_WORKFLOW";
         Optional<std::string> github_workflow;
-        constexpr static StringLiteral GITHUB_WORKSPACE_ENV = "GITHUB_WORKSPACE";
-        Optional<std::string> github_workspace;
         constexpr static StringLiteral DEPENDENCY_GRAPH_VERSION_ENV = "DEPENDENCY_GRAPH_VERSION";
         Optional<std::string> dependency_graph_version;
 
@@ -258,7 +256,6 @@ namespace vcpkg
         void debug_print_feature_flags() const;
         void track_feature_flag_metrics() const;
         void track_environment_metrics() const;
-        void track_github_repository_env() const;
 
         Optional<std::string> asset_sources_template() const;
 
