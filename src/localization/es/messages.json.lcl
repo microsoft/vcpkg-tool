@@ -2061,19 +2061,25 @@
       </Item>
       <Item ItemId=";CmdDependInfoFormatHelp" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Choose output format, one of `list`, `tree`, `dot`, or `dgml`.]]></Val>
+          <Val><![CDATA[Choose output format, one of `list`, `tree`, `mermaid`, `dot`, or `dgml`.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Elija el formato de salida: "list", "tree", "dot" o "dgml".]]></Val>
+            <Val><![CDATA[Elija el formato de salida: "list", "tree", "mermaid", "dot" o "dgml".]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Choose output format, one of `list`, `tree`, `dot`, or `dgml`.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdDependInfoFormatInvalid" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[--format={value} is not a recognized format. --format must be one of `list`, `tree`, `dot`, or `dgml`.]]></Val>
+          <Val><![CDATA[--format={value} is not a recognized format. --format must be one of `list`, `tree`, `mermaid`, `dot`, or `dgml`.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[--format={value} no es un formato reconocido. --format debe ser "list", "tree", "dot" o "dgml".]]></Val>
+            <Val><![CDATA[--format={value} no es un formato reconocido. --format debe ser "list", "tree", "mermaid", "dot" o "dgml".]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[--format={value} is not a recognized format. --format must be one of `list`, `tree`, `dot`, or `dgml`.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
