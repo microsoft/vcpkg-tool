@@ -84,6 +84,12 @@ TEST_CASE ("determine_depend_info_mode formats", "[depend-info]")
         expected = DependInfoFormat::Dgml;
     }
 
+    SECTION ("mermaid")
+    {
+        pa.settings.emplace("format", "mermaid");
+        expected = DependInfoFormat::Mermaid;
+    }
+
     auto result = determine_depend_info_mode(pa).value_or_exit(VCPKG_LINE_INFO);
     REQUIRE(result.sort_mode == DependInfoSortMode::Topological);
     REQUIRE(result.format == expected);
@@ -184,8 +190,8 @@ TEST_CASE ("determine_depend_info_mode errors", "[depend-info]")
     SECTION ("bad format")
     {
         pa.settings.emplace("format", "frobinate");
-        expected.append_raw(
-            "--format=frobinate is not a recognized format. --format must be one of `list`, `tree`, `dot`, or `dgml`.");
+        expected.append_raw("--format=frobinate is not a recognized format. --format must be one of `list`, `tree`, "
+                            "`mermaid`, `dot`, or `dgml`.");
     }
 
     SECTION ("bad sort")
@@ -230,6 +236,11 @@ TEST_CASE ("determine_depend_info_mode errors", "[depend-info]")
         SECTION ("dgml")
         {
             pa.settings.emplace("format", "dgml");
+        }
+
+        SECTION ("mermaid")
+        {
+            pa.settings.emplace("format", "mermaid");
         }
     }
 

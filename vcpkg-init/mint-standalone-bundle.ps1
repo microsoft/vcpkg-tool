@@ -47,8 +47,6 @@ $scripts_dependencies = @(
     'vcpkg_completion.bash',
     'vcpkg_completion.fish',
     'vcpkg_completion.zsh',
-    'vcpkg_get_dep_info.cmake',
-    'vcpkg_get_tags.cmake',
     'vcpkgTools.xml'
 )
 

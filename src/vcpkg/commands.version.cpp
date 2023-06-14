@@ -25,7 +25,7 @@ namespace vcpkg::Commands::Version
         nullptr,
     };
 
-    void perform_and_exit(const VcpkgCmdArguments& args, Filesystem&)
+    void perform_and_exit(const VcpkgCmdArguments& args, const Filesystem&)
     {
         (void)args.parse_arguments(COMMAND_STRUCTURE);
         msg::println(msgVersionCommandHeader, msg::version = version);

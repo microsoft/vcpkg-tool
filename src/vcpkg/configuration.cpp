@@ -1,3 +1,4 @@
+#include <vcpkg/base/files.h>
 #include <vcpkg/base/jsonreader.h>
 #include <vcpkg/base/message_sinks.h>
 #include <vcpkg/base/strings.h>

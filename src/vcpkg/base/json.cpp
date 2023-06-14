@@ -1109,7 +1109,7 @@ namespace vcpkg::Json
         return true;
     }
 
-    ExpectedT<ParsedJson, std::unique_ptr<ParseError>> parse_file(const Filesystem& fs,
+    ExpectedT<ParsedJson, std::unique_ptr<ParseError>> parse_file(const ReadOnlyFilesystem& fs,
                                                                   const Path& json_file,
                                                                   std::error_code& ec)
     {
@@ -1122,7 +1122,7 @@ namespace vcpkg::Json
         return parse(res, json_file);
     }
 
-    ParsedJson parse_file(vcpkg::LineInfo li, const Filesystem& fs, const Path& json_file)
+    ParsedJson parse_file(vcpkg::LineInfo li, const ReadOnlyFilesystem& fs, const Path& json_file)
     {
         std::error_code ec;
         auto ret = parse_file(fs, json_file, ec).map_error(parse_error_formatter);

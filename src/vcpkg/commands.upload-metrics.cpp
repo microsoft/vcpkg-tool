@@ -17,7 +17,7 @@ namespace vcpkg::Commands::UploadMetrics
         1,
     };
 
-    void perform_and_exit(const VcpkgCmdArguments& args, Filesystem& fs)
+    void perform_and_exit(const VcpkgCmdArguments& args, const Filesystem& fs)
     {
         const auto parsed = args.parse_arguments(COMMAND_STRUCTURE);
         const auto& payload_path = parsed.command_arguments[0];

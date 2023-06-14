@@ -1,3 +1,5 @@
+#include <vcpkg/base/files.h>
+
 #include <vcpkg/commands.h>
 #include <vcpkg/commands.help.h>
 #include <vcpkg/commands.update.h>
