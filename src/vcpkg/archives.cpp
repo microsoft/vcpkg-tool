@@ -162,7 +162,7 @@ namespace vcpkg
         }
     }
 
-    void extract_archive(Filesystem& fs,
+    void extract_archive(const Filesystem& fs,
                          const ToolCache& tools,
                          MessageSink& status_sink,
                          const Path& archive,
@@ -191,7 +191,6 @@ namespace vcpkg
                 win32_extract_self_extracting_7z(fs, archive, to_archive);
                 extract_archive(fs, tools, status_sink, to_archive, to_path, ext_type);
                 break;
-
         }
 #else
         (void)fs;
@@ -219,7 +218,7 @@ namespace vcpkg
         }
     }
 
-    Path extract_archive_to_temp_subdirectory(Filesystem& fs,
+    Path extract_archive_to_temp_subdirectory(const Filesystem& fs,
                                               const ToolCache& tools,
                                               MessageSink& status_sink,
                                               const Path& archive,
@@ -331,7 +330,7 @@ namespace vcpkg
                                msg::path = archive);
     }
 
-    void set_directory_to_archive_contents(Filesystem& fs,
+    void set_directory_to_archive_contents(const Filesystem& fs,
                                            const ToolCache& tools,
                                            MessageSink& status_sink,
                                            const Path& archive,

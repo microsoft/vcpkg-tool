@@ -122,7 +122,7 @@ namespace vcpkg::Commands
         return result;
     }
 
-    static void extract_and_strip(Filesystem& fs,
+    static void extract_and_strip(const Filesystem& fs,
                                   const VcpkgPaths& paths,
                                   int strip_count,
                                   Path archive_path,
