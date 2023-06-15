@@ -13,9 +13,6 @@ import { UnifiedFileSystem } from './fs/unified-filesystem';
 import { VsixLocalFilesystem } from './fs/vsix-local-filesystem';
 import { i } from './i18n';
 import { installGit } from './installers/git';
-import { installNuGet } from './installers/nuget';
-import { installUnTar } from './installers/untar';
-import { installUnZip } from './installers/unzip';
 import { InstallEvents, InstallOptions } from './interfaces/events';
 import { Installer } from './interfaces/metadata/installers/Installer';
 import { RegistryDatabase, RegistryResolver } from './registries/registries';
@@ -100,9 +97,6 @@ export class Session {
 
   /** register installer functions here */
   private installers = new Map<string, InstallerTool>([
-    ['nuget', installNuGet],
-    ['unzip', installUnZip],
-    ['untar', installUnTar],
     ['git', installGit]
   ]);
 

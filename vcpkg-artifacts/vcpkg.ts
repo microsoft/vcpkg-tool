@@ -44,15 +44,11 @@ export function vcpkgFetch(session: Session, fetchKey: string): Promise<string> 
   });
 }
 
-export function vcpkgExtract(session: Session, archive: string, target:string): Promise<string> {
-  return runVcpkg(session.vcpkgCommand, ['z-extract', archive, target]).then((output) => {
+export function vcpkgExtract(session: Session, archive: string, target:string, strip:string): Promise<string> {
+  return runVcpkg(session.vcpkgCommand, ['z-extract', archive, target, strip]).then((output) => {
     return output;
   }, (error) => 
  {
-    session.channels.warning('In vcpkgExtract...\n');
-    session.channels.warning('Command: ' + session.vcpkgCommand + '\n');
-    session.channels.warning('Archive: ' + archive + '\n');
-    session.channels.warning('Target: ' + target + '\n');
     session.channels.warning('Failed to extract: ' + archive + '\n');
     return Promise.reject(error);
   });

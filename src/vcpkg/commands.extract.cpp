@@ -103,7 +103,7 @@ namespace vcpkg::Commands
 
         for (const auto& file_path : proximate)
         {
-            auto old_path = Path{(base_path + Path{file_path}).generic_u8string()};
+            auto old_path = base_path / Path{file_path};
 
             auto path_str = file_path.native();
 
@@ -115,7 +115,21 @@ namespace vcpkg::Commands
                     path_str = path_str.substr(pos + 1);
                 }
             }
-            auto new_path = Path{(base_path + Path{path_str})}.generic_u8string();
+
+            // Trim the .partial.Xxx from the new path
+            Path new_path;
+
+            auto base_str = base_path.native();
+            size_t pos = base_str.find(".partial.");
+
+            if (pos != std::string::npos)
+            {
+                new_path = Path{base_str.substr(0, pos)} / Path{path_str};
+            }
+            else
+            {
+                new_path = Path{base_str} / Path{path_str};
+            }
 
             result.push_back({old_path, new_path});
         }
@@ -132,10 +146,10 @@ namespace vcpkg::Commands
         auto temp_dir = extract_archive_to_temp_subdirectory(
             fs, paths.get_tool_cache(), null_sink, archive_path, destination_path, extraction_type);
 
-        ExtractedArchive archive = {
-            destination_path, fs.get_regular_files_recursive_lexically_proximate(destination_path, VCPKG_LINE_INFO)};
+        ExtractedArchive archive = {temp_dir,
+                                    fs.get_regular_files_recursive_lexically_proximate(temp_dir, VCPKG_LINE_INFO)};
 
-        auto mapping = strip_map(archive, strip_count + 1);
+        auto mapping = strip_map(archive, strip_count);
 
         for (auto&& file : mapping)
         {
@@ -161,6 +175,12 @@ namespace vcpkg::Commands
         auto destination_path = Path{parse_args.command_arguments[1]};
         auto strip_count = get_strip_count(parse_args);
         auto extraction_type = get_extraction_type(parse_args);
+
+        if (!fs.exists(archive_path, VCPKG_LINE_INFO))
+        {
+            msg::write_unlocalized_text_to_stdout(Color::error, fmt::format("File does not exist: {}\n", archive_path));
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
 
         if (!fs.is_directory(destination_path))
         {
