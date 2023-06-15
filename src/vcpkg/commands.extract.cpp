@@ -120,7 +120,7 @@ namespace vcpkg::Commands
             Path new_path;
 
             auto base_str = base_path.native();
-            size_t pos = base_str.find(".partial.");
+            size_t pos = base_str.find(".partial");
 
             if (pos != std::string::npos)
             {
