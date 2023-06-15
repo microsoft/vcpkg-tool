@@ -322,7 +322,10 @@ namespace vcpkg
         // Enumerate all processes in the system snapshot.
         std::map<DWORD, DWORD> pid_ppid_map;
         std::map<DWORD, std::string> pid_exe_path_map;
+        std::set<DWORD> seen_pids;
 
+        PROCESSENTRY32W entry{};
+        entry.dwSize = sizeof(entry);
         {
             ToolHelpProcessSnapshot snapshot;
             if (!snapshot)
@@ -330,8 +333,6 @@ namespace vcpkg
                 return;
             }
 
-            PROCESSENTRY32W entry{};
-            entry.dwSize = sizeof(entry);
             if (snapshot.Process32First(&entry))
             {
                 do
@@ -344,9 +345,21 @@ namespace vcpkg
 
         // Find hierarchy of current process
         
-        DWORD next_parent = GetCurrentProcessId();
-        for (std::map<DWORD, DWORD>::iterator it; it = pid_ppid_map.find(next_parent), it != pid_ppid_map.end();)
+        for (DWORD next_parent = GetCurrentProcessId();;)
         {
+            if (Util::Sets::contains(seen_pids, next_parent))
+            {
+                // parent graph loops, for example if a parent terminates and the PID is reused by a child launch
+                break;
+            }
+
+            seen_pids.insert(next_parent);
+            auto it = pid_ppid_map.find(next_parent);
+            if (it == pid_ppid_map.end())
+            {
+                break;
+            }
+
             ret.push_back(pid_exe_path_map[it->first]);
             next_parent = it->second;
         }
