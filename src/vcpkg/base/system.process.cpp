@@ -296,7 +296,8 @@ namespace vcpkg
     }
 } // namespace vcpkg
 
-namespace {
+namespace
+{
 #if defined(_WIN32)
     struct ToolHelpProcessSnapshot
     {
@@ -314,14 +315,17 @@ namespace {
 
         BOOL Process32First(PPROCESSENTRY32W entry) const noexcept { return Process32FirstW(snapshot, entry); }
         BOOL Process32Next(PPROCESSENTRY32W entry) const noexcept { return Process32NextW(snapshot, entry); }
+
     private:
         HANDLE snapshot;
     };
 #elif defined(__linux__)
-    Optional<ProcessStat> try_get_process_stat_by_pid(int pid) {
+    Optional<ProcessStat> try_get_process_stat_by_pid(int pid)
+    {
         auto filepath = fmt::format("/proc/{}/stat", pid);
         auto maybe_contents = real_filesystem.try_read_contents(filepath);
-        if (auto contents = maybe_contents.get()) {
+        if (auto contents = maybe_contents.get())
+        {
             return try_parse_process_stat_file(*contents);
         }
 
@@ -330,7 +334,8 @@ namespace {
 #endif // ^^^ __linux__
 } // unnamed namespace
 
-namespace vcpkg {
+namespace vcpkg
+{
     void get_parent_process_list(std::vector<std::string>& ret)
     {
         ret.clear();
@@ -360,7 +365,7 @@ namespace vcpkg {
         } // destroy snapshot
 
         // Find hierarchy of current process
-        
+
         for (DWORD next_parent = GetCurrentProcessId();;)
         {
             if (Util::Sets::contains(seen_pids, next_parent))
@@ -382,9 +387,12 @@ namespace vcpkg {
 #elif defined(__linux__)
         std::set<int> seen_pids;
         auto maybe_vcpkg_stat = try_get_process_stat_by_pid(getpid());
-        if (auto vcpkg_stat = maybe_vcpkg_stat.get()) {
-            for (auto next_parent = vcpkg_stat->ppid; next_parent != 0;) {
-                if (Util::Sets::contains(seen_pids, next_parent)) {
+        if (auto vcpkg_stat = maybe_vcpkg_stat.get())
+        {
+            for (auto next_parent = vcpkg_stat->ppid; next_parent != 0;)
+            {
+                if (Util::Sets::contains(seen_pids, next_parent))
+                {
                     // parent graph loops, for example if a parent terminates and the PID is reused by a child launch
                     break;
                 }
@@ -395,7 +403,9 @@ namespace vcpkg {
                 {
                     ret.push_back(next_parent_stat->executable_name);
                     next_parent = next_parent_stat->ppid;
-                } else {
+                }
+                else
+                {
                     break;
                 }
             }
