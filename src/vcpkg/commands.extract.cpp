@@ -150,10 +150,7 @@ namespace vcpkg::Commands
                                     fs.get_regular_files_recursive_lexically_proximate(temp_dir, VCPKG_LINE_INFO)};
 
         auto mapping = strip_map(archive, strip_count);
-        for (auto&& file : mapping)
-        {
-            msg::write_unlocalized_text_to_stderr(Color::error, fmt::format("destination: {}\n", file.second));
-        }
+
         for (auto&& file : mapping)
         {
             const auto& source = file.first;
