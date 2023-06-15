@@ -12,6 +12,7 @@
 
 #include <ctime>
 #include <future>
+#include <set>
 
 #if defined(__APPLE__)
 extern char** environ;
@@ -249,9 +250,9 @@ namespace vcpkg
 #endif
     }
 
-    Optional<ProcessStat> try_parse_process_stat_file(StringView text, StringView origin)
+    Optional<ProcessStat> try_parse_process_stat_file(const FileContents& contents)
     {
-        ParserBase p(text, origin);
+        ParserBase p(contents.content, contents.origin);
 
         p.match_while(ParserBase::is_ascii_digit); // pid %d (ignored)
 
@@ -293,6 +294,9 @@ namespace vcpkg
         }
         return nullopt;
     }
+} // namespace vcpkg
+
+namespace {
 #if defined(_WIN32)
     struct ToolHelpProcessSnapshot
     {
@@ -313,8 +317,20 @@ namespace vcpkg
     private:
         HANDLE snapshot;
     };
-#endif // ^^^ _WIN32
+#elif defined(__linux__)
+    Optional<ProcessStat> try_get_process_stat_by_pid(int pid) {
+        auto filepath = fmt::format("/proc/{}/stat", pid);
+        auto maybe_contents = real_filesystem.try_read_contents(filepath);
+        if (auto contents = maybe_contents.get()) {
+            return try_parse_process_stat_file(*contents);
+        }
 
+        return nullopt;
+    }
+#endif // ^^^ __linux__
+} // unnamed namespace
+
+namespace vcpkg {
     void get_parent_process_list(std::vector<std::string>& ret)
     {
         ret.clear();
@@ -364,29 +380,22 @@ namespace vcpkg
             next_parent = it->second;
         }
 #elif defined(__linux__)
-        std::error_code ec;
-        auto vcpkg_stat_filepath = fmt::format("/proc/{}/stat", getpid());
-        auto vcpkg_stat_contents = real_filesystem.read_contents(vcpkg_stat_filepath, ec);
-        if (ec) return;
-
-        auto maybe_vcpkg_stat = try_parse_process_stat_file(vcpkg_stat_contents, vcpkg_stat_filepath);
-        if (auto vcpkg_stat = maybe_vcpkg_stat.get())
-        {
-            auto pid = vcpkg_stat->ppid;
-            while (pid != 0)
-            {
-                auto stat_filepath = fmt::format("/proc/{}/stat", pid);
-                auto contents = real_filesystem.read_contents(stat_filepath, ec);
-                if (ec) break;
-
-                auto maybe_stat = try_parse_process_stat_file(contents, stat_filepath);
-                if (auto stat = maybe_stat.get())
-                {
-                    ret.push_back(stat->executable_name);
-                    pid = stat->ppid;
+        std::set<int> seen_pids;
+        auto maybe_vcpkg_stat = try_get_process_stat_by_pid(getpid());
+        if (auto vcpkg_stat = maybe_vcpkg_stat.get()) {
+            for (auto next_parent = vcpkg_stat->ppid; next_parent != 0;) {
+                if (Util::Sets::contains(seen_pids, next_parent)) {
+                    // parent graph loops, for example if a parent terminates and the PID is reused by a child launch
+                    break;
                 }
-                else
+
+                seen_pids.insert(next_parent);
+                auto maybe_next_parent_stat = try_get_process_stat_by_pid(next_parent);
+                if (auto next_parent_stat = maybe_next_parent_stat.get())
                 {
+                    ret.push_back(next_parent_stat->executable_name);
+                    next_parent = next_parent_stat->ppid;
+                } else {
                     break;
                 }
             }
