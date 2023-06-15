@@ -521,12 +521,14 @@ namespace vcpkg
                          msg::spec = action.spec);
         }
 
-        ~TrackedPackageInstallGuard()
+        void print_elapsed_time() const
         {
             current_summary.timing = build_timer.elapsed();
             msg::println(
                 msgElapsedForPackage, msg::spec = current_summary.get_spec(), msg::elapsed = current_summary.timing);
         }
+
+        ~TrackedPackageInstallGuard() { print_elapsed_time(); }
 
         TrackedPackageInstallGuard(const TrackedPackageInstallGuard&) = delete;
         TrackedPackageInstallGuard& operator=(const TrackedPackageInstallGuard&) = delete;
@@ -581,6 +583,7 @@ namespace vcpkg
                 perform_install_plan_action(args, paths, action, status_db, binary_cache, build_logs_recorder);
             if (result.code != BuildResult::SUCCEEDED && keep_going == KeepGoing::NO)
             {
+                this_install.print_elapsed_time();
                 print_user_troubleshooting_message(action, paths, result.stdoutlog.then([&](auto&) -> Optional<Path> {
                     auto issue_body_path = paths.installed().root() / "vcpkg" / "issue_body.md";
                     paths.get_filesystem().write_contents(
