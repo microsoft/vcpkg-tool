@@ -1535,9 +1535,7 @@ namespace vcpkg
 
     int WriteFilePointer::put(int c) const noexcept { return ::fputc(c, m_fs); }
 
-    ILineReader::~ILineReader() = default;
-
-    uint64_t Filesystem::file_size(const Path& file_path, LineInfo li) const
+    uint64_t ReadOnlyFilesystem::file_size(const Path& file_path, LineInfo li) const
     {
         std::error_code ec;
         auto maybe_contents = this->file_size(file_path, ec);
