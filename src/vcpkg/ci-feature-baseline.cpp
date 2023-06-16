@@ -171,31 +171,44 @@ namespace vcpkg
                 if (spec.features.has_value())
                 {
                     auto& features = *spec.features.get();
+                    auto& entry = result.ports[spec.name];
+                    const auto error_if_already_defined = [&](const auto& set, auto state) {
+                        if (auto iter = Util::find_if(
+                                features, [&](const auto& feature) { return Util::Sets::contains(set, feature); });
+                            iter != features.end())
+                        {
+                            parser.add_error(msg::format(msgFeatureBaselineEntryAlreadySpecified,
+                                                         msg::feature = *iter,
+                                                         msg::value = (names[static_cast<int>(state)])),
+                                             cur_loc);
+                        }
+                    };
                     if (state == CiFeatureBaselineState::Skip)
                     {
-                        result.ports[spec.name].skip_features.insert(features.begin(), features.end());
+                        entry.skip_features.insert(features.begin(), features.end());
                     }
                     else if (state == CiFeatureBaselineState::Cascade)
                     {
-                        result.ports[spec.name].cascade_features.insert(features.begin(), features.end());
+                        error_if_already_defined(entry.failing_features, FEATURE_FAIL_STATE);
+                        entry.cascade_features.insert(features.begin(), features.end());
                     }
                     else if (state == COMBINATION_FAIL_STATE)
                     {
+                        error_if_already_defined(entry.cascade_features, CiFeatureBaselineState::Cascade);
                         features.emplace_back("core");
-                        result.ports[spec.name].fail_configurations.push_back(
-                            Util::sort_unique_erase(std::move(features)));
+                        entry.fail_configurations.push_back(Util::sort_unique_erase(std::move(features)));
                     }
                     else if (state == FEATURE_FAIL_STATE)
                     {
-                        result.ports[spec.name].failing_features.insert(features.begin(), features.end());
+                        entry.failing_features.insert(features.begin(), features.end());
                     }
                     else if (state == NO_TEST_STATE)
                     {
-                        result.ports[spec.name].no_separate_feature_test.insert(features.begin(), features.end());
+                        entry.no_separate_feature_test.insert(features.begin(), features.end());
                     }
                     else if (state == OPTIONS_STATE)
                     {
-                        result.ports[spec.name].options.push_back(features);
+                        entry.options.push_back(features);
                     }
                 }
                 else

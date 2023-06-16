@@ -1028,6 +1028,10 @@ DECLARE_MESSAGE(FailedVendorAuthentication,
                 "",
                 "One or more {vendor} credential providers failed to authenticate. See '{url}' for more details "
                 "on how to provide credentials.")
+DECLARE_MESSAGE(FeatureBaselineEntryAlreadySpecified,
+                (msg::feature, msg::value),
+                "{value} is a keyword",
+                "Feature '{feature}' was already declared as '{value}'.")
 DECLARE_MESSAGE(FeatureBaselineExpectedFeatures,
                 (msg::value),
                 "{value} is a keyword",
