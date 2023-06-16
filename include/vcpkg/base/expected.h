@@ -184,6 +184,18 @@ namespace vcpkg
             return !value_is_error ? *m_t.get() : T(std::forward<Args>(or_args)...);
         }
 
+        template<class Func>
+        T value_or_lazy(Func&& func) &&
+        {
+            return !value_is_error ? std::move(*m_t.get()) : T(func());
+        }
+
+        template<class Func>
+        T value_or_lazy(Func&& func) const&
+        {
+            return !value_is_error ? *m_t.get() : T(func());
+        }
+
         const T&& value_or_exit(const LineInfo& line_info) const&&
         {
             exit_if_error(line_info);

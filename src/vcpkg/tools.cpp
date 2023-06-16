@@ -809,8 +809,9 @@ namespace vcpkg
                                 actual_version[2] >= min_version[2]);
                     },
                     [&](const auto& path, const ExpectedL<std::string>& maybe_version) {
-                        considered_versions +=
-                            fmt::format("{}: {}", path, maybe_version.value_or(maybe_version.error().data()));
+                        considered_versions += fmt::format("{}: {}", path, maybe_version.value_or_lazy([&]() {
+                            return maybe_version.error().data();
+                        }));
                     });
                 if (const auto p = maybe_path.get())
                 {
