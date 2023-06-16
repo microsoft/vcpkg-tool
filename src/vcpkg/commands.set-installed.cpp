@@ -64,15 +64,7 @@ namespace vcpkg::Commands::SetInstalled
 
             Json::Object snapshot;
             snapshot.insert("job", job);
-            if (auto v = args.dependency_graph_version.get())
-            {
-                snapshot.insert("version", Json::Value::integer(std::stoi(*v)));
-            }
-            else
-            {
-                snapshot.insert("version", Json::Value::integer(0));
-            }
-
+            snapshot.insert("version", Json::Value::integer(0));
             snapshot.insert("sha", Json::Value::string(*args.github_sha.get()));
             snapshot.insert("ref", Json::Value::string(*args.github_ref.get()));
             snapshot.insert("scanned", Json::Value::string(CTime::now_string()));
@@ -84,8 +76,12 @@ namespace vcpkg::Commands::SetInstalled
             std::unordered_map<std::string, std::string> map;
             for (auto&& action : action_plan.install_actions)
             {
-                auto version =
-                    action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).to_version().to_string();
+                if (!action.source_control_file_and_location.has_value())
+                {
+                    return nullopt;
+                }
+                const auto& scf = *action.source_control_file_and_location.get();
+                auto version = scf.to_version().to_string();
                 auto pkg_url = Strings::concat("pkg:github/vcpkg/", action.spec.name(), "@", version);
                 map.insert({action.spec.to_string(), pkg_url});
             }
@@ -193,10 +189,12 @@ namespace vcpkg::Commands::SetInstalled
         if (paths.manifest_mode_enabled() && paths.get_feature_flags().dependency_graph)
         {
             auto snapshot = create_dependency_graph_snapshot(args, action_plan);
+            bool s = false;
             if (snapshot.has_value() && args.github_token.has_value() && args.github_repository.has_value())
             {
-                send_snapshot_to_api(*args.github_token.get(), *args.github_repository.get(), *snapshot.get());
+                s = send_snapshot_to_api(*args.github_token.get(), *args.github_repository.get(), *snapshot.get());
             }
+            get_global_metrics_collector().track_bool(BoolMetric::DependencyGraphSuccess, snapshot.has_value() && s);
         }
 
         // currently (or once) installed specifications

@@ -520,7 +520,7 @@ namespace vcpkg
         return ret;
     }
 
-    void send_snapshot_to_api(const std::string& github_token,
+    bool send_snapshot_to_api(const std::string& github_token,
                               const std::string& github_repository,
                               const Json::Object& snapshot)
     {
@@ -550,19 +550,12 @@ namespace vcpkg
             }
         });
 
-        if (auto pres = result.get())
+        auto r = result.get();
+        if (r && *r == 0 && code >= 200 && code < 300)
         {
-            MetricsSubmission submission;
-            if (*pres != 0 || (code >= 100 && code < 200) || code >= 300)
-            {
-                submission.track_bool(BoolMetric::DependencyGraphSuccess, false);
-            }
-            else
-            {
-                submission.track_bool(BoolMetric::DependencyGraphSuccess, true);
-            }
-            get_global_metrics_collector().track_submission(std::move(submission));
+            return true;
         }
+        return false;
     }
 
     ExpectedL<int> put_file(const ReadOnlyFilesystem&,

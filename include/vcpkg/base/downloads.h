@@ -36,7 +36,7 @@ namespace vcpkg
                                     View<std::pair<std::string, Path>> url_pairs,
                                     View<std::string> headers);
 
-    void send_snapshot_to_api(const std::string& github_token,
+    bool send_snapshot_to_api(const std::string& github_token,
                               const std::string& github_repository,
                               const Json::Object& snapshot);
     ExpectedL<int> put_file(const ReadOnlyFilesystem&,

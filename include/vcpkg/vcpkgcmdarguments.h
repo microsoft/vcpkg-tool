@@ -196,8 +196,6 @@ namespace vcpkg
         Optional<std::string> github_job;
         constexpr static StringLiteral GITHUB_WORKFLOW_ENV = "GITHUB_WORKFLOW";
         Optional<std::string> github_workflow;
-        constexpr static StringLiteral DEPENDENCY_GRAPH_VERSION_ENV = "DEPENDENCY_GRAPH_VERSION";
-        Optional<std::string> dependency_graph_version;
 
         // feature flags
         constexpr static StringLiteral FEATURE_FLAGS_ENV = "VCPKG_FEATURE_FLAGS";

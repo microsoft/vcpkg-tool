@@ -498,7 +498,6 @@ namespace vcpkg
         from_env(get_env, GITHUB_RUN_ID_ENV, github_run_id);
         from_env(get_env, GITHUB_TOKEN_ENV, github_token);
         from_env(get_env, GITHUB_WORKFLOW_ENV, github_workflow);
-        from_env(get_env, DEPENDENCY_GRAPH_VERSION_ENV, dependency_graph_version);
 
         // detect whether we are running in a CI environment
         for (auto&& ci_env_var : KNOWN_CI_VARIABLES)
@@ -773,7 +772,6 @@ namespace vcpkg
     constexpr StringLiteral VcpkgCmdArguments::GITHUB_SHA_ENV;
     constexpr StringLiteral VcpkgCmdArguments::GITHUB_TOKEN_ENV;
     constexpr StringLiteral VcpkgCmdArguments::GITHUB_WORKFLOW_ENV;
-    constexpr StringLiteral VcpkgCmdArguments::DEPENDENCY_GRAPH_VERSION_ENV;
 
     constexpr StringLiteral VcpkgCmdArguments::FEATURE_FLAGS_ENV;
     constexpr StringLiteral VcpkgCmdArguments::FEATURE_FLAGS_ARG;

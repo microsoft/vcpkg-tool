@@ -2386,7 +2386,6 @@ TEST_CASE ("dependency graph API snapshot")
         {VcpkgCmdArguments::GITHUB_SHA_ENV.to_string(), "abc123"},
         {VcpkgCmdArguments::GITHUB_TOKEN_ENV.to_string(), "abc"},
         {VcpkgCmdArguments::GITHUB_WORKFLOW_ENV.to_string(), "test"},
-        {VcpkgCmdArguments::DEPENDENCY_GRAPH_VERSION_ENV.to_string(), "3"},
     };
     auto v = VcpkgCmdArguments::create_from_arg_sequence(nullptr, nullptr);
     v.imbue_from_fake_environment(envmap);
