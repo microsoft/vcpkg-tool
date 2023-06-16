@@ -123,7 +123,7 @@ endmacro()
     Path TripletCMakeVarProvider::create_tag_extraction_file(
         const View<std::pair<const FullPackageSpec*, std::string>> spec_abi_settings) const
     {
-        Filesystem& fs = paths.get_filesystem();
+        const Filesystem& fs = paths.get_filesystem();
         static int tag_extract_id = 0;
 
         std::map<Triplet, int> emitted_triplets;
@@ -134,6 +134,7 @@ endmacro()
         }
         std::string extraction_file = create_extraction_file_prelude(paths, emitted_triplets);
 
+        // The variables collected here are those necessary to perform builds.
         extraction_file.append(R"(
 
 function(vcpkg_get_tags PORT FEATURES VCPKG_TRIPLET_ID VCPKG_ABI_SETTINGS_FILE)
@@ -202,7 +203,7 @@ endfunction()
     Path TripletCMakeVarProvider::create_dep_info_extraction_file(const View<PackageSpec> specs) const
     {
         static int dep_info_id = 0;
-        Filesystem& fs = paths.get_filesystem();
+        const Filesystem& fs = paths.get_filesystem();
 
         std::map<Triplet, int> emitted_triplets;
         int emitted_triplet_id = 0;
@@ -213,6 +214,8 @@ endfunction()
 
         std::string extraction_file = create_extraction_file_prelude(paths, emitted_triplets);
 
+        // The variables collected here are those necessary to perform dependency resolution.
+        // If a value affects platform expressions, it must be here.
         extraction_file.append(R"(
 
 function(vcpkg_get_dep_info PORT VCPKG_TRIPLET_ID)
@@ -231,6 +234,7 @@ CMAKE_HOST_SYSTEM_NAME=${CMAKE_HOST_SYSTEM_NAME}
 CMAKE_HOST_SYSTEM_PROCESSOR=${CMAKE_HOST_SYSTEM_PROCESSOR}
 CMAKE_HOST_SYSTEM_VERSION=${CMAKE_HOST_SYSTEM_VERSION}
 CMAKE_HOST_SYSTEM=${CMAKE_HOST_SYSTEM}
+VCPKG_XBOX_CONSOLE_TARGET=${VCPKG_XBOX_CONSOLE_TARGET}
 e1e74b5c-18cb-4474-a6bd-5c1c8bc81f3f
 8c504940-be29-4cba-9f8f-6cd83e9d87b7")
 endfunction()

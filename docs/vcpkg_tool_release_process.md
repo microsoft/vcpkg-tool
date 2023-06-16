@@ -11,8 +11,6 @@ such as https://github.com/microsoft/vcpkg/pull/23757
 1. Check that the changes there are in fact the changes that we want in that release. (Be aware,
   you are responsible for what is about to be signed with a Microsoft code signing certificate by
   proceeding)
-1. Build the changes locally with `-DVCPKG_ARTIFACTS_DEVELOPMENT=ON`, and run the end to end tests
-  with -RunArtifactsTests
 1. Submit a signed build from "vcpkg Signed Binaries (from GitHub)" (
   https://devdiv.visualstudio.com/DevDiv/_build?definitionId=17772&_a=summary as of this writing)
 1. The signed build will automatically create a draft GitHub release at

@@ -1859,7 +1859,7 @@ namespace vcpkg
                 {
                     if (fdeps.first == "core") continue;
 
-                    auto fpgh = scfl.source_control_file->find_feature(fdeps.first).value_or_exit(VCPKG_LINE_INFO);
+                    auto& fpgh = scfl.source_control_file->find_feature(fdeps.first).value_or_exit(VCPKG_LINE_INFO);
                     if (!fpgh.supports_expression.evaluate(vars))
                     {
                         ret.unsupported_features.insert({FeatureSpec(action.spec, fdeps.first), supports_expr});

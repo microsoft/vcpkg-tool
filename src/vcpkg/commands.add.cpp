@@ -49,7 +49,7 @@ namespace vcpkg::Commands
                                    msgAddArtifactOnlyOne,
                                    msg::command_line = "vcpkg add artifact");
 
-            auto artifact_name = parsed.command_arguments[1];
+            auto& artifact_name = parsed.command_arguments[1];
             auto artifact_hash = Hash::get_string_hash(artifact_name, Hash::Algorithm::Sha256);
             metrics.track_string(StringMetric::CommandContext, "artifact");
             metrics.track_string(StringMetric::CommandArgs, artifact_hash);

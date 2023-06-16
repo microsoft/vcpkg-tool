@@ -12,6 +12,7 @@
 
 #include <ctime>
 #include <future>
+#include <set>
 
 #if defined(__APPLE__)
 extern char** environ;
@@ -249,9 +250,9 @@ namespace vcpkg
 #endif
     }
 
-    Optional<ProcessStat> try_parse_process_stat_file(StringView text, StringView origin)
+    Optional<ProcessStat> try_parse_process_stat_file(const FileContents& contents)
     {
-        ParserBase p(text, origin);
+        ParserBase p(contents.content, contents.origin);
 
         p.match_while(ParserBase::is_ascii_digit); // pid %d (ignored)
 
@@ -293,63 +294,115 @@ namespace vcpkg
         }
         return nullopt;
     }
+} // namespace vcpkg
 
+namespace
+{
+#if defined(_WIN32)
+    struct ToolHelpProcessSnapshot
+    {
+        ToolHelpProcessSnapshot() noexcept : snapshot(CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0)) { }
+        ToolHelpProcessSnapshot(const ToolHelpProcessSnapshot&) = delete;
+        ToolHelpProcessSnapshot& operator=(const ToolHelpProcessSnapshot&) = delete;
+        ~ToolHelpProcessSnapshot()
+        {
+            if (snapshot != INVALID_HANDLE_VALUE)
+            {
+                CloseHandle(snapshot);
+            }
+        }
+        explicit operator bool() const noexcept { return snapshot != INVALID_HANDLE_VALUE; }
+
+        BOOL Process32First(PPROCESSENTRY32W entry) const noexcept { return Process32FirstW(snapshot, entry); }
+        BOOL Process32Next(PPROCESSENTRY32W entry) const noexcept { return Process32NextW(snapshot, entry); }
+
+    private:
+        HANDLE snapshot;
+    };
+#elif defined(__linux__)
+    Optional<ProcessStat> try_get_process_stat_by_pid(int pid)
+    {
+        auto filepath = fmt::format("/proc/{}/stat", pid);
+        auto maybe_contents = real_filesystem.try_read_contents(filepath);
+        if (auto contents = maybe_contents.get())
+        {
+            return try_parse_process_stat_file(*contents);
+        }
+
+        return nullopt;
+    }
+#endif // ^^^ __linux__
+} // unnamed namespace
+
+namespace vcpkg
+{
     void get_parent_process_list(std::vector<std::string>& ret)
     {
         ret.clear();
 #if defined(_WIN32)
         // Enumerate all processes in the system snapshot.
-        auto snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-        if (snapshot == INVALID_HANDLE_VALUE) return;
-
         std::map<DWORD, DWORD> pid_ppid_map;
         std::map<DWORD, std::string> pid_exe_path_map;
+        std::set<DWORD> seen_pids;
 
-        PROCESSENTRY32W entry;
-        memset(&entry, 0, sizeof(entry));
+        PROCESSENTRY32W entry{};
         entry.dwSize = sizeof(entry);
-        if (Process32FirstW(snapshot, &entry))
         {
-            do
+            ToolHelpProcessSnapshot snapshot;
+            if (!snapshot)
             {
-                pid_ppid_map.emplace(entry.th32ProcessID, entry.th32ParentProcessID);
-                pid_exe_path_map.emplace(entry.th32ProcessID, Strings::to_utf8(entry.szExeFile));
-            } while (Process32NextW(snapshot, &entry));
-        }
-        CloseHandle(snapshot);
+                return;
+            }
+
+            if (snapshot.Process32First(&entry))
+            {
+                do
+                {
+                    pid_ppid_map.emplace(entry.th32ProcessID, entry.th32ParentProcessID);
+                    pid_exe_path_map.emplace(entry.th32ProcessID, Strings::to_utf8(entry.szExeFile));
+                } while (snapshot.Process32Next(&entry));
+            }
+        } // destroy snapshot
 
         // Find hierarchy of current process
-        auto it = pid_ppid_map.find(GetCurrentProcessId());
-        if (it == pid_ppid_map.end()) return;
-        while (true)
+
+        for (DWORD next_parent = GetCurrentProcessId();;)
         {
-            it = pid_ppid_map.find(it->second);
-            if (it == pid_ppid_map.end()) break;
+            if (Util::Sets::contains(seen_pids, next_parent))
+            {
+                // parent graph loops, for example if a parent terminates and the PID is reused by a child launch
+                break;
+            }
+
+            seen_pids.insert(next_parent);
+            auto it = pid_ppid_map.find(next_parent);
+            if (it == pid_ppid_map.end())
+            {
+                break;
+            }
+
             ret.push_back(pid_exe_path_map[it->first]);
+            next_parent = it->second;
         }
 #elif defined(__linux__)
-        auto& fs = get_real_filesystem();
-
-        std::error_code ec;
-        auto vcpkg_stat_filepath = fmt::format("/proc/{}/stat", getpid());
-        auto vcpkg_stat_contents = fs.read_contents(vcpkg_stat_filepath, ec);
-        if (ec) return;
-
-        auto maybe_vcpkg_stat = try_parse_process_stat_file(vcpkg_stat_contents, vcpkg_stat_filepath);
+        std::set<int> seen_pids;
+        auto maybe_vcpkg_stat = try_get_process_stat_by_pid(getpid());
         if (auto vcpkg_stat = maybe_vcpkg_stat.get())
         {
-            auto pid = vcpkg_stat->ppid;
-            while (pid != 0)
+            for (auto next_parent = vcpkg_stat->ppid; next_parent != 0;)
             {
-                auto stat_filepath = fmt::format("/proc/{}/stat", pid);
-                auto contents = fs.read_contents(stat_filepath, ec);
-                if (ec) break;
-
-                auto maybe_stat = try_parse_process_stat_file(contents, stat_filepath);
-                if (auto stat = maybe_stat.get())
+                if (Util::Sets::contains(seen_pids, next_parent))
                 {
-                    ret.push_back(stat->executable_name);
-                    pid = stat->ppid;
+                    // parent graph loops, for example if a parent terminates and the PID is reused by a child launch
+                    break;
+                }
+
+                seen_pids.insert(next_parent);
+                auto maybe_next_parent_stat = try_get_process_stat_by_pid(next_parent);
+                if (auto next_parent_stat = maybe_next_parent_stat.get())
+                {
+                    ret.push_back(next_parent_stat->executable_name);
+                    next_parent = next_parent_stat->ppid;
                 }
                 else
                 {
@@ -720,8 +773,7 @@ namespace vcpkg
         {
             // this only fails if we can't get the current working directory of vcpkg, and we assume that we have that,
             // so it's fine anyways
-            working_directory =
-                Strings::to_utf16(get_real_filesystem().absolute(wd.working_directory, VCPKG_LINE_INFO));
+            working_directory = Strings::to_utf16(real_filesystem.absolute(wd.working_directory, VCPKG_LINE_INFO));
         }
 
         auto environment_block = env.get();

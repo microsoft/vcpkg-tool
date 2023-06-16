@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vcpkg/base/fwd/files.h>
 #include <vcpkg/base/fwd/optional.h>
 #include <vcpkg/base/fwd/system.process.h>
 
@@ -167,7 +168,7 @@ namespace vcpkg
         std::string executable_name;
     };
 
-    Optional<ProcessStat> try_parse_process_stat_file(StringView text, StringView origin);
+    Optional<ProcessStat> try_parse_process_stat_file(const FileContents& contents);
     void get_parent_process_list(std::vector<std::string>& ret);
 
     bool succeeded(const ExpectedL<int>& maybe_exit) noexcept;

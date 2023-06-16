@@ -258,7 +258,7 @@ namespace vcpkg::Commands::CIVerifyVersions
                                             .append_raw(maybe_port_git_tree_map.error()));
         }
 
-        auto port_git_tree_map = maybe_port_git_tree_map.value_or_exit(VCPKG_LINE_INFO);
+        auto& port_git_tree_map = maybe_port_git_tree_map.value_or_exit(VCPKG_LINE_INFO);
 
         // Baseline is required.
         auto baseline = get_builtin_baseline(paths).value_or_exit(VCPKG_LINE_INFO);

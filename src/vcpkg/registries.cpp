@@ -183,7 +183,7 @@ namespace
         ExpectedL<PathAndLocation> get_version(const Version& version) const override;
 
     private:
-        void fill_data_from_path(const Filesystem& fs, const Path& port_versions_path) const;
+        void fill_data_from_path(const ReadOnlyFilesystem& fs, const Path& port_versions_path) const;
 
         std::string port_name;
 
@@ -384,7 +384,7 @@ namespace
             return m_scfs.get_lazy(path, [this, &path]() { return Paragraphs::try_load_port(m_fs, path); });
         }
 
-        const Filesystem& m_fs;
+        const ReadOnlyFilesystem& m_fs;
         const Path m_builtin_ports_directory;
         Cache<Path, ParseExpected<SourceControlFile>> m_scfs;
     };
@@ -452,7 +452,7 @@ namespace
 
     struct FilesystemRegistry final : RegistryImplementation
     {
-        FilesystemRegistry(const Filesystem& fs, Path&& path, std::string&& baseline)
+        FilesystemRegistry(const ReadOnlyFilesystem& fs, Path&& path, std::string&& baseline)
             : m_fs(fs), m_path(std::move(path)), m_baseline_identifier(std::move(baseline))
         {
         }
@@ -466,7 +466,7 @@ namespace
         ExpectedL<Version> get_baseline_version(StringView) const override;
 
     private:
-        const Filesystem& m_fs;
+        const ReadOnlyFilesystem& m_fs;
 
         Path m_path;
         std::string m_baseline_identifier;
@@ -474,7 +474,7 @@ namespace
     };
 
     Path relative_path_to_versions(StringView port_name);
-    ExpectedL<std::vector<VersionDbEntry>> load_versions_file(const Filesystem& fs,
+    ExpectedL<std::vector<VersionDbEntry>> load_versions_file(const ReadOnlyFilesystem& fs,
                                                               VersionDbType vdb,
                                                               const Path& port_versions,
                                                               StringView port_name,
@@ -483,12 +483,12 @@ namespace
     // returns nullopt if the baseline is valid, but doesn't contain the specified baseline,
     // or (equivalently) if the baseline does not exist.
     ExpectedL<Optional<Baseline>> parse_baseline_versions(StringView contents, StringView baseline, StringView origin);
-    ExpectedL<Optional<Baseline>> load_baseline_versions(const Filesystem& fs,
+    ExpectedL<Optional<Baseline>> load_baseline_versions(const ReadOnlyFilesystem& fs,
                                                          const Path& baseline_path,
                                                          StringView identifier = {});
 
     void load_all_port_names_from_registry_versions(std::vector<std::string>& out,
-                                                    const Filesystem& fs,
+                                                    const ReadOnlyFilesystem& fs,
                                                     const Path& port_versions_path)
     {
         for (auto&& super_directory : fs.get_directories_non_recursive(port_versions_path, VCPKG_LINE_INFO))
@@ -516,7 +516,7 @@ namespace
 
     static ExpectedL<Path> git_checkout_baseline(const VcpkgPaths& paths, StringView commit_sha)
     {
-        Filesystem& fs = paths.get_filesystem();
+        const Filesystem& fs = paths.get_filesystem();
         const auto destination_parent = paths.baselines_output() / commit_sha;
         auto destination = destination_parent / "baseline.json";
         if (!fs.exists(destination, IgnoreErrors{}))
@@ -961,7 +961,7 @@ namespace
             });
     }
 
-    void GitRegistryEntry::fill_data_from_path(const Filesystem& fs, const Path& port_versions_path) const
+    void GitRegistryEntry::fill_data_from_path(const ReadOnlyFilesystem& fs, const Path& port_versions_path) const
     {
         auto maybe_version_entries = load_versions_file(fs, VersionDbType::Git, port_versions_path, port_name);
         auto version_entries = std::move(maybe_version_entries).value_or_exit(VCPKG_LINE_INFO);
@@ -1014,7 +1014,7 @@ namespace
         return Path(prefix) / port_name.to_string() + ".json";
     }
 
-    ExpectedL<std::vector<VersionDbEntry>> load_versions_file(const Filesystem& fs,
+    ExpectedL<std::vector<VersionDbEntry>> load_versions_file(const ReadOnlyFilesystem& fs,
                                                               VersionDbType type,
                                                               const Path& registry_versions,
                                                               StringView port_name,
@@ -1112,7 +1112,7 @@ namespace
         }
     }
 
-    ExpectedL<Optional<Baseline>> load_baseline_versions(const Filesystem& fs,
+    ExpectedL<Optional<Baseline>> load_baseline_versions(const ReadOnlyFilesystem& fs,
                                                          const Path& baseline_path,
                                                          StringView baseline)
     {
@@ -1325,7 +1325,7 @@ namespace vcpkg
     {
         return std::make_unique<GitRegistry>(paths, std::move(repo), std::move(reference), std::move(baseline));
     }
-    std::unique_ptr<RegistryImplementation> make_filesystem_registry(const Filesystem& fs,
+    std::unique_ptr<RegistryImplementation> make_filesystem_registry(const ReadOnlyFilesystem& fs,
                                                                      Path path,
                                                                      std::string baseline)
     {
