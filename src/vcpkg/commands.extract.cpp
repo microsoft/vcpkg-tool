@@ -29,31 +29,22 @@ namespace vcpkg::Commands
 
     static ExtractionType get_extraction_type(const ParsedArguments& options)
     {
-        static constexpr StringLiteral EXTRACTION_TYPE_TAR = "tar";
-        static constexpr StringLiteral EXTRACTION_TYPE_ZIP = "zip";
-        static constexpr StringLiteral EXTRACTION_TYPE_NUPKG = "nupkg";
-        static constexpr StringLiteral EXTRACTION_TYPE_MSI = "msi";
+        static const std::unordered_map<std::string, ExtractionType> extraction_type_map = {
+            {"tar", ExtractionType::TAR},
+            {"zip", ExtractionType::ZIP},
+            {"nupkg", ExtractionType::NUPKG},
+            {"msi", ExtractionType::MSI},
+            {"exe", ExtractionType::EXE},
+        };
 
         auto iter = options.settings.find(OPTION_EXTRACT_TYPE);
-
         if (iter != options.settings.end())
         {
             std::string extraction_type = Strings::ascii_to_lowercase(iter->second);
-            if (extraction_type == EXTRACTION_TYPE_TAR)
+            auto map_iter = extraction_type_map.find(extraction_type);
+            if (map_iter != extraction_type_map.end())
             {
-                return ExtractionType::TAR;
-            }
-            else if (extraction_type == EXTRACTION_TYPE_ZIP)
-            {
-                return ExtractionType::ZIP;
-            }
-            else if (extraction_type == EXTRACTION_TYPE_NUPKG)
-            {
-                return ExtractionType::NUPKG;
-            }
-            else if (extraction_type == EXTRACTION_TYPE_MSI)
-            {
-                return ExtractionType::MSI;
+                return map_iter->second;
             }
             else
             {
@@ -62,8 +53,8 @@ namespace vcpkg::Commands
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
         }
-
         return ExtractionType::UNKNOWN;
+
     }
 
     static int get_strip_count(const ParsedArguments& options)
@@ -91,8 +82,8 @@ namespace vcpkg::Commands
     {
         std::vector<std::pair<Path, Path>> result;
 
-        auto base_path = archive.base_path;
-        auto proximate = archive.proximate;
+        const auto base_path = archive.base_path;
+        const auto proximate = archive.proximate;
 
 #if defined(_WIN32)
         auto& delimiter = "\\";
@@ -151,7 +142,7 @@ namespace vcpkg::Commands
 
         auto mapping = strip_map(archive, strip_count);
 
-        for (auto&& file : mapping)
+        for (const auto& file : mapping)
         {
             const auto& source = file.first;
             const auto& destination = file.second;
@@ -178,7 +169,7 @@ namespace vcpkg::Commands
 
         if (!fs.exists(archive_path, VCPKG_LINE_INFO))
         {
-            msg::write_unlocalized_text_to_stdout(Color::error, fmt::format("File does not exist: {}\n", archive_path));
+            msg::println_error(msgArchiveExtractionFailed, msg::path = archive_path);
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 

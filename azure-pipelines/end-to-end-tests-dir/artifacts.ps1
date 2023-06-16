@@ -246,7 +246,6 @@ Test-Match $output "Updating registry data from microsoft"
 
 $output = Run-VcpkgAndCaptureOutput x-update-registry https://github.com/microsoft/vcpkg-ce-catalog/archive/refs/heads/main.zip
 Throw-IfFailed
-Write-Host "Output: $output"
 Test-Match $output "Updating registry data from microsoft"
 
 $output = Run-VcpkgAndCaptureOutput x-update-registry https://example.com
