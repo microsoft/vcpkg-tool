@@ -336,9 +336,7 @@ namespace vcpkg::Commands::TestFeatures
                                        ElapsedTime build_time = {}) {
             bool expected_cascade =
                 (baseline.state == CiFeatureBaselineState::Cascade ||
-                 (spec.features.size() > 1 && Util::all_of(spec.features, [&](const auto& feature) {
-                      return feature == "core" || Util::Sets::contains(baseline.cascade_features, feature);
-                  })));
+                 (spec.features.size() > 1 && Util::Sets::contains(baseline.cascade_features, spec.features[1])));
             bool actual_cascade = (result == CiFeatureBaselineState::Cascade);
             if (actual_cascade != expected_cascade)
             {
