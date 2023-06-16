@@ -194,7 +194,7 @@ namespace vcpkg::Commands::SetInstalled
             {
                 s = send_snapshot_to_api(*args.github_token.get(), *args.github_repository.get(), *snapshot.get());
             }
-            get_global_metrics_collector().track_bool(BoolMetric::DependencyGraphSuccess, snapshot.has_value() && s);
+            get_global_metrics_collector().track_bool(BoolMetric::DependencyGraphSuccess, s);
         }
 
         // currently (or once) installed specifications

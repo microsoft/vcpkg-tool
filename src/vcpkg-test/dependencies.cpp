@@ -2412,7 +2412,7 @@ TEST_CASE ("dependency graph API snapshot")
     auto relationship_a = dependency_a.get("relationship")->string(VCPKG_LINE_INFO);
     auto dependencies_a = dependency_a.get("dependencies")->array(VCPKG_LINE_INFO);
 
-    CHECK(static_cast<int>(version) == 3);
+    CHECK(static_cast<int>(version) == 0);
     CHECK(id == "123");
     CHECK(correlator == "test-123");
     CHECK(sha == "abc123");
