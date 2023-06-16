@@ -54,7 +54,6 @@ namespace vcpkg::Commands
             }
         }
         return ExtractionType::UNKNOWN;
-
     }
 
     static int get_strip_count(const ParsedArguments& options)
