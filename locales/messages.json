@@ -645,6 +645,8 @@
   "_FailedToWriteManifest.comment": "An example of {path} is /foo/bar.",
   "FailedVendorAuthentication": "One or more {vendor} credential providers failed to authenticate. See '{url}' for more details on how to provide credentials.",
   "_FailedVendorAuthentication.comment": "An example of {vendor} is Azure. An example of {url} is https://github.com/microsoft/vcpkg.",
+  "FeatureBaselineEntryAlreadySpecified": "Feature '{feature}' was already declared as '{value}'.",
+  "_FeatureBaselineEntryAlreadySpecified.comment": "{value} is a keyword An example of {feature} is avisynthplus.",
   "FeatureBaselineExpectedFeatures": "When using '{value}' a list of features must be specified.",
   "_FeatureBaselineExpectedFeatures.comment": "{value} is a keyword",
   "FeatureBaselineNoFeaturesForFail": "When using '= fail' no list of features is allowed.",
