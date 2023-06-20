@@ -539,7 +539,7 @@ namespace vcpkg
         auto& fs = paths.get_filesystem();
         for (auto&& action : action_plan.remove_actions)
         {
-            fs.remove_all(paths.package_dir(action.spec), VCPKG_LINE_INFO);
+            fs.remove_all(action.package_dir, VCPKG_LINE_INFO);
         }
 
         for (auto&& action : action_plan.install_actions)

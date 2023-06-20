@@ -232,7 +232,7 @@ namespace vcpkg::Remove
         const bool is_recursive = Util::Sets::contains(options.switches, OPTION_RECURSE);
         const bool dry_run = Util::Sets::contains(options.switches, OPTION_DRY_RUN);
 
-        const auto plan = create_remove_plan(specs, status_db);
+        const auto plan = create_remove_plan(specs, status_db, paths.packages());
 
         if (plan.empty())
         {
@@ -302,7 +302,7 @@ namespace vcpkg::Remove
             remove_package(fs, paths.installed(), action.spec, status_db);
             if (purge == Purge::YES)
             {
-                fs.remove_all(paths.package_dir(action.spec), VCPKG_LINE_INFO);
+                fs.remove_all(action.package_dir, VCPKG_LINE_INFO);
             }
         }
 

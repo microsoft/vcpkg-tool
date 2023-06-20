@@ -353,11 +353,11 @@ namespace vcpkg
 
     static LintStatus check_for_copyright_file(const ReadOnlyFilesystem& fs,
                                                const PackageSpec& spec,
+                                               const Path& package_dir,
                                                const VcpkgPaths& paths,
                                                MessageSink& msg_sink)
     {
-        const auto packages_dir = paths.package_dir(spec);
-        const auto copyright_file = packages_dir / "share" / spec.name() / "copyright";
+        const auto copyright_file = package_dir / "share" / spec.name() / "copyright";
 
         switch (fs.status(copyright_file, IgnoreErrors{}))
         {
@@ -1364,7 +1364,7 @@ namespace vcpkg
         error_count += check_folder_debug_lib_cmake(fs, package_dir, spec, msg_sink);
         error_count += check_for_dlls_in_lib_dir(fs, package_dir, msg_sink);
         error_count += check_for_dlls_in_lib_dir(fs, package_dir / "debug", msg_sink);
-        error_count += check_for_copyright_file(fs, spec, paths, msg_sink);
+        error_count += check_for_copyright_file(fs, spec, package_dir, paths, msg_sink);
         error_count += check_for_exes(fs, package_dir, msg_sink);
         error_count += check_for_exes(fs, package_dir / "debug", msg_sink);
         error_count += check_for_usage_forgot_install(fs, port_dir, package_dir, spec, msg_sink);

@@ -66,6 +66,7 @@ namespace vcpkg
 
         InstallPlanAction(const PackageSpec& spec,
                           const SourceControlFileAndLocation& scfl,
+                          const Path& packages_dir,
                           const RequestType& request_type,
                           Triplet host_triplet,
                           std::map<std::string, std::vector<FeatureSpec>>&& dependencies,
@@ -100,9 +101,10 @@ namespace vcpkg
 
     struct RemovePlanAction : BasicAction
     {
-        RemovePlanAction(const PackageSpec& spec, RequestType rt);
+        RemovePlanAction(const PackageSpec& spec, RequestType rt, const Path& package_dir);
 
         RequestType request_type;
+        Path package_dir;
     };
 
     struct ActionPlan
@@ -167,7 +169,9 @@ namespace vcpkg
         std::vector<RemovePlanAction> remove;
     };
 
-    RemovePlan create_remove_plan(const std::vector<PackageSpec>& specs, const StatusParagraphs& status_db);
+    RemovePlan create_remove_plan(const std::vector<PackageSpec>& specs,
+                                  const StatusParagraphs& status_db,
+                                  const Path& packages_dir);
 
     std::vector<ExportPlanAction> create_export_plan(const std::vector<PackageSpec>& specs,
                                                      const StatusParagraphs& status_db);
