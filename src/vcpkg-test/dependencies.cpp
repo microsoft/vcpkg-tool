@@ -2378,7 +2378,7 @@ TEST_CASE ("dependency graph API snapshot")
     MockVersionedPortfileProvider vp;
     auto& scfl_a = vp.emplace("a", {"1", 0});
     InstallPlanAction install_a(
-        {"a", Test::X64_WINDOWS}, scfl_a, RequestType::AUTO_SELECTED, Test::X64_ANDROID, {}, {});
+        {"a", Test::X64_WINDOWS}, scfl_a, "packages_root", RequestType::AUTO_SELECTED, Test::X64_ANDROID, {}, {});
 
     ActionPlan plan;
     plan.install_actions.push_back(std::move(install_a));
