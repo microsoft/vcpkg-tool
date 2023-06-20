@@ -10,16 +10,21 @@
 #include <vcpkg/packagespec.h>
 #include <vcpkg/platform-expression.h>
 #include <vcpkg/portfileprovider.h>
+#include <vcpkg/registries.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
 namespace vcpkg::Commands
 {
+    static constexpr StringLiteral OPTION_JSON{"x-json"};
+    static constexpr std::array<CommandSwitch, 1> CHECK_SUPPORT_SWITCHES = {
+        {{OPTION_JSON, []() { return msg::format(msgJsonSwitch); }}}};
+
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string(R"(x-check-support <package>...)"),
+        [] { return create_example_string("x-check-support <package>..."); },
         1,
         SIZE_MAX,
-        {},
+        {CHECK_SUPPORT_SWITCHES},
         nullptr,
     };
 
@@ -56,8 +61,8 @@ namespace vcpkg::Commands
         void print_port_supported(const Port& p, bool is_top_level_supported, View<Port> reasons)
         {
             const auto full_port_name = [](const Port& port) {
-                return Strings::format(
-                    "%s[%s]:%s", port.port_name, Strings::join(",", port.features), port.triplet.to_string());
+                return fmt::format(
+                    "{}[{}]:{}", port.port_name, Strings::join(",", port.features), port.triplet.to_string());
             };
 
             if (reasons.size() == 0)
@@ -105,14 +110,19 @@ namespace vcpkg::Commands
                                         Triplet host_triplet)
     {
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
-        const bool use_json = args.json.value_or(false);
+        const bool use_json = Util::Sets::contains(options.switches, OPTION_JSON);
         Json::Array json_to_print; // only used when `use_json`
 
-        const std::vector<FullPackageSpec> specs = Util::fmap(args.command_arguments, [&](auto&& arg) {
+        bool default_triplet_used = false;
+        const std::vector<FullPackageSpec> specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
             return check_and_get_full_package_spec(
-                std::string(arg), default_triplet, COMMAND_STRUCTURE.example_text, paths);
+                arg, default_triplet, default_triplet_used, COMMAND_STRUCTURE.get_example_text(), paths);
         });
-        print_default_triplet_warning(args, args.command_arguments);
+
+        if (default_triplet_used)
+        {
+            print_default_triplet_warning(args);
+        }
 
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();
@@ -121,9 +131,10 @@ namespace vcpkg::Commands
         auto cmake_vars = CMakeVars::make_triplet_cmake_var_provider(paths);
 
         // for each spec in the user-requested specs, check all dependencies
+        CreateInstallPlanOptions create_options{host_triplet, paths.packages()};
         for (const auto& user_spec : specs)
         {
-            auto action_plan = create_feature_install_plan(provider, *cmake_vars, {&user_spec, 1}, {}, {host_triplet});
+            auto action_plan = create_feature_install_plan(provider, *cmake_vars, {&user_spec, 1}, {}, create_options);
 
             cmake_vars->load_tag_vars(action_plan, provider, host_triplet);
 
@@ -191,13 +202,5 @@ namespace vcpkg::Commands
         {
             msg::write_unlocalized_text_to_stdout(Color::none, Json::stringify(json_to_print));
         }
-    }
-
-    void CheckSupport::CheckSupportCommand::perform_and_exit(const VcpkgCmdArguments& args,
-                                                             const VcpkgPaths& paths,
-                                                             Triplet default_triplet,
-                                                             Triplet host_triplet) const
-    {
-        return CheckSupport::perform_and_exit(args, paths, default_triplet, host_triplet);
     }
 }

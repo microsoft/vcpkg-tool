@@ -1,4 +1,4 @@
-#include <vcpkg/base/basic-checks.h>
+#include <vcpkg/base/checks.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/util.h>
 
@@ -25,7 +25,11 @@ namespace
     }};
 
     static const CommandStructure command_structure = {
-        Strings::format("Regenerates an artifact registry.\n%s\n", create_example_string("x-regenerate")),
+        [] {
+            return msg::format(msgRegeneratesArtifactRegistry)
+                .append_raw('\n')
+                .append(create_example_string("x-regenerate"));
+        },
         1,
         1,
         {command_switches},
@@ -33,14 +37,14 @@ namespace
     };
 }
 
-namespace vcpkg
+namespace vcpkg::Commands
 {
-    void RegenerateCommand::perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const
+    void command_regenerate_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
         std::vector<std::string> forwarded_args;
         forwarded_args.emplace_back("regenerate");
         const auto parsed = args.parse_arguments(command_structure);
-        forwarded_args.push_back(args.command_arguments[0]);
+        forwarded_args.push_back(parsed.command_arguments[0]);
 
         if (Util::Sets::contains(parsed.switches, FORCE))
         {

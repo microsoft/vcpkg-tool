@@ -1,7 +1,11 @@
-#include <vcpkg/base/basic-checks.h>
+#include <vcpkg/base/fwd/message_sinks.h>
+
+#include <vcpkg/base/checks.h>
+#include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/strings.h>
+#include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.add.h>
 #include <vcpkg/configure-environment.h>
@@ -16,10 +20,13 @@ using namespace vcpkg;
 namespace
 {
     const CommandStructure AddCommandStructure = {
-        Strings::format(
-            "Adds the indicated port or artifact to the manifest associated with the current directory.\n%s\n%s",
-            create_example_string("add port png"),
-            create_example_string("add artifact cmake")),
+        [] {
+            return msg::format(msgAddHelp)
+                .append_raw('\n')
+                .append(create_example_string("add port png"))
+                .append_raw('\n')
+                .append(create_example_string("add artifact cmake"));
+        },
         2,
         SIZE_MAX,
         {{}, {}},
@@ -29,20 +36,20 @@ namespace
 
 namespace vcpkg::Commands
 {
-    void AddCommand::perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const
+    void command_add_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
         MetricsSubmission metrics;
-        (void)args.parse_arguments(AddCommandStructure);
-        auto&& selector = args.command_arguments[0];
+        auto parsed = args.parse_arguments(AddCommandStructure);
+        auto&& selector = parsed.command_arguments[0];
 
         if (selector == "artifact")
         {
             Checks::msg_check_exit(VCPKG_LINE_INFO,
-                                   args.command_arguments.size() <= 2,
+                                   parsed.command_arguments.size() <= 2,
                                    msgAddArtifactOnlyOne,
                                    msg::command_line = "vcpkg add artifact");
 
-            auto artifact_name = args.command_arguments[1];
+            auto& artifact_name = parsed.command_arguments[1];
             auto artifact_hash = Hash::get_string_hash(artifact_name, Hash::Algorithm::Sha256);
             metrics.track_string(StringMetric::CommandContext, "artifact");
             metrics.track_string(StringMetric::CommandArgs, artifact_hash);
@@ -62,11 +69,11 @@ namespace vcpkg::Commands
             }
 
             std::vector<ParsedQualifiedSpecifier> specs;
-            specs.reserve(args.command_arguments.size() - 1);
-            for (std::size_t idx = 1; idx < args.command_arguments.size(); ++idx)
+            specs.reserve(parsed.command_arguments.size() - 1);
+            for (std::size_t idx = 1; idx < parsed.command_arguments.size(); ++idx)
             {
                 ParsedQualifiedSpecifier value =
-                    parse_qualified_specifier(args.command_arguments[idx]).value_or_exit(VCPKG_LINE_INFO);
+                    parse_qualified_specifier(parsed.command_arguments[idx]).value_or_exit(VCPKG_LINE_INFO);
                 if (const auto t = value.triplet.get())
                 {
                     Checks::msg_exit_with_error(VCPKG_LINE_INFO,
@@ -87,7 +94,7 @@ namespace vcpkg::Commands
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
-            auto& manifest_scf = *maybe_manifest_scf.value_or_exit(VCPKG_LINE_INFO);
+            auto& manifest_scf = *maybe_manifest_scf.value(VCPKG_LINE_INFO);
             for (const auto& spec : specs)
             {
                 auto dep = Util::find_if(manifest_scf.core_paragraph->dependencies, [&spec](Dependency& dep) {

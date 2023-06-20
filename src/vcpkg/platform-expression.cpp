@@ -130,7 +130,7 @@ namespace vcpkg::PlatformExpression
 
                 if (!at_eof())
                 {
-                    add_error("invalid logic expression, unexpected character");
+                    add_error(msg::format(msgInvalidLogicExpressionUnexpectedCharacter));
                 }
 
                 return Expr(std::move(res));
@@ -232,12 +232,12 @@ namespace vcpkg::PlatformExpression
                         }
                         else if (name == "or")
                         {
-                            add_error("invalid logic expression, use '|' instead of 'or'");
+                            add_error(msg::format(msgInvalidLogicExpressionUsePipe));
                             return ExprKind::op_invalid;
                         }
 
                         // Invalid alphanumeric strings or strings other than "and" are errors.
-                        add_error("unexpected character or identifier in logic expression");
+                        add_error(msg::format(msgInvalidLogicExpressionUnexpectedCharacter));
                         return ExprKind::op_invalid;
                     }
                     default:
@@ -264,7 +264,7 @@ namespace vcpkg::PlatformExpression
                     auto result = expr();
                     if (cur() != ')')
                     {
-                        add_error("missing closing )");
+                        add_error(msg::format(msgMissingClosingParen));
                         return result;
                     }
                     // ")",
@@ -287,7 +287,7 @@ namespace vcpkg::PlatformExpression
 
                 if (name.empty())
                 {
-                    add_error("missing or invalid identifier");
+                    add_error(msg::format(msgMissingOrInvalidIdentifer));
                 }
 
                 // optional-whitespace
@@ -385,7 +385,7 @@ namespace vcpkg::PlatformExpression
                 {
                     if (next_oper == unmixable_oper)
                     {
-                        add_error("mixing & and | is not allowed; use () to specify order of operations");
+                        add_error(msg::format(msgMixingBooleanOperationsNotAllowed));
                     }
                 }
 
@@ -489,6 +489,17 @@ namespace vcpkg::PlatformExpression
             const Context& context;
             const std::map<std::string, bool>& override_ctxt;
 
+            bool true_if_exists_and_nonempty(const std::string& variable_name) const
+            {
+                auto iter = context.find(variable_name);
+                if (iter == context.end())
+                {
+                    return false;
+                }
+
+                return !iter->second.empty();
+            }
+
             bool true_if_exists_and_equal(const std::string& variable_name, const std::string& value) const
             {
                 auto iter = context.find(variable_name);
@@ -542,9 +553,7 @@ namespace vcpkg::PlatformExpression
                         case Identifier::osx: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "Darwin");
                         case Identifier::uwp:
                             return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "WindowsStore");
-                        case Identifier::xbox:
-                            // This identifier is intended to be enabled via VCPKG_DEP_INFO_OVERRIDE_VARS
-                            return false;
+                        case Identifier::xbox: return true_if_exists_and_nonempty("VCPKG_XBOX_CONSOLE_TARGET");
                         case Identifier::android: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "Android");
                         case Identifier::emscripten:
                             return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "Emscripten");
@@ -626,14 +635,14 @@ namespace vcpkg::PlatformExpression
         return Impl{}(underlying_);
     }
 
-    ExpectedS<Expr> parse_platform_expression(StringView expression, MultipleBinaryOperators multiple_binary_operators)
+    ExpectedL<Expr> parse_platform_expression(StringView expression, MultipleBinaryOperators multiple_binary_operators)
     {
         ExpressionParser parser(expression, multiple_binary_operators);
         auto res = parser.parse();
 
         if (auto p = parser.extract_error())
         {
-            return p->to_string();
+            return LocalizedString::from_raw(p->to_string());
         }
         else
         {

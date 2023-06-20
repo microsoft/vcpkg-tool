@@ -1001,8 +1001,7 @@ namespace vcpkg::Json
                 }
             }
 
-            static ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<ParseError>> parse(StringView json,
-                                                                                             StringView origin)
+            static ExpectedT<ParsedJson, std::unique_ptr<ParseError>> parse(StringView json, StringView origin)
             {
                 StatsTimer t(g_json_parsing_stats);
 
@@ -1022,7 +1021,7 @@ namespace vcpkg::Json
                 }
                 else
                 {
-                    return std::make_pair(std::move(val), parser.style());
+                    return ParsedJson{std::move(val), parser.style()};
                 }
             }
 
@@ -1064,11 +1063,6 @@ namespace vcpkg::Json
 
     const BooleanDeserializer BooleanDeserializer::instance;
 
-    static constexpr bool is_lower_digit(char ch)
-    {
-        return ParserBase::is_lower_alpha(ch) || ParserBase::is_ascii_digit(ch);
-    }
-
     bool IdentifierDeserializer::is_ident(StringView sv)
     {
         // back-compat
@@ -1082,9 +1076,9 @@ namespace vcpkg::Json
         const auto last = sv.end();
         for (;;)
         {
-            if (cur == last || !is_lower_digit(*cur)) return false;
+            if (cur == last || !ParserBase::is_lower_digit(*cur)) return false;
             ++cur;
-            while (cur != last && is_lower_digit(*cur))
+            while (cur != last && ParserBase::is_lower_digit(*cur))
                 ++cur;
 
             if (cur == last) break;
@@ -1115,9 +1109,9 @@ namespace vcpkg::Json
         return true;
     }
 
-    ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<ParseError>> parse_file(const Filesystem& fs,
-                                                                                   const Path& json_file,
-                                                                                   std::error_code& ec)
+    ExpectedT<ParsedJson, std::unique_ptr<ParseError>> parse_file(const ReadOnlyFilesystem& fs,
+                                                                  const Path& json_file,
+                                                                  std::error_code& ec)
     {
         auto res = fs.read_contents(json_file, ec);
         if (ec)
@@ -1128,48 +1122,37 @@ namespace vcpkg::Json
         return parse(res, json_file);
     }
 
-    std::pair<Value, JsonStyle> parse_file(vcpkg::LineInfo li, const Filesystem& fs, const Path& json_file)
+    ParsedJson parse_file(vcpkg::LineInfo li, const ReadOnlyFilesystem& fs, const Path& json_file)
     {
         std::error_code ec;
-        auto ret = parse_file(fs, json_file, ec);
+        auto ret = parse_file(fs, json_file, ec).map_error(parse_error_formatter);
         if (ec)
         {
-            msg::println_error(msgFailedToRead, msg::path = json_file, msg::error_msg = ec);
-            Checks::exit_fail(li);
+            Checks::msg_exit_with_error(li, format_filesystem_call_error(ec, "read_contents", {json_file}));
         }
-        else if (!ret)
-        {
-            msg::println_error(msgFailedToParseJson, msg::path = json_file);
-            msg::write_unlocalized_text_to_stdout(Color::error, ret.error()->to_string());
-            msg::println();
-            Checks::exit_fail(li);
-        }
-        return ret.value_or_exit(li);
+        return std::move(ret).value_or_exit(VCPKG_LINE_INFO);
     }
 
-    ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<ParseError>> parse(StringView json, StringView origin)
+    ExpectedT<ParsedJson, std::unique_ptr<ParseError>> parse(StringView json, StringView origin)
     {
         return Parser::parse(json, origin);
     }
 
-    ExpectedS<Json::Object> parse_object(StringView text, StringView origin)
+    ExpectedL<Json::Object> parse_object(StringView text, StringView origin)
     {
         auto maybeValueIsh = parse(text, origin);
         if (auto asValueIsh = maybeValueIsh.get())
         {
-            auto& asValue = asValueIsh->first;
+            auto& asValue = asValueIsh->value;
             if (asValue.is_object())
             {
-                return std::move(asValue.object(VCPKG_LINE_INFO));
+                return std::move(asValue).object(VCPKG_LINE_INFO);
             }
 
-            return msg::format(msgJsonErrorMustBeAnObject, msg::path = origin).extract_data();
+            return msg::format(msgJsonErrorMustBeAnObject, msg::path = origin);
         }
 
-        return msg::format(msgFailedToParseJson, msg::path = origin)
-            .append_raw('\n')
-            .append_raw(maybeValueIsh.error()->to_string())
-            .extract_data();
+        return LocalizedString::from_raw(maybeValueIsh.error()->to_string());
     }
     // } auto parse()
 
@@ -1180,7 +1163,7 @@ namespace vcpkg::Json
             JsonStyle style;
             std::string& buffer;
 
-            void append_indent(int indent) const
+            void append_indent(size_t indent) const
             {
                 if (style.use_tabs())
                 {
@@ -1194,16 +1177,20 @@ namespace vcpkg::Json
 
             void append_unicode_escape(char16_t code_unit) const
             {
-                buffer.append("\\u");
-
                 // AFAIK, there's no standard way of doing this?
                 constexpr const char hex_digit[16] = {
                     '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
 
-                buffer.push_back(hex_digit[(code_unit >> 12) & 0x0F]);
-                buffer.push_back(hex_digit[(code_unit >> 8) & 0x0F]);
-                buffer.push_back(hex_digit[(code_unit >> 4) & 0x0F]);
-                buffer.push_back(hex_digit[(code_unit >> 0) & 0x0F]);
+                const char seq[6] = {
+                    '\\',
+                    'u',
+                    hex_digit[(code_unit >> 12) & 0x0F],
+                    hex_digit[(code_unit >> 8) & 0x0F],
+                    hex_digit[(code_unit >> 4) & 0x0F],
+                    hex_digit[(code_unit >> 0) & 0x0F],
+                };
+
+                buffer.append(seq, 6);
             }
 
             // taken from the ECMAScript 2020 standard, 24.5.2.2: Runtime Semantics: QuoteJSONString
@@ -1260,7 +1247,7 @@ namespace vcpkg::Json
                 buffer.push_back('"');
             }
 
-            void stringify_object(const Object& obj, int current_indent)
+            void stringify_object(const Object& obj, size_t current_indent)
             {
                 buffer.push_back('{');
                 if (obj.size() != 0)
@@ -1288,7 +1275,7 @@ namespace vcpkg::Json
                 buffer.push_back('}');
             }
 
-            void stringify_array(const Array& arr, int current_indent)
+            void stringify_array(const Array& arr, size_t current_indent)
             {
                 buffer.push_back('[');
                 if (arr.size() == 0)
@@ -1318,7 +1305,7 @@ namespace vcpkg::Json
                 }
             }
 
-            void stringify(const Value& value, int current_indent)
+            void stringify(const Value& value, size_t current_indent)
             {
                 switch (value.kind())
                 {
@@ -1474,9 +1461,14 @@ namespace vcpkg::Json
         for (auto&& s : m_path)
         {
             if (s.index < 0)
-                Strings::append(p, '.', s.field);
+            {
+                p.push_back('.');
+                p.append(s.field.data(), s.field.size());
+            }
             else
-                Strings::append(p, '[', s.index, ']');
+            {
+                fmt::format_to(std::back_inserter(p), "[{}]", s.index);
+            }
         }
         return p;
     }
@@ -1534,84 +1526,4 @@ namespace vcpkg::Json
     }
 
     const PackageNameDeserializer PackageNameDeserializer::instance;
-
-    LocalizedString PackagePatternDeserializer::type_name() const { return msg::format(msgAPackagePattern); }
-
-    Optional<PackagePatternDeclaration> PackagePatternDeserializer::visit_string(Json::Reader& r, StringView sv) const
-    {
-        if (!is_package_pattern(sv))
-        {
-            r.add_generic_error(
-                type_name(),
-                msg::format(msgParsePackagePatternError, msg::package_name = sv, msg::url = docs::registries_url));
-        }
-
-        return PackagePatternDeclaration{
-            sv.to_string(),
-            r.path(),
-        };
-    }
-
-    bool PackagePatternDeserializer::is_package_pattern(StringView sv)
-    {
-        if (IdentifierDeserializer::is_ident(sv))
-        {
-            return true;
-        }
-
-        /*if (sv == "*")
-        {
-            return true;
-        }*/
-
-        // ([a-z0-9]+(-[a-z0-9]+)*)(\*?)
-        auto cur = sv.begin();
-        const auto last = sv.end();
-        for (;;)
-        {
-            // [a-z0-9]+
-            if (cur == last)
-            {
-                return false;
-            }
-
-            if (!is_lower_digit(*cur))
-            {
-                if (*cur != '*')
-                {
-                    return false;
-                }
-
-                return ++cur == last;
-            }
-
-            do
-            {
-                ++cur;
-                if (cur == last)
-                {
-                    return true;
-                }
-            } while (is_lower_digit(*cur));
-
-            switch (*cur)
-            {
-                case '-':
-                    // repeat outer [a-z0-9]+ again to match -[a-z0-9]+
-                    ++cur;
-                    continue;
-                case '*':
-                    // match last optional *
-                    ++cur;
-                    return cur == last;
-                default: return false;
-            }
-        }
-    }
-
-    const PackagePatternDeserializer PackagePatternDeserializer::instance;
-
-    LocalizedString PackagePatternArrayDeserializer::type_name() const { return msg::format(msgAPackagePatternArray); }
-
-    const PackagePatternArrayDeserializer PackagePatternArrayDeserializer::instance;
 }

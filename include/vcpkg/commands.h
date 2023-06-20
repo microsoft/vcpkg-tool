@@ -1,37 +1,33 @@
 #pragma once
 
+#include <vcpkg/base/fwd/files.h>
+
+#include <vcpkg/fwd/triplet.h>
+#include <vcpkg/fwd/vcpkgcmdarguments.h>
+#include <vcpkg/fwd/vcpkgpaths.h>
+
 #include <vcpkg/base/span.h>
 #include <vcpkg/base/stringview.h>
-
-#include <vcpkg/commands.interface.h>
 
 #include <string>
 
 namespace vcpkg::Commands
 {
+    using BasicCommandFn = void (*)(const VcpkgCmdArguments& args, const Filesystem& fs);
+    using PathsCommandFn = void (*)(const VcpkgCmdArguments& args, const VcpkgPaths& paths);
+    using TripletCommandFn = void (*)(const VcpkgCmdArguments& args,
+                                      const VcpkgPaths& paths,
+                                      Triplet default_triplet,
+                                      Triplet host_triplet);
+
     template<class T>
     struct PackageNameAndFunction
     {
-        std::string name;
+        StringLiteral name;
         T function;
     };
 
-    Span<const PackageNameAndFunction<const BasicCommand*>> get_available_basic_commands();
-    Span<const PackageNameAndFunction<const PathsCommand*>> get_available_paths_commands();
-    Span<const PackageNameAndFunction<const TripletCommand*>> get_available_triplet_commands();
-
-    template<class T>
-    T find(StringView command_name, Span<const PackageNameAndFunction<T>> available_commands)
-    {
-        for (const PackageNameAndFunction<T>& cmd : available_commands)
-        {
-            if (cmd.name == command_name)
-            {
-                return cmd.function;
-            }
-        }
-
-        // not found
-        return nullptr;
-    }
+    extern const View<PackageNameAndFunction<BasicCommandFn>> basic_commands;
+    extern const View<PackageNameAndFunction<PathsCommandFn>> paths_commands;
+    extern const View<PackageNameAndFunction<TripletCommandFn>> triplet_commands;
 }

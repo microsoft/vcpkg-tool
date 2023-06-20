@@ -1,7 +1,11 @@
+#include <vcpkg/base/fwd/message_sinks.h>
+
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/parse.h>
 #include <vcpkg/base/system.debug.h>
+#include <vcpkg/base/system.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
@@ -110,18 +114,18 @@ namespace vcpkg::Commands::Integrate
 #if defined(_WIN32)
     static std::string create_appdata_shortcut(StringView target_path) noexcept
     {
-        return Strings::format(R"###(
+        return fmt::format(R"###(
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Condition="Exists('%s') and '$(VCPkgLocalAppDataDisabled)' == ''" Project="%s" />
+  <Import Condition="Exists('{}') and '$(VCPkgLocalAppDataDisabled)' == ''" Project="{}" />
 </Project>
 )###",
-                               target_path,
-                               target_path);
+                           target_path,
+                           target_path);
     }
 #endif
 
 #if defined(_WIN32)
-    static std::string create_system_targets_shortcut() noexcept
+    static std::string create_system_targets_shortcut()
     {
         return R"###(
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
@@ -137,32 +141,29 @@ namespace vcpkg::Commands::Integrate
 #endif
 
 #if defined(_WIN32)
-    static std::string create_nuget_targets_file_contents(const Path& msbuild_vcpkg_targets_file) noexcept
+    static std::string create_nuget_targets_file_contents(const Path& msbuild_vcpkg_targets_file)
     {
-        return Strings::format(R"###(
+        return fmt::format(R"###(
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="%s" Condition="Exists('%s')" />
+  <Import Project="{}" Condition="Exists('{}')" />
   <Target Name="CheckValidPlatform" BeforeTargets="Build">
     <Error Text="Unsupported architecture combination. Remove the 'vcpkg' nuget package." Condition="'$(VCPkgEnabled)' != 'true' and '$(VCPkgDisableError)' == ''"/>
   </Target>
 </Project>
 )###",
-                               msbuild_vcpkg_targets_file,
-                               msbuild_vcpkg_targets_file);
+                           msbuild_vcpkg_targets_file,
+                           msbuild_vcpkg_targets_file);
     }
 #endif
 
 #if defined(_WIN32)
-    static std::string create_nuget_props_file_contents() noexcept
-    {
-        return R"###(
+    static constexpr StringLiteral NUGET_PROPS_FILE_CONTENTS = R"###(
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <VCPkgLocalAppDataDisabled>true</VCPkgLocalAppDataDisabled>
   </PropertyGroup>
 </Project>
 )###";
-    }
 #endif
 
 #if defined(_WIN32)
@@ -185,7 +186,7 @@ namespace vcpkg::Commands::Integrate
                                                    const std::string& nuget_id,
                                                    const std::string& nupkg_version)
     {
-        static constexpr auto CONTENT_TEMPLATE = R"(
+        static constexpr StringLiteral CONTENT_TEMPLATE = R"(
 <package>
     <metadata>
         <id>@NUGET_ID@</id>
@@ -245,51 +246,38 @@ namespace vcpkg::Commands::Integrate
     }
 #endif
 
-#if defined(_WIN32)
-    static Path get_appdata_targets_path()
-    {
-        return get_appdata_local().value_or_exit(VCPKG_LINE_INFO) / "vcpkg\\vcpkg.user.targets";
-    }
-#endif
-#if defined(_WIN32)
-    static Path get_appdata_props_path()
-    {
-        return get_appdata_local().value_or_exit(VCPKG_LINE_INFO) / "vcpkg\\vcpkg.user.props";
-    }
-#endif
-
-    static constexpr StringLiteral vcpkg_path_txt_name = "vcpkg.path.txt";
+    static constexpr StringLiteral vcpkg_path_txt = "vcpkg.path.txt";
 
 #if defined(_WIN32)
-    static void integrate_install_msbuild14(Filesystem& fs, const Path& tmp_dir)
+    static constexpr StringLiteral vcpkg_user_props = "vcpkg.user.props";
+    static constexpr StringLiteral vcpkg_user_targets = "vcpkg.user.targets";
+
+    static bool integrate_install_msbuild14(const Filesystem& fs)
     {
-        static const std::array<Path, 2> OLD_SYSTEM_TARGET_FILES = {
+        std::array<Path, 2> OLD_SYSTEM_TARGET_FILES = {
             get_program_files_32_bit().value_or_exit(VCPKG_LINE_INFO) /
                 "MSBuild/14.0/Microsoft.Common.Targets/ImportBefore/vcpkg.nuget.targets",
             get_program_files_32_bit().value_or_exit(VCPKG_LINE_INFO) /
                 "MSBuild/14.0/Microsoft.Common.Targets/ImportBefore/vcpkg.system.targets"};
-        static const Path SYSTEM_WIDE_TARGETS_FILE =
-            get_program_files_32_bit().value_or_exit(VCPKG_LINE_INFO) /
-            "MSBuild/Microsoft.Cpp/v4.0/V140/ImportBefore/Default/vcpkg.system.props";
+        Path SYSTEM_WIDE_TARGETS_FILE = get_program_files_32_bit().value_or_exit(VCPKG_LINE_INFO) /
+                                        "MSBuild/Microsoft.Cpp/v4.0/V140/ImportBefore/Default/vcpkg.system.props";
 
         // TODO: This block of code should eventually be removed
         for (auto&& old_system_wide_targets_file : OLD_SYSTEM_TARGET_FILES)
         {
             if (fs.exists(old_system_wide_targets_file, IgnoreErrors{}))
             {
-                const std::string param = Strings::format(R"(/c "DEL "%s" /Q > nul")", old_system_wide_targets_file);
+                const std::string param = fmt::format(R"(/c "DEL "{}" /Q > nul")", old_system_wide_targets_file);
                 const ElevationPromptChoice user_choice = elevated_cmd_execute(param);
                 switch (user_choice)
                 {
                     case ElevationPromptChoice::YES: break;
-                    case ElevationPromptChoice::NO:
-                        msg::println_warning(msgPreviousIntegrationFileRemains);
-                        Checks::exit_fail(VCPKG_LINE_INFO);
+                    case ElevationPromptChoice::NO: msg::println_warning(msgPreviousIntegrationFileRemains); break;
                     default: Checks::unreachable(VCPKG_LINE_INFO);
                 }
             }
         }
-        bool should_install_system = true;
+
         std::error_code ec;
         std::string system_wide_file_contents = fs.read_contents(SYSTEM_WIDE_TARGETS_FILE, ec);
         if (!ec)
@@ -297,34 +285,28 @@ namespace vcpkg::Commands::Integrate
             auto opt = find_targets_file_version(system_wide_file_contents);
             if (opt.value_or(0) >= 1)
             {
-                should_install_system = false;
+                return true;
             }
         }
 
-        if (should_install_system)
+        const auto tmp_dir = fs.create_or_get_temp_directory(VCPKG_LINE_INFO);
+        const auto sys_src_path = tmp_dir / "vcpkg.system.targets";
+        fs.write_contents(sys_src_path, create_system_targets_shortcut(), VCPKG_LINE_INFO);
+
+        const std::string param = fmt::format(R"(/c "mkdir "{}" & copy "{}" "{}" /Y > nul")",
+                                              SYSTEM_WIDE_TARGETS_FILE.parent_path(),
+                                              sys_src_path,
+                                              SYSTEM_WIDE_TARGETS_FILE);
+        elevated_cmd_execute(param);
+        fs.remove_all(tmp_dir, VCPKG_LINE_INFO);
+
+        if (!fs.exists(SYSTEM_WIDE_TARGETS_FILE, IgnoreErrors{}))
         {
-            const auto sys_src_path = tmp_dir / "vcpkg.system.targets";
-            fs.write_contents(sys_src_path, create_system_targets_shortcut(), VCPKG_LINE_INFO);
-
-            const std::string param = Strings::format(R"(/c "mkdir "%s" & copy "%s" "%s" /Y > nul")",
-                                                      SYSTEM_WIDE_TARGETS_FILE.parent_path(),
-                                                      sys_src_path,
-                                                      SYSTEM_WIDE_TARGETS_FILE);
-            const ElevationPromptChoice user_choice = elevated_cmd_execute(param);
-            switch (user_choice)
-            {
-                case ElevationPromptChoice::YES: break;
-                case ElevationPromptChoice::NO:
-                    msg::println_warning(msgIntegrationFailed);
-                    Checks::exit_fail(VCPKG_LINE_INFO);
-                default: Checks::unreachable(VCPKG_LINE_INFO);
-            }
-
-            Checks::check_exit(VCPKG_LINE_INFO,
-                               fs.exists(SYSTEM_WIDE_TARGETS_FILE, IgnoreErrors{}),
-                               "Error: failed to copy targets file to %s",
-                               SYSTEM_WIDE_TARGETS_FILE);
+            msg::println_warning(msg::format(msgSystemTargetsInstallFailed, msg::path = SYSTEM_WIDE_TARGETS_FILE));
+            return false;
         }
+
+        return true;
     }
 #endif
 
@@ -332,62 +314,45 @@ namespace vcpkg::Commands::Integrate
     {
         auto& fs = paths.get_filesystem();
 
-#if defined(_WIN32)
-        {
-            const auto tmp_dir = paths.buildsystems / "tmp";
-            fs.create_directory(paths.buildsystems, VCPKG_LINE_INFO);
-            fs.create_directory(tmp_dir, VCPKG_LINE_INFO);
-
-            integrate_install_msbuild14(fs, tmp_dir);
-
-            const auto appdata_src_path = tmp_dir / "vcpkg.user.targets";
-            fs.write_contents(
-                appdata_src_path, create_appdata_shortcut(paths.buildsystems_msbuild_targets), VCPKG_LINE_INFO);
-            auto appdata_dst_path = get_appdata_targets_path();
-
-            const auto vcpkg_appdata_local = get_appdata_local().value_or_exit(VCPKG_LINE_INFO) / "vcpkg";
-            fs.create_directory(vcpkg_appdata_local, VCPKG_LINE_INFO);
-
-            fs.copy_file(appdata_src_path, appdata_dst_path, CopyOptions::overwrite_existing, VCPKG_LINE_INFO);
-
-            const Path appdata_src_path2 = tmp_dir / "vcpkg.user.props";
-            fs.write_contents(
-                appdata_src_path2, create_appdata_shortcut(paths.buildsystems_msbuild_props), VCPKG_LINE_INFO);
-            auto appdata_dst_path2 = get_appdata_props_path();
-
-            fs.copy_file(appdata_src_path2, appdata_dst_path2, CopyOptions::overwrite_existing, VCPKG_LINE_INFO);
-        }
-#endif
-
-        auto user_configuration_home = get_user_configuration_home().value_or_exit(VCPKG_LINE_INFO);
-        fs.create_directories(user_configuration_home, IgnoreErrors{});
-        fs.write_contents(
-            user_configuration_home / vcpkg_path_txt_name, paths.root.generic_u8string(), VCPKG_LINE_INFO);
-        msg::println(Color::success, msgAppliedUserIntegration);
-
         const auto cmake_toolchain = paths.buildsystems / "vcpkg.cmake";
+        auto message = msg::format(msgCMakeToolChainFile, msg::path = cmake_toolchain.generic_u8string());
+
+        auto& user_configuration_home = get_user_configuration_home().value_or_exit(VCPKG_LINE_INFO);
+        fs.create_directories(user_configuration_home, VCPKG_LINE_INFO);
+        fs.write_contents(user_configuration_home / vcpkg_path_txt, paths.root.generic_u8string(), VCPKG_LINE_INFO);
 
 #if defined(_WIN32)
-        msg::println(msg::format(msgCMakeToolChainFile, msg::path = cmake_toolchain.generic_u8string())
-                         .append_raw("\n\n")
-                         .append(msgAutomaticLinkingForMSBuildProjects));
-#else
-        msg::println(msgCMakeToolChainFile, msg::path = cmake_toolchain.generic_u8string());
+        fs.write_contents(user_configuration_home / vcpkg_user_props,
+                          create_appdata_shortcut(paths.buildsystems_msbuild_props),
+                          VCPKG_LINE_INFO);
+        fs.write_contents(user_configuration_home / vcpkg_user_targets,
+                          create_appdata_shortcut(paths.buildsystems_msbuild_targets),
+                          VCPKG_LINE_INFO);
+
+        if (!integrate_install_msbuild14(fs))
+        {
+            message.append_raw("\n\n").append(msgAutomaticLinkingForVS2017AndLater);
+            msg::println(message);
+            Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgIntegrationFailedVS2015);
+        }
+
+        message.append_raw("\n\n").append(msgAutomaticLinkingForMSBuildProjects);
 #endif
+
+        msg::println(Color::success, msgAppliedUserIntegration);
+        msg::println(message);
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 
-    static void integrate_remove(Filesystem& fs)
+    static void integrate_remove(const Filesystem& fs)
     {
         bool was_deleted = false;
-
+        auto& user_configuration_home = get_user_configuration_home().value_or_exit(VCPKG_LINE_INFO);
 #if defined(_WIN32)
-        was_deleted |= fs.remove(get_appdata_targets_path(), VCPKG_LINE_INFO);
-        was_deleted |= fs.remove(get_appdata_props_path(), VCPKG_LINE_INFO);
+        was_deleted |= fs.remove(user_configuration_home / vcpkg_user_props, VCPKG_LINE_INFO);
+        was_deleted |= fs.remove(user_configuration_home / vcpkg_user_targets, VCPKG_LINE_INFO);
 #endif
-
-        auto user_configuration_home = get_user_configuration_home().value_or_exit(VCPKG_LINE_INFO);
-        was_deleted |= fs.remove(user_configuration_home / vcpkg_path_txt_name, VCPKG_LINE_INFO);
+        was_deleted |= fs.remove(user_configuration_home / vcpkg_path_txt, VCPKG_LINE_INFO);
 
         if (was_deleted)
         {
@@ -408,11 +373,7 @@ namespace vcpkg::Commands::Integrate
 
         const Path& nuget_exe = paths.get_tool_exe(Tools::NUGET, stdout_sink);
 
-        const Path& buildsystems_dir = paths.buildsystems;
-        const auto tmp_dir = buildsystems_dir / "tmp";
-        fs.create_directory(buildsystems_dir, IgnoreErrors{});
-        fs.create_directory(tmp_dir, IgnoreErrors{});
-
+        const auto tmp_dir = fs.create_or_get_temp_directory(VCPKG_LINE_INFO);
         const auto targets_file_path = tmp_dir / "vcpkg.nuget.targets";
         const auto props_file_path = tmp_dir / "vcpkg.nuget.props";
         const auto nuspec_file_path = tmp_dir / "vcpkg.nuget.nuspec";
@@ -421,7 +382,7 @@ namespace vcpkg::Commands::Integrate
 
         fs.write_contents(
             targets_file_path, create_nuget_targets_file_contents(paths.buildsystems_msbuild_targets), VCPKG_LINE_INFO);
-        fs.write_contents(props_file_path, create_nuget_props_file_contents(), VCPKG_LINE_INFO);
+        fs.write_contents(props_file_path, NUGET_PROPS_FILE_CONTENTS, VCPKG_LINE_INFO);
         fs.write_contents(
             nuspec_file_path, create_nuspec_file_contents(paths.root, nuget_id, nupkg_version), VCPKG_LINE_INFO);
 
@@ -429,27 +390,29 @@ namespace vcpkg::Commands::Integrate
         auto cmd_line = Command(nuget_exe)
                             .string_arg("pack")
                             .string_arg("-OutputDirectory")
-                            .string_arg(buildsystems_dir)
+                            .string_arg(paths.original_cwd)
                             .string_arg(nuspec_file_path);
 
         const auto maybe_nuget_output = flatten(
             cmd_execute_and_capture_output(cmd_line, default_working_directory, get_clean_environment()), Tools::NUGET);
+
         if (!maybe_nuget_output)
         {
-            msg::println_error(msg::format(msgCommandFailed, msg::command_line = cmd_line.command_line())
-                                   .append_raw('\n')
-                                   .append(maybe_nuget_output.error()));
-            Checks::unreachable(VCPKG_LINE_INFO);
+            Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                          msg::format(msgCommandFailed, msg::command_line = cmd_line.command_line())
+                                              .append_raw('\n')
+                                              .append(maybe_nuget_output.error()));
         }
 
-        const auto nuget_package = buildsystems_dir / Strings::format("%s.%s.nupkg", nuget_id, nupkg_version);
+        fs.remove_all(tmp_dir, VCPKG_LINE_INFO);
+        const auto nuget_package = paths.original_cwd / fmt::format("{}.{}.nupkg", nuget_id, nupkg_version);
         Checks::msg_check_exit(VCPKG_LINE_INFO,
                                fs.exists(nuget_package, IgnoreErrors{}),
                                msgNugetPackageFileSucceededButCreationFailed,
                                msg::path = nuget_package);
         msg::println(Color::success, msgCreatedNuGetPackage, msg::path = nuget_package);
 
-        auto source_path = Strings::replace_all(buildsystems_dir, "`", "``");
+        auto source_path = Strings::replace_all(paths.original_cwd, "`", "``");
 
         msg::println(msgInstallPackageInstruction, msg::value = nuget_id, msg::path = source_path);
         Checks::exit_success(VCPKG_LINE_INFO);
@@ -468,7 +431,7 @@ namespace vcpkg::Commands::Integrate
                        .string_arg("-ExecutionPolicy")
                        .string_arg("Bypass")
                        .string_arg("-Command")
-                       .string_arg(Strings::format("& {& '%s' }", script_path));
+                       .string_arg(fmt::format("& {{& '{}' }}", script_path));
         const int rc = cmd_execute(cmd).value_or_exit(VCPKG_LINE_INFO);
         if (rc)
         {
@@ -588,26 +551,24 @@ namespace vcpkg::Commands::Integrate
     void append_helpstring(HelpTableFormatter& table)
     {
 #if defined(_WIN32)
-        table.format("vcpkg integrate install",
-                     "Make installed packages available user-wide. Requires admin privileges on first use.");
-        table.format("vcpkg integrate remove", "Remove user-wide integration");
-        table.format("vcpkg integrate project", "Generate a referencing nuget package for individual VS project use");
-        table.format("vcpkg integrate powershell", "Enable PowerShell tab-completion");
+        table.format("vcpkg integrate install", msg::format(msgIntegrateInstallHelpWindows));
+        table.format("vcpkg integrate remove", msg::format(msgIntegrateRemoveHelp));
+        table.format("vcpkg integrate project", msg::format(msgIntegrateProjectHelp));
+        table.format("vcpkg integrate powershell", msg::format(msgIntegratePowerShellHelp));
 #else  // ^^^ defined(_WIN32) // !defined(_WIN32) vvv
-        table.format("vcpkg integrate install",
-                     "Make installed packages available user - wide.Requires admin privileges on first use");
-        table.format("vcpkg integrate remove", "Remove user-wide integration");
-        table.format("vcpkg integrate bash", "Enable bash tab-completion");
-        table.format("vcpkg integrate zsh", "Enable zsh tab-completion");
-        table.format("vcpkg integrate x-fish", "Enable fish tab-completion");
+        table.format("vcpkg integrate install", msg::format(msgIntegrateInstallHelpLinux));
+        table.format("vcpkg integrate remove", msg::format(msgIntegrateRemoveHelp));
+        table.format("vcpkg integrate bash", msg::format(msgIntegrateBashHelp));
+        table.format("vcpkg integrate zsh", msg::format(msgIntegrateZshHelp));
+        table.format("vcpkg integrate x-fish", msg::format(msgIntegrateFishHelp));
 #endif // ^^^ !defined(_WIN32)
     }
 
-    std::string get_helpstring()
+    LocalizedString get_helpstring()
     {
         HelpTableFormatter table;
         append_helpstring(table);
-        return std::move(table.m_str);
+        return msg::format(msgCommands).append_raw('\n').append_raw(table.m_str);
     }
 
     namespace Subcommand
@@ -637,7 +598,7 @@ namespace vcpkg::Commands::Integrate
     }
 
     const CommandStructure COMMAND_STRUCTURE = {
-        "Commands:\n" + get_helpstring(),
+        [] { return get_helpstring(); },
         1,
         1,
         {},
@@ -646,45 +607,40 @@ namespace vcpkg::Commands::Integrate
 
     void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
-        (void)args.parse_arguments(COMMAND_STRUCTURE);
+        const auto parsed = args.parse_arguments(COMMAND_STRUCTURE);
 
-        if (args.command_arguments[0] == Subcommand::INSTALL)
+        if (parsed.command_arguments[0] == Subcommand::INSTALL)
         {
             return integrate_install(paths);
         }
-        if (args.command_arguments[0] == Subcommand::REMOVE)
+        if (parsed.command_arguments[0] == Subcommand::REMOVE)
         {
             return integrate_remove(paths.get_filesystem());
         }
 #if defined(_WIN32)
-        if (args.command_arguments[0] == Subcommand::PROJECT)
+        if (parsed.command_arguments[0] == Subcommand::PROJECT)
         {
             return integrate_project(paths);
         }
-        if (args.command_arguments[0] == Subcommand::POWERSHELL)
+        if (parsed.command_arguments[0] == Subcommand::POWERSHELL)
         {
             return integrate_powershell(paths);
         }
 #else
-        if (args.command_arguments[0] == Subcommand::BASH)
+        if (parsed.command_arguments[0] == Subcommand::BASH)
         {
             return integrate_bash(paths);
         }
-        if (args.command_arguments[0] == Subcommand::ZSH)
+        if (parsed.command_arguments[0] == Subcommand::ZSH)
         {
             return integrate_zsh(paths);
         }
-        if (args.command_arguments[0] == Subcommand::FISH)
+        if (parsed.command_arguments[0] == Subcommand::FISH)
         {
             return integrate_fish(paths);
         }
 #endif
         Checks::msg_exit_maybe_upgrade(
-            VCPKG_LINE_INFO, msgUnknownParameterForIntegrate, msg::value = args.command_arguments[0]);
-    }
-
-    void IntegrateCommand::perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const
-    {
-        Integrate::perform_and_exit(args, paths);
+            VCPKG_LINE_INFO, msgUnknownParameterForIntegrate, msg::value = parsed.command_arguments[0]);
     }
 }

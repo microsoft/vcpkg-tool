@@ -1,14 +1,19 @@
 #include <vcpkg/base/api-stable-format.h>
 #include <vcpkg/base/cache.h>
 #include <vcpkg/base/downloads.h>
+#include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/json.h>
+#include <vcpkg/base/message_sinks.h>
 #include <vcpkg/base/parse.h>
+#include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/system.proxy.h>
 #include <vcpkg/base/util.h>
+
+#include <vcpkg/metrics.h>
 
 namespace vcpkg
 {
@@ -326,25 +331,13 @@ namespace vcpkg
         return SplitURIView{scheme, {}, {sep + 1, uri.end()}};
     }
 
-    static ExpectedL<Unit> try_verify_downloaded_file_hash(const Filesystem& fs,
+    static ExpectedL<Unit> try_verify_downloaded_file_hash(const ReadOnlyFilesystem& fs,
                                                            StringView sanitized_url,
                                                            const Path& downloaded_path,
                                                            StringView sha512)
     {
         std::string actual_hash =
             vcpkg::Hash::get_file_hash(fs, downloaded_path, Hash::Algorithm::Sha512).value_or_exit(VCPKG_LINE_INFO);
-
-        // <HACK to handle NuGet.org changing nupkg hashes.>
-        // This is the NEW hash for 7zip
-        if (actual_hash == "a9dfaaafd15d98a2ac83682867ec5766720acf6e99d40d1a00d480692752603bf3f3742623f0ea85647a92374df"
-                           "405f331afd6021c5cf36af43ee8db198129c0")
-        {
-            // This is the OLD hash for 7zip
-            actual_hash = "8c75314102e68d2b2347d592f8e3eb05812e1ebb525decbac472231633753f1d4ca31c8e6881a36144a8da26b257"
-                          "1305b3ae3f4e2b85fc4a290aeda63d1a13b8";
-        }
-        // </HACK>
-
         if (!Strings::case_insensitive_ascii_equals(sha512, actual_hash))
         {
             return msg::format_error(msgDownloadFailedHashMismatch,
@@ -357,7 +350,7 @@ namespace vcpkg
         return Unit{};
     }
 
-    void verify_downloaded_file_hash(const Filesystem& fs,
+    void verify_downloaded_file_hash(const ReadOnlyFilesystem& fs,
                                      StringView url,
                                      const Path& downloaded_path,
                                      StringView sha512)
@@ -365,22 +358,18 @@ namespace vcpkg
         try_verify_downloaded_file_hash(fs, url, downloaded_path, sha512).value_or_exit(VCPKG_LINE_INFO);
     }
 
-    static bool check_downloaded_file_hash(Filesystem& fs,
-                                           const Optional<std::string>& hash,
-                                           StringView sanitized_url,
-                                           const Path& download_part_path,
-                                           std::vector<LocalizedString>& errors)
+    static ExpectedL<Unit> check_downloaded_file_hash(const ReadOnlyFilesystem& fs,
+                                                      const Optional<std::string>& hash,
+                                                      StringView sanitized_url,
+                                                      const Path& download_part_path)
     {
         if (auto p = hash.get())
         {
-            auto maybe_success = try_verify_downloaded_file_hash(fs, sanitized_url, download_part_path, *p);
-            if (!maybe_success.has_value())
-            {
-                errors.push_back(std::move(maybe_success).error());
-                return false;
-            }
+            return try_verify_downloaded_file_hash(fs, sanitized_url, download_part_path, *p);
         }
-        return true;
+
+        Debug::println("Skipping hash check because none was specified.");
+        return Unit{};
     }
 
     static void url_heads_inner(View<std::string> urls,
@@ -443,12 +432,17 @@ namespace vcpkg
         {
             url_heads_inner({urls.data() + i, batch_size}, headers, &ret, secrets);
         }
-        if (i != urls.size()) url_heads_inner({urls.begin() + i, urls.end()}, headers, &ret, secrets);
 
+        if (i != urls.size())
+        {
+            url_heads_inner({urls.begin() + i, urls.end()}, headers, &ret, secrets);
+        }
+
+        Checks::check_exit(VCPKG_LINE_INFO, ret.size() == urls.size());
         return ret;
     }
 
-    static void download_files_inner(Filesystem&,
+    static void download_files_inner(const Filesystem&,
                                      View<std::pair<std::string, Path>> url_pairs,
                                      View<std::string> headers,
                                      std::vector<int>* out)
@@ -499,7 +493,7 @@ namespace vcpkg
             }
         }
     }
-    std::vector<int> download_files(Filesystem& fs,
+    std::vector<int> download_files(const Filesystem& fs,
                                     View<std::pair<std::string, Path>> url_pairs,
                                     View<std::string> headers)
     {
@@ -512,7 +506,11 @@ namespace vcpkg
         {
             download_files_inner(fs, {url_pairs.data() + i, batch_size}, headers, &ret);
         }
-        if (i != url_pairs.size()) download_files_inner(fs, {url_pairs.begin() + i, url_pairs.end()}, headers, &ret);
+
+        if (i != url_pairs.size())
+        {
+            download_files_inner(fs, {url_pairs.begin() + i, url_pairs.end()}, headers, &ret);
+        }
 
         Checks::msg_check_exit(VCPKG_LINE_INFO,
                                ret.size() == url_pairs.size(),
@@ -522,11 +520,50 @@ namespace vcpkg
         return ret;
     }
 
-    ExpectedL<int> put_file(const Filesystem&,
+    bool send_snapshot_to_api(const std::string& github_token,
+                              const std::string& github_repository,
+                              const Json::Object& snapshot)
+    {
+        static constexpr StringLiteral guid_marker = "fcfad8a3-bb68-4a54-ad00-dab1ff671ed2";
+
+        Command cmd;
+        cmd.string_arg("curl");
+        cmd.string_arg("-w").string_arg("\\n" + guid_marker.to_string() + "%{http_code}");
+        cmd.string_arg("-X").string_arg("POST");
+        cmd.string_arg("-H").string_arg("Accept: application/vnd.github+json");
+
+        std::string res = "Authorization: Bearer " + github_token;
+        cmd.string_arg("-H").string_arg(res);
+        cmd.string_arg("-H").string_arg("X-GitHub-Api-Version: 2022-11-28");
+        cmd.string_arg(
+            Strings::concat("https://api.github.com/repos/", github_repository, "/dependency-graph/snapshots"));
+        cmd.string_arg("-d").string_arg(Json::stringify(snapshot));
+        int code = 0;
+        auto result = cmd_execute_and_stream_lines(cmd, [&code](StringView line) {
+            if (Strings::starts_with(line, guid_marker))
+            {
+                code = std::strtol(line.data() + guid_marker.size(), nullptr, 10);
+            }
+            else
+            {
+                Debug::println(line);
+            }
+        });
+
+        auto r = result.get();
+        if (r && *r == 0 && code >= 200 && code < 300)
+        {
+            return true;
+        }
+        return false;
+    }
+
+    ExpectedL<int> put_file(const ReadOnlyFilesystem&,
                             StringView url,
                             const std::vector<std::string>& secrets,
                             View<std::string> headers,
-                            const Path& file)
+                            const Path& file,
+                            StringView request)
     {
         static constexpr StringLiteral guid_marker = "9a1db05f-a65d-419b-aa72-037fb4d0672e";
 
@@ -555,11 +592,12 @@ namespace vcpkg
         }
 
         Command cmd;
-        cmd.string_arg("curl").string_arg("-X").string_arg("PUT");
+        cmd.string_arg("curl").string_arg("-X").string_arg(request);
         for (auto&& header : headers)
         {
             cmd.string_arg("-H").string_arg(header);
         }
+
         cmd.string_arg("-w").string_arg("\\n" + guid_marker.to_string() + "%{http_code}");
         cmd.string_arg(url);
         cmd.string_arg("-T").string_arg(file);
@@ -591,7 +629,7 @@ namespace vcpkg
         retry
     };
 
-    static WinHttpTrialResult download_winhttp_trial(Filesystem& fs,
+    static WinHttpTrialResult download_winhttp_trial(const Filesystem& fs,
                                                      WinHttpSession& s,
                                                      const Path& download_path_part_path,
                                                      SplitURIView split_uri,
@@ -648,7 +686,7 @@ namespace vcpkg
     /// <summary>
     /// Download a file using WinHTTP -- only supports HTTP and HTTPS
     /// </summary>
-    static bool download_winhttp(Filesystem& fs,
+    static bool download_winhttp(const Filesystem& fs,
                                  const Path& download_path_part_path,
                                  SplitURIView split_uri,
                                  const std::string& url,
@@ -702,7 +740,7 @@ namespace vcpkg
     }
 #endif
 
-    static bool try_download_file(vcpkg::Filesystem& fs,
+    static bool try_download_file(const Filesystem& fs,
                                   const std::string& url,
                                   View<std::string> headers,
                                   const Path& download_path,
@@ -732,10 +770,15 @@ namespace vcpkg
                 {
                     if (download_winhttp(fs, download_path_part_path, split_uri, url, secrets, errors, progress_sink))
                     {
-                        if (check_downloaded_file_hash(fs, sha512, url, download_path_part_path, errors))
+                        auto maybe_hash_check = check_downloaded_file_hash(fs, sha512, url, download_path_part_path);
+                        if (maybe_hash_check.has_value())
                         {
                             fs.rename(download_path_part_path, download_path, VCPKG_LINE_INFO);
                             return true;
+                        }
+                        else
+                        {
+                            errors.push_back(std::move(maybe_hash_check).error());
                         }
                     }
                     return false;
@@ -756,8 +799,8 @@ namespace vcpkg
             cmd.string_arg("-H").string_arg(header);
         }
 
-        std::string non_progress_lines;
-        const auto maybe_exit_code = cmd_execute_and_stream_lines(
+        std::string non_progress_content;
+        auto maybe_exit_code = cmd_execute_and_stream_lines(
             cmd,
             [&](StringView line) {
                 const auto maybe_parsed = try_parse_curl_progress_data(line);
@@ -767,8 +810,8 @@ namespace vcpkg
                 }
                 else
                 {
-                    non_progress_lines.append(line.data(), line.size());
-                    non_progress_lines.push_back('\n');
+                    non_progress_content.append(line.data(), line.size());
+                    non_progress_content.push_back('\n');
                 }
             },
             default_working_directory,
@@ -781,14 +824,21 @@ namespace vcpkg
             if (*exit_code != 0)
             {
                 errors.push_back(
-                    msg::format_error(msgDownloadFailedCurl, msg::url = sanitized_url, msg::exit_code = *exit_code));
+                    msg::format_error(msgDownloadFailedCurl, msg::url = sanitized_url, msg::exit_code = *exit_code)
+                        .append_raw('\n')
+                        .append_raw(non_progress_content));
                 return false;
             }
 
-            if (check_downloaded_file_hash(fs, sha512, sanitized_url, download_path_part_path, errors))
+            auto maybe_hash_check = check_downloaded_file_hash(fs, sha512, sanitized_url, download_path_part_path);
+            if (maybe_hash_check.has_value())
             {
                 fs.rename(download_path_part_path, download_path, VCPKG_LINE_INFO);
                 return true;
+            }
+            else
+            {
+                errors.push_back(std::move(maybe_hash_check).error());
             }
         }
         else
@@ -799,7 +849,7 @@ namespace vcpkg
         return false;
     }
 
-    static Optional<const std::string&> try_download_file(vcpkg::Filesystem& fs,
+    static Optional<const std::string&> try_download_file(const Filesystem& fs,
                                                           View<std::string> urls,
                                                           View<std::string> headers,
                                                           const Path& download_path,
@@ -825,7 +875,7 @@ namespace vcpkg
         return s_headers;
     }
 
-    void DownloadManager::download_file(Filesystem& fs,
+    void DownloadManager::download_file(const Filesystem& fs,
                                         const std::string& url,
                                         View<std::string> headers,
                                         const Path& download_path,
@@ -835,7 +885,7 @@ namespace vcpkg
         this->download_file(fs, View<std::string>(&url, 1), headers, download_path, sha512, progress_sink);
     }
 
-    std::string DownloadManager::download_file(Filesystem& fs,
+    std::string DownloadManager::download_file(const Filesystem& fs,
                                                View<std::string> urls,
                                                View<std::string> headers,
                                                const Path& download_path,
@@ -876,13 +926,10 @@ namespace vcpkg
             {
                 if (urls.size() != 0)
                 {
-                    const auto download_path_part_path =
-                        download_path + Strings::concat(".", get_process_id(), ".part");
-
+                    const auto download_path_part_path = download_path + fmt::format(".{}.part", get_process_id());
                     const auto escaped_url = Command(urls[0]).extract();
                     const auto escaped_sha512 = Command(*hash).extract();
                     const auto escaped_dpath = Command(download_path_part_path).extract();
-
                     auto cmd = api_stable_format(*script, [&](std::string& out, StringView key) {
                                    if (key == "url")
                                    {
@@ -956,7 +1003,7 @@ namespace vcpkg
         Checks::exit_fail(VCPKG_LINE_INFO);
     }
 
-    ExpectedL<int> DownloadManager::put_file_to_mirror(const Filesystem& fs,
+    ExpectedL<int> DownloadManager::put_file_to_mirror(const ReadOnlyFilesystem& fs,
                                                        const Path& file_to_put,
                                                        StringView sha512) const
     {

@@ -2,7 +2,7 @@
 
 #include <vcpkg/base/fwd/optional.h>
 
-#include <vcpkg/base/basic-checks.h>
+#include <vcpkg/base/checks.h>
 #include <vcpkg/base/lineinfo.h>
 #include <vcpkg/base/pragmas.h>
 
@@ -74,8 +74,8 @@ namespace vcpkg
                 }
                 else if (!m_is_present && o.m_is_present)
                 {
-                    m_is_present = true;
                     new (&m_t) T(o.m_t);
+                    m_is_present = true;
                 }
                 else if (m_is_present && !o.m_is_present)
                 {
@@ -92,8 +92,8 @@ namespace vcpkg
                 }
                 else if (!m_is_present && o.m_is_present)
                 {
-                    m_is_present = true;
                     new (&m_t) T(std::move(o.m_t));
+                    m_is_present = true;
                 }
                 else if (m_is_present && !o.m_is_present)
                 {
@@ -122,15 +122,9 @@ namespace vcpkg
             template<class... Args>
             T& emplace(Args&&... args)
             {
-                if (m_is_present)
-                {
-                    m_t = T(static_cast<Args&&>(args)...);
-                }
-                else
-                {
-                    new (&m_t) T(static_cast<Args&&>(args)...);
-                    m_is_present = true;
-                }
+                if (m_is_present) destroy();
+                new (&m_t) T(static_cast<Args&&>(args)...);
+                m_is_present = true;
                 return m_t;
             }
 
@@ -193,15 +187,9 @@ namespace vcpkg
             template<class... Args>
             T& emplace(Args&&... args)
             {
-                if (m_is_present)
-                {
-                    m_t = T(static_cast<Args&&>(args)...);
-                }
-                else
-                {
-                    new (&m_t) T(static_cast<Args&&>(args)...);
-                    m_is_present = true;
-                }
+                if (m_is_present) destroy();
+                new (&m_t) T(static_cast<Args&&>(args)...);
+                m_is_present = true;
                 return m_t;
             }
 
@@ -240,6 +228,8 @@ namespace vcpkg
 
             T* get() const { return m_t; }
 
+            void destroy() { m_t = nullptr; }
+
         private:
             T* m_t;
         };
@@ -266,103 +256,94 @@ namespace vcpkg
                 return *m_t;
             }
 
+            void destroy() { m_t = nullptr; }
+
         private:
             const T* m_t;
         };
     }
 
     template<class T>
-    struct Optional
+    struct Optional : private details::OptionalStorage<T>
     {
-    private:
-        details::OptionalStorage<T> m_base;
-
     public:
         constexpr Optional() noexcept { }
 
         // Constructors are intentionally implicit
         constexpr Optional(NullOpt) { }
 
-        template<class U, class = std::enable_if_t<!std::is_same_v<std::decay_t<U>, Optional>>>
-        constexpr Optional(U&& t) : m_base(std::forward<U>(t))
+        template<class U,
+                 std::enable_if_t<!std::is_same_v<std::decay_t<U>, Optional> &&
+                                      std::is_constructible_v<details::OptionalStorage<T>, U>,
+                                  int> = 0>
+        constexpr Optional(U&& t) : details::OptionalStorage<T>(static_cast<U&&>(t))
         {
         }
 
+        using details::OptionalStorage<T>::emplace;
+        using details::OptionalStorage<T>::has_value;
+        using details::OptionalStorage<T>::get;
+
         T&& value_or_exit(const LineInfo& line_info) &&
         {
-            Checks::check_exit(line_info, this->m_base.has_value(), "Value was null");
-            return std::move(this->m_base.value());
+            Checks::check_exit(line_info, this->has_value(), "Value was null");
+            return std::move(this->value());
         }
 
         T& value_or_exit(const LineInfo& line_info) &
         {
-            Checks::check_exit(line_info, this->m_base.has_value(), "Value was null");
-            return this->m_base.value();
+            Checks::check_exit(line_info, this->has_value(), "Value was null");
+            return this->value();
         }
 
         const T& value_or_exit(const LineInfo& line_info) const&
         {
-            Checks::check_exit(line_info, this->m_base.has_value(), "Value was null");
-            return this->m_base.value();
+            Checks::check_exit(line_info, this->has_value(), "Value was null");
+            return this->value();
         }
 
-        constexpr explicit operator bool() const { return this->m_base.has_value(); }
-
-        template<class... Args>
-        T& emplace(Args&&... args)
-        {
-            return this->m_base.emplace(static_cast<Args&&>(args)...);
-        }
-
-        constexpr bool has_value() const { return this->m_base.has_value(); }
+        constexpr explicit operator bool() const { return this->has_value(); }
 
         template<class U>
         T value_or(U&& default_value) const&
         {
-            return this->m_base.has_value() ? this->m_base.value() : static_cast<T>(std::forward<U>(default_value));
+            return this->has_value() ? this->value() : static_cast<T>(std::forward<U>(default_value));
         }
 
         T value_or(T&& default_value) const&
         {
-            return this->m_base.has_value() ? this->m_base.value() : static_cast<T&&>(default_value);
+            return this->has_value() ? this->value() : static_cast<T&&>(default_value);
         }
 
         template<class U>
         T value_or(U&& default_value) &&
         {
-            return this->m_base.has_value() ? std::move(this->m_base.value())
-                                            : static_cast<T>(std::forward<U>(default_value));
+            return this->has_value() ? std::move(this->value()) : static_cast<T>(std::forward<U>(default_value));
         }
         T value_or(T&& default_value) &&
         {
-            return this->m_base.has_value() ? std::move(this->m_base.value()) : static_cast<T&&>(default_value);
+            return this->has_value() ? std::move(this->value()) : static_cast<T&&>(default_value);
         }
-
-        // this allows us to error out when `.get()` would return a pointer to a temporary
-        decltype(auto) get() const& { return this->m_base.get(); }
-        decltype(auto) get() & { return this->m_base.get(); }
-        decltype(auto) get() const&& { return std::move(this->m_base).get(); }
-        decltype(auto) get() && { return std::move(this->m_base).get(); }
 
         template<class F>
         using map_t = decltype(std::declval<F&>()(std::declval<const T&>()));
 
-        template<class F, class U = map_t<F>>
-        Optional<U> map(F f) const&
+        template<class F>
+        Optional<map_t<F>> map(F f) const&
         {
-            if (this->m_base.has_value())
+            if (this->has_value())
             {
-                return f(this->m_base.value());
+                return f(this->value());
             }
             return nullopt;
         }
 
-        template<class F, class U = map_t<F>>
-        U then(F f) const&
+        template<class F>
+        map_t<F> then(F f) const&
         {
-            if (this->m_base.has_value())
+            if (this->has_value())
             {
-                return f(this->m_base.value());
+                return f(this->value());
             }
             return nullopt;
         }
@@ -370,47 +351,47 @@ namespace vcpkg
         template<class F>
         using move_map_t = decltype(std::declval<F&>()(std::declval<T&&>()));
 
-        template<class F, class U = move_map_t<F>>
-        Optional<U> map(F f) &&
+        template<class F>
+        Optional<move_map_t<F>> map(F f) &&
         {
-            if (this->m_base.has_value())
+            if (this->has_value())
             {
-                return f(std::move(this->m_base.value()));
+                return f(std::move(this->value()));
             }
             return nullopt;
         }
 
-        template<class F, class U = move_map_t<F>>
-        U then(F f) &&
+        template<class F>
+        move_map_t<F> then(F f) &&
         {
-            if (this->m_base.has_value())
+            if (this->has_value())
             {
-                return f(std::move(this->m_base.value()));
+                return f(std::move(this->value()));
             }
             return nullopt;
         }
 
         void clear()
         {
-            if (this->m_base.has_value())
+            if (this->has_value())
             {
-                this->m_base.destroy();
+                this->destroy();
             }
         }
 
         friend bool operator==(const Optional& lhs, const Optional& rhs)
         {
-            if (lhs.m_base.has_value())
+            if (lhs.has_value())
             {
-                if (rhs.m_base.has_value())
+                if (rhs.has_value())
                 {
-                    return lhs.m_base.value() == rhs.m_base.value();
+                    return lhs.value() == rhs.value();
                 }
 
                 return false;
             }
 
-            return !rhs.m_base.has_value();
+            return !rhs.has_value();
         }
         friend bool operator!=(const Optional& lhs, const Optional& rhs) noexcept { return !(lhs == rhs); }
     };

@@ -8,15 +8,24 @@
 #include <vcpkg/base/util.h>
 
 #include <ctype.h>
-#include <locale.h>
 #include <stdarg.h>
-#include <stdio.h>
 
 #include <algorithm>
+#include <iterator>
 #include <string>
 #include <vector>
 
+#include <fmt/compile.h>
+
 using namespace vcpkg;
+
+namespace vcpkg::Strings::details
+{
+    void append_internal(std::string& into, char c) { into += c; }
+    void append_internal(std::string& into, const char* v) { into.append(v); }
+    void append_internal(std::string& into, const std::string& s) { into.append(s); }
+    void append_internal(std::string& into, StringView s) { into.append(s.begin(), s.end()); }
+}
 
 vcpkg::ExpectedL<std::string> vcpkg::details::api_stable_format_impl(StringView sv,
                                                                      void (*cb)(void*, std::string&, StringView),
@@ -75,49 +84,30 @@ vcpkg::ExpectedL<std::string> vcpkg::details::api_stable_format_impl(StringView 
     return {std::move(out), expected_left_tag};
 }
 
-namespace vcpkg::Strings::details
+namespace
 {
     // To disambiguate between two overloads
-    static bool is_space(const char c) { return std::isspace(static_cast<unsigned char>(c)) != 0; }
-
-    // Avoids C4244 warnings because of char<->int conversion that occur when using std::tolower()
-    static char toupper_char(const char c) { return (c < 'a' || c > 'z') ? c : c - 'a' + 'A'; }
-
-#if defined(_WIN32)
-    static _locale_t& c_locale()
+    constexpr struct
     {
-        static _locale_t c_locale_impl = _create_locale(LC_ALL, "C");
-        return c_locale_impl;
-    }
-#endif
+        bool operator()(char c) const noexcept { return std::isspace(static_cast<unsigned char>(c)) != 0; }
+    } is_space_char;
 
-    std::string format_internal(const char* fmtstr, ...)
+    constexpr struct
     {
-        va_list args;
-        va_start(args, fmtstr);
+        char operator()(char c) const noexcept { return (c < 'a' || c > 'z') ? c : c - 'a' + 'A'; }
+    } to_upper_char;
 
-#if defined(_WIN32)
-        const int sz = _vscprintf_l(fmtstr, c_locale(), args);
-#else
-        const int sz = vsnprintf(nullptr, 0, fmtstr, args);
-#endif
-        Checks::check_exit(VCPKG_LINE_INFO, sz > 0);
+    constexpr struct
+    {
+        char operator()(char c) const noexcept { return (c < 'A' || c > 'Z') ? c : c - 'A' + 'a'; }
+    } tolower_char;
 
-        std::string output(sz, '\0');
+    constexpr struct
+    {
+        bool operator()(char a, char b) const noexcept { return tolower_char(a) == tolower_char(b); }
+    } icase_eq;
 
-#if defined(_WIN32)
-        _vsnprintf_s_l(&output.at(0), output.size() + 1, output.size(), fmtstr, c_locale(), args);
-#else
-        va_start(args, fmtstr);
-        vsnprintf(&output.at(0), output.size() + 1, fmtstr, args);
-#endif
-        va_end(args);
-
-        return output;
-    }
 }
-
-using namespace vcpkg;
 
 #if defined(_WIN32)
 std::wstring Strings::to_utf16(StringView s)
@@ -171,15 +161,6 @@ void Strings::to_utf8(std::string& output, const wchar_t* w, size_t size_in_char
 std::string Strings::to_utf8(const std::wstring& ws) { return to_utf8(ws.data(), ws.size()); }
 #endif
 
-std::string Strings::escape_string(std::string&& s, char char_to_escape, char escape_char)
-{
-    // Replace '\' with '\\' or '`' with '``'
-    auto ret = Strings::replace_all(std::move(s), {&escape_char, 1}, std::string{escape_char, escape_char});
-    // Replace '"' with '\"' or '`"'
-    ret = Strings::replace_all(std::move(ret), {&char_to_escape, 1}, std::string{escape_char, char_to_escape});
-    return ret;
-}
-
 const char* Strings::case_insensitive_ascii_search(StringView s, StringView pattern)
 {
     return std::search(s.begin(), s.end(), pattern.begin(), pattern.end(), icase_eq);
@@ -195,17 +176,22 @@ bool Strings::case_insensitive_ascii_equals(StringView left, StringView right)
     return std::equal(left.begin(), left.end(), right.begin(), right.end(), icase_eq);
 }
 
-void Strings::ascii_to_lowercase(char* first, char* last) { std::transform(first, last, first, tolower_char); }
+void Strings::inplace_ascii_to_lowercase(char* first, char* last) { std::transform(first, last, first, tolower_char); }
 
-std::string Strings::ascii_to_lowercase(std::string&& s)
+void Strings::inplace_ascii_to_lowercase(std::string& s)
 {
-    Strings::ascii_to_lowercase(s.data(), s.data() + s.size());
+    Strings::inplace_ascii_to_lowercase(s.data(), s.data() + s.size());
+}
+
+std::string Strings::ascii_to_lowercase(std::string s)
+{
+    Strings::inplace_ascii_to_lowercase(s);
     return std::move(s);
 }
 
-std::string Strings::ascii_to_uppercase(std::string&& s)
+std::string Strings::ascii_to_uppercase(std::string s)
 {
-    std::transform(s.begin(), s.end(), s.begin(), &details::toupper_char);
+    std::transform(s.begin(), s.end(), s.begin(), to_upper_char);
     return std::move(s);
 }
 
@@ -232,14 +218,11 @@ bool Strings::starts_with(StringView s, StringView pattern)
     return std::equal(s.begin(), s.begin() + pattern.size(), pattern.begin(), pattern.end());
 }
 
-std::string Strings::replace_all(const char* s, StringView search, StringView rep)
-{
-    return Strings::replace_all(std::string(s), search, rep);
-}
-
 std::string Strings::replace_all(StringView s, StringView search, StringView rep)
 {
-    return Strings::replace_all(s.to_string(), search, rep);
+    std::string ret = s.to_string();
+    Strings::inplace_replace_all(ret, search, rep);
+    return ret;
 }
 
 std::string Strings::replace_all(std::string&& s, StringView search, StringView rep)
@@ -268,28 +251,27 @@ void Strings::inplace_replace_all(std::string& s, char search, char rep) noexcep
     std::replace(s.begin(), s.end(), search, rep);
 }
 
-std::string Strings::trim(std::string&& s)
+void Strings::inplace_trim(std::string& s)
 {
-    s.erase(std::find_if_not(s.rbegin(), s.rend(), details::is_space).base(), s.end());
-    s.erase(s.begin(), std::find_if_not(s.begin(), s.end(), details::is_space));
-    return std::move(s);
+    s.erase(std::find_if_not(s.rbegin(), s.rend(), is_space_char).base(), s.end());
+    s.erase(s.begin(), std::find_if_not(s.begin(), s.end(), is_space_char));
 }
 
 StringView Strings::trim(StringView sv)
 {
-    auto last = std::find_if_not(sv.rbegin(), sv.rend(), details::is_space).base();
-    auto first = std::find_if_not(sv.begin(), sv.end(), details::is_space);
+    auto last = std::find_if_not(sv.rbegin(), sv.rend(), is_space_char).base();
+    auto first = std::find_if_not(sv.begin(), sv.end(), is_space_char);
     return StringView(first, last);
 }
 
-void Strings::trim_all_and_remove_whitespace_strings(std::vector<std::string>* strings)
+void Strings::inplace_trim_all_and_remove_whitespace_strings(std::vector<std::string>& strings)
 {
-    for (std::string& s : *strings)
+    for (std::string& s : strings)
     {
-        s = trim(std::move(s));
+        inplace_trim(s);
     }
 
-    Util::erase_remove_if(*strings, [](const std::string& s) { return s.empty(); });
+    Util::erase_remove_if(strings, [](const std::string& s) { return s.empty(); });
 }
 
 std::vector<std::string> Strings::split(StringView s, const char delimiter)
@@ -309,6 +291,20 @@ std::vector<std::string> Strings::split(StringView s, const char delimiter)
         output.emplace_back(first, next);
         first = next;
     }
+}
+
+std::vector<std::string> Strings::split_keep_empty(StringView s, const char delimiter)
+{
+    std::vector<std::string> output;
+    auto first = s.begin();
+    const auto last = s.end();
+    do
+    {
+        auto next = std::find_if(first, last, [=](const char c) { return c == delimiter; });
+        output.emplace_back(first, next);
+        if (next == last) return output;
+        first = next + 1;
+    } while (1);
 }
 
 std::vector<std::string> Strings::split_paths(StringView s)
@@ -729,6 +725,25 @@ namespace vcpkg::Strings
             value >>= shift;
         }
 
+        return result;
+    }
+
+    std::string percent_encode(StringView sv) noexcept
+    {
+        std::string result;
+        for (auto c : sv)
+        {
+            // list from https://datatracker.ietf.org/doc/html/rfc3986#section-2.3
+            if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '-' || c == '.' ||
+                c == '_' || c == '~')
+            {
+                result.push_back(c);
+            }
+            else
+            {
+                fmt::format_to(std::back_inserter(result), FMT_COMPILE("%{:02X}"), static_cast<uint8_t>(c));
+            }
+        }
         return result;
     }
 

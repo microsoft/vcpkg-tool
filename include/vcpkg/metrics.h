@@ -1,6 +1,7 @@
 #pragma once
 
-#include <vcpkg/base/files.h>
+#include <vcpkg/base/fwd/files.h>
+
 #include <vcpkg/base/stringview.h>
 
 #include <array>
@@ -53,13 +54,15 @@ namespace vcpkg
     enum class StringMetric
     {
         AcquiredArtifacts,
-        BuildError,
+        ActivatedArtifacts,
         CommandArgs,
         CommandContext,
         CommandName,
+        DeploymentKind,
         DetectedCiEnvironment,
         InstallPlan_1,
         ListFile,
+        ProcessTree,
         RegistriesDefaultRegistryKind,
         RegistriesKindsUsed,
         Title,
@@ -81,8 +84,10 @@ namespace vcpkg
     enum class BoolMetric
     {
         DetectedContainer,
+        DependencyGraphSuccess,
         FeatureFlagBinaryCaching,
         FeatureFlagCompilerTracking,
+        FeatureFlagDependencyGraph,
         FeatureFlagManifests,
         FeatureFlagRegistries,
         FeatureFlagVersions,
@@ -155,7 +160,7 @@ namespace vcpkg
 
         void to_string(std::string&) const;
         std::string to_string() const;
-        void try_write(Filesystem& fs) const;
+        void try_write(const Filesystem& fs) const;
 
         // If *this is missing data normally provided by the system, fill it in;
         // otherwise, no effects.
@@ -164,13 +169,14 @@ namespace vcpkg
     };
 
     MetricsUserConfig try_parse_metrics_user(StringView content);
-    MetricsUserConfig try_read_metrics_user(const Filesystem& fs);
+    MetricsUserConfig try_read_metrics_user(const ReadOnlyFilesystem& fs);
 
     struct MetricsSessionData
     {
         std::string submission_time;
         std::string os_version;
         std::string session_id;
+        std::string parent_process_list;
 
         static MetricsSessionData from_system();
     };
@@ -183,7 +189,7 @@ namespace vcpkg
     extern std::atomic<bool> g_should_print_metrics;
     extern std::atomic<bool> g_should_send_metrics;
 
-    void flush_global_metrics(Filesystem&);
+    void flush_global_metrics(const Filesystem&);
 #if defined(_WIN32)
     void winhttp_upload_metrics(StringView payload);
 #endif // ^^^ _WIN32

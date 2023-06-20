@@ -1,12 +1,12 @@
+#include <vcpkg/commands.help.h>
 #include <vcpkg/commands.owns.h>
-#include <vcpkg/help.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
 
 namespace vcpkg::Commands::Owns
 {
-    static void search_file(Filesystem& fs,
+    static void search_file(const Filesystem& fs,
                             const InstalledPaths& installed,
                             const std::string& file_substr,
                             const StatusParagraphs& status_db)
@@ -27,7 +27,7 @@ namespace vcpkg::Commands::Owns
         }
     }
     const CommandStructure COMMAND_STRUCTURE = {
-        Strings::format("The argument should be a pattern to search for. %s", create_example_string("owns zlib.dll")),
+        [] { return create_example_string("owns zlib.dll"); },
         1,
         1,
         {},
@@ -36,15 +36,10 @@ namespace vcpkg::Commands::Owns
 
     void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
-        (void)args.parse_arguments(COMMAND_STRUCTURE);
+        const auto parsed = args.parse_arguments(COMMAND_STRUCTURE);
 
         const StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
-        search_file(paths.get_filesystem(), paths.installed(), args.command_arguments[0], status_db);
+        search_file(paths.get_filesystem(), paths.installed(), parsed.command_arguments[0], status_db);
         Checks::exit_success(VCPKG_LINE_INFO);
-    }
-
-    void OwnsCommand::perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const
-    {
-        Owns::perform_and_exit(args, paths);
     }
 }

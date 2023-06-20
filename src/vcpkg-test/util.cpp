@@ -5,11 +5,13 @@
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/statusparagraph.h>
+#include <vcpkg/tools.h>
 
 #include <stdlib.h>
 
 #include <iostream>
 #include <memory>
+#include <numeric>
 #include <set>
 #include <vector>
 
@@ -54,6 +56,21 @@ namespace vcpkg::Test
         return std::move(*m_pgh.get());
     }
 
+    ParseExpected<SourceControlFile> test_parse_control_file(
+        const std::vector<std::unordered_map<std::string, std::string>>& v)
+    {
+        std::vector<vcpkg::Paragraph> pghs;
+        for (auto&& p : v)
+        {
+            pghs.emplace_back();
+            for (auto&& kv : p)
+            {
+                pghs.back().emplace(kv.first, std::make_pair(kv.second, vcpkg::TextRowCol{}));
+            }
+        }
+        return vcpkg::SourceControlFile::parse_control_file("", std::move(pghs));
+    }
+
     std::unique_ptr<vcpkg::StatusParagraph> make_status_pgh(const char* name,
                                                             const char* depends,
                                                             const char* default_features,
@@ -93,7 +110,7 @@ namespace vcpkg::Test
     PackageSpec PackageSpecMap::emplace(vcpkg::SourceControlFileAndLocation&& scfl)
     {
         const auto& name = scfl.source_control_file->core_paragraph->name;
-        REQUIRE(map.find(name) == map.end());
+        REQUIRE(!Util::Maps::contains(map, name));
         map.emplace(name, std::move(scfl));
         return {name, triplet};
     }
@@ -105,6 +122,22 @@ namespace vcpkg::Test
 #else
         return "/tmp/vcpkg-test";
 #endif
+    }
+
+    std::vector<FullPackageSpec> parse_test_fspecs(StringView sv)
+    {
+        std::vector<FullPackageSpec> ret;
+        ParserBase parser(sv, "test");
+        while (!parser.at_eof())
+        {
+            auto opt = parse_qualified_specifier(parser);
+            REQUIRE(opt.has_value());
+            bool unused = false;
+            ret.push_back(
+                opt.get()->to_full_spec(X86_WINDOWS, unused, ImplicitDefault::YES).value_or_exit(VCPKG_LINE_INFO));
+        }
+
+        return ret;
     }
 
     const Path& base_temporary_directory() noexcept
@@ -179,7 +212,7 @@ namespace vcpkg::Test
         const size_t orig_path_len = path.size();
         for (size_t i = 0; i < l.size() && i < r.size(); ++i)
         {
-            Strings::append(path, '[', i, ']');
+            fmt::format_to(std::back_inserter(path), "[{}]", i);
             check_json_eq(r[i], l[i], path, ordered);
             path.resize(orig_path_len);
         }
@@ -235,4 +268,86 @@ namespace vcpkg::Test
         check_json_eq(l, r, path, true);
     }
 
+    Optional<std::string> diff_lines(StringView a, StringView b)
+    {
+        auto lines_a = Strings::split_keep_empty(a, '\n');
+        auto lines_b = Strings::split_keep_empty(b, '\n');
+
+        std::vector<std::vector<size_t>> edits;
+        auto& first_row = edits.emplace_back();
+        first_row.resize(lines_b.size() + 1);
+        std::iota(first_row.begin(), first_row.end(), 0);
+        for (size_t i = 0; i < lines_a.size(); ++i)
+        {
+            edits.emplace_back().resize(lines_b.size() + 1);
+            edits[i + 1][0] = edits[i][0] + 1;
+            for (size_t j = 0; j < lines_b.size(); ++j)
+            {
+                size_t p = edits[i + 1][j] + 1;
+                size_t m = edits[i][j + 1] + 1;
+                if (m < p) p = m;
+                if (lines_a[i] == lines_b[j] && edits[i][j] < p) p = edits[i][j];
+                edits[i + 1][j + 1] = p;
+            }
+        }
+
+        size_t i = lines_a.size();
+        size_t j = lines_b.size();
+        if (edits[i][j] == 0) return nullopt;
+
+        std::vector<std::string> lines;
+
+        while (i > 0 && j > 0)
+        {
+            if (edits[i][j] == edits[i - 1][j - 1] && lines_a[i - 1] == lines_b[j - 1])
+            {
+                --j;
+                --i;
+                lines.emplace_back(" " + lines_a[i]);
+            }
+            else if (edits[i][j] == edits[i - 1][j] + 1)
+            {
+                --i;
+                lines.emplace_back("-" + lines_a[i]);
+            }
+            else
+            {
+                --j;
+                lines.emplace_back("+" + lines_b[j]);
+            }
+        }
+        for (; i > 0; --i)
+        {
+            lines.emplace_back("-" + lines_a[i - 1]);
+        }
+        for (; j > 0; --j)
+        {
+            lines.emplace_back("+" + lines_b[j - 1]);
+        }
+        std::string ret;
+        for (auto it = lines.rbegin(); it != lines.rend(); ++it)
+        {
+            ret.append(*it);
+            ret.push_back('\n');
+        }
+        return ret;
+    }
+}
+
+TEST_CASE ("diff algorithm", "[diff]")
+{
+    using namespace vcpkg::Test;
+    CHECK(!diff_lines("hello", "hello"));
+    CHECK(!diff_lines("hello\n", "hello\n"));
+    CHECK(!diff_lines("hello\n\nworld", "hello\n\nworld"));
+    {
+        auto a = diff_lines("hello\na\nworld", "hello\nworld");
+        REQUIRE(a);
+        CHECK(*a.get() == " hello\n-a\n world\n");
+    }
+    {
+        auto a = diff_lines("hello\nworld", "hello\na\nworld");
+        REQUIRE(a);
+        CHECK(*a.get() == " hello\n+a\n world\n");
+    }
 }

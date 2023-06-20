@@ -1,6 +1,9 @@
 #include <catch2/catch.hpp>
 
+#include <vcpkg/base/files.h>
+#include <vcpkg/base/optional.h>
 #include <vcpkg/base/stringview.h>
+#include <vcpkg/base/system.process.h>
 
 #include <vcpkg/cgroup-parser.h>
 
@@ -63,4 +66,76 @@ TEST_CASE ("detect docker", "[cgroup-parser]")
 
     CHECK(detect_docker_in_cgroup_file(with_docker, "with_docker"));
     CHECK(!detect_docker_in_cgroup_file(without_docker, "without_docker"));
+}
+
+TEST_CASE ("parse proc/pid/stat file", "[cgroup-parser]")
+{
+    SECTION ("simple case")
+    {
+        std::string contents =
+            R"(4281 (cpptools-srv) S 4099 1676 1676 0 -1 1077936384 51165 303 472 0 81 25 0 0 20 0 10 0 829158 4924583936 39830 18446744073709551615 4194304 14147733 140725993620736 0 0 0 0 16781312 16386 0 0 0 17 1 0 0 5 0 0 16247120 16519160 29999104 140725993622792 140725993622920 140725993622920 140725993627556 0)";
+
+        auto maybe_stat = try_parse_process_stat_file({contents, "test"});
+        REQUIRE(maybe_stat.has_value());
+        auto stat = maybe_stat.value_or_exit(VCPKG_LINE_INFO);
+        CHECK(stat.ppid == 4099);
+        CHECK(stat.executable_name == "cpptools-srv");
+    }
+
+    SECTION ("empty case")
+    {
+        std::string contents =
+            R"(4281 () S 4099 1676 1676 0 -1 1077936384 51165 303 472 0 81 25 0 0 20 0 10 0 829158 4924583936 39830 18446744073709551615 4194304 14147733 140725993620736 0 0 0 0 16781312 16386 0 0 0 17 1 0 0 5 0 0 16247120 16519160 29999104 140725993622792 140725993622920 140725993622920 140725993627556 0)";
+
+        auto maybe_stat = try_parse_process_stat_file({contents, "test"});
+        REQUIRE(maybe_stat.has_value());
+        auto stat = maybe_stat.value_or_exit(VCPKG_LINE_INFO);
+        CHECK(stat.ppid == 4099);
+        CHECK(stat.executable_name == "");
+    }
+
+    SECTION ("comm with parens")
+    {
+        std::string contents =
+            R"(4281 (<(' '<)(> ' ')>) S 4099 1676 1676 0 -1 1077936384 51165 303 472 0 81 25 0 0 20 0 10 0 829158 4924583936 39830 18446744073709551615 4194304 14147733 140725993620736 0 0 0 0 16781312 16386 0 0 0 17 1 0 0 5 0 0 16247120 16519160 29999104 140725993622792 140725993622920 140725993622920 140725993627556 0)";
+
+        auto maybe_stat = try_parse_process_stat_file({contents, "test"});
+        REQUIRE(maybe_stat.has_value());
+        auto stat = maybe_stat.value_or_exit(VCPKG_LINE_INFO);
+        CHECK(stat.ppid == 4099);
+        CHECK(stat.executable_name == "<(' '<)(> ' ')>");
+    }
+
+    SECTION ("comm max length")
+    {
+        std::string contents =
+            R"(4281 (0123456789abcdef) S 4099 1676 1676 0 -1 1077936384 51165 303 472 0 81 25 0 0 20 0 10 0 829158 4924583936 39830 18446744073709551615 4194304 14147733 140725993620736 0 0 0 0 16781312 16386 0 0 0 17 1 0 0 5 0 0 16247120 16519160 29999104 140725993622792 140725993622920 140725993622920 140725993627556 0)";
+
+        auto maybe_stat = try_parse_process_stat_file({contents, "test"});
+        REQUIRE(maybe_stat.has_value());
+        auto stat = maybe_stat.value_or_exit(VCPKG_LINE_INFO);
+        CHECK(stat.ppid == 4099);
+        CHECK(stat.executable_name == "0123456789abcdef");
+    }
+
+    SECTION ("only parens")
+    {
+        std::string contents =
+            R"(4281 (()()()()()()()()) S 4099 1676 1676 0 -1 1077936384 51165 303 472 0 81 25 0 0 20 0 10 0 829158 4924583936 39830 18446744073709551615 4194304 14147733 140725993620736 0 0 0 0 16781312 16386 0 0 0 17 1 0 0 5 0 0 16247120 16519160 29999104 140725993622792 140725993622920 140725993622920 140725993627556 0)";
+
+        auto maybe_stat = try_parse_process_stat_file({contents, "test"});
+        REQUIRE(maybe_stat.has_value());
+        auto stat = maybe_stat.value_or_exit(VCPKG_LINE_INFO);
+        CHECK(stat.ppid == 4099);
+        CHECK(stat.executable_name == "()()()()()()()()");
+    }
+
+    SECTION ("comm too long")
+    {
+        std::string contents =
+            R"(4281 (0123456789abcdefg) S 4099 1676 1676 0 -1 1077936384 51165 303 472 0 81 25 0 0 20 0 10 0 829158 4924583936 39830 18446744073709551615 4194304 14147733 140725993620736 0 0 0 0 16781312 16386 0 0 0 17 1 0 0 5 0 0 16247120 16519160 29999104 140725993622792 140725993622920 140725993622920 140725993627556 0)";
+
+        auto maybe_stat = try_parse_process_stat_file({contents, "test"});
+        REQUIRE(!maybe_stat.has_value());
+    }
 }

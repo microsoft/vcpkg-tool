@@ -1,6 +1,7 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/jsonreader.h>
+#include <vcpkg/base/message_sinks.h>
 #include <vcpkg/base/span.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.debug.h>
@@ -18,6 +19,55 @@
 
 namespace vcpkg
 {
+
+    bool operator==(const DependencyConstraint& lhs, const DependencyConstraint& rhs)
+    {
+        if (lhs.type != rhs.type) return false;
+        if (lhs.value != rhs.value) return false;
+        return lhs.port_version == rhs.port_version;
+    }
+
+    Optional<Version> DependencyConstraint::try_get_minimum_version() const
+    {
+        if (type == VersionConstraintKind::None)
+        {
+            return nullopt;
+        }
+
+        return Version{
+            value,
+            port_version,
+        };
+    }
+
+    FullPackageSpec Dependency::to_full_spec(Triplet target, Triplet host_triplet, ImplicitDefault id) const
+    {
+        return FullPackageSpec{{name, host ? host_triplet : target}, internalize_feature_list(features, id)};
+    }
+
+    bool operator==(const Dependency& lhs, const Dependency& rhs)
+    {
+        if (lhs.name != rhs.name) return false;
+        if (lhs.features != rhs.features) return false;
+        if (!structurally_equal(lhs.platform, rhs.platform)) return false;
+        if (lhs.extra_info != rhs.extra_info) return false;
+        if (lhs.constraint != rhs.constraint) return false;
+        if (lhs.host != rhs.host) return false;
+
+        return true;
+    }
+    bool operator!=(const Dependency& lhs, const Dependency& rhs);
+
+    bool operator==(const DependencyOverride& lhs, const DependencyOverride& rhs)
+    {
+        if (lhs.version_scheme != rhs.version_scheme) return false;
+        if (lhs.port_version != rhs.port_version) return false;
+        if (lhs.name != rhs.name) return false;
+        if (lhs.version != rhs.version) return false;
+        return lhs.extra_info == rhs.extra_info;
+    }
+    bool operator!=(const DependencyOverride& lhs, const DependencyOverride& rhs);
+
     struct UrlDeserializer : Json::StringDeserializer
     {
         LocalizedString type_name() const override { return msg::format(msgAUrl); }
@@ -117,7 +167,7 @@ namespace vcpkg
     {
         for (auto& el : arr)
         {
-            el = Strings::trim(std::move(el));
+            Strings::inplace_trim(el);
         }
     }
 
@@ -224,10 +274,9 @@ namespace vcpkg
                 {
                     auto error_info = std::make_unique<ParseControlErrorInfo>();
                     error_info->name = scf.core_paragraph->name;
-                    error_info->error = Strings::format(R"(Multiple features with the same name for port %s: %s
-    This is invalid; please make certain that features have distinct names.)",
-                                                        scf.core_paragraph->name,
-                                                        (*adjacent_equal)->name);
+                    error_info->error = msg::format_error(msgMultipleFeatures,
+                                                          msg::package_name = scf.core_paragraph->name,
+                                                          msg::feature = (*adjacent_equal)->name);
                     return error_info;
                 }
                 return nullptr;
@@ -404,7 +453,7 @@ namespace vcpkg
             }
             else
             {
-                r.add_generic_error(type_name(), LocalizedString::from_raw(std::move(opt).error()));
+                r.add_generic_error(type_name(), std::move(opt).error());
                 return PlatformExpression::Expr::Empty();
             }
         }
@@ -486,7 +535,7 @@ namespace vcpkg
                 {
                     auto opt = Strings::strto<int>(ZStringView{constraint_value}.substr(h + 1));
                     auto v = opt.get();
-                    if (v && *v > 0)
+                    if (v && *v >= 0)
                     {
                         dep.constraint.port_version = *v;
                     }
@@ -708,7 +757,7 @@ namespace vcpkg
 
     // The "license" field; either:
     // * a string, which must be an SPDX license expression.
-    //   EBNF located at: https://github.com/microsoft/vcpkg/blob/master/docs/maintainers/manifest-files.md#license
+    //   EBNF located at: https://learn.microsoft.com/vcpkg/reference/vcpkg-json#license
     // * `null`, for when the license of the package cannot be described by an SPDX expression
     struct SpdxLicenseExpressionParser : ParserBase
     {
@@ -916,7 +965,8 @@ namespace vcpkg
 
     std::string parse_spdx_license_expression(StringView sv, ParseMessages& messages)
     {
-        auto parser = SpdxLicenseExpressionParser(sv, "<license string>");
+        auto license_string = msg::format(msgLicenseExpressionString); // must live through parse
+        auto parser = SpdxLicenseExpressionParser(sv, license_string);
         auto result = parser.parse();
         messages = parser.extract_messages();
         return result;
@@ -1073,7 +1123,7 @@ namespace vcpkg
 
             if (auto maybe_error = canonicalize(*control_file))
             {
-                Checks::exit_with_message(VCPKG_LINE_INFO, maybe_error->error);
+                Checks::msg_exit_with_message(VCPKG_LINE_INFO, maybe_error->error);
             }
 
             return std::move(control_file); // gcc-7 bug workaround redundant move
@@ -1204,8 +1254,7 @@ namespace vcpkg
             ret.append_raw('\n');
             for (auto&& err : reader.errors())
             {
-                ret.append_indent();
-                ret.append_fmt_raw("{}\n", err);
+                ret.append_indent().append(err).append_raw("\n");
             }
             ret.append(msgExtendedDocumentationAtUrl, msg::url = docs::registries_url);
             ret.append_raw('\n');
@@ -1273,61 +1322,57 @@ namespace vcpkg
         return parse_manifest_object_impl<PortManifestDeserializer>(origin, manifest, warnings_sink);
     }
 
-    Optional<std::string> SourceControlFile::check_against_feature_flags(const Path& origin,
-                                                                         const FeatureFlagSettings& flags,
-                                                                         bool is_default_builtin_registry) const
+    ExpectedL<Unit> SourceControlFile::check_against_feature_flags(const Path& origin,
+                                                                   const FeatureFlagSettings& flags,
+                                                                   bool is_default_builtin_registry) const
     {
-        static constexpr StringLiteral s_extended_help = "See `vcpkg help versioning` for more information.";
-        auto format_error_message = [&](StringView manifest_field, StringView feature_flag) {
-            return Strings::format(" was rejected because it uses \"%s\" and the `%s` feature flag is disabled.\n"
-                                   "This can be fixed by removing \"%s\".\n",
-                                   manifest_field,
-                                   feature_flag,
-                                   manifest_field);
-        };
-
         if (!flags.versions)
         {
-            auto check_deps = [&](View<Dependency> deps) -> Optional<std::string> {
+            auto check_deps = [&](View<Dependency> deps) -> ExpectedL<Unit> {
                 for (auto&& dep : deps)
                 {
                     if (dep.constraint.type != VersionConstraintKind::None)
                     {
                         get_global_metrics_collector().track_define(DefineMetric::ErrorVersioningDisabled);
-                        return Strings::concat(
-                            origin,
-                            " was rejected because it uses constraints and the `",
-                            VcpkgCmdArguments::VERSIONS_FEATURE,
-                            "` feature flag is disabled.\nThis can be fixed by removing uses of \"version>=\".\n",
-                            s_extended_help);
+                        return msg::format_error(
+                            msgVersionRejectedDueToFeatureFlagOff, msg::path = origin, msg::json_field = "version>=");
                     }
                 }
-                return nullopt;
+
+                return Unit{};
             };
 
-            if (auto r = check_deps(core_paragraph->dependencies)) return r;
+            {
+                auto maybe_good = check_deps(core_paragraph->dependencies);
+                if (!maybe_good)
+                {
+                    return maybe_good;
+                }
+            }
 
             for (auto&& fpgh : feature_paragraphs)
             {
-                if (auto r = check_deps(fpgh->dependencies)) return r;
+                auto maybe_good = check_deps(fpgh->dependencies);
+                if (!maybe_good)
+                {
+                    return maybe_good;
+                }
             }
 
             if (core_paragraph->overrides.size() != 0)
             {
                 get_global_metrics_collector().track_define(DefineMetric::ErrorVersioningDisabled);
-                return Strings::concat(
-                    origin,
-                    format_error_message(ManifestDeserializer::OVERRIDES, VcpkgCmdArguments::VERSIONS_FEATURE),
-                    s_extended_help);
+                return msg::format_error(msgVersionRejectedDueToFeatureFlagOff,
+                                         msg::path = origin,
+                                         msg::json_field = ManifestDeserializer::OVERRIDES);
             }
 
             if (core_paragraph->builtin_baseline.has_value())
             {
                 get_global_metrics_collector().track_define(DefineMetric::ErrorVersioningDisabled);
-                return Strings::concat(
-                    origin,
-                    format_error_message(ManifestDeserializer::BUILTIN_BASELINE, VcpkgCmdArguments::VERSIONS_FEATURE),
-                    s_extended_help);
+                return msg::format_error(msgVersionRejectedDueToFeatureFlagOff,
+                                         msg::path = origin,
+                                         msg::json_field = ManifestDeserializer::BUILTIN_BASELINE);
             }
         }
         else
@@ -1341,23 +1386,20 @@ namespace vcpkg
                                 }))
                 {
                     get_global_metrics_collector().track_define(DefineMetric::ErrorVersioningNoBaseline);
-                    return Strings::concat(
-                        origin,
-                        " was rejected because it uses \"version>=\" and does not have a \"builtin-baseline\".\n",
-                        s_extended_help);
+                    return msg::format_error(
+                        msgVersionRejectedDueToBaselineMissing, msg::path = origin, msg::json_field = "version>=");
                 }
 
                 if (!core_paragraph->overrides.empty())
                 {
                     get_global_metrics_collector().track_define(DefineMetric::ErrorVersioningNoBaseline);
-                    return Strings::concat(
-                        origin,
-                        " was rejected because it uses \"overrides\" and does not have a \"builtin-baseline\".\n",
-                        s_extended_help);
+                    return msg::format_error(
+                        msgVersionRejectedDueToBaselineMissing, msg::path = origin, msg::json_field = "overrides");
                 }
             }
         }
-        return nullopt;
+
+        return Unit{};
     }
 
     std::string ParseControlErrorInfo::format_errors(View<std::unique_ptr<ParseControlErrorInfo>> error_info_list)
@@ -1574,7 +1616,7 @@ namespace vcpkg
                     auto s = dep.constraint.value;
                     if (dep.constraint.port_version != 0)
                     {
-                        Strings::append(s, '#', dep.constraint.port_version);
+                        fmt::format_to(std::back_inserter(s), "#{}", dep.constraint.port_version);
                     }
                     dep_obj.insert(DependencyDeserializer::VERSION_GE, std::move(s));
                 }

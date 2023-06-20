@@ -1,6 +1,8 @@
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/span.h>
+#include <vcpkg/base/strings.h>
+#include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
@@ -91,25 +93,26 @@ namespace vcpkg::CMakeVars
         const auto& fs = paths.get_filesystem();
         std::string extraction_file;
 
-        Strings::append(extraction_file,
-                        "cmake_minimum_required(VERSION 3.5)\n"
-                        "macro(vcpkg_triplet_file VCPKG_TRIPLET_ID)\n",
-                        "set(_vcpkg_triplet_file_BACKUP_CURRENT_LIST_FILE \"${CMAKE_CURRENT_LIST_FILE}\")\n");
+        extraction_file.append("cmake_minimum_required(VERSION 3.5)\n"
+                               "macro(vcpkg_triplet_file VCPKG_TRIPLET_ID)\n"
+                               "set(_vcpkg_triplet_file_BACKUP_CURRENT_LIST_FILE \"${CMAKE_CURRENT_LIST_FILE}\")\n");
 
         for (auto&& p : emitted_triplets)
         {
             auto path_to_triplet = paths.get_triplet_file_path(p.first);
-            Strings::append(extraction_file, "if(VCPKG_TRIPLET_ID EQUAL ", p.second, ")\n");
-            Strings::append(
-                extraction_file, "set(CMAKE_CURRENT_LIST_FILE \"", path_to_triplet.generic_u8string(), "\")\n");
-            Strings::append(
-                extraction_file,
-                "get_filename_component(CMAKE_CURRENT_LIST_DIR \"${CMAKE_CURRENT_LIST_FILE}\" DIRECTORY)\n");
-            Strings::append(extraction_file, fs.read_contents(path_to_triplet, VCPKG_LINE_INFO));
-            Strings::append(extraction_file, "\nendif()\n");
+            fmt::format_to(std::back_inserter(extraction_file),
+                           "if(VCPKG_TRIPLET_ID EQUAL {})\n"
+                           "set(CMAKE_CURRENT_LIST_FILE \"{}\")\n"
+                           "get_filename_component(CMAKE_CURRENT_LIST_DIR \"${{CMAKE_CURRENT_LIST_FILE}}\" DIRECTORY)\n"
+                           "{}\n"
+                           "endif()\n",
+                           p.second,
+                           path_to_triplet.generic_u8string(),
+                           fs.read_contents(path_to_triplet, VCPKG_LINE_INFO));
         }
-        Strings::append(extraction_file,
-                        R"(
+
+        extraction_file.append(
+            R"(
 set(CMAKE_CURRENT_LIST_FILE "${_vcpkg_triplet_file_BACKUP_CURRENT_LIST_FILE}")
 get_filename_component(CMAKE_CURRENT_LIST_DIR "${CMAKE_CURRENT_LIST_FILE}" DIRECTORY)
 endmacro()
@@ -120,7 +123,7 @@ endmacro()
     Path TripletCMakeVarProvider::create_tag_extraction_file(
         const View<std::pair<const FullPackageSpec*, std::string>> spec_abi_settings) const
     {
-        Filesystem& fs = paths.get_filesystem();
+        const Filesystem& fs = paths.get_filesystem();
         static int tag_extract_id = 0;
 
         std::map<Triplet, int> emitted_triplets;
@@ -131,7 +134,8 @@ endmacro()
         }
         std::string extraction_file = create_extraction_file_prelude(paths, emitted_triplets);
 
-        Strings::append(extraction_file, R"(
+        // The variables collected here are those necessary to perform builds.
+        extraction_file.append(R"(
 
 function(vcpkg_get_tags PORT FEATURES VCPKG_TRIPLET_ID VCPKG_ABI_SETTINGS_FILE)
     message("d8187afd-ea4a-4fc3-9aa4-a6782e1ed9af")
@@ -164,6 +168,8 @@ VCPKG_ENV_PASSTHROUGH=${VCPKG_ENV_PASSTHROUGH}
 VCPKG_ENV_PASSTHROUGH_UNTRACKED=${VCPKG_ENV_PASSTHROUGH_UNTRACKED}
 VCPKG_LOAD_VCVARS_ENV=${VCPKG_LOAD_VCVARS_ENV}
 VCPKG_DISABLE_COMPILER_TRACKING=${VCPKG_DISABLE_COMPILER_TRACKING}
+VCPKG_XBOX_CONSOLE_TARGET=${VCPKG_XBOX_CONSOLE_TARGET}
+Z_VCPKG_GameDKLatest=$ENV{GameDKLatest}
 e1e74b5c-18cb-4474-a6bd-5c1c8bc81f3f
 8c504940-be29-4cba-9f8f-6cd83e9d87b7")
 endfunction()
@@ -181,19 +187,15 @@ endfunction()
                 featurelist.append(f);
             }
 
-            Strings::append(extraction_file,
-                            "vcpkg_get_tags(\"",
-                            spec.package_spec.name(),
-                            "\" \"",
-                            featurelist,
-                            "\" \"",
-                            emitted_triplets[spec.package_spec.triplet()],
-                            "\" \"",
-                            spec_abi_setting.second,
-                            "\")\n");
+            fmt::format_to(std::back_inserter(extraction_file),
+                           "vcpkg_get_tags(\"{}\" \"{}\" \"{}\" \"{}\")\n",
+                           spec.package_spec.name(),
+                           featurelist,
+                           emitted_triplets[spec.package_spec.triplet()],
+                           spec_abi_setting.second);
         }
 
-        auto tags_path = paths.buildtrees() / Strings::concat(tag_extract_id++, ".vcpkg_tags.cmake");
+        auto tags_path = paths.buildtrees() / fmt::format("{}.vcpkg_tags.cmake", tag_extract_id++);
         fs.write_contents_and_dirs(tags_path, extraction_file, VCPKG_LINE_INFO);
         return tags_path;
     }
@@ -201,7 +203,7 @@ endfunction()
     Path TripletCMakeVarProvider::create_dep_info_extraction_file(const View<PackageSpec> specs) const
     {
         static int dep_info_id = 0;
-        Filesystem& fs = paths.get_filesystem();
+        const Filesystem& fs = paths.get_filesystem();
 
         std::map<Triplet, int> emitted_triplets;
         int emitted_triplet_id = 0;
@@ -212,7 +214,9 @@ endfunction()
 
         std::string extraction_file = create_extraction_file_prelude(paths, emitted_triplets);
 
-        Strings::append(extraction_file, R"(
+        // The variables collected here are those necessary to perform dependency resolution.
+        // If a value affects platform expressions, it must be here.
+        extraction_file.append(R"(
 
 function(vcpkg_get_dep_info PORT VCPKG_TRIPLET_ID)
     message("d8187afd-ea4a-4fc3-9aa4-a6782e1ed9af")
@@ -230,6 +234,7 @@ CMAKE_HOST_SYSTEM_NAME=${CMAKE_HOST_SYSTEM_NAME}
 CMAKE_HOST_SYSTEM_PROCESSOR=${CMAKE_HOST_SYSTEM_PROCESSOR}
 CMAKE_HOST_SYSTEM_VERSION=${CMAKE_HOST_SYSTEM_VERSION}
 CMAKE_HOST_SYSTEM=${CMAKE_HOST_SYSTEM}
+VCPKG_XBOX_CONSOLE_TARGET=${VCPKG_XBOX_CONSOLE_TARGET}
 e1e74b5c-18cb-4474-a6bd-5c1c8bc81f3f
 8c504940-be29-4cba-9f8f-6cd83e9d87b7")
 endfunction()
@@ -251,15 +256,13 @@ endfunction()
                 vcpkg_get_dep_info_name = spec_name;
             }
 
-            Strings::append(extraction_file,
-                            "vcpkg_get_dep_info(",
-                            vcpkg_get_dep_info_name,
-                            " ",
-                            emitted_triplets[spec.triplet()],
-                            ")\n");
+            fmt::format_to(std::back_inserter(extraction_file),
+                           "vcpkg_get_dep_info({} {})\n",
+                           vcpkg_get_dep_info_name,
+                           emitted_triplets[spec.triplet()]);
         }
 
-        auto dep_info_path = paths.buildtrees() / Strings::concat(dep_info_id++, ".vcpkg_dep_info.cmake");
+        auto dep_info_path = paths.buildtrees() / fmt::format("{}.vcpkg_dep_info.cmake", dep_info_id++);
         fs.write_contents_and_dirs(dep_info_path, extraction_file, VCPKG_LINE_INFO);
         return dep_info_path;
     }
@@ -343,9 +346,13 @@ endfunction()
                                              std::make_move_iterator(vars.front().end()));
     }
 
-    void TripletCMakeVarProvider::load_dep_info_vars(View<PackageSpec> specs, Triplet host_triplet) const
+    void TripletCMakeVarProvider::load_dep_info_vars(View<PackageSpec> original_specs, Triplet host_triplet) const
     {
+        std::vector<PackageSpec> specs = Util::filter(original_specs, [this](const PackageSpec& spec) {
+            return dep_resolution_vars.find(spec) == dep_resolution_vars.end();
+        });
         if (specs.size() == 0) return;
+        Debug::println("Loading dep info for: ", Strings::join(" ", specs));
         std::vector<std::vector<std::pair<std::string, std::string>>> vars(specs.size());
         const auto file_path = create_dep_info_extraction_file(specs);
         if (specs.size() > 100)
@@ -405,36 +412,18 @@ endfunction()
     Optional<const std::unordered_map<std::string, std::string>&> TripletCMakeVarProvider::get_generic_triplet_vars(
         Triplet triplet) const
     {
-        auto find_itr = generic_triplet_vars.find(triplet);
-        if (find_itr != generic_triplet_vars.end())
-        {
-            return find_itr->second;
-        }
-
-        return nullopt;
+        return Util::lookup_value(generic_triplet_vars, triplet);
     }
 
     Optional<const std::unordered_map<std::string, std::string>&> TripletCMakeVarProvider::get_dep_info_vars(
         const PackageSpec& spec) const
     {
-        auto find_itr = dep_resolution_vars.find(spec);
-        if (find_itr != dep_resolution_vars.end())
-        {
-            return find_itr->second;
-        }
-
-        return nullopt;
+        return Util::lookup_value(dep_resolution_vars, spec);
     }
 
     Optional<const std::unordered_map<std::string, std::string>&> TripletCMakeVarProvider::get_tag_vars(
         const PackageSpec& spec) const
     {
-        auto find_itr = tag_vars.find(spec);
-        if (find_itr != tag_vars.end())
-        {
-            return find_itr->second;
-        }
-
-        return nullopt;
+        return Util::lookup_value(tag_vars, spec);
     }
 }

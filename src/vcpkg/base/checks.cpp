@@ -13,7 +13,10 @@ namespace
     {
         return LocalizedString::from_raw(fmt::format("{}: ", line_info));
     }
+
 }
+
+std::string vcpkg::LineInfo::to_string() const { return fmt::format("{}({})", file_name, line_number); }
 
 namespace vcpkg
 {
@@ -78,12 +81,6 @@ namespace vcpkg
     [[noreturn]] void Checks::msg_exit_with_message(const LineInfo& line_info, const LocalizedString& error_message)
     {
         msg::println(Color::error, error_message);
-        exit_fail(line_info);
-    }
-
-    [[noreturn]] void Checks::exit_with_message_and_line(const LineInfo& line_info, StringView error_message)
-    {
-        msg::println(Color::error, locale_invariant_lineinfo(line_info).append_raw(error_message));
         exit_fail(line_info);
     }
 

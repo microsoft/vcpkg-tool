@@ -208,19 +208,31 @@ namespace vcpkg
             return *m_t.get();
         }
 
+        const T& value(const LineInfo& line_info) const&
+        {
+            unreachable_if_error(line_info);
+            return *m_t.get();
+        }
+
+        T&& value(const LineInfo& line_info) &&
+        {
+            unreachable_if_error(line_info);
+            return std::move(*m_t.get());
+        }
+
         const Error& error() const&
         {
-            exit_if_not_error();
+            unreachable_if_not_error(VCPKG_LINE_INFO);
             return m_error;
         }
 
         Error&& error() &&
         {
-            exit_if_not_error();
+            unreachable_if_not_error(VCPKG_LINE_INFO);
             return std::move(m_error);
         }
 
-        typename ExpectedHolder<T>::const_pointer get() const
+        typename ExpectedHolder<T>::const_pointer get() const noexcept
         {
             if (value_is_error)
             {
@@ -230,7 +242,7 @@ namespace vcpkg
             return m_t.get();
         }
 
-        typename ExpectedHolder<T>::pointer get()
+        typename ExpectedHolder<T>::pointer get() noexcept
         {
             if (value_is_error)
             {
@@ -316,9 +328,9 @@ namespace vcpkg
 
     public:
         template<class F, class... Args>
-        std::invoke_result_t<F, const T&, Args...> then(F f, Args&&... args) const&
+        typename std::invoke_result<F, const T&, Args...>::type then(F f, Args&&... args) const&
         {
-            static_assert(IsThenCompatibleExpected<std::invoke_result_t<F, const T&, Args...>>::value,
+            static_assert(IsThenCompatibleExpected<typename std::invoke_result<F, const T&, Args...>::type>::value,
                           "then expects f to return an expected with the same error type");
             if (value_is_error)
             {
@@ -331,9 +343,9 @@ namespace vcpkg
         }
 
         template<class F, class... Args>
-        std::invoke_result_t<F, T&&, Args...> then(F f, Args&&... args) &&
+        typename std::invoke_result<F, T, Args...>::type then(F f, Args&&... args) &&
         {
-            static_assert(IsThenCompatibleExpected<std::invoke_result_t<F, T&&, Args...>>::value,
+            static_assert(IsThenCompatibleExpected<typename std::invoke_result<F, T, Args...>::type>::value,
                           "then expects f to return an expected with the same error type");
             if (value_is_error)
             {
@@ -350,15 +362,23 @@ namespace vcpkg
         {
             if (value_is_error)
             {
-                Checks::exit_with_message(line_info, to_string(error()));
+                Checks::msg_exit_with_message(line_info, error());
             }
         }
 
-        void exit_if_not_error() const noexcept
+        void unreachable_if_error(const LineInfo& line_info) const
+        {
+            if (value_is_error)
+            {
+                Checks::unreachable(line_info);
+            }
+        }
+
+        void unreachable_if_not_error(const LineInfo& line_info) const noexcept
         {
             if (!value_is_error)
             {
-                Checks::unreachable(VCPKG_LINE_INFO);
+                Checks::unreachable(line_info);
             }
         }
 
@@ -370,7 +390,4 @@ namespace vcpkg
 
         bool value_is_error;
     };
-
-    template<class T>
-    using ExpectedS = ExpectedT<T, std::string>;
 }

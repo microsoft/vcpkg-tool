@@ -1,5 +1,11 @@
 #pragma once
 
+#if defined(_WIN32)
+#define VCPKG_PREFERRED_SEPARATOR "\\"
+#else // ^^^ _WIN32 / !_WIN32 vvv
+#define VCPKG_PREFERRED_SEPARATOR "/"
+#endif // _WIN32
+
 namespace vcpkg
 {
     enum class CopyOptions
@@ -28,6 +34,12 @@ namespace vcpkg
         junction // implementation-defined value indicating an NT junction
     };
 
+    enum class Append
+    {
+        NO = 0,
+        YES,
+    };
+
     struct IgnoreErrors;
     struct Path;
     struct FilePointer;
@@ -35,6 +47,8 @@ namespace vcpkg
     struct WriteFilePointer;
     struct IExclusiveFileLock;
     struct ILineReader;
+    struct FileContents;
+    struct ReadOnlyFilesystem;
     struct Filesystem;
     struct NotExtensionCaseSensitive;
     struct NotExtensionCaseInsensitive;

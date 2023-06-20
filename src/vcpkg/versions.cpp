@@ -1,3 +1,4 @@
+#include <vcpkg/base/format.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/stringview.h>
@@ -11,11 +12,20 @@ namespace vcpkg
     Version::Version(std::string&& value, int port_version) : m_text(std::move(value)), m_port_version(port_version) { }
     Version::Version(const std::string& value, int port_version) : m_text(value), m_port_version(port_version) { }
 
-    std::string Version::to_string() const { return Strings::concat(*this); }
+    std::string Version::to_string() const
+    {
+        std::string result;
+        to_string(result);
+        return result;
+    }
+
     void Version::to_string(std::string& out) const
     {
         out.append(m_text);
-        if (m_port_version) Strings::append(out, '#', m_port_version);
+        if (m_port_version)
+        {
+            fmt::format_to(std::back_inserter(out), "#{}", m_port_version);
+        }
     }
 
     bool operator==(const Version& left, const Version& right)
@@ -42,25 +52,20 @@ namespace vcpkg
     VersionDiff::VersionDiff() noexcept : left(), right() { }
     VersionDiff::VersionDiff(const Version& left, const Version& right) : left(left), right(right) { }
 
-    std::string VersionDiff::to_string() const
-    {
-        return Strings::format("%s -> %s", left.to_string(), right.to_string());
-    }
+    std::string VersionDiff::to_string() const { return fmt::format("{} -> {}", left, right); }
 
-    std::string VersionSpec::to_string() const { return Strings::concat(port_name, '@', version); }
+    std::string VersionSpec::to_string() const { return fmt::format("{}@{}", port_name, version); }
 
     namespace
     {
         Optional<uint64_t> as_numeric(StringView str)
         {
             uint64_t res = 0;
-            size_t digits = 0;
             for (auto&& ch : str)
             {
                 uint64_t digit_value = static_cast<unsigned char>(ch) - static_cast<unsigned char>('0');
                 if (digit_value > 9) return nullopt;
                 if (res > std::numeric_limits<uint64_t>::max() / 10 - digit_value) return nullopt;
-                ++digits;
                 res = res * 10 + digit_value;
             }
             return res;
@@ -146,7 +151,7 @@ namespace vcpkg
         return nullptr;
     }
 
-    static ExpectedL<DotVersion> try_parse_dot_version(StringView str)
+    static Optional<DotVersion> try_parse_dot_version(StringView str)
     {
         // Suggested regex by semver.org
         // ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)   (this part replaced here with dotted number parsing)
@@ -167,7 +172,7 @@ namespace vcpkg
             if (!cur || *cur != '.') break;
             ++cur;
         }
-        if (!cur) return LocalizedString{};
+        if (!cur) return nullopt;
         ret.version_string.assign(ret.original_string.c_str(), cur);
         if (*cur == 0) return ret;
 
@@ -182,7 +187,7 @@ namespace vcpkg
                 cur = skip_prerelease_identifier(cur);
                 if (!cur)
                 {
-                    return LocalizedString{};
+                    return nullopt;
                 }
                 ret.identifiers.emplace_back(start_identifier, cur);
                 if (*cur != '.') break;
@@ -193,12 +198,12 @@ namespace vcpkg
         if (*cur == 0) return ret;
 
         // build
-        if (*cur != '+') return LocalizedString{};
+        if (*cur != '+') return nullopt;
         ++cur;
         for (;;)
         {
             // Require non-empty identifier element
-            if (!ParserBase::is_alphanumdash(*cur)) return LocalizedString{};
+            if (!ParserBase::is_alphanumdash(*cur)) return nullopt;
             ++cur;
             while (ParserBase::is_alphanumdash(*cur))
             {
@@ -211,7 +216,7 @@ namespace vcpkg
             }
             else
             {
-                return LocalizedString{};
+                return nullopt;
             }
         }
     }
@@ -231,9 +236,9 @@ namespace vcpkg
 
     ExpectedL<DotVersion> DotVersion::try_parse_relaxed(StringView str)
     {
-        return try_parse_dot_version(str).map_error([&](LocalizedString&&) {
-            return msg::format(msg::msgErrorMessage).append(msg::format(msgVersionInvalidRelaxed, msg::version = str));
-        });
+        auto x = try_parse_dot_version(str);
+        if (auto p = x.get()) return std::move(*p);
+        return msg::format_error(msgVersionInvalidRelaxed, msg::version = str);
     }
 
     ExpectedL<DotVersion> DotVersion::try_parse_semver(StringView str)
@@ -247,7 +252,7 @@ namespace vcpkg
             }
         }
 
-        return msg::format(msg::msgErrorMessage).append(msg::format(msgVersionInvalidSemver, msg::version = str));
+        return msg::format_error(msgVersionInvalidSemver, msg::version = str);
     }
 
     static int uint64_comp(uint64_t a, uint64_t b) { return (a > b) - (a < b); }
@@ -332,31 +337,21 @@ namespace vcpkg
         return ret;
     }
 
-    void to_string(std::string& out, VersionScheme scheme)
+    StringLiteral to_string_literal(VersionScheme scheme)
     {
-        if (scheme == VersionScheme::Missing)
+        static constexpr StringLiteral MISSING = "missing";
+        static constexpr StringLiteral STRING = "string";
+        static constexpr StringLiteral SEMVER = "semver";
+        static constexpr StringLiteral RELAXED = "relaxed";
+        static constexpr StringLiteral DATE = "date";
+        switch (scheme)
         {
-            out.append("missing");
-        }
-        else if (scheme == VersionScheme::String)
-        {
-            out.append("string");
-        }
-        else if (scheme == VersionScheme::Semver)
-        {
-            out.append("semver");
-        }
-        else if (scheme == VersionScheme::Relaxed)
-        {
-            out.append("relaxed");
-        }
-        else if (scheme == VersionScheme::Date)
-        {
-            out.append("date");
-        }
-        else
-        {
-            Checks::unreachable(VCPKG_LINE_INFO);
+            case VersionScheme::Missing: return MISSING;
+            case VersionScheme::String: return STRING;
+            case VersionScheme::Semver: return SEMVER;
+            case VersionScheme::Relaxed: return RELAXED;
+            case VersionScheme::Date: return DATE;
+            default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
 
@@ -404,6 +399,11 @@ namespace vcpkg
     static inline VerComp portversion_vercomp(VerComp base, int a, int b)
     {
         return base == VerComp::eq ? integer_vercomp(a, b) : base;
+    }
+
+    VerComp compare_versions(const SchemedVersion& a, const SchemedVersion& b)
+    {
+        return compare_versions(a.scheme, a.version, b.scheme, b.version);
     }
 
     VerComp compare_versions(VersionScheme sa, const Version& a, VersionScheme sb, const Version& b)

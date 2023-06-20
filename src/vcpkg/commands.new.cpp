@@ -1,4 +1,5 @@
-#include <vcpkg/base/basic-checks.h>
+#include <vcpkg/base/checks.h>
+#include <vcpkg/base/files.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.new.h>
@@ -37,7 +38,7 @@ namespace
     };
 
     const CommandStructure COMMAND_STRUCTURE = {
-        create_example_string(R"###(new --name=example --version=1.0 --version-kind=relaxed)###"),
+        [] { return create_example_string("new --name=example --version=1.0 --version-kind=relaxed"); },
         0,
         0,
         {SWITCHES, SETTINGS, {}},
@@ -127,7 +128,7 @@ namespace vcpkg::Commands
         return std::move(manifest);
     }
 
-    void NewCommand::perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const
+    void command_new_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
         auto& fs = paths.get_filesystem();
         const auto& current_configuration = paths.get_configuration();
@@ -195,7 +196,8 @@ namespace vcpkg::Commands
             RegistryConfig default_ms_registry;
             default_ms_registry.kind.emplace("artifact");
             default_ms_registry.name.emplace("microsoft");
-            default_ms_registry.location.emplace("https://aka.ms/vcpkg-ce-default");
+            default_ms_registry.location.emplace(
+                "https://github.com/microsoft/vcpkg-ce-catalog/archive/refs/heads/main.zip");
             configuration.registries.emplace_back(std::move(default_ms_registry));
         }
 
