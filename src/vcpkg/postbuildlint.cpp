@@ -347,7 +347,7 @@ namespace vcpkg
         {
             auto folder_name = share_folder.filename().to_string();
             const auto orig_folder_name = folder_name;
-            Strings::ascii_to_lowercase(folder_name.data(), folder_name.data() + folder_name.size());
+            Strings::inplace_ascii_to_lowercase(folder_name.data(), folder_name.data() + folder_name.size());
 
             if (orig_folder_name != folder_name)
             {
