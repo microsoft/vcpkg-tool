@@ -3,6 +3,7 @@
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
+#include <vcpkg/base/json.h>
 #include <vcpkg/base/message_sinks.h>
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/strings.h>
@@ -13,6 +14,7 @@
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.version.h>
+#include <vcpkg/metrics.h>
 
 namespace vcpkg
 {
@@ -517,6 +519,44 @@ namespace vcpkg
                                msg::actual = ret.size(),
                                msg::expected = url_pairs.size());
         return ret;
+    }
+
+    bool send_snapshot_to_api(const std::string& github_token,
+                              const std::string& github_repository,
+                              const Json::Object& snapshot)
+    {
+        static constexpr StringLiteral guid_marker = "fcfad8a3-bb68-4a54-ad00-dab1ff671ed2";
+
+        Command cmd;
+        cmd.string_arg("curl");
+        cmd.string_arg("-w").string_arg("\\n" + guid_marker.to_string() + "%{http_code}");
+        cmd.string_arg("-X").string_arg("POST");
+        cmd.string_arg("-H").string_arg("Accept: application/vnd.github+json");
+
+        std::string res = "Authorization: Bearer " + github_token;
+        cmd.string_arg("-H").string_arg(res);
+        cmd.string_arg("-H").string_arg("X-GitHub-Api-Version: 2022-11-28");
+        cmd.string_arg(
+            Strings::concat("https://api.github.com/repos/", github_repository, "/dependency-graph/snapshots"));
+        cmd.string_arg("-d").string_arg(Json::stringify(snapshot));
+        int code = 0;
+        auto result = cmd_execute_and_stream_lines(cmd, [&code](StringView line) {
+            if (Strings::starts_with(line, guid_marker))
+            {
+                code = std::strtol(line.data() + guid_marker.size(), nullptr, 10);
+            }
+            else
+            {
+                Debug::println(line);
+            }
+        });
+
+        auto r = result.get();
+        if (r && *r == 0 && code >= 200 && code < 300)
+        {
+            return true;
+        }
+        return false;
     }
 
     ExpectedL<int> put_file(const ReadOnlyFilesystem&,
