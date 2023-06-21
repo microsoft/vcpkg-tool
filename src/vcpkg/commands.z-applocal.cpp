@@ -457,8 +457,10 @@ namespace
                            const Path& installed_dir,
                            const std::string& target_binary_name)
         {
-            const auto source = installed_dir / target_binary_name;
-            const auto target = target_binary_dir / target_binary_name;
+            auto source = installed_dir / target_binary_name;
+            source.make_preferred();
+            auto target = target_binary_dir / target_binary_name;
+            target.make_preferred();
             const auto mutant_name = "vcpkg-applocal-" + Hash::get_string_sha256(target_binary_dir);
             const MutantGuard mutant(mutant_name);
 
@@ -548,12 +550,16 @@ namespace vcpkg::Commands
 
         auto parsed = args.parse_arguments(COMMAND_STRUCTURE);
         const auto target_binary = parsed.settings.find(OPTION_TARGET_BINARY);
-        Checks::check_exit(
-            VCPKG_LINE_INFO, target_binary != parsed.settings.end(), "The --target-binary setting is required.");
+        if (target_binary == parsed.settings.end())
+        {
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgOptionRequiresAValue, msg::option = OPTION_TARGET_BINARY);
+        }
+
         const auto target_installed_bin_dir = parsed.settings.find(OPTION_INSTALLED_DIR);
-        Checks::check_exit(VCPKG_LINE_INFO,
-                           target_installed_bin_dir != parsed.settings.end(),
-                           "The --installed-bin-dir setting is required.");
+        if (target_installed_bin_dir == parsed.settings.end())
+        {
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgOptionRequiresAValue, msg::option = OPTION_INSTALLED_DIR);
+        }
 
         const auto target_binary_path = real_filesystem.almost_canonical(target_binary->second, VCPKG_LINE_INFO);
         AppLocalInvocation invocation(real_filesystem,
