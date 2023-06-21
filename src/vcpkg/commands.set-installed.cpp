@@ -119,9 +119,7 @@ namespace vcpkg::Commands::SetInstalled
         return nullopt;
     }
 
-    std::set<PackageSpec> adjust_action_plan_to_status_db(ActionPlan& action_plan,
-                                                          const StatusParagraphs& status_db,
-                                                          const Path& packages_dir)
+    std::set<PackageSpec> adjust_action_plan_to_status_db(ActionPlan& action_plan, const StatusParagraphs& status_db)
     {
         std::set<std::string> all_abis;
         for (const auto& action : action_plan.install_actions)
@@ -146,7 +144,7 @@ namespace vcpkg::Commands::SetInstalled
                 specs_installed.emplace(status_pgh->package.spec);
             }
         }
-        action_plan.remove_actions = create_remove_plan(specs_to_remove, status_db, packages_dir).remove;
+        action_plan.remove_actions = create_remove_plan(specs_to_remove, status_db).remove;
 
         for (const auto& action : action_plan.remove_actions)
         {
@@ -201,7 +199,7 @@ namespace vcpkg::Commands::SetInstalled
 
         // currently (or once) installed specifications
         auto status_db = database_load_check(fs, paths.installed());
-        adjust_action_plan_to_status_db(action_plan, status_db, paths.packages());
+        adjust_action_plan_to_status_db(action_plan, status_db);
 
         print_plan(action_plan, true, paths.builtin_ports_directory());
 

@@ -101,10 +101,9 @@ namespace vcpkg
 
     struct RemovePlanAction : BasicAction
     {
-        RemovePlanAction(const PackageSpec& spec, RequestType rt, const Path& package_dir);
+        RemovePlanAction(const PackageSpec& spec, RequestType rt);
 
         RequestType request_type;
-        Path package_dir;
     };
 
     struct ActionPlan
@@ -169,9 +168,7 @@ namespace vcpkg
         std::vector<RemovePlanAction> remove;
     };
 
-    RemovePlan create_remove_plan(const std::vector<PackageSpec>& specs,
-                                  const StatusParagraphs& status_db,
-                                  const Path& packages_dir);
+    RemovePlan create_remove_plan(const std::vector<PackageSpec>& specs, const StatusParagraphs& status_db);
 
     std::vector<ExportPlanAction> create_export_plan(const std::vector<PackageSpec>& specs,
                                                      const StatusParagraphs& status_db);

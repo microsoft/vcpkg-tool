@@ -30,9 +30,7 @@ namespace vcpkg::Commands::SetInstalled
      * @param status_db The status db of the installed folder
      * @returns A set of PackageSpec's that are already installed
      */
-    std::set<PackageSpec> adjust_action_plan_to_status_db(ActionPlan& action_plan,
-                                                          const StatusParagraphs& status_db,
-                                                          const Path& packages_dir);
+    std::set<PackageSpec> adjust_action_plan_to_status_db(ActionPlan& action_plan, const StatusParagraphs& status_db);
 
     void perform_and_exit_ex(const VcpkgCmdArguments& args,
                              const VcpkgPaths& paths,

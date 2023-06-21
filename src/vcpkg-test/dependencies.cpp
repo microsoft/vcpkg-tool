@@ -2275,10 +2275,11 @@ TEST_CASE ("formatting plan 1", "[dependencies]")
     auto& scfl_c = vp.emplace("c", {"1", 0});
     auto& scfl_f = vp.emplace("f", {"1", 0});
 
+    const RemovePlanAction remove_b({"b", Test::X64_OSX}, RequestType::USER_REQUESTED);
+    const RemovePlanAction remove_a({"a", Test::X64_OSX}, RequestType::USER_REQUESTED);
+    const RemovePlanAction remove_c({"c", Test::X64_OSX}, RequestType::AUTO_SELECTED);
+
     const Path pr = "packages_root";
-    const RemovePlanAction remove_b({"b", Test::X64_OSX}, RequestType::USER_REQUESTED, pr);
-    const RemovePlanAction remove_a({"a", Test::X64_OSX}, RequestType::USER_REQUESTED, pr);
-    const RemovePlanAction remove_c({"c", Test::X64_OSX}, RequestType::AUTO_SELECTED, pr);
     InstallPlanAction install_a(
         {"a", Test::X64_OSX}, scfl_a, pr, RequestType::AUTO_SELECTED, Test::X64_ANDROID, {}, {});
     InstallPlanAction install_b(

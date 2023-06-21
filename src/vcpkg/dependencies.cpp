@@ -536,8 +536,8 @@ namespace vcpkg
 
     NotInstalledAction::NotInstalledAction(const PackageSpec& spec) : BasicAction{spec} { }
 
-    RemovePlanAction::RemovePlanAction(const PackageSpec& spec, RequestType request_type, const Path& packages_dir)
-        : BasicAction{spec}, request_type(request_type), package_dir(packages_dir / spec.dir())
+    RemovePlanAction::RemovePlanAction(const PackageSpec& spec, RequestType request_type)
+        : BasicAction{spec}, request_type(request_type)
     {
     }
 
@@ -612,9 +612,7 @@ namespace vcpkg
         return Util::find_if(remove, non_user_requested) != remove.end();
     }
 
-    RemovePlan create_remove_plan(const std::vector<PackageSpec>& specs,
-                                  const StatusParagraphs& status_db,
-                                  const Path& packages_dir)
+    RemovePlan create_remove_plan(const std::vector<PackageSpec>& specs, const StatusParagraphs& status_db)
     {
         struct RemoveAdjacencyProvider final : AdjacencyProvider<PackageSpec, PackageSpec>
         {
@@ -650,8 +648,7 @@ namespace vcpkg
                 // installed
                 plan.remove.emplace_back(step,
                                          Util::Sets::contains(requested, step) ? RequestType::USER_REQUESTED
-                                                                               : RequestType::AUTO_SELECTED,
-                                         packages_dir);
+                                                                               : RequestType::AUTO_SELECTED);
             }
             else
             {
@@ -998,7 +995,7 @@ namespace vcpkg
 
         for (auto&& p_cluster : remove_toposort)
         {
-            plan.remove_actions.emplace_back(p_cluster->m_spec, p_cluster->request_type, m_packages_dir);
+            plan.remove_actions.emplace_back(p_cluster->m_spec, p_cluster->request_type);
         }
 
         for (auto&& p_cluster : insert_toposort)
