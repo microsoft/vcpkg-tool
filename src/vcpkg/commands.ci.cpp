@@ -42,7 +42,9 @@ namespace
     {
         CiBuildLogsRecorder(const Path& base_path_) : base_path(base_path_) { }
 
-        void record_build_result(const VcpkgPaths& paths, const PackageSpec& spec, BuildResult result) const override
+        virtual void record_build_result(const VcpkgPaths& paths,
+                                         const PackageSpec& spec,
+                                         BuildResult result) const override
         {
             if (result == BuildResult::SUCCEEDED)
             {
@@ -54,7 +56,7 @@ namespace
             auto children = filesystem.get_regular_files_non_recursive(source_path, IgnoreErrors{});
             Util::erase_remove_if(children, NotExtensionCaseInsensitive{".log"});
             const auto target_path = base_path / spec.name();
-            (void)filesystem.create_directories(target_path, VCPKG_LINE_INFO);
+            (void)filesystem.create_directory(target_path, VCPKG_LINE_INFO);
             if (children.empty())
             {
                 std::string message =
@@ -74,6 +76,7 @@ namespace
             }
         }
 
+    private:
         Path base_path;
     };
 }
@@ -410,6 +413,9 @@ namespace vcpkg::Commands::CI
             }
         }
 
+        const IBuildLogsRecorder& build_logs_recorder =
+            build_logs_recorder_storage ? *(build_logs_recorder_storage.get()) : null_build_logs_recorder();
+
         auto registry_set = paths.make_registry_set();
         PathsPortFileProvider provider(
             filesystem, *registry_set, make_overlay_provider(filesystem, paths.original_cwd, paths.overlay_ports));
@@ -510,6 +516,7 @@ namespace vcpkg::Commands::CI
                 return abi->string(VCPKG_LINE_INFO).to_string();
             });
         }
+
         reduce_action_plan(action_plan, split_specs->known, parent_hashes);
 
         msg::println(msgElapsedTimeForChecks, msg::elapsed = timer.elapsed());
@@ -528,10 +535,6 @@ namespace vcpkg::Commands::CI
             {
                 msg::println_warning(msgCISkipInstallation, msg::list = Strings::join(", ", already_installed));
             }
-
-            const IBuildLogsRecorder& build_logs_recorder =
-                build_logs_recorder_storage ? *(build_logs_recorder_storage.get()) : null_build_logs_recorder();
-
             Install::preclear_packages(paths, action_plan);
             binary_cache.fetch(action_plan.install_actions);
             auto summary = Install::execute_plan(
