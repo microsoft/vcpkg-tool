@@ -58,26 +58,47 @@ namespace
         HANDLE h;
     };
 
+    struct BinaryPathDecodedInfo
+    {
+        Path installed_root;
+        bool is_debug;
+    };
+
+    BinaryPathDecodedInfo decode_from_canonical_bin_dir(const Path& canonical_bin_dir)
+    {
+        auto maybe_installed_root = canonical_bin_dir.parent_path();
+        static constexpr StringLiteral debug_suffix = "\\debug";
+        const bool is_debug = Strings::case_insensitive_ascii_ends_with(maybe_installed_root, debug_suffix);
+        if (is_debug)
+        {
+            maybe_installed_root = maybe_installed_root.substr(0, maybe_installed_root.size() - debug_suffix.size());
+        }
+
+        return BinaryPathDecodedInfo{maybe_installed_root, is_debug};
+    }
+
     struct AppLocalInvocation
     {
         AppLocalInvocation(const Filesystem& fs,
                            const Path& deployment_dir,
                            const Path& installed_bin_dir,
+                           const Path& installed,
+                           bool is_debug,
                            WriteFilePointer&& tlog_file,
                            WriteFilePointer&& copied_files_log)
             : m_fs(fs)
             , m_deployment_dir(deployment_dir)
-            , m_installed_bin_dir(fs.almost_canonical(installed_bin_dir, VCPKG_LINE_INFO))
-            , m_installed_bin_parent(m_installed_bin_dir.parent_path())
+            , m_installed_bin_dir(installed_bin_dir)
+            , m_installed(installed)
+            , m_is_debug(is_debug)
             , m_tlog_file(std::move(tlog_file))
             , m_copied_files_log(std::move(copied_files_log))
-            , m_openni2_installed(
-                  m_fs.exists(m_installed_bin_parent / "bin/OpenNI2/openni2deploy.ps1", VCPKG_LINE_INFO))
+            , m_openni2_installed(m_fs.exists(m_installed / "bin/OpenNI2/openni2deploy.ps1", VCPKG_LINE_INFO))
             , m_azurekinectsdk_installed(
-                  m_fs.exists(m_installed_bin_parent / "tools/azure-kinect-sensor-sdk/k4adeploy.ps1", VCPKG_LINE_INFO))
-            , m_magnum_installed(m_fs.exists(m_installed_bin_parent / "bin/magnum/magnumdeploy.ps1", VCPKG_LINE_INFO) ||
-                                 m_fs.exists(m_installed_bin_parent / "bin/magnum-d/magnumdeploy.ps1", VCPKG_LINE_INFO))
-            , m_qt_installed(m_fs.exists(m_installed_bin_parent / "plugins/qtdeploy.ps1", VCPKG_LINE_INFO))
+                  m_fs.exists(m_installed / "tools/azure-kinect-sensor-sdk/k4adeploy.ps1", VCPKG_LINE_INFO))
+            , m_magnum_installed(m_fs.exists(m_installed / "bin/magnum/magnumdeploy.ps1", VCPKG_LINE_INFO) ||
+                                 m_fs.exists(m_installed / "bin/magnum-d/magnumdeploy.ps1", VCPKG_LINE_INFO))
+            , m_qt_installed(m_fs.exists(m_installed / "plugins/qtdeploy.ps1", VCPKG_LINE_INFO))
         {
         }
 
@@ -109,37 +130,36 @@ namespace
 
                     if (m_openni2_installed)
                     {
-                        deployOpenNI2(target_binary_dir, m_installed_bin_parent, imported_name);
+                        deployOpenNI2(target_binary_dir, m_installed, imported_name);
                     }
 
                     if (m_azurekinectsdk_installed)
                     {
-                        deployAzureKinectSensorSDK(target_binary_dir, m_installed_bin_parent, imported_name);
+                        deployAzureKinectSensorSDK(target_binary_dir, m_installed, imported_name);
                     }
 
                     if (m_magnum_installed)
                     {
-                        bool g_is_debug = m_installed_bin_parent.stem() == "debug";
-                        if (g_is_debug)
+                        if (m_is_debug)
                         {
-                            deployMagnum(target_binary_dir, m_installed_bin_parent / "bin/magnum-d", imported_name);
+                            deployMagnum(target_binary_dir, m_installed / "bin/magnum-d", imported_name);
                         }
                         else
                         {
-                            deployMagnum(target_binary_dir, m_installed_bin_parent / "bin/magnum", imported_name);
+                            deployMagnum(target_binary_dir, m_installed / "bin/magnum", imported_name);
                         }
                     }
 
                     if (m_qt_installed)
                     {
-                        deployQt(m_deployment_dir, m_installed_bin_parent / "plugins", imported_name);
+                        deployQt(m_deployment_dir, m_installed / "plugins", imported_name);
                     }
 
                     resolve(m_deployment_dir / imported_name);
                 }
                 else if (m_fs.exists(target_item_file_path, VCPKG_LINE_INFO))
                 {
-                    Debug::println("  ", imported_name, " not found in ", m_installed_bin_parent, "; locally deployed");
+                    Debug::println("  ", imported_name, " not found in ", m_installed, "; locally deployed");
                     resolve(target_item_file_path);
                 }
                 else
@@ -510,7 +530,8 @@ namespace
         const Filesystem& m_fs;
         Path m_deployment_dir;
         Path m_installed_bin_dir;
-        Path m_installed_bin_parent;
+        Path m_installed;
+        bool m_is_debug;
         WriteFilePointer m_tlog_file;
         WriteFilePointer m_copied_files_log;
         std::unordered_set<std::string> m_searched;
@@ -555,16 +576,21 @@ namespace vcpkg::Commands
             Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgOptionRequiresAValue, msg::option = OPTION_TARGET_BINARY);
         }
 
-        const auto target_installed_bin_dir = parsed.settings.find(OPTION_INSTALLED_DIR);
-        if (target_installed_bin_dir == parsed.settings.end())
+        const auto target_installed_bin_setting = parsed.settings.find(OPTION_INSTALLED_DIR);
+        if (target_installed_bin_setting == parsed.settings.end())
         {
             Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgOptionRequiresAValue, msg::option = OPTION_INSTALLED_DIR);
         }
 
+        const auto target_installed_bin_dir =
+            real_filesystem.almost_canonical(target_installed_bin_setting->second, VCPKG_LINE_INFO);
         const auto target_binary_path = real_filesystem.almost_canonical(target_binary->second, VCPKG_LINE_INFO);
+        const auto decoded = decode_from_canonical_bin_dir(target_installed_bin_dir);
         AppLocalInvocation invocation(real_filesystem,
                                       target_binary_path.parent_path(),
-                                      target_installed_bin_dir->second,
+                                      target_installed_bin_dir,
+                                      decoded.installed_root,
+                                      decoded.is_debug,
                                       maybe_create_log(parsed.settings, OPTION_TLOG_FILE, real_filesystem),
                                       maybe_create_log(parsed.settings, OPTION_COPIED_FILES_LOG, real_filesystem));
         invocation.resolve(target_binary_path);
