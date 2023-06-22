@@ -12,5 +12,5 @@ namespace vcpkg::Commands
     };
 
     std::vector<std::pair<Path, Path>> strip_map(const ExtractedArchive& archive, int num_leading_dir);
-    void extract_command_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths);
+    void command_extract_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths);
 }

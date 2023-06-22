@@ -157,7 +157,7 @@ namespace vcpkg::Commands
         fs.remove_all(temp_dir, VCPKG_LINE_INFO);
     }
 
-    void extract_command_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
+    void command_extract_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
         auto& fs = paths.get_filesystem();
         auto parse_args = args.parse_arguments(ExtractCommandStructure);
