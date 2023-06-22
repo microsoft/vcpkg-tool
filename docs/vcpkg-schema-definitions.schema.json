@@ -295,6 +295,9 @@
         },
         "supports": {
           "$ref": "#/definitions/platform-expression"
+        },
+        "license": {
+          "$ref": "#/definitions/license"
         }
       },
       "required": [
@@ -679,6 +682,17 @@
             "description": "Identifiers must not be a Windows filesystem or vcpkg reserved name.",
             "pattern": "^(prn|aux|nul|con|lpt[1-9]|com[1-9]|core|default)$"
           }
+        }
+      ]
+    },
+    "license": {
+      "description": "An SPDX license expression at version 3.9.",
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
         }
       ]
     },
