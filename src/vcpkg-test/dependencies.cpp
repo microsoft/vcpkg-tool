@@ -1,7 +1,11 @@
 #include <catch2/catch.hpp>
 
+#include <vcpkg/fwd/packagespec.h>
+
+#include <vcpkg/base/files.h>
 #include <vcpkg/base/graphs.h>
 
+#include <vcpkg/commands.set-installed.h>
 #include <vcpkg/dependencies.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/sourceparagraph.h>
@@ -2274,11 +2278,16 @@ TEST_CASE ("formatting plan 1", "[dependencies]")
     const RemovePlanAction remove_b({"b", Test::X64_OSX}, RequestType::USER_REQUESTED);
     const RemovePlanAction remove_a({"a", Test::X64_OSX}, RequestType::USER_REQUESTED);
     const RemovePlanAction remove_c({"c", Test::X64_OSX}, RequestType::AUTO_SELECTED);
-    InstallPlanAction install_a({"a", Test::X64_OSX}, scfl_a, RequestType::AUTO_SELECTED, Test::X64_ANDROID, {}, {});
+
+    const Path pr = "packages_root";
+    InstallPlanAction install_a(
+        {"a", Test::X64_OSX}, scfl_a, pr, RequestType::AUTO_SELECTED, Test::X64_ANDROID, {}, {});
     InstallPlanAction install_b(
-        {"b", Test::X64_OSX}, scfl_b, RequestType::AUTO_SELECTED, Test::X64_ANDROID, {{"1", {}}}, {});
-    InstallPlanAction install_c({"c", Test::X64_OSX}, scfl_c, RequestType::USER_REQUESTED, Test::X64_ANDROID, {}, {});
-    InstallPlanAction install_f({"f", Test::X64_OSX}, scfl_f, RequestType::USER_REQUESTED, Test::X64_ANDROID, {}, {});
+        {"b", Test::X64_OSX}, scfl_b, pr, RequestType::AUTO_SELECTED, Test::X64_ANDROID, {{"1", {}}}, {});
+    InstallPlanAction install_c(
+        {"c", Test::X64_OSX}, scfl_c, pr, RequestType::USER_REQUESTED, Test::X64_ANDROID, {}, {});
+    InstallPlanAction install_f(
+        {"f", Test::X64_OSX}, scfl_f, pr, RequestType::USER_REQUESTED, Test::X64_ANDROID, {}, {});
     install_f.plan_type = InstallPlanType::EXCLUDED;
 
     InstallPlanAction already_installed_d(
@@ -2363,4 +2372,61 @@ TEST_CASE ("formatting plan 1", "[dependencies]")
                   "  * b[1]:x64-osx -> 1\n"
                   "    c:x64-osx -> 1 -- c\n"
                   "Additional packages (*) will be modified to complete this operation.\n");
+}
+
+TEST_CASE ("dependency graph API snapshot")
+{
+    MockVersionedPortfileProvider vp;
+    auto& scfl_a = vp.emplace("a", {"1", 0});
+    InstallPlanAction install_a(
+        {"a", Test::X64_WINDOWS}, scfl_a, "packages_root", RequestType::AUTO_SELECTED, Test::X64_ANDROID, {}, {});
+
+    ActionPlan plan;
+    plan.install_actions.push_back(std::move(install_a));
+    std::map<std::string, std::string, std::less<>> envmap = {
+        {VcpkgCmdArguments::GITHUB_JOB_ENV.to_string(), "123"},
+        {VcpkgCmdArguments::GITHUB_RUN_ID_ENV.to_string(), "123"},
+        {VcpkgCmdArguments::GITHUB_REF_ENV.to_string(), "refs/heads/main"},
+        {VcpkgCmdArguments::GITHUB_REPOSITORY_ENV.to_string(), "owner/repo"},
+        {VcpkgCmdArguments::GITHUB_SHA_ENV.to_string(), "abc123"},
+        {VcpkgCmdArguments::GITHUB_TOKEN_ENV.to_string(), "abc"},
+        {VcpkgCmdArguments::GITHUB_WORKFLOW_ENV.to_string(), "test"},
+    };
+    auto v = VcpkgCmdArguments::create_from_arg_sequence(nullptr, nullptr);
+    v.imbue_from_fake_environment(envmap);
+    auto s = vcpkg::Commands::SetInstalled::create_dependency_graph_snapshot(v, plan);
+
+    CHECK(s.has_value());
+    auto obj = *s.get();
+    auto version = obj.get("version")->integer(VCPKG_LINE_INFO);
+    auto job = obj.get("job")->object(VCPKG_LINE_INFO);
+    auto id = job.get("id")->string(VCPKG_LINE_INFO);
+    auto correlator = job.get("correlator")->string(VCPKG_LINE_INFO);
+    auto sha = obj.get("sha")->string(VCPKG_LINE_INFO);
+    auto ref = obj.get("ref")->string(VCPKG_LINE_INFO);
+    auto detector = obj.get("detector")->object(VCPKG_LINE_INFO);
+    auto name = detector.get("name")->string(VCPKG_LINE_INFO);
+    auto detector_version = detector.get("version")->string(VCPKG_LINE_INFO);
+    auto url = detector.get("url")->string(VCPKG_LINE_INFO);
+    auto manifests = obj.get("manifests")->object(VCPKG_LINE_INFO);
+    auto manifest1 = manifests.get("vcpkg.json")->object(VCPKG_LINE_INFO);
+    auto name1 = manifest1.get("name")->string(VCPKG_LINE_INFO);
+    auto resolved1 = manifest1.get("resolved")->object(VCPKG_LINE_INFO);
+    auto dependency_a = resolved1.get("pkg:github/vcpkg/a@1")->object(VCPKG_LINE_INFO);
+    auto package_url_a = dependency_a.get("package_url")->string(VCPKG_LINE_INFO);
+    auto relationship_a = dependency_a.get("relationship")->string(VCPKG_LINE_INFO);
+    auto dependencies_a = dependency_a.get("dependencies")->array(VCPKG_LINE_INFO);
+
+    CHECK(static_cast<int>(version) == 0);
+    CHECK(id == "123");
+    CHECK(correlator == "test-123");
+    CHECK(sha == "abc123");
+    CHECK(ref == "refs/heads/main");
+    CHECK(name == "vcpkg");
+    CHECK(detector_version == "1.0.0");
+    CHECK(url == "https://github.com/microsoft/vcpkg");
+    CHECK(name1 == "vcpkg.json");
+    CHECK(package_url_a == "pkg:github/vcpkg/a@1");
+    CHECK(relationship_a == "direct");
+    CHECK(dependencies_a.size() == 0);
 }

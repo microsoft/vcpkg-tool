@@ -861,7 +861,8 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
             },
             "zuko": {
                 "description": ["son of the fire lord", "firebending 師父"],
-                "supports": "!(windows & arm)"
+                "supports": "!(windows & arm)",
+                "license": "MIT"
             }
         }
 })json";
@@ -927,6 +928,8 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
         {{"VCPKG_CMAKE_SYSTEM_NAME", ""}, {"VCPKG_TARGET_ARCHITECTURE", "arm"}}));
     REQUIRE(pgh.feature_paragraphs[1]->supports_expression.evaluate(
         {{"VCPKG_CMAKE_SYSTEM_NAME", ""}, {"VCPKG_TARGET_ARCHITECTURE", "x86"}}));
+    REQUIRE(pgh.feature_paragraphs[1]->license.has_value());
+    REQUIRE(*pgh.feature_paragraphs[1]->license.get() == "MIT");
 
     check_json_eq_ordered(serialize_manifest(pgh), object);
 }

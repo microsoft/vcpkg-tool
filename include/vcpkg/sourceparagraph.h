@@ -81,6 +81,10 @@ namespace vcpkg
         std::vector<std::string> description;
         std::vector<Dependency> dependencies;
         PlatformExpression::Expr supports_expression;
+        // there are two distinct "empty" states here
+        // "user did not provide a license" -> nullopt
+        // "user provided license = null" -> {""}
+        Optional<std::string> license; // SPDX license expression
 
         Json::Object extra_info;
 
