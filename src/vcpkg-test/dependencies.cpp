@@ -2278,11 +2278,16 @@ TEST_CASE ("formatting plan 1", "[dependencies]")
     const RemovePlanAction remove_b({"b", Test::X64_OSX}, RequestType::USER_REQUESTED);
     const RemovePlanAction remove_a({"a", Test::X64_OSX}, RequestType::USER_REQUESTED);
     const RemovePlanAction remove_c({"c", Test::X64_OSX}, RequestType::AUTO_SELECTED);
-    InstallPlanAction install_a({"a", Test::X64_OSX}, scfl_a, RequestType::AUTO_SELECTED, Test::X64_ANDROID, {}, {});
+
+    const Path pr = "packages_root";
+    InstallPlanAction install_a(
+        {"a", Test::X64_OSX}, scfl_a, pr, RequestType::AUTO_SELECTED, Test::X64_ANDROID, {}, {});
     InstallPlanAction install_b(
-        {"b", Test::X64_OSX}, scfl_b, RequestType::AUTO_SELECTED, Test::X64_ANDROID, {{"1", {}}}, {});
-    InstallPlanAction install_c({"c", Test::X64_OSX}, scfl_c, RequestType::USER_REQUESTED, Test::X64_ANDROID, {}, {});
-    InstallPlanAction install_f({"f", Test::X64_OSX}, scfl_f, RequestType::USER_REQUESTED, Test::X64_ANDROID, {}, {});
+        {"b", Test::X64_OSX}, scfl_b, pr, RequestType::AUTO_SELECTED, Test::X64_ANDROID, {{"1", {}}}, {});
+    InstallPlanAction install_c(
+        {"c", Test::X64_OSX}, scfl_c, pr, RequestType::USER_REQUESTED, Test::X64_ANDROID, {}, {});
+    InstallPlanAction install_f(
+        {"f", Test::X64_OSX}, scfl_f, pr, RequestType::USER_REQUESTED, Test::X64_ANDROID, {}, {});
     install_f.plan_type = InstallPlanType::EXCLUDED;
 
     InstallPlanAction already_installed_d(
@@ -2374,7 +2379,7 @@ TEST_CASE ("dependency graph API snapshot")
     MockVersionedPortfileProvider vp;
     auto& scfl_a = vp.emplace("a", {"1", 0});
     InstallPlanAction install_a(
-        {"a", Test::X64_WINDOWS}, scfl_a, RequestType::AUTO_SELECTED, Test::X64_ANDROID, {}, {});
+        {"a", Test::X64_WINDOWS}, scfl_a, "packages_root", RequestType::AUTO_SELECTED, Test::X64_ANDROID, {}, {});
 
     ActionPlan plan;
     plan.install_actions.push_back(std::move(install_a));
