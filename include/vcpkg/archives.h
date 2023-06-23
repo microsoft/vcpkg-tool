@@ -13,7 +13,7 @@
 
 namespace vcpkg
 {
-    enum ExtractionType
+    enum class ExtractionType
     {
         UNKNOWN,
         TAR,

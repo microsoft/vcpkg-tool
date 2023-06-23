@@ -7,8 +7,9 @@ namespace vcpkg::Commands
 {
     struct ExtractedArchive
     {
+        Path temp_path;
         Path base_path;
-        std::vector<Path> proximate;
+        std::vector<Path> proximate_to_temp;
     };
 
     std::vector<std::pair<Path, Path>> strip_map(const ExtractedArchive& archive, int num_leading_dir);

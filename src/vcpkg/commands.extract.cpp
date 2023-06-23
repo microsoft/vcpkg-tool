@@ -49,68 +49,57 @@ namespace vcpkg::Commands
     {
         std::vector<std::pair<Path, Path>> result;
 
+        const auto temp_dir = archive.temp_path;
         const auto base_path = archive.base_path;
-        const auto proximate = archive.proximate;
+        const auto proximate = archive.proximate_to_temp;
 
-#if defined(_WIN32)
-        auto& delimiter = "\\";
-#else
-
-        auto& delimiter = "/";
-#endif
-
-        for (const auto& file_path : proximate)
+        for (const auto& prox_path : proximate)
         {
-            auto old_path = base_path / Path{file_path};
+            auto old_path = temp_dir / Path{prox_path};
 
-            auto path_str = file_path.native();
+            auto prox_str = prox_path.native();
 
             for (int i = 0; i < num_leading_dir; ++i)
             {
-                size_t pos = path_str.find(delimiter);
+                size_t pos = prox_str.find_first_of(VCPKG_PREFERRED_SEPARATOR);
                 if (pos != std::string::npos)
                 {
-                    path_str = path_str.substr(pos + 1);
+                    prox_str = prox_str.substr(pos + 1);
+                }
+                else
+                {
+                    prox_str = "";
+                    break;
                 }
             }
 
-            // Trim the .partial.Xxx from the new path
-            Path new_path;
+            Path new_path = prox_str.empty() ? "" : Path{base_path} / Path{prox_str};
 
-            auto base_str = base_path.native();
-            size_t pos = base_str.find(".partial");
-
-            if (pos != std::string::npos)
-            {
-                new_path = Path{base_str.substr(0, pos)} / Path{path_str};
-            }
-            else
-            {
-                new_path = Path{base_str} / Path{path_str};
-            }
-
-            result.push_back({old_path, new_path});
+            result.emplace_back(std::move(old_path), std::move(new_path));
         }
         return result;
     }
 
-    static void extract_and_strip(
-        const Filesystem& fs, const VcpkgPaths& paths, int strip_count, Path archive_path, Path destination_path)
+    static void extract_and_strip(const Filesystem& fs,
+                                  const VcpkgPaths& paths,
+                                  int num_leading_dirs_to_strip,
+                                  Path archive_path,
+                                  Path output_dir)
     {
         auto temp_dir =
-            extract_archive_to_temp_subdirectory(fs, paths.get_tool_cache(), null_sink, archive_path, destination_path);
+            extract_archive_to_temp_subdirectory(fs, paths.get_tool_cache(), null_sink, archive_path, output_dir);
 
-        ExtractedArchive archive = {temp_dir,
-                                    fs.get_regular_files_recursive_lexically_proximate(temp_dir, VCPKG_LINE_INFO)};
+        ExtractedArchive archive = {
+            temp_dir, output_dir, fs.get_regular_files_recursive_lexically_proximate(temp_dir, VCPKG_LINE_INFO)};
 
-        auto mapping = strip_map(archive, strip_count);
+        auto mapping = strip_map(archive, num_leading_dirs_to_strip);
 
         for (const auto& file : mapping)
         {
             const auto& source = file.first;
             const auto& destination = file.second;
 
-            if (!fs.is_directory(destination.parent_path()))
+            if (!destination.empty() && !fs.is_directory(destination.parent_path()))
             {
                 fs.create_directories(destination.parent_path(), VCPKG_LINE_INFO);
             }
