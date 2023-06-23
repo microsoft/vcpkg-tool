@@ -2,7 +2,6 @@
 
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/strings.h>
-
 #include <vcpkg/archives.h>
 #include <vcpkg/commands.extract.h>
 #include <vcpkg/commands.h>
@@ -104,7 +103,10 @@ namespace vcpkg::Commands
                 fs.create_directories(destination.parent_path(), VCPKG_LINE_INFO);
             }
 
-            fs.rename(source, destination, VCPKG_LINE_INFO);
+            if (!destination.empty())
+            {
+                fs.rename(source, destination, VCPKG_LINE_INFO);
+            }
         }
 
         fs.remove_all(temp_dir, VCPKG_LINE_INFO);
