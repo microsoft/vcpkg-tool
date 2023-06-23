@@ -945,8 +945,9 @@ namespace vcpkg
             }
             else if (ret.header_only)
             {
-                static auto cmakeify = [](std::string name) {
-                    auto n = Strings::ascii_to_uppercase(Strings::replace_all(std::move(name), "-", "_"));
+                static auto cmakeify = [](StringView name) {
+                    auto n = Strings::ascii_to_uppercase(name);
+                    Strings::inplace_replace_all(n, "-", "_");
                     if (n.empty() || ParserBase::is_ascii_digit(n[0]))
                     {
                         n.insert(n.begin(), '_');
