@@ -48,8 +48,7 @@ namespace vcpkg::Commands
             }
             else
             {
-                msg::println_error(
-                    msgErrorInvalidExtractTypeOption, msg::option = OPTION_EXTRACT_TYPE, msg::value = extraction_type);
+                msg::println_error(msgErrorInvalidExtractTypeOption, msg::option = OPTION_EXTRACT_TYPE);
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
         }
@@ -68,9 +67,8 @@ namespace vcpkg::Commands
             }
             catch (std::exception&)
             {
-                msg::println_error(msgErrorInvalidStripOption, msg::option = OPTION_STRIP, msg::value = value);
+                msg::println_error(msgErrorInvalidOption, msg::option = OPTION_STRIP, msg::value = value);
                 Checks::exit_fail(VCPKG_LINE_INFO);
-                return 0;
             }
         }
         // No --strip set, default to 0
@@ -165,12 +163,6 @@ namespace vcpkg::Commands
         auto destination_path = Path{parse_args.command_arguments[1]};
         auto strip_count = get_strip_count(parse_args);
         auto extraction_type = get_extraction_type(parse_args);
-
-        if (!fs.exists(archive_path, VCPKG_LINE_INFO))
-        {
-            msg::println_error(msgArchiveExtractionFailed, msg::path = archive_path);
-            Checks::exit_fail(VCPKG_LINE_INFO);
-        }
 
         if (!fs.is_directory(destination_path))
         {

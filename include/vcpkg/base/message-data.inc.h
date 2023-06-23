@@ -154,7 +154,6 @@ DECLARE_MESSAGE(APackagePatternArray, (), "", "a package pattern array")
 DECLARE_MESSAGE(APath, (), "", "a path")
 DECLARE_MESSAGE(AppliedUserIntegration, (), "", "Applied user-wide integration for this vcpkg root.")
 DECLARE_MESSAGE(ApplocalProcessing, (msg::path), "", "vcpkg applocal processing: {path}")
-DECLARE_MESSAGE(ArchiveExtractionFailed, (msg::path), "", "Archive extraction failed: {path}")
 DECLARE_MESSAGE(ARegistry, (), "", "a registry")
 DECLARE_MESSAGE(ARegistryImplementationKind, (), "", "a registry implementation kind")
 DECLARE_MESSAGE(ARegistryPath, (), "", "a registry path")
@@ -818,9 +817,9 @@ DECLARE_MESSAGE(ErrorInvalidClassicModeOption,
                 "",
                 "The option --{option} is not supported in classic mode and no manifest was found.")
 DECLARE_MESSAGE(ErrorInvalidExtractTypeOption,
-                (msg::option, msg::value),
-                "{value} is the value passed to --{option}",
-                "--{option} was given an unexpected format \"{value}\". It can be one of \"zip\", \"tar\", \"nupkg\", "
+                (msg::option),
+                "The quoted options should not be localized.",
+                "--{option} was given an unexpected format. It can be one of \"zip\", \"tar\", \"nupkg\", "
                 "\"msi\", or \"exe\".")
 DECLARE_MESSAGE(ErrorInvalidManifestModeOption,
                 (msg::option),
@@ -856,10 +855,7 @@ DECLARE_MESSAGE(ErrorRequirePackagesList,
                 (),
                 "",
                 "`vcpkg install` requires a list of packages to install in classic mode.")
-DECLARE_MESSAGE(ErrorInvalidStripOption,
-                (msg::option, msg::value),
-                "{value} is the value given to --{option}",
-                "--{option} must be set to a positive integer. Was given \"{value}\"")
+DECLARE_MESSAGE(ErrorInvalidOption, (msg::option, msg::value), "", "--{option} must be set to a nonnegative integer.")
 DECLARE_MESSAGE(ErrorsFound, (), "", "Found the following errors:")
 DECLARE_MESSAGE(ErrorUnableToDetectCompilerInfo,
                 (),

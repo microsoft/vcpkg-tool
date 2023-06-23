@@ -33,31 +33,33 @@ using namespace vcpkg::Commands;
 */
 
 #if defined(_WIN32)
-const std::string DELIMITER = "\\";
-const std::string BASE_PATH = "C:\\to\\path\\";
+const Path BASE_PATH = "C:\\to\\path\\";
 #else
-const std::string DELIMITER = "/";
-const std::string BASE_PATH = "/to/path/";
+const Path BASE_PATH = "/to/path/";
 #endif
 
 ExtractedArchive archive = {BASE_PATH,
                             {
-                                "archive" + DELIMITER + "folder1" + DELIMITER + "file1.txt",
-                                "archive" + DELIMITER + "folder1" + DELIMITER + "file2.txt",
-                                "archive" + DELIMITER + "folder1" + DELIMITER + "file3.txt",
-                                "archive" + DELIMITER + "folder2" + DELIMITER + "file4.txt",
-                                "archive" + DELIMITER + "folder2" + DELIMITER + "file5.txt",
-                                "archive" + DELIMITER + "folder2" + DELIMITER + "folder3" + DELIMITER + "file6.txt",
-                                "archive" + DELIMITER + "folder2" + DELIMITER + "folder3" + DELIMITER + "file7.txt",
+                                "archive" VCPKG_PREFERRED_SEPARATOR "folder1" VCPKG_PREFERRED_SEPARATOR "file1.txt",
+                                "archive" VCPKG_PREFERRED_SEPARATOR "folder1" VCPKG_PREFERRED_SEPARATOR "file2.txt",
+                                "archive" VCPKG_PREFERRED_SEPARATOR "folder1" VCPKG_PREFERRED_SEPARATOR "file3.txt",
+                                "archive" VCPKG_PREFERRED_SEPARATOR "folder2" VCPKG_PREFERRED_SEPARATOR "file4.txt",
+                                "archive" VCPKG_PREFERRED_SEPARATOR "folder2" VCPKG_PREFERRED_SEPARATOR "file5.txt",
+                                "archive" VCPKG_PREFERRED_SEPARATOR "folder2" VCPKG_PREFERRED_SEPARATOR
+                                "folder3" VCPKG_PREFERRED_SEPARATOR "file6.txt",
+                                "archive" VCPKG_PREFERRED_SEPARATOR "folder2" VCPKG_PREFERRED_SEPARATOR
+                                "folder3" VCPKG_PREFERRED_SEPARATOR "file7.txt",
                             }};
 
-const Path FILE_1 = {BASE_PATH + "archive" + DELIMITER + "folder1" + DELIMITER + "file1.txt"};
-const Path FILE_2 = {BASE_PATH + "archive" + DELIMITER + "folder1" + DELIMITER + "file2.txt"};
-const Path FILE_3 = {BASE_PATH + "archive" + DELIMITER + "folder1" + DELIMITER + "file3.txt"};
-const Path FILE_4 = {BASE_PATH + "archive" + DELIMITER + "folder2" + DELIMITER + "file4.txt"};
-const Path FILE_5 = {BASE_PATH + "archive" + DELIMITER + "folder2" + DELIMITER + "file5.txt"};
-const Path FILE_6 = {BASE_PATH + "archive" + DELIMITER + "folder2" + DELIMITER + "folder3" + DELIMITER + "file6.txt"};
-const Path FILE_7 = {BASE_PATH + "archive" + DELIMITER + "folder2" + DELIMITER + "folder3" + DELIMITER + "file7.txt"};
+const Path FILE_1 = {BASE_PATH + "archive" VCPKG_PREFERRED_SEPARATOR "folder1" VCPKG_PREFERRED_SEPARATOR "file1.txt"};
+const Path FILE_2 = {BASE_PATH + "archive" VCPKG_PREFERRED_SEPARATOR "folder1" VCPKG_PREFERRED_SEPARATOR "file2.txt"};
+const Path FILE_3 = {BASE_PATH + "archive" VCPKG_PREFERRED_SEPARATOR "folder1" VCPKG_PREFERRED_SEPARATOR "file3.txt"};
+const Path FILE_4 = {BASE_PATH + "archive" VCPKG_PREFERRED_SEPARATOR "folder2" VCPKG_PREFERRED_SEPARATOR "file4.txt"};
+const Path FILE_5 = {BASE_PATH + "archive" VCPKG_PREFERRED_SEPARATOR "folder2" VCPKG_PREFERRED_SEPARATOR "file5.txt"};
+const Path FILE_6 = {BASE_PATH + "archive" VCPKG_PREFERRED_SEPARATOR "folder2" VCPKG_PREFERRED_SEPARATOR
+                                 "folder3" VCPKG_PREFERRED_SEPARATOR "file6.txt"};
+const Path FILE_7 = {BASE_PATH + "archive" VCPKG_PREFERRED_SEPARATOR "folder2" VCPKG_PREFERRED_SEPARATOR
+                                 "folder3" VCPKG_PREFERRED_SEPARATOR "file7.txt"};
 
 static void test_strip_map(const int strip, const std::vector<std::pair<Path, Path>>& expected)
 {
@@ -65,34 +67,37 @@ static void test_strip_map(const int strip, const std::vector<std::pair<Path, Pa
     REQUIRE(map.size() == expected.size());
     for (size_t i = 0; i < map.size(); ++i)
     {
-        REQUIRE(map[i].first.generic_u8string() == expected[i].first.generic_u8string());
-        REQUIRE(map[i].second.generic_u8string() == expected[i].second.generic_u8string());
+        REQUIRE(map[i].first.native() == expected[i].first.native());
+        REQUIRE(map[i].second.native() == expected[i].second.native());
     }
 }
 
 TEST_CASE ("Testing strip_map, strip = 1", "[z-extract]")
 {
     std::vector<std::pair<Path, Path>> expected = {
-        {FILE_1, BASE_PATH + "folder1" + DELIMITER + "file1.txt"},
-        {FILE_2, BASE_PATH + "folder1" + DELIMITER + "file2.txt"},
-        {FILE_3, BASE_PATH + "folder1" + DELIMITER + "file3.txt"},
-        {FILE_4, BASE_PATH + "folder2" + DELIMITER + "file4.txt"},
-        {FILE_5, BASE_PATH + "folder2" + DELIMITER + "file5.txt"},
-        {FILE_6, BASE_PATH + "folder2" + DELIMITER + "folder3" + DELIMITER + "file6.txt"},
-        {FILE_7, BASE_PATH + "folder2" + DELIMITER + "folder3" + DELIMITER + "file7.txt"}};
+        {FILE_1, BASE_PATH + "folder1" + VCPKG_PREFERRED_SEPARATOR + "file1.txt"},
+        {FILE_2, BASE_PATH + "folder1" + VCPKG_PREFERRED_SEPARATOR + "file2.txt"},
+        {FILE_3, BASE_PATH + "folder1" + VCPKG_PREFERRED_SEPARATOR + "file3.txt"},
+        {FILE_4, BASE_PATH + "folder2" + VCPKG_PREFERRED_SEPARATOR + "file4.txt"},
+        {FILE_5, BASE_PATH + "folder2" + VCPKG_PREFERRED_SEPARATOR + "file5.txt"},
+        {FILE_6,
+         BASE_PATH + "folder2" + VCPKG_PREFERRED_SEPARATOR + "folder3" + VCPKG_PREFERRED_SEPARATOR + "file6.txt"},
+        {FILE_7,
+         BASE_PATH + "folder2" + VCPKG_PREFERRED_SEPARATOR + "folder3" + VCPKG_PREFERRED_SEPARATOR + "file7.txt"}};
 
     test_strip_map(1, expected);
 }
 
 TEST_CASE ("Testing strip_map, strip = 2", "[z-extract]")
 {
-    std::vector<std::pair<Path, Path>> expected = {{FILE_1, BASE_PATH + "file1.txt"},
-                                                   {FILE_2, BASE_PATH + "file2.txt"},
-                                                   {FILE_3, BASE_PATH + "file3.txt"},
-                                                   {FILE_4, BASE_PATH + "file4.txt"},
-                                                   {FILE_5, BASE_PATH + "file5.txt"},
-                                                   {FILE_6, BASE_PATH + "folder3" + DELIMITER + "file6.txt"},
-                                                   {FILE_7, BASE_PATH + "folder3" + DELIMITER + "file7.txt"}};
+    std::vector<std::pair<Path, Path>> expected = {
+        {FILE_1, BASE_PATH + "file1.txt"},
+        {FILE_2, BASE_PATH + "file2.txt"},
+        {FILE_3, BASE_PATH + "file3.txt"},
+        {FILE_4, BASE_PATH + "file4.txt"},
+        {FILE_5, BASE_PATH + "file5.txt"},
+        {FILE_6, BASE_PATH + "folder3" + VCPKG_PREFERRED_SEPARATOR + "file6.txt"},
+        {FILE_7, BASE_PATH + "folder3" + VCPKG_PREFERRED_SEPARATOR + "file7.txt"}};
 
     test_strip_map(2, expected);
 }
