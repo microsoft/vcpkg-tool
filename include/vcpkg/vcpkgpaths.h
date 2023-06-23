@@ -13,9 +13,9 @@
 #include <vcpkg/fwd/registries.h>
 #include <vcpkg/fwd/sourceparagraph.h>
 #include <vcpkg/fwd/tools.h>
+#include <vcpkg/fwd/triplet.h>
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
-#include <vcpkg/fwd/triplet.h>
 
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/path.h>
@@ -101,7 +101,6 @@ namespace vcpkg
         std::vector<std::string> overlay_triplets;
 
     public:
-
         std::vector<std::string> overlay_ports;
 
         std::string get_toolver_diagnostics() const;

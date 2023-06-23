@@ -29,10 +29,10 @@ namespace vcpkg::Commands::Autocomplete
         Checks::exit_success(line_info);
     }
 
-    static std::vector<std::string> combine_port_with_triplets(StringView port,
-                                                               View<TripletFile> triplets)
+    static std::vector<std::string> combine_port_with_triplets(StringView port, View<TripletFile> triplets)
     {
-        return Util::fmap(triplets, [&](const TripletFile& triplet) { return fmt::format("{}:{}", port, triplet.name); });
+        return Util::fmap(triplets,
+                          [&](const TripletFile& triplet) { return fmt::format("{}:{}", port, triplet.name); });
     }
 
     void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)

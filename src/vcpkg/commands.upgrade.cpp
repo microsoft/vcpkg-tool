@@ -92,11 +92,8 @@ namespace vcpkg::Commands::Upgrade
             // input sanitization
             bool default_triplet_used = false;
             const std::vector<PackageSpec> specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
-                return check_and_get_package_spec(arg,
-                                                  default_triplet,
-                                                  default_triplet_used,
-                                                  COMMAND_STRUCTURE.get_example_text(),
-                                                  paths.get_triplet_db());
+                return check_and_get_package_spec(
+                    arg, default_triplet, default_triplet_used, COMMAND_STRUCTURE.get_example_text());
             });
 
             if (default_triplet_used)

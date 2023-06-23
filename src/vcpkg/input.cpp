@@ -16,17 +16,11 @@ namespace vcpkg
     PackageSpec check_and_get_package_spec(StringView spec_string,
                                            Triplet default_triplet,
                                            bool& default_triplet_used,
-                                           const LocalizedString& example_text,
-                                           const TripletDatabase& database)
+                                           const LocalizedString& example_text)
     {
         auto maybe_qualified_specifier = parse_qualified_specifier(Strings::ascii_to_lowercase(spec_string));
         if (auto qualified_specifier = maybe_qualified_specifier.get())
         {
-            if (auto specified_triplet = qualified_specifier->triplet.get())
-            {
-                check_triplet(*specified_triplet, database);
-            }
-
             auto expected_spec = qualified_specifier->to_package_spec(default_triplet, default_triplet_used);
             if (auto spec = expected_spec.get())
             {

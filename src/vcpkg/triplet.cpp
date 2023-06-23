@@ -2,9 +2,9 @@
 #include <vcpkg/base/system.h>
 #include <vcpkg/base/util.h>
 
+#include <vcpkg/input.h>
 #include <vcpkg/packagespec.h>
 #include <vcpkg/triplet.h>
-#include <vcpkg/input.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 
 namespace vcpkg
