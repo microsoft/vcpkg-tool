@@ -115,6 +115,7 @@ namespace vcpkg
     void print_default_triplet_warning(const VcpkgCmdArguments& args, const TripletDatabase& database)
     {
         (void)args;
+        (void)database;
         // The triplet is not set by --triplet or VCPKG_DEFAULT_TRIPLET
 #if defined(_WIN32)
         if (!args.triplet.has_value())
