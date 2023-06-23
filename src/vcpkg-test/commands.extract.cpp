@@ -37,7 +37,7 @@ const Path BASE_TEMP_PATH = "C:\\to\\path\\temp_path\\";
 const Path BASE_PATH = "C:\\to\\path\\";
 #else
 const Path BASE_TEMP_PATH = "/to/path/temp_path";
-const Path BASE_PATH = "/to/path";
+const Path BASE_PATH = "/to/path/";
 #endif
 
 ExtractedArchive archive = {BASE_TEMP_PATH,
