@@ -704,14 +704,6 @@ namespace vcpkg
         return this->package_dir(spec) / "BUILD_INFO";
     }
 
-    bool VcpkgPaths::is_valid_triplet(Triplet t) const
-    {
-        const auto it = Util::find_if(this->get_available_triplets(), [&](auto&& available_triplet) {
-            return t.canonical_name() == available_triplet.name;
-        });
-        return it != this->get_available_triplets().cend();
-    }
-
     const std::vector<std::string> VcpkgPaths::get_available_triplets_names() const
     {
         return vcpkg::Util::fmap(this->get_available_triplets(),

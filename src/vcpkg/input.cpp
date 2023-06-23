@@ -1,4 +1,5 @@
 #include <vcpkg/base/strings.h>
+#include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.h>
 #include <vcpkg/commands.help.h>
@@ -6,6 +7,20 @@
 #include <vcpkg/metrics.h>
 #include <vcpkg/packagespec.h>
 #include <vcpkg/vcpkgpaths.h>
+
+namespace
+{
+    using namespace vcpkg;
+
+    bool is_valid_triplet(const std::vector<TripletFile>& available_triplets, Triplet t)
+    {
+        const auto it = Util::find_if(
+            available_triplets, [&](auto&& available_triplet) {
+            return t.canonical_name() == available_triplet.name;
+        });
+        return it != available_triplets.cend();
+    }
+}
 
 namespace vcpkg
 {
@@ -34,7 +49,7 @@ namespace vcpkg
 
     void check_triplet(Triplet t, const VcpkgPaths& paths)
     {
-        if (!paths.is_valid_triplet(t))
+        if (!is_valid_triplet(paths.get_available_triplets(), t))
         {
             msg::println_error(msgInvalidTriplet, msg::triplet = t);
             Help::help_topic_valid_triplet(paths);

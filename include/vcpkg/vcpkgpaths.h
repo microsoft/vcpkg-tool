@@ -65,7 +65,6 @@ namespace vcpkg
         Path build_dir(StringView package_name) const;
         Path build_info_file_path(const PackageSpec& spec) const;
 
-        bool is_valid_triplet(Triplet t) const;
         const std::vector<std::string> get_available_triplets_names() const;
         const std::vector<TripletFile>& get_available_triplets() const;
         const std::map<std::string, std::string>& get_cmake_script_hashes() const;
