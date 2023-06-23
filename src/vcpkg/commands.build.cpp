@@ -184,10 +184,10 @@ namespace vcpkg::Build
                                                                      default_triplet,
                                                                      default_triplet_used,
                                                                      COMMAND_STRUCTURE.get_example_text(),
-                                                                     paths);
+                                                                     paths.get_triplet_db());
         if (default_triplet_used)
         {
-            print_default_triplet_warning(args);
+            print_default_triplet_warning(args, paths.get_triplet_db());
         }
 
         auto& fs = paths.get_filesystem();
@@ -431,7 +431,7 @@ namespace vcpkg
                                  * connection request will fail.
                                  */
 
-                                protocol = Strings::concat(Strings::ascii_to_uppercase(protocol.c_str()), "_PROXY");
+                                protocol = Strings::concat(Strings::ascii_to_uppercase(protocol), "_PROXY");
                                 env.emplace(protocol, address);
                                 msg::println(msgSettingEnvVar, msg::env_var = protocol, msg::url = address);
                             }
@@ -509,7 +509,7 @@ namespace vcpkg
 
         const auto& fs = paths.get_filesystem();
 
-        const auto& triplet_file_path = paths.get_triplet_file_path(abi_info.pre_build_info->triplet);
+        const auto& triplet_file_path = paths.get_triplet_db().get_triplet_file_path(abi_info.pre_build_info->triplet);
 
         auto&& toolchain_hash = get_toolchain_cache(m_toolchain_cache, abi_info.pre_build_info->toolchain_file(), fs);
 
@@ -531,7 +531,7 @@ namespace vcpkg
     {
         const auto& fs = paths.get_filesystem();
         Checks::check_exit(VCPKG_LINE_INFO, abi_info.pre_build_info != nullptr);
-        const auto& triplet_file_path = paths.get_triplet_file_path(abi_info.pre_build_info->triplet);
+        const auto& triplet_file_path = paths.get_triplet_db().get_triplet_file_path(abi_info.pre_build_info->triplet);
 
         auto&& toolchain_hash = get_toolchain_cache(m_toolchain_cache, abi_info.pre_build_info->toolchain_file(), fs);
 
@@ -645,7 +645,7 @@ namespace vcpkg
                                   {"CMD", "BUILD"},
                                   {"DOWNLOADS", paths.downloads},
                                   {"TARGET_TRIPLET", triplet.canonical_name()},
-                                  {"TARGET_TRIPLET_FILE", paths.get_triplet_file_path(triplet)},
+                                  {"TARGET_TRIPLET_FILE", paths.get_triplet_db().get_triplet_file_path(triplet)},
                                   {"VCPKG_BASE_VERSION", VCPKG_BASE_VERSION_AS_STRING},
                                   {"VCPKG_CONCURRENCY", std::to_string(get_concurrency())},
                                   {"VCPKG_PLATFORM_TOOLSET", toolset.version.c_str()},
@@ -904,14 +904,15 @@ namespace vcpkg
         auto&& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
 
         Triplet triplet = action.spec.triplet();
-        const auto& triplet_file_path = paths.get_triplet_file_path(triplet);
+        const auto& triplet_db = paths.get_triplet_db();
+        const auto& triplet_file_path = triplet_db.get_triplet_file_path(triplet);
 
-        if (Strings::starts_with(triplet_file_path, paths.community_triplets))
+        if (Strings::starts_with(triplet_file_path, triplet_db.community_triplet_directory))
         {
             msg::println_warning(msgUsingCommunityTriplet, msg::triplet = triplet.canonical_name());
             msg::println(msgLoadingCommunityTriplet, msg::path = triplet_file_path);
         }
-        else if (!Strings::starts_with(triplet_file_path, paths.triplets))
+        else if (!Strings::starts_with(triplet_file_path, triplet_db.default_triplet_directory))
         {
             msg::println(msgLoadingOverlayTriplet, msg::path = triplet_file_path);
         }

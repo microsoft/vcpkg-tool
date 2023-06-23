@@ -113,7 +113,7 @@ namespace vcpkg::Commands::Autocomplete
                     Checks::exit_success(VCPKG_LINE_INFO);
                 }
 
-                auto triplets = paths.get_available_triplets();
+                auto triplets = paths.get_triplet_db().available_triplets;
                 Util::erase_remove_if(triplets, [&](const TripletFile& tf) {
                     return !Strings::case_insensitive_ascii_starts_with(tf.name, triplet_prefix);
                 });
@@ -176,7 +176,7 @@ namespace vcpkg::Commands::Autocomplete
                 if (command.name == "install" && results.size() == 1 && !is_option)
                 {
                     const auto port_at_each_triplet =
-                        combine_port_with_triplets(results[0], paths.get_available_triplets());
+                        combine_port_with_triplets(results[0], paths.get_triplet_db().available_triplets);
                     Util::Vectors::append(&results, port_at_each_triplet);
                 }
 

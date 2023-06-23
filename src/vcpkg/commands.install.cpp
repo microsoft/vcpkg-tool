@@ -1030,7 +1030,7 @@ namespace vcpkg
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
-            print_default_triplet_warning(args);
+            print_default_triplet_warning(args, paths.get_triplet_db());
         }
         else
         {
@@ -1220,13 +1220,16 @@ namespace vcpkg
 
         bool default_triplet_used = false;
         const std::vector<FullPackageSpec> specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
-            return check_and_get_full_package_spec(
-                arg, default_triplet, default_triplet_used, COMMAND_STRUCTURE.get_example_text(), paths);
+            return check_and_get_full_package_spec(arg,
+                                                   default_triplet,
+                                                   default_triplet_used,
+                                                   COMMAND_STRUCTURE.get_example_text(),
+                                                   paths.get_triplet_db());
         });
 
         if (default_triplet_used)
         {
-            print_default_triplet_warning(args);
+            print_default_triplet_warning(args, paths.get_triplet_db());
         }
 
         // create the plan

@@ -15,6 +15,7 @@
 #include <vcpkg/fwd/tools.h>
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
+#include <vcpkg/fwd/triplet.h>
 
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/path.h>
@@ -45,14 +46,6 @@ namespace vcpkg
         std::vector<ToolsetArchOption> supported_architectures;
     };
 
-    struct TripletFile
-    {
-        std::string name;
-        Path location;
-
-        TripletFile(StringView name, StringView location) : name(name.data(), name.size()), location(location) { }
-    };
-
     struct VcpkgPaths
     {
         VcpkgPaths(const Filesystem& filesystem, const VcpkgCmdArguments& args, const BundleSettings& bundle);
@@ -65,10 +58,9 @@ namespace vcpkg
         Path build_dir(StringView package_name) const;
         Path build_info_file_path(const PackageSpec& spec) const;
 
-        const std::vector<TripletFile>& get_available_triplets() const;
+        const TripletDatabase& get_triplet_db() const;
         const std::map<std::string, std::string>& get_cmake_script_hashes() const;
         StringView get_ports_cmake_hash() const;
-        const Path& get_triplet_file_path(Triplet triplet) const;
 
         LockFile& get_installed_lockfile() const;
         void flush_lockfile() const;
@@ -102,11 +94,15 @@ namespace vcpkg
         const Path buildsystems_msbuild_targets;
         const Path buildsystems_msbuild_props;
         const Path ports_cmake;
+
+    private:
         const Path triplets;
         const Path community_triplets;
+        std::vector<std::string> overlay_triplets;
+
+    public:
 
         std::vector<std::string> overlay_ports;
-        std::vector<std::string> overlay_triplets;
 
         std::string get_toolver_diagnostics() const;
 

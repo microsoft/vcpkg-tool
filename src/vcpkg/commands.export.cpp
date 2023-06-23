@@ -407,16 +407,16 @@ namespace vcpkg::Export
             // input sanitization
             bool default_triplet_used = false;
             ret.specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
-                return check_and_get_package_spec(std::string(arg),
+                return check_and_get_package_spec(arg,
                                                   default_triplet,
                                                   default_triplet_used,
                                                   COMMAND_STRUCTURE.get_example_text(),
-                                                  paths);
+                                                  paths.get_triplet_db());
             });
 
             if (default_triplet_used)
             {
-                print_default_triplet_warning(args);
+                print_default_triplet_warning(args, paths.get_triplet_db());
             }
         }
 
