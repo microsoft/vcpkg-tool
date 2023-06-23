@@ -31,21 +31,18 @@ namespace vcpkg
                          const ToolCache& tools,
                          MessageSink& status_sink,
                          const Path& archive,
-                         const Path& to_path,
-                         const ExtractionType& extraction_type = {});
+                         const Path& to_path);
     // set `to_path` to `archive` contents.
     void set_directory_to_archive_contents(const Filesystem& fs,
                                            const ToolCache& tools,
                                            MessageSink& status_sink,
                                            const Path& archive,
-                                           const Path& to_path,
-                                           const ExtractionType& extraction_type = {});
+                                           const Path& to_path);
     Path extract_archive_to_temp_subdirectory(const Filesystem& fs,
                                               const ToolCache& tools,
                                               MessageSink& status_sink,
                                               const Path& archive,
-                                              const Path& to_path,
-                                              const ExtractionType& extraction_type = {});
+                                              const Path& to_path);
 
 #ifdef _WIN32
     // Extract the 7z archive part of a self extracting 7z installer

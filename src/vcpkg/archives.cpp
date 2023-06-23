@@ -166,16 +166,14 @@ namespace vcpkg
                          const ToolCache& tools,
                          MessageSink& status_sink,
                          const Path& archive,
-                         const Path& to_path,
-                         const ExtractionType& extraction_type)
+                         const Path& to_path)
     {
-        const auto ext_type =
-            (extraction_type == ExtractionType::UNKNOWN) ? guess_extraction_type(archive) : extraction_type;
+        const auto ext_type = guess_extraction_type(archive);
 
 #if defined(_WIN32)
         switch (ext_type)
         {
-            case ExtractionType::UNKNOWN:
+            case ExtractionType::UNKNOWN: break;
             case ExtractionType::NUPKG: win32_extract_nupkg(tools, status_sink, archive, to_path); break;
             case ExtractionType::MSI: win32_extract_msi(archive, to_path); break;
             case ExtractionType::ZIP:
@@ -189,7 +187,7 @@ namespace vcpkg
                 const Path stem = filename.stem();
                 const Path to_archive = Path(archive.parent_path()) / stem;
                 win32_extract_self_extracting_7z(fs, archive, to_archive);
-                extract_archive(fs, tools, status_sink, to_archive, to_path, ext_type);
+                extract_archive(fs, tools, status_sink, to_archive, to_path);
                 break;
         }
 #else
@@ -210,11 +208,12 @@ namespace vcpkg
                                    msg::value = "unzip",
                                    msg::path = archive);
         }
+
 #endif
+        // Try cmake for unkown extensions, i.e., vsix => zip
         if (ext_type == ExtractionType::UNKNOWN)
         {
-            Checks::msg_exit_maybe_upgrade(
-                VCPKG_LINE_INFO, msgUnexpectedExtension, msg::extension = archive.extension());
+            extract_tar_cmake(tools.get_tool_path(Tools::CMAKE, status_sink), archive, to_path);
         }
     }
 
@@ -222,8 +221,7 @@ namespace vcpkg
                                               const ToolCache& tools,
                                               MessageSink& status_sink,
                                               const Path& archive,
-                                              const Path& to_path,
-                                              const ExtractionType& extraction_type)
+                                              const Path& to_path)
 
     {
         Path to_path_partial = to_path + ".partial";
@@ -233,7 +231,7 @@ namespace vcpkg
 
         fs.remove_all(to_path_partial, VCPKG_LINE_INFO);
         fs.create_directories(to_path_partial, VCPKG_LINE_INFO);
-        extract_archive(fs, tools, status_sink, archive, to_path_partial, extraction_type);
+        extract_archive(fs, tools, status_sink, archive, to_path_partial);
         return to_path_partial;
     }
 #ifdef _WIN32
@@ -334,13 +332,11 @@ namespace vcpkg
                                            const ToolCache& tools,
                                            MessageSink& status_sink,
                                            const Path& archive,
-                                           const Path& to_path,
-                                           const ExtractionType& extraction_type)
+                                           const Path& to_path)
 
     {
         fs.remove_all(to_path, VCPKG_LINE_INFO);
-        Path to_path_partial =
-            extract_archive_to_temp_subdirectory(fs, tools, status_sink, archive, to_path, extraction_type);
+        Path to_path_partial = extract_archive_to_temp_subdirectory(fs, tools, status_sink, archive, to_path);
         fs.rename_with_retry(to_path_partial, to_path, VCPKG_LINE_INFO);
     }
 
