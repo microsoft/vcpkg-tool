@@ -85,7 +85,9 @@ try
     Update-VcpkgJson 'removed.json.in'
     $out = Run-VcpkgAndCaptureOutput @commonArgs install
     Throw-IfFailed
-    if ($out -match "error: the baseline does not contain an entry for port removed")
+    if ($out -match 'error: the baseline does not contain an entry for port removed' -Or
+        $out -notmatch 'The following packages will be built and installed:\s+removed:[^ ]+ -> 1.0.0 -- [^ ]+git-trees[\\/]e5333be21ca28f91ad0adcfdb036485c00b6102c'
+        )
     {
         throw 'Baseline removed port could not be selected with overrides'
     }

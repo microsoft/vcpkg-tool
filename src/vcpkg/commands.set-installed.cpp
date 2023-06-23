@@ -161,7 +161,6 @@ namespace vcpkg::Commands::SetInstalled
 
     void perform_and_exit_ex(const VcpkgCmdArguments& args,
                              const VcpkgPaths& paths,
-                             const PathsPortFileProvider& provider,
                              const CMakeVars::CMakeVarProvider& cmake_vars,
                              ActionPlan action_plan,
                              DryRun dry_run,
@@ -173,7 +172,7 @@ namespace vcpkg::Commands::SetInstalled
     {
         auto& fs = paths.get_filesystem();
 
-        cmake_vars.load_tag_vars(action_plan, provider, host_triplet);
+        cmake_vars.load_tag_vars(action_plan, host_triplet);
         compute_all_abis(paths, action_plan, cmake_vars, {});
 
         std::vector<PackageSpec> user_requested_specs;
@@ -311,7 +310,6 @@ namespace vcpkg::Commands::SetInstalled
 
         perform_and_exit_ex(args,
                             paths,
-                            provider,
                             *cmake_vars,
                             std::move(action_plan),
                             dry_run ? DryRun::Yes : DryRun::No,

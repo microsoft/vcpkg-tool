@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vcpkg/cmakevars.h>
+#include <vcpkg/dependencies.h>
 
 namespace vcpkg::Test
 {
@@ -18,13 +19,11 @@ namespace vcpkg::Test
                 dep_info_vars.emplace(spec, SMap{});
         }
 
-        void load_tag_vars(Span<const FullPackageSpec> specs,
-                           const PortFileProvider& port_provider,
+        void load_tag_vars(const ActionPlan& action_plan,
                            Triplet host_triplet) const override
         {
-            for (auto&& spec : specs)
-                tag_vars.emplace(spec.package_spec, SMap{});
-            (void)(port_provider);
+            for (auto&& install_action : action_plan.install_actions)
+                tag_vars.emplace(install_action.spec, SMap{});
             (void)(host_triplet);
         }
 
