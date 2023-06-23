@@ -495,6 +495,8 @@ namespace vcpkg
         from_env(get_env, GITHUB_REF_ENV, github_ref);
         from_env(get_env, GITHUB_SHA_ENV, github_sha);
         from_env(get_env, GITHUB_JOB_ENV, github_job);
+        from_env(get_env, GITHUB_REPOSITORY_ID, github_repository_id);
+        from_env(get_env, GITHUB_REPOSITORY_OWNER_ID, github_repository_owner_id);
         from_env(get_env, GITHUB_RUN_ID_ENV, github_run_id);
         from_env(get_env, GITHUB_TOKEN_ENV, github_token);
         from_env(get_env, GITHUB_WORKFLOW_ENV, github_workflow);
@@ -691,11 +693,26 @@ namespace vcpkg
 
     void VcpkgCmdArguments::track_environment_metrics() const
     {
+        MetricsSubmission submission;
         if (auto ci_env = m_detected_ci_environment.get())
         {
             Debug::println("Detected CI environment: ", *ci_env);
             get_global_metrics_collector().track_string(StringMetric::DetectedCiEnvironment, *ci_env);
         }
+
+        if (auto repo_id = github_repository_id.get())
+        {
+            Debug::println("Github Repository Id: ", *repo_id);
+            submission.track_string(StringMetric::GithubRepositoryId, *repo_id);
+        }
+
+        if (auto owner_id = github_repository_owner_id.get())
+        {
+            Debug::println("Github Repository Owner Id: ", *owner_id);
+            submission.track_string(StringMetric::GithubRepositoryOwnerId, *owner_id);
+        }
+
+        get_global_metrics_collector().track_submission(std::move(submission));
     }
 
     Optional<std::string> VcpkgCmdArguments::asset_sources_template() const
@@ -770,6 +787,8 @@ namespace vcpkg
     constexpr StringLiteral VcpkgCmdArguments::GITHUB_REPOSITORY_ENV;
     constexpr StringLiteral VcpkgCmdArguments::GITHUB_REF_ENV;
     constexpr StringLiteral VcpkgCmdArguments::GITHUB_SHA_ENV;
+    constexpr StringLiteral VcpkgCmdArguments::GITHUB_REPOSITORY_ID;
+    constexpr StringLiteral VcpkgCmdArguments::GITHUB_REPOSITORY_OWNER_ID;
     constexpr StringLiteral VcpkgCmdArguments::GITHUB_TOKEN_ENV;
     constexpr StringLiteral VcpkgCmdArguments::GITHUB_WORKFLOW_ENV;
 
