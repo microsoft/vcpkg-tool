@@ -39,8 +39,7 @@ namespace vcpkg::CMakeVars
 
             void load_dep_info_vars(View<PackageSpec> specs, Triplet host_triplet) const override;
 
-            void load_tag_vars(const ActionPlan& action_plan,
-                               Triplet host_triplet) const override;
+            void load_tag_vars(const ActionPlan& action_plan, Triplet host_triplet) const override;
 
             Optional<const std::unordered_map<std::string, std::string>&> get_generic_triplet_vars(
                 Triplet triplet) const override;
@@ -359,8 +358,7 @@ endfunction()
         }
     }
 
-    void TripletCMakeVarProvider::load_tag_vars(const ActionPlan& action_plan,
-                                                Triplet host_triplet) const
+    void TripletCMakeVarProvider::load_tag_vars(const ActionPlan& action_plan, Triplet host_triplet) const
     {
         if (action_plan.install_actions.empty()) return;
         std::vector<std::pair<FullPackageSpec, std::string>> spec_abi_settings;

@@ -19,8 +19,7 @@ namespace vcpkg::Test
                 dep_info_vars.emplace(spec, SMap{});
         }
 
-        void load_tag_vars(const ActionPlan& action_plan,
-                           Triplet host_triplet) const override
+        void load_tag_vars(const ActionPlan& action_plan, Triplet host_triplet) const override
         {
             for (auto&& install_action : action_plan.install_actions)
                 tag_vars.emplace(install_action.spec, SMap{});
