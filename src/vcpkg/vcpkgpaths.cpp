@@ -704,12 +704,6 @@ namespace vcpkg
         return this->package_dir(spec) / "BUILD_INFO";
     }
 
-    const std::vector<std::string> VcpkgPaths::get_available_triplets_names() const
-    {
-        return vcpkg::Util::fmap(this->get_available_triplets(),
-                                 [](auto&& triplet_file) -> std::string { return triplet_file.name; });
-    }
-
     const std::vector<TripletFile>& VcpkgPaths::get_available_triplets() const
     {
         return m_pimpl->available_triplets.get_lazy([this]() -> std::vector<TripletFile> {
