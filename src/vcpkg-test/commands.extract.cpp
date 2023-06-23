@@ -33,10 +33,10 @@ using namespace vcpkg::Commands;
 */
 
 #if defined(_WIN32)
-const Path BASE_TEMP_PATH = "C:\\to\\path\\temp_path\\";
+const Path BASE_TEMP_PATH = "C:\\to\\path\\temp\\";
 const Path BASE_PATH = "C:\\to\\path\\";
 #else
-const Path BASE_TEMP_PATH = "/to/path/temp_path";
+const Path BASE_TEMP_PATH = "/to/path/temp/";
 const Path BASE_PATH = "/to/path/";
 #endif
 
