@@ -9,6 +9,7 @@
 #include <vcpkg/packagespec.h>
 #include <vcpkg/triplet.h>
 
+#include <functional>
 #include <initializer_list>
 #include <string>
 #include <vector>
@@ -69,6 +70,7 @@ namespace vcpkg
                                      BuildResult result,
                                      const CiBaselineData& cidata,
                                      StringView cifile,
+                                     std::function<bool(const PackageSpec&)> supported_for_triplet,
                                      bool allow_unexpected_passing,
                                      bool is_independent);
 }

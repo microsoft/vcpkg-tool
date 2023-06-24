@@ -204,11 +204,18 @@ namespace vcpkg
                                      BuildResult result,
                                      const CiBaselineData& cidata,
                                      StringView cifile,
+                                     std::function<bool(const PackageSpec&)> supported_for_triplet,
                                      bool allow_unexpected_passing,
                                      bool is_independent)
     {
         switch (result)
         {
+            case BuildResult::EXCLUDED:
+                if (cidata.expected_failures.contains(spec) && !supported_for_triplet(spec))
+                {
+                    return msg::format(msgCiBaselineUnexpectedFail, msg::spec = spec, msg::triplet = spec.triplet());
+                }
+                break;
             case BuildResult::BUILD_FAILED:
             case BuildResult::POST_BUILD_CHECKS_FAILED:
             case BuildResult::FILE_CONFLICTS:

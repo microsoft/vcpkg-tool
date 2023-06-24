@@ -301,7 +301,8 @@ namespace vcpkg::Commands::CI
                                   const std::map<PackageSpec, BuildResult>& known,
                                   const CiBaselineData& cidata,
                                   const std::string& ci_baseline_file_name,
-                                  bool allow_unexpected_passing)
+                                  bool allow_unexpected_passing,
+                                  std::function<bool(const PackageSpec&)> supported_for_triplet)
     {
         bool has_error = false;
         LocalizedString output = msg::format(msgCiBaselineRegressionHeader);
@@ -313,6 +314,7 @@ namespace vcpkg::Commands::CI
                                         result,
                                         cidata,
                                         ci_baseline_file_name,
+                                        supported_for_triplet,
                                         allow_unexpected_passing,
                                         !r.is_user_requested_install());
             if (!msg.empty())
@@ -323,8 +325,13 @@ namespace vcpkg::Commands::CI
         }
         for (auto&& r : known)
         {
-            auto msg =
-                format_ci_result(r.first, r.second, cidata, ci_baseline_file_name, allow_unexpected_passing, true);
+            auto msg = format_ci_result(r.first,
+                                        r.second,
+                                        cidata,
+                                        ci_baseline_file_name,
+                                        supported_for_triplet,
+                                        allow_unexpected_passing,
+                                        true);
             if (!msg.empty())
             {
                 has_error = true;
@@ -527,7 +534,12 @@ namespace vcpkg::Commands::CI
             msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("\nTriplet: {}\n", target_triplet));
             summary.print();
             print_regressions(
-                summary.results, split_specs->known, cidata, baseline_iter->second, allow_unexpected_passing);
+                summary.results,
+                split_specs->known,
+                cidata,
+                baseline_iter->second,
+                allow_unexpected_passing,
+                [&](const PackageSpec& spec) { return supported_for_triplet(var_provider, provider, spec); });
 
             auto it_xunit = settings.find(OPTION_XUNIT);
             if (it_xunit != settings.end())
