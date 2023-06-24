@@ -627,12 +627,17 @@ namespace vcpkg
         {
         }
 
+        /**
+         * @param accept_version Callback that accepts a std::array<int,3> and returns true if the version is accepted
+         * @param log_candidate Callback that accepts Path, ExpectedL<std::string> maybe_version. Gets called on every
+         * existing candidate.
+         */
         template<typename Func, typename Func2>
         Optional<PathAndVersion> find_first_with_sufficient_version(MessageSink& status_sink,
                                                                     const ToolProvider& tool_provider,
                                                                     const std::vector<Path>& candidates,
                                                                     Func&& accept_version,
-                                                                    Func2&& log_candidate) const
+                                                                    const Func2& log_candidate) const
         {
             for (auto&& candidate : candidates)
             {
@@ -809,9 +814,10 @@ namespace vcpkg
                                 actual_version[2] >= min_version[2]);
                     },
                     [&](const auto& path, const ExpectedL<std::string>& maybe_version) {
-                        considered_versions += fmt::format("{}: {}", path, maybe_version.value_or_lazy([&]() {
-                            return maybe_version.error().data();
-                        }));
+                        considered_versions += fmt::format("{}: {}\n",
+                                                           path,
+                                                           maybe_version.has_value() ? *maybe_version.get()
+                                                                                     : maybe_version.error().data());
                     });
                 if (const auto p = maybe_path.get())
                 {
@@ -848,7 +854,8 @@ namespace vcpkg
             }
             if (!considered_versions.empty())
             {
-                s.append(msgConsideredVersions, msg::version = fmt::join(min_version, ","))
+                s.append_raw('\n')
+                    .append(msgConsideredVersions, msg::version = fmt::join(min_version, "."))
                     .append_raw('\n')
                     .append_raw(considered_versions);
             }
