@@ -29,7 +29,6 @@ using namespace vcpkg::Commands;
         |           |__ file6.txt
         |           |__ file7.txt
         |__ . . .
-
 */
 
 #if defined(_WIN32)

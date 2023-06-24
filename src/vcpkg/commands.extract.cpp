@@ -2,6 +2,7 @@
 
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/strings.h>
+
 #include <vcpkg/archives.h>
 #include <vcpkg/commands.extract.h>
 #include <vcpkg/commands.h>
@@ -98,7 +99,7 @@ namespace vcpkg::Commands
             const auto& source = file.first;
             const auto& destination = file.second;
 
-            if (!destination.empty() && !fs.is_directory(destination.parent_path()))
+            if (!fs.is_directory(destination.parent_path()))
             {
                 fs.create_directories(destination.parent_path(), VCPKG_LINE_INFO);
             }
