@@ -58,20 +58,33 @@ namespace vcpkg::Commands
             auto old_path = temp_dir / Path{prox_path};
 
             auto prox_str = prox_path.native();
+            auto first = prox_str.data();
+            auto last = first + prox_str.size();
+
+            // strip leading directories equivalent to the number specified
+
+            auto is_slash = [](char c) {
+                return c == '/'
+#if defined(_WIN32)
+                       || c == '\\'
+#endif // _WIN32
+                    ;
+            };
 
             for (int i = 0; i < num_leading_dir; ++i)
             {
-                size_t pos = prox_str.find_first_of(VCPKG_PREFERRED_SEPARATOR);
-                if (pos != std::string::npos)
+                while (last != first && +!is_slash(*first))
                 {
-                    prox_str = prox_str.substr(pos + 1);
+                    ++first;
                 }
-                else
+
+                while (last != first && is_slash(*first))
                 {
-                    prox_str = "";
-                    break;
+                    ++first;
                 }
             }
+
+            prox_str = std::string(first, static_cast<size_t>(last - first));
 
             Path new_path = prox_str.empty() ? "" : Path{base_path} / Path{prox_str};
 
@@ -99,7 +112,7 @@ namespace vcpkg::Commands
             const auto& source = file.first;
             const auto& destination = file.second;
 
-            if (!fs.is_directory(destination.parent_path()))
+            if (!destination.empty() && !fs.is_directory(destination.parent_path()))
             {
                 fs.create_directories(destination.parent_path(), VCPKG_LINE_INFO);
             }
