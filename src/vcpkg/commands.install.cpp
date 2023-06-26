@@ -1198,10 +1198,8 @@ namespace vcpkg
             Util::erase_remove_if(install_plan.install_actions,
                                   [&toplevel](auto&& action) { return action.spec == toplevel; });
 
-            PathsPortFileProvider provider(fs, *registry_set, std::move(oprovider));
             Commands::SetInstalled::perform_and_exit_ex(args,
                                                         paths,
-                                                        provider,
                                                         var_provider,
                                                         std::move(install_plan),
                                                         dry_run ? Commands::SetInstalled::DryRun::Yes
@@ -1246,7 +1244,7 @@ namespace vcpkg
             }
         }
 
-        var_provider.load_tag_vars(action_plan, provider, host_triplet);
+        var_provider.load_tag_vars(action_plan, host_triplet);
 
         // install plan will be empty if it is already installed - need to change this at status paragraph part
         if (action_plan.empty())
