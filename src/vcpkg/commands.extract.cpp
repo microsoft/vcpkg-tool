@@ -73,7 +73,7 @@ namespace vcpkg::Commands
 
             for (int i = 0; i < num_leading_dir; ++i)
             {
-                while (last != first && +!is_slash(*first))
+                while (last != first && !is_slash(*first))
                 {
                     ++first;
                 }
