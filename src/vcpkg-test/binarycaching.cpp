@@ -223,6 +223,7 @@ Build-Depends: bzip
 
     InstallPlanAction ipa(PackageSpec{"zlib2", Test::X64_WINDOWS},
                           scfl,
+                          "test_packages_root",
                           RequestType::USER_REQUESTED,
                           Test::ARM_UWP,
                           {{"a", {}}, {"b", {}}},
@@ -348,6 +349,7 @@ Description:
     std::vector<InstallPlanAction> install_plan;
     install_plan.emplace_back(PackageSpec{"someheadpackage", Test::X64_WINDOWS},
                               scfl,
+                              "test_packages_root",
                               RequestType::USER_REQUESTED,
                               Test::ARM_UWP,
                               std::map<std::string, std::vector<FeatureSpec>>{},
@@ -424,6 +426,7 @@ Description: a spiffy compression library wrapper
     SourceControlFileAndLocation scfl{std::move(*maybe_scf.get()), Path()};
     plan.install_actions.emplace_back(PackageSpec("zlib", Test::X64_ANDROID),
                                       scfl,
+                                      "test_packages_root",
                                       RequestType::USER_REQUESTED,
                                       Test::ARM64_WINDOWS,
                                       std::map<std::string, std::vector<FeatureSpec>>{},
@@ -451,6 +454,7 @@ Description: a spiffy compression library wrapper
     SourceControlFileAndLocation scfl2{std::move(*maybe_scf2.get()), Path()};
     plan.install_actions.emplace_back(PackageSpec("zlib2", Test::X64_ANDROID),
                                       scfl2,
+                                      "test_packages_root",
                                       RequestType::USER_REQUESTED,
                                       Test::ARM64_WINDOWS,
                                       std::map<std::string, std::vector<FeatureSpec>>{},

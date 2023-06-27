@@ -51,15 +51,7 @@
           "format": "uri"
         },
         "license": {
-          "description": "An SPDX license expression at version 3.9.",
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "$ref": "vcpkg-schema-definitions.schema.json#/definitions/license"
         },
         "builtin-baseline": {
           "description": "A vcpkg repository commit for version control.",

@@ -1,3 +1,8 @@
+#include <vcpkg/base/downloads.h>
+#include <vcpkg/base/json.h>
+#include <vcpkg/base/system.debug.h>
+#include <vcpkg/base/system.h>
+
 #include <vcpkg/binarycaching.h>
 #include <vcpkg/cmakevars.h>
 #include <vcpkg/commands.help.h>
@@ -42,6 +47,78 @@ namespace vcpkg::Commands::SetInstalled
         nullptr,
     };
 
+    Optional<Json::Object> create_dependency_graph_snapshot(const VcpkgCmdArguments& args,
+                                                            const ActionPlan& action_plan)
+    {
+        if (args.github_ref.has_value() && args.github_sha.has_value() && args.github_job.has_value() &&
+            args.github_workflow.has_value() && args.github_run_id.has_value())
+        {
+            Json::Object detector;
+            detector.insert("name", Json::Value::string("vcpkg"));
+            detector.insert("url", Json::Value::string("https://github.com/microsoft/vcpkg"));
+            detector.insert("version", Json::Value::string("1.0.0"));
+
+            Json::Object job;
+            job.insert("id", Json::Value::string(*args.github_run_id.get()));
+            job.insert("correlator", Json::Value::string(*args.github_workflow.get() + "-" + *args.github_job.get()));
+
+            Json::Object snapshot;
+            snapshot.insert("job", job);
+            snapshot.insert("version", Json::Value::integer(0));
+            snapshot.insert("sha", Json::Value::string(*args.github_sha.get()));
+            snapshot.insert("ref", Json::Value::string(*args.github_ref.get()));
+            snapshot.insert("scanned", Json::Value::string(CTime::now_string()));
+            snapshot.insert("detector", detector);
+
+            Json::Object manifest;
+            manifest.insert("name", "vcpkg.json");
+
+            std::unordered_map<std::string, std::string> map;
+            for (auto&& action : action_plan.install_actions)
+            {
+                if (!action.source_control_file_and_location.has_value())
+                {
+                    return nullopt;
+                }
+                const auto& scf = *action.source_control_file_and_location.get();
+                auto version = scf.to_version().to_string();
+                auto pkg_url = Strings::concat("pkg:github/vcpkg/", action.spec.name(), "@", version);
+                map.insert({action.spec.to_string(), pkg_url});
+            }
+
+            Json::Object resolved;
+            for (auto&& action : action_plan.install_actions)
+            {
+                Json::Object resolved_item;
+                if (map.find(action.spec.to_string()) != map.end())
+                {
+                    auto pkg_url = map.at(action.spec.to_string());
+                    resolved_item.insert("package_url", pkg_url);
+                    resolved_item.insert("relationship", Json::Value::string("direct"));
+                    Json::Array deps_list;
+                    for (auto&& dep : action.package_dependencies)
+                    {
+                        if (map.find(dep.to_string()) != map.end())
+                        {
+                            auto dep_pkg_url = map.at(dep.to_string());
+                            deps_list.push_back(dep_pkg_url);
+                        }
+                    }
+                    resolved_item.insert("dependencies", deps_list);
+                    resolved.insert(pkg_url, resolved_item);
+                }
+            }
+            manifest.insert("resolved", resolved);
+            Json::Object manifests;
+            manifests.insert("vcpkg.json", manifest);
+            snapshot.insert("manifests", manifests);
+
+            Debug::print(Json::stringify(snapshot));
+            return snapshot;
+        }
+        return nullopt;
+    }
+
     std::set<PackageSpec> adjust_action_plan_to_status_db(ActionPlan& action_plan, const StatusParagraphs& status_db)
     {
         std::set<std::string> all_abis;
@@ -84,7 +161,6 @@ namespace vcpkg::Commands::SetInstalled
 
     void perform_and_exit_ex(const VcpkgCmdArguments& args,
                              const VcpkgPaths& paths,
-                             const PathsPortFileProvider& provider,
                              const CMakeVars::CMakeVarProvider& cmake_vars,
                              ActionPlan action_plan,
                              DryRun dry_run,
@@ -96,7 +172,7 @@ namespace vcpkg::Commands::SetInstalled
     {
         auto& fs = paths.get_filesystem();
 
-        cmake_vars.load_tag_vars(action_plan, provider, host_triplet);
+        cmake_vars.load_tag_vars(action_plan, host_triplet);
         compute_all_abis(paths, action_plan, cmake_vars, {});
 
         std::vector<PackageSpec> user_requested_specs;
@@ -107,6 +183,17 @@ namespace vcpkg::Commands::SetInstalled
                 // save for reporting usage later
                 user_requested_specs.push_back(action.spec);
             }
+        }
+
+        if (paths.manifest_mode_enabled() && paths.get_feature_flags().dependency_graph)
+        {
+            auto snapshot = create_dependency_graph_snapshot(args, action_plan);
+            bool s = false;
+            if (snapshot.has_value() && args.github_token.has_value() && args.github_repository.has_value())
+            {
+                s = send_snapshot_to_api(*args.github_token.get(), *args.github_repository.get(), *snapshot.get());
+            }
+            get_global_metrics_collector().track_bool(BoolMetric::DependencyGraphSuccess, s);
         }
 
         // currently (or once) installed specifications
@@ -223,7 +310,6 @@ namespace vcpkg::Commands::SetInstalled
 
         perform_and_exit_ex(args,
                             paths,
-                            provider,
                             *cmake_vars,
                             std::move(action_plan),
                             dry_run ? DryRun::Yes : DryRun::No,

@@ -712,116 +712,6 @@ namespace vcpkg
 
     const DependencyOverrideArrayDeserializer DependencyOverrideArrayDeserializer::instance;
 
-    // reasoning for these two distinct types -- FeatureDeserializer and ArrayFeatureDeserializer:
-    // `"features"` may be defined in one of two ways:
-    // - An array of feature objects, which contains the `"name"` field
-    // - An object mapping feature names to feature objects, which do not contain the `"name"` field
-    // `ArrayFeatureDeserializer` is used for the former, `FeatureDeserializer` is used for the latter.
-    struct FeatureDeserializer final : Json::IDeserializer<std::unique_ptr<FeatureParagraph>>
-    {
-        virtual LocalizedString type_name() const override { return msg::format(msgAFeature); }
-
-        constexpr static StringLiteral NAME = "name";
-        constexpr static StringLiteral DESCRIPTION = "description";
-        constexpr static StringLiteral DEPENDENCIES = "dependencies";
-        constexpr static StringLiteral SUPPORTS = "supports";
-
-        virtual Span<const StringView> valid_fields() const override
-        {
-            static constexpr StringView t[] = {DESCRIPTION, DEPENDENCIES, SUPPORTS};
-            return t;
-        }
-
-        virtual Optional<std::unique_ptr<FeatureParagraph>> visit_object(Json::Reader& r,
-                                                                         const Json::Object& obj) const override
-        {
-            auto feature = std::make_unique<FeatureParagraph>();
-            for (const auto& el : obj)
-            {
-                if (Strings::starts_with(el.first, "$"))
-                {
-                    feature->extra_info.insert_or_replace(el.first.to_string(), el.second);
-                }
-            }
-
-            r.required_object_field(
-                type_name(), obj, DESCRIPTION, feature->description, Json::ParagraphDeserializer::instance);
-            r.optional_object_field(obj, DEPENDENCIES, feature->dependencies, DependencyArrayDeserializer::instance);
-            r.optional_object_field(obj, SUPPORTS, feature->supports_expression, PlatformExprDeserializer::instance);
-
-            return std::move(feature); // gcc-7 bug workaround redundant move
-        }
-
-        static const FeatureDeserializer instance;
-    };
-
-    const FeatureDeserializer FeatureDeserializer::instance;
-    constexpr StringLiteral FeatureDeserializer::NAME;
-    constexpr StringLiteral FeatureDeserializer::DESCRIPTION;
-    constexpr StringLiteral FeatureDeserializer::DEPENDENCIES;
-    constexpr StringLiteral FeatureDeserializer::SUPPORTS;
-
-    struct FeaturesObject
-    {
-        std::vector<std::unique_ptr<FeatureParagraph>> feature_paragraphs;
-        Json::Object extra_features_info;
-    };
-
-    struct FeaturesFieldDeserializer final : Json::IDeserializer<FeaturesObject>
-    {
-        virtual LocalizedString type_name() const override { return msg::format(msgASetOfFeatures); }
-
-        virtual Span<const StringView> valid_fields() const override { return {}; }
-
-        virtual Optional<FeaturesObject> visit_object(Json::Reader& r, const Json::Object& obj) const override
-        {
-            FeaturesObject res;
-            std::vector<std::string> extra_fields;
-
-            for (const auto& pr : obj)
-            {
-                if (Strings::starts_with(pr.first, "$"))
-                {
-                    res.extra_features_info.insert(pr.first.to_string(), pr.second);
-                    continue;
-                }
-                if (!Json::IdentifierDeserializer::is_ident(pr.first))
-                {
-                    r.add_generic_error(type_name(), msg::format(msgInvalidFeature));
-                    continue;
-                }
-                std::unique_ptr<FeatureParagraph> v;
-                r.visit_in_key(pr.second, pr.first, v, FeatureDeserializer::instance);
-                if (v)
-                {
-                    v->name = pr.first.to_string();
-                    res.feature_paragraphs.push_back(std::move(v));
-                }
-            }
-
-            return std::move(res); // gcc-7 bug workaround redundant move
-        }
-
-        static const FeaturesFieldDeserializer instance;
-    };
-
-    const FeaturesFieldDeserializer FeaturesFieldDeserializer::instance;
-
-    struct ContactsDeserializer final : Json::IDeserializer<Json::Object>
-    {
-        virtual LocalizedString type_name() const override { return msg::format(msgADictionaryOfContacts); }
-
-        virtual Optional<Json::Object> visit_object(Json::Reader& r, const Json::Object& obj) const override
-        {
-            (void)r;
-            return obj;
-        }
-
-        static const ContactsDeserializer instance;
-    };
-
-    const ContactsDeserializer ContactsDeserializer::instance;
-
     static constexpr StringLiteral VALID_LICENSES[] = {
 #include "spdx-licenses.inc"
     };
@@ -1076,6 +966,122 @@ namespace vcpkg
     };
 
     const LicenseExpressionDeserializer LicenseExpressionDeserializer::instance;
+
+    // reasoning for these two distinct types -- FeatureDeserializer and ArrayFeatureDeserializer:
+    // `"features"` may be defined in one of two ways:
+    // - An array of feature objects, which contains the `"name"` field
+    // - An object mapping feature names to feature objects, which do not contain the `"name"` field
+    // `ArrayFeatureDeserializer` is used for the former, `FeatureDeserializer` is used for the latter.
+    struct FeatureDeserializer final : Json::IDeserializer<std::unique_ptr<FeatureParagraph>>
+    {
+        virtual LocalizedString type_name() const override { return msg::format(msgAFeature); }
+
+        constexpr static StringLiteral NAME = "name";
+        constexpr static StringLiteral DESCRIPTION = "description";
+        constexpr static StringLiteral DEPENDENCIES = "dependencies";
+        constexpr static StringLiteral SUPPORTS = "supports";
+        constexpr static StringLiteral LICENSE = "license";
+
+        virtual Span<const StringView> valid_fields() const override
+        {
+            static constexpr StringView t[] = {DESCRIPTION, DEPENDENCIES, SUPPORTS, LICENSE};
+            return t;
+        }
+
+        virtual Optional<std::unique_ptr<FeatureParagraph>> visit_object(Json::Reader& r,
+                                                                         const Json::Object& obj) const override
+        {
+            auto feature = std::make_unique<FeatureParagraph>();
+            for (const auto& el : obj)
+            {
+                if (Strings::starts_with(el.first, "$"))
+                {
+                    feature->extra_info.insert_or_replace(el.first.to_string(), el.second);
+                }
+            }
+
+            r.required_object_field(
+                type_name(), obj, DESCRIPTION, feature->description, Json::ParagraphDeserializer::instance);
+            r.optional_object_field(obj, DEPENDENCIES, feature->dependencies, DependencyArrayDeserializer::instance);
+            r.optional_object_field(obj, SUPPORTS, feature->supports_expression, PlatformExprDeserializer::instance);
+            std::string license;
+            if (r.optional_object_field(obj, LICENSE, license, LicenseExpressionDeserializer::instance))
+            {
+                feature->license = {std::move(license)};
+            }
+
+            return std::move(feature); // gcc-7 bug workaround redundant move
+        }
+
+        static const FeatureDeserializer instance;
+    };
+
+    const FeatureDeserializer FeatureDeserializer::instance;
+    constexpr StringLiteral FeatureDeserializer::NAME;
+    constexpr StringLiteral FeatureDeserializer::DESCRIPTION;
+    constexpr StringLiteral FeatureDeserializer::DEPENDENCIES;
+    constexpr StringLiteral FeatureDeserializer::SUPPORTS;
+
+    struct FeaturesObject
+    {
+        std::vector<std::unique_ptr<FeatureParagraph>> feature_paragraphs;
+        Json::Object extra_features_info;
+    };
+
+    struct FeaturesFieldDeserializer final : Json::IDeserializer<FeaturesObject>
+    {
+        virtual LocalizedString type_name() const override { return msg::format(msgASetOfFeatures); }
+
+        virtual Span<const StringView> valid_fields() const override { return {}; }
+
+        virtual Optional<FeaturesObject> visit_object(Json::Reader& r, const Json::Object& obj) const override
+        {
+            FeaturesObject res;
+            std::vector<std::string> extra_fields;
+
+            for (const auto& pr : obj)
+            {
+                if (Strings::starts_with(pr.first, "$"))
+                {
+                    res.extra_features_info.insert(pr.first.to_string(), pr.second);
+                    continue;
+                }
+                if (!Json::IdentifierDeserializer::is_ident(pr.first))
+                {
+                    r.add_generic_error(type_name(), msg::format(msgInvalidFeature));
+                    continue;
+                }
+                std::unique_ptr<FeatureParagraph> v;
+                r.visit_in_key(pr.second, pr.first, v, FeatureDeserializer::instance);
+                if (v)
+                {
+                    v->name = pr.first.to_string();
+                    res.feature_paragraphs.push_back(std::move(v));
+                }
+            }
+
+            return std::move(res); // gcc-7 bug workaround redundant move
+        }
+
+        static const FeaturesFieldDeserializer instance;
+    };
+
+    const FeaturesFieldDeserializer FeaturesFieldDeserializer::instance;
+
+    struct ContactsDeserializer final : Json::IDeserializer<Json::Object>
+    {
+        virtual LocalizedString type_name() const override { return msg::format(msgADictionaryOfContacts); }
+
+        virtual Optional<Json::Object> visit_object(Json::Reader& r, const Json::Object& obj) const override
+        {
+            (void)r;
+            return obj;
+        }
+
+        static const ContactsDeserializer instance;
+    };
+
+    const ContactsDeserializer ContactsDeserializer::instance;
 
     struct BaselineCommitDeserializer final : Json::IDeserializer<std::string>
     {
@@ -1719,6 +1725,21 @@ namespace vcpkg
             serialize_schemed_version(dep_obj, dep.version_scheme, dep.version, dep.port_version);
         };
 
+        auto serialize_license =
+            [&](Json::Object& obj, StringLiteral name, const Optional<std::string>& maybe_license) {
+                if (auto license = maybe_license.get())
+                {
+                    if (license->empty())
+                    {
+                        obj.insert(name, Json::Value::null(nullptr));
+                    }
+                    else
+                    {
+                        obj.insert(name, Json::Value::string(*license));
+                    }
+                }
+            };
+
         Json::Object obj;
 
         for (const auto& el : scf.core_paragraph->extra_info)
@@ -1754,17 +1775,7 @@ namespace vcpkg
 
         serialize_optional_string(obj, ManifestDeserializer::HOMEPAGE, scf.core_paragraph->homepage);
         serialize_optional_string(obj, ManifestDeserializer::DOCUMENTATION, scf.core_paragraph->documentation);
-        if (auto license = scf.core_paragraph->license.get())
-        {
-            if (license->empty())
-            {
-                obj.insert(ManifestDeserializer::LICENSE, Json::Value::null(nullptr));
-            }
-            else
-            {
-                obj.insert(ManifestDeserializer::LICENSE, Json::Value::string(*license));
-            }
-        }
+        serialize_license(obj, ManifestDeserializer::LICENSE, scf.core_paragraph->license);
 
         serialize_optional_string(
             obj, ManifestDeserializer::SUPPORTS, to_string(scf.core_paragraph->supports_expression));
@@ -1805,6 +1816,7 @@ namespace vcpkg
                 serialize_paragraph(feature_obj, FeatureDeserializer::DESCRIPTION, feature->description, true);
                 serialize_optional_string(
                     feature_obj, FeatureDeserializer::SUPPORTS, to_string(feature->supports_expression));
+                serialize_license(feature_obj, FeatureDeserializer::LICENSE, feature->license);
 
                 if (!feature->dependencies.empty())
                 {

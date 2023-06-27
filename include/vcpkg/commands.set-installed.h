@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vcpkg/base/fwd/json.h>
 #include <vcpkg/base/fwd/optional.h>
 
 #include <vcpkg/fwd/binarycaching.h>
@@ -33,7 +34,6 @@ namespace vcpkg::Commands::SetInstalled
 
     void perform_and_exit_ex(const VcpkgCmdArguments& args,
                              const VcpkgPaths& paths,
-                             const PathsPortFileProvider& provider,
                              const CMakeVars::CMakeVarProvider& cmake_vars,
                              ActionPlan action_plan,
                              DryRun dry_run,
@@ -46,4 +46,7 @@ namespace vcpkg::Commands::SetInstalled
                           const VcpkgPaths& paths,
                           Triplet default_triplet,
                           Triplet host_triplet);
+
+    Optional<Json::Object> create_dependency_graph_snapshot(const VcpkgCmdArguments& args,
+                                                            const ActionPlan& action_plan);
 }

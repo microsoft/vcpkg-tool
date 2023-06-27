@@ -66,6 +66,7 @@ namespace vcpkg
 
         InstallPlanAction(const PackageSpec& spec,
                           const SourceControlFileAndLocation& scfl,
+                          const Path& packages_dir,
                           const RequestType& request_type,
                           Triplet host_triplet,
                           std::map<std::string, std::vector<FeatureSpec>>&& dependencies,

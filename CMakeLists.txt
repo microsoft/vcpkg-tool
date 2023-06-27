@@ -407,6 +407,14 @@ elseif(NOT MSVC)
     target_compile_options(vcpkglib PRIVATE -include "${CMAKE_CURRENT_SOURCE_DIR}/include/pch.h")
 endif()
 
+if(ANDROID)
+    if((CMAKE_SYSTEM_NAME STREQUAL "Android" AND CMAKE_SYSTEM_VERSION LESS "28") 
+       OR CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        # pkg install libandroid-spawn
+        target_link_libraries(vcpkglib PRIVATE android-spawn)
+    endif()
+endif()
+
 if(MINGW)
     target_compile_definitions(vcpkglib
         PUBLIC

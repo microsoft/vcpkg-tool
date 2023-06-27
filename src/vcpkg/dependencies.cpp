@@ -338,7 +338,8 @@ namespace vcpkg
             PackageGraph(const PortFileProvider& provider,
                          const CMakeVars::CMakeVarProvider& var_provider,
                          const StatusParagraphs& status_db,
-                         Triplet host_triplet);
+                         Triplet host_triplet,
+                         const Path& packages_dir);
             ~PackageGraph() = default;
 
             void install(Span<const FeatureSpec> specs, UnsupportedPortAction unsupported_port_action);
@@ -352,6 +353,7 @@ namespace vcpkg
             const CMakeVars::CMakeVarProvider& m_var_provider;
 
             std::unique_ptr<ClusterGraph> m_graph;
+            Path m_packages_dir;
             std::map<FeatureSpec, PlatformExpression::Expr> m_unsupported_features;
         };
 
@@ -503,6 +505,7 @@ namespace vcpkg
 
     InstallPlanAction::InstallPlanAction(const PackageSpec& spec,
                                          const SourceControlFileAndLocation& scfl,
+                                         const Path& packages_dir,
                                          const RequestType& request_type,
                                          Triplet host_triplet,
                                          std::map<std::string, std::vector<FeatureSpec>>&& dependencies,
@@ -517,6 +520,7 @@ namespace vcpkg
         , feature_dependencies(std::move(dependencies))
         , build_failure_messages(std::move(build_failure_messages))
         , host_triplet(host_triplet)
+        , package_dir(packages_dir / spec.dir())
     {
     }
 
@@ -755,7 +759,7 @@ namespace vcpkg
                                            const StatusParagraphs& status_db,
                                            const CreateInstallPlanOptions& options)
     {
-        PackageGraph pgraph(port_provider, var_provider, status_db, options.host_triplet);
+        PackageGraph pgraph(port_provider, var_provider, status_db, options.host_triplet, options.packages_dir);
 
         std::vector<FeatureSpec> feature_specs;
         for (const FullPackageSpec& spec : specs)
@@ -767,17 +771,7 @@ namespace vcpkg
 
         pgraph.install(feature_specs, options.unsupported_port_action);
 
-        auto res = pgraph.serialize(options.randomizer);
-
-        for (auto&& action : res.install_actions)
-        {
-            if (action.source_control_file_and_location.has_value())
-            {
-                action.package_dir.emplace(options.packages_dir / action.spec.dir());
-            }
-        }
-
-        return res;
+        return pgraph.serialize(options.randomizer);
     }
 
     void PackageGraph::mark_for_reinstall(const PackageSpec& first_remove_spec,
@@ -979,7 +973,7 @@ namespace vcpkg
                                    const StatusParagraphs& status_db,
                                    const CreateInstallPlanOptions& options)
     {
-        PackageGraph pgraph(port_provider, var_provider, status_db, options.host_triplet);
+        PackageGraph pgraph(port_provider, var_provider, status_db, options.host_triplet, options.packages_dir);
 
         pgraph.upgrade(specs, options.unsupported_port_action);
 
@@ -1096,20 +1090,32 @@ namespace vcpkg
                             fspecs.insert(fspec);
                             continue;
                         }
+
                         auto&& dep_clust = m_graph->get(fspec.spec());
                         const auto& default_features = [&] {
                             if (dep_clust.m_install_info.has_value())
+                            {
                                 return dep_clust.m_install_info.get()->default_features;
-                            if (auto p = dep_clust.m_installed.get()) return p->ipv.core->package.default_features;
+                            }
+
+                            if (auto p = dep_clust.m_installed.get())
+                            {
+                                return p->ipv.core->package.default_features;
+                            }
+
                             Checks::unreachable(VCPKG_LINE_INFO);
                         }();
+
                         for (auto&& default_feature : default_features)
+                        {
                             fspecs.emplace(fspec.spec(), default_feature);
+                        }
                     }
                     computed_edges[kv.first].assign(fspecs.begin(), fspecs.end());
                 }
                 plan.install_actions.emplace_back(p_cluster->m_spec,
                                                   p_cluster->get_scfl_or_exit(),
+                                                  m_packages_dir,
                                                   p_cluster->request_type,
                                                   m_graph->m_host_triplet,
                                                   std::move(computed_edges),
@@ -1165,8 +1171,11 @@ namespace vcpkg
     PackageGraph::PackageGraph(const PortFileProvider& port_provider,
                                const CMakeVars::CMakeVarProvider& var_provider,
                                const StatusParagraphs& status_db,
-                               Triplet host_triplet)
-        : m_var_provider(var_provider), m_graph(create_feature_install_graph(port_provider, status_db, host_triplet))
+                               Triplet host_triplet,
+                               const Path& packages_dir)
+        : m_var_provider(var_provider)
+        , m_graph(create_feature_install_graph(port_provider, status_db, host_triplet))
+        , m_packages_dir(packages_dir)
     {
     }
 
@@ -1324,12 +1333,14 @@ namespace vcpkg
                                   const IBaselineProvider& base_provider,
                                   const IOverlayProvider& oprovider,
                                   const CMakeVars::CMakeVarProvider& var_provider,
-                                  Triplet host_triplet)
+                                  Triplet host_triplet,
+                                  const Path& packages_dir)
                 : m_ver_provider(ver_provider)
                 , m_base_provider(base_provider)
                 , m_o_provider(oprovider)
                 , m_var_provider(var_provider)
                 , m_host_triplet(host_triplet)
+                , m_packages_dir(packages_dir)
             {
             }
 
@@ -1346,6 +1357,7 @@ namespace vcpkg
             const IOverlayProvider& m_o_provider;
             const CMakeVars::CMakeVarProvider& m_var_provider;
             const Triplet m_host_triplet;
+            const Path m_packages_dir;
 
             struct DepSpec
             {
@@ -1871,6 +1883,7 @@ namespace vcpkg
                                                                                            : RequestType::AUTO_SELECTED;
                     InstallPlanAction ipa(dep.spec,
                                           *node.second.scfl,
+                                          m_packages_dir,
                                           request,
                                           m_host_triplet,
                                           compute_feature_dependencies(node, deps),
@@ -1989,24 +2002,14 @@ namespace vcpkg
                                                         const PackageSpec& toplevel,
                                                         const CreateInstallPlanOptions& options)
     {
-        VersionedPackageGraph vpg(provider, bprovider, oprovider, var_provider, options.host_triplet);
+        VersionedPackageGraph vpg(
+            provider, bprovider, oprovider, var_provider, options.host_triplet, options.packages_dir);
         for (auto&& o : overrides)
         {
             vpg.add_override(o.name, {o.version, o.port_version});
         }
 
         vpg.solve_with_roots(deps, toplevel);
-        auto ret = vpg.finalize_extract_plan(toplevel, options.unsupported_port_action);
-        if (auto plan = ret.get())
-        {
-            for (auto&& action : plan->install_actions)
-            {
-                if (action.source_control_file_and_location.has_value())
-                {
-                    action.package_dir.emplace(options.packages_dir / action.spec.dir());
-                }
-            }
-        }
-        return ret;
+        return vpg.finalize_extract_plan(toplevel, options.unsupported_port_action);
     }
 }
