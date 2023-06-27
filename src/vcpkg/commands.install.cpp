@@ -521,12 +521,14 @@ namespace vcpkg
                          msg::spec = action.spec);
         }
 
-        ~TrackedPackageInstallGuard()
+        void print_elapsed_time() const
         {
             current_summary.timing = build_timer.elapsed();
             msg::println(
                 msgElapsedForPackage, msg::spec = current_summary.get_spec(), msg::elapsed = current_summary.timing);
         }
+
+        ~TrackedPackageInstallGuard() { print_elapsed_time(); }
 
         TrackedPackageInstallGuard(const TrackedPackageInstallGuard&) = delete;
         TrackedPackageInstallGuard& operator=(const TrackedPackageInstallGuard&) = delete;
@@ -581,6 +583,7 @@ namespace vcpkg
                 perform_install_plan_action(args, paths, action, status_db, binary_cache, build_logs_recorder);
             if (result.code != BuildResult::SUCCEEDED && keep_going == KeepGoing::NO)
             {
+                this_install.print_elapsed_time();
                 print_user_troubleshooting_message(action, paths, result.stdoutlog.then([&](auto&) -> Optional<Path> {
                     auto issue_body_path = paths.installed().root() / "vcpkg" / "issue_body.md";
                     paths.get_filesystem().write_contents(
@@ -1195,10 +1198,8 @@ namespace vcpkg
             Util::erase_remove_if(install_plan.install_actions,
                                   [&toplevel](auto&& action) { return action.spec == toplevel; });
 
-            PathsPortFileProvider provider(fs, *registry_set, std::move(oprovider));
             Commands::SetInstalled::perform_and_exit_ex(args,
                                                         paths,
-                                                        provider,
                                                         var_provider,
                                                         std::move(install_plan),
                                                         dry_run ? Commands::SetInstalled::DryRun::Yes
@@ -1243,7 +1244,7 @@ namespace vcpkg
             }
         }
 
-        var_provider.load_tag_vars(action_plan, provider, host_triplet);
+        var_provider.load_tag_vars(action_plan, host_triplet);
 
         // install plan will be empty if it is already installed - need to change this at status paragraph part
         if (action_plan.empty())

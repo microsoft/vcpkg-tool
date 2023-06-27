@@ -1,9 +1,13 @@
 . $PSScriptRoot/../end-to-end-tests-prelude.ps1
 
 # Tests a simple project with overlay ports and triplets configured on a vcpkg-configuration.json file
-$e2eProjects = "$PSScriptRoot/../e2e_projects"
+Copy-Item -Recurse -LiteralPath @(
+    "$PSScriptRoot/../e2e_projects/overlays-project-with-config",
+    "$PSScriptRoot/../e2e_projects/overlays-project-config-embedded",
+    "$PSScriptRoot/../e2e_projects/overlays-bad-paths"
+    ) $TestingRoot
 
-$manifestRoot = "$e2eProjects/overlays-project-with-config"
+$manifestRoot = "$TestingRoot/overlays-project-with-config"
 $env:VCPKG_OVERLAY_PORTS = "$manifestRoot/env-overlays"
 
 Run-Vcpkg install --x-manifest-root=$manifestRoot `
@@ -13,7 +17,7 @@ Run-Vcpkg install --x-manifest-root=$manifestRoot `
 Throw-IfFailed
 
 # Tests overlays configured in env and cli on a project with configuration embedded on the manifest file
-$manifestRoot = "$e2eProjects/overlays-project-config-embedded"
+$manifestRoot = "$TestingRoot/overlays-project-config-embedded"
 $env:VCPKG_OVERLAY_PORTS = "$manifestRoot/env-overlays"
 Run-Vcpkg install --x-manifest-root=$manifestRoot `
     --overlay-ports=$manifestRoot/cli-overlays `
@@ -22,7 +26,7 @@ Run-Vcpkg install --x-manifest-root=$manifestRoot `
 Throw-IfFailed
 
 # Config with bad paths
-$manifestRoot = "$e2eProjects/overlays-bad-paths"
+$manifestRoot = "$TestingRoot/overlays-bad-paths"
 $env:VCPKG_OVERLAY_PORTS = "$manifestRoot/env_overlays"
 Run-Vcpkg install --x-manifest-root=$manifestRoot `
     --overlay-triplets=$manifestRoot/my-triplets `
@@ -30,7 +34,7 @@ Run-Vcpkg install --x-manifest-root=$manifestRoot `
 Throw-IfNotFailed
 
 # Test overlay_triplet paths remain relative to the manifest root after x-update-baseline
-$manifestRoot = "$e2eProjects/overlays-project-with-config"
+$manifestRoot = "$TestingRoot/overlays-project-with-config"
 $configurationBefore = Get-Content "$manifestRoot/vcpkg-configuration.json" | ConvertFrom-Json
 Run-Vcpkg x-update-baseline --x-manifest-root=$manifestRoot
 $configurationAfter = Get-Content "$manifestRoot/vcpkg-configuration.json" | ConvertFrom-Json

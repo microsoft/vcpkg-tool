@@ -1,8 +1,6 @@
-#include <stdio.h>
-
-class 
+class
 #if MYLIB_EXPORTS
-__declspec( dllexport ) 
+__declspec(dllexport)
 #endif
 k4a {
 public:

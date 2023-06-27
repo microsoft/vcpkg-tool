@@ -99,7 +99,7 @@ namespace vcpkg::Build
         auto action_plan = create_feature_install_plan(
             provider, var_provider, {&full_spec, 1}, status_db, {host_triplet, paths.packages()});
 
-        var_provider.load_tag_vars(action_plan, provider, host_triplet);
+        var_provider.load_tag_vars(action_plan, host_triplet);
 
         compute_all_abis(paths, action_plan, var_provider, status_db);
 
