@@ -181,25 +181,33 @@ namespace vcpkg
                                                          msg::feature = *iter,
                                                          msg::value = (names[static_cast<int>(state)])),
                                              cur_loc);
+                            return true;
                         }
+                        return false;
                     };
                     if (state == CiFeatureBaselineState::Skip)
                     {
+                        if (error_if_already_defined(entry.failing_features, FEATURE_FAIL_STATE)) break;
+                        if (error_if_already_defined(entry.cascade_features, CiFeatureBaselineState::Cascade)) break;
                         entry.skip_features.insert(features.begin(), features.end());
                     }
                     else if (state == CiFeatureBaselineState::Cascade)
                     {
-                        error_if_already_defined(entry.failing_features, FEATURE_FAIL_STATE);
+                        if (error_if_already_defined(entry.failing_features, FEATURE_FAIL_STATE)) break;
+                        if (error_if_already_defined(entry.skip_features, CiFeatureBaselineState::Skip)) break;
                         entry.cascade_features.insert(features.begin(), features.end());
                     }
                     else if (state == COMBINATION_FAIL_STATE)
                     {
-                        error_if_already_defined(entry.cascade_features, CiFeatureBaselineState::Cascade);
+                        if (error_if_already_defined(entry.skip_features, CiFeatureBaselineState::Skip)) break;
+                        if (error_if_already_defined(entry.cascade_features, CiFeatureBaselineState::Cascade)) break;
                         features.emplace_back("core");
                         entry.fail_configurations.push_back(Util::sort_unique_erase(std::move(features)));
                     }
                     else if (state == FEATURE_FAIL_STATE)
                     {
+                        if (error_if_already_defined(entry.skip_features, CiFeatureBaselineState::Skip)) break;
+                        if (error_if_already_defined(entry.cascade_features, CiFeatureBaselineState::Cascade)) break;
                         entry.failing_features.insert(features.begin(), features.end());
                     }
                     else if (state == NO_TEST_STATE)
