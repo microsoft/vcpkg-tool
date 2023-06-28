@@ -283,6 +283,7 @@ namespace vcpkg::Commands::TestFeatures
         msg::println(msgComputeInstallPlans, msg::count = specs_to_test.size());
 
         std::vector<FullPackageSpec> specs;
+        std::vector<Path> port_locations;
         std::vector<const InstallPlanAction*> actions_to_check;
         CreateInstallPlanOptions install_plan_options{host_triplet, paths.packages(), UnsupportedPortAction::Warn};
         auto install_plans = Util::fmap(specs_to_test, [&](auto& spec) {
@@ -293,13 +294,15 @@ namespace vcpkg::Commands::TestFeatures
                 for (auto& actions : install_plan.install_actions)
                 {
                     specs.emplace_back(actions.spec, actions.feature_list);
+                    port_locations.emplace_back(
+                        actions.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_location);
                 }
                 actions_to_check.push_back(&install_plan.install_actions.back());
             }
             return std::make_pair(spec, std::move(install_plan));
         });
         msg::println(msgComputeAllAbis);
-        var_provider.load_tag_vars(specs, provider, host_triplet);
+        var_provider.load_tag_vars(specs, port_locations, host_triplet);
         StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
         PortAbiCache cache;
         for (auto& [spec, install_plan] : install_plans)

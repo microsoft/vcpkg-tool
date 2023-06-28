@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vcpkg/base/fwd/files.h>
+
 #include <vcpkg/fwd/dependencies.h>
 #include <vcpkg/fwd/portfileprovider.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
@@ -32,7 +34,11 @@ namespace vcpkg::CMakeVars
 
         virtual void load_dep_info_vars(Span<const PackageSpec> specs, Triplet host_triplet) const = 0;
 
-        virtual void load_tag_vars(const ActionPlan& action_plan, Triplet host_triplet) const = 0;
+        virtual void load_tag_vars(Span<const FullPackageSpec> specs,
+                                   Span<Path> port_locations,
+                                   Triplet host_triplet) const = 0;
+
+        void load_tag_vars(const ActionPlan& action_plan, Triplet host_triplet) const;
     };
 
     std::unique_ptr<CMakeVarProvider> make_triplet_cmake_var_provider(const VcpkgPaths& paths);
