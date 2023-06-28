@@ -738,6 +738,10 @@ DECLARE_MESSAGE(DeleteVcpkgConfigFromManifest,
                 (msg::path),
                 "",
                 "-- Or remove \"vcpkg-configuration\" from the manifest file {path}.")
+DECLARE_MESSAGE(DependencyWillFail,
+                (msg::feature_spec),
+                "'cascade' is a keyword and should not be translated",
+                "Dependency {feature_spec} will not build => cascade")
 DECLARE_MESSAGE(DeprecatedPrefabDebugOption, (), "", "--prefab-debug is now deprecated.")
 DECLARE_MESSAGE(DetectCompilerHash, (msg::triplet), "", "Detecting compiler hash for triplet {triplet}...")
 DECLARE_MESSAGE(DocumentedFieldsSuggestUpdate,
@@ -1943,6 +1947,10 @@ DECLARE_MESSAGE(NugetTimeoutExpectsSinglePositiveInteger,
                 (),
                 "",
                 "unexpected arguments: binary config 'nugettimeout' expects a single positive integer argument")
+DECLARE_MESSAGE(OnlySupports,
+                (msg::feature_spec, msg::supports_expression),
+                "",
+                "{feature_spec} only supports {supports_expression}")
 DECLARE_MESSAGE(OptionalCommand, (), "", "optional command")
 DECLARE_MESSAGE(OptionMustBeInteger, (msg::option), "", "Value of --{option} must be an integer.")
 DECLARE_MESSAGE(OptionRequired, (msg::option), "", "--{option} option is required.")
@@ -2335,6 +2343,10 @@ DECLARE_MESSAGE(SkipClearingInvalidDir,
                 (msg::path),
                 "",
                 "Skipping clearing contents of {path} because it was not a directory.")
+DECLARE_MESSAGE(SkipTestingOfPort,
+                (msg::feature_spec, msg::triplet),
+                "",
+                "Skipping testing of {feature_spec} because the following dependencies are not supported on {triplet}:")
 DECLARE_MESSAGE(SourceFieldPortNameMismatch,
                 (msg::package_name, msg::path),
                 "{package_name} and \"{path}\" are both names of installable ports/packages. 'Source', "
@@ -2488,6 +2500,11 @@ DECLARE_MESSAGE(UnexpectedState,
                 (msg::feature_spec, msg::actual, msg::elapsed),
                 "{actual} is the actual state, e.g. 'pass', 'skip', ...",
                 "{feature_spec} resulted in the unexpected state {actual} after {elapsed}")
+DECLARE_MESSAGE(UnexpectedStateCascase,
+                (msg::feature_spec, msg::actual),
+                "{actual} is the actual state, e.g. 'pass', 'skip', ...",
+                "{feature_spec} resulted in the unexpected state {actual} because the following "
+                "dependencies did not build:")
 DECLARE_MESSAGE(UnexpectedSwitch,
                 (msg::option),
                 "Switch is a command line switch like --switch",
