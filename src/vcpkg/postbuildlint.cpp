@@ -394,11 +394,8 @@ namespace vcpkg
                                         1); // The +1 is needed to remove the "/"
             const Path relative_path = found_relative_native;
             msg_sink.print(Color::none,
-                           fmt::format("\n    configure_file(\"${{CURRENT_BUILDTREES_DIR}}/{}/{}\" "
-                                       "\"${{CURRENT_PACKAGES_DIR}}/share/{}/copyright\" COPYONLY)\n",
-                                       relative_path.generic_u8string(),
-                                       found_file.filename(),
-                                       spec.name()));
+                           fmt::format("\n    vcpkg_install_copyright(FILE_LIST \"${{SOURCE_PATH}}/{}\")\n",
+                                       found_file.filename()));
         }
         else if (potential_copyright_files.size() > 1)
         {
