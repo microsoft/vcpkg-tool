@@ -90,10 +90,12 @@ namespace vcpkg::Commands
 
             result.emplace_back(std::move(old_path), std::move(new_path));
         }
+
         for (auto&& p : result)
         {
             msg::write_unlocalized_text_to_stderr(Color::none, fmt::format("From: {}\nTo: {}\n", p.first, p.second));
         }
+
         return result;
     }
 
