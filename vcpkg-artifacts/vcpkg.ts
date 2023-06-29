@@ -44,7 +44,7 @@ export function vcpkgFetch(session: Session, fetchKey: string): Promise<string> 
   });
 }
 
-export function vcpkgExtract(session: Session, archive: string, target:string, strip:string): Promise<string> {
+export async function vcpkgExtract(session: Session, archive: string, target:string, strip:string): Promise<string> {
   return runVcpkg(session.vcpkgCommand, ['z-extract', archive, target, strip]).then((output) => {
     return output;
   }, (error) => 
