@@ -809,13 +809,16 @@ namespace
                                     std::vector<std::string>{
                                         m_content_type_header.to_string(), m_token_header, m_accept_header.to_string()},
                                     url);
-            auto maybe_json = Json::parse_object(res.get()->c_str());
-            if (auto json = maybe_json.get())
+            if (auto p = res.get())
             {
-                auto archive_location = json->get("archiveLocation");
-                if (archive_location && archive_location->is_string())
+                auto maybe_json = Json::parse_object(*p);
+                if (auto json = maybe_json.get())
                 {
-                    return archive_location->string(VCPKG_LINE_INFO).to_string();
+                    auto archive_location = json->get("archiveLocation");
+                    if (archive_location && archive_location->is_string())
+                    {
+                        return archive_location->string(VCPKG_LINE_INFO).to_string();
+                    }
                 }
             }
             return {};
@@ -829,7 +832,7 @@ namespace
             for (size_t idx = 0; idx < actions.size(); ++idx)
             {
                 auto&& action = *actions[idx];
-                auto package_name = action.spec.name();
+                const auto& package_name = action.spec.name();
                 auto url = lookup_cache_entry(package_name, action.package_abi().value_or_exit(VCPKG_LINE_INFO));
                 if (url.empty()) continue;
 
@@ -877,12 +880,12 @@ namespace
             payload.insert("version", abi);
             payload.insert("cacheSize", Json::Value::integer(cacheSize));
 
-            auto res =
-                invoke_http_request("POST",
-                                    std::vector<std::string>{
-                                        m_content_type_header.to_string(), m_token_header, m_accept_header.to_string()},
-                                    m_url,
-                                    std::string{stringify(payload)});
+            std::vector<std::string> headers;
+            headers.emplace_back(m_accept_header.data(), m_accept_header.size());
+            headers.emplace_back(m_content_type_header.data(), m_content_type_header.size());
+            headers.emplace_back(m_token_header);
+
+            auto res = invoke_http_request("POST", headers, m_url, stringify(payload));
             if (auto p = res.get())
             {
                 auto maybe_json = Json::parse_object(*p);
@@ -923,19 +926,18 @@ namespace
                 {
                     Json::Object commit;
                     commit.insert("size", std::to_string(cache_size));
-                    auto res = invoke_http_request("POST",
-                                                   std::vector<std::string>{m_accept_header.to_string(),
-                                                                            m_content_type_header.to_string(),
-                                                                            m_token_header},
-                                                   url,
-                                                   stringify(commit));
-                    if (res.get())
+                    std::vector<std::string> headers;
+                    headers.emplace_back(m_accept_header.data(), m_accept_header.size());
+                    headers.emplace_back(m_content_type_header.data(), m_content_type_header.size());
+                    headers.emplace_back(m_token_header);
+                    auto res = invoke_http_request("POST", headers, url, stringify(commit));
+                    if (res)
                     {
                         ++upload_count;
                     }
                     else
                     {
-                        msg::println_error(res.error());
+                        msg::println(res.error());
                     }
                 }
             }
