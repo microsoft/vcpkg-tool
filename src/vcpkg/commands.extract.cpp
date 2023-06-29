@@ -119,6 +119,7 @@ namespace vcpkg::Commands
 
             if (!destination.empty())
             {
+                msg::write_unlocalized_text_to_stderr(Color::none, fmt::format("From: {}\nTo: {}\n", source, destination));
                 fs.rename(source, destination, VCPKG_LINE_INFO);
             }
         }
