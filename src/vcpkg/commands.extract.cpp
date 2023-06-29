@@ -73,6 +73,13 @@ namespace vcpkg::Commands
 
             for (int i = 0; i < num_leading_dir; ++i)
             {
+                int slash_count = std::count_if(first, last, is_slash);
+
+                if (slash_count <= 1)
+                {
+                    break;
+                }
+
                 while (last != first && !is_slash(*first))
                 {
                     ++first;
