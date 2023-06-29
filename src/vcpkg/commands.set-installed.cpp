@@ -83,6 +83,7 @@ namespace vcpkg::Commands::SetInstalled
                 const auto& scf = *action.source_control_file_and_location.get();
                 auto version = scf.to_version().to_string();
                 auto pkg_url = Strings::concat("pkg:github/vcpkg/", action.spec.name(), "@", version);
+                Debug::print("map: " + action.spec.to_string() + ": " + pkg_url);
                 map.insert({action.spec.to_string(), pkg_url});
             }
 
@@ -105,6 +106,7 @@ namespace vcpkg::Commands::SetInstalled
                         }
                     }
                     resolved_item.insert("dependencies", deps_list);
+                    Debug::print("inserting: " + pkg_url);
                     resolved.insert(pkg_url, resolved_item);
                 }
             }
