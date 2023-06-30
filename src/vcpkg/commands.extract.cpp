@@ -73,9 +73,10 @@ namespace vcpkg::Commands
 
             for (int i = 0; i < num_leading_dir; ++i)
             {
-                int slash_count = std::count_if(first, last, is_slash);
+                // stop stripping if there are no more directories
+                auto slash_count = std::count_if(first, last, is_slash);
 
-                if (slash_count <= 1)
+                if (slash_count == 0)
                 {
                     break;
                 }
@@ -96,11 +97,6 @@ namespace vcpkg::Commands
             Path new_path = prox_str.empty() ? "" : Path{base_path} / Path{prox_str};
 
             result.emplace_back(std::move(old_path), std::move(new_path));
-        }
-
-        for (auto&& p : result)
-        {
-            msg::write_unlocalized_text_to_stderr(Color::none, fmt::format("From: {}\nTo: {}\n", p.first, p.second));
         }
 
         return result;

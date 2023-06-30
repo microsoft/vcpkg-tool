@@ -109,11 +109,11 @@ TEST_CASE ("Testing strip_map, strip = 2", "[z-extract]")
 
 TEST_CASE ("Testing strip_map, strip = 3 (Max archive depth)", "[z-extract]")
 {
-    std::vector<std::pair<Path, Path>> expected = {{FILE_1, ""},
-                                                   {FILE_2, ""},
-                                                   {FILE_3, ""},
-                                                   {FILE_4, ""},
-                                                   {FILE_5, ""},
+    std::vector<std::pair<Path, Path>> expected = {{FILE_1, BASE_PATH + "file1.txt"},
+                                                   {FILE_2, BASE_PATH + "file2.txt"},
+                                                   {FILE_3, BASE_PATH + "file3.txt"},
+                                                   {FILE_4, BASE_PATH + "file4.txt"},
+                                                   {FILE_5, BASE_PATH + "file5.txt"},
                                                    {FILE_6, BASE_PATH + "file6.txt"},
                                                    {FILE_7, BASE_PATH + "file7.txt"}};
 
