@@ -82,9 +82,9 @@ namespace vcpkg::Commands::SetInstalled
                 }
                 const auto& scf = *action.source_control_file_and_location.get();
                 auto version = scf.to_version().to_string();
-                auto pkg_url = Strings::concat("pkg:github/vcpkg/", action.spec.name(), "@", version);
-                Debug::print("map: " + action.spec.to_string() + ": " + pkg_url);
-                map.insert({action.spec.to_string(), pkg_url});
+                auto s = action.spec.to_string();
+                auto pkg_url = Strings::concat("pkg:github/vcpkg/", s, "@", version);
+                map.insert({s, pkg_url});
             }
 
             Json::Object resolved;
@@ -106,7 +106,6 @@ namespace vcpkg::Commands::SetInstalled
                         }
                     }
                     resolved_item.insert("dependencies", deps_list);
-                    Debug::print("inserting: " + pkg_url);
                     resolved.insert(pkg_url, resolved_item);
                 }
             }
@@ -189,11 +188,17 @@ namespace vcpkg::Commands::SetInstalled
 
         if (paths.manifest_mode_enabled() && paths.get_feature_flags().dependency_graph)
         {
+            msg::println(msgDependencyGraphCalculation);
             auto snapshot = create_dependency_graph_snapshot(args, action_plan);
             bool s = false;
             if (snapshot.has_value() && args.github_token.has_value() && args.github_repository.has_value())
             {
                 s = send_snapshot_to_api(*args.github_token.get(), *args.github_repository.get(), *snapshot.get());
+                if (s) {
+                    msg::println(msgDependencyGraphCalculation);
+                } else {
+                    msg::println(msgDependencyGraphFailure);
+                }
             }
             get_global_metrics_collector().track_bool(BoolMetric::DependencyGraphSuccess, s);
         }
