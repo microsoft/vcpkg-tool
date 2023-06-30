@@ -702,14 +702,12 @@ namespace vcpkg
 
         if (auto repo_id = github_repository_id.get())
         {
-            Debug::println("Github Repository Id: ", *repo_id);
-            submission.track_string(StringMetric::GithubRepositoryId, *repo_id);
+            submission.track_string(StringMetric::CiProjectId, *repo_id);
         }
 
         if (auto owner_id = github_repository_owner_id.get())
         {
-            Debug::println("Github Repository Owner Id: ", *owner_id);
-            submission.track_string(StringMetric::GithubRepositoryOwnerId, *owner_id);
+            submission.track_string(StringMetric::CiOwnerId, *owner_id);
         }
 
         get_global_metrics_collector().track_submission(std::move(submission));
