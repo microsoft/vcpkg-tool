@@ -194,9 +194,12 @@ namespace vcpkg::Commands::SetInstalled
             if (snapshot.has_value() && args.github_token.has_value() && args.github_repository.has_value())
             {
                 s = send_snapshot_to_api(*args.github_token.get(), *args.github_repository.get(), *snapshot.get());
-                if (s) {
+                if (s)
+                {
                     msg::println(msgDependencyGraphSuccess);
-                } else {
+                }
+                else
+                {
                     msg::println(msgDependencyGraphFailure);
                 }
             }
