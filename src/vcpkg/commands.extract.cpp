@@ -30,14 +30,16 @@ namespace vcpkg::Commands
         auto iter = options.settings.find(OPTION_STRIP);
         if (iter != options.settings.end())
         {
-            std::string value = iter->second;
-            try
+            std::string maybe_value = iter->second;
+            auto value = Strings::strto<int>(maybe_value);
+
+            if (value.has_value())
             {
-                return std::stoi(value);
+                return value.value_or_exit(VCPKG_LINE_INFO);
             }
-            catch (std::exception&)
+            else
             {
-                msg::println_error(msgErrorInvalidOption, msg::option = OPTION_STRIP, msg::value = value);
+                msg::println_error(msgErrorInvalidOption, msg::option = OPTION_STRIP, msg::value = maybe_value);
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
         }
