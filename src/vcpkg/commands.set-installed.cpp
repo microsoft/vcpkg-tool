@@ -195,7 +195,7 @@ namespace vcpkg::Commands::SetInstalled
             {
                 s = send_snapshot_to_api(*args.github_token.get(), *args.github_repository.get(), *snapshot.get());
                 if (s) {
-                    msg::println(msgDependencyGraphCalculation);
+                    msg::println(msgDependencyGraphSuccess);
                 } else {
                     msg::println(msgDependencyGraphFailure);
                 }
