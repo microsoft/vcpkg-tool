@@ -697,7 +697,7 @@ namespace vcpkg
         if (auto ci_env = m_detected_ci_environment.get())
         {
             Debug::println("Detected CI environment: ", *ci_env);
-            get_global_metrics_collector().track_string(StringMetric::DetectedCiEnvironment, *ci_env);
+            submission.track_string(StringMetric::DetectedCiEnvironment, *ci_env);
         }
 
         if (auto repo_id = github_repository_id.get())
