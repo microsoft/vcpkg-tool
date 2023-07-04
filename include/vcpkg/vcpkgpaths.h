@@ -138,7 +138,8 @@ namespace vcpkg
         ExpectedL<std::string> git_show_from_remote_registry(StringView hash, const Path& relative_path_to_file) const;
         ExpectedL<std::string> git_find_object_id_for_remote_registry_path(StringView hash,
                                                                            const Path& relative_path_to_file) const;
-        ExpectedL<Path> git_checkout_object_from_remote_registry(StringView tree) const;
+        ExpectedL<Unit> git_read_tree(const Path& destination, StringView tree, const Path& dot_git_dir) const;
+        ExpectedL<Path> git_extract_tree_from_remote_registry(StringView tree) const;
 
         Optional<const ManifestAndPath&> get_manifest() const;
         bool manifest_mode_enabled() const;

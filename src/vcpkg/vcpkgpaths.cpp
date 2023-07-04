@@ -972,74 +972,16 @@ namespace vcpkg
             return destination;
         }
 
-        const auto destination_tmp = this->versions_output() / port_name / Strings::concat(git_tree, ".tmp");
-        const auto destination_tar = this->versions_output() / port_name / Strings::concat(git_tree, ".tar");
-        std::error_code ec;
-        Path failure_point;
-        fs.remove_all(destination_tmp, ec, failure_point);
-        if (ec)
+        auto maybe_tree = git_read_tree(destination, git_tree, dot_git_dir);
+        if (maybe_tree)
         {
-            return msg::format(msg::msgErrorMessage)
-                .append(format_filesystem_call_error(ec, "remove_all", {destination_tmp}))
-                .append_raw('\n')
-                .append(msg::msgNoteMessage)
-                .append(msgWhileCheckingOutPortTreeIsh, msg::package_name = port_name, msg::commit_sha = git_tree);
-        }
-        fs.create_directories(destination_tmp, ec);
-        if (ec)
-        {
-            return msg::format(msg::msgErrorMessage)
-                .append(format_filesystem_call_error(ec, "create_directories", {destination_tmp}))
-                .append_raw('\n')
-                .append(msg::msgNoteMessage)
-                .append(msgWhileCheckingOutPortTreeIsh, msg::package_name = port_name, msg::commit_sha = git_tree);
+            return destination;
         }
 
-        auto tar_cmd_builder = git_cmd_builder(dot_git_dir, dot_git_dir)
-                                   .string_arg("archive")
-                                   .string_arg(git_tree)
-                                   .string_arg("-o")
-                                   .string_arg(destination_tar);
-        auto maybe_tar_output = flatten(cmd_execute_and_capture_output(tar_cmd_builder), Tools::TAR);
-        if (!maybe_tar_output)
-        {
-            auto message = msg::format_error(msgGitCommandFailed, msg::command_line = tar_cmd_builder.command_line());
-            const auto& git_config = git_builtin_config();
-            if (is_shallow_clone(git_config).value_or(false))
-            {
-                message.append_raw('\n').append(msgShallowRepositoryDetected, msg::path = git_config.git_dir);
-            }
-
-            message.append_raw('\n')
-                .append(msg::msgNoteMessage)
-                .append(msgWhileCheckingOutPortTreeIsh, msg::package_name = port_name, msg::commit_sha = git_tree)
-                .append_raw('\n')
-                .append(maybe_tar_output.error());
-
-            return message;
-        }
-
-        extract_tar_cmake(this->get_tool_exe(Tools::CMAKE, stdout_sink), destination_tar, destination_tmp);
-        fs.remove(destination_tar, ec);
-        if (ec)
-        {
-            return msg::format(msg::msgErrorMessage)
-                .append(format_filesystem_call_error(ec, "remove", {destination_tar}))
-                .append_raw('\n')
-                .append(msg::msgNoteMessage)
-                .append(msgWhileCheckingOutPortTreeIsh, msg::package_name = port_name, msg::commit_sha = git_tree);
-        }
-        fs.rename_with_retry(destination_tmp, destination, ec);
-        if (ec)
-        {
-            return msg::format(msg::msgErrorMessage)
-                .append(format_filesystem_call_error(ec, "rename_with_retry", {destination_tmp, destination}))
-                .append_raw('\n')
-                .append(msg::msgNoteMessage)
-                .append(msgWhileCheckingOutPortTreeIsh, msg::package_name = port_name, msg::commit_sha = git_tree);
-        }
-
-        return destination;
+        return std::move(maybe_tree)
+            .error()
+            .append(msg::msgNoteMessage)
+            .append(msgWhileCheckingOutPortTreeIsh, msg::package_name = port_name, msg::commit_sha = git_tree);
     }
 
     ExpectedL<std::string> VcpkgPaths::git_show(StringView treeish, const Path& dot_git_dir) const
@@ -1221,51 +1163,93 @@ namespace vcpkg
         });
     }
 
-    ExpectedL<Path> VcpkgPaths::git_checkout_object_from_remote_registry(StringView object) const
+    ExpectedL<Unit> VcpkgPaths::git_read_tree(const Path& destination, StringView tree, const Path& dot_git_dir) const
     {
         auto& fs = get_filesystem();
-        fs.create_directories(m_pimpl->m_registries_git_trees, VCPKG_LINE_INFO);
-
-        auto git_tree_final = m_pimpl->m_registries_git_trees / object;
-        if (fs.exists(git_tree_final, IgnoreErrors{}))
+        std::error_code ec;
+        auto pid = get_process_id();
+        Path git_tree_temp = fmt::format("{}_{}.tmp", destination, pid);
+        Path git_tree_index = fmt::format("{}_{}.index", destination, pid);
+        auto parent = destination.parent_path();
+        if (!parent.empty())
         {
-            return git_tree_final;
+            fs.create_directories(parent, ec);
+            if (ec)
+            {
+                return format_filesystem_call_error(ec, "create_directories", {parent});
+            }
         }
 
-        auto pid = get_process_id();
+        fs.remove_all(git_tree_temp, ec);
+        if (ec)
+        {
+            return format_filesystem_call_error(ec, "remove_all", {git_tree_temp});
+        }
 
-        Path git_tree_temp = fmt::format("{}_{}.tmp", git_tree_final, pid);
-        Path git_tree_index = fmt::format("{}_{}.index", git_tree_final, pid);
-        fs.remove_all(git_tree_temp, VCPKG_LINE_INFO);
-        fs.create_directory(git_tree_temp, VCPKG_LINE_INFO);
+        fs.create_directory(git_tree_temp, ec);
+        if (ec)
+        {
+            return format_filesystem_call_error(ec, "create_directory", {git_tree_temp});
+        }
 
-        Command git_archive = git_cmd_builder(m_pimpl->m_registries_dot_git_dir, git_tree_temp)
+        fs.remove_all(destination, ec);
+        if (ec)
+        {
+            return format_filesystem_call_error(ec, "remove_all", {destination});
+        }
+
+        Command git_archive = git_cmd_builder(dot_git_dir, git_tree_temp)
                                   .string_arg("read-tree")
                                   .string_arg("-m")
                                   .string_arg("-u")
-                                  .string_arg(object);
+                                  .string_arg(tree);
 
         auto env = default_environment;
         env.add_entry("GIT_INDEX_FILE", git_tree_index.native());
 
-        auto maybe_git_archive_output = flatten(cmd_execute_and_capture_output(git_archive, default_working_directory, env), Tools::GIT);
-        if (!maybe_git_archive_output)
+        auto maybe_git_read_tree_output =
+            flatten(cmd_execute_and_capture_output(git_archive, default_working_directory, env), Tools::GIT);
+        if (!maybe_git_read_tree_output)
         {
-            return msg::format_error(msgGitCommandFailed, msg::command_line = git_archive.command_line())
-                .append_raw('\n')
-                .append(std::move(maybe_git_archive_output).error());
+            auto error = msg::format_error(msgGitCommandFailed, msg::command_line = git_archive.command_line());
+            const auto& git_config = git_builtin_config();
+            if (is_shallow_clone(GitConfig{get_tool_exe(Tools::GIT, stdout_sink), dot_git_dir, git_tree_temp})
+                    .value_or(false))
+            {
+                error = std::move(error).append_raw('\n').append(msgShallowRepositoryDetected,
+                                                                 msg::path = git_config.git_dir);
+            }
+
+            error.append_raw('\n').append(std::move(maybe_git_read_tree_output).error());
+            return error;
         }
 
-        std::error_code ec;
-        fs.rename_with_retry(git_tree_temp, git_tree_final, ec);
+        fs.rename_with_retry(git_tree_temp, destination, ec);
         if (ec)
         {
             return msg::format(msg::msgErrorMessage)
-                .append(format_filesystem_call_error(ec, "rename_with_retry", {git_tree_temp, git_tree_final}));
+                .append(format_filesystem_call_error(ec, "rename_with_retry", {git_tree_temp, destination}));
         }
 
         fs.remove(git_tree_index, IgnoreErrors{});
-        return git_tree_final;
+        return Unit{};
+    }
+
+    ExpectedL<Path> VcpkgPaths::git_extract_tree_from_remote_registry(StringView tree) const
+    {
+        auto git_tree_final = m_pimpl->m_registries_git_trees / tree;
+        if (get_filesystem().exists(git_tree_final, IgnoreErrors{}))
+        {
+            return git_tree_final;
+        }
+
+        auto maybe_extraction = git_read_tree(git_tree_final, tree, m_pimpl->m_registries_dot_git_dir);
+        if (maybe_extraction)
+        {
+            return git_tree_final;
+        }
+
+        return std::move(maybe_extraction).error();
     }
 
     Optional<const ManifestAndPath&> VcpkgPaths::get_manifest() const
