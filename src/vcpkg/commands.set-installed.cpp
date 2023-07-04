@@ -82,8 +82,9 @@ namespace vcpkg::Commands::SetInstalled
                 }
                 const auto& scf = *action.source_control_file_and_location.get();
                 auto version = scf.to_version().to_string();
-                auto pkg_url = Strings::concat("pkg:github/vcpkg/", action.spec.name(), "@", version);
-                map.insert({action.spec.to_string(), pkg_url});
+                auto s = action.spec.to_string();
+                auto pkg_url = Strings::concat("pkg:github/vcpkg/", s, "@", version);
+                map.insert({s, pkg_url});
             }
 
             Json::Object resolved;
@@ -161,7 +162,6 @@ namespace vcpkg::Commands::SetInstalled
 
     void perform_and_exit_ex(const VcpkgCmdArguments& args,
                              const VcpkgPaths& paths,
-                             const PathsPortFileProvider& provider,
                              const CMakeVars::CMakeVarProvider& cmake_vars,
                              ActionPlan action_plan,
                              DryRun dry_run,
@@ -173,7 +173,7 @@ namespace vcpkg::Commands::SetInstalled
     {
         auto& fs = paths.get_filesystem();
 
-        cmake_vars.load_tag_vars(action_plan, provider, host_triplet);
+        cmake_vars.load_tag_vars(action_plan, host_triplet);
         compute_all_abis(paths, action_plan, cmake_vars, {});
 
         std::vector<PackageSpec> user_requested_specs;
@@ -188,11 +188,20 @@ namespace vcpkg::Commands::SetInstalled
 
         if (paths.manifest_mode_enabled() && paths.get_feature_flags().dependency_graph)
         {
+            msg::println(msgDependencyGraphCalculation);
             auto snapshot = create_dependency_graph_snapshot(args, action_plan);
             bool s = false;
             if (snapshot.has_value() && args.github_token.has_value() && args.github_repository.has_value())
             {
                 s = send_snapshot_to_api(*args.github_token.get(), *args.github_repository.get(), *snapshot.get());
+                if (s)
+                {
+                    msg::println(msgDependencyGraphSuccess);
+                }
+                else
+                {
+                    msg::println(msgDependencyGraphFailure);
+                }
             }
             get_global_metrics_collector().track_bool(BoolMetric::DependencyGraphSuccess, s);
         }
@@ -314,7 +323,6 @@ namespace vcpkg::Commands::SetInstalled
 
         perform_and_exit_ex(args,
                             paths,
-                            provider,
                             *cmake_vars,
                             std::move(action_plan),
                             dry_run ? DryRun::Yes : DryRun::No,

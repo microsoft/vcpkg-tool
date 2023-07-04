@@ -731,6 +731,9 @@ DECLARE_MESSAGE(DeleteVcpkgConfigFromManifest,
                 (msg::path),
                 "",
                 "-- Or remove \"vcpkg-configuration\" from the manifest file {path}.")
+DECLARE_MESSAGE(DependencyGraphCalculation, (), "", "Dependency graph submission enabled.")
+DECLARE_MESSAGE(DependencyGraphFailure, (), "", "Dependency graph submission failed.")
+DECLARE_MESSAGE(DependencyGraphSuccess, (), "", "Dependency graph submission successful.")
 DECLARE_MESSAGE(DeprecatedPrefabDebugOption, (), "", "--prefab-debug is now deprecated.")
 DECLARE_MESSAGE(DetectCompilerHash, (msg::triplet), "", "Detecting compiler hash for triplet {triplet}...")
 DECLARE_MESSAGE(DocumentedFieldsSuggestUpdate,
