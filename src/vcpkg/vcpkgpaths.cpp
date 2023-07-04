@@ -1220,6 +1220,7 @@ namespace vcpkg
             return std::move(output);
         });
     }
+
     ExpectedL<Path> VcpkgPaths::git_checkout_object_from_remote_registry(StringView object) const
     {
         auto& fs = get_filesystem();
@@ -1233,30 +1234,27 @@ namespace vcpkg
 
         auto pid = get_process_id();
 
-        Path git_tree_temp = fmt::format("{}.tmp{}", git_tree_final, pid);
-        Path git_tree_temp_tar = git_tree_temp.native() + ".tar";
+        Path git_tree_temp = fmt::format("{}_{}.tmp", git_tree_final, pid);
+        Path git_tree_index = fmt::format("{}_{}.index", git_tree_final, pid);
         fs.remove_all(git_tree_temp, VCPKG_LINE_INFO);
         fs.create_directory(git_tree_temp, VCPKG_LINE_INFO);
 
-        const auto& dot_git_dir = m_pimpl->m_registries_dot_git_dir;
-        Command git_archive = git_cmd_builder(dot_git_dir, m_pimpl->m_registries_work_tree_dir)
-                                  .string_arg("archive")
-                                  .string_arg("--format")
-                                  .string_arg("tar")
-                                  .string_arg(object)
-                                  .string_arg("--output")
-                                  .string_arg(git_tree_temp_tar);
-        auto maybe_git_archive_output = flatten(cmd_execute_and_capture_output(git_archive), Tools::GIT);
+        Command git_archive = git_cmd_builder(m_pimpl->m_registries_dot_git_dir, git_tree_temp)
+                                  .string_arg("read-tree")
+                                  .string_arg("-m")
+                                  .string_arg("-u")
+                                  .string_arg(object);
+
+        auto env = default_environment;
+        env.add_entry("GIT_INDEX_FILE", git_tree_index.native());
+
+        auto maybe_git_archive_output = flatten(cmd_execute_and_capture_output(git_archive, default_working_directory, env), Tools::GIT);
         if (!maybe_git_archive_output)
         {
             return msg::format_error(msgGitCommandFailed, msg::command_line = git_archive.command_line())
                 .append_raw('\n')
                 .append(std::move(maybe_git_archive_output).error());
         }
-
-        extract_tar_cmake(get_tool_exe(Tools::CMAKE, stdout_sink), git_tree_temp_tar, git_tree_temp);
-        // Attempt to remove temporary files, though non-critical.
-        fs.remove(git_tree_temp_tar, IgnoreErrors{});
 
         std::error_code ec;
         fs.rename_with_retry(git_tree_temp, git_tree_final, ec);
@@ -1266,6 +1264,7 @@ namespace vcpkg
                 .append(format_filesystem_call_error(ec, "rename_with_retry", {git_tree_temp, git_tree_final}));
         }
 
+        fs.remove(git_tree_index, IgnoreErrors{});
         return git_tree_final;
     }
 
