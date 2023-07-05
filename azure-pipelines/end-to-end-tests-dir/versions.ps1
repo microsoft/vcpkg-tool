@@ -6,7 +6,7 @@ $versionFilesPath = "$PSScriptRoot/../e2e_ports/version-files"
 $CurrentTest = "transitive constraints without baseline"
 Run-Vcpkg install @commonArgs --dry-run `
     "--x-builtin-ports-root=$versionFilesPath/transitive-constraints/ports" `
-    "--x-manifest-root=$versionFilesPath/transitive-constraints" --debug
+    "--x-manifest-root=$versionFilesPath/transitive-constraints"
 Throw-IfFailed
 Refresh-TestRoot
 
@@ -25,7 +25,7 @@ $portsRedirectArgsIncomplete = @(
 )
 $CurrentTest = "x-verify-ci-versions (All files OK)"
 Write-Host $CurrentTest
-Run-Vcpkg @portsRedirectArgsOK x-ci-verify-versions --verbose --debug
+Run-Vcpkg @portsRedirectArgsOK x-ci-verify-versions --verbose
 Throw-IfFailed
 
 $CurrentTest = "x-verify-ci-versions (Incomplete)"
