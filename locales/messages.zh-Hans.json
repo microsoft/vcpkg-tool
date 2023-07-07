@@ -491,6 +491,7 @@
   "GitUnexpectedCommandOutputCmd": "git 在运行 {command_line} 时生成了意外输出",
   "GraphCycleDetected": "在 {package_name} 的图形中检测到循环:",
   "HashFileFailureToRead": "无法读取用于哈希的文件“{path}”: ",
+  "HashPortManyFiles": "The {package_name} contains a {count} files. Hashing these contents may take a long time when determining the ABI hash for binary caching. You should probably consider reducing the number of files. Common causes of this are accidentally checking out source or build trees into a port's directory.",
   "HeaderOnlyUsage": "{package_name} 是仅限标头的，可通过以下方式从 CMake 使用:",
   "HelpAssetCaching": "**试验性功能: 此功能可能会随时更改或删除**\n\nvcpkg 可以使用镜像来缓存下载的资产，确保即使原始源更改或消失，也能继续操作。\n\n可以通过将环境变量 X_VCPKG_ASSET_SOURCES 设置为以分号分隔的源列表或传递 --x-asset-sources=<source> 命令行选项序列来配置资产缓存。命令行源在环境源之后进行解释。可以使用反引号(`)转义逗号、分号和反引号。\n\n某些字符串的 <rw> 可选参数控制如何访问它们。可将其指定为 \"read、\"write\" 或 \"readwrite\"，默认为 \"read\"。\n\n有效源:",
   "HelpAssetCachingAzUrl": "添加 Azure Blob 存储源，可选择使用共享访问签名验证来添加。URL 应包含容器路径，并以尾随的 \"/\" 结束。<sas>如果已定义，应以 \"\" 作为前缀。如果非 Azure 服务器响应格式为 \"<url><sha512><sas>\" 的 GET 和 PUT 请求，则它们也将起作用。",
