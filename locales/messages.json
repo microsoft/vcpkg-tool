@@ -716,7 +716,7 @@
   "_GraphCycleDetected.comment": "A list of package names comprising the cycle will be printed after this message. An example of {package_name} is zlib.",
   "HashFileFailureToRead": "failed to read file \"{path}\" for hashing: ",
   "_HashFileFailureToRead.comment": "Printed after ErrorMessage and before the specific failing filesystem operation (like file not found) An example of {path} is /foo/bar.",
-  "HashPortManyFiles": "The {package_name} contains a {count} files. Hashing these contents may take a long time when determining the ABI hash for binary caching. You should probably consider reducing the number of files. Common causes of this are accidentally checking out source or build trees into a port's directory.",
+  "HashPortManyFiles": "The {package_name} contains {count} files. Hashing these contents may take a long time when determining the ABI hash for binary caching. Consider reducing the number of files. Common causes of this are accidentally checking out source or build files into a port's directory.",
   "_HashPortManyFiles.comment": "An example of {package_name} is zlib. An example of {count} is 42.",
   "HeaderOnlyUsage": "{package_name} is header-only and can be used from CMake via:",
   "_HeaderOnlyUsage.comment": "'header' refers to C/C++ .h files An example of {package_name} is zlib.",
