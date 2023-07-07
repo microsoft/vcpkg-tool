@@ -1138,17 +1138,22 @@ namespace vcpkg
         abi_entries_from_abi_info(fs, grdk_cache, abi_info, abi_tag_entries);
 
         // If there is an unusually large number of files in the port then
-        // something suspicious is going on.  Rather than hash all of them
-        // just mark the port as no-hash
+        // something suspicious is going on.
         constexpr int max_port_file_count = 100;
 
         std::string portfile_cmake_contents;
         std::vector<Path> files;
         std::vector<std::string> hashes;
         auto&& port_dir = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_location;
-        size_t port_file_count = 0;
         Path abs_port_file;
-        for (auto& port_file : fs.get_regular_files_recursive_lexically_proximate(port_dir, VCPKG_LINE_INFO))
+        auto port_files = fs.get_regular_files_recursive_lexically_proximate(port_dir, VCPKG_LINE_INFO);
+        if (port_files.size() > max_port_file_count)
+        {
+            msg::println_warning(
+                msgHashPortManyFiles, msg::package_name = action.spec.name(), msg::count = port_files.size());
+        }
+
+        for (auto& port_file : port_files)
         {
             if (port_file.filename() == ".DS_Store")
             {
@@ -1167,13 +1172,6 @@ namespace vcpkg
             abi_tag_entries.emplace_back(port_file, hash);
             files.push_back(port_file);
             hashes.push_back(std::move(hash));
-
-            ++port_file_count;
-            if (port_file_count > max_port_file_count)
-            {
-                abi_tag_entries.emplace_back("no_hash_max_portfile", "");
-                break;
-            }
         }
 
         abi_tag_entries.emplace_back("cmake", paths.get_tool_version(Tools::CMAKE, stdout_sink));

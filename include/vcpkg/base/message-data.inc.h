@@ -1132,6 +1132,13 @@ DECLARE_MESSAGE(HashFileFailureToRead,
                 (msg::path),
                 "Printed after ErrorMessage and before the specific failing filesystem operation (like file not found)",
                 "failed to read file \"{path}\" for hashing: ")
+DECLARE_MESSAGE(
+    HashPortManyFiles,
+    (msg::package_name, msg::count),
+    "",
+    "The {package_name} contains a {count} files. Hashing these contents may take a long time when determining the ABI "
+    "hash for binary caching. You should probably consider reducing the number of files. Common causes of this are "
+    "accidentally checking out source or build trees into a port's directory.")
 DECLARE_MESSAGE(HeaderOnlyUsage,
                 (msg::package_name),
                 "'header' refers to C/C++ .h files",
