@@ -256,11 +256,10 @@ namespace
     // This structure holds members for VcpkgPathsImpl that don't require explicit initialization/destruction
     struct VcpkgPathsImplStage0
     {
-        Lazy<std::vector<TripletFile>> available_triplets;
+        Lazy<TripletDatabase> triplets_db;
         Lazy<ToolsetsInformation> toolsets;
         Lazy<std::map<std::string, std::string>> cmake_script_hashes;
         Lazy<std::string> ports_cmake_hash;
-        Cache<Triplet, Path> m_triplets_cache;
         Optional<vcpkg::LockFile> m_installed_lock;
     };
 
@@ -704,24 +703,10 @@ namespace vcpkg
         return this->package_dir(spec) / "BUILD_INFO";
     }
 
-    bool VcpkgPaths::is_valid_triplet(Triplet t) const
+    const TripletDatabase& VcpkgPaths::get_triplet_db() const
     {
-        const auto it = Util::find_if(this->get_available_triplets(), [&](auto&& available_triplet) {
-            return t.canonical_name() == available_triplet.name;
-        });
-        return it != this->get_available_triplets().cend();
-    }
-
-    const std::vector<std::string> VcpkgPaths::get_available_triplets_names() const
-    {
-        return vcpkg::Util::fmap(this->get_available_triplets(),
-                                 [](auto&& triplet_file) -> std::string { return triplet_file.name; });
-    }
-
-    const std::vector<TripletFile>& VcpkgPaths::get_available_triplets() const
-    {
-        return m_pimpl->available_triplets.get_lazy([this]() -> std::vector<TripletFile> {
-            std::vector<TripletFile> output;
+        return m_pimpl->triplets_db.get_lazy([this]() -> TripletDatabase {
+            std::vector<TripletFile> available_triplets;
             const Filesystem& fs = this->get_filesystem();
             for (auto&& triplets_dir : m_pimpl->triplets_dirs)
             {
@@ -729,12 +714,12 @@ namespace vcpkg
                 {
                     if (Strings::case_insensitive_ascii_equals(path.extension(), ".cmake"))
                     {
-                        output.emplace_back(path.stem(), triplets_dir);
+                        available_triplets.emplace_back(path.stem(), triplets_dir);
                     }
                 }
             }
 
-            return output;
+            return TripletDatabase{triplets, community_triplets, std::move(available_triplets)};
         });
     }
 
@@ -763,24 +748,6 @@ namespace vcpkg
             return Hash::get_file_hash(get_filesystem(), ports_cmake, Hash::Algorithm::Sha256)
                 .value_or_exit(VCPKG_LINE_INFO);
         });
-    }
-
-    const Path& VcpkgPaths::get_triplet_file_path(Triplet triplet) const
-    {
-        return m_pimpl->m_triplets_cache.get_lazy(
-            triplet, [&]() -> auto{
-                for (const auto& triplet_dir : m_pimpl->triplets_dirs)
-                {
-                    auto path = triplet_dir / (triplet.canonical_name() + ".cmake");
-                    if (this->get_filesystem().exists(path, IgnoreErrors{}))
-                    {
-                        return path;
-                    }
-                }
-
-                Checks::msg_exit_with_message(
-                    VCPKG_LINE_INFO, msgTripletFileNotFound, msg::triplet = triplet.canonical_name());
-            });
     }
 
     LockFile& VcpkgPaths::get_installed_lockfile() const

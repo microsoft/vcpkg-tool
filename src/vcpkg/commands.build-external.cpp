@@ -30,10 +30,10 @@ namespace vcpkg::Commands::BuildExternal
                                                                      default_triplet,
                                                                      default_triplet_used,
                                                                      COMMAND_STRUCTURE.get_example_text(),
-                                                                     paths);
+                                                                     paths.get_triplet_db());
         if (default_triplet_used)
         {
-            print_default_triplet_warning(args);
+            print_default_triplet_warning(args, paths.get_triplet_db());
         }
 
         auto overlays = paths.overlay_ports;

@@ -215,16 +215,13 @@ namespace vcpkg::Remove
 
             bool default_triplet_used = false;
             specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
-                return check_and_get_package_spec(std::string(arg),
-                                                  default_triplet,
-                                                  default_triplet_used,
-                                                  COMMAND_STRUCTURE.get_example_text(),
-                                                  paths);
+                return parse_package_spec(
+                    arg, default_triplet, default_triplet_used, COMMAND_STRUCTURE.get_example_text());
             });
 
             if (default_triplet_used)
             {
-                print_default_triplet_warning(args);
+                print_default_triplet_warning(args, paths.get_triplet_db());
             }
         }
 

@@ -109,7 +109,7 @@ namespace vcpkg::Help
         {"remove", command_topic_fn<Remove::COMMAND_STRUCTURE>},
         {"search", command_topic_fn<Commands::SearchCommandStructure>},
         {"topics", help_topics},
-        {"triplet", help_topic_valid_triplet},
+        {"triplet", [](const VcpkgPaths& paths) { help_topic_valid_triplet(paths.get_triplet_db()); }},
         {"versioning", help_topic_versioning},
     }};
 
@@ -123,28 +123,28 @@ namespace vcpkg::Help
         msg::println(msg);
     }
 
-    void help_topic_valid_triplet(const VcpkgPaths& paths)
+    void help_topic_valid_triplet(const TripletDatabase& database)
     {
         std::map<StringView, std::vector<const TripletFile*>> triplets_per_location;
-        vcpkg::Util::group_by(paths.get_available_triplets(),
+        vcpkg::Util::group_by(database.available_triplets,
                               &triplets_per_location,
                               [](const TripletFile& triplet_file) -> StringView { return triplet_file.location; });
 
         msg::println(msgAvailableArchitectureTriplets);
         msg::println(msgBuiltInTriplets);
-        for (auto* triplet : triplets_per_location[paths.triplets])
+        for (auto* triplet : triplets_per_location[database.default_triplet_directory])
         {
             msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("  {}\n", triplet->name));
         }
 
-        triplets_per_location.erase(paths.triplets);
+        triplets_per_location.erase(database.default_triplet_directory);
         msg::println(msgCommunityTriplets);
-        for (auto* triplet : triplets_per_location[paths.community_triplets])
+        for (auto* triplet : triplets_per_location[database.community_triplet_directory])
         {
             msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("  {}\n", triplet->name));
         }
 
-        triplets_per_location.erase(paths.community_triplets);
+        triplets_per_location.erase(database.community_triplet_directory);
         for (auto&& kv_pair : triplets_per_location)
         {
             msg::println(msgOverlayTriplets, msg::path = kv_pair.first);
@@ -167,7 +167,7 @@ namespace vcpkg::Help
         const auto& topic = parsed.command_arguments[0];
         if (topic == "triplets" || topic == "triple")
         {
-            help_topic_valid_triplet(paths);
+            help_topic_valid_triplet(paths.get_triplet_db());
             get_global_metrics_collector().track_string(StringMetric::CommandContext, topic);
             Checks::exit_success(VCPKG_LINE_INFO);
         }
