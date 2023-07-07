@@ -631,6 +631,11 @@ DECLARE_MESSAGE(ConflictingFiles,
                 (msg::path, msg::spec),
                 "",
                 "The following files are already installed in {path} and are in conflict with {spec}")
+DECLARE_MESSAGE(ConsideredVersions,
+                (msg::version),
+                "",
+                "The following executables were considered but discarded because of the version "
+                "requirement of {version}:")
 DECLARE_MESSAGE(ConstraintViolation, (), "", "Found a constraint violation:")
 DECLARE_MESSAGE(ContinueCodeUnitInStart, (), "", "found continue code unit in start position")
 DECLARE_MESSAGE(ControlAndManifestFilesPresent,

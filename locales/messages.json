@@ -368,6 +368,8 @@
   "_ConfigurationNestedDemands.comment": "An example of {json_field} is identifer.",
   "ConflictingFiles": "The following files are already installed in {path} and are in conflict with {spec}",
   "_ConflictingFiles.comment": "An example of {path} is /foo/bar. An example of {spec} is zlib:x64-windows.",
+  "ConsideredVersions": "The following executables were considered but discarded because of the version requirement of {version}:",
+  "_ConsideredVersions.comment": "An example of {version} is 1.3.8.",
   "ConstraintViolation": "Found a constraint violation:",
   "ContinueCodeUnitInStart": "found continue code unit in start position",
   "ControlAndManifestFilesPresent": "Both a manifest file and a CONTROL file exist in port directory: {path}",
