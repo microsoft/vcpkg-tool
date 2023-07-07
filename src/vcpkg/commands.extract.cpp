@@ -31,6 +31,12 @@ namespace vcpkg::Commands
         if (iter != options.settings.end())
         {
             std::string maybe_value = iter->second;
+
+            if (Strings::case_insensitive_ascii_equals(maybe_value, "auto"))
+            {
+                return -1;
+            }
+
             auto value = Strings::strto<int>(maybe_value);
 
             if (value.has_value())
@@ -63,7 +69,7 @@ namespace vcpkg::Commands
             auto first = prox_str.data();
             auto last = first + prox_str.size();
 
-            // strip leading directories equivalent to the number specified
+           
 
             auto is_slash = [](char c) {
                 return c == '/'
@@ -73,6 +79,10 @@ namespace vcpkg::Commands
                     ;
             };
 
+            // strip = AUTO (i.e., strip until a file is found)
+             
+            
+            // strip leading directories equivalent to the number specified
             for (int i = 0; i < num_leading_dir; ++i)
             {
                 // stop stripping if there are no more directories

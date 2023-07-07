@@ -119,3 +119,17 @@ TEST_CASE ("Testing strip_map, strip = 3 (Max archive depth)", "[z-extract]")
 
     test_strip_map(3, expected);
 }
+
+TEST_CASE ("Testing strip_map, strip = AUTO => -1", "z-extract")
+{
+    std::vector<std::pair<Path, Path>> expected = {
+        {FILE_1, BASE_PATH + VCPKG_PREFERRED_SEPARATOR "file1.txt"},
+        {FILE_2, BASE_PATH + VCPKG_PREFERRED_SEPARATOR "file2.txt"},
+        {FILE_3, BASE_PATH + VCPKG_PREFERRED_SEPARATOR "file3.txt"},
+        {FILE_4, BASE_PATH + VCPKG_PREFERRED_SEPARATOR "file4.txt"},
+        {FILE_5, BASE_PATH + VCPKG_PREFERRED_SEPARATOR "file5.txt"},
+        {FILE_6, BASE_PATH + VCPKG_PREFERRED_SEPARATOR "folder3" VCPKG_PREFERRED_SEPARATOR "file6.txt"},
+        {FILE_7, BASE_PATH + VCPKG_PREFERRED_SEPARATOR "folder3" VCPKG_PREFERRED_SEPARATOR "file7.txt"}};
+
+    test_strip_map(-1, expected);
+}
