@@ -281,6 +281,7 @@
   "ConfigurationErrorRegistriesWithoutBaseline": "{path} 中定義的設定無效。\n\n使用登錄需要為預設登錄設定基準，或預設登錄為 Null。\n\n如需詳細資料，請參閱 {url}。",
   "ConfigurationNestedDemands": "[\"{json_field}\"] 包含巢狀 `demands` 物件 (巢狀 `demands` 沒有作用)",
   "ConflictingFiles": "下列檔案已安裝在 {path} 中，且與 {spec} 衝突",
+  "ConsideredVersions": "The following executables were considered but discarded because of the version requirement of {version}:",
   "ConstraintViolation": "發現強制違規:",
   "ContinueCodeUnitInStart": "在開始位置找到繼續字碼單位",
   "ControlAndManifestFilesPresent": "資訊清單檔案和 CONTROL 檔案同時存在於連接埠目錄中: {path}",

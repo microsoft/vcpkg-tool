@@ -281,6 +281,7 @@
   "ConfigurationErrorRegistriesWithoutBaseline": "La configurazione definita in {path} non è valida.\n\nL'uso dei registri richiede che sia impostata una baseline per il Registro di sistema predefinito o che il Registro di sistema predefinito sia Null.\n\nPer altri dettagli, vedere {url}.",
   "ConfigurationNestedDemands": "[\"{json_field}\"] contiene un oggetto 'demands' annidato (gli oggetti 'demands' annidati non hanno effetto)",
   "ConflictingFiles": "I file seguenti sono già installati in {path} e sono in conflitto con {spec}",
+  "ConsideredVersions": "The following executables were considered but discarded because of the version requirement of {version}:",
   "ConstraintViolation": "È stata trovata una violazione di vincolo:",
   "ContinueCodeUnitInStart": "è stata trovata un'unità di codice continua nella posizione iniziale",
   "ControlAndManifestFilesPresent": "Nella directory delle porte sono presenti sia un file manifesto che un file CONTROL: {path}",

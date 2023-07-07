@@ -281,6 +281,7 @@
   "ConfigurationErrorRegistriesWithoutBaseline": "{path} yolunda tanımlanan yapılandırma geçersiz.\n\nKayıt defterlerini kullanmak, varsayılan kayıt defteri için bir taban çizgisinin ayarlanmış veya varsayılan kayıt defterinin null olmasını gerektirir.\n\nDaha fazla ayrıntı için {url} adresine gidin.",
   "ConfigurationNestedDemands": "[\"{json_field}\"], iç içe geçmiş bir `demands` nesnesi içeriyor (iç içe geçmiş `demands`in hiçbir etkisi yoktur)",
   "ConflictingFiles": "Aşağıdaki dosyalar zaten {path} yolunda yüklü ve {spec} ile çakışıyor",
+  "ConsideredVersions": "The following executables were considered but discarded because of the version requirement of {version}:",
   "ConstraintViolation": "Bir kısıtlama ihlali bulundu:",
   "ContinueCodeUnitInStart": "başlangıç konumunda devam kodu birimi bulundu",
   "ControlAndManifestFilesPresent": "Bağlantı noktası dizininde hem bildirim dosyası hem de KONTROL dosyası bulunur: {path}",

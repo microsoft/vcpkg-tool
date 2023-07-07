@@ -281,6 +281,7 @@
   "ConfigurationErrorRegistriesWithoutBaseline": "{path}에 정의된 구성이 잘못되었습니다.\n\n레지스트리를 사용하려면 기본 레지스트리에 대한 기준이 설정되어 있거나 기본 레지스트리가 null여야 합니다.\n\n자세한 내용은 {url}을(를) 참조하세요.",
   "ConfigurationNestedDemands": "[\"{json_field}\"]에 중첩된 'demands' 개체가 포함되어 있습니다(중첩된 'demands'는 효과가 없음).",
   "ConflictingFiles": "다음 파일은 {path}에 이미 설치되어 있으며 {spec}과(와) 충돌합니다.",
+  "ConsideredVersions": "The following executables were considered but discarded because of the version requirement of {version}:",
   "ConstraintViolation": "제약 조건 위반 발견:",
   "ContinueCodeUnitInStart": "시작 위치에서 계속 코드 단위를 찾음",
   "ControlAndManifestFilesPresent": "매니페스트 파일과 CONTROL 파일이 모두 포트 디렉터리에 있습니다. {path}",

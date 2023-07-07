@@ -281,6 +281,7 @@
   "ConfigurationErrorRegistriesWithoutBaseline": "La configuración definida en {path} no es válida.\n\nEl uso de registros requiere que se establezca una línea base para el registro predeterminado o que el registro predeterminado sea null.\n\nConsulte {url} para obtener más detalles.",
   "ConfigurationNestedDemands": "[\"{json_field}\"] contiene un objeto `demands` anidado (las `demands` anidadas no tienen ningún efecto)",
   "ConflictingFiles": "Los siguientes archivos ya están instalados en {path} y están en conflicto con {spec}",
+  "ConsideredVersions": "The following executables were considered but discarded because of the version requirement of {version}:",
   "ConstraintViolation": "Se ha encontrado una infracción de restricción:",
   "ContinueCodeUnitInStart": "se encontró la unidad de código de continuación en la posición inicial",
   "ControlAndManifestFilesPresent": "Tanto un archivo de manifiesto como un archivo CONTROL existen en el directorio de puertos: {path}",

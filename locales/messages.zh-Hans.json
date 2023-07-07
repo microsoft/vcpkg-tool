@@ -281,6 +281,7 @@
   "ConfigurationErrorRegistriesWithoutBaseline": "{path} 中定义的配置无效。\n\n使用注册表需要为默认注册表设置基线，或者默认注册表为 null。\n\n有关更多详细信息，请参阅 {url}。",
   "ConfigurationNestedDemands": "[\"{json_field}\"] 包含嵌套的'需求'对象(嵌套的'需求'不起作用)",
   "ConflictingFiles": "以下文件已安装在 {path} 中，并与 {spec} 发生冲突",
+  "ConsideredVersions": "The following executables were considered but discarded because of the version requirement of {version}:",
   "ConstraintViolation": "发现约束冲突:",
   "ContinueCodeUnitInStart": "在“开始”位置找到了继续码位",
   "ControlAndManifestFilesPresent": "端口目录中同时存在清单文件和 CONTROL 文件: {path}",

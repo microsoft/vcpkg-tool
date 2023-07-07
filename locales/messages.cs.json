@@ -281,6 +281,7 @@
   "ConfigurationErrorRegistriesWithoutBaseline": "Konfigurace definovaná v cestě {path} je neplatná.\n\n Použití registrů vyžaduje, aby byl pro výchozí registr nastaven směrný plán nebo aby výchozí registr byl null.\n\n Další podrobnosti najdete na adrese {url}.",
   "ConfigurationNestedDemands": "[\"{json_field}\"] obsahuje vnořený objekt demands (vnořené demands nemají žádný účinek).",
   "ConflictingFiles": "Následující soubory jsou už nainstalované v {path} a jsou v konfliktu s {spec}.",
+  "ConsideredVersions": "The following executables were considered but discarded because of the version requirement of {version}:",
   "ConstraintViolation": "Bylo nalezeno porušení omezení:",
   "ContinueCodeUnitInStart": "našla se jednotka kódu pro pokračování na počáteční pozici",
   "ControlAndManifestFilesPresent": "V adresáři portů existuje jak soubor manifestu, tak soubor CONTROL: {path}",

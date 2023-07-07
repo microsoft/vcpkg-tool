@@ -281,6 +281,7 @@
   "ConfigurationErrorRegistriesWithoutBaseline": "Конфигурация, определенная в {path}, недопустима..\n\nПри использовании реестров необходимо, чтобы для стандартного реестра были настроены базовые показатели или чтобы стандартному реестру было присвоено значение NULL.\n\nДополнительные сведения: {url}.",
   "ConfigurationNestedDemands": "[\"{json_field}\"] содержит вложенный объект \"demands\" (вложенный объект \"demands\" не оказывает влияния)",
   "ConflictingFiles": "Следующие файлы уже установлены в {path} и конфликтуют с {spec}",
+  "ConsideredVersions": "The following executables were considered but discarded because of the version requirement of {version}:",
   "ConstraintViolation": "Обнаружено нарушение ограничения:",
   "ContinueCodeUnitInStart": "найдена единица кода продолжения в начальной позиции",
   "ControlAndManifestFilesPresent": "Файл манифеста и файл CONTROL существуют в каталоге порта: {path}",

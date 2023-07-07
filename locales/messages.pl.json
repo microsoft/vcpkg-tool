@@ -281,6 +281,7 @@
   "ConfigurationErrorRegistriesWithoutBaseline": "Konfiguracja zdefiniowana w ścieżce {path} jest nieprawidłowa.\n\nKorzystanie z rejestrów wymaga ustawienia punktu odniesienia dla rejestru domyślnego lub domyślnego rejestru o wartości null.\n\nZobacz {url}, aby uzyskać więcej szczegółów.",
   "ConfigurationNestedDemands": "[\"{json_field}\"] zawiera zagnieżdżony obiekt „demands” (zagnieżdżony obiekt „demands” nie ma żadnego efektu)",
   "ConflictingFiles": "Następujące pliki są już zainstalowane w ścieżce {path} i są w konflikcie z {spec}",
+  "ConsideredVersions": "The following executables were considered but discarded because of the version requirement of {version}:",
   "ConstraintViolation": "Znaleziono naruszenie ograniczenia:",
   "ContinueCodeUnitInStart": "znaleziono jednostkę kodu kontynuacji w pozycji początkowej",
   "ControlAndManifestFilesPresent": "Plik manifestu i plik CONTROL istnieją w katalogu portów: {path}",

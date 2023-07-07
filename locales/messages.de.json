@@ -281,6 +281,7 @@
   "ConfigurationErrorRegistriesWithoutBaseline": "Die in {path} definierte Konfiguration ist ungültig.\n\nDie Verwendung von Registrierungen erfordert, dass eine Baseline für die Standardregistrierung festgelegt ist, oder dass die Standardregistrierung NULL ist.\n\nWeitere Informationen finden Sie unter {url}.",
   "ConfigurationNestedDemands": "[\"{json_field}\"] enthält ein geschachteltes \"demands\"-Objekt (geschachtelte \"Anforderungen\" haben keine Auswirkungen)",
   "ConflictingFiles": "Die folgenden Dateien sind bereits in {path} installiert und stehen in Konflikt mit {spec}",
+  "ConsideredVersions": "The following executables were considered but discarded because of the version requirement of {version}:",
   "ConstraintViolation": "Es wurde eine Einschränkungsverletzung gefunden:",
   "ContinueCodeUnitInStart": "Fortsetzungscodeeinheit wurde an der Startposition gefunden.",
   "ControlAndManifestFilesPresent": "Sowohl eine Manifestdatei als auch eine CONTROL-Datei sind im Portverzeichnis vorhanden: {path}",

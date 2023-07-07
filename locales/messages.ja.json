@@ -281,6 +281,7 @@
   "ConfigurationErrorRegistriesWithoutBaseline": "{path} で定義されている構成が無効です。\n\nレジストリを使用するには、既定のレジストリにベースラインが設定されているか、既定のレジストリが null である必要があります。\n\n詳細については、{url} を参照してください。",
   "ConfigurationNestedDemands": "[\"{json_field}\"] に入れ子になった 'demands' オブジェクトが含まれています (入れ子になった 'demands' には効果がありません)",
   "ConflictingFiles": "次のファイルはすでに {path} にインストールされており、{spec} と競合しています",
+  "ConsideredVersions": "The following executables were considered but discarded because of the version requirement of {version}:",
   "ConstraintViolation": "以下の制約違反が見つかりました。",
   "ContinueCodeUnitInStart": "開始位置で continue コード単位が見つかりました",
   "ControlAndManifestFilesPresent": "マニフェスト ファイルとコントロール ファイルの両方がポート ディレクトリに存在します: {path}",

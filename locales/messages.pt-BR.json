@@ -281,6 +281,7 @@
   "ConfigurationErrorRegistriesWithoutBaseline": "A configuração definida em {path} é inválida.\n\nO uso de registros exige que uma linha de base seja definida para o registro padrão ou que o registro padrão seja nulo.\n\nConsulte {url} para obter mais detalhes.",
   "ConfigurationNestedDemands": "[\"{json_field}\"] contém um objeto aninhado `demands` (`demands` aninhadas não têm efeito)",
   "ConflictingFiles": "Os seguintes arquivos já estão instalados em {path} e estão em conflito com {spec}",
+  "ConsideredVersions": "The following executables were considered but discarded because of the version requirement of {version}:",
   "ConstraintViolation": "Encontrou uma violação de restrição:",
   "ContinueCodeUnitInStart": "encontrou unidade de código de continuação na posição inicial",
   "ControlAndManifestFilesPresent": "Tanto um arquivo manifesto quanto um arquivo CONTROL existem no diretório porta: {path}",

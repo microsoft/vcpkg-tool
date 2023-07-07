@@ -281,6 +281,7 @@
   "ConfigurationErrorRegistriesWithoutBaseline": "La configuration définie dans {path} n’est pas valide.\n\nL’utilisation de registres nécessite qu’une ligne de base soit définie pour le Registre par défaut ou que le Registre par défaut soit null.\n\nPour plus d’informations, consultez {url}.",
   "ConfigurationNestedDemands": "[\"{json_field}\"] contient un objet `demands` imbriqué (les `demands` imbriqués n’ont aucun effet)",
   "ConflictingFiles": "Les fichiers suivants sont déjà installés dans {path} et sont en conflit avec {spec}",
+  "ConsideredVersions": "The following executables were considered but discarded because of the version requirement of {version}:",
   "ConstraintViolation": "Une violation de contrainte a été trouvée :",
   "ContinueCodeUnitInStart": "unité de code continue trouvée en position de départ",
   "ControlAndManifestFilesPresent": "Un fichier manifeste et un fichier CONTROL existent dans le répertoire du port : {path}",
