@@ -355,7 +355,7 @@ DECLARE_MESSAGE(BuildTroubleshootingMessageGH,
                 (),
                 "Another part of build troubleshooting message, printed after the URI. An alternative version to "
                 "create an issue in some cases.",
-                "You can also sumbit an issue by running (GitHub cli must be installed):")
+                "You can also submit an issue by running (GitHub CLI must be installed):")
 DECLARE_MESSAGE(
     BuildTroubleshootingMessage3,
     (msg::package_name),
