@@ -146,7 +146,7 @@
   "BuildTroubleshootingMessage2": "次の場所で新しい問題を送信できます:",
   "BuildTroubleshootingMessage3": "バグ報告のタイトルに「[{package_name}] ビルド エラー」を含め、バグの説明に次のバージョン情報を含め、関連する失敗ログを上記から添付します。",
   "BuildTroubleshootingMessage4": "問題を報告するときは、{path} の事前に入力されたテンプレートを使用してください。",
-  "BuildTroubleshootingMessageGH": "実行して問題を提出することもできます (GitHub cli をインストールする必要があります)。",
+  "BuildTroubleshootingMessageGH": "You can also submit an issue by running (GitHub CLI must be installed):",
   "BuildingFromHead": "HEAD から {spec} をビルドしています...",
   "BuildingPackage": "{spec} をビルドしています...",
   "BuildingPackageFailed": "{spec} のビルドに失敗しました: {build_result}",

@@ -146,7 +146,7 @@
   "BuildTroubleshootingMessage2": "Możesz przesłać nowy problem pod adresem:",
   "BuildTroubleshootingMessage3": "W tytule raportu o usterce wpisz „[{package_name}] Błąd kompilacji”, w opisie usterki podaj następujące informacje o wersji oraz dołącz wszelkie odpowiednie dzienniki błędów z powyższych.",
   "BuildTroubleshootingMessage4": "Podczas zgłaszania problemu użyj wstępnie wypełnionego szablonu ze ścieżki {path}.",
-  "BuildTroubleshootingMessageGH": "Możesz również przesłać problem, uruchamiając polecenie (należy zainstalować interfejs wiersza polecenia usługi GitHub):",
+  "BuildTroubleshootingMessageGH": "You can also submit an issue by running (GitHub CLI must be installed):",
   "BuildingFromHead": "Trwa kompilowanie {spec} z nagłówka...",
   "BuildingPackage": "Trwa kompilowanie {spec}...",
   "BuildingPackageFailed": "kompilowanie {spec} nie powiodło się. {build_result}",

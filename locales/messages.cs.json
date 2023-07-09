@@ -146,7 +146,7 @@
   "BuildTroubleshootingMessage2": "Nový problém můžete odeslat tady:",
   "BuildTroubleshootingMessage3": "Do názvu zprávy o chybě zahrňte [{package_name}] Build error, následující informace o verzi v popisu chyby a připojte všechny relevantní protokoly chyb z výše uvedených možností.",
   "BuildTroubleshootingMessage4": "Při nahlašování problému použijte předvyplněnou šablonu z {path}.",
-  "BuildTroubleshootingMessageGH": "Problém můžete také nahlásit spuštěním (musí být nainstalované rozhraní příkazového řádku GitHubu):",
+  "BuildTroubleshootingMessageGH": "You can also submit an issue by running (GitHub CLI must be installed):",
   "BuildingFromHead": "{spec} se sestavuje z HEAD…",
   "BuildingPackage": "{spec} se setavuje…",
   "BuildingPackageFailed": "sestavení {spec} selhalo s: {build_result}",
