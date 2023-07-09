@@ -2854,6 +2854,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ConsideredVersions" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The following executables were considered but discarded because of the version requirement of {version}:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Następujące pliki wykonywalne zostały uwzględnione, ale odrzucone ze względu na wymaganie wersji {version}:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ConstraintViolation" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Found a constraint violation:]]></Val>
@@ -5197,6 +5206,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[failed to read file '{path}' for hashing: ]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HashPortManyFiles" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The {package_name} contains {count} files. Hashing these contents may take a long time when determining the ABI hash for binary caching. Consider reducing the number of files. Common causes of this are accidentally checking out source or build files into a port's directory.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Pakiet {package_name} zawiera {count} plików. Skracanie tej zawartości może zająć dużo czasu podczas określania skrótu ABI dla buforowania binarnego. Rozważ zmniejszenie liczby plików. Najczęstsze przyczyny to przypadkowe sprawdzenie plików źródłowych lub kompilacji w katalogu portu.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
