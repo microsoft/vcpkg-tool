@@ -53,16 +53,17 @@ namespace vcpkg::Commands
         return 0;
     }
 
+    static bool is_slash(char c)
+    {
+        return c == '/'
+#if defined(_WIN32)
+               || c == '\\'
+#endif // _WIN32
+            ;
+    }
+
     size_t get_common_prefix_count(std::vector<Path> paths)
     {
-        auto is_slash = [](char c) {
-            return c == '/'
-#if defined(_WIN32)
-                   || c == '\\'
-#endif // _WIN32
-                ;
-        };
-
         if (paths.size() == 0)
         {
             return 0;
@@ -84,7 +85,7 @@ namespace vcpkg::Commands
         return std::count_if(known_common_prefix.begin(), known_common_prefix.end(), is_slash);
     }
 
-    std::vector<std::pair<Path, Path>> strip_map(const ExtractedArchive& archive, int num_leading_dir)
+    std::vector<std::pair<Path, Path>> strip_map(const ExtractedArchive& archive, size_t num_leading_dir)
     {
         std::vector<std::pair<Path, Path>> result;
 
@@ -102,16 +103,8 @@ namespace vcpkg::Commands
             auto first = prox_str.data();
             auto last = first + prox_str.size();
 
-            auto is_slash = [](char c) {
-                return c == '/'
-#if defined(_WIN32)
-                       || c == '\\'
-#endif // _WIN32
-                    ;
-            };
-
             // strip leading directories equivalent to the number specified
-            for (int i = 0; i < num_leading_dir; ++i)
+            for (size_t i = 0; i < num_leading_dir; ++i)
             {
                 while (last != first && !is_slash(*first))
                 {
@@ -180,7 +173,7 @@ namespace vcpkg::Commands
             fs.create_directories(destination_path, VCPKG_LINE_INFO);
         }
 
-        if (strip_count > 0 || strip_count == -1)
+        if (strip_count != 0)
         {
             extract_and_strip(fs, paths, strip_count, archive_path, destination_path);
         }
