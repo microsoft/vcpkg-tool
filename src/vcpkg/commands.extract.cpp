@@ -85,7 +85,7 @@ namespace vcpkg::Commands
         return std::count_if(known_common_prefix.begin(), known_common_prefix.end(), is_slash);
     }
 
-    std::vector<std::pair<Path, Path>> strip_map(const ExtractedArchive& archive, size_t num_leading_dir)
+    std::vector<std::pair<Path, Path>> strip_map(const ExtractedArchive& archive, int num_leading_dir)
     {
         std::vector<std::pair<Path, Path>> result;
 
@@ -93,7 +93,7 @@ namespace vcpkg::Commands
         const auto base_path = archive.base_path;
         const auto proximate = archive.proximate_to_temp;
 
-        num_leading_dir = num_leading_dir < 0 ? get_common_prefix_count(proximate) : num_leading_dir;
+        size_t strip_count = num_leading_dir < 0 ? get_common_prefix_count(proximate) : static_cast<size_t>(num_leading_dir);
 
         for (const auto& prox_path : proximate)
         {
@@ -104,7 +104,7 @@ namespace vcpkg::Commands
             auto last = first + prox_str.size();
 
             // strip leading directories equivalent to the number specified
-            for (size_t i = 0; i < num_leading_dir; ++i)
+            for (size_t i = 0; i < strip_count; ++i)
             {
                 while (last != first && !is_slash(*first))
                 {
