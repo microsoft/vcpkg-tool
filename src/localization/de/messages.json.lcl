@@ -1572,10 +1572,13 @@
       </Item>
       <Item ItemId=";BuildTroubleshootingMessageGH" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[You can also sumbit an issue by running (GitHub cli must be installed):]]></Val>
+          <Val><![CDATA[You can also submit an issue by running (GitHub CLI must be installed):]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Sie können ein Problem auch einreichen, indem Sie Folgendes tun (GitHub-Cli muss installiert sein):]]></Val>
+            <Val><![CDATA[Sie können ein Problem auch einreichen, indem Sie Folgendes tun (GitHub-CLI muss installiert sein):]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[You can also sumbit an issue by running (GitHub cli must be installed):]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -2850,6 +2853,15 @@
           <Val><![CDATA[The following files are already installed in {path} and are in conflict with {spec}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Die folgenden Dateien sind bereits in {path} installiert und stehen in Konflikt mit {spec}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ConsideredVersions" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The following executables were considered but discarded because of the version requirement of {version}:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Die folgenden ausführbaren Dateien wurden berücksichtigt, aber aufgrund der Versionsanforderung von {version} verworfen:]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -5197,6 +5209,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[failed to read file '{path}' for hashing: ]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HashPortManyFiles" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The {package_name} contains {count} files. Hashing these contents may take a long time when determining the ABI hash for binary caching. Consider reducing the number of files. Common causes of this are accidentally checking out source or build files into a port's directory.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{package_name} enthält {count} Dateien. Das Hashen dieser Inhalte kann lange dauern, wenn der ABI-Hash für die binäre Zwischenspeicherung bestimmt wird. Erwägen Sie, die Anzahl der Dateien zu verringern. Häufige Ursachen hierfür sind das versehentliche Auschecken von Quell- oder Builddateien in das Verzeichnis eines Ports.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
