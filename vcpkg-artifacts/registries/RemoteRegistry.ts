@@ -91,7 +91,7 @@ export class RemoteRegistry extends ArtifactRegistry {
     const file = await acquireArtifactFile(this.session, locations, `${this.safeName}-registry.zip`, {}, {force: true});
     if (await file.exists()) {
       const targetLocation = this.cacheFolder.fsPath;
-      await vcpkgExtract(this.session, file.fsPath, targetLocation, "--strip=1");
+      await vcpkgExtract(this.session, file.fsPath, targetLocation, "--strip=AUTO");
       await file.delete();
     }
   }
