@@ -25,7 +25,7 @@ namespace vcpkg::Commands
         nullptr,
     };
 
-    static int get_strip_count(const ParsedArguments& options)
+    static StripSetting get_strip_setting(const ParsedArguments& options)
     {
         auto iter = options.settings.find(OPTION_STRIP);
         if (iter != options.settings.end())
@@ -34,14 +34,14 @@ namespace vcpkg::Commands
 
             if (Strings::case_insensitive_ascii_equals(maybe_value, "auto"))
             {
-                return -1;
+                return {StripMode::automatic, -1};
             }
 
             auto value = Strings::strto<int>(maybe_value);
 
             if (value.has_value())
             {
-                return value.value_or_exit(VCPKG_LINE_INFO);
+                return {StripMode::manual, value.value_or_exit(VCPKG_LINE_INFO)};
             }
             else
             {
@@ -50,7 +50,7 @@ namespace vcpkg::Commands
             }
         }
         // No --strip set, default to 0
-        return 0;
+        return {StripMode::manual, 0};
     }
 
     static bool is_slash(char c)
@@ -85,7 +85,7 @@ namespace vcpkg::Commands
         return std::count_if(known_common_prefix.begin(), known_common_prefix.end(), is_slash);
     }
 
-    std::vector<std::pair<Path, Path>> strip_map(const ExtractedArchive& archive, int num_leading_dir)
+    std::vector<std::pair<Path, Path>> strip_map(const ExtractedArchive& archive, StripSetting strip_setting)
     {
         std::vector<std::pair<Path, Path>> result;
 
@@ -93,8 +93,8 @@ namespace vcpkg::Commands
         const auto base_path = archive.base_path;
         const auto proximate = archive.proximate_to_temp;
 
-        size_t strip_count =
-            num_leading_dir < 0 ? get_common_prefix_count(proximate) : static_cast<size_t>(num_leading_dir);
+        size_t strip_count = strip_setting.mode == StripMode::automatic ? get_common_prefix_count(proximate)
+                                                                        : static_cast<size_t>(strip_setting.count);
 
         for (const auto& prox_path : proximate)
         {
@@ -128,11 +128,8 @@ namespace vcpkg::Commands
         return result;
     }
 
-    static void extract_and_strip(const Filesystem& fs,
-                                  const VcpkgPaths& paths,
-                                  int num_leading_dirs_to_strip,
-                                  Path archive_path,
-                                  Path output_dir)
+    static void extract_and_strip(
+        const Filesystem& fs, const VcpkgPaths& paths, StripSetting strip_setting, Path archive_path, Path output_dir)
     {
         auto temp_dir =
             extract_archive_to_temp_subdirectory(fs, paths.get_tool_cache(), null_sink, archive_path, output_dir);
@@ -140,7 +137,7 @@ namespace vcpkg::Commands
         ExtractedArchive archive = {
             temp_dir, output_dir, fs.get_regular_files_recursive_lexically_proximate(temp_dir, VCPKG_LINE_INFO)};
 
-        auto mapping = strip_map(archive, num_leading_dirs_to_strip);
+        auto mapping = strip_map(archive, strip_setting);
 
         for (const auto& file : mapping)
         {
@@ -167,16 +164,16 @@ namespace vcpkg::Commands
         auto parse_args = args.parse_arguments(ExtractCommandStructure);
         auto archive_path = Path{parse_args.command_arguments[0]};
         auto destination_path = Path{parse_args.command_arguments[1]};
-        auto strip_count = get_strip_count(parse_args);
+        auto strip_setting = get_strip_setting(parse_args);
 
         if (!fs.is_directory(destination_path))
         {
             fs.create_directories(destination_path, VCPKG_LINE_INFO);
         }
 
-        if (strip_count != 0)
+        if (strip_setting.count != 0)
         {
-            extract_and_strip(fs, paths, strip_count, archive_path, destination_path);
+            extract_and_strip(fs, paths, strip_setting, archive_path, destination_path);
         }
         else
         {

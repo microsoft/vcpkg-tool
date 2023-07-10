@@ -180,7 +180,7 @@ namespace vcpkg
                 extract_tar_cmake(tools.get_tool_path(Tools::CMAKE, status_sink), archive, to_path);
                 break;
             case ExtractionType::TAR:
-                vcpkg::extract_tar(tools.get_tool_path(Tools::TAR, status_sink), archive, to_path);
+                extract_tar(tools.get_tool_path(Tools::TAR, status_sink), archive, to_path);
                 break;
             case ExtractionType::EXE:
                 const Path filename = archive.filename();
@@ -194,7 +194,7 @@ namespace vcpkg
         (void)fs;
         if (ext_type == ExtractionType::TAR)
         {
-            vcpkg::extract_tar(tools.get_tool_path(Tools::TAR, status_sink), archive, to_path);
+            extract_tar(tools.get_tool_path(Tools::TAR, status_sink), archive, to_path);
         }
 
         if (ext_type == ExtractionType::ZIP)
@@ -222,7 +222,6 @@ namespace vcpkg
                                               MessageSink& status_sink,
                                               const Path& archive,
                                               const Path& to_path)
-
     {
         Path to_path_partial = to_path + ".partial";
 #if defined(_WIN32)

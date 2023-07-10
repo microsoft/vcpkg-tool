@@ -68,9 +68,9 @@ const Path FILE_6 = {BASE_TEMP_PATH + "archive" VCPKG_PREFERRED_SEPARATOR "folde
 const Path FILE_7 = {BASE_TEMP_PATH + "archive" VCPKG_PREFERRED_SEPARATOR "folder2" VCPKG_PREFERRED_SEPARATOR
                                       "folder3" VCPKG_PREFERRED_SEPARATOR "file7.txt"};
 
-static void test_strip_map(const int strip, const std::vector<std::pair<Path, Path>>& expected)
+static void test_strip_map(StripSetting strip_setting, const std::vector<std::pair<Path, Path>>& expected)
 {
-    auto map = strip_map(archive, strip);
+    auto map = strip_map(archive, strip_setting);
     REQUIRE(map.size() == expected.size());
     for (size_t i = 0; i < map.size(); ++i)
     {
@@ -79,7 +79,7 @@ static void test_strip_map(const int strip, const std::vector<std::pair<Path, Pa
     }
 }
 
-static void test_auto_strip_count(const std::vector<Path>& paths, size_t expected)
+static void test_get_common_prefix_count(const std::vector<Path>& paths, size_t expected)
 {
     REQUIRE(get_common_prefix_count(paths) == expected);
 }
@@ -95,7 +95,7 @@ TEST_CASE ("Testing strip_map, strip = 1", "[z-extract]")
         {FILE_6, BASE_PATH + "folder2" VCPKG_PREFERRED_SEPARATOR "folder3" VCPKG_PREFERRED_SEPARATOR "file6.txt"},
         {FILE_7, BASE_PATH + "folder2" VCPKG_PREFERRED_SEPARATOR "folder3" VCPKG_PREFERRED_SEPARATOR "file7.txt"}};
 
-    test_strip_map(1, expected);
+    test_strip_map({StripMode::manual, 1}, expected);
 }
 
 TEST_CASE ("Testing strip_map, strip = 2", "[z-extract]")
@@ -109,7 +109,7 @@ TEST_CASE ("Testing strip_map, strip = 2", "[z-extract]")
         {FILE_6, BASE_PATH + "folder3" VCPKG_PREFERRED_SEPARATOR "file6.txt"},
         {FILE_7, BASE_PATH + "folder3" VCPKG_PREFERRED_SEPARATOR "file7.txt"}};
 
-    test_strip_map(2, expected);
+    test_strip_map({StripMode::manual, 2}, expected);
 }
 
 TEST_CASE ("Testing strip_map, strip = 3 (Max archive depth)", "[z-extract]")
@@ -122,7 +122,7 @@ TEST_CASE ("Testing strip_map, strip = 3 (Max archive depth)", "[z-extract]")
                                                    {FILE_6, BASE_PATH + "file6.txt"},
                                                    {FILE_7, BASE_PATH + "file7.txt"}};
 
-    test_strip_map(3, expected);
+    test_strip_map({StripMode::manual, 3}, expected);
 }
 
 TEST_CASE ("Testing strip_map, strip = AUTO => remove all common prefixes from path", "z-extract")
@@ -136,10 +136,10 @@ TEST_CASE ("Testing strip_map, strip = AUTO => remove all common prefixes from p
         {FILE_6, BASE_PATH + "folder2" VCPKG_PREFERRED_SEPARATOR "folder3" VCPKG_PREFERRED_SEPARATOR "file6.txt"},
         {FILE_7, BASE_PATH + "folder2" VCPKG_PREFERRED_SEPARATOR "folder3" VCPKG_PREFERRED_SEPARATOR "file7.txt"}};
 
-    test_strip_map(-1, expected);
+    test_strip_map({StripMode::automatic, -1}, expected);
 }
 
-TEST_CASE ("Testing strip auto's get_auto_strip_count "
+TEST_CASE ("Testing strip auto's get_common_prefix_count "
            "z-extract")
 {
     std::vector<Path> expect_one = {"archive" VCPKG_PREFERRED_SEPARATOR "folder1" VCPKG_PREFERRED_SEPARATOR "file1.txt",
@@ -161,6 +161,6 @@ TEST_CASE ("Testing strip auto's get_auto_strip_count "
         "folder2" VCPKG_PREFERRED_SEPARATOR "folder3" VCPKG_PREFERRED_SEPARATOR "file6.txt",
         "folder2" VCPKG_PREFERRED_SEPARATOR "folder3" VCPKG_PREFERRED_SEPARATOR "file7.txt"};
 
-    test_auto_strip_count(expect_one, 1);
-    test_auto_strip_count(expect_zero, 0);
+    test_get_common_prefix_count(expect_one, 1);
+    test_get_common_prefix_count(expect_zero, 0);
 }
