@@ -53,7 +53,7 @@ namespace vcpkg::Commands
         return 0;
     }
 
-    size_t get_auto_strip_count(std::vector<Path> paths)
+    size_t get_common_prefix_count(std::vector<Path> paths)
     {
         auto is_slash = [](char c) {
             return c == '/'
@@ -92,7 +92,7 @@ namespace vcpkg::Commands
         const auto base_path = archive.base_path;
         const auto proximate = archive.proximate_to_temp;
 
-        num_leading_dir = num_leading_dir < 0 ? get_auto_strip_count(proximate) : num_leading_dir;
+        num_leading_dir = num_leading_dir < 0 ? get_common_prefix_count(proximate) : num_leading_dir;
 
         for (const auto& prox_path : proximate)
         {
@@ -180,7 +180,7 @@ namespace vcpkg::Commands
             fs.create_directories(destination_path, VCPKG_LINE_INFO);
         }
 
-        if (strip_count > 0)
+        if (strip_count > 0 || strip_count == -1)
         {
             extract_and_strip(fs, paths, strip_count, archive_path, destination_path);
         }

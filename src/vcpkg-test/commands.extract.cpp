@@ -81,7 +81,7 @@ static void test_strip_map(const int strip, const std::vector<std::pair<Path, Pa
 
 static void test_auto_strip_count(const std::vector<Path>& paths, size_t expected)
 {
-    REQUIRE(get_auto_strip_count(paths) == expected);
+    REQUIRE(get_common_prefix_count(paths) == expected);
 }
 
 TEST_CASE ("Testing strip_map, strip = 1", "[z-extract]")
