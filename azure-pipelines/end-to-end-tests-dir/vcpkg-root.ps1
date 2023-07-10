@@ -4,7 +4,7 @@ $CurrentTest = "VCPKG_ROOT"
 
 $targetMessage = 'ignoring mismatched VCPKG_ROOT environment value'
 
-$commonArgs += @('install', "--x-manifest-root=$PSScriptRoot/../e2e_projects/overlays-vcpkg-empty-port")
+$commonArgs += @('install', "--x-manifest-root=$PSScriptRoot/../e2e-projects/overlays-vcpkg-empty-port")
 
 $defaultOutput = Run-VcpkgAndCaptureOutput -TestArgs $commonArgs
 Throw-IfFailed

@@ -2,7 +2,7 @@ if ($IsWindows) {
     . $PSScriptRoot/../end-to-end-tests-prelude.ps1
 
     Refresh-TestRoot
-    Copy-Item -Recurse -LiteralPath "$PSScriptRoot/../e2e_projects/applocal" -Destination $TestingRoot
+    Copy-Item -Recurse -LiteralPath "$PSScriptRoot/../e2e-projects/applocal" -Destination $TestingRoot
     
     # Tests basic z-applocal command
     $basicDir = "$TestingRoot/applocal/basic"
