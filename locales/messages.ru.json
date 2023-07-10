@@ -146,7 +146,7 @@
   "BuildTroubleshootingMessage2": "Вы можете отправить новую проблему в:",
   "BuildTroubleshootingMessage3": "Добавьте \"Ошибка сборки [{package_name}]\" в название отчета об ошибке, следующие сведения о версии в описании ошибки и вложите любые релевантные журналы ошибок из раздела выше.",
   "BuildTroubleshootingMessage4": "Используйте предварительно заполненный шаблон из {path} при отправке сообщения о проблеме.",
-  "BuildTroubleshootingMessageGH": "You can also submit an issue by running (GitHub CLI must be installed):",
+  "BuildTroubleshootingMessageGH": "Вы также можете отправить проблему с помощью запуска (необходимо установить интерфейс командной строки GitHub):",
   "BuildingFromHead": "Сборка {spec} из HEAD...",
   "BuildingPackage": "Сборка {spec}...",
   "BuildingPackageFailed": "сбой {spec} при построении: {build_result}",

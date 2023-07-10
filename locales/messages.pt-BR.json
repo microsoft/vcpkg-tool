@@ -146,7 +146,7 @@
   "BuildTroubleshootingMessage2": "Você pode enviar a respeito de um novo problema em:",
   "BuildTroubleshootingMessage3": "Incluir 'Erro de build [{package_name}]' em seu título de relatório de bug, as seguintes informações de versão em sua descrição de bug, e anexe qualquer logs de falha relevante do erro acima.",
   "BuildTroubleshootingMessage4": "Use o modelo pré-preenchido de {path} ao relatar seu problema.",
-  "BuildTroubleshootingMessageGH": "You can also submit an issue by running (GitHub CLI must be installed):",
+  "BuildTroubleshootingMessageGH": "Você também pode enviar um problema executando (o GitHub CLI deve estar instalado):",
   "BuildingFromHead": "Criando {spec} de HEAD...",
   "BuildingPackage": "Criando {spec}...",
   "BuildingPackageFailed": "Ocorreu um erro ao compilar {spec} com: {build_result}",
