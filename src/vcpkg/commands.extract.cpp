@@ -93,7 +93,8 @@ namespace vcpkg::Commands
         const auto base_path = archive.base_path;
         const auto proximate = archive.proximate_to_temp;
 
-        size_t strip_count = num_leading_dir < 0 ? get_common_prefix_count(proximate) : static_cast<size_t>(num_leading_dir);
+        size_t strip_count =
+            num_leading_dir < 0 ? get_common_prefix_count(proximate) : static_cast<size_t>(num_leading_dir);
 
         for (const auto& prox_path : proximate)
         {
