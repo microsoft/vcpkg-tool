@@ -79,7 +79,7 @@ static void test_strip_map(const int strip, const std::vector<std::pair<Path, Pa
     }
 }
 
-static void test_auto_strip_count(const std::vector<Path>& paths, size_t expected) 
+static void test_auto_strip_count(const std::vector<Path>& paths, size_t expected)
 {
     REQUIRE(get_auto_strip_count(paths) == expected);
 }
@@ -152,14 +152,14 @@ TEST_CASE ("Testing strip auto's get_auto_strip_count "
                                     "archive" VCPKG_PREFERRED_SEPARATOR "folder2" VCPKG_PREFERRED_SEPARATOR
                                     "folder3" VCPKG_PREFERRED_SEPARATOR "file7.txt"};
 
-    std::vector<Path> expect_zero = {"folder1" VCPKG_PREFERRED_SEPARATOR "file1.txt",
-                                    "folder1" VCPKG_PREFERRED_SEPARATOR "file2.txt",
-                                    "folder1" VCPKG_PREFERRED_SEPARATOR "file3.txt",
-                                    "folder2" VCPKG_PREFERRED_SEPARATOR "file4.txt",
-                                    "folder2" VCPKG_PREFERRED_SEPARATOR "file5.txt",
-                                    "folder2" VCPKG_PREFERRED_SEPARATOR "folder3" VCPKG_PREFERRED_SEPARATOR "file6.txt",
-                                    "folder2" VCPKG_PREFERRED_SEPARATOR "folder3" VCPKG_PREFERRED_SEPARATOR
-                                    "file7.txt"};
+    std::vector<Path> expect_zero = {
+        "folder1" VCPKG_PREFERRED_SEPARATOR "file1.txt",
+        "folder1" VCPKG_PREFERRED_SEPARATOR "file2.txt",
+        "folder1" VCPKG_PREFERRED_SEPARATOR "file3.txt",
+        "folder2" VCPKG_PREFERRED_SEPARATOR "file4.txt",
+        "folder2" VCPKG_PREFERRED_SEPARATOR "file5.txt",
+        "folder2" VCPKG_PREFERRED_SEPARATOR "folder3" VCPKG_PREFERRED_SEPARATOR "file6.txt",
+        "folder2" VCPKG_PREFERRED_SEPARATOR "folder3" VCPKG_PREFERRED_SEPARATOR "file7.txt"};
 
     test_auto_strip_count(expect_one, 1);
     test_auto_strip_count(expect_zero, 0);
