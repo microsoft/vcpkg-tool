@@ -53,6 +53,37 @@ namespace vcpkg::Commands
         return 0;
     }
 
+    size_t get_auto_strip_count(std::vector<Path> paths)
+    {
+        auto is_slash = [](char c) {
+            return c == '/'
+#if defined(_WIN32)
+                   || c == '\\'
+#endif // _WIN32
+                ;
+        };
+
+        if (paths.size() == 0)
+        {
+            return 0;
+        }
+
+        std::string known_common_prefix = paths[0].native();
+        for (size_t idx = 1; idx < paths.size(); ++idx)
+        {
+            auto&& candidate = paths[idx].native();
+            auto mismatch_point = std::mismatch(known_common_prefix.begin(),
+                                                known_common_prefix.end(),
+
+                                                candidate.begin(),
+                                                candidate.end())
+                                      .first;
+            known_common_prefix.erase(mismatch_point, known_common_prefix.end());
+        }
+
+        return std::count_if(known_common_prefix.begin(), known_common_prefix.end(), is_slash);
+    }
+
     std::vector<std::pair<Path, Path>> strip_map(const ExtractedArchive& archive, int num_leading_dir)
     {
         std::vector<std::pair<Path, Path>> result;
@@ -60,6 +91,8 @@ namespace vcpkg::Commands
         const auto temp_dir = archive.temp_path;
         const auto base_path = archive.base_path;
         const auto proximate = archive.proximate_to_temp;
+
+        num_leading_dir = num_leading_dir < 0 ? get_auto_strip_count(proximate) : num_leading_dir;
 
         for (const auto& prox_path : proximate)
         {
@@ -69,8 +102,6 @@ namespace vcpkg::Commands
             auto first = prox_str.data();
             auto last = first + prox_str.size();
 
-           
-
             auto is_slash = [](char c) {
                 return c == '/'
 #if defined(_WIN32)
@@ -79,20 +110,9 @@ namespace vcpkg::Commands
                     ;
             };
 
-            // strip = AUTO (i.e., strip until a file is found)
-             
-            
             // strip leading directories equivalent to the number specified
             for (int i = 0; i < num_leading_dir; ++i)
             {
-                // stop stripping if there are no more directories
-                auto slash_count = std::count_if(first, last, is_slash);
-
-                if (slash_count == 0)
-                {
-                    break;
-                }
-
                 while (last != first && !is_slash(*first))
                 {
                     ++first;
