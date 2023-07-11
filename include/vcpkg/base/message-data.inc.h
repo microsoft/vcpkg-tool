@@ -816,11 +816,6 @@ DECLARE_MESSAGE(ErrorInvalidClassicModeOption,
                 (msg::option),
                 "",
                 "The option --{option} is not supported in classic mode and no manifest was found.")
-DECLARE_MESSAGE(ErrorInvalidExtractTypeOption,
-                (msg::option),
-                "The quoted options should not be localized.",
-                "--{option} was given an unexpected format. It can be one of \"zip\", \"tar\", \"nupkg\", "
-                "\"msi\", or \"exe\".")
 DECLARE_MESSAGE(ErrorInvalidManifestModeOption,
                 (msg::option),
                 "",
@@ -855,7 +850,10 @@ DECLARE_MESSAGE(ErrorRequirePackagesList,
                 (),
                 "",
                 "`vcpkg install` requires a list of packages to install in classic mode.")
-DECLARE_MESSAGE(ErrorInvalidOption, (msg::option, msg::value), "", "--{option} must be set to a nonnegative integer.")
+DECLARE_MESSAGE(ErrorInvalidOption,
+                (msg::option, msg::value),
+                "The keyword 'AUTO' should not be localized",
+                "--{option} must be set to a nonnegative integer or 'AUTO'.")
 DECLARE_MESSAGE(ErrorsFound, (), "", "Found the following errors:")
 DECLARE_MESSAGE(ErrorUnableToDetectCompilerInfo,
                 (),
@@ -929,7 +927,6 @@ DECLARE_MESSAGE(ExportUnsupportedInManifest,
 DECLARE_MESSAGE(ExtendedDocumentationAtUrl, (msg::url), "", "Extended documentation available at '{url}'.")
 DECLARE_MESSAGE(ExtractHelp, (), "", "Extracts an archive.")
 DECLARE_MESSAGE(ExtractingTool, (msg::tool_name), "", "Extracting {tool_name}...")
-DECLARE_MESSAGE(ExtractTypeOption, (msg::option), "", "--{option} specifies a method of extraction.")
 DECLARE_MESSAGE(FailedPostBuildChecks,
                 (msg::count, msg::path),
                 "",
@@ -2357,7 +2354,7 @@ DECLARE_MESSAGE(StoreOptionMissingSha, (), "", "--store option is invalid withou
 DECLARE_MESSAGE(StripOption,
                 (msg::option),
                 "--{option} is a setting that can be passed to z-extract command.",
-                "--{option} specifies the number of leading directories to strip from all paths")
+                "--{option} specifies the number of leading directories to strip from all paths.")
 DECLARE_MESSAGE(SuccessfulyExported, (msg::package_name, msg::path), "", "Exported {package_name} to {path}")
 DECLARE_MESSAGE(SuggestGitPull, (), "", "The result may be outdated. Run `git pull` to get the latest results.")
 DECLARE_MESSAGE(SuggestResolution,
