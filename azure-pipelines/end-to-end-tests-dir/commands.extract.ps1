@@ -6,7 +6,7 @@ Throw-IfFailed
 
 $extractedFilePath = Join-Path $out "myExe"
 if (-Not (Test-Path $extractedFilePath)) {
-throw "Extraction Failed"
+    throw "Extraction Failed"
 }
 
 if (-Not $IsWindows) {
