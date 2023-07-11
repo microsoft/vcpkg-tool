@@ -6,7 +6,7 @@ Throw-IfFailed
 
 if (-Not $IsWindows) {
     $extractedFilePath = Join-Path $out "myExe"
-    if ((Get-Item $extractedFilePath).UnixMode -notmatch ".*x.*") {
+    if ((Get-Item $extractedFilePath).UnixMode -ne "-rwxrwxrwx") {
         throw "File does not have +x permission"
     }
 }
