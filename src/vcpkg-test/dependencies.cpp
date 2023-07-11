@@ -2374,15 +2374,17 @@ TEST_CASE ("formatting plan 1", "[dependencies]")
                   "Additional packages (*) will be modified to complete this operation.\n");
 }
 
-TEST_CASE ("dependency graph API snapshot")
+TEST_CASE ("dependency graph API snapshot: host and target")
 {
     MockVersionedPortfileProvider vp;
     auto& scfl_a = vp.emplace("a", {"1", 0});
     InstallPlanAction install_a(
-        {"a", Test::X64_WINDOWS}, scfl_a, "packages_root", RequestType::AUTO_SELECTED, Test::X64_ANDROID, {}, {});
-
+        {"a", Test::X86_WINDOWS}, scfl_a, "packages_root", RequestType::AUTO_SELECTED, Test::X64_WINDOWS, {}, {});
+    InstallPlanAction install_a_host(
+        {"a", Test::X64_WINDOWS}, scfl_a, "packages_root", RequestType::AUTO_SELECTED, Test::X64_WINDOWS, {}, {});
     ActionPlan plan;
     plan.install_actions.push_back(std::move(install_a));
+    plan.install_actions.push_back(std::move(install_a_host));
     std::map<std::string, std::string, std::less<>> envmap = {
         {VcpkgCmdArguments::GITHUB_JOB_ENV.to_string(), "123"},
         {VcpkgCmdArguments::GITHUB_RUN_ID_ENV.to_string(), "123"},
@@ -2412,7 +2414,11 @@ TEST_CASE ("dependency graph API snapshot")
     auto manifest1 = manifests.get("vcpkg.json")->object(VCPKG_LINE_INFO);
     auto name1 = manifest1.get("name")->string(VCPKG_LINE_INFO);
     auto resolved1 = manifest1.get("resolved")->object(VCPKG_LINE_INFO);
-    auto dependency_a = resolved1.get("pkg:github/vcpkg/a@1")->object(VCPKG_LINE_INFO);
+    auto dependency_a_host = resolved1.get("pkg:github/vcpkg/a:x64-windows@1")->object(VCPKG_LINE_INFO);
+    auto package_url_a_host = dependency_a_host.get("package_url")->string(VCPKG_LINE_INFO);
+    auto relationship_a_host = dependency_a_host.get("relationship")->string(VCPKG_LINE_INFO);
+    auto dependencies_a_host = dependency_a_host.get("dependencies")->array(VCPKG_LINE_INFO);
+    auto dependency_a = resolved1.get("pkg:github/vcpkg/a:x86-windows@1")->object(VCPKG_LINE_INFO);
     auto package_url_a = dependency_a.get("package_url")->string(VCPKG_LINE_INFO);
     auto relationship_a = dependency_a.get("relationship")->string(VCPKG_LINE_INFO);
     auto dependencies_a = dependency_a.get("dependencies")->array(VCPKG_LINE_INFO);
@@ -2426,7 +2432,10 @@ TEST_CASE ("dependency graph API snapshot")
     CHECK(detector_version == "1.0.0");
     CHECK(url == "https://github.com/microsoft/vcpkg");
     CHECK(name1 == "vcpkg.json");
-    CHECK(package_url_a == "pkg:github/vcpkg/a@1");
+    CHECK(package_url_a_host == "pkg:github/vcpkg/a:x64-windows@1");
+    CHECK(relationship_a_host == "direct");
+    CHECK(dependencies_a_host.size() == 0);
+    CHECK(package_url_a == "pkg:github/vcpkg/a:x86-windows@1");
     CHECK(relationship_a == "direct");
     CHECK(dependencies_a.size() == 0);
 }

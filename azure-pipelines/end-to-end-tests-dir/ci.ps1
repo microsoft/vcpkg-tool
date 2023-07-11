@@ -1,7 +1,7 @@
 . $PSScriptRoot/../end-to-end-tests-prelude.ps1
 
 # test skipped ports
-$Output = Run-VcpkgAndCaptureOutput ci --dry-run --triplet=$Triplet --x-builtin-ports-root="$PSScriptRoot/../e2e_ports/ci"  --binarysource=clear
+$Output = Run-VcpkgAndCaptureOutput ci --dry-run --triplet=$Triplet --x-builtin-ports-root="$PSScriptRoot/../e2e-ports/ci"  --binarysource=clear
 Throw-IfFailed
 if (-not ($Output.Contains("dep-on-feature-not-sup:${Triplet}:  cascade"))) {
     throw 'dep-on-feature-not-sup must cascade because it depends on a features that is not supported'

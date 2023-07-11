@@ -183,7 +183,7 @@ namespace vcpkg::Commands::CI
         });
 
         auto action_plan = create_feature_install_plan(provider, var_provider, applicable_specs, {}, serialize_options);
-        var_provider.load_tag_vars(action_plan, provider, serialize_options.host_triplet);
+        var_provider.load_tag_vars(action_plan, serialize_options.host_triplet);
 
         Checks::check_exit(VCPKG_LINE_INFO, action_plan.already_installed.empty());
         Checks::check_exit(VCPKG_LINE_INFO, action_plan.remove_actions.empty());
@@ -347,7 +347,7 @@ namespace vcpkg::Commands::CI
     {
         msg::println_warning(msgInternalCICommand);
 
-        print_default_triplet_warning(args);
+        print_default_triplet_warning(args, paths.get_triplet_db());
 
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
         const auto& settings = options.settings;

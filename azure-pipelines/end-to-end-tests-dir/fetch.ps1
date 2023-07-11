@@ -86,7 +86,7 @@ if (-not $IsMacOS -and -not $IsLinux) {
     Remove-Item env:VCPKG_FORCE_DOWNLOADED_BINARIES
 
     $env:VCPKG_FORCE_SYSTEM_BINARIES = "1"
-    $env:PATH = "$PSScriptRoot\..\e2e_assets\fetch;$path"
+    $env:PATH = "$PSScriptRoot\..\e2e-assets\fetch;$path"
     Run-Vcpkg -TestArgs ($commonArgs + @("fetch", "ninja", "--vcpkg-root=$TestingRoot"))
     Throw-IfFailed
     Require-FileNotExists "$TestingRoot/down loads/tools/ninja-1.10.2-windows/ninja.exe"

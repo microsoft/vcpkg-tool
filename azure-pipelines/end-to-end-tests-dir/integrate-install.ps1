@@ -1,6 +1,6 @@
 if (-not $IsLinux -and -not $IsMacOS) {
     . $PSScriptRoot/../end-to-end-tests-prelude.ps1
-    $iiroot = "$PSScriptRoot/../e2e_ports/integrate-install"
+    $iiroot = "$PSScriptRoot/../e2e-ports/integrate-install"
 
     $env:VCPKG_BINARY_SOURCES="clear;default,read"
     $env:VCPKG_KEEP_ENV_VARS="VCPKG_KEEP_ENV_VARS;VCPKG_BINARY_SOURCES;VCPKG_FORCE_SYSTEM_BINARIES;VCPKG_DOWNLOADS;VCPKG_DEFAULT_BINARY_CACHE"

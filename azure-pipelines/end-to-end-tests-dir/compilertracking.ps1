@@ -4,7 +4,7 @@ if ($Triplet -ne "x64-linux") {
 
 . $PSScriptRoot/../end-to-end-tests-prelude.ps1
 
-$args = $commonArgs + @("--overlay-triplets=$PSScriptRoot/../e2e_ports/compilertracking", "--binarysource=clear;files,$ArchiveRoot,readwrite")
+$args = $commonArgs + @("--overlay-triplets=$PSScriptRoot/../e2e-ports/compilertracking", "--binarysource=clear;files,$ArchiveRoot,readwrite")
 
 # Test simple installation
 Run-Vcpkg -TestArgs ($args + @("install", "vcpkg-hello-world-1"))

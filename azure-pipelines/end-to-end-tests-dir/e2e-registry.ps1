@@ -3,24 +3,18 @@
 try
 {
     Copy-Item -Recurse -LiteralPath @(
-        "$PSScriptRoot/../e2e_projects/registries-package-patterns",
-        "$PSScriptRoot/../e2e_registry"
+        "$PSScriptRoot/../e2e-projects/e2e-registry-templates",
+        "$PSScriptRoot/../e2e-registry"
         ) $WorkingRoot
 
-    $manifestRoot = "$WorkingRoot/registries-package-patterns"
-    $e2eRegistryPath = "$WorkingRoot/e2e_registry".Replace('\', '\\')
+    $manifestRoot = "$WorkingRoot/e2e-registry-templates"
+    $e2eRegistryPath = "$WorkingRoot/e2e-registry".Replace('\', '\\')
     Push-Location $e2eRegistryPath
     ### <Initialize registry>
     # Creates a git registry to run the e2e tests on
     try
     {
         Write-Host "Initializing test registry"
-        if (Test-Path "$e2eRegistryPath/.git")
-        {
-            Remove-Item -Recurse -Force "$e2eRegistryPath/.git"
-        }
-        
-
         $gitConfig = @(
             '-c', 'user.name=Nobody',
             '-c', 'user.email=nobody@example.com',
@@ -42,6 +36,7 @@ try
     }
     ### </Initialize Registry>
 
+    # Testing registries' package selection patterns
     function Update-VcpkgJson {
         param($PreReplacementName)
         $content = Get-Content -LiteralPath "$manifestRoot/$PreReplacementName"
@@ -55,40 +50,54 @@ try
     # [patterns] No patterns (no default)
     Write-Host "[patterns] No patterns (no default)"
     Update-VcpkgJson 'no-patterns.json.in'
-    Run-Vcpkg -EndToEndTestSilent @commonArgs install | Out-Null
+    Run-Vcpkg @commonArgs install
     Throw-IfFailed
     Refresh-TestRoot
 
     # [patterns] Patterns only (no default)
     Write-Host "[patterns] Patterns only (no default)"
     Update-VcpkgJson 'only-patterns.json.in'
-    Run-Vcpkg -EndToEndTestSilent @commonArgs install | Out-Null
+    Run-Vcpkg @commonArgs install
     Throw-IfFailed
     Refresh-TestRoot
 
     # [patterns] Patterns with default
     Write-Host "[patterns] Patterns with default"
     Update-VcpkgJson 'with-default.json.in'
-    Run-Vcpkg -EndToEndTestSilent @commonArgs install | Out-Null
+    Run-Vcpkg @commonArgs install
     Throw-IfFailed
     Refresh-TestRoot
 
     # [patterns] Repeated patterns
     Write-Host "[patterns] Repeated patterns"
     Update-VcpkgJson 'with-redeclaration.json.in'
-    $out = Run-VcpkgAndCaptureOutput -EndToEndTestSilent @commonArgs install
+    $out = Run-VcpkgAndCaptureOutput @commonArgs install
     Throw-IfFailed
     if ($out -notmatch "redeclarations will be ignored")
     {
-        $out
-        throw "Expected warning about redeclaration"
+        throw 'Expected warning about redeclaration'
     }
+
+    Refresh-TestRoot
+
+    # Testing that overrides can select ports that are removed from the baseline
+    Write-Host "[removed] Removed from baseline"
+    Update-VcpkgJson 'removed.json.in'
+    $out = Run-VcpkgAndCaptureOutput @commonArgs install
+    Throw-IfFailed
+    if ($out -match 'error: the baseline does not contain an entry for port removed' -Or
+        $out -notmatch 'The following packages will be built and installed:\s+removed:[^ ]+ -> 1.0.0 -- [^ ]+git-trees[\\/]9b82c31964570870d27a5bb634f5b84e13f8b90a'
+        )
+    {
+        throw 'Baseline removed port could not be selected with overrides'
+    }
+
     Refresh-TestRoot
 }
 finally
 {
     Remove-Item -Recurse -Force -LiteralPath @(
-        "$WorkingRoot/registries-package-patterns",
-        "$WorkingRoot/e2e_registry"
+        "$WorkingRoot/e2e-registry-templates",
+        "$WorkingRoot/e2e-registry"
         ) -ErrorAction SilentlyContinue
 }

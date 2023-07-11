@@ -2,9 +2,9 @@
 
 # Tests a simple project with overlay ports and triplets configured on a vcpkg-configuration.json file
 Copy-Item -Recurse -LiteralPath @(
-    "$PSScriptRoot/../e2e_projects/overlays-project-with-config",
-    "$PSScriptRoot/../e2e_projects/overlays-project-config-embedded",
-    "$PSScriptRoot/../e2e_projects/overlays-bad-paths"
+    "$PSScriptRoot/../e2e-projects/overlays-project-with-config",
+    "$PSScriptRoot/../e2e-projects/overlays-project-config-embedded",
+    "$PSScriptRoot/../e2e-projects/overlays-bad-paths"
     ) $TestingRoot
 
 $manifestRoot = "$TestingRoot/overlays-project-with-config"
@@ -13,7 +13,8 @@ $env:VCPKG_OVERLAY_PORTS = "$manifestRoot/env-overlays"
 Run-Vcpkg install --x-manifest-root=$manifestRoot `
     --overlay-ports=$manifestRoot/cli-overlays `
     --overlay-triplets=$manifestRoot/my-triplets `
-    --x-install-root=$installRoot
+    --x-install-root=$installRoot `
+    --triplet fancy-triplet
 Throw-IfFailed
 
 # Tests overlays configured in env and cli on a project with configuration embedded on the manifest file
@@ -22,7 +23,8 @@ $env:VCPKG_OVERLAY_PORTS = "$manifestRoot/env-overlays"
 Run-Vcpkg install --x-manifest-root=$manifestRoot `
     --overlay-ports=$manifestRoot/cli-overlays `
     --overlay-triplets=$manifestRoot/my-triplets `
-    --x-install-root=$installRoot
+    --x-install-root=$installRoot `
+    --triplet fancy-config-embedded-triplet
 Throw-IfFailed
 
 # Config with bad paths
@@ -47,3 +49,36 @@ $notEqual = @(Compare-Object $overlaysBefore $overlaysAfter -SyncWindow 0).Lengt
 if ($notEqual) {
 	Throw "Overlay triplets paths changed after x-update-baseline"
 }
+
+# Test that removals can happen without the overlay triplets
+Remove-Item env:VCPKG_OVERLAY_PORTS
+Refresh-TestRoot
+Run-Vcpkg install another-vcpkg-empty-port:fancy-triplet `
+    --overlay-ports=$PSScriptRoot/../e2e-projects/overlays-project-with-config/cli-overlays `
+    --overlay-triplets=$PSScriptRoot/../e2e-projects/overlays-project-with-config/my-triplets
+Throw-IfFailed
+
+Run-Vcpkg remove another-vcpkg-empty-port:fancy-triplet `
+    --overlay-ports=$PSScriptRoot/../e2e-projects/overlays-project-with-config/cli-overlays
+Throw-IfFailed
+
+# ... or ports
+Refresh-TestRoot
+Run-Vcpkg install another-vcpkg-empty-port:fancy-triplet `
+    --overlay-ports=$PSScriptRoot/../e2e-projects/overlays-project-with-config/cli-overlays `
+    --overlay-triplets=$PSScriptRoot/../e2e-projects/overlays-project-with-config/my-triplets
+Throw-IfFailed
+
+Run-Vcpkg remove another-vcpkg-empty-port:fancy-triplet `
+    --overlay-triplets=$PSScriptRoot/../e2e-projects/overlays-project-with-config/my-triplets
+Throw-IfFailed
+
+# ... or either
+Refresh-TestRoot
+Run-Vcpkg install another-vcpkg-empty-port:fancy-triplet `
+    --overlay-ports=$PSScriptRoot/../e2e-projects/overlays-project-with-config/cli-overlays `
+    --overlay-triplets=$PSScriptRoot/../e2e-projects/overlays-project-with-config/my-triplets
+Throw-IfFailed
+
+Run-Vcpkg remove another-vcpkg-empty-port:fancy-triplet
+Throw-IfFailed

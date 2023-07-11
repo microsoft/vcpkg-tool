@@ -115,13 +115,16 @@ namespace vcpkg::Commands
 
         bool default_triplet_used = false;
         const std::vector<FullPackageSpec> specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
-            return check_and_get_full_package_spec(
-                arg, default_triplet, default_triplet_used, COMMAND_STRUCTURE.get_example_text(), paths);
+            return check_and_get_full_package_spec(arg,
+                                                   default_triplet,
+                                                   default_triplet_used,
+                                                   COMMAND_STRUCTURE.get_example_text(),
+                                                   paths.get_triplet_db());
         });
 
         if (default_triplet_used)
         {
-            print_default_triplet_warning(args);
+            print_default_triplet_warning(args, paths.get_triplet_db());
         }
 
         auto& fs = paths.get_filesystem();
@@ -136,7 +139,7 @@ namespace vcpkg::Commands
         {
             auto action_plan = create_feature_install_plan(provider, *cmake_vars, {&user_spec, 1}, {}, create_options);
 
-            cmake_vars->load_tag_vars(action_plan, provider, host_triplet);
+            cmake_vars->load_tag_vars(action_plan, host_triplet);
 
             Port user_port;
             user_port.port_name = user_spec.package_spec.name();
