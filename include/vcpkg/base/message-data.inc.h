@@ -360,7 +360,7 @@ DECLARE_MESSAGE(BuildTroubleshootingMessageGH,
                 (),
                 "Another part of build troubleshooting message, printed after the URI. An alternative version to "
                 "create an issue in some cases.",
-                "You can also sumbit an issue by running (GitHub cli must be installed):")
+                "You can also submit an issue by running (GitHub CLI must be installed):")
 DECLARE_MESSAGE(
     BuildTroubleshootingMessage3,
     (msg::package_name),
@@ -638,6 +638,11 @@ DECLARE_MESSAGE(ConflictingFiles,
                 (msg::path, msg::spec),
                 "",
                 "The following files are already installed in {path} and are in conflict with {spec}")
+DECLARE_MESSAGE(ConsideredVersions,
+                (msg::version),
+                "",
+                "The following executables were considered but discarded because of the version "
+                "requirement of {version}:")
 DECLARE_MESSAGE(ConstraintViolation, (), "", "Found a constraint violation:")
 DECLARE_MESSAGE(ContinueCodeUnitInStart, (), "", "found continue code unit in start position")
 DECLARE_MESSAGE(ControlAndManifestFilesPresent,
@@ -738,6 +743,9 @@ DECLARE_MESSAGE(DeleteVcpkgConfigFromManifest,
                 (msg::path),
                 "",
                 "-- Or remove \"vcpkg-configuration\" from the manifest file {path}.")
+DECLARE_MESSAGE(DependencyGraphCalculation, (), "", "Dependency graph submission enabled.")
+DECLARE_MESSAGE(DependencyGraphFailure, (), "", "Dependency graph submission failed.")
+DECLARE_MESSAGE(DependencyGraphSuccess, (), "", "Dependency graph submission successful.")
 DECLARE_MESSAGE(DependencyWillFail,
                 (msg::feature_spec),
                 "'cascade' is a keyword and should not be translated",
@@ -1149,6 +1157,12 @@ DECLARE_MESSAGE(HashFileFailureToRead,
                 (msg::path),
                 "Printed after ErrorMessage and before the specific failing filesystem operation (like file not found)",
                 "failed to read file \"{path}\" for hashing: ")
+DECLARE_MESSAGE(HashPortManyFiles,
+                (msg::package_name, msg::count),
+                "",
+                "The {package_name} contains {count} files. Hashing these contents may take a long time when "
+                "determining the ABI hash for binary caching. Consider reducing the number of files. Common causes of "
+                "this are accidentally checking out source or build files into a port's directory.")
 DECLARE_MESSAGE(HeaderOnlyUsage,
                 (msg::package_name),
                 "'header' refers to C/C++ .h files",

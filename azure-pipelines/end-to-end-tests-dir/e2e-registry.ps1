@@ -3,7 +3,7 @@
 try
 {
     Copy-Item -Recurse -LiteralPath @(
-        "$PSScriptRoot/../e2e_projects/e2e-registry-templates",
+        "$PSScriptRoot/../e2e-projects/e2e-registry-templates",
         "$PSScriptRoot/../e2e-registry"
         ) $WorkingRoot
 

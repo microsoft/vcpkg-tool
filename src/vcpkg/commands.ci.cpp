@@ -358,7 +358,7 @@ namespace vcpkg::Commands::CI
     {
         msg::println_warning(msgInternalCICommand);
 
-        print_default_triplet_warning(args);
+        print_default_triplet_warning(args, paths.get_triplet_db());
 
         const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
         const auto& settings = options.settings;

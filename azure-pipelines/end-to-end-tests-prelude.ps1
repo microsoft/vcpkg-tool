@@ -10,8 +10,8 @@ $directoryArgs = @(
     "--x-buildtrees-root=$buildtreesRoot",
     "--x-install-root=$installRoot",
     "--x-packages-root=$packagesRoot",
-    "--overlay-ports=$PSScriptRoot/e2e_ports/overlays",
-    "--overlay-triplets=$PSScriptRoot/e2e_ports/triplets"
+    "--overlay-ports=$PSScriptRoot/e2e-ports/overlays",
+    "--overlay-triplets=$PSScriptRoot/e2e-ports/triplets"
 )
 
 $commonArgs = @(

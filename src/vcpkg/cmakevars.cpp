@@ -102,7 +102,7 @@ namespace vcpkg::CMakeVars
 
         for (auto&& p : emitted_triplets)
         {
-            auto path_to_triplet = paths.get_triplet_file_path(p.first);
+            auto path_to_triplet = paths.get_triplet_db().get_triplet_file_path(p.first);
             fmt::format_to(std::back_inserter(extraction_file),
                            "if(VCPKG_TRIPLET_ID EQUAL {})\n"
                            "set(CMAKE_CURRENT_LIST_FILE \"{}\")\n"

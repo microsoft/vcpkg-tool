@@ -1,6 +1,6 @@
 . "$PSScriptRoot/../end-to-end-tests-prelude.ps1"
 
-$formatManifestAssets = (Get-Item "$PSScriptRoot/../e2e_assets/format-manifest").FullName
+$formatManifestAssets = (Get-Item "$PSScriptRoot/../e2e-assets/format-manifest").FullName
 $testProjects = Get-ChildItem "$formatManifestAssets/*.json" -File
 $testProjects | % {
     $asItem = Get-Item $_

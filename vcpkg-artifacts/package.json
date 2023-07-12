@@ -56,7 +56,7 @@
     "fs-constants": "^1.0.0",
     "inherits": "^2.0.3",
     "sed-lite": "0.8.4",
-    "semver": "7.3.5",
+    "semver": "7.5.2",
     "sorted-btree": "1.6.0",
     "strip-ansi": "5.2",
     "tar-stream": "2.2.0",

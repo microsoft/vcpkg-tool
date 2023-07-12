@@ -60,6 +60,8 @@ namespace vcpkg
         CommandName,
         DeploymentKind,
         DetectedCiEnvironment,
+        CiProjectId,
+        CiOwnerId,
         InstallPlan_1,
         ListFile,
         ProcessTree,
