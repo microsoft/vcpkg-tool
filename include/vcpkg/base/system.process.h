@@ -1,10 +1,10 @@
 #pragma once
 
 #include <vcpkg/base/fwd/files.h>
-#include <vcpkg/base/fwd/optional.h>
 #include <vcpkg/base/fwd/system.process.h>
 
 #include <vcpkg/base/expected.h>
+#include <vcpkg/base/optional.h>
 #include <vcpkg/base/path.h>
 #include <vcpkg/base/span.h>
 #include <vcpkg/base/stringview.h>
@@ -134,7 +134,8 @@ namespace vcpkg
                                                                 const WorkingDirectory& wd = default_working_directory,
                                                                 const Environment& env = default_environment,
                                                                 Encoding encoding = Encoding::Utf8,
-                                                                EchoInDebug echo_in_debug = EchoInDebug::Hide);
+                                                                EchoInDebug echo_in_debug = EchoInDebug::Hide,
+                                                                StringView stdin_content = {});
 
     std::vector<ExpectedL<ExitCodeAndOutput>> cmd_execute_and_capture_output_parallel(
         View<Command> cmd_lines,
@@ -145,13 +146,15 @@ namespace vcpkg
                                                 std::function<void(StringView)> per_line_cb,
                                                 const WorkingDirectory& wd = default_working_directory,
                                                 const Environment& env = default_environment,
-                                                Encoding encoding = Encoding::Utf8);
+                                                Encoding encoding = Encoding::Utf8,
+                                                StringView stdin_content = {});
 
     ExpectedL<int> cmd_execute_and_stream_data(const Command& cmd_line,
                                                std::function<void(StringView)> data_cb,
                                                const WorkingDirectory& wd = default_working_directory,
                                                const Environment& env = default_environment,
-                                               Encoding encoding = Encoding::Utf8);
+                                               Encoding encoding = Encoding::Utf8,
+                                               StringView stdin_content = {});
 
     uint64_t get_subproccess_stats();
 

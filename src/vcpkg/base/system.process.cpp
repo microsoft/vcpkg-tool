@@ -30,7 +30,11 @@ extern char** environ;
 #include <TlHelp32.h>
 #pragma comment(lib, "Advapi32")
 #else
+#include <fcntl.h>
+#include <poll.h>
 #include <spawn.h>
+
+#include <sys/wait.h>
 #endif
 
 namespace
@@ -52,6 +56,59 @@ namespace
     }
 
     static std::atomic_int32_t debug_id_counter{1000};
+
+    struct ChildStdinTracker
+    {
+        StringView input;
+        std::size_t offset;
+
+#if defined(_WIN32)
+        // Write a hunk of data to `target`. If there is no more input to write, returns `true`.
+        ExpectedL<bool> do_write(HANDLE target)
+        {
+            const auto this_write = input.size() - offset;
+            if (this_write != 0)
+            {
+                const auto this_write_clamped = static_cast<DWORD>(this_write > MAXDWORD ? MAXDWORD : this_write);
+                DWORD actually_written;
+                if (!WriteFile(target,
+                               static_cast<const void*>(input.data() + offset),
+                               this_write_clamped,
+                               &actually_written,
+                               nullptr))
+                {
+                    return format_system_error_message("WriteFile", GetLastError());
+                }
+
+                offset += actually_written;
+            }
+
+            return offset == input.size();
+        }
+#else  // ^^^ _WIN32 // !_WIN32 vvv
+       // Write a hunk of data to `target`. If there is no more input to write, returns `true`.
+        ExpectedL<bool> do_write(int target)
+        {
+            const auto this_write = input.size() - offset;
+            // Big enough to be big, small enough to avoid implementation limits
+            static constexpr std::size_t max_write = 1 << 28;
+            if (this_write != 0)
+            {
+                const auto this_write_clamped = this_write > max_write ? max_write : this_write;
+                const auto actually_written =
+                    write(target, static_cast<const void*>(input.data() + offset), this_write_clamped);
+                if (actually_written < 0)
+                {
+                    return format_system_error_message("write", errno);
+                }
+
+                offset += actually_written;
+            }
+
+            return offset == input.size();
+        }
+#endif // ^^^ !_WIN32
+    };
 } // unnamed namespace
 
 namespace vcpkg
@@ -708,26 +765,38 @@ namespace vcpkg
     {
         return cmd_execute(cmd_line, wd, get_clean_environment());
     }
+} // namespace vcpkg
 
+namespace
+{
 #if defined(_WIN32)
+    void close_handle_mark_invalid(HANDLE& target) noexcept
+    {
+        auto to_close = std::exchange(target, INVALID_HANDLE_VALUE);
+        if (to_close != INVALID_HANDLE_VALUE && to_close)
+        {
+            CloseHandle(to_close);
+        }
+    }
+
     struct ProcessInfo
     {
-        constexpr ProcessInfo() noexcept : proc_info{} { }
+        ProcessInfo() noexcept : proc_info{}
+        {
+            proc_info.hProcess = INVALID_HANDLE_VALUE;
+            proc_info.hThread = INVALID_HANDLE_VALUE;
+        }
+
         ProcessInfo(ProcessInfo&& other) noexcept : proc_info(other.proc_info)
         {
-            other.proc_info.hProcess = nullptr;
-            other.proc_info.hThread = nullptr;
+            other.proc_info.hProcess = INVALID_HANDLE_VALUE;
+            other.proc_info.hThread = INVALID_HANDLE_VALUE;
         }
+
         ~ProcessInfo()
         {
-            if (proc_info.hThread)
-            {
-                CloseHandle(proc_info.hThread);
-            }
-            if (proc_info.hProcess)
-            {
-                CloseHandle(proc_info.hProcess);
-            }
+            close_handle_mark_invalid(proc_info.hThread);
+            close_handle_mark_invalid(proc_info.hProcess);
         }
 
         ProcessInfo& operator=(ProcessInfo&& other) noexcept
@@ -746,10 +815,12 @@ namespace vcpkg
 
         unsigned int wait()
         {
+            close_handle_mark_invalid(proc_info.hThread);
             const DWORD result = WaitForSingleObject(proc_info.hProcess, INFINITE);
             Checks::check_exit(VCPKG_LINE_INFO, result != WAIT_FAILED, "WaitForSingleObject failed");
             DWORD exit_code = 0;
             GetExitCodeProcess(proc_info.hProcess, &exit_code);
+            close_handle_mark_invalid(proc_info.hProcess);
             return exit_code;
         }
 
@@ -758,12 +829,12 @@ namespace vcpkg
 
     /// <param name="maybe_environment">If non-null, an environment block to use for the new process. If null, the
     /// new process will inherit the current environment.</param>
-    static ExpectedL<ProcessInfo> windows_create_process(std::int32_t debug_id,
-                                                         StringView cmd_line,
-                                                         const WorkingDirectory& wd,
-                                                         const Environment& env,
-                                                         DWORD dwCreationFlags,
-                                                         STARTUPINFOEXW& startup_info) noexcept
+    ExpectedL<ProcessInfo> windows_create_process(std::int32_t debug_id,
+                                                  StringView cmd_line,
+                                                  const WorkingDirectory& wd,
+                                                  const Environment& env,
+                                                  DWORD dwCreationFlags,
+                                                  STARTUPINFOEXW& startup_info) noexcept
     {
         ProcessInfo process_info;
         Debug::print(fmt::format("{}: CreateProcessW({})\n", debug_id, cmd_line));
@@ -779,8 +850,16 @@ namespace vcpkg
             working_directory = Strings::to_utf16(real_filesystem.absolute(wd.working_directory, VCPKG_LINE_INFO));
         }
 
-        auto environment_block = env.get();
-        environment_block.push_back('\0');
+        auto&& env_unpacked = env.get();
+        std::wstring environment_block;
+        LPVOID call_environment = nullptr;
+        if (!env_unpacked.empty())
+        {
+            environment_block = env_unpacked;
+            environment_block.push_back('\0');
+            call_environment = environment_block.data();
+        }
+
         // Leaking process information handle 'process_info.proc_info.hProcess'
         // /analyze can't tell that we transferred ownership here
         VCPKG_MSVC_WARNING(suppress : 6335)
@@ -791,7 +870,7 @@ namespace vcpkg
                            TRUE,
                            IDLE_PRIORITY_CLASS | CREATE_UNICODE_ENVIRONMENT | EXTENDED_STARTUPINFO_PRESENT |
                                dwCreationFlags,
-                           env.get().empty() ? nullptr : environment_block.data(),
+                           call_environment,
                            working_directory.empty() ? nullptr : working_directory.data(),
                            &startup_info.StartupInfo,
                            &process_info.proc_info))
@@ -802,11 +881,11 @@ namespace vcpkg
         return format_system_error_message("CreateProcessW", GetLastError());
     }
 
-    static ExpectedL<ProcessInfo> windows_create_windowless_process(std::int32_t debug_id,
-                                                                    StringView cmd_line,
-                                                                    const WorkingDirectory& wd,
-                                                                    const Environment& env,
-                                                                    DWORD dwCreationFlags) noexcept
+    ExpectedL<ProcessInfo> windows_create_windowless_process(std::int32_t debug_id,
+                                                             StringView cmd_line,
+                                                             const WorkingDirectory& wd,
+                                                             const Environment& env,
+                                                             DWORD dwCreationFlags) noexcept
     {
         STARTUPINFOEXW startup_info_ex;
         memset(&startup_info_ex, 0, sizeof(STARTUPINFOEXW));
@@ -820,136 +899,211 @@ namespace vcpkg
     struct ProcessInfoAndPipes
     {
         ProcessInfo proc_info;
-        HANDLE child_stdin = 0;
-        HANDLE child_stdout = 0;
+        HANDLE child_handles[2]{INVALID_HANDLE_VALUE, INVALID_HANDLE_VALUE}; // [0] == child_stdin, [1] == child_stdout
+
+        ProcessInfoAndPipes() = default;
+        ProcessInfoAndPipes(const ProcessInfoAndPipes&) = delete;
+        ProcessInfoAndPipes(ProcessInfoAndPipes&& other) noexcept : proc_info(std::move(other.proc_info))
+        {
+            child_handles[0] = std::exchange(other.child_handles[0], INVALID_HANDLE_VALUE);
+            child_handles[1] = std::exchange(other.child_handles[1], INVALID_HANDLE_VALUE);
+        }
+
+        ProcessInfoAndPipes& operator=(const ProcessInfoAndPipes&) = delete;
+        ~ProcessInfoAndPipes()
+        {
+            close_handle_mark_invalid(child_handles[0]);
+            close_handle_mark_invalid(child_handles[1]);
+        }
+
+        void handle_child_read(ChildStdinTracker& stdin_tracker)
+        {
+            auto maybe_done = stdin_tracker.do_write(child_handles[0]);
+            if (auto done = maybe_done.get())
+            {
+                if (*done)
+                {
+                    close_handle_mark_invalid(child_handles[0]);
+                }
+
+                return;
+            }
+
+            vcpkg::Checks::unreachable(VCPKG_LINE_INFO);
+        }
 
         template<class Function>
-        int wait_and_stream_output(Function&& f, Encoding encoding)
+        void handle_child_write(const Function& f, char* buf, DWORD buffer_size, Encoding encoding)
         {
-            CloseHandle(child_stdin);
-
             DWORD bytes_read = 0;
-            static constexpr DWORD buffer_size = 1024 * 32;
-            char buf[buffer_size];
+            if (!ReadFile(child_handles[1], static_cast<void*>(buf), buffer_size, &bytes_read, nullptr))
+            {
+                if (GetLastError() != ERROR_BROKEN_PIPE)
+                {
+                    vcpkg::Checks::unreachable(VCPKG_LINE_INFO);
+                }
+
+                close_handle_mark_invalid(child_handles[1]);
+                return;
+            }
+
             if (encoding == Encoding::Utf8)
             {
-                while (ReadFile(child_stdout, static_cast<void*>(buf), buffer_size, &bytes_read, nullptr))
-                {
-                    std::replace(buf, buf + bytes_read, '\0', '?');
-                    f(StringView{buf, static_cast<size_t>(bytes_read)});
-                }
+                std::replace(buf, buf + bytes_read, '\0', '?');
+                f(StringView{buf, static_cast<size_t>(bytes_read)});
             }
             else if (encoding == Encoding::Utf16)
             {
-                // Note: This doesn't handle unpaired surrogates or partial encoding units correctly in order
-                // to be able to reuse Strings::to_utf8 which we believe will be fine 99% of the time.
+                // Note: This doesn't handle unpaired surrogates or partial encoding units correctly in
+                // order to be able to reuse Strings::to_utf8 which we believe will be fine 99% of the time.
                 std::string encoded;
-                while (ReadFile(child_stdout, static_cast<void*>(buf), buffer_size, &bytes_read, nullptr))
-                {
-                    Strings::to_utf8(encoded, reinterpret_cast<const wchar_t*>(buf), bytes_read);
-                    f(StringView{encoded});
-                }
+                Strings::to_utf8(encoded, reinterpret_cast<const wchar_t*>(buf), bytes_read);
+                std::replace(encoded.begin(), encoded.end(), '\0', '?');
+                f(StringView{encoded});
             }
             else
             {
                 vcpkg::Checks::unreachable(VCPKG_LINE_INFO);
             }
+        }
 
-            CloseHandle(child_stdout);
+        template<class Function>
+        int wait_and_stream_output(StringView input, const Function& f, Encoding encoding)
+        {
+            ChildStdinTracker input_tracker{input, 0};
+            static constexpr DWORD buffer_size = 1024 * 32;
+            char buf[buffer_size];
+            while (child_handles[0] != INVALID_HANDLE_VALUE && child_handles[1] != INVALID_HANDLE_VALUE)
+            {
+                switch (WaitForMultipleObjects(2, child_handles, FALSE, INFINITE))
+                {
+                    case WAIT_OBJECT_0: handle_child_read(input_tracker); break;
+                    case WAIT_OBJECT_0 + 1: handle_child_write(f, buf, buffer_size, encoding); break;
+                    default: vcpkg::Checks::unreachable(VCPKG_LINE_INFO); break;
+                }
+            }
+
+            while (child_handles[0] != INVALID_HANDLE_VALUE &&
+                   WaitForSingleObject(child_handles[0], INFINITE) == WAIT_OBJECT_0)
+            {
+                handle_child_read(input_tracker);
+            }
+
+            while (child_handles[1] != INVALID_HANDLE_VALUE &&
+                   WaitForSingleObject(child_handles[1], INFINITE) == WAIT_OBJECT_0)
+            {
+                handle_child_write(f, buf, buffer_size, encoding);
+            }
+
             return proc_info.wait();
         }
     };
 
-    static ExpectedL<ProcessInfoAndPipes> windows_create_process_redirect(std::int32_t debug_id,
-                                                                          StringView cmd_line,
-                                                                          const WorkingDirectory& wd,
-                                                                          const Environment& env,
-                                                                          DWORD dwCreationFlags) noexcept
+    struct ProcAttributeList
+    {
+        static ExpectedL<ProcAttributeList> create(DWORD dwAttributeCount)
+        {
+            SIZE_T size = 0;
+            if (InitializeProcThreadAttributeList(nullptr, dwAttributeCount, 0, &size) ||
+                GetLastError() != ERROR_INSUFFICIENT_BUFFER)
+            {
+                return format_system_error_message("InitializeProcThreadAttributeList nullptr", GetLastError());
+            }
+            Checks::check_exit(VCPKG_LINE_INFO, size > 0);
+            ASSUME(size > 0);
+            std::vector<unsigned char> buffer(size, 0);
+            if (!InitializeProcThreadAttributeList(
+                    reinterpret_cast<LPPROC_THREAD_ATTRIBUTE_LIST>(buffer.data()), dwAttributeCount, 0, &size))
+            {
+                return format_system_error_message("InitializeProcThreadAttributeList attribute_list", GetLastError());
+            }
+            return ProcAttributeList(std::move(buffer));
+        }
+        ExpectedL<Unit> update_attribute(DWORD_PTR Attribute, PVOID lpValue, SIZE_T cbSize)
+        {
+            if (!UpdateProcThreadAttribute(get(), 0, Attribute, lpValue, cbSize, nullptr, nullptr))
+            {
+                return format_system_error_message("InitializeProcThreadAttributeList attribute_list", GetLastError());
+            }
+            return Unit{};
+        }
+        ~ProcAttributeList() { DeleteProcThreadAttributeList(get()); }
+        LPPROC_THREAD_ATTRIBUTE_LIST get() noexcept
+        {
+            return reinterpret_cast<LPPROC_THREAD_ATTRIBUTE_LIST>(buffer.data());
+        }
+
+        ProcAttributeList(const ProcAttributeList&) = delete;
+        ProcAttributeList& operator=(const ProcAttributeList&) = delete;
+        ProcAttributeList(ProcAttributeList&&) = default;
+        ProcAttributeList& operator=(ProcAttributeList&&) = default;
+
+    private:
+        explicit ProcAttributeList(std::vector<unsigned char>&& buffer) : buffer(std::move(buffer)) { }
+        std::vector<unsigned char> buffer;
+    };
+
+    struct StartupInfoWithPipes : STARTUPINFOEXW
+    {
+        StartupInfoWithPipes() noexcept : STARTUPINFOEXW{}
+        {
+            StartupInfo.cb = sizeof(STARTUPINFOEXW);
+            StartupInfo.hStdInput = INVALID_HANDLE_VALUE;
+            StartupInfo.hStdOutput = INVALID_HANDLE_VALUE;
+            StartupInfo.dwFlags |= STARTF_USESTDHANDLES;
+        }
+
+        StartupInfoWithPipes(const StartupInfoWithPipes&) = delete;
+        StartupInfoWithPipes& operator=(const StartupInfoWithPipes&) = delete;
+
+        ~StartupInfoWithPipes()
+        {
+            close_handle_mark_invalid(StartupInfo.hStdInput);
+            close_handle_mark_invalid(StartupInfo.hStdOutput);
+        }
+    };
+
+    ExpectedL<ProcessInfoAndPipes> windows_create_process_redirect(std::int32_t debug_id,
+                                                                   StringView cmd_line,
+                                                                   const WorkingDirectory& wd,
+                                                                   const Environment& env,
+                                                                   DWORD dwCreationFlags) noexcept
     {
         ProcessInfoAndPipes ret;
-
-        STARTUPINFOEXW startup_info_ex;
-        memset(&startup_info_ex, 0, sizeof(STARTUPINFOEXW));
-        startup_info_ex.StartupInfo.cb = sizeof(STARTUPINFOEXW);
-        startup_info_ex.StartupInfo.dwFlags |= STARTF_USESTDHANDLES;
-
-        SECURITY_ATTRIBUTES saAttr;
-        memset(&saAttr, 0, sizeof(SECURITY_ATTRIBUTES));
-        saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
-        saAttr.bInheritHandle = TRUE;
-        saAttr.lpSecurityDescriptor = NULL;
+        StartupInfoWithPipes startup_info_ex;
+        SECURITY_ATTRIBUTES saAttr{sizeof(SECURITY_ATTRIBUTES), nullptr, TRUE};
 
         // Create a pipe for the child process's STDOUT.
-        if (!CreatePipe(&ret.child_stdout, &startup_info_ex.StartupInfo.hStdOutput, &saAttr, 0))
+        if (!CreatePipe(&ret.child_handles[1], &startup_info_ex.StartupInfo.hStdOutput, &saAttr, 0))
         {
             return format_system_error_message("CreatePipe stdout", GetLastError());
         }
 
         // Create a pipe for the child process's STDIN.
-        if (!CreatePipe(&startup_info_ex.StartupInfo.hStdInput, &ret.child_stdin, &saAttr, 0))
+        if (!CreatePipe(&startup_info_ex.StartupInfo.hStdInput, &ret.child_handles[0], &saAttr, 0))
         {
             return format_system_error_message("CreatePipe stdin", GetLastError());
+        }
+
+        DWORD nonblocking_flags = PIPE_NOWAIT;
+        if (!SetNamedPipeHandleState(ret.child_handles[0], &nonblocking_flags, nullptr, nullptr))
+        {
+            return format_system_error_message("SetNamedPipeHandleState", GetLastError());
         }
 
         startup_info_ex.StartupInfo.hStdError = startup_info_ex.StartupInfo.hStdOutput;
 
         // Ensure that only the write handle to STDOUT and the read handle to STDIN are inherited.
         // from https://devblogs.microsoft.com/oldnewthing/20111216-00/?p=8873
-        struct ProcAttributeList
-        {
-            static ExpectedL<ProcAttributeList> create(DWORD dwAttributeCount)
-            {
-                SIZE_T size = 0;
-                if (InitializeProcThreadAttributeList(nullptr, dwAttributeCount, 0, &size) ||
-                    GetLastError() != ERROR_INSUFFICIENT_BUFFER)
-                {
-                    return format_system_error_message("InitializeProcThreadAttributeList nullptr", GetLastError());
-                }
-                Checks::check_exit(VCPKG_LINE_INFO, size > 0);
-                ASSUME(size > 0);
-                std::vector<unsigned char> buffer(size, 0);
-                if (!InitializeProcThreadAttributeList(
-                        reinterpret_cast<LPPROC_THREAD_ATTRIBUTE_LIST>(buffer.data()), dwAttributeCount, 0, &size))
-                {
-                    return format_system_error_message("InitializeProcThreadAttributeList attribute_list",
-                                                       GetLastError());
-                }
-                return ProcAttributeList(std::move(buffer));
-            }
-            ExpectedL<Unit> update_attribute(DWORD_PTR Attribute, PVOID lpValue, SIZE_T cbSize)
-            {
-                if (!UpdateProcThreadAttribute(get(), 0, Attribute, lpValue, cbSize, nullptr, nullptr))
-                {
-                    return format_system_error_message("InitializeProcThreadAttributeList attribute_list",
-                                                       GetLastError());
-                }
-                return Unit{};
-            }
-            ~ProcAttributeList() { DeleteProcThreadAttributeList(get()); }
-            LPPROC_THREAD_ATTRIBUTE_LIST get() noexcept
-            {
-                return reinterpret_cast<LPPROC_THREAD_ATTRIBUTE_LIST>(buffer.data());
-            }
-
-            ProcAttributeList(const ProcAttributeList&) = delete;
-            ProcAttributeList& operator=(const ProcAttributeList&) = delete;
-            ProcAttributeList(ProcAttributeList&&) = default;
-            ProcAttributeList& operator=(ProcAttributeList&&) = default;
-
-        private:
-            explicit ProcAttributeList(std::vector<unsigned char>&& buffer) : buffer(std::move(buffer)) { }
-            std::vector<unsigned char> buffer;
-        };
-
         ExpectedL<ProcAttributeList> proc_attribute_list = ProcAttributeList::create(1);
         if (!proc_attribute_list.has_value())
         {
             return proc_attribute_list.error();
         }
-        std::vector<HANDLE> handles_to_inherit = {
-            {startup_info_ex.StartupInfo.hStdOutput, startup_info_ex.StartupInfo.hStdInput}};
+
+        HANDLE handles_to_inherit[2] = {startup_info_ex.StartupInfo.hStdOutput, startup_info_ex.StartupInfo.hStdInput};
         auto maybe_error = proc_attribute_list.get()->update_attribute(
-            PROC_THREAD_ATTRIBUTE_HANDLE_LIST, handles_to_inherit.data(), handles_to_inherit.size() * sizeof(HANDLE));
+            PROC_THREAD_ATTRIBUTE_HANDLE_LIST, handles_to_inherit, 2 * sizeof(HANDLE));
         if (!maybe_error.has_value())
         {
             return maybe_error.error();
@@ -957,9 +1111,6 @@ namespace vcpkg
         startup_info_ex.lpAttributeList = proc_attribute_list.get()->get();
 
         auto maybe_proc_info = windows_create_process(debug_id, cmd_line, wd, env, dwCreationFlags, startup_info_ex);
-
-        CloseHandle(startup_info_ex.StartupInfo.hStdInput);
-        CloseHandle(startup_info_ex.StartupInfo.hStdOutput);
 
         if (auto proc_info = maybe_proc_info.get())
         {
@@ -969,8 +1120,143 @@ namespace vcpkg
 
         return maybe_proc_info.error();
     }
-#endif
+#else // ^^^ _WIN32 // !_WIN32 vvv
+    struct AnonymousPipe
+    {
+        // pipefd[0] is the read end of the pipe, pipefd[1] is the write end
+        int pipefd[2];
+        AnonymousPipe() : pipefd{-1, -1} { }
+        AnonymousPipe(const AnonymousPipe&) = delete;
+        AnonymousPipe(AnonymousPipe&& other)
+        {
+            for (size_t idx = 0; idx < 2; ++idx)
+            {
+                pipefd[idx] = std::exchange(other.pipefd[idx], -1);
+            }
+        }
+        ~AnonymousPipe()
+        {
+            for (size_t idx = 0; idx < 2; ++idx)
+            {
+                close_mark_invalid(pipefd[idx]);
+            }
+        }
 
+        friend void swap(AnonymousPipe& lhs, AnonymousPipe& rhs) noexcept
+        {
+            for (size_t idx = 0; idx < 2; ++idx)
+            {
+                std::swap(lhs.pipefd[idx], rhs.pipefd[idx]);
+            }
+        }
+
+        AnonymousPipe& operator=(const AnonymousPipe&) = delete;
+        AnonymousPipe& operator=(AnonymousPipe&& other)
+        {
+            auto moved = std::move(other);
+            swap(*this, moved);
+            return *this;
+        }
+
+        ExpectedL<Unit> create()
+        {
+#if defined(__APPLE__)
+            static std::mutex pipe_creation_lock;
+            std::lock_guard<std::mutex> lck{pipe_creation_lock};
+            if (pipe(pipefd))
+            {
+                return format_system_error_message("pipe", errno);
+            }
+
+            for (size_t idx = 0; idx < 2; ++idx)
+            {
+                if (fcntl(pipefd[idx], F_SETFD, FD_CLOEXEC))
+                {
+                    return format_system_error_message("fcntl", errno);
+                }
+            }
+#else  // ^^^ Apple // !Apple vvv
+            if (pipe2(pipefd, O_CLOEXEC))
+            {
+                return format_system_error_message("pipe2", errno);
+            }
+#endif // ^^^ !Apple
+
+            return Unit{};
+        }
+    };
+
+    struct PosixSpawnFileActions
+    {
+        posix_spawn_file_actions_t actions;
+
+        PosixSpawnFileActions() { Checks::check_exit(VCPKG_LINE_INFO, posix_spawn_file_actions_init(&actions) == 0); }
+
+        ~PosixSpawnFileActions()
+        {
+            Checks::check_exit(VCPKG_LINE_INFO, posix_spawn_file_actions_destroy(&actions) == 0);
+        }
+
+        PosixSpawnFileActions(const PosixSpawnFileActions&) = delete;
+        PosixSpawnFileActions& operator=(const PosixSpawnFileActions&) = delete;
+
+        ExpectedL<Unit> adddup2(int fd, int newfd)
+        {
+            const int error = posix_spawn_file_actions_adddup2(&actions, fd, newfd);
+            if (error)
+            {
+                return format_system_error_message("posix_spawn_file_actions_adddup2", error);
+            }
+
+            return Unit{};
+        }
+    };
+
+    struct PosixPid
+    {
+        pid_t pid;
+
+        PosixPid() : pid{-1} { }
+
+        ExpectedL<int> wait_for_termination()
+        {
+            int exit_code;
+            if (pid != -1)
+            {
+                int status;
+                const auto child = waitpid(pid, &status, 0);
+                if (child != pid)
+                {
+                    return format_system_error_message("waitpid", errno);
+                }
+
+                if (WIFEXITED(status))
+                {
+                    exit_code = WEXITSTATUS(status);
+                }
+                else if (WIFSIGNALED(status))
+                {
+                    exit_code = WTERMSIG(status);
+                }
+                else if (WIFSTOPPED(status))
+                {
+                    exit_code = WSTOPSIG(status);
+                }
+
+                pid = -1;
+            }
+
+            return exit_code;
+        }
+
+        PosixPid(const PosixPid&) = delete;
+        PosixPid& operator=(const PosixPid&) = delete;
+    };
+#endif // ^^^ !_WIN32
+} // unnamed namespace
+
+namespace vcpkg
+{
 #if defined(_WIN32)
     Environment cmd_execute_and_capture_environment(const Command& cmd_line, const Environment& env)
     {
@@ -1131,12 +1417,13 @@ namespace vcpkg
                                                 std::function<void(StringView)> per_line_cb,
                                                 const WorkingDirectory& wd,
                                                 const Environment& env,
-                                                Encoding encoding)
+                                                Encoding encoding,
+                                                StringView stdin_content)
     {
         Strings::LinesStream lines;
 
         auto rc = cmd_execute_and_stream_data(
-            cmd_line, [&](const StringView sv) { lines.on_data(sv, per_line_cb); }, wd, env, encoding);
+            cmd_line, [&](const StringView sv) { lines.on_data(sv, per_line_cb); }, wd, env, encoding, stdin_content);
         lines.on_end(per_line_cb);
         return rc;
     }
@@ -1145,7 +1432,8 @@ namespace vcpkg
                                                std::function<void(StringView)> data_cb,
                                                const WorkingDirectory& wd,
                                                const Environment& env,
-                                               Encoding encoding)
+                                               Encoding encoding,
+                                               StringView stdin_content)
     {
         const ElapsedTimer timer;
         const auto debug_id = debug_id_counter.fetch_add(1, std::memory_order_relaxed);
@@ -1155,88 +1443,201 @@ namespace vcpkg
         g_ctrl_c_state.transition_to_spawn_process();
         ExpectedL<int> exit_code =
             windows_create_process_redirect(debug_id, cmd_line.command_line(), wd, env, 0)
-                .map([&](ProcessInfoAndPipes&& output) { return output.wait_and_stream_output(data_cb, encoding); });
+                .map([&](ProcessInfoAndPipes&& output) {
+                    if (encoding == Encoding::Utf16)
+                    {
+                        auto as_utf16 = Strings::to_utf16(stdin_content);
+                        return output.wait_and_stream_output(StringView{reinterpret_cast<const char*>(as_utf16.data()),
+                                                                        as_utf16.size() * sizeof(wchar_t)},
+                                                             data_cb,
+                                                             encoding);
+                    }
+
+                    return output.wait_and_stream_output(stdin_content, data_cb, encoding);
+                });
         g_ctrl_c_state.transition_from_spawn_process();
-#else // ^^^ _WIN32 // !_WIN32 vvv
+#else  // ^^^ _WIN32 // !_WIN32 vvv
+
         Checks::check_exit(VCPKG_LINE_INFO, encoding == Encoding::Utf8);
-
         std::string actual_cmd_line;
-        if (wd.working_directory.empty())
+        if (!wd.working_directory.empty())
         {
-            actual_cmd_line = fmt::format(R"({} {} 2>&1)", env.get(), cmd_line.command_line());
-        }
-        else
-        {
-            actual_cmd_line = Command("cd")
-                                  .string_arg(wd.working_directory)
-                                  .raw_arg("&&")
-                                  .raw_arg(env.get())
-                                  .raw_arg(cmd_line.command_line())
-                                  .raw_arg("2>&1")
-                                  .extract();
+            actual_cmd_line.append("cd ");
+            append_shell_escaped(actual_cmd_line, wd.working_directory);
+            actual_cmd_line.append(" && ");
         }
 
-        Debug::print(fmt::format("{}: popen({})\n", debug_id, actual_cmd_line));
+        const auto& env_text = env.get();
+        if (!env_text.empty())
+        {
+            actual_cmd_line.append(env_text);
+            actual_cmd_line.push_back(' ');
+        }
+
+        const auto unwrapped_to_execute = cmd_line.command_line();
+        actual_cmd_line.append(unwrapped_to_execute.data(), unwrapped_to_execute.size());
+
+        Debug::print(fmt::format("{}: execute_process({})\n", debug_id, actual_cmd_line));
         // Flush stdout before launching external process
         fflush(stdout);
 
-        FILE* pipe = nullptr;
-#if defined(__APPLE__)
-        static std::mutex mtx;
-#endif
-
-        // Scope for lock guard
+        AnonymousPipe child_input;
         {
-#if defined(__APPLE__)
-            // `popen` sometimes returns 127 on OSX when executed in parallel.
-            // Related: https://github.com/microsoft/vcpkg-tool/pull/695#discussion_r973364608
-
-            std::lock_guard guard(mtx);
-#endif
-
-            pipe = popen(actual_cmd_line.c_str(), "r");
+            auto err = child_input.create();
+            if (!err)
+            {
+                return std::move(err).error();
+            }
         }
 
-        if (pipe == nullptr)
+        AnonymousPipe child_output;
         {
-            return format_system_error_message("popen", errno);
+            auto err = child_output.create();
+            if (!err)
+            {
+                return std::move(err).error();
+            }
         }
+
+        PosixSpawnFileActions actions;
+        actions.adddup2(child_input.pipefd[0], 0);
+        actions.adddup2(child_output.pipefd[1], 1);
+        actions.adddup2(child_output.pipefd[1], 2);
+
+        std::vector<std::string> argv_builder;
+        argv_builder.reserve(3);
+        argv_builder.emplace_back("sh"); // as if by system()
+        argv_builder.emplace_back("-c");
+        argv_builder.emplace_back(actual_cmd_line.data(), actual_cmd_line.size());
+
+        std::vector<char*> argv;
+        argv.reserve(argv_builder.size() + 1);
+        for (std::string& arg : argv_builder)
+        {
+            argv.emplace_back(arg.data());
+        }
+
+        argv.emplace_back(nullptr);
+
+        PosixPid pid;
+        int error = posix_spawn(&pid.pid, "/bin/sh", &actions.actions, nullptr, argv.data(), environ);
+        if (error)
+        {
+            return format_system_error_message("posix_spawn", error);
+        }
+
+        close_mark_invalid(child_input.pipefd[0]);
+        close_mark_invalid(child_output.pipefd[1]);
 
         char buf[1024];
-        // Use fgets because fread will block until the entire buffer is filled.
-        while (fgets(buf, 1024, pipe))
+        ChildStdinTracker stdin_tracker{stdin_content, 0};
+        if (stdin_content.empty())
         {
-            data_cb(StringView{buf, strlen(buf)});
+            close_mark_invalid(child_input.pipefd[1]);
+        }
+        else
+        {
+            if (fcntl(child_input.pipefd[1], F_SETFL, O_NONBLOCK))
+            {
+                return format_system_error_message("fcntl", errno);
+            }
+
+            auto maybe_done = stdin_tracker.do_write(child_input.pipefd[1]);
+            bool done = false;
+            if (const auto done_first = maybe_done.get())
+            {
+                if (*done_first)
+                {
+                    close_mark_invalid(child_input.pipefd[1]);
+                    done = true;
+                }
+            }
+            else
+            {
+                return std::move(maybe_done).error();
+            }
+
+            if (!done)
+            {
+                for (;;)
+                {
+                    pollfd polls[2]{};
+                    polls[0].fd = child_input.pipefd[1];
+                    polls[0].events = POLLOUT;
+                    polls[1].fd = child_output.pipefd[0];
+                    polls[1].events = POLLIN;
+                    if (poll(polls, 2, -1) < 0)
+                    {
+                        return format_system_error_message("poll", errno);
+                    }
+
+                    if (polls[0].revents & POLLERR)
+                    {
+                        close_mark_invalid(child_input.pipefd[1]);
+                        break;
+                    }
+                    else if (polls[0].revents & POLLOUT)
+                    {
+                        auto maybe_next_done = stdin_tracker.do_write(child_input.pipefd[1]);
+                        if (const auto next_done = maybe_next_done.get())
+                        {
+                            if (*next_done)
+                            {
+                                close_mark_invalid(child_input.pipefd[1]);
+                                break;
+                            }
+                        }
+                        else
+                        {
+                            return std::move(maybe_next_done).error();
+                        }
+                    }
+
+                    if (polls[1].revents & POLLIN)
+                    {
+                        auto read_amount = read(child_output.pipefd[0], buf, sizeof(buf));
+                        if (read_amount < 0)
+                        {
+                            return format_system_error_message("read", errno);
+                        }
+
+                        // can't be 0 because poll told us otherwise
+                        if (read_amount == 0)
+                        {
+                            Checks::unreachable(VCPKG_LINE_INFO);
+                        }
+
+                        data_cb(StringView{buf, static_cast<size_t>(read_amount)});
+                    }
+                }
+            }
         }
 
-        if (!feof(pipe))
+        for (;;)
         {
-            return format_system_error_message("feof", errno);
+            auto read_amount = read(child_output.pipefd[0], buf, sizeof(buf));
+            if (read_amount < 0)
+            {
+                auto error = errno;
+                if (error == EPIPE)
+                {
+                    close_mark_invalid(child_output.pipefd[0]);
+                    break;
+                }
+
+                return format_system_error_message("read", error);
+            }
+
+            if (read_amount == 0)
+            {
+                close_mark_invalid(child_output.pipefd[0]);
+                break;
+            }
+
+            data_cb(StringView{buf, static_cast<size_t>(read_amount)});
         }
 
-        int ec;
-        // Scope for lock guard
-        {
-#if defined(__APPLE__)
-            // See the comment above at the call to `popen`.
-            std::lock_guard guard(mtx);
-#endif
-            ec = pclose(pipe);
-        }
-        if (WIFEXITED(ec))
-        {
-            ec = WEXITSTATUS(ec);
-        }
-        else if (WIFSIGNALED(ec))
-        {
-            ec = WTERMSIG(ec);
-        }
-        else if (WIFSTOPPED(ec))
-        {
-            ec = WSTOPSIG(ec);
-        }
-
-        ExpectedL<int> exit_code = ec;
+        ExpectedL<int> exit_code = pid.wait_for_termination();
 #endif /// ^^^ !_WIN32
 
         const auto elapsed = timer.us_64();
@@ -1256,7 +1657,8 @@ namespace vcpkg
                                                                 const WorkingDirectory& wd,
                                                                 const Environment& env,
                                                                 Encoding encoding,
-                                                                EchoInDebug echo_in_debug)
+                                                                EchoInDebug echo_in_debug,
+                                                                StringView stdin_content)
     {
         std::string output;
         return cmd_execute_and_stream_data(
@@ -1270,7 +1672,8 @@ namespace vcpkg
                    },
                    wd,
                    env,
-                   encoding)
+                   encoding,
+                   stdin_content)
             .map([&](int exit_code) {
                 return ExitCodeAndOutput{exit_code, std::move(output)};
             });
@@ -1348,4 +1751,4 @@ namespace vcpkg
                 expected_right_tag};
     }
 
-}
+} // namespace vcpkg
