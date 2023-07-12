@@ -1573,8 +1573,8 @@
       <Item ItemId=";BuildTroubleshootingMessageGH" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[You can also submit an issue by running (GitHub CLI must be installed):]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[También puede enviar un problema mediante la ejecución (debe estar instalada la CLI de GitHub):]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[También puede enviar una incidencia ejecutando (GitHub CLI debe estar instalado):]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[You can also sumbit an issue by running (GitHub cli must be installed):]]></Val>
