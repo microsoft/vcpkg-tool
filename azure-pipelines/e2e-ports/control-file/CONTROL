@@ -1,4 +1,4 @@
 Source: control-file
 Version: 0
 Description: Test port using old-style CONTROL file
-Supports: windows & !windows
+Supports: windows | !windows
