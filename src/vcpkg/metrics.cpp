@@ -377,8 +377,8 @@ namespace vcpkg
 
         std::vector<std::string> process_list;
         get_parent_process_list(process_list);
-        result.parent_process_list =
-            Strings::join(";", process_list, [](auto&& s) { return Hash::get_string_sha256(s); });
+        result.parent_process_list = Strings::join(
+            ";", process_list, [](auto&& s) { return Hash::get_string_sha256(Strings::ascii_to_lowercase(s)); });
 
         return result;
     }
