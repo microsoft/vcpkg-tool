@@ -700,7 +700,7 @@ namespace vcpkg
             submission.track_string(StringMetric::DetectedCiEnvironment, *ci_env);
         }
 
-#if 0 // CI system telemetry pending privacy review
+#if 0  // CI system telemetry pending privacy review
         if (auto repo_id = github_repository_id.get())
         {
             submission.track_string(StringMetric::CiProjectId, *repo_id);
