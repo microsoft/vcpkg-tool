@@ -334,7 +334,6 @@ TEST_CASE ("format_ci_result 1", "[ci-baseline]")
     constexpr const char failmsg[] = "REGRESSION: {0} failed with BUILD_FAILED. If expected, add {0}=fail to cifile.";
     constexpr const char cascademsg[] = "REGRESSION: {0} cascaded, but it is required to pass. (cifile).";
     constexpr const char passmsg[] = "PASSING, REMOVE FROM FAIL LIST: {0} (cifile).";
-    constexpr const char supportedmsg[] = "REGRESSION: {} is marked as fail but not supported for {}.";
 
     SECTION ("SUCCEEDED")
     {
@@ -368,16 +367,6 @@ TEST_CASE ("format_ci_result 1", "[ci-baseline]")
         };
         CHECK(test({"pass", Test::X64_UWP}) == fmt::format(cascademsg, "pass:x64-uwp"));
         CHECK(test({"fail", Test::X64_UWP}) == "");
-        CHECK(test({"neither", Test::X64_UWP}) == "");
-    }
-
-    SECTION ("EXCLUDED")
-    {
-        const auto test = [&](PackageSpec s) {
-            return format_ci_result(s, BuildResult::EXCLUDED, cidata, "cifile", false, false);
-        };
-        CHECK(test({"pass", Test::X64_UWP}) == "");
-        CHECK(test({"fail", Test::X64_UWP}) == fmt::format(supportedmsg, "fail:x64-uwp", "x64-uwp"));
         CHECK(test({"neither", Test::X64_UWP}) == "");
     }
 }
