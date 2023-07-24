@@ -477,7 +477,8 @@ namespace vcpkg
 
             if (res != 0)
             {
-                Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgCurlFailedToExecute, msg::exit_code = res);
+                msg::println_warning(msgCurlFailedToExecute, msg::exit_code = res);
+                break;
             }
 
             if (start_size + url_pairs.size() > out->size())

@@ -32,6 +32,8 @@ namespace vcpkg
 
     View<std::string> azure_blob_headers();
 
+    // Returns the response code of each request to given url.
+    // The value is 0 if the request failed.
     std::vector<int> download_files(const Filesystem& fs,
                                     View<std::pair<std::string, Path>> url_pairs,
                                     View<std::string> headers);
