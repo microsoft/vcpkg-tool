@@ -146,7 +146,7 @@
   "BuildTroubleshootingMessage2": "Puede enviar un nuevo problema en:",
   "BuildTroubleshootingMessage3": "Incluya \"Error de compilación de [{package_name}]\" en el título del informe de errores, la siguiente información de versión en la descripción del error y adjunte los registros de errores relevantes de arriba.",
   "BuildTroubleshootingMessage4": "Use la plantilla rellenada previamente de {path} al informar del problema.",
-  "BuildTroubleshootingMessageGH": "You can also submit an issue by running (GitHub CLI must be installed):",
+  "BuildTroubleshootingMessageGH": "También puede enviar una incidencia ejecutando (GitHub CLI debe estar instalado):",
   "BuildingFromHead": "Compilando {spec} de HEAD...",
   "BuildingPackage": "Compilando {spec}...",
   "BuildingPackageFailed": "error en la compilación de {spec} con: {build_result}",

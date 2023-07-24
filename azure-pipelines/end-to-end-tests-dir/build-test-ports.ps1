@@ -15,11 +15,8 @@ Run-Vcpkg @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports/overlays" inst
 Throw-IfFailed
 Run-Vcpkg @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports" install vcpkg-internal-e2e-test-port
 Throw-IfFailed
-if ($IsWindows) {
-    Run-Vcpkg @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports" install vcpkg-find-acquire-program
-    Throw-IfFailed
-}
-
+Run-Vcpkg @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports" install control-file
+Throw-IfFailed
 $output = Run-VcpkgAndCaptureOutput @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports/overlays" install broken-no-name
 Throw-IfNotFailed
 if ($output -notmatch "missing required field 'name'") {
