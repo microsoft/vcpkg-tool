@@ -242,7 +242,7 @@ namespace
                                                     .append_raw('\n')
                                                     .append_raw(maybe_tree.error()));
                 }
-                auto maybe_path = m_paths.git_checkout_object_from_remote_registry(*maybe_tree.get());
+                auto maybe_path = m_paths.git_extract_tree_from_remote_registry(*maybe_tree.get());
                 if (!maybe_path)
                 {
                     msg::println_error(msgFailedToCheckoutRepo, msg::package_name = m_repo);
@@ -275,7 +275,7 @@ namespace
                     // This could be caused by git gc or otherwise -- fall back to full fetch
                     return {get_versions_tree_path(), false};
                 }
-                auto maybe_path = m_paths.git_checkout_object_from_remote_registry(*maybe_tree.get());
+                auto maybe_path = m_paths.git_extract_tree_from_remote_registry(*maybe_tree.get());
                 if (!maybe_path)
                 {
                     // This could be caused by git gc or otherwise -- fall back to full fetch
@@ -952,7 +952,7 @@ namespace
         }
 
         const auto& git_tree = git_trees[it - port_versions.begin()];
-        return parent.m_paths.git_checkout_object_from_remote_registry(git_tree).map(
+        return parent.m_paths.git_extract_tree_from_remote_registry(git_tree).map(
             [this, &git_tree](Path&& p) -> PathAndLocation {
                 return {
                     std::move(p),

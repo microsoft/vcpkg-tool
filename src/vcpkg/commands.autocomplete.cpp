@@ -29,10 +29,10 @@ namespace vcpkg::Commands::Autocomplete
         Checks::exit_success(line_info);
     }
 
-    static std::vector<std::string> combine_port_with_triplets(StringView port,
-                                                               const std::vector<std::string>& triplets)
+    static std::vector<std::string> combine_port_with_triplets(StringView port, View<TripletFile> triplets)
     {
-        return Util::fmap(triplets, [&](const std::string& triplet) { return fmt::format("{}:{}", port, triplet); });
+        return Util::fmap(triplets,
+                          [&](const TripletFile& triplet) { return fmt::format("{}:{}", port, triplet.name); });
     }
 
     void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
@@ -113,9 +113,9 @@ namespace vcpkg::Commands::Autocomplete
                     Checks::exit_success(VCPKG_LINE_INFO);
                 }
 
-                std::vector<std::string> triplets = paths.get_available_triplets_names();
-                Util::erase_remove_if(triplets, [&](const std::string& s) {
-                    return !Strings::case_insensitive_ascii_starts_with(s, triplet_prefix);
+                auto triplets = paths.get_triplet_db().available_triplets;
+                Util::erase_remove_if(triplets, [&](const TripletFile& tf) {
+                    return !Strings::case_insensitive_ascii_starts_with(tf.name, triplet_prefix);
                 });
 
                 auto result = combine_port_with_triplets(port_name, triplets);
@@ -176,7 +176,7 @@ namespace vcpkg::Commands::Autocomplete
                 if (command.name == "install" && results.size() == 1 && !is_option)
                 {
                     const auto port_at_each_triplet =
-                        combine_port_with_triplets(results[0], paths.get_available_triplets_names());
+                        combine_port_with_triplets(results[0], paths.get_triplet_db().available_triplets);
                     Util::Vectors::append(&results, port_at_each_triplet);
                 }
 

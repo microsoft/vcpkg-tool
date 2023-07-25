@@ -87,10 +87,10 @@ namespace vcpkg::Commands::PackageInfo
                 }
 
                 auto& qpkg = *maybe_qpkg.get();
-                auto t = Triplet::from_canonical_name(std::string(*qpkg.triplet.get()));
-                check_triplet(t, paths);
-                specs_to_write.emplace_back(qpkg.name, t);
+                // intentionally no triplet name check
+                specs_to_write.emplace_back(qpkg.name, Triplet::from_canonical_name(*qpkg.triplet.get()));
             }
+
             Json::Object response;
             Json::Object results;
             while (!specs_to_write.empty())

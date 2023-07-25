@@ -12,7 +12,7 @@ function Reset-VcpkgConfiguration {
         registries = @(@{
             'name' = 'artifacts-test';
             'kind' = 'artifact';
-            'location' = (Get-Item "$PSScriptRoot/../e2e_artifacts_registry").FullName;
+            'location' = (Get-Item "$PSScriptRoot/../e2e-artifacts-registry").FullName;
         })
     } | ConvertTo-JSON | Out-File -Encoding ascii 'vcpkg-configuration.json' | Out-Null
 }
