@@ -102,7 +102,7 @@ namespace vcpkg::Commands
                            structurally_equal(spec.platform.value_or(PlatformExpression::Expr()), dep.platform);
                 });
                 const auto features = Util::fmap(spec.features.value_or({}), [](auto& feature) {
-                    return Dependency::Feature{feature, PlatformExpression::Expr::Empty()};
+                    return DependencyRequestedFeature{feature, PlatformExpression::Expr::Empty()};
                 });
                 if (dep == manifest_scf.core_paragraph->dependencies.end())
                 {

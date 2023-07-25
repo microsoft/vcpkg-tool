@@ -79,7 +79,7 @@ namespace vcpkg
     }
     bool operator!=(const DependencyOverride& lhs, const DependencyOverride& rhs);
 
-    bool operator==(const Dependency::Feature& lhs, const Dependency::Feature& rhs)
+    bool operator==(const DependencyRequestedFeature& lhs, const DependencyRequestedFeature& rhs)
     {
         if (lhs.name != rhs.name) return false;
         if (!structurally_equal(lhs.platform, rhs.platform)) return false;
@@ -87,7 +87,10 @@ namespace vcpkg
         return true;
     }
 
-    bool operator!=(const Dependency::Feature& lhs, const Dependency::Feature& rhs) { return !(lhs == rhs); }
+    bool operator!=(const DependencyRequestedFeature& lhs, const DependencyRequestedFeature& rhs)
+    {
+        return !(lhs == rhs);
+    }
 
     struct UrlDeserializer : Json::StringDeserializer
     {
@@ -223,7 +226,7 @@ namespace vcpkg
 
             struct DependencyFeatureLess
             {
-                bool operator()(const Dependency::Feature& lhs, const Dependency::Feature& rhs) const
+                bool operator()(const DependencyRequestedFeature& lhs, const DependencyRequestedFeature& rhs) const
                 {
                     if (lhs.name == rhs.name)
                     {
@@ -375,7 +378,7 @@ namespace vcpkg
         if (const auto default_features = maybe_default_features.get())
         {
             spgh->default_features =
-                Util::fmap(*default_features, [](const auto& name) { return Dependency::Feature{name}; });
+                Util::fmap(*default_features, [](const auto& name) { return DependencyRequestedFeature{name}; });
         }
         else
         {
@@ -500,7 +503,7 @@ namespace vcpkg
     };
     const PlatformExprDeserializer PlatformExprDeserializer::instance;
 
-    struct DependencyFeatureDeserializer : Json::IDeserializer<Dependency::Feature>
+    struct DependencyFeatureDeserializer : Json::IDeserializer<DependencyRequestedFeature>
     {
         LocalizedString type_name() const override { return msg::format(msgADependencyFeature); }
 
@@ -516,20 +519,20 @@ namespace vcpkg
             return t;
         }
 
-        Optional<Dependency::Feature> visit_string(Json::Reader& r, StringView sv) const override
+        Optional<DependencyRequestedFeature> visit_string(Json::Reader& r, StringView sv) const override
         {
             return Json::IdentifierDeserializer::instance.visit_string(r, sv).map(
                 [](std::string&& name) { return std::move(name); });
         }
 
-        Optional<Dependency::Feature> visit_object(Json::Reader& r, const Json::Object& obj) const override
+        Optional<DependencyRequestedFeature> visit_object(Json::Reader& r, const Json::Object& obj) const override
         {
             std::string name;
             PlatformExpression::Expr platform;
             r.required_object_field(type_name(), obj, NAME, name, Json::IdentifierDeserializer::instance);
             r.optional_object_field(obj, PLATFORM, platform, PlatformExprDeserializer::instance);
             if (name.empty()) return nullopt;
-            return Dependency::Feature{std::move(name), std::move(platform)};
+            return DependencyRequestedFeature{std::move(name), std::move(platform)};
         }
 
         const static DependencyFeatureDeserializer instance;

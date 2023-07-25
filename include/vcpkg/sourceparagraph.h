@@ -37,25 +37,28 @@ namespace vcpkg
         Optional<Version> try_get_minimum_version() const;
     };
 
+    struct DependencyRequestedFeature
+    {
+        std::string name;
+        PlatformExpression::Expr platform;
+        DependencyRequestedFeature(std::string name)
+            : DependencyRequestedFeature(std::move(name), PlatformExpression::Expr::Empty())
+        {
+        }
+        DependencyRequestedFeature(std::string name, PlatformExpression::Expr platform)
+            : name(std::move(name)), platform(std::move(platform))
+        {
+            Checks::check_exit(VCPKG_LINE_INFO, !this->name.empty() && this->name != "core" && this->name != "default");
+        }
+        friend bool operator==(const DependencyRequestedFeature& lhs, const DependencyRequestedFeature& rhs);
+        friend bool operator!=(const DependencyRequestedFeature& lhs, const DependencyRequestedFeature& rhs);
+    };
+
     struct Dependency
     {
-        struct Feature
-        {
-            std::string name;
-            PlatformExpression::Expr platform;
-            Feature(std::string name) : Feature(std::move(name), PlatformExpression::Expr::Empty()) { }
-            Feature(std::string name, PlatformExpression::Expr platform)
-                : name(std::move(name)), platform(std::move(platform))
-            {
-                Checks::check_exit(VCPKG_LINE_INFO,
-                                   !this->name.empty() && this->name != "core" && this->name != "default");
-            }
-            friend bool operator==(const Feature& lhs, const Feature& rhs);
-            friend bool operator!=(const Feature& lhs, const Feature& rhs);
-        };
         std::string name;
         // a list of "real" features without "core" or "default". Use member default_features instead.
-        std::vector<Feature> features;
+        std::vector<DependencyRequestedFeature> features;
         PlatformExpression::Expr platform;
         DependencyConstraint constraint;
         bool host = false;
@@ -126,7 +129,7 @@ namespace vcpkg
         std::string documentation;
         std::vector<Dependency> dependencies;
         std::vector<DependencyOverride> overrides;
-        std::vector<Dependency::Feature> default_features;
+        std::vector<DependencyRequestedFeature> default_features;
 
         // there are two distinct "empty" states here
         // "user did not provide a license" -> nullopt

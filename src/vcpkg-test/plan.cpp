@@ -458,7 +458,8 @@ TEST_CASE ("install platform dependent default features", "[plan]")
     // feature "1" is a default feature on "linux"
     using MBO = PlatformExpression::MultipleBinaryOperators;
     auto linux_expr = PlatformExpression::parse_platform_expression("linux", MBO::Deny).value_or_exit(VCPKG_LINE_INFO);
-    spec_map.map["a"].source_control_file->core_paragraph->default_features = {Dependency::Feature{"1", linux_expr}};
+    spec_map.map["a"].source_control_file->core_paragraph->default_features = {
+        DependencyRequestedFeature{"1", linux_expr}};
 
     MapPortFileProvider map_port{spec_map.map};
     MockCMakeVarProvider var_provider;

@@ -847,7 +847,7 @@ namespace vcpkg
                     {
                         has_supports = Util::any_of(
                             clust.get_scfl_or_exit().source_control_file->core_paragraph->default_features,
-                            [](const Dependency::Feature& feature) { return !feature.platform.is_empty(); });
+                            [](const DependencyRequestedFeature& feature) { return !feature.platform.is_empty(); });
                     }
                     else
                     {
@@ -1363,7 +1363,7 @@ namespace vcpkg
             {
                 PackageSpec spec;
                 DependencyConstraint dc;
-                std::vector<Dependency::Feature> features;
+                std::vector<DependencyRequestedFeature> features;
             };
 
             struct PackageNodeData

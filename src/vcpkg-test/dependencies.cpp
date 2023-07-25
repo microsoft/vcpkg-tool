@@ -91,7 +91,9 @@ struct MockVersionedPortfileProvider : IVersionedPortfileProvider
 
 struct CoreDependency : Dependency
 {
-    CoreDependency(std::string name, std::vector<Feature> features = {}, PlatformExpression::Expr platform = {})
+    CoreDependency(std::string name,
+                   std::vector<DependencyRequestedFeature> features = {},
+                   PlatformExpression::Expr platform = {})
         : Dependency{std::move(name), std::move(features), std::move(platform)}
     {
         default_features = false;
@@ -2270,7 +2272,7 @@ TEST_CASE ("respect supports expressions of features", "[versionplan]")
     }
 }
 
-TEST_CASE ("respect platform expressions in Dependency::Feature", "[versionplan]")
+TEST_CASE ("respect platform expressions in DependencyRequestedFeature", "[versionplan]")
 {
     using namespace PlatformExpression;
     MockBaselineProvider bp;
