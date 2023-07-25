@@ -528,6 +528,7 @@ namespace vcpkg
             PlatformExpression::Expr platform;
             r.required_object_field(type_name(), obj, NAME, name, Json::IdentifierDeserializer::instance);
             r.optional_object_field(obj, PLATFORM, platform, PlatformExprDeserializer::instance);
+            if (name.empty()) return nullopt;
             return Dependency::Feature{std::move(name), std::move(platform)};
         }
 
