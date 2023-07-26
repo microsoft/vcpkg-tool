@@ -1069,12 +1069,11 @@ namespace vcpkg
         return "none";
     }
 
-    static void abi_entries_from_abi_info(const Filesystem& fs,
-                                          Cache<Path, Optional<std::string>>& grdk_cache,
-                                          const AbiInfo& abi_info,
-                                          std::vector<AbiEntry>& abi_tag_entries)
+    static void abi_entries_from_pre_build_info(const Filesystem& fs,
+                                                Cache<Path, Optional<std::string>>& grdk_cache,
+                                                const PreBuildInfo& pre_build_info,
+                                                std::vector<AbiEntry>& abi_tag_entries)
     {
-        const auto& pre_build_info = *abi_info.pre_build_info;
         if (pre_build_info.public_abi_override)
         {
             abi_tag_entries.emplace_back(
@@ -1092,9 +1091,9 @@ namespace vcpkg
             }
         }
 
-        if (abi_info.pre_build_info->target_is_xbox)
+        if (pre_build_info.target_is_xbox)
         {
-            abi_tag_entries.emplace_back("grdk.h", grdk_hash(fs, grdk_cache, *abi_info.pre_build_info));
+            abi_tag_entries.emplace_back("grdk.h", grdk_hash(fs, grdk_cache, pre_build_info));
         }
     }
 
@@ -1111,6 +1110,8 @@ namespace vcpkg
 
     static Optional<AbiTagAndFiles> compute_abi_tag(const VcpkgPaths& paths,
                                                     const InstallPlanAction& action,
+                                                    const PreBuildInfo& pre_build_info,
+                                                    const Toolset& toolset,
                                                     Span<const AbiEntry> dependency_abis,
                                                     Cache<Path, Optional<std::string>>& grdk_cache)
     {
@@ -1142,13 +1143,10 @@ namespace vcpkg
 
         std::vector<AbiEntry> abi_tag_entries(dependency_abis.begin(), dependency_abis.end());
 
-        const auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
-        Checks::check_exit(VCPKG_LINE_INFO, abi_info.pre_build_info != nullptr);
-        const auto& triplet_abi =
-            paths.get_triplet_info(*abi_info.pre_build_info, abi_info.toolset.value_or_exit(VCPKG_LINE_INFO));
+        const auto& triplet_abi = paths.get_triplet_info(pre_build_info, toolset);
         abi_tag_entries.emplace_back("triplet", triplet.canonical_name());
         abi_tag_entries.emplace_back("triplet_abi", triplet_abi);
-        abi_entries_from_abi_info(fs, grdk_cache, abi_info, abi_tag_entries);
+        abi_entries_from_pre_build_info(fs, grdk_cache, pre_build_info, abi_tag_entries);
 
         // If there is an unusually large number of files in the port then
         // something suspicious is going on.
@@ -1308,7 +1306,8 @@ namespace vcpkg
                 paths, action.spec.triplet(), var_provider.get_tag_vars(action.spec).value_or_exit(VCPKG_LINE_INFO));
             const auto& toolset = paths.get_toolset(*abi_info.pre_build_info);
             abi_info.toolset = toolset;
-            auto maybe_abi_tag_and_file = compute_abi_tag(paths, action, dependency_abis, grdk_cache);
+            auto maybe_abi_tag_and_file =
+                compute_abi_tag(paths, action, *abi_info.pre_build_info, toolset, dependency_abis, grdk_cache);
             if (auto p = maybe_abi_tag_and_file.get())
             {
                 abi_info.compiler_info = paths.get_compiler_info(*abi_info.pre_build_info, toolset);
