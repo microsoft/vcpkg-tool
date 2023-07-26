@@ -483,7 +483,9 @@ namespace vcpkg
     }
 #endif
 
-    static CompilerInfo load_compiler_info(const VcpkgPaths& paths, const AbiInfo& abi_info);
+    static CompilerInfo load_compiler_info(const VcpkgPaths& paths,
+                                           const PreBuildInfo& pre_build_info,
+                                           const Toolset& toolset);
 
     static const std::string& get_toolchain_cache(Cache<Path, std::string>& cache,
                                                   const Path& tcfile,
@@ -521,7 +523,8 @@ namespace vcpkg
         return triplet_entry.compiler_info.get_lazy(toolchain_hash, [&]() -> CompilerInfo {
             if (m_compiler_tracking)
             {
-                return load_compiler_info(paths, abi_info);
+                return load_compiler_info(
+                    paths, *abi_info.pre_build_info, abi_info.toolset.value_or_exit(VCPKG_LINE_INFO));
             }
             else
             {
@@ -659,9 +662,11 @@ namespace vcpkg
         out_vars.emplace_back("GIT", git_exe_path);
     }
 
-    static CompilerInfo load_compiler_info(const VcpkgPaths& paths, const AbiInfo& abi_info)
+    static CompilerInfo load_compiler_info(const VcpkgPaths& paths,
+                                           const PreBuildInfo& pre_build_info,
+                                           const Toolset& toolset)
     {
-        auto& triplet = abi_info.pre_build_info->triplet;
+        auto& triplet = pre_build_info.triplet;
         msg::println(msgDetectCompilerHash, msg::triplet = triplet);
         auto buildpath = paths.buildtrees() / "detect_compiler";
 
@@ -672,12 +677,11 @@ namespace vcpkg
             // The detect_compiler "port" doesn't depend on the host triplet, so always natively compile
             {"_HOST_TRIPLET", triplet.canonical_name()},
         };
-        get_generic_cmake_build_args(paths, triplet, abi_info.toolset.value_or_exit(VCPKG_LINE_INFO), cmake_args);
+        get_generic_cmake_build_args(paths, triplet, toolset, cmake_args);
 
         auto command = vcpkg::make_cmake_cmd(paths, paths.ports_cmake, std::move(cmake_args));
 
-        const auto& env =
-            paths.get_action_env(*abi_info.pre_build_info, abi_info.toolset.value_or_exit(VCPKG_LINE_INFO));
+        const auto& env = paths.get_action_env(pre_build_info, toolset);
         auto& fs = paths.get_filesystem();
         fs.create_directory(buildpath, VCPKG_LINE_INFO);
         auto stdoutlog = buildpath / ("stdout-" + triplet.canonical_name() + ".log");
