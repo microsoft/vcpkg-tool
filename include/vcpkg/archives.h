@@ -15,12 +15,12 @@ namespace vcpkg
 {
     enum class ExtractionType
     {
-        UNKNOWN,
-        TAR,
-        ZIP,
-        NUPKG,
-        MSI,
-        EXE
+        Unknown,
+        Tar,
+        Zip,
+        Nupkg,
+        Msi,
+        Exe
     };
 
     // Extract `archive` to `to_path` using `tar_tool`.

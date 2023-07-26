@@ -7,8 +7,8 @@ namespace vcpkg::Commands
 {
     enum class StripMode
     {
-        manual,
-        automatic
+        Manual,
+        Automatic
     };
 
     struct StripSetting

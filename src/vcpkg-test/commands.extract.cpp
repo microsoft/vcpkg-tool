@@ -65,7 +65,7 @@ ExtractedArchive archive = {BASE_TEMP_PATH,
 TEST_CASE ("Testing strip_map, strip = 1", "[z-extract]")
 {
     REQUIRE(
-        strip_map(archive, {StripMode::manual, 1}) ==
+        strip_map(archive, {StripMode::Manual, 1}) ==
         std::vector<std::pair<Path, Path>>{
             {FILE_1, BASE_PATH "folder1" VCPKG_PREFERRED_SEPARATOR "file1.txt"},
             {FILE_2, BASE_PATH "folder1" VCPKG_PREFERRED_SEPARATOR "file2.txt"},
@@ -78,7 +78,7 @@ TEST_CASE ("Testing strip_map, strip = 1", "[z-extract]")
 
 TEST_CASE ("Testing strip_map, strip = 2", "[z-extract]")
 {
-    REQUIRE(strip_map(archive, {StripMode::manual, 2}) ==
+    REQUIRE(strip_map(archive, {StripMode::Manual, 2}) ==
             std::vector<std::pair<Path, Path>>{{FILE_1, BASE_PATH "file1.txt"},
                                                {FILE_2, BASE_PATH "file2.txt"},
                                                {FILE_3, BASE_PATH "file3.txt"},
@@ -90,7 +90,7 @@ TEST_CASE ("Testing strip_map, strip = 2", "[z-extract]")
 
 TEST_CASE ("Testing strip_map, strip = 3 (Max archive depth)", "[z-extract]")
 {
-    REQUIRE(strip_map(archive, {StripMode::manual, 3}) ==
+    REQUIRE(strip_map(archive, {StripMode::Manual, 3}) ==
             std::vector<std::pair<Path, Path>>{{FILE_1, ""},
                                                {FILE_2, ""},
                                                {FILE_3, ""},
@@ -103,7 +103,7 @@ TEST_CASE ("Testing strip_map, strip = 3 (Max archive depth)", "[z-extract]")
 TEST_CASE ("Testing strip_map, strip = AUTO => remove all common prefixes from path", "z-extract")
 {
     REQUIRE(
-        strip_map(archive, {StripMode::automatic, -1}) ==
+        strip_map(archive, {StripMode::Automatic, -1}) ==
         std::vector<std::pair<Path, Path>>{
             {FILE_1, BASE_PATH "folder1" VCPKG_PREFERRED_SEPARATOR "file1.txt"},
             {FILE_2, BASE_PATH "folder1" VCPKG_PREFERRED_SEPARATOR "file2.txt"},

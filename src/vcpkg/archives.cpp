@@ -137,28 +137,28 @@ namespace vcpkg
         const auto ext = archive.extension();
         if (Strings::case_insensitive_ascii_equals(ext, ".nupkg"))
         {
-            return ExtractionType::NUPKG;
+            return ExtractionType::Nupkg;
         }
         else if (Strings::case_insensitive_ascii_equals(ext, ".msi"))
         {
-            return ExtractionType::MSI;
+            return ExtractionType::Msi;
         }
         else if (Strings::case_insensitive_ascii_equals(ext, ".zip") ||
                  Strings::case_insensitive_ascii_equals(ext, ".7z"))
         {
-            return ExtractionType::ZIP;
+            return ExtractionType::Zip;
         }
         else if (ext == ".gz" || ext == ".bz2" || ext == ".tgz" || ext == ".xz")
         {
-            return ExtractionType::TAR;
+            return ExtractionType::Tar;
         }
         else if (Strings::case_insensitive_ascii_equals(ext, ".exe"))
         {
-            return ExtractionType::EXE;
+            return ExtractionType::Exe;
         }
         else
         {
-            return ExtractionType::UNKNOWN;
+            return ExtractionType::Unknown;
         }
     }
 
@@ -173,16 +173,16 @@ namespace vcpkg
 #if defined(_WIN32)
         switch (ext_type)
         {
-            case ExtractionType::UNKNOWN: break;
-            case ExtractionType::NUPKG: win32_extract_nupkg(tools, status_sink, archive, to_path); break;
-            case ExtractionType::MSI: win32_extract_msi(archive, to_path); break;
-            case ExtractionType::ZIP:
+            case ExtractionType::Unknown: break;
+            case ExtractionType::Nupkg: win32_extract_nupkg(tools, status_sink, archive, to_path); break;
+            case ExtractionType::Msi: win32_extract_msi(archive, to_path); break;
+            case ExtractionType::Zip:
                 extract_tar_cmake(tools.get_tool_path(Tools::CMAKE, status_sink), archive, to_path);
                 break;
-            case ExtractionType::TAR:
+            case ExtractionType::Tar:
                 extract_tar(tools.get_tool_path(Tools::TAR, status_sink), archive, to_path);
                 break;
-            case ExtractionType::EXE:
+            case ExtractionType::Exe:
                 const Path filename = archive.filename();
                 const Path stem = filename.stem();
                 const Path to_archive = Path(archive.parent_path()) / stem;
@@ -211,7 +211,7 @@ namespace vcpkg
 
 #endif
         // Try cmake for unkown extensions, i.e., vsix => zip
-        if (ext_type == ExtractionType::UNKNOWN)
+        if (ext_type == ExtractionType::Unknown)
         {
             extract_tar_cmake(tools.get_tool_path(Tools::CMAKE, status_sink), archive, to_path);
         }

@@ -34,14 +34,14 @@ namespace vcpkg::Commands
 
             if (Strings::case_insensitive_ascii_equals(maybe_value, "auto"))
             {
-                return {StripMode::automatic, -1};
+                return {StripMode::Automatic, -1};
             }
 
             auto value = Strings::strto<int>(maybe_value);
 
             if (value.has_value())
             {
-                return {StripMode::manual, value.value_or_exit(VCPKG_LINE_INFO)};
+                return {StripMode::Manual, value.value_or_exit(VCPKG_LINE_INFO)};
             }
             else
             {
@@ -50,7 +50,7 @@ namespace vcpkg::Commands
             }
         }
         // No --strip set, default to 0
-        return {StripMode::manual, 0};
+        return {StripMode::Manual, 0};
     }
 
     static bool is_slash(char c)
@@ -93,7 +93,7 @@ namespace vcpkg::Commands
         const auto base_path = archive.base_path;
         const auto proximate = archive.proximate_to_temp;
 
-        size_t strip_count = strip_setting.mode == StripMode::automatic ? get_common_prefix_count(proximate)
+        size_t strip_count = strip_setting.mode == StripMode::Automatic ? get_common_prefix_count(proximate)
                                                                         : static_cast<size_t>(strip_setting.count);
 
         for (const auto& prox_path : proximate)
