@@ -101,14 +101,17 @@ namespace vcpkg::Commands
                     return dep.name == spec.name && !dep.host &&
                            structurally_equal(spec.platform.value_or(PlatformExpression::Expr()), dep.platform);
                 });
+                const auto features = Util::fmap(spec.features.value_or({}), [](auto& feature) {
+                    return DependencyRequestedFeature{feature, PlatformExpression::Expr::Empty()};
+                });
                 if (dep == manifest_scf.core_paragraph->dependencies.end())
                 {
                     manifest_scf.core_paragraph->dependencies.push_back(
-                        Dependency{spec.name, spec.features.value_or({}), spec.platform.value_or({})});
+                        Dependency{spec.name, features, spec.platform.value_or({})});
                 }
                 else if (spec.features)
                 {
-                    for (const auto& feature : spec.features.value_or_exit(VCPKG_LINE_INFO))
+                    for (const auto& feature : features)
                     {
                         if (!Util::Vectors::contains(dep->features, feature))
                         {

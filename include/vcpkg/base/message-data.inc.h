@@ -4,6 +4,7 @@ DECLARE_MESSAGE(ABoolean, (), "", "a boolean")
 DECLARE_MESSAGE(ABuiltinRegistry, (), "", "a builtin registry")
 DECLARE_MESSAGE(AConfigurationObject, (), "", "a configuration object")
 DECLARE_MESSAGE(ADependency, (), "", "a dependency")
+DECLARE_MESSAGE(ADependencyFeature, (), "", "a feature in a dependency")
 DECLARE_MESSAGE(ADemandObject,
                 (),
                 "'demands' are a concept in the schema of a JSON file the user can edit",
@@ -124,6 +125,7 @@ DECLARE_MESSAGE(AnArtifactsGitRegistryUrl, (), "", "an artifacts git registry UR
 DECLARE_MESSAGE(AnArtifactsRegistry, (), "", "an artifacts registry")
 DECLARE_MESSAGE(AnArrayOfDependencies, (), "", "an array of dependencies")
 DECLARE_MESSAGE(AnArrayOfDependencyOverrides, (), "", "an array of dependency overrides")
+DECLARE_MESSAGE(AnArrayOfFeatures, (), "", "an array of features")
 DECLARE_MESSAGE(AnArrayOfIdentifers, (), "", "an array of identifiers")
 DECLARE_MESSAGE(AnArrayOfOverlayPaths, (), "", "an array of overlay paths")
 DECLARE_MESSAGE(AnArrayOfOverlayTripletsPaths, (), "", "an array of overlay triplets paths")

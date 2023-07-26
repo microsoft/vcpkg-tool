@@ -1117,12 +1117,23 @@ namespace vcpkg
             {
                 features.emplace_back("core");
             }
-
+            PackageSpec toplevel{manifest_core.name, default_triplet};
             auto core_it = std::remove(features.begin(), features.end(), "core");
             if (core_it == features.end())
             {
-                const auto& default_features = manifest_core.default_features;
-                features.insert(features.end(), default_features.begin(), default_features.end());
+                if (Util::any_of(manifest_core.default_features, [](const auto& f) { return !f.platform.is_empty(); }))
+                {
+                    const auto& vars = var_provider.get_or_load_dep_info_vars(toplevel, host_triplet);
+                    for (const auto& f : manifest_core.default_features)
+                    {
+                        if (f.platform.evaluate(vars)) features.push_back(f.name);
+                    }
+                }
+                else
+                {
+                    for (const auto& f : manifest_core.default_features)
+                        features.push_back(f.name);
+                }
             }
             else
             {
@@ -1176,7 +1187,6 @@ namespace vcpkg
 
             auto oprovider = make_manifest_provider(
                 fs, paths.original_cwd, extended_overlay_ports, manifest->path, std::move(manifest_scf));
-            PackageSpec toplevel{manifest_core.name, default_triplet};
             auto install_plan = create_versioned_install_plan(*verprovider,
                                                               *baseprovider,
                                                               *oprovider,
