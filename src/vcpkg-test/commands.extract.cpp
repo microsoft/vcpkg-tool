@@ -18,7 +18,7 @@ using namespace vcpkg::Commands;
 #define BASE_PATH "C:\\to\\path\\"
 #else // ^^^ _WIN32 // !_WIN32 vvv
 #define BASE_TEMP_PATH "/to/path/temp/"
-#define BASE_PATH = "/to/path/"
+#define BASE_PATH "/to/path/"
 #endif // ^^^ !_WIN32
 
 // C:\
