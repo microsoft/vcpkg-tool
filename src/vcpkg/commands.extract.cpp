@@ -37,11 +37,10 @@ namespace vcpkg::Commands
                 return {StripMode::Automatic, -1};
             }
 
-            auto value = Strings::strto<int>(maybe_value);
-
-            if (value.has_value())
+            auto maybe_strip_value = Strings::strto<int>(maybe_value);
+            if (auto value = maybe_strip_value.get())
             {
-                return {StripMode::Manual, value.value_or_exit(VCPKG_LINE_INFO)};
+                return {StripMode::Manual, *value};
             }
             else
             {
