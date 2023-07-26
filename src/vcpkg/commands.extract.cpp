@@ -62,7 +62,7 @@ namespace vcpkg::Commands
             ;
     }
 
-    size_t get_common_prefix_count(std::vector<Path> paths)
+    size_t get_common_directories_count(std::vector<Path> paths)
     {
         if (paths.size() == 0)
         {
@@ -85,7 +85,8 @@ namespace vcpkg::Commands
         return std::count_if(known_common_prefix.begin(), known_common_prefix.end(), is_slash);
     }
 
-    std::vector<std::pair<Path, Path>> strip_map(const ExtractedArchive& archive, StripSetting strip_setting)
+    std::vector<std::pair<Path, Path>> get_archive_deploy_operations(const ExtractedArchive& archive,
+                                                                     StripSetting strip_setting)
     {
         std::vector<std::pair<Path, Path>> result;
 
@@ -93,7 +94,7 @@ namespace vcpkg::Commands
         const auto base_path = archive.base_path;
         const auto proximate = archive.proximate_to_temp;
 
-        size_t strip_count = strip_setting.mode == StripMode::Automatic ? get_common_prefix_count(proximate)
+        size_t strip_count = strip_setting.mode == StripMode::Automatic ? get_common_directories_count(proximate)
                                                                         : static_cast<size_t>(strip_setting.count);
 
         for (const auto& prox_path : proximate)
@@ -137,7 +138,7 @@ namespace vcpkg::Commands
         ExtractedArchive archive = {
             temp_dir, output_dir, fs.get_regular_files_recursive_lexically_proximate(temp_dir, VCPKG_LINE_INFO)};
 
-        auto mapping = strip_map(archive, strip_setting);
+        auto mapping = get_archive_deploy_operations(archive, strip_setting);
 
         for (const auto& file : mapping)
         {

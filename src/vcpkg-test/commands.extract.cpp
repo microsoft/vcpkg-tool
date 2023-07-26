@@ -65,7 +65,7 @@ ExtractedArchive archive = {BASE_TEMP_PATH,
 TEST_CASE ("Testing strip_map, strip = 1", "[z-extract]")
 {
     REQUIRE(
-        strip_map(archive, {StripMode::Manual, 1}) ==
+        get_archive_deploy_operations(archive, {StripMode::Manual, 1}) ==
         std::vector<std::pair<Path, Path>>{
             {FILE_1, BASE_PATH "folder1" VCPKG_PREFERRED_SEPARATOR "file1.txt"},
             {FILE_2, BASE_PATH "folder1" VCPKG_PREFERRED_SEPARATOR "file2.txt"},
@@ -78,7 +78,7 @@ TEST_CASE ("Testing strip_map, strip = 1", "[z-extract]")
 
 TEST_CASE ("Testing strip_map, strip = 2", "[z-extract]")
 {
-    REQUIRE(strip_map(archive, {StripMode::Manual, 2}) ==
+    REQUIRE(get_archive_deploy_operations(archive, {StripMode::Manual, 2}) ==
             std::vector<std::pair<Path, Path>>{{FILE_1, BASE_PATH "file1.txt"},
                                                {FILE_2, BASE_PATH "file2.txt"},
                                                {FILE_3, BASE_PATH "file3.txt"},
@@ -90,7 +90,7 @@ TEST_CASE ("Testing strip_map, strip = 2", "[z-extract]")
 
 TEST_CASE ("Testing strip_map, strip = 3 (Max archive depth)", "[z-extract]")
 {
-    REQUIRE(strip_map(archive, {StripMode::Manual, 3}) ==
+    REQUIRE(get_archive_deploy_operations(archive, {StripMode::Manual, 3}) ==
             std::vector<std::pair<Path, Path>>{{FILE_1, ""},
                                                {FILE_2, ""},
                                                {FILE_3, ""},
@@ -103,7 +103,7 @@ TEST_CASE ("Testing strip_map, strip = 3 (Max archive depth)", "[z-extract]")
 TEST_CASE ("Testing strip_map, strip = AUTO => remove all common prefixes from path", "z-extract")
 {
     REQUIRE(
-        strip_map(archive, {StripMode::Automatic, -1}) ==
+        get_archive_deploy_operations(archive, {StripMode::Automatic, -1}) ==
         std::vector<std::pair<Path, Path>>{
             {FILE_1, BASE_PATH "folder1" VCPKG_PREFERRED_SEPARATOR "file1.txt"},
             {FILE_2, BASE_PATH "folder1" VCPKG_PREFERRED_SEPARATOR "file2.txt"},
@@ -116,7 +116,7 @@ TEST_CASE ("Testing strip_map, strip = AUTO => remove all common prefixes from p
 
 TEST_CASE ("Testing strip auto's get_common_prefix_count", "z-extract")
 {
-    REQUIRE(1 == get_common_prefix_count(
+    REQUIRE(1 == get_common_directories_count(
                      {"archive" VCPKG_PREFERRED_SEPARATOR "folder1" VCPKG_PREFERRED_SEPARATOR "file1.txt",
                       "archive" VCPKG_PREFERRED_SEPARATOR "folder1" VCPKG_PREFERRED_SEPARATOR "file2.txt",
                       "archive" VCPKG_PREFERRED_SEPARATOR "folder1" VCPKG_PREFERRED_SEPARATOR "file3.txt",
@@ -127,7 +127,7 @@ TEST_CASE ("Testing strip auto's get_common_prefix_count", "z-extract")
                       "archive" VCPKG_PREFERRED_SEPARATOR "folder2" VCPKG_PREFERRED_SEPARATOR
                       "folder3" VCPKG_PREFERRED_SEPARATOR "file7.txt"}));
 
-    REQUIRE(0 == get_common_prefix_count(
+    REQUIRE(0 == get_common_directories_count(
                      {"folder1" VCPKG_PREFERRED_SEPARATOR "file1.txt",
                       "folder1" VCPKG_PREFERRED_SEPARATOR "file2.txt",
                       "folder1" VCPKG_PREFERRED_SEPARATOR "file3.txt",
@@ -136,8 +136,8 @@ TEST_CASE ("Testing strip auto's get_common_prefix_count", "z-extract")
                       "folder2" VCPKG_PREFERRED_SEPARATOR "folder3" VCPKG_PREFERRED_SEPARATOR "file6.txt",
                       "folder2" VCPKG_PREFERRED_SEPARATOR "folder3" VCPKG_PREFERRED_SEPARATOR "file7.txt"}));
 
-    REQUIRE(0 == get_common_prefix_count({}));
-    REQUIRE(0 == get_common_prefix_count({"file1.txt", "file2.txt"}));
-    REQUIRE(0 == get_common_prefix_count({"file1.txt"}));
-    REQUIRE(1 == get_common_prefix_count({"folder1" VCPKG_PREFERRED_SEPARATOR "file1.txt"}));
+    REQUIRE(0 == get_common_directories_count({}));
+    REQUIRE(0 == get_common_directories_count({"file1.txt", "file2.txt"}));
+    REQUIRE(0 == get_common_directories_count({"file1.txt"}));
+    REQUIRE(1 == get_common_directories_count({"folder1" VCPKG_PREFERRED_SEPARATOR "file1.txt"}));
 }
