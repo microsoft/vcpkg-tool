@@ -21,7 +21,7 @@ using namespace vcpkg::Commands;
 #define BASE_PATH "/to/path/"
 #endif // ^^^ !_WIN32
 
-// C:\
+// C:
 // |__to
 //     |__ path
 //         |__ archive
