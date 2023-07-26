@@ -105,17 +105,10 @@ namespace vcpkg::Commands
             auto last = first + prox_str.size();
 
             // strip leading directories equivalent to the number specified
-            for (size_t i = 0; i < strip_count; ++i)
+            for (size_t i = 0; i < strip_count && first != last; ++i)
             {
-                while (last != first && !is_slash(*first))
-                {
-                    ++first;
-                }
-
-                while (last != first && is_slash(*first))
-                {
-                    ++first;
-                }
+                first = std::find_if(first, last, is_slash);
+                first = std::find_if_not(first, last, is_slash);
             }
 
             prox_str = std::string(first, static_cast<size_t>(last - first));
@@ -171,13 +164,13 @@ namespace vcpkg::Commands
             fs.create_directories(destination_path, VCPKG_LINE_INFO);
         }
 
-        if (strip_setting.count != 0)
+        if (strip_setting.mode == StripMode::Manual && strip_setting.count == 0)
         {
-            extract_and_strip(fs, paths, strip_setting, archive_path, destination_path);
+            extract_archive(fs, paths.get_tool_cache(), null_sink, archive_path, destination_path);
         }
         else
         {
-            extract_archive(fs, paths.get_tool_cache(), null_sink, archive_path, destination_path);
+            extract_and_strip(fs, paths, strip_setting, archive_path, destination_path);
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);
