@@ -15,6 +15,13 @@ namespace vcpkg::Commands
     {
         StripMode mode;
         int count;
+
+        // A constructor to enforce the relationship between mode and count
+        StripSetting(StripMode mode, int count) : mode(mode), count(count)
+        {
+            // If mode is Automatic, enforce count to be -1
+            if (mode == StripMode::Automatic) count = -1;
+        }
     };
 
     struct ExtractedArchive
