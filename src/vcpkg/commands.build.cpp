@@ -348,15 +348,15 @@ namespace vcpkg
 #endif
 
 #if defined(_WIN32)
-    const Environment& EnvCache::get_action_env(const VcpkgPaths& paths, const AbiInfo& abi_info)
+    const Environment& EnvCache::get_action_env(const VcpkgPaths& paths,
+                                                const PreBuildInfo& pre_build_info,
+                                                const Toolset& toolset)
     {
-        auto build_env_cmd =
-            make_build_env_cmd(*abi_info.pre_build_info, abi_info.toolset.value_or_exit(VCPKG_LINE_INFO));
-
-        const auto& base_env = envs.get_lazy(abi_info.pre_build_info->passthrough_env_vars, [&]() -> EnvMapEntry {
+        auto build_env_cmd = make_build_env_cmd(pre_build_info, toolset);
+        const auto& base_env = envs.get_lazy(pre_build_info.passthrough_env_vars, [&]() -> EnvMapEntry {
             std::unordered_map<std::string, std::string> env;
 
-            for (auto&& env_var : abi_info.pre_build_info->passthrough_env_vars)
+            for (auto&& env_var : pre_build_info.passthrough_env_vars)
             {
                 auto maybe_env_val = get_environment_variable(env_var);
                 if (auto env_val = maybe_env_val.get())
@@ -477,7 +477,10 @@ namespace vcpkg
         });
     }
 #else
-    const Environment& EnvCache::get_action_env(const VcpkgPaths&, const AbiInfo&) { return get_clean_environment(); }
+    const Environment& EnvCache::get_action_env(const VcpkgPaths&, const PreBuildInfo&, const Toolset&)
+    {
+        return get_clean_environment();
+    }
 #endif
 
     static CompilerInfo load_compiler_info(const VcpkgPaths& paths, const AbiInfo& abi_info);
@@ -673,7 +676,8 @@ namespace vcpkg
 
         auto command = vcpkg::make_cmake_cmd(paths, paths.ports_cmake, std::move(cmake_args));
 
-        const auto& env = paths.get_action_env(abi_info);
+        const auto& env =
+            paths.get_action_env(*abi_info.pre_build_info, abi_info.toolset.value_or_exit(VCPKG_LINE_INFO));
         auto& fs = paths.get_filesystem();
         fs.create_directory(buildpath, VCPKG_LINE_INFO);
         auto stdoutlog = buildpath / ("stdout-" + triplet.canonical_name() + ".log");
@@ -927,7 +931,7 @@ namespace vcpkg
         auto command = vcpkg::make_cmake_cmd(paths, paths.ports_cmake, get_cmake_build_args(args, paths, action));
 
         const auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
-        auto env = paths.get_action_env(abi_info);
+        auto env = paths.get_action_env(*abi_info.pre_build_info, abi_info.toolset.value_or_exit(VCPKG_LINE_INFO));
 
         auto buildpath = paths.build_dir(action.spec);
         fs.create_directory(buildpath, VCPKG_LINE_INFO);

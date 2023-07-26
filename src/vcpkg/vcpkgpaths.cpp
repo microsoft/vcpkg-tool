@@ -1338,9 +1338,9 @@ namespace vcpkg
 #endif
     }
 
-    const Environment& VcpkgPaths::get_action_env(const AbiInfo& abi_info) const
+    const Environment& VcpkgPaths::get_action_env(const PreBuildInfo& pre_build_info, const Toolset& toolset) const
     {
-        return m_pimpl->m_env_cache.get_action_env(*this, abi_info);
+        return m_pimpl->m_env_cache.get_action_env(*this, pre_build_info, toolset);
     }
 
     const std::string& VcpkgPaths::get_triplet_info(const AbiInfo& abi_info) const
