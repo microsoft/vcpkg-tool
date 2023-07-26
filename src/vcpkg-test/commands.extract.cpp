@@ -24,8 +24,8 @@ using namespace vcpkg::Commands;
 // C:
 // |__to
 //     |__ path
-//         |__ archive
-#define ARCHIVE_PATH BASE_TEMP_PATH "archive"
+//         |__ folder0
+#define ARCHIVE_PATH BASE_TEMP_PATH "folder0"
 //         |   |__ folder1
 #define FOLDER_1 ARCHIVE_PATH VCPKG_PREFERRED_SEPARATOR "folder1"
 //         |   |   |__ file1.txt
@@ -51,14 +51,14 @@ using namespace vcpkg::Commands;
 ExtractedArchive archive = {BASE_TEMP_PATH,
                             BASE_PATH,
                             {
-                                "archive" VCPKG_PREFERRED_SEPARATOR "folder1" VCPKG_PREFERRED_SEPARATOR "file1.txt",
-                                "archive" VCPKG_PREFERRED_SEPARATOR "folder1" VCPKG_PREFERRED_SEPARATOR "file2.txt",
-                                "archive" VCPKG_PREFERRED_SEPARATOR "folder1" VCPKG_PREFERRED_SEPARATOR "file3.txt",
-                                "archive" VCPKG_PREFERRED_SEPARATOR "folder2" VCPKG_PREFERRED_SEPARATOR "file4.txt",
-                                "archive" VCPKG_PREFERRED_SEPARATOR "folder2" VCPKG_PREFERRED_SEPARATOR "file5.txt",
-                                "archive" VCPKG_PREFERRED_SEPARATOR "folder2" VCPKG_PREFERRED_SEPARATOR
+                                "folder0" VCPKG_PREFERRED_SEPARATOR "folder1" VCPKG_PREFERRED_SEPARATOR "file1.txt",
+                                "folder0" VCPKG_PREFERRED_SEPARATOR "folder1" VCPKG_PREFERRED_SEPARATOR "file2.txt",
+                                "folder0" VCPKG_PREFERRED_SEPARATOR "folder1" VCPKG_PREFERRED_SEPARATOR "file3.txt",
+                                "folder0" VCPKG_PREFERRED_SEPARATOR "folder2" VCPKG_PREFERRED_SEPARATOR "file4.txt",
+                                "folder0" VCPKG_PREFERRED_SEPARATOR "folder2" VCPKG_PREFERRED_SEPARATOR "file5.txt",
+                                "folder0" VCPKG_PREFERRED_SEPARATOR "folder2" VCPKG_PREFERRED_SEPARATOR
                                 "folder3" VCPKG_PREFERRED_SEPARATOR "file6.txt",
-                                "archive" VCPKG_PREFERRED_SEPARATOR "folder2" VCPKG_PREFERRED_SEPARATOR
+                                "folder0" VCPKG_PREFERRED_SEPARATOR "folder2" VCPKG_PREFERRED_SEPARATOR
                                 "folder3" VCPKG_PREFERRED_SEPARATOR "file7.txt",
                             }};
 
@@ -117,14 +117,14 @@ TEST_CASE ("Testing strip_map, strip = AUTO => remove all common prefixes from p
 TEST_CASE ("Testing strip auto's get_common_prefix_count", "z-extract")
 {
     REQUIRE(1 == get_common_directories_count(
-                     {"archive" VCPKG_PREFERRED_SEPARATOR "folder1" VCPKG_PREFERRED_SEPARATOR "file1.txt",
-                      "archive" VCPKG_PREFERRED_SEPARATOR "folder1" VCPKG_PREFERRED_SEPARATOR "file2.txt",
-                      "archive" VCPKG_PREFERRED_SEPARATOR "folder1" VCPKG_PREFERRED_SEPARATOR "file3.txt",
-                      "archive" VCPKG_PREFERRED_SEPARATOR "folder2" VCPKG_PREFERRED_SEPARATOR "file4.txt",
-                      "archive" VCPKG_PREFERRED_SEPARATOR "folder2" VCPKG_PREFERRED_SEPARATOR "file5.txt",
-                      "archive" VCPKG_PREFERRED_SEPARATOR "folder2" VCPKG_PREFERRED_SEPARATOR
+                     {"folder0" VCPKG_PREFERRED_SEPARATOR "folder1" VCPKG_PREFERRED_SEPARATOR "file1.txt",
+                      "folder0" VCPKG_PREFERRED_SEPARATOR "folder1" VCPKG_PREFERRED_SEPARATOR "file2.txt",
+                      "folder0" VCPKG_PREFERRED_SEPARATOR "folder1" VCPKG_PREFERRED_SEPARATOR "file3.txt",
+                      "folder0" VCPKG_PREFERRED_SEPARATOR "folder2" VCPKG_PREFERRED_SEPARATOR "file4.txt",
+                      "folder0" VCPKG_PREFERRED_SEPARATOR "folder2" VCPKG_PREFERRED_SEPARATOR "file5.txt",
+                      "folder0" VCPKG_PREFERRED_SEPARATOR "folder2" VCPKG_PREFERRED_SEPARATOR
                       "folder3" VCPKG_PREFERRED_SEPARATOR "file6.txt",
-                      "archive" VCPKG_PREFERRED_SEPARATOR "folder2" VCPKG_PREFERRED_SEPARATOR
+                      "folder0" VCPKG_PREFERRED_SEPARATOR "folder2" VCPKG_PREFERRED_SEPARATOR
                       "folder3" VCPKG_PREFERRED_SEPARATOR "file7.txt"}));
 
     REQUIRE(0 == get_common_directories_count(
