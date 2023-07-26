@@ -1666,7 +1666,6 @@
   "verifying": "verifying",
   "downloading$$": "downloading ${p0} -> ${p1}",
   "_downloading$$.comment": "\n'${p0}' is a parameter of type 'string'\n\n'${p1}' is a parameter of type 'string'\n",
-  "unpacking": "unpacking",
   "unpacking$": "unpacking ${p0}",
   "_unpacking$.comment": "\n'${p0}' (aka 'archiveUri.fsPath') is a parameter of type 'string'\n",
   "Installing$": "Installing ${p0}...",
