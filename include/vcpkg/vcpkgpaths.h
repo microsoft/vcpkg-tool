@@ -143,7 +143,7 @@ namespace vcpkg
         const Toolset& get_toolset(const PreBuildInfo& prebuildinfo) const;
 
         const Environment& get_action_env(const PreBuildInfo& pre_build_info, const Toolset& toolset) const;
-        const std::string& get_triplet_info(const AbiInfo& abi_info) const;
+        const std::string& get_triplet_info(const PreBuildInfo& pre_build_info, const Toolset& toolset) const;
         const CompilerInfo& get_compiler_info(const PreBuildInfo& pre_build_info, const Toolset& toolset) const;
 
         const FeatureFlagSettings& get_feature_flags() const;

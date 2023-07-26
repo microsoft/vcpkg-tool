@@ -533,22 +533,21 @@ namespace vcpkg
         });
     }
 
-    const std::string& EnvCache::get_triplet_info(const VcpkgPaths& paths, const AbiInfo& abi_info)
+    const std::string& EnvCache::get_triplet_info(const VcpkgPaths& paths,
+                                                  const PreBuildInfo& pre_build_info,
+                                                  const Toolset& toolset)
     {
         const auto& fs = paths.get_filesystem();
-        Checks::check_exit(VCPKG_LINE_INFO, abi_info.pre_build_info != nullptr);
-        const auto& triplet_file_path = paths.get_triplet_db().get_triplet_file_path(abi_info.pre_build_info->triplet);
+        const auto& triplet_file_path = paths.get_triplet_db().get_triplet_file_path(pre_build_info.triplet);
 
-        auto&& toolchain_hash = get_toolchain_cache(m_toolchain_cache, abi_info.pre_build_info->toolchain_file(), fs);
+        auto&& toolchain_hash = get_toolchain_cache(m_toolchain_cache, pre_build_info.toolchain_file(), fs);
 
         auto&& triplet_entry = get_triplet_cache(fs, triplet_file_path);
 
-        if (m_compiler_tracking && !abi_info.pre_build_info->disable_compiler_tracking)
+        if (m_compiler_tracking && !pre_build_info.disable_compiler_tracking)
         {
             return triplet_entry.triplet_infos.get_lazy(toolchain_hash, [&]() -> std::string {
-                Checks::check_exit(VCPKG_LINE_INFO, abi_info.pre_build_info != nullptr);
-                auto& compiler_info =
-                    get_compiler_info(paths, *abi_info.pre_build_info, abi_info.toolset.value_or_exit(VCPKG_LINE_INFO));
+                auto& compiler_info = get_compiler_info(paths, pre_build_info, toolset);
                 return Strings::concat(triplet_entry.hash, '-', toolchain_hash, '-', compiler_info.hash);
             });
         }
@@ -1144,7 +1143,9 @@ namespace vcpkg
         std::vector<AbiEntry> abi_tag_entries(dependency_abis.begin(), dependency_abis.end());
 
         const auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
-        const auto& triplet_abi = paths.get_triplet_info(abi_info);
+        Checks::check_exit(VCPKG_LINE_INFO, abi_info.pre_build_info != nullptr);
+        const auto& triplet_abi =
+            paths.get_triplet_info(*abi_info.pre_build_info, abi_info.toolset.value_or_exit(VCPKG_LINE_INFO));
         abi_tag_entries.emplace_back("triplet", triplet.canonical_name());
         abi_tag_entries.emplace_back("triplet_abi", triplet_abi);
         abi_entries_from_abi_info(fs, grdk_cache, abi_info, abi_tag_entries);
