@@ -290,7 +290,9 @@ namespace vcpkg
                                           const PreBuildInfo& pre_build_info,
                                           const Toolset& toolset);
         const std::string& get_triplet_info(const VcpkgPaths& paths, const AbiInfo& abi_info);
-        const CompilerInfo& get_compiler_info(const VcpkgPaths& paths, const AbiInfo& abi_info);
+        const CompilerInfo& get_compiler_info(const VcpkgPaths& paths,
+                                              const PreBuildInfo& pre_build_info,
+                                              const Toolset& toolset);
 
     private:
         struct TripletMapEntry

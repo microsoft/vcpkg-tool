@@ -503,10 +503,11 @@ namespace vcpkg
         });
     }
 
-    const CompilerInfo& EnvCache::get_compiler_info(const VcpkgPaths& paths, const AbiInfo& abi_info)
+    const CompilerInfo& EnvCache::get_compiler_info(const VcpkgPaths& paths,
+                                                    const PreBuildInfo& pre_build_info,
+                                                    const Toolset& toolset)
     {
-        Checks::check_exit(VCPKG_LINE_INFO, abi_info.pre_build_info != nullptr);
-        if (!m_compiler_tracking || abi_info.pre_build_info->disable_compiler_tracking)
+        if (!m_compiler_tracking || pre_build_info.disable_compiler_tracking)
         {
             static CompilerInfo empty_ci;
             return empty_ci;
@@ -514,17 +515,16 @@ namespace vcpkg
 
         const auto& fs = paths.get_filesystem();
 
-        const auto& triplet_file_path = paths.get_triplet_db().get_triplet_file_path(abi_info.pre_build_info->triplet);
+        const auto& triplet_file_path = paths.get_triplet_db().get_triplet_file_path(pre_build_info.triplet);
 
-        auto&& toolchain_hash = get_toolchain_cache(m_toolchain_cache, abi_info.pre_build_info->toolchain_file(), fs);
+        auto&& toolchain_hash = get_toolchain_cache(m_toolchain_cache, pre_build_info.toolchain_file(), fs);
 
         auto&& triplet_entry = get_triplet_cache(fs, triplet_file_path);
 
         return triplet_entry.compiler_info.get_lazy(toolchain_hash, [&]() -> CompilerInfo {
             if (m_compiler_tracking)
             {
-                return load_compiler_info(
-                    paths, *abi_info.pre_build_info, abi_info.toolset.value_or_exit(VCPKG_LINE_INFO));
+                return load_compiler_info(paths, pre_build_info, toolset);
             }
             else
             {
@@ -546,7 +546,9 @@ namespace vcpkg
         if (m_compiler_tracking && !abi_info.pre_build_info->disable_compiler_tracking)
         {
             return triplet_entry.triplet_infos.get_lazy(toolchain_hash, [&]() -> std::string {
-                auto& compiler_info = get_compiler_info(paths, abi_info);
+                Checks::check_exit(VCPKG_LINE_INFO, abi_info.pre_build_info != nullptr);
+                auto& compiler_info =
+                    get_compiler_info(paths, *abi_info.pre_build_info, abi_info.toolset.value_or_exit(VCPKG_LINE_INFO));
                 return Strings::concat(triplet_entry.hash, '-', toolchain_hash, '-', compiler_info.hash);
             });
         }
@@ -1300,17 +1302,15 @@ namespace vcpkg
                 }
             }
 
-            action.abi_info = AbiInfo();
-            auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
-
+            auto& abi_info = action.abi_info.emplace();
             abi_info.pre_build_info = std::make_unique<PreBuildInfo>(
                 paths, action.spec.triplet(), var_provider.get_tag_vars(action.spec).value_or_exit(VCPKG_LINE_INFO));
-            abi_info.toolset = paths.get_toolset(*abi_info.pre_build_info);
-
+            const auto& toolset = paths.get_toolset(*abi_info.pre_build_info);
+            abi_info.toolset = toolset;
             auto maybe_abi_tag_and_file = compute_abi_tag(paths, action, dependency_abis, grdk_cache);
             if (auto p = maybe_abi_tag_and_file.get())
             {
-                abi_info.compiler_info = paths.get_compiler_info(abi_info);
+                abi_info.compiler_info = paths.get_compiler_info(*abi_info.pre_build_info, toolset);
                 abi_info.triplet_abi = *p->triplet_abi;
                 abi_info.package_abi = std::move(p->tag);
                 abi_info.abi_tag_file = std::move(p->tag_file);
