@@ -1306,11 +1306,12 @@ namespace vcpkg
                 paths, action.spec.triplet(), var_provider.get_tag_vars(action.spec).value_or_exit(VCPKG_LINE_INFO));
             const auto& toolset = paths.get_toolset(*abi_info.pre_build_info);
             abi_info.toolset = toolset;
+            abi_info.compiler_info = paths.get_compiler_info(*abi_info.pre_build_info, toolset);
+
             auto maybe_abi_tag_and_file =
                 compute_abi_tag(paths, action, *abi_info.pre_build_info, toolset, dependency_abis, grdk_cache);
             if (auto p = maybe_abi_tag_and_file.get())
             {
-                abi_info.compiler_info = paths.get_compiler_info(*abi_info.pre_build_info, toolset);
                 abi_info.triplet_abi = *p->triplet_abi;
                 abi_info.package_abi = std::move(p->tag);
                 abi_info.abi_tag_file = std::move(p->tag_file);

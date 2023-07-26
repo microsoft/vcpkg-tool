@@ -266,12 +266,14 @@ namespace vcpkg
 
     struct AbiInfo
     {
+        // These should always be known if an AbiInfo exists
         std::unique_ptr<PreBuildInfo> pre_build_info;
         Optional<const Toolset&> toolset;
+        Optional<const CompilerInfo&> compiler_info;
+        // These might not be known if compiler tracking is turned off or the port is --editable
         Optional<const std::string&> triplet_abi;
         std::string package_abi;
         Optional<Path> abi_tag_file;
-        Optional<const CompilerInfo&> compiler_info;
         std::vector<Path> relative_port_files;
         std::vector<std::string> relative_port_hashes;
         std::vector<Json::Value> heuristic_resources;
