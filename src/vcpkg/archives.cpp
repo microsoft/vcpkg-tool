@@ -192,12 +192,12 @@ namespace vcpkg
         }
 #else
         (void)fs;
-        if (ext_type == ExtractionType::TAR)
+        if (ext_type == ExtractionType::Tar)
         {
             extract_tar(tools.get_tool_path(Tools::TAR, status_sink), archive, to_path);
         }
 
-        if (ext_type == ExtractionType::ZIP)
+        if (ext_type == ExtractionType::Zip)
         {
             const auto code =
                 cmd_execute(Command{"unzip"}.string_arg("-qqo").string_arg(archive), WorkingDirectory{to_path})
