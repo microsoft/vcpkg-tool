@@ -1097,36 +1097,31 @@ namespace vcpkg
         }
     }
 
-    struct AbiTagAndFiles
+    static void populate_abi_tag(const VcpkgPaths& paths,
+                                 InstallPlanAction& action,
+                                 std::unique_ptr<PreBuildInfo>&& proto_pre_build_info,
+                                 Span<const AbiEntry> dependency_abis,
+                                 Cache<Path, Optional<std::string>>& grdk_cache)
     {
-        const std::string* triplet_abi;
-        std::string tag;
-        Path tag_file;
-
-        std::vector<Path> files;
-        std::vector<std::string> hashes;
-        Json::Value heuristic_resources;
-    };
-
-    static Optional<AbiTagAndFiles> compute_abi_tag(const VcpkgPaths& paths,
-                                                    const InstallPlanAction& action,
-                                                    const PreBuildInfo& pre_build_info,
-                                                    const Toolset& toolset,
-                                                    Span<const AbiEntry> dependency_abis,
-                                                    Cache<Path, Optional<std::string>>& grdk_cache)
-    {
+        Checks::check_exit(VCPKG_LINE_INFO, static_cast<bool>(proto_pre_build_info));
+        const auto& pre_build_info = *proto_pre_build_info;
+        const auto& toolset = paths.get_toolset(pre_build_info);
+        auto& abi_info = action.abi_info.emplace();
+        abi_info.pre_build_info = std::move(proto_pre_build_info);
+        abi_info.toolset.emplace(toolset);
+        abi_info.compiler_info = paths.get_compiler_info(*abi_info.pre_build_info, toolset);
         auto& fs = paths.get_filesystem();
         Triplet triplet = action.spec.triplet();
 
         if (action.build_options.use_head_version == UseHeadVersion::YES)
         {
             Debug::print("Binary caching for package ", action.spec, " is disabled due to --head\n");
-            return nullopt;
+            return;
         }
         if (action.build_options.editable == Editable::YES)
         {
             Debug::print("Binary caching for package ", action.spec, " is disabled due to --editable\n");
-            return nullopt;
+            return;
         }
         for (auto&& dep_abi : dependency_abis)
         {
@@ -1137,13 +1132,14 @@ namespace vcpkg
                              " is disabled due to missing abi info for ",
                              dep_abi.key,
                              '\n');
-                return nullopt;
+                return;
             }
         }
 
         std::vector<AbiEntry> abi_tag_entries(dependency_abis.begin(), dependency_abis.end());
 
         const auto& triplet_abi = paths.get_triplet_info(pre_build_info, toolset);
+        abi_info.triplet_abi.emplace(triplet_abi);
         abi_tag_entries.emplace_back("triplet", triplet.canonical_name());
         abi_tag_entries.emplace_back("triplet_abi", triplet_abi);
         abi_entries_from_pre_build_info(fs, grdk_cache, pre_build_info, abi_tag_entries);
@@ -1153,36 +1149,38 @@ namespace vcpkg
         constexpr int max_port_file_count = 100;
 
         std::string portfile_cmake_contents;
-        std::vector<Path> files;
-        std::vector<std::string> hashes;
         auto&& port_dir = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_location;
-        Path abs_port_file;
-        auto port_files = fs.get_regular_files_recursive_lexically_proximate(port_dir, VCPKG_LINE_INFO);
-        if (port_files.size() > max_port_file_count)
+        auto raw_files = fs.get_regular_files_recursive_lexically_proximate(port_dir, VCPKG_LINE_INFO);
+        if (raw_files.size() > max_port_file_count)
         {
             msg::println_warning(
-                msgHashPortManyFiles, msg::package_name = action.spec.name(), msg::count = port_files.size());
+                msgHashPortManyFiles, msg::package_name = action.spec.name(), msg::count = raw_files.size());
         }
 
-        for (auto& port_file : port_files)
+        std::vector<Path> files;         // will be port_files without .DS_Store entries
+        std::vector<std::string> hashes; // will be corresponding hashes
+        for (auto& port_file : raw_files)
         {
             if (port_file.filename() == ".DS_Store")
             {
                 continue;
             }
-            abs_port_file = port_dir;
-            abs_port_file /= port_file;
 
+            files.push_back(port_dir / port_file);
+            const auto& abs_port_file = files.back();
             if (port_file.extension() == ".cmake")
             {
-                portfile_cmake_contents += fs.read_contents(abs_port_file, VCPKG_LINE_INFO);
+                auto contents = fs.read_contents(abs_port_file, VCPKG_LINE_INFO);
+                portfile_cmake_contents += contents;
+                hashes.push_back(vcpkg::Hash::get_string_sha256(contents));
+            }
+            else
+            {
+                hashes.push_back(vcpkg::Hash::get_file_hash(fs, abs_port_file, Hash::Algorithm::Sha256)
+                                     .value_or_exit(VCPKG_LINE_INFO));
             }
 
-            auto hash =
-                vcpkg::Hash::get_file_hash(fs, abs_port_file, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO);
-            abi_tag_entries.emplace_back(port_file, hash);
-            files.push_back(port_file);
-            hashes.push_back(std::move(hash));
+            abi_tag_entries.emplace_back(port_file, hashes.back());
         }
 
         abi_tag_entries.emplace_back("cmake", paths.get_tool_version(Tools::CMAKE, stdout_sink));
@@ -1237,28 +1235,24 @@ namespace vcpkg
         }
 
         auto abi_tag_entries_missing = Util::filter(abi_tag_entries, [](const AbiEntry& p) { return p.value.empty(); });
-
-        if (abi_tag_entries_missing.empty())
+        if (!abi_tag_entries_missing.empty())
         {
-            auto current_build_tree = paths.build_dir(action.spec);
-            fs.create_directory(current_build_tree, VCPKG_LINE_INFO);
-            const auto abi_file_path = current_build_tree / (triplet.canonical_name() + ".vcpkg_abi_info.txt");
-            fs.write_contents(abi_file_path, full_abi_info, VCPKG_LINE_INFO);
-
-            return AbiTagAndFiles{
-                &triplet_abi,
-                Hash::get_file_hash(fs, abi_file_path, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO),
-                abi_file_path,
-                std::move(files),
-                std::move(hashes),
-                run_resource_heuristics(portfile_cmake_contents)};
+            Debug::println("Warning: abi keys are missing values:\n",
+                           Strings::join("\n", abi_tag_entries_missing, [](const AbiEntry& e) -> const std::string& {
+                               return e.key;
+                           }));
+            return;
         }
 
-        Debug::println(
-            "Warning: abi keys are missing values:\n",
-            Strings::join("", abi_tag_entries_missing, [](const AbiEntry& e) { return "    " + e.key + '\n'; }));
-
-        return nullopt;
+        auto current_build_tree = paths.build_dir(action.spec);
+        fs.create_directory(current_build_tree, VCPKG_LINE_INFO);
+        auto abi_file_path = current_build_tree / (triplet.canonical_name() + ".vcpkg_abi_info.txt");
+        fs.write_contents(abi_file_path, full_abi_info, VCPKG_LINE_INFO);
+        abi_info.package_abi = Hash::get_string_sha256(full_abi_info);
+        abi_info.abi_tag_file.emplace(std::move(abi_file_path));
+        abi_info.relative_port_files = std::move(files);
+        abi_info.relative_port_hashes = std::move(hashes);
+        abi_info.heuristic_resources.push_back(run_resource_heuristics(portfile_cmake_contents));
     }
 
     void compute_all_abis(const VcpkgPaths& paths,
@@ -1301,24 +1295,14 @@ namespace vcpkg
                 }
             }
 
-            auto& abi_info = action.abi_info.emplace();
-            abi_info.pre_build_info = std::make_unique<PreBuildInfo>(
-                paths, action.spec.triplet(), var_provider.get_tag_vars(action.spec).value_or_exit(VCPKG_LINE_INFO));
-            const auto& toolset = paths.get_toolset(*abi_info.pre_build_info);
-            abi_info.toolset = toolset;
-            abi_info.compiler_info = paths.get_compiler_info(*abi_info.pre_build_info, toolset);
-
-            auto maybe_abi_tag_and_file =
-                compute_abi_tag(paths, action, *abi_info.pre_build_info, toolset, dependency_abis, grdk_cache);
-            if (auto p = maybe_abi_tag_and_file.get())
-            {
-                abi_info.triplet_abi = *p->triplet_abi;
-                abi_info.package_abi = std::move(p->tag);
-                abi_info.abi_tag_file = std::move(p->tag_file);
-                abi_info.relative_port_files = std::move(p->files);
-                abi_info.relative_port_hashes = std::move(p->hashes);
-                abi_info.heuristic_resources.push_back(std::move(p->heuristic_resources));
-            }
+            populate_abi_tag(
+                paths,
+                action,
+                std::make_unique<PreBuildInfo>(paths,
+                                               action.spec.triplet(),
+                                               var_provider.get_tag_vars(action.spec).value_or_exit(VCPKG_LINE_INFO)),
+                dependency_abis,
+                grdk_cache);
         }
     }
 
