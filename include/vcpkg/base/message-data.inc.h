@@ -494,15 +494,10 @@ DECLARE_MESSAGE(CmdDependInfoOptSort,
 DECLARE_MESSAGE(CmdEditOptAll, (), "", "Open editor into the port as well as the port-specific buildtree subfolder")
 DECLARE_MESSAGE(CmdEditOptBuildTrees, (), "", "Open editor into the port-specific buildtree subfolder")
 DECLARE_MESSAGE(CmdEnvOptions, (msg::path, msg::env_var), "", "Add installed {path} to {env_var}")
-DECLARE_MESSAGE(CmdExportEmptyPlan, (), "", "Export plan cannot be empty. Install packages before exporting.")
-DECLARE_MESSAGE(CmdExportInvalidOption,
-                (msg::option),
-                "{option} is an argument supplied to the vcpkg export command.",
-                "{option} argument is not allowed in manifest mode.")
-DECLARE_MESSAGE(CmdExportMissingArgument,
-                (msg::option),
-                "{option} is an argument supplied to the vcpkg export command.",
-                "The {option} argument must be provided when running in manifest mode.")
+DECLARE_MESSAGE(CmdExportEmptyPlan,
+                (),
+                "",
+                "Refusing to create an export of zero packages. Install packages before exporting.")
 DECLARE_MESSAGE(CmdExportOpt7Zip, (), "", "Export to a 7zip (.7z) file")
 DECLARE_MESSAGE(CmdExportOptChocolatey, (), "", "Export a Chocolatey package (experimental feature)")
 DECLARE_MESSAGE(CmdExportOptDebug, (), "", "Enable prefab debug")
@@ -1644,10 +1639,6 @@ DECLARE_MESSAGE(InvalidDependency,
                 (),
                 "",
                 "dependencies must be lowercase alphanumeric+hyphens, and not one of the reserved names")
-DECLARE_MESSAGE(InvalidExportArgument,
-                (msg::option),
-                "{option} is an argument passed to the vcpkg export command.",
-                "{option} arguments are not allowed in manifest mode.")
 DECLARE_MESSAGE(InvalidFeature,
                 (),
                 "",

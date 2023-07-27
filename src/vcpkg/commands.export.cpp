@@ -398,13 +398,13 @@ namespace vcpkg::Export
             // --output-dir is required in manifest mode
             if (auto d = output_dir_opt.get())
             {
-				ret.output_dir = paths.original_cwd / *d;
-			}
+                ret.output_dir = paths.original_cwd / *d;
+            }
             else
             {
                 msg::println_error(msgMissingOption, msg::option = "output-dir");
-				Checks::exit_fail(VCPKG_LINE_INFO);
-			}
+                Checks::exit_fail(VCPKG_LINE_INFO);
+            }
 
             auto installed_ipv = get_installed_ports(status_db);
             std::transform(installed_ipv.begin(),
@@ -415,7 +415,7 @@ namespace vcpkg::Export
             // In manifest mode the entire installed directory is exported
             if (!options.command_arguments.empty())
             {
-                msg::println_error(msgCmdExportInvalidOption, msg::option = "<port:triplet>");
+                msg::println_error(msgUnexpectedArgument, msg::option = options.command_arguments[0]);
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
         }
