@@ -1,8 +1,18 @@
 #pragma once
 
+#include <vcpkg/base/fmt.h>
+
 namespace fmt
 {
+#if FMT_VERSION >= 100000
     inline namespace v10
+#elif FMT_VERSION >= 90000
+    inline namespace v9
+#elif FMT_VERSION >= 80000
+    inline namespace v8
+#else
+#error Unsupported fmt version.
+#endif
     {
         template<typename T, typename Char, typename Enable>
         struct formatter;
