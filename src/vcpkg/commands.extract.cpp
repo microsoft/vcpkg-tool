@@ -38,15 +38,14 @@ namespace vcpkg::Commands
             }
 
             auto maybe_strip_value = Strings::strto<int>(maybe_value);
-            if (auto value = maybe_strip_value.get())
+            if (auto value = maybe_strip_value.get(); value && *value >= 0)
             {
                 return {StripMode::Manual, *value};
             }
-            else
-            {
-                msg::println_error(msgErrorInvalidOption, msg::option = OPTION_STRIP, msg::value = maybe_value);
-                Checks::exit_fail(VCPKG_LINE_INFO);
-            }
+
+            // If the value is not an integer or is less than 0
+            msg::println_error(msgErrorInvalidExtractOption, msg::option = OPTION_STRIP, msg::value = maybe_value);
+            Checks::exit_fail(VCPKG_LINE_INFO);
         }
         // No --strip set, default to 0
         return {StripMode::Manual, 0};

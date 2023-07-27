@@ -858,7 +858,7 @@ DECLARE_MESSAGE(ErrorRequirePackagesList,
                 (),
                 "",
                 "`vcpkg install` requires a list of packages to install in classic mode.")
-DECLARE_MESSAGE(ErrorInvalidOption,
+DECLARE_MESSAGE(ErrorInvalidExtractOption,
                 (msg::option, msg::value),
                 "The keyword 'AUTO' should not be localized",
                 "--{option} must be set to a nonnegative integer or 'AUTO'.")
