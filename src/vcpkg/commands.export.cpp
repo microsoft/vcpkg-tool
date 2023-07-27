@@ -396,13 +396,16 @@ namespace vcpkg::Export
             auto output_dir_opt = Util::lookup_value(options.settings, OPTION_OUTPUT_DIR);
 
             // --output-dir is required in manifest mode
-            if (!output_dir_opt.has_value())
+            if (auto d = output_dir_opt.get())
             {
-                msg::println_error(msgCmdExportMissingArgument, msg::option = "--output-dir");
-                Checks::exit_fail(VCPKG_LINE_INFO);
-            }
+				ret.output_dir = paths.original_cwd / *d;
+			}
+            else
+            {
+                msg::println_error(msgMissingOption, msg::option = "output-dir");
+				Checks::exit_fail(VCPKG_LINE_INFO);
+			}
 
-            ret.output_dir = paths.original_cwd / output_dir_opt.value_or_exit(VCPKG_LINE_INFO);
             auto installed_ipv = get_installed_ports(status_db);
             std::transform(installed_ipv.begin(),
                            installed_ipv.end(),
