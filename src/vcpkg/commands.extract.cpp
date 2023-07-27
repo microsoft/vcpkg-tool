@@ -52,15 +52,7 @@ namespace vcpkg::Commands
         return {StripMode::Manual, 0};
     }
 
-    static bool is_slash(char c)
-    {
-        return c == '/'
-#if defined(_WIN32)
-               || c == '\\'
-#endif // _WIN32
-            ;
-    }
-
+    constexpr IsSlash is_slash;
     size_t get_common_directories_count(std::vector<Path> paths)
     {
         if (paths.size() == 0)
