@@ -89,8 +89,6 @@ namespace vcpkg::Commands
 
         for (const auto& prox_path : proximate)
         {
-            auto old_path = temp_dir / Path{prox_path};
-
             auto prox_str = prox_path.native();
             auto first = prox_str.data();
             auto last = first + prox_str.size();
@@ -106,6 +104,7 @@ namespace vcpkg::Commands
 
             Path new_path = prox_str.empty() ? "" : Path{base_path} / Path{prox_str};
 
+            auto old_path = temp_dir / Path{prox_path};
             result.emplace_back(std::move(old_path), std::move(new_path));
         }
 
