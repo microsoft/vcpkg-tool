@@ -1109,9 +1109,6 @@ namespace vcpkg
         auto& abi_info = action.abi_info.emplace();
         abi_info.pre_build_info = std::move(proto_pre_build_info);
         abi_info.toolset.emplace(toolset);
-        abi_info.compiler_info = paths.get_compiler_info(*abi_info.pre_build_info, toolset);
-        auto& fs = paths.get_filesystem();
-        Triplet triplet = action.spec.triplet();
 
         if (action.build_options.use_head_version == UseHeadVersion::YES)
         {
@@ -1123,6 +1120,8 @@ namespace vcpkg
             Debug::print("Binary caching for package ", action.spec, " is disabled due to --editable\n");
             return;
         }
+
+        abi_info.compiler_info = paths.get_compiler_info(*abi_info.pre_build_info, toolset);
         for (auto&& dep_abi : dependency_abis)
         {
             if (dep_abi.value.empty())
@@ -1140,8 +1139,10 @@ namespace vcpkg
 
         const auto& triplet_abi = paths.get_triplet_info(pre_build_info, toolset);
         abi_info.triplet_abi.emplace(triplet_abi);
-        abi_tag_entries.emplace_back("triplet", triplet.canonical_name());
+        const auto& triplet_canonical_name = action.spec.triplet().canonical_name();
+        abi_tag_entries.emplace_back("triplet", triplet_canonical_name);
         abi_tag_entries.emplace_back("triplet_abi", triplet_abi);
+        auto& fs = paths.get_filesystem();
         abi_entries_from_pre_build_info(fs, grdk_cache, pre_build_info, abi_tag_entries);
 
         // If there is an unusually large number of files in the port then
@@ -1246,7 +1247,7 @@ namespace vcpkg
 
         auto current_build_tree = paths.build_dir(action.spec);
         fs.create_directory(current_build_tree, VCPKG_LINE_INFO);
-        auto abi_file_path = current_build_tree / (triplet.canonical_name() + ".vcpkg_abi_info.txt");
+        auto abi_file_path = current_build_tree / (triplet_canonical_name + ".vcpkg_abi_info.txt");
         fs.write_contents(abi_file_path, full_abi_info, VCPKG_LINE_INFO);
         abi_info.package_abi = Hash::get_string_sha256(full_abi_info);
         abi_info.abi_tag_file.emplace(std::move(abi_file_path));
@@ -1460,13 +1461,12 @@ namespace vcpkg
         return res;
     }
 
-    std::string create_github_issue(const VcpkgCmdArguments& args,
-                                    const ExtendedBuildResult& build_result,
-                                    const VcpkgPaths& paths,
-                                    const InstallPlanAction& action)
+    struct CreateLogDetails
     {
-        const auto& fs = paths.get_filesystem();
-        const auto create_log_details = [&fs](vcpkg::Path&& path) {
+        const Filesystem& fs;
+
+        std::string operator()(const Path& path) const
+        {
             static constexpr auto MAX_LOG_LENGTH = 50'000;
             static constexpr auto START_BLOCK_LENGTH = 3'000;
             static constexpr auto START_BLOCK_MAX_LENGTH = 5'000;
@@ -1477,57 +1477,75 @@ namespace vcpkg
             {
                 auto first_block_end = log.find_first_of('\n', START_BLOCK_LENGTH);
                 if (first_block_end == std::string::npos || first_block_end > START_BLOCK_MAX_LENGTH)
+                {
                     first_block_end = START_BLOCK_LENGTH;
+                }
 
                 auto last_block_end = log.find_last_of('\n', log.size() - END_BLOCK_LENGTH);
                 if (last_block_end == std::string::npos || last_block_end < log.size() - END_BLOCK_MAX_LENGTH)
+                {
                     last_block_end = log.size() - END_BLOCK_LENGTH;
+                }
 
-                auto skipped_lines = std::count(log.begin() + first_block_end, log.begin() + last_block_end, '\n');
-                log = log.substr(0, first_block_end) + "\n...\nSkipped " + std::to_string(skipped_lines) +
-                      " lines\n...\n" + log.substr(last_block_end);
+                auto first = log.begin() + first_block_end;
+                auto last = log.begin() + last_block_end;
+                auto skipped_lines = std::count(first, last, '\n');
+                log.replace(first, last, fmt::format("\n...\nSkipped {} lines\n...", skipped_lines));
             }
-            while (!log.empty() && log.back() == '\n')
-                log.pop_back();
-            return Strings::concat(
-                "<details><summary>", path.native(), "</summary>\n\n```\n", log, "\n```\n</details>");
-        };
-        const auto manifest = paths.get_manifest()
-                                  .map([](const ManifestAndPath& manifest) {
-                                      return Strings::concat("<details><summary>vcpkg.json</summary>\n\n```\n",
-                                                             Json::stringify(manifest.manifest),
-                                                             "\n```\n</details>\n");
-                                  })
-                                  .value_or("");
 
-        const auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
-        const auto& compiler_info = abi_info.compiler_info.value_or_exit(VCPKG_LINE_INFO);
-        return Strings::concat(
-            "Package: ",
-            action.displayname(),
-            " -> ",
-            action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).to_version(),
-            "\n\n**Host Environment**",
-            "\n\n- Host: ",
-            to_zstring_view(get_host_processor()),
-            '-',
-            get_host_os_name(),
-            "\n- Compiler: ",
-            compiler_info.id,
-            " ",
-            compiler_info.version,
-            "\n-",
-            paths.get_toolver_diagnostics(),
-            "\n**To Reproduce**\n\n",
-            Strings::concat(
-                "`vcpkg ", args.get_command(), " ", Strings::join(" ", args.get_forwardable_arguments()), "`\n"),
-            "\n**Failure logs**\n\n```\n",
-            paths.get_filesystem().read_contents(build_result.stdoutlog.value_or_exit(VCPKG_LINE_INFO),
-                                                 VCPKG_LINE_INFO),
-            "\n```\n",
-            Strings::join("\n", build_result.error_logs, create_log_details),
-            "\n\n**Additional context**\n\n",
-            manifest);
+            while (!log.empty() && log.back() == '\n')
+            {
+                log.pop_back();
+            }
+
+            return fmt::format("<details><summary>{}</summary>\n\n```\n{}\n```\n</details>", path.native(), log);
+        }
+    };
+
+    std::string create_github_issue(const VcpkgCmdArguments& args,
+                                    const ExtendedBuildResult& build_result,
+                                    const VcpkgPaths& paths,
+                                    const InstallPlanAction& action)
+    {
+        const auto& fs = paths.get_filesystem();
+        std::string result;
+        fmt::format_to(std::back_inserter(result),
+                       "Package: {} -> {}\n\n**Host Environment**\n\n- Host: {}-{}\n",
+                       action.displayname(),
+                       action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).to_version(),
+                       to_zstring_view(get_host_processor()),
+                       get_host_os_name());
+
+        if (const auto* abi_info = action.abi_info.get())
+        {
+            if (const auto* compiler_info = abi_info->compiler_info.get())
+            {
+                fmt::format_to(
+                    std::back_inserter(result), "- Compiler: {} {}\n", compiler_info->id, compiler_info->version);
+            }
+        }
+
+        fmt::format_to(std::back_inserter(result), "-{}\n", paths.get_toolver_diagnostics());
+        fmt::format_to(std::back_inserter(result),
+                       "**To Reproduce**\n\n`vcpkg {} {}`\n",
+                       args.get_command(),
+                       Strings::join(" ", args.get_forwardable_arguments()));
+        fmt::format_to(std::back_inserter(result),
+                       "**Failure logs**\n\n```\n{}\n```\n",
+                       paths.get_filesystem().read_contents(build_result.stdoutlog.value_or_exit(VCPKG_LINE_INFO),
+                                                            VCPKG_LINE_INFO));
+        result.append(Strings::join("\n", build_result.error_logs, CreateLogDetails{fs}));
+
+        const auto maybe_manifest = paths.get_manifest();
+        if (auto manifest = maybe_manifest.get())
+        {
+            fmt::format_to(
+                std::back_inserter(result),
+                "**Additional context**\n\n<details><summary>vcpkg.json</summary>\n\n```\n{}\n```\n</details>\n",
+                Json::stringify(manifest->manifest));
+        }
+
+        return result;
     }
 
     static std::string make_gh_issue_search_url(const std::string& spec_name)
@@ -1569,8 +1587,8 @@ namespace vcpkg
         else
         {
             result.append_indent()
-                .append_raw(
-                    "https://github.com/microsoft/vcpkg/issues/new?template=report-package-build-failure.md&title=[")
+                .append_raw("https://github.com/microsoft/vcpkg/issues/"
+                            "new?template=report-package-build-failure.md&title=[")
                 .append_raw(spec_name)
                 .append_raw("]+Build+error\n");
             result.append(msgBuildTroubleshootingMessage3, msg::package_name = spec_name).append_raw('\n');
