@@ -447,7 +447,14 @@ namespace
 
             for (size_t i = 0; i < codes.size(); ++i)
             {
-                if (codes[i] == 200)
+                auto const& code = codes[i];
+                if (!code)
+                {
+                    msg::println_warning(code.error());
+                    continue;
+                }
+
+                if (code.value(VCPKG_LINE_INFO) == 200)
                 {
                     out_zip_paths[i].emplace(std::move(url_paths[i].second), RemoveWhen::always);
                 }
@@ -844,7 +851,14 @@ namespace
 
             for (size_t i = 0; i < codes.size(); ++i)
             {
-                if (codes[i] == 200)
+                auto const& code = codes[i];
+                if (!code)
+                {
+                    msg::println_error(code.error());
+                    continue;
+                }
+
+                if (code.value(VCPKG_LINE_INFO) == 200)
                 {
                     out_zip_paths[url_indices[i]].emplace(std::move(url_paths[i].second), RemoveWhen::always);
                 }
