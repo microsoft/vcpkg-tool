@@ -406,11 +406,8 @@ namespace vcpkg::Export
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
-            auto installed_ipv = get_installed_ports(status_db);
-            std::transform(installed_ipv.begin(),
-                           installed_ipv.end(),
-                           std::back_inserter(ret.specs),
-                           [](const auto& ipv) { return ipv.spec(); });
+            // Force enable --all-installed in manifest mode
+            ret.all_installed = true;
 
             // In manifest mode the entire installed directory is exported
             if (!options.command_arguments.empty())
@@ -419,33 +416,32 @@ namespace vcpkg::Export
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
         }
+
+        ret.output_dir = ret.output_dir.empty() ? Util::lookup_value(options.settings, OPTION_OUTPUT_DIR)
+                                                      .map([&](const Path& p) { return paths.original_cwd / p; })
+                                                      .value_or(paths.root)
+                                                : ret.output_dir;
+
+        if (ret.all_installed)
+        {
+            auto installed_ipv = get_installed_ports(status_db);
+            std::transform(installed_ipv.begin(),
+                           installed_ipv.end(),
+                           std::back_inserter(ret.specs),
+                           [](const auto& ipv) { return ipv.spec(); });
+        }
         else
         {
-            ret.output_dir = Util::lookup_value(options.settings, OPTION_OUTPUT_DIR)
-                                 .map([&](const Path& p) { return paths.original_cwd / p; })
-                                 .value_or(paths.root);
+            // input sanitization
+            bool default_triplet_used = false;
+            ret.specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
+                return parse_package_spec(
+                    arg, default_triplet, default_triplet_used, COMMAND_STRUCTURE.get_example_text());
+            });
 
-            if (ret.all_installed)
+            if (default_triplet_used)
             {
-                auto installed_ipv = get_installed_ports(status_db);
-                std::transform(installed_ipv.begin(),
-                               installed_ipv.end(),
-                               std::back_inserter(ret.specs),
-                               [](const auto& ipv) { return ipv.spec(); });
-            }
-            else
-            {
-                // input sanitization
-                bool default_triplet_used = false;
-                ret.specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
-                    return parse_package_spec(
-                        arg, default_triplet, default_triplet_used, COMMAND_STRUCTURE.get_example_text());
-                });
-
-                if (default_triplet_used)
-                {
-                    print_default_triplet_warning(args, paths.get_triplet_db());
-                }
+                print_default_triplet_warning(args, paths.get_triplet_db());
             }
         }
 
