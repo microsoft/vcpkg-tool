@@ -459,6 +459,10 @@ namespace vcpkg
             cmd.string_arg("curl")
                 .string_arg("--create-dirs")
                 .string_arg("--location")
+                .string_arg("--retry")
+                .string_arg("3")
+                .string_arg("--retry-max-time")
+                .string_arg("1")
                 .string_arg("-w")
                 .string_arg(guid_marker.to_string() + " %{http_code} %{exitcode}\\n");
             for (StringView header : headers)
