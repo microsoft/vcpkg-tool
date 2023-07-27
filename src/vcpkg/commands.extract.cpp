@@ -89,7 +89,7 @@ namespace vcpkg::Commands
 
         for (const auto& prox_path : proximate)
         {
-            auto prox_str = prox_path.native();
+            const auto& prox_str = prox_path.native();
             auto first = prox_str.data();
             auto last = first + prox_str.size();
 
