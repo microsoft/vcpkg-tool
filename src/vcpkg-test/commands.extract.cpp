@@ -91,13 +91,7 @@ TEST_CASE ("Testing strip_map, strip = 2", "[z-extract]")
 TEST_CASE ("Testing strip_map, strip = 3 (Max archive depth)", "[z-extract]")
 {
     REQUIRE(get_archive_deploy_operations(archive, {StripMode::Manual, 3}) ==
-            std::vector<std::pair<Path, Path>>{{FILE_1, ""},
-                                               {FILE_2, ""},
-                                               {FILE_3, ""},
-                                               {FILE_4, ""},
-                                               {FILE_5, ""},
-                                               {FILE_6, BASE_PATH "file6.txt"},
-                                               {FILE_7, BASE_PATH "file7.txt"}});
+            std::vector<std::pair<Path, Path>>{{FILE_6, BASE_PATH "file6.txt"}, {FILE_7, BASE_PATH "file7.txt"}});
 }
 
 TEST_CASE ("Testing strip_map, strip = AUTO => remove all common prefixes from path", "z-extract")

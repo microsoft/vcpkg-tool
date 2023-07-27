@@ -100,12 +100,13 @@ namespace vcpkg::Commands
                 first = std::find_if_not(first, last, is_slash);
             }
 
-            prox_str = std::string(first, static_cast<size_t>(last - first));
+            if (first == last)
+            {
+                continue;
+            }
 
-            Path new_path = prox_str.empty() ? "" : Path{base_path} / Path{prox_str};
-
-            auto old_path = temp_dir / Path{prox_path};
-            result.emplace_back(std::move(old_path), std::move(new_path));
+            result.emplace_back(temp_dir / Path{prox_path},
+                                Path{base_path} / std::string(first, static_cast<size_t>(last - first)));
         }
 
         return result;
@@ -127,15 +128,12 @@ namespace vcpkg::Commands
             const auto& source = file.first;
             const auto& destination = file.second;
 
-            if (!destination.empty() && !fs.is_directory(destination.parent_path()))
+            if (!fs.is_directory(destination.parent_path()))
             {
                 fs.create_directories(destination.parent_path(), VCPKG_LINE_INFO);
             }
 
-            if (!destination.empty())
-            {
-                fs.rename(source, destination, VCPKG_LINE_INFO);
-            }
+            fs.rename(source, destination, VCPKG_LINE_INFO);
         }
 
         fs.remove_all(temp_dir, VCPKG_LINE_INFO);
