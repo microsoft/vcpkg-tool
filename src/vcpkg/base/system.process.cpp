@@ -28,6 +28,7 @@ extern char** environ;
 #if defined(_WIN32)
 #include <Psapi.h>
 #include <TlHelp32.h>
+#include <sddl.h>
 #pragma comment(lib, "Advapi32")
 #else
 #include <fcntl.h>
@@ -57,36 +58,13 @@ namespace
 
     static std::atomic_int32_t debug_id_counter{1000};
 
+#if !defined(_WIN32)
     struct ChildStdinTracker
     {
         StringView input;
         std::size_t offset;
 
-#if defined(_WIN32)
         // Write a hunk of data to `target`. If there is no more input to write, returns `true`.
-        ExpectedL<bool> do_write(HANDLE target)
-        {
-            const auto this_write = input.size() - offset;
-            if (this_write != 0)
-            {
-                const auto this_write_clamped = static_cast<DWORD>(this_write > MAXDWORD ? MAXDWORD : this_write);
-                DWORD actually_written;
-                if (!WriteFile(target,
-                               static_cast<const void*>(input.data() + offset),
-                               this_write_clamped,
-                               &actually_written,
-                               nullptr))
-                {
-                    return format_system_error_message("WriteFile", GetLastError());
-                }
-
-                offset += actually_written;
-            }
-
-            return offset == input.size();
-        }
-#else  // ^^^ _WIN32 // !_WIN32 vvv
-       // Write a hunk of data to `target`. If there is no more input to write, returns `true`.
         ExpectedL<bool> do_write(int target)
         {
             const auto this_write = input.size() - offset;
@@ -107,8 +85,8 @@ namespace
 
             return offset == input.size();
         }
-#endif // ^^^ !_WIN32
     };
+#endif // ^^^ !_WIN32
 } // unnamed namespace
 
 namespace vcpkg
@@ -896,6 +874,12 @@ namespace
         return windows_create_process(debug_id, cmd_line, wd, env, dwCreationFlags, startup_info_ex);
     }
 
+    struct OverlappedStatus : OVERLAPPED
+    {
+        DWORD expected_write;
+        HANDLE* target;
+    };
+
     struct ProcessInfoAndPipes
     {
         ProcessInfo proc_info;
@@ -914,22 +898,6 @@ namespace
         {
             close_handle_mark_invalid(child_handles[0]);
             close_handle_mark_invalid(child_handles[1]);
-        }
-
-        void handle_child_read(ChildStdinTracker& stdin_tracker)
-        {
-            auto maybe_done = stdin_tracker.do_write(child_handles[0]);
-            if (auto done = maybe_done.get())
-            {
-                if (*done)
-                {
-                    close_handle_mark_invalid(child_handles[0]);
-                }
-
-                return;
-            }
-
-            vcpkg::Checks::unreachable(VCPKG_LINE_INFO);
         }
 
         template<class Function>
@@ -968,34 +936,92 @@ namespace
         }
 
         template<class Function>
-        int wait_and_stream_output(StringView input, const Function& f, Encoding encoding)
+        int wait_and_stream_output(const char* input, DWORD input_size, const Function& f, Encoding encoding)
         {
-            ChildStdinTracker input_tracker{input, 0};
+            static const auto stdin_completion_routine =
+                [](DWORD dwErrorCode, DWORD dwNumberOfBytesTransferred, LPOVERLAPPED pOverlapped) {
+                    const auto status = static_cast<OverlappedStatus*>(pOverlapped);
+                    switch (dwErrorCode)
+                    {
+                        case 0:
+                            // OK, done
+                            Checks::check_exit(VCPKG_LINE_INFO, dwNumberOfBytesTransferred == status->expected_write);
+                            break;
+                        case ERROR_BROKEN_PIPE:
+                        case ERROR_OPERATION_ABORTED:
+                            // OK, child didn't want all the data
+                            break;
+                        default: Checks::unreachable(VCPKG_LINE_INFO, "stdin write completion");
+                    }
+
+                    close_handle_mark_invalid(*status->target);
+                };
+
+            OverlappedStatus stdin_write{};
+            stdin_write.expected_write = input_size;
+            stdin_write.target = &child_handles[0];
+            if (input_size == 0)
+            {
+                close_handle_mark_invalid(child_handles[0]);
+            }
+            else
+            {
+                stdin_write.expected_write = input_size;
+                if (WriteFileEx(child_handles[0], input, input_size, &stdin_write, stdin_completion_routine))
+                {
+                    // write completed synchronously
+                    close_handle_mark_invalid(child_handles[0]);
+                }
+                else
+                {
+                    DWORD last_error = GetLastError();
+                    if (last_error != ERROR_IO_PENDING)
+                    {
+                        vcpkg::Checks::unreachable(VCPKG_LINE_INFO,
+                                                   fmt::format("Writing stdin failed: {:x}", last_error));
+                    }
+                }
+            }
+
             static constexpr DWORD buffer_size = 1024 * 32;
             char buf[buffer_size];
-            while (child_handles[0] != INVALID_HANDLE_VALUE && child_handles[1] != INVALID_HANDLE_VALUE)
+            while (child_handles[1] != INVALID_HANDLE_VALUE)
             {
-                switch (WaitForMultipleObjects(2, child_handles, FALSE, INFINITE))
+                switch (WaitForSingleObjectEx(child_handles[1], INFINITE, TRUE))
                 {
-                    case WAIT_OBJECT_0: handle_child_read(input_tracker); break;
-                    case WAIT_OBJECT_0 + 1: handle_child_write(f, buf, buffer_size, encoding); break;
+                    case WAIT_OBJECT_0: handle_child_write(f, buf, buffer_size, encoding); break;
+                    case WAIT_IO_COMPLETION:
+                        // stdin might have completed, that's OK
+                        break;
+                    case WAIT_FAILED:
+                        vcpkg::Checks::unreachable(VCPKG_LINE_INFO,
+                                                   fmt::format("Waiting for stdout failed: {:x}", GetLastError()));
+                        break;
                     default: vcpkg::Checks::unreachable(VCPKG_LINE_INFO); break;
                 }
             }
 
-            while (child_handles[0] != INVALID_HANDLE_VALUE &&
-                   WaitForSingleObject(child_handles[0], INFINITE) == WAIT_OBJECT_0)
+            auto child_exit_code = proc_info.wait();
+            if (child_handles[0] != INVALID_HANDLE_VALUE)
             {
-                handle_child_read(input_tracker);
+                if (!CancelIo(child_handles[0]))
+                {
+                    vcpkg::Checks::unreachable(VCPKG_LINE_INFO,
+                                               fmt::format("Cancel stdin write failed: {:x}", GetLastError()));
+                }
+
+                DWORD transferred;
+                if (GetOverlappedResult(child_handles[0], &stdin_write, &transferred, TRUE))
+                {
+                    stdin_completion_routine(0, transferred, &stdin_write);
+                }
+                else
+                {
+                    stdin_completion_routine(GetLastError(), transferred, &stdin_write);
+                }
             }
 
-            while (child_handles[1] != INVALID_HANDLE_VALUE &&
-                   WaitForSingleObject(child_handles[1], INFINITE) == WAIT_OBJECT_0)
-            {
-                handle_child_write(f, buf, buffer_size, encoding);
-            }
-
-            return proc_info.wait();
+            return child_exit_code;
         }
     };
 
@@ -1063,34 +1089,68 @@ namespace
         }
     };
 
+    struct CreatorOnlySecurityDescriptor
+    {
+        PSECURITY_DESCRIPTOR sd;
+
+        CreatorOnlySecurityDescriptor() : sd{}
+        {
+            // DACL:
+            //  ACE 0: Allow; FILE_READ;;;OWNER_RIGHTS
+            Checks::check_exit(
+                VCPKG_LINE_INFO,
+                ConvertStringSecurityDescriptorToSecurityDescriptorW(L"D:(A;;FR;;;OW)", SDDL_REVISION_1, &sd, 0));
+        }
+
+        ~CreatorOnlySecurityDescriptor() { LocalFree(sd); }
+
+        CreatorOnlySecurityDescriptor(const CreatorOnlySecurityDescriptor&) = delete;
+        CreatorOnlySecurityDescriptor& operator=(const CreatorOnlySecurityDescriptor&) = delete;
+    };
+
     ExpectedL<ProcessInfoAndPipes> windows_create_process_redirect(std::int32_t debug_id,
                                                                    StringView cmd_line,
                                                                    const WorkingDirectory& wd,
                                                                    const Environment& env,
                                                                    DWORD dwCreationFlags) noexcept
     {
+        static CreatorOnlySecurityDescriptor creator_owner_sd;
         ProcessInfoAndPipes ret;
         StartupInfoWithPipes startup_info_ex;
-        SECURITY_ATTRIBUTES saAttr{sizeof(SECURITY_ATTRIBUTES), nullptr, TRUE};
+        SECURITY_ATTRIBUTES namedSa{sizeof(SECURITY_ATTRIBUTES), creator_owner_sd.sd, FALSE};
+
+        // Create a pipe for the child process's STDIN.
+        std::wstring pipe_name{Strings::to_utf16(
+            fmt::format(R"(\\.\pipe\local\vcpkg-stdin-A8B4F218-4DB1-4A3E-8E5B-C41F1633F627-{})", debug_id))};
+        ret.child_handles[0] =
+            CreateNamedPipeW(pipe_name.c_str(),
+                             PIPE_ACCESS_OUTBOUND | FILE_FLAG_FIRST_PIPE_INSTANCE | FILE_FLAG_OVERLAPPED,
+                             PIPE_TYPE_BYTE | PIPE_REJECT_REMOTE_CLIENTS,
+                             1,     // nMaxInstances
+                             65535, // nOutBufferSize
+                             0,     // nInBufferSize (unused / PIPE_ACCESS_OUTBOUND)
+                             0,     // nDefaultTimeout (only for WaitPipe; unused)
+                             &namedSa);
+
+        if (ret.child_handles[0] == INVALID_HANDLE_VALUE)
+        {
+            return format_system_error_message("CreateNamedPipeW stdin", GetLastError());
+        }
+
+        SECURITY_ATTRIBUTES anonymousSa{sizeof(SECURITY_ATTRIBUTES), nullptr, TRUE};
+        startup_info_ex.StartupInfo.hStdInput =
+            CreateFileW(pipe_name.c_str(), FILE_GENERIC_READ, 0, &anonymousSa, OPEN_EXISTING, 0, 0);
+
+        if (startup_info_ex.StartupInfo.hStdInput == INVALID_HANDLE_VALUE)
+        {
+            return format_system_error_message("CreateFileW stdin", GetLastError());
+        }
 
         // Create a pipe for the child process's STDOUT.
-        if (!CreatePipe(&ret.child_handles[1], &startup_info_ex.StartupInfo.hStdOutput, &saAttr, 0))
+        if (!CreatePipe(&ret.child_handles[1], &startup_info_ex.StartupInfo.hStdOutput, &anonymousSa, 0))
         {
             return format_system_error_message("CreatePipe stdout", GetLastError());
         }
-
-        // Create a pipe for the child process's STDIN.
-        if (!CreatePipe(&startup_info_ex.StartupInfo.hStdInput, &ret.child_handles[0], &saAttr, 0))
-        {
-            return format_system_error_message("CreatePipe stdin", GetLastError());
-        }
-
-        DWORD nonblocking_flags = PIPE_NOWAIT;
-        if (!SetNamedPipeHandleState(ret.child_handles[0], &nonblocking_flags, nullptr, nullptr))
-        {
-            return format_system_error_message("SetNamedPipeHandleState", GetLastError());
-        }
-
         startup_info_ex.StartupInfo.hStdError = startup_info_ex.StartupInfo.hStdOutput;
 
         // Ensure that only the write handle to STDOUT and the read handle to STDIN are inherited.
@@ -1441,19 +1501,26 @@ namespace vcpkg
         using vcpkg::g_ctrl_c_state;
 
         g_ctrl_c_state.transition_to_spawn_process();
+        std::wstring as_utf16;
+        if (encoding == Encoding::Utf16)
+        {
+            as_utf16 = Strings::to_utf16(stdin_content);
+            stdin_content =
+                StringView{reinterpret_cast<const char*>(as_utf16.data()), as_utf16.size() * sizeof(wchar_t)};
+        }
+
+        auto stdin_content_size_raw = stdin_content.size();
+        if (stdin_content_size_raw > MAXDWORD)
+        {
+            return format_system_error_message("WriteFileEx", ERROR_INSUFFICIENT_BUFFER);
+        }
+
+        auto stdin_content_size = static_cast<DWORD>(stdin_content_size_raw);
+
         ExpectedL<int> exit_code =
             windows_create_process_redirect(debug_id, cmd_line.command_line(), wd, env, 0)
                 .map([&](ProcessInfoAndPipes&& output) {
-                    if (encoding == Encoding::Utf16)
-                    {
-                        auto as_utf16 = Strings::to_utf16(stdin_content);
-                        return output.wait_and_stream_output(StringView{reinterpret_cast<const char*>(as_utf16.data()),
-                                                                        as_utf16.size() * sizeof(wchar_t)},
-                                                             data_cb,
-                                                             encoding);
-                    }
-
-                    return output.wait_and_stream_output(stdin_content, data_cb, encoding);
+                    return output.wait_and_stream_output(stdin_content.data(), stdin_content_size, data_cb, encoding);
                 });
         g_ctrl_c_state.transition_from_spawn_process();
 #else  // ^^^ _WIN32 // !_WIN32 vvv
