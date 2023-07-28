@@ -142,27 +142,43 @@ TEST_CASE ("Testing get_strip_setting", "z-extract")
 
     SECTION ("Test no strip")
     {
-        REQUIRE(StripSetting{StripMode::Manual, 0} == get_strip_setting(settings));
+        REQUIRE(StripSetting{StripMode::Manual, 0} == get_strip_setting(settings).value_or_exit(VCPKG_LINE_INFO));
     }
 
     SECTION("Test Manual strip with count of 1")
     {
 		settings["strip"] = "1";
-		REQUIRE(StripSetting{StripMode::Manual, 1} == get_strip_setting(settings));
+        REQUIRE(StripSetting{StripMode::Manual, 1} == get_strip_setting(settings).value_or_exit(VCPKG_LINE_INFO));
         settings.clear();
 	}
 
     SECTION ("Test Manual strip with count greater than 1")
     {
-        settings["strip"] = "5";
-        REQUIRE(StripSetting{StripMode::Manual, 5} == get_strip_setting(settings));
+        settings["strip"] = "5000";
+        REQUIRE(StripSetting{StripMode::Manual, 5} == get_strip_setting(settings).value_or_exit(VCPKG_LINE_INFO));
         settings.clear();
     }
 
     SECTION ("Test Automatic strip")
     {
         settings["strip"] = "auto";
-        REQUIRE(StripSetting{StripMode::Automatic, -1} == get_strip_setting(settings));
+        REQUIRE(StripSetting{StripMode::Automatic, -1} == get_strip_setting(settings).value_or_exit(VCPKG_LINE_INFO));
+        settings.clear();
+        settings["strip"] = "AUTO";
+        REQUIRE(StripSetting{StripMode::Automatic, -1} == get_strip_setting(settings).value_or_exit(VCPKG_LINE_INFO));
+        settings.clear();
+        settings["strip"] = "AuTo";
+        REQUIRE(StripSetting{StripMode::Automatic, -1} == get_strip_setting(settings).value_or_exit(VCPKG_LINE_INFO));
+        settings.clear();
+    }
+
+    SECTION ("Bad strip values rejected")
+    {
+        settings["strip"] = "-42";
+        auto answer = get_strip_setting(settings);
+        REQUIRE(!answer);
+        REQUIRE(answer.error() ==
+                LocalizedString::from_raw("error: --strip must be set to a nonnegative integer or 'AUTO'."));
         settings.clear();
     }
 }

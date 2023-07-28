@@ -25,31 +25,30 @@ namespace vcpkg::Commands
         nullptr,
     };
 
-    StripSetting get_strip_setting(std::map<std::string, std::string, std::less<>> settings)
+    ExpectedL<StripSetting> get_strip_setting(std::map<std::string, std::string, std::less<>> settings)
     {
         auto iter = settings.find(OPTION_STRIP);
         if (iter == settings.end())
         {
             // no strip option specified - default to manual strip 0
-			return {StripMode::Manual, 0};
+			return StripSetting{StripMode::Manual, 0};
 		}
 
         std::string maybe_value = iter->second;
 
         if (Strings::case_insensitive_ascii_equals(maybe_value, "auto"))
         {
-            return {StripMode::Automatic, -1};
+            return StripSetting{StripMode::Automatic, -1};
         }
 
         auto maybe_strip_value = Strings::strto<int>(maybe_value);
         if (auto value = maybe_strip_value.get(); value && *value >= 0)
         {
-            return {StripMode::Manual, *value};
+            return StripSetting{StripMode::Manual, *value};
         }
 
         // If the value is not an integer or is less than 0
-        msg::println_error(msgErrorInvalidExtractOption, msg::option = OPTION_STRIP, msg::value = maybe_value);
-        Checks::exit_fail(VCPKG_LINE_INFO);
+        return msg::format_error(msgErrorInvalidExtractOption, msg::option = OPTION_STRIP, msg::value = maybe_value);
     }
 
     constexpr IsSlash is_slash;
@@ -146,7 +145,7 @@ namespace vcpkg::Commands
         auto parse_args = args.parse_arguments(ExtractCommandStructure);
         auto archive_path = Path{parse_args.command_arguments[0]};
         auto destination_path = Path{parse_args.command_arguments[1]};
-        auto strip_setting = get_strip_setting(parse_args.settings);
+        auto strip_setting = get_strip_setting(parse_args.settings).value_or_exit(VCPKG_LINE_INFO);
 
         if (!fs.is_directory(destination_path))
         {

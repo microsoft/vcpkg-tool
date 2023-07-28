@@ -3,6 +3,13 @@
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
+#include <vcpkg/base/expected.h>
+#include <vcpkg/base/path.h>
+
+#include <stddef.h>
+
+#include <utility>
+#include <vector>
 namespace vcpkg::Commands
 {
     enum class StripMode
@@ -30,6 +37,8 @@ namespace vcpkg::Commands
         }
     };
 
+    ExpectedL<StripSetting> get_strip_setting(std::map<std::string, std::string, std::less<>> settings);
+
     struct ExtractedArchive
     {
         Path temp_path;
@@ -48,6 +57,4 @@ namespace vcpkg::Commands
     // get_regular_files_recursive_lexically_proximate.
     size_t get_common_directories_count(std::vector<Path> paths);
     void command_extract_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths);
-
-    StripSetting get_strip_setting(std::map<std::string, std::string, std::less<>> settings);
 }
