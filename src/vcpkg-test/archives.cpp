@@ -1,6 +1,6 @@
 #include <catch2/catch.hpp>
-#include <vcpkg/archives.h>
 
+#include <vcpkg/archives.h>
 
 TEST_CASE ("Testing guess_extraction_type", "[z-extract]")
 {
@@ -15,5 +15,4 @@ TEST_CASE ("Testing guess_extraction_type", "[z-extract]")
     REQUIRE(guess_extraction_type(Path("/path/to/archive.xz")) == ExtractionType::Tar);
     REQUIRE(guess_extraction_type(Path("/path/to/archive.exe")) == ExtractionType::Exe);
     REQUIRE(guess_extraction_type(Path("/path/to/archive.unknown")) == ExtractionType::Unknown);
-
 }

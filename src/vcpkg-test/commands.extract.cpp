@@ -145,17 +145,17 @@ TEST_CASE ("Testing get_strip_setting", "z-extract")
         REQUIRE(StripSetting{StripMode::Manual, 0} == get_strip_setting(settings).value_or_exit(VCPKG_LINE_INFO));
     }
 
-    SECTION("Test Manual strip with count of 1")
+    SECTION ("Test Manual strip with count of 1")
     {
-		settings["strip"] = "1";
+        settings["strip"] = "1";
         REQUIRE(StripSetting{StripMode::Manual, 1} == get_strip_setting(settings).value_or_exit(VCPKG_LINE_INFO));
         settings.clear();
-	}
+    }
 
     SECTION ("Test Manual strip with count greater than 1")
     {
         settings["strip"] = "5000";
-        REQUIRE(StripSetting{StripMode::Manual, 5} == get_strip_setting(settings).value_or_exit(VCPKG_LINE_INFO));
+        REQUIRE(StripSetting{StripMode::Manual, 5000} == get_strip_setting(settings).value_or_exit(VCPKG_LINE_INFO));
         settings.clear();
     }
 

@@ -31,8 +31,8 @@ namespace vcpkg::Commands
         if (iter == settings.end())
         {
             // no strip option specified - default to manual strip 0
-			return StripSetting{StripMode::Manual, 0};
-		}
+            return StripSetting{StripMode::Manual, 0};
+        }
 
         std::string maybe_value = iter->second;
 
@@ -80,9 +80,9 @@ namespace vcpkg::Commands
     {
         std::vector<std::pair<Path, Path>> result;
 
-        const auto temp_dir = archive.temp_path;
-        const auto base_path = archive.base_path;
-        const auto proximate = archive.proximate_to_temp;
+        const auto& temp_dir = archive.temp_path;
+        const auto& base_path = archive.base_path;
+        const auto& proximate = archive.proximate_to_temp;
 
         size_t strip_count = strip_setting.mode == StripMode::Automatic ? get_common_directories_count(proximate)
                                                                         : static_cast<size_t>(strip_setting.count);
@@ -105,8 +105,8 @@ namespace vcpkg::Commands
                 continue;
             }
 
-            result.emplace_back(temp_dir / Path{prox_path},
-                                Path{base_path} / std::string(first, static_cast<size_t>(last - first)));
+            result.emplace_back(temp_dir / prox_path,
+                                base_path / std::string(first, static_cast<size_t>(last - first)));
         }
 
         return result;
