@@ -20,7 +20,13 @@ namespace vcpkg::Commands
         StripSetting(StripMode mode, int count) : mode(mode), count(count)
         {
             // If mode is Automatic, enforce count to be -1
-            if (mode == StripMode::Automatic) count = -1;
+            if (mode == StripMode::Automatic) this->count = -1;
+        }
+
+        // Equality comparison
+        bool operator==(const StripSetting& other) const
+        {
+            return this->mode == other.mode && this->count == other.count;
         }
     };
 
@@ -42,4 +48,6 @@ namespace vcpkg::Commands
     // get_regular_files_recursive_lexically_proximate.
     size_t get_common_directories_count(std::vector<Path> paths);
     void command_extract_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths);
+
+    StripSetting get_strip_setting(std::map<std::string, std::string, std::less<>> settings);
 }

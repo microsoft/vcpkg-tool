@@ -44,6 +44,7 @@ namespace vcpkg
                                               const Path& archive,
                                               const Path& to_path);
 
+    ExtractionType guess_extraction_type(const Path& archive);
 #ifdef _WIN32
     // Extract the 7z archive part of a self extracting 7z installer
     void win32_extract_self_extracting_7z(const Filesystem& fs, const Path& archive, const Path& to_path);

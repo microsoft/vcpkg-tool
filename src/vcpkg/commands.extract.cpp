@@ -25,30 +25,31 @@ namespace vcpkg::Commands
         nullptr,
     };
 
-    static StripSetting get_strip_setting(const ParsedArguments& options)
+    StripSetting get_strip_setting(std::map<std::string, std::string, std::less<>> settings)
     {
-        auto iter = options.settings.find(OPTION_STRIP);
-        if (iter != options.settings.end())
+        auto iter = settings.find(OPTION_STRIP);
+        if (iter == settings.end())
         {
-            std::string maybe_value = iter->second;
+            // no strip option specified - default to manual strip 0
+			return {StripMode::Manual, 0};
+		}
 
-            if (Strings::case_insensitive_ascii_equals(maybe_value, "auto"))
-            {
-                return {StripMode::Automatic, -1};
-            }
+        std::string maybe_value = iter->second;
 
-            auto maybe_strip_value = Strings::strto<int>(maybe_value);
-            if (auto value = maybe_strip_value.get(); value && *value >= 0)
-            {
-                return {StripMode::Manual, *value};
-            }
-
-            // If the value is not an integer or is less than 0
-            msg::println_error(msgErrorInvalidExtractOption, msg::option = OPTION_STRIP, msg::value = maybe_value);
-            Checks::exit_fail(VCPKG_LINE_INFO);
+        if (Strings::case_insensitive_ascii_equals(maybe_value, "auto"))
+        {
+            return {StripMode::Automatic, -1};
         }
-        // No --strip set, default to 0
-        return {StripMode::Manual, 0};
+
+        auto maybe_strip_value = Strings::strto<int>(maybe_value);
+        if (auto value = maybe_strip_value.get(); value && *value >= 0)
+        {
+            return {StripMode::Manual, *value};
+        }
+
+        // If the value is not an integer or is less than 0
+        msg::println_error(msgErrorInvalidExtractOption, msg::option = OPTION_STRIP, msg::value = maybe_value);
+        Checks::exit_fail(VCPKG_LINE_INFO);
     }
 
     constexpr IsSlash is_slash;
@@ -145,7 +146,7 @@ namespace vcpkg::Commands
         auto parse_args = args.parse_arguments(ExtractCommandStructure);
         auto archive_path = Path{parse_args.command_arguments[0]};
         auto destination_path = Path{parse_args.command_arguments[1]};
-        auto strip_setting = get_strip_setting(parse_args);
+        auto strip_setting = get_strip_setting(parse_args.settings);
 
         if (!fs.is_directory(destination_path))
         {

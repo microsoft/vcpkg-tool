@@ -131,7 +131,7 @@ namespace
 
 namespace vcpkg
 {
-    static ExtractionType guess_extraction_type(const Path& archive)
+    ExtractionType guess_extraction_type(const Path& archive)
 
     {
         const auto ext = archive.extension();

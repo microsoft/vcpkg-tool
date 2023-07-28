@@ -135,3 +135,34 @@ TEST_CASE ("Testing strip auto's get_common_prefix_count", "z-extract")
     REQUIRE(0 == get_common_directories_count({"file1.txt"}));
     REQUIRE(1 == get_common_directories_count({"folder1" VCPKG_PREFERRED_SEPARATOR "file1.txt"}));
 }
+
+TEST_CASE ("Testing get_strip_setting", "z-extract")
+{
+    std::map<std::string, std::string, std::less<>> settings;
+
+    SECTION ("Test no strip")
+    {
+        REQUIRE(StripSetting{StripMode::Manual, 0} == get_strip_setting(settings));
+    }
+
+    SECTION("Test Manual strip with count of 1")
+    {
+		settings["strip"] = "1";
+		REQUIRE(StripSetting{StripMode::Manual, 1} == get_strip_setting(settings));
+        settings.clear();
+	}
+
+    SECTION ("Test Manual strip with count greater than 1")
+    {
+        settings["strip"] = "5";
+        REQUIRE(StripSetting{StripMode::Manual, 5} == get_strip_setting(settings));
+        settings.clear();
+    }
+
+    SECTION ("Test Automatic strip")
+    {
+        settings["strip"] = "auto";
+        REQUIRE(StripSetting{StripMode::Automatic, -1} == get_strip_setting(settings));
+        settings.clear();
+    }
+}
