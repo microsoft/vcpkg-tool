@@ -483,20 +483,25 @@ namespace vcpkg
                     int exit_code = 0;
                     ss >> http_code >> exit_code;
 
-                    if (exit_code == 0)
+                    if (http_code != 0)
                     {
                         out->push_back(http_code);
                     }
                     else
                     {
+                        // If curl version < 7.75.0, `exit_code` is 0. In this case, only the exit code for the last
+                        // request is returned.
                         out->push_back(msg::format(msgCurlFailedToExecute, msg::exit_code = exit_code));
                     }
                 }
             };
 
-            cmd_execute_and_stream_lines(cmd, cb).value_or_exit(VCPKG_LINE_INFO);
-            if (std::any_of(out->cbegin(), out->cend(), [](ExpectedL<int> const& result) -> bool { return !result; }))
+            auto const ret = cmd_execute_and_stream_lines(cmd, cb).value_or_exit(VCPKG_LINE_INFO);
+            auto req_err = std::find_if(
+                out->rbegin(), out->rend(), [](ExpectedL<int> const& v) -> bool { return !v.has_value(); });
+            if (req_err != out->rend())
             {
+                *req_err = ExpectedL<int>(msg::format(msgCurlFailedToExecute, msg::exit_code = ret));
                 break;
             }
 
