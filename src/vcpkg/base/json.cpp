@@ -316,10 +316,7 @@ namespace vcpkg::Json
     // } struct Value
     // struct Array {
     Value& Array::push_back(std::string&& value) { return this->push_back(Json::Value::string(std::move(value))); }
-    Value& Array::push_back(Value&& value)
-    {
-        return underlying_.emplace_back(std::move(value));
-    }
+    Value& Array::push_back(Value&& value) { return underlying_.emplace_back(std::move(value)); }
     Object& Array::push_back(Object&& obj) { return push_back(Value::object(std::move(obj))).object(VCPKG_LINE_INFO); }
     Array& Array::push_back(Array&& arr) { return push_back(Value::array(std::move(arr))).array(VCPKG_LINE_INFO); }
     Value& Array::insert_before(iterator it, Value&& value)
