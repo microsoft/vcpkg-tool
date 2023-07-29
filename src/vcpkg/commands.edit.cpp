@@ -170,10 +170,14 @@ namespace vcpkg::Commands::Edit
         }
 
         std::vector<Path> candidate_paths;
-        auto maybe_editor_path = get_environment_variable("EDITOR");
-        if (const std::string* editor_path = maybe_editor_path.get())
+
+        // Scope to prevent use of moved-from variable
         {
-            candidate_paths.emplace_back(*editor_path);
+            auto maybe_editor_path = get_environment_variable("EDITOR");
+            if (std::string* editor_path = maybe_editor_path.get())
+            {
+                candidate_paths.emplace_back(std::move(*editor_path));
+            }
         }
 
 #ifdef _WIN32

@@ -580,7 +580,7 @@ namespace vcpkg
                 }
                 else
                 {
-                    env_strings.push_back(var);
+                    env_strings.push_back(std::move(var));
                 }
             }
         }
