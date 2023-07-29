@@ -2,6 +2,9 @@
 
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/expected.h>
+#include <vcpkg/base/files.h>
+
+#include <vcpkg-test/util.h>
 
 using namespace vcpkg;
 
@@ -57,6 +60,18 @@ TEST_CASE ("split_uri_view", "[downloads]")
         REQUIRE(x.get()->authority.value_or({}) == "//host:port");
         REQUIRE(x.get()->path_query_fragment == "/");
     }
+}
+
+TEST_CASE ("download_files", "[downloads]")
+{
+    auto const& fs = real_filesystem;
+    auto const dst = Test::base_temporary_directory() / "download_files";
+    auto const url = [&](std::string l) -> auto { return std::pair(l, dst); };
+
+    std::vector<std::string> headers;
+
+    REQUIRE(!download_files(fs, std::vector{url("unknown://localhost:9")}, headers).at(0).has_value());
+    REQUIRE(!download_files(fs, std::vector{url("http://localhost:9/not-exists")}, headers).at(0).has_value());
 }
 
 TEST_CASE ("try_parse_curl_max5_size", "[downloads]")
