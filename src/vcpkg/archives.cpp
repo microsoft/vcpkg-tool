@@ -16,7 +16,7 @@ namespace
 #if defined(_WIN32)
     void win32_extract_nupkg(const ToolCache& tools, MessageSink& status_sink, const Path& archive, const Path& to_path)
     {
-        const auto nuget_exe = tools.get_tool_path(Tools::NUGET, status_sink);
+        const auto& nuget_exe = tools.get_tool_path(Tools::NUGET, status_sink);
 
         const auto stem = archive.stem();
 

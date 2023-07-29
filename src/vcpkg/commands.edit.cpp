@@ -253,7 +253,7 @@ namespace vcpkg::Commands::Edit
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
-        const Path env_editor = *it;
+        const Path& env_editor = *it;
         const std::vector<std::string> arguments = create_editor_arguments(paths, options, ports);
         const auto args_as_string = Strings::join(" ", arguments);
         auto cmd_line = Command(env_editor).raw_arg(args_as_string).string_arg("-n");
