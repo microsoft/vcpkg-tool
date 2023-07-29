@@ -284,8 +284,7 @@ namespace vcpkg::Paragraphs
             skip_whitespace();
             while (!at_eof())
             {
-                paragraphs.emplace_back();
-                get_paragraph(paragraphs.back());
+                get_paragraph(paragraphs.emplace_back());
                 match_while(is_lineend);
             }
             if (get_error()) return LocalizedString::from_raw(get_error()->to_string());
