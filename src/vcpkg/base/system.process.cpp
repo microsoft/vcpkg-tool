@@ -589,7 +589,7 @@ namespace vcpkg
 
         for (auto&& env_string : env_strings)
         {
-            const Optional<std::string> value = get_environment_variable(env_string.c_str());
+            const Optional<std::string> value = get_environment_variable(env_string);
             const auto v = value.get();
             if (!v || v->empty()) continue;
 
