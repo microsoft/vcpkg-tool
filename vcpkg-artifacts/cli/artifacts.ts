@@ -2,10 +2,10 @@
 // Licensed under the MIT License.
 
 import { MultiBar, SingleBar } from 'cli-progress';
-import { Artifact, ArtifactBase, InstallStatus, ResolvedArtifact, resolveDependencies, Selections } from '../artifacts/artifact';
+import { Artifact, ArtifactBase, InstallStatus, ResolvedArtifact, Selections, resolveDependencies } from '../artifacts/artifact';
 import { i } from '../i18n';
-import { FileEntry, InstallEvents } from '../interfaces/events';
-import { getArtifact, RegistryDisplayContext, RegistryResolver } from '../registries/registries';
+import { InstallEvents } from '../interfaces/events';
+import { RegistryDisplayContext, RegistryResolver, getArtifact } from '../registries/registries';
 import { Session } from '../session';
 import { Channels } from '../util/channels';
 import { Uri } from '../util/uri';
@@ -159,19 +159,8 @@ class TtyProgressRenderer implements Partial<ProgressRenderer> {
     this.#individualProgress.startOrUpdate(TaggedProgressKind.Downloading, 100, percent, i`downloading ${uri.toString()} -> ${destination}`);
   }
 
-  unpackFileProgress(entry: Readonly<FileEntry>) {
-    let suffix = entry.extractPath;
-    if (suffix) {
-      suffix = ' ' + suffix;
-    } else {
-      suffix = '';
-    }
-
-    this.#individualProgress.startOrUpdate(TaggedProgressKind.GenericProgress, 100, this.#individualProgress.lastCurrentValue, i`unpacking` + suffix);
-  }
-
-  unpackArchiveProgress(archiveUri: Uri, percent: number) {
-    this.#individualProgress.startOrUpdate(TaggedProgressKind.GenericProgress, 100, percent, i`unpacking ${archiveUri.fsPath}`);
+  unpackArchiveStart(archiveUri: Uri) {
+    this.#individualProgress.heartbeat(i`unpacking ${archiveUri.fsPath}`);
   }
 
   unpackArchiveHeartbeat(text: string) {
@@ -230,7 +219,7 @@ class NoTtyProgressRenderer implements Partial<ProgressRenderer> {
     }
   }
 
-  unpackArchiveStart(archiveUri: Uri, outputUri: Uri) {
+  unpackArchiveStart(archiveUri: Uri) {
     this.channels.message(i`Unpacking ${archiveUri.fsPath}...`);
   }
 }

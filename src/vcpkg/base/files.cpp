@@ -47,18 +47,6 @@ namespace
 
     std::atomic<uint64_t> g_us_filesystem_stats(0);
 
-    struct IsSlash
-    {
-        bool operator()(const char c) const noexcept
-        {
-            return c == '/'
-#if defined(_WIN32)
-                   || c == '\\'
-#endif // _WIN32
-                ;
-        }
-    };
-
     constexpr IsSlash is_slash;
 
     bool is_dot(StringView sv) { return sv.size() == 1 && sv[0] == '.'; }
