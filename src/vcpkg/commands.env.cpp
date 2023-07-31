@@ -96,7 +96,7 @@ namespace vcpkg::Commands::Env
         {
             if (auto e = get_environment_variable(passthrough))
             {
-                extra_env.emplace(passthrough, e.value_or_exit(VCPKG_LINE_INFO));
+                extra_env.emplace(passthrough, std::move(e.value_or_exit(VCPKG_LINE_INFO)));
             }
         }
 

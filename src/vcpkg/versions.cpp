@@ -321,8 +321,7 @@ namespace vcpkg
         // (\.(0|[1-9][0-9]*))*
         while (*cur == '.')
         {
-            ret.identifiers.push_back(0);
-            cur = parse_skip_number(cur + 1, &ret.identifiers.back());
+            cur = parse_skip_number(cur + 1, &ret.identifiers.emplace_back(0));
             if (!cur)
             {
                 return format_invalid_date_version(version);

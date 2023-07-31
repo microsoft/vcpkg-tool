@@ -285,7 +285,7 @@ namespace vcpkg::Commands::CIVerifyVersions
                 continue;
             }
 
-            auto git_tree = git_tree_it->second;
+            auto& git_tree = git_tree_it->second;
             auto control_path = port_path / "CONTROL";
             auto manifest_path = port_path / "vcpkg.json";
             auto manifest_exists = fs.exists(manifest_path, IgnoreErrors{});
