@@ -1166,37 +1166,16 @@ namespace
     {
         // pipefd[0] is the read end of the pipe, pipefd[1] is the write end
         int pipefd[2];
+
         AnonymousPipe() : pipefd{-1, -1} { }
         AnonymousPipe(const AnonymousPipe&) = delete;
-        AnonymousPipe(AnonymousPipe&& other)
-        {
-            for (size_t idx = 0; idx < 2; ++idx)
-            {
-                pipefd[idx] = std::exchange(other.pipefd[idx], -1);
-            }
-        }
+        AnonymousPipe& operator=(const AnonymousPipe&) = delete;
         ~AnonymousPipe()
         {
             for (size_t idx = 0; idx < 2; ++idx)
             {
                 close_mark_invalid(pipefd[idx]);
             }
-        }
-
-        friend void swap(AnonymousPipe& lhs, AnonymousPipe& rhs) noexcept
-        {
-            for (size_t idx = 0; idx < 2; ++idx)
-            {
-                std::swap(lhs.pipefd[idx], rhs.pipefd[idx]);
-            }
-        }
-
-        AnonymousPipe& operator=(const AnonymousPipe&) = delete;
-        AnonymousPipe& operator=(AnonymousPipe&& other)
-        {
-            auto moved = std::move(other);
-            swap(*this, moved);
-            return *this;
         }
 
         ExpectedL<Unit> create()
