@@ -1510,6 +1510,36 @@ namespace vcpkg
 
 namespace
 {
+#if !defined(_WIN32)
+    struct ChildStdinTracker
+    {
+        StringView input;
+        std::size_t offset;
+
+        // Write a hunk of data to `target`. If there is no more input to write, returns `true`.
+        ExpectedL<bool> do_write(int target)
+        {
+            const auto this_write = input.size() - offset;
+            // Big enough to be big, small enough to avoid implementation limits
+            static constexpr std::size_t max_write = 1 << 28;
+            if (this_write != 0)
+            {
+                const auto this_write_clamped = this_write > max_write ? max_write : this_write;
+                const auto actually_written =
+                    write(target, static_cast<const void*>(input.data() + offset), this_write_clamped);
+                if (actually_written < 0)
+                {
+                    return format_system_error_message("write", errno);
+                }
+
+                offset += actually_written;
+            }
+
+            return offset == input.size();
+        }
+    };
+#endif // ^^^ !_WIN32
+
     ExpectedL<int> cmd_execute_and_stream_data_impl(const Command& cmd_line,
                                                     uint32_t debug_id,
                                                     const std::function<void(StringView)>& data_cb,
