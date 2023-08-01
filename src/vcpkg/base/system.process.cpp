@@ -957,6 +957,21 @@ namespace
         }
     };
 
+    // Ensure that all asynchronous procedure calls pending for this thread are called
+    void drain_apcs()
+    {
+        switch (SleepEx(0, TRUE))
+        {
+            case 0:
+                // timeout expired, OK
+                break;
+            case WAIT_IO_COMPLETION:
+                // completion queue drained completed, OK
+                break;
+            default: vcpkg::Checks::unreachable(VCPKG_LINE_INFO); break;
+        }
+    }
+
     struct OverlappedStatus : OVERLAPPED
     {
         DWORD expected_write;
@@ -1067,29 +1082,18 @@ namespace
             }
 
             auto child_exit_code = proc_info.wait();
+            drain_apcs();
             if (stdin_pipe.write_pipe != INVALID_HANDLE_VALUE)
             {
+                // this block probably never runs
+                Debug::print("{}: stdin write outlived the child process?\n", debug_id);
                 if (CancelIo(stdin_pipe.write_pipe))
                 {
-                    switch (SleepEx(0, TRUE))
-                    {
-                        case 0:
-                            // timeout expired, OK
-                            break;
-                        case WAIT_IO_COMPLETION:
-                            // stdin completed, OK
-                            break;
-                        default: vcpkg::Checks::unreachable(VCPKG_LINE_INFO); break;
-                    }
+                    drain_apcs();
                 }
                 else
                 {
                     Debug::print("{}: Cancelling stdin write failed: {:x}\n", debug_id, GetLastError());
-                }
-
-                if (stdin_pipe.write_pipe != INVALID_HANDLE_VALUE)
-                {
-                    Debug::print("{}: completion routine didn't close the stdin handle\n", debug_id);
                 }
             }
 
