@@ -60,7 +60,6 @@ TEST_CASE ("no closes-stdin crash", "[system.process]")
     REQUIRE(run.output.empty());
 }
 
-
 TEST_CASE ("no closes-stdout crash", "[system.process]")
 {
     auto test_program = Path(get_exe_path_of_current_process().parent_path()) / "closes-stdout";
