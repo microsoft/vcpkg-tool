@@ -44,6 +44,10 @@ export function vcpkgFetch(session: Session, fetchKey: string): Promise<string> 
   });
 }
 
+export async function vcpkgExtract(session: Session, archive: string, target:string, strip:string): Promise<string> {
+  return runVcpkg(session.vcpkgCommand, ['z-extract', archive, target, strip]);
+}
+
 export async function vcpkgDownload(session: Session, destination: string, sha512: string | undefined, uris: Array<Uri>, events: Partial<DownloadEvents>) : Promise<void> {
   const args = ['x-download', destination, '--z-machine-readable-progress'];
   if (sha512) {

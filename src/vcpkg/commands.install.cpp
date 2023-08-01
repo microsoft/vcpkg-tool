@@ -289,9 +289,7 @@ namespace vcpkg
         std::vector<StatusParagraph> features_spghs;
         for (auto&& feature : bcf.features)
         {
-            features_spghs.emplace_back();
-
-            StatusParagraph& feature_paragraph = features_spghs.back();
+            StatusParagraph& feature_paragraph = features_spghs.emplace_back();
             feature_paragraph.package = feature;
             feature_paragraph.want = Want::INSTALL;
             feature_paragraph.state = InstallState::HALF_INSTALLED;
@@ -571,8 +569,7 @@ namespace vcpkg
 
         for (auto&& action : action_plan.already_installed)
         {
-            results.emplace_back(action);
-            results.back().build_result.emplace(
+            results.emplace_back(action).build_result.emplace(
                 perform_install_plan_action(args, paths, action, status_db, binary_cache, build_logs_recorder));
         }
 
