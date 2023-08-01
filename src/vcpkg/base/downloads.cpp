@@ -12,7 +12,6 @@
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/system.proxy.h>
 #include <vcpkg/base/util.h>
-#include <vcpkg/base/uuid.h>
 
 #include <vcpkg/commands.version.h>
 #include <vcpkg/metrics.h>
@@ -522,8 +521,7 @@ namespace vcpkg
         return ret;
     }
 
-    bool send_snapshot_to_api(const Filesystem& fs,
-                              const std::string& github_token,
+    bool send_snapshot_to_api(const std::string& github_token,
                               const std::string& github_repository,
                               const Json::Object& snapshot)
     {
@@ -540,13 +538,7 @@ namespace vcpkg
         cmd.string_arg("-H").string_arg("X-GitHub-Api-Version: 2022-11-28");
         cmd.string_arg(
             Strings::concat("https://api.github.com/repos/", github_repository, "/dependency-graph/snapshots"));
-
-        const auto tmp_dir = fs.create_or_get_temp_directory(VCPKG_LINE_INFO);
-        const auto unique_file_name = fmt::format("dependency_snapshot_{}.json", generate_random_UUID());
-        const auto snapshot_file_path = tmp_dir / unique_file_name;
-        fs.write_contents(snapshot_file_path, Json::stringify(snapshot), VCPKG_LINE_INFO);
-
-        cmd.string_arg("-d").string_arg(fmt::format("@{}", snapshot_file_path));
+        cmd.string_arg("-d").string_arg("@-");
         int code = 0;
         auto result = cmd_execute_and_stream_lines(cmd, [&code](StringView line) {
             if (Strings::starts_with(line, guid_marker))
@@ -557,7 +549,7 @@ namespace vcpkg
             {
                 Debug::println(line);
             }
-        });
+        }, default_working_directory, default_environment, Encoding::Utf8, Json::stringify(snapshot));
 
         auto r = result.get();
         if (r && *r == 0 && code >= 200 && code < 300)
