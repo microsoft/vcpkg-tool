@@ -44,3 +44,34 @@ TEST_CASE ("captures-output", "[system.process]")
     REQUIRE(run.exit_code == 0);
     REQUIRE(run.output == expected);
 }
+
+TEST_CASE ("no closes-stdin crash", "[system.process]")
+{
+    auto test_program = Path(get_exe_path_of_current_process().parent_path()) / "closes-stdin";
+    Command cmd{test_program};
+    auto run = cmd_execute_and_capture_output(cmd,
+                                              default_working_directory,
+                                              default_environment,
+                                              Encoding::Utf8,
+                                              EchoInDebug::Hide,
+                                              "this is some input that will be intentionally not read")
+                   .value_or_exit(VCPKG_LINE_INFO);
+    REQUIRE(run.exit_code == 0);
+    REQUIRE(run.output.empty());
+}
+
+
+TEST_CASE ("no closes-stdout crash", "[system.process]")
+{
+    auto test_program = Path(get_exe_path_of_current_process().parent_path()) / "closes-stdout";
+    Command cmd{test_program};
+    auto run = cmd_execute_and_capture_output(cmd,
+                                              default_working_directory,
+                                              default_environment,
+                                              Encoding::Utf8,
+                                              EchoInDebug::Hide,
+                                              "this is some input that will be read")
+                   .value_or_exit(VCPKG_LINE_INFO);
+    REQUIRE(run.exit_code == 0);
+    REQUIRE(run.output == "hello world");
+}
