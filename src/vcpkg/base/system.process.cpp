@@ -957,15 +957,11 @@ namespace
         }
     };
 
-    struct MaybeOverlappedWrite : OVERLAPPED
-    {
-    
-    };
-
     struct OverlappedStatus : OVERLAPPED
     {
         DWORD expected_write;
         HANDLE* target;
+        int32_t debug_id;
     };
 
     struct RedirectedProcessInfo
@@ -979,10 +975,10 @@ namespace
         RedirectedProcessInfo& operator=(const RedirectedProcessInfo&) = delete;
         ~RedirectedProcessInfo() = default;
 
-        int wait_and_stream_output(const char* input,
+        int wait_and_stream_output(int32_t debug_id,
+                                   const char* input,
                                    DWORD input_size,
-                                   const std::function<void(StringView)>& f,
-                                   Encoding encoding)
+                                   const std::function<void(char*, size_t)>& raw_cb)
         {
             static const auto stdin_completion_routine =
                 [](DWORD dwErrorCode, DWORD dwNumberOfBytesTransferred, LPOVERLAPPED pOverlapped) {
@@ -997,7 +993,11 @@ namespace
                         case ERROR_OPERATION_ABORTED:
                             // OK, child didn't want all the data
                             break;
-                        default: Checks::unreachable(VCPKG_LINE_INFO, "stdin write completion");
+                        default:
+                            Debug::print(fmt::format("{}: Unexpected error writing to stdin of a child process: {:X}\n",
+                                                     status->debug_id,
+                                                     dwErrorCode));
+                            break;
                     }
 
                     close_handle_mark_invalid(*status->target);
@@ -1006,6 +1006,7 @@ namespace
             OverlappedStatus stdin_write{};
             stdin_write.expected_write = input_size;
             stdin_write.target = &stdin_pipe.write_pipe;
+            stdin_write.debug_id = debug_id;
             if (input_size == 0)
             {
                 close_handle_mark_invalid(stdin_pipe.write_pipe);
@@ -1015,17 +1016,17 @@ namespace
                 stdin_write.expected_write = input_size;
                 if (WriteFileEx(stdin_pipe.write_pipe, input, input_size, &stdin_write, stdin_completion_routine))
                 {
-                    // write completed synchronously
-                    close_handle_mark_invalid(stdin_pipe.write_pipe);
+                    DWORD last_error = GetLastError();
+                    if (last_error)
+                    {
+                        Debug::print(
+                            fmt::format("{}: Unexpected WriteFileEx partial success: {:X}\n", debug_id, last_error));
+                    }
                 }
                 else
                 {
-                    DWORD last_error = GetLastError();
-                    if (last_error != ERROR_IO_PENDING)
-                    {
-                        vcpkg::Checks::unreachable(VCPKG_LINE_INFO,
-                                                   fmt::format("Writing stdin failed: {:x}", last_error));
-                    }
+                    Debug::print(fmt::format("{}: stdin WriteFileEx failure: {:x}\n", debug_id, GetLastError()));
+                    close_handle_mark_invalid(stdin_pipe.write_pipe);
                 }
             }
 
@@ -1037,43 +1038,29 @@ namespace
                 switch (WaitForSingleObjectEx(stdout_pipe.read_pipe, INFINITE, TRUE))
                 {
                     case WAIT_OBJECT_0:
-                        if (!ReadFile(
-                                stdout_pipe.read_pipe, static_cast<void*>(buf), buffer_size, &bytes_read, nullptr))
+                        if (ReadFile(stdout_pipe.read_pipe, static_cast<void*>(buf), buffer_size, &bytes_read, nullptr))
                         {
-                            if (GetLastError() != ERROR_BROKEN_PIPE)
-                            {
-                                vcpkg::Checks::unreachable(VCPKG_LINE_INFO);
-                            }
-
-                            close_handle_mark_invalid(stdout_pipe.read_pipe);
-                            break;
-                        }
-
-                        if (encoding == Encoding::Utf8)
-                        {
-                            std::replace(buf, buf + bytes_read, '\0', '?');
-                            f(StringView{buf, static_cast<size_t>(bytes_read)});
-                        }
-                        else if (encoding == Encoding::Utf16)
-                        {
-                            // Note: This doesn't handle unpaired surrogates or partial encoding units correctly in
-                            // order to be able to reuse Strings::to_utf8 which we believe will be fine 99% of the time.
-                            std::string encoded;
-                            Strings::to_utf8(encoded, reinterpret_cast<const wchar_t*>(buf), bytes_read);
-                            std::replace(encoded.begin(), encoded.end(), '\0', '?');
-                            f(StringView{encoded});
+                            raw_cb(buf, bytes_read);
                         }
                         else
                         {
-                            vcpkg::Checks::unreachable(VCPKG_LINE_INFO);
+                            DWORD last_error = GetLastError();
+                            if (last_error != ERROR_BROKEN_PIPE)
+                            {
+                                Debug::print(fmt::format("{}: Writing to stdout failed: {:x}\n", debug_id, last_error));
+                            }
+
+                            close_handle_mark_invalid(stdout_pipe.read_pipe);
                         }
+
                         break;
                     case WAIT_IO_COMPLETION:
                         // stdin might have completed, that's OK
                         break;
                     case WAIT_FAILED:
-                        vcpkg::Checks::unreachable(VCPKG_LINE_INFO,
-                                                   fmt::format("Waiting for stdout failed: {:x}", GetLastError()));
+                        vcpkg::Checks::unreachable(
+                            VCPKG_LINE_INFO,
+                            fmt::format("{}: Waiting for stdout failed: {:x}", debug_id, GetLastError()));
                         break;
                     default: vcpkg::Checks::unreachable(VCPKG_LINE_INFO); break;
                 }
@@ -1082,20 +1069,27 @@ namespace
             auto child_exit_code = proc_info.wait();
             if (stdin_pipe.write_pipe != INVALID_HANDLE_VALUE)
             {
-                if (!CancelIo(stdin_pipe.write_pipe))
+                if (CancelIo(stdin_pipe.write_pipe))
                 {
-                    vcpkg::Checks::unreachable(VCPKG_LINE_INFO,
-                                               fmt::format("Cancel stdin write failed: {:x}", GetLastError()));
-                }
-
-                DWORD transferred;
-                if (GetOverlappedResult(stdin_pipe.write_pipe, &stdin_write, &transferred, TRUE))
-                {
-                    stdin_completion_routine(0, transferred, &stdin_write);
+                    switch (SleepEx(0, TRUE))
+                    {
+                        case 0:
+                            // timeout expired, OK
+                            break;
+                        case WAIT_IO_COMPLETION:
+                            // stdin completed, OK
+                            break;
+                        default: vcpkg::Checks::unreachable(VCPKG_LINE_INFO); break;
+                    }
                 }
                 else
                 {
-                    stdin_completion_routine(GetLastError(), transferred, &stdin_write);
+                    Debug::print("{}: Cancelling stdin write failed: {:x}\n", debug_id, GetLastError());
+                }
+
+                if (stdin_pipe.write_pipe != INVALID_HANDLE_VALUE)
+                {
+                    Debug::print("{}: completion routine didn't close the stdin handle\n", debug_id);
                 }
             }
 
@@ -1495,7 +1489,7 @@ namespace vcpkg
     }
 
     ExpectedL<int> cmd_execute_and_stream_lines(const Command& cmd_line,
-                                                std::function<void(StringView)> per_line_cb,
+                                                const std::function<void(StringView)>& per_line_cb,
                                                 const WorkingDirectory& wd,
                                                 const Environment& env,
                                                 Encoding encoding,
@@ -1514,7 +1508,7 @@ namespace
 {
     ExpectedL<int> cmd_execute_and_stream_data_impl(const Command& cmd_line,
                                                     uint32_t debug_id,
-                                                    std::function<void(StringView)> data_cb,
+                                                    const std::function<void(StringView)>& data_cb,
                                                     const WorkingDirectory& wd,
                                                     const Environment& env,
                                                     Encoding encoding,
@@ -1546,7 +1540,29 @@ namespace
             return std::move(process_create).error();
         }
 
-        return process_info.wait_and_stream_output(stdin_content.data(), stdin_content_size, data_cb, encoding);
+        std::function<void(char*, size_t)> raw_cb;
+        switch (encoding)
+        {
+            case Encoding::Utf8:
+                raw_cb = [&](char* buf, size_t bytes_read) {
+                    std::replace(buf, buf + bytes_read, '\0', '?');
+                    data_cb(StringView{buf, bytes_read});
+                };
+                break;
+            case Encoding::Utf16:
+                raw_cb = [&](char* buf, size_t bytes_read) {
+                    // Note: This doesn't handle unpaired surrogates or partial encoding units correctly in
+                    // order to be able to reuse Strings::to_utf8 which we believe will be fine 99% of the time.
+                    std::string encoded;
+                    Strings::to_utf8(encoded, reinterpret_cast<const wchar_t*>(buf), bytes_read / 2);
+                    std::replace(encoded.begin(), encoded.end(), '\0', '?');
+                    data_cb(StringView{encoded});
+                };
+                break;
+            default: vcpkg::Checks::unreachable(VCPKG_LINE_INFO);
+        }
+
+        return process_info.wait_and_stream_output(debug_id, stdin_content.data(), stdin_content_size, raw_cb);
 #else  // ^^^ _WIN32 // !_WIN32 vvv
 
         Checks::check_exit(VCPKG_LINE_INFO, encoding == Encoding::Utf8);
@@ -1736,7 +1752,7 @@ namespace
 namespace vcpkg
 {
     ExpectedL<int> cmd_execute_and_stream_data(const Command& cmd_line,
-                                               std::function<void(StringView)> data_cb,
+                                               const std::function<void(StringView)>& data_cb,
                                                const WorkingDirectory& wd,
                                                const Environment& env,
                                                Encoding encoding,

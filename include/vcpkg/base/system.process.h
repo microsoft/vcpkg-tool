@@ -143,14 +143,14 @@ namespace vcpkg
         const Environment& env = default_environment);
 
     ExpectedL<int> cmd_execute_and_stream_lines(const Command& cmd_line,
-                                                std::function<void(StringView)> per_line_cb,
+                                                const std::function<void(StringView)>& per_line_cb,
                                                 const WorkingDirectory& wd = default_working_directory,
                                                 const Environment& env = default_environment,
                                                 Encoding encoding = Encoding::Utf8,
                                                 StringView stdin_content = {});
 
     ExpectedL<int> cmd_execute_and_stream_data(const Command& cmd_line,
-                                               std::function<void(StringView)> data_cb,
+                                               const std::function<void(StringView)>& data_cb,
                                                const WorkingDirectory& wd = default_working_directory,
                                                const Environment& env = default_environment,
                                                Encoding encoding = Encoding::Utf8,
