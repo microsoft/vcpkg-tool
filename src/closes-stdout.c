@@ -5,7 +5,7 @@
 #include <unistd.h>
 #endif // ^^^ !_WIN32
 
-int main()
+int main(void)
 {
     const char content[] = "hello world";
     fwrite(content, 1, sizeof(content) - 1, stdout);
