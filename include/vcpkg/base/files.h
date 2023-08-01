@@ -40,6 +40,18 @@ namespace vcpkg
         std::error_code ec;
     };
 
+    struct IsSlash
+    {
+        bool operator()(const char c) const noexcept
+        {
+            return c == '/'
+#if defined(_WIN32)
+                   || c == '\\'
+#endif // _WIN32
+                ;
+        }
+    };
+
     bool is_symlink(FileType s);
     bool is_regular_file(FileType s);
     bool is_directory(FileType s);

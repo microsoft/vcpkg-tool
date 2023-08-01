@@ -4,6 +4,7 @@ DECLARE_MESSAGE(ABoolean, (), "", "a boolean")
 DECLARE_MESSAGE(ABuiltinRegistry, (), "", "a builtin registry")
 DECLARE_MESSAGE(AConfigurationObject, (), "", "a configuration object")
 DECLARE_MESSAGE(ADependency, (), "", "a dependency")
+DECLARE_MESSAGE(ADependencyFeature, (), "", "a feature in a dependency")
 DECLARE_MESSAGE(ADemandObject,
                 (),
                 "'demands' are a concept in the schema of a JSON file the user can edit",
@@ -124,6 +125,7 @@ DECLARE_MESSAGE(AnArtifactsGitRegistryUrl, (), "", "an artifacts git registry UR
 DECLARE_MESSAGE(AnArtifactsRegistry, (), "", "an artifacts registry")
 DECLARE_MESSAGE(AnArrayOfDependencies, (), "", "an array of dependencies")
 DECLARE_MESSAGE(AnArrayOfDependencyOverrides, (), "", "an array of dependency overrides")
+DECLARE_MESSAGE(AnArrayOfFeatures, (), "", "an array of features")
 DECLARE_MESSAGE(AnArrayOfIdentifers, (), "", "an array of identifiers")
 DECLARE_MESSAGE(AnArrayOfOverlayPaths, (), "", "an array of overlay paths")
 DECLARE_MESSAGE(AnArrayOfOverlayTripletsPaths, (), "", "an array of overlay triplets paths")
@@ -858,6 +860,10 @@ DECLARE_MESSAGE(ErrorRequirePackagesList,
                 (),
                 "",
                 "`vcpkg install` requires a list of packages to install in classic mode.")
+DECLARE_MESSAGE(ErrorInvalidExtractOption,
+                (msg::option, msg::value),
+                "The keyword 'AUTO' should not be localized",
+                "--{option} must be set to a nonnegative integer or 'AUTO'.")
 DECLARE_MESSAGE(ErrorsFound, (), "", "Found the following errors:")
 DECLARE_MESSAGE(ErrorUnableToDetectCompilerInfo,
                 (),
@@ -929,6 +935,7 @@ DECLARE_MESSAGE(ExportUnsupportedInManifest,
                 "vcpkg export does not support manifest mode, in order to allow for future design considerations. "
                 "You may use export in classic mode by running vcpkg outside of a manifest-based project.")
 DECLARE_MESSAGE(ExtendedDocumentationAtUrl, (msg::url), "", "Extended documentation available at '{url}'.")
+DECLARE_MESSAGE(ExtractHelp, (), "", "Extracts an archive.")
 DECLARE_MESSAGE(ExtractingTool, (msg::tool_name), "", "Extracting {tool_name}...")
 DECLARE_MESSAGE(FailedPostBuildChecks,
                 (msg::count, msg::path),
@@ -2360,6 +2367,10 @@ DECLARE_MESSAGE(StoredBinariesToDestinations,
                 "",
                 "Stored binaries in {count} destinations in {elapsed}.")
 DECLARE_MESSAGE(StoreOptionMissingSha, (), "", "--store option is invalid without a sha512")
+DECLARE_MESSAGE(StripOption,
+                (msg::option),
+                "--{option} is a setting that can be passed to z-extract command.",
+                "--{option} specifies the number of leading directories to strip from all paths.")
 DECLARE_MESSAGE(SuccessfulyExported, (msg::package_name, msg::path), "", "Exported {package_name} to {path}")
 DECLARE_MESSAGE(SuggestGitPull, (), "", "The result may be outdated. Run `git pull` to get the latest results.")
 DECLARE_MESSAGE(SuggestResolution,

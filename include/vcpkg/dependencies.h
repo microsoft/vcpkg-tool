@@ -70,7 +70,8 @@ namespace vcpkg
                           const RequestType& request_type,
                           Triplet host_triplet,
                           std::map<std::string, std::vector<FeatureSpec>>&& dependencies,
-                          std::vector<LocalizedString>&& build_failure_messages);
+                          std::vector<LocalizedString>&& build_failure_messages,
+                          std::vector<std::string> default_features);
 
         const std::string& public_abi() const;
         bool has_package_abi() const;
@@ -80,6 +81,7 @@ namespace vcpkg
 
         Optional<const SourceControlFileAndLocation&> source_control_file_and_location;
         Optional<InstalledPackageView> installed_package;
+        Optional<std::vector<std::string>> default_features;
 
         InstallPlanType plan_type;
         RequestType request_type;

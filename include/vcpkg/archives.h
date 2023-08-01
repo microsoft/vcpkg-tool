@@ -13,17 +13,38 @@
 
 namespace vcpkg
 {
+    enum class ExtractionType
+    {
+        Unknown,
+        Tar,
+        Zip,
+        Nupkg,
+        Msi,
+        Exe
+    };
+
     // Extract `archive` to `to_path` using `tar_tool`.
     void extract_tar(const Path& tar_tool, const Path& archive, const Path& to_path);
     // Extract `archive` to `to_path` using `cmake_tool`. (CMake's built in tar)
     void extract_tar_cmake(const Path& cmake_tool, const Path& archive, const Path& to_path);
-    // Extract `archive` to `to_path`, deleting `to_path` first.
     void extract_archive(const Filesystem& fs,
                          const ToolCache& tools,
                          MessageSink& status_sink,
                          const Path& archive,
                          const Path& to_path);
+    // set `to_path` to `archive` contents.
+    void set_directory_to_archive_contents(const Filesystem& fs,
+                                           const ToolCache& tools,
+                                           MessageSink& status_sink,
+                                           const Path& archive,
+                                           const Path& to_path);
+    Path extract_archive_to_temp_subdirectory(const Filesystem& fs,
+                                              const ToolCache& tools,
+                                              MessageSink& status_sink,
+                                              const Path& archive,
+                                              const Path& to_path);
 
+    ExtractionType guess_extraction_type(const Path& archive);
 #ifdef _WIN32
     // Extract the 7z archive part of a self extracting 7z installer
     void win32_extract_self_extracting_7z(const Filesystem& fs, const Path& archive, const Path& to_path);

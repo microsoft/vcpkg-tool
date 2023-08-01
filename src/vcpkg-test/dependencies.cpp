@@ -89,6 +89,17 @@ struct MockVersionedPortfileProvider : IVersionedPortfileProvider
     }
 };
 
+struct CoreDependency : Dependency
+{
+    CoreDependency(std::string name,
+                   std::vector<DependencyRequestedFeature> features = {},
+                   PlatformExpression::Expr platform = {})
+        : Dependency{std::move(name), std::move(features), std::move(platform)}
+    {
+        default_features = false;
+    }
+};
+
 static void check_name_and_features(const InstallPlanAction& ipa,
                                     StringLiteral name,
                                     std::initializer_list<StringLiteral> features)
@@ -1318,7 +1329,7 @@ TEST_CASE ("version install simple feature", "[versionplan]")
                                                         bp,
                                                         var_provider,
                                                         {
-                                                            Dependency{"a", {"x"}},
+                                                            Dependency{"a", {{"x"}}},
                                                         },
                                                         {},
                                                         toplevel_spec()));
@@ -1333,13 +1344,13 @@ TEST_CASE ("version install simple feature", "[versionplan]")
                                                         bp,
                                                         var_provider,
                                                         {
-                                                            Dependency{"semver", {"x"}},
+                                                            Dependency{"semver", {{"x"}}},
                                                         },
                                                         {},
                                                         toplevel_spec()));
 
             REQUIRE(install_plan.size() == 1);
-            check_name_and_version(install_plan.install_actions[0], "semver", {"1.0.0", 0}, {"x"});
+            check_name_and_version(install_plan.install_actions[0], "semver", {"1.0.0", 0}, {{"x"}});
         }
         SECTION ("date")
         {
@@ -1348,13 +1359,13 @@ TEST_CASE ("version install simple feature", "[versionplan]")
                                                         bp,
                                                         var_provider,
                                                         {
-                                                            Dependency{"date", {"x"}},
+                                                            Dependency{"date", {{"x"}}},
                                                         },
                                                         {},
                                                         toplevel_spec()));
 
             REQUIRE(install_plan.size() == 1);
-            check_name_and_version(install_plan.install_actions[0], "date", {"2020-01-01", 0}, {"x"});
+            check_name_and_version(install_plan.install_actions[0], "date", {"2020-01-01", 0}, {{"x"}});
         }
     }
 
@@ -1367,7 +1378,7 @@ TEST_CASE ("version install simple feature", "[versionplan]")
                                           bp,
                                           var_provider,
                                           {
-                                              Dependency{"a", {"x"}, {}, {VersionConstraintKind::Minimum, "1", 0}},
+                                              Dependency{"a", {{"x"}}, {}, {VersionConstraintKind::Minimum, "1", 0}},
                                           },
                                           {},
                                           toplevel_spec());
@@ -1389,7 +1400,7 @@ TEST_CASE ("version install transitive features", "[versionplan]")
     MockVersionedPortfileProvider vp;
 
     auto a_x = make_fpgh("x");
-    a_x->dependencies.push_back(Dependency{"b", {"y"}});
+    a_x->dependencies.push_back(Dependency{"b", {{"y"}}});
     vp.emplace("a", {"1", 0}, VersionScheme::Relaxed).source_control_file->feature_paragraphs.push_back(std::move(a_x));
 
     auto b_y = make_fpgh("y");
@@ -1406,7 +1417,7 @@ TEST_CASE ("version install transitive features", "[versionplan]")
                                                 bp,
                                                 var_provider,
                                                 {
-                                                    Dependency{"a", {"x"}},
+                                                    Dependency{"a", {{"x"}}},
                                                 },
                                                 {},
                                                 toplevel_spec()));
@@ -1421,7 +1432,7 @@ TEST_CASE ("version install transitive feature versioned", "[versionplan]")
     MockVersionedPortfileProvider vp;
 
     auto a_x = make_fpgh("x");
-    a_x->dependencies.push_back(Dependency{"b", {"y"}, {}, {VersionConstraintKind::Minimum, "2", 0}});
+    a_x->dependencies.push_back(Dependency{"b", {{"y"}}, {}, {VersionConstraintKind::Minimum, "2", 0}});
     vp.emplace("a", {"1", 0}, VersionScheme::Relaxed).source_control_file->feature_paragraphs.push_back(std::move(a_x));
 
     {
@@ -1450,7 +1461,7 @@ TEST_CASE ("version install transitive feature versioned", "[versionplan]")
                                                 bp,
                                                 var_provider,
                                                 {
-                                                    Dependency{"a", {"x"}},
+                                                    Dependency{"a", {{"x"}}},
                                                 },
                                                 {},
                                                 toplevel_spec()));
@@ -1647,9 +1658,8 @@ TEST_CASE ("version dont install default features", "[versionplan]")
     MockBaselineProvider bp;
     bp.v["a"] = {"1", 0};
 
-    auto install_plan =
-        create_versioned_install_plan(vp, bp, var_provider, {Dependency{"a", {"core"}}}, {}, toplevel_spec())
-            .value_or_exit(VCPKG_LINE_INFO);
+    auto install_plan = create_versioned_install_plan(vp, bp, var_provider, {CoreDependency{"a"}}, {}, toplevel_spec())
+                            .value_or_exit(VCPKG_LINE_INFO);
 
     REQUIRE(install_plan.size() == 1);
     check_name_and_version(install_plan.install_actions[0], "a", {"1", 0});
@@ -1665,7 +1675,7 @@ TEST_CASE ("version install transitive default features", "[versionplan]")
     a_scf->feature_paragraphs.push_back(std::move(a_x));
 
     auto& b_scf = vp.emplace("b", {"1", 0}, VersionScheme::Relaxed).source_control_file;
-    b_scf->core_paragraph->dependencies.push_back({"a", {"core"}});
+    b_scf->core_paragraph->dependencies.push_back(CoreDependency{"a"});
 
     auto& c_scf = vp.emplace("c", {"1", 0}, VersionScheme::Relaxed).source_control_file;
     c_scf->core_paragraph->dependencies.push_back({"a"});
@@ -1684,9 +1694,9 @@ TEST_CASE ("version install transitive default features", "[versionplan]")
     check_name_and_version(install_plan.install_actions[0], "a", {"1", 0}, {"x"});
     check_name_and_version(install_plan.install_actions[1], "b", {"1", 0});
 
-    install_plan = create_versioned_install_plan(
-                       vp, bp, var_provider, {Dependency{"a", {"core"}}, Dependency{"c"}}, {}, toplevel_spec())
-                       .value_or_exit(VCPKG_LINE_INFO);
+    install_plan =
+        create_versioned_install_plan(vp, bp, var_provider, {CoreDependency{"a"}, Dependency{"c"}}, {}, toplevel_spec())
+            .value_or_exit(VCPKG_LINE_INFO);
 
     REQUIRE(install_plan.size() == 2);
     check_name_and_version(install_plan.install_actions[0], "a", {"1", 0}, {"x"});
@@ -1756,7 +1766,7 @@ TEST_CASE ("version install qualified default suppression", "[versionplan]")
     a_scf->feature_paragraphs.push_back(make_fpgh("x"));
 
     vp.emplace("b", {"1", 0}, VersionScheme::Relaxed)
-        .source_control_file->core_paragraph->dependencies.push_back({"a", {"core"}});
+        .source_control_file->core_paragraph->dependencies.push_back(CoreDependency{"a"});
 
     MockCMakeVarProvider var_provider;
 
@@ -1764,14 +1774,14 @@ TEST_CASE ("version install qualified default suppression", "[versionplan]")
     bp.v["a"] = {"1", 0};
     bp.v["b"] = {"1", 0};
 
-    auto install_plan =
-        create_versioned_install_plan(vp,
-                                      bp,
-                                      var_provider,
-                                      {{"b", {}, parse_platform("!linux")}, {"a", {"core"}, parse_platform("linux")}},
-                                      {},
-                                      toplevel_spec())
-            .value_or_exit(VCPKG_LINE_INFO);
+    auto install_plan = create_versioned_install_plan(
+                            vp,
+                            bp,
+                            var_provider,
+                            {{"b", {}, parse_platform("!linux")}, CoreDependency{"a", {}, parse_platform("linux")}},
+                            {},
+                            toplevel_spec())
+                            .value_or_exit(VCPKG_LINE_INFO);
 
     REQUIRE(install_plan.size() == 2);
     check_name_and_version(install_plan.install_actions[0], "a", {"1", 0}, {"x"});
@@ -1879,13 +1889,13 @@ TEST_CASE ("version install self features", "[versionplan]")
     MockVersionedPortfileProvider vp;
     auto& a_scf = vp.emplace("a", {"1", 0}).source_control_file;
     a_scf->feature_paragraphs.push_back(make_fpgh("x"));
-    a_scf->feature_paragraphs.back()->dependencies.push_back({"a", {"core", "y"}});
+    a_scf->feature_paragraphs.back()->dependencies.push_back(CoreDependency{"a", {{"y"}}});
     a_scf->feature_paragraphs.push_back(make_fpgh("y"));
     a_scf->feature_paragraphs.push_back(make_fpgh("z"));
 
     MockCMakeVarProvider var_provider;
 
-    auto install_plan = create_versioned_install_plan(vp, bp, var_provider, {{"a", {"x"}}}, {}, toplevel_spec())
+    auto install_plan = create_versioned_install_plan(vp, bp, var_provider, {{"a", {{"x"}}}}, {}, toplevel_spec())
                             .value_or_exit(VCPKG_LINE_INFO);
 
     REQUIRE(install_plan.size() == 1);
@@ -1917,7 +1927,7 @@ TEST_CASE ("version install nonexisting features", "[versionplan]")
     auto& a_scf = vp.emplace("a", {"1", 0}).source_control_file;
     a_scf->feature_paragraphs.push_back(make_fpgh("x"));
 
-    auto install_plan = create_versioned_install_plan(vp, bp, {{"a", {"y"}}});
+    auto install_plan = create_versioned_install_plan(vp, bp, {{"a", {{"y"}}}});
 
     REQUIRE_FALSE(install_plan.has_value());
     REQUIRE(install_plan.error() == "error: a@1 does not have required feature y needed by toplevel-spec");
@@ -1931,7 +1941,7 @@ TEST_CASE ("version install transitive missing features", "[versionplan]")
 
     MockVersionedPortfileProvider vp;
     auto& a_scf = vp.emplace("a", {"1", 0}).source_control_file;
-    a_scf->core_paragraph->dependencies.push_back({"b", {"y"}});
+    a_scf->core_paragraph->dependencies.push_back({"b", {{"y"}}});
     vp.emplace("b", {"1", 0});
 
     auto install_plan = create_versioned_install_plan(vp, bp, {{"a", {}}});
@@ -1953,7 +1963,7 @@ TEST_CASE ("version remove features during upgrade", "[versionplan]")
     MockVersionedPortfileProvider vp;
     // a@0 -> b[x], c>=1
     auto& a_scf = vp.emplace("a", {"1", 0}).source_control_file;
-    a_scf->core_paragraph->dependencies.push_back({"b", {"x"}});
+    a_scf->core_paragraph->dependencies.push_back({"b", {{"x"}}});
     a_scf->core_paragraph->dependencies.push_back({"c", {}, {}, {VersionConstraintKind::Minimum, "1", 1}});
     // a@1 -> b
     auto& a1_scf = vp.emplace("a", {"1", 1}).source_control_file;
@@ -2232,10 +2242,10 @@ TEST_CASE ("respect supports expressions of features", "[versionplan]")
 
     MockCMakeVarProvider var_provider;
     var_provider.dep_info_vars[{"a", toplevel_spec().triplet()}]["VCPKG_CMAKE_SYSTEM_NAME"] = "";
-    auto install_plan = create_versioned_install_plan(vp, bp, {{"a", {"x"}}}, var_provider);
+    auto install_plan = create_versioned_install_plan(vp, bp, {{"a", {{"x"}}}}, var_provider);
     CHECK(install_plan.has_value());
     var_provider.dep_info_vars[{"a", toplevel_spec().triplet()}]["VCPKG_CMAKE_SYSTEM_NAME"] = "Linux";
-    install_plan = create_versioned_install_plan(vp, bp, {{"a", {"x"}}}, var_provider);
+    install_plan = create_versioned_install_plan(vp, bp, {{"a", {{"x"}}}}, var_provider);
     CHECK_FALSE(install_plan.has_value());
     SECTION ("override")
     {
@@ -2245,7 +2255,7 @@ TEST_CASE ("respect supports expressions of features", "[versionplan]")
                                                      bp,
                                                      oprovider,
                                                      var_provider,
-                                                     {Dependency{"a", {"x"}}},
+                                                     {Dependency{"a", {{"x"}}}},
                                                      {DependencyOverride{"a", "1", 1}},
                                                      toplevel_spec());
         CHECK(install_plan.has_value());
@@ -2255,10 +2265,89 @@ TEST_CASE ("respect supports expressions of features", "[versionplan]")
                                                      bp,
                                                      oprovider,
                                                      var_provider,
-                                                     {Dependency{"a", {"x"}}},
+                                                     {Dependency{"a", {{"x"}}}},
                                                      {DependencyOverride{"a", "1", 0}},
                                                      toplevel_spec());
         CHECK_FALSE(install_plan.has_value());
+    }
+}
+
+TEST_CASE ("respect platform expressions in DependencyRequestedFeature", "[versionplan]")
+{
+    using namespace PlatformExpression;
+    MockBaselineProvider bp;
+    bp.v["a"] = {"1", 0};
+
+    MockVersionedPortfileProvider vp;
+    {
+        auto a_x = std::make_unique<FeatureParagraph>();
+        a_x->name = "x";
+        vp.emplace("a", {"1", 0}).source_control_file->feature_paragraphs.push_back(std::move(a_x));
+    }
+
+    MockCMakeVarProvider var_provider;
+    Dependency dep{
+        "a", {{"x", parse_platform_expression("linux", MultipleBinaryOperators::Deny).value_or_exit(VCPKG_LINE_INFO)}}};
+
+    SECTION ("on windows")
+    {
+        var_provider.dep_info_vars[toplevel_spec()]["VCPKG_CMAKE_SYSTEM_NAME"] = "";
+        auto maybe_install_plan = create_versioned_install_plan(vp, bp, {dep}, var_provider);
+        CHECK(maybe_install_plan.has_value());
+        auto& install_plan = maybe_install_plan.value_or_exit(VCPKG_LINE_INFO);
+        CHECK(install_plan.install_actions.size() == 1);
+        CHECK(install_plan.install_actions[0].feature_list.size() == 1);
+    }
+
+    SECTION ("on linux")
+    {
+        var_provider.dep_info_vars[toplevel_spec()]["VCPKG_CMAKE_SYSTEM_NAME"] = "Linux";
+        auto maybe_install_plan = create_versioned_install_plan(vp, bp, {dep}, var_provider);
+        CHECK(maybe_install_plan.has_value());
+        auto& install_plan = maybe_install_plan.value_or_exit(VCPKG_LINE_INFO);
+        CHECK(install_plan.install_actions.size() == 1);
+        CHECK(install_plan.install_actions[0].feature_list.size() == 2);
+    }
+}
+
+TEST_CASE ("respect platform expressions in default features", "[versionplan]")
+{
+    using namespace PlatformExpression;
+    MockBaselineProvider bp;
+    bp.v["a"] = {"1", 0};
+
+    MockVersionedPortfileProvider vp;
+    {
+        // port with a feature x that is default on "linux"
+        auto a_x = std::make_unique<FeatureParagraph>();
+        a_x->name = "x";
+        auto& scf = vp.emplace("a", {"1", 0}).source_control_file;
+        scf->feature_paragraphs.push_back(std::move(a_x));
+        scf->core_paragraph->default_features.emplace_back(
+            "x", parse_platform_expression("linux", MultipleBinaryOperators::Deny).value_or_exit(VCPKG_LINE_INFO));
+    }
+
+    MockCMakeVarProvider var_provider;
+    Dependency dep{"a"};
+    PackageSpec spec{"a", toplevel_spec().triplet()};
+    SECTION ("on windows")
+    {
+        var_provider.dep_info_vars[spec]["VCPKG_CMAKE_SYSTEM_NAME"] = "";
+        auto maybe_install_plan = create_versioned_install_plan(vp, bp, {dep}, var_provider);
+        CHECK(maybe_install_plan.has_value());
+        auto& install_plan = maybe_install_plan.value_or_exit(VCPKG_LINE_INFO);
+        CHECK(install_plan.install_actions.size() == 1);
+        CHECK(install_plan.install_actions[0].feature_list.size() == 1);
+    }
+
+    SECTION ("on linux")
+    {
+        var_provider.dep_info_vars[spec]["VCPKG_CMAKE_SYSTEM_NAME"] = "Linux";
+        auto maybe_install_plan = create_versioned_install_plan(vp, bp, {dep}, var_provider);
+        CHECK(maybe_install_plan.has_value());
+        auto& install_plan = maybe_install_plan.value_or_exit(VCPKG_LINE_INFO);
+        CHECK(install_plan.install_actions.size() == 1);
+        CHECK(install_plan.install_actions[0].feature_list.size() == 2);
     }
 }
 
@@ -2281,13 +2370,13 @@ TEST_CASE ("formatting plan 1", "[dependencies]")
 
     const Path pr = "packages_root";
     InstallPlanAction install_a(
-        {"a", Test::X64_OSX}, scfl_a, pr, RequestType::AUTO_SELECTED, Test::X64_ANDROID, {}, {});
+        {"a", Test::X64_OSX}, scfl_a, pr, RequestType::AUTO_SELECTED, Test::X64_ANDROID, {}, {}, {});
     InstallPlanAction install_b(
-        {"b", Test::X64_OSX}, scfl_b, pr, RequestType::AUTO_SELECTED, Test::X64_ANDROID, {{"1", {}}}, {});
+        {"b", Test::X64_OSX}, scfl_b, pr, RequestType::AUTO_SELECTED, Test::X64_ANDROID, {{"1", {}}}, {}, {});
     InstallPlanAction install_c(
-        {"c", Test::X64_OSX}, scfl_c, pr, RequestType::USER_REQUESTED, Test::X64_ANDROID, {}, {});
+        {"c", Test::X64_OSX}, scfl_c, pr, RequestType::USER_REQUESTED, Test::X64_ANDROID, {}, {}, {});
     InstallPlanAction install_f(
-        {"f", Test::X64_OSX}, scfl_f, pr, RequestType::USER_REQUESTED, Test::X64_ANDROID, {}, {});
+        {"f", Test::X64_OSX}, scfl_f, pr, RequestType::USER_REQUESTED, Test::X64_ANDROID, {}, {}, {});
     install_f.plan_type = InstallPlanType::EXCLUDED;
 
     InstallPlanAction already_installed_d(
@@ -2379,9 +2468,9 @@ TEST_CASE ("dependency graph API snapshot: host and target")
     MockVersionedPortfileProvider vp;
     auto& scfl_a = vp.emplace("a", {"1", 0});
     InstallPlanAction install_a(
-        {"a", Test::X86_WINDOWS}, scfl_a, "packages_root", RequestType::AUTO_SELECTED, Test::X64_WINDOWS, {}, {});
+        {"a", Test::X86_WINDOWS}, scfl_a, "packages_root", RequestType::AUTO_SELECTED, Test::X64_WINDOWS, {}, {}, {});
     InstallPlanAction install_a_host(
-        {"a", Test::X64_WINDOWS}, scfl_a, "packages_root", RequestType::AUTO_SELECTED, Test::X64_WINDOWS, {}, {});
+        {"a", Test::X64_WINDOWS}, scfl_a, "packages_root", RequestType::AUTO_SELECTED, Test::X64_WINDOWS, {}, {}, {});
     ActionPlan plan;
     plan.install_actions.push_back(std::move(install_a));
     plan.install_actions.push_back(std::move(install_a_host));

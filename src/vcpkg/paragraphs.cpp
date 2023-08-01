@@ -198,7 +198,19 @@ namespace vcpkg
                                      loc);
                     return nullopt;
                 }
-                return Dependency{pqs.name, pqs.features.value_or({}), pqs.platform.value_or({})};
+                Dependency dependency{pqs.name, {}, pqs.platform.value_or({})};
+                for (const auto& feature : pqs.features.value_or({}))
+                {
+                    if (feature == "core")
+                    {
+                        dependency.default_features = false;
+                    }
+                    else
+                    {
+                        dependency.features.emplace_back(feature);
+                    }
+                }
+                return dependency;
             });
         });
         if (!opt) return {LocalizedString::from_raw(parser.get_error()->to_string()), expected_right_tag};
@@ -272,8 +284,7 @@ namespace vcpkg::Paragraphs
             skip_whitespace();
             while (!at_eof())
             {
-                paragraphs.emplace_back();
-                get_paragraph(paragraphs.back());
+                get_paragraph(paragraphs.emplace_back());
                 match_while(is_lineend);
             }
             if (get_error()) return LocalizedString::from_raw(get_error()->to_string());

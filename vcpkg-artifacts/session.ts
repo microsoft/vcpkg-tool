@@ -22,7 +22,6 @@ import { RegistryDatabase, RegistryResolver } from './registries/registries';
 import { Channels, Stopwatch } from './util/channels';
 import { Uri } from './util/uri';
 
-
 /** The definition for an installer tool function */
 type InstallerTool<T extends Installer = any> = (
   session: Session,

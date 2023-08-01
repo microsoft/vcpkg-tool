@@ -211,7 +211,7 @@
         "features": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/identifier"
+            "$ref": "#/definitions/dependency-feature"
           }
         },
         "host": {
@@ -238,6 +238,33 @@
         "^\\$": {}
       },
       "additionalProperties": false
+    },
+    "dependency-feature-object": {
+      "description": "Expanded form of a dependency feature with platform expression.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "$ref": "#/definitions/identifier"
+        },
+        "platform": {
+          "$ref": "#/definitions/platform-expression"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "additionalProperties": false
+    },
+    "dependency-feature": {
+      "description": "A feature",
+      "oneOf": [
+        {
+          "$ref": "#/definitions/identifier"
+        },
+        {
+          "$ref": "#/definitions/dependency-feature-object"
+        }
+      ]
     },
     "description-field": {
       "description": "A string or array of strings containing the description of a package or feature.",

@@ -704,7 +704,7 @@ namespace vcpkg
                 else
 #endif // ^^^ _WIN32
                 {
-                    extract_archive(fs, *this, status_sink, download_path, tool_dir_path);
+                    set_directory_to_archive_contents(fs, *this, status_sink, download_path, tool_dir_path);
                 }
             }
             else
