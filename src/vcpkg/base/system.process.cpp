@@ -932,7 +932,9 @@ namespace
             static CreatorOnlySecurityDescriptor creator_owner_sd;
             SECURITY_ATTRIBUTES namedPipeSa{sizeof(SECURITY_ATTRIBUTES), creator_owner_sd.sd, FALSE};
             std::wstring pipe_name{Strings::to_utf16(
-                fmt::format(R"(\\.\pipe\local\vcpkg-to-stdin-A8B4F218-4DB1-4A3E-8E5B-C41F1633F627-{})", debug_id))};
+                fmt::format(R"(\\.\pipe\local\vcpkg-to-stdin-A8B4F218-4DB1-4A3E-8E5B-C41F1633F627-{}-{})",
+                            GetCurrentProcessId(),
+                            debug_id))};
             write_pipe = CreateNamedPipeW(pipe_name.c_str(),
                                           PIPE_ACCESS_OUTBOUND | FILE_FLAG_FIRST_PIPE_INSTANCE | FILE_FLAG_OVERLAPPED,
                                           PIPE_TYPE_BYTE | PIPE_REJECT_REMOTE_CLIENTS,
