@@ -1167,8 +1167,7 @@ namespace vcpkg
                 continue;
             }
 
-            files.push_back(port_dir / port_file);
-            const auto& abs_port_file = files.back();
+            const auto& abs_port_file = files.emplace_back(port_dir / port_file);
             if (port_file.extension() == ".cmake")
             {
                 auto contents = fs.read_contents(abs_port_file, VCPKG_LINE_INFO);
