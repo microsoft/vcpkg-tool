@@ -1086,14 +1086,14 @@ namespace
             if (stdin_pipe.write_pipe != INVALID_HANDLE_VALUE)
             {
                 // this block probably never runs
-                Debug::print("{}: stdin write outlived the child process?\n", debug_id);
+                Debug::print(fmt::format("{}: stdin write outlived the child process?\n", debug_id));
                 if (CancelIo(stdin_pipe.write_pipe))
                 {
                     drain_apcs();
                 }
                 else
                 {
-                    Debug::print("{}: Cancelling stdin write failed: {:x}\n", debug_id, GetLastError());
+                    Debug::print(fmt::format("{}: Cancelling stdin write failed: {:x}\n", debug_id, GetLastError()));
                 }
             }
 
