@@ -138,19 +138,19 @@ TEST_CASE ("check valid package patterns", "[registries]")
 
 TEST_CASE ("calculate prefix priority", "[registries]")
 {
-    CHECK(package_match_prefix("boost", "*") == 1);
-    CHECK(package_match_prefix("boost", "b*") == 2);
-    CHECK(package_match_prefix("boost", "boost*") == 6);
-    CHECK(package_match_prefix("boost", "boost") == SIZE_MAX);
+    CHECK(package_pattern_match("boost", "*") == 1);
+    CHECK(package_pattern_match("boost", "b*") == 2);
+    CHECK(package_pattern_match("boost", "boost*") == 6);
+    CHECK(package_pattern_match("boost", "boost") == SIZE_MAX);
 
-    CHECK(package_match_prefix("", "") == SIZE_MAX);
-    CHECK(package_match_prefix("", "*") == 1);
-    CHECK(package_match_prefix("", "a") == 0);
-    CHECK(package_match_prefix("boost", "") == 0);
-    CHECK(package_match_prefix("boost", "c*") == 0);
-    CHECK(package_match_prefix("boost", "*c") == 0);
-    CHECK(package_match_prefix("boost", "c**") == 0);
-    CHECK(package_match_prefix("boost", "c*a") == 0);
+    CHECK(package_pattern_match("", "") == SIZE_MAX);
+    CHECK(package_pattern_match("", "*") == 1);
+    CHECK(package_pattern_match("", "a") == 0);
+    CHECK(package_pattern_match("boost", "") == 0);
+    CHECK(package_pattern_match("boost", "c*") == 0);
+    CHECK(package_pattern_match("boost", "*c") == 0);
+    CHECK(package_pattern_match("boost", "c**") == 0);
+    CHECK(package_pattern_match("boost", "c*a") == 0);
 }
 
 TEST_CASE ("select highest priority registry", "[registries]")

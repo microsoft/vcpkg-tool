@@ -1168,10 +1168,10 @@ namespace vcpkg
         }
     }
 
-    Registry::Registry(std::vector<std::string>&& packages, std::unique_ptr<RegistryImplementation>&& impl)
-        : packages_(std::move(packages)), implementation_(std::move(impl))
+    Registry::Registry(std::vector<std::string>&& patterns, std::unique_ptr<RegistryImplementation>&& impl)
+        : patterns_(std::move(patterns)), implementation_(std::move(impl))
     {
-        Util::sort_unique_erase(packages_);
+        Util::sort_unique_erase(patterns_);
         Checks::check_exit(VCPKG_LINE_INFO, implementation_ != nullptr);
     }
 
@@ -1186,21 +1186,19 @@ namespace vcpkg
         return candidates[0];
     }
 
-    // Note that the * is included in the match so that 0 means no match
-    size_t package_match_prefix(StringView name, StringView prefix)
+    size_t package_pattern_match(StringView name, StringView pattern)
     {
-        const auto prefix_size = prefix.size();
-        const auto maybe_star_index = prefix_size - 1;
-        if (prefix_size != 0 && prefix[maybe_star_index] == '*')
+        const auto pattern_size = pattern.size();
+        const auto maybe_star_index = pattern_size - 1;
+        if (pattern_size != 0 && pattern[maybe_star_index] == '*')
         {
-            // prefix is a wildcard
-            if (name.size() >= maybe_star_index &&
-                std::equal(prefix.begin(), prefix.end() - 1, name.begin()))
+            // pattern ends in wildcard
+            if (name.size() >= maybe_star_index && std::equal(pattern.begin(), pattern.end() - 1, name.begin()))
             {
-                return prefix_size;
+                return pattern_size;
             }
         }
-        else if (name == prefix)
+        else if (name == pattern)
         {
             // exact match is like matching "infinity" prefix
             return SIZE_MAX;
@@ -1221,9 +1219,9 @@ namespace vcpkg
         for (auto&& registry : registries())
         {
             std::size_t longest_prefix = 0;
-            for (auto&& package : registry.packages())
+            for (auto&& pattern : registry.patterns())
             {
-                longest_prefix = std::max(longest_prefix, package_match_prefix(name, package));
+                longest_prefix = std::max(longest_prefix, package_pattern_match(name, pattern));
             }
 
             if (longest_prefix != 0)
@@ -1263,9 +1261,21 @@ namespace vcpkg
         std::vector<std::string> result;
         for (const auto& registry : registries())
         {
-            const auto packages = registry.packages();
-            result.insert(result.end(), packages.begin(), packages.end());
+            const auto prefix_size = result.size();
+            registry.implementation().append_all_port_names(result);
+            const auto patterns = registry.patterns();
+            // Remove names which no package pattern matches
+            result.erase(std::remove_if(result.begin() + prefix_size,
+                                        result.end(),
+                                        [&](const std::string& name) {
+                                            return std::none_of(
+                                                patterns.begin(), patterns.end(), [&](const std::string& pattern) {
+                                                    return package_pattern_match(name, pattern) != 0;
+                                                });
+                                        }),
+                         result.end());
         }
+
         if (auto registry = default_registry())
         {
             registry->append_all_port_names(result);

@@ -89,16 +89,16 @@ namespace vcpkg
     struct Registry
     {
         // requires: static_cast<bool>(implementation)
-        Registry(std::vector<std::string>&& packages, std::unique_ptr<RegistryImplementation>&& implementation);
+        Registry(std::vector<std::string>&& patterns, std::unique_ptr<RegistryImplementation>&& implementation);
 
         Registry(std::vector<std::string>&&, std::nullptr_t) = delete;
 
-        // always ordered lexicographically
-        View<std::string> packages() const { return packages_; }
+        // always ordered lexicographically; note the JSON name is "packages"
+        View<std::string> patterns() const { return patterns_; }
         const RegistryImplementation& implementation() const { return *implementation_; }
 
     private:
-        std::vector<std::string> packages_;
+        std::vector<std::string> patterns_;
         std::unique_ptr<RegistryImplementation> implementation_;
     };
 
@@ -160,5 +160,9 @@ namespace vcpkg
     ExpectedL<std::map<std::string, Version, std::less<>>> get_builtin_baseline(const VcpkgPaths& paths);
 
     bool is_git_commit_sha(StringView sv);
-    size_t package_match_prefix(StringView name, StringView pattern);
+
+    // Returns the effective match length of the package pattern `pattern` against `name`.
+    // No match is 0, exact match is SIZE_MAX, wildcard match is the length of the pattern.
+    // Note that the * is included in the match size to distinguish from 0 == no match.
+    size_t package_pattern_match(StringView name, StringView pattern);
 }
