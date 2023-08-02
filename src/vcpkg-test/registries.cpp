@@ -17,7 +17,7 @@ namespace
 
         std::unique_ptr<RegistryEntry> get_port_entry(StringView) const override { return nullptr; }
 
-        void get_all_port_names(std::vector<std::string>&) const override { }
+        void append_all_port_names(std::vector<std::string>&) const override { }
 
         ExpectedL<Version> get_baseline_version(StringView) const override
         {

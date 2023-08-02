@@ -660,7 +660,7 @@ namespace vcpkg
         }
         if (auto registry = registries->default_registry())
         {
-            registry->get_all_port_names(ret);
+            registry->append_all_port_names(ret);
         }
 
         Util::sort_unique_erase(ret);

@@ -212,7 +212,7 @@ namespace
 
         std::unique_ptr<RegistryEntry> get_port_entry(StringView) const override;
 
-        void get_all_port_names(std::vector<std::string>&) const override;
+        void append_all_port_names(std::vector<std::string>&) const override;
 
         ExpectedL<Version> get_baseline_version(StringView) const override;
 
@@ -370,7 +370,7 @@ namespace
 
         std::unique_ptr<RegistryEntry> get_port_entry(StringView port_name) const override;
 
-        void get_all_port_names(std::vector<std::string>&) const override;
+        void append_all_port_names(std::vector<std::string>&) const override;
 
         ExpectedL<Version> get_baseline_version(StringView port_name) const override;
 
@@ -407,7 +407,7 @@ namespace
 
         std::unique_ptr<RegistryEntry> get_port_entry(StringView port_name) const override;
 
-        void get_all_port_names(std::vector<std::string>&) const override;
+        void append_all_port_names(std::vector<std::string>&) const override;
 
         ExpectedL<Version> get_baseline_version(StringView port_name) const override;
 
@@ -436,7 +436,7 @@ namespace
             Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgErrorRequireBaseline);
         }
 
-        void get_all_port_names(std::vector<std::string>&) const override
+        void append_all_port_names(std::vector<std::string>&) const override
         {
             Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgErrorRequireBaseline);
         }
@@ -461,7 +461,7 @@ namespace
 
         std::unique_ptr<RegistryEntry> get_port_entry(StringView) const override;
 
-        void get_all_port_names(std::vector<std::string>&) const override;
+        void append_all_port_names(std::vector<std::string>&) const override;
 
         ExpectedL<Version> get_baseline_version(StringView) const override;
 
@@ -610,7 +610,7 @@ namespace
         return LocalizedString::from_raw(ParseControlErrorInfo::format_errors({&maybe_scf.error(), 1}));
     }
 
-    void BuiltinFilesRegistry::get_all_port_names(std::vector<std::string>& out) const
+    void BuiltinFilesRegistry::append_all_port_names(std::vector<std::string>& out) const
     {
         std::error_code ec;
         auto port_directories = m_fs.get_directories_non_recursive(m_builtin_ports_directory, VCPKG_LINE_INFO);
@@ -680,7 +680,7 @@ namespace
         return msg::format(msg::msgErrorMessage).append(msgPortNotInBaseline, msg::package_name = port_name);
     }
 
-    void BuiltinGitRegistry::get_all_port_names(std::vector<std::string>& out) const
+    void BuiltinGitRegistry::append_all_port_names(std::vector<std::string>& out) const
     {
         const auto& fs = m_paths.get_filesystem();
 
@@ -689,7 +689,7 @@ namespace
             load_all_port_names_from_registry_versions(out, fs, m_paths.builtin_registry_versions);
         }
 
-        m_files_impl->get_all_port_names(out);
+        m_files_impl->append_all_port_names(out);
     }
     // } BuiltinGitRegistry::RegistryImplementation
 
@@ -747,7 +747,7 @@ namespace
         return res;
     }
 
-    void FilesystemRegistry::get_all_port_names(std::vector<std::string>& out) const
+    void FilesystemRegistry::append_all_port_names(std::vector<std::string>& out) const
     {
         load_all_port_names_from_registry_versions(out, m_fs, m_path / registry_versions_dir_name);
     }
@@ -860,7 +860,7 @@ namespace
         return msg::format(msg::msgErrorMessage).append(msgPortNotInBaseline, msg::package_name = port_name);
     }
 
-    void GitRegistry::get_all_port_names(std::vector<std::string>& out) const
+    void GitRegistry::append_all_port_names(std::vector<std::string>& out) const
     {
         auto versions_path = get_stale_versions_tree_path();
         load_all_port_names_from_registry_versions(out, m_paths.get_filesystem(), versions_path.p);

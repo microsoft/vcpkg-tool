@@ -515,7 +515,7 @@ namespace vcpkg::Paragraphs
         }
         if (auto registry = registries.default_registry())
         {
-            registry->get_all_port_names(ports);
+            registry->append_all_port_names(ports);
         }
 
         Util::sort_unique_erase(ports);

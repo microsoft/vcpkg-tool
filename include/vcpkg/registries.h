@@ -79,7 +79,7 @@ namespace vcpkg
 
         // appends the names of the ports to the out parameter
         // may result in duplicated port names; make sure to Util::sort_unique_erase at the end
-        virtual void get_all_port_names(std::vector<std::string>& port_names) const = 0;
+        virtual void append_all_port_names(std::vector<std::string>& port_names) const = 0;
 
         virtual ExpectedL<Version> get_baseline_version(StringView port_name) const = 0;
 
@@ -97,8 +97,6 @@ namespace vcpkg
         View<std::string> packages() const { return packages_; }
         const RegistryImplementation& implementation() const { return *implementation_; }
 
-        friend RegistrySet; // for experimental_set_builtin_registry_baseline
-
     private:
         std::vector<std::string> packages_;
         std::unique_ptr<RegistryImplementation> implementation_;
@@ -112,8 +110,8 @@ namespace vcpkg
     // configuration fields.
     struct RegistrySet
     {
-        RegistrySet(std::unique_ptr<RegistryImplementation>&& x, std::vector<Registry>&& y)
-            : default_registry_(std::move(x)), registries_(std::move(y))
+        RegistrySet(std::unique_ptr<RegistryImplementation>&& default_registry, std::vector<Registry>&& registries)
+            : default_registry_(std::move(default_registry)), registries_(std::move(registries))
         {
         }
 
