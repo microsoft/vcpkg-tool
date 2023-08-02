@@ -1258,6 +1258,23 @@ namespace vcpkg
     }
     bool RegistrySet::has_modifications() const { return !registries_.empty() || !is_default_builtin_registry(); }
 
+    std::vector<std::string> RegistrySet::get_all_reachable_port_names() const
+    {
+        std::vector<std::string> result;
+        for (const auto& registry : registries())
+        {
+            const auto packages = registry.packages();
+            result.insert(result.end(), packages.begin(), packages.end());
+        }
+        if (auto registry = default_registry())
+        {
+            registry->append_all_port_names(result);
+        }
+
+        Util::sort_unique_erase(result);
+        return result;
+    }
+
     ExpectedL<std::vector<std::pair<SchemedVersion, std::string>>> get_builtin_versions(const VcpkgPaths& paths,
                                                                                         StringView port_name)
     {

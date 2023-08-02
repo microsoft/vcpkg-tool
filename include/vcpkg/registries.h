@@ -136,6 +136,9 @@ namespace vcpkg
         // for checking against the registry feature flag.
         bool has_modifications() const;
 
+        // Returns a sorted vector of all reachable port names in this set.
+        std::vector<std::string> get_all_reachable_port_names() const;
+
     private:
         std::unique_ptr<RegistryImplementation> default_registry_;
         std::vector<Registry> registries_;
