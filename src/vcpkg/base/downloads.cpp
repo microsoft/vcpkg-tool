@@ -540,16 +540,22 @@ namespace vcpkg
             Strings::concat("https://api.github.com/repos/", github_repository, "/dependency-graph/snapshots"));
         cmd.string_arg("-d").string_arg("@-");
         int code = 0;
-        auto result = cmd_execute_and_stream_lines(cmd, [&code](StringView line) {
-            if (Strings::starts_with(line, guid_marker))
-            {
-                code = std::strtol(line.data() + guid_marker.size(), nullptr, 10);
-            }
-            else
-            {
-                Debug::println(line);
-            }
-        }, default_working_directory, default_environment, Encoding::Utf8, Json::stringify(snapshot));
+        auto result = cmd_execute_and_stream_lines(
+            cmd,
+            [&code](StringView line) {
+                if (Strings::starts_with(line, guid_marker))
+                {
+                    code = std::strtol(line.data() + guid_marker.size(), nullptr, 10);
+                }
+                else
+                {
+                    Debug::println(line);
+                }
+            },
+            default_working_directory,
+            default_environment,
+            Encoding::Utf8,
+            Json::stringify(snapshot));
 
         auto r = result.get();
         if (r && *r == 0 && code >= 200 && code < 300)
