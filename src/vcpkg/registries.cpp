@@ -1186,24 +1186,24 @@ namespace vcpkg
         return candidates[0];
     }
 
+    // Note that the * is included in the match so that 0 means no match
     size_t package_match_prefix(StringView name, StringView prefix)
     {
-        if (name == prefix)
-        {
-            // exact match is like matching "infinity" prefix
-            return SIZE_MAX;
-        }
-
-        // Note that the * is included in the match so that 0 means no match
         const auto prefix_size = prefix.size();
-        if (prefix_size != 0)
+        const auto maybe_star_index = prefix_size - 1;
+        if (prefix_size != 0 && prefix[maybe_star_index] == '*')
         {
-            const auto star_index = prefix_size - 1;
-            if (prefix[star_index] == '*' && name.size() >= star_index &&
-                name.substr(0, star_index) == prefix.substr(0, star_index))
+            // prefix is a wildcard
+            if (name.size() >= maybe_star_index &&
+                std::equal(prefix.begin(), prefix.end() - 1, name.begin()))
             {
                 return prefix_size;
             }
+        }
+        else if (name == prefix)
+        {
+            // exact match is like matching "infinity" prefix
+            return SIZE_MAX;
         }
 
         return 0;
