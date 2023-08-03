@@ -1,3 +1,4 @@
+#include <vcpkg/dependencies.h>
 #include <vcpkg/spdx.h>
 
 #include <vcpkg-test/util.h>
@@ -20,7 +21,7 @@ TEST_CASE ("spdx maximum serialization", "[spdx]")
     cpgh.raw_version = "1.0";
     cpgh.version_scheme = VersionScheme::Relaxed;
 
-    InstallPlanAction ipa(spec, scfl, RequestType::USER_REQUESTED, Test::X86_WINDOWS, {}, {});
+    InstallPlanAction ipa(spec, scfl, "test_packages_root", RequestType::USER_REQUESTED, Test::X86_WINDOWS, {}, {}, {});
     auto& abi = *(ipa.abi_info = AbiInfo{}).get();
     abi.package_abi = "ABIHASH";
 
@@ -157,10 +158,10 @@ TEST_CASE ("spdx maximum serialization", "[spdx]")
     }
   ]
 })json")
-                        .value_or_exit(VCPKG_LINE_INFO);
+                        .value(VCPKG_LINE_INFO);
 
-    auto doc = Json::parse(sbom).value_or_exit(VCPKG_LINE_INFO);
-    Test::check_json_eq(expected.first, doc.first);
+    auto doc = Json::parse(sbom).value(VCPKG_LINE_INFO);
+    Test::check_json_eq(expected.value, doc.value);
 }
 
 TEST_CASE ("spdx minimum serialization", "[spdx]")
@@ -174,7 +175,7 @@ TEST_CASE ("spdx minimum serialization", "[spdx]")
     cpgh.raw_version = "1.0";
     cpgh.version_scheme = VersionScheme::String;
 
-    InstallPlanAction ipa(spec, scfl, RequestType::USER_REQUESTED, Test::X86_WINDOWS, {}, {});
+    InstallPlanAction ipa(spec, scfl, "test_packages_root", RequestType::USER_REQUESTED, Test::X86_WINDOWS, {}, {}, {});
     auto& abi = *(ipa.abi_info = AbiInfo{}).get();
     abi.package_abi = "deadbeef";
 
@@ -285,10 +286,10 @@ TEST_CASE ("spdx minimum serialization", "[spdx]")
     }
   ]
 })json")
-                        .value_or_exit(VCPKG_LINE_INFO);
+                        .value(VCPKG_LINE_INFO);
 
-    auto doc = Json::parse(sbom).value_or_exit(VCPKG_LINE_INFO);
-    Test::check_json_eq(expected.first, doc.first);
+    auto doc = Json::parse(sbom).value(VCPKG_LINE_INFO);
+    Test::check_json_eq(expected.value, doc.value);
 }
 
 TEST_CASE ("spdx concat resources", "[spdx]")
@@ -302,7 +303,7 @@ TEST_CASE ("spdx concat resources", "[spdx]")
     cpgh.raw_version = "1.0";
     cpgh.version_scheme = VersionScheme::String;
 
-    InstallPlanAction ipa(spec, scfl, RequestType::USER_REQUESTED, Test::X86_WINDOWS, {}, {});
+    InstallPlanAction ipa(spec, scfl, "test_packages_root", RequestType::USER_REQUESTED, Test::X86_WINDOWS, {}, {}, {});
     auto& abi = *(ipa.abi_info = AbiInfo{}).get();
     abi.package_abi = "deadbeef";
 
@@ -311,15 +312,15 @@ TEST_CASE ("spdx concat resources", "[spdx]")
   "relationships": [ "r1", "r2", "r3" ],
   "files": [ "f1", "f2", "f3" ]
 })json")
-                    .value_or_exit(VCPKG_LINE_INFO)
-                    .first;
+                    .value(VCPKG_LINE_INFO)
+                    .value;
     auto doc2 = Json::parse(R"json(
 {
   "packages": [ "p1", "p2", "p3" ],
   "files": [ "f4", "f5" ]
 })json")
-                    .value_or_exit(VCPKG_LINE_INFO)
-                    .first;
+                    .value(VCPKG_LINE_INFO)
+                    .value;
 
     const auto sbom = create_spdx_sbom(ipa, {}, {}, "now+1", "ns", {std::move(doc1), std::move(doc2)});
 
@@ -385,8 +386,8 @@ TEST_CASE ("spdx concat resources", "[spdx]")
     "f5"
   ]
 })json")
-                        .value_or_exit(VCPKG_LINE_INFO);
+                        .value(VCPKG_LINE_INFO);
 
-    auto doc = Json::parse(sbom).value_or_exit(VCPKG_LINE_INFO);
-    Test::check_json_eq(expected.first, doc.first);
+    auto doc = Json::parse(sbom).value(VCPKG_LINE_INFO);
+    Test::check_json_eq(expected.value, doc.value);
 }

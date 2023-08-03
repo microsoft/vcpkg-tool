@@ -117,7 +117,8 @@ TEST_CASE ("SourceParagraph construct maximum", "[paragraph]")
     REQUIRE(pgh.core_paragraph->dependencies.size() == 1);
     REQUIRE(pgh.core_paragraph->dependencies[0].name == "bd");
     REQUIRE(pgh.core_paragraph->default_features.size() == 1);
-    REQUIRE(pgh.core_paragraph->default_features[0] == "df");
+    REQUIRE(pgh.core_paragraph->default_features[0].name == "df");
+    REQUIRE(pgh.core_paragraph->default_features[0].platform.is_empty());
 }
 
 TEST_CASE ("SourceParagraph construct feature", "[paragraph]")
@@ -203,7 +204,8 @@ TEST_CASE ("SourceParagraph default features", "[paragraph]")
     auto& pgh = **m_pgh.get();
 
     REQUIRE(pgh.core_paragraph->default_features.size() == 1);
-    REQUIRE(pgh.core_paragraph->default_features[0] == "a1");
+    REQUIRE(pgh.core_paragraph->default_features[0].name == "a1");
+    REQUIRE(pgh.core_paragraph->default_features[0].platform.is_empty());
 }
 
 TEST_CASE ("BinaryParagraph construct minimum", "[paragraph]")
@@ -468,12 +470,11 @@ TEST_CASE ("BinaryParagraph serialize min", "[paragraph]")
     auto pghs = vcpkg::Paragraphs::parse_paragraphs(ss, "").value_or_exit(VCPKG_LINE_INFO);
 
     REQUIRE(pghs.size() == 1);
-    REQUIRE(pghs[0].size() == 5);
+    REQUIRE(pghs[0].size() == 4);
     REQUIRE(pghs[0]["Package"].first == "zlib");
     REQUIRE(pghs[0]["Version"].first == "1.2.8");
     REQUIRE(pghs[0]["Architecture"].first == "x86-windows");
     REQUIRE(pghs[0]["Multi-Arch"].first == "same");
-    REQUIRE(pghs[0]["Type"].first == "Port");
 }
 
 TEST_CASE ("BinaryParagraph serialize max", "[paragraph]")
@@ -491,14 +492,13 @@ TEST_CASE ("BinaryParagraph serialize max", "[paragraph]")
     auto pghs = vcpkg::Paragraphs::parse_paragraphs(ss, "").value_or_exit(VCPKG_LINE_INFO);
 
     REQUIRE(pghs.size() == 1);
-    REQUIRE(pghs[0].size() == 8);
+    REQUIRE(pghs[0].size() == 7);
     REQUIRE(pghs[0]["Package"].first == "zlib");
     REQUIRE(pghs[0]["Version"].first == "1.2.8");
     REQUIRE(pghs[0]["Architecture"].first == "x86-windows");
     REQUIRE(pghs[0]["Multi-Arch"].first == "same");
     REQUIRE(pghs[0]["Description"].first == "first line\n    second line");
     REQUIRE(pghs[0]["Depends"].first == "dep");
-    REQUIRE(pghs[0]["Type"].first == "Port");
 }
 
 TEST_CASE ("BinaryParagraph serialize multiple deps", "[paragraph]")

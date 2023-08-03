@@ -1,10 +1,10 @@
 #include <catch2/catch.hpp>
 
-#include <vcpkg/base/basic_checks.h>
+#include <vcpkg/base/checks.h>
 #include <vcpkg/base/parse.h>
 
-#include <vcpkg/build.h>
 #include <vcpkg/ci-baseline.h>
+#include <vcpkg/commands.build.h>
 #include <vcpkg/triplet.h>
 
 #include <ostream>
@@ -268,24 +268,26 @@ TEST_CASE ("Parse Errors", "[ci-baseline]")
     on expression: hello
                         ^)");
 
-    check_error("?example:x64-windows=fail", R"(test:1:1: error: expected a port name here
+    check_error("?example:x64-windows=fail",
+                R"(test:1:1: error: expected a port name here (must be lowercase, digits, '-')
     on expression: ?example:x64-windows=fail
                    ^)");
 
-    check_error("x64-windows:", R"(test:1:13: error: expected a triplet name here
+    check_error("x64-windows:", R"(test:1:13: error: expected a triplet name here (must be lowercase, digits, '-')
     on expression: x64-windows:
                               ^)");
 
-    check_error("x64-windows:\nport:x64-windows=skip", R"(test:1:13: error: expected a triplet name here
+    check_error("x64-windows:\nport:x64-windows=skip",
+                R"(test:1:13: error: expected a triplet name here (must be lowercase, digits, '-')
     on expression: x64-windows:
                                ^)");
 
-    check_error("x64-windows:#", R"(test:1:13: error: expected a triplet name here
+    check_error("x64-windows:#", R"(test:1:13: error: expected a triplet name here (must be lowercase, digits, '-')
     on expression: x64-windows:#
                                ^)");
 
     // clang-format off
-    check_error("   \tx64-windows:", R"(test:1:21: error: expected a triplet name here
+    check_error("   \tx64-windows:", R"(test:1:21: error: expected a triplet name here (must be lowercase, digits, '-')
     on expression:    )" "\t" R"(x64-windows:
                       )" "\t" R"(           ^)");
     // clang-format on
@@ -336,7 +338,7 @@ TEST_CASE ("format_ci_result 1", "[ci-baseline]")
     SECTION ("SUCCEEDED")
     {
         const auto test = [&](PackageSpec s, bool allow_unexpected_passing) {
-            return format_ci_result(s, BuildResult::SUCCEEDED, cidata, "cifile", allow_unexpected_passing);
+            return format_ci_result(s, BuildResult::SUCCEEDED, cidata, "cifile", allow_unexpected_passing, false);
         };
         CHECK(test({"pass", Test::X64_UWP}, true) == "");
         CHECK(test({"pass", Test::X64_UWP}, false) == "");
@@ -350,7 +352,7 @@ TEST_CASE ("format_ci_result 1", "[ci-baseline]")
     SECTION ("BUILD_FAILED")
     {
         const auto test = [&](PackageSpec s) {
-            return format_ci_result(s, BuildResult::BUILD_FAILED, cidata, "cifile", false);
+            return format_ci_result(s, BuildResult::BUILD_FAILED, cidata, "cifile", false, false);
         };
         CHECK(test({"pass", Test::X64_UWP}) == fmt::format(failmsg, "pass:x64-uwp"));
         CHECK(test({"fail", Test::X64_UWP}) == "");
@@ -360,7 +362,8 @@ TEST_CASE ("format_ci_result 1", "[ci-baseline]")
     SECTION ("CASCADED_DUE_TO_MISSING_DEPENDENCIES")
     {
         const auto test = [&](PackageSpec s) {
-            return format_ci_result(s, BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES, cidata, "cifile", false);
+            return format_ci_result(
+                s, BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES, cidata, "cifile", false, false);
         };
         CHECK(test({"pass", Test::X64_UWP}) == fmt::format(cascademsg, "pass:x64-uwp"));
         CHECK(test({"fail", Test::X64_UWP}) == "");

@@ -1,6 +1,6 @@
 . "$PSScriptRoot/../end-to-end-tests-prelude.ps1"
 
-$formatManifestAssets = (Get-Item "$PSScriptRoot/../e2e_assets/format-manifest").FullName
+$formatManifestAssets = (Get-Item "$PSScriptRoot/../e2e-assets/format-manifest").FullName
 $testProjects = Get-ChildItem "$formatManifestAssets/*.json" -File
 $testProjects | % {
     $asItem = Get-Item $_
@@ -20,17 +20,22 @@ $testProjects | % {
 
 Write-Trace "test re-serializing every manifest"
 $manifestDir = "$TestingRoot/manifest-dir"
-New-Item -Path $manifestDir -ItemType Directory | Out-Null
-
-$ports = Get-ChildItem "$env:VCPKG_ROOT/ports"
-
-$ports | % {
-    Copy-Item "$_/vcpkg.json" "$manifestDir" | Out-Null
-    $x = Get-Content "$manifestDir/vcpkg.json" -Raw
-    Run-Vcpkg -EndToEndTestSilent format-manifest "$manifestDir/vcpkg.json" | Out-Null
-    Throw-IfFailed "$_/vcpkg.json"
-    $y = Get-Content "$manifestDir/vcpkg.json" -Raw
-    if ($x -ne $y) {
-        throw "Expected formatting manifest $_/vcpkg.json to cause no modifications"
-    }
+Copy-Item -Path "$env:VCPKG_ROOT/ports" -Destination $manifestDir -recurse -Force -Filter vcpkg.json
+git init $manifestDir
+Throw-IfFailed
+git -C $manifestDir config user.name vcpkg-test
+Throw-IfFailed
+git -C $manifestDir config user.email my@example.com
+Throw-IfFailed
+git -C $manifestDir config core.autocrlf false
+Throw-IfFailed
+git -C $manifestDir add .
+Throw-IfFailed
+git -C $manifestDir commit -m "baseline"
+Throw-IfFailed
+Run-Vcpkg format-manifest --all --x-builtin-ports-root=$manifestDir/ports
+Throw-IfFailed
+$diff = (& git -C $manifestDir diff) | Out-String
+if ($diff.length -gt 0) {
+    throw "Expected formatting of manifests vcpkg.json to cause no modifications: \n$diff"
 }

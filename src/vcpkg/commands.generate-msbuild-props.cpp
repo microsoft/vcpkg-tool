@@ -1,4 +1,4 @@
-#include <vcpkg/base/basic_checks.h>
+#include <vcpkg/base/checks.h>
 
 #include <vcpkg/commands.generate-msbuild-props.h>
 #include <vcpkg/configure-environment.h>
@@ -6,7 +6,7 @@
 
 namespace vcpkg::Commands
 {
-    void GenerateMSBuildPropsCommand::perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const
+    void command_generate_msbuild_props_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
         Checks::exit_with_code(
             VCPKG_LINE_INFO,

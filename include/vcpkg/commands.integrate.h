@@ -1,6 +1,12 @@
 #pragma once
 
-#include <vcpkg/commands.interface.h>
+#include <vcpkg/fwd/vcpkgcmdarguments.h>
+#include <vcpkg/fwd/vcpkgpaths.h>
+
+#include <vcpkg/base/stringview.h>
+
+#include <string>
+#include <vector>
 
 namespace vcpkg::Commands::Integrate
 {
@@ -8,7 +14,7 @@ namespace vcpkg::Commands::Integrate
 
     void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths);
     void append_helpstring(HelpTableFormatter& table);
-    std::string get_helpstring();
+    LocalizedString get_helpstring();
 
     Optional<int> find_targets_file_version(StringView contents);
     std::vector<std::string> get_bash_source_completion_lines(StringView contents);
@@ -20,9 +26,4 @@ namespace vcpkg::Commands::Integrate
         bool has_autoload_bashcompinit;
     };
     ZshAutocomplete get_zsh_autocomplete_data(StringView contents);
-
-    struct IntegrateCommand : PathsCommand
-    {
-        virtual void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const override;
-    };
 }

@@ -1,4 +1,4 @@
-#include <vcpkg/base/api_stable_format.h>
+#include <vcpkg/base/api-stable-format.h>
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/messages.h>
@@ -8,15 +8,24 @@
 #include <vcpkg/base/util.h>
 
 #include <ctype.h>
-#include <locale.h>
 #include <stdarg.h>
-#include <stdio.h>
 
 #include <algorithm>
+#include <iterator>
 #include <string>
 #include <vector>
 
+#include <fmt/compile.h>
+
 using namespace vcpkg;
+
+namespace vcpkg::Strings::details
+{
+    void append_internal(std::string& into, char c) { into += c; }
+    void append_internal(std::string& into, const char* v) { into.append(v); }
+    void append_internal(std::string& into, const std::string& s) { into.append(s); }
+    void append_internal(std::string& into, StringView s) { into.append(s.begin(), s.end()); }
+}
 
 vcpkg::ExpectedL<std::string> vcpkg::details::api_stable_format_impl(StringView sv,
                                                                      void (*cb)(void*, std::string&, StringView),
@@ -75,49 +84,30 @@ vcpkg::ExpectedL<std::string> vcpkg::details::api_stable_format_impl(StringView 
     return {std::move(out), expected_left_tag};
 }
 
-namespace vcpkg::Strings::details
+namespace
 {
     // To disambiguate between two overloads
-    static bool is_space(const char c) { return std::isspace(static_cast<unsigned char>(c)) != 0; }
-
-    // Avoids C4244 warnings because of char<->int conversion that occur when using std::tolower()
-    static char toupper_char(const char c) { return (c < 'a' || c > 'z') ? c : c - 'a' + 'A'; }
-
-#if defined(_WIN32)
-    static _locale_t& c_locale()
+    constexpr struct
     {
-        static _locale_t c_locale_impl = _create_locale(LC_ALL, "C");
-        return c_locale_impl;
-    }
-#endif
+        bool operator()(char c) const noexcept { return std::isspace(static_cast<unsigned char>(c)) != 0; }
+    } is_space_char;
 
-    std::string format_internal(const char* fmtstr, ...)
+    constexpr struct
     {
-        va_list args;
-        va_start(args, fmtstr);
+        char operator()(char c) const noexcept { return (c < 'a' || c > 'z') ? c : c - 'a' + 'A'; }
+    } to_upper_char;
 
-#if defined(_WIN32)
-        const int sz = _vscprintf_l(fmtstr, c_locale(), args);
-#else
-        const int sz = vsnprintf(nullptr, 0, fmtstr, args);
-#endif
-        Checks::check_exit(VCPKG_LINE_INFO, sz > 0);
+    constexpr struct
+    {
+        char operator()(char c) const noexcept { return (c < 'A' || c > 'Z') ? c : c - 'A' + 'a'; }
+    } tolower_char;
 
-        std::string output(sz, '\0');
+    constexpr struct
+    {
+        bool operator()(char a, char b) const noexcept { return tolower_char(a) == tolower_char(b); }
+    } icase_eq;
 
-#if defined(_WIN32)
-        _vsnprintf_s_l(&output.at(0), output.size() + 1, output.size(), fmtstr, c_locale(), args);
-#else
-        va_start(args, fmtstr);
-        vsnprintf(&output.at(0), output.size() + 1, fmtstr, args);
-#endif
-        va_end(args);
-
-        return output;
-    }
 }
-
-using namespace vcpkg;
 
 #if defined(_WIN32)
 std::wstring Strings::to_utf16(StringView s)
@@ -171,15 +161,6 @@ void Strings::to_utf8(std::string& output, const wchar_t* w, size_t size_in_char
 std::string Strings::to_utf8(const std::wstring& ws) { return to_utf8(ws.data(), ws.size()); }
 #endif
 
-std::string Strings::escape_string(std::string&& s, char char_to_escape, char escape_char)
-{
-    // Replace '\' with '\\' or '`' with '``'
-    auto ret = Strings::replace_all(std::move(s), {&escape_char, 1}, std::string{escape_char, escape_char});
-    // Replace '"' with '\"' or '`"'
-    ret = Strings::replace_all(std::move(ret), {&char_to_escape, 1}, std::string{escape_char, char_to_escape});
-    return ret;
-}
-
 const char* Strings::case_insensitive_ascii_search(StringView s, StringView pattern)
 {
     return std::search(s.begin(), s.end(), pattern.begin(), pattern.end(), icase_eq);
@@ -195,18 +176,25 @@ bool Strings::case_insensitive_ascii_equals(StringView left, StringView right)
     return std::equal(left.begin(), left.end(), right.begin(), right.end(), icase_eq);
 }
 
-void Strings::ascii_to_lowercase(char* first, char* last) { std::transform(first, last, first, tolower_char); }
+void Strings::inplace_ascii_to_lowercase(char* first, char* last) { std::transform(first, last, first, tolower_char); }
 
-std::string Strings::ascii_to_lowercase(std::string&& s)
+void Strings::inplace_ascii_to_lowercase(std::string& s)
 {
-    Strings::ascii_to_lowercase(s.data(), s.data() + s.size());
-    return std::move(s);
+    Strings::inplace_ascii_to_lowercase(s.data(), s.data() + s.size());
 }
 
-std::string Strings::ascii_to_uppercase(std::string&& s)
+std::string Strings::ascii_to_lowercase(StringView s)
 {
-    std::transform(s.begin(), s.end(), s.begin(), &details::toupper_char);
-    return std::move(s);
+    std::string result;
+    std::transform(s.begin(), s.end(), std::back_inserter(result), tolower_char);
+    return result;
+}
+
+std::string Strings::ascii_to_uppercase(StringView s)
+{
+    std::string result;
+    std::transform(s.begin(), s.end(), std::back_inserter(result), to_upper_char);
+    return result;
 }
 
 bool Strings::case_insensitive_ascii_starts_with(StringView s, StringView pattern)
@@ -232,14 +220,11 @@ bool Strings::starts_with(StringView s, StringView pattern)
     return std::equal(s.begin(), s.begin() + pattern.size(), pattern.begin(), pattern.end());
 }
 
-std::string Strings::replace_all(const char* s, StringView search, StringView rep)
-{
-    return Strings::replace_all(std::string(s), search, rep);
-}
-
 std::string Strings::replace_all(StringView s, StringView search, StringView rep)
 {
-    return Strings::replace_all(s.to_string(), search, rep);
+    std::string ret = s.to_string();
+    Strings::inplace_replace_all(ret, search, rep);
+    return ret;
 }
 
 std::string Strings::replace_all(std::string&& s, StringView search, StringView rep)
@@ -268,28 +253,27 @@ void Strings::inplace_replace_all(std::string& s, char search, char rep) noexcep
     std::replace(s.begin(), s.end(), search, rep);
 }
 
-std::string Strings::trim(std::string&& s)
+void Strings::inplace_trim(std::string& s)
 {
-    s.erase(std::find_if_not(s.rbegin(), s.rend(), details::is_space).base(), s.end());
-    s.erase(s.begin(), std::find_if_not(s.begin(), s.end(), details::is_space));
-    return std::move(s);
+    s.erase(std::find_if_not(s.rbegin(), s.rend(), is_space_char).base(), s.end());
+    s.erase(s.begin(), std::find_if_not(s.begin(), s.end(), is_space_char));
 }
 
 StringView Strings::trim(StringView sv)
 {
-    auto last = std::find_if_not(sv.rbegin(), sv.rend(), details::is_space).base();
-    auto first = std::find_if_not(sv.begin(), sv.end(), details::is_space);
+    auto last = std::find_if_not(sv.rbegin(), sv.rend(), is_space_char).base();
+    auto first = std::find_if_not(sv.begin(), sv.end(), is_space_char);
     return StringView(first, last);
 }
 
-void Strings::trim_all_and_remove_whitespace_strings(std::vector<std::string>* strings)
+void Strings::inplace_trim_all_and_remove_whitespace_strings(std::vector<std::string>& strings)
 {
-    for (std::string& s : *strings)
+    for (std::string& s : strings)
     {
-        s = trim(std::move(s));
+        inplace_trim(s);
     }
 
-    Util::erase_remove_if(*strings, [](const std::string& s) { return s.empty(); });
+    Util::erase_remove_if(strings, [](const std::string& s) { return s.empty(); });
 }
 
 std::vector<std::string> Strings::split(StringView s, const char delimiter)
@@ -309,6 +293,20 @@ std::vector<std::string> Strings::split(StringView s, const char delimiter)
         output.emplace_back(first, next);
         first = next;
     }
+}
+
+std::vector<std::string> Strings::split_keep_empty(StringView s, const char delimiter)
+{
+    std::vector<std::string> output;
+    auto first = s.begin();
+    const auto last = s.end();
+    do
+    {
+        auto next = std::find_if(first, last, [=](const char c) { return c == delimiter; });
+        output.emplace_back(first, next);
+        if (next == last) return output;
+        first = next + 1;
+    } while (1);
 }
 
 std::vector<std::string> Strings::split_paths(StringView s)
@@ -380,6 +378,102 @@ Optional<StringView> Strings::find_at_most_one_enclosed(StringView input, String
     }
 
     return result.front();
+}
+
+bool vcpkg::Strings::contains_any_ignoring_c_comments(const std::string& source, View<StringView> to_find)
+{
+    std::string::size_type offset = 0;
+    std::string::size_type no_comment_offset = 0;
+    while (offset != std::string::npos)
+    {
+        no_comment_offset = std::max(offset, no_comment_offset);
+        auto start = source.find_first_of("/\"", no_comment_offset);
+        if (start == std::string::npos || start + 1 == source.size() || no_comment_offset == std::string::npos)
+        {
+            return Strings::contains_any(StringView(source).substr(offset), to_find);
+        }
+
+        if (source[start] == '/')
+        {
+            if (source[start + 1] == '/' || source[start + 1] == '*')
+            {
+                if (Strings::contains_any(StringView(source).substr(offset, start - offset), to_find))
+                {
+                    return true;
+                }
+                if (source[start + 1] == '/')
+                {
+                    offset = source.find_first_of('\n', start);
+                    while (offset != std::string::npos && source[offset - 1] == '\\')
+                        offset = source.find_first_of('\n', offset + 1);
+                    if (offset != std::string::npos) ++offset;
+                    continue;
+                }
+                offset = source.find_first_of('/', start + 1);
+                while (offset != std::string::npos && source[offset - 1] != '*')
+                    offset = source.find_first_of('/', offset + 1);
+                if (offset != std::string::npos) ++offset;
+                continue;
+            }
+        }
+        else if (source[start] == '\"')
+        {
+            if (start > 0 && source[start - 1] == 'R') // raw string literals
+            {
+                auto end = source.find_first_of('(', start);
+                if (end == std::string::npos)
+                {
+                    // invalid c++, but allowed: auto test = 'R"'
+                    no_comment_offset = start + 1;
+                    continue;
+                }
+                auto d_char_sequence = ')' + source.substr(start + 1, end - start - 1);
+                d_char_sequence.push_back('\"');
+                no_comment_offset = source.find(d_char_sequence, end);
+                if (no_comment_offset != std::string::npos) no_comment_offset += d_char_sequence.size();
+                continue;
+            }
+            no_comment_offset = source.find_first_of('"', start + 1);
+            while (no_comment_offset != std::string::npos && source[no_comment_offset - 1] == '\\')
+                no_comment_offset = source.find_first_of('"', no_comment_offset + 1);
+            if (no_comment_offset != std::string::npos) ++no_comment_offset;
+            continue;
+        }
+        no_comment_offset = start + 1;
+    }
+    return false;
+}
+
+bool Strings::contains_any_ignoring_hash_comments(StringView source, View<StringView> to_find)
+{
+    auto first = source.data();
+    auto block_start = first;
+    const auto last = first + source.size();
+    for (; first != last; ++first)
+    {
+        if (*first == '#')
+        {
+            if (Strings::contains_any(StringView{block_start, first}, to_find))
+            {
+                return true;
+            }
+
+            first = std::find(first, last, '\n'); // skip comment
+            if (first == last)
+            {
+                return false;
+            }
+
+            block_start = first;
+        }
+    }
+
+    return Strings::contains_any(StringView{block_start, last}, to_find);
+}
+
+bool Strings::contains_any(StringView source, View<StringView> to_find)
+{
+    return Util::any_of(to_find, [=](StringView s) { return Strings::contains(source, s); });
 }
 
 bool Strings::equals(StringView a, StringView b)
@@ -467,6 +561,20 @@ Optional<int> Strings::strto<int>(StringView sv)
 }
 
 template<>
+Optional<unsigned int> Strings::strto<unsigned int>(StringView sv)
+{
+    auto opt = strto<unsigned long>(sv);
+    if (auto p = opt.get())
+    {
+        if (*p <= UINT_MAX)
+        {
+            return static_cast<unsigned int>(*p);
+        }
+    }
+    return nullopt;
+}
+
+template<>
 Optional<long> Strings::strto<long>(StringView sv)
 {
     // disallow initial whitespace
@@ -494,6 +602,33 @@ Optional<long> Strings::strto<long>(StringView sv)
 }
 
 template<>
+Optional<unsigned long> Strings::strto<unsigned long>(StringView sv)
+{
+    // disallow initial whitespace
+    if (sv.empty() || ParserBase::is_whitespace(sv[0]))
+    {
+        return nullopt;
+    }
+
+    auto with_nul_terminator = sv.to_string();
+
+    errno = 0;
+    char* endptr = nullptr;
+    long res = strtoul(with_nul_terminator.c_str(), &endptr, 10);
+    if (endptr != with_nul_terminator.data() + with_nul_terminator.size())
+    {
+        // contains invalid characters
+        return nullopt;
+    }
+    else if (errno == ERANGE)
+    {
+        return nullopt;
+    }
+
+    return res;
+}
+
+template<>
 Optional<long long> Strings::strto<long long>(StringView sv)
 {
     // disallow initial whitespace
@@ -507,6 +642,33 @@ Optional<long long> Strings::strto<long long>(StringView sv)
     errno = 0;
     char* endptr = nullptr;
     long long res = strtoll(with_nul_terminator.c_str(), &endptr, 10);
+    if (endptr != with_nul_terminator.data() + with_nul_terminator.size())
+    {
+        // contains invalid characters
+        return nullopt;
+    }
+    else if (errno == ERANGE)
+    {
+        return nullopt;
+    }
+
+    return res;
+}
+
+template<>
+Optional<unsigned long long> Strings::strto<unsigned long long>(StringView sv)
+{
+    // disallow initial whitespace
+    if (sv.empty() || ParserBase::is_whitespace(sv[0]))
+    {
+        return nullopt;
+    }
+
+    auto with_nul_terminator = sv.to_string();
+
+    errno = 0;
+    char* endptr = nullptr;
+    long long res = strtoull(with_nul_terminator.c_str(), &endptr, 10);
     if (endptr != with_nul_terminator.data() + with_nul_terminator.size())
     {
         // contains invalid characters
@@ -565,6 +727,25 @@ namespace vcpkg::Strings
             value >>= shift;
         }
 
+        return result;
+    }
+
+    std::string percent_encode(StringView sv) noexcept
+    {
+        std::string result;
+        for (auto c : sv)
+        {
+            // list from https://datatracker.ietf.org/doc/html/rfc3986#section-2.3
+            if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '-' || c == '.' ||
+                c == '_' || c == '~')
+            {
+                result.push_back(c);
+            }
+            else
+            {
+                fmt::format_to(std::back_inserter(result), FMT_COMPILE("%{:02X}"), static_cast<uint8_t>(c));
+            }
+        }
         return result;
     }
 

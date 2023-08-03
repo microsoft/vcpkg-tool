@@ -6,14 +6,33 @@ Param(
     [string]$DestinationDir,
     [Parameter(Mandatory = $True)]
     [string]$TempDir,
-    [Parameter()]
-    [switch]$ReadOnly,
     [Parameter(Mandatory = $True)]
-    [string]$SignedFilesRoot
+    [string]$Deployment,
+    [Parameter(Mandatory = $True)]
+    [string]$SignedFilesRoot,
+    [Parameter(Mandatory = $true)]
+    [string]$VcpkgBaseVersion
 )
 
 $sha = Get-Content "$PSScriptRoot/vcpkg-scripts-sha.txt" -Raw
 $sha = $sha.Trim()
+
+if ($Deployment -eq 'VisualStudio') {
+    $BundleConfig = @{
+        'readonly'       = $True;
+        'usegitregistry' = $True;
+        'embeddedsha'    = $sha;
+        'deployment'     = $Deployment;
+        'vsversion'      = "17.0";
+    }
+} else {
+    $BundleConfig = @{
+        'readonly'       = $False;
+        'usegitregistry' = $True;
+        'embeddedsha'    = $sha;
+        'deployment'     = $Deployment;
+    }
+}
 
 $scripts_dependencies = @(
     'build_info.cmake',
@@ -28,8 +47,6 @@ $scripts_dependencies = @(
     'vcpkg_completion.bash',
     'vcpkg_completion.fish',
     'vcpkg_completion.zsh',
-    'vcpkg_get_dep_info.cmake',
-    'vcpkg_get_tags.cmake',
     'vcpkgTools.xml'
 )
 
@@ -65,24 +82,32 @@ try {
         Pop-Location
     }
 
+    Set-Content -Path "out/vcpkg-version.txt" -Value $VcpkgBaseVersion -NoNewLine -Encoding Ascii
+    Copy-Item -Path "$PSScriptRoot/../NOTICE.txt" -Destination 'out/NOTICE.txt'
+    Copy-Item -Path "$PSScriptRoot/vcpkg-cmd.cmd" -Destination 'out/vcpkg-cmd.cmd'
     Copy-Item -Path "$SignedFilesRoot/vcpkg-init" -Destination 'out/vcpkg-init'
     Copy-Item -Path "$SignedFilesRoot/vcpkg-init.ps1" -Destination 'out/vcpkg-init.ps1'
     Copy-Item -Path "$SignedFilesRoot/vcpkg-init.cmd" -Destination 'out/vcpkg-init.cmd'
-    Copy-Item -Path "$SignedFilesRoot/addPoshVcpkgToPowershellProfile.ps1" -Destination 'out/scripts/addPoshVcpkgToPowershellProfile.ps1'
+    Copy-Item -Path "$SignedFilesRoot/scripts/addPoshVcpkgToPowershellProfile.ps1" -Destination 'out/scripts/addPoshVcpkgToPowershellProfile.ps1'
     New-Item -Path 'out/scripts/buildsystems/msbuild' -ItemType 'Directory' -Force
-    Copy-Item -Path "$SignedFilesRoot/applocal.ps1" -Destination 'out/scripts/buildsystems/msbuild/applocal.ps1'
-    New-Item -Path 'out/scripts/posh-vcpkg/0.0.1' -ItemType 'Directory' -Force
-    Copy-Item -Path "$SignedFilesRoot/posh-vcpkg.psm1" -Destination 'out/scripts/posh-vcpkg/0.0.1/posh-vcpkg.psm1'
+    Copy-Item -Path "$SignedFilesRoot/scripts/applocal.ps1" -Destination 'out/scripts/buildsystems/msbuild/applocal.ps1'
 
-    $bundleConfig = @{
-        'readonly'       = [bool]$ReadOnly;
-        'usegitregistry' = $True;
-        'embeddedsha'    = $sha
-    }
+    # None of the standalone bundles support classic mode, so turn that off in the bundled copy of the props
+    $propsContent = Get-Content "$PSScriptRoot/vcpkg.props" -Raw -Encoding Ascii
+    $classicEnabledLine = "<VcpkgEnableClassic Condition=`"'`$(VcpkgEnableClassic)' == ''`">true</VcpkgEnableClassic>"
+    $classicDisabledLine = "<VcpkgEnableClassic Condition=`"'`$(VcpkgEnableClassic)' == ''`">false</VcpkgEnableClassic>"
+    $propsContent = $propsContent.Replace($classicEnabledLine, $classicDisabledLine)
+    Set-Content -Path "out/scripts/buildsystems/msbuild/vcpkg.props" -Value $propsContent -NoNewline -Encoding Ascii
+
+    Copy-Item -Path "$PSScriptRoot/vcpkg.targets" -Destination 'out/scripts/buildsystems/msbuild/vcpkg.targets'
+    New-Item -Path 'out/scripts/posh-vcpkg/0.0.1' -ItemType 'Directory' -Force
+    Copy-Item -Path "$SignedFilesRoot/scripts/posh-vcpkg.psm1" -Destination 'out/scripts/posh-vcpkg/0.0.1/posh-vcpkg.psm1'
+
+    Copy-Item -Path "$SignedFilesRoot/vcpkg-artifacts" -Destination 'out/vcpkg-artifacts' -Recurse
 
     New-Item -Path "out/.vcpkg-root" -ItemType "File"
     Set-Content -Path "out/vcpkg-bundle.json" `
-        -Value (ConvertTo-Json -InputObject $bundleConfig) `
+        -Value (ConvertTo-Json -InputObject $BundleConfig) `
         -Encoding Ascii
 
     if (-not [String]::IsNullOrEmpty($DestinationTarball)) {

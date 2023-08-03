@@ -4,7 +4,7 @@
 
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/sortedvector.h>
-#include <vcpkg/base/view.h>
+#include <vcpkg/base/span.h>
 
 #include <vcpkg/packagespec.h>
 #include <vcpkg/triplet.h>
@@ -69,5 +69,6 @@ namespace vcpkg
                                      BuildResult result,
                                      const CiBaselineData& cidata,
                                      StringView cifile,
-                                     bool allow_unexpected_passing);
+                                     bool allow_unexpected_passing,
+                                     bool is_independent);
 }

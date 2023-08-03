@@ -1,0 +1,12 @@
+{
+  "id": "vcpkg-test-artifact-1",
+  "version": "1.0.0",
+  "exports": {
+    "environment": {
+      "VCPKG_TEST_ARTIFACT_1_ACTIVATED": "YES"
+    },
+    "paths": {
+      "VCPKG_TEST_ARTIFACTS_PATHS": "."
+    }
+  }
+}

@@ -1,4 +1,9 @@
+#include <vcpkg/base/json.h>
+#include <vcpkg/base/strings.h>
+#include <vcpkg/base/util.h>
+
 #include <vcpkg/commands.version.h>
+#include <vcpkg/dependencies.h>
 #include <vcpkg/spdx.h>
 
 using namespace vcpkg;
@@ -66,7 +71,7 @@ static Json::Object make_resource(
         auto& chk = obj.insert("checksums", Json::Array());
         auto& chk512 = chk.push_back(Json::Object());
         chk512.insert("algorithm", "SHA512");
-        chk512.insert("checksumValue", Strings::ascii_to_lowercase(sha512.to_string()));
+        chk512.insert("checksumValue", Strings::ascii_to_lowercase(sha512));
     }
     return obj;
 }
@@ -84,9 +89,9 @@ Json::Value vcpkg::run_resource_heuristics(StringView contents)
         auto repo = extract_cmake_invocation_argument(github, "REPO");
         auto ref = extract_cmake_invocation_argument(github, "REF");
         auto sha = extract_cmake_invocation_argument(github, "SHA512");
-        packages.push_back(make_resource(Strings::concat("SPDXRef-resource-", ++n),
+        packages.push_back(make_resource(fmt::format("SPDXRef-resource-{}", ++n),
                                          repo.to_string(),
-                                         Strings::concat("git+https://github.com/", repo, '@', ref),
+                                         fmt::format("git+https://github.com/{}@{}", repo, ref),
                                          sha,
                                          {}));
     }
@@ -95,11 +100,8 @@ Json::Value vcpkg::run_resource_heuristics(StringView contents)
     {
         auto url = extract_cmake_invocation_argument(github, "URL");
         auto ref = extract_cmake_invocation_argument(github, "REF");
-        packages.push_back(make_resource(Strings::concat("SPDXRef-resource-", ++n),
-                                         url.to_string(),
-                                         Strings::concat("git+", url, '@', ref),
-                                         {},
-                                         {}));
+        packages.push_back(make_resource(
+            fmt::format("SPDXRef-resource-{}", ++n), url.to_string(), fmt::format("git+{}@{}", url, ref), {}, {}));
     }
     auto distfile = find_cmake_invocation(contents, "vcpkg_download_distfile");
     if (!distfile.empty())
@@ -108,7 +110,7 @@ Json::Value vcpkg::run_resource_heuristics(StringView contents)
         auto filename = extract_cmake_invocation_argument(distfile, "FILENAME");
         auto sha = extract_cmake_invocation_argument(distfile, "SHA512");
         packages.push_back(make_resource(
-            Strings::concat("SPDXRef-resource-", ++n), filename.to_string(), url.to_string(), sha, filename));
+            fmt::format("SPDXRef-resource-{}", ++n), filename.to_string(), url.to_string(), sha, filename));
     }
     auto sfg = find_cmake_invocation(contents, "vcpkg_from_sourceforge");
     if (!sfg.empty())
@@ -119,7 +121,7 @@ Json::Value vcpkg::run_resource_heuristics(StringView contents)
         auto sha = extract_cmake_invocation_argument(sfg, "SHA512");
         auto url = Strings::concat("https://sourceforge.net/projects/", repo, "/files/", ref, '/', filename);
         packages.push_back(make_resource(
-            Strings::concat("SPDXRef-resource-", ++n), filename.to_string(), std::move(url), sha, filename));
+            fmt::format("SPDXRef-resource-{}", ++n), filename.to_string(), std::move(url), sha, filename));
     }
     return Json::Value::object(std::move(ret));
 }
@@ -181,7 +183,7 @@ std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
             auto& rel = rels.push_back(Json::Object());
             rel.insert("spdxElementId", "SPDXRef-port");
             rel.insert("relationshipType", "CONTAINS");
-            rel.insert("relatedSpdxElement", Strings::concat("SPDXRef-file-", i));
+            rel.insert("relatedSpdxElement", fmt::format("SPDXRef-file-{}", i));
         }
     }
     {
@@ -211,7 +213,7 @@ std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
 
             auto& obj = files.push_back(Json::Object());
             obj.insert("fileName", "./" + path.generic_u8string());
-            const auto ref = Strings::concat("SPDXRef-file-", i);
+            const auto ref = fmt::format("SPDXRef-file-{}", i);
             obj.insert("SPDXID", ref);
             auto& checksum = obj.insert("checksums", Json::Array());
             auto& checksum1 = checksum.push_back(Json::Object());

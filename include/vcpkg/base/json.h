@@ -1,12 +1,13 @@
 #pragma once
 
+#include <vcpkg/base/fwd/files.h>
 #include <vcpkg/base/fwd/json.h>
 
 #include <vcpkg/base/expected.h>
-#include <vcpkg/base/files.h>
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/stringview.h>
 
+#include <limits.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -27,26 +28,26 @@ namespace vcpkg::Json
 
         constexpr JsonStyle() noexcept = default;
 
-        static JsonStyle with_tabs() noexcept { return JsonStyle{-1}; }
-        static JsonStyle with_spaces(int indent) noexcept
+        static JsonStyle with_tabs() noexcept { return JsonStyle{SIZE_MAX}; }
+        static JsonStyle with_spaces(size_t indent) noexcept
         {
-            vcpkg::Checks::check_exit(VCPKG_LINE_INFO, indent >= 0);
+            vcpkg::Checks::check_exit(VCPKG_LINE_INFO, indent != SIZE_MAX);
             return JsonStyle{indent};
         }
 
-        void set_tabs() noexcept { this->indent = -1; }
-        void set_spaces(int indent_) noexcept
+        void set_tabs() noexcept { this->indent = SIZE_MAX; }
+        void set_spaces(size_t indent_) noexcept
         {
-            vcpkg::Checks::check_exit(VCPKG_LINE_INFO, indent >= 0);
+            vcpkg::Checks::check_exit(VCPKG_LINE_INFO, indent != SIZE_MAX);
             this->indent = indent_;
         }
 
-        bool use_tabs() const noexcept { return indent == -1; }
-        bool use_spaces() const noexcept { return indent >= 0; }
+        bool use_tabs() const noexcept { return indent == SIZE_MAX; }
+        bool use_spaces() const noexcept { return indent != SIZE_MAX; }
 
-        int spaces() const noexcept
+        size_t spaces() const noexcept
         {
-            vcpkg::Checks::check_exit(VCPKG_LINE_INFO, indent >= 0);
+            vcpkg::Checks::check_exit(VCPKG_LINE_INFO, indent != SIZE_MAX);
             return indent;
         }
 
@@ -61,9 +62,9 @@ namespace vcpkg::Json
         }
 
     private:
-        constexpr explicit JsonStyle(int indent) : indent(indent) { }
-        // -1 for tab, >=0 gives # of spaces
-        int indent = 2;
+        constexpr explicit JsonStyle(size_t indent) : indent(indent) { }
+        // SIZE_MAX for tab, otherwise # of spaces
+        size_t indent = 2;
     };
 
     enum class ValueKind : int
@@ -250,13 +251,21 @@ namespace vcpkg::Json
         Value& operator[](StringView key) noexcept
         {
             auto res = this->get(key);
-            vcpkg::Checks::check_exit(VCPKG_LINE_INFO, res != nullptr, "missing key: \"%s\"", key);
+            if (res == nullptr)
+            {
+                Checks::unreachable(VCPKG_LINE_INFO, fmt::format("JSON object missing key {}", key));
+            }
+
             return *res;
         }
         const Value& operator[](StringView key) const noexcept
         {
             auto res = this->get(key);
-            vcpkg::Checks::check_exit(VCPKG_LINE_INFO, res != nullptr, "missing key: \"%s\"", key);
+            if (res == nullptr)
+            {
+                Checks::unreachable(VCPKG_LINE_INFO, fmt::format("JSON object missing key {}", key));
+            }
+
             return *res;
         }
 
@@ -294,7 +303,7 @@ namespace vcpkg::Json
             bool operator!=(const_iterator other) const noexcept { return !(this->underlying_ == other.underlying_); }
 
         private:
-            friend struct Object;
+            friend Object;
             explicit const_iterator(const underlying_t::const_iterator& it) : underlying_(it) { }
             underlying_t::const_iterator underlying_;
         };
@@ -312,12 +321,18 @@ namespace vcpkg::Json
         underlying_t underlying_;
     };
 
-    ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<ParseError>> parse_file(const Filesystem&,
-                                                                                   const Path&,
-                                                                                   std::error_code& ec);
-    ExpectedT<std::pair<Value, JsonStyle>, std::unique_ptr<ParseError>> parse(StringView text, StringView origin = {});
-    std::pair<Value, JsonStyle> parse_file(LineInfo li, const Filesystem&, const Path&);
-    ExpectedS<Json::Object> parse_object(StringView text, StringView origin = {});
+    struct ParsedJson
+    {
+        Value value;
+        JsonStyle style;
+    };
+
+    ExpectedT<ParsedJson, std::unique_ptr<ParseError>> parse_file(const ReadOnlyFilesystem&,
+                                                                  const Path&,
+                                                                  std::error_code& ec);
+    ExpectedT<ParsedJson, std::unique_ptr<ParseError>> parse(StringView text, StringView origin = {});
+    ParsedJson parse_file(LineInfo li, const ReadOnlyFilesystem&, const Path&);
+    ExpectedL<Json::Object> parse_object(StringView text, StringView origin = {});
 
     std::string stringify(const Value&);
     std::string stringify(const Value&, JsonStyle style);

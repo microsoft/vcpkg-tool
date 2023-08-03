@@ -4,7 +4,7 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/git.h>
 #include <vcpkg/base/json.h>
-#include <vcpkg/base/system.print.h>
+#include <vcpkg/base/strings.h>
 
 #include <vcpkg/commands.add-version.h>
 #include <vcpkg/configuration.h>
@@ -124,7 +124,7 @@ namespace
         return output_object;
     }
 
-    static void write_baseline_file(Filesystem& fs,
+    static void write_baseline_file(const Filesystem& fs,
                                     const std::map<std::string, Version, std::less<>>& baseline_map,
                                     const Path& output_path)
     {
@@ -134,7 +134,7 @@ namespace
         fs.rename(new_path, output_path, VCPKG_LINE_INFO);
     }
 
-    static void write_versions_file(Filesystem& fs,
+    static void write_versions_file(const Filesystem& fs,
                                     const std::vector<VersionGitTree>& versions,
                                     const Path& output_path)
     {
@@ -209,7 +209,7 @@ namespace
                              msg::format(msgAddVersionAddedVersionToFile,
                                          msg::version = port_version.version,
                                          msg::path = version_db_file_path)
-                                 .append_raw(" ")
+                                 .append_raw(' ')
                                  .append(msgAddVersionNewFile));
             }
             return UpdateResult::Updated;
@@ -263,9 +263,9 @@ namespace
                             .append_raw('\n')
                             .append(msgAddVersionVersionIs, msg::version = port_version.version)
                             .append_raw('\n')
-                            .append(msgAddVersionOldShaIs, msg::value = it->second)
+                            .append(msgAddVersionOldShaIs, msg::commit_sha = it->second)
                             .append_raw('\n')
-                            .append(msgAddVersionNewShaIs, msg::value = git_tree)
+                            .append(msgAddVersionNewShaIs, msg::commit_sha = git_tree)
                             .append_raw('\n')
                             .append(msgAddVersionUpdateVersionReminder)
                             .append_raw('\n')
@@ -303,7 +303,7 @@ namespace
 
         msg::println_error(msg::format(msgAddVersionUnableToParseVersionsFile, msg::path = version_db_file_path)
                                .append_raw('\n')
-                               .append_raw(maybe_versions.error()));
+                               .append(maybe_versions.error()));
         Checks::exit_fail(VCPKG_LINE_INFO);
     }
 }
@@ -311,15 +311,15 @@ namespace
 namespace vcpkg::Commands::AddVersion
 {
     const CommandSwitch COMMAND_SWITCHES[] = {
-        {OPTION_ALL, "Process versions for all ports."},
-        {OPTION_OVERWRITE_VERSION, "Overwrite `git-tree` of an existing version."},
-        {OPTION_SKIP_FORMATTING_CHECK, "Skips the formatting check of vcpkg.json files."},
-        {OPTION_SKIP_VERSION_FORMAT_CHECK, "Skips the version format check."},
-        {OPTION_VERBOSE, "Print success messages instead of just errors."},
+        {OPTION_ALL, []() { return msg::format(msgCmdAddVersionOptAll); }},
+        {OPTION_OVERWRITE_VERSION, []() { return msg::format(msgCmdAddVersionOptOverwriteVersion); }},
+        {OPTION_SKIP_FORMATTING_CHECK, []() { return msg::format(msgCmdAddVersionOptSkipFormatChk); }},
+        {OPTION_SKIP_VERSION_FORMAT_CHECK, []() { return msg::format(msgCmdAddVersionOptSkipVersionFormatChk); }},
+        {OPTION_VERBOSE, []() { return msg::format(msgCmdAddVersionOptVerbose); }},
     };
 
     const CommandStructure COMMAND_STRUCTURE{
-        create_example_string(R"###(x-add-version <port name>)###"),
+        [] { return create_example_string("x-add-version <port name>"); },
         0,
         1,
         {{COMMAND_SWITCHES}, {}, {}},
@@ -344,13 +344,13 @@ namespace vcpkg::Commands::AddVersion
         }
 
         std::vector<std::string> port_names;
-        if (!args.command_arguments.empty())
+        if (!parsed_args.command_arguments.empty())
         {
             if (add_all)
             {
                 msg::println_warning(msgAddVersionIgnoringOptionAll, msg::option = OPTION_ALL);
             }
-            port_names.emplace_back(args.command_arguments[0]);
+            port_names.emplace_back(parsed_args.command_arguments[0]);
         }
         else
         {
@@ -378,7 +378,7 @@ namespace vcpkg::Commands::AddVersion
 
         // Get tree-ish from local repository state.
         auto maybe_git_tree_map = paths.git_get_local_port_treeish_map();
-        auto git_tree_map = maybe_git_tree_map.value_or_exit(VCPKG_LINE_INFO);
+        auto& git_tree_map = maybe_git_tree_map.value_or_exit(VCPKG_LINE_INFO);
 
         // Find ports with uncommited changes
         std::set<std::string> changed_ports;
@@ -399,7 +399,7 @@ namespace vcpkg::Commands::AddVersion
 
             if (!fs.exists(port_dir, IgnoreErrors{}))
             {
-                msg::println_error(msgAddVersionPortDoesNotExist, msg::package_name = port_name);
+                msg::println_error(msgPortDoesNotExist, msg::package_name = port_name);
                 Checks::check_exit(VCPKG_LINE_INFO, !add_all);
                 continue;
             }
@@ -413,7 +413,7 @@ namespace vcpkg::Commands::AddVersion
                 continue;
             }
 
-            const auto& scf = maybe_scf.value_or_exit(VCPKG_LINE_INFO);
+            const auto& scf = maybe_scf.value(VCPKG_LINE_INFO);
 
             if (!skip_formatting_check)
             {
@@ -482,10 +482,5 @@ namespace vcpkg::Commands::AddVersion
             }
         }
         Checks::exit_success(VCPKG_LINE_INFO);
-    }
-
-    void AddVersionCommand::perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const
-    {
-        AddVersion::perform_and_exit(args, paths);
     }
 }

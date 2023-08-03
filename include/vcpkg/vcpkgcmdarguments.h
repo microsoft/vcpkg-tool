@@ -5,7 +5,8 @@
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
-#include <vcpkg/base/files.h>
+#include <vcpkg/base/cmd-parser.h>
+#include <vcpkg/base/messages.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/span.h>
 #include <vcpkg/base/stringview.h>
@@ -24,39 +25,26 @@ namespace vcpkg
         std::map<std::string, std::vector<std::string>, std::less<>> multisettings;
 
         const std::string* read_setting(StringLiteral setting) const noexcept;
+
+        std::vector<std::string> command_arguments;
     };
 
     struct CommandSwitch
     {
-        constexpr CommandSwitch(const StringLiteral& name, const StringLiteral& short_help_text)
-            : name(name), short_help_text(short_help_text)
-        {
-        }
-
         StringLiteral name;
-        StringLiteral short_help_text;
+        LocalizedString (*helpmsg)();
     };
 
     struct CommandSetting
     {
-        constexpr CommandSetting(const StringLiteral& name, const StringLiteral& short_help_text)
-            : name(name), short_help_text(short_help_text)
-        {
-        }
-
         StringLiteral name;
-        StringLiteral short_help_text;
+        LocalizedString (*helpmsg)();
     };
 
     struct CommandMultiSetting
     {
-        constexpr CommandMultiSetting(const StringLiteral& name, const StringLiteral& short_help_text)
-            : name(name), short_help_text(short_help_text)
-        {
-        }
-
         StringLiteral name;
-        StringLiteral short_help_text;
+        LocalizedString (*helpmsg)();
     };
 
     struct CommandOptionsStructure
@@ -68,7 +56,7 @@ namespace vcpkg
 
     struct CommandStructure
     {
-        std::string example_text;
+        LocalizedString (*get_example_text)();
 
         size_t minimum_arity;
         size_t maximum_arity;
@@ -78,27 +66,10 @@ namespace vcpkg
         std::vector<std::string> (*valid_arguments)(const VcpkgPaths& paths);
     };
 
-    void print_usage();
+    void print_command_list_usage();
     void print_usage(const CommandStructure& command_structure);
 
-#if defined(_WIN32)
-    using CommandLineCharType = wchar_t;
-#else
-    using CommandLineCharType = char;
-#endif
-
-    std::string create_example_string(const std::string& command_and_arguments);
-
-    struct HelpTableFormatter
-    {
-        void format(StringView col1, StringView col2);
-        void example(StringView example_text);
-        void header(StringView name);
-        void blank();
-        void text(StringView text, int indent = 0);
-
-        std::string m_str;
-    };
+    LocalizedString create_example_string(StringView command_and_arguments);
 
     struct FeatureFlagSettings
     {
@@ -106,16 +77,15 @@ namespace vcpkg
         bool compiler_tracking;
         bool binary_caching;
         bool versions;
+        bool dependency_graph;
     };
 
     struct VcpkgCmdArguments
     {
-        static VcpkgCmdArguments create_from_command_line(const Filesystem& fs,
+        static VcpkgCmdArguments create_from_command_line(const ILineReader& fs,
                                                           const int argc,
                                                           const CommandLineCharType* const* const argv);
         static VcpkgCmdArguments create_from_arg_sequence(const std::string* arg_begin, const std::string* arg_end);
-
-        static void append_common_options(HelpTableFormatter& target);
 
         constexpr static StringLiteral VCPKG_ROOT_DIR_ENV = "VCPKG_ROOT";
         constexpr static StringLiteral VCPKG_ROOT_DIR_ARG = "vcpkg-root";
@@ -124,26 +94,26 @@ namespace vcpkg
         Optional<std::string> vcpkg_root_dir_arg;
         constexpr static StringLiteral VCPKG_ROOT_ENV_NAME = "VCPKG_ROOT_ENV";
         Optional<std::string> vcpkg_root_dir_env;
-        constexpr static StringLiteral MANIFEST_ROOT_DIR_ARG = "x-manifest-root";
+        constexpr static StringLiteral MANIFEST_ROOT_DIR_ARG = "manifest-root";
         Optional<std::string> manifest_root_dir;
 
-        constexpr static StringLiteral BUILDTREES_ROOT_DIR_ARG = "x-buildtrees-root";
+        constexpr static StringLiteral BUILDTREES_ROOT_DIR_ARG = "buildtrees-root";
         Optional<std::string> buildtrees_root_dir;
         constexpr static StringLiteral DOWNLOADS_ROOT_DIR_ENV = "VCPKG_DOWNLOADS";
         constexpr static StringLiteral DOWNLOADS_ROOT_DIR_ARG = "downloads-root";
         Optional<std::string> downloads_root_dir;
-        constexpr static StringLiteral INSTALL_ROOT_DIR_ARG = "x-install-root";
+        constexpr static StringLiteral INSTALL_ROOT_DIR_ARG = "install-root";
         Optional<std::string> install_root_dir;
-        constexpr static StringLiteral PACKAGES_ROOT_DIR_ARG = "x-packages-root";
+        constexpr static StringLiteral PACKAGES_ROOT_DIR_ARG = "packages-root";
         Optional<std::string> packages_root_dir;
-        constexpr static StringLiteral SCRIPTS_ROOT_DIR_ARG = "x-scripts-root";
+        constexpr static StringLiteral SCRIPTS_ROOT_DIR_ARG = "scripts-root";
         Optional<std::string> scripts_root_dir;
-        constexpr static StringLiteral BUILTIN_PORTS_ROOT_DIR_ARG = "x-builtin-ports-root";
+        constexpr static StringLiteral BUILTIN_PORTS_ROOT_DIR_ARG = "builtin-ports-root";
         Optional<std::string> builtin_ports_root_dir;
-        constexpr static StringLiteral BUILTIN_REGISTRY_VERSIONS_DIR_ARG = "x-builtin-registry-versions-dir";
+        constexpr static StringLiteral BUILTIN_REGISTRY_VERSIONS_DIR_ARG = "builtin-registry-versions-dir";
         Optional<std::string> builtin_registry_versions_dir;
         constexpr static StringLiteral REGISTRIES_CACHE_DIR_ENV = "X_VCPKG_REGISTRIES_CACHE";
-        constexpr static StringLiteral REGISTRIES_CACHE_DIR_ARG = "x-registries-cache";
+        constexpr static StringLiteral REGISTRIES_CACHE_DIR_ARG = "registries-cache";
         Optional<std::string> registries_cache_dir;
 
         constexpr static StringLiteral DEFAULT_VISUAL_STUDIO_PATH_ENV = "VCPKG_VISUAL_STUDIO_PATH";
@@ -164,13 +134,37 @@ namespace vcpkg
         std::vector<std::string> cli_overlay_triplets;
         std::vector<std::string> env_overlay_triplets;
 
+        constexpr static StringLiteral BINARY_SOURCES_ENV = "VCPKG_BINARY_SOURCES";
         constexpr static StringLiteral BINARY_SOURCES_ARG = "binarysource";
-        std::vector<std::string> binary_sources;
+        std::vector<std::string> cli_binary_sources;
+        Optional<std::string> env_binary_sources;
+        constexpr static StringLiteral ACTIONS_CACHE_URL_ENV = "ACTIONS_CACHE_URL";
+        Optional<std::string> actions_cache_url;
+        constexpr static StringLiteral ACTIONS_RUNTIME_TOKEN_ENV = "ACTIONS_RUNTIME_TOKEN";
+        Optional<std::string> actions_runtime_token;
+        constexpr static StringLiteral NUGET_ID_PREFIX_ENV = "X_VCPKG_NUGET_ID_PREFIX";
+        Optional<std::string> nuget_id_prefix;
+        constexpr static StringLiteral VCPKG_USE_NUGET_CACHE_ENV = "VCPKG_USE_NUGET_CACHE";
+        Optional<bool> use_nuget_cache;
+        constexpr static StringLiteral VCPKG_NUGET_REPOSITORY_ENV = "VCPKG_NUGET_REPOSITORY";
+        Optional<std::string> vcpkg_nuget_repository;
+        constexpr static StringLiteral GITHUB_REPOSITORY_ENV = "GITHUB_REPOSITORY";
+        Optional<std::string> github_repository;
+        constexpr static StringLiteral GITHUB_SERVER_URL_ENV = "GITHUB_SERVER_URL";
+        Optional<std::string> github_server_url;
+        constexpr static StringLiteral GITHUB_REF_ENV = "GITHUB_REF";
+        Optional<std::string> github_ref;
+        constexpr static StringLiteral GITHUB_SHA_ENV = "GITHUB_SHA";
+        Optional<std::string> github_sha;
+        constexpr static StringLiteral GITHUB_REPOSITORY_ID = "GITHUB_REPOSITORY_ID";
+        Optional<std::string> github_repository_id;
+        constexpr static StringLiteral GITHUB_REPOSITORY_OWNER_ID = "GITHUB_REPOSITORY_OWNER_ID";
+        Optional<std::string> github_repository_owner_id;
 
-        constexpr static StringLiteral CMAKE_SCRIPT_ARG = "x-cmake-args";
+        constexpr static StringLiteral CMAKE_SCRIPT_ARG = "cmake-args";
         std::vector<std::string> cmake_args;
 
-        constexpr static StringLiteral EXACT_ABI_TOOLS_VERSIONS_SWITCH = "x-abi-tools-use-exact-versions";
+        constexpr static StringLiteral EXACT_ABI_TOOLS_VERSIONS_SWITCH = "abi-tools-use-exact-versions";
         Optional<bool> exact_abi_tools_versions;
 
         constexpr static StringLiteral DEBUG_SWITCH = "debug";
@@ -186,24 +180,33 @@ namespace vcpkg
         constexpr static StringLiteral PRINT_METRICS_SWITCH = "printmetrics";
         Optional<bool> print_metrics = nullopt;
 
-        constexpr static StringLiteral WAIT_FOR_LOCK_SWITCH = "x-wait-for-lock";
+        constexpr static StringLiteral WAIT_FOR_LOCK_SWITCH = "wait-for-lock";
         Optional<bool> wait_for_lock = nullopt;
 
-        constexpr static StringLiteral IGNORE_LOCK_FAILURES_SWITCH = "x-ignore-lock-failures";
+        constexpr static StringLiteral IGNORE_LOCK_FAILURES_SWITCH = "ignore-lock-failures";
         constexpr static StringLiteral IGNORE_LOCK_FAILURES_ENV = "X_VCPKG_IGNORE_LOCK_FAILURES";
         Optional<bool> ignore_lock_failures = nullopt;
 
         bool do_not_take_lock = false;
 
-        constexpr static StringLiteral JSON_SWITCH = "x-json";
-        Optional<bool> json = nullopt;
-
         constexpr static StringLiteral ASSET_SOURCES_ENV = "X_VCPKG_ASSET_SOURCES";
-        constexpr static StringLiteral ASSET_SOURCES_ARG = "x-asset-sources";
+        constexpr static StringLiteral ASSET_SOURCES_ARG = "asset-sources";
+
+        constexpr static StringLiteral GITHUB_RUN_ID_ENV = "GITHUB_RUN_ID";
+        Optional<std::string> github_run_id;
+        constexpr static StringLiteral GITHUB_TOKEN_ENV = "GITHUB_TOKEN";
+        Optional<std::string> github_token;
+        constexpr static StringLiteral GITHUB_JOB_ENV = "GITHUB_JOB";
+        Optional<std::string> github_job;
+        constexpr static StringLiteral GITHUB_WORKFLOW_ENV = "GITHUB_WORKFLOW";
+        Optional<std::string> github_workflow;
 
         // feature flags
         constexpr static StringLiteral FEATURE_FLAGS_ENV = "VCPKG_FEATURE_FLAGS";
         constexpr static StringLiteral FEATURE_FLAGS_ARG = "feature-flags";
+
+        constexpr static StringLiteral DEPENDENCY_GRAPH_FEATURE = "dependencygraph";
+        Optional<bool> dependency_graph_feature = nullopt;
 
         constexpr static StringLiteral FEATURE_PACKAGES_SWITCH = "featurepackages";
         Optional<bool> feature_packages = nullopt;
@@ -220,6 +223,7 @@ namespace vcpkg
 
         constexpr static StringLiteral RECURSIVE_DATA_ENV = "X_VCPKG_RECURSIVE_DATA";
 
+        bool dependency_graph_enabled() const { return dependency_graph_feature.value_or(false); }
         bool binary_caching_enabled() const { return binary_caching.value_or(true); }
         bool compiler_tracking_enabled() const { return compiler_tracking.value_or(true); }
         bool registries_enabled() const { return registries_feature.value_or(true); }
@@ -231,14 +235,14 @@ namespace vcpkg
             f.compiler_tracking = compiler_tracking_enabled();
             f.registries = registries_enabled();
             f.versions = versions_enabled();
+            f.dependency_graph = dependency_graph_enabled();
             return f;
         }
         const Optional<StringLiteral>& detected_ci_environment() const { return m_detected_ci_environment; }
 
-        bool output_json() const { return json.value_or(false); }
+        const std::string& get_command() const noexcept { return command; }
 
-        std::string command;
-        std::vector<std::string> command_arguments;
+        std::vector<std::string> forwardable_arguments;
 
         ParsedArguments parse_arguments(const CommandStructure& command_structure) const;
 
@@ -259,17 +263,25 @@ namespace vcpkg
 
         const std::vector<std::string>& get_forwardable_arguments() const noexcept;
 
+        VcpkgCmdArguments(const VcpkgCmdArguments&);
+        VcpkgCmdArguments(VcpkgCmdArguments&&);
+        VcpkgCmdArguments& operator=(const VcpkgCmdArguments&);
+        VcpkgCmdArguments& operator=(VcpkgCmdArguments&&);
+        ~VcpkgCmdArguments();
+
     private:
+        VcpkgCmdArguments(CmdParser&& parser);
+
         void imbue_from_environment_impl(std::function<Optional<std::string>(ZStringView)> get_env);
 
         Optional<std::string> asset_sources_template_env; // for ASSET_SOURCES_ENV
         Optional<std::string> asset_sources_template_arg; // for ASSET_SOURCES_ARG
 
-        std::set<std::string, std::less<>> command_switches;
-        std::map<std::string, std::vector<std::string>, std::less<>> command_options;
-
-        std::vector<std::string> forwardable_arguments;
+        std::string command;
 
         Optional<StringLiteral> m_detected_ci_environment;
+
+        friend void print_usage(const CommandStructure& command_structure);
+        CmdParser parser;
     };
 }

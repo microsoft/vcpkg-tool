@@ -1,6 +1,7 @@
+#include <vcpkg/base/fwd/messages.h>
+
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/json.h>
-#include <vcpkg/base/messages.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/unicode.h>
 
@@ -16,19 +17,6 @@ using namespace vcpkg;
 
 namespace
 {
-    DECLARE_AND_REGISTER_MESSAGE(FuzzExpectedOneOf,
-                                 (),
-                                 "the list after the colon should stay the same, they're literal values",
-                                 "expected one of: utf-8, json, platform-expr");
-    DECLARE_AND_REGISTER_MESSAGE(FuzzHelpInput, (), "", "accepts input on stdin.");
-    DECLARE_AND_REGISTER_MESSAGE(FuzzHelpOptionKind, (), "", "one of {{utf-8, json, platform-expr}}");
-    DECLARE_AND_REGISTER_MESSAGE(FuzzHelpOptions, (), "", "options:");
-    DECLARE_AND_REGISTER_MESSAGE(FuzzHelpUsage, (), "", "usage: vcpkg-fuzz --kind=<kind>");
-    DECLARE_AND_REGISTER_MESSAGE(FuzzInvalidKind,
-                                 (msg::value),
-                                 "example of {value} is 'utf-8'",
-                                 "invalid kind: '{value}'");
-    DECLARE_AND_REGISTER_MESSAGE(FuzzUnknownOption, (msg::option), "", "unknown option: --{option}");
     enum class FuzzKind
     {
         None,
@@ -81,16 +69,17 @@ namespace
                     }
                     else
                     {
-                        msg::println_error(msg::format(msgFuzzInvalidKind, msg::value = value)
-                                               .append_raw('\n')
-                                               .append_indent()
-                                               .append(msgFuzzExpectedOneOf));
+                        msg::write_unlocalized_text_to_stdout(
+                            Color::error,
+                            fmt::format("error: invalid kind: '{}'\n"
+                                        "expected one of: utf-8, json, platform-expr\n",
+                                        value));
                         print_help_and_exit(true);
                     }
                 }
                 else
                 {
-                    msg::println_error(msgFuzzUnknownOption, msg::option = key);
+                    msg::write_unlocalized_text_to_stdout(Color::error, "error: unknown option: --" + key + "\n");
                     print_help_and_exit(true);
                 }
             }
@@ -116,28 +105,12 @@ namespace
         {
             auto color = invalid ? Color::error : Color::none;
 
-            auto message = msg::format(msgFuzzHelpUsage).append_raw("\n\n");
-            message.append(msgFuzzHelpInput).append_raw("\n\n");
-            message.append(msgFuzzHelpOptions).append_raw('\n');
+            StringLiteral message = "usage: vcpkg-fuzz --kind=<kind>\n\n"
+                                    "accepts input on stdin.\n\n"
+                                    "options:\n"
+                                    "  --kind=...            one of {{utf-8, json, platform-expr}}\n";
 
-            struct
-            {
-                StringLiteral option;
-                LocalizedString help;
-            } options[] = {
-                {"kind", msg::format(msgFuzzHelpOptionKind)},
-            };
-
-            for (const auto& option : options)
-            {
-                auto start_option = fmt::format("  --{}=...", option.option);
-                message.append_raw(start_option)
-                    .append_raw(std::string(30 - start_option.size(), ' '))
-                    .append(option.help)
-                    .append_raw('\n');
-            }
-
-            msg::print(color, message);
+            msg::write_unlocalized_text_to_stdout(color, message);
             if (invalid)
             {
                 Checks::exit_fail(VCPKG_LINE_INFO);
@@ -189,11 +162,11 @@ namespace
 
         if (!res1)
         {
-            Checks::exit_with_message(VCPKG_LINE_INFO, res1.error());
+            Checks::msg_exit_with_message(VCPKG_LINE_INFO, res1.error());
         }
         if (!res2)
         {
-            Checks::exit_with_message(VCPKG_LINE_INFO, res2.error());
+            Checks::msg_exit_with_message(VCPKG_LINE_INFO, res2.error());
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);
@@ -207,8 +180,6 @@ namespace vcpkg::Checks
 
 int main(int argc, char** argv)
 {
-    msg::threadunsafe_initialize_context();
-
     auto args = FuzzArgs(argc, argv);
 
     if (args.kind == FuzzKind::None)

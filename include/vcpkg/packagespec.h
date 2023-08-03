@@ -3,15 +3,14 @@
 #include <vcpkg/base/fwd/format.h>
 #include <vcpkg/base/fwd/parse.h>
 
+#include <vcpkg/fwd/packagespec.h>
+
 #include <vcpkg/base/expected.h>
-#include <vcpkg/base/format.h>
-#include <vcpkg/base/json.h>
 #include <vcpkg/base/optional.h>
-#include <vcpkg/base/view.h>
+#include <vcpkg/base/span.h>
 
 #include <vcpkg/platform-expression.h>
 #include <vcpkg/triplet.h>
-#include <vcpkg/versions.h>
 
 namespace vcpkg
 {
@@ -91,11 +90,17 @@ namespace vcpkg
         std::string m_feature;
     };
 
+    std::string format_name_only_feature_spec(StringView package_name, StringView feature_name);
+
     /// In an internal feature set, "default" represents default features and missing "core" has no semantic
     struct InternalFeatureSet : std::vector<std::string>
     {
         using std::vector<std::string>::vector;
+
+        bool empty_or_only_core() const;
     };
+
+    InternalFeatureSet internalize_feature_list(View<std::string> fs, ImplicitDefault id);
 
     ///
     /// <summary>
@@ -108,8 +113,7 @@ namespace vcpkg
         PackageSpec package_spec;
         InternalFeatureSet features;
 
-        FullPackageSpec() = default;
-        explicit FullPackageSpec(PackageSpec spec, InternalFeatureSet features)
+        FullPackageSpec(PackageSpec spec, InternalFeatureSet features)
             : package_spec(std::move(spec)), features(std::move(features))
         {
         }
@@ -124,61 +128,6 @@ namespace vcpkg
         friend bool operator!=(const FullPackageSpec& l, const FullPackageSpec& r) { return !(l == r); }
     };
 
-    struct DependencyConstraint
-    {
-        VersionConstraintKind type = VersionConstraintKind::None;
-        std::string value;
-        int port_version = 0;
-
-        friend bool operator==(const DependencyConstraint& lhs, const DependencyConstraint& rhs);
-        friend bool operator!=(const DependencyConstraint& lhs, const DependencyConstraint& rhs)
-        {
-            return !(lhs == rhs);
-        }
-
-        Optional<Version> try_get_minimum_version() const;
-    };
-
-    enum class ImplicitDefault : bool
-    {
-        NO,
-        YES,
-    };
-
-    struct Dependency
-    {
-        std::string name;
-
-        // When created through parsing a manifest, `features` will be pre-normalized (containing 'core' and 'default'
-        // as appropriate)
-        std::vector<std::string> features;
-        PlatformExpression::Expr platform;
-        DependencyConstraint constraint;
-        bool host = false;
-        Optional<bool> default_features;
-
-        Json::Object extra_info;
-
-        /// @param id adds "default" if "core" not present.
-        FullPackageSpec to_full_spec(Triplet target, Triplet host, ImplicitDefault id) const;
-
-        friend bool operator==(const Dependency& lhs, const Dependency& rhs);
-        friend bool operator!=(const Dependency& lhs, const Dependency& rhs) { return !(lhs == rhs); }
-    };
-
-    struct DependencyOverride
-    {
-        std::string name;
-        std::string version;
-        int port_version = 0;
-        VersionScheme version_scheme = VersionScheme::String;
-
-        Json::Object extra_info;
-
-        friend bool operator==(const DependencyOverride& lhs, const DependencyOverride& rhs);
-        friend bool operator!=(const DependencyOverride& lhs, const DependencyOverride& rhs) { return !(lhs == rhs); }
-    };
-
     struct ParsedQualifiedSpecifier
     {
         std::string name;
@@ -188,14 +137,16 @@ namespace vcpkg
 
         /// @param id add "default" if "core" is not present
         /// @return nullopt on success. On failure, caller should supplement returned string with more context.
-        ExpectedS<FullPackageSpec> to_full_spec(Triplet default_triplet, ImplicitDefault id) const;
+        ExpectedL<FullPackageSpec> to_full_spec(Triplet default_triplet,
+                                                bool& default_triplet_used,
+                                                ImplicitDefault id) const;
 
-        ExpectedS<PackageSpec> to_package_spec(Triplet default_triplet) const;
+        ExpectedL<PackageSpec> to_package_spec(Triplet default_triplet, bool& default_triplet_used) const;
     };
 
     Optional<std::string> parse_feature_name(ParserBase& parser);
     Optional<std::string> parse_package_name(ParserBase& parser);
-    ExpectedS<ParsedQualifiedSpecifier> parse_qualified_specifier(StringView input);
+    ExpectedL<ParsedQualifiedSpecifier> parse_qualified_specifier(StringView input);
     Optional<ParsedQualifiedSpecifier> parse_qualified_specifier(ParserBase& parser);
 }
 

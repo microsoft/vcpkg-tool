@@ -14,13 +14,11 @@ namespace vcpkg
         BinaryParagraph();
         explicit BinaryParagraph(Paragraph fields);
         BinaryParagraph(const SourceParagraph& spgh,
+                        const std::vector<std::string>& default_features,
                         Triplet triplet,
                         const std::string& abi_tag,
-                        const std::vector<FeatureSpec>& deps);
-        BinaryParagraph(const SourceParagraph& spgh,
-                        const FeatureParagraph& fpgh,
-                        Triplet triplet,
-                        const std::vector<FeatureSpec>& deps);
+                        std::vector<PackageSpec> deps);
+        BinaryParagraph(const PackageSpec& spec, const FeatureParagraph& fpgh, std::vector<PackageSpec> deps);
 
         void canonicalize();
 
@@ -43,7 +41,6 @@ namespace vcpkg
         std::vector<std::string> default_features;
         std::vector<PackageSpec> dependencies;
         std::string abi;
-        Type type = {Type::PORT};
     };
 
     bool operator==(const BinaryParagraph&, const BinaryParagraph&);
@@ -56,5 +53,5 @@ namespace vcpkg
     };
 
     void serialize(const BinaryParagraph& pgh, std::string& out_str);
-    std::string format_binary_paragraph(BinaryParagraph paragraph);
+    std::string format_binary_paragraph(const BinaryParagraph& paragraph);
 }

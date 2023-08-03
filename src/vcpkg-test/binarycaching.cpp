@@ -8,6 +8,7 @@
 #include <vcpkg/dependencies.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/sourceparagraph.h>
+#include <vcpkg/tools.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 
 #include <string>
@@ -16,32 +17,29 @@
 
 using namespace vcpkg;
 
-struct KnowNothingBinaryProvider : IBinaryProvider
+struct KnowNothingBinaryProvider : IReadBinaryProvider
 {
-    RestoreResult try_restore(const InstallPlanAction& action) const override
+    void fetch(View<const InstallPlanAction*> actions, Span<RestoreResult> out_status) const override
     {
-        CHECK(action.has_package_abi());
-        return RestoreResult::unavailable;
-    }
-
-    virtual void push_success(const InstallPlanAction& action) const override { CHECK(action.has_package_abi()); }
-
-    virtual void prefetch(View<InstallPlanAction> actions, View<CacheStatus* const> cache_status) const override
-    {
-        REQUIRE(actions.size() == cache_status.size());
-        for (size_t idx = 0; idx < cache_status.size(); ++idx)
+        REQUIRE(actions.size() == out_status.size());
+        for (size_t idx = 0; idx < out_status.size(); ++idx)
         {
-            CHECK(actions[idx].has_package_abi() == (cache_status[idx] != nullptr));
+            CHECK(actions[idx]->has_package_abi());
+            CHECK(out_status[idx] == RestoreResult::unavailable);
         }
     }
-    virtual void precheck(View<InstallPlanAction> actions, View<CacheStatus* const> cache_status) const override
+    void precheck(View<const InstallPlanAction*> actions, Span<CacheAvailability> out_status) const override
     {
-        REQUIRE(actions.size() == cache_status.size());
-        for (const auto c : cache_status)
+        REQUIRE(actions.size() == out_status.size());
+        for (const auto c : out_status)
         {
-            CHECK(c);
-            c->mark_unavailable(this);
+            REQUIRE(c == CacheAvailability::unknown);
         }
+    }
+
+    LocalizedString restored_message(size_t, std::chrono::high_resolution_clock::duration) const override
+    {
+        return LocalizedString::from_raw("Nothing");
     }
 };
 
@@ -53,8 +51,7 @@ TEST_CASE ("CacheStatus operations", "[BinaryCache]")
     CacheStatus default_constructed;
     REQUIRE(default_constructed.should_attempt_precheck(&know_nothing));
     REQUIRE(default_constructed.should_attempt_restore(&know_nothing));
-    REQUIRE(default_constructed.is_unavailable(0));
-    REQUIRE(default_constructed.is_unavailable(1));
+    REQUIRE(!default_constructed.is_unavailable(&know_nothing));
     REQUIRE(default_constructed.get_available_provider() == nullptr);
     REQUIRE(!default_constructed.is_restored());
 
@@ -62,8 +59,7 @@ TEST_CASE ("CacheStatus operations", "[BinaryCache]")
     unavailable.mark_unavailable(&know_nothing);
     REQUIRE(!unavailable.should_attempt_precheck(&know_nothing));
     REQUIRE(!unavailable.should_attempt_restore(&know_nothing));
-    REQUIRE(!unavailable.is_unavailable(0));
-    REQUIRE(unavailable.is_unavailable(1));
+    REQUIRE(unavailable.is_unavailable(&know_nothing));
     REQUIRE(unavailable.get_available_provider() == nullptr);
     REQUIRE(!unavailable.is_restored());
 
@@ -71,8 +67,7 @@ TEST_CASE ("CacheStatus operations", "[BinaryCache]")
     available.mark_available(&know_nothing);
     REQUIRE(!available.should_attempt_precheck(&know_nothing));
     REQUIRE(available.should_attempt_restore(&know_nothing));
-    REQUIRE(!available.is_unavailable(0));
-    REQUIRE(!available.is_unavailable(1));
+    REQUIRE(!available.is_unavailable(&know_nothing));
     REQUIRE(available.get_available_provider() == &know_nothing);
     REQUIRE(!available.is_restored());
 
@@ -80,64 +75,57 @@ TEST_CASE ("CacheStatus operations", "[BinaryCache]")
     restored.mark_restored();
     REQUIRE(!restored.should_attempt_precheck(&know_nothing));
     REQUIRE(!restored.should_attempt_restore(&know_nothing));
-    REQUIRE(!restored.is_unavailable(0));
-    REQUIRE(!restored.is_unavailable(1));
+    REQUIRE(!restored.is_unavailable(&know_nothing));
     REQUIRE(restored.get_available_provider() == nullptr);
     REQUIRE(restored.is_restored());
 
     // CacheStatus(const CacheStatus&);
     CacheStatus default_copy{default_constructed};
-    REQUIRE(default_copy.is_unavailable(0));
+    REQUIRE(!default_copy.is_unavailable(&know_nothing));
 
     CacheStatus unavailable_copy{unavailable};
     REQUIRE(!unavailable_copy.should_attempt_precheck(&know_nothing));
     REQUIRE(!unavailable_copy.should_attempt_restore(&know_nothing));
-    REQUIRE(!unavailable_copy.is_unavailable(0));
-    REQUIRE(unavailable_copy.is_unavailable(1));
+    REQUIRE(unavailable_copy.is_unavailable(&know_nothing));
     REQUIRE(unavailable_copy.get_available_provider() == nullptr);
     REQUIRE(!unavailable_copy.is_restored());
 
     CacheStatus available_copy{available};
     REQUIRE(!available_copy.should_attempt_precheck(&know_nothing));
     REQUIRE(available_copy.should_attempt_restore(&know_nothing));
-    REQUIRE(!available_copy.is_unavailable(0));
-    REQUIRE(!available_copy.is_unavailable(1));
+    REQUIRE(!available_copy.is_unavailable(&know_nothing));
     REQUIRE(available_copy.get_available_provider() == &know_nothing);
     REQUIRE(!available_copy.is_restored());
 
     CacheStatus restored_copy{restored};
     REQUIRE(!restored_copy.should_attempt_precheck(&know_nothing));
     REQUIRE(!restored_copy.should_attempt_restore(&know_nothing));
-    REQUIRE(!restored_copy.is_unavailable(0));
-    REQUIRE(!restored_copy.is_unavailable(1));
+    REQUIRE(!restored_copy.is_unavailable(&know_nothing));
     REQUIRE(restored_copy.get_available_provider() == nullptr);
     REQUIRE(restored_copy.is_restored());
 
     // CacheStatus(CacheStatus&&) noexcept;
     CacheStatus default_move{std::move(default_copy)};
-    REQUIRE(default_move.is_unavailable(0));
+    REQUIRE(!default_move.is_unavailable(&know_nothing));
 
     CacheStatus unavailable_move{std::move(unavailable_copy)};
     REQUIRE(!unavailable_move.should_attempt_precheck(&know_nothing));
     REQUIRE(!unavailable_move.should_attempt_restore(&know_nothing));
-    REQUIRE(!unavailable_move.is_unavailable(0));
-    REQUIRE(unavailable_move.is_unavailable(1));
+    REQUIRE(unavailable_move.is_unavailable(&know_nothing));
     REQUIRE(unavailable_move.get_available_provider() == nullptr);
     REQUIRE(!unavailable_move.is_restored());
 
     CacheStatus available_move{std::move(available_copy)};
     REQUIRE(!available_move.should_attempt_precheck(&know_nothing));
     REQUIRE(available_move.should_attempt_restore(&know_nothing));
-    REQUIRE(!available_move.is_unavailable(0));
-    REQUIRE(!available_move.is_unavailable(1));
+    REQUIRE(!available_move.is_unavailable(&know_nothing));
     REQUIRE(available_move.get_available_provider() == &know_nothing);
     REQUIRE(!available_move.is_restored());
 
     CacheStatus restored_move{std::move(restored_copy)};
     REQUIRE(!restored_move.should_attempt_precheck(&know_nothing));
     REQUIRE(!restored_move.should_attempt_restore(&know_nothing));
-    REQUIRE(!restored_move.is_unavailable(0));
-    REQUIRE(!restored_move.is_unavailable(1));
+    REQUIRE(!restored_move.is_unavailable(&know_nothing));
     REQUIRE(restored_move.get_available_provider() == nullptr);
     REQUIRE(restored_move.is_restored());
 
@@ -146,22 +134,19 @@ TEST_CASE ("CacheStatus operations", "[BinaryCache]")
     assignee = unavailable;
     REQUIRE(!assignee.should_attempt_precheck(&know_nothing));
     REQUIRE(!assignee.should_attempt_restore(&know_nothing));
-    REQUIRE(!assignee.is_unavailable(0));
-    REQUIRE(assignee.is_unavailable(1));
+    REQUIRE(assignee.is_unavailable(&know_nothing));
     REQUIRE(assignee.get_available_provider() == nullptr);
     REQUIRE(!assignee.is_restored());
     assignee = available;
     REQUIRE(!assignee.should_attempt_precheck(&know_nothing));
     REQUIRE(assignee.should_attempt_restore(&know_nothing));
-    REQUIRE(!assignee.is_unavailable(0));
-    REQUIRE(!assignee.is_unavailable(1));
+    REQUIRE(!assignee.is_unavailable(&know_nothing));
     REQUIRE(assignee.get_available_provider() == &know_nothing);
     REQUIRE(!assignee.is_restored());
     assignee = restored;
     REQUIRE(!assignee.should_attempt_precheck(&know_nothing));
     REQUIRE(!assignee.should_attempt_restore(&know_nothing));
-    REQUIRE(!assignee.is_unavailable(0));
-    REQUIRE(!assignee.is_unavailable(1));
+    REQUIRE(!assignee.is_unavailable(&know_nothing));
     REQUIRE(assignee.get_available_provider() == nullptr);
     REQUIRE(assignee.is_restored());
 
@@ -169,37 +154,22 @@ TEST_CASE ("CacheStatus operations", "[BinaryCache]")
     assignee = std::move(unavailable);
     REQUIRE(!assignee.should_attempt_precheck(&know_nothing));
     REQUIRE(!assignee.should_attempt_restore(&know_nothing));
-    REQUIRE(!assignee.is_unavailable(0));
-    REQUIRE(assignee.is_unavailable(1));
+    REQUIRE(assignee.is_unavailable(&know_nothing));
     REQUIRE(assignee.get_available_provider() == nullptr);
     REQUIRE(!assignee.is_restored());
     assignee = std::move(available);
     REQUIRE(!assignee.should_attempt_precheck(&know_nothing));
     REQUIRE(assignee.should_attempt_restore(&know_nothing));
-    REQUIRE(!assignee.is_unavailable(0));
-    REQUIRE(!assignee.is_unavailable(1));
+    REQUIRE(!assignee.is_unavailable(&know_nothing));
     REQUIRE(assignee.get_available_provider() == &know_nothing);
     REQUIRE(!assignee.is_restored());
     assignee = std::move(restored);
     REQUIRE(!assignee.should_attempt_precheck(&know_nothing));
     REQUIRE(!assignee.should_attempt_restore(&know_nothing));
-    REQUIRE(!assignee.is_unavailable(0));
-    REQUIRE(!assignee.is_unavailable(1));
+    REQUIRE(!assignee.is_unavailable(&know_nothing));
     REQUIRE(assignee.get_available_provider() == nullptr);
     REQUIRE(assignee.is_restored());
 }
-
-#define REQUIRE_EQUAL_TEXT(lhs, rhs)                                                                                   \
-    {                                                                                                                  \
-        auto lhs_lines = Strings::split((lhs), '\n');                                                                  \
-        auto rhs_lines = Strings::split((rhs), '\n');                                                                  \
-        for (size_t i = 0; i < lhs_lines.size() && i < rhs_lines.size(); ++i)                                          \
-        {                                                                                                              \
-            INFO("on line: " << i);                                                                                    \
-            REQUIRE(lhs_lines[i] == rhs_lines[i]);                                                                     \
-        }                                                                                                              \
-        REQUIRE(lhs_lines.size() == rhs_lines.size());                                                                 \
-    }
 
 TEST_CASE ("format_version_for_nugetref semver-ish", "[format_version_for_nugetref]")
 {
@@ -253,9 +223,11 @@ Build-Depends: bzip
 
     InstallPlanAction ipa(PackageSpec{"zlib2", Test::X64_WINDOWS},
                           scfl,
+                          "test_packages_root",
                           RequestType::USER_REQUESTED,
                           Test::ARM_UWP,
                           {{"a", {}}, {"b", {}}},
+                          {},
                           {});
 
     ipa.abi_info = AbiInfo{};
@@ -276,9 +248,8 @@ Build-Depends: bzip
 
     REQUIRE(ref.nupkg_filename() == "zlib2_x64-windows.1.5.0-vcpkgpackageabi.nupkg");
 
-    {
-        auto nuspec = generate_nuspec(pkgPath, ipa, ref, {});
-        std::string expected = R"(<package>
+    REQUIRE_LINES(generate_nuspec(pkgPath, ipa, "", {}),
+                  R"(<package>
   <metadata>
     <id>zlib2_x64-windows</id>
     <version>1.5.0-vcpkgpackageabi</version>
@@ -297,16 +268,14 @@ Dependencies:
 </description>
     <packageTypes><packageType name="vcpkg"/></packageTypes>
   </metadata>
-  <files><file src=")" + pkgPathWild +
-                               R"(" target=""/></files>
+  <files><file src=")" +
+                      pkgPathWild +
+                      R"(" target=""/></files>
 </package>
-)";
-        REQUIRE_EQUAL_TEXT(nuspec, expected);
-    }
+)");
 
-    {
-        auto nuspec = generate_nuspec(pkgPath, ipa, ref, {"urlvalue"});
-        std::string expected = R"(<package>
+    REQUIRE_LINES(generate_nuspec(pkgPath, ipa, "", {"urlvalue"}),
+                  R"(<package>
   <metadata>
     <id>zlib2_x64-windows</id>
     <version>1.5.0-vcpkgpackageabi</version>
@@ -326,15 +295,13 @@ Dependencies:
     <packageTypes><packageType name="vcpkg"/></packageTypes>
     <repository type="git" url="urlvalue"/>
   </metadata>
-  <files><file src=")" + pkgPathWild +
-                               R"(" target=""/></files>
+  <files><file src=")" +
+                      pkgPathWild +
+                      R"(" target=""/></files>
 </package>
-)";
-        REQUIRE_EQUAL_TEXT(nuspec, expected);
-    }
-    {
-        auto nuspec = generate_nuspec(pkgPath, ipa, ref, {"urlvalue", "branchvalue", "commitvalue"});
-        std::string expected = R"(<package>
+)");
+    REQUIRE_LINES(generate_nuspec(pkgPath, ipa, "", {"urlvalue", "branchvalue", "commitvalue"}),
+                  R"(<package>
   <metadata>
     <id>zlib2_x64-windows</id>
     <version>1.5.0-vcpkgpackageabi</version>
@@ -354,21 +321,19 @@ Dependencies:
     <packageTypes><packageType name="vcpkg"/></packageTypes>
     <repository type="git" url="urlvalue" branch="branchvalue" commit="commitvalue"/>
   </metadata>
-  <files><file src=")" + pkgPathWild +
-                               R"(" target=""/></files>
+  <files><file src=")" +
+                      pkgPathWild +
+                      R"(" target=""/></files>
 </package>
-)";
-        REQUIRE_EQUAL_TEXT(nuspec, expected);
-    }
+)");
 }
 
 TEST_CASE ("Provider nullptr checks", "[BinaryCache]")
 {
     // create a binary cache to test
-    BinaryCache uut;
-    std::vector<std::unique_ptr<IBinaryProvider>> providers;
-    providers.emplace_back(std::make_unique<KnowNothingBinaryProvider>());
-    uut.install_providers(std::move(providers));
+    BinaryProviders providers;
+    providers.read.emplace_back(std::make_unique<KnowNothingBinaryProvider>());
+    ReadOnlyBinaryCache uut(std::move(providers));
 
     // create an action plan with an action without a package ABI set
     auto pghs = Paragraphs::parse_paragraphs(R"(
@@ -384,16 +349,17 @@ Description:
     std::vector<InstallPlanAction> install_plan;
     install_plan.emplace_back(PackageSpec{"someheadpackage", Test::X64_WINDOWS},
                               scfl,
+                              "test_packages_root",
                               RequestType::USER_REQUESTED,
                               Test::ARM_UWP,
                               std::map<std::string, std::vector<FeatureSpec>>{},
-                              std::vector<LocalizedString>{});
+                              std::vector<LocalizedString>{},
+                              std::vector<std::string>{});
     InstallPlanAction& ipa_without_abi = install_plan.back();
+    ipa_without_abi.package_dir = "pkgs/someheadpackage";
 
     // test that the binary cache does the right thing. See also CHECKs etc. in KnowNothingBinaryProvider
-    uut.push_success(ipa_without_abi); // should have no effects
-    CHECK(uut.try_restore(ipa_without_abi) == RestoreResult::unavailable);
-    uut.prefetch(install_plan); // should have no effects
+    uut.fetch(install_plan); // should have no effects
 }
 
 TEST_CASE ("XmlSerializer", "[XmlSerializer]")
@@ -442,7 +408,7 @@ TEST_CASE ("XmlSerializer", "[XmlSerializer]")
 TEST_CASE ("generate_nuget_packages_config", "[generate_nuget_packages_config]")
 {
     ActionPlan plan;
-    auto packageconfig = generate_nuget_packages_config(plan);
+    auto packageconfig = generate_nuget_packages_config(plan, "");
     REQUIRE(packageconfig == R"(<?xml version="1.0" encoding="utf-8"?>
 <packages>
 </packages>
@@ -458,13 +424,18 @@ Description: a spiffy compression library wrapper
     auto maybe_scf = SourceControlFile::parse_control_file("", std::move(*pghs.get()));
     REQUIRE(maybe_scf.has_value());
     SourceControlFileAndLocation scfl{std::move(*maybe_scf.get()), Path()};
-    plan.install_actions.emplace_back();
-    plan.install_actions[0].spec = PackageSpec("zlib", Test::X64_ANDROID);
-    plan.install_actions[0].source_control_file_and_location = scfl;
+    plan.install_actions.emplace_back(PackageSpec("zlib", Test::X64_ANDROID),
+                                      scfl,
+                                      "test_packages_root",
+                                      RequestType::USER_REQUESTED,
+                                      Test::ARM64_WINDOWS,
+                                      std::map<std::string, std::vector<FeatureSpec>>{},
+                                      std::vector<LocalizedString>{},
+                                      std::vector<std::string>{});
     plan.install_actions[0].abi_info = AbiInfo{};
     plan.install_actions[0].abi_info.get()->package_abi = "packageabi";
 
-    packageconfig = generate_nuget_packages_config(plan);
+    packageconfig = generate_nuget_packages_config(plan, "");
     REQUIRE(packageconfig == R"(<?xml version="1.0" encoding="utf-8"?>
 <packages>
   <package id="zlib_x64-android" version="1.5.0-vcpkgpackageabi"/>
@@ -481,14 +452,19 @@ Description: a spiffy compression library wrapper
     auto maybe_scf2 = SourceControlFile::parse_control_file("", std::move(*pghs2.get()));
     REQUIRE(maybe_scf2.has_value());
     SourceControlFileAndLocation scfl2{std::move(*maybe_scf2.get()), Path()};
-    plan.install_actions.emplace_back();
-    plan.install_actions[1].spec = PackageSpec("zlib2", Test::X64_ANDROID);
-    plan.install_actions[1].source_control_file_and_location = scfl2;
+    plan.install_actions.emplace_back(PackageSpec("zlib2", Test::X64_ANDROID),
+                                      scfl2,
+                                      "test_packages_root",
+                                      RequestType::USER_REQUESTED,
+                                      Test::ARM64_WINDOWS,
+                                      std::map<std::string, std::vector<FeatureSpec>>{},
+                                      std::vector<LocalizedString>{},
+                                      std::vector<std::string>{});
     plan.install_actions[1].abi_info = AbiInfo{};
     plan.install_actions[1].abi_info.get()->package_abi = "packageabi2";
 
-    packageconfig = generate_nuget_packages_config(plan);
-    REQUIRE(packageconfig == R"(<?xml version="1.0" encoding="utf-8"?>
+    packageconfig = generate_nuget_packages_config(plan, "");
+    REQUIRE_LINES(packageconfig, R"(<?xml version="1.0" encoding="utf-8"?>
 <packages>
   <package id="zlib_x64-android" version="1.5.0-vcpkgpackageabi"/>
   <package id="zlib2_x64-android" version="1.52.0-vcpkgpackageabi2"/>

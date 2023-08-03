@@ -1,5 +1,7 @@
 #include <catch2/catch.hpp>
 
+#include <vcpkg/base/fwd/message_sinks.h>
+
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/util.h>
 
@@ -20,7 +22,7 @@ static Json::Object parse_json_object(StringView sv)
     // we're not testing json parsing here, so just fail on errors
     if (auto r = json.get())
     {
-        return std::move(r->first.object(VCPKG_LINE_INFO));
+        return std::move(r->value.object(VCPKG_LINE_INFO));
     }
     else
     {
@@ -108,7 +110,7 @@ TEST_CASE ("manifest construct minimum", "[manifests]")
     REQUIRE(!pgh.core_paragraph->builtin_baseline.has_value());
     REQUIRE(!pgh.core_paragraph->vcpkg_configuration.has_value());
 
-    REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_without_versioning));
+    REQUIRE(pgh.check_against_feature_flags({}, feature_flags_without_versioning));
 
     // name must be present:
     REQUIRE_FALSE(port_manifest_is_parsable(R"json({
@@ -273,31 +275,39 @@ TEST_CASE ("manifest versioning", "[manifests]")
 
 TEST_CASE ("manifest constraints hash", "[manifests]")
 {
-    auto m_pgh = test_parse_port_manifest(R"json({
-    "name": "zlib",
-    "version-string": "abcd",
-    "dependencies": [
-        {
-            "name": "d",
-            "version>=": "2018-09-01#1"
-        }
-    ]
-})json");
-    REQUIRE(m_pgh.has_value());
-    const auto& p = *m_pgh.get();
-    REQUIRE(p->core_paragraph->dependencies.at(0).constraint.value == "2018-09-01");
-    REQUIRE(p->core_paragraph->dependencies.at(0).constraint.port_version == 1);
+    {
+        auto m_pgh = test_parse_port_manifest(R"json({
+            "name": "zlib",
+            "version-string": "abcd",
+            "dependencies": [
+                {
+                    "name": "d",
+                    "version>=": "2018-09-01#1"
+                }
+            ]
+        })json");
+        REQUIRE(m_pgh.has_value());
+        const auto& p = *m_pgh.get();
+        REQUIRE(p->core_paragraph->dependencies.at(0).constraint.value == "2018-09-01");
+        REQUIRE(p->core_paragraph->dependencies.at(0).constraint.port_version == 1);
+    }
 
-    REQUIRE_FALSE(port_manifest_is_parsable(R"json({
-    "name": "zlib",
-    "version-string": "abcd",
-    "dependencies": [
-        {
-            "name": "d",
-            "version>=": "2018-09-01#0"
-        }
-    ]
-})json"));
+    {
+        auto m_pgh = test_parse_port_manifest(R"json({
+            "name": "zlib",
+            "version-string": "abcd",
+            "dependencies": [
+                {
+                    "name": "d",
+                    "version>=": "2018-09-01#0"
+                }
+            ]
+        })json");
+        REQUIRE(m_pgh.has_value());
+        const auto& p = *m_pgh.get();
+        REQUIRE(p->core_paragraph->dependencies.at(0).constraint.value == "2018-09-01");
+        REQUIRE(p->core_paragraph->dependencies.at(0).constraint.port_version == 0);
+    }
 
     REQUIRE_FALSE(port_manifest_is_parsable(R"json({
     "name": "zlib",
@@ -446,8 +456,8 @@ TEST_CASE ("manifest constraints", "[manifests]")
 
     REQUIRE(m_pgh.has_value());
     auto& pgh = **m_pgh.get();
-    REQUIRE(pgh.check_against_feature_flags({}, feature_flags_without_versioning));
-    REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_with_versioning));
+    REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_without_versioning));
+    REQUIRE(pgh.check_against_feature_flags({}, feature_flags_with_versioning));
     REQUIRE(Json::stringify(serialize_manifest(pgh), Json::JsonStyle::with_spaces(4)) == raw);
     REQUIRE(pgh.core_paragraph->dependencies.size() == 3);
     REQUIRE(pgh.core_paragraph->dependencies[0].name == "a");
@@ -485,8 +495,8 @@ TEST_CASE ("manifest builtin-baseline", "[manifests]")
 
         REQUIRE(m_pgh.has_value());
         auto& pgh = **m_pgh.get();
-        REQUIRE(pgh.check_against_feature_flags({}, feature_flags_without_versioning));
-        REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_with_versioning));
+        REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_without_versioning));
+        REQUIRE(pgh.check_against_feature_flags({}, feature_flags_with_versioning));
         REQUIRE(pgh.core_paragraph->builtin_baseline.value_or("does not have a value") ==
                 "089fa4de7dca22c67dcab631f618d5cd0697c8d4");
     }
@@ -503,8 +513,8 @@ TEST_CASE ("manifest builtin-baseline", "[manifests]")
 
         REQUIRE(m_pgh.has_value());
         auto& pgh = **m_pgh.get();
-        REQUIRE(pgh.check_against_feature_flags({}, feature_flags_without_versioning));
-        REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_with_versioning));
+        REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_without_versioning));
+        REQUIRE(pgh.check_against_feature_flags({}, feature_flags_with_versioning));
         REQUIRE(pgh.core_paragraph->builtin_baseline.value_or("does not have a value") ==
                 "089FA4DE7DCA22C67DCAB631F618D5CD0697C8D4");
     }
@@ -522,8 +532,8 @@ TEST_CASE ("manifest builtin-baseline", "[manifests]")
 
         REQUIRE(m_pgh.has_value());
         auto& pgh = **m_pgh.get();
-        REQUIRE(pgh.check_against_feature_flags({}, feature_flags_without_versioning));
-        REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_with_versioning));
+        REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_without_versioning));
+        REQUIRE(pgh.check_against_feature_flags({}, feature_flags_with_versioning));
         REQUIRE(pgh.core_paragraph->builtin_baseline.value_or("does not have a value") == "");
     }
 
@@ -561,8 +571,8 @@ TEST_CASE ("manifest builtin-baseline", "[manifests]")
         REQUIRE(pgh.core_paragraph->overrides[0].port_version == 0);
         REQUIRE(pgh.core_paragraph->builtin_baseline.value_or("does not have a value") ==
                 "089fa4de7dca22c67dcab631f618d5cd0697c8d4");
-        REQUIRE(pgh.check_against_feature_flags({}, feature_flags_without_versioning));
-        REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_with_versioning));
+        REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_without_versioning));
+        REQUIRE(pgh.check_against_feature_flags({}, feature_flags_with_versioning));
     }
 
     SECTION ("missing required baseline")
@@ -597,8 +607,8 @@ TEST_CASE ("manifest builtin-baseline", "[manifests]")
         REQUIRE(pgh.core_paragraph->overrides[0].version == "abcd");
         REQUIRE(pgh.core_paragraph->overrides[0].port_version == 0);
         REQUIRE(!pgh.core_paragraph->builtin_baseline.has_value());
-        REQUIRE(pgh.check_against_feature_flags({}, feature_flags_without_versioning));
-        REQUIRE(pgh.check_against_feature_flags({}, feature_flags_with_versioning));
+        REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_without_versioning));
+        REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_with_versioning));
     }
 }
 
@@ -672,8 +682,8 @@ TEST_CASE ("manifest overrides", "[manifests]")
         REQUIRE(pgh.core_paragraph->overrides.size() == 1);
         REQUIRE(pgh.core_paragraph->overrides[0].version_scheme == std::get<1>(v));
         REQUIRE(pgh.core_paragraph->overrides[0].version == std::get<2>(v));
-        REQUIRE(pgh.check_against_feature_flags({}, feature_flags_without_versioning));
-        REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_with_versioning));
+        REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_without_versioning));
+        REQUIRE(pgh.check_against_feature_flags({}, feature_flags_with_versioning));
     }
 
     REQUIRE_FALSE(port_manifest_is_parsable(R"json({
@@ -728,8 +738,8 @@ TEST_CASE ("manifest overrides", "[manifests]")
     REQUIRE(pgh.core_paragraph->overrides[1].name == "abcd");
     REQUIRE(pgh.core_paragraph->overrides[1].port_version == 7);
 
-    REQUIRE(pgh.check_against_feature_flags({}, feature_flags_without_versioning));
-    REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_with_versioning));
+    REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_without_versioning));
+    REQUIRE(pgh.check_against_feature_flags({}, feature_flags_with_versioning));
 }
 
 TEST_CASE ("manifest embed configuration", "[manifests]")
@@ -792,13 +802,13 @@ TEST_CASE ("manifest embed configuration", "[manifests]")
 
     REQUIRE(m_pgh.has_value());
     auto& pgh = **m_pgh.get();
-    REQUIRE(pgh.check_against_feature_flags({}, feature_flags_without_versioning));
-    REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_with_versioning));
+    REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_without_versioning));
+    REQUIRE(pgh.check_against_feature_flags({}, feature_flags_with_versioning));
 
     auto maybe_as_json = Json::parse(raw);
     REQUIRE(maybe_as_json.has_value());
     auto as_json = *maybe_as_json.get();
-    check_json_eq(Json::Value::object(serialize_manifest(pgh)), as_json.first);
+    check_json_eq(Json::Value::object(serialize_manifest(pgh)), as_json.value);
 
     REQUIRE(pgh.core_paragraph->builtin_baseline == "089fa4de7dca22c67dcab631f618d5cd0697c8d4");
     REQUIRE(pgh.core_paragraph->dependencies.size() == 3);
@@ -810,11 +820,9 @@ TEST_CASE ("manifest embed configuration", "[manifests]")
     REQUIRE(pgh.core_paragraph->dependencies[2].constraint ==
             DependencyConstraint{VersionConstraintKind::Minimum, "2018-09-01", 0});
 
-    auto maybe_config = Json::parse(raw_config, "<test config>");
-    REQUIRE(maybe_config.has_value());
-    auto config = *maybe_config.get();
-    REQUIRE(config.first.is_object());
-    auto config_obj = config.first.object(VCPKG_LINE_INFO);
+    auto config = Json::parse(raw_config, "<test config>").value(VCPKG_LINE_INFO).value;
+    REQUIRE(config.is_object());
+    auto config_obj = config.object(VCPKG_LINE_INFO);
     REQUIRE(pgh.core_paragraph->vcpkg_configuration.has_value());
     auto parsed_config_obj = *pgh.core_paragraph->vcpkg_configuration.get();
     REQUIRE(Json::stringify(parsed_config_obj) == Json::stringify(config_obj));
@@ -832,7 +840,13 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
         "builtin-baseline": "123",
         "depend-defaults": false,
         "dependencies": ["bd"],
-        "default-features": ["df"],
+        "default-features": [
+            "df",
+            {
+                "name": "zuko",
+                "platform": "windows & arm"
+            }
+        ],
         "features": {
             "$feature-level-comment": "hi",
             "$feature-level-comment2": "123456",
@@ -842,20 +856,31 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
                 "dependencies": [
                     "firebending",
                     {
-                        "name": "order.white-lotus",
-                        "features": [ "the-ancient-ways" ],
+                        "name": "order-white-lotus",
+                        "features": [
+                            "the-ancient-ways",
+                            {
+                                "name": "windows-tests",
+                                "platform": "windows"
+                            }
+                        ],
                         "platform": "!(windows & arm)"
                     },
                     {
                         "$extra": [],
                         "$my": [],
                         "name": "tea"
+                    },
+                    {
+                        "name": "z-no-defaults",
+                        "default-features": false
                     }
                 ]
             },
             "zuko": {
                 "description": ["son of the fire lord", "firebending 師父"],
-                "supports": "!(windows & arm)"
+                "supports": "!(windows & arm)",
+                "license": "MIT"
             }
         }
 })json";
@@ -888,8 +913,11 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
     REQUIRE(pgh.core_paragraph->description[0] == "d");
     REQUIRE(pgh.core_paragraph->dependencies.size() == 1);
     REQUIRE(pgh.core_paragraph->dependencies[0].name == "bd");
-    REQUIRE(pgh.core_paragraph->default_features.size() == 1);
-    REQUIRE(pgh.core_paragraph->default_features[0] == "df");
+    REQUIRE(pgh.core_paragraph->default_features.size() == 2);
+    REQUIRE(pgh.core_paragraph->default_features[0].name == "df");
+    REQUIRE(pgh.core_paragraph->default_features[0].platform.is_empty());
+    REQUIRE(pgh.core_paragraph->default_features[1].name == "zuko");
+    REQUIRE(to_string(pgh.core_paragraph->default_features[1].platform) == "windows & arm");
     REQUIRE(pgh.core_paragraph->supports_expression.is_empty());
     REQUIRE(pgh.core_paragraph->builtin_baseline == "123");
 
@@ -898,12 +926,21 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
     REQUIRE(pgh.feature_paragraphs[0]->name == "iroh");
     REQUIRE(pgh.feature_paragraphs[0]->description.size() == 1);
     REQUIRE(pgh.feature_paragraphs[0]->description[0] == "zuko's uncle");
-    REQUIRE(pgh.feature_paragraphs[0]->dependencies.size() == 3);
+    REQUIRE(pgh.feature_paragraphs[0]->dependencies.size() == 4);
     REQUIRE(pgh.feature_paragraphs[0]->dependencies[0].name == "firebending");
 
-    REQUIRE(pgh.feature_paragraphs[0]->dependencies[1].name == "order.white-lotus");
-    REQUIRE(pgh.feature_paragraphs[0]->dependencies[1].features.size() == 2); // "core" and "default"
-    REQUIRE(pgh.feature_paragraphs[0]->dependencies[1].features[0] == "the-ancient-ways");
+    REQUIRE(pgh.feature_paragraphs[0]->dependencies[1].name == "order-white-lotus");
+    REQUIRE(pgh.feature_paragraphs[0]->dependencies[1].default_features == true);
+    REQUIRE(pgh.feature_paragraphs[0]->dependencies[1].features.size() == 2);
+    REQUIRE(pgh.feature_paragraphs[0]->dependencies[1].features[0].name == "the-ancient-ways");
+    REQUIRE(pgh.feature_paragraphs[0]->dependencies[1].features[0].platform.is_empty());
+    REQUIRE(pgh.feature_paragraphs[0]->dependencies[1].features[1].name == "windows-tests");
+    REQUIRE_FALSE(pgh.feature_paragraphs[0]->dependencies[1].features[1].platform.is_empty());
+    REQUIRE(
+        pgh.feature_paragraphs[0]->dependencies[1].features[1].platform.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", ""}}));
+    REQUIRE_FALSE(pgh.feature_paragraphs[0]->dependencies[1].features[1].platform.evaluate(
+        {{"VCPKG_CMAKE_SYSTEM_NAME", "Linux"}}));
+
     REQUIRE_FALSE(pgh.feature_paragraphs[0]->dependencies[1].platform.evaluate(
         {{"VCPKG_CMAKE_SYSTEM_NAME", ""}, {"VCPKG_TARGET_ARCHITECTURE", "arm"}}));
     REQUIRE(pgh.feature_paragraphs[0]->dependencies[1].platform.evaluate(
@@ -912,6 +949,8 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
         {{"VCPKG_CMAKE_SYSTEM_NAME", "Linux"}, {"VCPKG_TARGET_ARCHITECTURE", "x86"}}));
 
     REQUIRE(pgh.feature_paragraphs[0]->dependencies[2].name == "tea");
+    REQUIRE(pgh.feature_paragraphs[0]->dependencies[3].name == "z-no-defaults");
+    REQUIRE(pgh.feature_paragraphs[0]->dependencies[3].default_features == false);
 
     REQUIRE(pgh.feature_paragraphs[1]->name == "zuko");
     REQUIRE(pgh.feature_paragraphs[1]->description.size() == 2);
@@ -922,6 +961,8 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
         {{"VCPKG_CMAKE_SYSTEM_NAME", ""}, {"VCPKG_TARGET_ARCHITECTURE", "arm"}}));
     REQUIRE(pgh.feature_paragraphs[1]->supports_expression.evaluate(
         {{"VCPKG_CMAKE_SYSTEM_NAME", ""}, {"VCPKG_TARGET_ARCHITECTURE", "x86"}}));
+    REQUIRE(pgh.feature_paragraphs[1]->license.has_value());
+    REQUIRE(*pgh.feature_paragraphs[1]->license.get() == "MIT");
 
     check_json_eq_ordered(serialize_manifest(pgh), object);
 }
@@ -1030,7 +1071,27 @@ TEST_CASE ("SourceParagraph manifest default features", "[manifests]")
     auto& pgh = **m_pgh.get();
 
     REQUIRE(pgh.core_paragraph->default_features.size() == 1);
-    REQUIRE(pgh.core_paragraph->default_features[0] == "a1");
+    REQUIRE(pgh.core_paragraph->default_features[0].name == "a1");
+    REQUIRE(pgh.core_paragraph->default_features[0].platform.is_empty());
+}
+
+TEST_CASE ("SourceParagraph manifest default feature missing name", "[manifests]")
+{
+    auto m_pgh = test_parse_port_manifest(R"json({
+        "name": "a",
+        "version-string": "1.0",
+        "default-features": [{"platform": "!windows"}]
+    })json",
+                                          PrintErrors::No);
+    REQUIRE(!m_pgh.has_value());
+
+    m_pgh = test_parse_port_manifest(R"json({
+        "name": "a",
+        "version-string": "1.0",
+        "default-features": [{"name": "", "platform": "!windows"}]
+    })json",
+                                     PrintErrors::No);
+    REQUIRE(!m_pgh.has_value());
 }
 
 TEST_CASE ("SourceParagraph manifest description paragraph", "[manifests]")
