@@ -80,6 +80,11 @@ namespace vcpkg
         // appends the names of the ports to the out parameter
         // may result in duplicated port names; make sure to Util::sort_unique_erase at the end
         virtual void append_all_port_names(std::vector<std::string>& port_names) const = 0;
+        
+        // appends the names of the ports to the out parameter if this can be known without
+        // network access.
+        // returns true if names were appended, otherwise returns false.
+        virtual bool try_append_all_port_names_no_network(std::vector<std::string>& port_names) const = 0;
 
         virtual ExpectedL<Version> get_baseline_version(StringView port_name) const = 0;
 
@@ -138,6 +143,9 @@ namespace vcpkg
 
         // Returns a sorted vector of all reachable port names in this set.
         std::vector<std::string> get_all_reachable_port_names() const;
+
+        // Returns a sorted vector of all reachable port names we can provably determine without touching the network.
+        std::vector<std::string> get_all_known_reachable_port_names_no_network() const;
 
     private:
         std::unique_ptr<RegistryImplementation> default_registry_;

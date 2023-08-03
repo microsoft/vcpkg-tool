@@ -18,7 +18,11 @@
 #include <vcpkg/versiondeserializers.h>
 #include <vcpkg/versions.h>
 
+#include <algorithm>
+#include <iterator>
 #include <map>
+#include <string>
+#include <vector>
 
 namespace
 {
@@ -214,6 +218,8 @@ namespace
 
         void append_all_port_names(std::vector<std::string>&) const override;
 
+        bool try_append_all_port_names_no_network(std::vector<std::string>& port_names) const override;
+
         ExpectedL<Version> get_baseline_version(StringView) const override;
 
     private:
@@ -372,6 +378,8 @@ namespace
 
         void append_all_port_names(std::vector<std::string>&) const override;
 
+        bool try_append_all_port_names_no_network(std::vector<std::string>& port_names) const override;
+
         ExpectedL<Version> get_baseline_version(StringView port_name) const override;
 
         ~BuiltinFilesRegistry() = default;
@@ -409,6 +417,8 @@ namespace
 
         void append_all_port_names(std::vector<std::string>&) const override;
 
+        bool try_append_all_port_names_no_network(std::vector<std::string>& port_names) const override;
+
         ExpectedL<Version> get_baseline_version(StringView port_name) const override;
 
         ~BuiltinGitRegistry() = default;
@@ -441,6 +451,11 @@ namespace
             Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgErrorRequireBaseline);
         }
 
+        bool try_append_all_port_names_no_network(std::vector<std::string>&) const override
+        {
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgErrorRequireBaseline);
+        }
+
         ExpectedL<Version> get_baseline_version(StringView) const override
         {
             Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgErrorRequireBaseline);
@@ -462,6 +477,8 @@ namespace
         std::unique_ptr<RegistryEntry> get_port_entry(StringView) const override;
 
         void append_all_port_names(std::vector<std::string>&) const override;
+
+        bool try_append_all_port_names_no_network(std::vector<std::string>& port_names) const override;
 
         ExpectedL<Version> get_baseline_version(StringView) const override;
 
@@ -622,6 +639,12 @@ namespace
             out.push_back(filename.to_string());
         }
     }
+
+    bool BuiltinFilesRegistry::try_append_all_port_names_no_network(std::vector<std::string>& port_names) const
+    {
+        append_all_port_names(port_names);
+        return true;
+    }
     // } BuiltinFilesRegistry::RegistryImplementation
 
     // { BuiltinGitRegistry::RegistryImplementation
@@ -691,6 +714,12 @@ namespace
 
         m_files_impl->append_all_port_names(out);
     }
+
+    bool BuiltinGitRegistry::try_append_all_port_names_no_network(std::vector<std::string>& port_names) const
+    {
+        append_all_port_names(port_names);
+        return true;
+    }
     // } BuiltinGitRegistry::RegistryImplementation
 
     // { FilesystemRegistry::RegistryImplementation
@@ -750,6 +779,12 @@ namespace
     void FilesystemRegistry::append_all_port_names(std::vector<std::string>& out) const
     {
         load_all_port_names_from_registry_versions(out, m_fs, m_path / registry_versions_dir_name);
+    }
+
+    bool FilesystemRegistry::try_append_all_port_names_no_network(std::vector<std::string>& port_names) const
+    {
+        append_all_port_names(port_names);
+        return true;
     }
     // } FilesystemRegistry::RegistryImplementation
 
@@ -864,6 +899,15 @@ namespace
     {
         auto versions_path = get_stale_versions_tree_path();
         load_all_port_names_from_registry_versions(out, m_paths.get_filesystem(), versions_path.p);
+    }
+
+    bool GitRegistry::try_append_all_port_names_no_network(std::vector<std::string>&) const
+    {
+        // At this time we don't record enough information to know what the last fetch for a registry is,
+        // so we can't even return what the most recent answer was.
+        //
+        // This would be fixable if we recorded LockFile in the registries cache.
+        return false;
     }
     // } GitRegistry::RegistryImplementation
 
@@ -1255,30 +1299,75 @@ namespace vcpkg
         return default_registry_ && default_registry_->kind() == BuiltinFilesRegistry::s_kind;
     }
     bool RegistrySet::has_modifications() const { return !registries_.empty() || !is_default_builtin_registry(); }
+} // namespace vcpkg
 
+namespace
+{
+    void remove_unreachable_port_names_by_patterns(std::vector<std::string>& result,
+                                                   std::size_t start_at,
+                                                   View<std::string> patterns)
+    {
+        // Remove names in result[start_at .. end] which no package pattern matches
+        result.erase(std::remove_if(result.begin() + start_at,
+                                    result.end(),
+                                    [&](const std::string& name) {
+                                        return std::none_of(
+                                            patterns.begin(), patterns.end(), [&](const std::string& pattern) {
+                                                return package_pattern_match(name, pattern) != 0;
+                                            });
+                                    }),
+                     result.end());
+    }
+} // unnamed namespace
+
+namespace vcpkg
+{
     std::vector<std::string> RegistrySet::get_all_reachable_port_names() const
     {
         std::vector<std::string> result;
         for (const auto& registry : registries())
         {
-            const auto prefix_size = result.size();
+            const auto start_at = result.size();
             registry.implementation().append_all_port_names(result);
-            const auto patterns = registry.patterns();
-            // Remove names which no package pattern matches
-            result.erase(std::remove_if(result.begin() + prefix_size,
-                                        result.end(),
-                                        [&](const std::string& name) {
-                                            return std::none_of(
-                                                patterns.begin(), patterns.end(), [&](const std::string& pattern) {
-                                                    return package_pattern_match(name, pattern) != 0;
-                                                });
-                                        }),
-                         result.end());
+            remove_unreachable_port_names_by_patterns(result, start_at, registry.patterns());
         }
 
         if (auto registry = default_registry())
         {
             registry->append_all_port_names(result);
+        }
+
+        Util::sort_unique_erase(result);
+        return result;
+    }
+
+    std::vector<std::string> RegistrySet::get_all_known_reachable_port_names_no_network() const
+    {
+        std::vector<std::string> result;
+        for (const auto& registry : registries())
+        {
+            const auto start_at = result.size();
+            const auto patterns = registry.patterns();
+            if (registry.implementation().try_append_all_port_names_no_network(result))
+            {
+                remove_unreachable_port_names_by_patterns(result, start_at, patterns);
+            }
+            else
+            {
+                // we don't know all names, but we can at least assume the exact match patterns
+                // will be names
+                std::remove_copy_if(patterns.begin(),
+                                    patterns.end(),
+                                    std::back_inserter(result),
+                                    [&](const std::string& package_pattern) -> bool {
+                                        return package_pattern.empty() || package_pattern.back() == '*';
+                                    });
+            }
+        }
+
+        if (auto registry = default_registry())
+        {
+            (void)registry->try_append_all_port_names_no_network(result);
         }
 
         Util::sort_unique_erase(result);
@@ -1291,10 +1380,9 @@ namespace vcpkg
         return load_versions_file(
                    paths.get_filesystem(), VersionDbType::Git, paths.builtin_registry_versions, port_name)
             .map([&](std::vector<VersionDbEntry>&& versions) {
-                return Util::fmap(
-                    versions, [](const VersionDbEntry& entry) -> auto{
-                        return std::make_pair(SchemedVersion{entry.scheme, entry.version}, entry.git_tree);
-                    });
+                return Util::fmap(versions, [](const VersionDbEntry& entry) -> auto {
+                    return std::make_pair(SchemedVersion{entry.scheme, entry.version}, entry.git_tree);
+                });
             });
     }
 

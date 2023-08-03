@@ -19,6 +19,8 @@ namespace
 
         void append_all_port_names(std::vector<std::string>&) const override { }
 
+        bool try_append_all_port_names_no_network(std::vector<std::string>&) const override { return true; }
+
         ExpectedL<Version> get_baseline_version(StringView) const override
         {
             return LocalizedString::from_raw("error");

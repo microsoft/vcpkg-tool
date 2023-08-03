@@ -648,9 +648,9 @@ namespace vcpkg
         {OPTION_MANIFEST_FEATURE, []() { return msg::format(msgHelpTxtOptManifestFeature); }},
     }};
 
-    static std::vector<std::string> get_all_reachable_port_names(const VcpkgPaths& paths)
+    static std::vector<std::string> get_all_known_reachable_port_names_no_network(const VcpkgPaths& paths)
     {
-        return paths.make_registry_set()->get_all_reachable_port_names();
+        return paths.make_registry_set()->get_all_known_reachable_port_names_no_network();
     }
 
     const CommandStructure Install::COMMAND_STRUCTURE = {
@@ -658,7 +658,7 @@ namespace vcpkg
         0,
         SIZE_MAX,
         {INSTALL_SWITCHES, INSTALL_SETTINGS, INSTALL_MULTISETTINGS},
-        &get_all_reachable_port_names,
+        &get_all_known_reachable_port_names_no_network,
     };
 
     // This command structure must share "critical" values (switches, number of arguments). It exists only to provide a
