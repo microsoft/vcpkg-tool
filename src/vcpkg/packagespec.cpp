@@ -61,7 +61,7 @@ namespace vcpkg
         if (!core)
         {
             ret.emplace_back("core");
-            if (implicit_default)
+            if (id == ImplicitDefault::YES)
             {
                 ret.emplace_back("default");
             }

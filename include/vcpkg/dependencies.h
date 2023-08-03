@@ -195,12 +195,6 @@ namespace vcpkg
                                    const StatusParagraphs& status_db,
                                    const CreateInstallPlanOptions& options);
 
-    enum class DependDefaults
-    {
-        NO,
-        YES,
-    };
-
     ExpectedL<ActionPlan> create_versioned_install_plan(const IVersionedPortfileProvider& vprovider,
                                                         const IBaselineProvider& bprovider,
                                                         const IOverlayProvider& oprovider,

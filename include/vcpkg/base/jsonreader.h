@@ -163,24 +163,6 @@ namespace vcpkg::Json
             }
         }
 
-        // returns whether key \in obj
-        template<class Type>
-        bool optional_object_field(const Object& obj,
-                                   StringView key,
-                                   Optional<Type>& place,
-                                   IDeserializer<Type>& visitor)
-        {
-            if (auto value = obj.get(key))
-            {
-                visit_in_key(*value, key, place.emplace(), visitor);
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-
         template<class Type>
         Optional<Type> visit(const Value& value, const IDeserializer<Type>& visitor)
         {

@@ -1123,7 +1123,7 @@ namespace vcpkg
         constexpr static StringLiteral BUILTIN_BASELINE = "builtin-baseline";
         constexpr static StringLiteral VCPKG_CONFIGURATION = "vcpkg-configuration";
 
-        virtual View<StringView> valid_fields() const override
+        virtual Span<const StringView> valid_fields() const override
         {
             static constexpr StringView u[] = {
                 NAME,
@@ -1161,8 +1161,6 @@ namespace vcpkg
                     spgh.extra_info.insert_or_replace(el.first.to_string(), el.second);
                 }
             }
-
-            static Json::StringDeserializer url_deserializer{"a url"};
 
             r.optional_object_field(obj, DEPEND_DEFAULTS, spgh.depend_defaults, Json::BooleanDeserializer::instance);
             r.optional_object_field(obj, MAINTAINERS, spgh.maintainers, Json::ParagraphDeserializer::instance);
@@ -1632,10 +1630,10 @@ namespace vcpkg
         return ret;
     }
 
-    static bool is_dependency_trivial(const Dependency& dep)
+    static bool is_dependency_trivial(const Dependency& dep, bool depend_defaults)
     {
-        return dep.features.empty() && dep.default_features && dep.platform.is_empty() && dep.extra_info.is_empty() &&
-               dep.constraint.type == VersionConstraintKind::None && !dep.host; // TODO not right
+        return dep.features.empty() && dep.default_features == depend_defaults && dep.platform.is_empty() &&
+               dep.extra_info.is_empty() && dep.constraint.type == VersionConstraintKind::None && !dep.host;
     }
 
     Json::Object serialize_manifest(const SourceControlFile& scf)
@@ -1689,7 +1687,7 @@ namespace vcpkg
             }
         };
         auto serialize_dependency = [&](Json::Array& arr, const Dependency& dep) {
-            if (is_dependency_trivial(dep))
+            if (is_dependency_trivial(dep, scf.core_paragraph->depend_defaults))
             {
                 arr.push_back(Json::Value::string(dep.name));
             }
@@ -1706,7 +1704,6 @@ namespace vcpkg
 
                 if (!dep.default_features)
                 {
-                // TODO depends default
                     dep_obj.insert(DependencyDeserializer::DEFAULT_FEATURES, Json::Value::boolean(false));
                 }
                 serialize_dependency_features(dep_obj, DependencyDeserializer::FEATURES, dep.features);

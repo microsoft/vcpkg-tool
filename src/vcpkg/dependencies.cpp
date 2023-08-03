@@ -179,8 +179,6 @@ namespace vcpkg
                 }
                 const std::vector<Dependency>* qualified_deps = &maybe_qualified_deps.value_or_exit(VCPKG_LINE_INFO);
 
-                const auto depend_defaults = scfl.source_control_file->core_paragraph->depend_defaults;
-
                 std::vector<FeatureSpec> dep_list;
                 if (auto vars = maybe_vars.get())
                 {
@@ -1336,14 +1334,14 @@ namespace vcpkg
                                   const IOverlayProvider& oprovider,
                                   const CMakeVars::CMakeVarProvider& var_provider,
                                   Triplet host_triplet,
-                                  DependDefaults depend_defaults,
+                                  ImplicitDefault implicit_default,
                                   const Path& packages_dir)
                 : m_ver_provider(ver_provider)
                 , m_base_provider(base_provider)
                 , m_o_provider(oprovider)
                 , m_var_provider(var_provider)
                 , m_host_triplet(host_triplet)
-                , m_depend_defaults(depend_defaults == DependDefaults::YES)
+                , m_implicit_default(implicit_default)
                 , m_packages_dir(packages_dir)
             {
             }
@@ -1361,7 +1359,7 @@ namespace vcpkg
             const IOverlayProvider& m_o_provider;
             const CMakeVars::CMakeVarProvider& m_var_provider;
             const Triplet m_host_triplet;
-            const bool m_depend_defaults;
+            const ImplicitDefault m_implicit_default;
             const Path m_packages_dir;
 
             struct DepSpec
@@ -1373,6 +1371,10 @@ namespace vcpkg
 
             struct PackageNodeData
             {
+                explicit PackageNodeData(ImplicitDefault implicit_default)
+                    : default_features(Util::Enum::to_bool(implicit_default))
+                {
+                }
                 // set of all scfls that have been considered
                 std::set<const SourceControlFileAndLocation*> considered;
 
@@ -1388,7 +1390,7 @@ namespace vcpkg
 
                 // The set of features that have been requested across all constraints
                 std::set<std::string> requested_features;
-                bool default_features = false;
+                bool default_features;
             };
 
             using PackageNode = std::pair<const PackageSpec, PackageNodeData>;
@@ -1413,7 +1415,7 @@ namespace vcpkg
 
             // Add an initial requirement for a package.
             // Returns a reference to the node to place additional constraints
-            Optional<PackageNode&> require_package(const PackageSpec& spec, bool depend_defaults, const std::string& origin);
+            Optional<PackageNode&> require_package(const PackageSpec& spec, const std::string& origin);
 
             void require_scfl(PackageNode& ref, const SourceControlFileAndLocation* scfl, const std::string& origin);
 
@@ -1597,13 +1599,12 @@ namespace vcpkg
         }
 
         Optional<VersionedPackageGraph::PackageNode&> VersionedPackageGraph::require_package(const PackageSpec& spec,
-        bool depends_defaults,
                                                                                              const std::string& origin)
         {
             auto it = m_graph.find(spec);
             if (it != m_graph.end())
             {
-                it->second.origins.insert(depends_defaults, origin);
+                it->second.origins.insert(origin);
                 return *it;
             }
 
@@ -1615,7 +1616,7 @@ namespace vcpkg
             const auto maybe_overlay = m_o_provider.get_control_file(spec.name());
             if (auto p_overlay = maybe_overlay.get())
             {
-                it = m_graph.emplace(spec, PackageNodeData{}).first;
+                it = m_graph.emplace(spec, PackageNodeData{m_implicit_default}).first;
                 it->second.overlay_or_override = true;
                 it->second.scfl = p_overlay;
             }
@@ -1627,7 +1628,7 @@ namespace vcpkg
                     auto maybe_scfl = m_ver_provider.get_control_file({spec.name(), over_it->second});
                     if (auto p_scfl = maybe_scfl.get())
                     {
-                        it = m_graph.emplace(spec, PackageNodeData{}).first;
+                        it = m_graph.emplace(spec, PackageNodeData{m_implicit_default}).first;
                         it->second.overlay_or_override = true;
                         it->second.scfl = p_scfl;
                     }
@@ -1645,7 +1646,7 @@ namespace vcpkg
                     });
                     if (auto p_scfl = maybe_scfl.get())
                     {
-                        it = m_graph.emplace(spec, PackageNodeData{}).first;
+                        it = m_graph.emplace(spec, PackageNodeData{m_implicit_default}).first;
                         it->second.baseline = p_scfl->schemed_version();
                         it->second.scfl = p_scfl;
                     }
@@ -2008,8 +2009,13 @@ namespace vcpkg
                                                         const PackageSpec& toplevel,
                                                         const CreateInstallPlanOptions& options)
     {
-        VersionedPackageGraph vpg(
-            provider, bprovider, oprovider, var_provider, options.host_triplet, options.packages_dir);
+        VersionedPackageGraph vpg(provider,
+                                  bprovider,
+                                  oprovider,
+                                  var_provider,
+                                  options.host_triplet,
+                                  options.implicit_default,
+                                  options.packages_dir);
         for (auto&& o : overrides)
         {
             vpg.add_override(o.name, {o.version, o.port_version});
