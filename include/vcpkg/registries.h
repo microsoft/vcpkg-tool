@@ -80,7 +80,7 @@ namespace vcpkg
         // appends the names of the ports to the out parameter
         // may result in duplicated port names; make sure to Util::sort_unique_erase at the end
         virtual void append_all_port_names(std::vector<std::string>& port_names) const = 0;
-        
+
         // appends the names of the ports to the out parameter if this can be known without
         // network access.
         // returns true if names were appended, otherwise returns false.
