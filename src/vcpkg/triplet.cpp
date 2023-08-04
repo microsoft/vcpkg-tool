@@ -84,6 +84,14 @@ namespace vcpkg
         {
             return CPUArchitecture::RISCV64;
         }
+        if (Strings::starts_with(this->canonical_name(), "loongarch32-"))
+        {
+            return CPUArchitecture::LOONGARCH32;
+        }
+        if (Strings::starts_with(this->canonical_name(), "loongarch64-"))
+        {
+            return CPUArchitecture::LOONGARCH64;
+        }
 
         return nullopt;
     }
