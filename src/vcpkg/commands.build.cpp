@@ -1329,7 +1329,6 @@ namespace vcpkg
         {
             for (const FeatureSpec& fspec : kv.second)
             {
-                if (fspec.feature() == "default") continue;
                 if (!status_db.is_installed(fspec) && !(fspec.port() == name && fspec.triplet() == spec.triplet()))
                 {
                     missing_fspecs.emplace_back(fspec);
