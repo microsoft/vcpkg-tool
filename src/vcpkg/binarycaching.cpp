@@ -379,6 +379,8 @@ namespace
             FolderSettings folder_settings;
             std::priority_queue<FileData, std::vector<FileData>, std::greater<FileData>> file_data;
             int64_t current_size = 0;
+            WriteFilePointer own_sync_file;
+            std::map<std::string, uint64_t> other_sync_files; // Mapping from id to bytes read
         };
         mutable std::vector<FileCacheData> file_cache_data;
 
@@ -390,100 +392,118 @@ namespace
             fmt::print("{:<25}{:>20}\n", key, value);
         }
 
+        Optional<FolderSettings> get_folder_settings(const Path& archives_root_dir, MessageSink& msg_sink)
+        {
+            Optional<FolderSettings> maybe_settings;
+            auto settings_path = archives_root_dir / "settings.json";
+            if (m_fs.exists(settings_path, IgnoreErrors{}))
+            {
+                std::error_code ec;
+                auto obj = Json::parse_file(m_fs, settings_path, ec);
+                if (ec)
+                {
+                    msg_sink.println_error(msgFailedToReadFile, msg::path = settings_path, msg::error_msg = ec);
+                }
+                else if (!obj.has_value())
+                {
+                    msg_sink.println_error(msg::format(msgFailedToParseJson, msg::path = settings_path)
+                                               .append_raw('\n')
+                                               .append_raw(obj.error()->to_string()));
+                }
+                else
+                {
+                    FolderSettingsDeserializer instance;
+                    Json::Reader reader;
+                    maybe_settings = reader.visit(obj.get()->value, instance);
+                    if (!reader.warnings().empty())
+                    {
+                        auto warning_message = msg::format(msgParserWarnings, msg::path = settings_path);
+                        for (auto&& warning : reader.warnings())
+                            warning_message.append_raw('\n').append(warning);
+                        msg_sink.println_warning(warning_message);
+                    }
+                    if (maybe_settings.has_value())
+                    {
+                        Debug::println("Read settings file ", settings_path);
+                    }
+                    else
+                    {
+                        auto error_msg = msg::format(msgFailedToParseFileCacheSettings, msg::path = settings_path);
+                        for (auto&& error : reader.errors())
+                            error_msg.append_raw('\n').append(error);
+                        msg_sink.println_error(error_msg);
+                    }
+                }
+            }
+            else
+            {
+                maybe_settings.emplace();
+                maybe_settings.get()->delete_policy =
+                    FolderSettings::DeletePolicy::OldestModificationDateUpdateOnAccess;
+                const auto write_settings_file = [&]() {
+                    auto obj = FolderSettingsDeserializer::serialize(*maybe_settings.get());
+                    obj.insert("$schema",
+                               "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/"
+                               "file-cache-settings.schema.json");
+                    obj.sort_keys();
+                    std::error_code ec;
+                    m_fs.create_directories(archives_root_dir, IgnoreErrors{});
+                    m_fs.write_contents(settings_path, Json::stringify(obj), ec);
+                    if (ec)
+                    {
+                        msg::println_error(msgFailedToWriteFile, msg::path = settings_path, msg::error_msg = ec);
+                    }
+                    return ec;
+                };
+                if (!write_settings_file())
+                {
+                    using namespace std::chrono;
+                    auto old_access_time = m_fs.last_access_time_now() - duration_cast<nanoseconds>(30 * 24h).count();
+                    m_fs.last_access_time(settings_path, old_access_time, VCPKG_LINE_INFO);
+                    m_fs.read_contents(settings_path, VCPKG_LINE_INFO);
+                    if (m_fs.last_access_time(settings_path, VCPKG_LINE_INFO) > old_access_time)
+                    {
+                        maybe_settings.get()->delete_policy = FolderSettings::DeletePolicy::OldestAccessDate;
+                        write_settings_file();
+                    }
+                }
+            }
+            return maybe_settings;
+        }
+
+        WriteFilePointer get_own_sync_file(const Path& archives_root_dir)
+        {
+            while (true)
+            {
+                Path path = archives_root_dir / fmt::format("{}", rand());
+                std::error_code ec;
+                WriteFilePointer wp(path, Append::NO, Overwrite::NO, ec);
+                if (!ec)
+                {
+                    return wp;
+                }
+            }
+        }
+
         size_t push_success(const BinaryPackageWriteInfo& request, MessageSink& msg_sink) override
         {
             const auto& zip_path = request.zip_path.value_or_exit(VCPKG_LINE_INFO);
             const auto archive_subpath = files_archive_subpath(request.package_abi);
 
             size_t index = 0;
-            int64_t file_size = -1;
+            uint64_t file_size = m_fs.file_size(zip_path, IgnoreErrors{});
             size_t count_stored = 0;
             for (const auto& archives_root_dir : m_dirs)
             {
                 if (index >= file_cache_data.size())
                 {
-                    Optional<FolderSettings> maybe_settings;
-                    auto settings_path = archives_root_dir / "settings.json";
-                    if (m_fs.exists(settings_path, IgnoreErrors{}))
-                    {
-                        std::error_code ec;
-                        auto obj = Json::parse_file(m_fs, settings_path, ec);
-                        if (ec)
-                        {
-                            msg_sink.println_error(msgFailedToReadFile, msg::path = settings_path, msg::error_msg = ec);
-                        }
-                        else if (!obj.has_value())
-                        {
-                            msg_sink.println_error(msg::format(msgFailedToParseJson, msg::path = settings_path)
-                                                       .append_raw('\n')
-                                                       .append_raw(obj.error()->to_string()));
-                        }
-                        else
-                        {
-                            FolderSettingsDeserializer instance;
-                            Json::Reader reader;
-                            maybe_settings = reader.visit(obj.get()->value, instance);
-                            if (!reader.warnings().empty())
-                            {
-                                auto warning_message = msg::format(msgParserWarnings, msg::path = settings_path);
-                                for (auto&& warning : reader.warnings())
-                                    warning_message.append_raw('\n').append(warning);
-                                msg_sink.println_warning(warning_message);
-                            }
-                            if (maybe_settings.has_value())
-                            {
-                                Debug::println("Read settings file ", settings_path);
-                            }
-                            else
-                            {
-                                auto error_msg =
-                                    msg::format(msgFailedToParseFileCacheSettings, msg::path = settings_path);
-                                for (auto&& error : reader.errors())
-                                    error_msg.append_raw('\n').append(error);
-                                msg_sink.println_error(error_msg);
-                            }
-                        }
-                    }
-                    else
-                    {
-                        maybe_settings.emplace();
-                        maybe_settings.get()->delete_policy =
-                            FolderSettings::DeletePolicy::OldestModificationDateUpdateOnAccess;
-                        const auto write_settings_file = [&]() {
-                            auto obj = FolderSettingsDeserializer::serialize(*maybe_settings.get());
-                            obj.insert("$schema",
-                                       "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/"
-                                       "file-cache-settings.schema.json");
-                            obj.sort_keys();
-                            std::error_code ec;
-                            m_fs.create_directories(archives_root_dir, IgnoreErrors{});
-                            m_fs.write_contents(settings_path, Json::stringify(obj), ec);
-                            if (ec)
-                            {
-                                msg::println_error(
-                                    msgFailedToWriteFile, msg::path = settings_path, msg::error_msg = ec);
-                            }
-                            return ec;
-                        };
-                        if (!write_settings_file())
-                        {
-                            using namespace std::chrono;
-                            auto old_access_time =
-                                m_fs.last_access_time_now() - duration_cast<nanoseconds>(30 * 24h).count();
-                            m_fs.last_access_time(settings_path, old_access_time, VCPKG_LINE_INFO);
-                            m_fs.read_contents(settings_path, VCPKG_LINE_INFO);
-                            if (m_fs.last_access_time(settings_path, VCPKG_LINE_INFO) > old_access_time)
-                            {
-                                maybe_settings.get()->delete_policy = FolderSettings::DeletePolicy::OldestAccessDate;
-                                write_settings_file();
-                            }
-                        }
-                    }
-
-                    file_cache_data.push_back(FileCacheData{maybe_settings.value_or({})});
+                    file_cache_data.push_back(
+                        FileCacheData{get_folder_settings(archives_root_dir, msg_sink).value_or({})});
+                    file_cache_data.back().own_sync_file = get_own_sync_file(archives_root_dir);
                     if (file_cache_data.back().folder_settings.delete_policy != FolderSettings::DeletePolicy::None)
                     {
                         auto& settings = file_cache_data.back().folder_settings;
+                        auto settings_path = archives_root_dir / "settings.json";
                         for (auto& path : m_fs.get_regular_files_recursive(archives_root_dir, IgnoreErrors{}))
                         {
                             if (path.filename() == ".DS_Store" || path == settings_path)
@@ -500,13 +520,13 @@ namespace
                 }
                 ++index;
                 auto& cache = file_cache_data.back();
+                {
+                    auto line = fmt::format("{};{}\n", request.package_abi, file_size);
+                    cache.own_sync_file.write(line.data(), 1, line.size());
+                }
                 auto& settings = cache.folder_settings;
                 if (settings.delete_policy != FolderSettings::DeletePolicy::None)
                 {
-                    if (file_size == -1)
-                    {
-                        file_size = m_fs.file_size(zip_path, IgnoreErrors{});
-                    }
                     const auto oldest_date =
                         (settings.max_age.count() ? settings.filetime_now(m_fs) - settings.max_age.count() : 0);
                     int64_t max_size_in_bytes =
@@ -579,6 +599,9 @@ namespace
                 else
                 {
                     count_stored++;
+                    auto last_time = settings.last_time(m_fs, archive_path, IgnoreErrors{});
+                    file_cache_data.back().file_data.push(FileData{archive_path, file_size, last_time});
+                    file_cache_data.back().current_size += file_size;
                 }
             }
             return count_stored;
