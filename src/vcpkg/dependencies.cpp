@@ -1371,10 +1371,6 @@ namespace vcpkg
 
             struct PackageNodeData
             {
-                explicit PackageNodeData(ImplicitDefault implicit_default)
-                    : default_features(Util::Enum::to_bool(implicit_default))
-                {
-                }
                 // set of all scfls that have been considered
                 std::set<const SourceControlFileAndLocation*> considered;
 
@@ -1390,7 +1386,7 @@ namespace vcpkg
 
                 // The set of features that have been requested across all constraints
                 std::set<std::string> requested_features;
-                bool default_features;
+                bool default_features = false;
             };
 
             using PackageNode = std::pair<const PackageSpec, PackageNodeData>;
@@ -1616,7 +1612,7 @@ namespace vcpkg
             const auto maybe_overlay = m_o_provider.get_control_file(spec.name());
             if (auto p_overlay = maybe_overlay.get())
             {
-                it = m_graph.emplace(spec, PackageNodeData{m_implicit_default}).first;
+                it = m_graph.emplace(spec, PackageNodeData{}).first;
                 it->second.overlay_or_override = true;
                 it->second.scfl = p_overlay;
             }
@@ -1628,7 +1624,7 @@ namespace vcpkg
                     auto maybe_scfl = m_ver_provider.get_control_file({spec.name(), over_it->second});
                     if (auto p_scfl = maybe_scfl.get())
                     {
-                        it = m_graph.emplace(spec, PackageNodeData{m_implicit_default}).first;
+                        it = m_graph.emplace(spec, PackageNodeData{}).first;
                         it->second.overlay_or_override = true;
                         it->second.scfl = p_scfl;
                     }
@@ -1646,7 +1642,7 @@ namespace vcpkg
                     });
                     if (auto p_scfl = maybe_scfl.get())
                     {
-                        it = m_graph.emplace(spec, PackageNodeData{m_implicit_default}).first;
+                        it = m_graph.emplace(spec, PackageNodeData{}).first;
                         it->second.baseline = p_scfl->schemed_version();
                         it->second.scfl = p_scfl;
                     }
@@ -1660,8 +1656,10 @@ namespace vcpkg
             }
 
             // Implicit defaults are disabled if spec has been mentioned at top-level.
-            // Note that if top-level doesn't also mark that reference as `[core]`, defaults will be re-engaged.
-            it->second.default_features = !Util::Maps::contains(m_user_requested, spec);
+            // Note that if top-level doesn't also mark that reference as `[core]` and ImplicitDefault::YES, defaults
+            // will be re-engaged.
+            it->second.default_features =
+                (m_implicit_default == ImplicitDefault::YES) && !Util::Maps::contains(m_user_requested, spec);
             it->second.requested_features.insert("core");
 
             require_scfl(*it, it->second.scfl, origin);

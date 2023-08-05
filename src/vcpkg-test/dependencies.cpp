@@ -105,6 +105,7 @@ static void check_name_and_features(const InstallPlanAction& ipa,
                                     std::initializer_list<StringLiteral> features)
 {
     CHECK(ipa.spec.name() == name);
+    INFO("spec.name: " << name);
     CHECK(ipa.source_control_file_and_location.has_value());
     {
         INFO("ipa.feature_list = [" << Strings::join(", ", ipa.feature_list) << "]");
@@ -1698,80 +1699,44 @@ TEST_CASE ("version install default features", "[versionplan]")
 
 TEST_CASE ("version install depend-defaults", "[versionplan]")
 {
+    // Dependencies:
+    // b has default feature '0'
+    // a -> b[core]
+    // c -> b[default]
+
     MockOverlayProvider op;
     auto& a_scf = op.emplace("a");
-    a_scf.source_control_file->core_paragraph->dependencies.push_back(Dependency{"b"});
+    a_scf.source_control_file->core_paragraph->dependencies.push_back(CoreDependency{"b"});
     auto& b_scf = op.emplace("b");
     b_scf.source_control_file->core_paragraph->default_features.emplace_back("0");
     b_scf.source_control_file->feature_paragraphs.emplace_back(make_fpgh("0"));
-    auto& c_scf = op.emplace("c");
-    auto& c0 = c_scf.source_control_file->feature_paragraphs.emplace_back(make_fpgh("0"));
-    c0->dependencies.push_back(Dependency{"b"});
+    auto& d_scf = op.emplace("c");
+    d_scf.source_control_file->core_paragraph->dependencies.push_back(Dependency{"b"});
 
-    auto& d_scf = op.emplace("d");
-    d_scf.source_control_file->core_paragraph->dependencies.push_back(CoreDependency{"b"});
-
-    auto& e_scf = op.emplace("e");
-    e_scf.source_control_file->core_paragraph->dependencies.push_back(Dependency{"b"});
-    e_scf.source_control_file->core_paragraph->depend_defaults = false;
-
-    SECTION ("toplevel depend-defaults true")
+    SECTION ("toplevel ImplicitDefault::YES")
     {
-        auto install_plan = create_versioned_install_plan(op, {Dependency{"b"}}, toplevel_spec(), ImplicitDefault::YES)
+        auto install_plan = create_versioned_install_plan(op, {Dependency{"a"}}, toplevel_spec(), ImplicitDefault::YES)
                                 .value_or_exit(VCPKG_LINE_INFO);
-        REQUIRE(install_plan.size() == 1);
+        REQUIRE(install_plan.size() == 2);
         check_name_and_features(install_plan.install_actions[0], "b", {"0"});
+        check_name_and_features(install_plan.install_actions[1], "a", {});
     }
 
-    SECTION ("toplevel depend-defaults false")
+    SECTION ("toplevel ImplicitDefault::NO")
     {
-        auto install_plan = create_versioned_install_plan(op, {Dependency{"b"}}, toplevel_spec(), ImplicitDefault::NO)
+        auto install_plan = create_versioned_install_plan(op, {Dependency{"a"}}, toplevel_spec(), ImplicitDefault::NO)
                                 .value_or_exit(VCPKG_LINE_INFO);
-        REQUIRE(install_plan.size() == 1);
-        check_name_and_features(install_plan.install_actions[0], "b", {});
+        REQUIRE(install_plan.size() == 2);
 
-        // a -> b[default], so depend-defaults should not suppress it
-        install_plan = create_versioned_install_plan(op, {Dependency{"a"}}, toplevel_spec(), ImplicitDefault::NO)
+        check_name_and_features(install_plan.install_actions[0], "b", {});
+        check_name_and_features(install_plan.install_actions[1], "a", {});
+
+        // c -> b[default], so depend-defaults should not suppress it
+        install_plan = create_versioned_install_plan(op, {Dependency{"c"}}, toplevel_spec(), ImplicitDefault::NO)
                            .value_or_exit(VCPKG_LINE_INFO);
         REQUIRE(install_plan.size() == 2);
         check_name_and_features(install_plan.install_actions[0], "b", {"0"});
-    }
-
-    SECTION ("toplevel depend-defaults true (transitive)")
-    {
-        auto install_plan = create_versioned_install_plan(op, {Dependency{"d"}}, toplevel_spec(), ImplicitDefault::YES)
-                                .value_or_exit(VCPKG_LINE_INFO);
-        REQUIRE(install_plan.size() == 2);
-        check_name_and_features(install_plan.install_actions[0], "b", {"0"});
-    }
-
-    SECTION ("toplevel depend-defaults false (transitive)")
-    {
-        auto install_plan = create_versioned_install_plan(op, {Dependency{"d"}}, toplevel_spec(), ImplicitDefault::NO)
-                                .value_or_exit(VCPKG_LINE_INFO);
-        REQUIRE(install_plan.size() == 2);
-        check_name_and_features(install_plan.install_actions[0], "b", {});
-    }
-
-    SECTION ("transitive depend-defaults false")
-    {
-        SECTION ("toplevel false")
-        {
-            auto install_plan =
-                create_versioned_install_plan(op, {Dependency{"e"}}, toplevel_spec(), ImplicitDefault::NO)
-                    .value_or_exit(VCPKG_LINE_INFO);
-            REQUIRE(install_plan.size() == 2);
-            check_name_and_features(install_plan.install_actions[0], "b", {});
-        }
-
-        SECTION ("toplevel core")
-        {
-            auto install_plan = create_versioned_install_plan(
-                                    op, {Dependency{"e"}, CoreDependency{"b"}}, toplevel_spec(), ImplicitDefault::YES)
-                                    .value_or_exit(VCPKG_LINE_INFO);
-            REQUIRE(install_plan.size() == 2);
-            check_name_and_features(install_plan.install_actions[0], "b", {});
-        }
+        check_name_and_features(install_plan.install_actions[1], "c", {});
     }
 }
 
