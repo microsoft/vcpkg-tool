@@ -370,7 +370,7 @@ namespace
         struct FileData
         {
             Path path;
-            int64_t file_size;
+            uint64_t file_size;
             int64_t time;
             bool operator>(const FileData& other) const { return time > other.time; }
         };

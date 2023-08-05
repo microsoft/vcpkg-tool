@@ -298,9 +298,6 @@ namespace vcpkg
         virtual space_info space(const Path& target, std::error_code& ec) const = 0;
         space_info space(const Path& target, LineInfo li) const noexcept;
 
-        virtual int64_t file_size(const Path& target, std::error_code& ec) const = 0;
-        int64_t file_size(const Path& target, LineInfo li) const noexcept;
-
         using ReadOnlyFilesystem::current_path;
         virtual void current_path(const Path& new_current_path, std::error_code&) const = 0;
         void current_path(const Path& new_current_path, LineInfo li) const;
