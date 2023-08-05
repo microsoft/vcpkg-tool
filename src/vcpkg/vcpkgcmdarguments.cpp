@@ -222,6 +222,7 @@ namespace vcpkg
             {VcpkgCmdArguments::COMPILER_TRACKING_FEATURE, args.compiler_tracking},
             {VcpkgCmdArguments::REGISTRIES_FEATURE, args.registries_feature},
             {VcpkgCmdArguments::VERSIONS_FEATURE, args.versions_feature},
+            {VcpkgCmdArguments::DEPENDENCY_GRAPH_FEATURE, args.dependency_graph_feature},
         };
 
         for (const auto& desc : flag_descriptions)
@@ -493,6 +494,12 @@ namespace vcpkg
         from_env(get_env, GITHUB_SERVER_URL_ENV, github_server_url);
         from_env(get_env, GITHUB_REF_ENV, github_ref);
         from_env(get_env, GITHUB_SHA_ENV, github_sha);
+        from_env(get_env, GITHUB_JOB_ENV, github_job);
+        from_env(get_env, GITHUB_REPOSITORY_ID, github_repository_id);
+        from_env(get_env, GITHUB_REPOSITORY_OWNER_ID, github_repository_owner_id);
+        from_env(get_env, GITHUB_RUN_ID_ENV, github_run_id);
+        from_env(get_env, GITHUB_TOKEN_ENV, github_token);
+        from_env(get_env, GITHUB_WORKFLOW_ENV, github_workflow);
 
         // detect whether we are running in a CI environment
         for (auto&& ci_env_var : KNOWN_CI_VARIABLES)
@@ -657,6 +664,7 @@ namespace vcpkg
             {COMPILER_TRACKING_FEATURE, compiler_tracking},
             {REGISTRIES_FEATURE, registries_feature},
             {VERSIONS_FEATURE, versions_feature},
+            {DEPENDENCY_GRAPH_FEATURE, dependency_graph_feature},
         };
 
         for (const auto& flag : flags)
@@ -677,6 +685,7 @@ namespace vcpkg
         MetricsSubmission submission;
         submission.track_bool(BoolMetric::FeatureFlagBinaryCaching, binary_caching_enabled());
         submission.track_bool(BoolMetric::FeatureFlagCompilerTracking, compiler_tracking_enabled());
+        submission.track_bool(BoolMetric::FeatureFlagDependencyGraph, dependency_graph_enabled());
         submission.track_bool(BoolMetric::FeatureFlagRegistries, registries_enabled());
         submission.track_bool(BoolMetric::FeatureFlagVersions, versions_enabled());
         get_global_metrics_collector().track_submission(std::move(submission));
@@ -684,11 +693,26 @@ namespace vcpkg
 
     void VcpkgCmdArguments::track_environment_metrics() const
     {
+        MetricsSubmission submission;
         if (auto ci_env = m_detected_ci_environment.get())
         {
             Debug::println("Detected CI environment: ", *ci_env);
-            get_global_metrics_collector().track_string(StringMetric::DetectedCiEnvironment, *ci_env);
+            submission.track_string(StringMetric::DetectedCiEnvironment, *ci_env);
         }
+
+#if 0  // CI system telemetry pending privacy review
+        if (auto repo_id = github_repository_id.get())
+        {
+            submission.track_string(StringMetric::CiProjectId, *repo_id);
+        }
+
+        if (auto owner_id = github_repository_owner_id.get())
+        {
+            submission.track_string(StringMetric::CiOwnerId, *owner_id);
+        }
+#endif // ^^^ telemetry disabled
+
+        get_global_metrics_collector().track_submission(std::move(submission));
     }
 
     Optional<std::string> VcpkgCmdArguments::asset_sources_template() const
@@ -758,10 +782,21 @@ namespace vcpkg
     constexpr StringLiteral VcpkgCmdArguments::ASSET_SOURCES_ENV;
     constexpr StringLiteral VcpkgCmdArguments::ASSET_SOURCES_ARG;
 
+    constexpr StringLiteral VcpkgCmdArguments::GITHUB_JOB_ENV;
+    constexpr StringLiteral VcpkgCmdArguments::GITHUB_RUN_ID_ENV;
+    constexpr StringLiteral VcpkgCmdArguments::GITHUB_REPOSITORY_ENV;
+    constexpr StringLiteral VcpkgCmdArguments::GITHUB_REF_ENV;
+    constexpr StringLiteral VcpkgCmdArguments::GITHUB_SHA_ENV;
+    constexpr StringLiteral VcpkgCmdArguments::GITHUB_REPOSITORY_ID;
+    constexpr StringLiteral VcpkgCmdArguments::GITHUB_REPOSITORY_OWNER_ID;
+    constexpr StringLiteral VcpkgCmdArguments::GITHUB_TOKEN_ENV;
+    constexpr StringLiteral VcpkgCmdArguments::GITHUB_WORKFLOW_ENV;
+
     constexpr StringLiteral VcpkgCmdArguments::FEATURE_FLAGS_ENV;
     constexpr StringLiteral VcpkgCmdArguments::FEATURE_FLAGS_ARG;
 
     constexpr StringLiteral VcpkgCmdArguments::FEATURE_PACKAGES_SWITCH;
+    constexpr StringLiteral VcpkgCmdArguments::DEPENDENCY_GRAPH_FEATURE;
     constexpr StringLiteral VcpkgCmdArguments::BINARY_CACHING_FEATURE;
     constexpr StringLiteral VcpkgCmdArguments::BINARY_CACHING_SWITCH;
     constexpr StringLiteral VcpkgCmdArguments::COMPILER_TRACKING_FEATURE;

@@ -136,11 +136,8 @@ namespace
             return command_function->function(args, paths);
         }
 
-        Triplet default_triplet = vcpkg::default_triplet(args);
-        check_triplet(default_triplet, paths);
-        Triplet host_triplet = vcpkg::default_host_triplet(args);
-        check_triplet(host_triplet, paths);
-
+        Triplet default_triplet = vcpkg::default_triplet(args, paths.get_triplet_db());
+        Triplet host_triplet = vcpkg::default_host_triplet(args, paths.get_triplet_db());
         if (const auto command_function = find_command(Commands::triplet_commands))
         {
             get_global_metrics_collector().track_string(StringMetric::CommandName, command_function->name);

@@ -12,6 +12,7 @@
 
 #include <ctime>
 #include <future>
+#include <set>
 
 #if defined(__APPLE__)
 extern char** environ;
@@ -49,6 +50,8 @@ namespace
                                  msg::exit_code = error_value,
                                  msg::error_msg = std::system_category().message(static_cast<int>(error_value)));
     }
+
+    static std::atomic_int32_t debug_id_counter{1000};
 } // unnamed namespace
 
 namespace vcpkg
@@ -249,9 +252,9 @@ namespace vcpkg
 #endif
     }
 
-    Optional<ProcessStat> try_parse_process_stat_file(StringView text, StringView origin)
+    Optional<ProcessStat> try_parse_process_stat_file(const FileContents& contents)
     {
-        ParserBase p(text, origin);
+        ParserBase p(contents.content, contents.origin);
 
         p.match_while(ParserBase::is_ascii_digit); // pid %d (ignored)
 
@@ -293,61 +296,115 @@ namespace vcpkg
         }
         return nullopt;
     }
+} // namespace vcpkg
 
+namespace
+{
+#if defined(_WIN32)
+    struct ToolHelpProcessSnapshot
+    {
+        ToolHelpProcessSnapshot() noexcept : snapshot(CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0)) { }
+        ToolHelpProcessSnapshot(const ToolHelpProcessSnapshot&) = delete;
+        ToolHelpProcessSnapshot& operator=(const ToolHelpProcessSnapshot&) = delete;
+        ~ToolHelpProcessSnapshot()
+        {
+            if (snapshot != INVALID_HANDLE_VALUE)
+            {
+                CloseHandle(snapshot);
+            }
+        }
+        explicit operator bool() const noexcept { return snapshot != INVALID_HANDLE_VALUE; }
+
+        BOOL Process32First(PPROCESSENTRY32W entry) const noexcept { return Process32FirstW(snapshot, entry); }
+        BOOL Process32Next(PPROCESSENTRY32W entry) const noexcept { return Process32NextW(snapshot, entry); }
+
+    private:
+        HANDLE snapshot;
+    };
+#elif defined(__linux__)
+    Optional<ProcessStat> try_get_process_stat_by_pid(int pid)
+    {
+        auto filepath = fmt::format("/proc/{}/stat", pid);
+        auto maybe_contents = real_filesystem.try_read_contents(filepath);
+        if (auto contents = maybe_contents.get())
+        {
+            return try_parse_process_stat_file(*contents);
+        }
+
+        return nullopt;
+    }
+#endif // ^^^ __linux__
+} // unnamed namespace
+
+namespace vcpkg
+{
     void get_parent_process_list(std::vector<std::string>& ret)
     {
         ret.clear();
 #if defined(_WIN32)
         // Enumerate all processes in the system snapshot.
-        auto snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-        if (snapshot == INVALID_HANDLE_VALUE) return;
-
         std::map<DWORD, DWORD> pid_ppid_map;
         std::map<DWORD, std::string> pid_exe_path_map;
+        std::set<DWORD> seen_pids;
 
-        PROCESSENTRY32W entry;
-        memset(&entry, 0, sizeof(entry));
+        PROCESSENTRY32W entry{};
         entry.dwSize = sizeof(entry);
-        if (Process32FirstW(snapshot, &entry))
         {
-            do
+            ToolHelpProcessSnapshot snapshot;
+            if (!snapshot)
             {
-                pid_ppid_map.emplace(entry.th32ProcessID, entry.th32ParentProcessID);
-                pid_exe_path_map.emplace(entry.th32ProcessID, Strings::to_utf8(entry.szExeFile));
-            } while (Process32NextW(snapshot, &entry));
-        }
-        CloseHandle(snapshot);
+                return;
+            }
+
+            if (snapshot.Process32First(&entry))
+            {
+                do
+                {
+                    pid_ppid_map.emplace(entry.th32ProcessID, entry.th32ParentProcessID);
+                    pid_exe_path_map.emplace(entry.th32ProcessID, Strings::to_utf8(entry.szExeFile));
+                } while (snapshot.Process32Next(&entry));
+            }
+        } // destroy snapshot
 
         // Find hierarchy of current process
-        auto it = pid_ppid_map.find(GetCurrentProcessId());
-        if (it == pid_ppid_map.end()) return;
-        while (true)
+
+        for (DWORD next_parent = GetCurrentProcessId();;)
         {
-            it = pid_ppid_map.find(it->second);
-            if (it == pid_ppid_map.end()) break;
+            if (Util::Sets::contains(seen_pids, next_parent))
+            {
+                // parent graph loops, for example if a parent terminates and the PID is reused by a child launch
+                break;
+            }
+
+            seen_pids.insert(next_parent);
+            auto it = pid_ppid_map.find(next_parent);
+            if (it == pid_ppid_map.end())
+            {
+                break;
+            }
+
             ret.push_back(pid_exe_path_map[it->first]);
+            next_parent = it->second;
         }
 #elif defined(__linux__)
-        std::error_code ec;
-        auto vcpkg_stat_filepath = fmt::format("/proc/{}/stat", getpid());
-        auto vcpkg_stat_contents = real_filesystem.read_contents(vcpkg_stat_filepath, ec);
-        if (ec) return;
-
-        auto maybe_vcpkg_stat = try_parse_process_stat_file(vcpkg_stat_contents, vcpkg_stat_filepath);
+        std::set<int> seen_pids;
+        auto maybe_vcpkg_stat = try_get_process_stat_by_pid(getpid());
         if (auto vcpkg_stat = maybe_vcpkg_stat.get())
         {
-            auto pid = vcpkg_stat->ppid;
-            while (pid != 0)
+            for (auto next_parent = vcpkg_stat->ppid; next_parent != 0;)
             {
-                auto stat_filepath = fmt::format("/proc/{}/stat", pid);
-                auto contents = real_filesystem.read_contents(stat_filepath, ec);
-                if (ec) break;
-
-                auto maybe_stat = try_parse_process_stat_file(contents, stat_filepath);
-                if (auto stat = maybe_stat.get())
+                if (Util::Sets::contains(seen_pids, next_parent))
                 {
-                    ret.push_back(stat->executable_name);
-                    pid = stat->ppid;
+                    // parent graph loops, for example if a parent terminates and the PID is reused by a child launch
+                    break;
+                }
+
+                seen_pids.insert(next_parent);
+                auto maybe_next_parent_stat = try_get_process_stat_by_pid(next_parent);
+                if (auto next_parent_stat = maybe_next_parent_stat.get())
+                {
+                    ret.push_back(next_parent_stat->executable_name);
+                    next_parent = next_parent_stat->ppid;
                 }
                 else
                 {
@@ -523,7 +580,7 @@ namespace vcpkg
                 }
                 else
                 {
-                    env_strings.push_back(var);
+                    env_strings.push_back(std::move(var));
                 }
             }
         }
@@ -532,7 +589,7 @@ namespace vcpkg
 
         for (auto&& env_string : env_strings)
         {
-            const Optional<std::string> value = get_environment_variable(env_string.c_str());
+            const Optional<std::string> value = get_environment_variable(env_string);
             const auto v = value.get();
             if (!v || v->empty()) continue;
 
@@ -701,14 +758,15 @@ namespace vcpkg
 
     /// <param name="maybe_environment">If non-null, an environment block to use for the new process. If null, the
     /// new process will inherit the current environment.</param>
-    static ExpectedL<ProcessInfo> windows_create_process(StringView cmd_line,
+    static ExpectedL<ProcessInfo> windows_create_process(std::int32_t debug_id,
+                                                         StringView cmd_line,
                                                          const WorkingDirectory& wd,
                                                          const Environment& env,
                                                          DWORD dwCreationFlags,
                                                          STARTUPINFOEXW& startup_info) noexcept
     {
         ProcessInfo process_info;
-        Debug::print("CreateProcessW(", cmd_line, ")\n");
+        Debug::print(fmt::format("{}: CreateProcessW({})\n", debug_id, cmd_line));
 
         // Flush stdout before launching external process
         fflush(nullptr);
@@ -744,7 +802,8 @@ namespace vcpkg
         return format_system_error_message("CreateProcessW", GetLastError());
     }
 
-    static ExpectedL<ProcessInfo> windows_create_windowless_process(StringView cmd_line,
+    static ExpectedL<ProcessInfo> windows_create_windowless_process(std::int32_t debug_id,
+                                                                    StringView cmd_line,
                                                                     const WorkingDirectory& wd,
                                                                     const Environment& env,
                                                                     DWORD dwCreationFlags) noexcept
@@ -755,7 +814,7 @@ namespace vcpkg
         startup_info_ex.StartupInfo.dwFlags = STARTF_USESHOWWINDOW;
         startup_info_ex.StartupInfo.wShowWindow = SW_HIDE;
 
-        return windows_create_process(cmd_line, wd, env, dwCreationFlags, startup_info_ex);
+        return windows_create_process(debug_id, cmd_line, wd, env, dwCreationFlags, startup_info_ex);
     }
 
     struct ProcessInfoAndPipes
@@ -796,13 +855,13 @@ namespace vcpkg
                 vcpkg::Checks::unreachable(VCPKG_LINE_INFO);
             }
 
-            Debug::print(fmt::format("ReadFile() finished with GetLastError(): {}\n", GetLastError()));
             CloseHandle(child_stdout);
             return proc_info.wait();
         }
     };
 
-    static ExpectedL<ProcessInfoAndPipes> windows_create_process_redirect(StringView cmd_line,
+    static ExpectedL<ProcessInfoAndPipes> windows_create_process_redirect(std::int32_t debug_id,
+                                                                          StringView cmd_line,
                                                                           const WorkingDirectory& wd,
                                                                           const Environment& env,
                                                                           DWORD dwCreationFlags) noexcept
@@ -897,7 +956,7 @@ namespace vcpkg
         }
         startup_info_ex.lpAttributeList = proc_attribute_list.get()->get();
 
-        auto maybe_proc_info = windows_create_process(cmd_line, wd, env, dwCreationFlags, startup_info_ex);
+        auto maybe_proc_info = windows_create_process(debug_id, cmd_line, wd, env, dwCreationFlags, startup_info_ex);
 
         CloseHandle(startup_info_ex.StartupInfo.hStdInput);
         CloseHandle(startup_info_ex.StartupInfo.hStdOutput);
@@ -967,16 +1026,18 @@ namespace vcpkg
 
     void cmd_execute_background(const Command& cmd_line)
     {
-        Debug::println("cmd_execute_background: ", cmd_line.command_line());
+        const auto debug_id = debug_id_counter.fetch_add(1, std::memory_order_relaxed);
+        Debug::print(fmt::format("{}: cmd_execute_background: {}\n", debug_id, cmd_line.command_line()));
 #if defined(_WIN32)
         auto process_info =
-            windows_create_windowless_process(cmd_line.command_line(),
+            windows_create_windowless_process(debug_id,
+                                              cmd_line.command_line(),
                                               default_working_directory,
                                               default_environment,
                                               CREATE_NEW_CONSOLE | CREATE_NO_WINDOW | CREATE_BREAKAWAY_FROM_JOB);
         if (!process_info)
         {
-            Debug::println("cmd_execute_background() failed: ", process_info.error());
+            Debug::print(fmt::format("{}: cmd_execute_background() failed: {}\n", debug_id, process_info.error()));
         }
 #else  // ^^^ _WIN32 // !_WIN32
         pid_t pid;
@@ -1000,22 +1061,25 @@ namespace vcpkg
         int error = posix_spawn(&pid, "/bin/sh", nullptr /*file_actions*/, nullptr /*attrp*/, argv.data(), environ);
         if (error)
         {
-            Debug::println(fmt::format("cmd_execute_background() failed: {}", error));
+            Debug::print(fmt::format("{}: cmd_execute_background() failed: {}\n", debug_id, error));
         }
 #endif // ^^^ !_WIN32
     }
 
-    static ExpectedL<int> cmd_execute_impl(const Command& cmd_line, const WorkingDirectory& wd, const Environment& env)
+    static ExpectedL<int> cmd_execute_impl(const int32_t debug_id,
+                                           const Command& cmd_line,
+                                           const WorkingDirectory& wd,
+                                           const Environment& env)
     {
 #if defined(_WIN32)
         using vcpkg::g_ctrl_c_state;
         g_ctrl_c_state.transition_to_spawn_process();
-        auto result =
-            windows_create_windowless_process(cmd_line.command_line(), wd, env, 0).map([](ProcessInfo&& proc_info) {
-                auto long_exit_code = proc_info.wait();
-                if (long_exit_code > INT_MAX) long_exit_code = INT_MAX;
-                return static_cast<int>(long_exit_code);
-            });
+        auto result = windows_create_windowless_process(debug_id, cmd_line.command_line(), wd, env, 0)
+                          .map([](ProcessInfo&& proc_info) {
+                              auto long_exit_code = proc_info.wait();
+                              if (long_exit_code > INT_MAX) long_exit_code = INT_MAX;
+                              return static_cast<int>(long_exit_code);
+                          });
         g_ctrl_c_state.transition_from_spawn_process();
         return result;
 #else
@@ -1036,7 +1100,7 @@ namespace vcpkg
         real_command_line_builder.raw_arg(cmd_line.command_line());
 
         std::string real_command_line = std::move(real_command_line_builder).extract();
-        Debug::print("system(", real_command_line, ")\n");
+        Debug::print(fmt::format("{}: system({})\n", debug_id, real_command_line));
         fflush(nullptr);
 
         return system(real_command_line.c_str());
@@ -1046,16 +1110,18 @@ namespace vcpkg
     ExpectedL<int> cmd_execute(const Command& cmd_line, const WorkingDirectory& wd, const Environment& env)
     {
         const ElapsedTimer timer;
-        auto maybe_result = cmd_execute_impl(cmd_line, wd, env);
+        const auto debug_id = debug_id_counter.fetch_add(1, std::memory_order_relaxed);
+        auto maybe_result = cmd_execute_impl(debug_id, cmd_line, wd, env);
         const auto elapsed = timer.us_64();
         g_subprocess_stats += elapsed;
         if (auto result = maybe_result.get())
         {
-            Debug::print(fmt::format("cmd_execute() returned {} after {} us\n", *result, elapsed));
+            Debug::print(fmt::format("{}: cmd_execute() returned {} after {} us\n", debug_id, *result, elapsed));
         }
         else
         {
-            Debug::print(fmt::format("cmd_execute() returned ({}) after {} us\n", maybe_result.error(), elapsed));
+            Debug::print(
+                fmt::format("{}: cmd_execute() returned ({}) after {} us\n", debug_id, maybe_result.error(), elapsed));
         }
 
         return maybe_result;
@@ -1082,16 +1148,14 @@ namespace vcpkg
                                                Encoding encoding)
     {
         const ElapsedTimer timer;
-        static std::atomic_int32_t id_counter{1000};
-        const auto id = fmt::format("{:4}", id_counter.fetch_add(1, std::memory_order_relaxed));
+        const auto debug_id = debug_id_counter.fetch_add(1, std::memory_order_relaxed);
 #if defined(_WIN32)
         using vcpkg::g_ctrl_c_state;
 
         g_ctrl_c_state.transition_to_spawn_process();
         ExpectedL<int> exit_code =
-            windows_create_process_redirect(cmd_line.command_line(), wd, env, 0).map([&](ProcessInfoAndPipes&& output) {
-                return output.wait_and_stream_output(data_cb, encoding);
-            });
+            windows_create_process_redirect(debug_id, cmd_line.command_line(), wd, env, 0)
+                .map([&](ProcessInfoAndPipes&& output) { return output.wait_and_stream_output(data_cb, encoding); });
         g_ctrl_c_state.transition_from_spawn_process();
 #else // ^^^ _WIN32 // !_WIN32 vvv
         Checks::check_exit(VCPKG_LINE_INFO, encoding == Encoding::Utf8);
@@ -1112,7 +1176,7 @@ namespace vcpkg
                                   .extract();
         }
 
-        Debug::print(id, ": popen(", actual_cmd_line, ")\n");
+        Debug::print(fmt::format("{}: popen({})\n", debug_id, actual_cmd_line));
         // Flush stdout before launching external process
         fflush(stdout);
 
@@ -1180,7 +1244,7 @@ namespace vcpkg
         if (const auto pec = exit_code.get())
         {
             Debug::print(fmt::format("{}: cmd_execute_and_stream_data() returned {} after {:8} us\n",
-                                     id,
+                                     debug_id,
                                      *pec,
                                      static_cast<unsigned long long>(elapsed)));
         }

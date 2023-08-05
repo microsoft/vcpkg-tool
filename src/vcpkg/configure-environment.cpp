@@ -130,7 +130,7 @@ namespace vcpkg
                 temp.replace_filename("vcpkg-artifacts-temp");
                 auto tarball = download_vcpkg_standalone_bundle(paths.get_download_manager(), fs, paths.downloads)
                                    .value_or_exit(VCPKG_LINE_INFO);
-                extract_archive(fs, paths.get_tool_cache(), null_sink, tarball, temp);
+                set_directory_to_archive_contents(fs, paths.get_tool_cache(), null_sink, tarball, temp);
                 fs.rename_with_retry(temp / "vcpkg-artifacts", vcpkg_artifacts_path, VCPKG_LINE_INFO);
                 fs.remove(tarball, VCPKG_LINE_INFO);
                 fs.remove_all(temp, VCPKG_LINE_INFO);

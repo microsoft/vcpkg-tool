@@ -48,18 +48,6 @@ namespace
 
     std::atomic<uint64_t> g_us_filesystem_stats(0);
 
-    struct IsSlash
-    {
-        bool operator()(const char c) const noexcept
-        {
-            return c == '/'
-#if defined(_WIN32)
-                   || c == '\\'
-#endif // _WIN32
-                ;
-        }
-    };
-
     constexpr IsSlash is_slash;
 
     bool is_dot(StringView sv) { return sv.size() == 1 && sv[0] == '.'; }
@@ -1536,6 +1524,18 @@ namespace vcpkg
 
     int WriteFilePointer::put(int c) const noexcept { return ::fputc(c, m_fs); }
 
+    uint64_t ReadOnlyFilesystem::file_size(const Path& file_path, LineInfo li) const
+    {
+        std::error_code ec;
+        auto maybe_contents = this->file_size(file_path, ec);
+        if (ec)
+        {
+            exit_filesystem_call_error(li, ec, __func__, {file_path});
+        }
+
+        return maybe_contents;
+    }
+
     std::string ReadOnlyFilesystem::read_contents(const Path& file_path, LineInfo li) const
     {
         std::error_code ec;
@@ -2190,6 +2190,22 @@ namespace vcpkg
 
     struct RealFilesystem final : Filesystem
     {
+        virtual uint64_t file_size(const Path& file_path, std::error_code& ec) const override
+        {
+#ifdef _WIN32
+            return stdfs::file_size(to_stdfs_path(file_path), ec);
+#else
+            struct stat st;
+            if (stat(file_path.c_str(), &st) != 0)
+            {
+                ec.assign(errno, std::generic_category());
+                return 0;
+            }
+
+            return st.st_size;
+#endif // defined(_WIN32)
+        }
+
         virtual std::string read_contents(const Path& file_path, std::error_code& ec) const override
         {
             StatsTimer t(g_us_filesystem_stats);

@@ -133,6 +133,8 @@ namespace vcpkg
         {StringMetric::CommandName, "command_name", "z-preregister-telemetry"},
         {StringMetric::DeploymentKind, "deployment_kind", "Git"},
         {StringMetric::DetectedCiEnvironment, "detected_ci_environment", "Generic"},
+        {StringMetric::CiProjectId, "ci_project_id", "0"},
+        {StringMetric::CiOwnerId, "ci_owner_id", "0"},
         // spec:triplet:version,...
         {StringMetric::InstallPlan_1, "installplan_1", plan_example},
         {StringMetric::ListFile, "listfile", "update to new format"},
@@ -148,8 +150,10 @@ namespace vcpkg
 
     const constexpr std::array<BoolMetricEntry, static_cast<size_t>(BoolMetric::COUNT)> all_bool_metrics{{
         {BoolMetric::DetectedContainer, "detected_container"},
+        {BoolMetric::DependencyGraphSuccess, "dependency-graph-success"},
         {BoolMetric::FeatureFlagBinaryCaching, "feature-flag-binarycaching"},
         {BoolMetric::FeatureFlagCompilerTracking, "feature-flag-compilertracking"},
+        {BoolMetric::FeatureFlagDependencyGraph, "feature-flag-dependency-graph"},
         {BoolMetric::FeatureFlagManifests, "feature-flag-manifests"},
         {BoolMetric::FeatureFlagRegistries, "feature-flag-registries"},
         {BoolMetric::FeatureFlagVersions, "feature-flag-versions"},
@@ -373,8 +377,8 @@ namespace vcpkg
 
         std::vector<std::string> process_list;
         get_parent_process_list(process_list);
-        result.parent_process_list =
-            Strings::join(";", process_list, [](auto&& s) { return Hash::get_string_sha256(s); });
+        result.parent_process_list = Strings::join(
+            ";", process_list, [](auto&& s) { return Hash::get_string_sha256(Strings::ascii_to_lowercase(s)); });
 
         return result;
     }

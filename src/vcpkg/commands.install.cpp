@@ -289,9 +289,7 @@ namespace vcpkg
         std::vector<StatusParagraph> features_spghs;
         for (auto&& feature : bcf.features)
         {
-            features_spghs.emplace_back();
-
-            StatusParagraph& feature_paragraph = features_spghs.back();
+            StatusParagraph& feature_paragraph = features_spghs.emplace_back();
             feature_paragraph.package = feature;
             feature_paragraph.want = Want::INSTALL;
             feature_paragraph.state = InstallState::HALF_INSTALLED;
@@ -521,12 +519,14 @@ namespace vcpkg
                          msg::spec = action.spec);
         }
 
-        ~TrackedPackageInstallGuard()
+        void print_elapsed_time() const
         {
             current_summary.timing = build_timer.elapsed();
             msg::println(
                 msgElapsedForPackage, msg::spec = current_summary.get_spec(), msg::elapsed = current_summary.timing);
         }
+
+        ~TrackedPackageInstallGuard() { print_elapsed_time(); }
 
         TrackedPackageInstallGuard(const TrackedPackageInstallGuard&) = delete;
         TrackedPackageInstallGuard& operator=(const TrackedPackageInstallGuard&) = delete;
@@ -569,8 +569,7 @@ namespace vcpkg
 
         for (auto&& action : action_plan.already_installed)
         {
-            results.emplace_back(action);
-            results.back().build_result.emplace(
+            results.emplace_back(action).build_result.emplace(
                 perform_install_plan_action(args, paths, action, status_db, binary_cache, build_logs_recorder));
         }
 
@@ -581,6 +580,7 @@ namespace vcpkg
                 perform_install_plan_action(args, paths, action, status_db, binary_cache, build_logs_recorder);
             if (result.code != BuildResult::SUCCEEDED && keep_going == KeepGoing::NO)
             {
+                this_install.print_elapsed_time();
                 print_user_troubleshooting_message(action, paths, result.stdoutlog.then([&](auto&) -> Optional<Path> {
                     auto issue_body_path = paths.installed().root() / "vcpkg" / "issue_body.md";
                     paths.get_filesystem().write_contents(
@@ -942,8 +942,9 @@ namespace vcpkg
             }
             else if (ret.header_only)
             {
-                static auto cmakeify = [](std::string name) {
-                    auto n = Strings::ascii_to_uppercase(Strings::replace_all(std::move(name), "-", "_"));
+                static auto cmakeify = [](StringView name) {
+                    auto n = Strings::ascii_to_uppercase(name);
+                    Strings::inplace_replace_all(n, "-", "_");
                     if (n.empty() || ParserBase::is_ascii_digit(n[0]))
                     {
                         n.insert(n.begin(), '_');
@@ -1026,7 +1027,7 @@ namespace vcpkg
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
-            print_default_triplet_warning(args);
+            print_default_triplet_warning(args, paths.get_triplet_db());
         }
         else
         {
@@ -1113,12 +1114,23 @@ namespace vcpkg
             {
                 features.emplace_back("core");
             }
-
+            PackageSpec toplevel{manifest_core.name, default_triplet};
             auto core_it = std::remove(features.begin(), features.end(), "core");
             if (core_it == features.end())
             {
-                const auto& default_features = manifest_core.default_features;
-                features.insert(features.end(), default_features.begin(), default_features.end());
+                if (Util::any_of(manifest_core.default_features, [](const auto& f) { return !f.platform.is_empty(); }))
+                {
+                    const auto& vars = var_provider.get_or_load_dep_info_vars(toplevel, host_triplet);
+                    for (const auto& f : manifest_core.default_features)
+                    {
+                        if (f.platform.evaluate(vars)) features.push_back(f.name);
+                    }
+                }
+                else
+                {
+                    for (const auto& f : manifest_core.default_features)
+                        features.push_back(f.name);
+                }
             }
             else
             {
@@ -1172,7 +1184,6 @@ namespace vcpkg
 
             auto oprovider = make_manifest_provider(
                 fs, paths.original_cwd, extended_overlay_ports, manifest->path, std::move(manifest_scf));
-            PackageSpec toplevel{manifest_core.name, default_triplet};
             auto install_plan = create_versioned_install_plan(*verprovider,
                                                               *baseprovider,
                                                               *oprovider,
@@ -1195,10 +1206,8 @@ namespace vcpkg
             Util::erase_remove_if(install_plan.install_actions,
                                   [&toplevel](auto&& action) { return action.spec == toplevel; });
 
-            PathsPortFileProvider provider(fs, *registry_set, std::move(oprovider));
             Commands::SetInstalled::perform_and_exit_ex(args,
                                                         paths,
-                                                        provider,
                                                         var_provider,
                                                         std::move(install_plan),
                                                         dry_run ? Commands::SetInstalled::DryRun::Yes
@@ -1216,13 +1225,16 @@ namespace vcpkg
 
         bool default_triplet_used = false;
         const std::vector<FullPackageSpec> specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
-            return check_and_get_full_package_spec(
-                arg, default_triplet, default_triplet_used, COMMAND_STRUCTURE.get_example_text(), paths);
+            return check_and_get_full_package_spec(arg,
+                                                   default_triplet,
+                                                   default_triplet_used,
+                                                   COMMAND_STRUCTURE.get_example_text(),
+                                                   paths.get_triplet_db());
         });
 
         if (default_triplet_used)
         {
-            print_default_triplet_warning(args);
+            print_default_triplet_warning(args, paths.get_triplet_db());
         }
 
         // create the plan
@@ -1243,7 +1255,7 @@ namespace vcpkg
             }
         }
 
-        var_provider.load_tag_vars(action_plan, provider, host_triplet);
+        var_provider.load_tag_vars(action_plan, host_triplet);
 
         // install plan will be empty if it is already installed - need to change this at status paragraph part
         if (action_plan.empty())

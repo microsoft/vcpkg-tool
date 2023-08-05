@@ -14,6 +14,7 @@ namespace vcpkg
         BinaryParagraph();
         explicit BinaryParagraph(Paragraph fields);
         BinaryParagraph(const SourceParagraph& spgh,
+                        const std::vector<std::string>& default_features,
                         Triplet triplet,
                         const std::string& abi_tag,
                         std::vector<PackageSpec> deps);

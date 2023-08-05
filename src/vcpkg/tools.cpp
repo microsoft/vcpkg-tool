@@ -627,16 +627,23 @@ namespace vcpkg
         {
         }
 
-        template<typename Func>
+        /**
+         * @param accept_version Callback that accepts a std::array<int,3> and returns true if the version is accepted
+         * @param log_candidate Callback that accepts Path, ExpectedL<std::string> maybe_version. Gets called on every
+         * existing candidate.
+         */
+        template<typename Func, typename Func2>
         Optional<PathAndVersion> find_first_with_sufficient_version(MessageSink& status_sink,
                                                                     const ToolProvider& tool_provider,
                                                                     const std::vector<Path>& candidates,
-                                                                    Func&& accept_version) const
+                                                                    Func&& accept_version,
+                                                                    const Func2& log_candidate) const
         {
             for (auto&& candidate : candidates)
             {
                 if (!fs.exists(candidate, IgnoreErrors{})) continue;
                 auto maybe_version = tool_provider.get_version(*this, status_sink, candidate);
+                log_candidate(candidate, maybe_version);
                 const auto version = maybe_version.get();
                 if (!version) continue;
                 const auto parsed_version = parse_tool_version_string(*version);
@@ -697,7 +704,7 @@ namespace vcpkg
                 else
 #endif // ^^^ _WIN32
                 {
-                    extract_archive(fs, *this, status_sink, download_path, tool_dir_path);
+                    set_directory_to_archive_contents(fs, *this, status_sink, download_path, tool_dir_path);
                 }
             }
             else
@@ -772,6 +779,7 @@ namespace vcpkg
                 tool.add_system_paths(fs, candidate_paths);
             }
 
+            std::string considered_versions;
             if (ignore_version)
             {
                 // If we are forcing the system copy (and therefore ignoring versions), take the first entry that
@@ -804,6 +812,12 @@ namespace vcpkg
                                (actual_version[0] == min_version[0] && actual_version[1] > min_version[1]) ||
                                (actual_version[0] == min_version[0] && actual_version[1] == min_version[1] &&
                                 actual_version[2] >= min_version[2]);
+                    },
+                    [&](const auto& path, const ExpectedL<std::string>& maybe_version) {
+                        considered_versions += fmt::format("{}: {}\n",
+                                                           path,
+                                                           maybe_version.has_value() ? *maybe_version.get()
+                                                                                     : maybe_version.error().data());
                     });
                 if (const auto p = maybe_path.get())
                 {
@@ -837,6 +851,13 @@ namespace vcpkg
             else if (!download_available)
             {
                 s.append_raw(' ').append(msgUnknownTool);
+            }
+            if (!considered_versions.empty())
+            {
+                s.append_raw('\n')
+                    .append(msgConsideredVersions, msg::version = fmt::join(min_version, "."))
+                    .append_raw('\n')
+                    .append_raw(considered_versions);
             }
             Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, s);
         }
