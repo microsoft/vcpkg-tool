@@ -1490,15 +1490,17 @@ namespace vcpkg
 
     WriteFilePointer::WriteFilePointer(WriteFilePointer&&) noexcept = default;
 
-    WriteFilePointer::WriteFilePointer(const Path& file_path, Append append, std::error_code& ec)
+    WriteFilePointer::WriteFilePointer(const Path& file_path, Append append, Overwrite overwrite, std::error_code& ec)
         : FilePointer(file_path)
     {
 #if defined(_WIN32)
-        m_fs = ::_wfsopen(to_stdfs_path(file_path).c_str(), append == Append::YES ? L"ab" : L"wb", _SH_DENYWR);
+        m_fs = ::_wfsopen(to_stdfs_path(file_path).c_str(),
+                          append == Append::YES ? L"ab" : (overwrite == Overwrite::YES ? L"wb" : L"wbx"),
+                          _SH_DENYWR);
         ec.assign(m_fs == nullptr ? errno : 0, std::generic_category());
         if (m_fs != nullptr) ::setvbuf(m_fs, NULL, _IONBF, 0);
 #else  // ^^^ _WIN32 / !_WIN32 vvv
-        m_fs = ::fopen(file_path.c_str(), append == Append::YES ? "ab" : "wb");
+        m_fs = ::fopen(file_path.c_str(), append == Append::YES ? "ab" : (overwrite == Overwrite::YES ? "wb" : "wbx"));
         if (m_fs)
         {
             ec.clear();
@@ -2954,7 +2956,7 @@ namespace vcpkg
                                  const std::vector<std::string>& lines,
                                  std::error_code& ec) const override
         {
-            vcpkg::WriteFilePointer output{file_path, Append::NO, ec};
+            vcpkg::WriteFilePointer output{file_path, Append::NO, Overwrite::YES, ec};
             if (!ec)
             {
                 for (const auto& line : lines)
@@ -3871,7 +3873,7 @@ namespace vcpkg
                                                 Append append,
                                                 std::error_code& ec) const override
         {
-            return WriteFilePointer{file_path, append, ec};
+            return WriteFilePointer{file_path, append, Overwrite::YES, ec};
         }
     };
 

@@ -101,7 +101,7 @@ namespace vcpkg
     {
         WriteFilePointer() noexcept;
         WriteFilePointer(WriteFilePointer&&) noexcept;
-        explicit WriteFilePointer(const Path& file_path, Append append, std::error_code& ec);
+        explicit WriteFilePointer(const Path& file_path, Append append, Overwrite overwrite, std::error_code& ec);
         WriteFilePointer& operator=(WriteFilePointer&& other) noexcept;
         size_t write(const void* buffer, size_t element_size, size_t element_count) const noexcept;
         int put(int c) const noexcept;
