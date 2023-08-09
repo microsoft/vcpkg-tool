@@ -31,7 +31,7 @@ such as https://github.com/microsoft/vcpkg/pull/23757
   (and test that `vcpkg use cmake` works from each of these)
 1. In the vcpkg repo, run `\scripts\update-vcpkg-tool-metadata.ps1 -Date 2023-03-29`
   with the new release date, which updates SHAs as appropriate. It will also emit a code block for
-  the nest vscode-embedded-tools repo step.
+  the next vscode-embedded-tools repo step.
 1. In the DevDiv vscode-embedded-tools repo, follow the
   [update instructions](https://devdiv.visualstudio.com/DefaultCollection/DevDiv/_git/vscode-embedded-tools?path=/docs/updating-vcpkg.md&_a=preview)
   to make a VS Code update PR.
