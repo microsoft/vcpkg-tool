@@ -505,21 +505,7 @@ namespace vcpkg::Paragraphs
     LoadResults try_load_all_registry_ports(const ReadOnlyFilesystem& fs, const RegistrySet& registries)
     {
         LoadResults ret;
-
-        std::vector<std::string> ports;
-
-        for (const auto& registry : registries.registries())
-        {
-            const auto packages = registry.packages();
-            ports.insert(end(ports), begin(packages), end(packages));
-        }
-        if (auto registry = registries.default_registry())
-        {
-            registry->get_all_port_names(ports);
-        }
-
-        Util::sort_unique_erase(ports);
-
+        std::vector<std::string> ports = registries.get_all_reachable_port_names();
         for (const auto& port_name : ports)
         {
             auto impl = registries.registry_for_port(port_name);
