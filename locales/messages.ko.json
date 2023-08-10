@@ -207,6 +207,7 @@
   "CmdEditOptAll": "포트별 빌드 트리 하위 폴더 및 포트로 편집기 열기",
   "CmdEditOptBuildTrees": "포트별 빌드 트리 하위 폴더로 편집기 열기",
   "CmdEnvOptions": "설치된 {path}을(를) {env_var}에 추가",
+  "CmdExportEmptyPlan": "Refusing to create an export of zero packages. Install packages before exporting.",
   "CmdExportOpt7Zip": "7zip(.7z) 파일로 내보내기",
   "CmdExportOptChocolatey": "Chocolatey 패키지 내보내기(실험적 기능)",
   "CmdExportOptDebug": "프리팹 디버그 사용",

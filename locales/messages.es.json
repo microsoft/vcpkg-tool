@@ -207,6 +207,7 @@
   "CmdEditOptAll": "Abrir editor en el puerto y en la subcarpeta del árbol de compilación específica del puerto",
   "CmdEditOptBuildTrees": "Abrir el editor en la subcarpeta del árbol de compilación específico del puerto",
   "CmdEnvOptions": "Agregar {path} instalado a {env_var}",
+  "CmdExportEmptyPlan": "Refusing to create an export of zero packages. Install packages before exporting.",
   "CmdExportOpt7Zip": "Exportar a un archivo 7zip (.7z)",
   "CmdExportOptChocolatey": "Exportar un paquete Chocolatey (característica experimental)",
   "CmdExportOptDebug": "Habilitar depuración prefab",

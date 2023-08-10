@@ -207,6 +207,7 @@
   "CmdEditOptAll": "Abrir o editor na porta, bem como a subpasta da buildtree específica da porta",
   "CmdEditOptBuildTrees": "Abrir o editor na subpasta da buildtree específica da porta",
   "CmdEnvOptions": "Adicionar {path} instalado a {env_var}",
+  "CmdExportEmptyPlan": "Refusing to create an export of zero packages. Install packages before exporting.",
   "CmdExportOpt7Zip": "Exportar para um arquivo 7zip (.7z)",
   "CmdExportOptChocolatey": "Exportar um pacote Chocolatey (recurso experimental)",
   "CmdExportOptDebug": "Habilitar depuração pré-fab",

@@ -207,6 +207,7 @@
   "CmdEditOptAll": "ポートとポート固有の buildtree サブフォルダーにエディターを開く",
   "CmdEditOptBuildTrees": "ポート固有の buildtree サブフォルダーにエディターを開く",
   "CmdEnvOptions": "インストールされている {path} を {env_var} に追加します",
+  "CmdExportEmptyPlan": "Refusing to create an export of zero packages. Install packages before exporting.",
   "CmdExportOpt7Zip": "7zip (.7z) ファイルにエクスポートする",
   "CmdExportOptChocolatey": "Chocolatey パッケージをエクスポートする (試験的な機能)",
   "CmdExportOptDebug": "プレハブデバッグを有効にする",

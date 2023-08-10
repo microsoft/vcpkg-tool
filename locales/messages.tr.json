@@ -207,6 +207,7 @@
   "CmdEditOptAll": "Düzenleyiciyi bağlantı noktasına ve bağlantı noktasına özgü derleme ağacı alt klasörüne aç",
   "CmdEditOptBuildTrees": "Düzenleyiciyi bağlantı noktasına özgü derleme ağacı alt klasörüne aç",
   "CmdEnvOptions": "Yüklü {path} yolunu şuna ekle: {env_var}",
+  "CmdExportEmptyPlan": "Refusing to create an export of zero packages. Install packages before exporting.",
   "CmdExportOpt7Zip": "7zip (.7z) dosyasına aktar",
   "CmdExportOptChocolatey": "Chocolatey paketini dışarı aktar (deneysel özellik)",
   "CmdExportOptDebug": "Prefab hata ayıklamayı etkinleştir",

@@ -207,6 +207,7 @@
   "CmdEditOptAll": "Otevřít editor na portu i v podsložce stromu buildu specifické pro port",
   "CmdEditOptBuildTrees": "Otevřít editor v podsložce stromu buildu specifické pro port",
   "CmdEnvOptions": "Přidat nainstalovanou cestu {path} do {env_var}",
+  "CmdExportEmptyPlan": "Refusing to create an export of zero packages. Install packages before exporting.",
   "CmdExportOpt7Zip": "Exportovat do souboru 7zip (.7z)",
   "CmdExportOptChocolatey": "Exportovat balíček Chocolatey (experimentální funkce)",
   "CmdExportOptDebug": "Povolit předběžné ladění",

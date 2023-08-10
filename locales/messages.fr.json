@@ -207,6 +207,7 @@
   "CmdEditOptAll": "Ouvrir l’éditeur dans le port, ainsi que dans le sous-dossier d’arborescence propre au port",
   "CmdEditOptBuildTrees": "Ouvrir l’éditeur dans le sous-dossier d’arborescence spécifique au port",
   "CmdEnvOptions": "Ajouter le {path} installé à {env_var}",
+  "CmdExportEmptyPlan": "Refusing to create an export of zero packages. Install packages before exporting.",
   "CmdExportOpt7Zip": "Exporter vers un fichier 7zip (.7z)",
   "CmdExportOptChocolatey": "Exporter un package Chocolatey (fonctionnalité expérimentale)",
   "CmdExportOptDebug": "Activer le débogage Prefab",
