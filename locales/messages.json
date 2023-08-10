@@ -289,6 +289,7 @@
   "CmdEditOptBuildTrees": "Open editor into the port-specific buildtree subfolder",
   "CmdEnvOptions": "Add installed {path} to {env_var}",
   "_CmdEnvOptions.comment": "An example of {path} is /foo/bar. An example of {env_var} is VCPKG_DEFAULT_TRIPLET.",
+  "CmdExportEmptyPlan": "Refusing to create an export of zero packages. Install packages before exporting.",
   "CmdExportOpt7Zip": "Export to a 7zip (.7z) file",
   "CmdExportOptChocolatey": "Export a Chocolatey package (experimental feature)",
   "CmdExportOptDebug": "Enable prefab debug",

@@ -496,6 +496,10 @@ DECLARE_MESSAGE(CmdDependInfoOptSort,
 DECLARE_MESSAGE(CmdEditOptAll, (), "", "Open editor into the port as well as the port-specific buildtree subfolder")
 DECLARE_MESSAGE(CmdEditOptBuildTrees, (), "", "Open editor into the port-specific buildtree subfolder")
 DECLARE_MESSAGE(CmdEnvOptions, (msg::path, msg::env_var), "", "Add installed {path} to {env_var}")
+DECLARE_MESSAGE(CmdExportEmptyPlan,
+                (),
+                "",
+                "Refusing to create an export of zero packages. Install packages before exporting.")
 DECLARE_MESSAGE(CmdExportOpt7Zip, (), "", "Export to a 7zip (.7z) file")
 DECLARE_MESSAGE(CmdExportOptChocolatey, (), "", "Export a Chocolatey package (experimental feature)")
 DECLARE_MESSAGE(CmdExportOptDebug, (), "", "Enable prefab debug")
