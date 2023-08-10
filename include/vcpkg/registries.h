@@ -173,4 +173,25 @@ namespace vcpkg
     // No match is 0, exact match is SIZE_MAX, wildcard match is the length of the pattern.
     // Note that the * is included in the match size to distinguish from 0 == no match.
     size_t package_pattern_match(StringView name, StringView pattern);
+
+    struct VersionDbEntry
+    {
+        Version version;
+        VersionScheme scheme = VersionScheme::String;
+
+        // only one of these may be non-empty
+        std::string git_tree;
+        Path p;
+    };
+
+    // VersionDbType::Git => VersionDbEntry.git_tree is filled
+    // VersionDbType::Filesystem => VersionDbEntry.path is filled
+    enum class VersionDbType
+    {
+        Git,
+        Filesystem,
+    };
+
+    std::unique_ptr<Json::IDeserializer<std::vector<VersionDbEntry>>> make_version_db_deserializer(VersionDbType type,
+                                                                                                   const Path& root);
 }

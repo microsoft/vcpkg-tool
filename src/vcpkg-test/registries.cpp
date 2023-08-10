@@ -5,7 +5,6 @@
 
 #include <vcpkg/configuration.h>
 #include <vcpkg/registries.h>
-#include <vcpkg/registries.private.h>
 
 using namespace vcpkg;
 
