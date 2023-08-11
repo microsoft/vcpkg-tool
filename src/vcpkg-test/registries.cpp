@@ -14,14 +14,15 @@ namespace
     {
         StringLiteral kind() const override { return "test"; }
 
-        std::unique_ptr<RegistryEntry> get_port_entry(StringView) const override { return nullptr; }
+        ExpectedL<std::unique_ptr<RegistryEntry>> get_port_entry(StringView) const override { return nullptr; }
 
-        void append_all_port_names(std::vector<std::string>& port_names) const override
+        ExpectedL<Unit> append_all_port_names(std::vector<std::string>& port_names) const override
         {
             port_names.insert(port_names.end(), all_port_names.begin(), all_port_names.end());
+            return Unit{};
         }
 
-        bool try_append_all_port_names_no_network(std::vector<std::string>& port_names) const override
+        ExpectedL<bool> try_append_all_port_names_no_network(std::vector<std::string>& port_names) const override
         {
             port_names.insert(port_names.end(), no_network_port_names.begin(), no_network_port_names.end());
             return !no_network_port_names.empty();
@@ -765,14 +766,14 @@ TEST_CASE ("get_all_port_names", "[registries]")
         // All the known ports from the default registry
         // hello, world, abcdefg, abc, abcde from the first registry
         // twoRegistry from the second registry
-        CHECK(with_default_registry.get_all_reachable_port_names() ==
+        CHECK(with_default_registry.get_all_reachable_port_names().value_or_exit(VCPKG_LINE_INFO) ==
               std::vector<std::string>{
                   "aDefault", "abc", "abcde", "abcdefg", "bDefault", "cDefault", "hello", "twoRegistry", "world"});
 
         // All the old ports from the default registry
         // hello, world, notpresent from the first registry (since network was unknown)
         // twoOld from the second registry
-        CHECK(with_default_registry.get_all_known_reachable_port_names_no_network() ==
+        CHECK(with_default_registry.get_all_known_reachable_port_names_no_network().value_or_exit(VCPKG_LINE_INFO) ==
               std::vector<std::string>{
                   "aDefaultOld", "bDefaultOld", "cDefaultOld", "hello", "notpresent", "twoOld", "world"});
     }
@@ -783,12 +784,12 @@ TEST_CASE ("get_all_port_names", "[registries]")
 
         // hello, world, abcdefg, abc, abcde from the first registry
         // twoRegistry from the second registry
-        CHECK(without_default_registry.get_all_reachable_port_names() ==
+        CHECK(without_default_registry.get_all_reachable_port_names().value_or_exit(VCPKG_LINE_INFO) ==
               std::vector<std::string>{"abc", "abcde", "abcdefg", "hello", "twoRegistry", "world"});
 
         // hello, world, notpresent from the first registry
         // twoOld from the second registry
-        CHECK(without_default_registry.get_all_known_reachable_port_names_no_network() ==
+        CHECK(without_default_registry.get_all_known_reachable_port_names_no_network().value_or_exit(VCPKG_LINE_INFO) ==
               std::vector<std::string>{"hello", "notpresent", "twoOld", "world"});
     }
 }

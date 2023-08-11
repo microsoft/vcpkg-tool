@@ -497,7 +497,7 @@ namespace vcpkg::Paragraphs
     LoadResults try_load_all_registry_ports(const ReadOnlyFilesystem& fs, const RegistrySet& registries)
     {
         LoadResults ret;
-        std::vector<std::string> ports = registries.get_all_reachable_port_names();
+        std::vector<std::string> ports = registries.get_all_reachable_port_names().value_or_exit(VCPKG_LINE_INFO);
         for (const auto& port_name : ports)
         {
             const auto impl = registries.registry_for_port(port_name);
