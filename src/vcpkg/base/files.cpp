@@ -668,14 +668,7 @@ namespace
 
         int get() const noexcept { return fd; }
 
-        void close() noexcept
-        {
-            if (fd >= 0)
-            {
-                Checks::check_exit(VCPKG_LINE_INFO, ::close(fd) == 0);
-                fd = -1;
-            }
-        }
+        void close() noexcept { close_mark_invalid(fd); }
 
         ~PosixFd() { close(); }
 
@@ -3801,4 +3794,15 @@ namespace vcpkg
             return Strings::case_insensitive_ascii_equals(extension, ext);
         });
     }
+
+#if !defined(_WIN32)
+    void close_mark_invalid(int& fd) noexcept
+    {
+        if (fd >= 0)
+        {
+            Checks::check_exit(VCPKG_LINE_INFO, ::close(fd) == 0);
+            fd = -1;
+        }
+    }
+#endif // ^^^ !_WIN32
 }
