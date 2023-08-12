@@ -187,6 +187,8 @@
   "CiBaselineIndependentRegression": "回帰: 独立した {spec} が {build_result} で失敗しました。",
   "CiBaselineRegression": "回帰: {spec} は {build_result} で失敗しました。必要な場合は、{spec}=fail を {path} に追加します。",
   "CiBaselineRegressionHeader": "回帰:",
+  "CiBaselineUnexpectedFail": "REGRESSION: {spec} is marked as fail but not supported for {triplet}.",
+  "CiBaselineUnexpectedFailCascade": "REGRESSION: {spec} is marked as fail but one dependency is not supported for {triplet}.",
   "CiBaselineUnexpectedPass": "成功、失敗リストから削除: {spec} ({path})。",
   "ClearingContents": "{path} の内容をクリアしています",
   "CmakeTargetsExcluded": "注: 追加の {count} 件のターゲットは表示されません。",

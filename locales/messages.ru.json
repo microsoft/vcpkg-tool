@@ -187,6 +187,8 @@
   "CiBaselineIndependentRegression": "РЕГРЕССИЯ: сбой независимого объекта {spec} с {build_result}.",
   "CiBaselineRegression": "РЕГРЕССИЯ: {spec} с ошибкой {build_result}. Если требуется, добавьте {spec}=fail в {path}.",
   "CiBaselineRegressionHeader": "РЕГРЕССИИ:",
+  "CiBaselineUnexpectedFail": "REGRESSION: {spec} is marked as fail but not supported for {triplet}.",
+  "CiBaselineUnexpectedFailCascade": "REGRESSION: {spec} is marked as fail but one dependency is not supported for {triplet}.",
   "CiBaselineUnexpectedPass": "ПЕРЕДАЧА, УДАЛЕНИЕ ИЗ СПИСКА СБОЕВ: {spec} ({path}).",
   "ClearingContents": "Очистка содержимого {path}",
   "CmakeTargetsExcluded": "примечание. Дополнительные целевые объекты ({count}) не отображаются.",

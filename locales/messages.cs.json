@@ -187,6 +187,8 @@
   "CiBaselineIndependentRegression": "REGRESE: Nezávislá specifikace {spec} selhala s {build_result}.",
   "CiBaselineRegression": "REGRESE: Akce {spec} selhala s výsledkem: {build_result}. Pokud se to očekávalo, přidejte {spec}=fail do cesty {path}.",
   "CiBaselineRegressionHeader": "REGRESE:",
+  "CiBaselineUnexpectedFail": "REGRESSION: {spec} is marked as fail but not supported for {triplet}.",
+  "CiBaselineUnexpectedFailCascade": "REGRESSION: {spec} is marked as fail but one dependency is not supported for {triplet}.",
   "CiBaselineUnexpectedPass": "PŘEDÁVÁNÍ, ODEBRAT ZE SEZNAMU SELHÁNÍ: {spec} ({path}).",
   "ClearingContents": "Mazání obsahu cesty {path}.",
   "CmakeTargetsExcluded": "poznámka: Nezobrazuje se tento počet dalších cílů: {count}.",

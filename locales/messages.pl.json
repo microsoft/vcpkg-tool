@@ -187,6 +187,8 @@
   "CiBaselineIndependentRegression": "REGRESJA: niezależne {spec} nie powiodło się z {build_result}.",
   "CiBaselineRegression": "REGRESJA: {spec} nie powiodło się z powodu {build_result}. Jeśli trzeba, dodaj {spec}=fail to {path}.",
   "CiBaselineRegressionHeader": "REGRESJE:",
+  "CiBaselineUnexpectedFail": "REGRESSION: {spec} is marked as fail but not supported for {triplet}.",
+  "CiBaselineUnexpectedFailCascade": "REGRESSION: {spec} is marked as fail but one dependency is not supported for {triplet}.",
   "CiBaselineUnexpectedPass": "PRZEKAZYWANIE, USUWANIE Z LISTY BŁĘDÓW: {spec} ({path}).",
   "ClearingContents": "Czyszczenie zawartości ścieżki {path}",
   "CmakeTargetsExcluded": "uwaga: nie jest wyświetlana następująca liczba elementów docelowych: {count}.",

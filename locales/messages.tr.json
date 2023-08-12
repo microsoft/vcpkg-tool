@@ -187,6 +187,8 @@
   "CiBaselineIndependentRegression": "REGRESSION: Bağımsız {spec}, {build_result} ile başarısız oldu.",
   "CiBaselineRegression": "GERİLEME: {spec}, {build_result} ile başarısız oldu. Bekleniyorsa, {spec}=fail öğesini {path} yoluna ekleyin.",
   "CiBaselineRegressionHeader": "GERİLEMELER:",
+  "CiBaselineUnexpectedFail": "REGRESSION: {spec} is marked as fail but not supported for {triplet}.",
+  "CiBaselineUnexpectedFailCascade": "REGRESSION: {spec} is marked as fail but one dependency is not supported for {triplet}.",
   "CiBaselineUnexpectedPass": "GEÇİRİLİYOR, HATA LİSTESİNDEN KALDIR: {spec} ({path}).",
   "ClearingContents": "{path} yolunun içeriği temizleniyor",
   "CmakeTargetsExcluded": "not: {count} ek hedef görüntülenmez.",

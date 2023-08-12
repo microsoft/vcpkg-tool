@@ -187,6 +187,8 @@
   "CiBaselineIndependentRegression": "REGRESSION: 独立 {spec} 失败，出现 {build_result}。",
   "CiBaselineRegression": "REGRESSION: {spec} 失败，结果为 {build_result}。如果在预期之内，则添加 {spec}=fail to {path}。",
   "CiBaselineRegressionHeader": "回归测试:",
+  "CiBaselineUnexpectedFail": "REGRESSION: {spec} is marked as fail but not supported for {triplet}.",
+  "CiBaselineUnexpectedFailCascade": "REGRESSION: {spec} is marked as fail but one dependency is not supported for {triplet}.",
   "CiBaselineUnexpectedPass": "正在通过，从失败列表中删除: {spec} ({path})。",
   "ClearingContents": "正在清除 {path} 的内容",
   "CmakeTargetsExcluded": "注意: 未显示其他 {count} 个目标。",

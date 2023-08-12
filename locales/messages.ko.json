@@ -187,6 +187,8 @@
   "CiBaselineIndependentRegression": "회귀: {build_result}(으)로 독립 {spec}이(가) 실패했습니다.",
   "CiBaselineRegression": "회귀: {spec}이(가) {build_result}(으)로 실패했습니다. 필요한 경우 {spec}=fail를 {path}에 추가합니다.",
   "CiBaselineRegressionHeader": "회귀:",
+  "CiBaselineUnexpectedFail": "REGRESSION: {spec} is marked as fail but not supported for {triplet}.",
+  "CiBaselineUnexpectedFailCascade": "REGRESSION: {spec} is marked as fail but one dependency is not supported for {triplet}.",
   "CiBaselineUnexpectedPass": "통과, FAIL LIST에서 제거: {spec}({path}).",
   "ClearingContents": "{path} 내용을 지우는 중",
   "CmakeTargetsExcluded": "참고: {count}개의 추가 대상이 표시되지 않습니다.",
