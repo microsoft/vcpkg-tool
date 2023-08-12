@@ -155,6 +155,8 @@ namespace vcpkg
         if (Strings::case_insensitive_ascii_equals(arch, "ppc64le")) return CPUArchitecture::PPC64LE;
         if (Strings::case_insensitive_ascii_equals(arch, "riscv32")) return CPUArchitecture::RISCV32;
         if (Strings::case_insensitive_ascii_equals(arch, "riscv64")) return CPUArchitecture::RISCV64;
+        if (Strings::case_insensitive_ascii_equals(arch, "loongarch32")) return CPUArchitecture::LOONGARCH32;
+        if (Strings::case_insensitive_ascii_equals(arch, "loongarch64")) return CPUArchitecture::LOONGARCH64;
 
         return nullopt;
     }
@@ -172,6 +174,8 @@ namespace vcpkg
             case CPUArchitecture::PPC64LE: return "ppc64le";
             case CPUArchitecture::RISCV32: return "riscv32";
             case CPUArchitecture::RISCV64: return "riscv64";
+            case CPUArchitecture::LOONGARCH32: return "loongarch32";
+            case CPUArchitecture::LOONGARCH64: return "loongarch64";
             default: Checks::exit_with_message(VCPKG_LINE_INFO, "unexpected vcpkg::CPUArchitecture");
         }
     }
@@ -269,6 +273,10 @@ namespace vcpkg
         return CPUArchitecture::RISCV32;
 #elif defined(__riscv) && defined(__riscv_xlen) && (__riscv_xlen == 64)
         return CPUArchitecture::RISCV64;
+#elif defined(__loongarch32) || defined(__loongarch__) && (__loongarch_grlen == 32)
+        return CPUArchitecture::LOONGARCH32;
+#elif defined(__loongarch64) || defined(__loongarch__) && (__loongarch_grlen == 64)
+        return CPUArchitecture::LOONGARCH64;
 #else // choose architecture
 #error "Unknown host architecture"
 #endif // choose architecture
