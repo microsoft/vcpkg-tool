@@ -1521,9 +1521,10 @@ namespace vcpkg
         return Strings::starts_with(sv, "Error") || Strings::starts_with(sv, "error: ");
     }
 
-    void print_error_message(Span<const std::unique_ptr<ParseControlErrorInfo>> error_info_list)
+    void print_error_message(View<LocalizedString> error_info_list)
     {
-        auto msg = ParseControlErrorInfo::format_errors(error_info_list);
+        auto msg = Strings::join("\n", error_info_list, [](const LocalizedString& ls) { return ls.data(); });
+        msg.push_back('\n');
 
         // To preserve previous behavior, each line starting with "Error" should be error-colored. All other lines
         // should be neutral color.

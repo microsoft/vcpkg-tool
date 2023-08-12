@@ -49,11 +49,11 @@ namespace vcpkg
     using ParseExpected = vcpkg::ExpectedT<std::unique_ptr<P>, std::unique_ptr<ParseControlErrorInfo>>;
 
     template<class P>
-    ExpectedL<P> map_parse_expected_to_localized_string(ParseExpected<P>&& parse_expected)
+    ExpectedL<std::unique_ptr<P>> map_parse_expected_to_localized_string(ParseExpected<P>&& parse_expected)
     {
         if (auto value = parse_expected.get())
         {
-            return std::move(**value);
+            return std::move(*value);
         }
 
         return LocalizedString::from_raw(parse_expected.error()->to_string());

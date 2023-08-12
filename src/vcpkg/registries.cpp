@@ -257,7 +257,7 @@ namespace
 
         ExpectedL<bool> try_append_all_port_names_no_network(std::vector<std::string>& port_names) const override;
 
-        ExpectedL<Version> get_baseline_version(StringView) const override;
+        ExpectedL<Optional<Version>> get_baseline_version(StringView) const override;
 
     private:
         friend struct GitRegistryEntry;
@@ -454,23 +454,21 @@ namespace
 
         ExpectedL<bool> try_append_all_port_names_no_network(std::vector<std::string>& port_names) const override;
 
-        ExpectedL<Version> get_baseline_version(StringView port_name) const override;
+        ExpectedL<Optional<Version>> get_baseline_version(StringView port_name) const override;
 
         ~BuiltinFilesRegistry() = default;
 
         DelayedInit<Baseline> m_baseline;
 
     private:
-        const ExpectedL<SourceControlFile>& get_scf(const Path& path) const
+        const ExpectedL<std::unique_ptr<SourceControlFile>>& get_scf(StringView port_name, const Path& path) const
         {
-            return m_scfs.get_lazy(path, [this, &path]() {
-                return map_parse_expected_to_localized_string(Paragraphs::try_load_port(m_fs, path));
-            });
+            return m_scfs.get_lazy(path, [&, this]() { return Paragraphs::try_load_port(m_fs, port_name, path); });
         }
 
         const ReadOnlyFilesystem& m_fs;
         const Path m_builtin_ports_directory;
-        Cache<Path, ExpectedL<SourceControlFile>> m_scfs;
+        Cache<Path, ExpectedL<std::unique_ptr<SourceControlFile>>> m_scfs;
     };
     constexpr StringLiteral BuiltinFilesRegistry::s_kind;
 
@@ -495,12 +493,12 @@ namespace
 
         ExpectedL<bool> try_append_all_port_names_no_network(std::vector<std::string>& port_names) const override;
 
-        ExpectedL<Version> get_baseline_version(StringView port_name) const override;
+        ExpectedL<Optional<Version>> get_baseline_version(StringView port_name) const override;
 
         ~BuiltinGitRegistry() = default;
 
         std::string m_baseline_identifier;
-        DelayedInit<Baseline> m_baseline;
+        DelayedInit<ExpectedL<Baseline>> m_baseline;
 
     private:
         std::unique_ptr<BuiltinFilesRegistry> m_files_impl;
@@ -532,7 +530,7 @@ namespace
             return msg::format_error(msgErrorRequireBaseline);
         }
 
-        ExpectedL<Version> get_baseline_version(StringView) const override
+        ExpectedL<Optional<Version>> get_baseline_version(StringView) const override
         {
             return msg::format_error(msgErrorRequireBaseline);
         }
@@ -556,14 +554,14 @@ namespace
 
         ExpectedL<bool> try_append_all_port_names_no_network(std::vector<std::string>& port_names) const override;
 
-        ExpectedL<Version> get_baseline_version(StringView) const override;
+        ExpectedL<Optional<Version>> get_baseline_version(StringView) const override;
 
     private:
         const ReadOnlyFilesystem& m_fs;
 
         Path m_path;
         std::string m_baseline_identifier;
-        DelayedInit<Baseline> m_baseline;
+        DelayedInit<ExpectedL<Optional<Baseline>>> m_baseline;
     };
 
     Path relative_path_to_versions(StringView port_name);
@@ -685,40 +683,48 @@ namespace
     ExpectedL<std::unique_ptr<RegistryEntry>> BuiltinFilesRegistry::get_port_entry(StringView port_name) const
     {
         auto port_directory = m_builtin_ports_directory / port_name;
-        if (m_fs.exists(port_directory, IgnoreErrors{}))
+        const auto& maybe_maybe_scf = get_scf(port_name, port_directory);
+        const auto maybe_scf = maybe_maybe_scf.get();
+        if (!maybe_scf)
         {
-            const auto& found_scf = get_scf(port_directory);
-            if (auto scf = found_scf.get())
-            {
-                if (scf->core_paragraph->name == port_name)
-                {
-                    return std::make_unique<BuiltinPortTreeRegistryEntry>(
-                        scf->core_paragraph->name, port_directory, scf->to_version());
-                }
-
-                return msg::format_error(msgUnexpectedPortName,
-                                         msg::expected = scf->core_paragraph->name,
-                                         msg::actual = port_name,
-                                         msg::path = port_directory);
-            }
-
-            return found_scf.error();
+            return maybe_maybe_scf.error();
         }
 
-        return nullptr;
+        auto scf = maybe_scf->get();
+        if (!scf)
+        {
+            return std::unique_ptr<RegistryEntry>();
+        }
+
+        if (scf->core_paragraph->name == port_name)
+        {
+            return std::make_unique<BuiltinPortTreeRegistryEntry>(
+                scf->core_paragraph->name, port_directory, scf->to_version());
+        }
+
+        return msg::format_error(msgUnexpectedPortName,
+                                 msg::expected = scf->core_paragraph->name,
+                                 msg::actual = port_name,
+                                 msg::path = port_directory);
     }
 
-    ExpectedL<Version> BuiltinFilesRegistry::get_baseline_version(StringView port_name) const
+    ExpectedL<Optional<Version>> BuiltinFilesRegistry::get_baseline_version(StringView port_name) const
     {
         // if a baseline is not specified, use the ports directory version
-        auto port_path = m_builtin_ports_directory / port_name;
-        const auto& maybe_scf = get_scf(port_path);
-        if (auto pscf = maybe_scf.get())
+        const auto& maybe_maybe_scf = get_scf(port_name, m_builtin_ports_directory / port_name);
+        auto maybe_scf = maybe_maybe_scf.get();
+        if (!maybe_scf)
         {
-            return pscf->to_version();
+            return maybe_maybe_scf.error();
         }
 
-        return maybe_scf.error();
+        auto scf = maybe_scf->get();
+        if (!scf)
+        {
+            return Optional<Version>();
+        }
+
+        return scf->to_version();
     }
 
     ExpectedL<Unit> BuiltinFilesRegistry::append_all_port_names(std::vector<std::string>& out) const
@@ -772,31 +778,49 @@ namespace
         return res;
     }
 
-    ExpectedL<Version> BuiltinGitRegistry::get_baseline_version(StringView port_name) const
+    ExpectedL<Optional<Version>> BuiltinGitRegistry::get_baseline_version(StringView port_name) const
     {
-        const auto& baseline = m_baseline.get([this]() -> Baseline {
+        const auto& maybe_baseline = m_baseline.get([this]() -> ExpectedL<Baseline> {
             auto maybe_path = git_checkout_baseline(m_paths, m_baseline_identifier);
-            if (!maybe_path)
+            auto path = maybe_path.get();
+            if (!path)
             {
-                msg::println(Color::error, LocalizedString::from_raw(maybe_path.error()));
-                msg::println(Color::error, LocalizedString::from_raw(m_paths.get_current_git_sha_baseline_message()));
-                Checks::exit_fail(VCPKG_LINE_INFO);
+                return std::move(maybe_path)
+                    .error()
+                    .append_raw('\n')
+                    .append_raw(m_paths.get_current_git_sha_baseline_message());
             }
-            auto b = load_baseline_versions(m_paths.get_filesystem(), *maybe_path.get()).value_or_exit(VCPKG_LINE_INFO);
-            if (auto p = b.get())
+
+            auto maybe_maybe_baseline = load_baseline_versions(m_paths.get_filesystem(), *path);
+            auto maybe_baseline = maybe_maybe_baseline.get();
+            if (!maybe_baseline)
             {
-                return std::move(*p);
+                return std::move(maybe_maybe_baseline).error();
             }
-            Checks::msg_exit_with_message(
-                VCPKG_LINE_INFO, msgBaselineFileNoDefaultField, msg::commit_sha = m_baseline_identifier);
+
+            auto baseline = maybe_baseline->get();
+            if (!baseline)
+            {
+                return msg::format_error(
+                    msgCouldNotFindBaseline, msg::commit_sha = m_baseline_identifier, msg::path = *path);
+            }
+
+            return std::move(*baseline);
         });
 
-        auto it = baseline.find(port_name);
-        if (it != baseline.end())
+        auto baseline = maybe_baseline.get();
+        if (!baseline)
+        {
+            return maybe_baseline.error();
+        }
+
+        auto it = baseline->find(port_name);
+        if (it != baseline->end())
         {
             return it->second;
         }
-        return msg::format(msg::msgErrorMessage).append(msgPortNotInBaseline, msg::package_name = port_name);
+
+        return Optional<Version>();
     }
 
     ExpectedL<Unit> BuiltinGitRegistry::append_all_port_names(std::vector<std::string>& out) const
@@ -818,41 +842,32 @@ namespace
     // } BuiltinGitRegistry::RegistryImplementation
 
     // { FilesystemRegistry::RegistryImplementation
-    ExpectedL<Version> FilesystemRegistry::get_baseline_version(StringView port_name) const
+    ExpectedL<Optional<Version>> FilesystemRegistry::get_baseline_version(StringView port_name) const
     {
-        const auto& baseline = m_baseline.get([this]() -> Baseline {
+        const auto& maybe_maybe_baseline = m_baseline.get([this]() -> ExpectedL<Optional<Baseline>> {
             auto path_to_baseline = m_path / registry_versions_dir_name / "baseline.json";
-            auto res_baseline = load_baseline_versions(m_fs, path_to_baseline, m_baseline_identifier);
-            if (auto opt_baseline = res_baseline.get())
-            {
-                if (auto p = opt_baseline->get())
-                {
-                    return std::move(*p);
-                }
-
-                if (m_baseline_identifier.size() == 0)
-                {
-                    return {};
-                }
-
-                Checks::msg_exit_with_error(VCPKG_LINE_INFO,
-                                            msgCouldNotFindBaseline,
-                                            msg::commit_sha = m_baseline_identifier,
-                                            msg::path = path_to_baseline);
-            }
-
-            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, res_baseline.error());
+            return load_baseline_versions(m_fs, path_to_baseline, m_baseline_identifier);
         });
 
-        auto it = baseline.find(port_name);
-        if (it != baseline.end())
+        auto maybe_baseline = maybe_maybe_baseline.get();
+        if (!maybe_baseline)
+        {
+            return maybe_maybe_baseline.error();
+        }
+
+        auto baseline = maybe_baseline->get();
+        if (!baseline)
+        {
+            return Optional<Version>();
+        }
+
+        auto it = baseline->find(port_name);
+        if (it != baseline->end())
         {
             return it->second;
         }
-        else
-        {
-            return msg::format(msg::msgErrorMessage).append(msgPortNotInBaseline, msg::package_name = port_name);
-        }
+
+        return Optional<Version>();
     }
 
     ExpectedL<std::unique_ptr<RegistryEntry>> FilesystemRegistry::get_port_entry(StringView port_name) const
@@ -964,109 +979,108 @@ namespace
     {
     }
 
-    ExpectedL<Version> GitRegistry::get_baseline_version(StringView port_name) const
+    ExpectedL<Optional<Version>> GitRegistry::get_baseline_version(StringView port_name) const
     {
-        const auto& baseline =
-            m_baseline
-                .get([this, port_name]() -> ExpectedL<Baseline> {
-                    // We delay baseline validation until here to give better error messages and suggestions
-                    if (!is_git_commit_sha(m_baseline_identifier))
-                    {
-                        auto& maybe_lock_entry = get_lock_entry();
-                        auto lock_entry = maybe_lock_entry.get();
-                        if (!lock_entry)
-                        {
-                            return maybe_lock_entry.error();
-                        }
+        const auto& maybe_baseline = m_baseline.get([this, port_name]() -> ExpectedL<Baseline> {
+            // We delay baseline validation until here to give better error messages and suggestions
+            if (!is_git_commit_sha(m_baseline_identifier))
+            {
+                auto& maybe_lock_entry = get_lock_entry();
+                auto lock_entry = maybe_lock_entry.get();
+                if (!lock_entry)
+                {
+                    return maybe_lock_entry.error();
+                }
 
-                        auto maybe_up_to_date = lock_entry->ensure_up_to_date(m_paths);
-                        if (maybe_up_to_date)
-                        {
-                            return msg::format_error(msgGitRegistryMustHaveBaseline,
-                                                     msg::url = m_repo,
-                                                     msg::commit_sha = lock_entry->commit_id());
-                        }
+                auto maybe_up_to_date = lock_entry->ensure_up_to_date(m_paths);
+                if (maybe_up_to_date)
+                {
+                    return msg::format_error(
+                        msgGitRegistryMustHaveBaseline, msg::url = m_repo, msg::commit_sha = lock_entry->commit_id());
+                }
 
-                        return std::move(maybe_up_to_date).error();
-                    }
+                return std::move(maybe_up_to_date).error();
+            }
 
-                    auto path_to_baseline = Path(registry_versions_dir_name.to_string()) / "baseline.json";
-                    auto maybe_contents =
-                        m_paths.git_show_from_remote_registry(m_baseline_identifier, path_to_baseline);
-                    if (!maybe_contents)
-                    {
-                        auto& maybe_lock_entry = get_lock_entry();
-                        auto lock_entry = maybe_lock_entry.get();
-                        if (!lock_entry)
-                        {
-                            return maybe_lock_entry.error();
-                        }
+            auto path_to_baseline = Path(registry_versions_dir_name.to_string()) / "baseline.json";
+            auto maybe_contents = m_paths.git_show_from_remote_registry(m_baseline_identifier, path_to_baseline);
+            if (!maybe_contents)
+            {
+                auto& maybe_lock_entry = get_lock_entry();
+                auto lock_entry = maybe_lock_entry.get();
+                if (!lock_entry)
+                {
+                    return maybe_lock_entry.error();
+                }
 
-                        auto maybe_up_to_date = lock_entry->ensure_up_to_date(m_paths);
-                        if (!maybe_up_to_date)
-                        {
-                            return std::move(maybe_up_to_date).error();
-                        }
+                auto maybe_up_to_date = lock_entry->ensure_up_to_date(m_paths);
+                if (!maybe_up_to_date)
+                {
+                    return std::move(maybe_up_to_date).error();
+                }
 
-                        maybe_contents = m_paths.git_show_from_remote_registry(m_baseline_identifier, path_to_baseline);
-                    }
+                maybe_contents = m_paths.git_show_from_remote_registry(m_baseline_identifier, path_to_baseline);
+            }
 
-                    if (!maybe_contents)
-                    {
-                        msg::println(msgFetchingBaselineInfo, msg::package_name = m_repo);
-                        auto maybe_err = m_paths.git_fetch(m_repo, m_baseline_identifier);
-                        if (!maybe_err)
-                        {
-                            get_global_metrics_collector().track_define(
-                                DefineMetric::RegistriesErrorCouldNotFindBaseline);
-                            return msg::format_error(msgFailedToFetchRepo, msg::url = m_repo)
-                                .append_raw('\n')
-                                .append(maybe_err.error());
-                        }
-
-                        maybe_contents = m_paths.git_show_from_remote_registry(m_baseline_identifier, path_to_baseline);
-                    }
-
-                    if (!maybe_contents)
-                    {
-                        get_global_metrics_collector().track_define(DefineMetric::RegistriesErrorCouldNotFindBaseline);
-                        return msg::format_error(msgCouldNotFindBaselineInCommit,
-                                                 msg::url = m_repo,
-                                                 msg::commit_sha = m_baseline_identifier,
-                                                 msg::package_name = port_name)
-                            .append_raw('\n')
-                            .append_raw(maybe_contents.error());
-                    }
-
-                    auto contents = maybe_contents.get();
-                    auto res_baseline = parse_baseline_versions(*contents, "default", path_to_baseline);
-                    if (auto opt_baseline = res_baseline.get())
-                    {
-                        if (auto p = opt_baseline->get())
-                        {
-                            return std::move(*p);
-                        }
-
-                        get_global_metrics_collector().track_define(DefineMetric::RegistriesErrorCouldNotFindBaseline);
-                        return msg::format_error(
-                            msgBaselineMissingDefault, msg::commit_sha = m_baseline_identifier, msg::url = m_repo);
-                    }
-
-                    return msg::format_error(msgErrorWhileFetchingBaseline,
-                                             msg::value = m_baseline_identifier,
-                                             msg::package_name = m_repo)
+            if (!maybe_contents)
+            {
+                msg::println(msgFetchingBaselineInfo, msg::package_name = m_repo);
+                auto maybe_err = m_paths.git_fetch(m_repo, m_baseline_identifier);
+                if (!maybe_err)
+                {
+                    get_global_metrics_collector().track_define(DefineMetric::RegistriesErrorCouldNotFindBaseline);
+                    return msg::format_error(msgFailedToFetchRepo, msg::url = m_repo)
                         .append_raw('\n')
-                        .append(res_baseline.error());
-                })
-                .value_or_exit(VCPKG_LINE_INFO);
+                        .append(maybe_err.error());
+                }
 
-        auto it = baseline.find(port_name);
-        if (it != baseline.end())
+                maybe_contents = m_paths.git_show_from_remote_registry(m_baseline_identifier, path_to_baseline);
+            }
+
+            if (!maybe_contents)
+            {
+                get_global_metrics_collector().track_define(DefineMetric::RegistriesErrorCouldNotFindBaseline);
+                return msg::format_error(msgCouldNotFindBaselineInCommit,
+                                         msg::url = m_repo,
+                                         msg::commit_sha = m_baseline_identifier,
+                                         msg::package_name = port_name)
+                    .append_raw('\n')
+                    .append_raw(maybe_contents.error());
+            }
+
+            auto contents = maybe_contents.get();
+            auto res_baseline = parse_baseline_versions(*contents, "default", path_to_baseline);
+            if (auto opt_baseline = res_baseline.get())
+            {
+                if (auto p = opt_baseline->get())
+                {
+                    return std::move(*p);
+                }
+
+                get_global_metrics_collector().track_define(DefineMetric::RegistriesErrorCouldNotFindBaseline);
+                return msg::format_error(
+                    msgBaselineMissingDefault, msg::commit_sha = m_baseline_identifier, msg::url = m_repo);
+            }
+
+            return msg::format_error(
+                       msgErrorWhileFetchingBaseline, msg::value = m_baseline_identifier, msg::package_name = m_repo)
+                .append_raw('\n')
+                .append(res_baseline.error());
+        });
+
+        auto baseline = maybe_baseline.get();
+        if (!baseline)
+        {
+            return maybe_baseline.error();
+        }
+
+        auto it = baseline->find(port_name);
+        if (it != baseline->end())
         {
             return it->second;
         }
 
-        return msg::format(msg::msgErrorMessage).append(msgPortNotInBaseline, msg::package_name = port_name);
+        return Optional<Version>();
     }
 
     ExpectedL<Unit> GitRegistry::append_all_port_names(std::vector<std::string>& out) const
@@ -1513,7 +1527,7 @@ namespace vcpkg
         return Util::fmap(std::move(candidates), [](const RegistryCandidate& target) { return target.impl; });
     }
 
-    ExpectedL<Version> RegistrySet::baseline_for_port(StringView port_name) const
+    ExpectedL<Optional<Version>> RegistrySet::baseline_for_port(StringView port_name) const
     {
         auto impl = registry_for_port(port_name);
         if (!impl) return msg::format(msg::msgErrorMessage).append(msgNoRegistryForPort, msg::package_name = port_name);

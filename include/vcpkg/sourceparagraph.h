@@ -214,8 +214,8 @@ namespace vcpkg
         std::string registry_location;
     };
 
-    void print_error_message(Span<const std::unique_ptr<ParseControlErrorInfo>> error_info_list);
-    inline void print_error_message(const std::unique_ptr<ParseControlErrorInfo>& error_info_list)
+    void print_error_message(View<LocalizedString> error_info_list);
+    inline void print_error_message(const LocalizedString& error_info_list)
     {
         return print_error_message({&error_info_list, 1});
     }

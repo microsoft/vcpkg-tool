@@ -49,7 +49,7 @@ namespace
         if (!scf)
         {
             msg::println_error(msgFailedToParseManifest, msg::path = path_string);
-            print_error_message(scf.error());
+            print_error_message(LocalizedString::from_raw(scf.error()->to_string()));
             msg::println();
             return nullopt;
         }
@@ -82,7 +82,7 @@ namespace
         if (!scf_res)
         {
             msg::println_error(msgFailedToParseControl, msg::path = control_path);
-            print_error_message(scf_res.error());
+            print_error_message(LocalizedString::from_raw(scf_res.error()->to_string()));
             return {};
         }
 

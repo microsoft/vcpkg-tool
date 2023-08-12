@@ -412,16 +412,16 @@ namespace vcpkg
                 continue;
             }
 
-            auto maybe_scf = Paragraphs::try_load_port(fs, paths.builtin_ports_directory() / port_name);
-            if (!maybe_scf)
+            auto maybe_scf =
+                Paragraphs::try_load_port_required(fs, port_name, paths.builtin_ports_directory() / port_name);
+            auto scf = maybe_scf.get();
+            if (!scf)
             {
                 msg::println_error(msgAddVersionLoadPortFailed, msg::package_name = port_name);
-                print_error_message(maybe_scf.error());
+                msg::println(Color::error, maybe_scf.error());
                 Checks::check_exit(VCPKG_LINE_INFO, !add_all);
                 continue;
             }
-
-            const auto& scf = maybe_scf.value(VCPKG_LINE_INFO);
 
             if (!skip_formatting_check)
             {
@@ -430,7 +430,7 @@ namespace vcpkg
                 if (fs.exists(path_to_manifest, IgnoreErrors{}))
                 {
                     const auto current_file_content = fs.read_contents(path_to_manifest, VCPKG_LINE_INFO);
-                    const auto json = serialize_manifest(*scf);
+                    const auto json = serialize_manifest(**scf);
                     const auto formatted_content = Json::stringify(json);
                     if (current_file_content != formatted_content)
                     {
@@ -454,7 +454,7 @@ namespace vcpkg
                 msg::println_warning(msgAddVersionUncommittedChanges, msg::package_name = port_name);
             }
 
-            const auto& schemed_version = scf->to_schemed_version();
+            const auto& schemed_version = (*scf)->to_schemed_version();
 
             auto git_tree_it = git_tree_map.find(port_name);
             if (git_tree_it == git_tree_map.end())

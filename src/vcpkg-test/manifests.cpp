@@ -45,7 +45,7 @@ static ParseExpected<SourceControlFile> test_parse_project_manifest(const Json::
     auto res = SourceControlFile::parse_project_manifest_object("<test manifest>", obj, null_sink);
     if (!res.has_value() && print == PrintErrors::Yes)
     {
-        print_error_message(res.error());
+        print_error_message(LocalizedString::from_raw(res.error()->to_string()));
     }
     return res;
 }
@@ -56,7 +56,7 @@ static ParseExpected<SourceControlFile> test_parse_port_manifest(const Json::Obj
     auto res = SourceControlFile::parse_port_manifest_object("<test manifest>", obj, null_sink);
     if (!res.has_value() && print == PrintErrors::Yes)
     {
-        print_error_message(res.error());
+        print_error_message(LocalizedString::from_raw(res.error()->to_string()));
     }
     return res;
 }
@@ -886,7 +886,7 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
     auto res = SourceControlFile::parse_port_manifest_object("<test manifest>", object, null_sink);
     if (!res.has_value())
     {
-        print_error_message(res.error());
+        print_error_message(LocalizedString::from_raw(res.error()->to_string()));
     }
     REQUIRE(res.has_value());
     REQUIRE(*res.get() != nullptr);
