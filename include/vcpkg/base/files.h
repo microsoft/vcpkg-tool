@@ -337,6 +337,10 @@ namespace vcpkg
         std::vector<std::string> exts;
         bool operator()(const Path& target) const;
     };
+
+#if !defined(_WIN32)
+    void close_mark_invalid(int& fd) noexcept;
+#endif // ^^^ !_WIN32
 }
 
 VCPKG_FORMAT_AS(vcpkg::Path, vcpkg::StringView);

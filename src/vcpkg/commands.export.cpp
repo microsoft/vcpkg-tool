@@ -389,10 +389,38 @@ namespace vcpkg::Export
         ret.prefab_options.enable_maven = Util::Sets::contains(options.switches, OPTION_PREFAB_ENABLE_MAVEN);
         ret.prefab_options.enable_debug = Util::Sets::contains(options.switches, OPTION_PREFAB_ENABLE_DEBUG);
         ret.maybe_output = Util::lookup_value_copy(options.settings, OPTION_OUTPUT);
-        ret.output_dir = Util::lookup_value(options.settings, OPTION_OUTPUT_DIR)
-                             .map([&](const Path& p) { return paths.original_cwd / p; })
-                             .value_or(paths.root);
         ret.all_installed = Util::Sets::contains(options.switches, OPTION_ALL_INSTALLED);
+
+        if (paths.manifest_mode_enabled())
+        {
+            auto output_dir_opt = Util::lookup_value(options.settings, OPTION_OUTPUT_DIR);
+
+            // --output-dir is required in manifest mode
+            if (auto d = output_dir_opt.get())
+            {
+                ret.output_dir = paths.original_cwd / *d;
+            }
+            else
+            {
+                msg::println_error(msgMissingOption, msg::option = "output-dir");
+                Checks::exit_fail(VCPKG_LINE_INFO);
+            }
+
+            // Force enable --all-installed in manifest mode
+            ret.all_installed = true;
+
+            // In manifest mode the entire installed directory is exported
+            if (!options.command_arguments.empty())
+            {
+                msg::println_error(msgUnexpectedArgument, msg::option = options.command_arguments[0]);
+                Checks::exit_fail(VCPKG_LINE_INFO);
+            }
+        }
+
+        ret.output_dir = ret.output_dir.empty() ? Util::lookup_value(options.settings, OPTION_OUTPUT_DIR)
+                                                      .map([&](const Path& p) { return paths.original_cwd / p; })
+                                                      .value_or(paths.root)
+                                                : ret.output_dir;
 
         if (ret.all_installed)
         {
@@ -593,10 +621,6 @@ namespace vcpkg::Export
                           Triplet host_triplet)
     {
         (void)host_triplet;
-        if (paths.manifest_mode_enabled())
-        {
-            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, msgExportUnsupportedInManifest);
-        }
         const StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
         const auto opts = handle_export_command_arguments(paths, args, default_triplet, status_db);
 
@@ -610,7 +634,7 @@ namespace vcpkg::Export
         std::vector<ExportPlanAction> export_plan = create_export_plan(opts.specs, status_db);
         if (export_plan.empty())
         {
-            Debug::print("Export plan cannot be empty.");
+            msg::println_error(msgCmdExportEmptyPlan);
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
