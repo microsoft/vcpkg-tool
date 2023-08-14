@@ -1969,6 +1969,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CiBaselineUnexpectedFail" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[REGRESSION: {spec} is marked as fail but not supported for {triplet}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[REGRESYON: {spec} başarısız olarak işaretlenmiş ancak {triplet} için desteklenmiyor.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CiBaselineUnexpectedFailCascade" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[REGRESSION: {spec} is marked as fail but one dependency is not supported for {triplet}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[REGRESYON: {spec} başarısız olarak işaretlenmiş ancak bir bağımlılık {triplet} için desteklenmiyor.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CiBaselineUnexpectedPass" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[PASSING, REMOVE FROM FAIL LIST: {spec} ({path}).]]></Val>
@@ -2181,6 +2199,15 @@
           <Val><![CDATA[Add installed {path} to {env_var}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Yüklü {path} yolunu şuna ekle: {env_var}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdExportEmptyPlan" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Refusing to create an export of zero packages. Install packages before exporting.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Sıfır paketlerin dışarı aktarılma işleminin oluşturulması reddediliyor. Dışarı aktarmadan önce paketleri yükleyin.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
