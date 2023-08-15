@@ -486,7 +486,7 @@ namespace vcpkg::Paragraphs
             p->erase(p->begin());
 
             bcf.features =
-                Util::fmap(*p, [&](auto&& raw_feature) -> BinaryParagraph { return BinaryParagraph(raw_feature); });
+                Util::fmap(*p, [&](auto&& raw_feature) -> BinaryParagraph { return BinaryParagraph(std::move(raw_feature)); });
 
             if (bcf.core_paragraph.spec != spec)
             {
