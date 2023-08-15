@@ -1155,7 +1155,6 @@ namespace vcpkg
             constexpr int max_port_file_count = 100;
 
             std::string portfile_cmake_contents;
-            auto&& port_dir = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_location;
             auto raw_files = fs.get_regular_files_recursive_lexically_proximate(port_dir, VCPKG_LINE_INFO);
             if (raw_files.size() > max_port_file_count)
             {
