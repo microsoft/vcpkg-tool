@@ -218,7 +218,7 @@ namespace vcpkg::Commands::DependInfo
         nodes.close_tag("Nodes");
         links.close_tag("Link");
         xml.buf.append(nodes.buf).append(links.buf);
-        xml.append("</DirectedGraph>");
+        xml.close_tag("DirectedGraph");
         return xml.buf;
     }
 
