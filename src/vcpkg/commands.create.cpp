@@ -51,7 +51,7 @@ namespace vcpkg::Commands::Create
                                    msgInvalidFilename,
                                    msg::value = FILESYSTEM_INVALID_CHARACTERS,
                                    msg::path = zip_file_name);
-            cmake_args.emplace_back("FILENAME", std::move(zip_file_name));
+            cmake_args.emplace_back("FILENAME", zip_file_name);
         }
 
         auto cmd_launch_cmake = make_cmake_cmd(paths, paths.ports_cmake, std::move(cmake_args));
