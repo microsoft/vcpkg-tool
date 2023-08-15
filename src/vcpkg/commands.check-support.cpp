@@ -170,7 +170,6 @@ namespace vcpkg::Commands
 
                 if (!supports_expression.evaluate(context))
                 {
-
                     Port& port = dependencies_not_supported.emplace_back();
                     port.port_name = spec.name();
                     port.features = std::move(action.feature_list);
