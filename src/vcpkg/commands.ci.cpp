@@ -55,7 +55,7 @@ namespace
             const auto source_path = paths.build_dir(spec);
             auto children = filesystem.get_regular_files_non_recursive(source_path, IgnoreErrors{});
             Util::erase_remove_if(children, NotExtensionCaseInsensitive{".log"});
-            const auto target_path = base_path / spec.name();
+            auto target_path = base_path / spec.name();
             (void)filesystem.create_directory(target_path, VCPKG_LINE_INFO);
             if (children.empty())
             {
@@ -64,7 +64,7 @@ namespace
                     " build.\n"
                     "This is usually because the build failed early and outside of a task that is logged.\n"
                     "See the console output logs from vcpkg for more information on the failure.\n";
-                filesystem.write_contents(target_path / readme_dot_log, message, VCPKG_LINE_INFO);
+                filesystem.write_contents(std::move(target_path) / readme_dot_log, message, VCPKG_LINE_INFO);
             }
             else
             {

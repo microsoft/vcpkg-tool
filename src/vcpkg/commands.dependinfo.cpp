@@ -137,7 +137,7 @@ namespace vcpkg::Commands::DependInfo
                                                          install_action.feature_list.end()};
                 features.erase("core");
 
-                std::string port_name = install_action.spec.name();
+                auto& port_name = install_action.spec.name();
 
                 PackageDependInfo info{port_name, -1, features, dependencies};
                 package_dependencies.emplace(port_name, std::move(info));
@@ -169,10 +169,9 @@ namespace vcpkg::Commands::DependInfo
 
     std::string create_dot_as_string(const std::vector<PackageDependInfo>& depend_info)
     {
-        int empty_node_count = 0;
+        unsigned int empty_node_count = 0;
 
-        std::string s;
-        s.append("digraph G{ rankdir=LR; edge [minlen=3]; overlap=false;");
+        std::string s = "digraph G{ rankdir=LR; edge [minlen=3]; overlap=false;";
 
         for (const auto& package : depend_info)
         {
@@ -197,14 +196,12 @@ namespace vcpkg::Commands::DependInfo
 
     std::string create_dgml_as_string(const std::vector<PackageDependInfo>& depend_info)
     {
-        std::string s;
-        s.append("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
-        s.append("<DirectedGraph xmlns=\"http://schemas.microsoft.com/vs/2009/dgml\">");
+        std::string s = R"(<?xml version="1.0" encoding="utf-8"?><DirectedGraph xmlns="http://schemas.microsoft.com/vs/2009/dgml">)";
 
         std::string nodes, links;
         for (const auto& package : depend_info)
         {
-            const std::string name = package.package;
+            const std::string& name = package.package;
             fmt::format_to(std::back_inserter(nodes), "<Node Id=\"{}\" />", name);
 
             // Iterate over dependencies.
@@ -222,8 +219,7 @@ namespace vcpkg::Commands::DependInfo
 
     std::string create_mermaid_as_string(const std::vector<PackageDependInfo>& depend_info)
     {
-        std::string s;
-        s.append("flowchart TD;");
+        std::string s = "flowchart TD;";
 
         for (const auto& package : depend_info)
         {

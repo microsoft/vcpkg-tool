@@ -150,7 +150,7 @@ namespace vcpkg::Commands::CIVerifyVersions
         {
             return {msg::format_error(msgWhileLoadingLocalPort, msg::package_name = port_name)
                         .append_raw('\n')
-                        .append_raw(maybe_scf.error()->error),
+                        .append_raw(std::move(maybe_scf).error()->error),
                     expected_right_tag};
         }
 
@@ -241,7 +241,7 @@ namespace vcpkg::Commands::CIVerifyVersions
         bool verify_git_trees = Util::Sets::contains(parsed_args.switches, OPTION_VERIFY_GIT_TREES);
 
         std::set<std::string> exclusion_set;
-        auto settings = parsed_args.settings;
+        auto& settings = parsed_args.settings;
         auto it_exclusions = settings.find(OPTION_EXCLUDE);
         if (it_exclusions != settings.end())
         {

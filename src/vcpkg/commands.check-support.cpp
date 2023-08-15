@@ -147,7 +147,7 @@ namespace vcpkg::Commands
             bool user_supported = false;
 
             std::vector<Port> dependencies_not_supported;
-            for (const auto& action : action_plan.install_actions)
+            for (auto&& action : action_plan.install_actions)
             {
                 const auto& spec = action.spec;
                 const auto& supports_expression = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO)
@@ -170,13 +170,12 @@ namespace vcpkg::Commands
 
                 if (!supports_expression.evaluate(context))
                 {
-                    Port port;
+
+                    Port& port = dependencies_not_supported.emplace_back();
                     port.port_name = spec.name();
-                    port.features = action.feature_list;
+                    port.features = std::move(action.feature_list);
                     port.triplet = spec.triplet();
                     port.supports_expr = to_string(supports_expression);
-
-                    dependencies_not_supported.push_back(port);
                 }
             }
 
