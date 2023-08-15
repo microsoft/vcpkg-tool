@@ -150,7 +150,7 @@ namespace vcpkg::Commands::CIVerifyVersions
         {
             return {msg::format_error(msgWhileLoadingLocalPort, msg::package_name = port_name)
                         .append_raw('\n')
-                        .append_raw(std::move(maybe_scf).error()->error),
+                        .append_raw(maybe_scf.error()->error),
                     expected_right_tag};
         }
 
