@@ -1,6 +1,7 @@
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/util.h>
+#include <vcpkg/base/xmlserializer.h>
 
 #include <vcpkg/cmakevars.h>
 #include <vcpkg/commands.dependinfo.h>
@@ -169,7 +170,7 @@ namespace vcpkg::Commands::DependInfo
 
     std::string create_dot_as_string(const std::vector<PackageDependInfo>& depend_info)
     {
-        unsigned int empty_node_count = 0;
+        int empty_node_count = 0;
 
         std::string s = "digraph G{ rankdir=LR; edge [minlen=3]; overlap=false;";
 
@@ -196,26 +197,29 @@ namespace vcpkg::Commands::DependInfo
 
     std::string create_dgml_as_string(const std::vector<PackageDependInfo>& depend_info)
     {
-        std::string s =
-            R"(<?xml version="1.0" encoding="utf-8"?><DirectedGraph xmlns="http://schemas.microsoft.com/vs/2009/dgml">)";
+        XmlSerializer xml;
+        xml.emit_declaration()
+            .open_tag(R"(DirectedGraph xmlns="http://schemas.microsoft.com/vs/2009/dgml")");
 
-        std::string nodes, links;
+        XmlSerializer nodes, links;
+        nodes.open_tag("Nodes");
+        links.open_tag("Link");
         for (const auto& package : depend_info)
         {
             const std::string& name = package.package;
-            fmt::format_to(std::back_inserter(nodes), "<Node Id=\"{}\" />", name);
+            nodes.start_complex_open_tag("Node").attr("Id", name).finish_self_closing_complex_tag();
 
             // Iterate over dependencies.
             for (const auto& d : package.dependencies)
             {
-                fmt::format_to(std::back_inserter(links), "<Link Source=\"{}\" Target=\"{}\" />", name, d);
+                links.start_complex_open_tag("Link").attr("Source", name).attr("Target", d).finish_self_closing_complex_tag();
             }
         }
-
-        fmt::format_to(std::back_inserter(s), "<Nodes>{}</Nodes>", nodes);
-        fmt::format_to(std::back_inserter(s), "<Links>{}</Links>", links);
-        s.append("</DirectedGraph>");
-        return s;
+        nodes.close_tag("Nodes");
+        links.close_tag("Link");
+        xml.buf.append(nodes).append(links);
+        xml.append("</DirectedGraph>");
+        return xml.buf;
     }
 
     std::string create_mermaid_as_string(const std::vector<PackageDependInfo>& depend_info)
