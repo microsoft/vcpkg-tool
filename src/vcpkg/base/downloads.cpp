@@ -13,6 +13,7 @@
 #include <vcpkg/base/system.proxy.h>
 #include <vcpkg/base/util.h>
 
+#include <vcpkg/commands.version.h>
 #include <vcpkg/metrics.h>
 
 namespace vcpkg
@@ -537,18 +538,24 @@ namespace vcpkg
         cmd.string_arg("-H").string_arg("X-GitHub-Api-Version: 2022-11-28");
         cmd.string_arg(
             Strings::concat("https://api.github.com/repos/", github_repository, "/dependency-graph/snapshots"));
-        cmd.string_arg("-d").string_arg(Json::stringify(snapshot));
+        cmd.string_arg("-d").string_arg("@-");
         int code = 0;
-        auto result = cmd_execute_and_stream_lines(cmd, [&code](StringView line) {
-            if (Strings::starts_with(line, guid_marker))
-            {
-                code = std::strtol(line.data() + guid_marker.size(), nullptr, 10);
-            }
-            else
-            {
-                Debug::println(line);
-            }
-        });
+        auto result = cmd_execute_and_stream_lines(
+            cmd,
+            [&code](StringView line) {
+                if (Strings::starts_with(line, guid_marker))
+                {
+                    code = std::strtol(line.data() + guid_marker.size(), nullptr, 10);
+                }
+                else
+                {
+                    Debug::println(line);
+                }
+            },
+            default_working_directory,
+            default_environment,
+            Encoding::Utf8,
+            Json::stringify(snapshot));
 
         auto r = result.get();
         if (r && *r == 0 && code >= 200 && code < 300)
@@ -563,7 +570,7 @@ namespace vcpkg
                             const std::vector<std::string>& secrets,
                             View<std::string> headers,
                             const Path& file,
-                            StringView request)
+                            StringView method)
     {
         static constexpr StringLiteral guid_marker = "9a1db05f-a65d-419b-aa72-037fb4d0672e";
 
@@ -592,7 +599,8 @@ namespace vcpkg
         }
 
         Command cmd;
-        cmd.string_arg("curl").string_arg("-X").string_arg(request);
+        cmd.string_arg("curl").string_arg("-X").string_arg(method);
+
         for (auto&& header : headers)
         {
             cmd.string_arg("-H").string_arg(header);
@@ -619,6 +627,46 @@ namespace vcpkg
         }
 
         return res;
+    }
+
+    std::string format_url_query(StringView base_url, View<std::string> query_params)
+    {
+        auto url = base_url.to_string();
+        if (query_params.empty())
+        {
+            return url;
+        }
+
+        std::string query = Strings::join("&", query_params);
+
+        return url + "?" + query;
+    }
+
+    ExpectedL<std::string> invoke_http_request(StringView method,
+                                               View<std::string> headers,
+                                               StringView url,
+                                               StringView data)
+    {
+        Command cmd;
+        cmd.string_arg("curl").string_arg("-s").string_arg("-L");
+        cmd.string_arg("-H").string_arg(
+            fmt::format("User-Agent: vcpkg/{}-{} (curl)", VCPKG_BASE_VERSION_AS_STRING, VCPKG_VERSION_AS_STRING));
+
+        for (auto&& header : headers)
+        {
+            cmd.string_arg("-H").string_arg(header);
+        }
+
+        cmd.string_arg("-X").string_arg(method);
+
+        if (!data.empty())
+        {
+            cmd.string_arg("--data-raw").string_arg(data);
+        }
+
+        cmd.string_arg(url);
+
+        return flatten_out(cmd_execute_and_capture_output(cmd), "curl");
     }
 
 #if defined(_WIN32)

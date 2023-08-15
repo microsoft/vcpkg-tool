@@ -148,13 +148,6 @@ namespace vcpkg::Commands::CI
     }
 
     static bool supported_for_triplet(const CMakeVars::CMakeVarProvider& var_provider,
-                                      const InstallPlanAction* install_plan)
-    {
-        auto&& scfl = install_plan->source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
-        return supported_for_triplet(var_provider, *scfl.source_control_file, install_plan->spec);
-    }
-
-    static bool supported_for_triplet(const CMakeVars::CMakeVarProvider& var_provider,
                                       const PortFileProvider& provider,
                                       PackageSpec spec)
     {
@@ -198,7 +191,6 @@ namespace vcpkg::Commands::CI
 
     static std::unique_ptr<UnknownCIPortsResults> compute_action_statuses(
         ExclusionPredicate is_excluded,
-        const CMakeVars::CMakeVarProvider& var_provider,
         const std::vector<CacheAvailability>& precheck_results,
         const std::unordered_set<std::string>& known_failures,
         const ActionPlan& action_plan)
@@ -215,19 +207,9 @@ namespace vcpkg::Commands::CI
             auto p = &action;
             ret->abi_map.emplace(action.spec, action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi);
             ret->features.emplace(action.spec, action.feature_list);
-
             if (is_excluded(p->spec))
             {
                 ret->action_state_string.emplace_back("skip");
-                ret->known.emplace(p->spec, BuildResult::EXCLUDED);
-                will_fail.emplace(p->spec);
-            }
-            else if (!supported_for_triplet(var_provider, p))
-            {
-                // This treats unsupported ports as if they are excluded
-                // which means the ports dependent on it will be cascaded due to missing dependencies
-                // Should this be changed so instead it is a failure to depend on a unsupported port?
-                ret->action_state_string.emplace_back("n/a");
                 ret->known.emplace(p->spec, BuildResult::EXCLUDED);
                 will_fail.emplace(p->spec);
             }
@@ -312,11 +294,13 @@ namespace vcpkg::Commands::CI
                                   const std::map<PackageSpec, BuildResult>& known,
                                   const CiBaselineData& cidata,
                                   const std::string& ci_baseline_file_name,
+                                  const LocalizedString& not_supported_regressions,
                                   bool allow_unexpected_passing)
     {
         bool has_error = false;
         LocalizedString output = msg::format(msgCiBaselineRegressionHeader);
         output.append_raw('\n');
+        output.append(not_supported_regressions);
         for (auto&& r : results)
         {
             auto result = r.build_result.value_or_exit(VCPKG_LINE_INFO).code;
@@ -455,9 +439,9 @@ namespace vcpkg::Commands::CI
         auto binary_cache = BinaryCache::make(args, paths, stdout_sink).value_or_exit(VCPKG_LINE_INFO);
         auto install_actions = Util::fmap(action_plan.install_actions, [](const auto& action) { return &action; });
         const auto precheck_results = binary_cache.precheck(install_actions);
-        auto split_specs = compute_action_statuses(
-            ExclusionPredicate{&exclusions_map}, var_provider, precheck_results, known_failures, action_plan);
-
+        auto split_specs =
+            compute_action_statuses(ExclusionPredicate{&exclusions_map}, precheck_results, known_failures, action_plan);
+        LocalizedString regressions;
         {
             std::string msg;
             for (const auto& spec : all_default_full_specs)
@@ -468,6 +452,15 @@ namespace vcpkg::Commands::CI
                     split_specs->known.emplace(spec.package_spec,
                                                supp ? BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES
                                                     : BuildResult::EXCLUDED);
+
+                    if (cidata.expected_failures.contains(spec.package_spec))
+                    {
+                        regressions
+                            .append(supp ? msgCiBaselineUnexpectedFailCascade : msgCiBaselineUnexpectedFail,
+                                    msg::spec = spec.package_spec,
+                                    msg::triplet = spec.package_spec.triplet())
+                            .append_raw('\n');
+                    }
                     msg += fmt::format("{:>40}: {:>8}\n", spec.package_spec, supp ? "cascade" : "skip");
                 }
             }
@@ -524,6 +517,11 @@ namespace vcpkg::Commands::CI
         if (is_dry_run)
         {
             print_plan(action_plan, true, paths.builtin_ports_directory());
+            if (!regressions.empty())
+            {
+                msg::println(Color::error, msgCiBaselineRegressionHeader);
+                msg::print(Color::error, regressions);
+            }
         }
         else
         {
@@ -547,8 +545,12 @@ namespace vcpkg::Commands::CI
 
             msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("\nTriplet: {}\n", target_triplet));
             summary.print();
-            print_regressions(
-                summary.results, split_specs->known, cidata, baseline_iter->second, allow_unexpected_passing);
+            print_regressions(summary.results,
+                              split_specs->known,
+                              cidata,
+                              baseline_iter->second,
+                              regressions,
+                              allow_unexpected_passing);
 
             auto it_xunit = settings.find(OPTION_XUNIT);
             if (it_xunit != settings.end())

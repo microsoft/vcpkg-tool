@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vcpkg/fwd/configuration.h>
+#include <vcpkg/fwd/packagespec.h>
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 
 #include <vcpkg/base/expected.h>
@@ -36,18 +37,39 @@ namespace vcpkg
         Optional<Version> try_get_minimum_version() const;
     };
 
+    struct DependencyRequestedFeature
+    {
+        std::string name;
+        PlatformExpression::Expr platform;
+        DependencyRequestedFeature(std::string name)
+            : DependencyRequestedFeature(std::move(name), PlatformExpression::Expr::Empty())
+        {
+        }
+        DependencyRequestedFeature(std::string name, PlatformExpression::Expr platform)
+            : name(std::move(name)), platform(std::move(platform))
+        {
+            Checks::check_exit(VCPKG_LINE_INFO, !this->name.empty() && this->name != "core" && this->name != "default");
+        }
+        friend bool operator==(const DependencyRequestedFeature& lhs, const DependencyRequestedFeature& rhs);
+        friend bool operator!=(const DependencyRequestedFeature& lhs, const DependencyRequestedFeature& rhs);
+    };
+
     struct Dependency
     {
         std::string name;
-        std::vector<std::string> features;
+        // a list of "real" features without "core" or "default". Use member default_features instead.
+        std::vector<DependencyRequestedFeature> features;
         PlatformExpression::Expr platform;
         DependencyConstraint constraint;
         bool host = false;
 
+        bool default_features = true;
+        bool has_platform_expressions() const;
+
         Json::Object extra_info;
 
-        /// @param id adds "default" if "core" not present.
-        FullPackageSpec to_full_spec(Triplet target, Triplet host, ImplicitDefault id) const;
+        /// @param id adds "default" if `default_features` is false.
+        FullPackageSpec to_full_spec(View<std::string> features, Triplet target, Triplet host) const;
 
         friend bool operator==(const Dependency& lhs, const Dependency& rhs);
         friend bool operator!=(const Dependency& lhs, const Dependency& rhs) { return !(lhs == rhs); }
@@ -69,8 +91,7 @@ namespace vcpkg
     std::vector<FullPackageSpec> filter_dependencies(const std::vector<Dependency>& deps,
                                                      Triplet t,
                                                      Triplet host,
-                                                     const std::unordered_map<std::string, std::string>& cmake_vars,
-                                                     ImplicitDefault id);
+                                                     const std::unordered_map<std::string, std::string>& cmake_vars);
 
     /// <summary>
     /// Port metadata of additional feature in a package (part of CONTROL file)
@@ -108,7 +129,7 @@ namespace vcpkg
         std::string documentation;
         std::vector<Dependency> dependencies;
         std::vector<DependencyOverride> overrides;
-        std::vector<std::string> default_features;
+        std::vector<DependencyRequestedFeature> default_features;
 
         // there are two distinct "empty" states here
         // "user did not provide a license" -> nullopt

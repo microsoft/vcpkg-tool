@@ -438,7 +438,7 @@ namespace vcpkg::Commands::Integrate
             msg::println_error(msg::format(msgCommandFailed, msg::command_line = TITLE)
                                    .append_raw('\n')
                                    .append_raw(script_path.generic_u8string()));
-            get_global_metrics_collector().track_string(StringMetric::Title, TITLE.to_string());
+            get_global_metrics_collector().track_string(StringMetric::Title, TITLE);
         }
 
         Checks::exit_with_code(VCPKG_LINE_INFO, rc);

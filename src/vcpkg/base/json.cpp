@@ -316,11 +316,7 @@ namespace vcpkg::Json
     // } struct Value
     // struct Array {
     Value& Array::push_back(std::string&& value) { return this->push_back(Json::Value::string(std::move(value))); }
-    Value& Array::push_back(Value&& value)
-    {
-        underlying_.push_back(std::move(value));
-        return underlying_.back();
-    }
+    Value& Array::push_back(Value&& value) { return underlying_.emplace_back(std::move(value)); }
     Object& Array::push_back(Object&& obj) { return push_back(Value::object(std::move(obj))).object(VCPKG_LINE_INFO); }
     Array& Array::push_back(Array&& arr) { return push_back(Value::array(std::move(arr))).array(VCPKG_LINE_INFO); }
     Value& Array::insert_before(iterator it, Value&& value)
@@ -349,8 +345,7 @@ namespace vcpkg::Json
                                 fmt::format("attempted to insert duplicate key {} into JSON object", key));
         }
 
-        underlying_.emplace_back(key.to_string(), std::move(value));
-        return underlying_.back().second;
+        return underlying_.emplace_back(key.to_string(), std::move(value)).second;
     }
     Value& Object::insert(StringView key, const Value& value)
     {
@@ -360,8 +355,7 @@ namespace vcpkg::Json
                                 fmt::format("attempted to insert duplicate key {} into JSON object", key));
         }
 
-        underlying_.emplace_back(key.to_string(), value);
-        return underlying_.back().second;
+        return underlying_.emplace_back(key.to_string(), value).second;
     }
     Array& Object::insert(StringView key, Array&& value)
     {
@@ -394,8 +388,7 @@ namespace vcpkg::Json
         }
         else
         {
-            underlying_.emplace_back(key, std::move(value));
-            return underlying_.back().second;
+            return underlying_.emplace_back(key, std::move(value)).second;
         }
     }
     Value& Object::insert_or_replace(StringView key, const Value& value)
@@ -408,8 +401,7 @@ namespace vcpkg::Json
         }
         else
         {
-            underlying_.emplace_back(key, value);
-            return underlying_.back().second;
+            return underlying_.emplace_back(key, value).second;
         }
     }
     Array& Object::insert_or_replace(StringView key, Array&& value)

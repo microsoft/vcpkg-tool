@@ -20,6 +20,7 @@
 #include <vcpkg/commands.edit.h>
 #include <vcpkg/commands.env.h>
 #include <vcpkg/commands.export.h>
+#include <vcpkg/commands.extract.h>
 #include <vcpkg/commands.fetch.h>
 #include <vcpkg/commands.find.h>
 #include <vcpkg/commands.format-manifest.h>
@@ -86,6 +87,7 @@ namespace vcpkg::Commands
         {"create", Create::perform_and_exit},
         {"deactivate", command_deactivate_and_exit},
         {"edit", Edit::perform_and_exit},
+        {"z-extract", command_extract_and_exit},
         {"fetch", Fetch::perform_and_exit},
         {"x-generate-msbuild-props", command_generate_msbuild_props_and_exit},
         {"find", command_find_and_exit},

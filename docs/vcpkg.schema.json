@@ -84,7 +84,7 @@
           "description": "Features enabled by default with the package.",
           "type": "array",
           "items": {
-            "$ref": "vcpkg-schema-definitions.schema.json#/definitions/identifier"
+            "$ref": "vcpkg-schema-definitions.schema.json#/definitions/dependency-feature"
           }
         },
         "supports": {

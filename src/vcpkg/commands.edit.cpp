@@ -170,10 +170,14 @@ namespace vcpkg::Commands::Edit
         }
 
         std::vector<Path> candidate_paths;
-        auto maybe_editor_path = get_environment_variable("EDITOR");
-        if (const std::string* editor_path = maybe_editor_path.get())
+
+        // Scope to prevent use of moved-from variable
         {
-            candidate_paths.emplace_back(*editor_path);
+            auto maybe_editor_path = get_environment_variable("EDITOR");
+            if (std::string* editor_path = maybe_editor_path.get())
+            {
+                candidate_paths.emplace_back(std::move(*editor_path));
+            }
         }
 
 #ifdef _WIN32
@@ -253,7 +257,7 @@ namespace vcpkg::Commands::Edit
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
-        const Path env_editor = *it;
+        const Path& env_editor = *it;
         const std::vector<std::string> arguments = create_editor_arguments(paths, options, ports);
         const auto args_as_string = Strings::join(" ", arguments);
         auto cmd_line = Command(env_editor).raw_arg(args_as_string).string_arg("-n");

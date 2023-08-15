@@ -40,6 +40,18 @@ namespace vcpkg
         std::error_code ec;
     };
 
+    struct IsSlash
+    {
+        bool operator()(const char c) const noexcept
+        {
+            return c == '/'
+#if defined(_WIN32)
+                   || c == '\\'
+#endif // _WIN32
+                ;
+        }
+    };
+
     bool is_symlink(FileType s);
     bool is_regular_file(FileType s);
     bool is_directory(FileType s);
@@ -113,6 +125,9 @@ namespace vcpkg
 
     struct ReadOnlyFilesystem : ILineReader
     {
+        virtual std::uint64_t file_size(const Path& file_path, std::error_code& ec) const = 0;
+        std::uint64_t file_size(const Path& file_path, LineInfo li) const;
+
         virtual std::string read_contents(const Path& file_path, std::error_code& ec) const = 0;
         std::string read_contents(const Path& file_path, LineInfo li) const;
 
@@ -315,6 +330,10 @@ namespace vcpkg
         std::vector<std::string> exts;
         bool operator()(const Path& target) const;
     };
+
+#if !defined(_WIN32)
+    void close_mark_invalid(int& fd) noexcept;
+#endif // ^^^ !_WIN32
 }
 
 VCPKG_FORMAT_AS(vcpkg::Path, vcpkg::StringView);

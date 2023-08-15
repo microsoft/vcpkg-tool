@@ -266,12 +266,14 @@ namespace vcpkg
 
     struct AbiInfo
     {
+        // These should always be known if an AbiInfo exists
         std::unique_ptr<PreBuildInfo> pre_build_info;
         Optional<const Toolset&> toolset;
+        // These might not be known if compiler tracking is turned off or the port is --editable
+        Optional<const CompilerInfo&> compiler_info;
         Optional<const std::string&> triplet_abi;
         std::string package_abi;
         Optional<Path> abi_tag_file;
-        Optional<const CompilerInfo&> compiler_info;
         std::vector<Path> relative_port_files;
         std::vector<std::string> relative_port_hashes;
         std::vector<Json::Value> heuristic_resources;
@@ -302,9 +304,15 @@ namespace vcpkg
     {
         explicit EnvCache(bool compiler_tracking) : m_compiler_tracking(compiler_tracking) { }
 
-        const Environment& get_action_env(const VcpkgPaths& paths, const AbiInfo& abi_info);
-        const std::string& get_triplet_info(const VcpkgPaths& paths, const AbiInfo& abi_info);
-        const CompilerInfo& get_compiler_info(const VcpkgPaths& paths, const AbiInfo& abi_info);
+        const Environment& get_action_env(const VcpkgPaths& paths,
+                                          const PreBuildInfo& pre_build_info,
+                                          const Toolset& toolset);
+        const std::string& get_triplet_info(const VcpkgPaths& paths,
+                                            const PreBuildInfo& pre_build_info,
+                                            const Toolset& toolset);
+        const CompilerInfo& get_compiler_info(const VcpkgPaths& paths,
+                                              const PreBuildInfo& pre_build_info,
+                                              const Toolset& toolset);
 
     private:
         struct TripletMapEntry

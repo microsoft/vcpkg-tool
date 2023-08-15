@@ -289,9 +289,7 @@ namespace vcpkg
         std::vector<StatusParagraph> features_spghs;
         for (auto&& feature : bcf.features)
         {
-            features_spghs.emplace_back();
-
-            StatusParagraph& feature_paragraph = features_spghs.back();
+            StatusParagraph& feature_paragraph = features_spghs.emplace_back();
             feature_paragraph.package = feature;
             feature_paragraph.want = Want::INSTALL;
             feature_paragraph.state = InstallState::HALF_INSTALLED;
@@ -571,8 +569,7 @@ namespace vcpkg
 
         for (auto&& action : action_plan.already_installed)
         {
-            results.emplace_back(action);
-            results.back().build_result.emplace(
+            results.emplace_back(action).build_result.emplace(
                 perform_install_plan_action(args, paths, action, status_db, binary_cache, build_logs_recorder));
         }
 
@@ -651,23 +648,9 @@ namespace vcpkg
         {OPTION_MANIFEST_FEATURE, []() { return msg::format(msgHelpTxtOptManifestFeature); }},
     }};
 
-    static std::vector<std::string> get_all_port_names(const VcpkgPaths& paths)
+    static std::vector<std::string> get_all_known_reachable_port_names_no_network(const VcpkgPaths& paths)
     {
-        const auto registries = paths.make_registry_set();
-
-        std::vector<std::string> ret;
-        for (const auto& registry : registries->registries())
-        {
-            const auto packages = registry.packages();
-            ret.insert(ret.end(), packages.begin(), packages.end());
-        }
-        if (auto registry = registries->default_registry())
-        {
-            registry->get_all_port_names(ret);
-        }
-
-        Util::sort_unique_erase(ret);
-        return ret;
+        return paths.make_registry_set()->get_all_known_reachable_port_names_no_network();
     }
 
     const CommandStructure Install::COMMAND_STRUCTURE = {
@@ -675,7 +658,7 @@ namespace vcpkg
         0,
         SIZE_MAX,
         {INSTALL_SWITCHES, INSTALL_SETTINGS, INSTALL_MULTISETTINGS},
-        &get_all_port_names,
+        &get_all_known_reachable_port_names_no_network,
     };
 
     // This command structure must share "critical" values (switches, number of arguments). It exists only to provide a
@@ -1117,12 +1100,23 @@ namespace vcpkg
             {
                 features.emplace_back("core");
             }
-
+            PackageSpec toplevel{manifest_core.name, default_triplet};
             auto core_it = std::remove(features.begin(), features.end(), "core");
             if (core_it == features.end())
             {
-                const auto& default_features = manifest_core.default_features;
-                features.insert(features.end(), default_features.begin(), default_features.end());
+                if (Util::any_of(manifest_core.default_features, [](const auto& f) { return !f.platform.is_empty(); }))
+                {
+                    const auto& vars = var_provider.get_or_load_dep_info_vars(toplevel, host_triplet);
+                    for (const auto& f : manifest_core.default_features)
+                    {
+                        if (f.platform.evaluate(vars)) features.push_back(f.name);
+                    }
+                }
+                else
+                {
+                    for (const auto& f : manifest_core.default_features)
+                        features.push_back(f.name);
+                }
             }
             else
             {
@@ -1176,7 +1170,6 @@ namespace vcpkg
 
             auto oprovider = make_manifest_provider(
                 fs, paths.original_cwd, extended_overlay_ports, manifest->path, std::move(manifest_scf));
-            PackageSpec toplevel{manifest_core.name, default_triplet};
             auto install_plan = create_versioned_install_plan(*verprovider,
                                                               *baseprovider,
                                                               *oprovider,
