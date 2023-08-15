@@ -21,6 +21,7 @@ namespace vcpkg::Commands::Contact
 
     void perform_and_exit(const VcpkgCmdArguments& args, const Filesystem& fs)
     {
+        (void)fs;
         const ParsedArguments parsed_args = args.parse_arguments(COMMAND_STRUCTURE);
 
         msg::println(msgEmailVcpkgTeam, msg::url = "vcpkg@microsoft.com");
