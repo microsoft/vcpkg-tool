@@ -198,12 +198,11 @@ namespace vcpkg::Commands::DependInfo
     std::string create_dgml_as_string(const std::vector<PackageDependInfo>& depend_info)
     {
         XmlSerializer xml;
-        xml.emit_declaration()
-            .open_tag(R"(DirectedGraph xmlns="http://schemas.microsoft.com/vs/2009/dgml")");
+        xml.emit_declaration().open_tag(R"(DirectedGraph xmlns="http://schemas.microsoft.com/vs/2009/dgml")");
 
         XmlSerializer nodes, links;
         nodes.open_tag("Nodes");
-        links.open_tag("Link");
+        links.open_tag("Links");
         for (const auto& package : depend_info)
         {
             const std::string& name = package.package;
@@ -212,11 +211,14 @@ namespace vcpkg::Commands::DependInfo
             // Iterate over dependencies.
             for (const auto& d : package.dependencies)
             {
-                links.start_complex_open_tag("Link").attr("Source", name).attr("Target", d).finish_self_closing_complex_tag();
+                links.start_complex_open_tag("Link")
+                    .attr("Source", name)
+                    .attr("Target", d)
+                    .finish_self_closing_complex_tag();
             }
         }
         nodes.close_tag("Nodes");
-        links.close_tag("Link");
+        links.close_tag("Links");
         xml.buf.append(nodes.buf).append(links.buf);
         xml.close_tag("DirectedGraph");
         return xml.buf;
