@@ -482,7 +482,7 @@ namespace vcpkg::Paragraphs
         if (auto p = pghs.get())
         {
             BinaryControlFile bcf;
-            bcf.core_paragraph = BinaryParagraph(p->front());
+            bcf.core_paragraph = BinaryParagraph(std::move(p->front()));
             p->erase(p->begin());
 
             bcf.features =
