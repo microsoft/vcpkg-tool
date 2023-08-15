@@ -586,7 +586,7 @@ namespace
         const auto super_directories = maybe_super_directories.get();
         if (!super_directories)
         {
-            return std::move(maybe_super_directories.error());
+            return maybe_super_directories.error();
         }
 
         for (auto&& super_directory : *super_directories)
