@@ -137,44 +137,45 @@ namespace vcpkg::Commands
         CreateInstallPlanOptions create_options{host_triplet, paths.packages()};
         for (const auto& user_spec : specs)
         {
-            auto action_plan = create_feature_install_plan(provider, *cmake_vars, {&user_spec, 1}, {}, create_options);
-
-            cmake_vars->load_tag_vars(action_plan, host_triplet);
-
             Port user_port;
             user_port.port_name = user_spec.package_spec.name();
             user_port.triplet = user_spec.package_spec.triplet();
             bool user_supported = false;
-
-            std::vector<Port> dependencies_not_supported;
-            for (auto&& action : action_plan.install_actions)
             {
-                const auto& spec = action.spec;
-                const auto& supports_expression = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO)
-                                                      .source_control_file->core_paragraph->supports_expression;
+                auto action_plan = create_feature_install_plan(provider, *cmake_vars, {&user_spec, 1}, {}, create_options);
 
-                PlatformExpression::Context context = cmake_vars->get_tag_vars(spec).value_or_exit(VCPKG_LINE_INFO);
+                cmake_vars->load_tag_vars(action_plan, host_triplet);
 
-                if (spec.name() == user_port.port_name && spec.triplet() == user_port.triplet)
+                std::vector<Port> dependencies_not_supported;
+                for (auto&& action : action_plan.install_actions)
                 {
-                    user_port.features = action.feature_list;
-                    user_port.supports_expr = to_string(supports_expression);
+                    const auto& spec = action.spec;
+                    const auto& supports_expression = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO)
+                        .source_control_file->core_paragraph->supports_expression;
 
-                    if (supports_expression.evaluate(context))
+                    PlatformExpression::Context context = cmake_vars->get_tag_vars(spec).value_or_exit(VCPKG_LINE_INFO);
+
+                    if (spec.name() == user_port.port_name && spec.triplet() == user_port.triplet)
                     {
-                        user_supported = true;
+                        user_port.features = action.feature_list;
+                        user_port.supports_expr = to_string(supports_expression);
+
+                        if (supports_expression.evaluate(context))
+                        {
+                            user_supported = true;
+                        }
+
+                        continue;
                     }
 
-                    continue;
-                }
-
-                if (!supports_expression.evaluate(context))
-                {
-                    Port& port = dependencies_not_supported.emplace_back();
-                    port.port_name = spec.name();
-                    port.features = std::move(action.feature_list);
-                    port.triplet = spec.triplet();
-                    port.supports_expr = to_string(supports_expression);
+                    if (!supports_expression.evaluate(context))
+                    {
+                        Port& port = dependencies_not_supported.emplace_back();
+                        port.port_name = spec.name();
+                        port.features = std::move(action.feature_list);
+                        port.triplet = spec.triplet();
+                        port.supports_expr = to_string(supports_expression);
+                    }
                 }
             }
 
