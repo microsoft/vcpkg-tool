@@ -2,7 +2,7 @@
 
 #include <vcpkg/base/files.h>
 
-#include <vcpkg/commands.extract.h>
+#include <vcpkg/commands.z-extract.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
@@ -11,7 +11,7 @@
 #include <vcpkg-test/util.h>
 
 using namespace vcpkg;
-using namespace vcpkg::Commands;
+using namespace vcpkg;
 
 #if defined(_WIN32)
 #define BASE_TEMP_PATH "C:\\to\\path\\temp\\"

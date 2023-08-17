@@ -2475,7 +2475,7 @@ TEST_CASE ("dependency graph API snapshot: host and target")
     };
     auto v = VcpkgCmdArguments::create_from_arg_sequence(nullptr, nullptr);
     v.imbue_from_fake_environment(envmap);
-    auto s = vcpkg::Commands::SetInstalled::create_dependency_graph_snapshot(v, plan);
+    auto s = create_dependency_graph_snapshot(v, plan);
 
     CHECK(s.has_value());
     auto obj = *s.get();

@@ -6,7 +6,7 @@
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
-namespace vcpkg::Commands::DependInfo
+namespace vcpkg
 {
     struct PackageDependInfo
     {
@@ -20,7 +20,7 @@ namespace vcpkg::Commands::DependInfo
     std::string create_dgml_as_string(const std::vector<PackageDependInfo>& depend_info);
     std::string create_mermaid_as_string(const std::vector<PackageDependInfo>& depend_info);
 
-    extern const CommandStructure COMMAND_STRUCTURE;
+    extern const CommandMetadata CommandDependinfoMetadata;
 
     enum class DependInfoSortMode
     {
@@ -48,8 +48,8 @@ namespace vcpkg::Commands::DependInfo
 
     ExpectedL<DependInfoStrategy> determine_depend_info_mode(const ParsedArguments& args);
 
-    void perform_and_exit(const VcpkgCmdArguments& args,
-                          const VcpkgPaths& paths,
-                          Triplet default_triplet,
-                          Triplet host_triplet);
+    void command_dependinfo_and_exit(const VcpkgCmdArguments& args,
+                                     const VcpkgPaths& paths,
+                                     Triplet default_triplet,
+                                     Triplet host_triplet);
 }

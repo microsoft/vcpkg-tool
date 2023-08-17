@@ -3,10 +3,9 @@
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/setup-messages.h>
 
-#include <vcpkg/commands.generate-message-map.h>
+#include <vcpkg/commands.z-generate-message-map.h>
 
 using namespace vcpkg;
-using namespace vcpkg::Commands;
 
 TEST_CASE ("append floating list", "[LocalizedString]")
 {

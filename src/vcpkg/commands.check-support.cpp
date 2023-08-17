@@ -14,13 +14,92 @@
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
-namespace vcpkg::Commands
+using namespace vcpkg;
+
+namespace
+{
+    struct Port
+    {
+        std::string port_name;
+        std::vector<std::string> features;
+        Triplet triplet;
+        std::string supports_expr;
+    };
+
+    Json::Object to_object(const Port& p)
+    {
+        Json::Object res;
+        res.insert("name", Json::Value::string(p.port_name));
+        res.insert("triplet", Json::Value::string(p.triplet.to_string()));
+
+        Json::Array& features = res.insert("features", Json::Array{});
+        for (const auto& feature : p.features)
+        {
+            features.push_back(Json::Value::string(feature));
+        }
+
+        if (!p.supports_expr.empty())
+        {
+            res.insert("supports", Json::Value::string(p.supports_expr));
+        }
+
+        return res;
+    }
+
+    void print_port_supported(const Port& p, bool is_top_level_supported, View<Port> reasons)
+    {
+        const auto full_port_name = [](const Port& port) {
+            return fmt::format(
+                "{}[{}]:{}", port.port_name, Strings::join(",", port.features), port.triplet.to_string());
+        };
+
+        if (reasons.size() == 0)
+        {
+            if (is_top_level_supported)
+            {
+                // supported!
+                msg::println(msgSupportedPort, msg::package_name = full_port_name(p));
+            }
+            else
+            {
+                msg::println(msg::format(msgUnsupportedPort, msg::package_name = full_port_name(p))
+                                 .append_raw('\n')
+                                 .append(msgPortSupportsField, msg::supports_expression = p.supports_expr));
+            }
+
+            return;
+        }
+        auto message = msg::format(msgUnsupportedPort, msg::package_name = full_port_name(p)).append_raw('\n');
+        if (is_top_level_supported)
+        {
+            message.append(msgPortDependencyConflict, msg::package_name = full_port_name(p));
+        }
+        else
+        {
+            message.append(msgPortSupportsField, msg::supports_expression = p.supports_expr)
+                .append_raw('\n')
+                .append(msgPortDependencyConflict, msg::package_name = full_port_name(p));
+        }
+
+        for (const Port& reason : reasons)
+        {
+            message.append_raw('\n')
+                .append_indent()
+                .append(msgUnsupportedPortDependency, msg::value = full_port_name(p))
+                .append(msgPortSupportsField, msg::supports_expression = reason.supports_expr);
+        }
+        msg::println(message);
+    }
+} // unnamed namespace
+
+namespace vcpkg
 {
     static constexpr StringLiteral OPTION_JSON{"x-json"};
-    static constexpr std::array<CommandSwitch, 1> CHECK_SUPPORT_SWITCHES = {
-        {{OPTION_JSON, []() { return msg::format(msgJsonSwitch); }}}};
+    static constexpr CommandSwitch CHECK_SUPPORT_SWITCHES[] = {
+        {OPTION_JSON, []() { return msg::format(msgJsonSwitch); }},
+    };
 
-    const CommandStructure COMMAND_STRUCTURE = {
+    constexpr CommandMetadata CommandCheckSupportMetadata = {
         [] { return create_example_string("x-check-support <package>..."); },
         1,
         SIZE_MAX,
@@ -28,88 +107,12 @@ namespace vcpkg::Commands
         nullptr,
     };
 
-    namespace
-    {
-        struct Port
-        {
-            std::string port_name;
-            std::vector<std::string> features;
-            Triplet triplet;
-            std::string supports_expr;
-        };
-
-        Json::Object to_object(const Port& p)
-        {
-            Json::Object res;
-            res.insert("name", Json::Value::string(p.port_name));
-            res.insert("triplet", Json::Value::string(p.triplet.to_string()));
-
-            Json::Array& features = res.insert("features", Json::Array{});
-            for (const auto& feature : p.features)
-            {
-                features.push_back(Json::Value::string(feature));
-            }
-
-            if (!p.supports_expr.empty())
-            {
-                res.insert("supports", Json::Value::string(p.supports_expr));
-            }
-
-            return res;
-        }
-
-        void print_port_supported(const Port& p, bool is_top_level_supported, View<Port> reasons)
-        {
-            const auto full_port_name = [](const Port& port) {
-                return fmt::format(
-                    "{}[{}]:{}", port.port_name, Strings::join(",", port.features), port.triplet.to_string());
-            };
-
-            if (reasons.size() == 0)
-            {
-                if (is_top_level_supported)
-                {
-                    // supported!
-                    msg::println(msgSupportedPort, msg::package_name = full_port_name(p));
-                }
-                else
-                {
-                    msg::println(msg::format(msgUnsupportedPort, msg::package_name = full_port_name(p))
-                                     .append_raw('\n')
-                                     .append(msgPortSupportsField, msg::supports_expression = p.supports_expr));
-                }
-
-                return;
-            }
-            auto message = msg::format(msgUnsupportedPort, msg::package_name = full_port_name(p)).append_raw('\n');
-            if (is_top_level_supported)
-            {
-                message.append(msgPortDependencyConflict, msg::package_name = full_port_name(p));
-            }
-            else
-            {
-                message.append(msgPortSupportsField, msg::supports_expression = p.supports_expr)
-                    .append_raw('\n')
-                    .append(msgPortDependencyConflict, msg::package_name = full_port_name(p));
-            }
-
-            for (const Port& reason : reasons)
-            {
-                message.append_raw('\n')
-                    .append_indent()
-                    .append(msgUnsupportedPortDependency, msg::value = full_port_name(p))
-                    .append(msgPortSupportsField, msg::supports_expression = reason.supports_expr);
-            }
-            msg::println(message);
-        }
-    }
-
-    void CheckSupport::perform_and_exit(const VcpkgCmdArguments& args,
+    void command_check_support_and_exit(const VcpkgCmdArguments& args,
                                         const VcpkgPaths& paths,
                                         Triplet default_triplet,
                                         Triplet host_triplet)
     {
-        const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
+        const ParsedArguments options = args.parse_arguments(CommandCheckSupportMetadata);
         const bool use_json = Util::Sets::contains(options.switches, OPTION_JSON);
         Json::Array json_to_print; // only used when `use_json`
 
@@ -118,7 +121,7 @@ namespace vcpkg::Commands
             return check_and_get_full_package_spec(arg,
                                                    default_triplet,
                                                    default_triplet_used,
-                                                   COMMAND_STRUCTURE.get_example_text(),
+                                                   CommandCheckSupportMetadata.get_example_text(),
                                                    paths.get_triplet_db());
         });
 
@@ -206,4 +209,4 @@ namespace vcpkg::Commands
             msg::write_unlocalized_text_to_stdout(Color::none, Json::stringify(json_to_print));
         }
     }
-}
+} // namespace vcpkg

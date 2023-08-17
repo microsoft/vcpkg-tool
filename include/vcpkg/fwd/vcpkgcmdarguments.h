@@ -7,7 +7,7 @@ namespace vcpkg
     struct CommandSetting;
     struct CommandMultiSetting;
     struct CommandOptionsStructure;
-    struct CommandStructure;
+    struct CommandMetadata;
     struct HelpTableFormatter;
     struct VcpkgCmdArguments;
     struct FeatureFlagSettings;

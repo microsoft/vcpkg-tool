@@ -4,7 +4,8 @@
 
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 
-namespace vcpkg::Commands
+namespace vcpkg
 {
+    extern const CommandMetadata CommandDownloadMetadata;
     void command_download_and_exit(const VcpkgCmdArguments& args, const Filesystem& fs);
 }

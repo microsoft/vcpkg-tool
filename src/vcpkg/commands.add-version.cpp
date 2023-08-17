@@ -25,11 +25,11 @@ namespace
     constexpr StringLiteral VERSION_DATE = "version-date";
     constexpr StringLiteral VERSION_STRING = "version-string";
 
-    static constexpr StringLiteral OPTION_ALL = "all";
-    static constexpr StringLiteral OPTION_OVERWRITE_VERSION = "overwrite-version";
-    static constexpr StringLiteral OPTION_SKIP_FORMATTING_CHECK = "skip-formatting-check";
-    static constexpr StringLiteral OPTION_SKIP_VERSION_FORMAT_CHECK = "skip-version-format-check";
-    static constexpr StringLiteral OPTION_VERBOSE = "verbose";
+    constexpr StringLiteral OPTION_ALL = "all";
+    constexpr StringLiteral OPTION_OVERWRITE_VERSION = "overwrite-version";
+    constexpr StringLiteral OPTION_SKIP_FORMATTING_CHECK = "skip-formatting-check";
+    constexpr StringLiteral OPTION_SKIP_VERSION_FORMAT_CHECK = "skip-version-format-check";
+    constexpr StringLiteral OPTION_VERBOSE = "verbose";
 
     enum class UpdateResult
     {
@@ -93,7 +93,7 @@ namespace
         }
     }
 
-    static Json::Object serialize_baseline(const std::map<std::string, Version, std::less<>>& baseline)
+    Json::Object serialize_baseline(const std::map<std::string, Version, std::less<>>& baseline)
     {
         Json::Object port_entries_obj;
         for (auto&& kv_pair : baseline)
@@ -108,7 +108,7 @@ namespace
         return baseline_obj;
     }
 
-    static Json::Object serialize_versions(const std::vector<VersionGitTree>& versions)
+    Json::Object serialize_versions(const std::vector<VersionGitTree>& versions)
     {
         Json::Array versions_array;
         for (auto&& version : versions)
@@ -124,9 +124,9 @@ namespace
         return output_object;
     }
 
-    static void write_baseline_file(const Filesystem& fs,
-                                    const std::map<std::string, Version, std::less<>>& baseline_map,
-                                    const Path& output_path)
+    void write_baseline_file(const Filesystem& fs,
+                             const std::map<std::string, Version, std::less<>>& baseline_map,
+                             const Path& output_path)
     {
         auto new_path = output_path + ".tmp";
         fs.create_directories(output_path.parent_path(), VCPKG_LINE_INFO);
@@ -134,9 +134,7 @@ namespace
         fs.rename(new_path, output_path, VCPKG_LINE_INFO);
     }
 
-    static void write_versions_file(const Filesystem& fs,
-                                    const std::vector<VersionGitTree>& versions,
-                                    const Path& output_path)
+    void write_versions_file(const Filesystem& fs, const std::vector<VersionGitTree>& versions, const Path& output_path)
     {
         auto new_path = output_path + ".tmp";
         fs.create_directories(output_path.parent_path(), VCPKG_LINE_INFO);
@@ -144,12 +142,12 @@ namespace
         fs.rename(new_path, output_path, VCPKG_LINE_INFO);
     }
 
-    static UpdateResult update_baseline_version(const VcpkgPaths& paths,
-                                                const std::string& port_name,
-                                                const Version& version,
-                                                const Path& baseline_path,
-                                                std::map<std::string, vcpkg::Version, std::less<>>& baseline_map,
-                                                bool print_success)
+    UpdateResult update_baseline_version(const VcpkgPaths& paths,
+                                         const std::string& port_name,
+                                         const Version& version,
+                                         const Path& baseline_path,
+                                         std::map<std::string, vcpkg::Version, std::less<>>& baseline_map,
+                                         bool print_success)
     {
         auto& fs = paths.get_filesystem();
 
@@ -184,15 +182,15 @@ namespace
         return UpdateResult::Updated;
     }
 
-    static UpdateResult update_version_db_file(const VcpkgPaths& paths,
-                                               const std::string& port_name,
-                                               const SchemedVersion& port_version,
-                                               const std::string& git_tree,
-                                               const Path& version_db_file_path,
-                                               bool overwrite_version,
-                                               bool print_success,
-                                               bool keep_going,
-                                               bool skip_version_format_check)
+    UpdateResult update_version_db_file(const VcpkgPaths& paths,
+                                        const std::string& port_name,
+                                        const SchemedVersion& port_version,
+                                        const std::string& git_tree,
+                                        const Path& version_db_file_path,
+                                        bool overwrite_version,
+                                        bool print_success,
+                                        bool keep_going,
+                                        bool skip_version_format_check)
     {
         auto& fs = paths.get_filesystem();
         if (!fs.exists(version_db_file_path, IgnoreErrors{}))
@@ -306,29 +304,29 @@ namespace
                                .append(maybe_versions.error()));
         Checks::exit_fail(VCPKG_LINE_INFO);
     }
-}
 
-namespace vcpkg::Commands::AddVersion
-{
-    const CommandSwitch COMMAND_SWITCHES[] = {
+    constexpr CommandSwitch AddVersionSwitches[] = {
         {OPTION_ALL, []() { return msg::format(msgCmdAddVersionOptAll); }},
         {OPTION_OVERWRITE_VERSION, []() { return msg::format(msgCmdAddVersionOptOverwriteVersion); }},
         {OPTION_SKIP_FORMATTING_CHECK, []() { return msg::format(msgCmdAddVersionOptSkipFormatChk); }},
         {OPTION_SKIP_VERSION_FORMAT_CHECK, []() { return msg::format(msgCmdAddVersionOptSkipVersionFormatChk); }},
         {OPTION_VERBOSE, []() { return msg::format(msgCmdAddVersionOptVerbose); }},
     };
+} // unnamed namespace
 
-    const CommandStructure COMMAND_STRUCTURE{
+namespace vcpkg
+{
+    constexpr CommandMetadata CommandAddVersionMetadata{
         [] { return create_example_string("x-add-version <port name>"); },
         0,
         1,
-        {{COMMAND_SWITCHES}, {}, {}},
+        {{AddVersionSwitches}, {}, {}},
         nullptr,
     };
 
-    void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
+    void command_add_version_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
-        auto parsed_args = args.parse_arguments(COMMAND_STRUCTURE);
+        auto parsed_args = args.parse_arguments(CommandAddVersionMetadata);
         const bool add_all = Util::Sets::contains(parsed_args.switches, OPTION_ALL);
         const bool overwrite_version = Util::Sets::contains(parsed_args.switches, OPTION_OVERWRITE_VERSION);
         const bool skip_formatting_check = Util::Sets::contains(parsed_args.switches, OPTION_SKIP_FORMATTING_CHECK);
@@ -483,4 +481,4 @@ namespace vcpkg::Commands::AddVersion
         }
         Checks::exit_success(VCPKG_LINE_INFO);
     }
-}
+} // namespace vcpkg

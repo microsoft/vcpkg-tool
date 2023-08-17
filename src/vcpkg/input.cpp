@@ -45,7 +45,7 @@ namespace vcpkg
         if (!database.is_valid_triplet_canonical_name(as_lower))
         {
             msg::println_error(msgInvalidTriplet, msg::triplet = as_lower);
-            Help::help_topic_valid_triplet(database);
+            help_topic_valid_triplet(database);
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
     }

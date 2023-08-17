@@ -16,7 +16,7 @@
 #undef minor
 #endif
 
-namespace vcpkg::Export::Prefab
+namespace vcpkg::Prefab
 {
     constexpr int kFragmentSize = 3;
 
