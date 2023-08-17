@@ -82,11 +82,6 @@ struct MockVersionedPortfileProvider : IVersionedPortfileProvider
 
         return it2->second;
     }
-
-    virtual void load_all_control_files(std::map<std::string, const SourceControlFileAndLocation*>&) const override
-    {
-        Checks::unreachable(VCPKG_LINE_INFO);
-    }
 };
 
 struct CoreDependency : Dependency
@@ -211,11 +206,6 @@ struct MockOverlayProvider : IOverlayProvider
     }
 
     SourceControlFileAndLocation& emplace(const std::string& name) { return emplace(name, {"1", 0}); }
-
-    virtual void load_all_control_files(std::map<std::string, const SourceControlFileAndLocation*>&) const override
-    {
-        Checks::unreachable(VCPKG_LINE_INFO);
-    }
 
 private:
     std::map<std::string, SourceControlFileAndLocation, std::less<>> mappings;
