@@ -491,7 +491,7 @@ namespace vcpkg::Paragraphs
                                    msg::actual = bcf.core_paragraph.spec);
             }
 
-            bcf.features.reserve(paragraphs.size());
+            bcf.features.reserve(paragraphs.size() - 1);
             for (std::size_t idx = 1; idx < paragraphs.size(); ++idx)
             {
                 bcf.features.emplace_back(BinaryParagraph{std::move(paragraphs[idx])});
