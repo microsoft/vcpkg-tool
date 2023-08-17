@@ -477,17 +477,12 @@ namespace vcpkg::Paragraphs
     {
         StatsTimer timer(g_load_ports_stats);
 
-        ExpectedL<std::vector<Paragraph>> pghs = get_paragraphs(fs, package_dir / "CONTROL");
-
-        if (auto p = pghs.get())
+        ExpectedL<std::vector<Paragraph>> maybe_paragraphs = get_paragraphs(fs, package_dir / "CONTROL");
+        if (auto pparagraphs = maybe_paragraphs.get())
         {
+            auto& paragraphs = *pparagraphs;
             BinaryControlFile bcf;
-            bcf.core_paragraph = BinaryParagraph(std::move(p->front()));
-            p->erase(p->begin());
-
-            bcf.features = Util::fmap(
-                *p, [&](auto&& raw_feature) -> BinaryParagraph { return BinaryParagraph(std::move(raw_feature)); });
-
+            bcf.core_paragraph = BinaryParagraph(std::move(paragraphs[0]));
             if (bcf.core_paragraph.spec != spec)
             {
                 return msg::format(msgMismatchedSpec,
@@ -496,10 +491,16 @@ namespace vcpkg::Paragraphs
                                    msg::actual = bcf.core_paragraph.spec);
             }
 
+            bcf.features.reserve(paragraphs.size());
+            for (std::size_t idx = 1; idx < paragraphs.size(); ++idx)
+            {
+                bcf.features.emplace_back(BinaryParagraph{std::move(paragraphs[idx])});
+            }
+
             return bcf;
         }
 
-        return pghs.error();
+        return maybe_paragraphs.error();
     }
 
     LoadResults try_load_all_registry_ports(const ReadOnlyFilesystem& fs, const RegistrySet& registries)
