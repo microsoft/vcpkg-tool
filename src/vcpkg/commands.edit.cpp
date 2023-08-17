@@ -90,10 +90,9 @@ namespace vcpkg::Commands::Edit
 
     static std::vector<std::string> valid_arguments(const VcpkgPaths& paths)
     {
-        auto registry_set = paths.make_registry_set();
-        auto sources_and_errors = Paragraphs::try_load_all_registry_ports(paths.get_filesystem(), *registry_set);
-
-        return Util::fmap(sources_and_errors.paragraphs, Paragraphs::get_name_of_control_file);
+        return Util::fmap(
+            paths.get_filesystem().get_directories_non_recursive(paths.builtin_ports_directory(), IgnoreErrors{}),
+            [](const Path& p) { return p.filename().to_string(); });
     }
 
     static constexpr std::array<CommandSwitch, 2> EDIT_SWITCHES = {
