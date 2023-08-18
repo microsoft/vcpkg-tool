@@ -45,7 +45,7 @@ namespace vcpkg::Commands::Create
 
         if (parsed.command_arguments.size() >= 3)
         {
-            const std::string& zip_file_name = parsed.command_arguments[2];
+            std::string& zip_file_name = parsed.command_arguments[2];
             Checks::msg_check_exit(VCPKG_LINE_INFO,
                                    !has_invalid_chars_for_filesystem(zip_file_name),
                                    msgInvalidFilename,

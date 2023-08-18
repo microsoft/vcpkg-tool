@@ -1,6 +1,7 @@
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/util.h>
+#include <vcpkg/base/xmlserializer.h>
 
 #include <vcpkg/cmakevars.h>
 #include <vcpkg/commands.dependinfo.h>
@@ -137,7 +138,7 @@ namespace vcpkg::Commands::DependInfo
                                                          install_action.feature_list.end()};
                 features.erase("core");
 
-                std::string port_name = install_action.spec.name();
+                auto& port_name = install_action.spec.name();
 
                 PackageDependInfo info{port_name, -1, features, dependencies};
                 package_dependencies.emplace(port_name, std::move(info));
@@ -171,8 +172,7 @@ namespace vcpkg::Commands::DependInfo
     {
         int empty_node_count = 0;
 
-        std::string s;
-        s.append("digraph G{ rankdir=LR; edge [minlen=3]; overlap=false;");
+        std::string s = "digraph G{ rankdir=LR; edge [minlen=3]; overlap=false;";
 
         for (const auto& package : depend_info)
         {
@@ -197,33 +197,36 @@ namespace vcpkg::Commands::DependInfo
 
     std::string create_dgml_as_string(const std::vector<PackageDependInfo>& depend_info)
     {
-        std::string s;
-        s.append("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
-        s.append("<DirectedGraph xmlns=\"http://schemas.microsoft.com/vs/2009/dgml\">");
+        XmlSerializer xml;
+        xml.emit_declaration().open_tag(R"(DirectedGraph xmlns="http://schemas.microsoft.com/vs/2009/dgml")");
 
-        std::string nodes, links;
+        XmlSerializer nodes, links;
+        nodes.open_tag("Nodes");
+        links.open_tag("Links");
         for (const auto& package : depend_info)
         {
-            const std::string name = package.package;
-            fmt::format_to(std::back_inserter(nodes), "<Node Id=\"{}\" />", name);
+            const std::string& name = package.package;
+            nodes.start_complex_open_tag("Node").attr("Id", name).finish_self_closing_complex_tag();
 
             // Iterate over dependencies.
             for (const auto& d : package.dependencies)
             {
-                fmt::format_to(std::back_inserter(links), "<Link Source=\"{}\" Target=\"{}\" />", name, d);
+                links.start_complex_open_tag("Link")
+                    .attr("Source", name)
+                    .attr("Target", d)
+                    .finish_self_closing_complex_tag();
             }
         }
-
-        fmt::format_to(std::back_inserter(s), "<Nodes>{}</Nodes>", nodes);
-        fmt::format_to(std::back_inserter(s), "<Links>{}</Links>", links);
-        s.append("</DirectedGraph>");
-        return s;
+        nodes.close_tag("Nodes");
+        links.close_tag("Links");
+        xml.buf.append(nodes.buf).append(links.buf);
+        xml.close_tag("DirectedGraph");
+        return xml.buf;
     }
 
     std::string create_mermaid_as_string(const std::vector<PackageDependInfo>& depend_info)
     {
-        std::string s;
-        s.append("flowchart TD;");
+        std::string s = "flowchart TD;";
 
         for (const auto& package : depend_info)
         {
