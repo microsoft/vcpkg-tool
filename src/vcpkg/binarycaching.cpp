@@ -384,12 +384,21 @@ namespace
             std::map<std::string, uint64_t> other_sync_files; // Mapping from id to bytes read
 
             template<typename F>
-            void get_sync_updates(const Filesystem& fs, F&& func)
+            void get_sync_updates(const Filesystem& fs, F&& func, bool delete_old = false)
             {
                 for (const auto& file : fs.get_files_non_recursive(sync_root_dir, VCPKG_LINE_INFO))
                 {
                     if (file == own_sync_file.path() || file.filename() == ".DS_Store") continue;
-
+                    if (delete_old)
+                    {
+                        using namespace std::chrono;
+                        if (fs.last_write_time_now() - fs.last_write_time(file, VCPKG_LINE_INFO) >
+                            duration_cast<nanoseconds>(24h).count())
+                        {
+                            fs.remove(file, IgnoreErrors{});
+                            continue;
+                        }
+                    }
                     auto new_size = fs.file_size(file, VCPKG_LINE_INFO);
                     auto& cur_size = other_sync_files[file.filename().to_string()];
                     if (new_size > cur_size)
@@ -541,10 +550,13 @@ namespace
                     if (cache.folder_settings.delete_policy != FolderSettings::DeletePolicy::None)
                     {
                         std::unordered_map<std::string, uint64_t> file_sizes;
-                        cache.get_sync_updates(m_fs, [&](auto id, auto size) {
-                            auto size_as_int = Strings::strto<uint64_t>(size).value_or_exit(VCPKG_LINE_INFO);
-                            file_sizes.emplace(id.to_string(), size_as_int);
-                        });
+                        cache.get_sync_updates(
+                            m_fs,
+                            [&](auto id, auto size) {
+                                auto size_as_int = Strings::strto<uint64_t>(size).value_or_exit(VCPKG_LINE_INFO);
+                                file_sizes.emplace(id.to_string(), size_as_int);
+                            },
+                            true);
                         auto& settings = cache.folder_settings;
                         auto settings_path = archives_root_dir / "settings.json";
                         for (auto& path : m_fs.get_regular_files_recursive(archives_root_dir, IgnoreErrors{}))
