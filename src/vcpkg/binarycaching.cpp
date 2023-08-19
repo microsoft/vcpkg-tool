@@ -223,7 +223,6 @@ namespace
             None,
             OldestAccessDate,
             OldestModificationDate,
-            OldestModificationDateUpdateOnAccess,
         };
         DeletePolicy delete_policy = DeletePolicy::None;
         int64_t filetime_now(const Filesystem& fs)
@@ -231,8 +230,7 @@ namespace
             switch (delete_policy)
             {
                 case DeletePolicy::OldestAccessDate: return fs.last_access_time_now();
-                case DeletePolicy::OldestModificationDate:
-                case DeletePolicy::OldestModificationDateUpdateOnAccess: return fs.last_write_time_now();
+                case DeletePolicy::OldestModificationDate: return fs.last_write_time_now();
                 default: Checks::unreachable(VCPKG_LINE_INFO);
             }
         }
@@ -242,8 +240,7 @@ namespace
             {
                 case DeletePolicy::OldestAccessDate: return fs.last_access_time(path, ec);
 
-                case DeletePolicy::OldestModificationDate:
-                case DeletePolicy::OldestModificationDateUpdateOnAccess: return fs.last_write_time(path, ec);
+                case DeletePolicy::OldestModificationDate: return fs.last_write_time(path, ec);
                 default: Checks::unreachable(VCPKG_LINE_INFO);
             }
         }
@@ -256,8 +253,6 @@ namespace
             case FolderSettings::DeletePolicy::None: return "None";
             case FolderSettings::DeletePolicy::OldestAccessDate: return "OldestAccessDate";
             case FolderSettings::DeletePolicy::OldestModificationDate: return "OldestModificationDate";
-            case FolderSettings::DeletePolicy::OldestModificationDateUpdateOnAccess:
-                return "OldestModificationDateUpdateOnAccess";
         }
         Checks::unreachable(VCPKG_LINE_INFO);
     }
@@ -274,10 +269,6 @@ namespace
             else if (value == "OldestAccessDate")
             {
                 return FolderSettings::DeletePolicy::OldestAccessDate;
-            }
-            else if (value == "OldestModificationDateUpdateOnAccess")
-            {
-                return FolderSettings::DeletePolicy::OldestModificationDateUpdateOnAccess;
             }
             else if (value == "OldestModificationDate")
             {
@@ -482,8 +473,7 @@ namespace
             else
             {
                 maybe_settings.emplace();
-                maybe_settings.get()->delete_policy =
-                    FolderSettings::DeletePolicy::OldestModificationDateUpdateOnAccess;
+                maybe_settings.get()->delete_policy = FolderSettings::DeletePolicy::OldestModificationDate;
                 const auto write_settings_file = [&]() {
                     auto obj = FolderSettingsDeserializer::serialize(*maybe_settings.get());
                     obj.insert("$schema",

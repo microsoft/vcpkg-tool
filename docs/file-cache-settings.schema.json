@@ -11,8 +11,7 @@
       "enum": [
         "None",
         "OldestAccessDate",
-        "OldestModificationDate",
-        "OldestModificationDateUpdateOnAccess"
+        "OldestModificationDate"
       ]
     },
     "max-size-in-gb": {
