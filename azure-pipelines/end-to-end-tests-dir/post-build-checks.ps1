@@ -7,7 +7,7 @@ if (-not $IsWindows) {
 
 # DLLs with no exports
 Refresh-TestRoot
-[string]$buildOutput = Run-VcpkgAndCaptureOutput @commonArgs install --overlay-ports="$PSScriptRoot/../e2e_ports" vcpkg-internal-dll-with-no-exports --no-binarycaching
+[string]$buildOutput = Run-VcpkgAndCaptureOutput @commonArgs install --overlay-ports="$PSScriptRoot/../e2e-ports" vcpkg-internal-dll-with-no-exports --no-binarycaching
 if (-not $buildOutput.Contains("$packagesRoot\vcpkg-internal-dll-with-no-exports_x86-windows\debug\bin\no_exports.dll") `
     -or -not $buildOutput.Contains("$packagesRoot\vcpkg-internal-dll-with-no-exports_x86-windows\bin\no_exports.dll") `
     -or -not $buildOutput.Contains('set(VCPKG_POLICY_DLLS_WITHOUT_EXPORTS enabled)')) {
@@ -17,7 +17,7 @@ if (-not $buildOutput.Contains("$packagesRoot\vcpkg-internal-dll-with-no-exports
 # DLLs with wrong architecture
 Refresh-TestRoot
 mkdir "$TestingRoot/wrong-architecture"
-Copy-Item -Recurse "$PSScriptRoot/../e2e_assets/test-dll-port-template" "$TestingRoot/wrong-architecture/test-dll"
+Copy-Item -Recurse "$PSScriptRoot/../e2e-assets/test-dll-port-template" "$TestingRoot/wrong-architecture/test-dll"
 Run-Vcpkg env "$TestingRoot/wrong-architecture/test-dll/build.cmd" --Triplet x64-windows
 Throw-IfFailed
 
@@ -40,7 +40,7 @@ if (-not $buildOutput.Replace("`r`n", "`n").Contains($expected)) {
 # DLLs with no AppContainer bit
 Refresh-TestRoot
 mkdir "$TestingRoot/wrong-appcontainer"
-Copy-Item -Recurse "$PSScriptRoot/../e2e_assets/test-dll-port-template" "$TestingRoot/wrong-appcontainer/test-dll"
+Copy-Item -Recurse "$PSScriptRoot/../e2e-assets/test-dll-port-template" "$TestingRoot/wrong-appcontainer/test-dll"
 Run-Vcpkg env "$TestingRoot/wrong-appcontainer/test-dll/build.cmd" --Triplet x64-windows
 Throw-IfFailed
 
@@ -57,7 +57,7 @@ if (-not $buildOutput.Replace("`r`n", "`n").Contains($expected)) {
 # Wrong CRT linkage
 Refresh-TestRoot
 mkdir "$TestingRoot/wrong-crt"
-Copy-Item -Recurse "$PSScriptRoot/../e2e_assets/test-lib-port-template-dynamic-crt" "$TestingRoot/wrong-crt/test-lib"
+Copy-Item -Recurse "$PSScriptRoot/../e2e-assets/test-lib-port-template-dynamic-crt" "$TestingRoot/wrong-crt/test-lib"
 Run-Vcpkg env "$TestingRoot/wrong-crt/test-lib/build.cmd" --Triplet x86-windows-static
 Throw-IfFailed
 

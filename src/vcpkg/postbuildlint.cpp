@@ -353,11 +353,11 @@ namespace vcpkg
 
     static LintStatus check_for_copyright_file(const ReadOnlyFilesystem& fs,
                                                const PackageSpec& spec,
+                                               const Path& package_dir,
                                                const VcpkgPaths& paths,
                                                MessageSink& msg_sink)
     {
-        const auto packages_dir = paths.package_dir(spec);
-        const auto copyright_file = packages_dir / "share" / spec.name() / "copyright";
+        const auto copyright_file = package_dir / "share" / spec.name() / "copyright";
 
         switch (fs.status(copyright_file, IgnoreErrors{}))
         {
@@ -396,11 +396,9 @@ namespace vcpkg
                                         1); // The +1 is needed to remove the "/"
             const Path relative_path = found_relative_native;
             msg_sink.print(Color::none,
-                           fmt::format("\n    configure_file(\"${{CURRENT_BUILDTREES_DIR}}/{}/{}\" "
-                                       "\"${{CURRENT_PACKAGES_DIR}}/share/{}/copyright\" COPYONLY)\n",
+                           fmt::format("\n    vcpkg_install_copyright(FILE_LIST \"${{SOURCE_PATH}}/{}/{}\")\n",
                                        relative_path.generic_u8string(),
-                                       found_file.filename(),
-                                       spec.name()));
+                                       found_file.filename()));
         }
         else if (potential_copyright_files.size() > 1)
         {
@@ -577,6 +575,8 @@ namespace vcpkg
             case MachineType::THUMB: return "thumb";
             case MachineType::WCEMIPSV2: return "mips-le-wce-v2";
             case MachineType::LLVM_BITCODE: return "llvm-bitcode";
+            case MachineType::LOONGARCH32: return "loongarch32";
+            case MachineType::LOONGARCH64: return "loongarch64";
             default: return fmt::format("unknown-{}", static_cast<uint16_t>(machine_type));
         }
     }
@@ -1364,7 +1364,7 @@ namespace vcpkg
         error_count += check_folder_debug_lib_cmake(fs, package_dir, spec, msg_sink);
         error_count += check_for_dlls_in_lib_dir(fs, package_dir, msg_sink);
         error_count += check_for_dlls_in_lib_dir(fs, package_dir / "debug", msg_sink);
-        error_count += check_for_copyright_file(fs, spec, paths, msg_sink);
+        error_count += check_for_copyright_file(fs, spec, package_dir, paths, msg_sink);
         error_count += check_for_exes(fs, package_dir, msg_sink);
         error_count += check_for_exes(fs, package_dir / "debug", msg_sink);
         error_count += check_for_usage_forgot_install(fs, port_dir, package_dir, spec, msg_sink);

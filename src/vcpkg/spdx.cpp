@@ -71,7 +71,7 @@ static Json::Object make_resource(
         auto& chk = obj.insert("checksums", Json::Array());
         auto& chk512 = chk.push_back(Json::Object());
         chk512.insert("algorithm", "SHA512");
-        chk512.insert("checksumValue", Strings::ascii_to_lowercase(sha512.to_string()));
+        chk512.insert("checksumValue", Strings::ascii_to_lowercase(sha512));
     }
     return obj;
 }

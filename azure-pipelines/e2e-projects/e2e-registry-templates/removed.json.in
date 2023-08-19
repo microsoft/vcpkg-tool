@@ -1,0 +1,18 @@
+{
+  "vcpkg-configuration": {
+    "default-registry": {
+      "kind": "git",
+      "baseline": "$E2ERegistryBaseline",
+      "repository": "$E2ERegistryPath"
+    }
+  },
+  "dependencies": [
+    "removed"
+  ],
+  "overrides": [
+    {
+      "name": "removed",
+      "version": "1.0.0"
+    }
+  ]
+}

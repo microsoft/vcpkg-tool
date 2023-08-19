@@ -448,6 +448,45 @@ TEST_CASE ("install all features test", "[plan]")
     features_check(install_plan.install_actions.at(0), "a", {"0", "1", "core"}, Test::X64_WINDOWS);
 }
 
+TEST_CASE ("install platform dependent default features", "[plan]")
+{
+    std::vector<std::unique_ptr<StatusParagraph>> status_paragraphs;
+
+    // Add a port "a" with default features "1" and features "0" and "1".
+    PackageSpecMap spec_map(Test::X64_WINDOWS);
+    auto iter = spec_map.emplace("a", "", {{"0", ""}, {"1", ""}});
+    // feature "1" is a default feature on "linux"
+    using MBO = PlatformExpression::MultipleBinaryOperators;
+    auto linux_expr = PlatformExpression::parse_platform_expression("linux", MBO::Deny).value_or_exit(VCPKG_LINE_INFO);
+    spec_map.map["a"].source_control_file->core_paragraph->default_features = {
+        DependencyRequestedFeature{"1", linux_expr}};
+
+    MapPortFileProvider map_port{spec_map.map};
+    MockCMakeVarProvider var_provider;
+
+    SECTION ("on !linux")
+    {
+        // Install "a" (without explicit feature specification)
+        auto install_plan = create_feature_install_plan(map_port,
+                                                        var_provider,
+                                                        Test::parse_test_fspecs("a:x64-windows"),
+                                                        StatusParagraphs(std::move(status_paragraphs)));
+        // Expect the default feature "1" to be installed, but not "0"
+        REQUIRE(install_plan.size() == 1);
+        features_check(install_plan.install_actions.at(0), "a", {"core"}, Test::X64_WINDOWS);
+    }
+    SECTION ("on linux")
+    {
+        var_provider.dep_info_vars[iter] = {{"VCPKG_CMAKE_SYSTEM_NAME", "Linux"}};
+        auto install_plan = create_feature_install_plan(map_port,
+                                                        var_provider,
+                                                        Test::parse_test_fspecs("a:x64-windows"),
+                                                        StatusParagraphs(std::move(status_paragraphs)));
+        REQUIRE(install_plan.size() == 1);
+        features_check(install_plan.install_actions.at(0), "a", {"core", "1"}, Test::X64_WINDOWS);
+    }
+}
+
 TEST_CASE ("install default features test 1", "[plan]")
 {
     std::vector<std::unique_ptr<StatusParagraph>> status_paragraphs;

@@ -23,12 +23,8 @@ export interface FileEntry {
 }
 
 export interface UnpackEvents {
-  unpackArchiveStart(archiveUri: Uri, outputUri: Uri): void;
-  unpackArchiveProgress(archiveUri: Uri, archivePercentage: number): void;
-  // message when we have no ability to give a linear progress
+  unpackArchiveStart(archiveUri: Uri): void;
   unpackArchiveHeartbeat(text: string): void;
-  unpackFileProgress(entry: Readonly<FileEntry>, filePercentage: number): void;
-  unpackFileComplete(entry: Readonly<FileEntry>): void;
 }
 
 export interface InstallEvents extends DownloadEvents, UnpackEvents {

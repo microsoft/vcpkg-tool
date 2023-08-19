@@ -60,6 +60,8 @@ namespace vcpkg
         CommandName,
         DeploymentKind,
         DetectedCiEnvironment,
+        CiProjectId,
+        CiOwnerId,
         InstallPlan_1,
         ListFile,
         ProcessTree,
@@ -84,8 +86,10 @@ namespace vcpkg
     enum class BoolMetric
     {
         DetectedContainer,
+        DependencyGraphSuccess,
         FeatureFlagBinaryCaching,
         FeatureFlagCompilerTracking,
+        FeatureFlagDependencyGraph,
         FeatureFlagManifests,
         FeatureFlagRegistries,
         FeatureFlagVersions,

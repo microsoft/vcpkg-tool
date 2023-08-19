@@ -1,12 +1,12 @@
 . $PSScriptRoot/../end-to-end-tests-prelude.ps1
 
-$versionFilesPath = "$PSScriptRoot/../e2e_ports/version-files"
+$versionFilesPath = "$PSScriptRoot/../e2e-ports/version-files"
 
 # Ensure transitive packages can be used even if they add version constraints
 $CurrentTest = "transitive constraints without baseline"
 Run-Vcpkg install @commonArgs --dry-run `
     "--x-builtin-ports-root=$versionFilesPath/transitive-constraints/ports" `
-    "--x-manifest-root=$versionFilesPath/transitive-constraints" --debug
+    "--x-manifest-root=$versionFilesPath/transitive-constraints"
 Throw-IfFailed
 Refresh-TestRoot
 
@@ -25,7 +25,7 @@ $portsRedirectArgsIncomplete = @(
 )
 $CurrentTest = "x-verify-ci-versions (All files OK)"
 Write-Host $CurrentTest
-Run-Vcpkg @portsRedirectArgsOK x-ci-verify-versions --verbose --debug
+Run-Vcpkg @portsRedirectArgsOK x-ci-verify-versions --verbose
 Throw-IfFailed
 
 $CurrentTest = "x-verify-ci-versions (Incomplete)"
@@ -77,7 +77,7 @@ if ($out -notmatch ".*error: while checking out baseline\.*")
 }
 
 $CurrentTest = "mismatched version database"
-$out = Run-VcpkgAndCaptureOutput @commonArgs "--feature-flags=versions" install --x-manifest-root="$PSScriptRoot/../e2e_ports/mismatched-version-database"
+$out = Run-VcpkgAndCaptureOutput @commonArgs "--feature-flags=versions" install --x-manifest-root="$PSScriptRoot/../e2e-ports/mismatched-version-database"
 Throw-IfNotFailed
 if (($out -notmatch ".*error: Failed to load port because versions are inconsistent*") -or
   ($out -notmatch ".*version database indicates that it should be arrow@6.0.0.20210925#4.*") -or

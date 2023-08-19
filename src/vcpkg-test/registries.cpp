@@ -17,7 +17,16 @@ namespace
 
         std::unique_ptr<RegistryEntry> get_port_entry(StringView) const override { return nullptr; }
 
-        void get_all_port_names(std::vector<std::string>&) const override { }
+        void append_all_port_names(std::vector<std::string>& port_names) const override
+        {
+            port_names.insert(port_names.end(), all_port_names.begin(), all_port_names.end());
+        }
+
+        bool try_append_all_port_names_no_network(std::vector<std::string>& port_names) const override
+        {
+            port_names.insert(port_names.end(), no_network_port_names.begin(), no_network_port_names.end());
+            return !no_network_port_names.empty();
+        }
 
         ExpectedL<Version> get_baseline_version(StringView) const override
         {
@@ -25,13 +34,30 @@ namespace
         }
 
         int number;
+        std::vector<std::string> all_port_names;
+        std::vector<std::string> no_network_port_names;
 
-        TestRegistryImplementation(int n) : number(n) { }
+        TestRegistryImplementation(int n) : number(n), all_port_names(), no_network_port_names() { }
+        TestRegistryImplementation(int n,
+                                   std::vector<std::string>&& all_port_names,
+                                   std::vector<std::string>&& no_network_port_names)
+            : number(n), all_port_names(all_port_names), no_network_port_names(no_network_port_names)
+        {
+        }
     };
 
-    Registry make_registry(int n, std::vector<std::string>&& port_names)
+    Registry make_registry(int n, std::vector<std::string>&& patterns)
     {
-        return {std::move(port_names), std::make_unique<TestRegistryImplementation>(n)};
+        return {std::move(patterns), std::make_unique<TestRegistryImplementation>(n)};
+    }
+
+    Registry make_registry(int n,
+                           std::vector<std::string>&& patterns,
+                           std::vector<std::string>&& known_no_network,
+                           std::vector<std::string>&& known_network)
+    {
+        return {std::move(patterns),
+                std::make_unique<TestRegistryImplementation>(n, std::move(known_no_network), std::move(known_network))};
     }
 
     int get_tri_num(const RegistryImplementation& r)
@@ -138,19 +164,19 @@ TEST_CASE ("check valid package patterns", "[registries]")
 
 TEST_CASE ("calculate prefix priority", "[registries]")
 {
-    CHECK(package_match_prefix("boost", "*") == 1);
-    CHECK(package_match_prefix("boost", "b*") == 2);
-    CHECK(package_match_prefix("boost", "boost*") == 6);
-    CHECK(package_match_prefix("boost", "boost") == SIZE_MAX);
+    CHECK(package_pattern_match("boost", "*") == 1);
+    CHECK(package_pattern_match("boost", "b*") == 2);
+    CHECK(package_pattern_match("boost", "boost*") == 6);
+    CHECK(package_pattern_match("boost", "boost") == SIZE_MAX);
 
-    CHECK(package_match_prefix("", "") == SIZE_MAX);
-    CHECK(package_match_prefix("", "*") == 1);
-    CHECK(package_match_prefix("", "a") == 0);
-    CHECK(package_match_prefix("boost", "") == 0);
-    CHECK(package_match_prefix("boost", "c*") == 0);
-    CHECK(package_match_prefix("boost", "*c") == 0);
-    CHECK(package_match_prefix("boost", "c**") == 0);
-    CHECK(package_match_prefix("boost", "c*a") == 0);
+    CHECK(package_pattern_match("", "") == SIZE_MAX);
+    CHECK(package_pattern_match("", "*") == 1);
+    CHECK(package_pattern_match("", "a") == 0);
+    CHECK(package_pattern_match("boost", "") == 0);
+    CHECK(package_pattern_match("boost", "c*") == 0);
+    CHECK(package_pattern_match("boost", "*c") == 0);
+    CHECK(package_pattern_match("boost", "c**") == 0);
+    CHECK(package_pattern_match("boost", "c*a") == 0);
 }
 
 TEST_CASE ("select highest priority registry", "[registries]")
@@ -711,5 +737,59 @@ TEST_CASE ("filesystem_version_db_parsing", "[registries]")
     )json");
         CHECK(r.visit(test_json, *filesystem_version_db).value_or_exit(VCPKG_LINE_INFO).empty());
         CHECK(!r.errors().empty());
+    }
+}
+
+TEST_CASE ("get_all_port_names", "[registries]")
+{
+    std::vector<Registry> registries;
+    // no network 0 known ports, unrelated and example are not selected
+    registries.emplace_back(make_registry(1,
+                                          {"hello", "world", "abc*", "notpresent"},
+                                          {"hello", "world", "unrelated", "example", "abcdefg", "abc", "abcde"},
+                                          {}));
+    // no network has some known ports
+    registries.emplace_back(
+        make_registry(2,
+                      {"two*"},
+                      {"hello", "world", "unrelated", "twoRegistry", "abcdefgXXX", "abcXXX", "abcdeXXX"},
+                      {"old", "ports", "abcdefgsuper", "twoOld"}));
+
+    SECTION ("with default registry")
+    {
+        RegistrySet with_default_registry{std::make_unique<TestRegistryImplementation>(
+                                              1,
+                                              std::vector<std::string>{"aDefault", "bDefault", "cDefault"},
+                                              std::vector<std::string>{"aDefaultOld", "bDefaultOld", "cDefaultOld"}),
+                                          std::move(registries)};
+
+        // All the known ports from the default registry
+        // hello, world, abcdefg, abc, abcde from the first registry
+        // twoRegistry from the second registry
+        CHECK(with_default_registry.get_all_reachable_port_names() ==
+              std::vector<std::string>{
+                  "aDefault", "abc", "abcde", "abcdefg", "bDefault", "cDefault", "hello", "twoRegistry", "world"});
+
+        // All the old ports from the default registry
+        // hello, world, notpresent from the first registry (since network was unknown)
+        // twoOld from the second registry
+        CHECK(with_default_registry.get_all_known_reachable_port_names_no_network() ==
+              std::vector<std::string>{
+                  "aDefaultOld", "bDefaultOld", "cDefaultOld", "hello", "notpresent", "twoOld", "world"});
+    }
+
+    SECTION ("without default registry")
+    {
+        RegistrySet without_default_registry{nullptr, std::move(registries)};
+
+        // hello, world, abcdefg, abc, abcde from the first registry
+        // twoRegistry from the second registry
+        CHECK(without_default_registry.get_all_reachable_port_names() ==
+              std::vector<std::string>{"abc", "abcde", "abcdefg", "hello", "twoRegistry", "world"});
+
+        // hello, world, notpresent from the first registry
+        // twoOld from the second registry
+        CHECK(without_default_registry.get_all_known_reachable_port_names_no_network() ==
+              std::vector<std::string>{"hello", "notpresent", "twoOld", "world"});
     }
 }

@@ -92,8 +92,8 @@ namespace vcpkg::Strings
 
     void inplace_ascii_to_lowercase(char* first, char* last);
     void inplace_ascii_to_lowercase(std::string& s);
-    [[nodiscard]] std::string ascii_to_lowercase(std::string s);
-    [[nodiscard]] std::string ascii_to_uppercase(std::string s);
+    [[nodiscard]] std::string ascii_to_lowercase(StringView s);
+    [[nodiscard]] std::string ascii_to_uppercase(StringView s);
 
     bool case_insensitive_ascii_starts_with(StringView s, StringView pattern);
     bool case_insensitive_ascii_ends_with(StringView s, StringView pattern);

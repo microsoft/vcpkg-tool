@@ -4,6 +4,7 @@ DECLARE_MESSAGE(ABoolean, (), "", "a boolean")
 DECLARE_MESSAGE(ABuiltinRegistry, (), "", "a builtin registry")
 DECLARE_MESSAGE(AConfigurationObject, (), "", "a configuration object")
 DECLARE_MESSAGE(ADependency, (), "", "a dependency")
+DECLARE_MESSAGE(ADependencyFeature, (), "", "a feature in a dependency")
 DECLARE_MESSAGE(ADemandObject,
                 (),
                 "'demands' are a concept in the schema of a JSON file the user can edit",
@@ -124,6 +125,7 @@ DECLARE_MESSAGE(AnArtifactsGitRegistryUrl, (), "", "an artifacts git registry UR
 DECLARE_MESSAGE(AnArtifactsRegistry, (), "", "an artifacts registry")
 DECLARE_MESSAGE(AnArrayOfDependencies, (), "", "an array of dependencies")
 DECLARE_MESSAGE(AnArrayOfDependencyOverrides, (), "", "an array of dependency overrides")
+DECLARE_MESSAGE(AnArrayOfFeatures, (), "", "an array of features")
 DECLARE_MESSAGE(AnArrayOfIdentifers, (), "", "an array of identifiers")
 DECLARE_MESSAGE(AnArrayOfOverlayPaths, (), "", "an array of overlay paths")
 DECLARE_MESSAGE(AnArrayOfOverlayTripletsPaths, (), "", "an array of overlay triplets paths")
@@ -355,7 +357,7 @@ DECLARE_MESSAGE(BuildTroubleshootingMessageGH,
                 (),
                 "Another part of build troubleshooting message, printed after the URI. An alternative version to "
                 "create an issue in some cases.",
-                "You can also sumbit an issue by running (GitHub cli must be installed):")
+                "You can also submit an issue by running (GitHub CLI must be installed):")
 DECLARE_MESSAGE(
     BuildTroubleshootingMessage3,
     (msg::package_name),
@@ -402,6 +404,14 @@ DECLARE_MESSAGE(CiBaselineRegressionHeader,
                 (),
                 "Printed before a series of CiBaselineRegression and/or CiBaselineUnexpectedPass messages.",
                 "REGRESSIONS:")
+DECLARE_MESSAGE(CiBaselineUnexpectedFail,
+                (msg::spec, msg::triplet),
+                "",
+                "REGRESSION: {spec} is marked as fail but not supported for {triplet}.")
+DECLARE_MESSAGE(CiBaselineUnexpectedFailCascade,
+                (msg::spec, msg::triplet),
+                "",
+                "REGRESSION: {spec} is marked as fail but one dependency is not supported for {triplet}.")
 DECLARE_MESSAGE(CiBaselineUnexpectedPass,
                 (msg::spec, msg::path),
                 "",
@@ -494,6 +504,10 @@ DECLARE_MESSAGE(CmdDependInfoOptSort,
 DECLARE_MESSAGE(CmdEditOptAll, (), "", "Open editor into the port as well as the port-specific buildtree subfolder")
 DECLARE_MESSAGE(CmdEditOptBuildTrees, (), "", "Open editor into the port-specific buildtree subfolder")
 DECLARE_MESSAGE(CmdEnvOptions, (msg::path, msg::env_var), "", "Add installed {path} to {env_var}")
+DECLARE_MESSAGE(CmdExportEmptyPlan,
+                (),
+                "",
+                "Refusing to create an export of zero packages. Install packages before exporting.")
 DECLARE_MESSAGE(CmdExportOpt7Zip, (), "", "Export to a 7zip (.7z) file")
 DECLARE_MESSAGE(CmdExportOptChocolatey, (), "", "Export a Chocolatey package (experimental feature)")
 DECLARE_MESSAGE(CmdExportOptDebug, (), "", "Enable prefab debug")
@@ -631,6 +645,11 @@ DECLARE_MESSAGE(ConflictingFiles,
                 (msg::path, msg::spec),
                 "",
                 "The following files are already installed in {path} and are in conflict with {spec}")
+DECLARE_MESSAGE(ConsideredVersions,
+                (msg::version),
+                "",
+                "The following executables were considered but discarded because of the version "
+                "requirement of {version}:")
 DECLARE_MESSAGE(ConstraintViolation, (), "", "Found a constraint violation:")
 DECLARE_MESSAGE(ContinueCodeUnitInStart, (), "", "found continue code unit in start position")
 DECLARE_MESSAGE(ControlAndManifestFilesPresent,
@@ -731,6 +750,9 @@ DECLARE_MESSAGE(DeleteVcpkgConfigFromManifest,
                 (msg::path),
                 "",
                 "-- Or remove \"vcpkg-configuration\" from the manifest file {path}.")
+DECLARE_MESSAGE(DependencyGraphCalculation, (), "", "Dependency graph submission enabled.")
+DECLARE_MESSAGE(DependencyGraphFailure, (), "", "Dependency graph submission failed.")
+DECLARE_MESSAGE(DependencyGraphSuccess, (), "", "Dependency graph submission successful.")
 DECLARE_MESSAGE(DeprecatedPrefabDebugOption, (), "", "--prefab-debug is now deprecated.")
 DECLARE_MESSAGE(DetectCompilerHash, (msg::triplet), "", "Detecting compiler hash for triplet {triplet}...")
 DECLARE_MESSAGE(DocumentedFieldsSuggestUpdate,
@@ -850,6 +872,10 @@ DECLARE_MESSAGE(ErrorRequirePackagesList,
                 (),
                 "",
                 "`vcpkg install` requires a list of packages to install in classic mode.")
+DECLARE_MESSAGE(ErrorInvalidExtractOption,
+                (msg::option, msg::value),
+                "The keyword 'AUTO' should not be localized",
+                "--{option} must be set to a nonnegative integer or 'AUTO'.")
 DECLARE_MESSAGE(ErrorsFound, (), "", "Found the following errors:")
 DECLARE_MESSAGE(ErrorUnableToDetectCompilerInfo,
                 (),
@@ -921,6 +947,7 @@ DECLARE_MESSAGE(ExportUnsupportedInManifest,
                 "vcpkg export does not support manifest mode, in order to allow for future design considerations. "
                 "You may use export in classic mode by running vcpkg outside of a manifest-based project.")
 DECLARE_MESSAGE(ExtendedDocumentationAtUrl, (msg::url), "", "Extended documentation available at '{url}'.")
+DECLARE_MESSAGE(ExtractHelp, (), "", "Extracts an archive.")
 DECLARE_MESSAGE(ExtractingTool, (msg::tool_name), "", "Extracting {tool_name}...")
 DECLARE_MESSAGE(FailedPostBuildChecks,
                 (msg::count, msg::path),
@@ -1129,6 +1156,12 @@ DECLARE_MESSAGE(HashFileFailureToRead,
                 (msg::path),
                 "Printed after ErrorMessage and before the specific failing filesystem operation (like file not found)",
                 "failed to read file \"{path}\" for hashing: ")
+DECLARE_MESSAGE(HashPortManyFiles,
+                (msg::package_name, msg::count),
+                "",
+                "The {package_name} contains {count} files. Hashing these contents may take a long time when "
+                "determining the ABI hash for binary caching. Consider reducing the number of files. Common causes of "
+                "this are accidentally checking out source or build files into a port's directory.")
 DECLARE_MESSAGE(HeaderOnlyUsage,
                 (msg::package_name),
                 "'header' refers to C/C++ .h files",
@@ -2346,6 +2379,10 @@ DECLARE_MESSAGE(StoredBinariesToDestinations,
                 "",
                 "Stored binaries in {count} destinations in {elapsed}.")
 DECLARE_MESSAGE(StoreOptionMissingSha, (), "", "--store option is invalid without a sha512")
+DECLARE_MESSAGE(StripOption,
+                (msg::option),
+                "--{option} is a setting that can be passed to z-extract command.",
+                "--{option} specifies the number of leading directories to strip from all paths.")
 DECLARE_MESSAGE(SuccessfulyExported, (msg::package_name, msg::path), "", "Exported {package_name} to {path}")
 DECLARE_MESSAGE(SuggestGitPull, (), "", "The result may be outdated. Run `git pull` to get the latest results.")
 DECLARE_MESSAGE(SuggestResolution,
