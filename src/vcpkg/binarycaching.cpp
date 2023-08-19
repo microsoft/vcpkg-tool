@@ -379,8 +379,43 @@ namespace
             FolderSettings folder_settings;
             std::priority_queue<FileData, std::vector<FileData>, std::greater<FileData>> file_data;
             int64_t current_size = 0;
+            Path sync_root_dir;
             WriteFilePointer own_sync_file;
             std::map<std::string, uint64_t> other_sync_files; // Mapping from id to bytes read
+
+            template<typename F>
+            void get_sync_updates(const Filesystem& fs, F&& func)
+            {
+                for (const auto& file : fs.get_files_non_recursive(sync_root_dir, VCPKG_LINE_INFO))
+                {
+                    if (file == own_sync_file.path() || file.filename() == ".DS_Store") continue;
+
+                    auto new_size = fs.file_size(file, VCPKG_LINE_INFO);
+                    auto& cur_size = other_sync_files[file.filename().to_string()];
+                    if (new_size > cur_size)
+                    {
+                        // TODO Better error handling:
+                        auto file_handle = fs.open_for_read(file, VCPKG_LINE_INFO);
+                        file_handle.try_seek_to(cur_size);
+                        std::error_code ec;
+                        auto file_content = file_handle.read_to_end(ec);
+                        print(file, file_content);
+                        ParserBase parser(file_content, file);
+                        while (!parser.at_eof())
+                        {
+                            auto start = parser.it().pointer_to_current();
+                            auto id = parser.match_until([](auto c) { return c == ';'; });
+                            parser.require_character(';');
+                            auto size = parser.match_until(ParserBase::is_lineend);
+
+                            parser.skip_newline();
+                            auto end = parser.it().pointer_to_current();
+                            cur_size += (end - start);
+                            func(id, size);
+                        }
+                    }
+                }
+            }
         };
         mutable std::vector<FileCacheData> file_cache_data;
 
@@ -471,11 +506,11 @@ namespace
             return maybe_settings;
         }
 
-        WriteFilePointer get_own_sync_file(const Path& archives_root_dir)
+        WriteFilePointer get_own_sync_file(const Path& sync_root_dir)
         {
             while (true)
             {
-                Path path = archives_root_dir / fmt::format("{}", rand());
+                Path path = sync_root_dir / fmt::format("{}", rand());
                 std::error_code ec;
                 WriteFilePointer wp(path, Append::NO, Overwrite::NO, ec);
                 if (!ec)
@@ -499,10 +534,18 @@ namespace
                 {
                     file_cache_data.push_back(
                         FileCacheData{get_folder_settings(archives_root_dir, msg_sink).value_or({})});
-                    file_cache_data.back().own_sync_file = get_own_sync_file(archives_root_dir);
-                    if (file_cache_data.back().folder_settings.delete_policy != FolderSettings::DeletePolicy::None)
+                    auto& cache = file_cache_data.back();
+                    cache.sync_root_dir = archives_root_dir / "sync";
+                    m_fs.create_directories(cache.sync_root_dir, VCPKG_LINE_INFO);
+                    cache.own_sync_file = get_own_sync_file(cache.sync_root_dir);
+                    if (cache.folder_settings.delete_policy != FolderSettings::DeletePolicy::None)
                     {
-                        auto& settings = file_cache_data.back().folder_settings;
+                        std::unordered_map<std::string, uint64_t> file_sizes;
+                        cache.get_sync_updates(m_fs, [&](auto id, auto size) {
+                            auto size_as_int = Strings::strto<uint64_t>(size).value_or_exit(VCPKG_LINE_INFO);
+                            file_sizes.emplace(id.to_string(), size_as_int);
+                        });
+                        auto& settings = cache.folder_settings;
                         auto settings_path = archives_root_dir / "settings.json";
                         for (auto& path : m_fs.get_regular_files_recursive(archives_root_dir, IgnoreErrors{}))
                         {
@@ -510,21 +553,42 @@ namespace
                             {
                                 continue;
                             }
+                            if (path.parent_path() == cache.sync_root_dir)
+                            {
+                                continue;
+                            }
                             auto time = settings.last_time(m_fs, path, IgnoreErrors{});
-                            auto size = m_fs.file_size(path, IgnoreErrors{});
-                            file_cache_data.back().file_data.push(FileData{path, size, time});
-                            file_cache_data.back().current_size += size;
+                            const auto size = std::invoke([&]() {
+                                if (auto iter = file_sizes.find(path.native()); iter != file_sizes.end())
+                                {
+                                    return iter->second;
+                                }
+                                return m_fs.file_size(path, IgnoreErrors{});
+                            });
+                            cache.file_data.push(FileData{path, size, time});
+                            cache.current_size += size;
                             fmt::print("Check {}\n", path);
                         }
                     }
                 }
+                auto& cache = file_cache_data[index];
                 ++index;
-                auto& cache = file_cache_data.back();
                 {
                     auto line = fmt::format("{};{}\n", request.package_abi, file_size);
                     cache.own_sync_file.write(line.data(), 1, line.size());
+                    cache.own_sync_file.flush();
                 }
                 auto& settings = cache.folder_settings;
+                {
+                    // read changes from other instances
+                    cache.get_sync_updates(m_fs, [&](auto id, auto size) {
+                        const auto archive_path = archives_root_dir / files_archive_subpath(id.to_string());
+                        auto last_time = settings.last_time(m_fs, archive_path, IgnoreErrors{});
+                        auto size_as_int = Strings::strto<uint64_t>(size).value_or_exit(VCPKG_LINE_INFO);
+                        cache.file_data.push(FileData{archive_path, size_as_int, last_time});
+                        cache.current_size += size_as_int;
+                    });
+                }
                 if (settings.delete_policy != FolderSettings::DeletePolicy::None)
                 {
                     const auto oldest_date =
@@ -600,8 +664,8 @@ namespace
                 {
                     count_stored++;
                     auto last_time = settings.last_time(m_fs, archive_path, IgnoreErrors{});
-                    file_cache_data.back().file_data.push(FileData{archive_path, file_size, last_time});
-                    file_cache_data.back().current_size += file_size;
+                    cache.file_data.push(FileData{archive_path, file_size, last_time});
+                    cache.current_size += file_size;
                 }
             }
             return count_stored;

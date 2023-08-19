@@ -1524,6 +1524,8 @@ namespace vcpkg
         return ::fwrite(buffer, element_size, element_count, m_fs);
     }
 
+    void WriteFilePointer::flush() const noexcept { ::fflush(m_fs); }
+
     int WriteFilePointer::put(int c) const noexcept { return ::fputc(c, m_fs); }
 
     uint64_t ReadOnlyFilesystem::file_size(const Path& file_path, LineInfo li) const
