@@ -122,7 +122,6 @@ namespace vcpkg::Commands::Integrate
                            target_path,
                            target_path);
     }
-#endif
 
     static constexpr StringLiteral SystemTargetsShortcut = R"###(
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
@@ -135,7 +134,6 @@ namespace vcpkg::Commands::Integrate
 </Project>
 )###";
 
-#if defined(_WIN32)
     static std::string create_nuget_targets_file_contents(const Path& msbuild_vcpkg_targets_file)
     {
         return fmt::format(R"###(
