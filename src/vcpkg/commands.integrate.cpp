@@ -124,10 +124,7 @@ namespace vcpkg::Commands::Integrate
     }
 #endif
 
-#if defined(_WIN32)
-    static std::string create_system_targets_shortcut()
-    {
-        return R"###(
+    static constexpr StringLiteral SystemTargetsShortcut = R"###(
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <!-- version 1 -->
   <PropertyGroup>
@@ -137,8 +134,6 @@ namespace vcpkg::Commands::Integrate
   <Import Condition="'$(VCLibPackagePath)' != '' and Exists('$(VCLibPackagePath).targets')" Project="$(VCLibPackagePath).targets" />
 </Project>
 )###";
-    }
-#endif
 
 #if defined(_WIN32)
     static std::string create_nuget_targets_file_contents(const Path& msbuild_vcpkg_targets_file)
@@ -154,7 +149,7 @@ namespace vcpkg::Commands::Integrate
                            msbuild_vcpkg_targets_file,
                            msbuild_vcpkg_targets_file);
     }
-#endif
+#endif // ^^^ _WIN32
 
 #if defined(_WIN32)
     static constexpr StringLiteral NUGET_PROPS_FILE_CONTENTS = R"###(
@@ -164,7 +159,7 @@ namespace vcpkg::Commands::Integrate
   </PropertyGroup>
 </Project>
 )###";
-#endif
+#endif // ^^^ _WIN32
 
 #if defined(_WIN32)
     static std::string get_nuget_id(const Path& vcpkg_root_dir)
@@ -176,10 +171,9 @@ namespace vcpkg::Commands::Integrate
         // NuGet id cannot have invalid characters. We will only use alphanumeric and dot.
         Util::erase_remove_if(dir_id, [](char c) { return !isalnum(static_cast<unsigned char>(c)) && (c != '.'); });
 
-        const std::string nuget_id = "vcpkg." + dir_id;
-        return nuget_id;
+        return "vcpkg." + dir_id;
     }
-#endif
+#endif // ^^^ _WIN32
 
 #if defined(_WIN32)
     static std::string create_nuspec_file_contents(const Path& vcpkg_root_dir,
@@ -208,7 +202,7 @@ namespace vcpkg::Commands::Integrate
         Strings::inplace_replace_all(content, "@VERSION@", nupkg_version);
         return content;
     }
-#endif
+#endif // ^^^ _WIN32
 
 #if defined(_WIN32)
     enum class ElevationPromptChoice
@@ -244,7 +238,7 @@ namespace vcpkg::Commands::Integrate
         CloseHandle(sh_ex_info.hProcess);
         return ElevationPromptChoice::YES;
     }
-#endif
+#endif // ^^^ _WIN32
 
     static constexpr StringLiteral vcpkg_path_txt = "vcpkg.path.txt";
 
@@ -291,7 +285,7 @@ namespace vcpkg::Commands::Integrate
 
         const auto tmp_dir = fs.create_or_get_temp_directory(VCPKG_LINE_INFO);
         const auto sys_src_path = tmp_dir / "vcpkg.system.targets";
-        fs.write_contents(sys_src_path, create_system_targets_shortcut(), VCPKG_LINE_INFO);
+        fs.write_contents(sys_src_path, SystemTargetsShortcut, VCPKG_LINE_INFO);
 
         const std::string param = fmt::format(R"(/c "mkdir "{}" & copy "{}" "{}" /Y > nul")",
                                               SYSTEM_WIDE_TARGETS_FILE.parent_path(),
@@ -308,7 +302,7 @@ namespace vcpkg::Commands::Integrate
 
         return true;
     }
-#endif
+#endif // ^^^ _WIN32
 
     static void integrate_install(const VcpkgPaths& paths)
     {
@@ -337,7 +331,7 @@ namespace vcpkg::Commands::Integrate
         }
 
         message.append_raw("\n\n").append(msgAutomaticLinkingForMSBuildProjects);
-#endif
+#endif // ^^^ _WIN32
 
         msg::println(Color::success, msgAppliedUserIntegration);
         msg::println(message);
@@ -351,7 +345,7 @@ namespace vcpkg::Commands::Integrate
 #if defined(_WIN32)
         was_deleted |= fs.remove(user_configuration_home / vcpkg_user_props, VCPKG_LINE_INFO);
         was_deleted |= fs.remove(user_configuration_home / vcpkg_user_targets, VCPKG_LINE_INFO);
-#endif
+#endif // ^^^ _WIN32
         was_deleted |= fs.remove(user_configuration_home / vcpkg_path_txt, VCPKG_LINE_INFO);
 
         if (was_deleted)
@@ -366,9 +360,9 @@ namespace vcpkg::Commands::Integrate
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 
-#if defined(WIN32)
     static void integrate_project(const VcpkgPaths& paths)
     {
+#if defined(WIN32)
         auto& fs = paths.get_filesystem();
 
         const Path& nuget_exe = paths.get_tool_exe(Tools::NUGET, stdout_sink);
@@ -416,12 +410,16 @@ namespace vcpkg::Commands::Integrate
 
         msg::println(msgInstallPackageInstruction, msg::value = nuget_id, msg::path = source_path);
         Checks::exit_success(VCPKG_LINE_INFO);
+#else  // ^^^ _WIN32 // !_WIN32 vvv
+        (void)paths;
+        Checks::msg_exit_with_error(
+            VCPKG_LINE_INFO, msgIntegrateWindowsOnly, msg::command_line = "vcpkg integrate project");
+#endif // ^^^ !_WIN32
     }
-#endif
 
-#if defined(_WIN32)
     static void integrate_powershell(const VcpkgPaths& paths)
     {
+#if defined(_WIN32)
         static constexpr StringLiteral TITLE = "PowerShell Tab-Completion";
         const auto script_path = paths.scripts / "addPoshVcpkgToPowershellProfile.ps1";
 
@@ -442,10 +440,20 @@ namespace vcpkg::Commands::Integrate
         }
 
         Checks::exit_with_code(VCPKG_LINE_INFO, rc);
+#else  // ^^^ _WIN32 // !_WIN32 vvv
+        (void)paths;
+        Checks::msg_exit_with_error(
+            VCPKG_LINE_INFO, msgIntegrateWindowsOnly, msg::command_line = "vcpkg integrate powershell");
+#endif // ^^^ !_WIN32
     }
-#else
+
     static void integrate_bash(const VcpkgPaths& paths)
     {
+#if defined(_WIN32)
+        (void)paths;
+        Checks::msg_exit_with_error(
+            VCPKG_LINE_INFO, msgIntegrateNonWindowsOnly, msg::command_line = "vcpkg integrate bash");
+#else // ^^^ _WIN32 // !_WIN32 vvv
         const auto home_path = get_environment_variable("HOME").value_or_exit(VCPKG_LINE_INFO);
 #if defined(__APPLE__)
         const auto bashrc_path = Path{home_path} / ".bash_profile";
@@ -473,10 +481,16 @@ namespace vcpkg::Commands::Integrate
         bashrc_content.push_back('\n');
         fs.write_contents(bashrc_path, bashrc_content, VCPKG_LINE_INFO);
         Checks::exit_success(VCPKG_LINE_INFO);
+#endif // ^^^ !_WIN32
     }
 
     static void integrate_zsh(const VcpkgPaths& paths)
     {
+#if defined(_WIN32)
+        (void)paths;
+        Checks::msg_exit_with_error(
+            VCPKG_LINE_INFO, msgIntegrateNonWindowsOnly, msg::command_line = "vcpkg integrate zsh");
+#else  // ^^^ _WIN32 // !_WIN32 vvv
         const auto home_path = get_environment_variable("HOME").value_or_exit(VCPKG_LINE_INFO);
         const auto zshrc_path = Path{home_path} / ".zshrc";
 
@@ -510,10 +524,16 @@ namespace vcpkg::Commands::Integrate
         zshrc_content.push_back('\n');
         fs.write_contents(zshrc_path, zshrc_content, VCPKG_LINE_INFO);
         Checks::exit_success(VCPKG_LINE_INFO);
+#endif // ^^^ !_WIN32
     }
 
     static void integrate_fish(const VcpkgPaths& paths)
     {
+#if defined(_WIN32)
+        (void)paths;
+        Checks::msg_exit_with_error(
+            VCPKG_LINE_INFO, msgIntegrateNonWindowsOnly, msg::command_line = "vcpkg integrate x-fish");
+#else  // ^^^ _WIN32 // !_WIN32 vvv
         Path fish_completions_path;
         const auto config_path = get_environment_variable("XDG_CONFIG_HOME");
         if (config_path.has_value())
@@ -545,23 +565,24 @@ namespace vcpkg::Commands::Integrate
         msg::println(msgAddingCompletionEntry, msg::path = fish_completions_path);
         fs.create_symlink(completion_script_path, fish_completions_path, VCPKG_LINE_INFO);
         Checks::exit_success(VCPKG_LINE_INFO);
+#endif // ^^^ !_WIN32
     }
-#endif
 
     void append_helpstring(HelpTableFormatter& table)
     {
 #if defined(_WIN32)
         table.format("vcpkg integrate install", msg::format(msgIntegrateInstallHelpWindows));
-        table.format("vcpkg integrate remove", msg::format(msgIntegrateRemoveHelp));
-        table.format("vcpkg integrate project", msg::format(msgIntegrateProjectHelp));
-        table.format("vcpkg integrate powershell", msg::format(msgIntegratePowerShellHelp));
 #else  // ^^^ defined(_WIN32) // !defined(_WIN32) vvv
         table.format("vcpkg integrate install", msg::format(msgIntegrateInstallHelpLinux));
-        table.format("vcpkg integrate remove", msg::format(msgIntegrateRemoveHelp));
-        table.format("vcpkg integrate bash", msg::format(msgIntegrateBashHelp));
-        table.format("vcpkg integrate zsh", msg::format(msgIntegrateZshHelp));
-        table.format("vcpkg integrate x-fish", msg::format(msgIntegrateFishHelp));
 #endif // ^^^ !defined(_WIN32)
+        table.format("vcpkg integrate remove", msg::format(msgIntegrateRemoveHelp));
+        table.blank();
+        table.format("vcpkg integrate project", msg::format(msgIntegrateProjectHelp));
+        table.blank();
+        table.format("vcpkg integrate bash", msg::format(msgIntegrateBashHelp));
+        table.format("vcpkg integrate x-fish", msg::format(msgIntegrateFishHelp));
+        table.format("vcpkg integrate powershell", msg::format(msgIntegratePowerShellHelp));
+        table.format("vcpkg integrate zsh", msg::format(msgIntegrateZshHelp));
     }
 
     LocalizedString get_helpstring()
@@ -571,28 +592,24 @@ namespace vcpkg::Commands::Integrate
         return msg::format(msgCommands).append_raw('\n').append_raw(table.m_str);
     }
 
-    namespace Subcommand
-    {
-        static constexpr StringLiteral INSTALL = "install";
-        static constexpr StringLiteral REMOVE = "remove";
-#if defined(_WIN32)
-        static constexpr StringLiteral PROJECT = "project";
-        static constexpr StringLiteral POWERSHELL = "powershell";
-#endif // ^^^ _WIN32
-        static constexpr StringLiteral BASH = "bash";
-        static constexpr StringLiteral ZSH = "zsh";
-        static constexpr StringLiteral FISH = "x-fish";
-    }
+    static constexpr StringLiteral INSTALL = "install";
+    static constexpr StringLiteral REMOVE = "remove";
+    static constexpr StringLiteral PROJECT = "project";
+    static constexpr StringLiteral POWERSHELL = "powershell";
+    static constexpr StringLiteral BASH = "bash";
+    static constexpr StringLiteral ZSH = "zsh";
+    static constexpr StringLiteral FISH = "x-fish";
 
     static std::vector<std::string> valid_arguments(const VcpkgPaths&)
     {
+        // Note that help lists all supported args, but we only want to autocomplete the ones valid on this platform
         return
         {
-            Subcommand::INSTALL.to_string(), Subcommand::REMOVE.to_string(),
+            INSTALL.to_string(), REMOVE.to_string(),
 #if defined(_WIN32)
-                Subcommand::PROJECT.to_string(), Subcommand::POWERSHELL.to_string(),
+                PROJECT.to_string(), POWERSHELL.to_string(),
 #else
-                Subcommand::BASH.to_string(), Subcommand::FISH.to_string(),
+                BASH.to_string(), FISH.to_string(), ZSH.to_string()
 #endif
         };
     }
@@ -609,37 +626,41 @@ namespace vcpkg::Commands::Integrate
     {
         const auto parsed = args.parse_arguments(COMMAND_STRUCTURE);
 
-        if (parsed.command_arguments[0] == Subcommand::INSTALL)
+        if (Strings::case_insensitive_ascii_equals(parsed.command_arguments[0], INSTALL))
         {
             return integrate_install(paths);
         }
-        if (parsed.command_arguments[0] == Subcommand::REMOVE)
+
+        if (Strings ::case_insensitive_ascii_equals(parsed.command_arguments[0], REMOVE))
         {
             return integrate_remove(paths.get_filesystem());
         }
-#if defined(_WIN32)
-        if (parsed.command_arguments[0] == Subcommand::PROJECT)
+
+        if (Strings ::case_insensitive_ascii_equals(parsed.command_arguments[0], PROJECT))
         {
             return integrate_project(paths);
         }
-        if (parsed.command_arguments[0] == Subcommand::POWERSHELL)
+
+        if (Strings ::case_insensitive_ascii_equals(parsed.command_arguments[0], POWERSHELL))
         {
             return integrate_powershell(paths);
         }
-#else
-        if (parsed.command_arguments[0] == Subcommand::BASH)
+
+        if (Strings ::case_insensitive_ascii_equals(parsed.command_arguments[0], BASH))
         {
             return integrate_bash(paths);
         }
-        if (parsed.command_arguments[0] == Subcommand::ZSH)
+
+        if (Strings ::case_insensitive_ascii_equals(parsed.command_arguments[0], ZSH))
         {
             return integrate_zsh(paths);
         }
-        if (parsed.command_arguments[0] == Subcommand::FISH)
+
+        if (Strings ::case_insensitive_ascii_equals(parsed.command_arguments[0], FISH))
         {
             return integrate_fish(paths);
         }
-#endif
+
         Checks::msg_exit_maybe_upgrade(
             VCPKG_LINE_INFO, msgUnknownParameterForIntegrate, msg::value = parsed.command_arguments[0]);
     }
