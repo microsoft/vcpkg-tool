@@ -1248,11 +1248,14 @@ namespace vcpkg
         fs.create_directory(current_build_tree, VCPKG_LINE_INFO);
         auto abi_file_path = current_build_tree / (triplet_canonical_name + ".vcpkg_abi_info.txt");
         fs.write_contents(abi_file_path, full_abi_info, VCPKG_LINE_INFO);
+
+        auto& scf = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_control_file;
+
         abi_info.package_abi = Hash::get_string_sha256(full_abi_info);
         abi_info.abi_tag_file.emplace(std::move(abi_file_path));
         abi_info.relative_port_files = std::move(files);
         abi_info.relative_port_hashes = std::move(hashes);
-        abi_info.heuristic_resources.push_back(run_resource_heuristics(portfile_cmake_contents));
+        abi_info.heuristic_resources.push_back(run_resource_heuristics(portfile_cmake_contents, scf->core_paragraph->raw_version));
     }
 
     void compute_all_abis(const VcpkgPaths& paths,

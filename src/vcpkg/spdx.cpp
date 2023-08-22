@@ -8,6 +8,19 @@
 
 using namespace vcpkg;
 
+static std::string fix_ref_version(StringView ref, StringView version) {
+    static StringView versionReplaceString = "${VERSION}";
+
+    auto fixedRef = ref.to_string();
+    const auto pos = fixedRef.find(versionReplaceString.data());
+
+    if(pos != std::string::npos) {
+        fixedRef.replace(pos, versionReplaceString.size(), version.data());
+    }
+
+    return fixedRef;
+}
+
 static std::string conclude_license(const std::string& license)
 {
     if (license.empty()) return "NOASSERTION";
@@ -76,7 +89,7 @@ static Json::Object make_resource(
     return obj;
 }
 
-Json::Value vcpkg::run_resource_heuristics(StringView contents)
+Json::Value vcpkg::run_resource_heuristics(StringView contents, StringView portRawVersion)
 {
     // These are a sequence of heuristics to enable proof-of-concept extraction of remote resources for SPDX SBOM
     // inclusion
@@ -87,8 +100,9 @@ Json::Value vcpkg::run_resource_heuristics(StringView contents)
     if (!github.empty())
     {
         auto repo = extract_cmake_invocation_argument(github, "REPO");
-        auto ref = extract_cmake_invocation_argument(github, "REF");
+        auto ref = fix_ref_version(extract_cmake_invocation_argument(github, "REF"), portRawVersion);
         auto sha = extract_cmake_invocation_argument(github, "SHA512");
+
         packages.push_back(make_resource(fmt::format("SPDXRef-resource-{}", ++n),
                                          repo.to_string(),
                                          fmt::format("git+https://github.com/{}@{}", repo, ref),
@@ -99,7 +113,7 @@ Json::Value vcpkg::run_resource_heuristics(StringView contents)
     if (!git.empty())
     {
         auto url = extract_cmake_invocation_argument(github, "URL");
-        auto ref = extract_cmake_invocation_argument(github, "REF");
+        auto ref = fix_ref_version(extract_cmake_invocation_argument(github, "REF"), portRawVersion);
         packages.push_back(make_resource(
             fmt::format("SPDXRef-resource-{}", ++n), url.to_string(), fmt::format("git+{}@{}", url, ref), {}, {}));
     }
@@ -116,7 +130,7 @@ Json::Value vcpkg::run_resource_heuristics(StringView contents)
     if (!sfg.empty())
     {
         auto repo = extract_cmake_invocation_argument(sfg, "REPO");
-        auto ref = extract_cmake_invocation_argument(sfg, "REF");
+        auto ref = fix_ref_version(extract_cmake_invocation_argument(sfg, "REF"), portRawVersion);
         auto filename = extract_cmake_invocation_argument(sfg, "FILENAME");
         auto sha = extract_cmake_invocation_argument(sfg, "SHA512");
         auto url = Strings::concat("https://sourceforge.net/projects/", repo, "/files/", ref, '/', filename);
