@@ -293,21 +293,21 @@ namespace
         {
             FolderSettings folder_settings;
             double gb = 0;
-            r.optional_object_field(obj, MAX_SIZE_GB, gb, Json::PositiveNumberDeserializer::instance);
+            reader.optional_object_field(obj, MAX_SIZE_GB, gb, Json::PositiveNumberDeserializer::instance);
             folder_settings.max_size_in_bytes = static_cast<int64_t>(gb * std::giga::num);
             DeletePolicyDeserializer instance;
-            r.required_object_field(
+            reader.required_object_field(
                 LocalizedString::from_raw(DELETE_POLICY), obj, DELETE_POLICY, folder_settings.delete_policy, instance);
-            r.optional_object_field(obj,
-                                    KEEP_AVAILABLE_PERCENTAGE,
-                                    folder_settings.keep_available_percentage,
-                                    Json::PositiveNumberDeserializer::instance);
-            r.optional_object_field(obj,
-                                    KEEP_AVAILABLE_PERCENTAGE,
-                                    folder_settings.keep_available_percentage,
-                                    Json::PositiveNumberDeserializer::instance);
+            reader.optional_object_field(obj,
+                                         KEEP_AVAILABLE_PERCENTAGE,
+                                         folder_settings.keep_available_percentage,
+                                         Json::PositiveNumberDeserializer::instance);
+            reader.optional_object_field(obj,
+                                         KEEP_AVAILABLE_PERCENTAGE,
+                                         folder_settings.keep_available_percentage,
+                                         Json::PositiveNumberDeserializer::instance);
             double days = 0;
-            r.optional_object_field(obj, MAX_AGE_DAYS, days, Json::PositiveNumberDeserializer::instance);
+            reader.optional_object_field(obj, MAX_AGE_DAYS, days, Json::PositiveNumberDeserializer::instance);
             using namespace std::chrono;
             folder_settings.max_age = duration_cast<nanoseconds>(days * duration<double, hours::period>(24));
             static constexpr std::array<StringView, 5> valid_fields = {
@@ -316,7 +316,7 @@ namespace
             {
                 if (key_value.first.front() != '$' && !Util::Vectors::contains(valid_fields, key_value.first))
                 {
-                    r.add_warning(LocalizedString::from_raw(key_value.first), "unknown field");
+                    reader.add_warning(LocalizedString::from_raw(key_value.first), "unknown field");
                 }
             }
             if (folder_settings.delete_policy != FolderSettings::DeletePolicy::None)
@@ -324,8 +324,8 @@ namespace
                 if (folder_settings.max_age.count() == 0 && folder_settings.keep_available_percentage == 0 &&
                     folder_settings.max_size_in_bytes == 0)
                 {
-                    r.add_generic_error(LocalizedString::from_raw("DeletePolicy"),
-                                        LocalizedString::from_raw("")); // TODO
+                    reader.add_generic_error(LocalizedString::from_raw("DeletePolicy"),
+                                             LocalizedString::from_raw("")); // TODO
                     folder_settings.delete_policy = FolderSettings::DeletePolicy::None;
                 }
             }
