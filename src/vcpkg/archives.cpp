@@ -353,7 +353,6 @@ namespace vcpkg
 #else
         return flatten(cmd_execute_and_capture_output(Command{"zip"}
                                                           .string_arg("--quiet")
-                                                          .string_arg("-0")
                                                           .string_arg("-y")
                                                           .string_arg("-r")
                                                           .string_arg(destination)
