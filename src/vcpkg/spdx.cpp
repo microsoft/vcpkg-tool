@@ -9,16 +9,7 @@
 using namespace vcpkg;
 
 static std::string fix_ref_version(StringView ref, StringView version) {
-    static StringView versionReplaceString = "${VERSION}";
-
-    auto fixedRef = ref.to_string();
-    const auto pos = fixedRef.find(versionReplaceString.data());
-
-    if(pos != std::string::npos) {
-        fixedRef.replace(pos, versionReplaceString.size(), version.data());
-    }
-
-    return fixedRef;
+    return Strings::replace_all(ref, "${VERSION}", version);
 }
 
 static std::string conclude_license(const std::string& license)
