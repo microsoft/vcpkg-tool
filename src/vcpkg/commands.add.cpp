@@ -101,13 +101,27 @@ namespace vcpkg::Commands
                     return dep.name == spec.name && !dep.host &&
                            structurally_equal(spec.platform.value_or(PlatformExpression::Expr()), dep.platform);
                 });
-                const auto features = Util::fmap(spec.features.value_or({}), [](auto& feature) {
+                auto feature_names = spec.features.value_or({});
+                bool is_core = false;
+                Util::erase_if(feature_names, [&](const auto& feature_name) {
+                    if (feature_name == "core")
+                    {
+                        is_core = true;
+                        return true;
+                    }
+                    return false;
+                });
+                const auto features = Util::fmap(feature_names, [](auto& feature) {
                     return DependencyRequestedFeature{feature, PlatformExpression::Expr::Empty()};
                 });
                 if (dep == manifest_scf.core_paragraph->dependencies.end())
                 {
-                    manifest_scf.core_paragraph->dependencies.push_back(
+                    auto& new_dep = manifest_scf.core_paragraph->dependencies.emplace_back(
                         Dependency{spec.name, features, spec.platform.value_or({})});
+                    if (is_core)
+                    {
+                        new_dep.default_features = false;
+                    }
                 }
                 else if (spec.features)
                 {
@@ -117,6 +131,10 @@ namespace vcpkg::Commands
                         {
                             dep->features.push_back(feature);
                         }
+                    }
+                    if (is_core)
+                    {
+                        dep->default_features = false;
                     }
                 }
             }
