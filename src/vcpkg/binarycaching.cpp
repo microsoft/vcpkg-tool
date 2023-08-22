@@ -289,7 +289,7 @@ namespace
         constexpr static StringLiteral DELETE_POLICY = "delete-policy";
         constexpr static StringLiteral MODIFICATION_DATE_UPDATE_INTERVAL = "modification-date-update-interval";
 
-        Optional<FolderSettings> visit_object(Json::Reader& r, const Json::Object& obj) const override
+        Optional<FolderSettings> visit_object(Json::Reader& reader, const Json::Object& obj) const override
         {
             FolderSettings folder_settings;
             double gb = 0;
@@ -310,7 +310,7 @@ namespace
             r.optional_object_field(obj, MAX_AGE_DAYS, days, Json::PositiveNumberDeserializer::instance);
             using namespace std::chrono;
             folder_settings.max_age = duration_cast<nanoseconds>(days * duration<double, hours::period>(24));
-            static const std::array<StringView, 5> valid_fields = {
+            static constexpr std::array<StringView, 5> valid_fields = {
                 MAX_SIZE_GB, MAX_AGE_DAYS, KEEP_AVAILABLE_PERCENTAGE, DELETE_POLICY, MODIFICATION_DATE_UPDATE_INTERVAL};
             for (const auto& key_value : obj)
             {
@@ -363,7 +363,7 @@ namespace
             Path path;
             uint64_t file_size;
             int64_t time;
-            bool operator>(const FileData& other) const { return time > other.time; }
+            bool operator>(const FileData& other) const noexcept { return time > other.time; }
         };
         struct FileCacheData
         {
@@ -531,9 +531,8 @@ namespace
             {
                 if (index >= file_cache_data.size())
                 {
-                    file_cache_data.push_back(
+                    auto& cache = file_cache_data.emplace_back(
                         FileCacheData{get_folder_settings(archives_root_dir, msg_sink).value_or({})});
-                    auto& cache = file_cache_data.back();
                     cache.sync_root_dir = archives_root_dir / "sync";
                     m_fs.create_directories(cache.sync_root_dir, VCPKG_LINE_INFO);
                     cache.own_sync_file = get_own_sync_file(cache.sync_root_dir);
