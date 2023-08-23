@@ -11,7 +11,6 @@
 #include <vcpkg-test/util.h>
 
 using namespace vcpkg;
-using namespace vcpkg;
 
 #if defined(_WIN32)
 #define BASE_TEMP_PATH "C:\\to\\path\\temp\\"

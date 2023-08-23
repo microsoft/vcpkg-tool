@@ -90,15 +90,15 @@ namespace
         }
         msg::println(message);
     }
+
+    constexpr StringLiteral OPTION_JSON{"x-json"};
+    constexpr CommandSwitch CHECK_SUPPORT_SWITCHES[] = {
+        {OPTION_JSON, []() { return msg::format(msgJsonSwitch); }},
+    };
 } // unnamed namespace
 
 namespace vcpkg
 {
-    static constexpr StringLiteral OPTION_JSON{"x-json"};
-    static constexpr CommandSwitch CHECK_SUPPORT_SWITCHES[] = {
-        {OPTION_JSON, []() { return msg::format(msgJsonSwitch); }},
-    };
-
     constexpr CommandMetadata CommandCheckSupportMetadata = {
         [] { return create_example_string("x-check-support <package>..."); },
         1,
