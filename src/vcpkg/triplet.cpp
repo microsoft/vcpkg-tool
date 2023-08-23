@@ -1,6 +1,8 @@
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.h>
+#include <vcpkg/base/util.h>
 
+#include <vcpkg/input.h>
 #include <vcpkg/packagespec.h>
 #include <vcpkg/triplet.h>
 #include <vcpkg/vcpkgcmdarguments.h>
@@ -82,32 +84,67 @@ namespace vcpkg
         {
             return CPUArchitecture::RISCV64;
         }
+        if (Strings::starts_with(this->canonical_name(), "loongarch32-"))
+        {
+            return CPUArchitecture::LOONGARCH32;
+        }
+        if (Strings::starts_with(this->canonical_name(), "loongarch64-"))
+        {
+            return CPUArchitecture::LOONGARCH64;
+        }
 
         return nullopt;
     }
 
-    static Triplet system_triplet()
+    static std::string system_triplet_canonical_name()
     {
         auto host_proc = get_host_processor();
-        auto canonical_name = fmt::format("{}-{}", to_zstring_view(host_proc), get_host_os_name());
-        return Triplet::from_canonical_name(std::move(canonical_name));
+        return fmt::format("{}-{}", to_zstring_view(host_proc), get_host_os_name());
     }
 
-    Triplet default_triplet(const VcpkgCmdArguments& args)
+    Triplet default_triplet(const VcpkgCmdArguments& args, const TripletDatabase& database)
     {
         if (auto triplet = args.triplet.get())
         {
             return Triplet::from_canonical_name(*triplet);
         }
-        return default_host_triplet(args);
+        return default_host_triplet(args, database);
     }
 
-    Triplet default_host_triplet(const VcpkgCmdArguments& args)
+    Triplet default_host_triplet(const VcpkgCmdArguments& args, const TripletDatabase& database)
     {
-        if (auto host_triplet = args.host_triplet.get())
+        auto host_triplet_name = args.host_triplet.value_or(system_triplet_canonical_name());
+        check_triplet(host_triplet_name, database);
+        return Triplet::from_canonical_name(host_triplet_name);
+    }
+
+    TripletFile::TripletFile(StringView name, StringView location) : name(name.data(), name.size()), location(location)
+    {
+    }
+
+    Path TripletFile::get_full_path() const { return location / (name + ".cmake"); }
+
+    Path TripletDatabase::get_triplet_file_path(Triplet triplet) const
+    {
+        auto it = Util::find_if(available_triplets,
+                                [&](const TripletFile& tf) { return tf.name == triplet.canonical_name(); });
+
+        if (it == available_triplets.end())
         {
-            return Triplet::from_canonical_name(*host_triplet);
+            Checks::msg_exit_with_message(
+                VCPKG_LINE_INFO, msgTripletFileNotFound, msg::triplet = triplet.canonical_name());
         }
-        return system_triplet();
+
+        return it->get_full_path();
+    }
+
+    bool TripletDatabase::is_valid_triplet_name(StringView name) const
+    {
+        return is_valid_triplet_canonical_name(Strings::ascii_to_lowercase(name));
+    }
+
+    bool TripletDatabase::is_valid_triplet_canonical_name(StringView name) const
+    {
+        return Util::any_of(available_triplets, [=](const TripletFile& tf) { return tf.name == name; });
     }
 }

@@ -5,12 +5,12 @@
 
 #include <vcpkg/commands.autocomplete.h>
 #include <vcpkg/commands.edit.h>
+#include <vcpkg/commands.install.h>
 #include <vcpkg/commands.integrate.h>
+#include <vcpkg/commands.remove.h>
 #include <vcpkg/commands.upgrade.h>
-#include <vcpkg/install.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/paragraphs.h>
-#include <vcpkg/remove.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
@@ -29,10 +29,10 @@ namespace vcpkg::Commands::Autocomplete
         Checks::exit_success(line_info);
     }
 
-    static std::vector<std::string> combine_port_with_triplets(StringView port,
-                                                               const std::vector<std::string>& triplets)
+    static std::vector<std::string> combine_port_with_triplets(StringView port, View<TripletFile> triplets)
     {
-        return Util::fmap(triplets, [&](const std::string& triplet) { return fmt::format("{}:{}", port, triplet); });
+        return Util::fmap(triplets,
+                          [&](const TripletFile& triplet) { return fmt::format("{}:{}", port, triplet.name); });
     }
 
     void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
@@ -97,14 +97,14 @@ namespace vcpkg::Commands::Autocomplete
         const auto& command_name = command_arguments[0];
 
         // Handles vcpkg install package:<triplet>
-        if (command_name == "install")
+        if (Strings::case_insensitive_ascii_equals(command_name, "install"))
         {
             StringView last_arg = command_arguments.back();
             auto colon = Util::find(last_arg, ':');
             if (colon != last_arg.end())
             {
-                auto port_name = StringView{last_arg.begin(), colon};
-                auto triplet_prefix = StringView{colon + 1, last_arg.end()};
+                StringView port_name{last_arg.begin(), colon};
+                StringView triplet_prefix{colon + 1, last_arg.end()};
                 // TODO: Support autocomplete for ports in --overlay-ports
                 auto maybe_port =
                     Paragraphs::try_load_port(paths.get_filesystem(), paths.builtin_ports_directory() / port_name);
@@ -113,9 +113,9 @@ namespace vcpkg::Commands::Autocomplete
                     Checks::exit_success(VCPKG_LINE_INFO);
                 }
 
-                std::vector<std::string> triplets = paths.get_available_triplets_names();
-                Util::erase_remove_if(triplets, [&](const std::string& s) {
-                    return !Strings::case_insensitive_ascii_starts_with(s, triplet_prefix);
+                auto triplets = paths.get_triplet_db().available_triplets;
+                Util::erase_remove_if(triplets, [&](const TripletFile& tf) {
+                    return !Strings::case_insensitive_ascii_starts_with(tf.name, triplet_prefix);
                 });
 
                 auto result = combine_port_with_triplets(port_name, triplets);
@@ -140,7 +140,7 @@ namespace vcpkg::Commands::Autocomplete
 
         for (auto&& command : COMMANDS)
         {
-            if (command_name == command.name)
+            if (Strings::case_insensitive_ascii_equals(command_name, command.name))
             {
                 StringView prefix = command_arguments.back();
                 std::vector<std::string> results;
@@ -173,10 +173,11 @@ namespace vcpkg::Commands::Autocomplete
                     return !Strings::case_insensitive_ascii_starts_with(s, prefix);
                 });
 
-                if (command.name == "install" && results.size() == 1 && !is_option)
+                if (Strings::case_insensitive_ascii_equals(command.name, "install") && results.size() == 1 &&
+                    !is_option)
                 {
                     const auto port_at_each_triplet =
-                        combine_port_with_triplets(results[0], paths.get_available_triplets_names());
+                        combine_port_with_triplets(results[0], paths.get_triplet_db().available_triplets);
                     Util::Vectors::append(&results, port_at_each_triplet);
                 }
 
@@ -185,10 +186,5 @@ namespace vcpkg::Commands::Autocomplete
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);
-    }
-
-    void AutocompleteCommand::perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const
-    {
-        Autocomplete::perform_and_exit(args, paths);
     }
 }

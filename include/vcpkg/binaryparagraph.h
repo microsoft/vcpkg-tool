@@ -12,8 +12,9 @@ namespace vcpkg
     struct BinaryParagraph
     {
         BinaryParagraph();
-        explicit BinaryParagraph(Paragraph fields);
+        explicit BinaryParagraph(Paragraph&& fields);
         BinaryParagraph(const SourceParagraph& spgh,
+                        const std::vector<std::string>& default_features,
                         Triplet triplet,
                         const std::string& abi_tag,
                         std::vector<PackageSpec> deps);
@@ -52,5 +53,5 @@ namespace vcpkg
     };
 
     void serialize(const BinaryParagraph& pgh, std::string& out_str);
-    std::string format_binary_paragraph(BinaryParagraph paragraph);
+    std::string format_binary_paragraph(const BinaryParagraph& paragraph);
 }

@@ -1,11 +1,10 @@
 #pragma once
 
-#include <vcpkg/commands.interface.h>
+#include <vcpkg/base/fwd/files.h>
+
+#include <vcpkg/fwd/vcpkgcmdarguments.h>
 
 namespace vcpkg::Commands
 {
-    struct BootstrapStandaloneCommand : BasicCommand
-    {
-        virtual void perform_and_exit(const VcpkgCmdArguments& args, Filesystem& fs) const override;
-    };
+    void command_bootstrap_standalone_and_exit(const VcpkgCmdArguments& args, const Filesystem& fs);
 }

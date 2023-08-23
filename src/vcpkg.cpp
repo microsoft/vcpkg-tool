@@ -16,9 +16,9 @@
 #include <vcpkg/cgroup-parser.h>
 #include <vcpkg/commands.contact.h>
 #include <vcpkg/commands.h>
+#include <vcpkg/commands.help.h>
 #include <vcpkg/commands.version.h>
 #include <vcpkg/globalstate.h>
-#include <vcpkg/help.h>
 #include <vcpkg/input.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/paragraphs.h>
@@ -49,7 +49,7 @@ namespace
         Checks::exit_fail(VCPKG_LINE_INFO);
     }
 
-    bool detect_container(vcpkg::Filesystem& fs)
+    bool detect_container(const Filesystem& fs)
     {
         (void)fs;
 #if defined(_WIN32)
@@ -90,7 +90,7 @@ namespace
         return false;
     }
 
-    void inner(vcpkg::Filesystem& fs, const VcpkgCmdArguments& args, const BundleSettings& bundle)
+    void inner(const Filesystem& fs, const VcpkgCmdArguments& args, const BundleSettings& bundle)
     {
         // track version on each invocation
         get_global_metrics_collector().track_string(StringMetric::VcpkgVersion, Commands::Version::version.to_string());
@@ -118,10 +118,10 @@ namespace
 
         get_global_metrics_collector().track_bool(BoolMetric::DetectedContainer, detect_container(fs));
 
-        if (const auto command_function = find_command(Commands::get_available_basic_commands()))
+        if (const auto command_function = find_command(Commands::basic_commands))
         {
             get_global_metrics_collector().track_string(StringMetric::CommandName, command_function->name);
-            return command_function->function->perform_and_exit(args, fs);
+            return command_function->function(args, fs);
         }
 
         const VcpkgPaths paths(fs, args, bundle);
@@ -130,21 +130,18 @@ namespace
 
         fs.current_path(paths.root, VCPKG_LINE_INFO);
 
-        if (const auto command_function = find_command(Commands::get_available_paths_commands()))
+        if (const auto command_function = find_command(Commands::paths_commands))
         {
             get_global_metrics_collector().track_string(StringMetric::CommandName, command_function->name);
-            return command_function->function->perform_and_exit(args, paths);
+            return command_function->function(args, paths);
         }
 
-        Triplet default_triplet = vcpkg::default_triplet(args);
-        check_triplet(default_triplet, paths);
-        Triplet host_triplet = vcpkg::default_host_triplet(args);
-        check_triplet(host_triplet, paths);
-
-        if (const auto command_function = find_command(Commands::get_available_triplet_commands()))
+        Triplet default_triplet = vcpkg::default_triplet(args, paths.get_triplet_db());
+        Triplet host_triplet = vcpkg::default_host_triplet(args, paths.get_triplet_db());
+        if (const auto command_function = find_command(Commands::triplet_commands))
         {
             get_global_metrics_collector().track_string(StringMetric::CommandName, command_function->name);
-            return command_function->function->perform_and_exit(args, paths, default_triplet, host_triplet);
+            return command_function->function(args, paths, default_triplet, host_triplet);
         }
 
         return invalid_command(args);
@@ -163,7 +160,7 @@ namespace vcpkg::Checks
 
         get_global_metrics_collector().track_elapsed_us(elapsed_us_inner);
         Debug::g_debugging = false;
-        flush_global_metrics(get_real_filesystem());
+        flush_global_metrics(real_filesystem);
 
 #if defined(_WIN32)
         if (g_init_console_initialized)
@@ -215,7 +212,6 @@ int main(const int argc, const char* const* const argv)
     if (argc == 0) std::abort();
 
     ElapsedTimer total_timer;
-    auto& fs = get_real_filesystem();
     auto maybe_vslang = get_environment_variable("VSLANG");
     if (const auto vslang = maybe_vslang.get())
     {
@@ -280,7 +276,7 @@ int main(const int argc, const char* const* const argv)
     }
 #endif
 
-    VcpkgCmdArguments args = VcpkgCmdArguments::create_from_command_line(fs, argc, argv);
+    VcpkgCmdArguments args = VcpkgCmdArguments::create_from_command_line(real_filesystem, argc, argv);
     if (const auto p = args.debug.get()) Debug::g_debugging = *p;
     args.imbue_from_environment();
     VcpkgCmdArguments::imbue_or_apply_process_recursion(args);
@@ -302,7 +298,7 @@ int main(const int argc, const char* const* const argv)
         auto disable_metrics_tag_file_path = current_exe_path;
         disable_metrics_tag_file_path.replace_filename("vcpkg.disable-metrics");
         std::error_code ec;
-        if (fs.exists(disable_metrics_tag_file_path, ec) || ec)
+        if (real_filesystem.exists(disable_metrics_tag_file_path, ec) || ec)
         {
             Debug::println("Disabling metrics because vcpkg.disable-metrics exists");
             to_enable_metrics = false;
@@ -312,7 +308,8 @@ int main(const int argc, const char* const* const argv)
     auto bundle_path = current_exe_path;
     bundle_path.replace_filename("vcpkg-bundle.json");
     Debug::println("Trying to load bundleconfig from ", bundle_path);
-    auto bundle = fs.try_read_contents(bundle_path).then(&try_parse_bundle_settings).value_or(BundleSettings{});
+    auto bundle =
+        real_filesystem.try_read_contents(bundle_path).then(&try_parse_bundle_settings).value_or(BundleSettings{});
     Debug::println("Bundle config: ", bundle.to_string());
 
     if (to_enable_metrics)
@@ -393,14 +390,14 @@ int main(const int argc, const char* const* const argv)
 
     if (Debug::g_debugging)
     {
-        inner(fs, args, bundle);
+        inner(real_filesystem, args, bundle);
         Checks::exit_fail(VCPKG_LINE_INFO);
     }
 
     std::string exc_msg;
     try
     {
-        inner(fs, args, bundle);
+        inner(real_filesystem, args, bundle);
         Checks::exit_fail(VCPKG_LINE_INFO);
     }
     catch (std::exception& e)

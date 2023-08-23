@@ -3,7 +3,7 @@
 
 #include <vcpkg/binaryparagraph.h>
 #include <vcpkg/commands.cache.h>
-#include <vcpkg/help.h>
+#include <vcpkg/commands.help.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
@@ -15,11 +15,10 @@ namespace vcpkg::Commands::Cache
         std::vector<BinaryParagraph> output;
         for (auto&& path : paths.get_filesystem().get_files_non_recursive(paths.packages(), VCPKG_LINE_INFO))
         {
-            const auto pghs = Paragraphs::get_single_paragraph(paths.get_filesystem(), path / "CONTROL");
+            auto pghs = Paragraphs::get_single_paragraph(paths.get_filesystem(), std::move(path) / "CONTROL");
             if (const auto p = pghs.get())
             {
-                const BinaryParagraph binary_paragraph = BinaryParagraph(*p);
-                output.push_back(binary_paragraph);
+                output.emplace_back(std::move(*p));
             }
         }
 
@@ -67,10 +66,5 @@ namespace vcpkg::Commands::Cache
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);
-    }
-
-    void CacheCommand::perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const
-    {
-        Cache::perform_and_exit(args, paths);
     }
 }

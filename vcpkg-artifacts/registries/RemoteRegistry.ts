@@ -4,15 +4,15 @@
 import { strict } from 'assert';
 import { createHash } from 'crypto';
 import { parse } from 'yaml';
-import { unpackZip } from '../archivers/ZipUnpacker';
 import { registryIndexFile } from '../constants';
 import { acquireArtifactFile } from '../fs/acquire';
 import { i } from '../i18n';
 import { Session } from '../session';
 import { isGithubRepo } from '../util/checks';
 import { Uri } from '../util/uri';
-import { ArtifactIndex } from './artifact-index';
+import { vcpkgExtract } from '../vcpkg';
 import { ArtifactRegistry } from './ArtifactRegistry';
+import { ArtifactIndex } from './artifact-index';
 import { Index } from './indexer';
 
 export class RemoteRegistry extends ArtifactRegistry {
@@ -76,8 +76,10 @@ export class RemoteRegistry extends ArtifactRegistry {
     }
   }
 
-  async update() {
-    this.session.channels.message(i`Updating registry data from ${this.location.toString()}`);
+  async update(displayName?: string) {
+    const displayNameStr = displayName ?? this.location.toString();
+
+    this.session.channels.message(i`Updating registry data from ${displayNameStr}`);
 
     let locations = [this.location];
 
@@ -86,9 +88,10 @@ export class RemoteRegistry extends ArtifactRegistry {
       locations = [this.location.join('archive/refs/heads/main.zip'), this.location.join('archive/refs/heads/master.zip')];
     }
 
-    const file = await acquireArtifactFile(this.session, locations, `${this.safeName}-registry.zip`, {});
+    const file = await acquireArtifactFile(this.session, locations, `${this.safeName}-registry.zip`, {}, {force: true});
     if (await file.exists()) {
-      await unpackZip(this.session, file, this.cacheFolder, {}, { strip: -1 });
+      const targetLocation = this.cacheFolder.fsPath;
+      await vcpkgExtract(this.session, file.fsPath, targetLocation, 'AUTO');
       await file.delete();
     }
   }

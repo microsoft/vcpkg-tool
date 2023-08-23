@@ -1,10 +1,10 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+import { strict } from 'assert';
 import { Artifact } from '../../artifacts/artifact';
 import { Registry, RegistryDatabase, RegistryResolver, SearchCriteria } from '../../registries/registries';
 import { Uri } from '../../util/uri';
-import { strict } from 'assert';
 import { SuiteLocal } from './SuiteLocal';
 
 class FakeRegistry implements Registry {
@@ -19,7 +19,7 @@ class FakeRegistry implements Registry {
 
   load(force?: boolean): Promise<void> { return Promise.resolve(); }
   save(): Promise<void> { return Promise.resolve(); }
-  update(): Promise<void> { return Promise.resolve(); }
+  update(displayName?: string): Promise<void> { return Promise.resolve(); }
   regenerate(normalize?: boolean): Promise<void> { return Promise.resolve(); }
 }
 

@@ -3,10 +3,10 @@
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.process.h>
 
+#include <vcpkg/commands.export.h>
 #include <vcpkg/commands.h>
+#include <vcpkg/commands.install.h>
 #include <vcpkg/export.chocolatey.h>
-#include <vcpkg/export.h>
-#include <vcpkg/install.h>
 #include <vcpkg/installedpaths.h>
 #include <vcpkg/tools.h>
 #include <vcpkg/vcpkgpaths.h>
@@ -157,7 +157,7 @@ if (Test-Path $installedDir)
                                msgOptionRequired,
                                msg::option = "x-maintainer");
 
-        Filesystem& fs = paths.get_filesystem();
+        const Filesystem& fs = paths.get_filesystem();
         const auto vcpkg_root_path = paths.root;
         const auto raw_exported_dir_path = vcpkg_root_path / "chocolatey";
         const auto exported_dir_path = vcpkg_root_path / "chocolatey_exports";

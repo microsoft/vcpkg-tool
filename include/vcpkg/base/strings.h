@@ -92,8 +92,8 @@ namespace vcpkg::Strings
 
     void inplace_ascii_to_lowercase(char* first, char* last);
     void inplace_ascii_to_lowercase(std::string& s);
-    [[nodiscard]] std::string ascii_to_lowercase(std::string s);
-    [[nodiscard]] std::string ascii_to_uppercase(std::string s);
+    [[nodiscard]] std::string ascii_to_lowercase(StringView s);
+    [[nodiscard]] std::string ascii_to_uppercase(StringView s);
 
     bool case_insensitive_ascii_starts_with(StringView s, StringView pattern);
     bool case_insensitive_ascii_ends_with(StringView s, StringView pattern);
@@ -152,6 +152,8 @@ namespace vcpkg::Strings
     void inplace_trim_all_and_remove_whitespace_strings(std::vector<std::string>& strings);
 
     [[nodiscard]] std::vector<std::string> split(StringView s, const char delimiter);
+
+    [[nodiscard]] std::vector<std::string> split_keep_empty(StringView s, const char delimiter);
 
     [[nodiscard]] std::vector<std::string> split_paths(StringView s);
 

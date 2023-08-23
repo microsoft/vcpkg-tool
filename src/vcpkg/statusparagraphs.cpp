@@ -1,6 +1,6 @@
 #include <vcpkg/base/checks.h>
 
-#include <vcpkg/install.h>
+#include <vcpkg/commands.install.h>
 #include <vcpkg/installedpaths.h>
 #include <vcpkg/statusparagraphs.h>
 #include <vcpkg/vcpkgpaths.h>
@@ -151,7 +151,9 @@ namespace vcpkg
         }
     }
 
-    Json::Value serialize_ipv(const InstalledPackageView& ipv, const InstalledPaths& installed, const Filesystem& fs)
+    Json::Value serialize_ipv(const InstalledPackageView& ipv,
+                              const InstalledPaths& installed,
+                              const ReadOnlyFilesystem& fs)
     {
         Json::Object iobj;
         iobj.insert("version-string", Json::Value::string(ipv.core->package.version));

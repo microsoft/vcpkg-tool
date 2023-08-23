@@ -321,8 +321,7 @@ namespace vcpkg
         // (\.(0|[1-9][0-9]*))*
         while (*cur == '.')
         {
-            ret.identifiers.push_back(0);
-            cur = parse_skip_number(cur + 1, &ret.identifiers.back());
+            cur = parse_skip_number(cur + 1, &ret.identifiers.emplace_back(0));
             if (!cur)
             {
                 return format_invalid_date_version(version);
@@ -399,6 +398,11 @@ namespace vcpkg
     static inline VerComp portversion_vercomp(VerComp base, int a, int b)
     {
         return base == VerComp::eq ? integer_vercomp(a, b) : base;
+    }
+
+    VerComp compare_versions(const SchemedVersion& a, const SchemedVersion& b)
+    {
+        return compare_versions(a.scheme, a.version, b.scheme, b.version);
     }
 
     VerComp compare_versions(VersionScheme sa, const Version& a, VersionScheme sb, const Version& b)

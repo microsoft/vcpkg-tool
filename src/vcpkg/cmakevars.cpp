@@ -2,6 +2,7 @@
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/span.h>
 #include <vcpkg/base/strings.h>
+#include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
@@ -14,20 +15,6 @@
 using namespace vcpkg;
 namespace vcpkg::CMakeVars
 {
-    void CMakeVarProvider::load_tag_vars(const ActionPlan& action_plan,
-                                         const PortFileProvider& port_provider,
-                                         Triplet host_triplet) const
-    {
-        std::vector<FullPackageSpec> install_package_specs;
-        install_package_specs.reserve(action_plan.install_actions.size());
-        for (auto&& action : action_plan.install_actions)
-        {
-            install_package_specs.emplace_back(action.spec, action.feature_list);
-        }
-
-        load_tag_vars(install_package_specs, port_provider, host_triplet);
-    }
-
     const std::unordered_map<std::string, std::string>& CMakeVarProvider::get_or_load_dep_info_vars(
         const PackageSpec& spec, Triplet host_triplet) const
     {
@@ -52,9 +39,7 @@ namespace vcpkg::CMakeVars
 
             void load_dep_info_vars(View<PackageSpec> specs, Triplet host_triplet) const override;
 
-            void load_tag_vars(View<FullPackageSpec> specs,
-                               const PortFileProvider& port_provider,
-                               Triplet host_triplet) const override;
+            void load_tag_vars(const ActionPlan& action_plan, Triplet host_triplet) const override;
 
             Optional<const std::unordered_map<std::string, std::string>&> get_generic_triplet_vars(
                 Triplet triplet) const override;
@@ -67,7 +52,7 @@ namespace vcpkg::CMakeVars
 
         public:
             Path create_tag_extraction_file(
-                const View<std::pair<const FullPackageSpec*, std::string>> spec_abi_settings) const;
+                const View<std::pair<FullPackageSpec, std::string>> spec_abi_settings) const;
 
             Path create_dep_info_extraction_file(const View<PackageSpec> specs) const;
 
@@ -98,7 +83,7 @@ namespace vcpkg::CMakeVars
 
         for (auto&& p : emitted_triplets)
         {
-            auto path_to_triplet = paths.get_triplet_file_path(p.first);
+            auto path_to_triplet = paths.get_triplet_db().get_triplet_file_path(p.first);
             fmt::format_to(std::back_inserter(extraction_file),
                            "if(VCPKG_TRIPLET_ID EQUAL {})\n"
                            "set(CMAKE_CURRENT_LIST_FILE \"{}\")\n"
@@ -120,19 +105,20 @@ endmacro()
     }
 
     Path TripletCMakeVarProvider::create_tag_extraction_file(
-        const View<std::pair<const FullPackageSpec*, std::string>> spec_abi_settings) const
+        const View<std::pair<FullPackageSpec, std::string>> spec_abi_settings) const
     {
-        Filesystem& fs = paths.get_filesystem();
+        const Filesystem& fs = paths.get_filesystem();
         static int tag_extract_id = 0;
 
         std::map<Triplet, int> emitted_triplets;
         int emitted_triplet_id = 0;
         for (const auto& spec_abi_setting : spec_abi_settings)
         {
-            emitted_triplets[spec_abi_setting.first->package_spec.triplet()] = emitted_triplet_id++;
+            emitted_triplets[spec_abi_setting.first.package_spec.triplet()] = emitted_triplet_id++;
         }
         std::string extraction_file = create_extraction_file_prelude(paths, emitted_triplets);
 
+        // The variables collected here are those necessary to perform builds.
         extraction_file.append(R"(
 
 function(vcpkg_get_tags PORT FEATURES VCPKG_TRIPLET_ID VCPKG_ABI_SETTINGS_FILE)
@@ -166,6 +152,8 @@ VCPKG_ENV_PASSTHROUGH=${VCPKG_ENV_PASSTHROUGH}
 VCPKG_ENV_PASSTHROUGH_UNTRACKED=${VCPKG_ENV_PASSTHROUGH_UNTRACKED}
 VCPKG_LOAD_VCVARS_ENV=${VCPKG_LOAD_VCVARS_ENV}
 VCPKG_DISABLE_COMPILER_TRACKING=${VCPKG_DISABLE_COMPILER_TRACKING}
+VCPKG_XBOX_CONSOLE_TARGET=${VCPKG_XBOX_CONSOLE_TARGET}
+Z_VCPKG_GameDKLatest=$ENV{GameDKLatest}
 e1e74b5c-18cb-4474-a6bd-5c1c8bc81f3f
 8c504940-be29-4cba-9f8f-6cd83e9d87b7")
 endfunction()
@@ -173,7 +161,7 @@ endfunction()
 
         for (const auto& spec_abi_setting : spec_abi_settings)
         {
-            const FullPackageSpec& spec = *spec_abi_setting.first;
+            const FullPackageSpec& spec = spec_abi_setting.first;
 
             std::string featurelist;
             for (auto&& f : spec.features)
@@ -199,7 +187,7 @@ endfunction()
     Path TripletCMakeVarProvider::create_dep_info_extraction_file(const View<PackageSpec> specs) const
     {
         static int dep_info_id = 0;
-        Filesystem& fs = paths.get_filesystem();
+        const Filesystem& fs = paths.get_filesystem();
 
         std::map<Triplet, int> emitted_triplets;
         int emitted_triplet_id = 0;
@@ -210,6 +198,8 @@ endfunction()
 
         std::string extraction_file = create_extraction_file_prelude(paths, emitted_triplets);
 
+        // The variables collected here are those necessary to perform dependency resolution.
+        // If a value affects platform expressions, it must be here.
         extraction_file.append(R"(
 
 function(vcpkg_get_dep_info PORT VCPKG_TRIPLET_ID)
@@ -228,6 +218,7 @@ CMAKE_HOST_SYSTEM_NAME=${CMAKE_HOST_SYSTEM_NAME}
 CMAKE_HOST_SYSTEM_PROCESSOR=${CMAKE_HOST_SYSTEM_PROCESSOR}
 CMAKE_HOST_SYSTEM_VERSION=${CMAKE_HOST_SYSTEM_VERSION}
 CMAKE_HOST_SYSTEM=${CMAKE_HOST_SYSTEM}
+VCPKG_XBOX_CONSOLE_TARGET=${VCPKG_XBOX_CONSOLE_TARGET}
 e1e74b5c-18cb-4474-a6bd-5c1c8bc81f3f
 8c504940-be29-4cba-9f8f-6cd83e9d87b7")
 endfunction()
@@ -329,9 +320,8 @@ endfunction()
     {
         std::vector<std::vector<std::pair<std::string, std::string>>> vars(1);
         // Hack: PackageSpecs should never have .name==""
-        FullPackageSpec full_spec({"", triplet}, {});
-        const auto file_path = create_tag_extraction_file(std::array<std::pair<const FullPackageSpec*, std::string>, 1>{
-            std::pair<const FullPackageSpec*, std::string>{&full_spec, ""}});
+        const auto file_path = create_tag_extraction_file(std::array<std::pair<FullPackageSpec, std::string>, 1>{
+            std::pair<FullPackageSpec, std::string>{FullPackageSpec{{"", triplet}, {}}, ""}});
         launch_and_split(file_path, vars);
         paths.get_filesystem().remove(file_path, VCPKG_LINE_INFO);
 
@@ -339,9 +329,13 @@ endfunction()
                                              std::make_move_iterator(vars.front().end()));
     }
 
-    void TripletCMakeVarProvider::load_dep_info_vars(View<PackageSpec> specs, Triplet host_triplet) const
+    void TripletCMakeVarProvider::load_dep_info_vars(View<PackageSpec> original_specs, Triplet host_triplet) const
     {
+        std::vector<PackageSpec> specs = Util::filter(original_specs, [this](const PackageSpec& spec) {
+            return dep_resolution_vars.find(spec) == dep_resolution_vars.end();
+        });
         if (specs.size() == 0) return;
+        Debug::println("Loading dep info for: ", Strings::join(" ", specs));
         std::vector<std::vector<std::pair<std::string, std::string>>> vars(specs.size());
         const auto file_path = create_dep_info_extraction_file(specs);
         if (specs.size() > 100)
@@ -364,19 +358,18 @@ endfunction()
         }
     }
 
-    void TripletCMakeVarProvider::load_tag_vars(View<FullPackageSpec> specs,
-                                                const PortFileProvider& port_provider,
-                                                Triplet host_triplet) const
+    void TripletCMakeVarProvider::load_tag_vars(const ActionPlan& action_plan, Triplet host_triplet) const
     {
-        if (specs.size() == 0) return;
-        std::vector<std::pair<const FullPackageSpec*, std::string>> spec_abi_settings;
-        spec_abi_settings.reserve(specs.size());
+        if (action_plan.install_actions.empty()) return;
+        std::vector<std::pair<FullPackageSpec, std::string>> spec_abi_settings;
+        spec_abi_settings.reserve(action_plan.install_actions.size());
 
-        for (const FullPackageSpec& spec : specs)
+        for (const auto& install_action : action_plan.install_actions)
         {
-            auto& scfl = port_provider.get_control_file(spec.package_spec.name()).value_or_exit(VCPKG_LINE_INFO);
+            auto& scfl = install_action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
             const auto override_path = scfl.source_location / "vcpkg-abi-settings.cmake";
-            spec_abi_settings.emplace_back(&spec, override_path.generic_u8string());
+            spec_abi_settings.emplace_back(FullPackageSpec{install_action.spec, install_action.feature_list},
+                                           override_path.generic_u8string());
         }
 
         std::vector<std::vector<std::pair<std::string, std::string>>> vars(spec_abi_settings.size());
@@ -387,7 +380,7 @@ endfunction()
         auto var_list_itr = vars.begin();
         for (const auto& spec_abi_setting : spec_abi_settings)
         {
-            const FullPackageSpec& spec = *spec_abi_setting.first;
+            const FullPackageSpec& spec = spec_abi_setting.first;
             PlatformExpression::Context ctxt{std::make_move_iterator(var_list_itr->begin()),
                                              std::make_move_iterator(var_list_itr->end())};
             ++var_list_itr;
@@ -401,36 +394,18 @@ endfunction()
     Optional<const std::unordered_map<std::string, std::string>&> TripletCMakeVarProvider::get_generic_triplet_vars(
         Triplet triplet) const
     {
-        auto find_itr = generic_triplet_vars.find(triplet);
-        if (find_itr != generic_triplet_vars.end())
-        {
-            return find_itr->second;
-        }
-
-        return nullopt;
+        return Util::lookup_value(generic_triplet_vars, triplet);
     }
 
     Optional<const std::unordered_map<std::string, std::string>&> TripletCMakeVarProvider::get_dep_info_vars(
         const PackageSpec& spec) const
     {
-        auto find_itr = dep_resolution_vars.find(spec);
-        if (find_itr != dep_resolution_vars.end())
-        {
-            return find_itr->second;
-        }
-
-        return nullopt;
+        return Util::lookup_value(dep_resolution_vars, spec);
     }
 
     Optional<const std::unordered_map<std::string, std::string>&> TripletCMakeVarProvider::get_tag_vars(
         const PackageSpec& spec) const
     {
-        auto find_itr = tag_vars.find(spec);
-        if (find_itr != tag_vars.end())
-        {
-            return find_itr->second;
-        }
-
-        return nullopt;
+        return Util::lookup_value(tag_vars, spec);
     }
 }

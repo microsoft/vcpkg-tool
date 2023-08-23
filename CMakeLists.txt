@@ -34,15 +34,10 @@ if(DEFINE_DISABLE_METRICS OR VCPKG_DISABLE_METRICS)
         "file vcpkg.disable_metrics next to the binary.")
 endif()
 
-set(LANGUAGES "CXX")
-if(VCPKG_BUILD_TLS12_DOWNLOADER)
-    list(APPEND LANGUAGES "C")
-endif()
-
 project(vcpkg
     DESCRIPTION "vcpkg helps you manage C and C++ libraries on Windows, Linux and MacOS."
     HOMEPAGE_URL "https://github.com/microsoft/vcpkg"
-    LANGUAGES ${LANGUAGES}
+    LANGUAGES C CXX
 )
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
@@ -407,6 +402,11 @@ elseif(NOT MSVC)
     target_compile_options(vcpkglib PRIVATE -include "${CMAKE_CURRENT_SOURCE_DIR}/include/pch.h")
 endif()
 
+if(ANDROID AND CMAKE_SYSTEM_VERSION LESS "28")
+    # pkg install libandroid-spawn
+    target_link_libraries(vcpkglib PRIVATE android-spawn)
+endif()
+
 if(MINGW)
     target_compile_definitions(vcpkglib
         PUBLIC
@@ -444,9 +444,8 @@ if(VCPKG_ADD_SOURCELINK)
         REF "${VCPKG_VERSION}"
     )
 endif()
-if(VCPKG_PDB_SUFFIX)
-    set_property(TARGET vcpkg PROPERTY PDB_NAME "vcpkg${VCPKG_PDB_SUFFIX}")
-endif()
+
+set_property(TARGET vcpkg PROPERTY PDB_NAME "vcpkg${VCPKG_PDB_SUFFIX}")
 
 # === Target: generate-message-map ===
 set(GENERATE_MESSAGE_MAP_DEPENDENCIES vcpkg)
@@ -476,6 +475,7 @@ if (BUILD_TESTING)
         "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg.manifest"
     )
     target_link_libraries(vcpkg-test PRIVATE vcpkglib)
+    set_property(TARGET vcpkg-test PROPERTY PDB_NAME "vcpkg-test${VCPKG_PDB_SUFFIX}")
     if(ANDROID)
         target_link_libraries(vcpkg-test PRIVATE log)
     endif()
@@ -494,27 +494,43 @@ if (BUILD_TESTING)
 endif()
 
 # === Target: vcpkg-fuzz ===
-
-file(GLOB VCPKG_FUZZ_SOURCES CONFIGURE_DEPENDS "src/vcpkg-fuzz/*.cpp")
+set(VCPKG_FUZZ_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg-fuzz/main.cpp")
 if(VCPKG_BUILD_FUZZING)
     add_executable(vcpkg-fuzz ${VCPKG_FUZZ_SOURCES} "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg.manifest")
     target_link_libraries(vcpkg-fuzz PRIVATE vcpkglib)
+    set_property(TARGET vcpkg-fuzz PROPERTY PDB_NAME "vcpkg-fuzz${VCPKG_PDB_SUFFIX}")
 endif()
 
 
 # === Target: tls12-download ===
-
 set(TLS12_DOWNLOAD_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/tls12-download.c")
 if(VCPKG_BUILD_TLS12_DOWNLOADER)
     add_executable(tls12-download ${TLS12_DOWNLOAD_SOURCES} "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg.manifest")
     set_property(TARGET tls12-download PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded")
     set_property(TARGET tls12-download APPEND PROPERTY LINK_OPTIONS "$<IF:$<CONFIG:Debug>,,/ENTRY:entry>")
     target_link_libraries(tls12-download winhttp wintrust shell32)
-    if(VCPKG_PDB_SUFFIX)
-        set_property(TARGET tls12-download PROPERTY PDB_NAME "tls12-download${VCPKG_PDB_SUFFIX}")
-    endif()
+    set_property(TARGET tls12-download PROPERTY PDB_NAME "tls12-download${VCPKG_PDB_SUFFIX}")
 endif()
 
+if (BUILD_TESTING)
+# === Target: closes-stdin ===
+
+set(CLOSES_STDIN_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/closes-stdin.c")
+add_executable(closes-stdin ${CLOSES_STDIN_SOURCES} "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg.manifest")
+set_property(TARGET closes-stdin PROPERTY PDB_NAME "closes-stdin${VCPKG_PDB_SUFFIX}")
+
+# === Target: closes-stdout ===
+
+set(CLOSES_STDOUT_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/closes-stdout.c")
+add_executable(closes-stdout ${CLOSES_STDOUT_SOURCES} "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg.manifest")
+set_property(TARGET closes-stdout PROPERTY PDB_NAME "closes-stdout${VCPKG_PDB_SUFFIX}")
+
+# === Target: reads-stdin ===
+
+set(READS_STDIN_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/reads-stdin.c")
+add_executable(reads-stdin ${READS_STDIN_SOURCES} "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg.manifest")
+set_property(TARGET reads-stdin PROPERTY PDB_NAME "reads-stdin${VCPKG_PDB_SUFFIX}")
+endif()
 
 # === Target: format ===
 
@@ -535,6 +551,9 @@ if(CLANG_FORMAT)
 
         COMMAND "${CLANG_FORMAT}" -i -verbose ${VCPKG_FUZZ_SOURCES}
         COMMAND "${CLANG_FORMAT}" -i -verbose ${TLS12_DOWNLOAD_SOURCES}
+        COMMAND "${CLANG_FORMAT}" -i -verbose ${CLOSES_STDIN_SOURCES}
+        COMMAND "${CLANG_FORMAT}" -i -verbose ${CLOSES_STDOUT_SOURCES}
+        COMMAND "${CLANG_FORMAT}" -i -verbose ${READS_STDIN_SOURCES}
     )
 endif()
 

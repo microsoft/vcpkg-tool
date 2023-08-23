@@ -316,11 +316,7 @@ namespace vcpkg::Json
     // } struct Value
     // struct Array {
     Value& Array::push_back(std::string&& value) { return this->push_back(Json::Value::string(std::move(value))); }
-    Value& Array::push_back(Value&& value)
-    {
-        underlying_.push_back(std::move(value));
-        return underlying_.back();
-    }
+    Value& Array::push_back(Value&& value) { return underlying_.emplace_back(std::move(value)); }
     Object& Array::push_back(Object&& obj) { return push_back(Value::object(std::move(obj))).object(VCPKG_LINE_INFO); }
     Array& Array::push_back(Array&& arr) { return push_back(Value::array(std::move(arr))).array(VCPKG_LINE_INFO); }
     Value& Array::insert_before(iterator it, Value&& value)
@@ -349,8 +345,7 @@ namespace vcpkg::Json
                                 fmt::format("attempted to insert duplicate key {} into JSON object", key));
         }
 
-        underlying_.emplace_back(key.to_string(), std::move(value));
-        return underlying_.back().second;
+        return underlying_.emplace_back(key.to_string(), std::move(value)).second;
     }
     Value& Object::insert(StringView key, const Value& value)
     {
@@ -360,8 +355,7 @@ namespace vcpkg::Json
                                 fmt::format("attempted to insert duplicate key {} into JSON object", key));
         }
 
-        underlying_.emplace_back(key.to_string(), value);
-        return underlying_.back().second;
+        return underlying_.emplace_back(key.to_string(), value).second;
     }
     Array& Object::insert(StringView key, Array&& value)
     {
@@ -394,8 +388,7 @@ namespace vcpkg::Json
         }
         else
         {
-            underlying_.emplace_back(key, std::move(value));
-            return underlying_.back().second;
+            return underlying_.emplace_back(key, std::move(value)).second;
         }
     }
     Value& Object::insert_or_replace(StringView key, const Value& value)
@@ -408,8 +401,7 @@ namespace vcpkg::Json
         }
         else
         {
-            underlying_.emplace_back(key, value);
-            return underlying_.back().second;
+            return underlying_.emplace_back(key, value).second;
         }
     }
     Array& Object::insert_or_replace(StringView key, Array&& value)
@@ -1109,7 +1101,7 @@ namespace vcpkg::Json
         return true;
     }
 
-    ExpectedT<ParsedJson, std::unique_ptr<ParseError>> parse_file(const Filesystem& fs,
+    ExpectedT<ParsedJson, std::unique_ptr<ParseError>> parse_file(const ReadOnlyFilesystem& fs,
                                                                   const Path& json_file,
                                                                   std::error_code& ec)
     {
@@ -1122,7 +1114,7 @@ namespace vcpkg::Json
         return parse(res, json_file);
     }
 
-    ParsedJson parse_file(vcpkg::LineInfo li, const Filesystem& fs, const Path& json_file)
+    ParsedJson parse_file(vcpkg::LineInfo li, const ReadOnlyFilesystem& fs, const Path& json_file)
     {
         std::error_code ec;
         auto ret = parse_file(fs, json_file, ec).map_error(parse_error_formatter);
@@ -1163,7 +1155,7 @@ namespace vcpkg::Json
             JsonStyle style;
             std::string& buffer;
 
-            void append_indent(int indent) const
+            void append_indent(size_t indent) const
             {
                 if (style.use_tabs())
                 {
@@ -1247,7 +1239,7 @@ namespace vcpkg::Json
                 buffer.push_back('"');
             }
 
-            void stringify_object(const Object& obj, int current_indent)
+            void stringify_object(const Object& obj, size_t current_indent)
             {
                 buffer.push_back('{');
                 if (obj.size() != 0)
@@ -1275,7 +1267,7 @@ namespace vcpkg::Json
                 buffer.push_back('}');
             }
 
-            void stringify_array(const Array& arr, int current_indent)
+            void stringify_array(const Array& arr, size_t current_indent)
             {
                 buffer.push_back('[');
                 if (arr.size() == 0)
@@ -1305,7 +1297,7 @@ namespace vcpkg::Json
                 }
             }
 
-            void stringify(const Value& value, int current_indent)
+            void stringify(const Value& value, size_t current_indent)
             {
                 switch (value.kind())
                 {

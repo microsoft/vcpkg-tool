@@ -7,6 +7,7 @@
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 
 #include <vcpkg/base/optional.h>
+#include <vcpkg/base/path.h>
 #include <vcpkg/base/stringview.h>
 
 #include <string>
@@ -40,9 +41,6 @@ namespace vcpkg
     };
 
     inline bool operator!=(Triplet left, Triplet right) { return !(left == right); }
-
-    Triplet default_triplet(const VcpkgCmdArguments& args);
-    Triplet default_host_triplet(const VcpkgCmdArguments& args);
 }
 
 VCPKG_FORMAT_AS(vcpkg::Triplet, vcpkg::StringView);
@@ -53,5 +51,32 @@ namespace std
     struct hash<vcpkg::Triplet>
     {
         size_t operator()(vcpkg::Triplet t) const { return t.hash_code(); }
+    };
+}
+
+namespace vcpkg
+{
+    Triplet default_triplet(const VcpkgCmdArguments& args, const TripletDatabase& database);
+    Triplet default_host_triplet(const VcpkgCmdArguments& args, const TripletDatabase& database);
+
+    struct TripletFile
+    {
+        std::string name;
+        Path location;
+
+        TripletFile(StringView name, StringView location);
+
+        Path get_full_path() const;
+    };
+
+    struct TripletDatabase
+    {
+        Path default_triplet_directory;
+        Path community_triplet_directory;
+        std::vector<TripletFile> available_triplets;
+
+        Path get_triplet_file_path(Triplet triplet) const;
+        bool is_valid_triplet_name(StringView name) const;
+        bool is_valid_triplet_canonical_name(StringView name) const;
     };
 }

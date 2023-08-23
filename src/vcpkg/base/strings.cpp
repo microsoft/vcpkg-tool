@@ -183,16 +183,18 @@ void Strings::inplace_ascii_to_lowercase(std::string& s)
     Strings::inplace_ascii_to_lowercase(s.data(), s.data() + s.size());
 }
 
-std::string Strings::ascii_to_lowercase(std::string s)
+std::string Strings::ascii_to_lowercase(StringView s)
 {
-    Strings::inplace_ascii_to_lowercase(s);
-    return std::move(s);
+    std::string result;
+    std::transform(s.begin(), s.end(), std::back_inserter(result), tolower_char);
+    return result;
 }
 
-std::string Strings::ascii_to_uppercase(std::string s)
+std::string Strings::ascii_to_uppercase(StringView s)
 {
-    std::transform(s.begin(), s.end(), s.begin(), to_upper_char);
-    return std::move(s);
+    std::string result;
+    std::transform(s.begin(), s.end(), std::back_inserter(result), to_upper_char);
+    return result;
 }
 
 bool Strings::case_insensitive_ascii_starts_with(StringView s, StringView pattern)
@@ -291,6 +293,20 @@ std::vector<std::string> Strings::split(StringView s, const char delimiter)
         output.emplace_back(first, next);
         first = next;
     }
+}
+
+std::vector<std::string> Strings::split_keep_empty(StringView s, const char delimiter)
+{
+    std::vector<std::string> output;
+    auto first = s.begin();
+    const auto last = s.end();
+    do
+    {
+        auto next = std::find_if(first, last, [=](const char c) { return c == delimiter; });
+        output.emplace_back(first, next);
+        if (next == last) return output;
+        first = next + 1;
+    } while (1);
 }
 
 std::vector<std::string> Strings::split_paths(StringView s)

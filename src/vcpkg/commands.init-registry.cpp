@@ -13,7 +13,7 @@ namespace vcpkg::Commands::InitRegistry
         nullptr,
     };
 
-    void perform_and_exit(const VcpkgCmdArguments& args, Filesystem& fs)
+    void perform_and_exit(const VcpkgCmdArguments& args, const Filesystem& fs)
     {
         auto parsed_args = args.parse_arguments(COMMAND_STRUCTURE);
 
@@ -39,10 +39,5 @@ namespace vcpkg::Commands::InitRegistry
         }
         msg::println(msgRegistryCreated, msg::path = path);
         Checks::exit_success(VCPKG_LINE_INFO);
-    }
-
-    void InitRegistryCommand::perform_and_exit(const VcpkgCmdArguments& args, Filesystem& fs) const
-    {
-        InitRegistry::perform_and_exit(args, fs);
     }
 }
