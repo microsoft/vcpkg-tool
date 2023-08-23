@@ -97,7 +97,7 @@ namespace vcpkg::Commands::Autocomplete
         const auto& command_name = command_arguments[0];
 
         // Handles vcpkg install package:<triplet>
-        if (command_name == "install")
+        if (Strings::case_insensitive_ascii_equals(command_name, "install"))
         {
             StringView last_arg = command_arguments.back();
             auto colon = Util::find(last_arg, ':');
@@ -140,7 +140,7 @@ namespace vcpkg::Commands::Autocomplete
 
         for (auto&& command : COMMANDS)
         {
-            if (command_name == command.name)
+            if (Strings::case_insensitive_ascii_equals(command_name, command.name))
             {
                 StringView prefix = command_arguments.back();
                 std::vector<std::string> results;
@@ -173,7 +173,8 @@ namespace vcpkg::Commands::Autocomplete
                     return !Strings::case_insensitive_ascii_starts_with(s, prefix);
                 });
 
-                if (command.name == "install" && results.size() == 1 && !is_option)
+                if (Strings::case_insensitive_ascii_equals(command.name, "install") && results.size() == 1 &&
+                    !is_option)
                 {
                     const auto port_at_each_triplet =
                         combine_port_with_triplets(results[0], paths.get_triplet_db().available_triplets);

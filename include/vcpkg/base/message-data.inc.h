@@ -1522,23 +1522,34 @@ DECLARE_MESSAGE(InstallWithSystemManagerPkg,
 DECLARE_MESSAGE(IntegrateBashHelp,
                 (),
                 "'bash' is a terminal program which should be unlocalized.",
-                "Enable bash tab-completion.")
+                "Enable bash tab-completion. Non-Windows only.")
 DECLARE_MESSAGE(IntegrateFishHelp,
                 (),
                 "'fish' is a terminal program which should be unlocalized.",
-                "Enable fish tab-completion.")
+                "Enable fish tab-completion. Non-Windows only.")
 DECLARE_MESSAGE(IntegrateInstallHelpLinux, (), "", "Make installed packages available user-wide.")
 DECLARE_MESSAGE(IntegrateInstallHelpWindows,
                 (),
                 "",
                 "Make installed packages available user-wide. Requires admin privileges on first use.")
-DECLARE_MESSAGE(IntegratePowerShellHelp, (), "", "Enable PowerShell tab-completion.")
-DECLARE_MESSAGE(IntegrateProjectHelp, (), "", "Generate a referencing NuGet package for individual VS project use.")
+DECLARE_MESSAGE(IntegrateNonWindowsOnly,
+                (msg::command_line),
+                "",
+                "{command_line} is non-Windows-only and not supported on this system.")
+DECLARE_MESSAGE(IntegratePowerShellHelp, (), "", "Enable PowerShell tab-completion. Windows-only.")
+DECLARE_MESSAGE(IntegrateProjectHelp,
+                (),
+                "",
+                "Generate a referencing NuGet package for individual Visual Studio project use. Windows-only.")
 DECLARE_MESSAGE(IntegrateRemoveHelp, (), "", "Remove user-wide integration.")
+DECLARE_MESSAGE(IntegrateWindowsOnly,
+                (msg::command_line),
+                "",
+                "{command_line} is Windows-only and not supported on this system.")
 DECLARE_MESSAGE(IntegrateZshHelp,
                 (),
                 "'zsh' is a terminal program which should be unlocalized.",
-                "Enable zsh tab-completion.")
+                "Enable zsh tab-completion. Non-Windows only.")
 DECLARE_MESSAGE(IntegrationFailedVS2015, (), "", "Integration was not applied for Visual Studio 2015.")
 DECLARE_MESSAGE(InternalCICommand,
                 (),
