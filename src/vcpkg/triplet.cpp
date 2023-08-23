@@ -104,9 +104,10 @@ namespace vcpkg
 
     Triplet default_triplet(const VcpkgCmdArguments& args, const TripletDatabase& database)
     {
-        if (auto triplet = args.triplet.get())
+        if (auto triplet_name = args.triplet.get())
         {
-            return Triplet::from_canonical_name(*triplet);
+            check_triplet(*triplet_name, database);
+            return Triplet::from_canonical_name(*triplet_name);
         }
         return default_host_triplet(args, database);
     }
