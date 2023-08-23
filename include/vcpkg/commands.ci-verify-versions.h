@@ -3,7 +3,8 @@
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
-namespace vcpkg::Commands::CIVerifyVersions
+namespace vcpkg
 {
-    void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths);
+    extern const CommandMetadata CommandCiVerifyVersionsMetadata;
+    void command_ci_verify_versions_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths);
 }

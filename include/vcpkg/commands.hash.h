@@ -4,7 +4,8 @@
 
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 
-namespace vcpkg::Commands::Hash
+namespace vcpkg
 {
-    void perform_and_exit(const VcpkgCmdArguments& args, const Filesystem& paths);
+    extern const CommandMetadata CommandHashMetadata;
+    void command_hash_and_exit(const VcpkgCmdArguments& args, const Filesystem& paths);
 }

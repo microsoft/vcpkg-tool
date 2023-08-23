@@ -8,20 +8,25 @@
 
 #include <string>
 
-namespace vcpkg::Commands::ZPrintConfig
+using namespace vcpkg;
+
+namespace
 {
-    static void opt_add(Json::Object& obj, StringLiteral key, const Optional<Path>& opt)
+    void opt_add(Json::Object& obj, StringLiteral key, const Optional<Path>& opt)
     {
         if (auto p = opt.get())
         {
             obj.insert(key, p->native());
         }
     }
+} // unnamed namespace
 
-    void perform_and_exit(const VcpkgCmdArguments& args,
-                          const VcpkgPaths& paths,
-                          Triplet default_triplet,
-                          Triplet host_triplet)
+namespace vcpkg
+{
+    void command_z_print_config_and_exit(const VcpkgCmdArguments& args,
+                                         const VcpkgPaths& paths,
+                                         Triplet default_triplet,
+                                         Triplet host_triplet)
     {
         Json::Object obj;
         obj.insert("downloads", paths.downloads.native());
@@ -48,4 +53,4 @@ namespace vcpkg::Commands::ZPrintConfig
         msg::write_unlocalized_text_to_stdout(Color::none, Json::stringify(obj) + "\n");
         Checks::exit_success(VCPKG_LINE_INFO);
     }
-}
+} // namespace vcpkg

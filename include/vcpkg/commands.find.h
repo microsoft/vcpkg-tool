@@ -9,7 +9,7 @@
 
 #include <string>
 
-namespace vcpkg::Commands
+namespace vcpkg
 {
     void perform_find_port_and_exit(const VcpkgPaths& paths,
                                     bool full_description,
@@ -17,5 +17,6 @@ namespace vcpkg::Commands
                                     Optional<StringView> filter,
                                     View<std::string> overlay_ports);
     void perform_find_artifact_and_exit(const VcpkgPaths& paths, Optional<StringView> filter);
+    extern const CommandMetadata CommandFindMetadata;
     void command_find_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths);
 }

@@ -18,10 +18,11 @@
 #include <string>
 #include <vector>
 
-namespace vcpkg::Commands::Autocomplete
+using namespace vcpkg;
+
+namespace
 {
-    [[noreturn]] static void output_sorted_results_and_exit(const LineInfo& line_info,
-                                                            std::vector<std::string>&& results)
+    [[noreturn]] void output_sorted_results_and_exit(const LineInfo& line_info, std::vector<std::string>&& results)
     {
         const SortedVector<std::string> sorted_results(results);
         msg::write_unlocalized_text_to_stdout(Color::none, Strings::join("\n", sorted_results));
@@ -29,13 +30,16 @@ namespace vcpkg::Commands::Autocomplete
         Checks::exit_success(line_info);
     }
 
-    static std::vector<std::string> combine_port_with_triplets(StringView port, View<TripletFile> triplets)
+    std::vector<std::string> combine_port_with_triplets(StringView port, View<TripletFile> triplets)
     {
         return Util::fmap(triplets,
                           [&](const TripletFile& triplet) { return fmt::format("{}:{}", port, triplet.name); });
     }
+} // unnamed namespace
 
-    void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
+namespace vcpkg
+{
+    void command_autocomplete_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
         g_should_send_metrics = false;
 
@@ -127,15 +131,15 @@ namespace vcpkg::Commands::Autocomplete
         struct CommandEntry
         {
             StringLiteral name;
-            const CommandStructure& structure;
+            const CommandMetadata& structure;
         };
 
         static constexpr CommandEntry COMMANDS[] = {
-            CommandEntry{"install", Install::COMMAND_STRUCTURE},
-            CommandEntry{"edit", Edit::COMMAND_STRUCTURE},
-            CommandEntry{"remove", Remove::COMMAND_STRUCTURE},
-            CommandEntry{"integrate", Integrate::COMMAND_STRUCTURE},
-            CommandEntry{"upgrade", Upgrade::COMMAND_STRUCTURE},
+            CommandEntry{"install", CommandInstallMetadata},
+            CommandEntry{"edit", CommandEditMetadata},
+            CommandEntry{"remove", CommandRemoveMetadata},
+            CommandEntry{"integrate", CommandIntegrateMetadata},
+            CommandEntry{"upgrade", CommandUpgradeMetadata},
         };
 
         for (auto&& command : COMMANDS)
@@ -187,4 +191,4 @@ namespace vcpkg::Commands::Autocomplete
 
         Checks::exit_success(VCPKG_LINE_INFO);
     }
-}
+} // namespace vcpkg

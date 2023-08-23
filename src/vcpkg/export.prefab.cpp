@@ -17,7 +17,7 @@
 #include <vcpkg/tools.h>
 #include <vcpkg/vcpkgpaths.h>
 
-namespace vcpkg::Export::Prefab
+namespace vcpkg::Prefab
 {
     static std::vector<Path> find_modules(const VcpkgPaths& system, const Path& root, const std::string& ext)
     {

@@ -6,7 +6,6 @@
 #include <limits.h>
 
 using namespace vcpkg;
-using namespace vcpkg::Commands::DependInfo;
 
 TEST_CASE ("determine_depend_info_mode no args", "[depend-info]")
 {

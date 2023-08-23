@@ -15,7 +15,7 @@
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
-namespace vcpkg::Commands::Integrate
+namespace vcpkg
 {
     Optional<int> find_targets_file_version(StringView contents)
     {
@@ -246,11 +246,12 @@ namespace vcpkg::Commands::Integrate
 
     static bool integrate_install_msbuild14(const Filesystem& fs)
     {
-        std::array<Path, 2> OLD_SYSTEM_TARGET_FILES = {
+        Path OLD_SYSTEM_TARGET_FILES[] = {
             get_program_files_32_bit().value_or_exit(VCPKG_LINE_INFO) /
                 "MSBuild/14.0/Microsoft.Common.Targets/ImportBefore/vcpkg.nuget.targets",
             get_program_files_32_bit().value_or_exit(VCPKG_LINE_INFO) /
                 "MSBuild/14.0/Microsoft.Common.Targets/ImportBefore/vcpkg.system.targets"};
+
         Path SYSTEM_WIDE_TARGETS_FILE = get_program_files_32_bit().value_or_exit(VCPKG_LINE_INFO) /
                                         "MSBuild/Microsoft.Cpp/v4.0/V140/ImportBefore/Default/vcpkg.system.props";
 
@@ -566,7 +567,7 @@ namespace vcpkg::Commands::Integrate
 #endif // ^^^ !_WIN32
     }
 
-    void append_helpstring(HelpTableFormatter& table)
+    void append_integrate_helpstring(HelpTableFormatter& table)
     {
 #if defined(_WIN32)
         table.format("vcpkg integrate install", msg::format(msgIntegrateInstallHelpWindows));
@@ -583,10 +584,10 @@ namespace vcpkg::Commands::Integrate
         table.format("vcpkg integrate zsh", msg::format(msgIntegrateZshHelp));
     }
 
-    LocalizedString get_helpstring()
+    LocalizedString get_integrate_helpstring()
     {
         HelpTableFormatter table;
-        append_helpstring(table);
+        append_integrate_helpstring(table);
         return msg::format(msgCommands).append_raw('\n').append_raw(table.m_str);
     }
 
@@ -612,17 +613,17 @@ namespace vcpkg::Commands::Integrate
         };
     }
 
-    const CommandStructure COMMAND_STRUCTURE = {
-        [] { return get_helpstring(); },
+    constexpr CommandMetadata CommandIntegrateMetadata = {
+        [] { return get_integrate_helpstring(); },
         1,
         1,
         {},
         &valid_arguments,
     };
 
-    void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
+    void command_integrate_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
-        const auto parsed = args.parse_arguments(COMMAND_STRUCTURE);
+        const auto parsed = args.parse_arguments(CommandIntegrateMetadata);
 
         if (Strings::case_insensitive_ascii_equals(parsed.command_arguments[0], INSTALL))
         {

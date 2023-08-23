@@ -23,14 +23,16 @@
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
 
-namespace vcpkg::Export
+using namespace vcpkg;
+
+namespace
 {
-    static std::string create_nuspec_file_contents(const Path& raw_exported_dir,
-                                                   const Path& targets_redirect_path,
-                                                   const Path& props_redirect_path,
-                                                   const std::string& nuget_id,
-                                                   const std::string& nupkg_version,
-                                                   const std::string& nuget_description)
+    std::string create_nuspec_file_contents(const Path& raw_exported_dir,
+                                            const Path& targets_redirect_path,
+                                            const Path& props_redirect_path,
+                                            const std::string& nuget_id,
+                                            const std::string& nupkg_version,
+                                            const std::string& nuget_description)
     {
         XmlSerializer xml;
         xml.open_tag("package").line_break();
@@ -77,7 +79,7 @@ namespace vcpkg::Export
         return std::move(xml.buf);
     }
 
-    static std::string create_targets_redirect(const std::string& target_path) noexcept
+    std::string create_targets_redirect(const std::string& target_path) noexcept
     {
         return fmt::format(R"###(
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
@@ -88,10 +90,13 @@ namespace vcpkg::Export
                            target_path);
     }
 
-    static void print_plan(const std::map<ExportPlanType, std::vector<const ExportPlanAction*>>& group_by_plan_type)
+    void print_export_plan(const std::map<ExportPlanType, std::vector<const ExportPlanAction*>>& group_by_plan_type)
     {
-        static constexpr std::array<ExportPlanType, 2> ORDER = {ExportPlanType::ALREADY_BUILT,
-                                                                ExportPlanType::NOT_BUILT};
+        static constexpr ExportPlanType ORDER[] = {
+            ExportPlanType::ALREADY_BUILT,
+            ExportPlanType::NOT_BUILT,
+        };
+
         for (const ExportPlanType plan_type : ORDER)
         {
             const auto it = group_by_plan_type.find(plan_type);
@@ -119,7 +124,7 @@ namespace vcpkg::Export
         }
     }
 
-    static std::string create_export_id()
+    std::string create_export_id()
     {
         const tm date_time = get_current_date_time_local();
 
@@ -136,12 +141,12 @@ namespace vcpkg::Export
         return ("vcpkg-export-" + date_time_as_string);
     }
 
-    static Path do_nuget_export(const VcpkgPaths& paths,
-                                const std::string& nuget_id,
-                                const std::string& nuget_version,
-                                const std::string& nuget_description,
-                                const Path& raw_exported_dir,
-                                const Path& output_dir)
+    Path do_nuget_export(const VcpkgPaths& paths,
+                         const std::string& nuget_id,
+                         const std::string& nuget_version,
+                         const std::string& nuget_description,
+                         const Path& raw_exported_dir,
+                         const Path& output_dir)
     {
         const Filesystem& fs = paths.get_filesystem();
         fs.create_directories(paths.buildsystems / "tmp", IgnoreErrors{});
@@ -212,10 +217,10 @@ namespace vcpkg::Export
         constexpr const ArchiveFormat SEVEN_ZIP(ArchiveFormat::BackingEnum::SEVEN_ZIP, "7z", "7zip");
     }
 
-    static Path do_archive_export(const VcpkgPaths& paths,
-                                  const Path& raw_exported_dir,
-                                  const Path& output_dir,
-                                  const ArchiveFormat& format)
+    Path do_archive_export(const VcpkgPaths& paths,
+                           const Path& raw_exported_dir,
+                           const Path& output_dir,
+                           const ArchiveFormat& format)
     {
         const Path& cmake_exe = paths.get_tool_exe(Tools::CMAKE, stdout_sink);
 
@@ -237,39 +242,6 @@ namespace vcpkg::Export
             cmd_execute_clean(cmd, WorkingDirectory{raw_exported_dir.parent_path()}).value_or_exit(VCPKG_LINE_INFO);
         Checks::msg_check_exit(VCPKG_LINE_INFO, exit_code == 0, msgCreationFailed, msg::path = exported_archive_path);
         return exported_archive_path;
-    }
-
-    void export_integration_files(const Path& raw_exported_dir_path, const VcpkgPaths& paths)
-    {
-        const std::vector<Path> integration_files_relative_to_root = {
-            Path{"scripts/buildsystems/msbuild/applocal.ps1"},
-            Path{"scripts/buildsystems/msbuild/vcpkg.targets"},
-            Path{"scripts/buildsystems/msbuild/vcpkg.props"},
-            Path{"scripts/buildsystems/msbuild/vcpkg-general.xml"},
-            Path{"scripts/buildsystems/vcpkg.cmake"},
-            Path{"scripts/buildsystems/osx/applocal.py"},
-            Path{"scripts/cmake/vcpkg_get_windows_sdk.cmake"},
-        };
-
-        const Filesystem& fs = paths.get_filesystem();
-        for (const Path& file : integration_files_relative_to_root)
-        {
-            const auto source = paths.root / file;
-            auto destination = raw_exported_dir_path / file;
-            fs.create_directories(destination.parent_path(), IgnoreErrors{});
-            fs.copy_file(source, destination, CopyOptions::overwrite_existing, VCPKG_LINE_INFO);
-        }
-
-        // Copying exe (this is not relative to root)
-        Path vcpkg_exe = get_exe_path_of_current_process();
-#if defined(_WIN32)
-        auto destination = raw_exported_dir_path / "vcpkg.exe";
-#else
-        auto destination = raw_exported_dir_path / "vcpkg";
-#endif
-        fs.copy_file(vcpkg_exe, destination, CopyOptions::overwrite_existing, VCPKG_LINE_INFO);
-
-        fs.write_contents(raw_exported_dir_path / ".vcpkg-root", "", VCPKG_LINE_INFO);
     }
 
     struct ExportArguments
@@ -297,37 +269,37 @@ namespace vcpkg::Export
         std::vector<PackageSpec> specs;
     };
 
-    static constexpr StringLiteral OPTION_OUTPUT = "output";
-    static constexpr StringLiteral OPTION_OUTPUT_DIR = "output-dir";
-    static constexpr StringLiteral OPTION_DRY_RUN = "dry-run";
-    static constexpr StringLiteral OPTION_RAW = "raw";
-    static constexpr StringLiteral OPTION_NUGET = "nuget";
-    static constexpr StringLiteral OPTION_IFW = "ifw";
-    static constexpr StringLiteral OPTION_ZIP = "zip";
-    static constexpr StringLiteral OPTION_SEVEN_ZIP = "7zip";
-    static constexpr StringLiteral OPTION_NUGET_ID = "nuget-id";
-    static constexpr StringLiteral OPTION_NUGET_DESCRIPTION = "nuget-description";
-    static constexpr StringLiteral OPTION_NUGET_VERSION = "nuget-version";
-    static constexpr StringLiteral OPTION_IFW_REPOSITORY_URL = "ifw-repository-url";
-    static constexpr StringLiteral OPTION_IFW_PACKAGES_DIR_PATH = "ifw-packages-directory-path";
-    static constexpr StringLiteral OPTION_IFW_REPOSITORY_DIR_PATH = "ifw-repository-directory-path";
-    static constexpr StringLiteral OPTION_IFW_CONFIG_FILE_PATH = "ifw-configuration-file-path";
-    static constexpr StringLiteral OPTION_IFW_INSTALLER_FILE_PATH = "ifw-installer-file-path";
-    static constexpr StringLiteral OPTION_CHOCOLATEY = "x-chocolatey";
-    static constexpr StringLiteral OPTION_CHOCOLATEY_MAINTAINER = "x-maintainer";
-    static constexpr StringLiteral OPTION_CHOCOLATEY_VERSION_SUFFIX = "x-version-suffix";
-    static constexpr StringLiteral OPTION_ALL_INSTALLED = "x-all-installed";
+    constexpr StringLiteral OPTION_OUTPUT = "output";
+    constexpr StringLiteral OPTION_OUTPUT_DIR = "output-dir";
+    constexpr StringLiteral OPTION_DRY_RUN = "dry-run";
+    constexpr StringLiteral OPTION_RAW = "raw";
+    constexpr StringLiteral OPTION_NUGET = "nuget";
+    constexpr StringLiteral OPTION_IFW = "ifw";
+    constexpr StringLiteral OPTION_ZIP = "zip";
+    constexpr StringLiteral OPTION_SEVEN_ZIP = "7zip";
+    constexpr StringLiteral OPTION_NUGET_ID = "nuget-id";
+    constexpr StringLiteral OPTION_NUGET_DESCRIPTION = "nuget-description";
+    constexpr StringLiteral OPTION_NUGET_VERSION = "nuget-version";
+    constexpr StringLiteral OPTION_IFW_REPOSITORY_URL = "ifw-repository-url";
+    constexpr StringLiteral OPTION_IFW_PACKAGES_DIR_PATH = "ifw-packages-directory-path";
+    constexpr StringLiteral OPTION_IFW_REPOSITORY_DIR_PATH = "ifw-repository-directory-path";
+    constexpr StringLiteral OPTION_IFW_CONFIG_FILE_PATH = "ifw-configuration-file-path";
+    constexpr StringLiteral OPTION_IFW_INSTALLER_FILE_PATH = "ifw-installer-file-path";
+    constexpr StringLiteral OPTION_CHOCOLATEY = "x-chocolatey";
+    constexpr StringLiteral OPTION_CHOCOLATEY_MAINTAINER = "x-maintainer";
+    constexpr StringLiteral OPTION_CHOCOLATEY_VERSION_SUFFIX = "x-version-suffix";
+    constexpr StringLiteral OPTION_ALL_INSTALLED = "x-all-installed";
 
-    static constexpr StringLiteral OPTION_PREFAB = "prefab";
-    static constexpr StringLiteral OPTION_PREFAB_GROUP_ID = "prefab-group-id";
-    static constexpr StringLiteral OPTION_PREFAB_ARTIFACT_ID = "prefab-artifact-id";
-    static constexpr StringLiteral OPTION_PREFAB_VERSION = "prefab-version";
-    static constexpr StringLiteral OPTION_PREFAB_SDK_MIN_VERSION = "prefab-min-sdk";
-    static constexpr StringLiteral OPTION_PREFAB_SDK_TARGET_VERSION = "prefab-target-sdk";
-    static constexpr StringLiteral OPTION_PREFAB_ENABLE_MAVEN = "prefab-maven";
-    static constexpr StringLiteral OPTION_PREFAB_ENABLE_DEBUG = "prefab-debug";
+    constexpr StringLiteral OPTION_PREFAB = "prefab";
+    constexpr StringLiteral OPTION_PREFAB_GROUP_ID = "prefab-group-id";
+    constexpr StringLiteral OPTION_PREFAB_ARTIFACT_ID = "prefab-artifact-id";
+    constexpr StringLiteral OPTION_PREFAB_VERSION = "prefab-version";
+    constexpr StringLiteral OPTION_PREFAB_SDK_MIN_VERSION = "prefab-min-sdk";
+    constexpr StringLiteral OPTION_PREFAB_SDK_TARGET_VERSION = "prefab-target-sdk";
+    constexpr StringLiteral OPTION_PREFAB_ENABLE_MAVEN = "prefab-maven";
+    constexpr StringLiteral OPTION_PREFAB_ENABLE_DEBUG = "prefab-debug";
 
-    static constexpr std::array<CommandSwitch, 11> EXPORT_SWITCHES = {{
+    constexpr CommandSwitch EXPORT_SWITCHES[] = {
         {OPTION_DRY_RUN, []() { return msg::format(msgCmdExportOptDryRun); }},
         {OPTION_RAW, []() { return msg::format(msgCmdExportOptRaw); }},
         {OPTION_NUGET, []() { return msg::format(msgCmdExportOptNuget); }},
@@ -339,9 +311,9 @@ namespace vcpkg::Export
         {OPTION_PREFAB_ENABLE_MAVEN, []() { return msg::format(msgCmdExportOptMaven); }},
         {OPTION_PREFAB_ENABLE_DEBUG, []() { return msg::format(msgCmdExportOptDebug); }},
         {OPTION_ALL_INSTALLED, []() { return msg::format(msgCmdExportOptInstalled); }},
-    }};
+    };
 
-    static constexpr std::array<CommandSetting, 17> EXPORT_SETTINGS = {{
+    constexpr CommandSetting EXPORT_SETTINGS[] = {
         {OPTION_OUTPUT, []() { return msg::format(msgCmdExportSettingOutput); }},
         {OPTION_OUTPUT_DIR, []() { return msg::format(msgCmdExportSettingOutputDir); }},
         {OPTION_NUGET_ID, []() { return msg::format(msgCmdExportSettingNugetID); }},
@@ -359,24 +331,16 @@ namespace vcpkg::Export
         {OPTION_PREFAB_VERSION, []() { return msg::format(msgCmdExportSettingPrefabVersion); }},
         {OPTION_PREFAB_SDK_MIN_VERSION, []() { return msg::format(msgCmdExportSettingSDKMinVersion); }},
         {OPTION_PREFAB_SDK_TARGET_VERSION, []() { return msg::format(msgCmdExportSettingSDKTargetVersion); }},
-    }};
-
-    const CommandStructure COMMAND_STRUCTURE = {
-        [] { return create_example_string("export zlib zlib:x64-windows boost --nuget"); },
-        0,
-        SIZE_MAX,
-        {EXPORT_SWITCHES, EXPORT_SETTINGS},
-        nullptr,
     };
 
-    static ExportArguments handle_export_command_arguments(const VcpkgPaths& paths,
-                                                           const VcpkgCmdArguments& args,
-                                                           Triplet default_triplet,
-                                                           const StatusParagraphs& status_db)
+    ExportArguments handle_export_command_arguments(const VcpkgPaths& paths,
+                                                    const VcpkgCmdArguments& args,
+                                                    Triplet default_triplet,
+                                                    const StatusParagraphs& status_db)
     {
         ExportArguments ret;
 
-        const auto options = args.parse_arguments(COMMAND_STRUCTURE);
+        const auto options = args.parse_arguments(CommandExportMetadata);
 
         ret.dry_run = Util::Sets::contains(options.switches, OPTION_DRY_RUN);
         ret.raw = Util::Sets::contains(options.switches, OPTION_RAW);
@@ -436,7 +400,7 @@ namespace vcpkg::Export
             bool default_triplet_used = false;
             ret.specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
                 return parse_package_spec(
-                    arg, default_triplet, default_triplet_used, COMMAND_STRUCTURE.get_example_text());
+                    arg, default_triplet, default_triplet_used, CommandExportMetadata.get_example_text());
             });
 
             if (default_triplet_used)
@@ -449,7 +413,7 @@ namespace vcpkg::Export
             !ret.prefab)
         {
             msg::println_error(msgProvideExportType);
-            msg::write_unlocalized_text_to_stdout(Color::none, COMMAND_STRUCTURE.get_example_text());
+            msg::write_unlocalized_text_to_stdout(Color::none, CommandExportMetadata.get_example_text());
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
@@ -515,17 +479,17 @@ namespace vcpkg::Export
         return ret;
     }
 
-    static void print_next_step_info(const Path& prefix)
+    void print_next_step_info(const Path& prefix)
     {
         const auto cmake_toolchain = prefix / "scripts/buildsystems/vcpkg.cmake";
         const CMakeVariable cmake_variable = CMakeVariable("CMAKE_TOOLCHAIN_FILE", cmake_toolchain.generic_u8string());
         msg::println(msg::format(msgCMakeUsingExportedLibs, msg::value = cmake_variable.s));
     }
 
-    static void handle_raw_based_export(Span<const ExportPlanAction> export_plan,
-                                        const ExportArguments& opts,
-                                        const std::string& export_id,
-                                        const VcpkgPaths& paths)
+    void handle_raw_based_export(Span<const ExportPlanAction> export_plan,
+                                 const ExportArguments& opts,
+                                 const std::string& export_id,
+                                 const VcpkgPaths& paths)
     {
         const Filesystem& fs = paths.get_filesystem();
         const auto raw_exported_dir_path = opts.output_dir / export_id;
@@ -614,11 +578,55 @@ namespace vcpkg::Export
             fs.remove_all(raw_exported_dir_path, VCPKG_LINE_INFO);
         }
     }
+} // unnamed namespace
 
-    void perform_and_exit(const VcpkgCmdArguments& args,
-                          const VcpkgPaths& paths,
-                          Triplet default_triplet,
-                          Triplet host_triplet)
+namespace vcpkg
+{
+    void export_integration_files(const Path& raw_exported_dir_path, const VcpkgPaths& paths)
+    {
+        const std::vector<Path> integration_files_relative_to_root = {
+            Path{"scripts/buildsystems/msbuild/applocal.ps1"},
+            Path{"scripts/buildsystems/msbuild/vcpkg.targets"},
+            Path{"scripts/buildsystems/msbuild/vcpkg.props"},
+            Path{"scripts/buildsystems/msbuild/vcpkg-general.xml"},
+            Path{"scripts/buildsystems/vcpkg.cmake"},
+            Path{"scripts/buildsystems/osx/applocal.py"},
+            Path{"scripts/cmake/vcpkg_get_windows_sdk.cmake"},
+        };
+
+        const Filesystem& fs = paths.get_filesystem();
+        for (const Path& file : integration_files_relative_to_root)
+        {
+            const auto source = paths.root / file;
+            auto destination = raw_exported_dir_path / file;
+            fs.create_directories(destination.parent_path(), IgnoreErrors{});
+            fs.copy_file(source, destination, CopyOptions::overwrite_existing, VCPKG_LINE_INFO);
+        }
+
+        // Copying exe (this is not relative to root)
+        Path vcpkg_exe = get_exe_path_of_current_process();
+#if defined(_WIN32)
+        auto destination = raw_exported_dir_path / "vcpkg.exe";
+#else
+        auto destination = raw_exported_dir_path / "vcpkg";
+#endif
+        fs.copy_file(vcpkg_exe, destination, CopyOptions::overwrite_existing, VCPKG_LINE_INFO);
+
+        fs.write_contents(raw_exported_dir_path / ".vcpkg-root", "", VCPKG_LINE_INFO);
+    }
+
+    constexpr CommandMetadata CommandExportMetadata = {
+        [] { return create_example_string("export zlib zlib:x64-windows boost --nuget"); },
+        0,
+        SIZE_MAX,
+        {EXPORT_SWITCHES, EXPORT_SETTINGS},
+        nullptr,
+    };
+
+    void command_export_and_exit(const VcpkgCmdArguments& args,
+                                 const VcpkgPaths& paths,
+                                 Triplet default_triplet,
+                                 Triplet host_triplet)
     {
         (void)host_triplet;
         const StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
@@ -640,7 +648,7 @@ namespace vcpkg::Export
 
         std::map<ExportPlanType, std::vector<const ExportPlanAction*>> group_by_plan_type;
         Util::group_by(export_plan, &group_by_plan_type, [](const ExportPlanAction& p) { return p.plan_type; });
-        print_plan(group_by_plan_type);
+        print_export_plan(group_by_plan_type);
 
         const bool has_non_user_requested_packages =
             Util::find_if(export_plan, [](const ExportPlanAction& package) -> bool {
@@ -696,4 +704,4 @@ namespace vcpkg::Export
 
         Checks::exit_success(VCPKG_LINE_INFO);
     }
-}
+} // namespace vcpkg

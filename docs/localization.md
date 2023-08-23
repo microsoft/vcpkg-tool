@@ -116,7 +116,7 @@ namespace
     };
 }
 
-namespace vcpkg::Commands
+namespace vcpkg
 {
     void HelloWorldCommand::perform_and_exit(const VcpkgCmdArguments& args,
                                              const VcpkgPaths& paths
