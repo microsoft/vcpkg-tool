@@ -186,7 +186,6 @@ namespace vcpkg::Build
                                                                      COMMAND_STRUCTURE.get_example_text(),
                                                                      paths.get_triplet_db());
 
-
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();
         PathsPortFileProvider provider(
