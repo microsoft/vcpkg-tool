@@ -6,7 +6,7 @@
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
-namespace vcpkg::Commands
+namespace vcpkg
 {
     ExpectedL<Json::Object> build_prototype_manifest(const std::string* name,
                                                      const std::string* version,
@@ -15,5 +15,6 @@ namespace vcpkg::Commands
                                                      bool option_version_date,
                                                      bool option_version_string);
 
+    extern const CommandMetadata CommandNewMetadata;
     void command_new_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths);
 }

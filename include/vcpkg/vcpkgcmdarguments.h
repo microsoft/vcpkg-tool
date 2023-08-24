@@ -54,7 +54,7 @@ namespace vcpkg
         Span<const CommandMultiSetting> multisettings;
     };
 
-    struct CommandStructure
+    struct CommandMetadata
     {
         LocalizedString (*get_example_text)();
 
@@ -67,7 +67,7 @@ namespace vcpkg
     };
 
     void print_command_list_usage();
-    void print_usage(const CommandStructure& command_structure);
+    void print_usage(const CommandMetadata& command_metadata);
 
     LocalizedString create_example_string(StringView command_and_arguments);
 
@@ -244,7 +244,7 @@ namespace vcpkg
 
         std::vector<std::string> forwardable_arguments;
 
-        ParsedArguments parse_arguments(const CommandStructure& command_structure) const;
+        ParsedArguments parse_arguments(const CommandMetadata& command_metadata) const;
 
         void imbue_from_environment();
         void imbue_from_fake_environment(const std::map<std::string, std::string, std::less<>>& env);
@@ -281,7 +281,7 @@ namespace vcpkg
 
         Optional<StringLiteral> m_detected_ci_environment;
 
-        friend void print_usage(const CommandStructure& command_structure);
+        friend void print_usage(const CommandMetadata& command_metadata);
         CmdParser parser;
     };
 }

@@ -10,7 +10,8 @@
 
 #include <utility>
 #include <vector>
-namespace vcpkg::Commands
+
+namespace vcpkg
 {
     enum class StripMode
     {
@@ -56,5 +57,6 @@ namespace vcpkg::Commands
     // Both conditions are usually met by calling this function with the result of
     // get_regular_files_recursive_lexically_proximate.
     size_t get_common_directories_count(std::vector<Path> paths);
-    void command_extract_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths);
+
+    void command_z_extract_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths);
 }

@@ -98,7 +98,7 @@ namespace
     };
 }
 
-namespace vcpkg::Commands::TestFeatures
+namespace vcpkg
 {
     static constexpr StringLiteral OPTION_FAILURE_LOGS = "failure-logs";
     static constexpr StringLiteral OPTION_CI_FEATURE_BASELINE = "ci-feature-baseline";
@@ -138,7 +138,7 @@ namespace vcpkg::Commands::TestFeatures
          }},
     }};
 
-    const CommandStructure COMMAND_STRUCTURE = {
+    constexpr CommandMetadata CommandTestFeaturesMetadata = {
         []() { return create_example_string("test-features llvm"); },
         0,
         SIZE_MAX,
@@ -146,12 +146,12 @@ namespace vcpkg::Commands::TestFeatures
         nullptr,
     };
 
-    void perform_and_exit(const VcpkgCmdArguments& args,
-                          const VcpkgPaths& paths,
-                          Triplet target_triplet,
-                          Triplet host_triplet)
+    void command_test_features_and_exit(const VcpkgCmdArguments& args,
+                                        const VcpkgPaths& paths,
+                                        Triplet target_triplet,
+                                        Triplet host_triplet)
     {
-        const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
+        const ParsedArguments options = args.parse_arguments(CommandTestFeaturesMetadata);
         const auto& settings = options.settings;
 
         const auto all_ports = Util::Sets::contains(options.switches, OPTION_ALL_PORTS);
@@ -399,7 +399,7 @@ namespace vcpkg::Commands::TestFeatures
             }
 
             // only install the absolute minimum
-            SetInstalled::adjust_action_plan_to_status_db(install_plan, status_db);
+            adjust_action_plan_to_status_db(install_plan, status_db);
             if (install_plan.install_actions.empty()) // already installed
             {
                 handle_result(std::move(spec), CiFeatureBaselineState::Pass, baseline);
@@ -429,9 +429,9 @@ namespace vcpkg::Commands::TestFeatures
                                                                 ? *(feature_build_logs_recorder_storage.get())
                                                                 : null_build_logs_recorder();
             ElapsedTimer install_timer;
-            Install::preclear_packages(paths, install_plan);
+            install_preclear_packages(paths, install_plan);
             binary_cache.fetch(install_plan.install_actions);
-            const auto summary = Install::execute_plan(
+            const auto summary = install_execute_plan(
                 args, install_plan, KeepGoing::YES, paths, status_db, binary_cache, build_logs_recorder);
             binary_cache.clear_cache();
 

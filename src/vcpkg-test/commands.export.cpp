@@ -5,9 +5,6 @@
 
 using namespace vcpkg;
 
-namespace IFW = Export::IFW;
-namespace Prefab = Export::Prefab;
-
 TEST_CASE ("safe_rich_from_plain_text", "[export]")
 {
     CHECK(IFW::safe_rich_from_plain_text("&") == "&amp;");

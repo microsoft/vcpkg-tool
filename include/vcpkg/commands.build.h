@@ -38,30 +38,24 @@ namespace vcpkg
 
     const IBuildLogsRecorder& null_build_logs_recorder() noexcept;
 
-    namespace Build
-    {
-        int perform_ex(const VcpkgCmdArguments& args,
-                       const FullPackageSpec& full_spec,
-                       Triplet host_triplet,
-                       const PathsPortFileProvider& provider,
-                       const IBuildLogsRecorder& build_logs_recorder,
-                       const VcpkgPaths& paths);
-        void perform_and_exit_ex(const VcpkgCmdArguments& args,
-                                 const FullPackageSpec& full_spec,
-                                 Triplet host_triplet,
-                                 const PathsPortFileProvider& provider,
-                                 const IBuildLogsRecorder& build_logs_recorder,
-                                 const VcpkgPaths& paths);
+    extern const CommandMetadata CommandBuildMetadata;
+    int command_build_ex(const VcpkgCmdArguments& args,
+                         const FullPackageSpec& full_spec,
+                         Triplet host_triplet,
+                         const PathsPortFileProvider& provider,
+                         const IBuildLogsRecorder& build_logs_recorder,
+                         const VcpkgPaths& paths);
+    void command_build_and_exit_ex(const VcpkgCmdArguments& args,
+                                   const FullPackageSpec& full_spec,
+                                   Triplet host_triplet,
+                                   const PathsPortFileProvider& provider,
+                                   const IBuildLogsRecorder& build_logs_recorder,
+                                   const VcpkgPaths& paths);
 
-        int perform(const VcpkgCmdArguments& args,
-                    const VcpkgPaths& paths,
-                    Triplet default_triplet,
-                    Triplet host_triplet);
-        void perform_and_exit(const VcpkgCmdArguments& args,
-                              const VcpkgPaths& paths,
-                              Triplet default_triplet,
-                              Triplet host_triplet);
-    } // namespace vcpkg::Build
+    void command_build_and_exit(const VcpkgCmdArguments& args,
+                                const VcpkgPaths& paths,
+                                Triplet default_triplet,
+                                Triplet host_triplet);
 
     StringLiteral to_string_view(DownloadTool tool);
     std::string to_string(DownloadTool tool);

@@ -54,41 +54,73 @@ namespace
     static const NullBuildLogsRecorder null_build_logs_recorder_instance;
 }
 
-namespace vcpkg::Build
+namespace vcpkg
 {
-    void perform_and_exit_ex(const VcpkgCmdArguments& args,
-                             const FullPackageSpec& full_spec,
-                             Triplet host_triplet,
-                             const PathsPortFileProvider& provider,
-                             const IBuildLogsRecorder& build_logs_recorder,
-                             const VcpkgPaths& paths)
+    void command_build_and_exit_ex(const VcpkgCmdArguments& args,
+                                   const FullPackageSpec& full_spec,
+                                   Triplet host_triplet,
+                                   const PathsPortFileProvider& provider,
+                                   const IBuildLogsRecorder& build_logs_recorder,
+                                   const VcpkgPaths& paths)
     {
         Checks::exit_with_code(VCPKG_LINE_INFO,
-                               perform_ex(args, full_spec, host_triplet, provider, build_logs_recorder, paths));
+                               command_build_ex(args, full_spec, host_triplet, provider, build_logs_recorder, paths));
     }
 
-    const CommandStructure COMMAND_STRUCTURE = {
+    constexpr CommandMetadata CommandBuildMetadata = {
         [] { return create_example_string("build zlib:x64-windows"); },
         1,
         1,
         {{}, {}},
         nullptr,
     };
+} // namespace vcpkg
 
-    void perform_and_exit(const VcpkgCmdArguments& args,
-                          const VcpkgPaths& paths,
-                          Triplet default_triplet,
-                          Triplet host_triplet)
+namespace
+{
+    int command_build(const VcpkgCmdArguments& args,
+                      const VcpkgPaths& paths,
+                      Triplet default_triplet,
+                      Triplet host_triplet)
     {
-        Checks::exit_with_code(VCPKG_LINE_INFO, perform(args, paths, default_triplet, host_triplet));
+        // Build only takes a single package and all dependencies must already be installed
+        const ParsedArguments options = args.parse_arguments(CommandBuildMetadata);
+        bool default_triplet_used = false;
+        const FullPackageSpec spec = check_and_get_full_package_spec(options.command_arguments[0],
+                                                                     default_triplet,
+                                                                     default_triplet_used,
+                                                                     CommandBuildMetadata.get_example_text(),
+                                                                     paths.get_triplet_db());
+        if (default_triplet_used)
+        {
+            print_default_triplet_warning(args, paths.get_triplet_db());
+        }
+
+        auto& fs = paths.get_filesystem();
+        auto registry_set = paths.make_registry_set();
+        PathsPortFileProvider provider(
+            fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
+        return command_build_ex(args, spec, host_triplet, provider, null_build_logs_recorder(), paths);
+    }
+} // unnamed namespace
+
+namespace vcpkg
+{
+
+    void command_build_and_exit(const VcpkgCmdArguments& args,
+                                const VcpkgPaths& paths,
+                                Triplet default_triplet,
+                                Triplet host_triplet)
+    {
+        Checks::exit_with_code(VCPKG_LINE_INFO, command_build(args, paths, default_triplet, host_triplet));
     }
 
-    int perform_ex(const VcpkgCmdArguments& args,
-                   const FullPackageSpec& full_spec,
-                   Triplet host_triplet,
-                   const PathsPortFileProvider& provider,
-                   const IBuildLogsRecorder& build_logs_recorder,
-                   const VcpkgPaths& paths)
+    int command_build_ex(const VcpkgCmdArguments& args,
+                         const FullPackageSpec& full_spec,
+                         Triplet host_triplet,
+                         const PathsPortFileProvider& provider,
+                         const IBuildLogsRecorder& build_logs_recorder,
+                         const VcpkgPaths& paths)
     {
         const PackageSpec& spec = full_spec.package_spec;
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
@@ -175,31 +207,6 @@ namespace vcpkg::Build
         return 0;
     }
 
-    int perform(const VcpkgCmdArguments& args, const VcpkgPaths& paths, Triplet default_triplet, Triplet host_triplet)
-    {
-        // Build only takes a single package and all dependencies must already be installed
-        const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
-        bool default_triplet_used = false;
-        const FullPackageSpec spec = check_and_get_full_package_spec(options.command_arguments[0],
-                                                                     default_triplet,
-                                                                     default_triplet_used,
-                                                                     COMMAND_STRUCTURE.get_example_text(),
-                                                                     paths.get_triplet_db());
-        if (default_triplet_used)
-        {
-            print_default_triplet_warning(args, paths.get_triplet_db());
-        }
-
-        auto& fs = paths.get_filesystem();
-        auto registry_set = paths.make_registry_set();
-        PathsPortFileProvider provider(
-            fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
-        return perform_ex(args, spec, host_triplet, provider, null_build_logs_recorder(), paths);
-    }
-} // namespace vcpkg::Build
-
-namespace vcpkg
-{
     static constexpr StringLiteral NAME_EMPTY_PACKAGE = "PolicyEmptyPackage";
     static constexpr StringLiteral NAME_DLLS_WITHOUT_LIBS = "PolicyDLLsWithoutLIBs";
     static constexpr StringLiteral NAME_DLLS_WITHOUT_EXPORTS = "PolicyDLLsWithoutExports";

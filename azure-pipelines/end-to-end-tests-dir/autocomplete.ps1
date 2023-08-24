@@ -28,8 +28,8 @@ $privateCommands = @(
     'portsdiff'
 )
 
-function getOptionsForPrefix($prefix, $commands) {
-    ($commands | Sort-Object | ? { $_.StartsWith($prefix) }) -join '`n'
+function getOptionsForPrefix([string]$prefix, $commands) {
+    ($commands | Sort-Object | ? { $_.StartsWith($prefix.ToLowerInvariant()) }) -join '`n'
 }
 function arraysEqual($arr1, $arr2) {
     if ($arr1.Length -ne $arr2.Length) {
@@ -48,6 +48,7 @@ $publicPrefixesToTest = @(
     'in'
     's'
     'rem'
+    'rEm'
     'h'
     'upgra'
     'e'

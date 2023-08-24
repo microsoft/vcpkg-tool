@@ -744,7 +744,6 @@ DECLARE_MESSAGE(DefaultBinaryCacheRequiresDirectory,
                 (msg::path),
                 "",
                 "Environment variable VCPKG_DEFAULT_BINARY_CACHE must be a directory (was: {path})")
-DECLARE_MESSAGE(DefaultBrowserLaunched, (msg::url), "", "Default browser launched to {url}.")
 DECLARE_MESSAGE(DefaultFlag, (msg::option), "", "Defaulting to --{option} being on.")
 DECLARE_MESSAGE(DefaultRegistryIsArtifact, (), "", "The default registry cannot be an artifact registry.")
 DECLARE_MESSAGE(DefaultTriplet,
@@ -1068,7 +1067,6 @@ DECLARE_MESSAGE(FeatureBaselineExpectedFeatures,
                 "{value} is a keyword",
                 "When using '{value}' a list of features must be specified.")
 DECLARE_MESSAGE(FeatureBaselineNoFeaturesForFail, (), "", "When using '= fail' no list of features is allowed.")
-DECLARE_MESSAGE(FeedbackAppreciated, (), "", "Thank you for your feedback!")
 DECLARE_MESSAGE(FilesContainAbsolutePath1,
                 (),
                 "This message is printed before a list of found absolute paths, followed by FilesContainAbsolutePath2, "
@@ -1544,23 +1542,34 @@ DECLARE_MESSAGE(InstallWithSystemManagerPkg,
 DECLARE_MESSAGE(IntegrateBashHelp,
                 (),
                 "'bash' is a terminal program which should be unlocalized.",
-                "Enable bash tab-completion.")
+                "Enable bash tab-completion. Non-Windows only.")
 DECLARE_MESSAGE(IntegrateFishHelp,
                 (),
                 "'fish' is a terminal program which should be unlocalized.",
-                "Enable fish tab-completion.")
+                "Enable fish tab-completion. Non-Windows only.")
 DECLARE_MESSAGE(IntegrateInstallHelpLinux, (), "", "Make installed packages available user-wide.")
 DECLARE_MESSAGE(IntegrateInstallHelpWindows,
                 (),
                 "",
                 "Make installed packages available user-wide. Requires admin privileges on first use.")
-DECLARE_MESSAGE(IntegratePowerShellHelp, (), "", "Enable PowerShell tab-completion.")
-DECLARE_MESSAGE(IntegrateProjectHelp, (), "", "Generate a referencing NuGet package for individual VS project use.")
+DECLARE_MESSAGE(IntegrateNonWindowsOnly,
+                (msg::command_line),
+                "",
+                "{command_line} is non-Windows-only and not supported on this system.")
+DECLARE_MESSAGE(IntegratePowerShellHelp, (), "", "Enable PowerShell tab-completion. Windows-only.")
+DECLARE_MESSAGE(IntegrateProjectHelp,
+                (),
+                "",
+                "Generate a referencing NuGet package for individual Visual Studio project use. Windows-only.")
 DECLARE_MESSAGE(IntegrateRemoveHelp, (), "", "Remove user-wide integration.")
+DECLARE_MESSAGE(IntegrateWindowsOnly,
+                (msg::command_line),
+                "",
+                "{command_line} is Windows-only and not supported on this system.")
 DECLARE_MESSAGE(IntegrateZshHelp,
                 (),
                 "'zsh' is a terminal program which should be unlocalized.",
-                "Enable zsh tab-completion.")
+                "Enable zsh tab-completion. Non-Windows only.")
 DECLARE_MESSAGE(IntegrationFailedVS2015, (), "", "Integration was not applied for Visual Studio 2015.")
 DECLARE_MESSAGE(InternalCICommand,
                 (),
@@ -1913,7 +1922,6 @@ DECLARE_MESSAGE(MutuallyExclusiveOption,
                 (msg::value, msg::option),
                 "{value} is a second {option} switch",
                 "--{value} cannot be used with --{option}.")
-DECLARE_MESSAGE(NavigateToNPS, (msg::url), "", "Please navigate to {url} in your preferred browser.")
 DECLARE_MESSAGE(NewConfigurationAlreadyExists,
                 (msg::path),
                 "",
