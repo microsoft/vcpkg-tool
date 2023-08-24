@@ -110,23 +110,6 @@ namespace
     constexpr CommandSetting FindSettings[] = {
         {OPTION_VERSION, [] { return msg::format(msgArtifactsOptionVersion); }},
     };
-} // unnamed namespace
-
-namespace vcpkg
-{
-    constexpr CommandMetadata CommandFindMetadata = {
-        [] {
-            return msg::format(msgFindHelp)
-                .append_raw('\n')
-                .append(create_example_string("find port png"))
-                .append_raw('\n')
-                .append(create_example_string("find artifact cmake"));
-        },
-        1,
-        2,
-        {FindSwitches, FindSettings},
-        nullptr,
-    };
 
     void perform_find_port_and_exit(const VcpkgPaths& paths,
                                     bool full_description,
@@ -231,6 +214,23 @@ namespace vcpkg
 
         Checks::exit_with_code(VCPKG_LINE_INFO, run_configure_environment_command(paths, ce_args));
     }
+} // unnamed namespace
+
+namespace vcpkg
+{
+    constexpr CommandMetadata CommandFindMetadata = {
+        [] {
+            return msg::format(msgFindHelp)
+                .append_raw('\n')
+                .append(create_example_string("find port png"))
+                .append_raw('\n')
+                .append(create_example_string("find artifact cmake"));
+        },
+        1,
+        2,
+        {FindSwitches, FindSettings},
+        nullptr,
+    };
 
     void command_find_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
