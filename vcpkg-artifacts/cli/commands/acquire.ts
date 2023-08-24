@@ -14,9 +14,6 @@ import { Version } from '../switches/version';
 
 export class AcquireCommand extends Command {
   readonly command = 'acquire';
-  readonly aliases = ['install'];
-  seeAlso = [];
-  argumentsHelp = [];
   version: Version = new Version(this);
   project: Project = new Project(this);
 
@@ -38,7 +35,7 @@ export class AcquireCommand extends Command {
 
     const versions = this.version.values;
     if (versions.length && this.inputs.length !== versions.length) {
-      error(i`Multiple packages specified, but not an equal number of ${cmdSwitch('version')} switches`);
+      error(`Multiple packages specified, but not an equal number of ${cmdSwitch('version')} switches`);
       return false;
     }
 

@@ -105,6 +105,11 @@ namespace
         {OPTION_FULLDESC, []() { return msg::format(msgHelpTextOptFullDesc); }},
         {OPTION_JSON, []() { return msg::format(msgJsonSwitch); }},
     };
+
+    constexpr StringLiteral OPTION_VERSION = "version";
+    constexpr CommandSetting FindSettings[] = {
+        {OPTION_VERSION, [] { return msg::format(msgArtifactsOptionVersion); }},
+    };
 } // unnamed namespace
 
 namespace vcpkg
@@ -119,7 +124,7 @@ namespace vcpkg
         },
         1,
         2,
-        {FindSwitches, {}},
+        {FindSwitches, FindSettings},
         nullptr,
     };
 
@@ -207,13 +212,21 @@ namespace vcpkg
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 
-    void perform_find_artifact_and_exit(const VcpkgPaths& paths, Optional<StringView> filter)
+    void perform_find_artifact_and_exit(const VcpkgPaths& paths,
+                                        Optional<StringView> filter,
+                                        Optional<StringView> version)
     {
         std::vector<std::string> ce_args;
         ce_args.emplace_back("find");
         if (auto* filter_str = filter.get())
         {
             ce_args.emplace_back(filter_str->data(), filter_str->size());
+        }
+
+        if (auto v = version.get())
+        {
+            ce_args.emplace_back("--version");
+            ce_args.emplace_back(*v);
         }
 
         Checks::exit_with_code(VCPKG_LINE_INFO, run_configure_environment_command(paths, ce_args));
@@ -244,7 +257,6 @@ namespace vcpkg
             }
 
             Optional<std::string> filter_hash = filter.map(Hash::get_string_sha256);
-            auto args_hash = Hash::get_string_hash(filter.value_or_exit(VCPKG_LINE_INFO), Hash::Algorithm::Sha256);
             MetricsSubmission metrics;
             metrics.track_string(StringMetric::CommandContext, "artifact");
             if (auto p_filter_hash = filter_hash.get())
@@ -253,11 +265,16 @@ namespace vcpkg
             }
 
             get_global_metrics_collector().track_submission(std::move(metrics));
-            perform_find_artifact_and_exit(paths, filter);
+            perform_find_artifact_and_exit(paths, filter, Util::lookup_value(options.settings, OPTION_VERSION));
         }
 
         if (selector == "port")
         {
+            if (Util::Maps::contains(options.settings, OPTION_VERSION))
+            {
+                Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgFindVersionArtifactsOnly);
+            }
+
             Optional<std::string> filter_hash = filter.map(Hash::get_string_sha256);
             MetricsSubmission metrics;
             metrics.track_string(StringMetric::CommandContext, "port");

@@ -1,6 +1,9 @@
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/binarycaching.h>
+#include <vcpkg/commands.acquire-project.h>
+#include <vcpkg/commands.acquire.h>
+#include <vcpkg/commands.activate.h>
 #include <vcpkg/commands.add-version.h>
 #include <vcpkg/commands.add.h>
 #include <vcpkg/commands.build-external.h>
@@ -39,6 +42,7 @@
 #include <vcpkg/commands.update-registry.h>
 #include <vcpkg/commands.update.h>
 #include <vcpkg/commands.upgrade.h>
+#include <vcpkg/commands.use.h>
 #include <vcpkg/commands.version.h>
 #include <vcpkg/commands.vsinstances.h>
 #include <vcpkg/documentation.h>
@@ -112,6 +116,9 @@ namespace
     }
 
     constexpr Topic topics[] = {
+        {"acquire", command_topic_fn<CommandAcquireMetadata>},
+        {"acquire-project", command_topic_fn<CommandAcquireProjectMetadata>},
+        {"activate", command_topic_fn<CommandActivateMetadata>},
         {"add", command_topic_fn<CommandAddMetadata>},
         {"x-add-version", command_topic_fn<CommandAddVersionMetadata>},
         {"assetcaching", [](const VcpkgPaths&) { msg::println(format_help_topic_asset_caching()); }},
@@ -156,6 +163,7 @@ namespace
         {"x-update-registry", command_topic_fn<CommandUpdateRegistryMetadata>},
         {"update", command_topic_fn<CommandUpdateMetadata>},
         {"upgrade", command_topic_fn<CommandUpgradeMetadata>},
+        {"use", command_topic_fn<CommandUseMetadata>},
         {"version", command_topic_fn<CommandVersionMetadata>},
         {"versioning", help_topic_versioning},
         {"x-vs-instances", command_topic_fn<CommandVsInstancesMetadata>},

@@ -9,9 +9,6 @@ import { Project } from '../switches/project';
 
 export class RemoveCommand extends Command {
   readonly command = 'remove';
-  readonly aliases = [];
-  seeAlso = [];
-  argumentsHelp = [];
   project: Project = new Project(this);
 
   get summary() {

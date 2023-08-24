@@ -13,9 +13,6 @@ import { Version } from '../switches/version';
 
 export class AddCommand extends Command {
   readonly command = 'add';
-  readonly aliases = [];
-  seeAlso = [];
-  argumentsHelp = [];
 
   version = new Version(this);
   project: Project = new Project(this);

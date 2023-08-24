@@ -15,6 +15,16 @@
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
+using namespace vcpkg;
+
+namespace
+{
+    constexpr StringLiteral OPTION_VERSION = "version";
+    constexpr CommandSetting AddOptions[] = {
+        {OPTION_VERSION, [] { return msg::format(msgArtifactsOptionVersion); }},
+    };
+}
+
 namespace vcpkg
 {
     constexpr CommandMetadata CommandAddMetadata = {
@@ -27,7 +37,7 @@ namespace vcpkg
         },
         2,
         SIZE_MAX,
-        {{}, {}},
+        {{}, {AddOptions}},
         nullptr,
     };
 
@@ -50,8 +60,17 @@ namespace vcpkg
             metrics.track_string(StringMetric::CommandArgs, artifact_hash);
             get_global_metrics_collector().track_submission(std::move(metrics));
 
-            std::string ce_args[] = {"add", artifact_name};
-            Checks::exit_with_code(VCPKG_LINE_INFO, run_configure_environment_command(paths, ce_args));
+            std::vector<std::string> ecmascript_args;
+            ecmascript_args.emplace_back("add");
+            ecmascript_args.emplace_back(artifact_name);
+            auto maybe_version = Util::lookup_value(parsed.settings, OPTION_VERSION);
+            if (auto version = maybe_version.get())
+            {
+                ecmascript_args.emplace_back("--version");
+                ecmascript_args.emplace_back(*version);
+            }
+
+            Checks::exit_with_code(VCPKG_LINE_INFO, run_configure_environment_command(paths, ecmascript_args));
         }
 
         if (selector == "port")
@@ -61,6 +80,11 @@ namespace vcpkg
             {
                 Checks::msg_exit_with_message(
                     VCPKG_LINE_INFO, msgAddPortRequiresManifest, msg::command_line = "vcpkg add port");
+            }
+
+            if (Util::Maps::contains(parsed.settings, OPTION_VERSION))
+            {
+                Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgAddVersionArtifactsOnly);
             }
 
             std::vector<ParsedQualifiedSpecifier> specs;

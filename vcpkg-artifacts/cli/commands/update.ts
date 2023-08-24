@@ -35,9 +35,7 @@ async function updateRegistry(registry: Registry, displayName: string) : Promise
 
 export class UpdateCommand extends Command {
   readonly command = 'update';
-  readonly aliases = [];
-  seeAlso = [];
-  argumentsHelp = [];
+
   project: Project = new Project(this);
   all = new All(this);
 

@@ -8,6 +8,7 @@
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/span.h>
 #include <vcpkg/base/stringview.h>
+#include <vcpkg/base/util.h>
 
 #include <string>
 
@@ -18,5 +19,25 @@ namespace vcpkg
                                                      const Path& download_root);
 
     int run_configure_environment_command(const VcpkgPaths& paths, View<std::string> args);
-    int run_configure_environment_command(const VcpkgPaths& paths, StringView arg0, View<std::string> args);
+
+    template<size_t N>
+    bool more_than_one_mapped(const StringLiteral* const (&candidates)[N],
+                              const std::set<std::string, std::less<>>& switches)
+    {
+        bool seen = false;
+        for (auto&& candidate : candidates)
+        {
+            if (Util::Sets::contains(switches, *candidate))
+            {
+                if (seen)
+                {
+                    return true;
+                }
+
+                seen = true;
+            }
+        }
+
+        return false;
+    }
 }

@@ -13,9 +13,7 @@ import { Project } from '../switches/project';
 
 export class GenerateMSBuildPropsCommand extends Command {
   readonly command = 'generate-msbuild-props';
-  readonly aliases = [];
-  seeAlso = [];
-  argumentsHelp = [];
+
   project: Project = new Project(this);
   msbuildProps: MSBuildProps = new MSBuildProps(this, 'out');
 
@@ -23,11 +21,9 @@ export class GenerateMSBuildPropsCommand extends Command {
     return i`Generates MSBuild properties for an activation without downloading anything for a project`;
   }
 
-  get description() { return ['']; }
-
   override async run() {
     if (!this.msbuildProps.active) {
-      error(i`generate-msbuild-props requires --msbuild-props`);
+      error('generate-msbuild-props requires --msbuild-props');
       return false;
     }
 

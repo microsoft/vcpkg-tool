@@ -206,13 +206,4 @@ namespace vcpkg
 
         return result;
     }
-
-    int run_configure_environment_command(const VcpkgPaths& paths, StringView arg0, View<std::string> args)
-    {
-        std::vector<std::string> all_args;
-        all_args.reserve(args.size() + 1);
-        all_args.emplace_back(arg0.data(), arg0.size());
-        all_args.insert(all_args.end(), args.begin(), args.end());
-        return run_configure_environment_command(paths, all_args);
-    }
 }
