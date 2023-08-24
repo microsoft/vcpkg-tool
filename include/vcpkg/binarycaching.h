@@ -8,7 +8,7 @@
 #include <vcpkg/fwd/tools.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
-#include <vcpkg/base/batch-quere.h>
+#include <vcpkg/base/batch-queue.h>
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/message_sinks.h>
