@@ -101,12 +101,15 @@ namespace
     constexpr StringLiteral OPTION_FULLDESC = "x-full-desc"; // TODO: This should find a better home, eventually
     constexpr StringLiteral OPTION_JSON = "x-json";
 
-    constexpr std::array<CommandSwitch, 2> FindSwitches = {{
+    constexpr CommandSwitch FindSwitches[] = {
         {OPTION_FULLDESC, []() { return msg::format(msgHelpTextOptFullDesc); }},
         {OPTION_JSON, []() { return msg::format(msgJsonSwitch); }},
-    }};
+    };
+} // unnamed namespace
 
-    const CommandStructure FindCommandStructure = {
+namespace vcpkg
+{
+    constexpr CommandMetadata CommandFindMetadata = {
         [] {
             return msg::format(msgFindHelp)
                 .append_raw('\n')
@@ -119,10 +122,7 @@ namespace
         {FindSwitches, {}},
         nullptr,
     };
-}
 
-namespace vcpkg::Commands
-{
     void perform_find_port_and_exit(const VcpkgPaths& paths,
                                     bool full_description,
                                     bool enable_json,
@@ -221,7 +221,7 @@ namespace vcpkg::Commands
 
     void command_find_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
-        const ParsedArguments options = args.parse_arguments(FindCommandStructure);
+        const ParsedArguments options = args.parse_arguments(CommandFindMetadata);
         const bool full_description = Util::Sets::contains(options.switches, OPTION_FULLDESC);
         const bool enable_json = Util::Sets::contains(options.switches, OPTION_JSON);
         auto&& selector = options.command_arguments[0];
@@ -272,4 +272,4 @@ namespace vcpkg::Commands
 
         Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgAddCommandFirstArg);
     }
-}
+} // namespace vcpkg

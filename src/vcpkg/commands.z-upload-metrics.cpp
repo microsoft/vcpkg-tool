@@ -1,4 +1,4 @@
-#include <vcpkg/commands.upload-metrics.h>
+#include <vcpkg/commands.z-upload-metrics.h>
 
 #if defined(_WIN32)
 #include <vcpkg/base/checks.h>
@@ -9,17 +9,20 @@
 
 using namespace vcpkg;
 
-namespace vcpkg::Commands::UploadMetrics
+namespace
 {
-    const CommandStructure COMMAND_STRUCTURE = {
-        [] { return create_example_string("x-upload-metrics metrics.txt"); },
+    constexpr CommandMetadata CommandZUploadMetricsMetadata = {
+        nullptr,
         1,
         1,
     };
+}
 
-    void perform_and_exit(const VcpkgCmdArguments& args, const Filesystem& fs)
+namespace vcpkg
+{
+    void command_z_upload_metrics_and_exit(const VcpkgCmdArguments& args, const Filesystem& fs)
     {
-        const auto parsed = args.parse_arguments(COMMAND_STRUCTURE);
+        const auto parsed = args.parse_arguments(CommandZUploadMetricsMetadata);
         const auto& payload_path = parsed.command_arguments[0];
         auto payload = fs.read_contents(payload_path, VCPKG_LINE_INFO);
         winhttp_upload_metrics(payload);

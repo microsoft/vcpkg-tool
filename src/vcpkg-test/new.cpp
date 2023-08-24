@@ -11,7 +11,7 @@ static std::string example_version_date = "2022-07-05";
 static std::string example_version_string = "vista";
 
 using namespace vcpkg;
-using namespace vcpkg::Commands;
+using namespace vcpkg;
 
 TEST_CASE ("error cases", "[new]")
 {

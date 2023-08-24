@@ -10,7 +10,9 @@
 #include <vcpkg/vcpkgpaths.h>
 #include <vcpkg/versions.h>
 
-namespace vcpkg::Commands::PortsDiff
+using namespace vcpkg;
+
+namespace
 {
     struct UpdatedPort
     {
@@ -45,10 +47,9 @@ namespace vcpkg::Commands::PortsDiff
         std::vector<T> only_right;
     };
 
-    static std::vector<UpdatedPort> find_updated_ports(
-        const std::vector<std::string>& ports,
-        const std::map<std::string, Version>& previous_names_and_versions,
-        const std::map<std::string, Version>& current_names_and_versions)
+    std::vector<UpdatedPort> find_updated_ports(const std::vector<std::string>& ports,
+                                                const std::map<std::string, Version>& previous_names_and_versions,
+                                                const std::map<std::string, Version>& current_names_and_versions)
     {
         std::vector<UpdatedPort> output;
         for (const std::string& name : ports)
@@ -66,8 +67,8 @@ namespace vcpkg::Commands::PortsDiff
         return output;
     }
 
-    static void do_print_name_and_version(const std::vector<std::string>& ports_to_print,
-                                          const std::map<std::string, Version>& names_and_versions)
+    void do_print_name_and_version(const std::vector<std::string>& ports_to_print,
+                                   const std::map<std::string, Version>& names_and_versions)
     {
         for (const std::string& name : ports_to_print)
         {
@@ -76,8 +77,7 @@ namespace vcpkg::Commands::PortsDiff
         }
     }
 
-    static std::map<std::string, Version> read_ports_from_commit(const VcpkgPaths& paths,
-                                                                 const std::string& git_commit_id)
+    std::map<std::string, Version> read_ports_from_commit(const VcpkgPaths& paths, const std::string& git_commit_id)
     {
         auto& fs = paths.get_filesystem();
         const auto dot_git_dir = paths.root / ".git";
@@ -110,7 +110,7 @@ namespace vcpkg::Commands::PortsDiff
         return names_and_versions;
     }
 
-    static void check_commit_exists(const VcpkgPaths& paths, const std::string& git_commit_id)
+    void check_commit_exists(const VcpkgPaths& paths, const std::string& git_commit_id)
     {
         static constexpr StringLiteral VALID_COMMIT_OUTPUT = "commit\n";
         auto cmd = paths.git_cmd_builder(paths.root / ".git", paths.root)
@@ -123,8 +123,11 @@ namespace vcpkg::Commands::PortsDiff
                                msgInvalidCommitId,
                                msg::commit_sha = git_commit_id);
     }
+} // unnamed namespace
 
-    const CommandStructure COMMAND_STRUCTURE = {
+namespace vcpkg
+{
+    constexpr CommandMetadata CommandPortsdiffMetadata = {
         [] {
             return msg::format(msgPortsDiffHelp)
                 .append_raw('\n')
@@ -136,9 +139,9 @@ namespace vcpkg::Commands::PortsDiff
         nullptr,
     };
 
-    void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
+    void command_portsdiff_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
-        const auto parsed = args.parse_arguments(COMMAND_STRUCTURE);
+        const auto parsed = args.parse_arguments(CommandPortsdiffMetadata);
 
         const std::string git_commit_id_for_previous_snapshot = parsed.command_arguments.at(0);
         const std::string git_commit_id_for_current_snapshot =
@@ -194,4 +197,4 @@ namespace vcpkg::Commands::PortsDiff
 
         Checks::exit_success(VCPKG_LINE_INFO);
     }
-}
+} // namespace vcpkg

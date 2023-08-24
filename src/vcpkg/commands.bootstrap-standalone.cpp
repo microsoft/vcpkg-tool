@@ -11,7 +11,7 @@
 
 #include <string>
 
-namespace vcpkg::Commands
+namespace vcpkg
 {
     void command_bootstrap_standalone_and_exit(const VcpkgCmdArguments& args, const Filesystem& fs)
     {

@@ -6,9 +6,9 @@
 #include <vcpkg/vcpkgpaths.h>
 #include <vcpkg/visualstudio.h>
 
-namespace vcpkg::Commands::VSInstances
+namespace vcpkg
 {
-    const CommandStructure COMMAND_STRUCTURE = {
+    constexpr CommandMetadata CommandVsInstancesMetadata = {
         [] { return create_example_string("x-vsinstances"); },
         0,
         0,
@@ -16,10 +16,10 @@ namespace vcpkg::Commands::VSInstances
         nullptr,
     };
 
-    void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
+    void command_vs_instances_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
 #if defined(_WIN32)
-        const ParsedArguments parsed_args = args.parse_arguments(COMMAND_STRUCTURE);
+        const ParsedArguments parsed_args = args.parse_arguments(CommandVsInstancesMetadata);
 
         const auto instances = vcpkg::VisualStudio::get_visual_studio_instances(paths.get_filesystem());
         for (const std::string& instance : instances)

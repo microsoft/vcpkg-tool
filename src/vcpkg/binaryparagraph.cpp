@@ -29,7 +29,7 @@ namespace vcpkg
 
     BinaryParagraph::BinaryParagraph() = default;
 
-    BinaryParagraph::BinaryParagraph(Paragraph fields)
+    BinaryParagraph::BinaryParagraph(Paragraph&& fields)
     {
         ParagraphParser parser(std::move(fields));
 
