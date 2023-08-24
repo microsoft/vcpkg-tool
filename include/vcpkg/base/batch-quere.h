@@ -5,7 +5,7 @@
 #include <vector>
 
 template<class T>
-class BatchQuere
+class BatchQueue
 {
 public:
     template<class... Args>
@@ -46,7 +46,7 @@ struct BGThreadBatchQueue
 
     void stop()
     {
-        std::lock_guard<std ::mutex> lock(m_mtx);
+        std::lock_guard<std::mutex> lock(m_mtx);
         m_running = false;
         m_cv.notify_all();
     }
@@ -56,6 +56,6 @@ struct BGThreadBatchQueue
 private:
     std::mutex m_mtx;
     std::condition_variable m_cv;
-    BatchQuere<WorkItem> m_tasks;
+    BatchQueue<WorkItem> m_tasks;
     bool m_running = true;
 };
