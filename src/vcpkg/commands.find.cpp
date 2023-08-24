@@ -111,6 +111,29 @@ namespace
         {OPTION_VERSION, [] { return msg::format(msgArtifactsOptionVersion); }},
     };
 
+    void perform_find_artifact_and_exit(const VcpkgPaths& paths,
+                                        Optional<StringView> filter,
+                                        Optional<StringView> version)
+    {
+        std::vector<std::string> ce_args;
+        ce_args.emplace_back("find");
+        if (auto* filter_str = filter.get())
+        {
+            ce_args.emplace_back(filter_str->data(), filter_str->size());
+        }
+
+        if (auto v = version.get())
+        {
+            ce_args.emplace_back("--version");
+            ce_args.emplace_back(*v);
+        }
+
+        Checks::exit_with_code(VCPKG_LINE_INFO, run_configure_environment_command(paths, ce_args));
+    }
+} // unnamed namespace
+
+namespace vcpkg
+{
     void perform_find_port_and_exit(const VcpkgPaths& paths,
                                     bool full_description,
                                     bool enable_json,
@@ -195,29 +218,6 @@ namespace
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 
-    void perform_find_artifact_and_exit(const VcpkgPaths& paths,
-                                        Optional<StringView> filter,
-                                        Optional<StringView> version)
-    {
-        std::vector<std::string> ce_args;
-        ce_args.emplace_back("find");
-        if (auto* filter_str = filter.get())
-        {
-            ce_args.emplace_back(filter_str->data(), filter_str->size());
-        }
-
-        if (auto v = version.get())
-        {
-            ce_args.emplace_back("--version");
-            ce_args.emplace_back(*v);
-        }
-
-        Checks::exit_with_code(VCPKG_LINE_INFO, run_configure_environment_command(paths, ce_args));
-    }
-} // unnamed namespace
-
-namespace vcpkg
-{
     constexpr CommandMetadata CommandFindMetadata = {
         [] {
             return msg::format(msgFindHelp)
