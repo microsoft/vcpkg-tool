@@ -15,19 +15,9 @@
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
-using namespace vcpkg;
-
-namespace
-{
-    constexpr StringLiteral OPTION_VERSION = "version";
-    constexpr CommandSetting AddOptions[] = {
-        {OPTION_VERSION, [] { return msg::format(msgArtifactsOptionVersion); }},
-    };
-}
-
 namespace vcpkg
 {
-    constexpr CommandMetadata CommandAddMetadata = {
+    const CommandMetadata CommandAddMetadata = {
         [] {
             return msg::format(msgAddHelp)
                 .append_raw('\n')
@@ -37,7 +27,7 @@ namespace vcpkg
         },
         2,
         SIZE_MAX,
-        {{}, {AddOptions}},
+        {{}, CommonSelectArtifactVersionSettings},
         nullptr,
     };
 

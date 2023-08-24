@@ -1,4 +1,5 @@
 #include <vcpkg/base/hash.h>
+#include <vcpkg/base/span.h>
 #include <vcpkg/base/strings.h>
 
 #include <vcpkg/commands.find.h>
@@ -104,11 +105,6 @@ namespace
     constexpr CommandSwitch FindSwitches[] = {
         {OPTION_FULLDESC, []() { return msg::format(msgHelpTextOptFullDesc); }},
         {OPTION_JSON, []() { return msg::format(msgJsonSwitch); }},
-    };
-
-    constexpr StringLiteral OPTION_VERSION = "version";
-    constexpr CommandSetting FindSettings[] = {
-        {OPTION_VERSION, [] { return msg::format(msgArtifactsOptionVersion); }},
     };
 
     void perform_find_artifact_and_exit(const VcpkgPaths& paths,
@@ -218,7 +214,7 @@ namespace vcpkg
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 
-    constexpr CommandMetadata CommandFindMetadata = {
+    const CommandMetadata CommandFindMetadata = {
         [] {
             return msg::format(msgFindHelp)
                 .append_raw('\n')
@@ -228,7 +224,7 @@ namespace vcpkg
         },
         1,
         2,
-        {FindSwitches, FindSettings},
+        {FindSwitches, CommonSelectArtifactVersionSettings},
         nullptr,
     };
 

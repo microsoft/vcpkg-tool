@@ -3,6 +3,7 @@
 #include <vcpkg/base/fwd/downloads.h>
 #include <vcpkg/base/fwd/files.h>
 
+#include <vcpkg/fwd/vcpkgcmdarguments.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
 #include <vcpkg/base/expected.h>
@@ -20,24 +21,15 @@ namespace vcpkg
 
     int run_configure_environment_command(const VcpkgPaths& paths, View<std::string> args);
 
-    template<size_t N>
-    bool more_than_one_mapped(const StringLiteral* const (&candidates)[N],
-                              const std::set<std::string, std::less<>>& switches)
-    {
-        bool seen = false;
-        for (auto&& candidate : candidates)
-        {
-            if (Util::Sets::contains(switches, *candidate))
-            {
-                if (seen)
-                {
-                    return true;
-                }
+    bool more_than_one_mapped(View<const StringLiteral*> candidates,
+                              const std::set<std::string, std::less<>>& switches);
 
-                seen = true;
-            }
-        }
+    constexpr StringLiteral OPTION_VERSION = "version";
 
-        return false;
-    }
+    extern const View<CommandSwitch> CommonAcquireArtifactSwitches;
+    extern const View<CommandSetting> CommonSelectArtifactVersionSettings;
+
+    // Copies the switches and settings, but not multisettings from parsed to appended_to, and checks that the switches
+    // that apply to artifacts meet semantic rules like only one operating system being selected.
+    void forward_common_artifacts_arguments(std::vector<std::string>& appended_to, const ParsedArguments& parsed);
 }
