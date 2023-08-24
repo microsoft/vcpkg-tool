@@ -8,6 +8,7 @@ if (-not $IsLinux -and -not $IsMacOS) {
     # Test msbuild props and targets
     $Script:CurrentTest = "zlib:x86-windows msbuild $iiroot\..."
     Write-Host $Script:CurrentTest
+    Run-Vcpkg @CommonArgs integrate install
     Run-Vcpkg @CommonArgs install zlib:x86-windows
     Throw-IfFailed
     foreach ($project in @("Project1", "NoProps")) {
