@@ -7,7 +7,7 @@
 
 namespace vcpkg
 {
-    const CommandMetadata CommandAcquireProjectMetadata{
+    constexpr CommandMetadata CommandAcquireProjectMetadata{
         [] { return create_example_string("acquire-project"); },
         0,
         0,

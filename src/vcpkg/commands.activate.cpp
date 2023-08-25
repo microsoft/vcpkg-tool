@@ -20,7 +20,7 @@ namespace
 
 namespace vcpkg
 {
-    const CommandMetadata CommandActivateMetadata{
+    constexpr CommandMetadata CommandActivateMetadata{
         [] { return create_example_string("activate"); },
         0,
         0,

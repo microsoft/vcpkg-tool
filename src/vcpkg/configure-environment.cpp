@@ -72,38 +72,6 @@ namespace
         }
     }
 
-    constexpr StringLiteral SWITCH_WINDOWS = "windows";
-    constexpr StringLiteral SWITCH_OSX = "osx";
-    constexpr StringLiteral SWITCH_LINUX = "linux";
-    constexpr StringLiteral SWITCH_FREEBSD = "freebsd";
-    constexpr StringLiteral SWITCH_X86 = "x86";
-    constexpr StringLiteral SWITCH_X64 = "x64";
-    constexpr StringLiteral SWITCH_ARM = "arm";
-    constexpr StringLiteral SWITCH_ARM64 = "arm64";
-    constexpr StringLiteral SWITCH_TARGET_X86 = "target:x86";
-    constexpr StringLiteral SWITCH_TARGET_X64 = "target:x64";
-    constexpr StringLiteral SWITCH_TARGET_ARM = "target:arm";
-    constexpr StringLiteral SWITCH_TARGET_ARM64 = "target:arm64";
-    constexpr StringLiteral SWITCH_FORCE = "force";
-    constexpr StringLiteral SWITCH_ALL_LANGUAGES = "all-languages";
-
-    constexpr CommandSwitch CommonAcquireArtifactSwitchesStorage[] = {
-        {SWITCH_WINDOWS, [] { return msg::format(msgArtifactsSwitchWindows); }},
-        {SWITCH_OSX, [] { return msg::format(msgArtifactsSwitchOsx); }},
-        {SWITCH_LINUX, [] { return msg::format(msgArtifactsSwitchLinux); }},
-        {SWITCH_FREEBSD, [] { return msg::format(msgArtifactsSwitchFreebsd); }},
-        {SWITCH_X86, [] { return msg::format(msgArtifactsSwitchX86); }},
-        {SWITCH_X64, [] { return msg::format(msgArtifactsSwitchX64); }},
-        {SWITCH_ARM, [] { return msg::format(msgArtifactsSwitchARM); }},
-        {SWITCH_ARM64, [] { return msg::format(msgArtifactsSwitchARM64); }},
-        {SWITCH_TARGET_X86, [] { return msg::format(msgArtifactsSwitchTargetX86); }},
-        {SWITCH_TARGET_X64, [] { return msg::format(msgArtifactsSwitchTargetX64); }},
-        {SWITCH_TARGET_ARM, [] { return msg::format(msgArtifactsSwitchTargetARM); }},
-        {SWITCH_TARGET_ARM64, [] { return msg::format(msgArtifactsSwitchTargetARM64); }},
-        {SWITCH_FORCE, [] { return msg::format(msgArtifactsSwitchForce); }},
-        {SWITCH_ALL_LANGUAGES, [] { return msg::format(msgArtifactsSwitchAllLanguages); }},
-    };
-
     constexpr const StringLiteral* ArtifactOperatingSystemsSwitchNamesStorage[] = {
         &SWITCH_WINDOWS, &SWITCH_OSX, &SWITCH_LINUX, &SWITCH_FREEBSD};
     constexpr const StringLiteral* ArtifactHostPlatformSwitchNamesStorage[] = {
@@ -111,9 +79,24 @@ namespace
     constexpr const StringLiteral* ArtifactTargetPlatformSwitchNamesStorage[] = {
         &SWITCH_TARGET_X86, &SWITCH_TARGET_X64, &SWITCH_TARGET_ARM, &SWITCH_TARGET_ARM64};
 
-    constexpr CommandSetting CommonSelectArtifactVersionSettingsStorage[] = {
-        {OPTION_VERSION, [] { return msg::format(msgArtifactsOptionVersion); }},
-    };
+    bool more_than_one_mapped(View<const StringLiteral*> candidates, const std::set<std::string, std::less<>>& switches)
+    {
+        bool seen = false;
+        for (auto&& candidate : candidates)
+        {
+            if (Util::Sets::contains(switches, *candidate))
+            {
+                if (seen)
+                {
+                    return true;
+                }
+
+                seen = true;
+            }
+        }
+
+        return false;
+    }
 } // unnamed namespace
 
 namespace vcpkg
@@ -250,28 +233,6 @@ namespace vcpkg
 
         return result;
     }
-
-    bool more_than_one_mapped(View<const StringLiteral*> candidates, const std::set<std::string, std::less<>>& switches)
-    {
-        bool seen = false;
-        for (auto&& candidate : candidates)
-        {
-            if (Util::Sets::contains(switches, *candidate))
-            {
-                if (seen)
-                {
-                    return true;
-                }
-
-                seen = true;
-            }
-        }
-
-        return false;
-    }
-
-    constexpr View<CommandSwitch> CommonAcquireArtifactSwitches = CommonAcquireArtifactSwitchesStorage;
-    constexpr View<CommandSetting> CommonSelectArtifactVersionSettings = CommonSelectArtifactVersionSettingsStorage;
 
     void forward_common_artifacts_arguments(std::vector<std::string>& appended_to, const ParsedArguments& parsed)
     {

@@ -17,7 +17,7 @@
 
 namespace vcpkg
 {
-    const CommandMetadata CommandAddMetadata = {
+    constexpr CommandMetadata CommandAddMetadata = {
         [] {
             return msg::format(msgAddHelp)
                 .append_raw('\n')

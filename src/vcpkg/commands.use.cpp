@@ -26,7 +26,7 @@ namespace
 
 namespace vcpkg
 {
-    const CommandMetadata CommandUseMetadata = {
+    constexpr CommandMetadata CommandUseMetadata = {
         [] { return create_example_string("use cmake"); },
         1,
         SIZE_MAX,

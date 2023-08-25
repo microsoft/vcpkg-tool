@@ -18,7 +18,7 @@ namespace
 
 namespace vcpkg
 {
-    const CommandMetadata CommandGenerateMsbuildPropsMetadata{
+    constexpr CommandMetadata CommandGenerateMsbuildPropsMetadata{
         [] { return create_example_string("generate-msbuild-props --msbuild-props out.props"); },
         0,
         0,

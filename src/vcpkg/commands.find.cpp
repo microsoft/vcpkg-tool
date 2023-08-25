@@ -214,7 +214,7 @@ namespace vcpkg
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 
-    const CommandMetadata CommandFindMetadata = {
+    constexpr CommandMetadata CommandFindMetadata = {
         [] {
             return msg::format(msgFindHelp)
                 .append_raw('\n')

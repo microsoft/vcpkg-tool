@@ -18,7 +18,7 @@ namespace
 
 namespace vcpkg
 {
-    const CommandMetadata CommandAcquireMetadata = {
+    constexpr CommandMetadata CommandAcquireMetadata = {
         [] { return create_example_string("acquire cmake"); },
         1,
         SIZE_MAX,
