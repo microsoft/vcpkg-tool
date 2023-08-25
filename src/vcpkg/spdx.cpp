@@ -8,7 +8,8 @@
 
 using namespace vcpkg;
 
-static std::string fix_ref_version(StringView ref, StringView version) {
+static std::string fix_ref_version(StringView ref, StringView version)
+{
     return Strings::replace_all(ref, "${VERSION}", version);
 }
 

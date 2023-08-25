@@ -1262,7 +1262,8 @@ namespace vcpkg
         abi_info.abi_tag_file.emplace(std::move(abi_file_path));
         abi_info.relative_port_files = std::move(files);
         abi_info.relative_port_hashes = std::move(hashes);
-        abi_info.heuristic_resources.push_back(run_resource_heuristics(portfile_cmake_contents, scf->core_paragraph->raw_version));
+        abi_info.heuristic_resources.push_back(
+            run_resource_heuristics(portfile_cmake_contents, scf->core_paragraph->raw_version));
     }
 
     void compute_all_abis(const VcpkgPaths& paths,
