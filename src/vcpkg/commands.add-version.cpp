@@ -306,21 +306,24 @@ namespace
     }
 
     constexpr CommandSwitch AddVersionSwitches[] = {
-        {OPTION_ALL, []() { return msg::format(msgCmdAddVersionOptAll); }},
-        {OPTION_OVERWRITE_VERSION, []() { return msg::format(msgCmdAddVersionOptOverwriteVersion); }},
-        {OPTION_SKIP_FORMATTING_CHECK, []() { return msg::format(msgCmdAddVersionOptSkipFormatChk); }},
-        {OPTION_SKIP_VERSION_FORMAT_CHECK, []() { return msg::format(msgCmdAddVersionOptSkipVersionFormatChk); }},
-        {OPTION_VERBOSE, []() { return msg::format(msgCmdAddVersionOptVerbose); }},
+        {OPTION_ALL, msgCmdAddVersionOptAll},
+        {OPTION_OVERWRITE_VERSION, msgCmdAddVersionOptOverwriteVersion},
+        {OPTION_SKIP_FORMATTING_CHECK, msgCmdAddVersionOptSkipFormatChk},
+        {OPTION_SKIP_VERSION_FORMAT_CHECK, msgCmdAddVersionOptSkipVersionFormatChk},
+        {OPTION_VERBOSE, msgCmdAddVersionOptVerbose},
     };
 } // unnamed namespace
 
 namespace vcpkg
 {
     constexpr CommandMetadata CommandAddVersionMetadata{
-        [] { return create_example_string("x-add-version <port name>"); },
+        "x-add-version",
+        msgCmdAddVersionSynopsis,
+        {msgCmdAddVersionExample1, "vcpkg x-add-version curl --overwrite-version"},
+        AutocompletePriority::Public,
         0,
         1,
-        {{AddVersionSwitches}, {}, {}},
+        {AddVersionSwitches},
         nullptr,
     };
 

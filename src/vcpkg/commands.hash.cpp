@@ -8,8 +8,11 @@
 
 namespace vcpkg
 {
-    constexpr CommandMetadata CommandHashMetadata = {
-        [] { return create_example_string("hash boost_1_62_0.tar.bz2"); },
+    constexpr CommandMetadata CommandHashMetadata{
+        "hash",
+        msgCmdHashSynopsis,
+        {msgCmdHashExample1, msgCmdHashExample2, "vcpkg hash boost_1_62_0.tar.bz2"},
+        AutocompletePriority::Public,
         1,
         2,
         {},

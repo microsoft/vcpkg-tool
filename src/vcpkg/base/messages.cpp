@@ -100,6 +100,14 @@ namespace vcpkg
     LocalizedString::LocalizedString(StringView data) : m_data(data.data(), data.size()) { }
     LocalizedString::LocalizedString(std::string&& data) noexcept : m_data(std::move(data)) { }
 
+    LocalizedString format_environment_variable(StringView variable_name)
+    {
+#if defined(_WIN32)
+        return LocalizedString::from_raw(fmt::format("%{}%", variable_name));
+#else  // ^^^ _WIN32 / !_WIN32 vvv
+        return LocalizedString::from_raw(fmt::format("${}", variable_name));
+#endif // ^^^ !_WIN32
+    }
 }
 
 namespace vcpkg::msg

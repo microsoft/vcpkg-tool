@@ -13,16 +13,6 @@ export class ListCommand extends Command {
   readonly command = 'list';
   installed = new Installed(this);
 
-  get summary() {
-    return i`Lists the artifacts`;
-  }
-
-  get description() {
-    return [
-      i`This allows the consumer to list artifacts.`,
-    ];
-  }
-
   override async run() {
     if (this.installed.active) {
       const artifacts = await session.getInstalledArtifacts();

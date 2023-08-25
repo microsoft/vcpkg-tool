@@ -12,17 +12,20 @@ namespace
     constexpr StringLiteral OPTION_MSBUILD_PROPS = "msbuild-props";
 
     constexpr CommandSetting GenerateMSBuildPropsOptions[] = {
-        {OPTION_MSBUILD_PROPS, [] { return msg::format(msgArtifactsOptionMSBuildProps); }},
+        {OPTION_MSBUILD_PROPS, msgArtifactsOptionMSBuildProps},
     };
 } // unnamed namespace
 
 namespace vcpkg
 {
     constexpr CommandMetadata CommandGenerateMsbuildPropsMetadata{
-        [] { return create_example_string("generate-msbuild-props --msbuild-props out.props"); },
+        "generate-msbuild-props",
+        msgCmdGenerateMSBuildPropsSynopsis,
+        {msgCmdGenerateMSBuildPropsExample1, msgCmdGenerateMSBuildPropsExample2},
+        AutocompletePriority::Internal,
         0,
         0,
-        {CommonAcquireArtifactSwitches, {GenerateMSBuildPropsOptions}, {}},
+        {CommonAcquireArtifactSwitches, GenerateMSBuildPropsOptions},
         nullptr,
     };
 

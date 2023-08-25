@@ -17,10 +17,6 @@ export class GenerateMSBuildPropsCommand extends Command {
   project: Project = new Project(this);
   msbuildProps: MSBuildProps = new MSBuildProps(this, 'out');
 
-  get summary() {
-    return i`Generates MSBuild properties for an activation without downloading anything for a project`;
-  }
-
   override async run() {
     if (!this.msbuildProps.active) {
       error('generate-msbuild-props requires --msbuild-props');

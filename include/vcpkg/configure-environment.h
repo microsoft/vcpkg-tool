@@ -40,24 +40,24 @@ namespace vcpkg
     constexpr StringLiteral SWITCH_ALL_LANGUAGES = "all-languages";
 
     constexpr CommandSwitch CommonAcquireArtifactSwitches[] = {
-        {SWITCH_WINDOWS, [] { return msg::format(msgArtifactsSwitchWindows); }},
-        {SWITCH_OSX, [] { return msg::format(msgArtifactsSwitchOsx); }},
-        {SWITCH_LINUX, [] { return msg::format(msgArtifactsSwitchLinux); }},
-        {SWITCH_FREEBSD, [] { return msg::format(msgArtifactsSwitchFreebsd); }},
-        {SWITCH_X86, [] { return msg::format(msgArtifactsSwitchX86); }},
-        {SWITCH_X64, [] { return msg::format(msgArtifactsSwitchX64); }},
-        {SWITCH_ARM, [] { return msg::format(msgArtifactsSwitchARM); }},
-        {SWITCH_ARM64, [] { return msg::format(msgArtifactsSwitchARM64); }},
-        {SWITCH_TARGET_X86, [] { return msg::format(msgArtifactsSwitchTargetX86); }},
-        {SWITCH_TARGET_X64, [] { return msg::format(msgArtifactsSwitchTargetX64); }},
-        {SWITCH_TARGET_ARM, [] { return msg::format(msgArtifactsSwitchTargetARM); }},
-        {SWITCH_TARGET_ARM64, [] { return msg::format(msgArtifactsSwitchTargetARM64); }},
-        {SWITCH_FORCE, [] { return msg::format(msgArtifactsSwitchForce); }},
-        {SWITCH_ALL_LANGUAGES, [] { return msg::format(msgArtifactsSwitchAllLanguages); }},
+        {SWITCH_WINDOWS, msgArtifactsSwitchWindows},
+        {SWITCH_OSX, msgArtifactsSwitchOsx},
+        {SWITCH_LINUX, msgArtifactsSwitchLinux},
+        {SWITCH_FREEBSD, msgArtifactsSwitchFreebsd},
+        {SWITCH_X86, msgArtifactsSwitchX86},
+        {SWITCH_X64, msgArtifactsSwitchX64},
+        {SWITCH_ARM, msgArtifactsSwitchARM},
+        {SWITCH_ARM64, msgArtifactsSwitchARM64},
+        {SWITCH_TARGET_X86, msgArtifactsSwitchTargetX86},
+        {SWITCH_TARGET_X64, msgArtifactsSwitchTargetX64},
+        {SWITCH_TARGET_ARM, msgArtifactsSwitchTargetARM},
+        {SWITCH_TARGET_ARM64, msgArtifactsSwitchTargetARM64},
+        {SWITCH_FORCE, msgArtifactsSwitchForce},
+        {SWITCH_ALL_LANGUAGES, msgArtifactsSwitchAllLanguages},
     };
 
     constexpr CommandSetting CommonSelectArtifactVersionSettings[] = {
-        {OPTION_VERSION, [] { return msg::format(msgArtifactsOptionVersion); }},
+        {OPTION_VERSION, msgArtifactsOptionVersion},
     };
 
     // Copies the switches and settings, but not multisettings from parsed to appended_to, and checks that the switches

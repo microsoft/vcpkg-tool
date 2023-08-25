@@ -15,7 +15,7 @@
 #include <vcpkg/commands.contact.h>
 #include <vcpkg/commands.create.h>
 #include <vcpkg/commands.deactivate.h>
-#include <vcpkg/commands.dependinfo.h>
+#include <vcpkg/commands.depend-info.h>
 #include <vcpkg/commands.download.h>
 #include <vcpkg/commands.edit.h>
 #include <vcpkg/commands.env.h>
@@ -116,7 +116,7 @@ namespace vcpkg
         {"build-external", command_build_external_and_exit},
         {"x-check-support", command_check_support_and_exit},
         {"ci", command_ci_and_exit},
-        {"depend-info", command_dependinfo_and_exit},
+        {"depend-info", command_depend_info_and_exit},
         {"env", command_env_and_exit},
         {"export", command_export_and_exit},
         {"install", command_install_and_exit},

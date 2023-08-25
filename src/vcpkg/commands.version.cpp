@@ -18,8 +18,11 @@ namespace
 namespace vcpkg
 {
     constexpr StringLiteral vcpkg_executable_version = version_init;
-    constexpr CommandMetadata CommandVersionMetadata = {
-        [] { return create_example_string("version"); },
+    constexpr CommandMetadata CommandVersionMetadata{
+        "version",
+        msgHelpVersionCommand,
+        {"vcpkg version"},
+        AutocompletePriority::Public,
         0,
         0,
         {},

@@ -23,26 +23,26 @@ namespace
     constexpr StringLiteral OPTION_MACHINE_PROGRESS = "z-machine-readable-progress";
 
     constexpr CommandSwitch FETCH_SWITCHES[] = {
-        {OPTION_STORE, []() { return msg::format(msgCmdXDownloadOptStore); }},
-        {OPTION_SKIP_SHA512, []() { return msg::format(msgCmdXDownloadOptSkipSha); }},
-        {OPTION_MACHINE_PROGRESS, nullptr}};
+        {OPTION_STORE, msgCmdXDownloadOptStore},
+        {OPTION_SKIP_SHA512, msgCmdXDownloadOptSkipSha},
+        {OPTION_MACHINE_PROGRESS, {}},
+    };
     constexpr CommandSetting FETCH_SETTINGS[] = {
-        {OPTION_SHA512, []() { return msg::format(msgCmdXDownloadOptSha); }},
+        {OPTION_SHA512, msgCmdXDownloadOptSha},
     };
     constexpr CommandMultiSetting FETCH_MULTISETTINGS[] = {
-        {OPTION_URL, []() { return msg::format(msgCmdXDownloadOptUrl); }},
-        {OPTION_HEADER, []() { return msg::format(msgCmdXDownloadOptHeader); }},
+        {OPTION_URL, msgCmdXDownloadOptUrl},
+        {OPTION_HEADER, msgCmdXDownloadOptHeader},
     };
 } // unnamed namespace
 
 namespace vcpkg
 {
-    constexpr CommandMetadata CommandDownloadMetadata = {
-        [] {
-            return create_example_string("x-download <filepath> [--sha512=]<sha512> [--url=https://...]...")
-                .append_raw('\n')
-                .append(create_example_string("x-download <filepath> --skip-sha512 [--url=https://...]..."));
-        },
+    constexpr CommandMetadata CommandDownloadMetadata{
+        "x-download",
+        msgCmdDownloadSynopsis,
+        {msgCmdDownloadExample1, msgCmdDownloadExample2, msgCmdDownloadExample3},
+        AutocompletePriority::Internal,
         1,
         2,
         {FETCH_SWITCHES, FETCH_SETTINGS, FETCH_MULTISETTINGS},

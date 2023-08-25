@@ -18,16 +18,6 @@ export class FindCommand extends Command {
   version = new Version(this);
   project = new Project(this);
 
-  get summary() {
-    return i`Find artifacts in the registry`;
-  }
-
-  get description() {
-    return [
-      i`This allows the user to find artifacts based on some criteria.`,
-    ];
-  }
-
   override async run() {
     // load registries (from the current project too if available)
     const resolver = session.globalRegistryResolver.with(

@@ -12,17 +12,20 @@ namespace
     constexpr StringLiteral OPTION_VERSION = "version";
 
     constexpr CommandMultiSetting AcquireMultiOptions[] = {
-        {OPTION_VERSION, [] { return msg::format(msgArtifactsOptionVersion); }},
+        {OPTION_VERSION, msgArtifactsOptionVersion},
     };
 } // unnamed namespace
 
 namespace vcpkg
 {
-    constexpr CommandMetadata CommandAcquireMetadata = {
-        [] { return create_example_string("acquire cmake"); },
+    constexpr CommandMetadata CommandAcquireMetadata{
+        "acquire",
+        msgCmdAcquireSynopsis,
+        {msgCmdAcquireExample1, "vcpkg acquire cmake"},
+        AutocompletePriority::Public,
         1,
         SIZE_MAX,
-        {CommonAcquireArtifactSwitches, {}, {AcquireMultiOptions}},
+        {CommonAcquireArtifactSwitches, {}, AcquireMultiOptions},
         nullptr,
     };
 

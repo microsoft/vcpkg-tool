@@ -11,22 +11,27 @@ namespace
 {
     constexpr StringLiteral OPTION_ALL = "all";
     constexpr CommandSwitch UpdateRegistrySwitches[] = {
-        {OPTION_ALL, []() { return msg::format(msgCmdUpdateRegistryAll); }},
+        {OPTION_ALL, msgCmdUpdateRegistryAll},
     };
 } // unnamed namespace
 
 namespace vcpkg
 {
     constexpr CommandMetadata CommandUpdateRegistryMetadata{
-        []() {
-            return create_example_string("x-update-registry https://example.com")
-                .append_raw("\n")
-                .append(create_example_string("x-update-registry microsoft"));
+        "x-update-registry",
+        msgCmdUpdateRegistrySynopsis,
+        {
+            "vcpkg x-update-registry <uri>",
+            "vcpkg x-update-registry https://example.com",
+            msgCmdUpdateRegistryExample3,
+            "vcpkg x-update-registry microsoft",
         },
+        AutocompletePriority::Public,
         0,
         SIZE_MAX,
-        {UpdateRegistrySwitches, {}, {}},
-        nullptr};
+        {UpdateRegistrySwitches},
+        nullptr,
+    };
 
     void command_update_registry_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {

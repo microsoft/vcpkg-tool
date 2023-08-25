@@ -547,22 +547,23 @@ namespace
     constexpr StringLiteral OPTION_COPIED_FILES_LOG = "copied-files-log";
 
     constexpr CommandSetting SETTINGS[] = {
-        {OPTION_TARGET_BINARY, []() { return msg::format(msgCmdSettingTargetBin); }},
-        {OPTION_INSTALLED_DIR, []() { return msg::format(msgCmdSettingInstalledDir); }},
-        {OPTION_TLOG_FILE, []() { return msg::format(msgCmdSettingTLogFile); }},
-        {OPTION_COPIED_FILES_LOG, []() { return msg::format(msgCmdSettingCopiedFilesLog); }},
+        {OPTION_TARGET_BINARY, msgCmdSettingTargetBin},
+        {OPTION_INSTALLED_DIR, msgCmdSettingInstalledDir},
+        {OPTION_TLOG_FILE, msgCmdSettingTLogFile},
+        {OPTION_COPIED_FILES_LOG, msgCmdSettingCopiedFilesLog},
     };
 
-    constexpr CommandMetadata CommandZApplocalCommandMetadata = {
-        [] {
-            return LocalizedString::from_raw(
-                "--target-binary=\"Path/to/binary\" --installed-bin-dir=\"Path/to/installed/bin\" --tlog-file="
-                "\"Path/to/tlog.tlog\" --copied-files-log=\"Path/to/copiedFilesLog.log\"");
-        },
+    constexpr CommandMetadata CommandZApplocalCommandMetadata{
+        "z-applocal",
+        msgCmdZApplocalSynopsis,
+        {"vcpkg z-applocal --target-binary=\"Path/to/binary\" --installed-bin-dir=\"Path/to/installed/bin\" "
+         "--tlog-file=\"Path/to/tlog.tlog\" --copied-files-log=\"Path/to/copiedFilesLog.log\""},
+        AutocompletePriority::Internal,
         0,
         0,
-        {{}, SETTINGS, {}},
-        nullptr};
+        {{}, SETTINGS},
+        nullptr,
+    };
 } // unnamed namespace
 
 namespace vcpkg

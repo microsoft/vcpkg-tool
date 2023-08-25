@@ -842,7 +842,8 @@ namespace vcpkg
             s.append(msgToolFetchFailed, msg::tool_name = tool.tool_data_name());
             if (env_force_system_binaries && download_available)
             {
-                s.append_raw(' ').append(msgDownloadAvailable, msg::env_var = s_env_vcpkg_force_system_binaries);
+                s.append_raw(' ').append(msgDownloadAvailable,
+                                         msg::env_var = format_environment_variable(s_env_vcpkg_force_system_binaries));
             }
             if (consider_system)
             {

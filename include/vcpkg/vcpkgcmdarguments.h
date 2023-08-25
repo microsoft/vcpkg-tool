@@ -29,34 +29,88 @@ namespace vcpkg
         std::vector<std::string> command_arguments;
     };
 
+    struct MetadataMessage
+    {
+        constexpr MetadataMessage() noexcept : kind(MetadataMessageKind::Unused), unused{} { }
+        /*implicit*/ constexpr MetadataMessage(const msg::MessageT<>& message) noexcept
+            : kind(MetadataMessageKind::Message), message(&message)
+        {
+        }
+
+        template<int N>
+        /*implicit*/ constexpr MetadataMessage(const char (&literal)[N]) noexcept
+            : kind(MetadataMessageKind::Literal), literal(literal)
+        {
+        }
+
+        template<class Callback,
+                 std::enable_if_t<std::is_convertible_v<const Callback&, LocalizedString (*)()>, int> = 0>
+        /*implicit*/ constexpr MetadataMessage(const Callback& callback) noexcept
+            : kind(MetadataMessageKind::Callback), callback(callback)
+        {
+        }
+
+        constexpr MetadataMessage(std::nullptr_t) = delete;
+
+        MetadataMessage(const MetadataMessage&) = delete;
+        MetadataMessage& operator=(const MetadataMessage&) = delete;
+
+        LocalizedString format() const;
+        void append_to(LocalizedString& target) const;
+        explicit operator bool() const noexcept;
+
+    private:
+        enum class MetadataMessageKind
+        {
+            Unused,
+            Message,
+            Literal,
+            Callback
+        };
+
+        MetadataMessageKind kind;
+        union
+        {
+            char unused;
+            const msg::MessageT<>* message;
+            StringLiteral literal;
+            LocalizedString (*callback)();
+        };
+    };
+
     struct CommandSwitch
     {
         StringLiteral name;
-        LocalizedString (*helpmsg)();
+        MetadataMessage helpmsg;
     };
 
     struct CommandSetting
     {
         StringLiteral name;
-        LocalizedString (*helpmsg)();
+        MetadataMessage helpmsg;
     };
 
     struct CommandMultiSetting
     {
         StringLiteral name;
-        LocalizedString (*helpmsg)();
+        MetadataMessage helpmsg;
     };
 
     struct CommandOptionsStructure
     {
-        Span<const CommandSwitch> switches;
-        Span<const CommandSetting> settings;
-        Span<const CommandMultiSetting> multisettings;
+        View<CommandSwitch> switches;
+        View<CommandSetting> settings;
+        View<CommandMultiSetting> multisettings;
     };
 
     struct CommandMetadata
     {
-        LocalizedString (*get_example_text)();
+        StringLiteral name;
+        MetadataMessage synopsis;
+        static constexpr std::size_t example_max_size = 4;
+        MetadataMessage examples[example_max_size];
+
+        AutocompletePriority autocomplete_priority;
 
         size_t minimum_arity;
         size_t maximum_arity;
@@ -64,12 +118,12 @@ namespace vcpkg
         CommandOptionsStructure options;
 
         std::vector<std::string> (*valid_arguments)(const VcpkgPaths& paths);
+
+        LocalizedString get_example_text() const;
     };
 
     void print_command_list_usage();
     void print_usage(const CommandMetadata& command_metadata);
-
-    LocalizedString create_example_string(StringView command_and_arguments);
 
     struct FeatureFlagSettings
     {

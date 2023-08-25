@@ -1,6 +1,5 @@
 #include <vcpkg/base/files.h>
 
-#include <vcpkg/commands.help.h>
 #include <vcpkg/commands.vsinstances.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
@@ -8,11 +7,14 @@
 
 namespace vcpkg
 {
-    constexpr CommandMetadata CommandVsInstancesMetadata = {
-        [] { return create_example_string("x-vsinstances"); },
+    constexpr CommandMetadata CommandVsInstancesMetadata{
+        "x-vsinstances",
+        msgCmdVSInstancesSynopsis,
+        {"vcpkg x-vsinstances"},
+        AutocompletePriority::Public,
         0,
         0,
-        {{}, {}},
+        {},
         nullptr,
     };
 

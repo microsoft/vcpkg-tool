@@ -23,11 +23,23 @@ namespace
 
 namespace vcpkg
 {
+    constexpr CommandMetadata CommandZPrintConfigMetadata{
+        "z-print-config",
+        {/*intentionally undocumented*/},
+        {},
+        AutocompletePriority::Never,
+        0,
+        0,
+        {},
+        nullptr,
+    };
+
     void command_z_print_config_and_exit(const VcpkgCmdArguments& args,
                                          const VcpkgPaths& paths,
                                          Triplet default_triplet,
                                          Triplet host_triplet)
     {
+        (void)args.parse_arguments(CommandZPrintConfigMetadata);
         Json::Object obj;
         obj.insert("downloads", paths.downloads.native());
         obj.insert("default_triplet", default_triplet.canonical_name());

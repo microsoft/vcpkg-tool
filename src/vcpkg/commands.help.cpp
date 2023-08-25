@@ -16,7 +16,7 @@
 #include <vcpkg/commands.contact.h>
 #include <vcpkg/commands.create.h>
 #include <vcpkg/commands.deactivate.h>
-#include <vcpkg/commands.dependinfo.h>
+#include <vcpkg/commands.depend-info.h>
 #include <vcpkg/commands.download.h>
 #include <vcpkg/commands.edit.h>
 #include <vcpkg/commands.env.h>
@@ -64,8 +64,6 @@ namespace
     {
         print_usage(S);
     }
-
-    void integrate_topic_fn(const VcpkgPaths&) { msg::println(get_integrate_helpstring()); }
 
     void help_topics(const VcpkgPaths&);
 
@@ -135,7 +133,7 @@ namespace
         {"create", command_topic_fn<CommandCreateMetadata>},
         {"contact", command_topic_fn<CommandContactMetadata>},
         {"deactivate", command_topic_fn<CommandDeactivateMetadata>},
-        {"depend-info", command_topic_fn<CommandDependinfoMetadata>},
+        {"depend-info", command_topic_fn<CommandDependInfoMetadata>},
         {"x-download", command_topic_fn<CommandDownloadMetadata>},
         {"edit", command_topic_fn<CommandEditMetadata>},
         {"env", command_topic_fn<CommandEnvMetadata>},
@@ -147,7 +145,7 @@ namespace
         {"help", command_topic_fn<CommandHelpMetadata>},
         {"x-init-registry", command_topic_fn<CommandInitRegistryMetadata>},
         {"install", command_topic_fn<CommandInstallMetadata>},
-        {"integrate", integrate_topic_fn},
+        {"integrate", command_topic_fn<CommandIntegrateMetadata>},
         {"list", command_topic_fn<CommandListMetadata>},
         {"new", command_topic_fn<CommandNewMetadata>},
         {"owns", command_topic_fn<CommandOwnsMetadata>},
@@ -183,8 +181,11 @@ namespace
 
 namespace vcpkg
 {
-    constexpr CommandMetadata CommandHelpMetadata = {
-        [] { return create_example_string("help"); },
+    constexpr CommandMetadata CommandHelpMetadata{
+        "help",
+        msgHelpTopicCommand,
+        {"vcpkg help topics", "vcpkg help install"},
+        AutocompletePriority::Public,
         0,
         1,
         {},

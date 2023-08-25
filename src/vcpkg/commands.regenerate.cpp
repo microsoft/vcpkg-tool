@@ -19,20 +19,19 @@ namespace
     constexpr StringLiteral NORMALIZE = "normalize";
 
     constexpr CommandSwitch command_switches[] = {
-        {FORCE, []() { return msg::format(msgCmdRegenerateOptForce); }},
-        {DRY_RUN, []() { return msg::format(msgCmdRegenerateOptDryRun); }},
-        {NORMALIZE, []() { return msg::format(msgCmdRegenerateOptNormalize); }},
+        {FORCE, msgCmdRegenerateOptForce},
+        {DRY_RUN, msgCmdRegenerateOptDryRun},
+        {NORMALIZE, msgCmdRegenerateOptNormalize},
     };
 } // unnamed namespace
 
 namespace vcpkg
 {
-    constexpr CommandMetadata CommandRegenerateMetadata = {
-        [] {
-            return msg::format(msgRegeneratesArtifactRegistry)
-                .append_raw('\n')
-                .append(create_example_string("x-regenerate"));
-        },
+    constexpr CommandMetadata CommandRegenerateMetadata{
+        "x-regenerate",
+        msgRegeneratesArtifactRegistry,
+        {"vcpkg x-regenerate"},
+        AutocompletePriority::Public,
         1,
         1,
         {command_switches},

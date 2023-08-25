@@ -1,20 +1,18 @@
-#include <vcpkg/base/chrono.h>
-#include <vcpkg/base/files.h>
-#include <vcpkg/base/system.process.h>
-#include <vcpkg/base/util.h>
+#include <vcpkg/base/checks.h>
 
 #include <vcpkg/commands.contact.h>
-#include <vcpkg/commands.help.h>
-#include <vcpkg/metrics.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 
 namespace vcpkg
 {
-    constexpr CommandMetadata CommandContactMetadata = {
-        [] { return create_example_string("contact"); },
+    constexpr CommandMetadata CommandContactMetadata{
+        "contact",
+        msgHelpContactCommand,
+        {"vcpkg contact"},
+        AutocompletePriority::Internal,
         0,
         0,
-        {{}, {}},
+        {},
         nullptr,
     };
 

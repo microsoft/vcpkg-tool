@@ -127,12 +127,11 @@ namespace
 
 namespace vcpkg
 {
-    constexpr CommandMetadata CommandPortsdiffMetadata = {
-        [] {
-            return msg::format(msgPortsDiffHelp)
-                .append_raw('\n')
-                .append(create_example_string("portsdiff mybranchname"));
-        },
+    constexpr CommandMetadata CommandPortsdiffMetadata{
+        "portsdiff",
+        msgCmdPortsdiffSynopsis,
+        {msgCmdPortsdiffExample1, msgCmdPortsdiffExample2},
+        AutocompletePriority::Public,
         1,
         2,
         {},

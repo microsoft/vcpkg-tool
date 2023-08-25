@@ -183,11 +183,9 @@ namespace vcpkg
 
         if (!violations.empty())
         {
-            msg_sink.println_warning(msgPortBugRestrictedHeaderPaths,
-                                     msg::env_var = to_cmake_variable(BuildPolicy::ALLOW_RESTRICTED_HEADERS));
+            msg_sink.println_warning(msgPortBugRestrictedHeaderPaths);
             print_paths(msg_sink, violations);
-            msg_sink.println(msgPortBugRestrictedHeaderPaths,
-                             msg::env_var = to_cmake_variable(BuildPolicy::ALLOW_RESTRICTED_HEADERS));
+            msg_sink.println(msgPortBugRestrictedHeaderPaths);
             return LintStatus::PROBLEM_DETECTED;
         }
 

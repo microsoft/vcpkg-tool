@@ -13,14 +13,17 @@ namespace
     constexpr StringLiteral OPTION_NO_OUTPUT_COMMENTS = "no-output-comments";
 
     constexpr CommandSwitch GENERATE_MESSAGE_MAP_SWITCHES[]{
-        {OPTION_NO_OUTPUT_COMMENTS, []() { return msg::format(msgCmdGenerateMessageMapOptNoOutputComments); }},
+        {OPTION_NO_OUTPUT_COMMENTS, msgCmdGenerateMessageMapOptNoOutputComments},
     };
 
     constexpr CommandMetadata CommandZGenerateDefaultMessageMapMetadata = {
-        [] { return create_example_string("x-generate-default-message-map locales/messages.json"); },
+        "z-generate-default-message-map",
+        {/*intentionally undocumented*/},
+        {},
+        AutocompletePriority::Never,
         2,
         2,
-        {GENERATE_MESSAGE_MAP_SWITCHES, {}, {}},
+        {GENERATE_MESSAGE_MAP_SWITCHES},
         nullptr,
     };
 } // unnamed namespace

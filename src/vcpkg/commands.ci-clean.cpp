@@ -26,8 +26,11 @@ namespace
 
 namespace vcpkg
 {
-    constexpr CommandMetadata CommandCiCleanMetadata = {
-        [] { return create_example_string("x-ci-clean"); },
+    constexpr CommandMetadata CommandCiCleanMetadata{
+        "x-ci-clean",
+        msgCmdCiCleanSynopsis,
+        {"vcpkg x-ci-clean"},
+        AutocompletePriority::Internal,
         0,
         0,
         {},

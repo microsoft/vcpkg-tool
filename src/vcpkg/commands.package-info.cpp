@@ -21,23 +21,22 @@ namespace
     constexpr StringLiteral OPTION_INSTALLED = "x-installed";
 
     constexpr CommandSwitch INFO_SWITCHES[] = {
-        {OPTION_JSON, []() { return msg::format(msgJsonSwitch); }},
-        {OPTION_INSTALLED, []() { return msg::format(msgCmdInfoOptInstalled); }},
-        {OPTION_TRANSITIVE, []() { return msg::format(msgCmdInfoOptTransitive); }},
+        {OPTION_JSON, msgJsonSwitch},
+        {OPTION_INSTALLED, msgCmdInfoOptInstalled},
+        {OPTION_TRANSITIVE, msgCmdInfoOptTransitive},
     };
 } // unnamed namespace
 
 namespace vcpkg
 {
-    constexpr CommandMetadata CommandPackageInfoMetadata = {
-        [] {
-            return msg::format(msgPackageInfoHelp)
-                .append_raw('\n')
-                .append(create_example_string("x-package-info zlib openssl:x64-windows"));
-        },
+    constexpr CommandMetadata CommandPackageInfoMetadata{
+        "x-package-info",
+        msgPackageInfoHelp,
+        {msgCmdPackageInfoExample1, "vcpkg x-package-info zlib openssl:x64-windows"},
+        AutocompletePriority::Public,
         1,
         SIZE_MAX,
-        {INFO_SWITCHES, {}},
+        {INFO_SWITCHES},
         nullptr,
     };
 

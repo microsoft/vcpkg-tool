@@ -31,22 +31,25 @@ namespace
     constexpr StringLiteral OPTION_ALLOW_UNSUPPORTED_PORT = "allow-unsupported";
 
     constexpr CommandSwitch INSTALL_SWITCHES[] = {
-        {OPTION_DRY_RUN, []() { return msg::format(msgCmdSetInstalledOptDryRun); }},
-        {OPTION_NO_PRINT_USAGE, []() { return msg::format(msgCmdSetInstalledOptNoUsage); }},
-        {OPTION_ONLY_DOWNLOADS, []() { return msg::format(msgHelpTxtOptOnlyDownloads); }},
-        {OPTION_ENFORCE_PORT_CHECKS, []() { return msg::format(msgHelpTxtOptEnforcePortChecks); }},
-        {OPTION_ALLOW_UNSUPPORTED_PORT, []() { return msg::format(msgHelpTxtOptAllowUnsupportedPort); }},
+        {OPTION_DRY_RUN, msgCmdSetInstalledOptDryRun},
+        {OPTION_NO_PRINT_USAGE, msgCmdSetInstalledOptNoUsage},
+        {OPTION_ONLY_DOWNLOADS, msgHelpTxtOptOnlyDownloads},
+        {OPTION_ENFORCE_PORT_CHECKS, msgHelpTxtOptEnforcePortChecks},
+        {OPTION_ALLOW_UNSUPPORTED_PORT, msgHelpTxtOptAllowUnsupportedPort},
     };
 
     constexpr CommandSetting INSTALL_SETTINGS[] = {
-        {OPTION_WRITE_PACKAGES_CONFIG, []() { return msg::format(msgCmdSetInstalledOptWritePkgConfig); }},
+        {OPTION_WRITE_PACKAGES_CONFIG, msgCmdSetInstalledOptWritePkgConfig},
     };
 } // unnamed namespace
 
 namespace vcpkg
 {
     constexpr CommandMetadata CommandSetInstalledMetadata = {
-        [] { return create_example_string("x-set-installed <package>..."); },
+        "x-set-installed",
+        msgCmdSetInstalledSynopsis,
+        {msgCmdSetInstalledExample1, "x-set-installed zlib:x64-windows boost"},
+        AutocompletePriority::Public,
         0,
         SIZE_MAX,
         {INSTALL_SWITCHES, INSTALL_SETTINGS},

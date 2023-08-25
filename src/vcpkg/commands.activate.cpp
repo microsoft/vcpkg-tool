@@ -13,18 +13,21 @@ namespace
     constexpr StringLiteral OPTION_JSON = "json";
 
     constexpr CommandSetting ActivateOptions[] = {
-        {OPTION_MSBUILD_PROPS, [] { return msg::format(msgArtifactsOptionMSBuildProps); }},
-        {OPTION_JSON, [] { return msg::format(msgArtifactsOptionJson); }},
+        {OPTION_MSBUILD_PROPS, msgArtifactsOptionMSBuildProps},
+        {OPTION_JSON, msgArtifactsOptionJson},
     };
 } // unnamed namespace
 
 namespace vcpkg
 {
     constexpr CommandMetadata CommandActivateMetadata{
-        [] { return create_example_string("activate"); },
+        "activate",
+        msgCmdActivateSynopsis,
+        {"vcpkg activate"},
+        AutocompletePriority::Public,
         0,
         0,
-        {CommonAcquireArtifactSwitches, {ActivateOptions}, {}},
+        {CommonAcquireArtifactSwitches, ActivateOptions},
         nullptr,
     };
 

@@ -159,19 +159,22 @@ namespace
     constexpr StringLiteral OPTION_CONVERT_CONTROL = "convert-control";
 
     constexpr CommandSwitch FORMAT_SWITCHES[] = {
-        {OPTION_ALL, []() { return msg::format(msgCmdFormatManifestOptAll); }},
-        {OPTION_CONVERT_CONTROL, []() { return msg::format(msgCmdFormatManifestOptConvertControl); }},
+        {OPTION_ALL, msgCmdFormatManifestOptAll},
+        {OPTION_CONVERT_CONTROL, msgCmdFormatManifestOptConvertControl},
     };
 
 } // unnamed namespace
 
 namespace vcpkg
 {
-    constexpr CommandMetadata CommandFormatManifestMetadata = {
-        [] { return create_example_string("format-manifest --all"); },
+    constexpr CommandMetadata CommandFormatManifestMetadata{
+        "format-manifest",
+        msgCmdFormatManifestSynopsis,
+        {msgCmdFormatManifestExample1, "vcpkg format-manifest ports/zlib/vcpkg.json", "format-manifest --all"},
+        AutocompletePriority::Public,
         0,
         SIZE_MAX,
-        {FORMAT_SWITCHES, {}, {}},
+        {FORMAT_SWITCHES},
         nullptr,
     };
 

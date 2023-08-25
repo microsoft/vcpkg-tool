@@ -14,15 +14,18 @@ namespace
     constexpr StringLiteral OPTION_JSON = "x-json";
 
     constexpr CommandSwitch SearchSwitches[] = {
-        {OPTION_FULLDESC, []() { return msg::format(msgHelpTextOptFullDesc); }},
-        {OPTION_JSON, []() { return msg::format(msgJsonSwitch); }},
+        {OPTION_FULLDESC, msgHelpTextOptFullDesc},
+        {OPTION_JSON, msgJsonSwitch},
     };
 } // unnamed namespace
 
 namespace vcpkg
 {
     constexpr CommandMetadata CommandSearchMetadata = {
-        [] { return msg::format(msgSearchHelp).append_raw('\n').append(create_example_string("search png")); },
+        "search",
+        msgHelpSearchCommand,
+        {msgCmdSearchExample1, "vcpkg search png"},
+        AutocompletePriority::Public,
         0,
         1,
         {SearchSwitches, {}},

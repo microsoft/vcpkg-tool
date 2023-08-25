@@ -8,10 +8,13 @@
 namespace vcpkg
 {
     constexpr CommandMetadata CommandAcquireProjectMetadata{
-        [] { return create_example_string("acquire-project"); },
+        "acquire_project",
+        msgCmdAcquireProjectSynopsis,
+        {"vcpkg acquire-project"},
+        AutocompletePriority::Public,
         0,
         0,
-        {CommonAcquireArtifactSwitches, {}, {}},
+        {CommonAcquireArtifactSwitches},
         nullptr,
     };
 

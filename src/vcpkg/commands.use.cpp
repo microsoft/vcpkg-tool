@@ -14,23 +14,26 @@ namespace
     constexpr StringLiteral OPTION_MSBUILD_PROPS = "msbuild-props";
 
     constexpr CommandSetting UseOptions[] = {
-        {OPTION_MSBUILD_PROPS, [] { return msg::format(msgArtifactsOptionMSBuildProps); }},
+        {OPTION_MSBUILD_PROPS, msgArtifactsOptionMSBuildProps},
     };
 
     constexpr StringLiteral OPTION_VERSION = "version";
 
     constexpr CommandMultiSetting UseMultiOptions[] = {
-        {OPTION_VERSION, [] { return msg::format(msgArtifactsOptionVersion); }},
+        {OPTION_VERSION, msgArtifactsOptionVersion},
     };
 } // unnamed namespace
 
 namespace vcpkg
 {
-    constexpr CommandMetadata CommandUseMetadata = {
-        [] { return create_example_string("use cmake"); },
+    constexpr CommandMetadata CommandUseMetadata{
+        "use",
+        msgCmdUseSynopsis,
+        {msgCmdUseExample1, "vcpkg use cmake"},
+        AutocompletePriority::Public,
         1,
         SIZE_MAX,
-        {CommonAcquireArtifactSwitches, {UseOptions}, {UseMultiOptions}},
+        {CommonAcquireArtifactSwitches, UseOptions, UseMultiOptions},
         nullptr,
     };
 

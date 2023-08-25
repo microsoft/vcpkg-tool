@@ -15,16 +15,6 @@ export class CacheCommand extends Command {
   readonly command = 'cache';
   clear = new Clear(this);
 
-  get summary() {
-    return i`Manages the download cache`;
-  }
-
-  get description() {
-    return [
-      i`Manages the download cache`,
-    ];
-  }
-
   override async run() {
     if (this.clear.active) {
       await session.downloads.delete({ recursive: true });

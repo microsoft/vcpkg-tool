@@ -80,18 +80,21 @@ namespace
     }
 
     constexpr CommandSwitch LIST_SWITCHES[] = {
-        {OPTION_FULLDESC, []() { return msg::format(msgHelpTextOptFullDesc); }},
-        {OPTION_JSON, []() { return msg::format(msgJsonSwitch); }},
+        {OPTION_FULLDESC, msgHelpTextOptFullDesc},
+        {OPTION_JSON, msgJsonSwitch},
     };
 } // unnamed namespace
 
 namespace vcpkg
 {
-    constexpr CommandMetadata CommandListMetadata = {
-        [] { return msg::format(msgListHelp).append_raw('\n').append(create_example_string("list png")); },
+    constexpr CommandMetadata CommandListMetadata{
+        "list",
+        msgListHelp,
+        {"vcpkg list", msgCmdListExample2, "vcpkg list png"},
+        AutocompletePriority::Public,
         0,
         1,
-        {LIST_SWITCHES, {}},
+        {LIST_SWITCHES},
         nullptr,
     };
 

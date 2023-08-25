@@ -39,6 +39,17 @@ namespace
 
 namespace vcpkg
 {
+    constexpr CommandMetadata CommandAutocompleteMetadata{
+        "autocomplete",
+        {/*Intentionally undocumented*/},
+        {},
+        AutocompletePriority::Never,
+        0,
+        SIZE_MAX,
+        {},
+        nullptr,
+    };
+
     void command_autocomplete_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
         g_should_send_metrics = false;

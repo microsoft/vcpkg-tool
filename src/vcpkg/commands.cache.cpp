@@ -30,8 +30,11 @@ namespace
 
 namespace vcpkg
 {
-    constexpr CommandMetadata CommandCacheMetadata = {
-        [] { return msg::format(msgCacheHelp).append_raw('\n').append(create_example_string("cache png")); },
+    constexpr CommandMetadata CommandCacheMetadata{
+        "cache",
+        msgCmdCacheSynopsis,
+        {msgCmdCacheExample1, "vcpkg cache png"},
+        AutocompletePriority::Public,
         0,
         1,
         {},
@@ -49,25 +52,21 @@ namespace vcpkg
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 
-        if (parsed.command_arguments.empty())
+        std::string filter;
+        if (!parsed.command_arguments.empty())
         {
-            for (const BinaryParagraph& binary_paragraph : binary_paragraphs)
-            {
-                msg::write_unlocalized_text_to_stdout(Color::none, binary_paragraph.displayname() + '\n');
-            }
+            filter = parsed.command_arguments[0];
         }
-        else
+
+        for (const BinaryParagraph& binary_paragraph : binary_paragraphs)
         {
-            // At this point there is 1 argument
-            for (const BinaryParagraph& binary_paragraph : binary_paragraphs)
+            const std::string displayname = binary_paragraph.displayname();
+            if (!Strings::case_insensitive_ascii_contains(displayname, filter))
             {
-                const std::string displayname = binary_paragraph.displayname();
-                if (!Strings::case_insensitive_ascii_contains(displayname, parsed.command_arguments[0]))
-                {
-                    continue;
-                }
-                msg::write_unlocalized_text_to_stdout(Color::none, displayname + '\n');
+                continue;
             }
+
+            msg::write_unlocalized_text_to_stdout(Color::none, displayname + '\n');
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);

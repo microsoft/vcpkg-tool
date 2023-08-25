@@ -7,19 +7,19 @@
 #include <vcpkg/metrics.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 
-using namespace vcpkg;
-
-namespace
-{
-    constexpr CommandMetadata CommandZUploadMetricsMetadata = {
-        nullptr,
-        1,
-        1,
-    };
-}
-
 namespace vcpkg
 {
+    constexpr CommandMetadata CommandZUploadMetricsMetadata{
+        "z-upload-metrics",
+        {/*intentionally undocumented*/},
+        {},
+        AutocompletePriority::Never,
+        1,
+        1,
+        {},
+        nullptr,
+    };
+
     void command_z_upload_metrics_and_exit(const VcpkgCmdArguments& args, const Filesystem& fs)
     {
         const auto parsed = args.parse_arguments(CommandZUploadMetricsMetadata);

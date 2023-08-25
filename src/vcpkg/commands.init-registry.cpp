@@ -5,11 +5,14 @@
 
 namespace vcpkg
 {
-    constexpr CommandMetadata CommandInitRegistryMetadata = {
-        [] { return create_example_string(R"(x-init-registry .)"); },
+    constexpr CommandMetadata CommandInitRegistryMetadata{
+        "x-init-registry",
+        msgCmdInitRegistrySynopsis,
+        {msgCmdInitRegistryExample1, "vcpkg x-init-registry ."},
+        AutocompletePriority::Public,
         1,
         1,
-        {{}, {}, {}},
+        {},
         nullptr,
     };
 
