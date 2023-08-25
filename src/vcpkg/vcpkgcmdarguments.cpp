@@ -66,9 +66,9 @@ namespace
 
     void maybe_parse_cmd_arguments(CmdParser& cmd_parser,
                                    ParsedArguments& output,
-                                   const CommandStructure& command_structure)
+                                   const CommandMetadata& command_metadata)
     {
-        for (const auto& switch_ : command_structure.options.switches)
+        for (const auto& switch_ : command_metadata.options.switches)
         {
             bool parse_result;
             auto name = switch_.name.to_string();
@@ -102,7 +102,7 @@ namespace
 
         {
             std::string maybe_parse_result;
-            for (const auto& option : command_structure.options.settings)
+            for (const auto& option : command_metadata.options.settings)
             {
                 auto name = option.name.to_string();
                 StabilityTag tag = StabilityTag::Standard;
@@ -134,7 +134,7 @@ namespace
             }
         }
 
-        for (const auto& option : command_structure.options.multisettings)
+        for (const auto& option : command_metadata.options.multisettings)
         {
             auto name = option.name.to_string();
             StabilityTag tag = StabilityTag::Standard;
@@ -330,16 +330,16 @@ namespace vcpkg
         return args;
     }
 
-    ParsedArguments VcpkgCmdArguments::parse_arguments(const CommandStructure& command_structure) const
+    ParsedArguments VcpkgCmdArguments::parse_arguments(const CommandMetadata& command_metadata) const
     {
         ParsedArguments output;
         auto cmd_parser = this->parser;
-        maybe_parse_cmd_arguments(cmd_parser, output, command_structure);
-        if (command_structure.maximum_arity == 0)
+        maybe_parse_cmd_arguments(cmd_parser, output, command_metadata);
+        if (command_metadata.maximum_arity == 0)
         {
             cmd_parser.enforce_no_remaining_args(command);
         }
-        else if (command_structure.minimum_arity == 0 && command_structure.maximum_arity == 1)
+        else if (command_metadata.minimum_arity == 0 && command_metadata.maximum_arity == 1)
         {
             auto maybe_arg = cmd_parser.consume_only_remaining_arg_optional(command);
             if (auto arg = maybe_arg.get())
@@ -347,22 +347,22 @@ namespace vcpkg
                 output.command_arguments.push_back(std::move(*arg));
             }
         }
-        else if (command_structure.minimum_arity == 1 && command_structure.maximum_arity == 1)
+        else if (command_metadata.minimum_arity == 1 && command_metadata.maximum_arity == 1)
         {
             output.command_arguments.push_back(cmd_parser.consume_only_remaining_arg(command));
         }
-        else if (command_structure.minimum_arity == command_structure.maximum_arity)
+        else if (command_metadata.minimum_arity == command_metadata.maximum_arity)
         {
-            output.command_arguments = cmd_parser.consume_remaining_args(command, command_structure.minimum_arity);
+            output.command_arguments = cmd_parser.consume_remaining_args(command, command_metadata.minimum_arity);
         }
         else
         {
             output.command_arguments = cmd_parser.consume_remaining_args(
-                command, command_structure.minimum_arity, command_structure.maximum_arity);
+                command, command_metadata.minimum_arity, command_metadata.maximum_arity);
         }
 
         LocalizedString example_text;
-        const auto get_example_text = command_structure.get_example_text;
+        const auto get_example_text = command_metadata.get_example_text;
         if (get_example_text)
         {
             example_text = get_example_text();
@@ -400,7 +400,7 @@ namespace vcpkg
         table.format("vcpkg help <topic>", msg::format(msgHelpTopicCommand));
         table.format("vcpkg list", msg::format(msgHelpListCommand));
         table.blank();
-        Commands::Integrate::append_helpstring(table);
+        append_integrate_helpstring(table);
         table.blank();
         table.format("vcpkg export <pkg>... [opt]...", msg::format(msgHelpExportCommand));
         table.format("vcpkg edit <pkg>", msg::format(msgHelpEditCommand, msg::env_var = "EDITOR"));
@@ -420,13 +420,13 @@ namespace vcpkg
         msg::println(LocalizedString::from_raw(table.m_str));
     }
 
-    void print_usage(const CommandStructure& command_structure)
+    void print_usage(const CommandMetadata& command_metadata)
     {
         auto with_common_options = VcpkgCmdArguments::create_from_arg_sequence(nullptr, nullptr);
         ParsedArguments throwaway;
-        maybe_parse_cmd_arguments(with_common_options.parser, throwaway, command_structure);
+        maybe_parse_cmd_arguments(with_common_options.parser, throwaway, command_metadata);
         LocalizedString result;
-        const auto get_example_text = command_structure.get_example_text;
+        const auto get_example_text = command_metadata.get_example_text;
         if (get_example_text)
         {
             auto example_text = get_example_text();

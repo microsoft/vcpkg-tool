@@ -824,7 +824,7 @@ namespace vcpkg
     std::string VcpkgPaths::get_toolver_diagnostics() const
     {
         std::string ret;
-        Strings::append(ret, "    vcpkg-tool version: ", Commands::Version::version, "\n");
+        Strings::append(ret, "    vcpkg-tool version: ", vcpkg_executable_version, "\n");
         if (m_pimpl->m_bundle.read_only)
         {
             Strings::append(ret, "    vcpkg-readonly: true\n");

@@ -12,19 +12,24 @@
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/versions.h>
 
-namespace vcpkg::Commands::PackageInfo
-{
-    static constexpr StringLiteral OPTION_JSON = "x-json";
-    static constexpr StringLiteral OPTION_TRANSITIVE = "x-transitive";
-    static constexpr StringLiteral OPTION_INSTALLED = "x-installed";
+using namespace vcpkg;
 
-    static constexpr CommandSwitch INFO_SWITCHES[] = {
+namespace
+{
+    constexpr StringLiteral OPTION_JSON = "x-json";
+    constexpr StringLiteral OPTION_TRANSITIVE = "x-transitive";
+    constexpr StringLiteral OPTION_INSTALLED = "x-installed";
+
+    constexpr CommandSwitch INFO_SWITCHES[] = {
         {OPTION_JSON, []() { return msg::format(msgJsonSwitch); }},
         {OPTION_INSTALLED, []() { return msg::format(msgCmdInfoOptInstalled); }},
         {OPTION_TRANSITIVE, []() { return msg::format(msgCmdInfoOptTransitive); }},
     };
+} // unnamed namespace
 
-    const CommandStructure COMMAND_STRUCTURE = {
+namespace vcpkg
+{
+    constexpr CommandMetadata CommandPackageInfoMetadata = {
         [] {
             return msg::format(msgPackageInfoHelp)
                 .append_raw('\n')
@@ -36,9 +41,9 @@ namespace vcpkg::Commands::PackageInfo
         nullptr,
     };
 
-    void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
+    void command_package_info_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
-        const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
+        const ParsedArguments options = args.parse_arguments(CommandPackageInfoMetadata);
         if (!Util::Vectors::contains(options.switches, OPTION_JSON))
         {
             Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, msgMissingOption, msg::option = OPTION_JSON);
@@ -151,4 +156,4 @@ namespace vcpkg::Commands::PackageInfo
             msg::write_unlocalized_text_to_stdout(Color::none, Json::stringify(response));
         }
     }
-}
+} // namespace vcpkg

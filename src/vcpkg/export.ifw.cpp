@@ -12,7 +12,7 @@
 #include <vcpkg/tools.h>
 #include <vcpkg/vcpkgpaths.h>
 
-namespace vcpkg::Export::IFW
+namespace vcpkg::IFW
 {
     // requires: after_prefix <= semi
     // requires: *semi == ';'

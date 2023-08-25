@@ -14,10 +14,8 @@
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
 
-namespace vcpkg::Remove
+namespace vcpkg
 {
-    using Update::OutdatedPackage;
-
     void remove_package(const Filesystem& fs,
                         const InstalledPaths& installed,
                         const PackageSpec& spec,
@@ -102,7 +100,11 @@ namespace vcpkg::Remove
             status_db.insert(std::make_unique<StatusParagraph>(std::move(spgh)));
         }
     }
+} // namespace vcpkg
 
+namespace
+{
+    using namespace vcpkg;
     constexpr struct OpAddressOf
     {
         template<class T>
@@ -112,7 +114,7 @@ namespace vcpkg::Remove
         }
     } op_address_of;
 
-    static void print_plan(const RemovePlan& plan)
+    void print_remove_plan(const RemovePlan& plan)
     {
         if (!plan.not_installed.empty())
         {
@@ -140,27 +142,30 @@ namespace vcpkg::Remove
         }
     }
 
-    static constexpr StringLiteral OPTION_PURGE = "purge";
-    static constexpr StringLiteral OPTION_RECURSE = "recurse";
-    static constexpr StringLiteral OPTION_DRY_RUN = "dry-run";
-    static constexpr StringLiteral OPTION_OUTDATED = "outdated";
+    constexpr StringLiteral OPTION_PURGE = "purge";
+    constexpr StringLiteral OPTION_RECURSE = "recurse";
+    constexpr StringLiteral OPTION_DRY_RUN = "dry-run";
+    constexpr StringLiteral OPTION_OUTDATED = "outdated";
 
-    static constexpr std::array<CommandSwitch, 4> SWITCHES = {{
+    constexpr CommandSwitch SWITCHES[] = {
         {OPTION_PURGE, nullptr},
         {OPTION_RECURSE, []() { return msg::format(msgCmdRemoveOptRecurse); }},
         {OPTION_DRY_RUN, []() { return msg::format(msgCmdRemoveOptDryRun); }},
         {OPTION_OUTDATED, []() { return msg::format(msgCmdRemoveOptOutdated); }},
-    }};
+    };
 
-    static std::vector<std::string> valid_arguments(const VcpkgPaths& paths)
+    std::vector<std::string> valid_arguments(const VcpkgPaths& paths)
     {
         const StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
         auto installed_packages = get_installed_ports(status_db);
 
         return Util::fmap(installed_packages, [](auto&& pgh) -> std::string { return pgh.spec().to_string(); });
     }
+} // unnamed namespace
 
-    const CommandStructure COMMAND_STRUCTURE = {
+namespace vcpkg
+{
+    constexpr CommandMetadata CommandRemoveMetadata = {
         [] { return create_example_string("remove zlib zlib:x64-windows curl boost"); },
         0,
         SIZE_MAX,
@@ -168,17 +173,17 @@ namespace vcpkg::Remove
         &valid_arguments,
     };
 
-    void perform_and_exit(const VcpkgCmdArguments& args,
-                          const VcpkgPaths& paths,
-                          Triplet default_triplet,
-                          Triplet host_triplet)
+    void command_remove_and_exit(const VcpkgCmdArguments& args,
+                                 const VcpkgPaths& paths,
+                                 Triplet default_triplet,
+                                 Triplet host_triplet)
     {
         (void)host_triplet;
         if (paths.manifest_mode_enabled())
         {
             Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, msgRemoveDependencies);
         }
-        const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
+        const ParsedArguments options = args.parse_arguments(CommandRemoveMetadata);
 
         StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
         std::vector<PackageSpec> specs;
@@ -196,8 +201,8 @@ namespace vcpkg::Remove
             PathsPortFileProvider provider(
                 fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
 
-            specs = Util::fmap(Update::find_outdated_packages(provider, status_db),
-                               [](auto&& outdated) { return outdated.spec; });
+            specs =
+                Util::fmap(find_outdated_packages(provider, status_db), [](auto&& outdated) { return outdated.spec; });
 
             if (specs.empty())
             {
@@ -216,7 +221,7 @@ namespace vcpkg::Remove
             bool default_triplet_used = false;
             specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
                 return parse_package_spec(
-                    arg, default_triplet, default_triplet_used, COMMAND_STRUCTURE.get_example_text());
+                    arg, default_triplet, default_triplet_used, CommandRemoveMetadata.get_example_text());
             });
 
             if (default_triplet_used)
@@ -236,7 +241,7 @@ namespace vcpkg::Remove
             Checks::unreachable(VCPKG_LINE_INFO, "Remove plan cannot be empty");
         }
 
-        print_plan(plan);
+        print_remove_plan(plan);
 
         if (plan.has_non_user_requested())
         {

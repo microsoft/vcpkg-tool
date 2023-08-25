@@ -9,6 +9,8 @@
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
+using namespace vcpkg;
+
 namespace
 {
     std::string remove_trailing_url_slashes(std::string argument)
@@ -19,9 +21,9 @@ namespace
     }
 }
 
-namespace vcpkg::Commands::Create
+namespace vcpkg
 {
-    const CommandStructure COMMAND_STRUCTURE = {
+    constexpr CommandMetadata CommandCreateMetadata = {
         [] { return create_example_string(R"###(create zlib2 http://zlib.net/zlib1211.zip "zlib1211-2.zip")###"); },
         2,
         3,
@@ -29,9 +31,9 @@ namespace vcpkg::Commands::Create
         nullptr,
     };
 
-    int perform(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
+    int command_create(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
-        auto parsed = args.parse_arguments(COMMAND_STRUCTURE);
+        auto parsed = args.parse_arguments(CommandCreateMetadata);
         const std::string& port_name = parsed.command_arguments[0];
         std::string url = remove_trailing_url_slashes(parsed.command_arguments[1]);
 
@@ -58,8 +60,8 @@ namespace vcpkg::Commands::Create
         return cmd_execute_clean(cmd_launch_cmake).value_or_exit(VCPKG_LINE_INFO);
     }
 
-    void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
+    void command_create_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
-        Checks::exit_with_code(VCPKG_LINE_INFO, perform(args, paths));
+        Checks::exit_with_code(VCPKG_LINE_INFO, command_create(args, paths));
     }
 }
