@@ -11,7 +11,7 @@
 
 #include <string>
 
-namespace vcpkg::Commands
+namespace vcpkg
 {
     using BasicCommandFn = void (*)(const VcpkgCmdArguments& args, const Filesystem& fs);
     using PathsCommandFn = void (*)(const VcpkgCmdArguments& args, const VcpkgPaths& paths);

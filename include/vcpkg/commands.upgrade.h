@@ -4,11 +4,11 @@
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
-namespace vcpkg::Commands::Upgrade
+namespace vcpkg
 {
-    extern const CommandStructure COMMAND_STRUCTURE;
-    void perform_and_exit(const VcpkgCmdArguments& args,
-                          const VcpkgPaths& paths,
-                          Triplet default_triplet,
-                          Triplet host_triplet);
+    extern const CommandMetadata CommandUpgradeMetadata;
+    void command_upgrade_and_exit(const VcpkgCmdArguments& args,
+                                  const VcpkgPaths& paths,
+                                  Triplet default_triplet,
+                                  Triplet host_triplet);
 }

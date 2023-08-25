@@ -11,7 +11,7 @@
 #include <vcpkg/tools.h>
 #include <vcpkg/vcpkgpaths.h>
 
-namespace vcpkg::Export::Chocolatey
+namespace vcpkg::Chocolatey
 {
     static std::string create_nuspec_dependencies(const BinaryParagraph& binary_paragraph,
                                                   const std::map<PackageSpec, std::string>& packages_version)

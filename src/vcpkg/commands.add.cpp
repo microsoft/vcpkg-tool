@@ -15,11 +15,9 @@
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
-using namespace vcpkg;
-
-namespace
+namespace vcpkg
 {
-    const CommandStructure AddCommandStructure = {
+    constexpr CommandMetadata CommandAddMetadata = {
         [] {
             return msg::format(msgAddHelp)
                 .append_raw('\n')
@@ -32,14 +30,11 @@ namespace
         {{}, {}},
         nullptr,
     };
-}
 
-namespace vcpkg::Commands
-{
     void command_add_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
         MetricsSubmission metrics;
-        auto parsed = args.parse_arguments(AddCommandStructure);
+        auto parsed = args.parse_arguments(CommandAddMetadata);
         auto&& selector = parsed.command_arguments[0];
 
         if (selector == "artifact")

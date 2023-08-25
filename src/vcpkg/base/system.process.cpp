@@ -256,10 +256,10 @@ namespace vcpkg
         Checks::check_exit(VCPKG_LINE_INFO, ret != nullptr, "Could not determine current executable path.");
         return resolved_path;
 #else /* LINUX */
-        std::array<char, 1024 * 4> buf{};
-        auto written = readlink("/proc/self/exe", buf.data(), buf.size());
+        char buf[1024 * 4] = {};
+        auto written = readlink("/proc/self/exe", buf, sizeof(buf));
         Checks::check_exit(VCPKG_LINE_INFO, written != -1, "Could not determine current executable path.");
-        return Path(buf.data(), written);
+        return Path(buf, written);
 #endif
     }
 

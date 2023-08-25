@@ -18,156 +18,158 @@
 
 #include <vector>
 
-namespace vcpkg::Commands::DependInfo
+using namespace vcpkg;
+
+namespace
 {
-    namespace
+    // invariant: prefix_buf is equivalent on exitv (but may have been reallocated)
+    void print_dep_tree(std::string& prefix_buf,
+                        const std::string& currDepend,
+                        const std::vector<PackageDependInfo>& allDepends,
+                        std::set<std::string>& printed)
     {
-        // invariant: prefix_buf is equivalent on exitv (but may have been reallocated)
-        void print_dep_tree(std::string& prefix_buf,
-                            const std::string& currDepend,
-                            const std::vector<PackageDependInfo>& allDepends,
-                            std::set<std::string>& printed)
+        if (prefix_buf.size() > 400)
         {
-            if (prefix_buf.size() > 400)
+            Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgExceededRecursionDepth);
+        }
+        auto currPos = std::find_if(
+            allDepends.begin(), allDepends.end(), [&currDepend](const auto& p) { return p.package == currDepend; });
+        Checks::check_exit(VCPKG_LINE_INFO, currPos != allDepends.end(), "internal vcpkg error");
+        if (currPos->dependencies.empty())
+        {
+            return;
+        }
+
+        const size_t original_size = prefix_buf.size();
+
+        if (Util::Sets::contains(printed, currDepend))
+        {
+            // If we've already printed the set of dependencies, print an elipsis instead
+            Strings::append(prefix_buf, "+- ...\n");
+            msg::write_unlocalized_text_to_stdout(Color::none, prefix_buf);
+            prefix_buf.resize(original_size);
+        }
+        else
+        {
+            printed.insert(currDepend);
+
+            for (auto i = currPos->dependencies.begin(); i != currPos->dependencies.end() - 1; ++i)
             {
-                Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgExceededRecursionDepth);
-            }
-            auto currPos = std::find_if(
-                allDepends.begin(), allDepends.end(), [&currDepend](const auto& p) { return p.package == currDepend; });
-            Checks::check_exit(VCPKG_LINE_INFO, currPos != allDepends.end(), "internal vcpkg error");
-            if (currPos->dependencies.empty())
-            {
-                return;
-            }
-
-            const size_t original_size = prefix_buf.size();
-
-            if (Util::Sets::contains(printed, currDepend))
-            {
-                // If we've already printed the set of dependencies, print an elipsis instead
-                Strings::append(prefix_buf, "+- ...\n");
-                msg::write_unlocalized_text_to_stdout(Color::none, prefix_buf);
-                prefix_buf.resize(original_size);
-            }
-            else
-            {
-                printed.insert(currDepend);
-
-                for (auto i = currPos->dependencies.begin(); i != currPos->dependencies.end() - 1; ++i)
-                {
-                    // Print the current level
-                    Strings::append(prefix_buf, "+-- ", *i, "\n");
-                    msg::write_unlocalized_text_to_stdout(Color::none, prefix_buf);
-                    prefix_buf.resize(original_size);
-
-                    // Recurse
-                    prefix_buf.append("|   ");
-                    print_dep_tree(prefix_buf, *i, allDepends, printed);
-                    prefix_buf.resize(original_size);
-                }
-
-                // Print the last of the current level
-                Strings::append(prefix_buf, "+-- ", currPos->dependencies.back(), "\n");
+                // Print the current level
+                Strings::append(prefix_buf, "+-- ", *i, "\n");
                 msg::write_unlocalized_text_to_stdout(Color::none, prefix_buf);
                 prefix_buf.resize(original_size);
 
                 // Recurse
-                prefix_buf.append("    ");
-                print_dep_tree(prefix_buf, currPos->dependencies.back(), allDepends, printed);
+                prefix_buf.append("|   ");
+                print_dep_tree(prefix_buf, *i, allDepends, printed);
                 prefix_buf.resize(original_size);
             }
+
+            // Print the last of the current level
+            Strings::append(prefix_buf, "+-- ", currPos->dependencies.back(), "\n");
+            msg::write_unlocalized_text_to_stdout(Color::none, prefix_buf);
+            prefix_buf.resize(original_size);
+
+            // Recurse
+            prefix_buf.append("    ");
+            print_dep_tree(prefix_buf, currPos->dependencies.back(), allDepends, printed);
+            prefix_buf.resize(original_size);
+        }
+    }
+
+    constexpr StringLiteral OPTION_DOT = "dot";
+    constexpr StringLiteral OPTION_DGML = "dgml";
+    constexpr StringLiteral OPTION_SHOW_DEPTH = "show-depth";
+    constexpr StringLiteral OPTION_MAX_RECURSE = "max-recurse";
+    constexpr StringLiteral OPTION_SORT = "sort";
+    constexpr StringLiteral OPTION_FORMAT = "format";
+
+    constexpr CommandSwitch DEPEND_SWITCHES[] = {
+        {OPTION_DOT, nullptr},
+        {OPTION_DGML, nullptr},
+        {OPTION_SHOW_DEPTH, []() { return msg::format(msgCmdDependInfoOptDepth); }},
+    };
+
+    constexpr CommandSetting DEPEND_SETTINGS[] = {
+        {OPTION_MAX_RECURSE, []() { return msg::format(msgCmdDependInfoOptMaxRecurse); }},
+        {OPTION_SORT, []() { return msg::format(msgCmdDependInfoOptSort); }},
+        {OPTION_FORMAT, [] { return msg::format(msgCmdDependInfoFormatHelp); }},
+    };
+
+    void assign_depth_to_dependencies(const std::string& package,
+                                      const int depth,
+                                      const int max_depth,
+                                      std::map<std::string, PackageDependInfo>& dependencies_map)
+    {
+        auto iter = dependencies_map.find(package);
+        if (iter == dependencies_map.end())
+        {
+            Checks::unreachable(VCPKG_LINE_INFO, fmt::format("Not found in dependency graph: {}", package));
         }
 
-        constexpr StringLiteral OPTION_DOT = "dot";
-        constexpr StringLiteral OPTION_DGML = "dgml";
-        constexpr StringLiteral OPTION_SHOW_DEPTH = "show-depth";
-        constexpr StringLiteral OPTION_MAX_RECURSE = "max-recurse";
-        constexpr StringLiteral OPTION_SORT = "sort";
-        constexpr StringLiteral OPTION_FORMAT = "format";
+        PackageDependInfo& info = iter->second;
 
-        constexpr std::array<CommandSwitch, 3> DEPEND_SWITCHES = {{
-            {OPTION_DOT, nullptr},
-            {OPTION_DGML, nullptr},
-            {OPTION_SHOW_DEPTH, []() { return msg::format(msgCmdDependInfoOptDepth); }},
-        }};
-
-        constexpr std::array<CommandSetting, 3> DEPEND_SETTINGS = {{
-            {OPTION_MAX_RECURSE, []() { return msg::format(msgCmdDependInfoOptMaxRecurse); }},
-            {OPTION_SORT, []() { return msg::format(msgCmdDependInfoOptSort); }},
-            {OPTION_FORMAT, [] { return msg::format(msgCmdDependInfoFormatHelp); }},
-        }};
-
-        void assign_depth_to_dependencies(const std::string& package,
-                                          const int depth,
-                                          const int max_depth,
-                                          std::map<std::string, PackageDependInfo>& dependencies_map)
+        if (depth > info.depth)
         {
-            auto iter = dependencies_map.find(package);
-            if (iter == dependencies_map.end())
+            info.depth = depth;
+            if (depth < max_depth)
             {
-                Checks::unreachable(VCPKG_LINE_INFO, fmt::format("Not found in dependency graph: {}", package));
-            }
-
-            PackageDependInfo& info = iter->second;
-
-            if (depth > info.depth)
-            {
-                info.depth = depth;
-                if (depth < max_depth)
+                for (auto&& dependency : info.dependencies)
                 {
-                    for (auto&& dependency : info.dependencies)
-                    {
-                        assign_depth_to_dependencies(dependency, depth + 1, max_depth, dependencies_map);
-                    }
+                    assign_depth_to_dependencies(dependency, depth + 1, max_depth, dependencies_map);
                 }
             }
         }
+    }
 
-        std::vector<PackageDependInfo> extract_depend_info(const std::vector<const InstallPlanAction*>& install_actions,
-                                                           const int max_depth)
+    std::vector<PackageDependInfo> extract_depend_info(const std::vector<const InstallPlanAction*>& install_actions,
+                                                       const int max_depth)
+    {
+        std::map<std::string, PackageDependInfo> package_dependencies;
+        for (const InstallPlanAction* pia : install_actions)
         {
-            std::map<std::string, PackageDependInfo> package_dependencies;
-            for (const InstallPlanAction* pia : install_actions)
-            {
-                const InstallPlanAction& install_action = *pia;
+            const InstallPlanAction& install_action = *pia;
 
-                const std::vector<std::string> dependencies = Util::fmap(
-                    install_action.package_dependencies, [](const PackageSpec& spec) { return spec.name(); });
+            const std::vector<std::string> dependencies =
+                Util::fmap(install_action.package_dependencies, [](const PackageSpec& spec) { return spec.name(); });
 
-                std::unordered_set<std::string> features{install_action.feature_list.begin(),
-                                                         install_action.feature_list.end()};
-                features.erase("core");
+            std::unordered_set<std::string> features{install_action.feature_list.begin(),
+                                                     install_action.feature_list.end()};
+            features.erase("core");
 
-                auto& port_name = install_action.spec.name();
+            auto& port_name = install_action.spec.name();
 
-                PackageDependInfo info{port_name, -1, features, dependencies};
-                package_dependencies.emplace(port_name, std::move(info));
-            }
-
-            const InstallPlanAction& init = *install_actions.back();
-            assign_depth_to_dependencies(init.spec.name(), 0, max_depth, package_dependencies);
-
-            std::vector<PackageDependInfo> out =
-                Util::fmap(package_dependencies, [](auto&& kvpair) -> PackageDependInfo { return kvpair.second; });
-            Util::erase_remove_if(out, [](auto&& info) { return info.depth < 0; });
-            return out;
+            PackageDependInfo info{port_name, -1, features, dependencies};
+            package_dependencies.emplace(port_name, std::move(info));
         }
 
-        // Try to emplace candidate into maybe_target. If that would be inconsistent, return true.
-        // An engaged maybe_target is consistent with candidate if the contained value equals candidate.
-        template<typename T>
-        bool emplace_inconsistent(Optional<T>& maybe_target, const T& candidate)
+        const InstallPlanAction& init = *install_actions.back();
+        assign_depth_to_dependencies(init.spec.name(), 0, max_depth, package_dependencies);
+
+        std::vector<PackageDependInfo> out =
+            Util::fmap(package_dependencies, [](auto&& kvpair) -> PackageDependInfo { return kvpair.second; });
+        Util::erase_remove_if(out, [](auto&& info) { return info.depth < 0; });
+        return out;
+    }
+
+    // Try to emplace candidate into maybe_target. If that would be inconsistent, return true.
+    // An engaged maybe_target is consistent with candidate if the contained value equals candidate.
+    template<typename T>
+    bool emplace_inconsistent(Optional<T>& maybe_target, const T& candidate)
+    {
+        if (auto target = maybe_target.get())
         {
-            if (auto target = maybe_target.get())
-            {
-                return *target != candidate;
-            }
-
-            maybe_target.emplace(candidate);
-            return false;
+            return *target != candidate;
         }
-    } // unnamed namespace
 
+        maybe_target.emplace(candidate);
+        return false;
+    }
+} // unnamed namespace
+
+namespace vcpkg
+{
     std::string create_dot_as_string(const std::vector<PackageDependInfo>& depend_info)
     {
         int empty_node_count = 0;
@@ -239,7 +241,7 @@ namespace vcpkg::Commands::DependInfo
         return s;
     }
 
-    const CommandStructure COMMAND_STRUCTURE = {
+    constexpr CommandMetadata CommandDependinfoMetadata = {
         [] { return create_example_string("depend-info sqlite3"); },
         1,
         1,
@@ -384,12 +386,12 @@ namespace vcpkg::Commands::DependInfo
         return result;
     }
 
-    void perform_and_exit(const VcpkgCmdArguments& args,
-                          const VcpkgPaths& paths,
-                          Triplet default_triplet,
-                          Triplet host_triplet)
+    void command_dependinfo_and_exit(const VcpkgCmdArguments& args,
+                                     const VcpkgPaths& paths,
+                                     Triplet default_triplet,
+                                     Triplet host_triplet)
     {
-        const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
+        const ParsedArguments options = args.parse_arguments(CommandDependinfoMetadata);
         const auto strategy = determine_depend_info_mode(options).value_or_exit(VCPKG_LINE_INFO);
 
         bool default_triplet_used = false;
@@ -397,7 +399,7 @@ namespace vcpkg::Commands::DependInfo
             return check_and_get_full_package_spec(arg,
                                                    default_triplet,
                                                    default_triplet_used,
-                                                   COMMAND_STRUCTURE.get_example_text(),
+                                                   CommandDependinfoMetadata.get_example_text(),
                                                    paths.get_triplet_db());
         });
 
@@ -520,4 +522,4 @@ namespace vcpkg::Commands::DependInfo
 
         Checks::exit_success(VCPKG_LINE_INFO);
     }
-}
+} // namespace vcpkg

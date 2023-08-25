@@ -4,20 +4,25 @@
 #include <vcpkg/base/strings.h>
 
 #include <vcpkg/archives.h>
-#include <vcpkg/commands.extract.h>
 #include <vcpkg/commands.h>
+#include <vcpkg/commands.z-extract.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
-namespace vcpkg::Commands
+using namespace vcpkg;
+
+namespace
 {
-    static constexpr StringLiteral OPTION_STRIP = "strip";
+    constexpr StringLiteral OPTION_STRIP = "strip";
 
-    static constexpr std::array<CommandSetting, 1> EXTRACT_SETTINGS = {{
+    constexpr CommandSetting EXTRACT_SETTINGS[] = {
         {OPTION_STRIP, []() { return msg::format(msgStripOption, msg::option = "strip"); }},
-    }};
+    };
+} // unnamed namespace
 
-    const CommandStructure ExtractCommandStructure = {
+namespace vcpkg
+{
+    constexpr CommandMetadata CommandZExtractMetadata = {
         [] { return msg::format(msgExtractHelp); },
         2,
         3,
@@ -139,10 +144,10 @@ namespace vcpkg::Commands
         fs.remove_all(temp_dir, VCPKG_LINE_INFO);
     }
 
-    void command_extract_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
+    void command_z_extract_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
         auto& fs = paths.get_filesystem();
-        auto parse_args = args.parse_arguments(ExtractCommandStructure);
+        auto parse_args = args.parse_arguments(CommandZExtractMetadata);
         auto archive_path = Path{parse_args.command_arguments[0]};
         auto destination_path = Path{parse_args.command_arguments[1]};
         auto strip_setting = get_strip_setting(parse_args.settings).value_or_exit(VCPKG_LINE_INFO);
@@ -163,4 +168,4 @@ namespace vcpkg::Commands
 
         Checks::exit_success(VCPKG_LINE_INFO);
     }
-}
+} // namespace vcpkg

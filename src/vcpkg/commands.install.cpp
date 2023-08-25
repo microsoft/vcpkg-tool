@@ -532,7 +532,7 @@ namespace vcpkg
         TrackedPackageInstallGuard& operator=(const TrackedPackageInstallGuard&) = delete;
     };
 
-    void Install::preclear_packages(const VcpkgPaths& paths, const ActionPlan& action_plan)
+    void install_preclear_packages(const VcpkgPaths& paths, const ActionPlan& action_plan)
     {
         auto& fs = paths.get_filesystem();
         for (auto&& action : action_plan.remove_actions)
@@ -546,13 +546,13 @@ namespace vcpkg
         }
     }
 
-    InstallSummary Install::execute_plan(const VcpkgCmdArguments& args,
-                                         const ActionPlan& action_plan,
-                                         const KeepGoing keep_going,
-                                         const VcpkgPaths& paths,
-                                         StatusParagraphs& status_db,
-                                         BinaryCache& binary_cache,
-                                         const IBuildLogsRecorder& build_logs_recorder)
+    InstallSummary install_execute_plan(const VcpkgCmdArguments& args,
+                                        const ActionPlan& action_plan,
+                                        const KeepGoing keep_going,
+                                        const VcpkgPaths& paths,
+                                        StatusParagraphs& status_db,
+                                        BinaryCache& binary_cache,
+                                        const IBuildLogsRecorder& build_logs_recorder)
     {
         const ElapsedTimer timer;
         std::vector<SpecSummary> results;
@@ -563,7 +563,7 @@ namespace vcpkg
         for (auto&& action : action_plan.remove_actions)
         {
             TrackedPackageInstallGuard this_install(action_index++, action_count, results, action);
-            Remove::remove_package(fs, paths.installed(), action.spec, status_db);
+            remove_package(fs, paths.installed(), action.spec, status_db);
             results.back().build_result.emplace(BuildResult::REMOVED);
         }
 
@@ -619,41 +619,42 @@ namespace vcpkg
     static constexpr StringLiteral OPTION_ALLOW_UNSUPPORTED_PORT = "allow-unsupported";
     static constexpr StringLiteral OPTION_NO_PRINT_USAGE = "no-print-usage";
 
-    static constexpr std::array<CommandSwitch, 18> INSTALL_SWITCHES = {
-        {{OPTION_DRY_RUN, []() { return msg::format(msgHelpTxtOptDryRun); }},
-         {OPTION_USE_HEAD_VERSION, []() { return msg::format(msgHelpTxtOptUseHeadVersion); }},
-         {OPTION_NO_DOWNLOADS, []() { return msg::format(msgHelpTxtOptNoDownloads); }},
-         {OPTION_ONLY_DOWNLOADS, []() { return msg::format(msgHelpTxtOptOnlyDownloads); }},
-         {OPTION_ONLY_BINARYCACHING, []() { return msg::format(msgHelpTxtOptOnlyBinCache); }},
-         {OPTION_RECURSE, []() { return msg::format(msgHelpTxtOptRecurse); }},
-         {OPTION_KEEP_GOING, []() { return msg::format(msgHelpTxtOptKeepGoing); }},
-         {OPTION_EDITABLE, []() { return msg::format(msgHelpTxtOptEditable); }},
-         {OPTION_USE_ARIA2, []() { return msg::format(msgHelpTxtOptUseAria2); }},
-         {OPTION_CLEAN_AFTER_BUILD, []() { return msg::format(msgHelpTxtOptCleanAfterBuild); }},
-         {OPTION_CLEAN_BUILDTREES_AFTER_BUILD, []() { return msg::format(msgHelpTxtOptCleanBuildTreesAfterBuild); }},
-         {OPTION_CLEAN_PACKAGES_AFTER_BUILD, []() { return msg::format(msgHelpTxtOptCleanPkgAfterBuild); }},
-         {OPTION_CLEAN_DOWNLOADS_AFTER_BUILD, []() { return msg::format(msgHelpTxtOptCleanDownloadsAfterBuild); }},
-         {OPTION_MANIFEST_NO_DEFAULT_FEATURES, []() { return msg::format(msgHelpTxtOptManifestNoDefault); }},
-         {OPTION_ENFORCE_PORT_CHECKS, []() { return msg::format(msgHelpTxtOptEnforcePortChecks); }},
-         {OPTION_PROHIBIT_BACKCOMPAT_FEATURES, nullptr},
-         {OPTION_ALLOW_UNSUPPORTED_PORT, []() { return msg::format(msgHelpTxtOptAllowUnsupportedPort); }},
-         {OPTION_NO_PRINT_USAGE, []() { return msg::format(msgHelpTxtOptNoUsage); }}}};
+    static constexpr CommandSwitch INSTALL_SWITCHES[] = {
+        {OPTION_DRY_RUN, []() { return msg::format(msgHelpTxtOptDryRun); }},
+        {OPTION_USE_HEAD_VERSION, []() { return msg::format(msgHelpTxtOptUseHeadVersion); }},
+        {OPTION_NO_DOWNLOADS, []() { return msg::format(msgHelpTxtOptNoDownloads); }},
+        {OPTION_ONLY_DOWNLOADS, []() { return msg::format(msgHelpTxtOptOnlyDownloads); }},
+        {OPTION_ONLY_BINARYCACHING, []() { return msg::format(msgHelpTxtOptOnlyBinCache); }},
+        {OPTION_RECURSE, []() { return msg::format(msgHelpTxtOptRecurse); }},
+        {OPTION_KEEP_GOING, []() { return msg::format(msgHelpTxtOptKeepGoing); }},
+        {OPTION_EDITABLE, []() { return msg::format(msgHelpTxtOptEditable); }},
+        {OPTION_USE_ARIA2, []() { return msg::format(msgHelpTxtOptUseAria2); }},
+        {OPTION_CLEAN_AFTER_BUILD, []() { return msg::format(msgHelpTxtOptCleanAfterBuild); }},
+        {OPTION_CLEAN_BUILDTREES_AFTER_BUILD, []() { return msg::format(msgHelpTxtOptCleanBuildTreesAfterBuild); }},
+        {OPTION_CLEAN_PACKAGES_AFTER_BUILD, []() { return msg::format(msgHelpTxtOptCleanPkgAfterBuild); }},
+        {OPTION_CLEAN_DOWNLOADS_AFTER_BUILD, []() { return msg::format(msgHelpTxtOptCleanDownloadsAfterBuild); }},
+        {OPTION_MANIFEST_NO_DEFAULT_FEATURES, []() { return msg::format(msgHelpTxtOptManifestNoDefault); }},
+        {OPTION_ENFORCE_PORT_CHECKS, []() { return msg::format(msgHelpTxtOptEnforcePortChecks); }},
+        {OPTION_PROHIBIT_BACKCOMPAT_FEATURES, nullptr},
+        {OPTION_ALLOW_UNSUPPORTED_PORT, []() { return msg::format(msgHelpTxtOptAllowUnsupportedPort); }},
+        {OPTION_NO_PRINT_USAGE, []() { return msg::format(msgHelpTxtOptNoUsage); }},
+    };
 
-    static constexpr std::array<CommandSetting, 2> INSTALL_SETTINGS = {{
+    static constexpr CommandSetting INSTALL_SETTINGS[] = {
         {OPTION_XUNIT, nullptr}, // internal use
         {OPTION_WRITE_PACKAGES_CONFIG, []() { return msg::format(msgHelpTxtOptWritePkgConfig); }},
-    }};
+    };
 
-    static constexpr std::array<CommandMultiSetting, 1> INSTALL_MULTISETTINGS = {{
+    static constexpr CommandMultiSetting INSTALL_MULTISETTINGS[] = {
         {OPTION_MANIFEST_FEATURE, []() { return msg::format(msgHelpTxtOptManifestFeature); }},
-    }};
+    };
 
     static std::vector<std::string> get_all_known_reachable_port_names_no_network(const VcpkgPaths& paths)
     {
         return paths.make_registry_set()->get_all_known_reachable_port_names_no_network();
     }
 
-    const CommandStructure Install::COMMAND_STRUCTURE = {
+    constexpr CommandMetadata CommandInstallMetadata = {
         [] { return create_example_string("install zlib zlib:x64-windows curl boost"); },
         0,
         SIZE_MAX,
@@ -661,19 +662,20 @@ namespace vcpkg
         &get_all_known_reachable_port_names_no_network,
     };
 
-    // This command structure must share "critical" values (switches, number of arguments). It exists only to provide a
+    // This command metadata must share "critical" values (switches, number of arguments). It exists only to provide a
     // better example string.
-    const CommandStructure MANIFEST_COMMAND_STRUCTURE = {
+    constexpr CommandMetadata ManifestCommandMetadata = {
         [] { return create_example_string("install --triplet x64-windows"); },
         0,
         SIZE_MAX,
         {INSTALL_SWITCHES, INSTALL_SETTINGS, INSTALL_MULTISETTINGS},
         nullptr,
     };
-    void Install::print_usage_information(const BinaryParagraph& bpgh,
-                                          std::set<std::string>& printed_usages,
-                                          const ReadOnlyFilesystem& fs,
-                                          const InstalledPaths& installed)
+
+    void install_print_usage_information(const BinaryParagraph& bpgh,
+                                         std::set<std::string>& printed_usages,
+                                         const ReadOnlyFilesystem& fs,
+                                         const InstalledPaths& installed)
     {
         auto message = get_cmake_usage(fs, installed, bpgh).message;
         if (!message.empty())
@@ -950,13 +952,13 @@ namespace vcpkg
         return ret;
     }
 
-    void Install::perform_and_exit(const VcpkgCmdArguments& args,
-                                   const VcpkgPaths& paths,
-                                   Triplet default_triplet,
-                                   Triplet host_triplet)
+    void command_install_and_exit(const VcpkgCmdArguments& args,
+                                  const VcpkgPaths& paths,
+                                  Triplet default_triplet,
+                                  Triplet host_triplet)
     {
         const ParsedArguments options =
-            args.parse_arguments(paths.manifest_mode_enabled() ? MANIFEST_COMMAND_STRUCTURE : COMMAND_STRUCTURE);
+            args.parse_arguments(paths.manifest_mode_enabled() ? ManifestCommandMetadata : CommandInstallMetadata);
 
         const bool dry_run = Util::Sets::contains(options.switches, OPTION_DRY_RUN);
         const bool use_head_version = Util::Sets::contains(options.switches, (OPTION_USE_HEAD_VERSION));
@@ -1009,7 +1011,7 @@ namespace vcpkg
             if (failure)
             {
                 msg::println(msgUsingManifestAt, msg::path = p->path);
-                print_usage(MANIFEST_COMMAND_STRUCTURE);
+                print_usage(ManifestCommandMetadata);
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
         }
@@ -1033,7 +1035,7 @@ namespace vcpkg
             }
             if (failure)
             {
-                print_usage(COMMAND_STRUCTURE);
+                print_usage(CommandInstallMetadata);
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
         }
@@ -1190,17 +1192,16 @@ namespace vcpkg
             Util::erase_remove_if(install_plan.install_actions,
                                   [&toplevel](auto&& action) { return action.spec == toplevel; });
 
-            Commands::SetInstalled::perform_and_exit_ex(args,
-                                                        paths,
-                                                        var_provider,
-                                                        std::move(install_plan),
-                                                        dry_run ? Commands::SetInstalled::DryRun::Yes
-                                                                : Commands::SetInstalled::DryRun::No,
-                                                        pkgsconfig,
-                                                        host_triplet,
-                                                        keep_going,
-                                                        only_downloads,
-                                                        print_cmake_usage);
+            command_set_installed_and_exit_ex(args,
+                                              paths,
+                                              var_provider,
+                                              std::move(install_plan),
+                                              dry_run ? DryRun::Yes : DryRun::No,
+                                              pkgsconfig,
+                                              host_triplet,
+                                              keep_going,
+                                              only_downloads,
+                                              print_cmake_usage);
         }
 
         auto registry_set = paths.make_registry_set();
@@ -1212,7 +1213,7 @@ namespace vcpkg
             return check_and_get_full_package_spec(arg,
                                                    default_triplet,
                                                    default_triplet_used,
-                                                   COMMAND_STRUCTURE.get_example_text(),
+                                                   CommandInstallMetadata.get_example_text(),
                                                    paths.get_triplet_db());
         });
 
@@ -1294,12 +1295,12 @@ namespace vcpkg
         paths.flush_lockfile();
 
         track_install_plan(action_plan);
-        Install::preclear_packages(paths, action_plan);
+        install_preclear_packages(paths, action_plan);
 
         auto binary_cache = only_downloads ? BinaryCache(paths.get_filesystem())
                                            : BinaryCache::make(args, paths, stdout_sink).value_or_exit(VCPKG_LINE_INFO);
         binary_cache.fetch(action_plan.install_actions);
-        const InstallSummary summary = Install::execute_plan(
+        const InstallSummary summary = install_execute_plan(
             args, action_plan, keep_going, paths, status_db, binary_cache, null_build_logs_recorder());
 
         if (keep_going == KeepGoing::YES)
@@ -1335,7 +1336,7 @@ namespace vcpkg
                 // If a package failed to build, don't attempt to print usage.
                 // e.g. --keep-going
                 if (!bpgh) continue;
-                Install::print_usage_information(*bpgh, printed_usages, fs, paths.installed());
+                install_print_usage_information(*bpgh, printed_usages, fs, paths.installed());
             }
         }
 

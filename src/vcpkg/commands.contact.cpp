@@ -8,10 +8,9 @@
 #include <vcpkg/metrics.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 
-namespace vcpkg::Commands::Contact
+namespace vcpkg
 {
-
-    const CommandStructure COMMAND_STRUCTURE = {
+    constexpr CommandMetadata CommandContactMetadata = {
         [] { return create_example_string("contact"); },
         0,
         0,
@@ -19,13 +18,10 @@ namespace vcpkg::Commands::Contact
         nullptr,
     };
 
-    void perform_and_exit(const VcpkgCmdArguments& args, const Filesystem& fs)
+    void command_contact_and_exit(const VcpkgCmdArguments& args, const Filesystem&)
     {
-        (void)fs;
-        const ParsedArguments parsed_args = args.parse_arguments(COMMAND_STRUCTURE);
-
+        (void)args.parse_arguments(CommandContactMetadata);
         msg::println(msgEmailVcpkgTeam, msg::url = "vcpkg@microsoft.com");
-
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 }

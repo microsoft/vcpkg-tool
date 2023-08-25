@@ -2,7 +2,7 @@
 
 #include <vcpkg/commands.dependinfo.h>
 
-using namespace vcpkg::Commands::DependInfo;
+using namespace vcpkg;
 
 namespace
 {

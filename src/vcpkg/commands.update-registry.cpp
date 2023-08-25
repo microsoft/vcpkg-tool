@@ -5,16 +5,19 @@
 #include <vcpkg/configure-environment.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 
+using namespace vcpkg;
+
 namespace
 {
-    using namespace vcpkg;
-
     constexpr StringLiteral OPTION_ALL = "all";
-    constexpr std::array<CommandSwitch, 1> UpdateRegistrySwitches{{
+    constexpr CommandSwitch UpdateRegistrySwitches[] = {
         {OPTION_ALL, []() { return msg::format(msgCmdUpdateRegistryAll); }},
-    }};
+    };
+} // unnamed namespace
 
-    constexpr CommandStructure UpdateRegistryCommandMetadata{
+namespace vcpkg
+{
+    constexpr CommandMetadata CommandUpdateRegistryMetadata{
         []() {
             return create_example_string("x-update-registry https://example.com")
                 .append_raw("\n")
@@ -24,13 +27,10 @@ namespace
         SIZE_MAX,
         {UpdateRegistrySwitches, {}, {}},
         nullptr};
-} // unnamed namespace
 
-namespace vcpkg::Commands
-{
     void command_update_registry_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
-        auto parsed = args.parse_arguments(UpdateRegistryCommandMetadata);
+        auto parsed = args.parse_arguments(CommandUpdateRegistryMetadata);
         const bool all = Util::Sets::contains(parsed.switches, OPTION_ALL);
         auto&& command_arguments = parsed.command_arguments;
         if (all)
@@ -59,4 +59,4 @@ namespace vcpkg::Commands
 
         Checks::exit_with_code(VCPKG_LINE_INFO, run_configure_environment_command(paths, command_arguments));
     }
-} // vcpkg::Commands
+} // namespace vcpkg

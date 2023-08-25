@@ -7,8 +7,8 @@
 #include <map>
 #include <vector>
 
+using vcpkg::CommandMetadata;
 using vcpkg::CommandSetting;
-using vcpkg::CommandStructure;
 using vcpkg::CommandSwitch;
 using vcpkg::VcpkgCmdArguments;
 
@@ -90,8 +90,8 @@ TEST_CASE ("VcpkgCmdArguments from argument sequence with valued options", "[arg
 {
     SECTION ("case 1")
     {
-        std::array<CommandSetting, 1> settings = {{{"a", nullptr}}};
-        CommandStructure cmdstruct = {nullptr, 0, SIZE_MAX, {{}, settings}, nullptr};
+        CommandSetting settings[] = {{"a", nullptr}};
+        CommandMetadata cmdstruct = {nullptr, 0, SIZE_MAX, {{}, settings}, nullptr};
 
         std::vector<std::string> t = {"--a=b", "command", "argument"};
         auto v = VcpkgCmdArguments::create_from_arg_sequence(t.data(), t.data() + t.size());
@@ -105,9 +105,9 @@ TEST_CASE ("VcpkgCmdArguments from argument sequence with valued options", "[arg
 
     SECTION ("case 2")
     {
-        std::array<CommandSwitch, 2> switches = {{{"a", nullptr}, {"c", nullptr}}};
-        std::array<CommandSetting, 2> settings = {{{"b", nullptr}, {"d", nullptr}}};
-        CommandStructure cmdstruct = {nullptr, 0, SIZE_MAX, {switches, settings}, nullptr};
+        CommandSwitch switches[] = {{"a", nullptr}, {"c", nullptr}};
+        CommandSetting settings[] = {{"b", nullptr}, {"d", nullptr}};
+        CommandMetadata cmdstruct = {nullptr, 0, SIZE_MAX, {switches, settings}, nullptr};
 
         std::vector<std::string> t = {"--a", "--b=c"};
         auto v = VcpkgCmdArguments::create_from_arg_sequence(t.data(), t.data() + t.size());
