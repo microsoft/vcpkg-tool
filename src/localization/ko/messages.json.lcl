@@ -3247,15 +3247,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";DefaultBrowserLaunched" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Default browser launched to {url}.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[기본 브라우저가 {url}(으)로 실행되었습니다.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";DefaultFlag" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Defaulting to --{option} being on.]]></Val>
@@ -4825,15 +4816,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";FeedbackAppreciated" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Thank you for your feedback!]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[피드백을 주셔서 감사합니다!]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";FetchingBaselineInfo" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Fetching baseline information from {package_name}...]]></Val>
@@ -6315,19 +6297,25 @@
       </Item>
       <Item ItemId=";IntegrateBashHelp" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Enable bash tab-completion.]]></Val>
+          <Val><![CDATA[Enable bash tab-completion. Non-Windows only.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[bash 탭 완성을 사용하도록 설정합니다.]]></Val>
+            <Val><![CDATA[bash 탭 완성을 사용합니다. 비 Windows 전용입니다.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Enable bash tab-completion.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";IntegrateFishHelp" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Enable fish tab-completion.]]></Val>
+          <Val><![CDATA[Enable fish tab-completion. Non-Windows only.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[fish 탭 완성을 사용하도록 설정합니다.]]></Val>
+            <Val><![CDATA[fish 탭 완성을 사용합니다. 비 Windows 전용입니다.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Enable fish tab-completion.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -6349,21 +6337,36 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";IntegrateNonWindowsOnly" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{command_line} is non-Windows-only and not supported on this system.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{command_line}은(는) Windows 전용이 아니므로 이 시스템에서 지원되지 않습니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";IntegratePowerShellHelp" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Enable PowerShell tab-completion.]]></Val>
+          <Val><![CDATA[Enable PowerShell tab-completion. Windows-only.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[PowerShell 탭 완성을 사용하도록 설정합니다.]]></Val>
+            <Val><![CDATA[PowerShell 탭 완성을 사용합니다. Windows 전용입니다.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Enable PowerShell tab-completion.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";IntegrateProjectHelp" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Generate a referencing NuGet package for individual VS project use.]]></Val>
+          <Val><![CDATA[Generate a referencing NuGet package for individual Visual Studio project use. Windows-only.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[개별 VS 프로젝트 사용을 위해 참조하는 NuGet 패키지를 생성합니다.]]></Val>
+            <Val><![CDATA[개별 Visual Studio 프로젝트 사용에 대한 참조 NuGet 패키지를 생성합니다. Windows 전용입니다.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Generate a referencing NuGet package for individual VS project use.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -6376,12 +6379,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";IntegrateWindowsOnly" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{command_line} is Windows-only and not supported on this system.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{command_line}은(는) Windows 전용이므로 이 시스템에서 지원되지 않습니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";IntegrateZshHelp" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Enable zsh tab-completion.]]></Val>
+          <Val><![CDATA[Enable zsh tab-completion. Non-Windows only.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[zsh 탭 완성을 사용하도록 설정합니다.]]></Val>
+            <Val><![CDATA[zsh 탭 완성을 사용합니다. 비 Windows 전용입니다.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Enable zsh tab-completion.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -7564,15 +7579,6 @@
           <Prev Cat="Text">
             <Val><![CDATA[--{value} can not be used with --{option}.]]></Val>
           </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";NavigateToNPS" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Please navigate to {url} in your preferred browser.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[선호하는 브라우저에서 {url}(으)로 이동하세요.]]></Val>
-          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
