@@ -1088,6 +1088,31 @@ TEST_CASE ("real world commands", "[cmd_parser]")
                                              "error: unexpected switch: --zlib"}));
         CHECK(uut.get_remaining_args().empty());
     }
+
+    {
+        CmdParser uut{std::vector<std::string>{"version"}};
+        CHECK(uut.extract_first_command_like_arg_lowercase().value_or_exit(VCPKG_LINE_INFO) == "version");
+    }
+
+    {
+        CmdParser uut{std::vector<std::string>{"--version"}};
+        CHECK(uut.extract_first_command_like_arg_lowercase().value_or_exit(VCPKG_LINE_INFO) == "version");
+    }
+
+    {
+        CmdParser uut{std::vector<std::string>{"/?"}};
+        CHECK(uut.extract_first_command_like_arg_lowercase().value_or_exit(VCPKG_LINE_INFO) == "help");
+    }
+
+    {
+        CmdParser uut{std::vector<std::string>{"-?"}};
+        CHECK(uut.extract_first_command_like_arg_lowercase().value_or_exit(VCPKG_LINE_INFO) == "help");
+    }
+
+        {
+        CmdParser uut{std::vector<std::string>{"--help"}};
+        CHECK(uut.extract_first_command_like_arg_lowercase().value_or_exit(VCPKG_LINE_INFO) == "help");
+    }
 }
 
 TEST_CASE ("inverted switches", "[cmd_parser]")

@@ -15,7 +15,10 @@ namespace
     constexpr CommandSwitch GENERATE_MESSAGE_MAP_SWITCHES[]{
         {OPTION_NO_OUTPUT_COMMENTS, msgCmdGenerateMessageMapOptNoOutputComments},
     };
+} // unnamed namespace
 
+namespace vcpkg
+{
     constexpr CommandMetadata CommandZGenerateDefaultMessageMapMetadata = {
         "z-generate-default-message-map",
         {/*intentionally undocumented*/},
@@ -26,10 +29,7 @@ namespace
         {GENERATE_MESSAGE_MAP_SWITCHES},
         nullptr,
     };
-} // unnamed namespace
 
-namespace vcpkg
-{
     std::vector<StringView> get_all_format_args(StringView fstring, LocalizedString& error)
     {
         error = {};

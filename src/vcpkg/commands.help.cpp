@@ -1,52 +1,13 @@
+#include <vcpkg/base/cmd-parser.h>
+#include <vcpkg/base/strings.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/binarycaching.h>
-#include <vcpkg/commands.acquire-project.h>
-#include <vcpkg/commands.acquire.h>
-#include <vcpkg/commands.activate.h>
-#include <vcpkg/commands.add-version.h>
-#include <vcpkg/commands.add.h>
-#include <vcpkg/commands.build-external.h>
-#include <vcpkg/commands.build.h>
-#include <vcpkg/commands.cache.h>
-#include <vcpkg/commands.check-support.h>
-#include <vcpkg/commands.ci-clean.h>
-#include <vcpkg/commands.ci-verify-versions.h>
-#include <vcpkg/commands.ci.h>
-#include <vcpkg/commands.contact.h>
-#include <vcpkg/commands.create.h>
-#include <vcpkg/commands.deactivate.h>
-#include <vcpkg/commands.depend-info.h>
-#include <vcpkg/commands.download.h>
-#include <vcpkg/commands.edit.h>
-#include <vcpkg/commands.env.h>
-#include <vcpkg/commands.export.h>
-#include <vcpkg/commands.fetch.h>
-#include <vcpkg/commands.find.h>
-#include <vcpkg/commands.format-manifest.h>
-#include <vcpkg/commands.hash.h>
+#include <vcpkg/commands.h>
 #include <vcpkg/commands.help.h>
-#include <vcpkg/commands.init-registry.h>
-#include <vcpkg/commands.install.h>
-#include <vcpkg/commands.integrate.h>
-#include <vcpkg/commands.list.h>
-#include <vcpkg/commands.new.h>
-#include <vcpkg/commands.owns.h>
-#include <vcpkg/commands.package-info.h>
-#include <vcpkg/commands.portsdiff.h>
-#include <vcpkg/commands.regenerate.h>
-#include <vcpkg/commands.remove.h>
-#include <vcpkg/commands.search.h>
-#include <vcpkg/commands.set-installed.h>
-#include <vcpkg/commands.update-baseline.h>
-#include <vcpkg/commands.update-registry.h>
-#include <vcpkg/commands.update.h>
-#include <vcpkg/commands.upgrade.h>
-#include <vcpkg/commands.use.h>
-#include <vcpkg/commands.version.h>
-#include <vcpkg/commands.vsinstances.h>
 #include <vcpkg/documentation.h>
 #include <vcpkg/metrics.h>
+#include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
 using namespace vcpkg;
@@ -114,66 +75,34 @@ namespace
     }
 
     constexpr Topic topics[] = {
-        {"acquire", command_topic_fn<CommandAcquireMetadata>},
-        {"acquire-project", command_topic_fn<CommandAcquireProjectMetadata>},
-        {"activate", command_topic_fn<CommandActivateMetadata>},
-        {"add", command_topic_fn<CommandAddMetadata>},
-        {"x-add-version", command_topic_fn<CommandAddVersionMetadata>},
         {"assetcaching", [](const VcpkgPaths&) { msg::println(format_help_topic_asset_caching()); }},
-        // autocomplete intentionally has no help topic
         {"binarycaching", [](const VcpkgPaths&) { msg::println(format_help_topic_binary_caching()); }},
-        // bootstrap-standalone intentionally has no help topic
-        {"build", command_topic_fn<CommandBuildMetadata>},
-        {"build-external", command_topic_fn<CommandBuildExternalMetadata>},
-        {"cache", command_topic_fn<CommandCacheMetadata>},
-        {"x-check-support", command_topic_fn<CommandCheckSupportMetadata>},
-        {"ci", command_topic_fn<CommandCiMetadata>},
-        {"x-ci-clean", command_topic_fn<CommandCiCleanMetadata>},
-        {"x-ci-verify-versions", command_topic_fn<CommandCiVerifyVersionsMetadata>},
-        {"create", command_topic_fn<CommandCreateMetadata>},
-        {"contact", command_topic_fn<CommandContactMetadata>},
-        {"deactivate", command_topic_fn<CommandDeactivateMetadata>},
-        {"depend-info", command_topic_fn<CommandDependInfoMetadata>},
-        {"x-download", command_topic_fn<CommandDownloadMetadata>},
-        {"edit", command_topic_fn<CommandEditMetadata>},
-        {"env", command_topic_fn<CommandEnvMetadata>},
-        {"export", command_topic_fn<CommandExportMetadata>},
-        {"fetch", command_topic_fn<CommandFetchMetadata>},
-        {"find", command_topic_fn<CommandFindMetadata>},
-        {"format-manifest", command_topic_fn<CommandFormatManifestMetadata>},
-        {"hash", command_topic_fn<CommandHashMetadata>},
-        {"help", command_topic_fn<CommandHelpMetadata>},
-        {"x-init-registry", command_topic_fn<CommandInitRegistryMetadata>},
-        {"install", command_topic_fn<CommandInstallMetadata>},
-        {"integrate", command_topic_fn<CommandIntegrateMetadata>},
-        {"list", command_topic_fn<CommandListMetadata>},
-        {"new", command_topic_fn<CommandNewMetadata>},
-        {"owns", command_topic_fn<CommandOwnsMetadata>},
-        {"x-package-info", command_topic_fn<CommandPackageInfoMetadata>},
-        {"portsdiff", command_topic_fn<CommandPortsdiffMetadata>},
-        {"x-regenerate", command_topic_fn<CommandRegenerateMetadata>},
-        {"remove", command_topic_fn<CommandRemoveMetadata>},
-        {"search", command_topic_fn<CommandSearchMetadata>},
-        {"x-set-installed", command_topic_fn<CommandSetInstalledMetadata>},
         {"topics", help_topics},
         {"triplet", [](const VcpkgPaths& paths) { help_topic_valid_triplet(paths.get_triplet_db()); }},
-        {"x-update-baseline", command_topic_fn<CommandUpdateBaselineMetadata>},
-        {"x-update-registry", command_topic_fn<CommandUpdateRegistryMetadata>},
-        {"update", command_topic_fn<CommandUpdateMetadata>},
-        {"upgrade", command_topic_fn<CommandUpgradeMetadata>},
-        {"use", command_topic_fn<CommandUseMetadata>},
-        {"version", command_topic_fn<CommandVersionMetadata>},
         {"versioning", help_topic_versioning},
-        {"x-vs-instances", command_topic_fn<CommandVsInstancesMetadata>},
     };
 
     void help_topics(const VcpkgPaths&)
     {
-        auto msg = msg::format(msgAvailableHelpTopics);
+        std::vector<std::string> all_topic_names;
         for (auto&& topic : topics)
         {
-            msg.append_raw(fmt::format("\n  {}", topic.name));
+            all_topic_names.push_back(topic.name.to_string());
         }
+
+        for (auto&& command_metadata : get_all_commands_metadata())
+        {
+            all_topic_names.push_back(command_metadata->name.to_string());
+        }
+
+        Util::sort(all_topic_names);
+
+        auto msg = msg::format(msgAvailableHelpTopics);
+        for (auto&& topic_name : all_topic_names)
+        {
+            msg.append_raw(fmt::format("\n  {}", topic_name));
+        }
+
         msg::println(msg);
     }
 
@@ -234,19 +163,30 @@ namespace vcpkg
             Checks::exit_success(VCPKG_LINE_INFO);
         }
         const auto& topic = parsed.command_arguments[0];
-        if (topic == "triplets" || topic == "triple")
+        if (Strings::case_insensitive_ascii_equals(topic, "triplets") ||
+            Strings::case_insensitive_ascii_equals(topic, "triple"))
         {
             help_topic_valid_triplet(paths.get_triplet_db());
-            get_global_metrics_collector().track_string(StringMetric::CommandContext, topic);
+            get_global_metrics_collector().track_string(StringMetric::CommandContext, "triplet");
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 
         for (auto&& candidate : topics)
         {
-            if (candidate.name == topic)
+            if (Strings::case_insensitive_ascii_equals(candidate.name, topic))
             {
                 candidate.print(paths);
                 get_global_metrics_collector().track_string(StringMetric::CommandContext, candidate.name);
+                Checks::exit_success(VCPKG_LINE_INFO);
+            }
+        }
+
+        for (auto&& command_metadata : get_all_commands_metadata())
+        {
+            if (Strings::case_insensitive_ascii_equals(command_metadata->name, topic))
+            {
+                print_usage(*command_metadata);
+                get_global_metrics_collector().track_string(StringMetric::CommandContext, command_metadata->name);
                 Checks::exit_success(VCPKG_LINE_INFO);
             }
         }

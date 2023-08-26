@@ -694,6 +694,12 @@ namespace vcpkg
                     return "version";
                 }
 
+                if (this_arg == "--help" || this_arg == "/?" || this_arg == "-?")
+                {
+                    argument_parsed[idx] = true;
+                    return "help";
+                }
+
                 if (!Strings::starts_with(this_arg, "--"))
                 {
                     argument_parsed[idx] = true;

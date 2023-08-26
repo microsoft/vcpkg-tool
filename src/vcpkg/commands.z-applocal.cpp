@@ -552,8 +552,11 @@ namespace
         {OPTION_TLOG_FILE, msgCmdSettingTLogFile},
         {OPTION_COPIED_FILES_LOG, msgCmdSettingCopiedFilesLog},
     };
+} // unnamed namespace
 
-    constexpr CommandMetadata CommandZApplocalCommandMetadata{
+namespace vcpkg
+{
+    constexpr CommandMetadata CommandZApplocalMetadata{
         "z-applocal",
         msgCmdZApplocalSynopsis,
         {"vcpkg z-applocal --target-binary=\"Path/to/binary\" --installed-bin-dir=\"Path/to/installed/bin\" "
@@ -564,13 +567,10 @@ namespace
         {{}, SETTINGS},
         nullptr,
     };
-} // unnamed namespace
 
-namespace vcpkg
-{
     void command_z_applocal_and_exit(const VcpkgCmdArguments& args, const Filesystem&)
     {
-        auto parsed = args.parse_arguments(CommandZApplocalCommandMetadata);
+        auto parsed = args.parse_arguments(CommandZApplocalMetadata);
         const auto target_binary = parsed.settings.find(OPTION_TARGET_BINARY);
         if (target_binary == parsed.settings.end())
         {

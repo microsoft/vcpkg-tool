@@ -21,7 +21,7 @@ $publicCommands = @(
 
 $privateCommands = @(
     'build'
-    'buildexternal'
+    'build-external'
     'ci'
     'depend-info'
     'env'
