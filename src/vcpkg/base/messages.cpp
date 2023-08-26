@@ -48,7 +48,7 @@ namespace vcpkg
 
     LocalizedString& LocalizedString::append_indent(size_t indent)
     {
-        m_data.append(indent * 4, ' ');
+        m_data.append(indent * 2, ' ');
         return *this;
     }
 

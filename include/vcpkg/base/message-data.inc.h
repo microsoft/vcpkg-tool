@@ -572,12 +572,12 @@ DECLARE_MESSAGE(CmdCreateExample1,
                 "vcpkg create <port name> <uri>")
 DECLARE_MESSAGE(CmdCreateExample2,
                 (),
-                "This is a command line, only the <>s part should be localized",
-                "vcpkg create <port name> <uri> <downloaded filename>")
-DECLARE_MESSAGE(CmdCreateExample3,
-                (),
                 "This is a command line, 'my-fancy-port' and 'sources.zip' should probably be localized",
                 "vcpkg create my-fancy-port https://example.com/sources.zip")
+DECLARE_MESSAGE(CmdCreateExample3,
+                (),
+                "This is a command line, only the <>s part should be localized",
+                "vcpkg create <port name> <uri> <downloaded filename>")
 DECLARE_MESSAGE(CmdDeactivateSynopsis, (), "", "Remove all artifact activations from the current shell")
 DECLARE_MESSAGE(CmdDependInfoExample1,
                 (),
@@ -1149,7 +1149,7 @@ DECLARE_MESSAGE(ErrorWhileFetchingBaseline,
                 "while fetching baseline `\"{value}\"` from repo {package_name}:")
 DECLARE_MESSAGE(ErrorWhileParsing, (msg::path), "", "Errors occurred while parsing {path}.")
 DECLARE_MESSAGE(ErrorWhileWriting, (msg::path), "", "Error occurred while writing {path}.")
-DECLARE_MESSAGE(Example, (), "", "example:")
+DECLARE_MESSAGE(ExampleHeader, (), "Printed before a list of example command lines", "Example:")
 DECLARE_MESSAGE(ExceededRecursionDepth, (), "", "Recursion depth exceeded.")
 DECLARE_MESSAGE(ExcludedPackage, (msg::spec), "", "Excluded {spec}")
 DECLARE_MESSAGE(ExcludedPackages, (), "", "The following packages are excluded:")
@@ -2656,6 +2656,7 @@ DECLARE_MESSAGE(SuggestUpdateVcpkg,
                 "You may need to update the vcpkg binary; try running {command_line} to update.")
 DECLARE_MESSAGE(SupportedPort, (msg::package_name), "", "Port {package_name} is supported.")
 DECLARE_MESSAGE(SwitchUsedMultipleTimes, (msg::option), "", "the switch '{option}' was specified multiple times")
+DECLARE_MESSAGE(SynopsisHeader, (), "Printed before a description of what a command does", "Synopsis:")
 DECLARE_MESSAGE(SystemApiErrorMessage,
                 (msg::system_api, msg::exit_code, msg::error_msg),
                 "",

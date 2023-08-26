@@ -466,10 +466,29 @@ namespace vcpkg
         ParsedArguments throwaway;
         maybe_parse_cmd_arguments(with_common_options.parser, throwaway, command_metadata);
         LocalizedString result;
-        auto example_text = command_metadata.get_example_text();
-        if (!example_text.empty())
+        if (command_metadata.synopsis)
         {
-            result.append(example_text).append_raw('\n');
+            result.append(msgSynopsisHeader);
+            result.append_raw(' ');
+            result.append(command_metadata.synopsis.format());
+            result.append_raw("\n\n");
+        }
+
+        std::vector<LocalizedString> examples;
+        for (auto&& maybe_example : command_metadata.examples)
+        {
+            if (maybe_example)
+            {
+                examples.push_back(maybe_example.format());
+            }
+        }
+
+        if (!examples.empty())
+        {
+            result.append(msgExampleHeader);
+            result.append_raw(' ');
+            result.append_floating_list(1, examples);
+            result.append_raw("\n\n");
         }
 
         with_common_options.parser.append_options_table(result);

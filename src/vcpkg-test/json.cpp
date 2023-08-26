@@ -234,8 +234,8 @@ TEST_CASE ("JSON track newlines", "[json]")
     REQUIRE(!res);
     REQUIRE(res.error()->to_string() ==
             R"(filename:2:1: error: Unexpected character; expected property name
-    on expression: ,
-                   ^)");
+  on expression: ,
+                 ^)");
 }
 
 TEST_CASE ("JSON duplicated object keys", "[json]")
@@ -244,8 +244,8 @@ TEST_CASE ("JSON duplicated object keys", "[json]")
     REQUIRE(!res);
     REQUIRE(res.error()->to_string() ==
             R"(filename:1:13: error: Duplicated key "name" in an object
-    on expression: {"name": 1, "name": 2}
-                               ^)");
+  on expression: {"name": 1, "name": 2}
+                             ^)");
 }
 
 TEST_CASE ("JSON support unicode characters in errors", "[json]")
@@ -255,8 +255,8 @@ TEST_CASE ("JSON support unicode characters in errors", "[json]")
     REQUIRE(!res);
     CHECK(res.error()->to_string() ==
           R"(filename:1:9: error: Unexpected character; expected EOF
-    on expression: "Δx/Δt" ""
-                           ^)");
+  on expression: "Δx/Δt" ""
+                         ^)");
 
     // full width unicode characters
     // note that the A is full width
@@ -264,8 +264,8 @@ TEST_CASE ("JSON support unicode characters in errors", "[json]")
     REQUIRE(!res);
     CHECK(res.error()->to_string() ==
           R"(filename:1:8: error: Unexpected character; expected EOF
-    on expression: "姐姐aＡ" ""
-                             ^)");
+  on expression: "姐姐aＡ" ""
+                           ^)");
 
     // incorrect errors in the face of combining characters
     // (this test should be fixed once the underlying bug is fixed)
@@ -273,6 +273,6 @@ TEST_CASE ("JSON support unicode characters in errors", "[json]")
     REQUIRE(!res);
     CHECK(res.error()->to_string() ==
           R"(filename:1:6: error: Unexpected character; expected EOF
-    on expression: "é" ""
-                        ^)");
+  on expression: "é" ""
+                      ^)");
 }

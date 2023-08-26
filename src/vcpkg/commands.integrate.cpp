@@ -607,7 +607,7 @@ namespace vcpkg
             table.format("vcpkg integrate x-fish", msg::format(msgIntegrateFishHelp));
             table.format("vcpkg integrate powershell", msg::format(msgIntegratePowerShellHelp));
             table.format("vcpkg integrate zsh", msg::format(msgIntegrateZshHelp));
-            return LocalizedString::from_raw(std::move(table.m_str));
+            return LocalizedString::from_raw("\n").append_raw(std::move(table.m_str));
         }},
         AutocompletePriority::Public,
         1,

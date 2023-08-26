@@ -170,7 +170,7 @@ namespace vcpkg
     constexpr CommandMetadata CommandFormatManifestMetadata{
         "format-manifest",
         msgCmdFormatManifestSynopsis,
-        {msgCmdFormatManifestExample1, "vcpkg format-manifest ports/zlib/vcpkg.json", "format-manifest --all"},
+        {msgCmdFormatManifestExample1, "vcpkg format-manifest ports/zlib/vcpkg.json", "vcpkg format-manifest --all"},
         AutocompletePriority::Public,
         0,
         SIZE_MAX,

@@ -20,12 +20,6 @@ namespace
         void (*print)(const VcpkgPaths&);
     };
 
-    template<const CommandMetadata& S>
-    void command_topic_fn(const VcpkgPaths&)
-    {
-        print_usage(S);
-    }
-
     void help_topics(const VcpkgPaths&);
 
     void help_topic_versioning(const VcpkgPaths&)

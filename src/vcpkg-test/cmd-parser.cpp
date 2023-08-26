@@ -1109,7 +1109,7 @@ TEST_CASE ("real world commands", "[cmd_parser]")
         CHECK(uut.extract_first_command_like_arg_lowercase().value_or_exit(VCPKG_LINE_INFO) == "help");
     }
 
-        {
+    {
         CmdParser uut{std::vector<std::string>{"--help"}};
         CHECK(uut.extract_first_command_like_arg_lowercase().value_or_exit(VCPKG_LINE_INFO) == "help");
     }
