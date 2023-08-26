@@ -122,7 +122,6 @@ namespace vcpkg
         LocalizedString get_example_text() const;
     };
 
-    void print_command_list_usage();
     void print_usage(const CommandMetadata& command_metadata);
 
     struct FeatureFlagSettings

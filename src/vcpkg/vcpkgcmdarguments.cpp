@@ -427,39 +427,6 @@ namespace vcpkg
         return result;
     }
 
-    void print_command_list_usage()
-    {
-        HelpTableFormatter table;
-        table.header("Commands");
-        table.format("vcpkg search", msg::format(msgHelpSearchCommand));
-        table.format("vcpkg install", msg::format(msgHelpInstallCommand));
-        table.format("vcpkg remove", msg::format(msgHelpRemoveCommand));
-        table.format("vcpkg update", msg::format(msgHelpUpdateCommand));
-        table.format("vcpkg upgrade", msg::format(msgHelpUpgradeCommand));
-        table.format("vcpkg hash", msg::format(msgHelpHashCommand));
-        table.format("vcpkg help topics", msg::format(msgHelpTopicsCommand));
-        table.format("vcpkg help <topic>", msg::format(msgHelpTopicCommand));
-        table.format("vcpkg list", msg::format(msgHelpListCommand));
-        table.format("vcpkg integrate", msg::format(msgCmdIntegrateSynopsis));
-        table.format("vcpkg export", msg::format(msgHelpExportCommand));
-        table.format("vcpkg edit",
-                     msg::format(msgHelpEditCommand, msg::env_var = format_environment_variable("EDITOR")));
-        table.format("vcpkg create", msg::format(msgHelpCreateCommand));
-        table.format("vcpkg x-init-registry", msg::format(msgCmdInitRegistrySynopsis));
-        table.format("vcpkg format-manifest", msg::format(msgCmdFormatManifestSynopsis));
-        table.format("vcpkg owns", msg::format(msgHelpOwnsCommand));
-        table.format("vcpkg depend-info", msg::format(msgHelpDependInfoCommand));
-        table.format("vcpkg env", msg::format(msgHelpEnvCommand));
-        table.format("vcpkg version", msg::format(msgHelpVersionCommand));
-        table.format("vcpkg contact", msg::format(msgHelpContactCommand));
-        table.blank();
-        table.format(msg::format(msgResponseFileCode), msg::format(msgHelpResponseFileCommand));
-        table.blank();
-        table.example(msg::format(msgHelpExampleCommand));
-
-        msg::println(LocalizedString::from_raw(table.m_str));
-    }
-
     void print_usage(const CommandMetadata& command_metadata)
     {
         auto with_common_options = VcpkgCmdArguments::create_from_arg_sequence(nullptr, nullptr);

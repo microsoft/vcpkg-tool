@@ -25,5 +25,6 @@ Each "subcommand" added to vcpkg needs the following.
       `vcpkg install zlib`
 - [ ] An `extern const CommandMetadata CommandCommandNameMetadata` describing the command connected
       to `vcpkg help`, unless the command is not intended for users to use.
+- [ ] An entry in print_command_list_usage(), if appropriate.
 - [ ] A documentation page on vcpkg learn.microsoft.com, unless the command is not intended for 
       users to use.

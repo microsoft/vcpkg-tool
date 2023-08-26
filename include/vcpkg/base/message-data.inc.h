@@ -732,6 +732,7 @@ DECLARE_MESSAGE(CmdHashExample2,
                 "This is a command line, only the <path> part should be localized",
                 "vcpkg hash <path> SHA256")
 DECLARE_MESSAGE(CmdHashSynopsis, (), "", "Get a file's SHA256 or SHA512")
+DECLARE_MESSAGE(CmdHelpTopic, (), "This is a command line, only <topic> should be localized.", "vcpkg help <topic>")
 DECLARE_MESSAGE(CmdInfoOptInstalled, (), "", "(experimental) Report on installed packages instead of available")
 DECLARE_MESSAGE(CmdInfoOptTransitive, (), "", "(experimental) Also report on dependencies of installed packages")
 DECLARE_MESSAGE(CmdInitRegistryExample1,
@@ -874,7 +875,6 @@ DECLARE_MESSAGE(CommandFailed,
                 "command:\n"
                 "{command_line}\n"
                 "failed with the following results:")
-DECLARE_MESSAGE(Commands, (), "", "Commands:")
 DECLARE_MESSAGE(CommunityTriplets, (), "", "VCPKG community triplets:")
 DECLARE_MESSAGE(ComparingUtf8Decoders,
                 (),
@@ -1352,6 +1352,10 @@ DECLARE_MESSAGE(FormattedParseMessageExpression,
                 (msg::value),
                 "Example of {value} is 'x64 & windows'",
                 "on expression: {value}")
+DECLARE_MESSAGE(ForMoreHelp,
+                (),
+                "Printed before a suggestion for the user to run `vcpkg help <topic>`",
+                "For more help")
 DECLARE_MESSAGE(GeneratedConfiguration, (msg::path), "", "Generated configuration {path}.")
 DECLARE_MESSAGE(GeneratedInstaller, (msg::path), "", "{path} installer generated.")
 DECLARE_MESSAGE(GenerateMsgErrorParsingFormatArgs,
@@ -1587,10 +1591,7 @@ DECLARE_MESSAGE(HelpEditCommand,
                 "\"code\" is the name of a program and should not be localized.",
                 "Edit a port, optionally with {env_var}, defaults to \"code\".")
 DECLARE_MESSAGE(HelpEnvCommand, (), "", "Creates a clean shell environment for development or compiling.")
-DECLARE_MESSAGE(HelpExampleCommand,
-                (),
-                "",
-                "For more help (including examples) see the accompanying README.md and docs folder.")
+DECLARE_MESSAGE(HelpExampleCommand, (), "", "For more help (including examples) see https://learn.microsoft.com/vcpkg")
 DECLARE_MESSAGE(HelpExampleManifest, (), "", "Example manifest:")
 DECLARE_MESSAGE(HelpExportCommand, (), "", "Exports a package.")
 DECLARE_MESSAGE(HelpHashCommand, (), "", "Hash a file by specific algorithm, default SHA512.")
@@ -2234,15 +2235,19 @@ DECLARE_MESSAGE(OptionRequiresOption,
                 "--{value} requires --{option}")
 DECLARE_MESSAGE(Options, (), "Printed just before a list of options for a command", "Options")
 DECLARE_MESSAGE(OriginalBinParagraphHeader, (), "", "\nOriginal Binary Paragraph")
+DECLARE_MESSAGE(OtherCommands, (), "", "Other Commands")
 DECLARE_MESSAGE(OverlayPatchDir, (msg::path), "", "Overlay path \"{path}\" must exist and must be a directory.")
 DECLARE_MESSAGE(OverlayTriplets, (msg::path), "", "Overlay triplets from {path} :")
 DECLARE_MESSAGE(OverwritingFile, (msg::path), "", "File {path} was already present and will be overwritten")
 DECLARE_MESSAGE(PackageAlreadyRemoved, (msg::spec), "", "unable to remove {spec}: already removed")
+DECLARE_MESSAGE(PackageDiscoveryCommands, (), "", "Package Discovery Commands")
+DECLARE_MESSAGE(PackageManipulationCommmands, (), "", "Package Manipulation Commands")
 DECLARE_MESSAGE(PackageInfoHelp, (), "", "Display detailed information on packages.")
 DECLARE_MESSAGE(PackageFailedtWhileExtracting,
                 (msg::value, msg::path),
                 "'{value}' is either a tool name or a package name.",
                 "'{value}' failed while extracting {path}.")
+DECLARE_MESSAGE(PackageInstallationCommands, (), "", "Package Installation Commands")
 DECLARE_MESSAGE(PackageRootDir, (), "", "(Experimental) Specify the packages root directory.")
 DECLARE_MESSAGE(PackagesToInstall, (), "", "The following packages will be built and installed:")
 DECLARE_MESSAGE(PackagesToInstallDirectly, (), "", "The following packages will be directly installed:")

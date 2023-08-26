@@ -32,4 +32,6 @@ namespace vcpkg
     extern const View<CommandRegistration<TripletCommandFn>> triplet_commands;
 
     std::vector<const CommandMetadata*> get_all_commands_metadata();
+
+    void print_command_list_usage();
 }
