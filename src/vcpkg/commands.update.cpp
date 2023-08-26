@@ -48,7 +48,7 @@ namespace vcpkg
     }
 
     constexpr CommandMetadata CommandUpdateMetadata{
-        "upgrade",
+        "update",
         msgHelpUpdateCommand,
         {"vcpkg update"},
         AutocompletePriority::Public,

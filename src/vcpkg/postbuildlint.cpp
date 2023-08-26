@@ -1106,7 +1106,7 @@ namespace vcpkg
             }
 
             msg_sink.println(msg::format(msgPortBugInspectFiles, msg::extension = "lib")
-                                 .append_raw("\n    dumpbin.exe /directives mylibfile.lib"));
+                                 .append_raw("\n  dumpbin.exe /directives mylibfile.lib"));
             return LintStatus::PROBLEM_DETECTED;
         }
 
@@ -1147,10 +1147,10 @@ namespace vcpkg
             msg_sink.println_warning(msgPortBugOutdatedCRT);
             for (const OutdatedDynamicCrtAndFile& btf : dlls_with_outdated_crt)
             {
-                msg_sink.print(Color::warning, fmt::format("    {}:{}\n", btf.file, btf.outdated_crt));
+                msg_sink.print(Color::warning, fmt::format("  {}:{}\n", btf.file, btf.outdated_crt));
             }
             msg_sink.println(msg::format(msgPortBugInspectFiles, msg::extension = "dll")
-                                 .append_raw("\n    dumpbin.exe /dependents mylibfile.dll"));
+                                 .append_raw("\n  dumpbin.exe /dependents mylibfile.dll"));
             return LintStatus::PROBLEM_DETECTED;
         }
 
@@ -1192,7 +1192,7 @@ namespace vcpkg
         }
 
         msg_sink.println(msg::format(msgPortBugInspectFiles, msg::extension = "dll")
-                             .append_raw("\n    dumpbin.exe /dependents mylibfile.dll"));
+                             .append_raw("\n  dumpbin.exe /dependents mylibfile.dll"));
         return LintStatus::PROBLEM_DETECTED;
     }
 
