@@ -1193,7 +1193,9 @@ namespace vcpkg
                 cache_entry.abi_entries.emplace_back(port_file, cache_entry.hashes.back());
             }
 
-            cache_entry.heuristic_resources = run_resource_heuristics(portfile_cmake_contents);
+            auto& scf = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_control_file;
+            cache_entry.heuristic_resources =
+                run_resource_heuristics(portfile_cmake_contents, scf->core_paragraph->raw_version);
 
             auto& helpers = paths.get_cmake_script_hashes();
             for (auto&& helper : helpers)
