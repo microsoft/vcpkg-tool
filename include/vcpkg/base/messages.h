@@ -143,7 +143,7 @@ namespace vcpkg::msg
             return detail::format_message_by_index_to(s, index, fmt::make_format_args(args...));
         }
     }
-    
+
     template<class... Tags, class... Types>
     LocalizedString format(MessageT<Tags...> m, TagArg<identity_t<Tags>, Types>... args)
     {
