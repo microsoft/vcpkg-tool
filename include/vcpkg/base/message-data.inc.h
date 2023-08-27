@@ -1066,6 +1066,7 @@ DECLARE_MESSAGE(FeatureBaselineExpectedFeatures,
                 (msg::value),
                 "{value} is a keyword",
                 "When using '{value}' a list of features must be specified.")
+DECLARE_MESSAGE(FeatureBaselineFormatted, (), "", "Succeeded in formatting the feature baseline file.")
 DECLARE_MESSAGE(FeatureBaselineNoFeaturesForFail, (), "", "When using '= fail' no list of features is allowed.")
 DECLARE_MESSAGE(FilesContainAbsolutePath1,
                 (),

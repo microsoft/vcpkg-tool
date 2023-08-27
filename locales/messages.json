@@ -664,6 +664,7 @@
   "_FeatureBaselineEntryAlreadySpecified.comment": "{value} is a keyword An example of {feature} is avisynthplus.",
   "FeatureBaselineExpectedFeatures": "When using '{value}' a list of features must be specified.",
   "_FeatureBaselineExpectedFeatures.comment": "{value} is a keyword",
+  "FeatureBaselineFormatted": "Succeeded in formatting the feature baseline file.",
   "FeatureBaselineNoFeaturesForFail": "When using '= fail' no list of features is allowed.",
   "FetchingBaselineInfo": "Fetching baseline information from {package_name}...",
   "_FetchingBaselineInfo.comment": "An example of {package_name} is zlib.",

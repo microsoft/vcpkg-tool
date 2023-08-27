@@ -22,6 +22,7 @@
 #include <vcpkg/commands.export.h>
 #include <vcpkg/commands.fetch.h>
 #include <vcpkg/commands.find.h>
+#include <vcpkg/commands.format-feature-baselinet.h>
 #include <vcpkg/commands.format-manifest.h>
 #include <vcpkg/commands.generate-msbuild-props.h>
 #include <vcpkg/commands.h>
@@ -61,6 +62,7 @@ namespace vcpkg
         {"bootstrap-standalone", command_bootstrap_standalone_and_exit},
         {"contact", command_contact_and_exit},
         {"x-download", command_download_and_exit},
+        {"format-feature-baseline", command_format_feature_baseline_and_exit},
         {"hash", command_hash_and_exit},
         {"x-init-registry", command_init_registry_and_exit},
         {"version", command_version_and_exit},
