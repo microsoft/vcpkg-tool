@@ -304,6 +304,9 @@ namespace vcpkg
         args.parser.parse_multi_option(
             BINARY_SOURCES_ARG, StabilityTag::Standard, args.cli_binary_sources, msg::format(msgBinarySourcesArg));
         args.parser.parse_multi_option(CMAKE_SCRIPT_ARG, StabilityTag::Standard, args.cmake_args);
+        args.parser.parse_multi_option(CMAKE_DEBUGGING_ARG, StabilityTag::Experimental, args.cmake_debug);
+        args.parser.parse_multi_option(
+            CMAKE_CONFIGURE_DEBUGGING_ARG, StabilityTag::Experimental, args.cmake_configure_debug);
 
         std::vector<std::string> feature_flags;
         args.parser.parse_multi_option(FEATURE_FLAGS_ARG, StabilityTag::Standard, feature_flags);
@@ -804,5 +807,7 @@ namespace vcpkg
     constexpr StringLiteral VcpkgCmdArguments::VERSIONS_FEATURE;
 
     constexpr StringLiteral VcpkgCmdArguments::CMAKE_SCRIPT_ARG;
+    constexpr StringLiteral VcpkgCmdArguments::CMAKE_DEBUGGING_ARG;
+    constexpr StringLiteral VcpkgCmdArguments::CMAKE_CONFIGURE_DEBUGGING_ARG;
     constexpr StringLiteral VcpkgCmdArguments::EXACT_ABI_TOOLS_VERSIONS_SWITCH;
 }

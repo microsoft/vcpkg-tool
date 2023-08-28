@@ -37,6 +37,8 @@
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
 
+#include <algorithm>
+
 using namespace vcpkg;
 
 namespace
@@ -776,6 +778,29 @@ namespace vcpkg
         if (action.build_options.download_tool == DownloadTool::ARIA2)
         {
             variables.emplace_back("ARIA2", paths.get_tool_exe(Tools::ARIA2, stdout_sink));
+        }
+
+        if (!args.cmake_debug.empty())
+        {
+            if (args.cmake_debug.size() == 1 ||
+                std::find(args.cmake_debug.begin(), args.cmake_debug.end(), scf.core_paragraph->name) !=
+                    args.cmake_debug.end())
+            {
+                variables.emplace_back("--debugger");
+                variables.emplace_back(fmt::format("--debugger-pipe={}", *args.cmake_debug.begin()));
+            }
+        }
+
+        if (!args.cmake_configure_debug.empty())
+        {
+            if (args.cmake_configure_debug.size() == 1 ||
+                std::find(args.cmake_configure_debug.begin(),
+                          args.cmake_configure_debug.end(),
+                          scf.core_paragraph->name) != args.cmake_configure_debug.end())
+            {
+                variables.emplace_back(fmt::format("-DVCPKG_CMAKE_CONFIGURE_OPTIONS=--debugger;--debugger-pipe={}",
+                                                   *args.cmake_configure_debug.begin()));
+            }
         }
 
         for (const auto& cmake_arg : args.cmake_args)
