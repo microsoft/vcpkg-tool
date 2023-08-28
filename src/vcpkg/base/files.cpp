@@ -1405,9 +1405,10 @@ namespace vcpkg
     ReadFilePointer::ReadFilePointer(const Path& file_path, std::error_code& ec) : FilePointer(file_path)
     {
 #if defined(_WIN32)
-        ec.assign(::_wfopen_s(&m_fs, to_stdfs_path(file_path).c_str(), L"rb"), std::generic_category());
+        m_fs = ::_wfsopen(to_stdfs_path(file_path).c_str(), L"rb", _SH_DENYNO);
 #else  // ^^^ _WIN32 / !_WIN32 vvv
         m_fs = ::fopen(file_path.c_str(), "rb");
+#endif // ^^^ !_WIN32
         if (m_fs)
         {
             ec.clear();
@@ -1416,7 +1417,6 @@ namespace vcpkg
         {
             ec.assign(errno, std::generic_category());
         }
-#endif // ^^^ !_WIN32
     }
 
     ReadFilePointer& ReadFilePointer::operator=(ReadFilePointer&& other) noexcept
