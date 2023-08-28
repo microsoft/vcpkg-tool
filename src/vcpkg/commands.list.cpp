@@ -1,18 +1,21 @@
+#include <vcpkg/base/strings.h>
 #include <vcpkg/base/util.h>
 
+#include <vcpkg/commands.help.h>
 #include <vcpkg/commands.list.h>
-#include <vcpkg/help.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
 #include <vcpkg/versions.h>
 
-namespace vcpkg::Commands::List
-{
-    static constexpr StringLiteral OPTION_FULLDESC = "x-full-desc"; // TODO: This should find a better home, eventually
-    static constexpr StringLiteral OPTION_JSON = "x-json";
+using namespace vcpkg;
 
-    static void do_print_json(std::vector<const vcpkg::StatusParagraph*> installed_packages)
+namespace
+{
+    constexpr StringLiteral OPTION_FULLDESC = "x-full-desc";
+    constexpr StringLiteral OPTION_JSON = "x-json";
+
+    void do_print_json(std::vector<const vcpkg::StatusParagraph*> installed_packages)
     {
         Json::Object obj;
         for (const StatusParagraph* status_paragraph : installed_packages)
@@ -50,7 +53,7 @@ namespace vcpkg::Commands::List
         msg::write_unlocalized_text_to_stdout(Color::none, Json::stringify(obj));
     }
 
-    static void do_print(const StatusParagraph& pgh, const bool full_desc)
+    void do_print(const StatusParagraph& pgh, const bool full_desc)
     {
         auto full_version = Version(pgh.package.version, pgh.package.port_version).to_string();
         if (full_desc)
@@ -76,12 +79,15 @@ namespace vcpkg::Commands::List
         }
     }
 
-    static constexpr std::array<CommandSwitch, 2> LIST_SWITCHES = {{
+    constexpr CommandSwitch LIST_SWITCHES[] = {
         {OPTION_FULLDESC, []() { return msg::format(msgHelpTextOptFullDesc); }},
         {OPTION_JSON, []() { return msg::format(msgJsonSwitch); }},
-    }};
+    };
+} // unnamed namespace
 
-    const CommandStructure COMMAND_STRUCTURE = {
+namespace vcpkg
+{
+    constexpr CommandMetadata CommandListMetadata = {
         [] { return msg::format(msgListHelp).append_raw('\n').append(create_example_string("list png")); },
         0,
         1,
@@ -89,9 +95,9 @@ namespace vcpkg::Commands::List
         nullptr,
     };
 
-    void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
+    void command_list_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
-        const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
+        const ParsedArguments options = args.parse_arguments(CommandListMetadata);
 
         const StatusParagraphs status_paragraphs = database_load_check(paths.get_filesystem(), paths.installed());
         auto installed_ipv = get_installed_ports(status_paragraphs);
@@ -142,9 +148,4 @@ namespace vcpkg::Commands::List
 
         Checks::exit_success(VCPKG_LINE_INFO);
     }
-
-    void ListCommand::perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const
-    {
-        List::perform_and_exit(args, paths);
-    }
-}
+} // namespace vcpkg

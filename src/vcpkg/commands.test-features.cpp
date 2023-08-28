@@ -10,20 +10,21 @@
 #include <vcpkg/base/xmlserializer.h>
 
 #include <vcpkg/binarycaching.h>
-#include <vcpkg/build.h>
-#include <vcpkg/ci-baseline.h>
+#include <vcpkg/ci-feature-baseline.h>
 #include <vcpkg/cmakevars.h>
-#include <vcpkg/commands.setinstalled.h>
+#include <vcpkg/commands.build.h>
+#include <vcpkg/commands.help.h>
+#include <vcpkg/commands.install.h>
+#include <vcpkg/commands.set-installed.h>
 #include <vcpkg/commands.test-features.h>
 #include <vcpkg/dependencies.h>
 #include <vcpkg/globalstate.h>
-#include <vcpkg/help.h>
 #include <vcpkg/input.h>
-#include <vcpkg/install.h>
 #include <vcpkg/packagespec.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/platform-expression.h>
 #include <vcpkg/portfileprovider.h>
+#include <vcpkg/registries.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
@@ -71,7 +72,7 @@ namespace
             }
         }
 
-        CiBuildLogsRecorder create_for_feature_test(const FullPackageSpec& spec, Filesystem& filesystem) const
+        CiBuildLogsRecorder create_for_feature_test(const FullPackageSpec& spec, const Filesystem& filesystem) const
         {
             static int counter = 0;
             std::string feature;
@@ -85,7 +86,7 @@ namespace
             }
             else
             {
-                feature = Strings::concat("all_", ++counter);
+                feature = fmt::format("all_{}", ++counter);
             }
             auto new_base_path = base_path / Strings::concat(spec.package_spec.name(), '_', feature);
             filesystem.create_directory(new_base_path, VCPKG_LINE_INFO);
@@ -97,7 +98,7 @@ namespace
     };
 }
 
-namespace vcpkg::Commands::TestFeatures
+namespace vcpkg
 {
     static constexpr StringLiteral OPTION_FAILURE_LOGS = "failure-logs";
     static constexpr StringLiteral OPTION_CI_FEATURE_BASELINE = "ci-feature-baseline";
@@ -137,20 +138,20 @@ namespace vcpkg::Commands::TestFeatures
          }},
     }};
 
-    const CommandStructure COMMAND_STRUCTURE = {
+    constexpr CommandMetadata CommandTestFeaturesMetadata = {
         []() { return create_example_string("test-features llvm"); },
         0,
         SIZE_MAX,
-        {CI_SWITCHES, CI_SETTINGS},
+        {CI_SWITCHES, CI_SETTINGS, {}},
         nullptr,
     };
 
-    void perform_and_exit(const VcpkgCmdArguments& args,
-                          const VcpkgPaths& paths,
-                          Triplet target_triplet,
-                          Triplet host_triplet)
+    void command_test_features_and_exit(const VcpkgCmdArguments& args,
+                                        const VcpkgPaths& paths,
+                                        Triplet target_triplet,
+                                        Triplet host_triplet)
     {
-        const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
+        const ParsedArguments options = args.parse_arguments(CommandTestFeaturesMetadata);
         const auto& settings = options.settings;
 
         const auto all_ports = Util::Sets::contains(options.switches, OPTION_ALL_PORTS);
@@ -160,7 +161,7 @@ namespace vcpkg::Commands::TestFeatures
         const auto test_features_seperatly =
             !Util::Sets::contains(options.switches, OPTION_DONT_TEST_FEATURES_SEPARATELY);
 
-        BinaryCache binary_cache{args, paths};
+        auto binary_cache = BinaryCache::make(args, paths, stdout_sink).value_or_exit(VCPKG_LINE_INFO);
 
         auto& filesystem = paths.get_filesystem();
         Optional<CiBuildLogsRecorder> build_logs_recorder_storage;
@@ -226,12 +227,20 @@ namespace vcpkg::Commands::TestFeatures
             const auto dep_info_vars = var_provider.get_or_load_dep_info_vars(package_spec, host_triplet);
             if (!port->core_paragraph->supports_expression.evaluate(dep_info_vars))
             {
-                fmt::print("Port {} is not supported on {}\n", port->core_paragraph->name, target_triplet);
+                msg::println(
+                    msgPortNotSupported, msg::package_name = port->core_paragraph->name, msg::triplet = target_triplet);
                 continue;
             }
             if (test_feature_core && !Util::Sets::contains(baseline.skip_features, "core"))
             {
                 specs_to_test.emplace_back(package_spec, InternalFeatureSet{{"core"}});
+                for (const auto& option_set : baseline.options)
+                {
+                    if (option_set.front() != "core")
+                    {
+                        specs_to_test.back().features.push_back(option_set.front());
+                    }
+                }
             }
             InternalFeatureSet all_features{{"core"}};
             for (const auto& feature : port->feature_paragraphs)
@@ -239,16 +248,29 @@ namespace vcpkg::Commands::TestFeatures
                 if (feature->supports_expression.evaluate(dep_info_vars) &&
                     !Util::Sets::contains(baseline.skip_features, feature->name))
                 {
-                    // if we expect a feature to cascade don't add it the the all features test because this test
-                    // will them simply cascade too
-                    if (!Util::Sets::contains(baseline.cascade_features, feature->name))
+                    // if we expect a feature to cascade or fail don't add it the the all features test because this
+                    // test will them simply cascade or fail too
+                    if (!Util::Sets::contains(baseline.cascade_features, feature->name) &&
+                        !Util::Sets::contains(baseline.failing_features, feature->name))
                     {
-                        all_features.push_back(feature->name);
+                        if (Util::all_of(baseline.options, [&](const auto& options) {
+                                return !Util::contains(options, feature->name) || options.front() == feature->name;
+                            }))
+                        {
+                            all_features.push_back(feature->name);
+                        }
                     }
                     if (test_features_seperatly &&
                         !Util::Sets::contains(baseline.no_separate_feature_test, feature->name))
                     {
                         specs_to_test.emplace_back(package_spec, InternalFeatureSet{{"core", feature->name}});
+                        for (const auto& option_set : baseline.options)
+                        {
+                            if (option_set.front() != "core" && !Util::contains(option_set, feature->name))
+                            {
+                                specs_to_test.back().features.push_back(option_set.front());
+                            }
+                        }
                     }
                 }
             }
@@ -258,21 +280,45 @@ namespace vcpkg::Commands::TestFeatures
                 specs_to_test.emplace_back(package_spec, all_features);
             }
         }
-        fmt::print("compute {} install plans\n", specs_to_test.size());
+        msg::println(msgComputeInstallPlans, msg::count = specs_to_test.size());
+
+        std::vector<FullPackageSpec> specs;
+        std::vector<Path> port_locations;
+        std::vector<const InstallPlanAction*> actions_to_check;
+        CreateInstallPlanOptions install_plan_options{host_triplet, paths.packages(), UnsupportedPortAction::Warn};
         auto install_plans = Util::fmap(specs_to_test, [&](auto& spec) {
-            return std::make_pair(spec,
-                                  create_feature_install_plan(provider,
-                                                              var_provider,
-                                                              Span<FullPackageSpec>(&spec, 1),
-                                                              {},
-                                                              {host_triplet, UnsupportedPortAction::Warn}));
+            auto install_plan = create_feature_install_plan(
+                provider, var_provider, Span<FullPackageSpec>(&spec, 1), {}, install_plan_options);
+            if (install_plan.unsupported_features.empty())
+            {
+                for (auto& actions : install_plan.install_actions)
+                {
+                    specs.emplace_back(actions.spec, actions.feature_list);
+                    port_locations.emplace_back(
+                        actions.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_location);
+                }
+                actions_to_check.push_back(&install_plan.install_actions.back());
+            }
+            return std::make_pair(spec, std::move(install_plan));
         });
+        msg::println(msgComputeAllAbis);
+        var_provider.load_tag_vars(specs, port_locations, host_triplet);
+        StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
+        PortAbiCache cache;
+        for (auto& [spec, install_plan] : install_plans)
+        {
+            if (install_plan.unsupported_features.empty())
+            {
+                compute_all_abis(paths, install_plan, var_provider, status_db, cache);
+            }
+        }
+
+        msg::println(msgPrecheckBinaryCache);
+        binary_cache.precheck(actions_to_check);
 
         Util::stable_sort(install_plans, [](const auto& left, const auto& right) {
             return left.second.install_actions.size() < right.second.install_actions.size();
         });
-
-        StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
 
         // test port features
         std::unordered_set<std::string> known_failures;
@@ -282,6 +328,7 @@ namespace vcpkg::Commands::TestFeatures
             CiFeatureBaselineState actual_state;
             Optional<Path> logs_dir;
             ElapsedTime build_time;
+            std::string cascade_reason;
         };
 
         std::vector<UnexpectedResult> unexpected_states;
@@ -289,24 +336,25 @@ namespace vcpkg::Commands::TestFeatures
         const auto handle_result = [&](FullPackageSpec&& spec,
                                        CiFeatureBaselineState result,
                                        CiFeatureBaselineEntry baseline,
+                                       std::string cascade_reason = {},
                                        Optional<Path> logs_dir = nullopt,
                                        ElapsedTime build_time = {}) {
             bool expected_cascade =
                 (baseline.state == CiFeatureBaselineState::Cascade ||
-                 (spec.features.size() > 1 && Util::all_of(spec.features, [&](const auto& feature) {
-                      return feature == "core" || Util::Sets::contains(baseline.cascade_features, feature);
-                  })));
+                 (spec.features.size() > 1 && Util::Sets::contains(baseline.cascade_features, spec.features[1])));
             bool actual_cascade = (result == CiFeatureBaselineState::Cascade);
             if (actual_cascade != expected_cascade)
             {
-                unexpected_states.push_back(UnexpectedResult{std::move(spec), result, logs_dir, build_time});
+                unexpected_states.push_back(
+                    UnexpectedResult{std::move(spec), result, logs_dir, build_time, std::move(cascade_reason)});
                 return;
             }
             bool expected_fail = (baseline.state == CiFeatureBaselineState::Fail || baseline.will_fail(spec.features));
             bool actual_fail = (result == CiFeatureBaselineState::Fail);
             if (expected_fail != actual_fail)
             {
-                unexpected_states.push_back(UnexpectedResult{std::move(spec), result, logs_dir, build_time});
+                unexpected_states.push_back(
+                    UnexpectedResult{std::move(spec), result, logs_dir, build_time, std::move(cascade_reason)});
             }
         };
 
@@ -319,22 +367,23 @@ namespace vcpkg::Commands::TestFeatures
 
             if (!install_plan.unsupported_features.empty())
             {
-                std::string out;
+                std::vector<std::string> out;
                 for (const auto& entry : install_plan.unsupported_features)
                 {
-                    Strings::append(out, entry.first, " only supported on  ", to_string(entry.second), '\n');
+                    out.push_back(msg::format(msgOnlySupports,
+                                              msg::feature_spec = entry.first.to_string(),
+                                              msg::supports_expression = to_string(entry.second))
+                                      .extract_data());
                 }
-                msg::write_unlocalized_text_to_stdout(Color::none,
-                                                      Strings::concat("Skipping testing of ",
-                                                                      install_plan.install_actions.back().displayname(),
-                                                                      " because of the following warnings: \n",
-                                                                      out,
-                                                                      '\n'));
-                handle_result(std::move(spec), CiFeatureBaselineState::Cascade, baseline);
+                msg::print(msg::format(msgSkipTestingOfPort,
+                                       msg::feature_spec = install_plan.install_actions.back().displayname(),
+                                       msg::triplet = target_triplet)
+                               .append_raw('\n')
+                               .append_raw(Strings::join("\n", out))
+                               .append_raw('\n'));
+                handle_result(std::move(spec), CiFeatureBaselineState::Cascade, baseline, Strings::join(", ", out));
                 continue;
             }
-            var_provider.load_tag_vars(install_plan, provider, host_triplet);
-            compute_all_abis(paths, install_plan, var_provider, status_db);
 
             if (auto iter = Util::find_if(install_plan.install_actions,
                                           [&known_failures](const auto& install_action) {
@@ -344,27 +393,28 @@ namespace vcpkg::Commands::TestFeatures
                                           });
                 iter != install_plan.install_actions.end())
             {
-                msg::write_unlocalized_text_to_stdout(
-                    Color::none, Strings::concat(spec, " dependency ", iter->displayname(), " will fail => cascade\n"));
-                handle_result(std::move(spec), CiFeatureBaselineState::Cascade, baseline);
+                msg::println(msgDependencyWillFail, msg::feature_spec = iter->displayname());
+                handle_result(std::move(spec), CiFeatureBaselineState::Cascade, baseline, iter->displayname());
                 continue;
             }
 
             // only install the absolute minimum
-            SetInstalled::adjust_action_plan_to_status_db(install_plan, status_db);
+            adjust_action_plan_to_status_db(install_plan, status_db);
             if (install_plan.install_actions.empty()) // already installed
             {
                 handle_result(std::move(spec), CiFeatureBaselineState::Pass, baseline);
                 continue;
             }
 
-            if (binary_cache.precheck({&install_plan.install_actions.back(), 1}).front() ==
-                CacheAvailability::available)
             {
-                handle_result(std::move(spec), CiFeatureBaselineState::Pass, baseline);
-                continue;
+                const InstallPlanAction* action = &install_plan.install_actions.back();
+                std::array<const InstallPlanAction*, 1> actions = {action};
+                if (binary_cache.precheck(actions).front() == CacheAvailability::available)
+                {
+                    handle_result(std::move(spec), CiFeatureBaselineState::Pass, baseline);
+                    continue;
+                }
             }
-            msg::write_unlocalized_text_to_stdout(Color::none, Strings::concat("Test feature ", spec, '\n'));
             for (auto&& action : install_plan.install_actions)
             {
                 action.build_options = backcompat_prohibiting_package_options;
@@ -379,10 +429,13 @@ namespace vcpkg::Commands::TestFeatures
                                                                 ? *(feature_build_logs_recorder_storage.get())
                                                                 : null_build_logs_recorder();
             ElapsedTimer install_timer;
-            const auto summary = Install::perform(
-                args, install_plan, KeepGoing::YES, paths, status_db, binary_cache, build_logs_recorder, var_provider);
+            install_preclear_packages(paths, install_plan);
+            binary_cache.fetch(install_plan.install_actions);
+            const auto summary = install_execute_plan(
+                args, install_plan, KeepGoing::YES, paths, status_db, binary_cache, build_logs_recorder);
             binary_cache.clear_cache();
 
+            std::string failed_dependencies;
             for (const auto& result : summary.results)
             {
                 switch (result.build_result.value_or_exit(VCPKG_LINE_INFO).code)
@@ -399,9 +452,16 @@ namespace vcpkg::Commands::TestFeatures
                                                     result.get_install_plan_action().value_or_exit(VCPKG_LINE_INFO)),
                                 VCPKG_LINE_INFO);
                         }
+                        if (result.get_spec() != spec.package_spec)
+                        {
+                            if (!failed_dependencies.empty())
+                            {
+                                Strings::append(failed_dependencies, ", ");
+                            }
+                            Strings::append(failed_dependencies, result.get_spec());
+                        }
                         [[fallthrough]];
                     case BuildResult::POST_BUILD_CHECKS_FAILED:
-                    case BuildResult::FILE_CONFLICTS:
                         known_failures.insert(result.get_abi().value_or_exit(VCPKG_LINE_INFO));
                         break;
                     default: break;
@@ -412,11 +472,16 @@ namespace vcpkg::Commands::TestFeatures
             {
                 case BuildResult::DOWNLOADED:
                 case vcpkg::BuildResult::SUCCEEDED:
-                    handle_result(std::move(spec), CiFeatureBaselineState::Pass, baseline, logs_dir, time_to_install);
+                    handle_result(
+                        std::move(spec), CiFeatureBaselineState::Pass, baseline, {}, logs_dir, time_to_install);
                     break;
                 case vcpkg::BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES:
-                    handle_result(
-                        std::move(spec), CiFeatureBaselineState::Cascade, baseline, logs_dir, time_to_install);
+                    handle_result(std::move(spec),
+                                  CiFeatureBaselineState::Cascade,
+                                  baseline,
+                                  std::move(failed_dependencies),
+                                  logs_dir,
+                                  time_to_install);
                     break;
                 case BuildResult::BUILD_FAILED:
                 case BuildResult::POST_BUILD_CHECKS_FAILED:
@@ -424,22 +489,42 @@ namespace vcpkg::Commands::TestFeatures
                 case BuildResult::CACHE_MISSING:
                 case BuildResult::REMOVED:
                 case BuildResult::EXCLUDED:
-                    handle_result(std::move(spec), CiFeatureBaselineState::Fail, baseline, logs_dir, time_to_install);
+                    if (auto abi = summary.results.back().get_abi().get())
+                    {
+                        known_failures.insert(*abi);
+                    }
+                    handle_result(
+                        std::move(spec), CiFeatureBaselineState::Fail, baseline, {}, logs_dir, time_to_install);
                     break;
             }
         }
 
+        msg::println();
         for (const auto& result : unexpected_states)
         {
-            msg::write_unlocalized_text_to_stderr(Color::error,
-                                                  Strings::concat(result.spec,
-                                                                  " resulted in the unexpected state ",
-                                                                  result.actual_state,
-                                                                  " ",
-                                                                  result.logs_dir.value_or(""),
-                                                                  " after ",
-                                                                  result.build_time.to_string(),
-                                                                  '\n'));
+            if (result.actual_state == CiFeatureBaselineState::Cascade && !result.cascade_reason.empty())
+            {
+                msg::println(Color::error,
+                             msg::format(msgUnexpectedStateCascase,
+                                         msg::feature_spec = to_string(result.spec),
+                                         msg::actual = to_string(result.actual_state))
+                                 .append_raw(" ")
+                                 .append_raw(result.cascade_reason));
+            }
+            else
+            {
+                msg::println(Color::error,
+                             msg::format(msgUnexpectedState,
+                                         msg::feature_spec = to_string(result.spec),
+                                         msg::actual = to_string(result.actual_state),
+                                         msg::elapsed = result.build_time)
+                                 .append_raw(" ")
+                                 .append_raw(result.logs_dir.value_or("")));
+            }
+        }
+        if (unexpected_states.empty())
+        {
+            msg::println(msgAllFeatureTestsPassed);
         }
 
         auto it_output_file = settings.find(OPTION_OUTPUT_FAILURE_ABIS);
@@ -452,13 +537,5 @@ namespace vcpkg::Commands::TestFeatures
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);
-    }
-
-    void TestFeaturesCommand::perform_and_exit(const VcpkgCmdArguments& args,
-                                               const VcpkgPaths& paths,
-                                               Triplet default_triplet,
-                                               Triplet host_triplet) const
-    {
-        TestFeatures::perform_and_exit(args, paths, default_triplet, host_triplet);
     }
 }

@@ -1,21 +1,23 @@
 #include <vcpkg/base/fwd/message_sinks.h>
 
+#include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.process.h>
 
+#include <vcpkg/commands.export.h>
 #include <vcpkg/commands.h>
+#include <vcpkg/commands.install.h>
 #include <vcpkg/export.chocolatey.h>
-#include <vcpkg/export.h>
-#include <vcpkg/install.h>
 #include <vcpkg/installedpaths.h>
 #include <vcpkg/tools.h>
 #include <vcpkg/vcpkgpaths.h>
 
-namespace vcpkg::Export::Chocolatey
+namespace vcpkg::Chocolatey
 {
     static std::string create_nuspec_dependencies(const BinaryParagraph& binary_paragraph,
                                                   const std::map<PackageSpec, std::string>& packages_version)
     {
-        static constexpr auto CONTENT_TEMPLATE = R"(<dependency id="@PACKAGE_ID@" version="[@PACKAGE_VERSION@]" />)";
+        static constexpr StringLiteral CONTENT_TEMPLATE =
+            R"(<dependency id="@PACKAGE_ID@" version="[@PACKAGE_VERSION@]" />)";
 
         std::string nuspec_dependencies;
         for (const auto& depend : binary_paragraph.dependencies)
@@ -37,7 +39,7 @@ namespace vcpkg::Export::Chocolatey
                                                    const std::map<PackageSpec, std::string>& packages_version,
                                                    const Options& chocolatey_options)
     {
-        static constexpr auto CONTENT_TEMPLATE = R"(<?xml version="1.0" encoding="utf-8"?>
+        static constexpr StringLiteral CONTENT_TEMPLATE = R"(<?xml version="1.0" encoding="utf-8"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
     <metadata>
         <id>@PACKAGE_ID@</id>
@@ -78,7 +80,7 @@ namespace vcpkg::Export::Chocolatey
 
     static std::string create_chocolatey_install_contents()
     {
-        static constexpr auto CONTENT_TEMPLATE = R"###(
+        static constexpr StringLiteral CONTENT_TEMPLATE = R"###(
 $ErrorActionPreference = 'Stop';
 
 $packageName= $env:ChocolateyPackageName
@@ -91,12 +93,12 @@ $whereToInstallCache = Join-Path $rootDir 'install.txt'
 Set-Content -Path $whereToInstallCache -Value $whereToInstall
 Copy-Item $installedDir -destination $whereToInstall -recurse -force
 )###";
-        return CONTENT_TEMPLATE;
+        return CONTENT_TEMPLATE.to_string();
     }
 
     static std::string create_chocolatey_uninstall_contents(const BinaryParagraph& binary_paragraph)
     {
-        static constexpr auto CONTENT_TEMPLATE = R"###(
+        static constexpr StringLiteral CONTENT_TEMPLATE = R"###(
 $ErrorActionPreference = 'Stop';
 
 $packageName= $env:ChocolateyPackageName
@@ -155,7 +157,7 @@ if (Test-Path $installedDir)
                                msgOptionRequired,
                                msg::option = "x-maintainer");
 
-        Filesystem& fs = paths.get_filesystem();
+        const Filesystem& fs = paths.get_filesystem();
         const auto vcpkg_root_path = paths.root;
         const auto raw_exported_dir_path = vcpkg_root_path / "chocolatey";
         const auto exported_dir_path = vcpkg_root_path / "chocolatey_exports";

@@ -1,9 +1,11 @@
 #include <vcpkg/base/fwd/message_sinks.h>
 
-#include <vcpkg/base/basic-checks.h>
+#include <vcpkg/base/checks.h>
+#include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/strings.h>
+#include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.add.h>
 #include <vcpkg/configure-environment.h>
@@ -13,11 +15,9 @@
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
-using namespace vcpkg;
-
-namespace
+namespace vcpkg
 {
-    const CommandStructure AddCommandStructure = {
+    constexpr CommandMetadata CommandAddMetadata = {
         [] {
             return msg::format(msgAddHelp)
                 .append_raw('\n')
@@ -30,14 +30,11 @@ namespace
         {{}, {}},
         nullptr,
     };
-}
 
-namespace vcpkg::Commands
-{
-    void AddCommand::perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const
+    void command_add_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
         MetricsSubmission metrics;
-        auto parsed = args.parse_arguments(AddCommandStructure);
+        auto parsed = args.parse_arguments(CommandAddMetadata);
         auto&& selector = parsed.command_arguments[0];
 
         if (selector == "artifact")
@@ -47,7 +44,7 @@ namespace vcpkg::Commands
                                    msgAddArtifactOnlyOne,
                                    msg::command_line = "vcpkg add artifact");
 
-            auto artifact_name = parsed.command_arguments[1];
+            auto& artifact_name = parsed.command_arguments[1];
             auto artifact_hash = Hash::get_string_hash(artifact_name, Hash::Algorithm::Sha256);
             metrics.track_string(StringMetric::CommandContext, "artifact");
             metrics.track_string(StringMetric::CommandArgs, artifact_hash);
@@ -92,21 +89,24 @@ namespace vcpkg::Commands
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
-            auto& manifest_scf = *maybe_manifest_scf.value_or_exit(VCPKG_LINE_INFO);
+            auto& manifest_scf = *maybe_manifest_scf.value(VCPKG_LINE_INFO);
             for (const auto& spec : specs)
             {
                 auto dep = Util::find_if(manifest_scf.core_paragraph->dependencies, [&spec](Dependency& dep) {
                     return dep.name == spec.name && !dep.host &&
                            structurally_equal(spec.platform.value_or(PlatformExpression::Expr()), dep.platform);
                 });
+                const auto features = Util::fmap(spec.features.value_or({}), [](auto& feature) {
+                    return DependencyRequestedFeature{feature, PlatformExpression::Expr::Empty()};
+                });
                 if (dep == manifest_scf.core_paragraph->dependencies.end())
                 {
                     manifest_scf.core_paragraph->dependencies.push_back(
-                        Dependency{spec.name, spec.features.value_or({}), spec.platform.value_or({})});
+                        Dependency{spec.name, features, spec.platform.value_or({})});
                 }
                 else if (spec.features)
                 {
-                    for (const auto& feature : spec.features.value_or_exit(VCPKG_LINE_INFO))
+                    for (const auto& feature : features)
                     {
                         if (!Util::Vectors::contains(dep->features, feature))
                         {

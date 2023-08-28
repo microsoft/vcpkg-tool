@@ -96,6 +96,18 @@ namespace vcpkg
         return deps;
     }
 
+    InternalFeatureSet InstalledPackageView::feature_list() const
+    {
+        InternalFeatureSet ret;
+        ret.emplace_back("core");
+        for (const auto& f : features)
+        {
+            ret.emplace_back(f->package.feature);
+        }
+        return ret;
+    }
+    Version InstalledPackageView::version() const { return {core->package.version, core->package.port_version}; }
+
     std::vector<PackageSpec> InstalledPackageView::dependencies() const
     {
         // accumulate all features in installed dependencies

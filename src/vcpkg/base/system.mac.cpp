@@ -109,7 +109,7 @@ namespace vcpkg
 
         // get "physical address"
         if (parser.require_character('"')) return false;
-        auto mac_address = parser.match_until(is_quote).to_string();
+        out = parser.match_until(is_quote).to_string();
         if (parser.require_character('"')) return false;
         if (parser.require_character(',')) return false;
 
@@ -121,12 +121,13 @@ namespace vcpkg
         parser.skip_whitespace();
         if (!parser.at_eof())
         {
+            out.clear();
             return false;
         }
 
         // output line was properly formatted
-        std::replace(mac_address.begin(), mac_address.end(), '-', ':');
-        out = Strings::ascii_to_lowercase(std::move(mac_address));
+        std::replace(out.begin(), out.end(), '-', ':');
+        Strings::inplace_ascii_to_lowercase(out);
         return true;
     }
 

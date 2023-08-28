@@ -1,13 +1,11 @@
 #pragma once
 
-#include <vcpkg/commands.interface.h>
+#include <vcpkg/base/fwd/files.h>
 
-namespace vcpkg::Commands::InitRegistry
+#include <vcpkg/fwd/vcpkgcmdarguments.h>
+
+namespace vcpkg
 {
-    void perform_and_exit(const VcpkgCmdArguments& args, Filesystem& fs);
-
-    struct InitRegistryCommand : BasicCommand
-    {
-        virtual void perform_and_exit(const VcpkgCmdArguments& args, Filesystem& fs) const override;
-    };
+    extern const CommandMetadata CommandInitRegistryMetadata;
+    void command_init_registry_and_exit(const VcpkgCmdArguments& args, const Filesystem& fs);
 }

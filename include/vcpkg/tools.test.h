@@ -4,7 +4,7 @@
 #include <vcpkg/base/fwd/optional.h>
 #include <vcpkg/base/fwd/stringview.h>
 
-#include <vcpkg/base/files.h>
+#include <vcpkg/base/path.h>
 
 #include <array>
 #include <string>

@@ -1,4 +1,5 @@
 #include <vcpkg/base/cmd-parser.h>
+#include <vcpkg/base/files.h>
 #include <vcpkg/base/strings.h>
 
 #include <stdint.h>
@@ -359,6 +360,7 @@ namespace vcpkg
             auto maybe_response_file_lines = response_file_source.read_lines(file_name);
             if (auto response_file_lines = maybe_response_file_lines.get())
             {
+                Strings::inplace_trim_all_and_remove_whitespace_strings(*response_file_lines);
                 if (response_file_lines->empty())
                 {
                     first = inputs.erase(first);
@@ -1007,6 +1009,7 @@ namespace vcpkg
             msg::write_unlocalized_text_to_stdout(Color::error, error.append_raw("\n"));
         }
 
+        example.append_raw('\n');
         append_options_table(example);
         msg::println(Color::none, example);
         Checks::exit_with_code(VCPKG_LINE_INFO, 1);

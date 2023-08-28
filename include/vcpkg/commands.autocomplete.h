@@ -1,13 +1,9 @@
 #pragma once
 
-#include <vcpkg/commands.interface.h>
+#include <vcpkg/fwd/vcpkgcmdarguments.h>
+#include <vcpkg/fwd/vcpkgpaths.h>
 
-namespace vcpkg::Commands::Autocomplete
+namespace vcpkg
 {
-    void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths);
-
-    struct AutocompleteCommand : PathsCommand
-    {
-        virtual void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const override;
-    };
+    void command_autocomplete_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths);
 }

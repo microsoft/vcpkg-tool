@@ -3,18 +3,21 @@
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/git.h>
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/jsonreader.h>
+#include <vcpkg/base/lazy.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/system.debug.h>
+#include <vcpkg/base/system.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/archives.h>
 #include <vcpkg/binarycaching.h>
 #include <vcpkg/binaryparagraph.h>
-#include <vcpkg/build.h>
 #include <vcpkg/bundlesettings.h>
+#include <vcpkg/commands.build.h>
 #include <vcpkg/commands.h>
 #include <vcpkg/commands.version.h>
 #include <vcpkg/configuration.h>
@@ -34,8 +37,11 @@ namespace
 {
     using namespace vcpkg;
 
-    Path process_input_directory_impl(
-        Filesystem& filesystem, const Path& root, const std::string* option, StringLiteral name, LineInfo li)
+    Path process_input_directory_impl(const ReadOnlyFilesystem& filesystem,
+                                      const Path& root,
+                                      const std::string* option,
+                                      StringLiteral name,
+                                      LineInfo li)
     {
         if (option)
         {
@@ -47,20 +53,23 @@ namespace
         }
     }
 
-    Path process_input_directory(
-        Filesystem& filesystem, const Path& root, const std::string* option, StringLiteral name, LineInfo li)
+    Path process_input_directory(const ReadOnlyFilesystem& filesystem,
+                                 const Path& root,
+                                 const std::string* option,
+                                 StringLiteral name,
+                                 LineInfo li)
     {
         auto result = process_input_directory_impl(filesystem, root, option, name, li);
         Debug::print("Using ", name, "-root: ", result, '\n');
         return result;
     }
 
-    Path process_output_directory(Filesystem& fs, const std::string* option, const Path& default_path)
+    Path process_output_directory(const ReadOnlyFilesystem& fs, const std::string* option, const Path& default_path)
     {
         return fs.almost_canonical(option ? Path(*option) : default_path, VCPKG_LINE_INFO);
     }
 
-    ManifestAndPath load_manifest(const Filesystem& fs, const Path& manifest_dir)
+    ManifestAndPath load_manifest(const ReadOnlyFilesystem& fs, const Path& manifest_dir)
     {
         std::error_code ec;
         auto manifest_path = manifest_dir / "vcpkg.json";
@@ -79,7 +88,7 @@ namespace
                                            LocalizedString::from_raw(manifest_opt.error()->to_string()));
         }
 
-        auto manifest_value = std::move(manifest_opt).value_or_exit(VCPKG_LINE_INFO).value;
+        auto manifest_value = std::move(manifest_opt).value(VCPKG_LINE_INFO).value;
         if (!manifest_value.is_object())
         {
             msg::println_error(msgFailedToParseNoTopLevelObj, msg::path = manifest_path);
@@ -202,7 +211,7 @@ namespace
         return ret;
     }
 
-    Optional<Path> maybe_get_tmp_path(const Filesystem& fs,
+    Optional<Path> maybe_get_tmp_path(const ReadOnlyFilesystem& fs,
                                       const Optional<InstalledPaths>& installed,
                                       const Path& root,
                                       bool root_read_only,
@@ -232,7 +241,7 @@ namespace
         }
     }
 
-    Path compute_manifest_dir(const Filesystem& fs, const VcpkgCmdArguments& args, const Path& original_cwd)
+    Path compute_manifest_dir(const ReadOnlyFilesystem& fs, const VcpkgCmdArguments& args, const Path& original_cwd)
     {
         if (auto manifest_root_dir = args.manifest_root_dir.get())
         {
@@ -247,22 +256,21 @@ namespace
     // This structure holds members for VcpkgPathsImpl that don't require explicit initialization/destruction
     struct VcpkgPathsImplStage0
     {
-        Lazy<std::vector<TripletFile>> available_triplets;
+        Lazy<TripletDatabase> triplets_db;
         Lazy<ToolsetsInformation> toolsets;
         Lazy<std::map<std::string, std::string>> cmake_script_hashes;
         Lazy<std::string> ports_cmake_hash;
-        Cache<Triplet, Path> m_triplets_cache;
         Optional<vcpkg::LockFile> m_installed_lock;
     };
 
-    Path compute_registries_cache_root(const Filesystem& fs, const VcpkgCmdArguments& args)
+    Path compute_registries_cache_root(const ReadOnlyFilesystem& fs, const VcpkgCmdArguments& args)
     {
         Path ret;
         if (auto registries_cache_dir = args.registries_cache_dir.get())
         {
             get_global_metrics_collector().track_define(DefineMetric::X_VcpkgRegistriesCache);
             ret = *registries_cache_dir;
-            const auto status = get_real_filesystem().status(ret, VCPKG_LINE_INFO);
+            const auto status = real_filesystem.status(ret, VCPKG_LINE_INFO);
 
             if (!vcpkg::is_directory(status))
             {
@@ -288,7 +296,7 @@ namespace
     // 2. Are const (and therefore initialized in the initializer list)
     struct VcpkgPathsImplStage1 : VcpkgPathsImplStage0
     {
-        VcpkgPathsImplStage1(Filesystem& fs,
+        VcpkgPathsImplStage1(const Filesystem& fs,
                              const VcpkgCmdArguments& args,
                              const BundleSettings& bundle,
                              const Path& root,
@@ -311,7 +319,7 @@ namespace
             Debug::println("Using builtin-ports: ", m_builtin_ports);
         }
 
-        Filesystem& m_fs;
+        const Filesystem& m_fs;
         const FeatureFlagSettings m_ff_settings;
         const Path m_manifest_dir;
         const BundleSettings m_bundle;
@@ -322,8 +330,11 @@ namespace
         const Path m_registries_cache;
     };
 
-    Optional<InstalledPaths> compute_installed(
-        Filesystem& fs, const VcpkgCmdArguments& args, const Path& root, bool root_read_only, const Path& manifest_dir)
+    Optional<InstalledPaths> compute_installed(const ReadOnlyFilesystem& fs,
+                                               const VcpkgCmdArguments& args,
+                                               const Path& root,
+                                               bool root_read_only,
+                                               const Path& manifest_dir)
     {
         if (manifest_dir.empty())
         {
@@ -340,7 +351,7 @@ namespace
         return nullopt;
     }
 
-    Path compute_downloads_root(const Filesystem& fs,
+    Path compute_downloads_root(const ReadOnlyFilesystem& fs,
                                 const VcpkgCmdArguments& args,
                                 const Path& root,
                                 bool root_read_only)
@@ -363,7 +374,7 @@ namespace
     }
 
     // Guaranteed to return non-empty
-    Path determine_root(const Filesystem& fs, const Path& original_cwd, const VcpkgCmdArguments& args)
+    Path determine_root(const ReadOnlyFilesystem& fs, const Path& original_cwd, const VcpkgCmdArguments& args)
     {
         Path ret;
         if (auto vcpkg_root_dir_arg = args.vcpkg_root_dir_arg.get())
@@ -404,7 +415,7 @@ namespace
         return ret;
     }
 
-    Path preferred_current_path(const Filesystem& fs)
+    Path preferred_current_path(const ReadOnlyFilesystem& fs)
     {
 #if defined(_WIN32)
         return vcpkg::win32_fix_path_case(fs.current_path(VCPKG_LINE_INFO));
@@ -470,7 +481,7 @@ namespace
         return obj;
     }
 
-    vcpkg::LockFile load_lockfile(const Filesystem& fs, const Path& p)
+    vcpkg::LockFile load_lockfile(const ReadOnlyFilesystem& fs, const Path& p)
     {
         vcpkg::LockFile ret;
         std::error_code ec;
@@ -510,7 +521,7 @@ namespace vcpkg
 
     struct VcpkgPathsImpl : VcpkgPathsImplStage1
     {
-        VcpkgPathsImpl(Filesystem& fs,
+        VcpkgPathsImpl(const Filesystem& fs,
                        const VcpkgCmdArguments& args,
                        const BundleSettings bundle,
                        const Path& root,
@@ -617,7 +628,7 @@ namespace vcpkg
         ConfigurationAndSource m_config;
     };
 
-    VcpkgPaths::VcpkgPaths(Filesystem& filesystem, const VcpkgCmdArguments& args, const BundleSettings& bundle)
+    VcpkgPaths::VcpkgPaths(const Filesystem& filesystem, const VcpkgCmdArguments& args, const BundleSettings& bundle)
         : original_cwd(preferred_current_path(filesystem))
         , root(determine_root(filesystem, original_cwd, args))
         // this is used during the initialization of the below public members
@@ -659,17 +670,19 @@ namespace vcpkg
                 return (m_pimpl->m_config.directory / overlay_path).native();
             };
 
+            std::vector<std::string> overlay_triplet_paths;
+            std::vector<std::string> overlay_port_paths;
+
             if (!m_pimpl->m_config.directory.empty())
             {
                 auto& config = m_pimpl->m_config.config;
-                Util::transform(config.overlay_ports, resolve_relative_to_config);
-                Util::transform(config.overlay_triplets, resolve_relative_to_config);
+                overlay_triplet_paths = Util::fmap(config.overlay_triplets, resolve_relative_to_config);
+                overlay_port_paths = Util::fmap(config.overlay_ports, resolve_relative_to_config);
             }
 
-            overlay_ports =
-                merge_overlays(args.cli_overlay_ports, m_pimpl->m_config.config.overlay_ports, args.env_overlay_ports);
-            overlay_triplets = merge_overlays(
-                args.cli_overlay_triplets, m_pimpl->m_config.config.overlay_triplets, args.env_overlay_triplets);
+            overlay_ports = merge_overlays(args.cli_overlay_ports, overlay_port_paths, args.env_overlay_ports);
+            overlay_triplets =
+                merge_overlays(args.cli_overlay_triplets, overlay_triplet_paths, args.env_overlay_triplets);
         }
 
         for (const std::string& triplet : this->overlay_triplets)
@@ -690,37 +703,23 @@ namespace vcpkg
         return this->package_dir(spec) / "BUILD_INFO";
     }
 
-    bool VcpkgPaths::is_valid_triplet(Triplet t) const
+    const TripletDatabase& VcpkgPaths::get_triplet_db() const
     {
-        const auto it = Util::find_if(this->get_available_triplets(), [&](auto&& available_triplet) {
-            return t.canonical_name() == available_triplet.name;
-        });
-        return it != this->get_available_triplets().cend();
-    }
-
-    const std::vector<std::string> VcpkgPaths::get_available_triplets_names() const
-    {
-        return vcpkg::Util::fmap(this->get_available_triplets(),
-                                 [](auto&& triplet_file) -> std::string { return triplet_file.name; });
-    }
-
-    const std::vector<TripletFile>& VcpkgPaths::get_available_triplets() const
-    {
-        return m_pimpl->available_triplets.get_lazy([this]() -> std::vector<TripletFile> {
-            std::vector<TripletFile> output;
-            Filesystem& fs = this->get_filesystem();
+        return m_pimpl->triplets_db.get_lazy([this]() -> TripletDatabase {
+            std::vector<TripletFile> available_triplets;
+            const Filesystem& fs = this->get_filesystem();
             for (auto&& triplets_dir : m_pimpl->triplets_dirs)
             {
                 for (auto&& path : fs.get_regular_files_non_recursive(triplets_dir, VCPKG_LINE_INFO))
                 {
                     if (Strings::case_insensitive_ascii_equals(path.extension(), ".cmake"))
                     {
-                        output.emplace_back(path.stem(), triplets_dir);
+                        available_triplets.emplace_back(path.stem(), triplets_dir);
                     }
                 }
             }
 
-            return output;
+            return TripletDatabase{triplets, community_triplets, std::move(available_triplets)};
         });
     }
 
@@ -749,24 +748,6 @@ namespace vcpkg
             return Hash::get_file_hash(get_filesystem(), ports_cmake, Hash::Algorithm::Sha256)
                 .value_or_exit(VCPKG_LINE_INFO);
         });
-    }
-
-    const Path VcpkgPaths::get_triplet_file_path(Triplet triplet) const
-    {
-        return m_pimpl->m_triplets_cache.get_lazy(
-            triplet, [&]() -> auto{
-                for (const auto& triplet_dir : m_pimpl->triplets_dirs)
-                {
-                    auto path = triplet_dir / (triplet.canonical_name() + ".cmake");
-                    if (this->get_filesystem().exists(path, IgnoreErrors{}))
-                    {
-                        return path;
-                    }
-                }
-
-                Checks::msg_exit_with_message(
-                    VCPKG_LINE_INFO, msgTripletFileNotFound, msg::triplet = triplet.canonical_name());
-            });
     }
 
     LockFile& VcpkgPaths::get_installed_lockfile() const
@@ -829,11 +810,21 @@ namespace vcpkg
 
     Path VcpkgPaths::baselines_output() const { return buildtrees() / "versioning_" / "baselines"; }
     Path VcpkgPaths::versions_output() const { return buildtrees() / "versioning_" / "versions"; }
+    bool VcpkgPaths::try_provision_vcpkg_artifacts() const
+    {
+        switch (m_pimpl->m_bundle.deployment)
+        {
+            case DeploymentKind::Git: return true;
+            case DeploymentKind::OneLiner: return false;     // handled by z-boostrap-standalone
+            case DeploymentKind::VisualStudio: return false; // bundled in VS itself
+            default: Checks::unreachable(VCPKG_LINE_INFO);
+        }
+    }
 
     std::string VcpkgPaths::get_toolver_diagnostics() const
     {
         std::string ret;
-        Strings::append(ret, "    vcpkg-tool version: ", Commands::Version::version, "\n");
+        Strings::append(ret, "    vcpkg-tool version: ", vcpkg_executable_version, "\n");
         if (m_pimpl->m_bundle.read_only)
         {
             Strings::append(ret, "    vcpkg-readonly: true\n");
@@ -863,7 +854,7 @@ namespace vcpkg
         return ret;
     }
 
-    Filesystem& VcpkgPaths::get_filesystem() const { return m_pimpl->m_fs; }
+    const Filesystem& VcpkgPaths::get_filesystem() const { return m_pimpl->m_fs; }
     const DownloadManager& VcpkgPaths::get_download_manager() const { return *m_pimpl->m_download_manager; }
     const ToolCache& VcpkgPaths::get_tool_cache() const { return *m_pimpl->m_tool_cache; }
     const Path& VcpkgPaths::get_tool_exe(StringView tool, MessageSink& status_messages) const
@@ -908,7 +899,8 @@ namespace vcpkg
         auto cmd = git_cmd_builder(this->root / ".git", this->root);
         cmd.string_arg("rev-parse").string_arg("HEAD");
         return flatten_out(cmd_execute_and_capture_output(cmd), Tools::GIT).map([](std::string&& output) {
-            return Strings::trim(std::move(output));
+            Strings::inplace_trim(output);
+            return std::move(output);
         });
     }
 
@@ -940,81 +932,23 @@ namespace vcpkg
          * Since we are checking a git tree object, all files will be checked out to the root of `work-tree`.
          * Because of that, it makes sense to use the git hash as the name for the directory.
          */
-        Filesystem& fs = get_filesystem();
+        const Filesystem& fs = get_filesystem();
         auto destination = this->versions_output() / port_name / git_tree;
         if (fs.exists(destination, IgnoreErrors{}))
         {
             return destination;
         }
 
-        const auto destination_tmp = this->versions_output() / port_name / Strings::concat(git_tree, ".tmp");
-        const auto destination_tar = this->versions_output() / port_name / Strings::concat(git_tree, ".tar");
-        std::error_code ec;
-        Path failure_point;
-        fs.remove_all(destination_tmp, ec, failure_point);
-        if (ec)
+        auto maybe_tree = git_read_tree(destination, git_tree, dot_git_dir);
+        if (maybe_tree)
         {
-            return msg::format(msg::msgErrorMessage)
-                .append(format_filesystem_call_error(ec, "remove_all", {destination_tmp}))
-                .append_raw('\n')
-                .append(msg::msgNoteMessage)
-                .append(msgWhileCheckingOutPortTreeIsh, msg::package_name = port_name, msg::commit_sha = git_tree);
-        }
-        fs.create_directories(destination_tmp, ec);
-        if (ec)
-        {
-            return msg::format(msg::msgErrorMessage)
-                .append(format_filesystem_call_error(ec, "create_directories", {destination_tmp}))
-                .append_raw('\n')
-                .append(msg::msgNoteMessage)
-                .append(msgWhileCheckingOutPortTreeIsh, msg::package_name = port_name, msg::commit_sha = git_tree);
+            return destination;
         }
 
-        auto tar_cmd_builder = git_cmd_builder(dot_git_dir, dot_git_dir)
-                                   .string_arg("archive")
-                                   .string_arg(git_tree)
-                                   .string_arg("-o")
-                                   .string_arg(destination_tar);
-        auto maybe_tar_output = flatten(cmd_execute_and_capture_output(tar_cmd_builder), Tools::TAR);
-        if (!maybe_tar_output)
-        {
-            auto message = msg::format_error(msgGitCommandFailed, msg::command_line = tar_cmd_builder.command_line());
-            const auto& git_config = git_builtin_config();
-            if (is_shallow_clone(git_config).value_or(false))
-            {
-                message.append_raw('\n').append(msgShallowRepositoryDetected, msg::path = git_config.git_dir);
-            }
-
-            message.append_raw('\n')
-                .append(msg::msgNoteMessage)
-                .append(msgWhileCheckingOutPortTreeIsh, msg::package_name = port_name, msg::commit_sha = git_tree)
-                .append_raw('\n')
-                .append(maybe_tar_output.error());
-
-            return message;
-        }
-
-        extract_tar_cmake(this->get_tool_exe(Tools::CMAKE, stdout_sink), destination_tar, destination_tmp);
-        fs.remove(destination_tar, ec);
-        if (ec)
-        {
-            return msg::format(msg::msgErrorMessage)
-                .append(format_filesystem_call_error(ec, "remove", {destination_tar}))
-                .append_raw('\n')
-                .append(msg::msgNoteMessage)
-                .append(msgWhileCheckingOutPortTreeIsh, msg::package_name = port_name, msg::commit_sha = git_tree);
-        }
-        fs.rename_with_retry(destination_tmp, destination, ec);
-        if (ec)
-        {
-            return msg::format(msg::msgErrorMessage)
-                .append(format_filesystem_call_error(ec, "rename_with_retry", {destination_tmp, destination}))
-                .append_raw('\n')
-                .append(msg::msgNoteMessage)
-                .append(msgWhileCheckingOutPortTreeIsh, msg::package_name = port_name, msg::commit_sha = git_tree);
-        }
-
-        return destination;
+        return std::move(maybe_tree)
+            .error()
+            .append(msg::msgNoteMessage)
+            .append(msgWhileCheckingOutPortTreeIsh, msg::package_name = port_name, msg::commit_sha = git_tree);
     }
 
     ExpectedL<std::string> VcpkgPaths::git_show(StringView treeish, const Path& dot_git_dir) const
@@ -1191,56 +1125,98 @@ namespace vcpkg
                                     .string_arg(revision);
 
         return flatten_out(cmd_execute_and_capture_output(git_rev_parse), Tools::GIT).map([](std::string&& output) {
-            return Strings::trim(std::move(output));
+            Strings::inplace_trim(output);
+            return std::move(output);
         });
     }
-    ExpectedL<Path> VcpkgPaths::git_checkout_object_from_remote_registry(StringView object) const
+
+    ExpectedL<Unit> VcpkgPaths::git_read_tree(const Path& destination, StringView tree, const Path& dot_git_dir) const
     {
         auto& fs = get_filesystem();
-        fs.create_directories(m_pimpl->m_registries_git_trees, VCPKG_LINE_INFO);
+        std::error_code ec;
+        auto pid = get_process_id();
+        Path git_tree_temp = fmt::format("{}_{}.tmp", destination, pid);
+        Path git_tree_index = fmt::format("{}_{}.index", destination, pid);
+        auto parent = destination.parent_path();
+        if (!parent.empty())
+        {
+            fs.create_directories(parent, ec);
+            if (ec)
+            {
+                return format_filesystem_call_error(ec, "create_directories", {parent});
+            }
+        }
 
-        auto git_tree_final = m_pimpl->m_registries_git_trees / object;
-        if (fs.exists(git_tree_final, IgnoreErrors{}))
+        fs.remove_all(git_tree_temp, ec);
+        if (ec)
+        {
+            return format_filesystem_call_error(ec, "remove_all", {git_tree_temp});
+        }
+
+        fs.create_directory(git_tree_temp, ec);
+        if (ec)
+        {
+            return format_filesystem_call_error(ec, "create_directory", {git_tree_temp});
+        }
+
+        fs.remove_all(destination, ec);
+        if (ec)
+        {
+            return format_filesystem_call_error(ec, "remove_all", {destination});
+        }
+
+        Command git_archive = git_cmd_builder(dot_git_dir, git_tree_temp)
+                                  .string_arg("read-tree")
+                                  .string_arg("-m")
+                                  .string_arg("-u")
+                                  .string_arg(tree);
+
+        auto env = default_environment;
+        env.add_entry("GIT_INDEX_FILE", git_tree_index.native());
+
+        auto maybe_git_read_tree_output =
+            flatten(cmd_execute_and_capture_output(git_archive, default_working_directory, env), Tools::GIT);
+        if (!maybe_git_read_tree_output)
+        {
+            auto error = msg::format_error(msgGitCommandFailed, msg::command_line = git_archive.command_line());
+            const auto& git_config = git_builtin_config();
+            if (is_shallow_clone(GitConfig{get_tool_exe(Tools::GIT, stdout_sink), dot_git_dir, git_tree_temp})
+                    .value_or(false))
+            {
+                error = std::move(error).append_raw('\n').append(msgShallowRepositoryDetected,
+                                                                 msg::path = git_config.git_dir);
+            }
+
+            error.append_raw('\n').append(std::move(maybe_git_read_tree_output).error());
+            return error;
+        }
+
+        fs.rename_with_retry(git_tree_temp, destination, ec);
+        if (ec)
+        {
+            return msg::format(msg::msgErrorMessage)
+                .append(format_filesystem_call_error(ec, "rename_with_retry", {git_tree_temp, destination}));
+        }
+
+        fs.remove(git_tree_index, IgnoreErrors{});
+        return Unit{};
+    }
+
+    ExpectedL<Path> VcpkgPaths::git_extract_tree_from_remote_registry(StringView tree) const
+    {
+        auto git_tree_final = m_pimpl->m_registries_git_trees / tree;
+        if (get_filesystem().exists(git_tree_final, IgnoreErrors{}))
         {
             return git_tree_final;
         }
 
-        auto pid = get_process_id();
-
-        Path git_tree_temp = fmt::format("{}.tmp{}", git_tree_final, pid);
-        Path git_tree_temp_tar = git_tree_temp.native() + ".tar";
-        fs.remove_all(git_tree_temp, VCPKG_LINE_INFO);
-        fs.create_directory(git_tree_temp, VCPKG_LINE_INFO);
-
-        const auto& dot_git_dir = m_pimpl->m_registries_dot_git_dir;
-        Command git_archive = git_cmd_builder(dot_git_dir, m_pimpl->m_registries_work_tree_dir)
-                                  .string_arg("archive")
-                                  .string_arg("--format")
-                                  .string_arg("tar")
-                                  .string_arg(object)
-                                  .string_arg("--output")
-                                  .string_arg(git_tree_temp_tar);
-        auto maybe_git_archive_output = flatten(cmd_execute_and_capture_output(git_archive), Tools::GIT);
-        if (!maybe_git_archive_output)
+        auto maybe_extraction = git_read_tree(git_tree_final, tree, m_pimpl->m_registries_dot_git_dir);
+        if (maybe_extraction)
         {
-            return msg::format_error(msgGitCommandFailed, msg::command_line = git_archive.command_line())
-                .append_raw('\n')
-                .append(std::move(maybe_git_archive_output).error());
+            return git_tree_final;
         }
 
-        extract_tar_cmake(get_tool_exe(Tools::CMAKE, stdout_sink), git_tree_temp_tar, git_tree_temp);
-        // Attempt to remove temporary files, though non-critical.
-        fs.remove(git_tree_temp_tar, IgnoreErrors{});
-
-        std::error_code ec;
-        fs.rename_with_retry(git_tree_temp, git_tree_final, ec);
-        if (ec)
-        {
-            return msg::format(msg::msgErrorMessage)
-                .append(format_filesystem_call_error(ec, "rename_with_retry", {git_tree_temp, git_tree_final}));
-        }
-
-        return git_tree_final;
+        return std::move(maybe_extraction).error();
     }
 
     Optional<const ManifestAndPath&> VcpkgPaths::get_manifest() const
@@ -1288,7 +1264,7 @@ namespace vcpkg
     }
 
 #if defined(_WIN32)
-    static const ToolsetsInformation& get_all_toolsets(VcpkgPathsImpl& impl, const Filesystem& fs)
+    static const ToolsetsInformation& get_all_toolsets(VcpkgPathsImpl& impl, const ReadOnlyFilesystem& fs)
     {
         return impl.toolsets.get_lazy(
             [&fs]() -> ToolsetsInformation { return VisualStudio::find_toolset_instances_preferred_first(fs); });
@@ -1362,19 +1338,19 @@ namespace vcpkg
 #endif
     }
 
-    const Environment& VcpkgPaths::get_action_env(const AbiInfo& abi_info) const
+    const Environment& VcpkgPaths::get_action_env(const PreBuildInfo& pre_build_info, const Toolset& toolset) const
     {
-        return m_pimpl->m_env_cache.get_action_env(*this, abi_info);
+        return m_pimpl->m_env_cache.get_action_env(*this, pre_build_info, toolset);
     }
 
-    const std::string& VcpkgPaths::get_triplet_info(const AbiInfo& abi_info) const
+    const std::string& VcpkgPaths::get_triplet_info(const PreBuildInfo& pre_build_info, const Toolset& toolset) const
     {
-        return m_pimpl->m_env_cache.get_triplet_info(*this, abi_info);
+        return m_pimpl->m_env_cache.get_triplet_info(*this, pre_build_info, toolset);
     }
 
-    const CompilerInfo& VcpkgPaths::get_compiler_info(const AbiInfo& abi_info) const
+    const CompilerInfo& VcpkgPaths::get_compiler_info(const PreBuildInfo& pre_build_info, const Toolset& toolset) const
     {
-        return m_pimpl->m_env_cache.get_compiler_info(*this, abi_info);
+        return m_pimpl->m_env_cache.get_compiler_info(*this, pre_build_info, toolset);
     }
 
     const FeatureFlagSettings& VcpkgPaths::get_feature_flags() const { return m_pimpl->m_ff_settings; }

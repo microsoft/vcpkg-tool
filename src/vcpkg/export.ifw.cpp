@@ -1,16 +1,18 @@
 #include <vcpkg/base/fwd/message_sinks.h>
 
+#include <vcpkg/base/messages.h>
+#include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.process.h>
 
+#include <vcpkg/commands.export.h>
 #include <vcpkg/commands.h>
-#include <vcpkg/export.h>
+#include <vcpkg/commands.install.h>
 #include <vcpkg/export.ifw.h>
-#include <vcpkg/install.h>
 #include <vcpkg/installedpaths.h>
 #include <vcpkg/tools.h>
 #include <vcpkg/vcpkgpaths.h>
 
-namespace vcpkg::Export::IFW
+namespace vcpkg::IFW
 {
     // requires: after_prefix <= semi
     // requires: *semi == ';'
@@ -135,7 +137,9 @@ namespace vcpkg::Export::IFW
                        : paths.root / (export_id + "-ifw-installer.exe");
         }
 
-        Path export_real_package(const Path& ifw_packages_dir_path, const ExportPlanAction& action, Filesystem& fs)
+        Path export_real_package(const Path& ifw_packages_dir_path,
+                                 const ExportPlanAction& action,
+                                 const Filesystem& fs)
         {
             const BinaryParagraph& binary_paragraph = action.core_paragraph().value_or_exit(VCPKG_LINE_INFO);
 
@@ -177,7 +181,7 @@ namespace vcpkg::Export::IFW
 
         void export_unique_packages(const Path& raw_exported_dir_path,
                                     std::map<std::string, const ExportPlanAction*> unique_packages,
-                                    Filesystem& fs)
+                                    const Filesystem& fs)
         {
             auto package_xml_dir_path = raw_exported_dir_path / "packages/meta";
             auto package_xml_file_path = package_xml_dir_path / "package.xml";
@@ -222,7 +226,7 @@ namespace vcpkg::Export::IFW
 
         void export_unique_triplets(const Path& raw_exported_dir_path,
                                     std::set<std::string> unique_triplets,
-                                    Filesystem& fs)
+                                    const Filesystem& fs)
         {
             // triplets
 
@@ -261,7 +265,7 @@ namespace vcpkg::Export::IFW
             }
         }
 
-        void export_integration(const Path& raw_exported_dir_path, Filesystem& fs)
+        void export_integration(const Path& raw_exported_dir_path, const Filesystem& fs)
         {
             // integration
             auto package_xml_dir_path = raw_exported_dir_path / "integration/meta";
@@ -282,7 +286,7 @@ namespace vcpkg::Export::IFW
 
         void export_config(const std::string& export_id, const Options& ifw_options, const VcpkgPaths& paths)
         {
-            Filesystem& fs = paths.get_filesystem();
+            const Filesystem& fs = paths.get_filesystem();
 
             const auto config_xml_file_path = get_config_file_path(export_id, ifw_options, paths);
             fs.create_directories(config_xml_file_path.parent_path(), VCPKG_LINE_INFO);
@@ -317,7 +321,7 @@ namespace vcpkg::Export::IFW
         {
             msg::println(msgExportingMaintenanceTool);
 
-            Filesystem& fs = paths.get_filesystem();
+            const Filesystem& fs = paths.get_filesystem();
 
             const Path& installerbase_exe = paths.get_tool_exe(Tools::IFW_INSTALLER_BASE, stdout_sink);
             auto tempmaintenancetool_dir = ifw_packages_dir_path / "maintenance/data";
@@ -357,7 +361,7 @@ namespace vcpkg::Export::IFW
             const auto repository_dir = get_repository_dir_path(export_id, ifw_options, paths);
             msg::println(msgGeneratingRepo, msg::path = repository_dir);
 
-            Filesystem& fs = paths.get_filesystem();
+            const Filesystem& fs = paths.get_filesystem();
             fs.remove_all(repository_dir, VCPKG_LINE_INFO);
 
             auto cmd_line =
@@ -415,7 +419,7 @@ namespace vcpkg::Export::IFW
     {
         std::error_code ec;
         Path failure_point;
-        Filesystem& fs = paths.get_filesystem();
+        const Filesystem& fs = paths.get_filesystem();
 
         // Prepare packages directory
         const auto ifw_packages_dir_path = get_packages_dir_path(export_id, ifw_options, paths);

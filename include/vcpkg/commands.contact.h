@@ -1,14 +1,11 @@
 #pragma once
 
-#include <vcpkg/commands.interface.h>
+#include <vcpkg/base/fwd/files.h>
 
-namespace vcpkg::Commands::Contact
+#include <vcpkg/fwd/vcpkgcmdarguments.h>
+
+namespace vcpkg
 {
-    extern const CommandStructure COMMAND_STRUCTURE;
-    void perform_and_exit(const VcpkgCmdArguments& args, Filesystem& fs);
-
-    struct ContactCommand : BasicCommand
-    {
-        virtual void perform_and_exit(const VcpkgCmdArguments& args, Filesystem& fs) const override;
-    };
+    extern const CommandMetadata CommandContactMetadata;
+    void command_contact_and_exit(const VcpkgCmdArguments& args, const Filesystem& fs);
 }

@@ -3,7 +3,7 @@
 $env:X_VCPKG_REGISTRIES_CACHE = Join-Path $TestingRoot 'registries'
 New-Item -ItemType Directory -Force $env:X_VCPKG_REGISTRIES_CACHE | Out-Null
 
-$builtinRegistryArgs = $commonArgs + @("--x-builtin-registry-versions-dir=$PSScriptRoot/../e2e_ports/versions")
+$builtinRegistryArgs = $commonArgs + @("--x-builtin-registry-versions-dir=$PSScriptRoot/../e2e-ports/versions")
 
 Run-Vcpkg install @builtinRegistryArgs 'vcpkg-internal-e2e-test-port'
 Throw-IfNotFailed
@@ -28,13 +28,13 @@ New-Item -Path $filesystemRegistry -ItemType Directory
 $filesystemRegistry = (Get-Item $filesystemRegistry).FullName
 
 Copy-Item -Recurse `
-    -LiteralPath "$PSScriptRoot/../e2e_ports/vcpkg-internal-e2e-test-port" `
+    -LiteralPath "$PSScriptRoot/../e2e-ports/vcpkg-internal-e2e-test-port" `
     -Destination "$filesystemRegistry"
 New-Item `
     -Path "$filesystemRegistry/versions" `
     -ItemType Directory
 Copy-Item `
-    -LiteralPath "$PSScriptRoot/../e2e_ports/versions/baseline.json" `
+    -LiteralPath "$PSScriptRoot/../e2e-ports/versions/baseline.json" `
     -Destination "$filesystemRegistry/versions/baseline.json"
 New-Item `
     -Path "$filesystemRegistry/versions/v-" `
@@ -80,7 +80,7 @@ try
     git @gitConfigOptions switch --orphan $gitMainBranch
     Throw-IfFailed
 
-    Copy-Item -Recurse -LiteralPath "$PSScriptRoot/../e2e_ports/vcpkg-internal-e2e-test-port" -Destination .
+    Copy-Item -Recurse -LiteralPath "$PSScriptRoot/../e2e-ports/vcpkg-internal-e2e-test-port" -Destination .
     New-Item -Path './vcpkg-internal-e2e-test-port/foobar' -Value 'this is just to get a distinct git tree'
 
     $CurrentTest = 'git add -A'
@@ -129,7 +129,7 @@ try
     git @gitConfigOptions switch --orphan $gitSecondaryBranch
     Throw-IfFailed
 
-    Copy-Item -Recurse -LiteralPath "$PSScriptRoot/../e2e_ports/vcpkg-internal-e2e-test-port2" -Destination .
+    Copy-Item -Recurse -LiteralPath "$PSScriptRoot/../e2e-ports/vcpkg-internal-e2e-test-port2" -Destination .
     New-Item -Path './vcpkg-internal-e2e-test-port2/foobaz' -Value 'this is just to get a distinct git tree'
 
     $CurrentTest = 'git add -A'

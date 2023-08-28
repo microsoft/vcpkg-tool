@@ -1,9 +1,0 @@
-{
-  "id": "vcpkg-test-artifact-2",
-  "version": "1.0.0",
-  "exports": {
-    "environment": {
-      "VCPKG_TEST_ARTIFACT_2_ACTIVATED": "YES"
-    }
-  }
-}

@@ -1,13 +1,10 @@
 #pragma once
 
-#include <vcpkg/commands.interface.h>
+#include <vcpkg/fwd/vcpkgcmdarguments.h>
+#include <vcpkg/fwd/vcpkgpaths.h>
 
-namespace vcpkg::Commands::Cache
+namespace vcpkg
 {
-    void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths);
-
-    struct CacheCommand : PathsCommand
-    {
-        virtual void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const override;
-    };
+    extern const CommandMetadata CommandCacheMetadata;
+    void command_cache_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths);
 }

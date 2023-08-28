@@ -819,7 +819,7 @@ TEST_CASE ("manifest embed configuration", "[manifests]")
     REQUIRE(pgh.core_paragraph->dependencies[2].constraint ==
             DependencyConstraint{VersionConstraintKind::Minimum, "2018-09-01", 0});
 
-    auto config = Json::parse(raw_config, "<test config>").value_or_exit(VCPKG_LINE_INFO).value;
+    auto config = Json::parse(raw_config, "<test config>").value(VCPKG_LINE_INFO).value;
     REQUIRE(config.is_object());
     auto config_obj = config.object(VCPKG_LINE_INFO);
     REQUIRE(pgh.core_paragraph->vcpkg_configuration.has_value());
@@ -838,7 +838,13 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
         "description": "d",
         "builtin-baseline": "123",
         "dependencies": ["bd"],
-        "default-features": ["df"],
+        "default-features": [
+            "df",
+            {
+                "name": "zuko",
+                "platform": "windows & arm"
+            }
+        ],
         "features": {
             "$feature-level-comment": "hi",
             "$feature-level-comment2": "123456",
@@ -849,19 +855,30 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
                     "firebending",
                     {
                         "name": "order-white-lotus",
-                        "features": [ "the-ancient-ways" ],
+                        "features": [
+                            "the-ancient-ways",
+                            {
+                                "name": "windows-tests",
+                                "platform": "windows"
+                            }
+                        ],
                         "platform": "!(windows & arm)"
-                },
-                {
-                    "$extra": [],
-                    "$my": [],
-                    "name": "tea"
+                    },
+                    {
+                        "$extra": [],
+                        "$my": [],
+                        "name": "tea"
+                    },
+                    {
+                        "name": "z-no-defaults",
+                        "default-features": false
                     }
                 ]
             },
             "zuko": {
                 "description": ["son of the fire lord", "firebending 師父"],
-                "supports": "!(windows & arm)"
+                "supports": "!(windows & arm)",
+                "license": "MIT"
             }
         }
 })json";
@@ -893,8 +910,11 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
     REQUIRE(pgh.core_paragraph->description[0] == "d");
     REQUIRE(pgh.core_paragraph->dependencies.size() == 1);
     REQUIRE(pgh.core_paragraph->dependencies[0].name == "bd");
-    REQUIRE(pgh.core_paragraph->default_features.size() == 1);
-    REQUIRE(pgh.core_paragraph->default_features[0] == "df");
+    REQUIRE(pgh.core_paragraph->default_features.size() == 2);
+    REQUIRE(pgh.core_paragraph->default_features[0].name == "df");
+    REQUIRE(pgh.core_paragraph->default_features[0].platform.is_empty());
+    REQUIRE(pgh.core_paragraph->default_features[1].name == "zuko");
+    REQUIRE(to_string(pgh.core_paragraph->default_features[1].platform) == "windows & arm");
     REQUIRE(pgh.core_paragraph->supports_expression.is_empty());
     REQUIRE(pgh.core_paragraph->builtin_baseline == "123");
 
@@ -903,12 +923,21 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
     REQUIRE(pgh.feature_paragraphs[0]->name == "iroh");
     REQUIRE(pgh.feature_paragraphs[0]->description.size() == 1);
     REQUIRE(pgh.feature_paragraphs[0]->description[0] == "zuko's uncle");
-    REQUIRE(pgh.feature_paragraphs[0]->dependencies.size() == 3);
+    REQUIRE(pgh.feature_paragraphs[0]->dependencies.size() == 4);
     REQUIRE(pgh.feature_paragraphs[0]->dependencies[0].name == "firebending");
 
     REQUIRE(pgh.feature_paragraphs[0]->dependencies[1].name == "order-white-lotus");
-    REQUIRE(pgh.feature_paragraphs[0]->dependencies[1].features.size() == 1);
-    REQUIRE(pgh.feature_paragraphs[0]->dependencies[1].features[0] == "the-ancient-ways");
+    REQUIRE(pgh.feature_paragraphs[0]->dependencies[1].default_features == true);
+    REQUIRE(pgh.feature_paragraphs[0]->dependencies[1].features.size() == 2);
+    REQUIRE(pgh.feature_paragraphs[0]->dependencies[1].features[0].name == "the-ancient-ways");
+    REQUIRE(pgh.feature_paragraphs[0]->dependencies[1].features[0].platform.is_empty());
+    REQUIRE(pgh.feature_paragraphs[0]->dependencies[1].features[1].name == "windows-tests");
+    REQUIRE_FALSE(pgh.feature_paragraphs[0]->dependencies[1].features[1].platform.is_empty());
+    REQUIRE(
+        pgh.feature_paragraphs[0]->dependencies[1].features[1].platform.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", ""}}));
+    REQUIRE_FALSE(pgh.feature_paragraphs[0]->dependencies[1].features[1].platform.evaluate(
+        {{"VCPKG_CMAKE_SYSTEM_NAME", "Linux"}}));
+
     REQUIRE_FALSE(pgh.feature_paragraphs[0]->dependencies[1].platform.evaluate(
         {{"VCPKG_CMAKE_SYSTEM_NAME", ""}, {"VCPKG_TARGET_ARCHITECTURE", "arm"}}));
     REQUIRE(pgh.feature_paragraphs[0]->dependencies[1].platform.evaluate(
@@ -917,6 +946,8 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
         {{"VCPKG_CMAKE_SYSTEM_NAME", "Linux"}, {"VCPKG_TARGET_ARCHITECTURE", "x86"}}));
 
     REQUIRE(pgh.feature_paragraphs[0]->dependencies[2].name == "tea");
+    REQUIRE(pgh.feature_paragraphs[0]->dependencies[3].name == "z-no-defaults");
+    REQUIRE(pgh.feature_paragraphs[0]->dependencies[3].default_features == false);
 
     REQUIRE(pgh.feature_paragraphs[1]->name == "zuko");
     REQUIRE(pgh.feature_paragraphs[1]->description.size() == 2);
@@ -927,6 +958,8 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
         {{"VCPKG_CMAKE_SYSTEM_NAME", ""}, {"VCPKG_TARGET_ARCHITECTURE", "arm"}}));
     REQUIRE(pgh.feature_paragraphs[1]->supports_expression.evaluate(
         {{"VCPKG_CMAKE_SYSTEM_NAME", ""}, {"VCPKG_TARGET_ARCHITECTURE", "x86"}}));
+    REQUIRE(pgh.feature_paragraphs[1]->license.has_value());
+    REQUIRE(*pgh.feature_paragraphs[1]->license.get() == "MIT");
 
     check_json_eq_ordered(serialize_manifest(pgh), object);
 }
@@ -1035,7 +1068,27 @@ TEST_CASE ("SourceParagraph manifest default features", "[manifests]")
     auto& pgh = **m_pgh.get();
 
     REQUIRE(pgh.core_paragraph->default_features.size() == 1);
-    REQUIRE(pgh.core_paragraph->default_features[0] == "a1");
+    REQUIRE(pgh.core_paragraph->default_features[0].name == "a1");
+    REQUIRE(pgh.core_paragraph->default_features[0].platform.is_empty());
+}
+
+TEST_CASE ("SourceParagraph manifest default feature missing name", "[manifests]")
+{
+    auto m_pgh = test_parse_port_manifest(R"json({
+        "name": "a",
+        "version-string": "1.0",
+        "default-features": [{"platform": "!windows"}]
+    })json",
+                                          PrintErrors::No);
+    REQUIRE(!m_pgh.has_value());
+
+    m_pgh = test_parse_port_manifest(R"json({
+        "name": "a",
+        "version-string": "1.0",
+        "default-features": [{"name": "", "platform": "!windows"}]
+    })json",
+                                     PrintErrors::No);
+    REQUIRE(!m_pgh.has_value());
 }
 
 TEST_CASE ("SourceParagraph manifest description paragraph", "[manifests]")

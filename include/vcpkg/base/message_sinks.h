@@ -2,7 +2,6 @@
 
 #include <vcpkg/base/fwd/message_sinks.h>
 
-#include <vcpkg/base/files.h>
 #include <vcpkg/base/messages.h>
 
 namespace vcpkg
@@ -24,55 +23,41 @@ namespace vcpkg
             this->print(Color::none, s);
             this->print(Color::none, "\n");
         }
-
-        template<class Message, class... Ts>
-        typename Message::is_message_type print(Message m, Ts... args)
-        {
-            this->print(Color::none, msg::format(m, args...));
-        }
-
-        template<class Message, class... Ts>
-        typename Message::is_message_type println(Message m, Ts... args)
-        {
-            this->print(Color::none, msg::format(m, args...).append_raw('\n'));
-        }
-
-        template<class Message, class... Ts>
-        typename Message::is_message_type print(Color c, Message m, Ts... args)
-        {
-            this->print(c, msg::format(m, args...));
-        }
-
-        template<class Message, class... Ts>
-        typename Message::is_message_type println(Color c, Message m, Ts... args)
-        {
-            this->print(c, msg::format(m, args...).append_raw('\n'));
-        }
-
+        inline void println(Color c, LocalizedString&& s) { this->print(c, s.append_raw('\n')); }
+        inline void println(LocalizedString&& s) { this->print(Color::none, s.append_raw('\n')); }
         void println_warning(const LocalizedString& s);
-        template<class Message, class... Ts>
-        typename Message::is_message_type println_warning(Message m, Ts... args)
-        {
-            println_warning(msg::format(m, args...));
-        }
-
         void println_error(const LocalizedString& s);
-        template<class Message, class... Ts>
-        typename Message::is_message_type println_error(Message m, Ts... args)
+
+        template<VCPKG_DECL_MSG_TEMPLATE>
+        void print(VCPKG_DECL_MSG_ARGS)
         {
-            println_error(msg::format(m, args...));
+            this->print(msg::format(VCPKG_EXPAND_MSG_ARGS));
+        }
+        template<VCPKG_DECL_MSG_TEMPLATE>
+        void println(VCPKG_DECL_MSG_ARGS)
+        {
+            this->println(msg::format(VCPKG_EXPAND_MSG_ARGS));
+        }
+        template<VCPKG_DECL_MSG_TEMPLATE>
+        void println_warning(VCPKG_DECL_MSG_ARGS)
+        {
+            this->println_warning(msg::format(VCPKG_EXPAND_MSG_ARGS));
+        }
+        template<VCPKG_DECL_MSG_TEMPLATE>
+        void println_error(VCPKG_DECL_MSG_ARGS)
+        {
+            this->println_error(msg::format(VCPKG_EXPAND_MSG_ARGS));
         }
 
-        template<class Message, class... Ts, class = typename Message::is_message_type>
-        LocalizedString format_warning(Message m, Ts... args)
+        template<VCPKG_DECL_MSG_TEMPLATE>
+        void print(Color c, VCPKG_DECL_MSG_ARGS)
         {
-            return format(msg::msgWarningMessage).append(m, args...);
+            this->print(c, msg::format(VCPKG_EXPAND_MSG_ARGS));
         }
-
-        template<class Message, class... Ts, class = typename Message::is_message_type>
-        LocalizedString format_error(Message m, Ts... args)
+        template<VCPKG_DECL_MSG_TEMPLATE>
+        void println(Color c, VCPKG_DECL_MSG_ARGS)
         {
-            return format(msg::msgErrorMessage).append(m, args...);
+            this->println(c, msg::format(VCPKG_EXPAND_MSG_ARGS));
         }
 
         MessageSink(const MessageSink&) = delete;
@@ -83,17 +68,6 @@ namespace vcpkg
         ~MessageSink() = default;
     };
 
-    struct FileSink : MessageSink
-    {
-        Path m_log_file;
-        WriteFilePointer m_out_file;
-
-        FileSink(Filesystem& fs, StringView log_file, Append append_to_file)
-            : m_log_file(log_file), m_out_file(fs.open_for_write(m_log_file, append_to_file, VCPKG_LINE_INFO))
-        {
-        }
-        void print(Color c, StringView sv) override;
-    };
     struct CombiningSink : MessageSink
     {
         MessageSink& m_first;

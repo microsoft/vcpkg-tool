@@ -58,6 +58,34 @@ static void remove_plan_check(RemovePlanAction& plan, std::string pkg_name, Trip
     REQUIRE(pkg_name == plan.spec.name());
 }
 
+static ActionPlan create_feature_install_plan(const PortFileProvider& port_provider,
+                                              const CMakeVars::CMakeVarProvider& var_provider,
+                                              View<FullPackageSpec> specs,
+                                              const StatusParagraphs& status_db)
+{
+    const CreateInstallPlanOptions create_options{Test::X64_ANDROID, "pkg"};
+    return create_feature_install_plan(port_provider, var_provider, specs, status_db, create_options);
+}
+
+static ActionPlan create_feature_install_plan(const PortFileProvider& port_provider,
+                                              const CMakeVars::CMakeVarProvider& var_provider,
+                                              View<FullPackageSpec> specs,
+                                              const StatusParagraphs& status_db,
+                                              Triplet host_triplet)
+{
+    const CreateInstallPlanOptions create_options{host_triplet, "pkg"};
+    return create_feature_install_plan(port_provider, var_provider, specs, status_db, create_options);
+}
+
+static ActionPlan create_upgrade_plan(const PortFileProvider& provider,
+                                      const CMakeVars::CMakeVarProvider& var_provider,
+                                      const std::vector<PackageSpec>& specs,
+                                      const StatusParagraphs& status_db)
+{
+    const CreateInstallPlanOptions create_options{Test::X64_ANDROID, "pkg"};
+    return create_upgrade_plan(provider, var_provider, specs, status_db, create_options);
+}
+
 TEST_CASE ("basic install scheme", "[plan]")
 {
     std::vector<std::unique_ptr<StatusParagraph>> status_paragraphs;
@@ -418,6 +446,45 @@ TEST_CASE ("install all features test", "[plan]")
 
     REQUIRE(install_plan.size() == 1);
     features_check(install_plan.install_actions.at(0), "a", {"0", "1", "core"}, Test::X64_WINDOWS);
+}
+
+TEST_CASE ("install platform dependent default features", "[plan]")
+{
+    std::vector<std::unique_ptr<StatusParagraph>> status_paragraphs;
+
+    // Add a port "a" with default features "1" and features "0" and "1".
+    PackageSpecMap spec_map(Test::X64_WINDOWS);
+    auto iter = spec_map.emplace("a", "", {{"0", ""}, {"1", ""}});
+    // feature "1" is a default feature on "linux"
+    using MBO = PlatformExpression::MultipleBinaryOperators;
+    auto linux_expr = PlatformExpression::parse_platform_expression("linux", MBO::Deny).value_or_exit(VCPKG_LINE_INFO);
+    spec_map.map["a"].source_control_file->core_paragraph->default_features = {
+        DependencyRequestedFeature{"1", linux_expr}};
+
+    MapPortFileProvider map_port{spec_map.map};
+    MockCMakeVarProvider var_provider;
+
+    SECTION ("on !linux")
+    {
+        // Install "a" (without explicit feature specification)
+        auto install_plan = create_feature_install_plan(map_port,
+                                                        var_provider,
+                                                        Test::parse_test_fspecs("a:x64-windows"),
+                                                        StatusParagraphs(std::move(status_paragraphs)));
+        // Expect the default feature "1" to be installed, but not "0"
+        REQUIRE(install_plan.size() == 1);
+        features_check(install_plan.install_actions.at(0), "a", {"core"}, Test::X64_WINDOWS);
+    }
+    SECTION ("on linux")
+    {
+        var_provider.dep_info_vars[iter] = {{"VCPKG_CMAKE_SYSTEM_NAME", "Linux"}};
+        auto install_plan = create_feature_install_plan(map_port,
+                                                        var_provider,
+                                                        Test::parse_test_fspecs("a:x64-windows"),
+                                                        StatusParagraphs(std::move(status_paragraphs)));
+        REQUIRE(install_plan.size() == 1);
+        features_check(install_plan.install_actions.at(0), "a", {"core", "1"}, Test::X64_WINDOWS);
+    }
 }
 
 TEST_CASE ("install default features test 1", "[plan]")
@@ -914,8 +981,8 @@ TEST_CASE ("basic remove scheme", "[plan]")
     pghs.push_back(make_status_pgh("a"));
     StatusParagraphs status_db(std::move(pghs));
 
-    auto remove_plan = create_remove_plan({{"a", Test::X86_WINDOWS}}, status_db);
-
+    auto plan = create_remove_plan({{"a", Test::X86_WINDOWS}}, status_db);
+    auto& remove_plan = plan.remove;
     REQUIRE(remove_plan.size() == 1);
     REQUIRE(remove_plan.at(0).spec.name() == "a");
 }
@@ -927,7 +994,8 @@ TEST_CASE ("recurse remove scheme", "[plan]")
     pghs.push_back(make_status_pgh("b", "a"));
     StatusParagraphs status_db(std::move(pghs));
 
-    auto remove_plan = create_remove_plan({{"a", Test::X86_WINDOWS}}, status_db);
+    auto plan = create_remove_plan({{"a", Test::X86_WINDOWS}}, status_db);
+    auto& remove_plan = plan.remove;
 
     REQUIRE(remove_plan.size() == 2);
     REQUIRE(remove_plan.at(0).spec.name() == "b");
@@ -942,7 +1010,8 @@ TEST_CASE ("features depend remove scheme", "[plan]")
     pghs.push_back(make_status_feature_pgh("b", "0", "a"));
     StatusParagraphs status_db(std::move(pghs));
 
-    auto remove_plan = create_remove_plan({{"a", Test::X86_WINDOWS}}, status_db);
+    auto plan = create_remove_plan({{"a", Test::X86_WINDOWS}}, status_db);
+    auto& remove_plan = plan.remove;
 
     REQUIRE(remove_plan.size() == 2);
     REQUIRE(remove_plan.at(0).spec.name() == "b");
@@ -958,7 +1027,8 @@ TEST_CASE ("features depend remove scheme once removed", "[plan]")
     pghs.push_back(make_status_feature_pgh("opencv", "vtk", "vtk"));
     StatusParagraphs status_db(std::move(pghs));
 
-    auto remove_plan = create_remove_plan({{"expat", Test::X86_WINDOWS}}, status_db);
+    auto plan = create_remove_plan({{"expat", Test::X86_WINDOWS}}, status_db);
+    auto& remove_plan = plan.remove;
 
     REQUIRE(remove_plan.size() == 3);
     REQUIRE(remove_plan.at(0).spec.name() == "opencv");
@@ -975,7 +1045,8 @@ TEST_CASE ("features depend remove scheme once removed x64", "[plan]")
     pghs.push_back(make_status_feature_pgh("opencv", "vtk", "vtk", "x64"));
     StatusParagraphs status_db(std::move(pghs));
 
-    auto remove_plan = create_remove_plan({{"expat", Triplet::from_canonical_name("x64")}}, status_db);
+    auto plan = create_remove_plan({{"expat", Triplet::from_canonical_name("x64")}}, status_db);
+    auto& remove_plan = plan.remove;
 
     REQUIRE(remove_plan.size() == 3);
     REQUIRE(remove_plan.at(0).spec.name() == "opencv");
@@ -990,7 +1061,8 @@ TEST_CASE ("features depend core remove scheme", "[plan]")
     pghs.push_back(make_status_pgh("cpr", "curl[core]", "", "x64"));
     StatusParagraphs status_db(std::move(pghs));
 
-    auto remove_plan = create_remove_plan({{"curl", Triplet::from_canonical_name("x64")}}, status_db);
+    auto plan = create_remove_plan({{"curl", Triplet::from_canonical_name("x64")}}, status_db);
+    auto& remove_plan = plan.remove;
 
     REQUIRE(remove_plan.size() == 2);
     REQUIRE(remove_plan.at(0).spec.name() == "cpr");
@@ -1005,7 +1077,8 @@ TEST_CASE ("features depend core remove scheme 2", "[plan]")
     pghs.push_back(make_status_feature_pgh("curl", "b", "curl[a]", "x64"));
     StatusParagraphs status_db(std::move(pghs));
 
-    auto remove_plan = create_remove_plan({{"curl", Triplet::from_canonical_name("x64")}}, status_db);
+    auto plan = create_remove_plan({{"curl", Triplet::from_canonical_name("x64")}}, status_db);
+    auto& remove_plan = plan.remove;
 
     REQUIRE(remove_plan.size() == 1);
     REQUIRE(remove_plan.at(0).spec.name() == "curl");
@@ -1022,16 +1095,16 @@ TEST_CASE ("self-referencing scheme", "[plan]")
 
     SECTION ("basic")
     {
-        auto install_plan = create_feature_install_plan(
-            map_port, var_provider, Test::parse_test_fspecs("a"), {}, {{}, Test::X64_WINDOWS});
+        auto install_plan =
+            create_feature_install_plan(map_port, var_provider, Test::parse_test_fspecs("a"), {}, Test::X64_WINDOWS);
 
         REQUIRE(install_plan.size() == 1);
         REQUIRE(install_plan.install_actions.at(0).spec == spec_a);
     }
     SECTION ("qualified")
     {
-        auto install_plan = create_feature_install_plan(
-            map_port, var_provider, Test::parse_test_fspecs("b"), {}, {{}, Test::X64_WINDOWS});
+        auto install_plan =
+            create_feature_install_plan(map_port, var_provider, Test::parse_test_fspecs("b"), {}, Test::X64_WINDOWS);
 
         REQUIRE(install_plan.size() == 1);
         REQUIRE(install_plan.install_actions.at(0).spec == spec_b);
@@ -1056,7 +1129,7 @@ TEST_CASE ("basic tool port scheme", "[plan]")
                                                     var_provider,
                                                     Test::parse_test_fspecs("a"),
                                                     StatusParagraphs(std::move(status_paragraphs)),
-                                                    {{}, Test::X64_WINDOWS});
+                                                    Test::X64_WINDOWS);
 
     REQUIRE(install_plan.size() == 3);
     REQUIRE(install_plan.install_actions.at(0).spec.name() == "c");
@@ -1085,8 +1158,7 @@ TEST_CASE ("basic existing tool port scheme", "[plan]")
 
         MapPortFileProvider map_port(spec_map.map);
 
-        auto install_plan =
-            create_feature_install_plan(map_port, var_provider, fspecs_a, status_db, {{}, Test::X64_WINDOWS});
+        auto install_plan = create_feature_install_plan(map_port, var_provider, fspecs_a, status_db, Test::X64_WINDOWS);
 
         REQUIRE(install_plan.size() == 1);
         REQUIRE(install_plan.install_actions.at(0).spec == spec_a);
@@ -1101,16 +1173,14 @@ TEST_CASE ("basic existing tool port scheme", "[plan]")
 
         MapPortFileProvider map_port(spec_map.map);
 
-        auto install_plan =
-            create_feature_install_plan(map_port, var_provider, fspecs_a, status_db, {{}, Test::X64_WINDOWS});
+        auto install_plan = create_feature_install_plan(map_port, var_provider, fspecs_a, status_db, Test::X64_WINDOWS);
 
         REQUIRE(install_plan.size() == 2);
         REQUIRE(install_plan.install_actions.at(0).spec.name() == "a");
         REQUIRE(install_plan.install_actions.at(0).spec.triplet() == Test::X64_WINDOWS);
         REQUIRE(install_plan.install_actions.at(1).spec == spec_a);
 
-        install_plan =
-            create_feature_install_plan(map_port, var_provider, fspecs_a, status_db, {{}, Test::X86_WINDOWS});
+        install_plan = create_feature_install_plan(map_port, var_provider, fspecs_a, status_db, Test::X86_WINDOWS);
 
         REQUIRE(install_plan.size() == 1);
         REQUIRE(install_plan.install_actions.at(0).spec == spec_a);
@@ -1126,8 +1196,7 @@ TEST_CASE ("basic existing tool port scheme", "[plan]")
 
         MapPortFileProvider map_port(spec_map.map);
 
-        auto install_plan =
-            create_feature_install_plan(map_port, var_provider, fspecs_a, status_db, {{}, Test::ARM_UWP});
+        auto install_plan = create_feature_install_plan(map_port, var_provider, fspecs_a, status_db, Test::ARM_UWP);
 
         REQUIRE(install_plan.size() == 2);
         REQUIRE(install_plan.install_actions.at(0).spec.name() == "b");
@@ -1146,8 +1215,7 @@ TEST_CASE ("basic existing tool port scheme", "[plan]")
 
         MapPortFileProvider map_port(spec_map.map);
 
-        auto install_plan =
-            create_feature_install_plan(map_port, var_provider, fspecs_a, status_db, {{}, Test::X64_WINDOWS});
+        auto install_plan = create_feature_install_plan(map_port, var_provider, fspecs_a, status_db, Test::X64_WINDOWS);
 
         REQUIRE(install_plan.size() == 1);
         REQUIRE(install_plan.install_actions.at(0).spec == spec_a);
@@ -1160,7 +1228,8 @@ TEST_CASE ("remove tool port scheme", "[plan]")
     pghs.push_back(make_status_pgh("a"));
     StatusParagraphs status_db(std::move(pghs));
 
-    auto remove_plan = create_remove_plan({{"a", Test::X86_WINDOWS}}, status_db);
+    auto plan = create_remove_plan({{"a", Test::X86_WINDOWS}}, status_db);
+    auto& remove_plan = plan.remove;
 
     REQUIRE(remove_plan.size() == 1);
     REQUIRE(remove_plan.at(0).spec.name() == "a");

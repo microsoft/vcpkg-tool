@@ -1,15 +1,16 @@
 #pragma once
 
+#include <vcpkg/base/fwd/files.h>
+#include <vcpkg/base/fwd/json.h>
+
 #include <vcpkg/fwd/configuration.h>
 #include <vcpkg/fwd/registries.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
-#include <vcpkg/base/files.h>
-#include <vcpkg/base/jsonreader.h>
+#include <vcpkg/base/path.h>
 #include <vcpkg/base/span.h>
 #include <vcpkg/base/stringview.h>
 
-#include <vcpkg/versiondeserializers.h>
 #include <vcpkg/versions.h>
 
 #include <map>
@@ -78,7 +79,12 @@ namespace vcpkg
 
         // appends the names of the ports to the out parameter
         // may result in duplicated port names; make sure to Util::sort_unique_erase at the end
-        virtual void get_all_port_names(std::vector<std::string>& port_names) const = 0;
+        virtual void append_all_port_names(std::vector<std::string>& port_names) const = 0;
+
+        // appends the names of the ports to the out parameter if this can be known without
+        // network access.
+        // returns true if names were appended, otherwise returns false.
+        virtual bool try_append_all_port_names_no_network(std::vector<std::string>& port_names) const = 0;
 
         virtual ExpectedL<Version> get_baseline_version(StringView port_name) const = 0;
 
@@ -88,18 +94,16 @@ namespace vcpkg
     struct Registry
     {
         // requires: static_cast<bool>(implementation)
-        Registry(std::vector<std::string>&& packages, std::unique_ptr<RegistryImplementation>&& implementation);
+        Registry(std::vector<std::string>&& patterns, std::unique_ptr<RegistryImplementation>&& implementation);
 
         Registry(std::vector<std::string>&&, std::nullptr_t) = delete;
 
-        // always ordered lexicographically
-        View<std::string> packages() const { return packages_; }
+        // always ordered lexicographically; note the JSON name is "packages"
+        View<std::string> patterns() const { return patterns_; }
         const RegistryImplementation& implementation() const { return *implementation_; }
 
-        friend RegistrySet; // for experimental_set_builtin_registry_baseline
-
     private:
-        std::vector<std::string> packages_;
+        std::vector<std::string> patterns_;
         std::unique_ptr<RegistryImplementation> implementation_;
     };
 
@@ -111,8 +115,8 @@ namespace vcpkg
     // configuration fields.
     struct RegistrySet
     {
-        RegistrySet(std::unique_ptr<RegistryImplementation>&& x, std::vector<Registry>&& y)
-            : default_registry_(std::move(x)), registries_(std::move(y))
+        RegistrySet(std::unique_ptr<RegistryImplementation>&& default_registry, std::vector<Registry>&& registries)
+            : default_registry_(std::move(default_registry)), registries_(std::move(registries))
         {
         }
 
@@ -137,6 +141,12 @@ namespace vcpkg
         // for checking against the registry feature flag.
         bool has_modifications() const;
 
+        // Returns a sorted vector of all reachable port names in this set.
+        std::vector<std::string> get_all_reachable_port_names() const;
+
+        // Returns a sorted vector of all reachable port names we can provably determine without touching the network.
+        std::vector<std::string> get_all_known_reachable_port_names_no_network() const;
+
     private:
         std::unique_ptr<RegistryImplementation> default_registry_;
         std::vector<Registry> registries_;
@@ -148,7 +158,7 @@ namespace vcpkg
                                                               std::string repo,
                                                               std::string reference,
                                                               std::string baseline);
-    std::unique_ptr<RegistryImplementation> make_filesystem_registry(const Filesystem& fs,
+    std::unique_ptr<RegistryImplementation> make_filesystem_registry(const ReadOnlyFilesystem& fs,
                                                                      Path path,
                                                                      std::string baseline);
 
@@ -159,49 +169,8 @@ namespace vcpkg
 
     bool is_git_commit_sha(StringView sv);
 
-    struct VersionDbEntry
-    {
-        Version version;
-        VersionScheme scheme = VersionScheme::String;
-
-        // only one of these may be non-empty
-        std::string git_tree;
-        Path p;
-    };
-
-    // VersionDbType::Git => VersionDbEntry.git_tree is filled
-    // VersionDbType::Filesystem => VersionDbEntry.path is filled
-    enum class VersionDbType
-    {
-        Git,
-        Filesystem,
-    };
-
-    struct VersionDbEntryDeserializer final : Json::IDeserializer<VersionDbEntry>
-    {
-        static constexpr StringLiteral GIT_TREE = "git-tree";
-        static constexpr StringLiteral PATH = "path";
-
-        LocalizedString type_name() const override;
-        View<StringView> valid_fields() const override;
-        Optional<VersionDbEntry> visit_object(Json::Reader& r, const Json::Object& obj) const override;
-        VersionDbEntryDeserializer(VersionDbType type, const Path& root) : type(type), registry_root(root) { }
-
-    private:
-        VersionDbType type;
-        Path registry_root;
-    };
-
-    struct VersionDbEntryArrayDeserializer final : Json::IDeserializer<std::vector<VersionDbEntry>>
-    {
-        virtual LocalizedString type_name() const override;
-        virtual Optional<std::vector<VersionDbEntry>> visit_array(Json::Reader& r,
-                                                                  const Json::Array& arr) const override;
-        VersionDbEntryArrayDeserializer(VersionDbType type, const Path& root) : underlying{type, root} { }
-
-    private:
-        VersionDbEntryDeserializer underlying;
-    };
-
-    size_t package_match_prefix(StringView name, StringView pattern);
+    // Returns the effective match length of the package pattern `pattern` against `name`.
+    // No match is 0, exact match is SIZE_MAX, wildcard match is the length of the pattern.
+    // Note that the * is included in the match size to distinguish from 0 == no match.
+    size_t package_pattern_match(StringView name, StringView pattern);
 }

@@ -1,29 +1,31 @@
 #pragma once
 
 #include <vcpkg/base/fwd/downloads.h>
-#include <vcpkg/base/fwd/json.h>
+#include <vcpkg/base/fwd/files.h>
+#include <vcpkg/base/fwd/git.h>
 #include <vcpkg/base/fwd/system.process.h>
 
-#include <vcpkg/fwd/binaryparagraph.h>
 #include <vcpkg/fwd/build.h>
 #include <vcpkg/fwd/bundlesettings.h>
 #include <vcpkg/fwd/configuration.h>
 #include <vcpkg/fwd/installedpaths.h>
+#include <vcpkg/fwd/packagespec.h>
 #include <vcpkg/fwd/registries.h>
+#include <vcpkg/fwd/sourceparagraph.h>
 #include <vcpkg/fwd/tools.h>
+#include <vcpkg/fwd/triplet.h>
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
-#include <vcpkg/base/cache.h>
-#include <vcpkg/base/files.h>
-#include <vcpkg/base/git.h>
-#include <vcpkg/base/lazy.h>
 #include <vcpkg/base/optional.h>
-#include <vcpkg/base/system.h>
-#include <vcpkg/base/util.h>
+#include <vcpkg/base/path.h>
 
-#include <vcpkg/packagespec.h>
 #include <vcpkg/triplet.h>
+
+#include <map>
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace vcpkg
 {
@@ -44,23 +46,9 @@ namespace vcpkg
         std::vector<ToolsetArchOption> supported_architectures;
     };
 
-    struct ManifestAndPath
-    {
-        Json::Object manifest;
-        Path path;
-    };
-
-    struct TripletFile
-    {
-        std::string name;
-        Path location;
-
-        TripletFile(StringView name, StringView location) : name(name.data(), name.size()), location(location) { }
-    };
-
     struct VcpkgPaths
     {
-        VcpkgPaths(Filesystem& filesystem, const VcpkgCmdArguments& args, const BundleSettings& bundle);
+        VcpkgPaths(const Filesystem& filesystem, const VcpkgCmdArguments& args, const BundleSettings& bundle);
         VcpkgPaths(const VcpkgPaths&) = delete;
         VcpkgPaths& operator=(const VcpkgPaths&) = delete;
         ~VcpkgPaths();
@@ -70,12 +58,9 @@ namespace vcpkg
         Path build_dir(StringView package_name) const;
         Path build_info_file_path(const PackageSpec& spec) const;
 
-        bool is_valid_triplet(Triplet t) const;
-        const std::vector<std::string> get_available_triplets_names() const;
-        const std::vector<TripletFile>& get_available_triplets() const;
+        const TripletDatabase& get_triplet_db() const;
         const std::map<std::string, std::string>& get_cmake_script_hashes() const;
         StringView get_ports_cmake_hash() const;
-        const Path get_triplet_file_path(Triplet triplet) const;
 
         LockFile& get_installed_lockfile() const;
         void flush_lockfile() const;
@@ -94,6 +79,7 @@ namespace vcpkg
 
         const Path original_cwd;
         const Path root;
+        bool try_provision_vcpkg_artifacts() const;
 
     private:
         const std::unique_ptr<VcpkgPathsImpl> m_pimpl;
@@ -108,15 +94,18 @@ namespace vcpkg
         const Path buildsystems_msbuild_targets;
         const Path buildsystems_msbuild_props;
         const Path ports_cmake;
+
+    private:
         const Path triplets;
         const Path community_triplets;
-
-        std::vector<std::string> overlay_ports;
         std::vector<std::string> overlay_triplets;
+
+    public:
+        std::vector<std::string> overlay_ports;
 
         std::string get_toolver_diagnostics() const;
 
-        Filesystem& get_filesystem() const;
+        const Filesystem& get_filesystem() const;
         const DownloadManager& get_download_manager() const;
         const ToolCache& get_tool_cache() const;
         const Path& get_tool_exe(StringView tool, MessageSink& status_messages) const;
@@ -142,7 +131,8 @@ namespace vcpkg
         ExpectedL<std::string> git_show_from_remote_registry(StringView hash, const Path& relative_path_to_file) const;
         ExpectedL<std::string> git_find_object_id_for_remote_registry_path(StringView hash,
                                                                            const Path& relative_path_to_file) const;
-        ExpectedL<Path> git_checkout_object_from_remote_registry(StringView tree) const;
+        ExpectedL<Unit> git_read_tree(const Path& destination, StringView tree, const Path& dot_git_dir) const;
+        ExpectedL<Path> git_extract_tree_from_remote_registry(StringView tree) const;
 
         Optional<const ManifestAndPath&> get_manifest() const;
         bool manifest_mode_enabled() const;
@@ -152,9 +142,9 @@ namespace vcpkg
         // Retrieve a toolset matching the requirements in prebuildinfo
         const Toolset& get_toolset(const PreBuildInfo& prebuildinfo) const;
 
-        const Environment& get_action_env(const AbiInfo& abi_info) const;
-        const std::string& get_triplet_info(const AbiInfo& abi_info) const;
-        const CompilerInfo& get_compiler_info(const AbiInfo& abi_info) const;
+        const Environment& get_action_env(const PreBuildInfo& pre_build_info, const Toolset& toolset) const;
+        const std::string& get_triplet_info(const PreBuildInfo& pre_build_info, const Toolset& toolset) const;
+        const CompilerInfo& get_compiler_info(const PreBuildInfo& pre_build_info, const Toolset& toolset) const;
 
         const FeatureFlagSettings& get_feature_flags() const;
 

@@ -1,11 +1,11 @@
 #pragma once
 
-#include <vcpkg/commands.interface.h>
+#include <vcpkg/base/fwd/files.h>
 
-namespace vcpkg::Commands::Hash
+#include <vcpkg/fwd/vcpkgcmdarguments.h>
+
+namespace vcpkg
 {
-    struct HashCommand : BasicCommand
-    {
-        virtual void perform_and_exit(const VcpkgCmdArguments& args, Filesystem& paths) const override;
-    };
+    extern const CommandMetadata CommandHashMetadata;
+    void command_hash_and_exit(const VcpkgCmdArguments& args, const Filesystem& paths);
 }

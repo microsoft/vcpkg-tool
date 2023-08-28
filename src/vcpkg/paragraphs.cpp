@@ -1,5 +1,6 @@
 #include <vcpkg/base/fwd/message_sinks.h>
 
+#include <vcpkg/base/chrono.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/parse.h>
@@ -197,7 +198,19 @@ namespace vcpkg
                                      loc);
                     return nullopt;
                 }
-                return Dependency{pqs.name, pqs.features.value_or({}), pqs.platform.value_or({})};
+                Dependency dependency{pqs.name, {}, pqs.platform.value_or({})};
+                for (const auto& feature : pqs.features.value_or({}))
+                {
+                    if (feature == "core")
+                    {
+                        dependency.default_features = false;
+                    }
+                    else
+                    {
+                        dependency.features.emplace_back(feature);
+                    }
+                }
+                return dependency;
             });
         });
         if (!opt) return {LocalizedString::from_raw(parser.get_error()->to_string()), expected_right_tag};
@@ -271,8 +284,7 @@ namespace vcpkg::Paragraphs
             skip_whitespace();
             while (!at_eof())
             {
-                paragraphs.emplace_back();
-                get_paragraph(paragraphs.back());
+                get_paragraph(paragraphs.emplace_back());
                 match_while(is_lineend);
             }
             if (get_error()) return LocalizedString::from_raw(get_error()->to_string());
@@ -318,7 +330,7 @@ namespace vcpkg::Paragraphs
             });
     }
 
-    ExpectedL<Paragraph> get_single_paragraph(const Filesystem& fs, const Path& control_path)
+    ExpectedL<Paragraph> get_single_paragraph(const ReadOnlyFilesystem& fs, const Path& control_path)
     {
         std::error_code ec;
         std::string contents = fs.read_contents(control_path, ec);
@@ -330,7 +342,7 @@ namespace vcpkg::Paragraphs
         return parse_single_paragraph(contents, control_path);
     }
 
-    ExpectedL<std::vector<Paragraph>> get_paragraphs(const Filesystem& fs, const Path& control_path)
+    ExpectedL<std::vector<Paragraph>> get_paragraphs(const ReadOnlyFilesystem& fs, const Path& control_path)
     {
         std::error_code ec;
         std::string contents = fs.read_contents(control_path, ec);
@@ -347,7 +359,7 @@ namespace vcpkg::Paragraphs
         return PghParser(str, origin).get_paragraphs();
     }
 
-    bool is_port_directory(const Filesystem& fs, const Path& maybe_directory)
+    bool is_port_directory(const ReadOnlyFilesystem& fs, const Path& maybe_directory)
     {
         return fs.exists(maybe_directory / "CONTROL", IgnoreErrors{}) ||
                fs.exists(maybe_directory / "vcpkg.json", IgnoreErrors{});
@@ -402,7 +414,7 @@ namespace vcpkg::Paragraphs
         return error_info;
     }
 
-    ParseExpected<SourceControlFile> try_load_port(const Filesystem& fs, const Path& port_directory)
+    ParseExpected<SourceControlFile> try_load_port(const ReadOnlyFilesystem& fs, const Path& port_directory)
     {
         StatsTimer timer(g_load_ports_stats);
 
@@ -459,23 +471,18 @@ namespace vcpkg::Paragraphs
         return error_info;
     }
 
-    ExpectedL<BinaryControlFile> try_load_cached_package(const Filesystem& fs,
+    ExpectedL<BinaryControlFile> try_load_cached_package(const ReadOnlyFilesystem& fs,
                                                          const Path& package_dir,
                                                          const PackageSpec& spec)
     {
         StatsTimer timer(g_load_ports_stats);
 
-        ExpectedL<std::vector<Paragraph>> pghs = get_paragraphs(fs, package_dir / "CONTROL");
-
-        if (auto p = pghs.get())
+        ExpectedL<std::vector<Paragraph>> maybe_paragraphs = get_paragraphs(fs, package_dir / "CONTROL");
+        if (auto pparagraphs = maybe_paragraphs.get())
         {
+            auto& paragraphs = *pparagraphs;
             BinaryControlFile bcf;
-            bcf.core_paragraph = BinaryParagraph(p->front());
-            p->erase(p->begin());
-
-            bcf.features =
-                Util::fmap(*p, [&](auto&& raw_feature) -> BinaryParagraph { return BinaryParagraph(raw_feature); });
-
+            bcf.core_paragraph = BinaryParagraph(std::move(paragraphs[0]));
             if (bcf.core_paragraph.spec != spec)
             {
                 return msg::format(msgMismatchedSpec,
@@ -484,30 +491,22 @@ namespace vcpkg::Paragraphs
                                    msg::actual = bcf.core_paragraph.spec);
             }
 
+            bcf.features.reserve(paragraphs.size() - 1);
+            for (std::size_t idx = 1; idx < paragraphs.size(); ++idx)
+            {
+                bcf.features.emplace_back(BinaryParagraph{std::move(paragraphs[idx])});
+            }
+
             return bcf;
         }
 
-        return pghs.error();
+        return maybe_paragraphs.error();
     }
 
-    LoadResults try_load_all_registry_ports(const Filesystem& fs, const RegistrySet& registries)
+    LoadResults try_load_all_registry_ports(const ReadOnlyFilesystem& fs, const RegistrySet& registries)
     {
         LoadResults ret;
-
-        std::vector<std::string> ports;
-
-        for (const auto& registry : registries.registries())
-        {
-            const auto packages = registry.packages();
-            ports.insert(end(ports), begin(packages), end(packages));
-        }
-        if (auto registry = registries.default_registry())
-        {
-            registry->get_all_port_names(ports);
-        }
-
-        Util::sort_unique_erase(ports);
-
+        std::vector<std::string> ports = registries.get_all_reachable_port_names();
         for (const auto& port_name : ports)
         {
             auto impl = registries.registry_for_port(port_name);
@@ -562,7 +561,7 @@ namespace vcpkg::Paragraphs
         }
     }
 
-    std::vector<SourceControlFileAndLocation> load_all_registry_ports(const Filesystem& fs,
+    std::vector<SourceControlFileAndLocation> load_all_registry_ports(const ReadOnlyFilesystem& fs,
                                                                       const RegistrySet& registries)
     {
         auto results = try_load_all_registry_ports(fs, registries);
@@ -570,7 +569,7 @@ namespace vcpkg::Paragraphs
         return std::move(results.paragraphs);
     }
 
-    std::vector<SourceControlFileAndLocation> load_overlay_ports(const Filesystem& fs, const Path& directory)
+    std::vector<SourceControlFileAndLocation> load_overlay_ports(const ReadOnlyFilesystem& fs, const Path& directory)
     {
         LoadResults ret;
 

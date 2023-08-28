@@ -1,14 +1,11 @@
 #pragma once
 
-#include <vcpkg/commands.interface.h>
-#include <vcpkg/vcpkgcmdarguments.h>
+#include <vcpkg/fwd/vcpkgcmdarguments.h>
+#include <vcpkg/fwd/vcpkgpaths.h>
 
-namespace vcpkg::Commands
+namespace vcpkg
 {
-    extern const CommandStructure SearchCommandStructure;
+    extern const CommandMetadata CommandSearchMetadata;
 
-    struct SearchCommand : PathsCommand
-    {
-        virtual void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const override;
-    };
+    void command_search_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths);
 }

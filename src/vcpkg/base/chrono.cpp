@@ -74,34 +74,34 @@ namespace vcpkg
         if (duration_cast<hours>(nanos) > hours())
         {
             const auto t = nanos_as_double / duration_cast<nanoseconds>(hours(1)).count();
-            return fmt::format("{:4} h", t);
+            return fmt::format("{:.2} h", t);
         }
 
         if (duration_cast<minutes>(nanos) > minutes())
         {
             const auto t = nanos_as_double / duration_cast<nanoseconds>(minutes(1)).count();
-            return fmt::format("{:4} min", t);
+            return fmt::format("{:.2} min", t);
         }
 
         if (duration_cast<seconds>(nanos) > seconds())
         {
             const auto t = nanos_as_double / duration_cast<nanoseconds>(seconds(1)).count();
-            return fmt::format("{:4} s", t);
+            return fmt::format("{:.2} s", t);
         }
 
         if (duration_cast<milliseconds>(nanos) > milliseconds())
         {
             const auto t = nanos_as_double / duration_cast<nanoseconds>(milliseconds(1)).count();
-            return fmt::format("{:4} ms", t);
+            return fmt::format("{:.3} ms", t);
         }
 
         if (duration_cast<microseconds>(nanos) > microseconds())
         {
             const auto t = nanos_as_double / duration_cast<nanoseconds>(microseconds(1)).count();
-            return fmt::format("{:4} us", t);
+            return fmt::format("{:.3} us", t);
         }
 
-        return fmt::format("{:4} ns", nanos_as_double);
+        return fmt::format("{:.3} ns", nanos_as_double);
     }
 
     ElapsedTimer::ElapsedTimer() noexcept
@@ -173,9 +173,9 @@ namespace vcpkg
     std::string CTime::to_string() const { return this->strftime("%Y-%m-%dT%H:%M:%SZ"); }
     std::string CTime::strftime(const char* format) const
     {
-        std::array<char, 80> date{};
-        ::strftime(date.data(), date.size(), format, &m_tm);
-        return date.data();
+        char date[80]{};
+        ::strftime(date, sizeof(date), format, &m_tm);
+        return date;
     }
     std::chrono::system_clock::time_point CTime::to_time_point() const
     {

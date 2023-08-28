@@ -1,31 +1,36 @@
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/strings.h>
 
 #include <vcpkg/binaryparagraph.h>
 #include <vcpkg/commands.cache.h>
-#include <vcpkg/help.h>
+#include <vcpkg/commands.help.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
-namespace vcpkg::Commands::Cache
+using namespace vcpkg;
+
+namespace
 {
-    static std::vector<BinaryParagraph> read_all_binary_paragraphs(const VcpkgPaths& paths)
+    std::vector<BinaryParagraph> read_all_binary_paragraphs(const VcpkgPaths& paths)
     {
         std::vector<BinaryParagraph> output;
         for (auto&& path : paths.get_filesystem().get_files_non_recursive(paths.packages(), VCPKG_LINE_INFO))
         {
-            const auto pghs = Paragraphs::get_single_paragraph(paths.get_filesystem(), path / "CONTROL");
+            auto pghs = Paragraphs::get_single_paragraph(paths.get_filesystem(), std::move(path) / "CONTROL");
             if (const auto p = pghs.get())
             {
-                const BinaryParagraph binary_paragraph = BinaryParagraph(*p);
-                output.push_back(binary_paragraph);
+                output.emplace_back(std::move(*p));
             }
         }
 
         return output;
     }
+} // unnamed namespace
 
-    const CommandStructure COMMAND_STRUCTURE = {
+namespace vcpkg
+{
+    constexpr CommandMetadata CommandCacheMetadata = {
         [] { return msg::format(msgCacheHelp).append_raw('\n').append(create_example_string("cache png")); },
         0,
         1,
@@ -33,9 +38,9 @@ namespace vcpkg::Commands::Cache
         nullptr,
     };
 
-    void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
+    void command_cache_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
-        auto parsed = args.parse_arguments(COMMAND_STRUCTURE);
+        auto parsed = args.parse_arguments(CommandCacheMetadata);
 
         const std::vector<BinaryParagraph> binary_paragraphs = read_all_binary_paragraphs(paths);
         if (binary_paragraphs.empty())
@@ -67,9 +72,4 @@ namespace vcpkg::Commands::Cache
 
         Checks::exit_success(VCPKG_LINE_INFO);
     }
-
-    void CacheCommand::perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const
-    {
-        Cache::perform_and_exit(args, paths);
-    }
-}
+} // namespace vcpkg

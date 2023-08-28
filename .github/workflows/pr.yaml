@@ -1,0 +1,68 @@
+name: PR Build
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: '${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}'
+  cancel-in-progress: true
+
+jobs:
+  builds:
+    uses: ./.github/workflows/build.yaml
+
+  format:
+    runs-on: windows-2022
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "18.x"
+          cache: 'npm'
+          cache-dependency-path: vcpkg-artifacts/package-lock.json
+      - uses: lukka/get-cmake@v3.26.3
+        with:
+          cmakeVersion: 3.22.1 # ubuntu 22.04
+          ninjaVersion: 1.11.1
+      - name: Configure and Build (Windows)
+        shell: cmd
+        run: |
+          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=amd64 -host_arch=amd64
+          IF %ERRORLEVEL% NEQ 0 exit /B %ERRORLEVEL%
+          cl /Bv
+          set CXX=cl
+          set CC=cl
+          cmake --preset windows-ci
+          IF %ERRORLEVEL% NEQ 0 exit /B %ERRORLEVEL%
+          cmake --build --preset windows-ci --target generate-message-map -- -k0
+      - name: 'Format C++'
+        shell: pwsh
+        run: ./azure-pipelines/Format-CxxCode.ps1
+      - name: 'Create Diff'
+        id: diff
+        shell: pwsh
+        run: |
+          git add -u
+          git restore --staged vcpkg-artifacts/.npmrc
+          git diff --cached --stat --exit-code
+          if ($LASTEXITCODE -ne 0) {
+            git config user.name $(git log -1 --pretty=format:'%an')
+            git config user.email $(git log -1 --pretty=format:'%ae')
+            git commit -m "Format and regenerate messages"
+            git format-patch HEAD~ --output=out/format.patch
+            echo "::group::Diff"
+            get-content out/format.patch
+            echo "::endgroup::"
+            echo "::error::You must reformat the sources or regenerate the message map. See the format.patch artifact for more information.%0AOne-liner to apply and push the patch from the root of your vcpkg-tool repo:%0Agh run -R ${{ github.repository }} download ${{ github.run_id }} -n format.patch && git am format.patch && rm format.patch && git push"
+            exit 1
+          }
+      - name: 'Publish Format and Messages File Diff'
+        uses: actions/upload-artifact@v3
+        if: failure() && steps.diff.outcome == 'failure'
+        with:
+          name: format.patch
+          path: out/format.patch

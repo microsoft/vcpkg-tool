@@ -8,6 +8,23 @@
 #include <vcpkg/packagespec.h>
 #include <vcpkg/paragraphparser.h>
 
+namespace
+{
+    using namespace vcpkg;
+    Triplet resolve_triplet(const Optional<std::string>& specified_triplet,
+                            Triplet default_triplet,
+                            bool& default_triplet_used)
+    {
+        if (auto pspecified = specified_triplet.get())
+        {
+            return Triplet::from_canonical_name(*pspecified);
+        }
+
+        default_triplet_used = true;
+        return default_triplet;
+    }
+} // unnamed namespace
+
 namespace vcpkg
 {
     std::string FeatureSpec::to_string() const
@@ -43,6 +60,32 @@ namespace vcpkg
         return fmt::format("{}[{}]", package_name, feature_name);
     }
 
+    bool InternalFeatureSet::empty_or_only_core() const { return empty() || (size() == 1 && *begin() == "core"); }
+
+    InternalFeatureSet internalize_feature_list(View<std::string> fs, ImplicitDefault id)
+    {
+        InternalFeatureSet ret;
+        bool core = false;
+        for (auto&& f : fs)
+        {
+            if (f == "core")
+            {
+                core = true;
+            }
+            ret.emplace_back(f);
+        }
+
+        if (!core)
+        {
+            ret.emplace_back("core");
+            if (id == ImplicitDefault::YES)
+            {
+                ret.emplace_back("default");
+            }
+        }
+        return ret;
+    }
+
     void FullPackageSpec::expand_fspecs_to(std::vector<FeatureSpec>& out) const
     {
         for (auto&& feature : features)
@@ -68,55 +111,39 @@ namespace vcpkg
         return left.name() == right.name() && left.triplet() == right.triplet();
     }
 
-    static InternalFeatureSet normalize_feature_list(View<std::string> fs, ImplicitDefault id)
-    {
-        InternalFeatureSet ret;
-        bool core = false;
-        for (auto&& f : fs)
-        {
-            if (f == "core")
-            {
-                core = true;
-            }
-            ret.emplace_back(f);
-        }
-
-        if (!core)
-        {
-            ret.emplace_back("core");
-            if (id == ImplicitDefault::YES)
-            {
-                ret.emplace_back("default");
-            }
-        }
-        return ret;
-    }
-
-    ExpectedL<FullPackageSpec> ParsedQualifiedSpecifier::to_full_spec(Triplet default_triplet, ImplicitDefault id) const
+    ExpectedL<FullPackageSpec> ParsedQualifiedSpecifier::to_full_spec(Triplet default_triplet,
+                                                                      bool& default_triplet_used,
+                                                                      ImplicitDefault id) const
     {
         if (platform)
         {
             return msg::format_error(msgIllegalPlatformSpec);
         }
 
-        const Triplet t = triplet ? Triplet::from_canonical_name(*triplet.get()) : default_triplet;
-        const View<std::string> fs = !features.get() ? View<std::string>{} : *features.get();
-        return FullPackageSpec{{name, t}, normalize_feature_list(fs, id)};
+        View<std::string> fs{};
+        if (auto pfeatures = features.get())
+        {
+            fs = *pfeatures;
+        }
+
+        return FullPackageSpec{{name, resolve_triplet(triplet, default_triplet, default_triplet_used)},
+                               internalize_feature_list(fs, id)};
     }
 
-    ExpectedL<PackageSpec> ParsedQualifiedSpecifier::to_package_spec(Triplet default_triplet) const
+    ExpectedL<PackageSpec> ParsedQualifiedSpecifier::to_package_spec(Triplet default_triplet,
+                                                                     bool& default_triplet_used) const
     {
         if (platform)
         {
             return msg::format_error(msgIllegalPlatformSpec);
         }
+
         if (features)
         {
             return msg::format_error(msgIllegalFeatures);
         }
 
-        const Triplet t = triplet ? Triplet::from_canonical_name(*triplet.get()) : default_triplet;
-        return PackageSpec{name, t};
+        return PackageSpec{name, resolve_triplet(triplet, default_triplet, default_triplet_used)};
     }
 
     ExpectedL<ParsedQualifiedSpecifier> parse_qualified_specifier(StringView input)
@@ -273,52 +300,4 @@ namespace vcpkg
         parser.skip_tabs_spaces();
         return ret;
     }
-
-    bool operator==(const DependencyConstraint& lhs, const DependencyConstraint& rhs)
-    {
-        if (lhs.type != rhs.type) return false;
-        if (lhs.value != rhs.value) return false;
-        return lhs.port_version == rhs.port_version;
-    }
-
-    Optional<Version> DependencyConstraint::try_get_minimum_version() const
-    {
-        if (type == VersionConstraintKind::None)
-        {
-            return nullopt;
-        }
-
-        return Version{
-            value,
-            port_version,
-        };
-    }
-
-    FullPackageSpec Dependency::to_full_spec(Triplet target, Triplet host_triplet, ImplicitDefault id) const
-    {
-        return FullPackageSpec{{name, host ? host_triplet : target}, normalize_feature_list(features, id)};
-    }
-
-    bool operator==(const Dependency& lhs, const Dependency& rhs)
-    {
-        if (lhs.name != rhs.name) return false;
-        if (lhs.features != rhs.features) return false;
-        if (!structurally_equal(lhs.platform, rhs.platform)) return false;
-        if (lhs.extra_info != rhs.extra_info) return false;
-        if (lhs.constraint != rhs.constraint) return false;
-        if (lhs.host != rhs.host) return false;
-
-        return true;
-    }
-    bool operator!=(const Dependency& lhs, const Dependency& rhs);
-
-    bool operator==(const DependencyOverride& lhs, const DependencyOverride& rhs)
-    {
-        if (lhs.version_scheme != rhs.version_scheme) return false;
-        if (lhs.port_version != rhs.port_version) return false;
-        if (lhs.name != rhs.name) return false;
-        if (lhs.version != rhs.version) return false;
-        return lhs.extra_info == rhs.extra_info;
-    }
-    bool operator!=(const DependencyOverride& lhs, const DependencyOverride& rhs);
 }

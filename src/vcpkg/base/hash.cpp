@@ -1,5 +1,6 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/expected.h>
+#include <vcpkg/base/files.h>
 #include <vcpkg/base/format.h>
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/strings.h>
@@ -557,7 +558,7 @@ namespace vcpkg::Hash
 
     std::string get_string_sha256(StringView s) { return get_string_hash(s, Hash::Algorithm::Sha256); }
 
-    ExpectedL<std::string> get_file_hash(const Filesystem& fs, const Path& path, Algorithm algo)
+    ExpectedL<std::string> get_file_hash(const ReadOnlyFilesystem& fs, const Path& path, Algorithm algo)
     {
         Debug::println("Trying to hash ", path);
         std::error_code ec;

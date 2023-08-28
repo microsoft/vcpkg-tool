@@ -1,4 +1,5 @@
 #include <vcpkg/base/checks.h>
+#include <vcpkg/base/strings.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/binaryparagraph.h>
@@ -28,7 +29,7 @@ namespace vcpkg
 
     BinaryParagraph::BinaryParagraph() = default;
 
-    BinaryParagraph::BinaryParagraph(Paragraph fields)
+    BinaryParagraph::BinaryParagraph(Paragraph&& fields)
     {
         ParagraphParser parser(std::move(fields));
 
@@ -100,38 +101,36 @@ namespace vcpkg
     }
 
     BinaryParagraph::BinaryParagraph(const SourceParagraph& spgh,
+                                     const std::vector<std::string>& default_features,
                                      Triplet triplet,
                                      const std::string& abi_tag,
-                                     const std::vector<FeatureSpec>& deps)
+                                     std::vector<PackageSpec> deps)
         : spec(spgh.name, triplet)
         , version(spgh.raw_version)
         , port_version(spgh.port_version)
         , description(spgh.description)
         , maintainers(spgh.maintainers)
         , feature()
-        , default_features(spgh.default_features)
-        , dependencies()
+        , default_features(default_features)
+        , dependencies(std::move(deps))
         , abi(abi_tag)
     {
-        this->dependencies = Util::fmap(deps, [](const FeatureSpec& spec) { return spec.spec(); });
         canonicalize();
     }
 
-    BinaryParagraph::BinaryParagraph(const SourceParagraph& spgh,
+    BinaryParagraph::BinaryParagraph(const PackageSpec& spec,
                                      const FeatureParagraph& fpgh,
-                                     Triplet triplet,
-                                     const std ::vector<FeatureSpec>& deps)
-        : spec(spgh.name, triplet)
+                                     std::vector<PackageSpec> deps)
+        : spec(spec)
         , version()
         , port_version()
         , description(fpgh.description)
         , maintainers()
         , feature(fpgh.name)
         , default_features()
-        , dependencies()
+        , dependencies(std::move(deps))
         , abi()
     {
-        this->dependencies = Util::fmap(deps, [](const FeatureSpec& spec) { return spec.spec(); });
         canonicalize();
     }
 
@@ -145,7 +144,7 @@ namespace vcpkg
 
         for (auto& maintainer : this->maintainers)
         {
-            maintainer = Strings::trim(std::move(maintainer));
+            Strings::inplace_trim(maintainer);
         }
         if (all_empty(this->maintainers))
         {
@@ -154,7 +153,7 @@ namespace vcpkg
 
         for (auto& desc : this->description)
         {
-            desc = Strings::trim(std::move(desc));
+            Strings::inplace_trim(desc);
         }
         if (all_empty(this->description))
         {
@@ -275,9 +274,9 @@ namespace vcpkg
         serialize_array(Fields::DEFAULT_FEATURES, pgh.default_features, out_str);
 
         // sanity check the serialized data
-        const auto my_paragraph = out_str.substr(initial_end);
+        auto my_paragraph = StringView{out_str}.substr(initial_end);
         auto parsed_paragraph = Paragraphs::parse_single_paragraph(
-            out_str.substr(initial_end), "vcpkg::serialize(const BinaryParagraph&, std::string&)");
+            StringView{out_str}.substr(initial_end), "vcpkg::serialize(const BinaryParagraph&, std::string&)");
         if (!parsed_paragraph)
         {
             Checks::msg_exit_maybe_upgrade(
@@ -287,7 +286,7 @@ namespace vcpkg
                     .append_raw(my_paragraph));
         }
 
-        auto binary_paragraph = BinaryParagraph(*parsed_paragraph.get());
+        auto binary_paragraph = BinaryParagraph(std::move(*parsed_paragraph.get()));
         if (binary_paragraph != pgh)
         {
             Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
@@ -299,9 +298,9 @@ namespace vcpkg
         }
     }
 
-    std::string format_binary_paragraph(BinaryParagraph paragraph)
+    std::string format_binary_paragraph(const BinaryParagraph& paragraph)
     {
-        constexpr StringLiteral join_str = R"(", ")";
+        static constexpr StringLiteral join_str = R"(", ")";
         return fmt::format(
             "\nspec: \"{}\"\nversion: \"{}\"\nport_version: {}\ndescription: [\"{}\"]\nmaintainers: [\"{}\"]\nfeature: "
             "\"{}\"\ndefault_features: [\"{}\"]\ndependencies: [\"{}\"]\nabi: \"{}\"",

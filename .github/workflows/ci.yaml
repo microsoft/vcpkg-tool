@@ -1,0 +1,17 @@
+name: CI Build
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  # Required for CodeQL
+  security-events: write
+  contents: read
+
+jobs:
+  builds:
+    uses: ./.github/workflows/build.yaml
+    with:
+      codeql: true

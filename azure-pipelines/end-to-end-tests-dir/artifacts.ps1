@@ -12,9 +12,43 @@ function Reset-VcpkgConfiguration {
         registries = @(@{
             'name' = 'artifacts-test';
             'kind' = 'artifact';
-            'location' = (Get-Item "$PSScriptRoot/../e2e_artifacts_registry").FullName;
+            'location' = (Get-Item "$PSScriptRoot/../e2e-artifacts-registry").FullName;
         })
     } | ConvertTo-JSON | Out-File -Encoding ascii 'vcpkg-configuration.json' | Out-Null
+}
+
+function Test-Activation {
+    Param(
+        [Parameter(Mandatory=$true)]
+        [int]$Number,
+        [Parameter(Mandatory=$true)]
+        [bool]$Expected
+    )
+
+    [string]$combined = [System.Environment]::GetEnvironmentVariable('VCPKG_TEST_ARTIFACTS_PATHS')
+    if ($combined -eq $null) {
+        $combined = ''
+    }
+
+    # This is technically depending on the implementation detail that the artifact name ends up in
+    # in the resulting path; if this is a problem in the future the test artifacts could be changed
+    # to install real content which would be disinguishable directly.
+    [bool]$combinedActivated = $combined.Contains("vcpkg.test.artifact.$($Number)")
+    $singleActivationName = "VCPKG_TEST_ARTIFACT_$($Number)_ACTIVATED"
+    $single = [System.Environment]::GetEnvironmentVariable($singleActivationName)
+    [bool]$singleActivated = $single -eq 'YES'
+
+    if ($combinedActivated -ne $singleActivated) {
+        throw "When testing activation of vcpkg-test-artifact-$($Number), the combined variable and single variable disagreed on the activation status`n" `
+            + "VCPKG_TEST_ARTIFACTS_PATHS: $combined`n" `
+            + "$($singleActivationName): $single`n";
+    }
+
+    if ($Expected -And -Not $combinedActivated) {
+        throw "Expected vcpkg-test-artifact-$($Number) to be activated"
+    } elseif(-Not $Expected -And $combinedActivated) {
+        throw "Expected vcpkg-test-artifact-$($Number) to be deactivated"
+    }
 }
 
 function Test-Activations {
@@ -24,23 +58,9 @@ function Test-Activations {
         [switch]$Three
     )
 
-    if ($One -And $env:VCPKG_TEST_ARTIFACT_1_ACTIVATED -ne 'YES') {
-        throw 'Expected vcpkg-test-artifact-1 to be activated'
-    } elseif(-Not $One -And (Test-Path env:VCPKG_TEST_ARTIFACT_1_ACTIVATED)) {
-        throw 'Expected vcpkg-test-artifact-1 to be deactivated'
-    }
-
-    if ($Two -And $env:VCPKG_TEST_ARTIFACT_2_ACTIVATED -ne 'YES') {
-        throw 'Expected vcpkg-test-artifact-2 to be activated'
-    } elseif(-Not $Two -And (Test-Path env:VCPKG_TEST_ARTIFACT_2_ACTIVATED)) {
-        throw 'Expected vcpkg-test-artifact-2 to be deactivated'
-    }
-
-    if ($Three -And $env:VCPKG_TEST_ARTIFACT_3_ACTIVATED -ne 'YES') {
-        throw 'Expected vcpkg-test-artifact-3 to be activated'
-    } elseif(-Not $Three -And (Test-Path env:VCPKG_TEST_ARTIFACT_3_ACTIVATED)) {
-        throw 'Expected vcpkg-test-artifact-3 to be deactivated'
-    }
+    Test-Activation -Number 1 -Expected $One.ToBool()
+    Test-Activation -Number 2 -Expected $Two.ToBool()
+    Test-Activation -Number 3 -Expected $Three.ToBool()
 }
 
 function Test-Match {
@@ -185,7 +205,49 @@ try {
     Test-Activations -Three
     Test-Match $output "Deactivating: artifacts-test:vcpkg-test-artifact-1"
     Test-Match $output "Activating: $ProjectRegex"
+
+    # test "no postscript" warning:
+    #  can't deactivate without postscript:
+    $output = Run-VcpkgAndCaptureOutput -ForceExe deactivate
+    Throw-IfNotFailed
+    Test-Match $output "no postscript file: rerun with the vcpkg shell function rather than executable"
+
+    $output = Run-VcpkgAndCaptureOutput deactivate
+    Throw-IfFailed
+    Test-NoDeactivationWarning $output $ProjectRegex
+
+    #  can't activate without postscript:
+    $output = Run-VcpkgAndCaptureOutput -ForceExe activate
+    Throw-IfNotFailed
+    Test-Match $output "no postscript file: rerun with the vcpkg shell function rather than executable"
+    Test-Activations
+
+    #  unless --json passed
+    $output = Run-VcpkgAndCaptureOutput -ForceExe activate --json (Join-Path $Project 'result.json')
+    Throw-IfFailed
+    Test-Match $output "Activating: $ProjectRegex"
+    Test-NoMatch $output "no postscript file: rerun with the vcpkg shell function rather than executable"
+    Test-Activations # no shell activation
+
+    #  or --msbuild-props passed
+    $output = Run-VcpkgAndCaptureOutput -ForceExe activate --msbuild-props (Join-Path $Project 'result.props')
+    Throw-IfFailed
+    Test-Match $output "Activating: $ProjectRegex"
+    Test-NoMatch $output "no postscript file: rerun with the vcpkg shell function rather than executable"
+    Test-Activations # no shell activation
 } finally {
     Run-Vcpkg deactivate
     Pop-Location
 }
+
+$output = Run-VcpkgAndCaptureOutput x-update-registry microsoft
+Throw-IfFailed
+Test-Match $output "Updating registry data from microsoft"
+
+$output = Run-VcpkgAndCaptureOutput x-update-registry https://github.com/microsoft/vcpkg-ce-catalog/archive/refs/heads/main.zip
+Throw-IfFailed
+Test-Match $output "Updating registry data from microsoft"
+
+$output = Run-VcpkgAndCaptureOutput x-update-registry https://example.com
+Throw-IfNotFailed
+Test-Match $output "\[https://example.com/\] could not be updated; it could be malformed\."

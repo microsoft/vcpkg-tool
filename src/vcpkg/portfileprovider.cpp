@@ -1,4 +1,4 @@
-#include <vcpkg/base/json.h>
+#include <vcpkg/base/files.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/system.debug.h>
 
@@ -37,6 +37,8 @@ namespace
 
 namespace vcpkg
 {
+    PortFileProvider::~PortFileProvider() = default;
+
     MapPortFileProvider::MapPortFileProvider(const std::unordered_map<std::string, SourceControlFileAndLocation>& map)
         : ports(map)
     {
@@ -54,9 +56,15 @@ namespace vcpkg
         return Util::fmap(ports, [](auto&& kvpair) -> const SourceControlFileAndLocation* { return &kvpair.second; });
     }
 
-    PathsPortFileProvider::PathsPortFileProvider(const Filesystem& fs,
+    IVersionedPortfileProvider::~IVersionedPortfileProvider() = default;
+
+    IBaselineProvider::~IBaselineProvider() = default;
+
+    IOverlayProvider::~IOverlayProvider() = default;
+
+    PathsPortFileProvider::PathsPortFileProvider(const ReadOnlyFilesystem& fs,
                                                  const RegistrySet& registry_set,
-                                                 std::unique_ptr<IOverlayProvider>&& overlay)
+                                                 std::unique_ptr<IFullOverlayProvider>&& overlay)
         : m_baseline(make_baseline_provider(registry_set))
         , m_versioned(make_versioned_portfile_provider(fs, registry_set))
         , m_overlay(std::move(overlay))
@@ -118,9 +126,9 @@ namespace vcpkg
             mutable std::map<std::string, ExpectedL<Version>, std::less<>> m_baseline_cache;
         };
 
-        struct VersionedPortfileProviderImpl : IVersionedPortfileProvider
+        struct VersionedPortfileProviderImpl : IFullVersionedPortfileProvider
         {
-            VersionedPortfileProviderImpl(const Filesystem& fs, const RegistrySet& rset)
+            VersionedPortfileProviderImpl(const ReadOnlyFilesystem& fs, const RegistrySet& rset)
                 : m_fs(fs), m_registry_set(rset)
             {
             }
@@ -240,7 +248,7 @@ namespace vcpkg
             }
 
         private:
-            const Filesystem& m_fs;
+            const ReadOnlyFilesystem& m_fs;
             const RegistrySet& m_registry_set;
             mutable std::
                 unordered_map<VersionSpec, ExpectedL<std::unique_ptr<SourceControlFileAndLocation>>, VersionSpecHasher>
@@ -248,9 +256,9 @@ namespace vcpkg
             mutable std::map<std::string, ExpectedL<std::unique_ptr<RegistryEntry>>, std::less<>> m_entry_cache;
         };
 
-        struct OverlayProviderImpl : IOverlayProvider
+        struct OverlayProviderImpl : IFullOverlayProvider
         {
-            OverlayProviderImpl(const Filesystem& fs, const Path& original_cwd, View<std::string> overlay_ports)
+            OverlayProviderImpl(const ReadOnlyFilesystem& fs, const Path& original_cwd, View<std::string> overlay_ports)
                 : m_fs(fs), m_overlay_ports(Util::fmap(overlay_ports, [&original_cwd](const std::string& s) -> Path {
                     return original_cwd / s;
                 }))
@@ -384,14 +392,14 @@ namespace vcpkg
             }
 
         private:
-            const Filesystem& m_fs;
+            const ReadOnlyFilesystem& m_fs;
             const std::vector<Path> m_overlay_ports;
             mutable std::map<std::string, Optional<SourceControlFileAndLocation>, std::less<>> m_overlay_cache;
         };
 
-        struct ManifestProviderImpl : IOverlayProvider
+        struct ManifestProviderImpl : IFullOverlayProvider
         {
-            ManifestProviderImpl(const Filesystem& fs,
+            ManifestProviderImpl(const ReadOnlyFilesystem& fs,
                                  const Path& original_cwd,
                                  View<std::string> overlay_ports,
                                  const Path& manifest_path,
@@ -431,20 +439,20 @@ namespace vcpkg
         return std::make_unique<BaselineProviderImpl>(registry_set);
     }
 
-    std::unique_ptr<IVersionedPortfileProvider> make_versioned_portfile_provider(const Filesystem& fs,
-                                                                                 const RegistrySet& registry_set)
+    std::unique_ptr<IFullVersionedPortfileProvider> make_versioned_portfile_provider(const ReadOnlyFilesystem& fs,
+                                                                                     const RegistrySet& registry_set)
     {
         return std::make_unique<VersionedPortfileProviderImpl>(fs, registry_set);
     }
 
-    std::unique_ptr<IOverlayProvider> make_overlay_provider(const Filesystem& fs,
-                                                            const Path& original_cwd,
-                                                            View<std::string> overlay_ports)
+    std::unique_ptr<IFullOverlayProvider> make_overlay_provider(const ReadOnlyFilesystem& fs,
+                                                                const Path& original_cwd,
+                                                                View<std::string> overlay_ports)
     {
         return std::make_unique<OverlayProviderImpl>(fs, original_cwd, overlay_ports);
     }
 
-    std::unique_ptr<IOverlayProvider> make_manifest_provider(const Filesystem& fs,
+    std::unique_ptr<IOverlayProvider> make_manifest_provider(const ReadOnlyFilesystem& fs,
                                                              const Path& original_cwd,
                                                              View<std::string> overlay_ports,
                                                              const Path& manifest_path,

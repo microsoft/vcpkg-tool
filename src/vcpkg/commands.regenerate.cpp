@@ -1,4 +1,4 @@
-#include <vcpkg/base/basic-checks.h>
+#include <vcpkg/base/checks.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/util.h>
 
@@ -10,21 +10,24 @@
 #include <string>
 #include <vector>
 
+using namespace vcpkg;
+
 namespace
 {
-    using namespace vcpkg;
-
     constexpr StringLiteral DRY_RUN = "dry-run";
     constexpr StringLiteral FORCE = "force";
     constexpr StringLiteral NORMALIZE = "normalize";
 
-    constexpr std::array<CommandSwitch, 3> command_switches = {{
+    constexpr CommandSwitch command_switches[] = {
         {FORCE, []() { return msg::format(msgCmdRegenerateOptForce); }},
         {DRY_RUN, []() { return msg::format(msgCmdRegenerateOptDryRun); }},
         {NORMALIZE, []() { return msg::format(msgCmdRegenerateOptNormalize); }},
-    }};
+    };
+} // unnamed namespace
 
-    static const CommandStructure command_structure = {
+namespace vcpkg
+{
+    constexpr CommandMetadata CommandRegenerateMetadata = {
         [] {
             return msg::format(msgRegeneratesArtifactRegistry)
                 .append_raw('\n')
@@ -35,15 +38,12 @@ namespace
         {command_switches},
         nullptr,
     };
-}
 
-namespace vcpkg
-{
-    void RegenerateCommand::perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const
+    void command_regenerate_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
         std::vector<std::string> forwarded_args;
         forwarded_args.emplace_back("regenerate");
-        const auto parsed = args.parse_arguments(command_structure);
+        const auto parsed = args.parse_arguments(CommandRegenerateMetadata);
         forwarded_args.push_back(parsed.command_arguments[0]);
 
         if (Util::Sets::contains(parsed.switches, FORCE))
@@ -63,4 +63,4 @@ namespace vcpkg
 
         Checks::exit_with_code(VCPKG_LINE_INFO, run_configure_environment_command(paths, forwarded_args));
     }
-}
+} // namespace vcpkg

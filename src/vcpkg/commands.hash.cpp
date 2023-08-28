@@ -1,3 +1,4 @@
+#include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/util.h>
 
@@ -5,9 +6,9 @@
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
-namespace vcpkg::Commands::Hash
+namespace vcpkg
 {
-    const CommandStructure COMMAND_STRUCTURE = {
+    constexpr CommandMetadata CommandHashMetadata = {
         [] { return create_example_string("hash boost_1_62_0.tar.bz2"); },
         1,
         2,
@@ -15,9 +16,9 @@ namespace vcpkg::Commands::Hash
         nullptr,
     };
 
-    void HashCommand::perform_and_exit(const VcpkgCmdArguments& args, Filesystem& fs) const
+    void command_hash_and_exit(const VcpkgCmdArguments& args, const Filesystem& fs)
     {
-        const auto parsed = args.parse_arguments(COMMAND_STRUCTURE);
+        const auto parsed = args.parse_arguments(CommandHashMetadata);
 
         const auto file_to_hash = (fs.current_path(VCPKG_LINE_INFO) / parsed.command_arguments[0]).lexically_normal();
 
