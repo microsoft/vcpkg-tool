@@ -163,8 +163,10 @@ TEST_CASE ("Feature flag off", "[arguments]")
 
 TEST_CASE ("CMake debugger flags", "[arguments]")
 {
-    std::vector<std::string> t = {
-        "--x-cmake-debug", "\\\\.\\pipe\\tespipe;zlib;bar;baz", "--x-cmake-configure-debug", "\\\\.\\pipe\\configure-pipe"};
+    std::vector<std::string> t = {"--x-cmake-debug",
+                                  "\\\\.\\pipe\\tespipe;zlib;bar;baz",
+                                  "--x-cmake-configure-debug",
+                                  "\\\\.\\pipe\\configure-pipe"};
     auto v = VcpkgCmdArguments::create_from_arg_sequence(t.data(), t.data() + t.size());
     auto& cmake_debug = v.cmake_debug.value_or_exit(VCPKG_LINE_INFO);
     REQUIRE(cmake_debug.value == "\\\\.\\pipe\\tespipe");
