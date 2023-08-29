@@ -259,8 +259,8 @@ namespace vcpkg::Strings
             if (!previous_partial_line.empty())
             {
                 cb(StringView{previous_partial_line});
+                previous_partial_line.clear();
             }
-            previous_partial_line.clear();
             last_was_cr = false;
         }
 
