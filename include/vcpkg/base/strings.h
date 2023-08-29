@@ -256,8 +256,11 @@ namespace vcpkg::Strings
         template<class Fn>
         void on_end(Fn cb)
         {
-            cb(StringView{previous_partial_line});
-            previous_partial_line.clear();
+            if (!previous_partial_line.empty())
+            {
+                cb(StringView{previous_partial_line});
+                previous_partial_line.clear();
+            }
             last_was_cr = false;
         }
 
