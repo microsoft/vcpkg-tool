@@ -3,7 +3,8 @@
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
-namespace vcpkg::Commands::CIClean
+namespace vcpkg
 {
-    void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths);
+    extern const CommandMetadata CommandCiCleanMetadata;
+    void command_ci_clean_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths);
 }

@@ -12,7 +12,7 @@ function Reset-VcpkgConfiguration {
         registries = @(@{
             'name' = 'artifacts-test';
             'kind' = 'artifact';
-            'location' = (Get-Item "$PSScriptRoot/../e2e_artifacts_registry").FullName;
+            'location' = (Get-Item "$PSScriptRoot/../e2e-artifacts-registry").FullName;
         })
     } | ConvertTo-JSON | Out-File -Encoding ascii 'vcpkg-configuration.json' | Out-Null
 }
@@ -244,7 +244,7 @@ $output = Run-VcpkgAndCaptureOutput x-update-registry microsoft
 Throw-IfFailed
 Test-Match $output "Updating registry data from microsoft"
 
-$output = Run-VcpkgAndCaptureOutput x-update-registry https://aka.ms/vcpkg-ce-default
+$output = Run-VcpkgAndCaptureOutput x-update-registry https://github.com/microsoft/vcpkg-ce-catalog/archive/refs/heads/main.zip
 Throw-IfFailed
 Test-Match $output "Updating registry data from microsoft"
 

@@ -4,7 +4,7 @@
 #include <vcpkg/configure-environment.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 
-namespace vcpkg::Commands
+namespace vcpkg
 {
     void command_generate_msbuild_props_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {

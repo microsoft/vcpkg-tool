@@ -13,6 +13,7 @@
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.process.h>
+#include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.integrate.h>
 #include <vcpkg/packagespec.h>
@@ -37,30 +38,24 @@ namespace vcpkg
 
     const IBuildLogsRecorder& null_build_logs_recorder() noexcept;
 
-    namespace Build
-    {
-        int perform_ex(const VcpkgCmdArguments& args,
-                       const FullPackageSpec& full_spec,
-                       Triplet host_triplet,
-                       const PathsPortFileProvider& provider,
-                       const IBuildLogsRecorder& build_logs_recorder,
-                       const VcpkgPaths& paths);
-        void perform_and_exit_ex(const VcpkgCmdArguments& args,
-                                 const FullPackageSpec& full_spec,
-                                 Triplet host_triplet,
-                                 const PathsPortFileProvider& provider,
-                                 const IBuildLogsRecorder& build_logs_recorder,
-                                 const VcpkgPaths& paths);
+    extern const CommandMetadata CommandBuildMetadata;
+    int command_build_ex(const VcpkgCmdArguments& args,
+                         const FullPackageSpec& full_spec,
+                         Triplet host_triplet,
+                         const PathsPortFileProvider& provider,
+                         const IBuildLogsRecorder& build_logs_recorder,
+                         const VcpkgPaths& paths);
+    void command_build_and_exit_ex(const VcpkgCmdArguments& args,
+                                   const FullPackageSpec& full_spec,
+                                   Triplet host_triplet,
+                                   const PathsPortFileProvider& provider,
+                                   const IBuildLogsRecorder& build_logs_recorder,
+                                   const VcpkgPaths& paths);
 
-        int perform(const VcpkgCmdArguments& args,
-                    const VcpkgPaths& paths,
-                    Triplet default_triplet,
-                    Triplet host_triplet);
-        void perform_and_exit(const VcpkgCmdArguments& args,
-                              const VcpkgPaths& paths,
-                              Triplet default_triplet,
-                              Triplet host_triplet);
-    } // namespace vcpkg::Build
+    void command_build_and_exit(const VcpkgCmdArguments& args,
+                                const VcpkgPaths& paths,
+                                Triplet default_triplet,
+                                Triplet host_triplet);
 
     StringLiteral to_string_view(DownloadTool tool);
     std::string to_string(DownloadTool tool);
@@ -154,6 +149,7 @@ namespace vcpkg
         Triplet triplet;
         bool load_vcvars_env = false;
         bool disable_compiler_tracking = false;
+        bool target_is_xbox = false;
         std::string target_architecture;
         std::string cmake_system_name;
         std::string cmake_system_version;
@@ -165,6 +161,7 @@ namespace vcpkg
         Optional<std::string> public_abi_override;
         std::vector<std::string> passthrough_env_vars;
         std::vector<std::string> passthrough_env_vars_tracked;
+        Optional<Path> gamedk_latest_path;
 
         Path toolchain_file() const;
         bool using_vcvars() const;
@@ -214,12 +211,7 @@ namespace vcpkg
         BuildPolicies() = default;
         BuildPolicies(std::unordered_map<BuildPolicy, bool>&& map) : m_policies(std::move(map)) { }
 
-        bool is_enabled(BuildPolicy policy) const
-        {
-            const auto it = m_policies.find(policy);
-            if (it != m_policies.cend()) return it->second;
-            return false;
-        }
+        bool is_enabled(BuildPolicy policy) const { return Util::copy_or_default(m_policies, policy); }
 
     private:
         std::unordered_map<BuildPolicy, bool> m_policies;
@@ -243,7 +235,7 @@ namespace vcpkg
         BuildPolicies policies;
     };
 
-    BuildInfo read_build_info(const Filesystem& fs, const Path& filepath);
+    BuildInfo read_build_info(const ReadOnlyFilesystem& fs, const Path& filepath);
 
     struct AbiEntry
     {
@@ -268,12 +260,14 @@ namespace vcpkg
 
     struct AbiInfo
     {
+        // These should always be known if an AbiInfo exists
         std::unique_ptr<PreBuildInfo> pre_build_info;
         Optional<const Toolset&> toolset;
+        // These might not be known if compiler tracking is turned off or the port is --editable
+        Optional<const CompilerInfo&> compiler_info;
         Optional<const std::string&> triplet_abi;
         std::string package_abi;
         Optional<Path> abi_tag_file;
-        Optional<const CompilerInfo&> compiler_info;
         std::vector<Path> relative_port_files;
         std::vector<std::string> relative_port_hashes;
         std::vector<Json::Value> heuristic_resources;
@@ -288,9 +282,15 @@ namespace vcpkg
     {
         explicit EnvCache(bool compiler_tracking) : m_compiler_tracking(compiler_tracking) { }
 
-        const Environment& get_action_env(const VcpkgPaths& paths, const AbiInfo& abi_info);
-        const std::string& get_triplet_info(const VcpkgPaths& paths, const AbiInfo& abi_info);
-        const CompilerInfo& get_compiler_info(const VcpkgPaths& paths, const AbiInfo& abi_info);
+        const Environment& get_action_env(const VcpkgPaths& paths,
+                                          const PreBuildInfo& pre_build_info,
+                                          const Toolset& toolset);
+        const std::string& get_triplet_info(const VcpkgPaths& paths,
+                                            const PreBuildInfo& pre_build_info,
+                                            const Toolset& toolset);
+        const CompilerInfo& get_compiler_info(const VcpkgPaths& paths,
+                                              const PreBuildInfo& pre_build_info,
+                                              const Toolset& toolset);
 
     private:
         struct TripletMapEntry
@@ -303,7 +303,7 @@ namespace vcpkg
         Cache<Path, TripletMapEntry> m_triplet_cache;
         Cache<Path, std::string> m_toolchain_cache;
 
-        const TripletMapEntry& get_triplet_cache(const Filesystem& fs, const Path& p) const;
+        const TripletMapEntry& get_triplet_cache(const ReadOnlyFilesystem& fs, const Path& p) const;
 
 #if defined(_WIN32)
         struct EnvMapEntry

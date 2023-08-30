@@ -12,10 +12,10 @@
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
+using namespace vcpkg;
+
 namespace
 {
-    using namespace vcpkg;
-
     struct ToWrite
     {
         SourceControlFile scf;
@@ -24,7 +24,7 @@ namespace
         std::string original_source;
     };
 
-    Optional<ToWrite> read_manifest(Filesystem& fs, Path&& manifest_path)
+    Optional<ToWrite> read_manifest(const ReadOnlyFilesystem& fs, Path&& manifest_path)
     {
         const auto& path_string = manifest_path.native();
         Debug::println("Reading ", path_string);
@@ -50,6 +50,7 @@ namespace
         {
             msg::println_error(msgFailedToParseManifest, msg::path = path_string);
             print_error_message(scf.error());
+            msg::println();
             return nullopt;
         }
 
@@ -61,7 +62,7 @@ namespace
         };
     }
 
-    Optional<ToWrite> read_control_file(Filesystem& fs, Path&& control_path)
+    Optional<ToWrite> read_control_file(const ReadOnlyFilesystem& fs, Path&& control_path)
     {
         Debug::println("Reading ", control_path);
 
@@ -93,7 +94,7 @@ namespace
         };
     }
 
-    void open_for_write(Filesystem& fs, const ToWrite& data)
+    void open_for_write(const Filesystem& fs, const ToWrite& data)
     {
         const auto& original_path_string = data.original_path.native();
         const auto& file_to_write_string = data.file_to_write.native();
@@ -153,19 +154,20 @@ namespace
             }
         }
     }
-}
 
-namespace vcpkg::Commands::FormatManifest
-{
-    static constexpr StringLiteral OPTION_ALL = "all";
-    static constexpr StringLiteral OPTION_CONVERT_CONTROL = "convert-control";
+    constexpr StringLiteral OPTION_ALL = "all";
+    constexpr StringLiteral OPTION_CONVERT_CONTROL = "convert-control";
 
-    const CommandSwitch FORMAT_SWITCHES[] = {
+    constexpr CommandSwitch FORMAT_SWITCHES[] = {
         {OPTION_ALL, []() { return msg::format(msgCmdFormatManifestOptAll); }},
         {OPTION_CONVERT_CONTROL, []() { return msg::format(msgCmdFormatManifestOptConvertControl); }},
     };
 
-    const CommandStructure COMMAND_STRUCTURE = {
+} // unnamed namespace
+
+namespace vcpkg
+{
+    constexpr CommandMetadata CommandFormatManifestMetadata = {
         [] { return create_example_string("format-manifest --all"); },
         0,
         SIZE_MAX,
@@ -173,9 +175,9 @@ namespace vcpkg::Commands::FormatManifest
         nullptr,
     };
 
-    void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
+    void command_format_manifest_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
-        auto parsed_args = args.parse_arguments(COMMAND_STRUCTURE);
+        auto parsed_args = args.parse_arguments(CommandFormatManifestMetadata);
 
         auto& fs = paths.get_filesystem();
         bool has_error = false;
@@ -263,4 +265,4 @@ namespace vcpkg::Commands::FormatManifest
             Checks::exit_success(VCPKG_LINE_INFO);
         }
     }
-}
+} // namespace vcpkg

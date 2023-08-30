@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vcpkg/base/fwd/json.h>
 #include <vcpkg/base/fwd/optional.h>
 
 #include <vcpkg/fwd/binarycaching.h>
@@ -12,7 +13,7 @@
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
-namespace vcpkg::Commands::SetInstalled
+namespace vcpkg
 {
     enum class DryRun : bool
     {
@@ -20,7 +21,7 @@ namespace vcpkg::Commands::SetInstalled
         Yes,
     };
 
-    extern const CommandStructure COMMAND_STRUCTURE;
+    extern const CommandMetadata CommandSetInstalledMetadata;
 
     /**
      * @brief adjust_action_plan_to_status_db creates an action plan that installs only the requested ports.
@@ -31,19 +32,21 @@ namespace vcpkg::Commands::SetInstalled
      */
     std::set<PackageSpec> adjust_action_plan_to_status_db(ActionPlan& action_plan, const StatusParagraphs& status_db);
 
-    void perform_and_exit_ex(const VcpkgCmdArguments& args,
-                             const VcpkgPaths& paths,
-                             const PathsPortFileProvider& provider,
-                             const CMakeVars::CMakeVarProvider& cmake_vars,
-                             ActionPlan action_plan,
-                             DryRun dry_run,
-                             const Optional<Path>& pkgsconfig_path,
-                             Triplet host_triplet,
-                             const KeepGoing keep_going,
-                             const bool only_downloads,
-                             const PrintUsage print_cmake_usage);
-    void perform_and_exit(const VcpkgCmdArguments& args,
-                          const VcpkgPaths& paths,
-                          Triplet default_triplet,
-                          Triplet host_triplet);
+    void command_set_installed_and_exit_ex(const VcpkgCmdArguments& args,
+                                           const VcpkgPaths& paths,
+                                           const CMakeVars::CMakeVarProvider& cmake_vars,
+                                           ActionPlan action_plan,
+                                           DryRun dry_run,
+                                           const Optional<Path>& pkgsconfig_path,
+                                           Triplet host_triplet,
+                                           const KeepGoing keep_going,
+                                           const bool only_downloads,
+                                           const PrintUsage print_cmake_usage);
+    void command_set_installed_and_exit(const VcpkgCmdArguments& args,
+                                        const VcpkgPaths& paths,
+                                        Triplet default_triplet,
+                                        Triplet host_triplet);
+
+    Optional<Json::Object> create_dependency_graph_snapshot(const VcpkgCmdArguments& args,
+                                                            const ActionPlan& action_plan);
 }

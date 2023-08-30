@@ -60,9 +60,11 @@ namespace vcpkg
         const Path& listfile() const;
     };
 
-    void install_package_and_write_listfile(Filesystem& fs, const Path& source_dir, const InstallDir& destination_dir);
+    void install_package_and_write_listfile(const Filesystem& fs,
+                                            const Path& source_dir,
+                                            const InstallDir& destination_dir);
 
-    void install_files_and_write_listfile(Filesystem& fs,
+    void install_files_and_write_listfile(const Filesystem& fs,
                                           const Path& source_dir,
                                           const std::vector<Path>& files,
                                           const InstallDir& destination_dir);
@@ -81,30 +83,31 @@ namespace vcpkg
 
     std::vector<std::string> get_cmake_add_library_names(StringView cmake_file);
     std::string get_cmake_find_package_name(StringView dirname, StringView filename);
-    CMakeUsageInfo get_cmake_usage(const Filesystem& fs, const InstalledPaths& installed, const BinaryParagraph& bpgh);
+    CMakeUsageInfo get_cmake_usage(const ReadOnlyFilesystem& fs,
+                                   const InstalledPaths& installed,
+                                   const BinaryParagraph& bpgh);
 
-    namespace Install
-    {
-        extern const CommandStructure COMMAND_STRUCTURE;
+    extern const CommandMetadata CommandInstallMetadata;
 
-        void print_usage_information(const BinaryParagraph& bpgh,
-                                     std::set<std::string>& printed_usages,
-                                     const Filesystem& fs,
-                                     const InstalledPaths& installed);
+    void install_print_usage_information(const BinaryParagraph& bpgh,
+                                         std::set<std::string>& printed_usages,
+                                         const ReadOnlyFilesystem& fs,
+                                         const InstalledPaths& installed);
 
-        InstallSummary execute_plan(const VcpkgCmdArguments& args,
-                                    const ActionPlan& action_plan,
-                                    const KeepGoing keep_going,
-                                    const VcpkgPaths& paths,
-                                    StatusParagraphs& status_db,
-                                    BinaryCache& binary_cache,
-                                    const IBuildLogsRecorder& build_logs_recorder);
+    void install_preclear_packages(const VcpkgPaths& paths, const ActionPlan& action_plan);
 
-        void perform_and_exit(const VcpkgCmdArguments& args,
-                              const VcpkgPaths& paths,
-                              Triplet default_triplet,
-                              Triplet host_triplet);
-    } // namespace vcpkg::Install
+    InstallSummary install_execute_plan(const VcpkgCmdArguments& args,
+                                        const ActionPlan& action_plan,
+                                        const KeepGoing keep_going,
+                                        const VcpkgPaths& paths,
+                                        StatusParagraphs& status_db,
+                                        BinaryCache& binary_cache,
+                                        const IBuildLogsRecorder& build_logs_recorder);
+
+    void command_install_and_exit(const VcpkgCmdArguments& args,
+                                  const VcpkgPaths& paths,
+                                  Triplet default_triplet,
+                                  Triplet host_triplet);
 
     void track_install_plan(const ActionPlan& plan);
 }

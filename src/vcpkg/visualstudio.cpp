@@ -83,7 +83,7 @@ namespace vcpkg::VisualStudio
         std::string major_version() const { return version.substr(0, 2); }
     };
 
-    static std::vector<VisualStudioInstance> get_visual_studio_instances_internal(const Filesystem& fs)
+    static std::vector<VisualStudioInstance> get_visual_studio_instances_internal(const ReadOnlyFilesystem& fs)
     {
         std::vector<VisualStudioInstance> instances;
 
@@ -176,14 +176,14 @@ namespace vcpkg::VisualStudio
         return instances;
     }
 
-    std::vector<std::string> get_visual_studio_instances(const Filesystem& fs)
+    std::vector<std::string> get_visual_studio_instances(const ReadOnlyFilesystem& fs)
     {
         std::vector<VisualStudioInstance> sorted{get_visual_studio_instances_internal(fs)};
         std::sort(sorted.begin(), sorted.end(), VisualStudioInstance::preferred_first_comparator);
         return Util::fmap(sorted, [](const VisualStudioInstance& instance) { return instance.to_string(); });
     }
 
-    ToolsetsInformation find_toolset_instances_preferred_first(const Filesystem& fs)
+    ToolsetsInformation find_toolset_instances_preferred_first(const ReadOnlyFilesystem& fs)
     {
         ToolsetsInformation ret;
 

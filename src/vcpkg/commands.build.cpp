@@ -54,41 +54,73 @@ namespace
     static const NullBuildLogsRecorder null_build_logs_recorder_instance;
 }
 
-namespace vcpkg::Build
+namespace vcpkg
 {
-    void perform_and_exit_ex(const VcpkgCmdArguments& args,
-                             const FullPackageSpec& full_spec,
-                             Triplet host_triplet,
-                             const PathsPortFileProvider& provider,
-                             const IBuildLogsRecorder& build_logs_recorder,
-                             const VcpkgPaths& paths)
+    void command_build_and_exit_ex(const VcpkgCmdArguments& args,
+                                   const FullPackageSpec& full_spec,
+                                   Triplet host_triplet,
+                                   const PathsPortFileProvider& provider,
+                                   const IBuildLogsRecorder& build_logs_recorder,
+                                   const VcpkgPaths& paths)
     {
         Checks::exit_with_code(VCPKG_LINE_INFO,
-                               perform_ex(args, full_spec, host_triplet, provider, build_logs_recorder, paths));
+                               command_build_ex(args, full_spec, host_triplet, provider, build_logs_recorder, paths));
     }
 
-    const CommandStructure COMMAND_STRUCTURE = {
+    constexpr CommandMetadata CommandBuildMetadata = {
         [] { return create_example_string("build zlib:x64-windows"); },
         1,
         1,
         {{}, {}},
         nullptr,
     };
+} // namespace vcpkg
 
-    void perform_and_exit(const VcpkgCmdArguments& args,
-                          const VcpkgPaths& paths,
-                          Triplet default_triplet,
-                          Triplet host_triplet)
+namespace
+{
+    int command_build(const VcpkgCmdArguments& args,
+                      const VcpkgPaths& paths,
+                      Triplet default_triplet,
+                      Triplet host_triplet)
     {
-        Checks::exit_with_code(VCPKG_LINE_INFO, perform(args, paths, default_triplet, host_triplet));
+        // Build only takes a single package and all dependencies must already be installed
+        const ParsedArguments options = args.parse_arguments(CommandBuildMetadata);
+        bool default_triplet_used = false;
+        const FullPackageSpec spec = check_and_get_full_package_spec(options.command_arguments[0],
+                                                                     default_triplet,
+                                                                     default_triplet_used,
+                                                                     CommandBuildMetadata.get_example_text(),
+                                                                     paths.get_triplet_db());
+        if (default_triplet_used)
+        {
+            print_default_triplet_warning(args, paths.get_triplet_db());
+        }
+
+        auto& fs = paths.get_filesystem();
+        auto registry_set = paths.make_registry_set();
+        PathsPortFileProvider provider(
+            fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
+        return command_build_ex(args, spec, host_triplet, provider, null_build_logs_recorder(), paths);
+    }
+} // unnamed namespace
+
+namespace vcpkg
+{
+
+    void command_build_and_exit(const VcpkgCmdArguments& args,
+                                const VcpkgPaths& paths,
+                                Triplet default_triplet,
+                                Triplet host_triplet)
+    {
+        Checks::exit_with_code(VCPKG_LINE_INFO, command_build(args, paths, default_triplet, host_triplet));
     }
 
-    int perform_ex(const VcpkgCmdArguments& args,
-                   const FullPackageSpec& full_spec,
-                   Triplet host_triplet,
-                   const PathsPortFileProvider& provider,
-                   const IBuildLogsRecorder& build_logs_recorder,
-                   const VcpkgPaths& paths)
+    int command_build_ex(const VcpkgCmdArguments& args,
+                         const FullPackageSpec& full_spec,
+                         Triplet host_triplet,
+                         const PathsPortFileProvider& provider,
+                         const IBuildLogsRecorder& build_logs_recorder,
+                         const VcpkgPaths& paths)
     {
         const PackageSpec& spec = full_spec.package_spec;
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
@@ -99,7 +131,7 @@ namespace vcpkg::Build
         auto action_plan = create_feature_install_plan(
             provider, var_provider, {&full_spec, 1}, status_db, {host_triplet, paths.packages()});
 
-        var_provider.load_tag_vars(action_plan, provider, host_triplet);
+        var_provider.load_tag_vars(action_plan, host_triplet);
 
         compute_all_abis(paths, action_plan, var_provider, status_db);
 
@@ -175,31 +207,6 @@ namespace vcpkg::Build
         return 0;
     }
 
-    int perform(const VcpkgCmdArguments& args, const VcpkgPaths& paths, Triplet default_triplet, Triplet host_triplet)
-    {
-        // Build only takes a single package and all dependencies must already be installed
-        const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
-        bool default_triplet_used = false;
-        const FullPackageSpec spec = check_and_get_full_package_spec(options.command_arguments[0],
-                                                                     default_triplet,
-                                                                     default_triplet_used,
-                                                                     COMMAND_STRUCTURE.get_example_text(),
-                                                                     paths);
-        if (default_triplet_used)
-        {
-            print_default_triplet_warning(args);
-        }
-
-        auto& fs = paths.get_filesystem();
-        auto registry_set = paths.make_registry_set();
-        PathsPortFileProvider provider(
-            fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
-        return perform_ex(args, spec, host_triplet, provider, null_build_logs_recorder(), paths);
-    }
-} // namespace vcpkg::Build
-
-namespace vcpkg
-{
     static constexpr StringLiteral NAME_EMPTY_PACKAGE = "PolicyEmptyPackage";
     static constexpr StringLiteral NAME_DLLS_WITHOUT_LIBS = "PolicyDLLsWithoutLIBs";
     static constexpr StringLiteral NAME_DLLS_WITHOUT_EXPORTS = "PolicyDLLsWithoutExports";
@@ -348,21 +355,20 @@ namespace vcpkg
 #endif
 
 #if defined(_WIN32)
-    const Environment& EnvCache::get_action_env(const VcpkgPaths& paths, const AbiInfo& abi_info)
+    const Environment& EnvCache::get_action_env(const VcpkgPaths& paths,
+                                                const PreBuildInfo& pre_build_info,
+                                                const Toolset& toolset)
     {
-        auto build_env_cmd =
-            make_build_env_cmd(*abi_info.pre_build_info, abi_info.toolset.value_or_exit(VCPKG_LINE_INFO));
-
-        const auto& base_env = envs.get_lazy(abi_info.pre_build_info->passthrough_env_vars, [&]() -> EnvMapEntry {
+        auto build_env_cmd = make_build_env_cmd(pre_build_info, toolset);
+        const auto& base_env = envs.get_lazy(pre_build_info.passthrough_env_vars, [&]() -> EnvMapEntry {
             std::unordered_map<std::string, std::string> env;
 
-            for (auto&& env_var : abi_info.pre_build_info->passthrough_env_vars)
+            for (auto&& env_var : pre_build_info.passthrough_env_vars)
             {
-                auto env_val = get_environment_variable(env_var);
-
-                if (env_val)
+                auto maybe_env_val = get_environment_variable(env_var);
+                if (auto env_val = maybe_env_val.get())
                 {
-                    env[env_var] = env_val.value_or_exit(VCPKG_LINE_INFO);
+                    env[env_var] = std::move(*env_val);
                 }
             }
             static constexpr StringLiteral s_extra_vars[] = {
@@ -414,8 +420,8 @@ namespace vcpkg
                             auto kvp = Strings::split(s, '=');
                             if (kvp.size() == 2)
                             {
-                                auto protocol = kvp[0];
-                                auto address = kvp[1];
+                                auto& protocol = kvp[0];
+                                auto& address = kvp[1];
 
                                 /* Unlike Python's urllib implementation about this type of proxy configuration
                                  * (http=addr:port;https=addr:port)
@@ -432,7 +438,7 @@ namespace vcpkg
                                  * connection request will fail.
                                  */
 
-                                protocol = Strings::concat(Strings::ascii_to_uppercase(protocol.c_str()), "_PROXY");
+                                protocol = Strings::concat(Strings::ascii_to_uppercase(protocol), "_PROXY");
                                 env.emplace(protocol, address);
                                 msg::println(msgSettingEnvVar, msg::env_var = protocol, msg::url = address);
                             }
@@ -478,31 +484,37 @@ namespace vcpkg
         });
     }
 #else
-    const Environment& EnvCache::get_action_env(const VcpkgPaths&, const AbiInfo&) { return get_clean_environment(); }
+    const Environment& EnvCache::get_action_env(const VcpkgPaths&, const PreBuildInfo&, const Toolset&)
+    {
+        return get_clean_environment();
+    }
 #endif
 
-    static CompilerInfo load_compiler_info(const VcpkgPaths& paths, const AbiInfo& abi_info);
+    static CompilerInfo load_compiler_info(const VcpkgPaths& paths,
+                                           const PreBuildInfo& pre_build_info,
+                                           const Toolset& toolset);
 
     static const std::string& get_toolchain_cache(Cache<Path, std::string>& cache,
                                                   const Path& tcfile,
-                                                  const Filesystem& fs)
+                                                  const ReadOnlyFilesystem& fs)
     {
         return cache.get_lazy(tcfile, [&]() {
             return Hash::get_file_hash(fs, tcfile, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO);
         });
     }
 
-    const EnvCache::TripletMapEntry& EnvCache::get_triplet_cache(const Filesystem& fs, const Path& p) const
+    const EnvCache::TripletMapEntry& EnvCache::get_triplet_cache(const ReadOnlyFilesystem& fs, const Path& p) const
     {
         return m_triplet_cache.get_lazy(p, [&]() -> TripletMapEntry {
             return TripletMapEntry{Hash::get_file_hash(fs, p, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO)};
         });
     }
 
-    const CompilerInfo& EnvCache::get_compiler_info(const VcpkgPaths& paths, const AbiInfo& abi_info)
+    const CompilerInfo& EnvCache::get_compiler_info(const VcpkgPaths& paths,
+                                                    const PreBuildInfo& pre_build_info,
+                                                    const Toolset& toolset)
     {
-        Checks::check_exit(VCPKG_LINE_INFO, abi_info.pre_build_info != nullptr);
-        if (!m_compiler_tracking || abi_info.pre_build_info->disable_compiler_tracking)
+        if (!m_compiler_tracking || pre_build_info.disable_compiler_tracking)
         {
             static CompilerInfo empty_ci;
             return empty_ci;
@@ -510,16 +522,16 @@ namespace vcpkg
 
         const auto& fs = paths.get_filesystem();
 
-        const auto triplet_file_path = paths.get_triplet_file_path(abi_info.pre_build_info->triplet);
+        const auto& triplet_file_path = paths.get_triplet_db().get_triplet_file_path(pre_build_info.triplet);
 
-        auto&& toolchain_hash = get_toolchain_cache(m_toolchain_cache, abi_info.pre_build_info->toolchain_file(), fs);
+        auto&& toolchain_hash = get_toolchain_cache(m_toolchain_cache, pre_build_info.toolchain_file(), fs);
 
         auto&& triplet_entry = get_triplet_cache(fs, triplet_file_path);
 
         return triplet_entry.compiler_info.get_lazy(toolchain_hash, [&]() -> CompilerInfo {
             if (m_compiler_tracking)
             {
-                return load_compiler_info(paths, abi_info);
+                return load_compiler_info(paths, pre_build_info, toolset);
             }
             else
             {
@@ -528,20 +540,21 @@ namespace vcpkg
         });
     }
 
-    const std::string& EnvCache::get_triplet_info(const VcpkgPaths& paths, const AbiInfo& abi_info)
+    const std::string& EnvCache::get_triplet_info(const VcpkgPaths& paths,
+                                                  const PreBuildInfo& pre_build_info,
+                                                  const Toolset& toolset)
     {
         const auto& fs = paths.get_filesystem();
-        Checks::check_exit(VCPKG_LINE_INFO, abi_info.pre_build_info != nullptr);
-        const auto triplet_file_path = paths.get_triplet_file_path(abi_info.pre_build_info->triplet);
+        const auto& triplet_file_path = paths.get_triplet_db().get_triplet_file_path(pre_build_info.triplet);
 
-        auto&& toolchain_hash = get_toolchain_cache(m_toolchain_cache, abi_info.pre_build_info->toolchain_file(), fs);
+        auto&& toolchain_hash = get_toolchain_cache(m_toolchain_cache, pre_build_info.toolchain_file(), fs);
 
         auto&& triplet_entry = get_triplet_cache(fs, triplet_file_path);
 
-        if (m_compiler_tracking && !abi_info.pre_build_info->disable_compiler_tracking)
+        if (m_compiler_tracking && !pre_build_info.disable_compiler_tracking)
         {
             return triplet_entry.triplet_infos.get_lazy(toolchain_hash, [&]() -> std::string {
-                auto& compiler_info = get_compiler_info(paths, abi_info);
+                auto& compiler_info = get_compiler_info(paths, pre_build_info, toolset);
                 return Strings::concat(triplet_entry.hash, '-', toolchain_hash, '-', compiler_info.hash);
             });
         }
@@ -601,6 +614,7 @@ namespace vcpkg
         auto find_itr = action.feature_dependencies.find("core");
         Checks::check_exit(VCPKG_LINE_INFO, find_itr != action.feature_dependencies.end());
         BinaryParagraph bpgh(*scfl.source_control_file->core_paragraph,
+                             action.default_features.value_or_exit(VCPKG_LINE_INFO),
                              action.spec.triplet(),
                              action.public_abi(),
                              fspecs_to_pspecs(find_itr->second));
@@ -624,7 +638,7 @@ namespace vcpkg
         return bcf;
     }
 
-    static void write_binary_control_file(Filesystem& fs, const Path& package_dir, const BinaryControlFile& bcf)
+    static void write_binary_control_file(const Filesystem& fs, const Path& package_dir, const BinaryControlFile& bcf)
     {
         std::string start = Strings::serialize(bcf.core_paragraph);
         for (auto&& feature : bcf.features)
@@ -646,7 +660,7 @@ namespace vcpkg
                                   {"CMD", "BUILD"},
                                   {"DOWNLOADS", paths.downloads},
                                   {"TARGET_TRIPLET", triplet.canonical_name()},
-                                  {"TARGET_TRIPLET_FILE", paths.get_triplet_file_path(triplet)},
+                                  {"TARGET_TRIPLET_FILE", paths.get_triplet_db().get_triplet_file_path(triplet)},
                                   {"VCPKG_BASE_VERSION", VCPKG_BASE_VERSION_AS_STRING},
                                   {"VCPKG_CONCURRENCY", std::to_string(get_concurrency())},
                                   {"VCPKG_PLATFORM_TOOLSET", toolset.version.c_str()},
@@ -656,9 +670,11 @@ namespace vcpkg
         out_vars.emplace_back("GIT", git_exe_path);
     }
 
-    static CompilerInfo load_compiler_info(const VcpkgPaths& paths, const AbiInfo& abi_info)
+    static CompilerInfo load_compiler_info(const VcpkgPaths& paths,
+                                           const PreBuildInfo& pre_build_info,
+                                           const Toolset& toolset)
     {
-        auto triplet = abi_info.pre_build_info->triplet;
+        auto& triplet = pre_build_info.triplet;
         msg::println(msgDetectCompilerHash, msg::triplet = triplet);
         auto buildpath = paths.buildtrees() / "detect_compiler";
 
@@ -669,11 +685,11 @@ namespace vcpkg
             // The detect_compiler "port" doesn't depend on the host triplet, so always natively compile
             {"_HOST_TRIPLET", triplet.canonical_name()},
         };
-        get_generic_cmake_build_args(paths, triplet, abi_info.toolset.value_or_exit(VCPKG_LINE_INFO), cmake_args);
+        get_generic_cmake_build_args(paths, triplet, toolset, cmake_args);
 
         auto command = vcpkg::make_cmake_cmd(paths, paths.ports_cmake, std::move(cmake_args));
 
-        const auto& env = paths.get_action_env(abi_info);
+        const auto& env = paths.get_action_env(pre_build_info, toolset);
         auto& fs = paths.get_filesystem();
         fs.create_directory(buildpath, VCPKG_LINE_INFO);
         auto stdoutlog = buildpath / ("stdout-" + triplet.canonical_name() + ".log");
@@ -783,7 +799,7 @@ namespace vcpkg
             variables.emplace_back("VCPKG_DOWNLOAD_MODE", "true");
         }
 
-        const Filesystem& fs = paths.get_filesystem();
+        const ReadOnlyFilesystem& fs = paths.get_filesystem();
 
         std::vector<std::string> port_configs;
         for (const PackageSpec& dependency : action.package_dependencies)
@@ -846,17 +862,11 @@ namespace vcpkg
         }
         else if (cmake_system_name == "WindowsStore")
         {
-            // HACK: remove once we have fully shipped a uwp toolchain
-            static bool have_uwp_triplet =
-                m_paths.get_filesystem().exists(m_paths.scripts / "toolchains/uwp.cmake", IgnoreErrors{});
-            if (have_uwp_triplet)
-            {
-                return m_paths.scripts / "toolchains/uwp.cmake";
-            }
-            else
-            {
-                return m_paths.scripts / "toolchains/windows.cmake";
-            }
+            return m_paths.scripts / "toolchains/uwp.cmake";
+        }
+        else if (target_is_xbox)
+        {
+            return m_paths.scripts / "toolchains/xbox.cmake";
         }
         else if (cmake_system_name.empty() || cmake_system_name == "Windows")
         {
@@ -911,14 +921,15 @@ namespace vcpkg
         auto&& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
 
         Triplet triplet = action.spec.triplet();
-        const auto& triplet_file_path = paths.get_triplet_file_path(triplet);
+        const auto& triplet_db = paths.get_triplet_db();
+        const auto& triplet_file_path = triplet_db.get_triplet_file_path(triplet);
 
-        if (Strings::starts_with(triplet_file_path, paths.community_triplets))
+        if (Strings::starts_with(triplet_file_path, triplet_db.community_triplet_directory))
         {
             msg::println_warning(msgUsingCommunityTriplet, msg::triplet = triplet.canonical_name());
             msg::println(msgLoadingCommunityTriplet, msg::path = triplet_file_path);
         }
-        else if (!Strings::starts_with(triplet_file_path, paths.triplets))
+        else if (!Strings::starts_with(triplet_file_path, triplet_db.default_triplet_directory))
         {
             msg::println(msgLoadingOverlayTriplet, msg::path = triplet_file_path);
         }
@@ -932,7 +943,7 @@ namespace vcpkg
         auto command = vcpkg::make_cmake_cmd(paths, paths.ports_cmake, get_cmake_build_args(args, paths, action));
 
         const auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
-        auto env = paths.get_action_env(abi_info);
+        auto env = paths.get_action_env(*abi_info.pre_build_info, abi_info.toolset.value_or_exit(VCPKG_LINE_INFO));
 
         auto buildpath = paths.build_dir(action.spec);
         fs.create_directory(buildpath, VCPKG_LINE_INFO);
@@ -1037,9 +1048,39 @@ namespace vcpkg
         return result;
     }
 
-    static void abi_entries_from_abi_info(const AbiInfo& abi_info, std::vector<AbiEntry>& abi_tag_entries)
+    static std::string grdk_hash(const Filesystem& fs,
+                                 Cache<Path, Optional<std::string>>& grdk_cache,
+                                 const PreBuildInfo& pre_build_info)
     {
-        const auto& pre_build_info = *abi_info.pre_build_info;
+        if (auto game_dk_latest = pre_build_info.gamedk_latest_path.get())
+        {
+            const auto grdk_header_path = *game_dk_latest / "GRDK/gameKit/Include/grdk.h";
+            const auto& maybe_header_hash = grdk_cache.get_lazy(grdk_header_path, [&]() -> Optional<std::string> {
+                auto maybe_hash = Hash::get_file_hash(fs, grdk_header_path, Hash::Algorithm::Sha256);
+                if (auto hash = maybe_hash.get())
+                {
+                    return std::move(*hash);
+                }
+                else
+                {
+                    return nullopt;
+                }
+            });
+
+            if (auto header_hash = maybe_header_hash.get())
+            {
+                return *header_hash;
+            }
+        }
+
+        return "none";
+    }
+
+    static void abi_entries_from_pre_build_info(const Filesystem& fs,
+                                                Cache<Path, Optional<std::string>>& grdk_cache,
+                                                const PreBuildInfo& pre_build_info,
+                                                std::vector<AbiEntry>& abi_tag_entries)
+    {
         if (pre_build_info.public_abi_override)
         {
             abi_tag_entries.emplace_back(
@@ -1056,36 +1097,38 @@ namespace vcpkg
                     "ENV:" + env_var, Hash::get_string_hash(e.value_or_exit(VCPKG_LINE_INFO), Hash::Algorithm::Sha256));
             }
         }
+
+        if (pre_build_info.target_is_xbox)
+        {
+            abi_tag_entries.emplace_back("grdk.h", grdk_hash(fs, grdk_cache, pre_build_info));
+        }
     }
 
-    struct AbiTagAndFiles
+    static void populate_abi_tag(const VcpkgPaths& paths,
+                                 InstallPlanAction& action,
+                                 std::unique_ptr<PreBuildInfo>&& proto_pre_build_info,
+                                 Span<const AbiEntry> dependency_abis,
+                                 Cache<Path, Optional<std::string>>& grdk_cache)
     {
-        const std::string* triplet_abi;
-        std::string tag;
-        Path tag_file;
-
-        std::vector<Path> files;
-        std::vector<std::string> hashes;
-        Json::Value heuristic_resources;
-    };
-
-    static Optional<AbiTagAndFiles> compute_abi_tag(const VcpkgPaths& paths,
-                                                    const InstallPlanAction& action,
-                                                    Span<const AbiEntry> dependency_abis)
-    {
-        auto& fs = paths.get_filesystem();
-        Triplet triplet = action.spec.triplet();
+        Checks::check_exit(VCPKG_LINE_INFO, static_cast<bool>(proto_pre_build_info));
+        const auto& pre_build_info = *proto_pre_build_info;
+        const auto& toolset = paths.get_toolset(pre_build_info);
+        auto& abi_info = action.abi_info.emplace();
+        abi_info.pre_build_info = std::move(proto_pre_build_info);
+        abi_info.toolset.emplace(toolset);
 
         if (action.build_options.use_head_version == UseHeadVersion::YES)
         {
             Debug::print("Binary caching for package ", action.spec, " is disabled due to --head\n");
-            return nullopt;
+            return;
         }
         if (action.build_options.editable == Editable::YES)
         {
             Debug::print("Binary caching for package ", action.spec, " is disabled due to --editable\n");
-            return nullopt;
+            return;
         }
+
+        abi_info.compiler_info = paths.get_compiler_info(*abi_info.pre_build_info, toolset);
         for (auto&& dep_abi : dependency_abis)
         {
             if (dep_abi.value.empty())
@@ -1095,55 +1138,56 @@ namespace vcpkg
                              " is disabled due to missing abi info for ",
                              dep_abi.key,
                              '\n');
-                return nullopt;
+                return;
             }
         }
 
         std::vector<AbiEntry> abi_tag_entries(dependency_abis.begin(), dependency_abis.end());
 
-        const auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
-        const auto& triplet_abi = paths.get_triplet_info(abi_info);
-        abi_tag_entries.emplace_back("triplet", triplet.canonical_name());
+        const auto& triplet_abi = paths.get_triplet_info(pre_build_info, toolset);
+        abi_info.triplet_abi.emplace(triplet_abi);
+        const auto& triplet_canonical_name = action.spec.triplet().canonical_name();
+        abi_tag_entries.emplace_back("triplet", triplet_canonical_name);
         abi_tag_entries.emplace_back("triplet_abi", triplet_abi);
-        abi_entries_from_abi_info(abi_info, abi_tag_entries);
+        auto& fs = paths.get_filesystem();
+        abi_entries_from_pre_build_info(fs, grdk_cache, pre_build_info, abi_tag_entries);
 
         // If there is an unusually large number of files in the port then
-        // something suspicious is going on.  Rather than hash all of them
-        // just mark the port as no-hash
+        // something suspicious is going on.
         constexpr int max_port_file_count = 100;
 
         std::string portfile_cmake_contents;
-        std::vector<Path> files;
-        std::vector<std::string> hashes;
         auto&& port_dir = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_location;
-        size_t port_file_count = 0;
-        Path abs_port_file;
-        for (auto& port_file : fs.get_regular_files_recursive_lexically_proximate(port_dir, VCPKG_LINE_INFO))
+        auto raw_files = fs.get_regular_files_recursive_lexically_proximate(port_dir, VCPKG_LINE_INFO);
+        if (raw_files.size() > max_port_file_count)
+        {
+            msg::println_warning(
+                msgHashPortManyFiles, msg::package_name = action.spec.name(), msg::count = raw_files.size());
+        }
+
+        std::vector<Path> files;         // will be port_files without .DS_Store entries
+        std::vector<std::string> hashes; // will be corresponding hashes
+        for (auto& port_file : raw_files)
         {
             if (port_file.filename() == ".DS_Store")
             {
                 continue;
             }
-            abs_port_file = port_dir;
-            abs_port_file /= port_file;
 
+            const auto& abs_port_file = files.emplace_back(port_dir / port_file);
             if (port_file.extension() == ".cmake")
             {
-                portfile_cmake_contents += fs.read_contents(abs_port_file, VCPKG_LINE_INFO);
+                auto contents = fs.read_contents(abs_port_file, VCPKG_LINE_INFO);
+                portfile_cmake_contents += contents;
+                hashes.push_back(vcpkg::Hash::get_string_sha256(contents));
             }
-
-            auto hash =
-                vcpkg::Hash::get_file_hash(fs, abs_port_file, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO);
-            abi_tag_entries.emplace_back(port_file, hash);
-            files.push_back(port_file);
-            hashes.push_back(std::move(hash));
-
-            ++port_file_count;
-            if (port_file_count > max_port_file_count)
+            else
             {
-                abi_tag_entries.emplace_back("no_hash_max_portfile", "");
-                break;
+                hashes.push_back(vcpkg::Hash::get_file_hash(fs, abs_port_file, Hash::Algorithm::Sha256)
+                                     .value_or_exit(VCPKG_LINE_INFO));
             }
+
+            abi_tag_entries.emplace_back(port_file, hashes.back());
         }
 
         abi_tag_entries.emplace_back("cmake", paths.get_tool_version(Tools::CMAKE, stdout_sink));
@@ -1167,7 +1211,7 @@ namespace vcpkg
         InternalFeatureSet sorted_feature_list = action.feature_list;
         // Check that no "default" feature is present. Default features must be resolved before attempting to calculate
         // a package ABI, so the "default" should not have made it here.
-        static constexpr auto default_literal = StringLiteral{"default"};
+        static constexpr StringLiteral default_literal{"default"};
         const bool has_no_pseudo_features = std::none_of(
             sorted_feature_list.begin(), sorted_feature_list.end(), [](StringView s) { return s == default_literal; });
         Checks::check_exit(VCPKG_LINE_INFO, has_no_pseudo_features);
@@ -1198,28 +1242,24 @@ namespace vcpkg
         }
 
         auto abi_tag_entries_missing = Util::filter(abi_tag_entries, [](const AbiEntry& p) { return p.value.empty(); });
-
-        if (abi_tag_entries_missing.empty())
+        if (!abi_tag_entries_missing.empty())
         {
-            auto current_build_tree = paths.build_dir(action.spec);
-            fs.create_directory(current_build_tree, VCPKG_LINE_INFO);
-            const auto abi_file_path = current_build_tree / (triplet.canonical_name() + ".vcpkg_abi_info.txt");
-            fs.write_contents(abi_file_path, full_abi_info, VCPKG_LINE_INFO);
-
-            return AbiTagAndFiles{
-                &triplet_abi,
-                Hash::get_file_hash(fs, abi_file_path, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO),
-                abi_file_path,
-                std::move(files),
-                std::move(hashes),
-                run_resource_heuristics(portfile_cmake_contents)};
+            Debug::println("Warning: abi keys are missing values:\n",
+                           Strings::join("\n", abi_tag_entries_missing, [](const AbiEntry& e) -> const std::string& {
+                               return e.key;
+                           }));
+            return;
         }
 
-        Debug::println(
-            "Warning: abi keys are missing values:\n",
-            Strings::join("", abi_tag_entries_missing, [](const AbiEntry& e) { return "    " + e.key + '\n'; }));
-
-        return nullopt;
+        auto current_build_tree = paths.build_dir(action.spec);
+        fs.create_directory(current_build_tree, VCPKG_LINE_INFO);
+        auto abi_file_path = current_build_tree / (triplet_canonical_name + ".vcpkg_abi_info.txt");
+        fs.write_contents(abi_file_path, full_abi_info, VCPKG_LINE_INFO);
+        abi_info.package_abi = Hash::get_string_sha256(full_abi_info);
+        abi_info.abi_tag_file.emplace(std::move(abi_file_path));
+        abi_info.relative_port_files = std::move(files);
+        abi_info.relative_port_hashes = std::move(hashes);
+        abi_info.heuristic_resources.push_back(run_resource_heuristics(portfile_cmake_contents));
     }
 
     void compute_all_abis(const VcpkgPaths& paths,
@@ -1227,6 +1267,7 @@ namespace vcpkg
                           const CMakeVars::CMakeVarProvider& var_provider,
                           const StatusParagraphs& status_db)
     {
+        Cache<Path, Optional<std::string>> grdk_cache;
         for (auto it = action_plan.install_actions.begin(); it != action_plan.install_actions.end(); ++it)
         {
             auto& action = *it;
@@ -1261,24 +1302,14 @@ namespace vcpkg
                 }
             }
 
-            action.abi_info = AbiInfo();
-            auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
-
-            abi_info.pre_build_info = std::make_unique<PreBuildInfo>(
-                paths, action.spec.triplet(), var_provider.get_tag_vars(action.spec).value_or_exit(VCPKG_LINE_INFO));
-            abi_info.toolset = paths.get_toolset(*abi_info.pre_build_info);
-
-            auto maybe_abi_tag_and_file = compute_abi_tag(paths, action, dependency_abis);
-            if (auto p = maybe_abi_tag_and_file.get())
-            {
-                abi_info.compiler_info = paths.get_compiler_info(abi_info);
-                abi_info.triplet_abi = *p->triplet_abi;
-                abi_info.package_abi = std::move(p->tag);
-                abi_info.abi_tag_file = std::move(p->tag_file);
-                abi_info.relative_port_files = std::move(p->files);
-                abi_info.relative_port_hashes = std::move(p->hashes);
-                abi_info.heuristic_resources.push_back(std::move(p->heuristic_resources));
-            }
+            populate_abi_tag(
+                paths,
+                action,
+                std::make_unique<PreBuildInfo>(paths,
+                                               action.spec.triplet(),
+                                               var_provider.get_tag_vars(action.spec).value_or_exit(VCPKG_LINE_INFO)),
+                dependency_abis,
+                grdk_cache);
         }
     }
 
@@ -1436,13 +1467,12 @@ namespace vcpkg
         return res;
     }
 
-    std::string create_github_issue(const VcpkgCmdArguments& args,
-                                    const ExtendedBuildResult& build_result,
-                                    const VcpkgPaths& paths,
-                                    const InstallPlanAction& action)
+    struct CreateLogDetails
     {
-        const auto& fs = paths.get_filesystem();
-        const auto create_log_details = [&fs](vcpkg::Path&& path) {
+        const Filesystem& fs;
+
+        std::string operator()(const Path& path) const
+        {
             static constexpr auto MAX_LOG_LENGTH = 50'000;
             static constexpr auto START_BLOCK_LENGTH = 3'000;
             static constexpr auto START_BLOCK_MAX_LENGTH = 5'000;
@@ -1453,65 +1483,83 @@ namespace vcpkg
             {
                 auto first_block_end = log.find_first_of('\n', START_BLOCK_LENGTH);
                 if (first_block_end == std::string::npos || first_block_end > START_BLOCK_MAX_LENGTH)
+                {
                     first_block_end = START_BLOCK_LENGTH;
+                }
 
                 auto last_block_end = log.find_last_of('\n', log.size() - END_BLOCK_LENGTH);
                 if (last_block_end == std::string::npos || last_block_end < log.size() - END_BLOCK_MAX_LENGTH)
+                {
                     last_block_end = log.size() - END_BLOCK_LENGTH;
+                }
 
-                auto skipped_lines = std::count(log.begin() + first_block_end, log.begin() + last_block_end, '\n');
-                log = log.substr(0, first_block_end) + "\n...\nSkipped " + std::to_string(skipped_lines) +
-                      " lines\n...\n" + log.substr(last_block_end);
+                auto first = log.begin() + first_block_end;
+                auto last = log.begin() + last_block_end;
+                auto skipped_lines = std::count(first, last, '\n');
+                log.replace(first, last, fmt::format("\n...\nSkipped {} lines\n...", skipped_lines));
             }
+
             while (!log.empty() && log.back() == '\n')
+            {
                 log.pop_back();
-            return Strings::concat(
-                "<details><summary>", path.native(), "</summary>\n\n```\n", log, "\n```\n</details>");
-        };
-        const auto manifest = paths.get_manifest()
-                                  .map([](const ManifestAndPath& manifest) {
-                                      return Strings::concat("<details><summary>vcpkg.json</summary>\n\n```\n",
-                                                             Json::stringify(manifest.manifest),
-                                                             "\n```\n</details>\n");
-                                  })
-                                  .value_or("");
+            }
 
-        const auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
-        const auto& compiler_info = abi_info.compiler_info.value_or_exit(VCPKG_LINE_INFO);
-        return Strings::concat(
-            "Package: ",
-            action.displayname(),
-            " -> ",
-            action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).to_version(),
-            "\n\n**Host Environment**",
-            "\n\n- Host: ",
-            to_zstring_view(get_host_processor()),
-            '-',
-            get_host_os_name(),
-            "\n- Compiler: ",
-            compiler_info.id,
-            " ",
-            compiler_info.version,
-            "\n-",
-            paths.get_toolver_diagnostics(),
-            "\n**To Reproduce**\n\n",
-            Strings::concat(
-                "`vcpkg ", args.get_command(), " ", Strings::join(" ", args.get_forwardable_arguments()), "`\n"),
-            "\n**Failure logs**\n\n```\n",
-            paths.get_filesystem().read_contents(build_result.stdoutlog.value_or_exit(VCPKG_LINE_INFO),
-                                                 VCPKG_LINE_INFO),
-            "\n```\n",
-            Strings::join("\n", build_result.error_logs, create_log_details),
-            "\n\n**Additional context**\n\n",
-            manifest);
-    }
+            return fmt::format("<details><summary>{}</summary>\n\n```\n{}\n```\n</details>", path.native(), log);
+        }
+    };
 
-    static std::string make_gh_issue_search_url(StringView spec_name)
+    std::string create_github_issue(const VcpkgCmdArguments& args,
+                                    const ExtendedBuildResult& build_result,
+                                    const VcpkgPaths& paths,
+                                    const InstallPlanAction& action)
     {
-        return "https://github.com/microsoft/vcpkg/issues?q=is%3Aissue+is%3Aopen+in%3Atitle+" + spec_name.to_string();
+        const auto& fs = paths.get_filesystem();
+        std::string result;
+        fmt::format_to(std::back_inserter(result),
+                       "Package: {} -> {}\n\n**Host Environment**\n\n- Host: {}-{}\n",
+                       action.displayname(),
+                       action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).to_version(),
+                       to_zstring_view(get_host_processor()),
+                       get_host_os_name());
+
+        if (const auto* abi_info = action.abi_info.get())
+        {
+            if (const auto* compiler_info = abi_info->compiler_info.get())
+            {
+                fmt::format_to(
+                    std::back_inserter(result), "- Compiler: {} {}\n", compiler_info->id, compiler_info->version);
+            }
+        }
+
+        fmt::format_to(std::back_inserter(result), "-{}\n", paths.get_toolver_diagnostics());
+        fmt::format_to(std::back_inserter(result),
+                       "**To Reproduce**\n\n`vcpkg {} {}`\n",
+                       args.get_command(),
+                       Strings::join(" ", args.get_forwardable_arguments()));
+        fmt::format_to(std::back_inserter(result),
+                       "**Failure logs**\n\n```\n{}\n```\n",
+                       paths.get_filesystem().read_contents(build_result.stdoutlog.value_or_exit(VCPKG_LINE_INFO),
+                                                            VCPKG_LINE_INFO));
+        result.append(Strings::join("\n", build_result.error_logs, CreateLogDetails{fs}));
+
+        const auto maybe_manifest = paths.get_manifest();
+        if (auto manifest = maybe_manifest.get())
+        {
+            fmt::format_to(
+                std::back_inserter(result),
+                "**Additional context**\n\n<details><summary>vcpkg.json</summary>\n\n```\n{}\n```\n</details>\n",
+                Json::stringify(manifest->manifest));
+        }
+
+        return result;
     }
 
-    static std::string make_gh_issue_open_url(StringView spec_name, const Path& path)
+    static std::string make_gh_issue_search_url(const std::string& spec_name)
+    {
+        return "https://github.com/microsoft/vcpkg/issues?q=is%3Aissue+is%3Aopen+in%3Atitle+" + spec_name;
+    }
+
+    static std::string make_gh_issue_open_url(StringView spec_name, StringView path)
     {
         return Strings::concat("https://github.com/microsoft/vcpkg/issues/new?title=[",
                                spec_name,
@@ -1529,8 +1577,8 @@ namespace vcpkg
         result.append(msgBuildTroubleshootingMessage2).append_raw('\n');
         if (issue_body.has_value())
         {
-            auto path = issue_body.get()->generic_u8string();
-            result.append_indent().append_raw(make_gh_issue_open_url(spec_name, path)).append_raw("\n");
+            const auto path = issue_body.get()->generic_u8string();
+            result.append_indent().append_raw(make_gh_issue_open_url(spec_name, path)).append_raw('\n');
             if (!paths.get_filesystem().find_from_PATH("gh").empty())
             {
                 Command gh("gh");
@@ -1545,8 +1593,8 @@ namespace vcpkg
         else
         {
             result.append_indent()
-                .append_raw(
-                    "https://github.com/microsoft/vcpkg/issues/new?template=report-package-build-failure.md&title=[")
+                .append_raw("https://github.com/microsoft/vcpkg/issues/"
+                            "new?template=report-package-build-failure.md&title=[")
                 .append_raw(spec_name)
                 .append_raw("]+Build+error\n");
             result.append(msgBuildTroubleshootingMessage3, msg::package_name = spec_name).append_raw('\n');
@@ -1625,7 +1673,7 @@ namespace vcpkg
         return build_info;
     }
 
-    BuildInfo read_build_info(const Filesystem& fs, const Path& filepath)
+    BuildInfo read_build_info(const ReadOnlyFilesystem& fs, const Path& filepath)
     {
         auto pghs = Paragraphs::get_single_paragraph(fs, filepath);
         if (!pghs)
@@ -1674,6 +1722,8 @@ namespace vcpkg
             PUBLIC_ABI_OVERRIDE,
             LOAD_VCVARS_ENV,
             DISABLE_COMPILER_TRACKING,
+            XBOX_CONSOLE_TARGET,
+            Z_VCPKG_GameDKLatest
         };
 
         static const std::vector<std::pair<std::string, VcpkgTripletVar>> VCPKG_OPTIONS = {
@@ -1691,23 +1741,14 @@ namespace vcpkg
             // Note: this value must come after VCPKG_CHAINLOAD_TOOLCHAIN_FILE because its default depends upon it.
             {"VCPKG_LOAD_VCVARS_ENV", VcpkgTripletVar::LOAD_VCVARS_ENV},
             {"VCPKG_DISABLE_COMPILER_TRACKING", VcpkgTripletVar::DISABLE_COMPILER_TRACKING},
+            {"VCPKG_XBOX_CONSOLE_TARGET", VcpkgTripletVar::XBOX_CONSOLE_TARGET},
+            {"Z_VCPKG_GameDKLatest", VcpkgTripletVar::Z_VCPKG_GameDKLatest},
         };
 
-        std::string empty;
+        const std::string empty;
         for (auto&& kv : VCPKG_OPTIONS)
         {
-            const std::string& variable_value = [&]() -> const std::string& {
-                auto find_itr = cmakevars.find(kv.first);
-                if (find_itr == cmakevars.end())
-                {
-                    return empty;
-                }
-                else
-                {
-                    return find_itr->second;
-                }
-            }();
-
+            const std::string& variable_value = Util::value_or_default(cmakevars, kv.first, empty);
             switch (kv.second)
             {
                 case VcpkgTripletVar::TARGET_ARCHITECTURE: target_architecture = variable_value; break;
@@ -1765,6 +1806,18 @@ namespace vcpkg
                     {
                         disable_compiler_tracking =
                             from_cmake_bool(variable_value, kv.first).value_or_exit(VCPKG_LINE_INFO);
+                    }
+                    break;
+                case VcpkgTripletVar::XBOX_CONSOLE_TARGET:
+                    if (!variable_value.empty())
+                    {
+                        target_is_xbox = true;
+                    }
+                    break;
+                case VcpkgTripletVar::Z_VCPKG_GameDKLatest:
+                    if (!variable_value.empty())
+                    {
+                        gamedk_latest_path.emplace(variable_value);
                     }
                     break;
             }

@@ -4,12 +4,14 @@
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
 
-namespace vcpkg::Commands::Owns
+using namespace vcpkg;
+
+namespace
 {
-    static void search_file(Filesystem& fs,
-                            const InstalledPaths& installed,
-                            const std::string& file_substr,
-                            const StatusParagraphs& status_db)
+    void search_file(const Filesystem& fs,
+                     const InstalledPaths& installed,
+                     const std::string& file_substr,
+                     const StatusParagraphs& status_db)
     {
         const auto installed_files = get_installed_files(fs, installed, status_db);
         for (auto&& pgh_and_file : installed_files)
@@ -26,7 +28,11 @@ namespace vcpkg::Commands::Owns
             }
         }
     }
-    const CommandStructure COMMAND_STRUCTURE = {
+} // unnamed namespace
+
+namespace vcpkg
+{
+    constexpr CommandMetadata CommandOwnsMetadata = {
         [] { return create_example_string("owns zlib.dll"); },
         1,
         1,
@@ -34,12 +40,12 @@ namespace vcpkg::Commands::Owns
         nullptr,
     };
 
-    void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
+    void command_owns_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
-        const auto parsed = args.parse_arguments(COMMAND_STRUCTURE);
+        const auto parsed = args.parse_arguments(CommandOwnsMetadata);
 
         const StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
         search_file(paths.get_filesystem(), paths.installed(), parsed.command_arguments[0], status_db);
         Checks::exit_success(VCPKG_LINE_INFO);
     }
-}
+} // namespace vcpkg

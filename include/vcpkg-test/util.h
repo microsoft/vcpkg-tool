@@ -75,6 +75,15 @@ namespace Catch
     {
         static const std::string convert(const vcpkg::Path& value) { return "\"" + value.native() + "\""; }
     };
+
+    template<>
+    struct StringMaker<std::pair<vcpkg::Path, vcpkg::Path>>
+    {
+        static const std::string convert(const std::pair<vcpkg::Path, vcpkg::Path>& value)
+        {
+            return "{\"" + value.first.native() + "\", \"" + value.second.native() + "\"}";
+        }
+    };
 }
 
 namespace vcpkg

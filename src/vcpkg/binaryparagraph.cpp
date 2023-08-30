@@ -29,7 +29,7 @@ namespace vcpkg
 
     BinaryParagraph::BinaryParagraph() = default;
 
-    BinaryParagraph::BinaryParagraph(Paragraph fields)
+    BinaryParagraph::BinaryParagraph(Paragraph&& fields)
     {
         ParagraphParser parser(std::move(fields));
 
@@ -101,6 +101,7 @@ namespace vcpkg
     }
 
     BinaryParagraph::BinaryParagraph(const SourceParagraph& spgh,
+                                     const std::vector<std::string>& default_features,
                                      Triplet triplet,
                                      const std::string& abi_tag,
                                      std::vector<PackageSpec> deps)
@@ -110,7 +111,7 @@ namespace vcpkg
         , description(spgh.description)
         , maintainers(spgh.maintainers)
         , feature()
-        , default_features(spgh.default_features)
+        , default_features(default_features)
         , dependencies(std::move(deps))
         , abi(abi_tag)
     {
@@ -273,9 +274,9 @@ namespace vcpkg
         serialize_array(Fields::DEFAULT_FEATURES, pgh.default_features, out_str);
 
         // sanity check the serialized data
-        const auto my_paragraph = out_str.substr(initial_end);
+        auto my_paragraph = StringView{out_str}.substr(initial_end);
         auto parsed_paragraph = Paragraphs::parse_single_paragraph(
-            out_str.substr(initial_end), "vcpkg::serialize(const BinaryParagraph&, std::string&)");
+            StringView{out_str}.substr(initial_end), "vcpkg::serialize(const BinaryParagraph&, std::string&)");
         if (!parsed_paragraph)
         {
             Checks::msg_exit_maybe_upgrade(
@@ -285,7 +286,7 @@ namespace vcpkg
                     .append_raw(my_paragraph));
         }
 
-        auto binary_paragraph = BinaryParagraph(*parsed_paragraph.get());
+        auto binary_paragraph = BinaryParagraph(std::move(*parsed_paragraph.get()));
         if (binary_paragraph != pgh)
         {
             Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
@@ -297,9 +298,9 @@ namespace vcpkg
         }
     }
 
-    std::string format_binary_paragraph(BinaryParagraph paragraph)
+    std::string format_binary_paragraph(const BinaryParagraph& paragraph)
     {
-        constexpr StringLiteral join_str = R"(", ")";
+        static constexpr StringLiteral join_str = R"(", ")";
         return fmt::format(
             "\nspec: \"{}\"\nversion: \"{}\"\nport_version: {}\ndescription: [\"{}\"]\nmaintainers: [\"{}\"]\nfeature: "
             "\"{}\"\ndefault_features: [\"{}\"]\ndependencies: [\"{}\"]\nabi: \"{}\"",

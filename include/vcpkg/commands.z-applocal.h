@@ -5,8 +5,8 @@
 
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 
-namespace vcpkg::Commands
+namespace vcpkg
 {
-    void command_z_applocal_and_exit(const VcpkgCmdArguments& args, Filesystem& fs);
+    void command_z_applocal_and_exit(const VcpkgCmdArguments& args, const Filesystem& fs);
 }
 #endif

@@ -37,6 +37,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";$CouldNotBeUpdatedItCouldBeMalformed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[${p0} could not be updated; it could be malformed.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[${p0} se nepovedlo aktualizovat; může být poškozený.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";$MatchedMoreThanOneResult$" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA['${p0}' matched more than one result (${p1}).]]></Val>
@@ -72,6 +81,18 @@
           </Tgt>
         </Str>
         <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";@TheXupdateregistryCommandDownloadsNewRegistryInformationAndThusCannotBeUsedWithLocalRegistriesDidYouMeanXregenera" ItemType="0" PsrId="306" Leaf="false">
+        <Disp Icon="Dir" LocTbl="false" />
+        <Item ItemId=";(...) te$" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+          <Str Cat="Text">
+            <Val><![CDATA[The x-update-registry command downloads new registry information and thus cannot be used with local registries. Did you mean x-regenerate ${p0}?]]></Val>
+            <Tgt Cat="Text" Stat="Loc" Orig="New">
+              <Val><![CDATA[Příkaz x-update-registry stáhne nové informace registru, a nelze jej proto použít s místními registry. Měli jste na mysli x-regenerovat ${p0}?]]></Val>
+            </Tgt>
+          </Str>
+          <Disp Icon="Str" />
+        </Item>
       </Item>
       <Item ItemId=";@ThisAllowsTheConsumerToActivateTheToolsRequiredForAProjectIfTheToolsAreNotAlreadyInstalledThisWillForceThemToBeDo" ItemType="0" PsrId="306" Leaf="false">
         <Disp Icon="Dir" LocTbl="false" />
@@ -153,6 +174,15 @@
           <Val><![CDATA[a dependency]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[závislost]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ADependencyFeature" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[a feature in a dependency]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[funkce v závislosti]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -946,6 +976,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";AnArrayOfFeatures" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[an array of features]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[pole funkcí]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";AnArrayOfIdentifers" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[an array of identifiers]]></Val>
@@ -1135,15 +1174,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";ArtifactRegistryDataIsNotLoaded" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Artifact registry data is not loaded]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Data registru artefaktů se nenačetla.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";ArtifactsBootstrapFailed" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[vcpkg-artifacts is not installed and could not be bootstrapped.]]></Val>
@@ -1221,15 +1251,6 @@
           <Val><![CDATA[attempting to set builtin-baseline in vcpkg.json while overriding the default-registry in vcpkg-configuration.json.]A;the default-registry from vcpkg-configuration.json will be used.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[při pokusu o nastavení předdefinovaného směrného plánu v souboru vcpkg.json při přepsání výchozího registru v souboru vcpkg-configuration.json.]A;se použije výchozí registr z vcpkg-configuration.json.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";AttemptingToUpdateArtifactRegistry" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Attempting to update artifact registry]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Probíhá pokus o aktualizaci registru artefaktů]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1365,6 +1386,15 @@
           <Val><![CDATA[The baseline.json from commit `"{commit_sha}"` in the repo {url} was invalid (did not contain a "default" field).]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Soubor baseline.json z potvrzení „{commit_sha}“ v úložišti {url} byl neplatný (neobsahoval pole „default“).]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";BinaryCacheVendorHTTP" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[HTTP servers]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Servery HTTP]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1560,10 +1590,13 @@
       </Item>
       <Item ItemId=";BuildTroubleshootingMessageGH" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[You can also sumbit an issue by running (GitHub cli must be installed):]]></Val>
+          <Val><![CDATA[You can also submit an issue by running (GitHub CLI must be installed):]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Problém můžete také nahlásit spuštěním (musí být nainstalované rozhraní příkazového řádku GitHubu):]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[You can also sumbit an issue by running (GitHub cli must be installed):]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -1936,6 +1969,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CiBaselineUnexpectedFail" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[REGRESSION: {spec} is marked as fail but not supported for {triplet}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[REGRESSION: {spec} je označen jako neúspěšný, ale pro {triplet} se nepodporuje.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CiBaselineUnexpectedFailCascade" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[REGRESSION: {spec} is marked as fail but one dependency is not supported for {triplet}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[REGRESE: {spec} je označena jako neúspěšná, ale jedna závislost se pro {triplet} nepodporuje.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CiBaselineUnexpectedPass" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[PASSING, REMOVE FROM FAIL LIST: {spec} ({path}).]]></Val>
@@ -2038,47 +2089,89 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CmdDependInfoOptDGML" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";CmdDependInfoFormatConflict" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Creates graph on basis of dgml]]></Val>
+          <Val><![CDATA[Conflicting formats specified. Only one of --format, --dgml, or --dot are accepted.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Vytvoří graf na základě dgml.]]></Val>
+            <Val><![CDATA[Byly zadány konfliktní formáty. Přijímá se jenom jedna z těchto hodnot: --format, --dgml nebo --dot.]]></Val>
           </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdDependInfoFormatHelp" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Choose output format, one of `list`, `tree`, `mermaid`, `dot`, or `dgml`.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Zvolte výstupní formát, jeden z těchto formátů: list, tree, mermaid, dot nebo dgml.]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Choose output format, one of `list`, `tree`, `dot`, or `dgml`.]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdDependInfoFormatInvalid" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[--format={value} is not a recognized format. --format must be one of `list`, `tree`, `mermaid`, `dot`, or `dgml`.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[--format={value} není rozpoznaný formát. Argument --format musí být list, tree, mermaid, dot nebo dgml.]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[--format={value} is not a recognized format. --format must be one of `list`, `tree`, `dot`, or `dgml`.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdDependInfoOptDepth" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Show recursion depth in output]]></Val>
+          <Val><![CDATA[Show recursion depth in `list` output.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Zobrazit hloubku rekurze ve výstupu]]></Val>
+            <Val><![CDATA[Zobrazit hloubku rekurze ve výstupu list.]]></Val>
           </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CmdDependInfoOptDot" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Creates graph on basis of dot]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Vytvoří graf na základě dot]]></Val>
-          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Show recursion depth in output]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdDependInfoOptMaxRecurse" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Set max recursion depth, a value of -1 indicates no limit]]></Val>
+          <Val><![CDATA[Set max recursion depth. Default is no limit.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Nastavit maximální hloubku rekurze, hodnota -1 udává hloubku bez omezení]]></Val>
+            <Val><![CDATA[Nastavte maximální hloubku rekurze. Výchozí hodnota není nijak omezena.]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Set max recursion depth, a value of -1 indicates no limit]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdDependInfoOptSort" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Choose sort order for the `list` format, one of `lexicographical`, `topological` (default), `reverse`]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Zvolte pořadí řazení pro formát list, jeden z lexicographical, topological (výchozí), reverse.]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Set sort order for the list of dependencies, accepted values are: lexicographical, topological (default), x-tree, reverse]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdDependInfoShowDepthFormatMismatch" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[--show-depth can only be used with `list` and `tree` formats.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[--show-depth se dá použít jenom s formáty list a tree.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CmdDependInfoOptSort" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";CmdDependInfoXtreeTree" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Set sort order for the list of dependencies, accepted values are: lexicographical, topological (default), x-tree, reverse]]></Val>
+          <Val><![CDATA[--sort=x-tree cannot be used with formats other than tree]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Nastavit pořadí řazení pro seznam závislostí, přípustné hodnoty jsou: lexikografické, topologické (výchozí), x-tree, obrácené]]></Val>
+            <Val><![CDATA[--sort=x-tree nejde použít s jinými formáty než strom]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2106,6 +2199,15 @@
           <Val><![CDATA[Add installed {path} to {env_var}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Přidat nainstalovanou cestu {path} do {env_var}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdExportEmptyPlan" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Refusing to create an export of zero packages. Install packages before exporting.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Odmítnutí vytvořit export nulových balíčků. Před exportem nainstalujte balíčky.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2614,6 +2716,33 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CmdUpdateRegistryAll" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Update all known artifact registries]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Aktualizovat všechny známé registry artefaktů]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdUpdateRegistryAllExcludesTargets" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Update registry --all cannot be used with a list of artifact registries]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Aktualizovat registr --all se nedá použít se seznamem registrů artefaktů]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdUpdateRegistryAllOrTargets" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Update registry requires either a list of artifact registry names or URiIs to update, or --all.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Aktualizace registru vyžaduje k aktualizaci buď seznam názvů registru artefaktů, nebo identifikátory URI, nebo --all.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CmdUpgradeOptAllowUnsupported" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Instead of erroring on an unsupported port, continue with a warning.]]></Val>
@@ -2769,6 +2898,15 @@
           <Val><![CDATA[The following files are already installed in {path} and are in conflict with {spec}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Následující soubory jsou už nainstalované v {path} a jsou v konfliktu s {spec}.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ConsideredVersions" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The following executables were considered but discarded because of the version requirement of {version}:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Následující spustitelné soubory byly zvažovány, ale byly vyřazeny, protože je vyžadována verze {version}:]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -3181,6 +3319,33 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";DependencyGraphCalculation" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Dependency graph submission enabled.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Odesílání grafu závislostí je povolené.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DependencyGraphFailure" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Dependency graph submission failed.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Odeslání grafu závislostí se nezdařilo.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DependencyGraphSuccess" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Dependency graph submission successful.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Odeslání grafu závislostí proběhlo úspěšně.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";DeprecatedPrefabDebugOption" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[--prefab-debug is now deprecated.]]></Val>
@@ -3318,15 +3483,6 @@
           <Val><![CDATA[A suitable version of {tool_name} was not found (required v{version}) Downloading portable {tool_name} {version}...]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Nenašla se vhodná verze {tool_name} (požadovánA v{version}) Stahuje se přenosný {tool_name} {version}...]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";DownloadingRegistryData" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Downloading registry data]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Stahování dat registru]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -3622,6 +3778,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[Error: The option --{option} is not supported in classic mode and no manifest was found.]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ErrorInvalidExtractOption" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[--{option} must be set to a nonnegative integer or 'AUTO'.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Parametr --{option} musí být nastaven na nezáporné celé číslo nebo hodnotu „AUTO“.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -4198,6 +4363,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ExtractHelp" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Extracts an archive.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Extrahuje archiv.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ExtractingTool" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Extracting {tool_name}...]]></Val>
@@ -4633,20 +4807,20 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";FatalTheGlobalConfigurationFile$CanNotBeCreated" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";FatalTheGlobalConfigurationFile$CannotBeCreated" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Fatal: The global configuration file '${p0}' can not be created]]></Val>
+          <Val><![CDATA[Fatal: The global configuration file '${p0}' cannot be created]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Závažné: Globální konfigurační soubor ${p0} se nedá vytvořit.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";FatalTheRootFolder$CanNotBeCreated" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";FatalTheRootFolder$CannotBeCreated" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Fatal: The root folder '${p0}' can not be created]]></Val>
+          <Val><![CDATA[Fatal: The root folder '${p0}' cannot be created]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Závažné: Kořenovou složku ${p0} nejde vytvořit.]]></Val>
+            <Val><![CDATA[Závažné: Kořenovou složku ${p0} nejde vytvořit]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -5098,6 +5272,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[failed to read file '{path}' for hashing: ]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HashPortManyFiles" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The {package_name} contains {count} files. Hashing these contents may take a long time when determining the ABI hash for binary caching. Consider reducing the number of files. Common causes of this are accidentally checking out source or build files into a port's directory.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{package_name} obsahuje {count} souborů. Použití algoritmů hash u tohoto obsahu při určování hodnoty hash ABI pro ukládání binárních dat do mezipaměti může trvat dlouho. Zvažte snížení počtu souborů. Častou příčinou je náhodné zahrnutí zdrojových nebo buildovacích souborů do adresáře portu.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -7377,10 +7560,13 @@
       </Item>
       <Item ItemId=";MutuallyExclusiveOption" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[--{value} can not be used with --{option}.]]></Val>
+          <Val><![CDATA[--{value} cannot be used with --{option}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Parametr --{value} nejde použít s parametrem --{option}.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[--{value} can not be used with --{option}.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -8251,6 +8437,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";PortBugKernel32FromXbox" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The selected triplet targets Xbox, but the following DLLs link with kernel32. These DLLs cannot be loaded on Xbox, where kernel32 is not present. This is typically caused by linking with kernel32.lib rather than a suitable umbrella library, such as onecore_apiset.lib or xgameplatform.lib.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Vybraný triplet cílí na Xbox, ale následující knihovny DLL jsou propojeny s kernel32. Tyto knihovny DLL nelze načíst na konzoli Xbox, kde není k dispozici kernel32. To je obvykle způsobeno propojením s kernel32.lib namísto vhodné knihovny umbrella, jako je onecore_apiset.lib nebo xgameplatform.lib.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";PortBugMergeLibCMakeDir" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[The /lib/cmake folder should be merged with /debug/lib/cmake and moved to /share/{package_name}/cmake. Please use the helper function `vcpkg_cmake_config_fixup()` from the port vcpkg-cmake-config.`]]></Val>
@@ -8713,27 +8908,66 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";RestoredPackage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";RestoredPackagesFromAWS" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Restored package from "{path}"]]></Val>
+          <Val><![CDATA[Restored {count} package(s) from AWS in {elapsed}. Use --debug to see more details.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Byl obnoven balíček z cesty {path}.]]></Val>
+            <Val><![CDATA[Počet obnovených balíčků z AWS: {count} za {elapsed} Pokud si chcete zobrazit další podrobnosti, použijte --debug.]]></Val>
           </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Restored package from '{path}']]></Val>
-          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";RestoredPackagesFromVendor" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";RestoredPackagesFromCOS" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Restored {count} package(s) from {value} in {elapsed}. Use --debug to see more details.]]></Val>
+          <Val><![CDATA[Restored {count} package(s) from COS in {elapsed}. Use --debug to see more details.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Za {elapsed} se obnovil tento počet balíčků: {count} z {value}. Pokud si chcete zobrazit další podrobnosti, použijte --debug.]]></Val>
+            <Val><![CDATA[Počet obnovených balíčků z COS: {count} za {elapsed}. Pokud si chcete zobrazit další podrobnosti, použijte --debug.]]></Val>
           </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Restored {count} package(s) from {vendor} in {elapsed}]]></Val>
-          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";RestoredPackagesFromFiles" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Restored {count} package(s) from {path} in {elapsed}. Use --debug to see more details.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Počet obnovených balíčků z cesty {path} za {elapsed}: {count} Pokud si chcete zobrazit další podrobnosti, použijte --debug.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";RestoredPackagesFromGCS" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Restored {count} package(s) from GCS in {elapsed}. Use --debug to see more details.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Počet obnovených balíčků z GCS: {count} za {elapsed}. Pokud si chcete zobrazit další podrobnosti, použijte --debug.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";RestoredPackagesFromGHA" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Restored {count} package(s) from GitHub Actions Cache in {elapsed}. Use --debug to see more details.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Počet obnovených balíčků z mezipaměti GitHub Actions za {elapsed}: {count} Pokud si chcete zobrazit další podrobnosti, použijte --debug.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";RestoredPackagesFromHTTP" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Restored {count} package(s) from HTTP servers in {elapsed}. Use --debug to see more details.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Počet obnovených balíčků ze serverů HTTP za {elapsed}: {count}. Pokud si chcete zobrazit další podrobnosti, použijte --debug.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";RestoredPackagesFromNuGet" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Restored {count} package(s) from NuGet in {elapsed}. Use --debug to see more details.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Počet obnovených balíčků z NuGetu: {count} za {elapsed} Pokud si chcete zobrazit další podrobnosti, použijte --debug.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -8949,10 +9183,13 @@
       </Item>
       <Item ItemId=";StoredBinariesToDestinations" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Stored binaries in {count} destinations.]]></Val>
+          <Val><![CDATA[Stored binaries in {count} destinations in {elapsed}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Binární soubory se uložily v {count} cílech.]]></Val>
+            <Val><![CDATA[Uložené binární soubory v(e) {count} cílech v {elapsed}.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Stored binaries in {count} destinations.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -8965,6 +9202,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[Stored binary cache: '{path}']]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";StripOption" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[--{option} specifies the number of leading directories to strip from all paths.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Parametr --{option} určuje počet úvodních adresářů, které se mají odstranit ze všech cest.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -9346,11 +9592,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";UnableToDownloadRegistrySnapshot" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";UnableToDownload$" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Unable to download registry snapshot]]></Val>
+          <Val><![CDATA[Unable to download ${p0}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Nepovedlo se stáhnout snímek registru.]]></Val>
+            <Val><![CDATA[Nejde stáhnout ${p0}.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -9384,19 +9630,13 @@
       </Item>
       <Item ItemId=";UnableToFindRegistry$" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Unable to find registry ${p0}]]></Val>
+          <Val><![CDATA[Unable to find registry ${p0}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Nepovedlo se najít registr ${p0}.]]></Val>
           </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";UnableToLoadRegistryIndex" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Unable to load registry index]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Nelze načíst index registru.]]></Val>
-          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Unable to find registry ${p0}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -10060,6 +10300,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";UpdateAllKnownArtifactRegistries" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Update all known artifact registries]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Aktualizovat všechny známé registry artefaktů]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";UpdateBaselineAddBaselineNoManifest" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[the --{option} switch was passed, but there is no manifest file to add a `builtin-baseline` field to.]]></Val>
@@ -10126,9 +10375,9 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";Updated$RegistryContains$MetadataFiles" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";Updated$ItContains$MetadataFiles" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Updated ${p0}. registry contains ${p1} metadata files]]></Val>
+          <Val><![CDATA[Updated ${p0}. It contains ${p1} metadata files.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Aktualizováno : ${p0}. Registr obsahuje soubory metadat ${p1}.]]></Val>
           </Tgt>
@@ -11122,15 +11371,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";in$Skipping$BecauseItIsA$" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[in ${p0} skipping ${p1} because it is a ${p2}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[v ${p0} přeskakuje ${p1}, protože se jedná o ${p2}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";infodescriptionShouldBeOfTypestringFound$" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[info.description should be of type 'string', found '${p0}']]></Val>
@@ -11334,15 +11574,6 @@
           <Val><![CDATA[unable to find artifact ${p0} in the project manifest]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[V manifestu projektu se nepovedlo najít artefakt ${p0}.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";unpacking" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[unpacking]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[rozbalení]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />

@@ -11,9 +11,9 @@
 
 #include <string>
 
-namespace vcpkg::Commands
+namespace vcpkg
 {
-    void command_bootstrap_standalone_and_exit(const VcpkgCmdArguments& args, Filesystem& fs)
+    void command_bootstrap_standalone_and_exit(const VcpkgCmdArguments& args, const Filesystem& fs)
     {
         DownloadManager download_manager{{}};
         const auto maybe_vcpkg_root_env = args.vcpkg_root_dir_env.get();
