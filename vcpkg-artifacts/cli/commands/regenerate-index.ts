@@ -13,10 +13,7 @@ import { Normalize } from '../switches/normalize';
 
 export class RegenerateCommand extends Command {
   readonly command = 'regenerate';
-  readonly aliases = ['regen'];
   readonly normalize = new Normalize(this);
-  seeAlso = [];
-  argumentsHelp = [];
 
   get summary() {
     return i`regenerate the index for a registry`;

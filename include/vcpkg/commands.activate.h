@@ -5,5 +5,6 @@
 
 namespace vcpkg
 {
+    extern const CommandMetadata CommandActivateMetadata;
     void command_activate_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths);
 }

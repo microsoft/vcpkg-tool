@@ -42,6 +42,10 @@ DECLARE_MESSAGE(AddTripletExpressionNotAllowed,
                 "",
                 "triplet expressions are not allowed here. You may want to change "
                 "`{package_name}:{triplet}` to `{package_name}` instead.")
+DECLARE_MESSAGE(AddVersionArtifactsOnly,
+                (),
+                "'--version', and 'vcpkg add port' are command lines that must not be localized",
+                "--version is artifacts only and can't be used with vcpkg add port")
 DECLARE_MESSAGE(AddVersionAddedVersionToFile, (msg::version, msg::path), "", "added version {version} to {path}")
 DECLARE_MESSAGE(AddVersionCommitChangesReminder, (), "", "Did you remember to commit your changes?")
 DECLARE_MESSAGE(AddVersionCommitResultReminder, (), "", "Don't forget to commit the result!")
@@ -177,6 +181,47 @@ DECLARE_MESSAGE(ArtifactsNotInstalledReadonlyRoot,
                 "readonly. Reinstalling vcpkg using the 'one liner' may fix this problem.")
 DECLARE_MESSAGE(ArtifactsNotOfficialWarning, (), "", "Using vcpkg-artifacts with an unofficial ")
 DECLARE_MESSAGE(ArtifactsOptionIncompatibility, (msg::option), "", "--{option} has no effect on find artifact.")
+DECLARE_MESSAGE(ArtifactsOptionJson,
+                (),
+                "",
+                "Full path to JSON file where environment variables and other properties are recorded")
+DECLARE_MESSAGE(ArtifactsOptionMSBuildProps,
+                (),
+                "",
+                "Full path to the file in which MSBuild properties will be written")
+DECLARE_MESSAGE(ArtifactsOptionVersion, (), "", "A version or version range to match; only valid for artifacts")
+DECLARE_MESSAGE(ArtifactsOptionVersionMismatch,
+                (),
+                "--version is a command line switch and must not be localized",
+                "The number of --version switches must match the number of named artifacts")
+DECLARE_MESSAGE(ArtifactsSwitchAll, (), "", "Update all known artifact registries")
+DECLARE_MESSAGE(ArtifactsSwitchAllLanguages, (), "", "Acquire all language files when acquiring artifacts")
+DECLARE_MESSAGE(ArtifactsSwitchARM, (), "", "Force host detection to ARM when acquiring artifacts")
+DECLARE_MESSAGE(ArtifactsSwitchARM64, (), "", "Force host detection to ARM64 when acquiring artifacts")
+DECLARE_MESSAGE(ArtifactsSwitchForce, (), "", "Force reacquire if an artifact is already acquired")
+DECLARE_MESSAGE(ArtifactsSwitchFreebsd, (), "", "Force host detection to FreeBSD when acquiring artifacts")
+DECLARE_MESSAGE(ArtifactsSwitchLinux, (), "", "Force host detection to Linux when acquiring artifacts")
+DECLARE_MESSAGE(ArtifactsSwitchNormalize, (), "", "Apply any deprecation fixups")
+DECLARE_MESSAGE(ArtifactsSwitchTargetARM, (), "", "Set target detection to ARM when acquiring artifacts")
+DECLARE_MESSAGE(ArtifactsSwitchTargetARM64, (), "", "Set target detection to ARM64 when acquiring artifacts")
+DECLARE_MESSAGE(ArtifactsSwitchTargetX64, (), "", "Set target detection to x64 when acquiring artifacts")
+DECLARE_MESSAGE(ArtifactsSwitchTargetX86, (), "", "Set target to x86 when acquiring artifacts")
+DECLARE_MESSAGE(ArtifactsSwitchOnlyOneOperatingSystem,
+                (),
+                "The words after -- are command line switches and must not be localized.",
+                "Only one operating system (--windows, --osx, --linux, --freebsd) may be set.")
+DECLARE_MESSAGE(ArtifactsSwitchOnlyOneHostPlatform,
+                (),
+                "The words after -- are command line switches and must not be localized.",
+                "Only one host platform (--x64, --x86, --arm, --arm64) may be set.")
+DECLARE_MESSAGE(ArtifactsSwitchOnlyOneTargetPlatform,
+                (),
+                "The words after -- are command line switches and must not be localized.",
+                "Only one target platform (--target:x64, --target:x86, --target:arm, --target:arm64) may be set.")
+DECLARE_MESSAGE(ArtifactsSwitchOsx, (), "", "Force host detection to MacOS when acquiring artifacts")
+DECLARE_MESSAGE(ArtifactsSwitchX64, (), "", "Force host detection to x64 when acquiring artifacts")
+DECLARE_MESSAGE(ArtifactsSwitchX86, (), "", "Force host detection to x86 when acquiring artifacts")
+DECLARE_MESSAGE(ArtifactsSwitchWindows, (), "", "Force host detection to Windows when acquiring artifacts")
 DECLARE_MESSAGE(AssetCacheProviderAcceptsNoArguments,
                 (msg::value),
                 "{value} is a asset caching provider name such as azurl, clear, or x-block-origin",
@@ -1058,6 +1103,10 @@ DECLARE_MESSAGE(FindHelp,
                 "'artifact' and 'port' are what the user must literally type.",
                 "Searches for the indicated artifact or port. With no parameter after 'artifact' or 'port', "
                 "displays everything.")
+DECLARE_MESSAGE(FindVersionArtifactsOnly,
+                (),
+                "'--version', 'vcpkg search', and 'vcpkg find port' are command lines that must not be localized",
+                "--version can't be used with vcpkg search or vcpkg find port")
 DECLARE_MESSAGE(FieldKindDidNotHaveExpectedValue,
                 (msg::expected, msg::actual),
                 "{expected} is a list of literal kinds the user must type, separated by commas, {actual} is what "

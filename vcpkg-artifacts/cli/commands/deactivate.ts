@@ -8,9 +8,6 @@ import { Command } from '../command';
 
 export class DeactivateCommand extends Command {
   readonly command = 'deactivate';
-  readonly aliases = [];
-  seeAlso = [];
-  argumentsHelp = [];
 
   get summary() {
     return i`Deactivates the current session`;

@@ -14,9 +14,7 @@ import { Version } from '../switches/version';
 
 export class FindCommand extends Command {
   readonly command = 'find';
-  readonly aliases = ['search'];
-  seeAlso = [];
-  argumentsHelp = [];
+
   version = new Version(this);
   project = new Project(this);
 

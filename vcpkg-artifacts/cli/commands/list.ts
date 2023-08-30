@@ -11,9 +11,6 @@ import { Installed } from '../switches/installed';
 
 export class ListCommand extends Command {
   readonly command = 'list';
-  readonly aliases = ['show'];
-  seeAlso = [];
-  argumentsHelp = [];
   installed = new Installed(this);
 
   get summary() {

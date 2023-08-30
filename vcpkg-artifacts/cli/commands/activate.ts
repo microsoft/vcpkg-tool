@@ -16,9 +16,6 @@ import { Project } from '../switches/project';
 
 export class ActivateCommand extends Command {
   readonly command = 'activate';
-  readonly aliases = [];
-  seeAlso = [];
-  argumentsHelp = [];
   project: Project = new Project(this);
   msbuildProps: MSBuildProps = new MSBuildProps(this);
   json : Json = new Json(this);

@@ -11,9 +11,6 @@ import { Project } from '../switches/project';
 
 export class AcquireProjectCommand extends Command {
   readonly command = 'acquire-project';
-  readonly aliases = [];
-  seeAlso = [];
-  argumentsHelp = [];
   project: Project = new Project(this);
 
   get summary() {
