@@ -648,11 +648,11 @@ namespace vcpkg
         std::size_t bytes_read = 0;
         for (std::size_t i = 0; i < file_size; i += bytes_read)
         {
-            const int64_t end = std::min(i + chunk_size, file_size) - 1;
-            const std::string range = fmt::format("{}-{}", i, end);
-
             bytes_read = file_ptr.read(buffer.data(), sizeof(decltype(buffer)::value_type), chunk_size);
             if (!bytes_read) break;
+
+            const std::size_t end = std::min(i + bytes_read, file_size) - 1;
+            const std::string range = fmt::format("{}-{}", i, end);
 
             auto cmd = base_cmd;
             cmd.string_arg("-H").string_arg(fmt::format("Content-Range: bytes {}/{}", range, file_size));
