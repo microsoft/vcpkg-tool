@@ -917,6 +917,7 @@ namespace
                 std::vector<std::string> headers{
                     m_token_header, m_accept_header.to_string(), "Content-Type: application/octet-stream"};
                 auto url = m_url + "/" + std::to_string(*cacheId.get());
+
                 if (patch_file(m_fs, url, headers, zip_path, cache_size))
                 {
                     Json::Object commit;

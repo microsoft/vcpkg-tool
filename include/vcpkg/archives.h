@@ -78,7 +78,4 @@ namespace vcpkg
     };
 
     std::vector<ExpectedL<Unit>> decompress_in_parallel(View<Command> jobs);
-
-    // Split an archive into chunks.
-    ExpectedL<Unit> split_archive(Filesystem& fs, const Path& path, int64_t file_size, int64_t chunk_size);
 }

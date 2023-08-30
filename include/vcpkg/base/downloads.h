@@ -48,8 +48,8 @@ namespace vcpkg
                                         StringView url,
                                         View<std::string> headers,
                                         const Path& file,
-                                        int64_t file_size,
-                                        unsigned int chunk_size = 450 * 1024 * 1024);
+                                        std::size_t file_size,
+                                        std::size_t chunk_size = 450 * 1024 * 1024);
 
     ExpectedL<std::string> invoke_http_request(StringView method,
                                                View<std::string> headers,
