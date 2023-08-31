@@ -550,7 +550,7 @@ DECLARE_MESSAGE(CmdCacheExample1,
                 (),
                 "This is a command line, only the <>s part should be localized",
                 "vcpkg cache <search substring>")
-DECLARE_MESSAGE(CmdCacheSynopsis, (), "", "List names of installed ports")
+DECLARE_MESSAGE(CmdCacheSynopsis, (), "", "List specs of packages")
 DECLARE_MESSAGE(CmdCiCleanSynopsis,
                 (),
                 "CI is continuous integration (building everything together)",

@@ -327,7 +327,7 @@
   "CmdBuildSynopsis": "Builds a port",
   "CmdCacheExample1": "vcpkg cache <search substring>",
   "_CmdCacheExample1.comment": "This is a command line, only the <>s part should be localized",
-  "CmdCacheSynopsis": "List names of installed ports",
+  "CmdCacheSynopsis": "List specs of packages",
   "CmdCheckSupportExample1": "vcpkg x-check-support <port name>",
   "_CmdCheckSupportExample1.comment": "This is a command line, only the <>s part should be localized",
   "CmdCheckSupportSynopsis": "Test whether a port is supported without building it",
