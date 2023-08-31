@@ -12,6 +12,7 @@ namespace vcpkg
         "hash",
         msgCmdHashSynopsis,
         {msgCmdHashExample1, msgCmdHashExample2, "vcpkg hash boost_1_62_0.tar.bz2"},
+        Undocumented,
         AutocompletePriority::Public,
         1,
         2,

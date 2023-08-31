@@ -14,6 +14,7 @@ namespace vcpkg
         "build-external",
         msgCmdBuildExternalSynopsis,
         {msgCmdBuildExternalExample1, msgCmdBuildExternalExample2},
+        Undocumented,
         AutocompletePriority::Internal,
         2,
         2,

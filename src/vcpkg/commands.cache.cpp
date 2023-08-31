@@ -34,6 +34,7 @@ namespace vcpkg
         "cache",
         msgCmdCacheSynopsis,
         {msgCmdCacheExample1, "vcpkg cache png"},
+        Undocumented,
         AutocompletePriority::Public,
         0,
         1,

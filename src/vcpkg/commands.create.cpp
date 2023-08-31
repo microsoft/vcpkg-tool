@@ -32,6 +32,7 @@ namespace vcpkg
             msgCmdCreateExample3,
             "vcpkg create zlib2 http://zlib.net/zlib1211.zip zlib1211-2.zip",
         },
+        Undocumented,
         AutocompletePriority::Public,
         2,
         3,

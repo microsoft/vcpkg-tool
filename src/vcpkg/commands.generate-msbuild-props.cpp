@@ -22,6 +22,7 @@ namespace vcpkg
         "generate-msbuild-props",
         msgCmdGenerateMSBuildPropsSynopsis,
         {msgCmdGenerateMSBuildPropsExample1, msgCmdGenerateMSBuildPropsExample2},
+        Undocumented,
         AutocompletePriority::Internal,
         0,
         0,

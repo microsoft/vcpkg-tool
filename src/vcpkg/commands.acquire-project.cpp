@@ -11,6 +11,7 @@ namespace vcpkg
         "acquire_project",
         msgCmdAcquireProjectSynopsis,
         {"vcpkg acquire-project"},
+        Undocumented,
         AutocompletePriority::Public,
         0,
         0,

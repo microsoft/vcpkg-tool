@@ -37,6 +37,7 @@ namespace vcpkg
         "z-preregister-telemetry",
         {/*intentionally undocumented*/},
         {},
+        Undocumented,
         AutocompletePriority::Never,
         0,
         0,

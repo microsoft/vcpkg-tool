@@ -30,6 +30,7 @@ namespace vcpkg
         "use",
         msgCmdUseSynopsis,
         {msgCmdUseExample1, "vcpkg use cmake"},
+        Undocumented,
         AutocompletePriority::Public,
         1,
         SIZE_MAX,

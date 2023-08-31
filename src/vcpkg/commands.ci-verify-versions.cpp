@@ -229,6 +229,7 @@ namespace vcpkg
         "x-ci-verify-versions",
         msgCmdCiVerifyVersionsSynopsis,
         {"vcpkg x-ci-verify-versions"},
+        Undocumented,
         AutocompletePriority::Internal,
         0,
         SIZE_MAX,

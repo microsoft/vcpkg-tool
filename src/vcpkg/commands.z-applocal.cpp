@@ -561,6 +561,7 @@ namespace vcpkg
         msgCmdZApplocalSynopsis,
         {"vcpkg z-applocal --target-binary=\"Path/to/binary\" --installed-bin-dir=\"Path/to/installed/bin\" "
          "--tlog-file=\"Path/to/tlog.tlog\" --copied-files-log=\"Path/to/copiedFilesLog.log\""},
+        Undocumented,
         AutocompletePriority::Internal,
         0,
         0,

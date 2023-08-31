@@ -25,6 +25,7 @@ namespace vcpkg
         "search",
         msgHelpSearchCommand,
         {msgCmdSearchExample1, "vcpkg search png"},
+        "https://learn.microsoft.com/vcpkg/commands/search",
         AutocompletePriority::Public,
         0,
         1,

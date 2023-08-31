@@ -49,6 +49,7 @@ namespace vcpkg
         "x-set-installed",
         msgCmdSetInstalledSynopsis,
         {msgCmdSetInstalledExample1, "vcpkg x-set-installed zlib:x64-windows boost"},
+        Undocumented,
         AutocompletePriority::Public,
         0,
         SIZE_MAX,

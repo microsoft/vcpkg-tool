@@ -9,6 +9,7 @@ namespace vcpkg
         "x-init-registry",
         msgCmdInitRegistrySynopsis,
         {msgCmdInitRegistryExample1, "vcpkg x-init-registry ."},
+        Undocumented,
         AutocompletePriority::Public,
         1,
         1,

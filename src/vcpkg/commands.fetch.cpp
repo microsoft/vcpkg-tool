@@ -21,6 +21,7 @@ namespace vcpkg
         "fetch",
         msgCmdFetchSynopsis,
         {"vcpkg fetch python"},
+        Undocumented,
         AutocompletePriority::Public,
         1,
         1,

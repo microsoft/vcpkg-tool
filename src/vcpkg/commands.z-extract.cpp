@@ -26,6 +26,7 @@ namespace vcpkg
         "z-extract",
         msgExtractHelp,
         {msgCmdZExtractExample1, msgCmdZExtractExample2},
+        Undocumented,
         AutocompletePriority::Internal,
         2,
         3,

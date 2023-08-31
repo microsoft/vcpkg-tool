@@ -223,6 +223,7 @@ namespace vcpkg
             msgCmdFindExample2,
             "vcpkg find artifact cmake",
         },
+        Undocumented,
         AutocompletePriority::Public,
         1,
         2,

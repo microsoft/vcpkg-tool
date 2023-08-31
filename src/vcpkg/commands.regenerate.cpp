@@ -31,6 +31,7 @@ namespace vcpkg
         "x-regenerate",
         msgRegeneratesArtifactRegistry,
         {"vcpkg x-regenerate"},
+        Undocumented,
         AutocompletePriority::Public,
         1,
         1,

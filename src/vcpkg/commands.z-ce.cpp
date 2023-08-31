@@ -10,6 +10,7 @@ namespace vcpkg
         "z-ce",
         {/*intentionally undocumented*/},
         {},
+        Undocumented,
         AutocompletePriority::Never,
         0,
         SIZE_MAX,

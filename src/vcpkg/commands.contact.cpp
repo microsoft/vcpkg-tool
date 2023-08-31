@@ -9,6 +9,7 @@ namespace vcpkg
         "contact",
         msgHelpContactCommand,
         {"vcpkg contact"},
+        Undocumented,
         AutocompletePriority::Internal,
         0,
         0,

@@ -19,10 +19,11 @@ namespace
 
 namespace vcpkg
 {
-    constexpr CommandMetadata CommandZGenerateDefaultMessageMapMetadata = {
+    constexpr CommandMetadata CommandZGenerateDefaultMessageMapMetadata{
         "z-generate-default-message-map",
         {/*intentionally undocumented*/},
         {},
+        Undocumented,
         AutocompletePriority::Never,
         2,
         2,

@@ -103,6 +103,7 @@ namespace vcpkg
         "x-check-support",
         msgCmdCheckSupportSynopsis,
         {msgCmdCheckSupportExample1, "vcpkg x-check-support zlib"},
+        Undocumented,
         AutocompletePriority::Public,
         1,
         SIZE_MAX,

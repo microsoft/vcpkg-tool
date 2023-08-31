@@ -609,6 +609,7 @@ namespace vcpkg
             table.format("vcpkg integrate zsh", msg::format(msgIntegrateZshHelp));
             return LocalizedString::from_raw("\n").append_raw(std::move(table.m_str));
         }},
+        "https://learn.microsoft.com/vcpkg/commands/integrate",
         AutocompletePriority::Public,
         1,
         1,

@@ -71,6 +71,7 @@ namespace vcpkg
         "build",
         msgCmdBuildSynopsis,
         {msgCmdBuildExample1, "vcpkg build zlib:x64-windows"},
+        Undocumented,
         AutocompletePriority::Internal,
         1,
         1,

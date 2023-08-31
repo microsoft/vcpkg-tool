@@ -26,6 +26,7 @@ namespace vcpkg
             msgCmdUpdateRegistryExample3,
             "vcpkg x-update-registry microsoft",
         },
+        Undocumented,
         AutocompletePriority::Public,
         0,
         SIZE_MAX,

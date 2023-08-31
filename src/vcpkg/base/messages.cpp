@@ -459,7 +459,7 @@ namespace vcpkg::msg
     }
 
     // LCIDs supported by VS:
-    // https://learn.microsoft.com/en-us/visualstudio/ide/reference/lcid-devenv-exe?view=vs-2022
+    // https://learn.microsoft.com/visualstudio/ide/reference/lcid-devenv-exe?view=vs-2022
     Optional<StringLiteral> get_language_tag(int LCID)
     {
         static constexpr std::pair<int, StringLiteral> languages[] = {

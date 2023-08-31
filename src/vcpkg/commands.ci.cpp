@@ -320,6 +320,7 @@ namespace vcpkg
         "ci",
         msgCmdCiSynopsis,
         {"vcpkg ci --triplet=x64-windows"},
+        Undocumented,
         AutocompletePriority::Internal,
         0,
         0,

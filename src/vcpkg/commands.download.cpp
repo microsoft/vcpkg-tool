@@ -42,6 +42,7 @@ namespace vcpkg
         "x-download",
         msgCmdDownloadSynopsis,
         {msgCmdDownloadExample1, msgCmdDownloadExample2, msgCmdDownloadExample3},
+        Undocumented,
         AutocompletePriority::Internal,
         1,
         2,

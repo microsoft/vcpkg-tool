@@ -169,6 +169,7 @@ namespace vcpkg
         "remove",
         msgHelpRemoveCommand,
         {msgCmdRemoveExample1, "vcpkg remove zlib zlib:x64-windows curl boost", "vcpkg remove --outdated"},
+        "https://learn.microsoft.com/vcpkg/commands/remove",
         AutocompletePriority::Public,
         0,
         SIZE_MAX,

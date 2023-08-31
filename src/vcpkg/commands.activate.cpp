@@ -24,6 +24,7 @@ namespace vcpkg
         "activate",
         msgCmdActivateSynopsis,
         {"vcpkg activate"},
+        Undocumented,
         AutocompletePriority::Public,
         0,
         0,

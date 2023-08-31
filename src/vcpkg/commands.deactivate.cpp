@@ -10,6 +10,7 @@ namespace vcpkg
         "deactivate",
         msgCmdDeactivateSynopsis,
         {"vcpkg deactivate"},
+        Undocumented,
         AutocompletePriority::Public,
         0,
         0,

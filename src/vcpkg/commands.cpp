@@ -150,7 +150,7 @@ namespace vcpkg
 
     static void format_command_usage_entry(HelpTableFormatter& table, const CommandMetadata& metadata)
     {
-        table.format(fmt::format("vcpkg {}", metadata.name), metadata.synopsis.format());
+        table.format(fmt::format("vcpkg {}", metadata.name), metadata.synopsis.to_string());
     }
 
     void print_command_list_usage()

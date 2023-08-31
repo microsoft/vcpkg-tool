@@ -245,6 +245,7 @@ namespace vcpkg
         "depend-info",
         msgHelpDependInfoCommand,
         {msgCmdDependInfoExample1, "vcpkg depend-info zlib"},
+        "https://learn.microsoft.com/vcpkg/commands/depend-info",
         AutocompletePriority::Public,
         1,
         1,

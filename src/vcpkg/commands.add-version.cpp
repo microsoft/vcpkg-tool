@@ -320,6 +320,7 @@ namespace vcpkg
         "x-add-version",
         msgCmdAddVersionSynopsis,
         {msgCmdAddVersionExample1, "vcpkg x-add-version curl --overwrite-version"},
+        Undocumented,
         AutocompletePriority::Public,
         0,
         1,

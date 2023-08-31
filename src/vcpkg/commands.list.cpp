@@ -91,6 +91,7 @@ namespace vcpkg
         "list",
         msgListHelp,
         {"vcpkg list", msgCmdListExample2, "vcpkg list png"},
+        "https://learn.microsoft.com/vcpkg/commands/list",
         AutocompletePriority::Public,
         0,
         1,

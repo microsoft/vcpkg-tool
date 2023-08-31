@@ -62,6 +62,7 @@ namespace vcpkg
             msgCommandEnvExample2,
             "vcpkg env \"ninja --version\" --triplet x64-windows",
         },
+        Undocumented,
         AutocompletePriority::Public,
         0,
         1,

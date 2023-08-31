@@ -86,7 +86,7 @@ namespace
 
             if (switch_.helpmsg)
             {
-                if (cmd_parser.parse_switch(name, tag, parse_result, switch_.helpmsg.format()) && parse_result)
+                if (cmd_parser.parse_switch(name, tag, parse_result, switch_.helpmsg.to_string()) && parse_result)
                 {
                     output.switches.emplace(switch_.name.to_string());
                 }
@@ -119,7 +119,7 @@ namespace
 
                 if (option.helpmsg)
                 {
-                    if (cmd_parser.parse_option(name, tag, maybe_parse_result, option.helpmsg.format()))
+                    if (cmd_parser.parse_option(name, tag, maybe_parse_result, option.helpmsg.to_string()))
                     {
                         output.settings.emplace(option.name.to_string(), std::move(maybe_parse_result));
                     }
@@ -152,7 +152,7 @@ namespace
             std::vector<std::string> maybe_parse_result;
             if (option.helpmsg)
             {
-                if (cmd_parser.parse_multi_option(name, tag, maybe_parse_result, option.helpmsg.format()))
+                if (cmd_parser.parse_multi_option(name, tag, maybe_parse_result, option.helpmsg.to_string()))
                 {
                     output.multisettings.emplace(option.name.to_string(), std::move(maybe_parse_result));
                 }
@@ -181,7 +181,7 @@ namespace vcpkg
         return &loc->second;
     }
 
-    LocalizedString MetadataMessage::format() const
+    LocalizedString MetadataMessage::to_string() const
     {
         switch (kind)
         {
@@ -193,7 +193,7 @@ namespace vcpkg
         }
     }
 
-    void MetadataMessage::append_to(LocalizedString& target) const
+    void MetadataMessage::to_string(LocalizedString& target) const
     {
         switch (kind)
         {
@@ -206,6 +206,12 @@ namespace vcpkg
     }
 
     MetadataMessage::operator bool() const noexcept { return kind != MetadataMessageKind::Unused; }
+
+    LocalizedString LearnWebsiteLinkLiteral::to_string() const { return LocalizedString::from_raw(literal); }
+
+    void LearnWebsiteLinkLiteral::to_string(LocalizedString& target) const { target.append_raw(literal); }
+
+    LearnWebsiteLinkLiteral::operator bool() const noexcept { return literal != nullptr; }
 
     static void set_from_feature_flag(const std::vector<std::string>& flags, StringView flag, Optional<bool>& place)
     {
@@ -413,13 +419,13 @@ namespace vcpkg
         LocalizedString result;
         if (examples[0])
         {
-            examples[0].append_to(result);
+            examples[0].to_string(result);
             for (std::size_t idx = 1; idx < example_max_size; ++idx)
             {
                 if (examples[idx])
                 {
                     result.append_raw('\n');
-                    examples[idx].append_to(result);
+                    examples[idx].to_string(result);
                 }
             }
         }
@@ -437,8 +443,8 @@ namespace vcpkg
         {
             result.append(msgSynopsisHeader);
             result.append_raw(' ');
-            result.append(command_metadata.synopsis.format());
-            result.append_raw("\n\n");
+            command_metadata.synopsis.to_string(result);
+            result.append_raw('\n');
         }
 
         std::vector<LocalizedString> examples;
@@ -446,16 +452,20 @@ namespace vcpkg
         {
             if (maybe_example)
             {
-                examples.push_back(maybe_example.format());
+                examples.push_back(maybe_example.to_string());
             }
         }
 
         if (!examples.empty())
         {
-            result.append(msgExampleHeader);
-            result.append_raw(' ');
+            result.append(msgExamplesHeader);
             result.append_floating_list(1, examples);
-            result.append_raw("\n\n");
+            result.append_raw('\n');
+        }
+
+        if (command_metadata.website_link)
+        {
+            result.append(msgSeeURL, msg::url = command_metadata.website_link.to_string()).append_raw('\n');
         }
 
         with_common_options.parser.append_options_table(result);

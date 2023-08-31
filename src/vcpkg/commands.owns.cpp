@@ -36,6 +36,7 @@ namespace vcpkg
         "owns",
         msgHelpOwnsCommand,
         {msgCmdOwnsExample1, "vcpkg owns zlib1.dll"},
+        Undocumented,
         AutocompletePriority::Public,
         1,
         1,

@@ -39,6 +39,7 @@ namespace vcpkg
         "autocomplete",
         {/*Intentionally undocumented*/},
         {},
+        Undocumented,
         AutocompletePriority::Never,
         0,
         SIZE_MAX,

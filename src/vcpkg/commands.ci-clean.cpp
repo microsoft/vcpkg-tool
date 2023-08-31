@@ -30,6 +30,7 @@ namespace vcpkg
         "x-ci-clean",
         msgCmdCiCleanSynopsis,
         {"vcpkg x-ci-clean"},
+        Undocumented,
         AutocompletePriority::Internal,
         0,
         0,

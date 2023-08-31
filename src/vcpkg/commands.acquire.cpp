@@ -22,6 +22,7 @@ namespace vcpkg
         "acquire",
         msgCmdAcquireSynopsis,
         {msgCmdAcquireExample1, "vcpkg acquire cmake"},
+        Undocumented,
         AutocompletePriority::Public,
         1,
         SIZE_MAX,

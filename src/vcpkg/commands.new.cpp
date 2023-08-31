@@ -44,6 +44,7 @@ namespace vcpkg
         "new",
         msgCmdNewSynposis,
         {msgCmdNewExample1, "vcpkg new --application"},
+        Undocumented,
         AutocompletePriority::Public,
         0,
         0,

@@ -131,6 +131,7 @@ namespace vcpkg
         "portsdiff",
         msgCmdPortsdiffSynopsis,
         {msgCmdPortsdiffExample1, msgCmdPortsdiffExample2},
+        Undocumented,
         AutocompletePriority::Public,
         1,
         2,

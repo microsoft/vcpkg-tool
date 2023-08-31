@@ -619,6 +619,7 @@ namespace vcpkg
         "export",
         msgCmdExportSynopsis,
         {msgCmdExportExample1, "vcpkg export zlib zlib:x64-windows boost --nuget"},
+        "https://learn.microsoft.com/vcpkg/commands/export",
         AutocompletePriority::Public,
         0,
         SIZE_MAX,

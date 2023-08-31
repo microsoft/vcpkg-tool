@@ -13,6 +13,7 @@ namespace vcpkg
         "z-upload-metrics",
         {/*intentionally undocumented*/},
         {},
+        Undocumented,
         AutocompletePriority::Never,
         1,
         1,

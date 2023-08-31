@@ -171,6 +171,7 @@ namespace vcpkg
         "format-manifest",
         msgCmdFormatManifestSynopsis,
         {msgCmdFormatManifestExample1, "vcpkg format-manifest ports/zlib/vcpkg.json", "vcpkg format-manifest --all"},
+        Undocumented,
         AutocompletePriority::Public,
         0,
         SIZE_MAX,

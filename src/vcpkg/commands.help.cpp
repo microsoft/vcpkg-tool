@@ -104,6 +104,7 @@ namespace vcpkg
         "help",
         msgHelpTopicCommand,
         {"vcpkg help topics", "vcpkg help install"},
+        Undocumented,
         AutocompletePriority::Public,
         0,
         1,

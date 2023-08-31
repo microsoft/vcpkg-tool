@@ -51,6 +51,7 @@ namespace vcpkg
         "update",
         msgHelpUpdateCommand,
         {"vcpkg update"},
+        "https://learn.microsoft.com/vcpkg/commands/update",
         AutocompletePriority::Public,
         0,
         0,

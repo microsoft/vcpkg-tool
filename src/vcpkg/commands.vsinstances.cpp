@@ -11,6 +11,7 @@ namespace vcpkg
         "x-vsinstances",
         msgCmdVSInstancesSynopsis,
         {"vcpkg x-vsinstances"},
+        Undocumented,
         AutocompletePriority::Public,
         0,
         0,

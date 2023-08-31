@@ -59,6 +59,7 @@ namespace vcpkg
         "x-update-baseline",
         msgCmdUpdateBaselineSynopsis,
         {"vcpkg x-update-baseline"},
+        "https://learn.microsoft.com/vcpkg/commands/update-baseline",
         AutocompletePriority::Public,
         0,
         0,

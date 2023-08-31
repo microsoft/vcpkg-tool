@@ -22,6 +22,7 @@ namespace vcpkg
         "version",
         msgHelpVersionCommand,
         {"vcpkg version"},
+        "https://learn.microsoft.com/vcpkg/commands/version",
         AutocompletePriority::Public,
         0,
         0,

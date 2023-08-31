@@ -1148,7 +1148,7 @@ DECLARE_MESSAGE(ErrorWhileFetchingBaseline,
                 "while fetching baseline `\"{value}\"` from repo {package_name}:")
 DECLARE_MESSAGE(ErrorWhileParsing, (msg::path), "", "Errors occurred while parsing {path}.")
 DECLARE_MESSAGE(ErrorWhileWriting, (msg::path), "", "Error occurred while writing {path}.")
-DECLARE_MESSAGE(ExampleHeader, (), "Printed before a list of example command lines", "Example:")
+DECLARE_MESSAGE(ExamplesHeader, (), "Printed before a list of example command lines", "Examples:")
 DECLARE_MESSAGE(ExceededRecursionDepth, (), "", "Recursion depth exceeded.")
 DECLARE_MESSAGE(ExcludedPackage, (msg::spec), "", "Excluded {spec}")
 DECLARE_MESSAGE(ExcludedPackages, (), "", "The following packages are excluded:")
@@ -2300,36 +2300,31 @@ DECLARE_MESSAGE(PathMustBeAbsolute,
                 (msg::path),
                 "",
                 "Value of environment variable X_VCPKG_REGISTRIES_CACHE is not absolute: {path}")
-DECLARE_MESSAGE(
-    PECoffHeaderTooShort,
-    (msg::path),
-    "Portable executable is a term-of-art, see https://learn.microsoft.com/en-us/windows/win32/debug/pe-format",
-    "While parsing Portable Executable {path}, size of COFF header too small to contain a valid PE header.")
-DECLARE_MESSAGE(
-    PEConfigCrossesSectionBoundary,
-    (msg::path),
-    "Portable executable is a term-of-art, see https://learn.microsoft.com/en-us/windows/win32/debug/pe-format",
-    "While parsing Portable Executable {path}, image config directory crosses a secion boundary.")
-DECLARE_MESSAGE(
-    PEImportCrossesSectionBoundary,
-    (msg::path),
-    "Portable executable is a term-of-art, see https://learn.microsoft.com/en-us/windows/win32/debug/pe-format",
-    "While parsing Portable Executable {path}, import table crosses a secion boundary.")
-DECLARE_MESSAGE(
-    PEPlusTagInvalid,
-    (msg::path),
-    "Portable executable is a term-of-art, see https://learn.microsoft.com/en-us/windows/win32/debug/pe-format",
-    "While parsing Portable Executable {path}, optional header was neither PE32 nor PE32+.")
+DECLARE_MESSAGE(PECoffHeaderTooShort,
+                (msg::path),
+                "Portable executable is a term-of-art, see https://learn.microsoft.com/windows/win32/debug/pe-format",
+                "While parsing Portable Executable {path}, size of COFF header too small to contain a valid PE header.")
+DECLARE_MESSAGE(PEConfigCrossesSectionBoundary,
+                (msg::path),
+                "Portable executable is a term-of-art, see https://learn.microsoft.com/windows/win32/debug/pe-format",
+                "While parsing Portable Executable {path}, image config directory crosses a secion boundary.")
+DECLARE_MESSAGE(PEImportCrossesSectionBoundary,
+                (msg::path),
+                "Portable executable is a term-of-art, see https://learn.microsoft.com/windows/win32/debug/pe-format",
+                "While parsing Portable Executable {path}, import table crosses a secion boundary.")
+DECLARE_MESSAGE(PEPlusTagInvalid,
+                (msg::path),
+                "Portable executable is a term-of-art, see https://learn.microsoft.com/windows/win32/debug/pe-format",
+                "While parsing Portable Executable {path}, optional header was neither PE32 nor PE32+.")
 DECLARE_MESSAGE(PERvaNotFound,
                 (msg::path, msg::value),
                 "{value:#X} is the Relative Virtual Address sought. Portable executable is a term-of-art, see "
-                "https://learn.microsoft.com/en-us/windows/win32/debug/pe-format",
+                "https://learn.microsoft.com/windows/win32/debug/pe-format",
                 "While parsing Portable Executable {path}, could not find RVA {value:#X}.")
-DECLARE_MESSAGE(
-    PESignatureMismatch,
-    (msg::path),
-    "Portable Executable is a term-of-art, see https://learn.microsoft.com/en-us/windows/win32/debug/pe-format",
-    "While parsing Portable Executable {path}, signature mismatch.")
+DECLARE_MESSAGE(PESignatureMismatch,
+                (msg::path),
+                "Portable Executable is a term-of-art, see https://learn.microsoft.com/windows/win32/debug/pe-format",
+                "While parsing Portable Executable {path}, signature mismatch.")
 DECLARE_MESSAGE(PerformingPostBuildValidation, (), "", "-- Performing post-build validation")
 DECLARE_MESSAGE(PortBugAllowRestrictedHeaders,
                 (msg::env_var),
@@ -2391,7 +2386,7 @@ DECLARE_MESSAGE(
     "{expected} is one of LinkageDynamicDebug/LinkageDynamicRelease/LinkageStaticDebug/LinkageStaticRelease. "
     "Immediately after this message is a file by file list with what linkages they contain. 'CRT' is an acronym "
     "meaning C Runtime. See also: "
-    "https://learn.microsoft.com/en-us/cpp/build/reference/md-mt-ld-use-run-time-library?view=msvc-170. This is "
+    "https://learn.microsoft.com/cpp/build/reference/md-mt-ld-use-run-time-library?view=msvc-170. This is "
     "complicated because a binary can link with more than one CRT.\n"
     "Example fully formatted message:\n"
     "The following binaries should use the Dynamic Debug (/MDd) CRT.\n"

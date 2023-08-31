@@ -11,6 +11,8 @@
 #include <vcpkg/base/span.h>
 #include <vcpkg/base/stringview.h>
 
+#include <assert.h>
+
 #include <map>
 #include <memory>
 #include <set>
@@ -31,7 +33,7 @@ namespace vcpkg
 
     struct MetadataMessage
     {
-        constexpr MetadataMessage() noexcept : kind(MetadataMessageKind::Unused), unused{} { }
+        constexpr MetadataMessage() noexcept : kind(MetadataMessageKind::Unused), literal{} { }
         /*implicit*/ constexpr MetadataMessage(const msg::MessageT<>& message) noexcept
             : kind(MetadataMessageKind::Message), message(&message)
         {
@@ -55,8 +57,8 @@ namespace vcpkg
         MetadataMessage(const MetadataMessage&) = delete;
         MetadataMessage& operator=(const MetadataMessage&) = delete;
 
-        LocalizedString format() const;
-        void append_to(LocalizedString& target) const;
+        LocalizedString to_string() const;
+        void to_string(LocalizedString& target) const;
         explicit operator bool() const noexcept;
 
     private:
@@ -71,11 +73,67 @@ namespace vcpkg
         MetadataMessageKind kind;
         union
         {
-            char unused;
             const msg::MessageT<>* message;
-            StringLiteral literal;
+            const char* literal; // not StringLiteral so this union is sizeof(void*)
             LocalizedString (*callback)();
         };
+    };
+
+    inline constexpr bool constexpr_contains(const char* haystack, const char* needle) noexcept
+    {
+        for (;; ++haystack)
+        {
+            for (std::size_t offset = 0;; ++offset)
+            {
+                if (!needle[offset])
+                {
+                    return true;
+                }
+
+                if (!haystack[offset])
+                {
+                    return false;
+                }
+
+                if (needle[offset] != haystack[offset])
+                {
+                    break;
+                }
+            }
+        }
+    }
+
+    static_assert(constexpr_contains("", ""), "boom");
+    static_assert(constexpr_contains("hay", ""), "boom");
+    static_assert(!constexpr_contains("", "needle"), "boom");
+    static_assert(constexpr_contains("needle", "nee"), "boom");
+
+    struct LearnWebsiteLinkLiteralUndocumentedCookie
+    {
+    };
+
+    constexpr LearnWebsiteLinkLiteralUndocumentedCookie Undocumented;
+
+    struct LearnWebsiteLinkLiteral
+    {
+        /*implicit*/ constexpr LearnWebsiteLinkLiteral(LearnWebsiteLinkLiteralUndocumentedCookie) noexcept : literal{}
+        {
+        }
+
+        template<int N>
+        /*implicit*/ constexpr LearnWebsiteLinkLiteral(const char (&literal)[N]) noexcept : literal(literal)
+        {
+            assert(!constexpr_contains(literal, "en-us") &&
+                   "If you get a build error here, remove the en-us from the learn uri so that the correct locale is "
+                   "chosen for the user");
+        }
+
+        LocalizedString to_string() const;
+        void to_string(LocalizedString& target) const;
+        explicit operator bool() const noexcept;
+
+    private:
+        const char* literal; // not StringLiteral to be nullable
     };
 
     struct CommandSwitch
@@ -109,6 +167,7 @@ namespace vcpkg
         MetadataMessage synopsis;
         static constexpr std::size_t example_max_size = 4;
         MetadataMessage examples[example_max_size];
+        LearnWebsiteLinkLiteral website_link;
 
         AutocompletePriority autocomplete_priority;
 

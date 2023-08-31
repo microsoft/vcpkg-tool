@@ -150,6 +150,7 @@ namespace vcpkg
         "edit",
         [] { return msg::format(msgHelpEditCommand, msg::env_var = format_environment_variable("EDITOR")); },
         {msgCmdEditExample1, "vcpkg edit zlib"},
+        Undocumented,
         AutocompletePriority::Public,
         1,
         SIZE_MAX,

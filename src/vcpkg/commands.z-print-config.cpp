@@ -27,6 +27,7 @@ namespace vcpkg
         "z-print-config",
         {/*intentionally undocumented*/},
         {},
+        Undocumented,
         AutocompletePriority::Never,
         0,
         0,

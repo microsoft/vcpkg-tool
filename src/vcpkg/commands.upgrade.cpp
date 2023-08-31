@@ -38,6 +38,7 @@ namespace vcpkg
         "upgrade",
         msgHelpUpgradeCommand,
         {"vcpkg upgrade --no-dry-run"},
+        "https://learn.microsoft.com/vcpkg/commands/upgrade",
         AutocompletePriority::Public,
         0,
         SIZE_MAX,

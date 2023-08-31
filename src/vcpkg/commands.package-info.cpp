@@ -33,6 +33,7 @@ namespace vcpkg
         "x-package-info",
         msgPackageInfoHelp,
         {msgCmdPackageInfoExample1, "vcpkg x-package-info zlib openssl:x64-windows"},
+        Undocumented,
         AutocompletePriority::Public,
         1,
         SIZE_MAX,

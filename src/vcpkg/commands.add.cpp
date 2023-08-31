@@ -23,6 +23,7 @@ namespace vcpkg
         "add",
         msgCmdAddSynopsis,
         {msgCmdAddExample1, "vcpkg add port png", msgCmdAddExample2, "vcpkg add artifact cmake"},
+        Undocumented,
         AutocompletePriority::Public,
         2,
         SIZE_MAX,

@@ -17,6 +17,7 @@ namespace vcpkg
         "bootstrap-standalone",
         msgCmdBootstrapStandaloneSynopsis,
         {"vcpkg bootstrap-standalone"},
+        Undocumented,
         AutocompletePriority::Never,
         0,
         0,
