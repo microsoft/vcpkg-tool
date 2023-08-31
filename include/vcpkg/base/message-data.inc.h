@@ -417,10 +417,6 @@ DECLARE_MESSAGE(BuildTroubleshootingMessage4,
                 "Please use the prefilled template from {path} when reporting your issue.")
 DECLARE_MESSAGE(BuiltInTriplets, (), "", "vcpkg built-in triplets:")
 DECLARE_MESSAGE(BuiltWithIncorrectArchitecture, (), "", "The following files were built for an incorrect architecture:")
-DECLARE_MESSAGE(CacheHelp,
-                (),
-                "",
-                "The argument should be a substring to search for or no argument to display all cached libraries.")
 DECLARE_MESSAGE(CheckedOutGitSha, (msg::commit_sha), "", "Checked out Git SHA: {commit_sha}")
 DECLARE_MESSAGE(CheckedOutObjectMissingManifest,
                 (),
@@ -1968,7 +1964,6 @@ DECLARE_MESSAGE(NewSpecifyNameVersionOrApplication,
                 "--application to indicate that the manifest is not intended to be used as a port.")
 DECLARE_MESSAGE(NewVersionCannotBeEmpty, (), "", "--version cannot be empty.")
 DECLARE_MESSAGE(NoArgumentsForOption, (msg::option), "", "The option --{option} does not accept an argument.")
-DECLARE_MESSAGE(NoCachedPackages, (), "", "No packages are cached.")
 DECLARE_MESSAGE(NoError, (), "", "no error")
 DECLARE_MESSAGE(NoInstalledPackages,
                 (),
