@@ -28,7 +28,7 @@ namespace
     constexpr CommandSwitch SWITCHES[] = {
         {OPTION_NO_DRY_RUN, msgCmdUpgradeOptNoDryRun},
         {OPTION_NO_KEEP_GOING, msgCmdUpgradeOptNoKeepGoing},
-        {OPTION_ALLOW_UNSUPPORTED_PORT, msgCmdUpgradeOptAllowUnsupported},
+        {OPTION_ALLOW_UNSUPPORTED_PORT, msgHelpTxtOptAllowUnsupportedPort},
     };
 } // unnamed namespace
 

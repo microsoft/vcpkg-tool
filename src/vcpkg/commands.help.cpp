@@ -69,6 +69,7 @@ namespace
     constexpr Topic topics[] = {
         {"assetcaching", [](const VcpkgPaths&) { msg::println(format_help_topic_asset_caching()); }},
         {"binarycaching", [](const VcpkgPaths&) { msg::println(format_help_topic_binary_caching()); }},
+        {"commands", [](const VcpkgPaths&) { print_full_command_list(); }},
         {"topics", help_topics},
         {"triplet", [](const VcpkgPaths& paths) { help_topic_valid_triplet(paths.get_triplet_db()); }},
         {"versioning", help_topic_versioning},
@@ -103,7 +104,7 @@ namespace vcpkg
     constexpr CommandMetadata CommandHelpMetadata{
         "help",
         msgHelpTopicCommand,
-        {"vcpkg help topics", "vcpkg help install"},
+        {"vcpkg help topics", "vcpkg help commands", "vcpkg help install"},
         Undocumented,
         AutocompletePriority::Public,
         0,
@@ -154,7 +155,7 @@ namespace vcpkg
 
         if (parsed.command_arguments.empty())
         {
-            print_command_list_usage();
+            print_zero_args_usage();
             Checks::exit_success(VCPKG_LINE_INFO);
         }
         const auto& topic = parsed.command_arguments[0];

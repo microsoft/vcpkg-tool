@@ -33,5 +33,6 @@ namespace vcpkg
 
     std::vector<const CommandMetadata*> get_all_commands_metadata();
 
-    void print_command_list_usage();
+    void print_zero_args_usage();
+    void print_full_command_list();
 }

@@ -150,49 +150,38 @@ namespace vcpkg
 
     static void format_command_usage_entry(HelpTableFormatter& table, const CommandMetadata& metadata)
     {
-        table.format(fmt::format("vcpkg {}", metadata.name), metadata.synopsis.to_string());
+        table.format(metadata.name, metadata.synopsis.to_string());
     }
 
-    void print_command_list_usage()
+    void print_zero_args_usage()
     {
         HelpTableFormatter table;
-        table.header(msg::format(msgPackageInstallationCommands));
-        format_command_usage_entry(table, CommandAcquireMetadata);
-        format_command_usage_entry(table, CommandAcquireProjectMetadata);
-        format_command_usage_entry(table, CommandActivateMetadata);
-        format_command_usage_entry(table, CommandBuildExternalMetadata);
-        format_command_usage_entry(table, CommandBuildMetadata);
-        format_command_usage_entry(table, CommandDeactivateMetadata);
-        format_command_usage_entry(table, CommandExportMetadata);
-        format_command_usage_entry(table, CommandGenerateMsbuildPropsMetadata);
-        format_command_usage_entry(table, CommandInstallMetadata);
-        format_command_usage_entry(table, CommandIntegrateMetadata);
-        format_command_usage_entry(table, CommandRemoveMetadata);
-        format_command_usage_entry(table, CommandSetInstalledMetadata);
-        format_command_usage_entry(table, CommandUpdateBaselineMetadata);
-        format_command_usage_entry(table, CommandUpdateRegistryMetadata);
-        format_command_usage_entry(table, CommandUpgradeMetadata);
-        format_command_usage_entry(table, CommandUseMetadata);
+        table.example(msg::format(msgVcpkgUsage));
+        table.format(msg::format(msgResponseFileCode), msg::format(msgHelpResponseFileCommand));
         table.blank();
 
-        table.header(msg::format(msgPackageDiscoveryCommands));
-        format_command_usage_entry(table, CommandCacheMetadata);
+        table.header(msg::format(msgPackageInstallationHeader));
+        format_command_usage_entry(table, CommandExportMetadata);
+        format_command_usage_entry(table, CommandInstallMetadata);
+        format_command_usage_entry(table, CommandRemoveMetadata);
+        format_command_usage_entry(table, CommandSetInstalledMetadata);
+        format_command_usage_entry(table, CommandUpgradeMetadata);
+        table.blank();
+
+        table.header(msg::format(msgPackageDiscoveryHeader));
         format_command_usage_entry(table, CommandCheckSupportMetadata);
         format_command_usage_entry(table, CommandDependInfoMetadata);
-        format_command_usage_entry(table, CommandFindMetadata);
         format_command_usage_entry(table, CommandListMetadata);
         format_command_usage_entry(table, CommandOwnsMetadata);
         format_command_usage_entry(table, CommandPackageInfoMetadata);
         format_command_usage_entry(table, CommandPortsdiffMetadata);
+        format_command_usage_entry(table, CommandSearchMetadata);
         format_command_usage_entry(table, CommandUpdateMetadata);
         table.blank();
 
-        table.header(msg::format(msgPackageManipulationCommmands));
+        table.header(msg::format(msgPackageManipulationHeader));
         format_command_usage_entry(table, CommandAddMetadata);
         format_command_usage_entry(table, CommandAddVersionMetadata);
-        format_command_usage_entry(table, CommandCiCleanMetadata);
-        format_command_usage_entry(table, CommandCiMetadata);
-        format_command_usage_entry(table, CommandCiVerifyVersionsMetadata);
         format_command_usage_entry(table, CommandCreateMetadata);
         format_command_usage_entry(table, CommandEditMetadata);
         format_command_usage_entry(table, CommandEnvMetadata);
@@ -200,25 +189,75 @@ namespace vcpkg
         format_command_usage_entry(table, CommandHashMetadata);
         format_command_usage_entry(table, CommandInitRegistryMetadata);
         format_command_usage_entry(table, CommandNewMetadata);
-        format_command_usage_entry(table, CommandRegenerateMetadata);
+        format_command_usage_entry(table, CommandUpdateBaselineMetadata);
         table.blank();
 
-        table.header(msg::format(msgOtherCommands));
+        table.header(msg::format(msgOtherCommandsHeader));
+        format_command_usage_entry(table, CommandCiMetadata);
+        format_command_usage_entry(table, CommandCiVerifyVersionsMetadata);
         format_command_usage_entry(table, CommandContactMetadata);
-        format_command_usage_entry(table, CommandDownloadMetadata);
         format_command_usage_entry(table, CommandFetchMetadata);
-        format_command_usage_entry(table, CommandVersionMetadata);
-        format_command_usage_entry(table, CommandVsInstancesMetadata);
+        format_command_usage_entry(table, CommandIntegrateMetadata);
         table.blank();
 
         table.header(msg::format(msgForMoreHelp));
         table.format("vcpkg help topics", msg::format(msgHelpTopicsCommand));
         table.format(msg::format(msgCmdHelpTopic), msg::format(msgHelpTopicCommand));
-        table.blank();
-        table.format(msg::format(msgResponseFileCode), msg::format(msgHelpResponseFileCommand));
+        table.format("vcpkg help commands", msg::format(msgCmdHelpCommandsSynopsis));
+        table.format(msg::format(msgCmdHelpCommands), msg::format(msgCmdHelpCommandSynopsis));
         table.blank();
         table.example(msg::format(msgHelpExampleCommand));
 
+        msg::println(LocalizedString::from_raw(table.m_str));
+    }
+
+    void print_full_command_list()
+    {
+        HelpTableFormatter table;
+        format_command_usage_entry(table, CommandAcquireMetadata);
+        format_command_usage_entry(table, CommandAcquireProjectMetadata);
+        format_command_usage_entry(table, CommandActivateMetadata);
+        format_command_usage_entry(table, CommandAddMetadata);
+        format_command_usage_entry(table, CommandAddVersionMetadata);
+        format_command_usage_entry(table, CommandBuildExternalMetadata);
+        format_command_usage_entry(table, CommandBuildMetadata);
+        format_command_usage_entry(table, CommandCacheMetadata);
+        format_command_usage_entry(table, CommandCheckSupportMetadata);
+        format_command_usage_entry(table, CommandCiCleanMetadata);
+        format_command_usage_entry(table, CommandCiMetadata);
+        format_command_usage_entry(table, CommandCiVerifyVersionsMetadata);
+        format_command_usage_entry(table, CommandContactMetadata);
+        format_command_usage_entry(table, CommandCreateMetadata);
+        format_command_usage_entry(table, CommandDeactivateMetadata);
+        format_command_usage_entry(table, CommandDependInfoMetadata);
+        format_command_usage_entry(table, CommandDownloadMetadata);
+        format_command_usage_entry(table, CommandEditMetadata);
+        format_command_usage_entry(table, CommandEnvMetadata);
+        format_command_usage_entry(table, CommandExportMetadata);
+        format_command_usage_entry(table, CommandFetchMetadata);
+        format_command_usage_entry(table, CommandFindMetadata);
+        format_command_usage_entry(table, CommandFormatManifestMetadata);
+        format_command_usage_entry(table, CommandGenerateMsbuildPropsMetadata);
+        format_command_usage_entry(table, CommandHashMetadata);
+        format_command_usage_entry(table, CommandInitRegistryMetadata);
+        format_command_usage_entry(table, CommandInstallMetadata);
+        format_command_usage_entry(table, CommandIntegrateMetadata);
+        format_command_usage_entry(table, CommandListMetadata);
+        format_command_usage_entry(table, CommandNewMetadata);
+        format_command_usage_entry(table, CommandOwnsMetadata);
+        format_command_usage_entry(table, CommandPackageInfoMetadata);
+        format_command_usage_entry(table, CommandPortsdiffMetadata);
+        format_command_usage_entry(table, CommandRegenerateMetadata);
+        format_command_usage_entry(table, CommandRemoveMetadata);
+        format_command_usage_entry(table, CommandSearchMetadata);
+        format_command_usage_entry(table, CommandSetInstalledMetadata);
+        format_command_usage_entry(table, CommandUpdateBaselineMetadata);
+        format_command_usage_entry(table, CommandUpdateMetadata);
+        format_command_usage_entry(table, CommandUpdateRegistryMetadata);
+        format_command_usage_entry(table, CommandUpgradeMetadata);
+        format_command_usage_entry(table, CommandUseMetadata);
+        format_command_usage_entry(table, CommandVersionMetadata);
+        format_command_usage_entry(table, CommandVsInstancesMetadata);
         msg::println(LocalizedString::from_raw(table.m_str));
     }
 }

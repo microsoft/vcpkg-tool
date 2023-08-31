@@ -327,15 +327,15 @@ namespace vcpkg
                                  args.asset_sources_template_arg,
                                  msg::format(msgAssetSourcesArg));
 
-        args.parser.parse_multi_option(OVERLAY_PORTS_ARG,
-                                       StabilityTag::Standard,
-                                       args.cli_overlay_ports,
-                                       msg::format(msgSpecifyDirectoriesWhenSearching,
-                                                   msg::env_var = format_environment_variable(OVERLAY_PORTS_ENV)));
+        args.parser.parse_multi_option(
+            OVERLAY_PORTS_ARG,
+            StabilityTag::Standard,
+            args.cli_overlay_ports,
+            msg::format(msgOverlayPortsDirectoriesHelp, msg::env_var = format_environment_variable(OVERLAY_PORTS_ENV)));
         args.parser.parse_multi_option(OVERLAY_TRIPLETS_ARG,
                                        StabilityTag::Standard,
                                        args.cli_overlay_triplets,
-                                       msg::format(msgSpecifyDirectoriesContaining,
+                                       msg::format(msgOverlayTripletDirectoriesHelp,
                                                    msg::env_var = format_environment_variable(OVERLAY_TRIPLETS_ENV)));
         args.parser.parse_multi_option(
             BINARY_SOURCES_ARG, StabilityTag::Standard, args.cli_binary_sources, msg::format(msgBinarySourcesArg));

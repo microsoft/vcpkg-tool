@@ -45,7 +45,7 @@ namespace
     void invalid_command(const VcpkgCmdArguments& args)
     {
         msg::println_error(msgVcpkgInvalidCommand, msg::command_name = args.get_command());
-        print_command_list_usage();
+        print_zero_args_usage();
         Checks::exit_fail(VCPKG_LINE_INFO);
     }
 
@@ -97,7 +97,7 @@ namespace
 
         if (args.get_command().empty())
         {
-            print_command_list_usage();
+            print_zero_args_usage();
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 

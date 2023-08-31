@@ -513,7 +513,12 @@ namespace vcpkg
                            [&](auto& spec) { return Util::Sets::contains(split_specs->known, spec); });
             if (!already_installed.empty())
             {
-                msg::println_warning(msgCISkipInstallation, msg::list = Strings::join(", ", already_installed));
+                LocalizedString warning;
+                warning.append(msgCISkipInstallation);
+                warning.append_floating_list(1, Util::fmap(already_installed, [](const PackageSpec& spec) {
+                                                 return LocalizedString::from_raw(spec.to_string());
+                                             }));
+                msg::println_warning(warning);
             }
 
             install_preclear_packages(paths, action_plan);
@@ -526,7 +531,11 @@ namespace vcpkg
                 split_specs->known.erase(result.get_spec());
             }
 
-            msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("\nTriplet: {}\n", target_triplet));
+            msg::print(LocalizedString::from_raw("\n")
+                           .append(msgTripletLabel)
+                           .append_raw(' ')
+                           .append_raw(target_triplet)
+                           .append_raw('\n'));
             summary.print();
             print_regressions(summary.results,
                               split_specs->known,
