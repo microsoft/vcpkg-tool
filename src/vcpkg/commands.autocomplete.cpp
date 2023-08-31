@@ -74,7 +74,7 @@ namespace vcpkg
                 }
             }
 
-            // If no public commands match, try intenral commands
+            // If no public commands match, try internal commands
             if (results.empty())
             {
                 for (auto&& metadata : all_commands_metadata)

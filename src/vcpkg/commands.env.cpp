@@ -60,7 +60,7 @@ namespace vcpkg
         {
             "vcpkg env --triplet x64-windows",
             msgCommandEnvExample2,
-            "vcpkg env \"ninja -C build\" --triplet x64-windows",
+            "vcpkg env \"ninja --version\" --triplet x64-windows",
         },
         AutocompletePriority::Public,
         0,

@@ -257,7 +257,6 @@ DECLARE_MESSAGE(AutoSettingEnvVar,
                 "'--' at the beginning must be preserved",
                 "-- Automatically setting {env_var} environment variables to \"{url}\".")
 DECLARE_MESSAGE(AUrl, (), "", "a url")
-DECLARE_MESSAGE(AvailableArchitectureTriplets, (), "", "Available architecture triplets:")
 DECLARE_MESSAGE(AvailableHelpTopics, (), "", "Available help topics:")
 DECLARE_MESSAGE(AVcpkgRepositoryCommit, (), "", "a vcpkg repository commit")
 DECLARE_MESSAGE(AVersionDatabaseEntry, (), "", "a version database entry")
@@ -411,7 +410,7 @@ DECLARE_MESSAGE(BuildTroubleshootingMessage4,
                 "Fourth optional part of build troubleshooting message, printed after the version"
                 "information about vcpkg itself.",
                 "Please use the prefilled template from {path} when reporting your issue.")
-DECLARE_MESSAGE(BuiltInTriplets, (), "", "vcpkg built-in triplets:")
+DECLARE_MESSAGE(BuiltInTriplets, (), "", "Built-in Triplets:")
 DECLARE_MESSAGE(BuiltWithIncorrectArchitecture, (), "", "The following files were built for an incorrect architecture:")
 DECLARE_MESSAGE(CacheHelp,
                 (),
@@ -875,7 +874,7 @@ DECLARE_MESSAGE(CommandFailed,
                 "command:\n"
                 "{command_line}\n"
                 "failed with the following results:")
-DECLARE_MESSAGE(CommunityTriplets, (), "", "VCPKG community triplets:")
+DECLARE_MESSAGE(CommunityTriplets, (), "", "Community Triplets:")
 DECLARE_MESSAGE(ComparingUtf8Decoders,
                 (),
                 "",
@@ -2237,7 +2236,7 @@ DECLARE_MESSAGE(Options, (), "Printed just before a list of options for a comman
 DECLARE_MESSAGE(OriginalBinParagraphHeader, (), "", "\nOriginal Binary Paragraph")
 DECLARE_MESSAGE(OtherCommands, (), "", "Other Commands")
 DECLARE_MESSAGE(OverlayPatchDir, (msg::path), "", "Overlay path \"{path}\" must exist and must be a directory.")
-DECLARE_MESSAGE(OverlayTriplets, (msg::path), "", "Overlay triplets from {path} :")
+DECLARE_MESSAGE(OverlayTriplets, (msg::path), "", "Overlay Triplets from \"{path}\":")
 DECLARE_MESSAGE(OverwritingFile, (msg::path), "", "File {path} was already present and will be overwritten")
 DECLARE_MESSAGE(PackageAlreadyRemoved, (msg::spec), "", "unable to remove {spec}: already removed")
 DECLARE_MESSAGE(PackageDiscoveryCommands, (), "", "Package Discovery Commands")

@@ -53,8 +53,6 @@ namespace
         tbl.text(msg::format(msgHelpExampleManifest));
         tbl.blank();
         tbl.text(R"({
-    "name": "example",
-    "version": "1.0",
     "builtin-baseline": "a14a6bcb27287e3ec138dba1b948a0cdbc337a3a",
     "dependencies": [
         { "name": "zlib", "version>=": "1.2.11#8" },
@@ -64,7 +62,7 @@ namespace
         { "name": "rapidjson", "version": "2020-09-14" }
     ]
 })");
-        msg::write_unlocalized_text_to_stdout(Color::none, tbl.m_str);
+        msg::println(LocalizedString::from_raw(std::move(tbl).m_str));
         msg::println(msgExtendedDocumentationAtUrl, msg::url = docs::versioning_url);
     }
 
@@ -78,26 +76,24 @@ namespace
 
     void help_topics(const VcpkgPaths&)
     {
-        std::vector<std::string> all_topic_names;
+        std::vector<LocalizedString> all_topic_names;
         for (auto&& topic : topics)
         {
-            all_topic_names.push_back(topic.name.to_string());
+            all_topic_names.push_back(LocalizedString::from_raw(topic.name));
         }
 
         for (auto&& command_metadata : get_all_commands_metadata())
         {
-            all_topic_names.push_back(command_metadata->name.to_string());
+            all_topic_names.push_back(LocalizedString::from_raw(command_metadata->name));
         }
 
         Util::sort(all_topic_names);
 
-        auto msg = msg::format(msgAvailableHelpTopics);
-        for (auto&& topic_name : all_topic_names)
-        {
-            msg.append_raw(fmt::format("\n  {}", topic_name));
-        }
-
-        msg::println(msg);
+        LocalizedString result;
+        result.append(msgAvailableHelpTopics);
+        result.append_floating_list(1, all_topic_names);
+        result.append_raw('\n');
+        msg::print(result);
     }
 
 } // unnamed namespace
@@ -122,29 +118,33 @@ namespace vcpkg
                               &triplets_per_location,
                               [](const TripletFile& triplet_file) -> StringView { return triplet_file.location; });
 
-        msg::println(msgAvailableArchitectureTriplets);
-        msg::println(msgBuiltInTriplets);
+        LocalizedString result;
+        result.append(msgBuiltInTriplets).append_raw('\n');
         for (auto* triplet : triplets_per_location[database.default_triplet_directory])
         {
-            msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("  {}\n", triplet->name));
+            result.append_indent().append_raw(triplet->name).append_raw('\n');
         }
 
         triplets_per_location.erase(database.default_triplet_directory);
-        msg::println(msgCommunityTriplets);
+        result.append(msgCommunityTriplets).append_raw('\n');
         for (auto* triplet : triplets_per_location[database.community_triplet_directory])
         {
-            msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("  {}\n", triplet->name));
+            result.append_indent().append_raw(triplet->name).append_raw('\n');
         }
 
         triplets_per_location.erase(database.community_triplet_directory);
         for (auto&& kv_pair : triplets_per_location)
         {
-            msg::println(msgOverlayTriplets, msg::path = kv_pair.first);
+            result.append(msgOverlayTriplets, msg::path = kv_pair.first).append_raw('\n');
             for (auto* triplet : kv_pair.second)
             {
-                msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("  {}\n", triplet->name));
+                result.append_indent().append_raw(triplet->name).append_raw('\n');
             }
         }
+
+        result.append(msgSeeURL, msg::url = "https://learn.microsoft.com/vcpkg/users/triplets");
+        result.append_raw('\n');
+        msg::print(result);
     }
 
     void command_help_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
