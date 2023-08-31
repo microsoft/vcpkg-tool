@@ -35,15 +35,14 @@ TEST_CASE ("Smoke test help table formatter", "[cmd_parser]")
     uut.text("this is some text");
 
     const char* const expected = R"(This is a header:
-  short-arg                       short help text
+  short-arg              short help text
   a-really-long-arg-that-does-not-fit-in-the-first-column-and-keeps-going
-                                  shorty
-  short-arg                       some really long help text that does not fit on the same line
-                                  because we have a 100 character line limit and oh god it keeps
-                                  going and going
+                         shorty
+  short-arg              some really long help text that does not fit on the same line because we
+                         have a 100 character line limit and oh god it keeps going and going
   a-really-long-arg-combined-with-some-really-long-help-text
-                                  another instance of that really long help text goes here to
-                                  demonstrate that the worst case combo can be accommodated
+                         another instance of that really long help text goes here to demonstrate
+                         that the worst case combo can be accommodated
 
 some example command
 this is some text)";
@@ -606,22 +605,22 @@ TEST_CASE ("Help table is generated", "[cmd_parser]")
 
     const auto expected = LocalizedString::from_raw(
         R"(Options:
-  --x-b                           b help
-  --x-d                           d help
-  --x-f                           f help
-  --g=...                         g help
-  --i=...                         i help
-  --x-j=...                       j help
-  --k=...                         k help
-  --x-l=...                       l help
-  --m=...                         m help
-  --x-n=...                       n help
-  --o=...                         m help
-  --x-p=...                       n help
-  --x-w=...                       w help
-  --x                             x help
-  --y                             y help
-  --z                             z help
+  --x-b                  b help
+  --x-d                  d help
+  --x-f                  f help
+  --g=...                g help
+  --i=...                i help
+  --x-j=...              j help
+  --k=...                k help
+  --x-l=...              l help
+  --m=...                m help
+  --x-n=...              n help
+  --o=...                m help
+  --x-p=...              n help
+  --x-w=...              w help
+  --x                    x help
+  --y                    y help
+  --z                    z help
 )");
     LocalizedString actual;
     uut.append_options_table(actual);
