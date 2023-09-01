@@ -116,7 +116,7 @@
   "ArtifactsOptionVersionMismatch": "The number of --version switches must match the number of named artifacts",
   "ArtifactsSwitchARM": "Force host detection to ARM when acquiring artifacts",
   "ArtifactsSwitchARM64": "Force host detection to ARM64 when acquiring artifacts",
-  "ArtifactsSwitchAll": "Update all known artifact registries",
+  "ArtifactsSwitchAll": "更新所有已知项目注册表",
   "ArtifactsSwitchAllLanguages": "Acquire all language files when acquiring artifacts",
   "ArtifactsSwitchForce": "Force reacquire if an artifact is already acquired",
   "ArtifactsSwitchFreebsd": "Force host detection to FreeBSD when acquiring artifacts",
