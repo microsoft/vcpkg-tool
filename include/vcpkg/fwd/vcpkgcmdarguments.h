@@ -11,4 +11,5 @@ namespace vcpkg
     struct HelpTableFormatter;
     struct VcpkgCmdArguments;
     struct FeatureFlagSettings;
+    struct PortApplicableSetting;
 }
