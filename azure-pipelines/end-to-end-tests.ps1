@@ -30,7 +30,9 @@ Param(
     [Parameter(Mandatory = $false)]
     [string]$VcpkgExe,
     [Parameter(Mandatory = $false, HelpMessage="Run artifacts tests, only usable when vcpkg was built with VCPKG_ARTIFACTS_DEVELOPMENT=ON")]
-    [switch]$RunArtifactsTests
+    [switch]$RunArtifactsTests,
+    [Parameter(Mandatory = $false, HelpMessage="Uses the vcpkg executable instead of the vcpkg.ps1 script")]
+    [switch]$WithoutPs1
 )
 
 $ErrorActionPreference = "Stop"

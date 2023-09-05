@@ -104,7 +104,7 @@ function Run-VcpkgAndCaptureOutput {
         [string[]]$TestArgs
     )
     $thisVcpkg = $VcpkgPs1;
-    if ($ForceExe) {
+    if ($ForceExe -or $WithoutPs1) {
         $thisVcpkg = $VcpkgExe;
     }
 

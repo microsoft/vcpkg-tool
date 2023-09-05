@@ -4,6 +4,11 @@ if (Test-Path env:VCPKG_DOWNLOADS) {
     Remove-Item env:VCPKG_DOWNLOADS
 }
 
+if ($WithoutPs1) {
+    Write-Host "Skipping tests in bundles.ps1 because -WithoutPs1 was specified"
+    return
+}
+
 if ($IsWindows) {
     $cache_home = $env:LOCALAPPDATA
 } elseif (Test-Path "env:XDG_CACHE_HOME") {
