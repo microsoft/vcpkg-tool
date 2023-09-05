@@ -123,7 +123,7 @@ namespace vcpkg::Commands
                         new_dep.default_features = false;
                     }
                 }
-                else if (spec.features)
+                else
                 {
                     for (const auto& feature : features)
                     {
@@ -132,10 +132,7 @@ namespace vcpkg::Commands
                             dep->features.push_back(feature);
                         }
                     }
-                    if (is_core)
-                    {
-                        dep->default_features = false;
-                    }
+                    dep->default_features = !is_core;
                 }
             }
 
