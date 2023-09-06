@@ -780,12 +780,14 @@ DECLARE_MESSAGE(DefaultBinaryCacheRequiresDirectory,
                 "Environment variable VCPKG_DEFAULT_BINARY_CACHE must be a directory (was: {path})")
 DECLARE_MESSAGE(DefaultFlag, (msg::option), "", "Defaulting to --{option} being on.")
 DECLARE_MESSAGE(DefaultRegistryIsArtifact, (), "", "The default registry cannot be an artifact registry.")
-DECLARE_MESSAGE(DefaultTriplet,
-                (msg::triplet),
-                "",
-                "Starting with the September 2023 release, the default triplet for vcpkg libraries will change "
-                "from x86-windows to the detected host triplet ({triplet}). To resolve this message, add --triplet "
-                "x86-windows to keep the same behavior.")
+DECLARE_MESSAGE(
+    DefaultTripletChanged,
+    (msg::triplet),
+    "The parts naming --triplet are command line switches that should be unlocalized. The space after the last "
+    "'triplet' and the period is intended to avoid the period looking like it's part of the command line switch",
+    "In the September 2023 release, the default triplet for vcpkg libraries changed from x86-windows to "
+    "the detected host triplet ({triplet}). For the old behavior, add --triplet x86-windows . To "
+    "suppress this message, add --triplet {triplet} .")
 DECLARE_MESSAGE(DeleteVcpkgConfigFromManifest,
                 (msg::path),
                 "",
