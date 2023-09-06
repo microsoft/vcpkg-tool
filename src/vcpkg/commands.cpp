@@ -7,7 +7,6 @@
 #include <vcpkg/commands.bootstrap-standalone.h>
 #include <vcpkg/commands.build-external.h>
 #include <vcpkg/commands.build.h>
-#include <vcpkg/commands.cache.h>
 #include <vcpkg/commands.check-support.h>
 #include <vcpkg/commands.ci-clean.h>
 #include <vcpkg/commands.ci-verify-versions.h>
@@ -80,7 +79,6 @@ namespace vcpkg
         {"add", command_add_and_exit},
         {"x-add-version", command_add_version_and_exit},
         {"autocomplete", command_autocomplete_and_exit},
-        {"cache", command_cache_and_exit},
         {"x-ci-clean", command_ci_clean_and_exit},
         {"x-ci-verify-versions", command_ci_verify_versions_and_exit},
         {"create", command_create_and_exit},

@@ -8,7 +8,6 @@
 #include <vcpkg/commands.add.h>
 #include <vcpkg/commands.build-external.h>
 #include <vcpkg/commands.build.h>
-#include <vcpkg/commands.cache.h>
 #include <vcpkg/commands.check-support.h>
 #include <vcpkg/commands.ci-clean.h>
 #include <vcpkg/commands.ci-verify-versions.h>
@@ -127,7 +126,6 @@ namespace
         // bootstrap-standalone intentionally has no help topic
         {"build", command_topic_fn<CommandBuildMetadata>},
         {"build-external", command_topic_fn<CommandBuildExternalMetadata>},
-        {"cache", command_topic_fn<CommandCacheMetadata>},
         {"x-check-support", command_topic_fn<CommandCheckSupportMetadata>},
         {"ci", command_topic_fn<CommandCiMetadata>},
         {"x-ci-clean", command_topic_fn<CommandCiCleanMetadata>},
