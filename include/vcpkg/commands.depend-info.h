@@ -20,7 +20,7 @@ namespace vcpkg
     std::string create_dgml_as_string(const std::vector<PackageDependInfo>& depend_info);
     std::string create_mermaid_as_string(const std::vector<PackageDependInfo>& depend_info);
 
-    extern const CommandMetadata CommandDependinfoMetadata;
+    extern const CommandMetadata CommandDependInfoMetadata;
 
     enum class DependInfoSortMode
     {
@@ -48,8 +48,8 @@ namespace vcpkg
 
     ExpectedL<DependInfoStrategy> determine_depend_info_mode(const ParsedArguments& args);
 
-    void command_dependinfo_and_exit(const VcpkgCmdArguments& args,
-                                     const VcpkgPaths& paths,
-                                     Triplet default_triplet,
-                                     Triplet host_triplet);
+    void command_depend_info_and_exit(const VcpkgCmdArguments& args,
+                                      const VcpkgPaths& paths,
+                                      Triplet default_triplet,
+                                      Triplet host_triplet);
 }

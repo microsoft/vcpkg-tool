@@ -26,16 +26,6 @@ export class CleanCommand extends Command {
   artifacts = new Artifacts(this);
   downloads = new Downloads(this);
 
-  get summary() {
-    return i`cleans up`;
-  }
-
-  get description() {
-    return [
-      i`Allows the user to clean out the cache, installed artifacts, etc.`,
-    ];
-  }
-
   override async run() {
 
     if (this.all.active || this.artifacts.active) {

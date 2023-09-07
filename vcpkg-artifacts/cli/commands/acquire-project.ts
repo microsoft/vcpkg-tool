@@ -13,16 +13,6 @@ export class AcquireProjectCommand extends Command {
   readonly command = 'acquire-project';
   project: Project = new Project(this);
 
-  get summary() {
-    return i`Acquires everything referenced by a project, without activating`;
-  }
-
-  get description() {
-    return [
-      i`This allows the consumer to pre-download tools required for a project.`,
-    ];
-  }
-
   override async run() {
     const projectManifest = await this.project.manifest;
     if (!projectManifest) {

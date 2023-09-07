@@ -9,17 +9,6 @@ import { Version } from '../switches/version';
 export class DeleteCommand extends Command {
   readonly command = 'delete';
   version = new Version(this);
-
-  get summary() {
-    return i`Deletes an artifact from the artifact folder`;
-  }
-
-  get description() {
-    return [
-      i`This allows the consumer to remove an artifact from disk.`,
-    ];
-  }
-
   override async run() {
     const artifacts = await session.getInstalledArtifacts();
     for (const input of this.inputs) {

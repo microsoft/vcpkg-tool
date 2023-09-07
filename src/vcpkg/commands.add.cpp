@@ -15,16 +15,16 @@
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
+#include <limits.h>
+
 namespace vcpkg
 {
-    constexpr CommandMetadata CommandAddMetadata = {
-        [] {
-            return msg::format(msgAddHelp)
-                .append_raw('\n')
-                .append(create_example_string("add port png"))
-                .append_raw('\n')
-                .append(create_example_string("add artifact cmake"));
-        },
+    constexpr CommandMetadata CommandAddMetadata{
+        "add",
+        msgCmdAddSynopsis,
+        {msgCmdAddExample1, "vcpkg add port png", msgCmdAddExample2, "vcpkg add artifact cmake"},
+        Undocumented,
+        AutocompletePriority::Public,
         2,
         SIZE_MAX,
         {{}, CommonSelectArtifactVersionSettings},

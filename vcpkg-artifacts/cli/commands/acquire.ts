@@ -17,16 +17,6 @@ export class AcquireCommand extends Command {
   version: Version = new Version(this);
   project: Project = new Project(this);
 
-  get summary() {
-    return i`Acquire artifacts in the registry`;
-  }
-
-  get description() {
-    return [
-      i`This allows the consumer to acquire (download and unpack) artifacts. Artifacts must be activated to be used`,
-    ];
-  }
-
   override async run() {
     if (this.inputs.length === 0) {
       error(i`No artifacts specified`);

@@ -6,7 +6,17 @@
 
 namespace vcpkg
 {
-    constexpr CommandMetadata CommandDeactivateMetadata = {[] { return create_example_string("deactivate"); }, 0, 0};
+    constexpr CommandMetadata CommandDeactivateMetadata{
+        "deactivate",
+        msgCmdDeactivateSynopsis,
+        {"vcpkg deactivate"},
+        Undocumented,
+        AutocompletePriority::Public,
+        0,
+        0,
+        {},
+        nullptr,
+    };
 
     void command_deactivate_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {

@@ -11,14 +11,18 @@ using namespace vcpkg;
 namespace
 {
     static constexpr CommandSwitch STDERR_STATUS[] = {
-        {"x-stderr-status", []() { return msg::format(msgCmdFetchOptXStderrStatus); }},
+        {"x-stderr-status", msgCmdFetchOptXStderrStatus},
     };
 } // unnamed namespace
 
 namespace vcpkg
 {
-    constexpr CommandMetadata CommandFetchMetadata = {
-        [] { return create_example_string("fetch cmake"); },
+    constexpr CommandMetadata CommandFetchMetadata{
+        "fetch",
+        msgCmdFetchSynopsis,
+        {"vcpkg fetch python"},
+        Undocumented,
+        AutocompletePriority::Public,
         1,
         1,
         {STDERR_STATUS},

@@ -19,16 +19,6 @@ export class UseCommand extends Command {
   project = new Project(this);
   msbuildProps = new MSBuildProps(this);
 
-  get summary() {
-    return i`Instantly activates an artifact outside of the project`;
-  }
-
-  get description() {
-    return [
-      i`This will instantly activate an artifact .`,
-    ];
-  }
-
   override async run() : Promise<boolean> {
     if (this.inputs.length === 0) {
       error(i`No artifacts specified`);

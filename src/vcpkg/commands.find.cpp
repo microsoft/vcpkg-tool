@@ -103,8 +103,8 @@ namespace
     constexpr StringLiteral OPTION_JSON = "x-json";
 
     constexpr CommandSwitch FindSwitches[] = {
-        {OPTION_FULLDESC, []() { return msg::format(msgHelpTextOptFullDesc); }},
-        {OPTION_JSON, []() { return msg::format(msgJsonSwitch); }},
+        {OPTION_FULLDESC, msgHelpTextOptFullDesc},
+        {OPTION_JSON, msgJsonSwitch},
     };
 
     void perform_find_artifact_and_exit(const VcpkgPaths& paths,
@@ -214,14 +214,17 @@ namespace vcpkg
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 
-    constexpr CommandMetadata CommandFindMetadata = {
-        [] {
-            return msg::format(msgFindHelp)
-                .append_raw('\n')
-                .append(create_example_string("find port png"))
-                .append_raw('\n')
-                .append(create_example_string("find artifact cmake"));
+    constexpr CommandMetadata CommandFindMetadata{
+        "find",
+        msgCmdFindSynopsis,
+        {
+            msgCmdFindExample1,
+            "vcpkg find port png",
+            msgCmdFindExample2,
+            "vcpkg find artifact cmake",
         },
+        Undocumented,
+        AutocompletePriority::Public,
         1,
         2,
         {FindSwitches, CommonSelectArtifactVersionSettings},

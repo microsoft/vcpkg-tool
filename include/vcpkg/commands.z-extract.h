@@ -58,5 +58,6 @@ namespace vcpkg
     // get_regular_files_recursive_lexically_proximate.
     size_t get_common_directories_count(std::vector<Path> paths);
 
+    extern const CommandMetadata CommandZExtractMetadata;
     void command_z_extract_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths);
 }

@@ -21,13 +21,18 @@ namespace vcpkg
                                       Triplet host_triplet);
 
     template<class T>
-    struct PackageNameAndFunction
+    struct CommandRegistration
     {
-        StringLiteral name;
+        const CommandMetadata& metadata;
         T function;
     };
 
-    extern const View<PackageNameAndFunction<BasicCommandFn>> basic_commands;
-    extern const View<PackageNameAndFunction<PathsCommandFn>> paths_commands;
-    extern const View<PackageNameAndFunction<TripletCommandFn>> triplet_commands;
+    extern const View<CommandRegistration<BasicCommandFn>> basic_commands;
+    extern const View<CommandRegistration<PathsCommandFn>> paths_commands;
+    extern const View<CommandRegistration<TripletCommandFn>> triplet_commands;
+
+    std::vector<const CommandMetadata*> get_all_commands_metadata();
+
+    void print_zero_args_usage();
+    void print_full_command_list();
 }

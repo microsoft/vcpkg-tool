@@ -18,7 +18,13 @@ Each "subcommand" added to vcpkg needs the following.
 - [ ] An entry point function named `vcpkg::command_command_name_and_exit` corresponding with one of 
       the CommandFn prototypes in `commands.h`. Note that the dashes are replaced with underscores
       to make this a valid C++ identifier.
+- [ ] A localization message named CmdCommandNameSynopsis with a short synopsis.
+- [ ] One or more examples named CmdCommandNameExample1, CmdCommandNameExample2, .... If possible,
+      some examples should use `<placeholders>` and some should use real data. Example:  
+      `vcpkg install <package name>`  
+      `vcpkg install zlib`
 - [ ] An `extern const CommandMetadata CommandCommandNameMetadata` describing the command connected
       to `vcpkg help`, unless the command is not intended for users to use.
+- [ ] An entry in print_command_list_usage(), if appropriate.
 - [ ] A documentation page on vcpkg learn.microsoft.com, unless the command is not intended for 
       users to use.

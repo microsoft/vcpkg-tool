@@ -94,8 +94,8 @@ namespace
     }
 
     constexpr CommandSwitch EDIT_SWITCHES[] = {
-        {OPTION_BUILDTREES, []() { return msg::format(msgCmdEditOptBuildTrees); }},
-        {OPTION_ALL, []() { return msg::format(msgCmdEditOptAll); }},
+        {OPTION_BUILDTREES, msgCmdEditOptBuildTrees},
+        {OPTION_ALL, msgCmdEditOptAll},
     };
 
     std::vector<std::string> create_editor_arguments(const VcpkgPaths& paths,
@@ -146,11 +146,15 @@ namespace
 
 namespace vcpkg
 {
-    constexpr CommandMetadata CommandEditMetadata = {
-        [] { return create_example_string("edit zlib"); },
+    constexpr CommandMetadata CommandEditMetadata{
+        "edit",
+        [] { return msg::format(msgHelpEditCommand, msg::env_var = format_environment_variable("EDITOR")); },
+        {msgCmdEditExample1, "vcpkg edit zlib"},
+        Undocumented,
+        AutocompletePriority::Public,
         1,
-        10,
-        {EDIT_SWITCHES, {}},
+        SIZE_MAX,
+        {EDIT_SWITCHES},
         &valid_arguments,
     };
 
@@ -251,11 +255,11 @@ namespace vcpkg
         const auto it = Util::find_if(candidate_paths, [&](const Path& p) { return fs.exists(p, IgnoreErrors{}); });
         if (it == candidate_paths.cend())
         {
-            msg::println_error(msg::format(msgErrorVsCodeNotFound, msg::env_var = "EDITOR")
+            msg::println_error(msg::format(msgErrorVsCodeNotFound, msg::env_var = format_environment_variable("EDITOR"))
                                    .append_raw('\n')
                                    .append(msgErrorVsCodeNotFoundPathExamined));
             print_paths(stdout_sink, candidate_paths);
-            msg::println(msgInfoSetEnvVar, msg::env_var = "EDITOR");
+            msg::println(msgInfoSetEnvVar, msg::env_var = format_environment_variable("EDITOR"));
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 

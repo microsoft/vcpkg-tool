@@ -11,16 +11,6 @@ export class RemoveCommand extends Command {
   readonly command = 'remove';
   project: Project = new Project(this);
 
-  get summary() {
-    return i`Removes an artifact from a project`;
-  }
-
-  get description() {
-    return [
-      i`This allows the consumer to remove an artifact from the project. Forces reactivation in this window.`,
-    ];
-  }
-
   override async run() {
     const projectManifest = await this.project.manifest;
 

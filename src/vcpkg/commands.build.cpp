@@ -67,21 +67,22 @@ namespace vcpkg
                                command_build_ex(args, full_spec, host_triplet, provider, build_logs_recorder, paths));
     }
 
-    constexpr CommandMetadata CommandBuildMetadata = {
-        [] { return create_example_string("build zlib:x64-windows"); },
+    constexpr CommandMetadata CommandBuildMetadata{
+        "build",
+        msgCmdBuildSynopsis,
+        {msgCmdBuildExample1, "vcpkg build zlib:x64-windows"},
+        Undocumented,
+        AutocompletePriority::Internal,
         1,
         1,
-        {{}, {}},
+        {},
         nullptr,
     };
-} // namespace vcpkg
 
-namespace
-{
-    int command_build(const VcpkgCmdArguments& args,
-                      const VcpkgPaths& paths,
-                      Triplet default_triplet,
-                      Triplet host_triplet)
+    void command_build_and_exit(const VcpkgCmdArguments& args,
+                                const VcpkgPaths& paths,
+                                Triplet default_triplet,
+                                Triplet host_triplet)
     {
         // Build only takes a single package and all dependencies must already be installed
         const ParsedArguments options = args.parse_arguments(CommandBuildMetadata);
@@ -100,19 +101,8 @@ namespace
         auto registry_set = paths.make_registry_set();
         PathsPortFileProvider provider(
             fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
-        return command_build_ex(args, spec, host_triplet, provider, null_build_logs_recorder(), paths);
-    }
-} // unnamed namespace
-
-namespace vcpkg
-{
-
-    void command_build_and_exit(const VcpkgCmdArguments& args,
-                                const VcpkgPaths& paths,
-                                Triplet default_triplet,
-                                Triplet host_triplet)
-    {
-        Checks::exit_with_code(VCPKG_LINE_INFO, command_build(args, paths, default_triplet, host_triplet));
+        Checks::exit_with_code(VCPKG_LINE_INFO,
+                               command_build_ex(args, spec, host_triplet, provider, null_build_logs_recorder(), paths));
     }
 
     int command_build_ex(const VcpkgCmdArguments& args,
@@ -400,7 +390,7 @@ namespace vcpkg
 
             if (proxy_from_env)
             {
-                msg::println(msgUseEnvVar, msg::env_var = "HTTP(S)_PROXY");
+                msg::println(msgUseEnvVar, msg::env_var = format_environment_variable("HTTP(S)_PROXY"));
             }
             else
             {
@@ -440,20 +430,26 @@ namespace vcpkg
 
                                 protocol = Strings::concat(Strings::ascii_to_uppercase(protocol), "_PROXY");
                                 env.emplace(protocol, address);
-                                msg::println(msgSettingEnvVar, msg::env_var = protocol, msg::url = address);
+                                msg::println(msgSettingEnvVar,
+                                             msg::env_var = format_environment_variable(protocol),
+                                             msg::url = address);
                             }
                         }
                     }
                     // Specified http:// prefix
                     else if (Strings::starts_with(server, "http://"))
                     {
-                        msg::println(msgSettingEnvVar, msg::env_var = "HTTP_PROXY", msg::url = server);
+                        msg::println(msgSettingEnvVar,
+                                     msg::env_var = format_environment_variable("HTTP_PROXY"),
+                                     msg::url = server);
                         env.emplace("HTTP_PROXY", server);
                     }
                     // Specified https:// prefix
                     else if (Strings::starts_with(server, "https://"))
                     {
-                        msg::println(msgSettingEnvVar, msg::env_var = "HTTPS_PROXY", msg::url = server);
+                        msg::println(msgSettingEnvVar,
+                                     msg::env_var = format_environment_variable("HTTPS_PROXY"),
+                                     msg::url = server);
                         env.emplace("HTTPS_PROXY", server);
                     }
                     // Most common case: "ip:port" style, apply to HTTP and HTTPS proxies.
@@ -464,7 +460,9 @@ namespace vcpkg
                     // We simply set "ip:port" to HTTP(S)_PROXY variables because it works on most common cases.
                     else
                     {
-                        msg::println(msgAutoSettingEnvVar, msg::env_var = "HTTP(S)_PROXY", msg::url = server);
+                        msg::println(msgAutoSettingEnvVar,
+                                     msg::env_var = format_environment_variable("HTTP(S)_PROXY"),
+                                     msg::url = server);
 
                         env.emplace("HTTP_PROXY", server.c_str());
                         env.emplace("HTTPS_PROXY", server.c_str());

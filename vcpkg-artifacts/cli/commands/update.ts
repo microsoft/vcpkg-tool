@@ -39,16 +39,6 @@ export class UpdateCommand extends Command {
   project: Project = new Project(this);
   all = new All(this);
 
-  get summary() {
-    return i`update the registry from the remote`;
-  }
-
-  get description() {
-    return [
-      i`This downloads the latest contents of the registry from the remote service.`,
-    ];
-  }
-
   override async run() {
     const resolver = session.globalRegistryResolver.with(
       await buildRegistryResolver(session, (await this.project.manifest)?.metadata.registries));
