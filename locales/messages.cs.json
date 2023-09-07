@@ -569,6 +569,7 @@
   "HelpRemoveOutdatedCommand": "Odinstalujte všechny zastaralé balíčky.",
   "HelpResponseFileCommand": "Zadejte soubor odpovědí pro zadání dalších parametrů.",
   "HelpSearchCommand": "Vyhledejte balíčky, které jsou k dispozici k sestavení.",
+  "HelpFetchCommand": "Získejte nástroje dostupné na této platformě.",
   "HelpTextOptFullDesc": "Nezkracovat dlouhý text.",
   "HelpTopicCommand": "Zobrazí nápovědu pro konkrétní téma.",
   "HelpTopicsCommand": "Umožňuje zobrazit seznam témat nápovědy.",

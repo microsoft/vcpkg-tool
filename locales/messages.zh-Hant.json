@@ -569,6 +569,7 @@
   "HelpRemoveOutdatedCommand": "解除安裝所有過期套件。",
   "HelpResponseFileCommand": "指定回應檔以提供其他參數。",
   "HelpSearchCommand": "搜尋可用來建置的套件。",
+  "HelpFetchCommand": "獲取平台上可用的工具。",
   "HelpTextOptFullDesc": "不要截斷長的文字簡訊。",
   "HelpTopicCommand": "顯示特定主題的說明。",
   "HelpTopicsCommand": "顯示說明主題清單。",

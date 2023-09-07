@@ -569,6 +569,7 @@
   "HelpRemoveOutdatedCommand": "卸载所有过期包。",
   "HelpResponseFileCommand": "指定响应文件以提供其他参数。",
   "HelpSearchCommand": "搜索可生成的包。",
+  "HelpFetchCommand": "获取此平台上可用的工具。",
   "HelpTextOptFullDesc": "请勿截断长文本。",
   "HelpTopicCommand": "显示特定主题的帮助。",
   "HelpTopicsCommand": "显示帮助主题列表。",

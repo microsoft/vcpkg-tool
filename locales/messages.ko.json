@@ -569,6 +569,7 @@
   "HelpRemoveOutdatedCommand": "오래된 패키지를 모두 제거합니다.",
   "HelpResponseFileCommand": "추가 매개 변수를 제공하려면 응답 파일을 지정하세요.",
   "HelpSearchCommand": "빌드할 수 있는 패키지를 검색합니다.",
+  "HelpFetchCommand": "이 플랫폼에서 사용할 수 있는 도구를 얻으세요.",
   "HelpTextOptFullDesc": "긴 텍스트를 자르지 않습니다.",
   "HelpTopicCommand": "특정 토픽에 대한 도움말을 표시합니다.",
   "HelpTopicsCommand": "도움말 항목 목록을 표시합니다.",

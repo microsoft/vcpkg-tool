@@ -569,6 +569,7 @@
   "HelpRemoveOutdatedCommand": "期限切れのパッケージをすべてアンインストールします。",
   "HelpResponseFileCommand": "応答ファイルを指定して、追加のパラメーターを指定します。",
   "HelpSearchCommand": "ビルド可能なパッケージを検索します。",
+  "HelpFetchCommand": "このプラットフォームで利用可能なツールを入手してください。",
   "HelpTextOptFullDesc": "長いテキストは切り捨てないでください。",
   "HelpTopicCommand": "特定のトピックのヘルプを表示します。",
   "HelpTopicsCommand": "ヘルプ トピックの一覧を表示します。",

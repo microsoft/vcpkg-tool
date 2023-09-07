@@ -823,6 +823,7 @@
   "HelpRemoveOutdatedCommand": "Uninstall all out-of-date packages.",
   "HelpResponseFileCommand": "Specify a response file to provide additional parameters.",
   "HelpSearchCommand": "Search for packages available to be built.",
+  "HelpFetchCommand": "Get the tools available on this platform.",
   "HelpTextOptFullDesc": "Do not truncate long text.",
   "HelpTopicCommand": "Display help for a specific topic.",
   "HelpTopicsCommand": "Display the list of help topics.",

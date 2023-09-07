@@ -569,6 +569,7 @@
   "HelpRemoveOutdatedCommand": "Güncel olmayan tüm paketleri kaldırın.",
   "HelpResponseFileCommand": "Ek parametreler sağlamak için bir yanıt dosyası belirtin.",
   "HelpSearchCommand": "Derlemek için uygun olan paketleri ara.",
+  "HelpFetchCommand": "Bu platformda bulunan araçları edinin.",
   "HelpTextOptFullDesc": "Uzun metni kesme.",
   "HelpTopicCommand": "Belirli bir konu için yardım görüntüleyin.",
   "HelpTopicsCommand": "Yardım konularının listesini görüntüleyin.",

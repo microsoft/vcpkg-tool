@@ -569,6 +569,7 @@
   "HelpRemoveOutdatedCommand": "Desinstale todos los paquetes obsoletos.",
   "HelpResponseFileCommand": "Especifique un archivo de respuesta para proporcionar parámetros adicionales.",
   "HelpSearchCommand": "Buscar paquetes disponibles para compilar.",
+  "HelpFetchCommand": "Obtén las herramientas disponibles en esta plataforma.",
   "HelpTextOptFullDesc": "No recortar texto largo.",
   "HelpTopicCommand": "Mostrar ayuda para un tema específico.",
   "HelpTopicsCommand": "Mostrar la lista de temas de ayuda.",
