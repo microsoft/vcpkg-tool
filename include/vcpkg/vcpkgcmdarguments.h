@@ -192,6 +192,21 @@ namespace vcpkg
         bool dependency_graph;
     };
 
+    struct PortApplicableSetting
+    {
+        std::string value;
+
+        PortApplicableSetting(StringView setting);
+        PortApplicableSetting(const PortApplicableSetting&);
+        PortApplicableSetting(PortApplicableSetting&&);
+        PortApplicableSetting& operator=(const PortApplicableSetting&);
+        PortApplicableSetting& operator=(PortApplicableSetting&&);
+        bool is_port_affected(StringView port_name) const noexcept;
+
+    private:
+        std::vector<std::string> affected_ports;
+    };
+
     struct VcpkgCmdArguments
     {
         static VcpkgCmdArguments create_from_command_line(const ILineReader& fs,
@@ -272,6 +287,11 @@ namespace vcpkg
         Optional<std::string> github_repository_id;
         constexpr static StringLiteral GITHUB_REPOSITORY_OWNER_ID = "GITHUB_REPOSITORY_OWNER_ID";
         Optional<std::string> github_repository_owner_id;
+
+        constexpr static StringLiteral CMAKE_DEBUGGING_ARG = "cmake-debug";
+        Optional<PortApplicableSetting> cmake_debug;
+        constexpr static StringLiteral CMAKE_CONFIGURE_DEBUGGING_ARG = "cmake-configure-debug";
+        Optional<PortApplicableSetting> cmake_configure_debug;
 
         constexpr static StringLiteral CMAKE_SCRIPT_ARG = "cmake-args";
         std::vector<std::string> cmake_args;

@@ -7,7 +7,6 @@
 #include <vcpkg/commands.bootstrap-standalone.h>
 #include <vcpkg/commands.build-external.h>
 #include <vcpkg/commands.build.h>
-#include <vcpkg/commands.cache.h>
 #include <vcpkg/commands.check-support.h>
 #include <vcpkg/commands.ci-clean.h>
 #include <vcpkg/commands.ci-verify-versions.h>
@@ -80,7 +79,6 @@ namespace vcpkg
         {CommandAddMetadata, command_add_and_exit},
         {CommandAddVersionMetadata, command_add_version_and_exit},
         {CommandAutocompleteMetadata, command_autocomplete_and_exit},
-        {CommandCacheMetadata, command_cache_and_exit},
         {CommandCiCleanMetadata, command_ci_clean_and_exit},
         {CommandCiVerifyVersionsMetadata, command_ci_verify_versions_and_exit},
         {CommandCreateMetadata, command_create_and_exit},
@@ -221,7 +219,6 @@ namespace vcpkg
         format_command_usage_entry(table, CommandAddVersionMetadata);
         format_command_usage_entry(table, CommandBuildExternalMetadata);
         format_command_usage_entry(table, CommandBuildMetadata);
-        format_command_usage_entry(table, CommandCacheMetadata);
         format_command_usage_entry(table, CommandCheckSupportMetadata);
         format_command_usage_entry(table, CommandCiCleanMetadata);
         format_command_usage_entry(table, CommandCiMetadata);

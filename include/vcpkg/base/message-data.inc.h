@@ -415,10 +415,6 @@ DECLARE_MESSAGE(BuildTroubleshootingMessage4,
                 "Please use the prefilled template from {path} when reporting your issue.")
 DECLARE_MESSAGE(BuiltInTriplets, (), "", "Built-in Triplets:")
 DECLARE_MESSAGE(BuiltWithIncorrectArchitecture, (), "", "The following files were built for an incorrect architecture:")
-DECLARE_MESSAGE(CacheHelp,
-                (),
-                "",
-                "The argument should be a substring to search for or no argument to display all cached libraries.")
 DECLARE_MESSAGE(CheckedOutGitSha, (msg::commit_sha), "", "Checked out Git SHA: {commit_sha}")
 DECLARE_MESSAGE(CheckedOutObjectMissingManifest,
                 (),
@@ -993,12 +989,14 @@ DECLARE_MESSAGE(DefaultBinaryCacheRequiresDirectory,
                 "Environment variable VCPKG_DEFAULT_BINARY_CACHE must be a directory (was: {path})")
 DECLARE_MESSAGE(DefaultFlag, (msg::option), "", "Defaulting to --{option} being on.")
 DECLARE_MESSAGE(DefaultRegistryIsArtifact, (), "", "The default registry cannot be an artifact registry.")
-DECLARE_MESSAGE(DefaultTriplet,
-                (msg::triplet),
-                "",
-                "Starting with the September 2023 release, the default triplet for vcpkg libraries will change "
-                "from x86-windows to the detected host triplet ({triplet}). To resolve this message, add --triplet "
-                "x86-windows to keep the same behavior.")
+DECLARE_MESSAGE(
+    DefaultTripletChanged,
+    (msg::triplet),
+    "The parts naming --triplet are command line switches that should be unlocalized. The space after the last "
+    "'triplet' and the period is intended to avoid the period looking like it's part of the command line switch",
+    "In the September 2023 release, the default triplet for vcpkg libraries changed from x86-windows to "
+    "the detected host triplet ({triplet}). For the old behavior, add --triplet x86-windows . To "
+    "suppress this message, add --triplet {triplet} .")
 DECLARE_MESSAGE(DeleteVcpkgConfigFromManifest,
                 (msg::path),
                 "",
@@ -2172,7 +2170,6 @@ DECLARE_MESSAGE(NewSpecifyNameVersionOrApplication,
                 "--application to indicate that the manifest is not intended to be used as a port.")
 DECLARE_MESSAGE(NewVersionCannotBeEmpty, (), "", "--version cannot be empty.")
 DECLARE_MESSAGE(NoArgumentsForOption, (msg::option), "", "The option --{option} does not accept an argument.")
-DECLARE_MESSAGE(NoCachedPackages, (), "", "No packages are cached.")
 DECLARE_MESSAGE(NoError, (), "", "no error")
 DECLARE_MESSAGE(NoInstalledPackages,
                 (),

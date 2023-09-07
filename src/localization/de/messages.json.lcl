@@ -28,15 +28,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";$COMMANDargumentsswitches" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[${p0} COMMAND <arguments> [--switches]5D;]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[${p0} BEFEHL <arguments> [--switches]5D;]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";$CouldNotBeUpdatedItCouldBeMalformed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[${p0} could not be updated; it could be malformed.]]></Val>
@@ -619,6 +610,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";AddVersionArtifactsOnly" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[--version is artifacts only and can't be used with vcpkg add port]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[--version ist nur Artefakte und kann nicht mit vcpkg-Hinzufügungport verwendet werden.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";AddVersionCommitChangesReminder" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Did you remember to commit your changes?]]></Val>
@@ -1147,24 +1147,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";ApplyAnyDeprecationFixups" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Apply any deprecation fixups.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Reparaturen aller veralteten Funktionen anwenden.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";Arguments" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Arguments:]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Argumente:]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";Artifact" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Artifact]]></Val>
@@ -1206,6 +1188,213 @@
           <Val><![CDATA[--{option} has no effect on find artifact.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[--{option} hat keine Auswirkungen auf "Artefakt suchen".]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ArtifactsOptionJson" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Full path to JSON file where environment variables and other properties are recorded]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Vollständiger Pfad zur JSON-Datei, in der Umgebungsvariablen und andere Eigenschaften aufgezeichnet werden.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ArtifactsOptionMSBuildProps" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Full path to the file in which MSBuild properties will be written]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Vollständiger Pfad zu der Datei, in die MSBuild-Eigenschaften geschrieben werden]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ArtifactsOptionVersion" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[A version or version range to match; only valid for artifacts]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Eine Version oder ein Versionsbereich, der übereinstimmen soll; nur für Artefakte gültig]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ArtifactsOptionVersionMismatch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The number of --version switches must match the number of named artifacts]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Die Anzahl der --version-Switches muss mit der Anzahl der benannten Artefakte übereinstimmen.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ArtifactsSwitchARM" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Force host detection to ARM when acquiring artifacts]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Hosterkennung für ARM beim Abrufen von Artefakten erzwingen]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ArtifactsSwitchARM64" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Force host detection to ARM64 when acquiring artifacts]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Hosterkennung für ARM64 beim Abrufen von Artefakten erzwingen]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ArtifactsSwitchAll" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Update all known artifact registries]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Alle bekannten Artefaktregistrierungen aktualisieren]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ArtifactsSwitchAllLanguages" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Acquire all language files when acquiring artifacts]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Alle Sprachdateien beim Abrufen von Artefakten abrufen]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ArtifactsSwitchForce" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Force reacquire if an artifact is already acquired]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Erneutes Abrufen erzwingen, wenn ein Artefakt bereits abgerufen wurde]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ArtifactsSwitchFreebsd" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Force host detection to FreeBSD when acquiring artifacts]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Hosterkennung für FreeBSD beim Abrufen von Artefakten erzwingen]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ArtifactsSwitchLinux" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Force host detection to Linux when acquiring artifacts]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Hosterkennung für Linux beim Abrufen von Artefakten erzwingen]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ArtifactsSwitchNormalize" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Apply any deprecation fixups]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Alle veralteten Reparaturen anwenden]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ArtifactsSwitchOnlyOneHostPlatform" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Only one host platform (--x64, --x86, --arm, --arm64) may be set.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Es kann nur eine Hostplattform (--x64, --x86, --arm, --arm64) festgelegt werden.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ArtifactsSwitchOnlyOneOperatingSystem" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Only one operating system (--windows, --osx, --linux, --freebsd) may be set.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Es kann nur ein Betriebssystem (--windows, --osx, --linux, --freebsd) festgelegt werden.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ArtifactsSwitchOnlyOneTargetPlatform" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Only one target platform (--target:x64, --target:x86, --target:arm, --target:arm64) may be set.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Es kann nur eine Zielplattform (--target:x64, --target:x86, --target:arm, --target:arm64) festgelegt werden.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ArtifactsSwitchOsx" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Force host detection to MacOS when acquiring artifacts]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Hosterkennung für MacOS beim Abrufen von Artefakten erzwingen]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ArtifactsSwitchTargetARM" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Set target detection to ARM when acquiring artifacts]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Zielerkennung auf ARM beim Abrufen von Artefakten festlegen]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ArtifactsSwitchTargetARM64" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Set target detection to ARM64 when acquiring artifacts]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Zielerkennung auf ARM64 beim Abrufen von Artefakten festlegen]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ArtifactsSwitchTargetX64" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Set target detection to x64 when acquiring artifacts]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Zielerkennung auf x64 beim Abrufen von Artefakten festlegen]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ArtifactsSwitchTargetX86" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Set target to x86 when acquiring artifacts]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Ziel auf x86 beim Abrufen von Artefakten festlegen]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ArtifactsSwitchWindows" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Force host detection to Windows when acquiring artifacts]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Hosterkennung für Windows beim Abrufen von Artefakten erzwingen]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ArtifactsSwitchX64" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Force host detection to x64 when acquiring artifacts]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Hosterkennung auf x64 beim Abrufen von Artefakten erzwingen]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ArtifactsSwitchX86" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Force host detection to x86 when acquiring artifacts]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Hosterkennung auf x86 beim Abrufen von Artefakten erzwingen]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1287,15 +1476,6 @@
           <Val><![CDATA[Visual Studio 2017 and later can now #include any installed libraries. Linking will be handled automatically. Installing new libraries will make them instantly available.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Visual Studio 2017 und höher kann jetzt alle installierten Bibliotheken beinhalten (#include). Die Verknüpfung wird automatisch verarbeitet. Durch die Installation neuer Bibliotheken werden diese sofort verfügbar.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";Available$Commands" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Available ${p0} commands:]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Verfügbare ${p0}-Befehle:]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -3346,15 +3526,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";Description" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Description]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Beschreibung]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";DetectCompilerHash" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Detecting compiler hash for triplet {triplet}...]]></Val>
@@ -3519,15 +3690,6 @@
           <Val><![CDATA[Downloads folder cleared (${p0}) ]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Ordner "Downloads" gelöscht (${p0}) ]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";DumpEnvironmentVariablesAndOtherPropertiesToAJsonFileWithThePathProvidedByTheUser" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Dump environment variables and other properties to a json file with the path provided by the user.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Sichern Sie Umgebungsvariablen und andere Eigenschaften in einer JSON-Datei mit dem vom Benutzer angegebenen Pfad.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4933,6 +5095,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";FindVersionArtifactsOnly" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[--version can't be used with vcpkg search or vcpkg find port]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[--version kann nicht mit der vcpkg-Suche oder dem vcpkg-Suchport verwendet werden.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";FishCompletion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[vcpkg fish completion is already added at "{path}".]]></Val>
@@ -5007,15 +5178,6 @@
           <Val><![CDATA[Found a mismatched ${p0} in '${p1}'. For a literal ${p2}, use ${p3}${p4} instead.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Es wurde ein nicht übereinstimmender ${p0} in "${p1}" gefunden. Verwenden Sie für ein Literal ${p2} stattdessen ${p3}${p4}.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";FullPathToTheFileInWhichMSBuildPropertiesWillBeWritten" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Full path to the file in which MSBuild properties will be written.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Vollständiger Pfad zu der Datei, in die MSBuild-Eigenschaften geschrieben werden.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -5133,15 +5295,6 @@
           <Val><![CDATA[Use '--debug' to get more information about the parse failures.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Verwenden Sie „--debug“, um weitere Informationen zu den Analysefehlern zu erhalten.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";GetsDetailedHelpOn$OrOneOfTheCommands" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Gets detailed help on ${p0}, or one of the commands]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Ruft ausführliche Hilfe zu ${p0} oder einem der Befehle ab.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -7561,15 +7714,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";MultiplePackagesSpecifiedButNotAnEqualNumberOf$Switches" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Multiple packages specified, but not an equal number of ${p0} switches]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Es wurden mehrere Pakete angegeben, aber nicht die gleiche Anzahl von ${p0}-Switches.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";MutuallyExclusiveOption" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[--{value} cannot be used with --{option}.]]></Val>
@@ -9028,15 +9172,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";SeeAlso" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[See Also]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Siehe auch]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";SeeURL" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[See {url} for more information.]]></Val>
@@ -9285,24 +9420,6 @@
           <Val><![CDATA[the switch '{option}' was specified multiple times]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Der Schalter "{option}" wurde mehrmals angegeben.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";Switches" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Switches]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Schalter]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";Synopsis" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Synopsis]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Synopsis]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10162,15 +10279,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";UnrecognizedCommand$" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Unrecognized command '${p0}']]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Unbekannter Befehl "${p0}"]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";UnrecognizedConfigField" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[configuration contains the following unrecognized fields:]]></Val>
@@ -10299,15 +10407,6 @@
           <Val><![CDATA[the update command does not currently support manifest mode. Instead, modify your vcpkg.json and run install.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[der Updatebefehl unterstützt derzeit nicht den Manifestmodus. Ändern Sie stattdessen "vcpkg.json", und führen Sie die Installation aus.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";UpdateAllKnownArtifactRegistries" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Update all known artifact registries]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Alle bekannten Artefaktregistrierungen aktualisieren]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10473,33 +10572,6 @@
           <Val><![CDATA[Uri may not be empty]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Der URI darf nicht leer sein.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";Usage" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Usage]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Verwendung]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";Use$ToGetHelp" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Use ${p0} to get help]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[${p0} verwenden, um Hilfe zu erhalten]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";Use$ToGetTheListOfAvailableCommands" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Use ${p0} to get the list of available commands]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Verwenden Sie ${p0}, um die Liste der verfügbaren Befehle abzurufen.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -11239,33 +11311,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";aVersionOrVersionRangeToMatch" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[a version or version range to match]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[eine Version oder ein Versionsbereich, der übereinstimmen soll]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";cleansOutEverythingcacheInstalledArtifacts" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[cleans out everything (cache, installed artifacts)]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[bereinigt alles (Cache, installierte Artefakte)]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";cleansOutTheDownloadsCache" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[cleans out the downloads cache]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[bereinigt den Downloadcache.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";cleansUp" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[cleans up]]></Val>
@@ -11289,24 +11334,6 @@
           <Val><![CDATA[downloading ${p0} -> ${p1}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[${p0} -> ${p1} wird heruntergeladen.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";enablesDebugModeDisplaysInternalMesssagesAboutHow$Works" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[enables debug mode, displays internal messsages about how ${p0} works]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[aktiviert den Debugmodus, zeigt interne Fehler zur Funktionsweise von ${p0} an.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";enablesVerboseModeDisplaysVerboseMesssagesAboutTheProcess" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[enables verbose mode, displays verbose messsages about the process]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[aktiviert den ausführlichen Modus, zeigt ausführliche Meldungen zum Prozess an.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -11343,24 +11370,6 @@
           <Val><![CDATA[failed to download from ${p0}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Fehler beim Herunterladen von ${p0}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";generatemsbuildpropsRequiresmsbuildprops" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[generate-msbuild-props requires --msbuild-props]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[generate-msbuild-props erfordert "--msbuild-props".]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";getHelpOn$OrOneOfTheCommands" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[get help on ${p0} or one of the commands]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Hilfe zu ${p0} oder einem der Befehle erhalten]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -11455,29 +11464,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";overrideThePathToTheProjectFolder" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[override the path to the project folder]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Überschreiben des Pfads zum Projektordner]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";packageReference$IsNotAValidNugetPackageReferencenameversion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[package reference '${p0}' is not a valid nuget package reference ({name}/{version})]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Der Paketverweis "${p0}" ist kein gültiger NuGet-Paketverweis ({name}/{version}).]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";proceedsWithThepotentiallyDangerousActionWithoutConfirmation" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[proceeds with the (potentially dangerous) action without confirmation]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[fährt ohne Bestätigung mit der (potenziell gefährlichen) Aktion fort.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -11500,24 +11491,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";removesAllFilesInTheLocalCache" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[removes all files in the local cache]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[entfernt alle Dateien im lokalen Cache.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";removesAllTheArtifactsThatAreInstalled" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[removes all the artifacts that are installed]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[entfernt alle installierten Artefakte.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";scheme$AlreadyRegistered" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[scheme '${p0}' already registered]]></Val>
@@ -11536,15 +11509,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";showsTheinstalledArtifacts" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[shows the _installed_ artifacts]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[zeigt die _installed_-Artefakte an.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";statsMayNotBeUndefined" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[stats may not be undefined]]></Val>
@@ -11559,15 +11523,6 @@
           <Val><![CDATA[summary should be of type 'string', found '${p0}']]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Die Zusammenfassung muss vom Typ "string" sein, gefunden wurde "${p0}".]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";theNameOfTheCommandForWhichYouWantHelp" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[the name of the command for which you want help]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[der Name des Befehls, für den Sie Hilfe benötigen]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />

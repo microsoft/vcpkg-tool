@@ -776,6 +776,24 @@ namespace vcpkg
             variables.emplace_back("ARIA2", paths.get_tool_exe(Tools::ARIA2, stdout_sink));
         }
 
+        if (auto cmake_debug = args.cmake_debug.get())
+        {
+            if (cmake_debug->is_port_affected(scf.core_paragraph->name))
+            {
+                variables.emplace_back("--debugger");
+                variables.emplace_back(fmt::format("--debugger-pipe={}", cmake_debug->value));
+            }
+        }
+
+        if (auto cmake_configure_debug = args.cmake_configure_debug.get())
+        {
+            if (cmake_configure_debug->is_port_affected(scf.core_paragraph->name))
+            {
+                variables.emplace_back(fmt::format("-DVCPKG_CMAKE_CONFIGURE_OPTIONS=--debugger;--debugger-pipe={}",
+                                                   cmake_configure_debug->value));
+            }
+        }
+
         for (const auto& cmake_arg : args.cmake_args)
         {
             variables.emplace_back(cmake_arg);

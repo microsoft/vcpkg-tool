@@ -10,6 +10,10 @@
 #include <vcpkg/metrics.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 
+#include <algorithm>
+#include <string>
+#include <utility>
+
 namespace
 {
     using namespace vcpkg;
@@ -263,6 +267,28 @@ namespace vcpkg
         }
     }
 
+    PortApplicableSetting::PortApplicableSetting(StringView setting)
+    {
+        auto split = Strings::split(setting, ';');
+        if (!split.empty())
+        {
+            value = std::move(split[0]);
+            split.erase(split.begin());
+            Util::sort(split);
+            affected_ports = std::move(split);
+        }
+    }
+
+    PortApplicableSetting::PortApplicableSetting(const PortApplicableSetting&) = default;
+    PortApplicableSetting::PortApplicableSetting(PortApplicableSetting&&) = default;
+    PortApplicableSetting& PortApplicableSetting::operator=(const PortApplicableSetting&) = default;
+    PortApplicableSetting& PortApplicableSetting::operator=(PortApplicableSetting&&) = default;
+
+    bool PortApplicableSetting::is_port_affected(StringView port_name) const noexcept
+    {
+        return affected_ports.empty() || std::binary_search(affected_ports.begin(), affected_ports.end(), port_name);
+    }
+
     VcpkgCmdArguments VcpkgCmdArguments::create_from_command_line(const ILineReader& fs,
                                                                   const int argc,
                                                                   const CommandLineCharType* const* const argv)
@@ -326,6 +352,18 @@ namespace vcpkg
                                  StabilityTag::Experimental,
                                  args.asset_sources_template_arg,
                                  msg::format(msgAssetSourcesArg));
+        {
+            std::string raw_cmake_debug;
+            if (args.parser.parse_option(CMAKE_DEBUGGING_ARG, StabilityTag::Experimental, raw_cmake_debug))
+            {
+                args.cmake_debug.emplace(raw_cmake_debug);
+            }
+
+            if (args.parser.parse_option(CMAKE_CONFIGURE_DEBUGGING_ARG, StabilityTag::Experimental, raw_cmake_debug))
+            {
+                args.cmake_configure_debug.emplace(raw_cmake_debug);
+            }
+        }
 
         args.parser.parse_multi_option(
             OVERLAY_PORTS_ARG,
@@ -827,5 +865,7 @@ namespace vcpkg
     constexpr StringLiteral VcpkgCmdArguments::VERSIONS_FEATURE;
 
     constexpr StringLiteral VcpkgCmdArguments::CMAKE_SCRIPT_ARG;
+    constexpr StringLiteral VcpkgCmdArguments::CMAKE_DEBUGGING_ARG;
+    constexpr StringLiteral VcpkgCmdArguments::CMAKE_CONFIGURE_DEBUGGING_ARG;
     constexpr StringLiteral VcpkgCmdArguments::EXACT_ABI_TOOLS_VERSIONS_SWITCH;
 }
