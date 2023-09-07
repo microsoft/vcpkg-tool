@@ -725,13 +725,10 @@ DECLARE_MESSAGE(CmdHashExample2,
                 "This is a command line, only the <path> part should be localized",
                 "vcpkg hash <path> SHA256")
 DECLARE_MESSAGE(CmdHashSynopsis, (), "", "Gets a file's SHA256 or SHA512")
-DECLARE_MESSAGE(CmdHelpCommands,
-                (),
-                "This is a command line, only <command> should be localized.",
-                "vcpkg help <command>")
+DECLARE_MESSAGE(CmdHelpCommands, (), "This is a command line, only <command> should be localized.", "help <command>")
 DECLARE_MESSAGE(CmdHelpCommandSynopsis, (), "", "Displays help detail for <command>")
 DECLARE_MESSAGE(CmdHelpCommandsSynopsis, (), "", "Displays full list of commands, including rare ones not listed here")
-DECLARE_MESSAGE(CmdHelpTopic, (), "This is a command line, only <topic> should be localized.", "vcpkg help <topic>")
+DECLARE_MESSAGE(CmdHelpTopic, (), "This is a command line, only <topic> should be localized.", "help <topic>")
 DECLARE_MESSAGE(CmdInfoOptInstalled, (), "", "(experimental) Reports installed packages rather than available")
 DECLARE_MESSAGE(CmdInfoOptTransitive, (), "", "(experimental) Also reports dependencies of installed packages")
 DECLARE_MESSAGE(CmdInitRegistryExample1,
