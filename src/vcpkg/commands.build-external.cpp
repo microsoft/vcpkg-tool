@@ -10,8 +10,12 @@
 
 namespace vcpkg
 {
-    constexpr CommandMetadata CommandBuildExternalMetadata = {
-        [] { return create_example_string(R"(build-external zlib2 C:\path\to\dir\with\vcpkg.json)"); },
+    constexpr CommandMetadata CommandBuildExternalMetadata{
+        "build-external",
+        msgCmdBuildExternalSynopsis,
+        {msgCmdBuildExternalExample1, msgCmdBuildExternalExample2},
+        Undocumented,
+        AutocompletePriority::Internal,
         2,
         2,
         {},

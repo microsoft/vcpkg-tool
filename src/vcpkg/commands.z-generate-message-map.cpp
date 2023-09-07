@@ -13,20 +13,24 @@ namespace
     constexpr StringLiteral OPTION_NO_OUTPUT_COMMENTS = "no-output-comments";
 
     constexpr CommandSwitch GENERATE_MESSAGE_MAP_SWITCHES[]{
-        {OPTION_NO_OUTPUT_COMMENTS, []() { return msg::format(msgCmdGenerateMessageMapOptNoOutputComments); }},
-    };
-
-    constexpr CommandMetadata CommandZGenerateDefaultMessageMapMetadata = {
-        [] { return create_example_string("x-generate-default-message-map locales/messages.json"); },
-        2,
-        2,
-        {GENERATE_MESSAGE_MAP_SWITCHES, {}, {}},
-        nullptr,
+        {OPTION_NO_OUTPUT_COMMENTS, msgCmdGenerateMessageMapOptNoOutputComments},
     };
 } // unnamed namespace
 
 namespace vcpkg
 {
+    constexpr CommandMetadata CommandZGenerateDefaultMessageMapMetadata{
+        "z-generate-default-message-map",
+        {/*intentionally undocumented*/},
+        {},
+        Undocumented,
+        AutocompletePriority::Never,
+        2,
+        2,
+        {GENERATE_MESSAGE_MAP_SWITCHES},
+        nullptr,
+    };
+
     std::vector<StringView> get_all_format_args(StringView fstring, LocalizedString& error)
     {
         error = {};

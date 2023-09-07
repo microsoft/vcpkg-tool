@@ -23,8 +23,17 @@ namespace
 
 namespace vcpkg
 {
-    constexpr CommandMetadata CommandCreateMetadata = {
-        [] { return create_example_string(R"###(create zlib2 http://zlib.net/zlib1211.zip "zlib1211-2.zip")###"); },
+    constexpr CommandMetadata CommandCreateMetadata{
+        "create",
+        msgHelpCreateCommand,
+        {
+            msgCmdCreateExample1,
+            msgCmdCreateExample2,
+            msgCmdCreateExample3,
+            "vcpkg create zlib2 http://zlib.net/zlib1211.zip zlib1211-2.zip",
+        },
+        Undocumented,
+        AutocompletePriority::Public,
         2,
         3,
         {},

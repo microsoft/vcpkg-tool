@@ -1,14 +1,11 @@
+#include <vcpkg/base/files.h>
 #include <vcpkg/base/lineinfo.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.autocomplete.h>
-#include <vcpkg/commands.edit.h>
-#include <vcpkg/commands.install.h>
-#include <vcpkg/commands.integrate.h>
-#include <vcpkg/commands.remove.h>
-#include <vcpkg/commands.upgrade.h>
+#include <vcpkg/commands.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/vcpkgcmdarguments.h>
@@ -24,9 +21,8 @@ namespace
 {
     [[noreturn]] void output_sorted_results_and_exit(const LineInfo& line_info, std::vector<std::string>&& results)
     {
-        const SortedVector<std::string> sorted_results(results);
-        msg::write_unlocalized_text_to_stdout(Color::none, Strings::join("\n", sorted_results));
-
+        Util::sort(results);
+        msg::write_unlocalized_text_to_stdout(Color::none, Strings::join("\n", results));
         Checks::exit_success(line_info);
     }
 
@@ -39,9 +35,23 @@ namespace
 
 namespace vcpkg
 {
+    constexpr CommandMetadata CommandAutocompleteMetadata{
+        "autocomplete",
+        {/*Intentionally undocumented*/},
+        {},
+        Undocumented,
+        AutocompletePriority::Never,
+        0,
+        SIZE_MAX,
+        {},
+        nullptr,
+    };
+
     void command_autocomplete_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
         g_should_send_metrics = false;
+
+        const auto all_commands_metadata = get_all_commands_metadata();
 
         auto&& command_arguments = args.get_forwardable_arguments();
         // Handles vcpkg <command>
@@ -53,48 +63,32 @@ namespace vcpkg
                 requested_command = command_arguments[0];
             }
 
+            std::vector<std::string> results;
+
             // First try public commands
-            std::vector<std::string> public_commands = {"install",
-                                                        "search",
-                                                        "remove",
-                                                        "list",
-                                                        "update",
-                                                        "hash",
-                                                        "help",
-                                                        "integrate",
-                                                        "export",
-                                                        "edit",
-                                                        "create",
-                                                        "owns",
-                                                        "cache",
-                                                        "version",
-                                                        "contact",
-                                                        "upgrade"};
-
-            Util::erase_remove_if(public_commands, [&](const std::string& s) {
-                return !Strings::case_insensitive_ascii_starts_with(s, requested_command);
-            });
-
-            if (!public_commands.empty())
+            for (auto&& metadata : all_commands_metadata)
             {
-                output_sorted_results_and_exit(VCPKG_LINE_INFO, std::move(public_commands));
+                if (metadata->autocomplete_priority == AutocompletePriority::Public &&
+                    Strings::case_insensitive_ascii_starts_with(metadata->name, requested_command))
+                {
+                    results.push_back(metadata->name.to_string());
+                }
             }
 
-            // If no public commands match, try private commands
-            std::vector<std::string> private_commands = {
-                "build",
-                "buildexternal",
-                "ci",
-                "depend-info",
-                "env",
-                "portsdiff",
-            };
+            // If no public commands match, try internal commands
+            if (results.empty())
+            {
+                for (auto&& metadata : all_commands_metadata)
+                {
+                    if (metadata->autocomplete_priority == AutocompletePriority::Internal &&
+                        Strings::case_insensitive_ascii_starts_with(metadata->name, requested_command))
+                    {
+                        results.push_back(metadata->name.to_string());
+                    }
+                }
+            }
 
-            Util::erase_remove_if(private_commands, [&](const std::string& s) {
-                return !Strings::case_insensitive_ascii_starts_with(s, requested_command);
-            });
-
-            output_sorted_results_and_exit(VCPKG_LINE_INFO, std::move(private_commands));
+            output_sorted_results_and_exit(VCPKG_LINE_INFO, std::move(results));
         }
 
         // command_arguments.size() >= 2
@@ -128,23 +122,9 @@ namespace vcpkg
             }
         }
 
-        struct CommandEntry
+        for (auto&& metadata : all_commands_metadata)
         {
-            StringLiteral name;
-            const CommandMetadata& structure;
-        };
-
-        static constexpr CommandEntry COMMANDS[] = {
-            CommandEntry{"install", CommandInstallMetadata},
-            CommandEntry{"edit", CommandEditMetadata},
-            CommandEntry{"remove", CommandRemoveMetadata},
-            CommandEntry{"integrate", CommandIntegrateMetadata},
-            CommandEntry{"upgrade", CommandUpgradeMetadata},
-        };
-
-        for (auto&& command : COMMANDS)
-        {
-            if (Strings::case_insensitive_ascii_equals(command_name, command.name))
+            if (Strings::case_insensitive_ascii_equals(command_name, metadata->name))
             {
                 StringView prefix = command_arguments.back();
                 std::vector<std::string> results;
@@ -152,24 +132,24 @@ namespace vcpkg
                 const bool is_option = Strings::starts_with(prefix, "-");
                 if (is_option)
                 {
-                    for (const auto& s : command.structure.options.switches)
+                    for (const auto& s : metadata->options.switches)
                     {
                         results.push_back(Strings::concat("--", s.name));
                     }
-                    for (const auto& s : command.structure.options.settings)
+                    for (const auto& s : metadata->options.settings)
                     {
                         results.push_back(Strings::concat("--", s.name));
                     }
-                    for (const auto& s : command.structure.options.multisettings)
+                    for (const auto& s : metadata->options.multisettings)
                     {
                         results.push_back(Strings::concat("--", s.name));
                     }
                 }
                 else
                 {
-                    if (command.structure.valid_arguments != nullptr)
+                    if (metadata->valid_arguments != nullptr)
                     {
-                        results = command.structure.valid_arguments(paths);
+                        results = metadata->valid_arguments(paths);
                     }
                 }
 
@@ -177,7 +157,7 @@ namespace vcpkg
                     return !Strings::case_insensitive_ascii_starts_with(s, prefix);
                 });
 
-                if (Strings::case_insensitive_ascii_equals(command.name, "install") && results.size() == 1 &&
+                if (Strings::case_insensitive_ascii_equals(metadata->name, "install") && results.size() == 1 &&
                     !is_option)
                 {
                     const auto port_at_each_triplet =

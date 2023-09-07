@@ -6,6 +6,18 @@
 
 namespace vcpkg
 {
+    constexpr CommandMetadata CommandZCEMetadata{
+        "z-ce",
+        {/*intentionally undocumented*/},
+        {},
+        Undocumented,
+        AutocompletePriority::Never,
+        0,
+        SIZE_MAX,
+        {},
+        nullptr,
+    };
+
     void command_z_ce_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
         Checks::exit_with_code(VCPKG_LINE_INFO,

@@ -32,8 +32,12 @@ namespace
 
 namespace vcpkg
 {
-    constexpr CommandMetadata CommandOwnsMetadata = {
-        [] { return create_example_string("owns zlib.dll"); },
+    constexpr CommandMetadata CommandOwnsMetadata{
+        "owns",
+        msgHelpOwnsCommand,
+        {msgCmdOwnsExample1, "vcpkg owns zlib1.dll"},
+        Undocumented,
+        AutocompletePriority::Public,
         1,
         1,
         {},

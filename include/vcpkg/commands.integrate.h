@@ -11,10 +11,7 @@
 namespace vcpkg
 {
     extern const CommandMetadata CommandIntegrateMetadata;
-
     void command_integrate_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths);
-    void append_integrate_helpstring(HelpTableFormatter& table);
-    LocalizedString get_integrate_helpstring();
 
     Optional<int> find_targets_file_version(StringView contents);
     std::vector<std::string> get_bash_source_completion_lines(StringView contents);

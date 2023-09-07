@@ -122,6 +122,8 @@ namespace vcpkg
         explicit LocalizedString(StringView data);
         explicit LocalizedString(std::string&& data) noexcept;
     };
+
+    LocalizedString format_environment_variable(StringView variable_name);
 }
 
 VCPKG_FORMAT_AS(vcpkg::LocalizedString, vcpkg::StringView);

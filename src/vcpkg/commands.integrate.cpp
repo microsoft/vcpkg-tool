@@ -567,30 +567,6 @@ namespace vcpkg
 #endif // ^^^ !_WIN32
     }
 
-    void append_integrate_helpstring(HelpTableFormatter& table)
-    {
-#if defined(_WIN32)
-        table.format("vcpkg integrate install", msg::format(msgIntegrateInstallHelpWindows));
-#else  // ^^^ defined(_WIN32) // !defined(_WIN32) vvv
-        table.format("vcpkg integrate install", msg::format(msgIntegrateInstallHelpLinux));
-#endif // ^^^ !defined(_WIN32)
-        table.format("vcpkg integrate remove", msg::format(msgIntegrateRemoveHelp));
-        table.blank();
-        table.format("vcpkg integrate project", msg::format(msgIntegrateProjectHelp));
-        table.blank();
-        table.format("vcpkg integrate bash", msg::format(msgIntegrateBashHelp));
-        table.format("vcpkg integrate x-fish", msg::format(msgIntegrateFishHelp));
-        table.format("vcpkg integrate powershell", msg::format(msgIntegratePowerShellHelp));
-        table.format("vcpkg integrate zsh", msg::format(msgIntegrateZshHelp));
-    }
-
-    LocalizedString get_integrate_helpstring()
-    {
-        HelpTableFormatter table;
-        append_integrate_helpstring(table);
-        return msg::format(msgCommands).append_raw('\n').append_raw(table.m_str);
-    }
-
     static constexpr StringLiteral INSTALL = "install";
     static constexpr StringLiteral REMOVE = "remove";
     static constexpr StringLiteral PROJECT = "project";
@@ -613,8 +589,28 @@ namespace vcpkg
         };
     }
 
-    constexpr CommandMetadata CommandIntegrateMetadata = {
-        [] { return get_integrate_helpstring(); },
+    constexpr CommandMetadata CommandIntegrateMetadata{
+        "integrate",
+        msgCmdIntegrateSynopsis,
+        {[] {
+            HelpTableFormatter table;
+#if defined(_WIN32)
+            table.format("vcpkg integrate install", msg::format(msgIntegrateInstallHelpWindows));
+#else  // ^^^ defined(_WIN32) // !defined(_WIN32) vvv
+            table.format("vcpkg integrate install", msg::format(msgIntegrateInstallHelpLinux));
+#endif // ^^^ !defined(_WIN32)
+            table.format("vcpkg integrate remove", msg::format(msgIntegrateRemoveHelp));
+            table.blank();
+            table.format("vcpkg integrate project", msg::format(msgIntegrateProjectHelp));
+            table.blank();
+            table.format("vcpkg integrate bash", msg::format(msgIntegrateBashHelp));
+            table.format("vcpkg integrate x-fish", msg::format(msgIntegrateFishHelp));
+            table.format("vcpkg integrate powershell", msg::format(msgIntegratePowerShellHelp));
+            table.format("vcpkg integrate zsh", msg::format(msgIntegrateZshHelp));
+            return LocalizedString::from_raw("\n").append_raw(std::move(table.m_str));
+        }},
+        "https://learn.microsoft.com/vcpkg/commands/integrate",
+        AutocompletePriority::Public,
         1,
         1,
         {},

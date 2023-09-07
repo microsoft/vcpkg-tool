@@ -214,22 +214,26 @@ namespace
     constexpr StringLiteral OPTION_VERIFY_GIT_TREES = "verify-git-trees";
 
     constexpr CommandSwitch VERIFY_VERSIONS_SWITCHES[]{
-        {OPTION_VERBOSE, []() { return msg::format(msgCISettingsVerifyVersion); }},
-        {OPTION_VERIFY_GIT_TREES, []() { return msg::format(msgCISettingsVerifyGitTree); }},
+        {OPTION_VERBOSE, msgCISettingsVerifyVersion},
+        {OPTION_VERIFY_GIT_TREES, msgCISettingsVerifyGitTree},
     };
 
     constexpr CommandSetting VERIFY_VERSIONS_SETTINGS[] = {
-        {OPTION_EXCLUDE, []() { return msg::format(msgCISettingsExclude); }},
+        {OPTION_EXCLUDE, msgCISettingsExclude},
     };
 } // unnamed namespace
 
 namespace vcpkg
 {
     constexpr CommandMetadata CommandCiVerifyVersionsMetadata{
-        [] { return create_example_string("x-ci-verify-versions"); },
+        "x-ci-verify-versions",
+        msgCmdCiVerifyVersionsSynopsis,
+        {"vcpkg x-ci-verify-versions"},
+        Undocumented,
+        AutocompletePriority::Internal,
         0,
         SIZE_MAX,
-        {{VERIFY_VERSIONS_SWITCHES}, {VERIFY_VERSIONS_SETTINGS}, {}},
+        {VERIFY_VERSIONS_SWITCHES, VERIFY_VERSIONS_SETTINGS},
         nullptr,
     };
 

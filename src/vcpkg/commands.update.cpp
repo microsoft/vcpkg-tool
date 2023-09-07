@@ -47,8 +47,12 @@ namespace vcpkg
         return output;
     }
 
-    constexpr CommandMetadata CommandUpdateMetadata = {
-        [] { return create_example_string("update"); },
+    constexpr CommandMetadata CommandUpdateMetadata{
+        "update",
+        msgHelpUpdateCommand,
+        {"vcpkg update"},
+        "https://learn.microsoft.com/vcpkg/commands/update",
+        AutocompletePriority::Public,
         0,
         0,
         {},

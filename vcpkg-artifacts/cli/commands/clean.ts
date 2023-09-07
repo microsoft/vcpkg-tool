@@ -10,49 +10,21 @@ import { Switch } from '../switch';
 
 export class All extends Switch {
   switch = 'all';
-  get help() {
-    return [
-      i`cleans out everything (cache, installed artifacts)`
-    ];
-  }
 }
 
 export class Downloads extends Switch {
   switch = 'downloads';
-  get help() {
-    return [
-      i`cleans out the downloads cache`
-    ];
-  }
 }
 
 export class Artifacts extends Switch {
   switch = 'artifacts';
-  get help() {
-    return [
-      i`removes all the artifacts that are installed`
-    ];
-  }
 }
 
 export class CleanCommand extends Command {
   readonly command = 'clean';
-  readonly aliases = [];
-  seeAlso = [];
-  argumentsHelp = [];
   all = new All(this);
   artifacts = new Artifacts(this);
   downloads = new Downloads(this);
-
-  get summary() {
-    return i`cleans up`;
-  }
-
-  get description() {
-    return [
-      i`Allows the user to clean out the cache, installed artifacts, etc.`,
-    ];
-  }
 
   override async run() {
 
