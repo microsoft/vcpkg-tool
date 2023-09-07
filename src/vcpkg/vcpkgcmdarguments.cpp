@@ -428,6 +428,7 @@ namespace vcpkg
         HelpTableFormatter table;
         table.header("Commands");
         table.format("vcpkg search [pat]", msg::format(msgHelpSearchCommand));
+        table.format("vcpkg fetch  [pat]", msg::format(msgHelpfetchCommand));
         table.format("vcpkg install <pkg>...", msg::format(msgHelpInstallCommand));
         table.format("vcpkg remove <pkg>...", msg::format(msgHelpRemoveCommand));
         table.format("vcpkg update", msg::format(msgHelpUpdateCommand));
