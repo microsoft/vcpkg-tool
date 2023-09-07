@@ -389,23 +389,23 @@ namespace vcpkg
     {
         static ExpectedL<Path> s_home = []() -> ExpectedL<Path> {
 #ifdef _WIN32
-            static constexpr StringLiteral HOMEVAR = "%USERPROFILE%";
-            static constexpr StringLiteral HOMEVARNAME = "USERPROFILE";
+            static constexpr StringLiteral HOMEVAR = "USERPROFILE";
 #else  // ^^^ _WIN32 // !_WIN32 vvv
-            static constexpr StringLiteral HOMEVAR = "$HOME";
-            static constexpr StringLiteral HOMEVARNAME = "HOME";
+            static constexpr StringLiteral HOMEVAR = "HOME";
 #endif // ^^^ !_WIN32
 
-            auto maybe_home = get_environment_variable(HOMEVARNAME);
+            auto maybe_home = get_environment_variable(HOMEVAR);
             if (!maybe_home.has_value() || maybe_home.get()->empty())
             {
-                return msg::format(msgUnableToReadEnvironmentVariable, msg::env_var = HOMEVAR);
+                return msg::format(msgUnableToReadEnvironmentVariable,
+                                   msg::env_var = format_environment_variable(HOMEVAR));
             }
 
             Path p = std::move(*maybe_home.get());
             if (!p.is_absolute())
             {
-                return msg::format(msgEnvVarMustBeAbsolutePath, msg::path = p, msg::env_var = HOMEVAR);
+                return msg::format(
+                    msgEnvVarMustBeAbsolutePath, msg::path = p, msg::env_var = format_environment_variable(HOMEVAR));
             }
 
             return p;

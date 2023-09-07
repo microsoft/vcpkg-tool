@@ -13,8 +13,22 @@
 
 namespace vcpkg
 {
+    constexpr CommandMetadata CommandBootstrapStandaloneMetadata{
+        "bootstrap-standalone",
+        msgCmdBootstrapStandaloneSynopsis,
+        {"vcpkg bootstrap-standalone"},
+        Undocumented,
+        AutocompletePriority::Never,
+        0,
+        0,
+        {},
+        nullptr,
+    };
+
     void command_bootstrap_standalone_and_exit(const VcpkgCmdArguments& args, const Filesystem& fs)
     {
+        (void)args.parse_arguments(CommandBootstrapStandaloneMetadata);
+
         DownloadManager download_manager{{}};
         const auto maybe_vcpkg_root_env = args.vcpkg_root_dir_env.get();
         if (!maybe_vcpkg_root_env)

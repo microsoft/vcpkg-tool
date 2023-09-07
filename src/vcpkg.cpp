@@ -45,7 +45,7 @@ namespace
     void invalid_command(const VcpkgCmdArguments& args)
     {
         msg::println_error(msgVcpkgInvalidCommand, msg::command_name = args.get_command());
-        print_command_list_usage();
+        print_zero_args_usage();
         Checks::exit_fail(VCPKG_LINE_INFO);
     }
 
@@ -97,13 +97,13 @@ namespace
 
         if (args.get_command().empty())
         {
-            print_command_list_usage();
+            print_zero_args_usage();
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
         static const auto find_command = [&](auto&& commands) {
             auto it = Util::find_if(commands, [&](auto&& commandc) {
-                return Strings::case_insensitive_ascii_equals(commandc.name, args.get_command());
+                return Strings::case_insensitive_ascii_equals(commandc.metadata.name, args.get_command());
             });
             using std::end;
             if (it != end(commands))
@@ -120,7 +120,7 @@ namespace
 
         if (const auto command_function = find_command(basic_commands))
         {
-            get_global_metrics_collector().track_string(StringMetric::CommandName, command_function->name);
+            get_global_metrics_collector().track_string(StringMetric::CommandName, command_function->metadata.name);
             return command_function->function(args, fs);
         }
 
@@ -132,7 +132,7 @@ namespace
 
         if (const auto command_function = find_command(paths_commands))
         {
-            get_global_metrics_collector().track_string(StringMetric::CommandName, command_function->name);
+            get_global_metrics_collector().track_string(StringMetric::CommandName, command_function->metadata.name);
             return command_function->function(args, paths);
         }
 
@@ -140,7 +140,7 @@ namespace
         Triplet host_triplet = vcpkg::default_host_triplet(args, paths.get_triplet_db());
         if (const auto command_function = find_command(triplet_commands))
         {
-            get_global_metrics_collector().track_string(StringMetric::CommandName, command_function->name);
+            get_global_metrics_collector().track_string(StringMetric::CommandName, command_function->metadata.name);
             return command_function->function(args, paths, default_triplet, host_triplet);
         }
 

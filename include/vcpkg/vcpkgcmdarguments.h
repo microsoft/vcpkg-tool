@@ -11,6 +11,8 @@
 #include <vcpkg/base/span.h>
 #include <vcpkg/base/stringview.h>
 
+#include <assert.h>
+
 #include <map>
 #include <memory>
 #include <set>
@@ -29,34 +31,145 @@ namespace vcpkg
         std::vector<std::string> command_arguments;
     };
 
+    struct MetadataMessage
+    {
+        constexpr MetadataMessage() noexcept : kind(MetadataMessageKind::Unused), literal{} { }
+        /*implicit*/ constexpr MetadataMessage(const msg::MessageT<>& message) noexcept
+            : kind(MetadataMessageKind::Message), message(&message)
+        {
+        }
+
+        template<int N>
+        /*implicit*/ constexpr MetadataMessage(const char (&literal)[N]) noexcept
+            : kind(MetadataMessageKind::Literal), literal(literal)
+        {
+        }
+
+        template<class Callback,
+                 std::enable_if_t<std::is_convertible_v<const Callback&, LocalizedString (*)()>, int> = 0>
+        /*implicit*/ constexpr MetadataMessage(const Callback& callback) noexcept
+            : kind(MetadataMessageKind::Callback), callback(callback)
+        {
+        }
+
+        constexpr MetadataMessage(std::nullptr_t) = delete;
+
+        MetadataMessage(const MetadataMessage&) = delete;
+        MetadataMessage& operator=(const MetadataMessage&) = delete;
+
+        LocalizedString to_string() const;
+        void to_string(LocalizedString& target) const;
+        explicit operator bool() const noexcept;
+
+    private:
+        enum class MetadataMessageKind
+        {
+            Unused,
+            Message,
+            Literal,
+            Callback
+        };
+
+        MetadataMessageKind kind;
+        union
+        {
+            const msg::MessageT<>* message;
+            const char* literal; // not StringLiteral so this union is sizeof(void*)
+            LocalizedString (*callback)();
+        };
+    };
+
+    inline constexpr bool constexpr_contains(const char* haystack, const char* needle) noexcept
+    {
+        for (;; ++haystack)
+        {
+            for (std::size_t offset = 0;; ++offset)
+            {
+                if (!needle[offset])
+                {
+                    return true;
+                }
+
+                if (!haystack[offset])
+                {
+                    return false;
+                }
+
+                if (needle[offset] != haystack[offset])
+                {
+                    break;
+                }
+            }
+        }
+    }
+
+    static_assert(constexpr_contains("", ""), "boom");
+    static_assert(constexpr_contains("hay", ""), "boom");
+    static_assert(!constexpr_contains("", "needle"), "boom");
+    static_assert(constexpr_contains("needle", "nee"), "boom");
+
+    struct LearnWebsiteLinkLiteralUndocumentedCookie
+    {
+    };
+
+    constexpr LearnWebsiteLinkLiteralUndocumentedCookie Undocumented;
+
+    struct LearnWebsiteLinkLiteral
+    {
+        /*implicit*/ constexpr LearnWebsiteLinkLiteral(LearnWebsiteLinkLiteralUndocumentedCookie) noexcept : literal{}
+        {
+        }
+
+        template<int N>
+        /*implicit*/ constexpr LearnWebsiteLinkLiteral(const char (&literal)[N]) noexcept : literal(literal)
+        {
+            assert(!constexpr_contains(literal, "en-us") &&
+                   "If you get a build error here, remove the en-us from the learn uri so that the correct locale is "
+                   "chosen for the user");
+        }
+
+        LocalizedString to_string() const;
+        void to_string(LocalizedString& target) const;
+        explicit operator bool() const noexcept;
+
+    private:
+        const char* literal; // not StringLiteral to be nullable
+    };
+
     struct CommandSwitch
     {
         StringLiteral name;
-        LocalizedString (*helpmsg)();
+        MetadataMessage helpmsg;
     };
 
     struct CommandSetting
     {
         StringLiteral name;
-        LocalizedString (*helpmsg)();
+        MetadataMessage helpmsg;
     };
 
     struct CommandMultiSetting
     {
         StringLiteral name;
-        LocalizedString (*helpmsg)();
+        MetadataMessage helpmsg;
     };
 
     struct CommandOptionsStructure
     {
-        Span<const CommandSwitch> switches;
-        Span<const CommandSetting> settings;
-        Span<const CommandMultiSetting> multisettings;
+        View<CommandSwitch> switches;
+        View<CommandSetting> settings;
+        View<CommandMultiSetting> multisettings;
     };
 
     struct CommandMetadata
     {
-        LocalizedString (*get_example_text)();
+        StringLiteral name;
+        MetadataMessage synopsis;
+        static constexpr std::size_t example_max_size = 4;
+        MetadataMessage examples[example_max_size];
+        LearnWebsiteLinkLiteral website_link;
+
+        AutocompletePriority autocomplete_priority;
 
         size_t minimum_arity;
         size_t maximum_arity;
@@ -64,12 +177,11 @@ namespace vcpkg
         CommandOptionsStructure options;
 
         std::vector<std::string> (*valid_arguments)(const VcpkgPaths& paths);
+
+        LocalizedString get_example_text() const;
     };
 
-    void print_command_list_usage();
     void print_usage(const CommandMetadata& command_metadata);
-
-    LocalizedString create_example_string(StringView command_and_arguments);
 
     struct FeatureFlagSettings
     {
@@ -78,6 +190,21 @@ namespace vcpkg
         bool binary_caching;
         bool versions;
         bool dependency_graph;
+    };
+
+    struct PortApplicableSetting
+    {
+        std::string value;
+
+        PortApplicableSetting(StringView setting);
+        PortApplicableSetting(const PortApplicableSetting&);
+        PortApplicableSetting(PortApplicableSetting&&);
+        PortApplicableSetting& operator=(const PortApplicableSetting&);
+        PortApplicableSetting& operator=(PortApplicableSetting&&);
+        bool is_port_affected(StringView port_name) const noexcept;
+
+    private:
+        std::vector<std::string> affected_ports;
     };
 
     struct VcpkgCmdArguments
@@ -160,6 +287,11 @@ namespace vcpkg
         Optional<std::string> github_repository_id;
         constexpr static StringLiteral GITHUB_REPOSITORY_OWNER_ID = "GITHUB_REPOSITORY_OWNER_ID";
         Optional<std::string> github_repository_owner_id;
+
+        constexpr static StringLiteral CMAKE_DEBUGGING_ARG = "cmake-debug";
+        Optional<PortApplicableSetting> cmake_debug;
+        constexpr static StringLiteral CMAKE_CONFIGURE_DEBUGGING_ARG = "cmake-configure-debug";
+        Optional<PortApplicableSetting> cmake_configure_debug;
 
         constexpr static StringLiteral CMAKE_SCRIPT_ARG = "cmake-args";
         std::vector<std::string> cmake_args;

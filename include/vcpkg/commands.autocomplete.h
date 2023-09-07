@@ -5,5 +5,6 @@
 
 namespace vcpkg
 {
+    extern const CommandMetadata CommandAutocompleteMetadata;
     void command_autocomplete_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths);
 }

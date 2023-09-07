@@ -139,7 +139,11 @@ namespace vcpkg
     }};
 
     constexpr CommandMetadata CommandTestFeaturesMetadata = {
-        []() { return create_example_string("test-features llvm"); },
+        "test-features",
+        msgCmdTestFeaturesSynopsis,
+        {"vcpkg test-features gdal"},
+        "https://learn.microsoft.com/vcpkg/commands/test-features",
+        AutocompletePriority::Public,
         0,
         SIZE_MAX,
         {CI_SWITCHES, CI_SETTINGS, {}},

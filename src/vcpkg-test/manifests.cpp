@@ -1229,30 +1229,30 @@ TEST_CASE ("license error messages", "[manifests][license]")
     parse_spdx_license_expression("", messages);
     REQUIRE(messages.error);
     CHECK(messages.error->to_string() == R"(<license string>:1:1: error: SPDX license expression was empty.
-    on expression: 
-                   ^)");
+  on expression: 
+                 ^)");
 
     parse_spdx_license_expression("MIT ()", messages);
     REQUIRE(messages.error);
     CHECK(messages.error->to_string() ==
           R"(<license string>:1:5: error: Expected a compound or the end of the string, found a parenthesis.
-    on expression: MIT ()
-                       ^)");
+  on expression: MIT ()
+                     ^)");
 
     parse_spdx_license_expression("MIT +", messages);
     REQUIRE(messages.error);
     CHECK(
         messages.error->to_string() ==
         R"(<license string>:1:5: error: SPDX license expression contains an extra '+'. These are only allowed directly after a license identifier.
-    on expression: MIT +
-                       ^)");
+  on expression: MIT +
+                     ^)");
 
     parse_spdx_license_expression("MIT AND", messages);
     REQUIRE(messages.error);
     CHECK(messages.error->to_string() ==
           R"(<license string>:1:8: error: Expected a license name, found the end of the string.
-    on expression: MIT AND
-                         ^)");
+  on expression: MIT AND
+                       ^)");
 
     parse_spdx_license_expression("MIT AND unknownlicense", messages);
     CHECK(!messages.error);
@@ -1260,6 +1260,6 @@ TEST_CASE ("license error messages", "[manifests][license]")
     CHECK(
         test_format_parse_warning(messages.warnings[0]) ==
         R"(<license string>:1:9: warning: Unknown license identifier 'unknownlicense'. Known values are listed at https://spdx.org/licenses/
-    on expression: MIT AND unknownlicense
-                           ^)");
+  on expression: MIT AND unknownlicense
+                         ^)");
 }

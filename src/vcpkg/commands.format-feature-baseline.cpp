@@ -52,8 +52,12 @@ namespace
 
 namespace vcpkg
 {
-    constexpr CommandMetadata CommandFormatManifestMetadata = {
-        [] { return create_example_string("format-feature-baseline <path_to_feature_baseline>"); },
+    constexpr CommandMetadata CommandFormatFeatureBaselineMetadata = {
+        "format-feature-baseline",
+        msgCmdFormatFeatureBaselineSynopsis,
+        {msgCmdFormatFeatureBaselineExample},
+        Undocumented,
+        AutocompletePriority::Public,
         1,
         1,
         {{}, {}, {}},
@@ -62,7 +66,7 @@ namespace vcpkg
 
     void command_format_feature_baseline_and_exit(const VcpkgCmdArguments& args, const Filesystem& fs)
     {
-        auto parsed_args = args.parse_arguments(CommandFormatManifestMetadata);
+        auto parsed_args = args.parse_arguments(CommandFormatFeatureBaselineMetadata);
 
         auto lines = fs.read_lines(parsed_args.command_arguments.at(0)).value_or_exit(VCPKG_LINE_INFO);
         for (auto start = lines.begin(); start != lines.end();)
