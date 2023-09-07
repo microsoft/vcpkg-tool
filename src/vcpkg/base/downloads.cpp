@@ -651,12 +651,11 @@ namespace vcpkg
             bytes_read = file_ptr.read(buffer.data(), sizeof(decltype(buffer)::value_type), chunk_size);
             if (!bytes_read) break;
 
-            const std::size_t end = std::min(i + bytes_read, file_size) - 1;
-            const std::string range = fmt::format("{}-{}", i, end);
-
             auto cmd = base_cmd;
-            cmd.string_arg("-H").string_arg(fmt::format("Content-Range: bytes {}/{}", range, file_size));
-            cmd.string_arg("--data-binary").string_arg("@-");
+            cmd.string_arg("-H")
+                .string_arg(fmt::format("Content-Range: bytes {}-{}/{}", i, i + bytes_read - 1, file_size))
+                .string_arg("--data-binary")
+                .string_arg("@-");
 
             auto res = cmd_execute_and_capture_output(cmd,
                                                       default_working_directory,
