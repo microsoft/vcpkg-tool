@@ -637,7 +637,7 @@ namespace vcpkg
     {
         Command base_cmd;
         base_cmd.string_arg("curl").string_arg("-X").string_arg("PATCH").string_arg("-w").string_arg(
-            "\\n" + guid_marker.to_string() + "%{http_code}");
+            "\\n" + guid_marker.to_string() + "%{http_code}\n");
         for (auto&& header : headers)
         {
             base_cmd.string_arg("-H").string_arg(header);
