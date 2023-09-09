@@ -122,21 +122,39 @@ namespace vcpkg
         explicit LocalizedString(StringView data);
         explicit LocalizedString(std::string&& data) noexcept;
     };
+
+    LocalizedString format_environment_variable(StringView variable_name);
 }
 
 VCPKG_FORMAT_AS(vcpkg::LocalizedString, vcpkg::StringView);
 
 namespace vcpkg::msg
 {
+    namespace detail
+    {
+        template<class... FmtArgs>
+        LocalizedString format_impl(std::size_t index, FmtArgs&&... args)
+        {
+            // no forward to intentionally make an lvalue here
+            return detail::format_message_by_index(index, fmt::make_format_args(args...));
+        }
+        template<class... FmtArgs>
+        void format_to_impl(LocalizedString& s, std::size_t index, FmtArgs&&... args)
+        {
+            // no forward to intentionally make an lvalue here
+            return detail::format_message_by_index_to(s, index, fmt::make_format_args(args...));
+        }
+    }
+
     template<class... Tags, class... Types>
     LocalizedString format(MessageT<Tags...> m, TagArg<identity_t<Tags>, Types>... args)
     {
-        return detail::format_message_by_index(m.index, fmt::make_format_args(args.arg()...));
+        return detail::format_impl(m.index, args.arg()...);
     }
     template<class... Tags, class... Types>
     void format_to(LocalizedString& s, MessageT<Tags...> m, TagArg<identity_t<Tags>, Types>... args)
     {
-        return detail::format_message_by_index_to(s, m.index, fmt::make_format_args(args.arg()...));
+        return detail::format_to_impl(s, m.index, args.arg()...);
     }
 
     inline void println() { msg::write_unlocalized_text_to_stdout(Color::none, "\n"); }

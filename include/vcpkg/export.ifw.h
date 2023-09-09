@@ -7,7 +7,7 @@
 #include <string>
 #include <vector>
 
-namespace vcpkg::Export::IFW
+namespace vcpkg::IFW
 {
     struct Options
     {

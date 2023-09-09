@@ -1,8 +1,8 @@
 #include <catch2/catch.hpp>
 
-#include <vcpkg/commands.dependinfo.h>
+#include <vcpkg/commands.depend-info.h>
 
-using namespace vcpkg::Commands::DependInfo;
+using namespace vcpkg;
 
 namespace
 {
@@ -52,16 +52,16 @@ TEST_CASE ("depend-info DGML graph output", "[depend-info]")
     SECTION ("single node")
     {
         CHECK(create_dgml_as_string(single_node_dependencies()) ==
-              fmt::format(DGML_TEMPLATE, "<Node Id=\"a\" />", "<Link Source=\"a\" Target=\"a\" />"));
+              fmt::format(DGML_TEMPLATE, "<Node Id=\"a\"/>", "<Link Source=\"a\" Target=\"a\"/>"));
     }
 
     SECTION ("4 nodes")
     {
         CHECK(create_dgml_as_string(four_nodes_dependencies()) ==
               fmt::format(DGML_TEMPLATE,
-                          "<Node Id=\"a\" /><Node Id=\"b\" /><Node Id=\"c\" /><Node Id=\"d\" />",
-                          "<Link Source=\"a\" Target=\"b\" /><Link Source=\"a\" Target=\"c\" /><Link Source=\"a\" "
-                          "Target=\"d\" /><Link Source=\"b\" Target=\"c\" /><Link Source=\"c\" Target=\"d\" />"));
+                          "<Node Id=\"a\"/><Node Id=\"b\"/><Node Id=\"c\"/><Node Id=\"d\"/>",
+                          "<Link Source=\"a\" Target=\"b\"/><Link Source=\"a\" Target=\"c\"/><Link Source=\"a\" "
+                          "Target=\"d\"/><Link Source=\"b\" Target=\"c\"/><Link Source=\"c\" Target=\"d\"/>"));
     }
 }
 

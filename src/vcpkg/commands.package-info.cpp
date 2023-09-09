@@ -12,33 +12,38 @@
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/versions.h>
 
-namespace vcpkg::Commands::PackageInfo
+using namespace vcpkg;
+
+namespace
 {
-    static constexpr StringLiteral OPTION_JSON = "x-json";
-    static constexpr StringLiteral OPTION_TRANSITIVE = "x-transitive";
-    static constexpr StringLiteral OPTION_INSTALLED = "x-installed";
+    constexpr StringLiteral OPTION_JSON = "x-json";
+    constexpr StringLiteral OPTION_TRANSITIVE = "x-transitive";
+    constexpr StringLiteral OPTION_INSTALLED = "x-installed";
 
-    static constexpr CommandSwitch INFO_SWITCHES[] = {
-        {OPTION_JSON, []() { return msg::format(msgJsonSwitch); }},
-        {OPTION_INSTALLED, []() { return msg::format(msgCmdInfoOptInstalled); }},
-        {OPTION_TRANSITIVE, []() { return msg::format(msgCmdInfoOptTransitive); }},
+    constexpr CommandSwitch INFO_SWITCHES[] = {
+        {OPTION_JSON, msgJsonSwitch},
+        {OPTION_INSTALLED, msgCmdInfoOptInstalled},
+        {OPTION_TRANSITIVE, msgCmdInfoOptTransitive},
     };
+} // unnamed namespace
 
-    const CommandStructure COMMAND_STRUCTURE = {
-        [] {
-            return msg::format(msgPackageInfoHelp)
-                .append_raw('\n')
-                .append(create_example_string("x-package-info zlib openssl:x64-windows"));
-        },
+namespace vcpkg
+{
+    constexpr CommandMetadata CommandPackageInfoMetadata{
+        "x-package-info",
+        msgPackageInfoHelp,
+        {msgCmdPackageInfoExample1, "vcpkg x-package-info zlib openssl:x64-windows"},
+        Undocumented,
+        AutocompletePriority::Public,
         1,
         SIZE_MAX,
-        {INFO_SWITCHES, {}},
+        {INFO_SWITCHES},
         nullptr,
     };
 
-    void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
+    void command_package_info_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
-        const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
+        const ParsedArguments options = args.parse_arguments(CommandPackageInfoMetadata);
         if (!Util::Vectors::contains(options.switches, OPTION_JSON))
         {
             Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, msgMissingOption, msg::option = OPTION_JSON);
@@ -151,4 +156,4 @@ namespace vcpkg::Commands::PackageInfo
             msg::write_unlocalized_text_to_stdout(Color::none, Json::stringify(response));
         }
     }
-}
+} // namespace vcpkg

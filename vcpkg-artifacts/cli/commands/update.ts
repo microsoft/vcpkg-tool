@@ -35,21 +35,9 @@ async function updateRegistry(registry: Registry, displayName: string) : Promise
 
 export class UpdateCommand extends Command {
   readonly command = 'update';
-  readonly aliases = [];
-  seeAlso = [];
-  argumentsHelp = [];
+
   project: Project = new Project(this);
   all = new All(this);
-
-  get summary() {
-    return i`update the registry from the remote`;
-  }
-
-  get description() {
-    return [
-      i`This downloads the latest contents of the registry from the remote service.`,
-    ];
-  }
 
   override async run() {
     const resolver = session.globalRegistryResolver.with(

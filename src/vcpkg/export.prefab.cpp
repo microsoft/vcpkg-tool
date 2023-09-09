@@ -17,7 +17,7 @@
 #include <vcpkg/tools.h>
 #include <vcpkg/vcpkgpaths.h>
 
-namespace vcpkg::Export::Prefab
+namespace vcpkg::Prefab
 {
     static std::vector<Path> find_modules(const VcpkgPaths& system, const Path& root, const std::string& ext)
     {
@@ -321,7 +321,7 @@ namespace vcpkg::Export::Prefab
         Checks::msg_check_maybe_upgrade(VCPKG_LINE_INFO,
                                         fs.exists(ndk_location, IgnoreErrors{}),
                                         msgAndroidHomeDirMissingProps,
-                                        msg::env_var = "ANDROID_NDK_HOME",
+                                        msg::env_var = format_environment_variable("ANDROID_NDK_HOME"),
                                         msg::path = source_properties_location);
 
         std::string content = fs.read_contents(source_properties_location, VCPKG_LINE_INFO);

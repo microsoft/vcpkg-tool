@@ -29,9 +29,12 @@ such as https://github.com/microsoft/vcpkg/pull/23757
     * Bash:
         `. <(curl https://github.com/microsoft/vcpkg-tool/releases/download/2023-03-29/vcpkg-init -L)`
   (and test that `vcpkg use cmake` works from each of these)
-1. In the vcpkg repo, draft a PR which updates `bootstrap-vcpkg.sh` and `boostrap-vcpkg.ps1`
-  with the new release date, and update SHAs as appropriate in the .sh script. (For example, see
-  https://github.com/microsoft/vcpkg/pull/23757)
+1. In the vcpkg repo, run `\scripts\update-vcpkg-tool-metadata.ps1 -Date 2023-03-29`
+  with the new release date, which updates SHAs as appropriate. It will also emit a code block for
+  the next vscode-embedded-tools repo step.
+1. In the DevDiv vscode-embedded-tools repo, follow the
+  [update instructions](https://devdiv.visualstudio.com/DefaultCollection/DevDiv/_git/vscode-embedded-tools?path=/docs/updating-vcpkg.md&_a=preview)
+  to make a VS Code update PR.
 1. If changes in this release that might affect ports, submit a new full tree rebuild by
   microsoft.vcpkg.ci (https://dev.azure.com/vcpkg/public/_build?definitionId=29 as of this writing)
   targeting `refs/pull/NUMBER/head`
@@ -40,9 +43,6 @@ such as https://github.com/microsoft/vcpkg/pull/23757
 1. In the DevDiv VS repo, update `default.config`, run the VcpkgInsertionUtility, and submit a PR
   with those changes.
 1. Smoke test the copy of vcpkg inserted into VS. See smoke test steps below.
-1. In the DevDiv vscode-embedded-tools repo, follow the
-  [update instructions](https://devdiv.visualstudio.com/DefaultCollection/DevDiv/_git/vscode-embedded-tools?path=/docs/updating-vcpkg.md&_a=preview)
-  to make a VS Code update PR.
 1. (After all tests have passed, at the same time) Merge all 3 PRs, and change the github release
   in vcpkg-tool from "prerelease" to "release". (This automatically updates the aka.ms links)
 
@@ -58,8 +58,8 @@ flowchart TD
     vs_corext_feed[(devdiv/VS-CoreXtFeeds NuGet Feed)]
     subgraph vcpkg_update_pr [vcpkg Update PR]
         direction LR
-        bootstrap_ps1[bootstrap.ps1]
-        bootstrap_sh[bootstrap.sh]
+        update_vcpkg_tool_metadata_ps1[update-vcpkg-tool-metadata.ps1]
+        vcpkg_tool_metadata_txt[vcpkg-tool-metadata.txt]
         vcpkg_repo_target[(GitHub vcpkg Repo)]
     end
     create_vcpkg_pr{Create GitHub vcpkg PR}
@@ -94,10 +94,9 @@ flowchart TD
     vcpkg_signed_binaries --> symweb
     
     %% vcpkg Update
-    release_version --> bootstrap_ps1
-    release_version --> bootstrap_sh
-    bootstrap_ps1 --> vcpkg_repo_target
-    bootstrap_sh --> vcpkg_repo_target
+    release_version --> update_vcpkg_tool_metadata_ps1
+    update_vcpkg_tool_metadata_ps1 --> vcpkg_tool_metadata_txt
+    vcpkg_tool_metadata_txt --> vcpkg_repo_target
     vcpkg_update_pr ----> create_vcpkg_pr
     create_vcpkg_pr --> run_full_tree_rebuild
     
@@ -111,7 +110,7 @@ flowchart TD
     vs_update_pr --> create_vs_pr
     
     %% VS Code Update
-    release_version --> package_json
+    update_vcpkg_tool_metadata_ps1 --> package_json
     release_version --> changelog_md
     package_json --> vs_embedded_tools_repo
     changelog_md --> vs_embedded_tools_repo

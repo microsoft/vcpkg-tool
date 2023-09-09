@@ -84,6 +84,14 @@ namespace vcpkg
         {
             return CPUArchitecture::RISCV64;
         }
+        if (Strings::starts_with(this->canonical_name(), "loongarch32-"))
+        {
+            return CPUArchitecture::LOONGARCH32;
+        }
+        if (Strings::starts_with(this->canonical_name(), "loongarch64-"))
+        {
+            return CPUArchitecture::LOONGARCH64;
+        }
 
         return nullopt;
     }
@@ -96,13 +104,13 @@ namespace vcpkg
 
     Triplet default_triplet(const VcpkgCmdArguments& args, const TripletDatabase& database)
     {
-#if defined(_WIN32)
-        auto triplet_name = args.triplet.value_or("x86-windows");
-#else
-        auto triplet_name = args.triplet.value_or(system_triplet_canonical_name());
-#endif
-        check_triplet(triplet_name, database);
-        return Triplet::from_canonical_name(triplet_name);
+        if (auto triplet_name = args.triplet.get())
+        {
+            check_triplet(*triplet_name, database);
+            return Triplet::from_canonical_name(*triplet_name);
+        }
+
+        return default_host_triplet(args, database);
     }
 
     Triplet default_host_triplet(const VcpkgCmdArguments& args, const TripletDatabase& database)
@@ -116,11 +124,12 @@ namespace vcpkg
     {
         (void)args;
         (void)database;
-        // The triplet is not set by --triplet or VCPKG_DEFAULT_TRIPLET
 #if defined(_WIN32)
         if (!args.triplet.has_value())
         {
-            msg::println_warning(msgDefaultTriplet, msg::triplet = default_host_triplet(args, database));
+            // Remove this warning in March 2024
+            // The triplet is not set by --triplet or VCPKG_DEFAULT_TRIPLET
+            msg::println_warning(msgDefaultTripletChanged, msg::triplet = default_host_triplet(args, database));
         }
 #endif // ^^^ _WIN32
     }

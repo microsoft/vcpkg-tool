@@ -5,32 +5,38 @@
 #include <vcpkg/configure-environment.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 
+using namespace vcpkg;
+
 namespace
 {
-    using namespace vcpkg;
-
     constexpr StringLiteral OPTION_ALL = "all";
-    constexpr std::array<CommandSwitch, 1> UpdateRegistrySwitches{{
-        {OPTION_ALL, []() { return msg::format(msgCmdUpdateRegistryAll); }},
-    }};
-
-    constexpr CommandStructure UpdateRegistryCommandMetadata{
-        []() {
-            return create_example_string("x-update-registry https://example.com")
-                .append_raw("\n")
-                .append(create_example_string("x-update-registry microsoft"));
-        },
-        0,
-        SIZE_MAX,
-        {UpdateRegistrySwitches, {}, {}},
-        nullptr};
+    constexpr CommandSwitch UpdateRegistrySwitches[] = {
+        {OPTION_ALL, msgCmdUpdateRegistryAll},
+    };
 } // unnamed namespace
 
-namespace vcpkg::Commands
+namespace vcpkg
 {
+    constexpr CommandMetadata CommandUpdateRegistryMetadata{
+        "x-update-registry",
+        msgCmdUpdateRegistrySynopsis,
+        {
+            "vcpkg x-update-registry <uri>",
+            "vcpkg x-update-registry https://example.com",
+            msgCmdUpdateRegistryExample3,
+            "vcpkg x-update-registry microsoft",
+        },
+        Undocumented,
+        AutocompletePriority::Public,
+        0,
+        SIZE_MAX,
+        {UpdateRegistrySwitches},
+        nullptr,
+    };
+
     void command_update_registry_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
-        auto parsed = args.parse_arguments(UpdateRegistryCommandMetadata);
+        auto parsed = args.parse_arguments(CommandUpdateRegistryMetadata);
         const bool all = Util::Sets::contains(parsed.switches, OPTION_ALL);
         auto&& command_arguments = parsed.command_arguments;
         if (all)
@@ -59,4 +65,4 @@ namespace vcpkg::Commands
 
         Checks::exit_with_code(VCPKG_LINE_INFO, run_configure_environment_command(paths, command_arguments));
     }
-} // vcpkg::Commands
+} // namespace vcpkg

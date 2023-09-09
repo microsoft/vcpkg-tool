@@ -14,21 +14,9 @@ import { Version } from '../switches/version';
 
 export class FindCommand extends Command {
   readonly command = 'find';
-  readonly aliases = ['search'];
-  seeAlso = [];
-  argumentsHelp = [];
+
   version = new Version(this);
   project = new Project(this);
-
-  get summary() {
-    return i`Find artifacts in the registry`;
-  }
-
-  get description() {
-    return [
-      i`This allows the user to find artifacts based on some criteria.`,
-    ];
-  }
 
   override async run() {
     // load registries (from the current project too if available)

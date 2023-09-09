@@ -10,7 +10,6 @@ export interface ChannelEvents {
   error(text: string, msec: number): void;
   message(text: string, msec: number): void;
   debug(text: string, msec: number): void;
-  verbose(text: string, msec: number): void;
 }
 
 /**

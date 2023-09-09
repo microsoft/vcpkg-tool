@@ -17,10 +17,6 @@ DECLARE_MESSAGE(AddFirstArgument,
                 (msg::command_line),
                 "",
                 "The first argument to '{command_line}' must be 'artifact' or 'port'.")
-DECLARE_MESSAGE(AddHelp,
-                (),
-                "",
-                "Adds the indicated port or artifact to the manifest associated with the current directory.")
 DECLARE_MESSAGE(AddingCompletionEntry, (msg::path), "", "Adding vcpkg completion entry to {path}.")
 DECLARE_MESSAGE(AdditionalPackagesToExport,
                 (),
@@ -42,6 +38,10 @@ DECLARE_MESSAGE(AddTripletExpressionNotAllowed,
                 "",
                 "triplet expressions are not allowed here. You may want to change "
                 "`{package_name}:{triplet}` to `{package_name}` instead.")
+DECLARE_MESSAGE(AddVersionArtifactsOnly,
+                (),
+                "'--version', and 'vcpkg add port' are command lines that must not be localized",
+                "--version is artifacts only and can't be used with vcpkg add port")
 DECLARE_MESSAGE(AddVersionAddedVersionToFile, (msg::version, msg::path), "", "added version {version} to {path}")
 DECLARE_MESSAGE(AddVersionCommitChangesReminder, (), "", "Did you remember to commit your changes?")
 DECLARE_MESSAGE(AddVersionCommitResultReminder, (), "", "Don't forget to commit the result!")
@@ -78,7 +78,7 @@ DECLARE_MESSAGE(AddVersionPortHasImproperFormat, (msg::package_name), "", "{pack
 DECLARE_MESSAGE(AddVersionSuggestNewVersionScheme,
                 (msg::new_scheme, msg::old_scheme, msg::package_name, msg::option),
                 "The -- before {option} must be preserved as they're part of the help message for the user.",
-                "Use the version scheme \"{new_scheme}\" instead of \"{old_scheme}\" in port "
+                "Use the version scheme \"{new_scheme}\" rather than \"{old_scheme}\" in port "
                 "\"{package_name}\".\nUse --{option} to disable this check.")
 DECLARE_MESSAGE(AddVersionUnableToParseVersionsFile, (msg::path), "", "unable to parse versions file {path}")
 DECLARE_MESSAGE(AddVersionUncommittedChanges,
@@ -177,11 +177,52 @@ DECLARE_MESSAGE(ArtifactsNotInstalledReadonlyRoot,
                 "readonly. Reinstalling vcpkg using the 'one liner' may fix this problem.")
 DECLARE_MESSAGE(ArtifactsNotOfficialWarning, (), "", "Using vcpkg-artifacts with an unofficial ")
 DECLARE_MESSAGE(ArtifactsOptionIncompatibility, (msg::option), "", "--{option} has no effect on find artifact.")
+DECLARE_MESSAGE(ArtifactsOptionJson,
+                (),
+                "",
+                "Full path to JSON file where environment variables and other properties are recorded")
+DECLARE_MESSAGE(ArtifactsOptionMSBuildProps,
+                (),
+                "",
+                "Full path to the file in which MSBuild properties will be written")
+DECLARE_MESSAGE(ArtifactsOptionVersion, (), "", "A version or version range to match; only valid for artifacts")
+DECLARE_MESSAGE(ArtifactsOptionVersionMismatch,
+                (),
+                "--version is a command line switch and must not be localized",
+                "The number of --version switches must match the number of named artifacts")
+DECLARE_MESSAGE(ArtifactsSwitchAll, (), "", "Updates all known artifact registries")
+DECLARE_MESSAGE(ArtifactsSwitchAllLanguages, (), "", "Acquires all language files when acquiring artifacts")
+DECLARE_MESSAGE(ArtifactsSwitchARM, (), "", "Forces host detection to ARM when acquiring artifacts")
+DECLARE_MESSAGE(ArtifactsSwitchARM64, (), "", "Forces host detection to ARM64 when acquiring artifacts")
+DECLARE_MESSAGE(ArtifactsSwitchForce, (), "", "Forces reacquire if an artifact is already acquired")
+DECLARE_MESSAGE(ArtifactsSwitchFreebsd, (), "", "Forces host detection to FreeBSD when acquiring artifacts")
+DECLARE_MESSAGE(ArtifactsSwitchLinux, (), "", "Forces host detection to Linux when acquiring artifacts")
+DECLARE_MESSAGE(ArtifactsSwitchNormalize, (), "", "Applies any deprecation fixups")
+DECLARE_MESSAGE(ArtifactsSwitchTargetARM, (), "", "Sets target detection to ARM when acquiring artifacts")
+DECLARE_MESSAGE(ArtifactsSwitchTargetARM64, (), "", "Sets target detection to ARM64 when acquiring artifacts")
+DECLARE_MESSAGE(ArtifactsSwitchTargetX64, (), "", "Sets target detection to x64 when acquiring artifacts")
+DECLARE_MESSAGE(ArtifactsSwitchTargetX86, (), "", "Sets target to x86 when acquiring artifacts")
+DECLARE_MESSAGE(ArtifactsSwitchOnlyOneOperatingSystem,
+                (),
+                "The words after -- are command line switches and must not be localized.",
+                "Only one operating system (--windows, --osx, --linux, --freebsd) may be set.")
+DECLARE_MESSAGE(ArtifactsSwitchOnlyOneHostPlatform,
+                (),
+                "The words after -- are command line switches and must not be localized.",
+                "Only one host platform (--x64, --x86, --arm, --arm64) may be set.")
+DECLARE_MESSAGE(ArtifactsSwitchOnlyOneTargetPlatform,
+                (),
+                "The words after -- are command line switches and must not be localized.",
+                "Only one target platform (--target:x64, --target:x86, --target:arm, --target:arm64) may be set.")
+DECLARE_MESSAGE(ArtifactsSwitchOsx, (), "", "Forces host detection to MacOS when acquiring artifacts")
+DECLARE_MESSAGE(ArtifactsSwitchX64, (), "", "Forces host detection to x64 when acquiring artifacts")
+DECLARE_MESSAGE(ArtifactsSwitchX86, (), "", "Forces host detection to x86 when acquiring artifacts")
+DECLARE_MESSAGE(ArtifactsSwitchWindows, (), "", "Forces host detection to Windows when acquiring artifacts")
 DECLARE_MESSAGE(AssetCacheProviderAcceptsNoArguments,
                 (msg::value),
                 "{value} is a asset caching provider name such as azurl, clear, or x-block-origin",
                 "unexpected arguments: '{value}' does not accept arguments")
-DECLARE_MESSAGE(AssetSourcesArg, (), "", "Add sources for asset caching. See 'vcpkg help assetcaching'.")
+DECLARE_MESSAGE(AssetSourcesArg, (), "", "Asset caching sources. See 'vcpkg help assetcaching'")
 DECLARE_MESSAGE(ASemanticVersionString, (), "", "a semantic version string")
 DECLARE_MESSAGE(ASetOfFeatures, (), "", "a set of features")
 DECLARE_MESSAGE(AStringOrArrayOfStrings, (), "", "a string or array of strings")
@@ -216,7 +257,6 @@ DECLARE_MESSAGE(AutoSettingEnvVar,
                 "'--' at the beginning must be preserved",
                 "-- Automatically setting {env_var} environment variables to \"{url}\".")
 DECLARE_MESSAGE(AUrl, (), "", "a url")
-DECLARE_MESSAGE(AvailableArchitectureTriplets, (), "", "Available architecture triplets:")
 DECLARE_MESSAGE(AvailableHelpTopics, (), "", "Available help topics:")
 DECLARE_MESSAGE(AVcpkgRepositoryCommit, (), "", "a vcpkg repository commit")
 DECLARE_MESSAGE(AVersionDatabaseEntry, (), "", "a version database entry")
@@ -263,7 +303,10 @@ DECLARE_MESSAGE(BaselineMissingDefault,
                 "The baseline.json from commit `\"{commit_sha}\"` in the repo {url} was invalid (did not "
                 "contain a \"default\" field).")
 DECLARE_MESSAGE(BinaryCacheVendorHTTP, (), "", "HTTP servers")
-DECLARE_MESSAGE(BinarySourcesArg, (), "", "Add sources for binary caching. See 'vcpkg help binarycaching'.")
+DECLARE_MESSAGE(BinarySourcesArg,
+                (),
+                "'vcpkg help binarycaching' is a command line and should not be localized",
+                "Binary caching sources. See 'vcpkg help binarycaching'")
 DECLARE_MESSAGE(BinaryWithInvalidArchitecture,
                 (msg::path, msg::expected, msg::actual),
                 "{expected} and {actual} are architectures",
@@ -342,7 +385,7 @@ DECLARE_MESSAGE(BuildResultSummaryLine,
                 (msg::build_result, msg::count),
                 "Displayed to show a count of results of a build_result in a summary.",
                 "{build_result}: {count}")
-DECLARE_MESSAGE(BuildTreesRootDir, (), "", "(Experimental) Specify the buildtrees root directory.")
+DECLARE_MESSAGE(BuildTreesRootDir, (), "", "Buildtrees directory (experimental)")
 DECLARE_MESSAGE(BuildTroubleshootingMessage1,
                 (),
                 "First part of build troubleshooting message, printed before the URI to look for existing bugs.",
@@ -370,12 +413,8 @@ DECLARE_MESSAGE(BuildTroubleshootingMessage4,
                 "Fourth optional part of build troubleshooting message, printed after the version"
                 "information about vcpkg itself.",
                 "Please use the prefilled template from {path} when reporting your issue.")
-DECLARE_MESSAGE(BuiltInTriplets, (), "", "vcpkg built-in triplets:")
+DECLARE_MESSAGE(BuiltInTriplets, (), "", "Built-in Triplets:")
 DECLARE_MESSAGE(BuiltWithIncorrectArchitecture, (), "", "The following files were built for an incorrect architecture:")
-DECLARE_MESSAGE(CacheHelp,
-                (),
-                "",
-                "The argument should be a substring to search for or no argument to display all cached libraries.")
 DECLARE_MESSAGE(CheckedOutGitSha, (msg::commit_sha), "", "Checked out Git SHA: {commit_sha}")
 DECLARE_MESSAGE(CheckedOutObjectMissingManifest,
                 (),
@@ -404,6 +443,14 @@ DECLARE_MESSAGE(CiBaselineRegressionHeader,
                 (),
                 "Printed before a series of CiBaselineRegression and/or CiBaselineUnexpectedPass messages.",
                 "REGRESSIONS:")
+DECLARE_MESSAGE(CiBaselineUnexpectedFail,
+                (msg::spec, msg::triplet),
+                "",
+                "REGRESSION: {spec} is marked as fail but not supported for {triplet}.")
+DECLARE_MESSAGE(CiBaselineUnexpectedFailCascade,
+                (msg::spec, msg::triplet),
+                "",
+                "REGRESSION: {spec} is marked as fail but one dependency is not supported for {triplet}.")
 DECLARE_MESSAGE(CiBaselineUnexpectedPass,
                 (msg::spec, msg::path),
                 "",
@@ -425,27 +472,21 @@ DECLARE_MESSAGE(CISettingsOptSkippedCascadeCount,
                 (),
                 "",
                 "Asserts that the number of --exclude and supports skips exactly equal this number")
-DECLARE_MESSAGE(CISettingsOptXUnit, (), "", "File to output results in XUnit format (internal)")
+DECLARE_MESSAGE(CISettingsOptXUnit, (), "", "File to output results in XUnit format")
 DECLARE_MESSAGE(CISettingsVerifyGitTree,
                 (),
                 "",
-                "Verify that each git tree object matches its declared version (this is very slow)")
-DECLARE_MESSAGE(CISettingsVerifyVersion, (), "", "Print result for each port instead of just errors.")
-DECLARE_MESSAGE(CISkipInstallation,
-                (msg::list),
-                "{list} is a list of packages",
-                "The following packages are already installed and not build again: {list}")
-DECLARE_MESSAGE(CISwitchOptAllowUnexpectedPassing,
-                (),
-                "",
-                "Indicates that 'Passing, remove from fail list' results should not be emitted.")
-DECLARE_MESSAGE(CISwitchOptDryRun, (), "", "Print out plan without execution")
-DECLARE_MESSAGE(CISwitchOptRandomize, (), "", "Randomize the install order")
+                "Verifies that each git tree object matches its declared version (this is very slow)")
+DECLARE_MESSAGE(CISettingsVerifyVersion, (), "", "Prints result for each port rather than only just errors")
+DECLARE_MESSAGE(CISkipInstallation, (), "", "The following packages are already installed and won't be built again:")
+DECLARE_MESSAGE(CISwitchOptAllowUnexpectedPassing, (), "", "Suppresses 'Passing, remove from fail list' results")
+DECLARE_MESSAGE(CISwitchOptDryRun, (), "", "Prints out plan without execution")
+DECLARE_MESSAGE(CISwitchOptRandomize, (), "", "Randomizes the install order")
 DECLARE_MESSAGE(CISwitchOptSkipFailures,
                 (),
-                "",
-                "Indicates that ports marked `=fail` in ci.baseline.txt should be skipped.")
-DECLARE_MESSAGE(CISwitchOptXUnitAll, (), "", "Report also unchanged ports to the XUnit output (internal)")
+                "=fail is an on-disk format and should not be localized",
+                "Skips ports marked `=fail` in ci.baseline.txt")
+DECLARE_MESSAGE(CISwitchOptXUnitAll, (), "", "Reports unchanged ports in the XUnit output")
 DECLARE_MESSAGE(ClearingContents, (msg::path), "", "Clearing contents of {path}")
 DECLARE_MESSAGE(CmakeTargetsExcluded, (msg::count), "", "note: {count} additional targets are not displayed.")
 DECLARE_MESSAGE(CMakeTargetsUsage,
@@ -462,12 +503,78 @@ DECLARE_MESSAGE(CMakeUsingExportedLibs,
                 (msg::value),
                 "{value} is a CMake command line switch of the form -DFOO=BAR",
                 "To use exported libraries in CMake projects, add {value} to your CMake command line.")
-DECLARE_MESSAGE(CmdAddVersionOptAll, (), "", "Process versions for all ports.")
-DECLARE_MESSAGE(CmdAddVersionOptOverwriteVersion, (), "", "Overwrite `git-tree` of an existing version.")
-DECLARE_MESSAGE(CmdAddVersionOptSkipFormatChk, (), "", "Skips the formatting check of vcpkg.json files.")
-DECLARE_MESSAGE(CmdAddVersionOptSkipVersionFormatChk, (), "", "Skips the version format check.")
-DECLARE_MESSAGE(CmdAddVersionOptVerbose, (), "", "Print success messages instead of just errors.")
+DECLARE_MESSAGE(CmdAcquireExample1,
+                (),
+                "This is a command line, only the <>s part should be localized",
+                "vcpkg acquire <artifact>")
+DECLARE_MESSAGE(CmdAcquireProjectSynopsis, (), "", "Acquires all artifacts referenced by a manifest")
+DECLARE_MESSAGE(CmdAcquireSynopsis, (), "", "Acquires the named artifact")
+DECLARE_MESSAGE(CmdActivateSynopsis, (), "", "Activates artifacts from a manifest")
+DECLARE_MESSAGE(CmdAddExample1, (), "", "vcpkg add port <port name>")
+DECLARE_MESSAGE(CmdAddExample2, (), "", "vcpkg add artifact <artifact name>")
+DECLARE_MESSAGE(CmdAddSynopsis, (), "", "Adds dependency to manifest")
+DECLARE_MESSAGE(CmdAddVersionSynopsis, (), "", "Adds a version to the version database")
+DECLARE_MESSAGE(CmdAddVersionExample1,
+                (),
+                "This is a command line, only the <>s part should be localized",
+                "vcpkg x-add-version <port name>")
+DECLARE_MESSAGE(CmdAddVersionOptAll, (), "", "Processes versions for all ports")
+DECLARE_MESSAGE(CmdAddVersionOptOverwriteVersion, (), "", "Overwrites git-tree of an existing version")
+DECLARE_MESSAGE(CmdAddVersionOptSkipFormatChk, (), "", "Skips the formatting check of vcpkg.json files")
+DECLARE_MESSAGE(CmdAddVersionOptSkipVersionFormatChk, (), "", "Skips the version format check")
+DECLARE_MESSAGE(CmdAddVersionOptVerbose, (), "", "Prints success messages rather than only errors")
+DECLARE_MESSAGE(CmdBootstrapStandaloneSynopsis, (), "", "Bootstraps a vcpkg root from only a vcpkg binary")
+DECLARE_MESSAGE(CmdBuildExternalExample1,
+                (),
+                "This is a command line, only the <>s part should be localized",
+                "vcpkg build-external <port name> <source path>")
+DECLARE_MESSAGE(CmdBuildExternalExample2,
+                (),
+                "This is a command line, only the path part should be changed to a path conveying the same idea",
+                "vcpkg build-external zlib2 C:\\path\\to\\dir\\with\\vcpkg.json")
+DECLARE_MESSAGE(CmdBuildExample1,
+                (),
+                "This is a command line, only the <>s part should be localized",
+                "vcpkg build <port spec>")
+DECLARE_MESSAGE(CmdBuildExternalSynopsis, (), "", "Builds port from a path")
+DECLARE_MESSAGE(CmdBuildSynopsis, (), "", "Builds a port")
+DECLARE_MESSAGE(CmdCacheExample1,
+                (),
+                "This is a command line, only the <>s part should be localized",
+                "vcpkg cache <search substring>")
+DECLARE_MESSAGE(CmdCacheSynopsis, (), "", "List specs of packages")
+DECLARE_MESSAGE(CmdCiCleanSynopsis,
+                (),
+                "CI is continuous integration (building everything together)",
+                "Clears all files to prepare for a CI run")
+DECLARE_MESSAGE(CmdCiSynopsis,
+                (),
+                "CI is continuous integration (building everything together)",
+                "Tries building all ports for CI testing")
+DECLARE_MESSAGE(CmdCiVerifyVersionsSynopsis, (), "", "Checks integrity of the version database")
 DECLARE_MESSAGE(CmdContactOptSurvey, (), "", "Launch default browser to the current vcpkg survey")
+DECLARE_MESSAGE(CmdCheckSupportExample1,
+                (),
+                "This is a command line, only the <>s part should be localized",
+                "vcpkg x-check-support <port name>")
+DECLARE_MESSAGE(CmdCheckSupportSynopsis, (), "", "Tests whether a port is supported without building it")
+DECLARE_MESSAGE(CmdCreateExample1,
+                (),
+                "This is a command line, only the <>s part should be localized",
+                "vcpkg create <port name> <uri>")
+DECLARE_MESSAGE(CmdCreateExample2,
+                (),
+                "This is a command line, 'my-fancy-port' and 'sources.zip' should probably be localized",
+                "vcpkg create my-fancy-port https://example.com/sources.zip")
+DECLARE_MESSAGE(CmdCreateExample3,
+                (),
+                "This is a command line, only the <>s part should be localized",
+                "vcpkg create <port name> <uri> <downloaded filename>")
+DECLARE_MESSAGE(CmdDeactivateSynopsis, (), "", "Removes all artifact activations from the current shell")
+DECLARE_MESSAGE(CmdDependInfoExample1,
+                (),
+                "This is a command line, only the <>s part should be localized",
+                "vcpkg depend-info <port name>")
 DECLARE_MESSAGE(CmdDependInfoFormatConflict,
                 (),
                 "",
@@ -475,7 +582,7 @@ DECLARE_MESSAGE(CmdDependInfoFormatConflict,
 DECLARE_MESSAGE(CmdDependInfoFormatHelp,
                 (),
                 "The alternatives in ``s must not be localized.",
-                "Choose output format, one of `list`, `tree`, `mermaid`, `dot`, or `dgml`.")
+                "Chooses output format, one of `list`, `tree`, `mermaid`, `dot`, or `dgml`")
 DECLARE_MESSAGE(
     CmdDependInfoFormatInvalid,
     (msg::value),
@@ -486,43 +593,73 @@ DECLARE_MESSAGE(CmdDependInfoShowDepthFormatMismatch,
                 "",
                 "--show-depth can only be used with `list` and `tree` formats.")
 DECLARE_MESSAGE(CmdDependInfoXtreeTree, (), "", "--sort=x-tree cannot be used with formats other than tree")
-DECLARE_MESSAGE(CmdDependInfoOptDepth, (), "", "Show recursion depth in `list` output.")
-DECLARE_MESSAGE(CmdDependInfoOptMaxRecurse, (), "", "Set max recursion depth. Default is no limit.")
-DECLARE_MESSAGE(CmdDependInfoOptSort,
+DECLARE_MESSAGE(CmdDependInfoOptDepth, (), "", "Shows recursion depth in `list` output")
+DECLARE_MESSAGE(CmdDependInfoOptMaxRecurse, (), "", "Sets max recursion depth. Default is no limit")
+DECLARE_MESSAGE(
+    CmdDependInfoOptSort,
+    (),
+    "The alternatives in ``s must not be localized, but the localized text can explain what each value "
+    "means. The value `reverse` means 'reverse-topological'.",
+    "Chooses sort order for the `list` format, one of `lexicographical`, `topological` (default), `reverse`")
+DECLARE_MESSAGE(CmdDownloadExample1,
                 (),
-                "The alternatives in ``s must not be localized, but the localized text can explain what each value "
-                "means. The value `reverse` means 'reverse-topological'.",
-                "Choose sort order for the `list` format, one of `lexicographical`, `topological` (default), `reverse`")
-DECLARE_MESSAGE(CmdEditOptAll, (), "", "Open editor into the port as well as the port-specific buildtree subfolder")
-DECLARE_MESSAGE(CmdEditOptBuildTrees, (), "", "Open editor into the port-specific buildtree subfolder")
-DECLARE_MESSAGE(CmdEnvOptions, (msg::path, msg::env_var), "", "Add installed {path} to {env_var}")
-DECLARE_MESSAGE(CmdExportOpt7Zip, (), "", "Export to a 7zip (.7z) file")
-DECLARE_MESSAGE(CmdExportOptChocolatey, (), "", "Export a Chocolatey package (experimental feature)")
-DECLARE_MESSAGE(CmdExportOptDebug, (), "", "Enable prefab debug")
-DECLARE_MESSAGE(CmdExportOptDryRun, (), "", "Do not actually export.")
-DECLARE_MESSAGE(CmdExportOptIFW, (), "", "Export to an IFW-based installer")
-DECLARE_MESSAGE(CmdExportOptInstalled, (), "", "Export all installed packages")
-DECLARE_MESSAGE(CmdExportOptMaven, (), "", "Enable Maven")
-DECLARE_MESSAGE(CmdExportOptNuget, (), "", "Export a NuGet package")
-DECLARE_MESSAGE(CmdExportOptPrefab, (), "", "Export to Prefab format")
-DECLARE_MESSAGE(CmdExportOptRaw, (), "", "Export to an uncompressed directory")
-DECLARE_MESSAGE(CmdExportOptZip, (), "", "Export to a zip file")
+                "This is a command line, only the <filepath> part should be localized",
+                "vcpkg x-download <filepath> <sha512> --url=https://...")
+DECLARE_MESSAGE(CmdDownloadExample2,
+                (),
+                "This is a command line, only the <filepath> part should be localized",
+                "vcpkg x-download <filepath> --sha512=<sha512> --url=https://...")
+DECLARE_MESSAGE(CmdDownloadExample3,
+                (),
+                "This is a command line, only the <filepath> part should be localized",
+                "vcpkg x-download <filepath> --skip-sha512 --url=https://...")
+DECLARE_MESSAGE(CmdDownloadSynopsis, (), "", "Downloads a file")
+DECLARE_MESSAGE(CmdEditExample1,
+                (),
+                "This is a command line, only the <port name> part should be localized",
+                "vcpkg edit <port name>")
+DECLARE_MESSAGE(CmdEditOptAll, (), "", "Opens editor into the port as well as the port-specific buildtree subfolder")
+DECLARE_MESSAGE(CmdEditOptBuildTrees, (), "", "Opens editor into the port-specific buildtree subfolder")
+DECLARE_MESSAGE(CommandEnvExample2,
+                (),
+                "This is a command line, only the <path> part should be localized",
+                "vcpkg env \"ninja -C <path>\" --triplet x64-windows")
+DECLARE_MESSAGE(CmdEnvOptions, (msg::path, msg::env_var), "", "Adds installed {path} to {env_var}")
+DECLARE_MESSAGE(CmdExportEmptyPlan,
+                (),
+                "",
+                "Refusing to create an export of zero packages. Install packages before exporting.")
+DECLARE_MESSAGE(CmdExportExample1,
+                (),
+                "This is a command line, only <port names> and the out_dir part should be localized",
+                "vcpkg export <port names> [--nuget] [--directory=out_dir]")
+DECLARE_MESSAGE(CmdExportOpt7Zip, (), "", "Exports to a 7zip (.7z) file")
+DECLARE_MESSAGE(CmdExportOptChocolatey, (), "", "Exports a Chocolatey package (experimental)")
+DECLARE_MESSAGE(CmdExportOptDebug, (), "", "Enables prefab debug")
+DECLARE_MESSAGE(CmdExportOptDryRun, (), "", "Does not actually export")
+DECLARE_MESSAGE(CmdExportOptIFW, (), "", "Exports to an IFW-based installer")
+DECLARE_MESSAGE(CmdExportOptInstalled, (), "", "Exports all installed packages")
+DECLARE_MESSAGE(CmdExportOptMaven, (), "", "Enables Maven")
+DECLARE_MESSAGE(CmdExportOptNuget, (), "", "Exports a NuGet package")
+DECLARE_MESSAGE(CmdExportOptPrefab, (), "", "Exports to Prefab format")
+DECLARE_MESSAGE(CmdExportOptRaw, (), "", "Exports to an uncompressed directory")
+DECLARE_MESSAGE(CmdExportOptZip, (), "", "Exports to a zip file")
 DECLARE_MESSAGE(CmdExportSettingChocolateyMaint,
                 (),
                 "",
-                "Specify the maintainer for the exported Chocolatey package (experimental feature)")
+                "The maintainer for the exported Chocolatey package (experimental)")
 DECLARE_MESSAGE(CmdExportSettingChocolateyVersion,
                 (),
                 "",
-                "Specify the version suffix to add for the exported Chocolatey package (experimental feature)")
-DECLARE_MESSAGE(CmdExportSettingConfigFile, (), "", "Specify the temporary file path for the installer configuration")
-DECLARE_MESSAGE(CmdExportSettingInstallerPath, (), "", "Specify the file path for the exported installer")
-DECLARE_MESSAGE(CmdExportSettingNugetDesc, (), "", "Specify a description for the exported NuGet package")
-DECLARE_MESSAGE(CmdExportSettingNugetID, (), "", "Specify the id for the exported NuGet package (overrides --output)")
-DECLARE_MESSAGE(CmdExportSettingNugetVersion, (), "", "Specify the version for the exported NuGet package")
-DECLARE_MESSAGE(CmdExportSettingOutput, (), "", "Specify the output name (used to construct filename)")
-DECLARE_MESSAGE(CmdExportSettingOutputDir, (), "", "Specify the output directory for produced artifacts")
-DECLARE_MESSAGE(CmdExportSettingPkgDir, (), "", "Specify the temporary directory path for the repacked packages")
+                "The version suffix to add for the exported Chocolatey package (experimental)")
+DECLARE_MESSAGE(CmdExportSettingConfigFile, (), "", "The temporary file path for the installer configuration")
+DECLARE_MESSAGE(CmdExportSettingInstallerPath, (), "", "The file path for the exported installer")
+DECLARE_MESSAGE(CmdExportSettingNugetDesc, (), "", "Description for the exported NuGet package")
+DECLARE_MESSAGE(CmdExportSettingNugetID, (), "", "Id for the exported NuGet package (overrides --output)")
+DECLARE_MESSAGE(CmdExportSettingNugetVersion, (), "", "The version for the exported NuGet package")
+DECLARE_MESSAGE(CmdExportSettingOutput, (), "", "The output name (used to construct filename)")
+DECLARE_MESSAGE(CmdExportSettingOutputDir, (), "", "The output directory for produced artifacts")
+DECLARE_MESSAGE(CmdExportSettingPkgDir, (), "", "The temporary directory path for the repacked packages")
 DECLARE_MESSAGE(CmdExportSettingPrefabArtifactID,
                 (),
                 "",
@@ -535,83 +672,205 @@ DECLARE_MESSAGE(CmdExportSettingPrefabVersion,
                 (),
                 "",
                 "Version is the name of the project according Maven specifications")
-DECLARE_MESSAGE(CmdExportSettingRepoDir, (), "", "Specify the directory path for the exported repository")
-DECLARE_MESSAGE(CmdExportSettingRepoURL, (), "", "Specify the remote repository URL for the online installer")
-DECLARE_MESSAGE(CmdExportSettingSDKMinVersion, (), "", "Android minimum supported SDK version")
-DECLARE_MESSAGE(CmdExportSettingSDKTargetVersion, (), "", "Android target sdk version")
+DECLARE_MESSAGE(CmdExportSettingRepoDir, (), "", "The directory path for the exported repository")
+DECLARE_MESSAGE(CmdExportSettingRepoURL, (), "", "The remote repository URL for the online installer")
+DECLARE_MESSAGE(CmdExportSettingSDKMinVersion, (), "", "The Android minimum supported SDK version")
+DECLARE_MESSAGE(CmdExportSettingSDKTargetVersion, (), "", "The Android target sdk version")
+DECLARE_MESSAGE(CmdExportSynopsis, (), "", "Creates a standalone deployment of installed ports")
 DECLARE_MESSAGE(CmdFetchOptXStderrStatus,
                 (),
                 "",
-                "Direct status/downloading messages to stderr rather than stdout. (Errors/failures still go to stdout)")
-DECLARE_MESSAGE(CmdFormatManifestOptAll, (), "", "Format all ports' manifest files.")
-DECLARE_MESSAGE(CmdFormatManifestOptConvertControl, (), "", "Convert CONTROL files to manifest files.")
+                "Prints status/downloading messages to stderr rather than stdout (Errors/failures still go to stdout)")
+DECLARE_MESSAGE(CmdFetchSynopsis, (), "", "Fetches something from the system or the internet")
+DECLARE_MESSAGE(CmdFindExample1,
+                (),
+                "This is a command line, only the <>s part should be localized",
+                "vcpkg find port <port name>")
+DECLARE_MESSAGE(CmdFindExample2,
+                (),
+                "This is a command line, only the <>s part should be localized",
+                "vcpkg find artifact <artifact name>")
+DECLARE_MESSAGE(CmdFindSynopsis, (), "", "Finds a port or artifact that may be installed or activated")
+DECLARE_MESSAGE(CmdFormatManifestExample1,
+                (),
+                "This is a command line, only the <vcpkg.json path>s part should be localized",
+                "vcpkg format-manifest <vcpkg.json path>")
+DECLARE_MESSAGE(CmdFormatManifestOptAll, (), "", "Formats all ports' manifest files")
+DECLARE_MESSAGE(CmdFormatManifestOptConvertControl, (), "", "Converts CONTROL files to manifest files")
 DECLARE_MESSAGE(
     CmdGenerateMessageMapOptNoOutputComments,
     (),
     "",
-    "When generating the message map, exclude comments (useful for generating the English localization file)")
-DECLARE_MESSAGE(CmdInfoOptInstalled, (), "", "(experimental) Report on installed packages instead of available")
-DECLARE_MESSAGE(CmdInfoOptTransitive, (), "", "(experimental) Also report on dependencies of installed packages")
-DECLARE_MESSAGE(CmdNewOptApplication, (), "", "Create an application manifest (don't require name or version).")
-DECLARE_MESSAGE(CmdNewOptSingleFile, (), "", "Embed vcpkg-configuration.json into vcpkg.json.")
-DECLARE_MESSAGE(CmdNewOptVersionDate, (), "", "Interpret --version as an ISO 8601 date. (YYYY-MM-DD)")
+    "Excludes comments when generating the message map (useful for generating the English localization file)")
+DECLARE_MESSAGE(CmdFormatManifestSynopsis, (), "", "Prettyfies vcpkg.json")
+DECLARE_MESSAGE(CmdGenerateMSBuildPropsExample1,
+                (),
+                "This is a command line, only the <path> part should be localized",
+                "vcpkg generate-msbuild-props --msbuild-props <path>")
+DECLARE_MESSAGE(CmdGenerateMSBuildPropsExample2,
+                (),
+                "This is a command line, only the word 'out' should be localized",
+                "vcpkg generate-msbuild-props --msbuild-props out.props")
+DECLARE_MESSAGE(
+    CmdGenerateMSBuildPropsSynopsis,
+    (),
+    "",
+    "Generates msbuild .props files as if activating a manifest's artifact dependencies, without acquiring them")
+DECLARE_MESSAGE(CmdHashExample1,
+                (),
+                "This is a command line, only the <path> part should be localized",
+                "vcpkg hash <path>")
+DECLARE_MESSAGE(CmdHashExample2,
+                (),
+                "This is a command line, only the <path> part should be localized",
+                "vcpkg hash <path> SHA256")
+DECLARE_MESSAGE(CmdHashSynopsis, (), "", "Gets a file's SHA256 or SHA512")
+DECLARE_MESSAGE(CmdHelpCommands, (), "This is a command line, only <command> should be localized.", "help <command>")
+DECLARE_MESSAGE(CmdHelpCommandSynopsis, (), "", "Displays help detail for <command>")
+DECLARE_MESSAGE(CmdHelpCommandsSynopsis, (), "", "Displays full list of commands, including rare ones not listed here")
+DECLARE_MESSAGE(CmdHelpTopic, (), "This is a command line, only <topic> should be localized.", "help <topic>")
+DECLARE_MESSAGE(CmdInfoOptInstalled, (), "", "(experimental) Reports installed packages rather than available")
+DECLARE_MESSAGE(CmdInfoOptTransitive, (), "", "(experimental) Also reports dependencies of installed packages")
+DECLARE_MESSAGE(CmdInitRegistryExample1,
+                (),
+                "This is a command line, only the <path> part should be localized",
+                "vcpkg x-init-registry <path>")
+DECLARE_MESSAGE(CmdInitRegistrySynopsis, (), "", "Creates a blank git registry")
+DECLARE_MESSAGE(CmdInstallExample1,
+                (),
+                "This is a command line, only the <> parts should be localized",
+                "vcpkg install <port name> <port name>...")
+DECLARE_MESSAGE(CmdIntegrateSynopsis, (), "", "Integrates vcpkg with machines, projects, or shells")
+DECLARE_MESSAGE(CmdListExample2,
+                (),
+                "This is a command line, only the <filter> part should be localized",
+                "vcpkg list <filter>")
+DECLARE_MESSAGE(CmdNewExample1,
+                (),
+                "This is a command line, only the word example should be localized",
+                "vcpkg new --name=example --version=1.0")
+DECLARE_MESSAGE(CmdNewOptApplication, (), "", "Creates an application manifest (don't require name or version)")
+DECLARE_MESSAGE(CmdNewOptSingleFile, (), "", "Embeds vcpkg-configuration.json into vcpkg.json")
+DECLARE_MESSAGE(CmdNewOptVersionDate, (), "", "Interprets --version as an ISO 8601 date. (YYYY-MM-DD)")
 DECLARE_MESSAGE(CmdNewOptVersionRelaxed,
                 (),
                 "",
-                "Interpret --version as a relaxed-numeric version. (Nonnegative numbers separated by dots)")
-DECLARE_MESSAGE(CmdNewOptVersionString, (), "", "Interpret --version as a string with no ordering behavior.")
-DECLARE_MESSAGE(CmdNewSettingName, (), "", "Name for the new manifest.")
-DECLARE_MESSAGE(CmdNewSettingVersion, (), "", "Version for the new manifest.")
-DECLARE_MESSAGE(CmdRegenerateOptDryRun, (), "", "does not actually perform the action, shows only what would be done")
-DECLARE_MESSAGE(CmdRegenerateOptForce, (), "", "proceeds with the (potentially dangerous) action without confirmation")
-DECLARE_MESSAGE(CmdRegenerateOptNormalize, (), "", "apply any deprecation fixups")
-DECLARE_MESSAGE(CmdRemoveOptDryRun, (), "", "Print the packages to be removed, but do not remove them")
-DECLARE_MESSAGE(CmdRemoveOptOutdated, (), "", "Select all packages with versions that do not match the portfiles")
-DECLARE_MESSAGE(CmdRemoveOptRecurse, (), "", "Allow removal of packages not explicitly specified on the command line")
+                "Interprets --version as a relaxed-numeric version (Nonnegative numbers separated by dots)")
+DECLARE_MESSAGE(CmdNewOptVersionString, (), "", "Interprets --version as a string with no ordering behavior")
+DECLARE_MESSAGE(CmdNewSettingName, (), "", "Name for the new manifest")
+DECLARE_MESSAGE(CmdNewSettingVersion, (), "", "Version for the new manifest")
+DECLARE_MESSAGE(CmdNewSynposis, (), "", "Creates a new manifest")
+DECLARE_MESSAGE(CmdOwnsExample1,
+                (),
+                "This is a command line, only the part <pattern> should be localized.",
+                "vcpkg owns <pattern>")
+DECLARE_MESSAGE(CmdPackageInfoExample1,
+                (),
+                "This is a command line, only the part <package name> should be localized.",
+                "vcpkg x-package-info <package name>...")
+DECLARE_MESSAGE(CmdPortsdiffExample1,
+                (),
+                "This is a command line, only the <branch name> part should be localized",
+                "vcpkg portsdiff <branch name>")
+DECLARE_MESSAGE(CmdPortsdiffExample2,
+                (),
+                "This is a command line, only the parts in <>s should be localized",
+                "vcpkg portsdiff <from> <to>")
+DECLARE_MESSAGE(CmdPortsdiffSynopsis, (), "", "Diffs changes in port versions between commits")
+DECLARE_MESSAGE(CmdRegenerateOptDryRun, (), "", "Does not actually perform the action, shows only what would be done")
+DECLARE_MESSAGE(CmdRegenerateOptForce, (), "", "Proceeds with the (potentially dangerous) action without confirmation")
+DECLARE_MESSAGE(CmdRegenerateOptNormalize, (), "", "Applies any deprecation fixes")
+DECLARE_MESSAGE(CmdRemoveExample1,
+                (),
+                "This is a command line, only the part <package name> should be localized.",
+                "vcpkg remove <package name>...")
+DECLARE_MESSAGE(CmdRemoveOptDryRun, (), "", "Prints the packages to be removed, but does not remove them")
+DECLARE_MESSAGE(CmdRemoveOptOutdated,
+                (),
+                "",
+                "Removes all packages with versions that do not match the built-in registry")
+DECLARE_MESSAGE(CmdRemoveOptRecurse, (), "", "Allows removal of dependent packages not explicitly specified")
+DECLARE_MESSAGE(CmdSearchExample1,
+                (),
+                "This is a command line, only the part <pattern> should be localized.",
+                "vcpkg search <pattern>")
 DECLARE_MESSAGE(CmdSettingCopiedFilesLog, (), "", "Path to the copied files log to create")
 DECLARE_MESSAGE(CmdSettingInstalledDir, (), "", "Path to the installed tree to use")
 DECLARE_MESSAGE(CmdSettingTargetBin, (), "", "Path to the binary to analyze")
 DECLARE_MESSAGE(CmdSettingTLogFile, (), "", "Path to the tlog file to create")
-DECLARE_MESSAGE(CmdSetInstalledOptDryRun, (), "", "Do not actually build or install")
-DECLARE_MESSAGE(CmdSetInstalledOptNoUsage, (), "", "Don't print CMake usage information after install.")
+DECLARE_MESSAGE(CmdSetInstalledExample1,
+                (),
+                "This is a command line, only the part <package name> should be localized.",
+                "vcpkg x-set-installed <package name> <package name>...")
+DECLARE_MESSAGE(CmdSetInstalledOptDryRun, (), "", "Does not actually build or install")
+DECLARE_MESSAGE(CmdSetInstalledOptNoUsage, (), "", "Does not print CMake usage information after install")
 DECLARE_MESSAGE(CmdSetInstalledOptWritePkgConfig,
                 (),
+                "'vcpkg help binarycaching' is a command line and should not be localized.",
+                "Writes a NuGet packages.config-formatted file for use with external binary caching. "
+                "See `vcpkg help binarycaching` for more information")
+DECLARE_MESSAGE(CmdSetInstalledSynopsis,
+                (),
                 "",
-                "Writes out a NuGet packages.config-formatted file for use with external binary caching.\n"
-                "See `vcpkg help binarycaching` for more information.")
-DECLARE_MESSAGE(CmdUpdateBaselineOptDryRun, (), "", "Print out plan without execution")
+                "Installs, upgrades, or removes packages such that that installed matches exactly those supplied")
+DECLARE_MESSAGE(CmdUpdateBaselineOptDryRun, (), "", "Prints out plan without execution")
 DECLARE_MESSAGE(CmdUpdateBaselineOptInitial,
                 (),
                 "",
-                "add a `builtin-baseline` to a vcpkg.json that doesn't already have it")
-DECLARE_MESSAGE(CmdUpdateRegistryAll, (), "", "Update all known artifact registries")
+                "Adds a `builtin-baseline` to a vcpkg.json that doesn't already have it")
+DECLARE_MESSAGE(CmdUpdateBaselineSynopsis,
+                (),
+                "",
+                "Updates baselines of git registries in a manifest to those registries' HEAD commit")
+DECLARE_MESSAGE(CmdUpdateRegistryAll, (), "", "Updates all known artifact registries")
 DECLARE_MESSAGE(CmdUpdateRegistryAllExcludesTargets,
                 (),
                 "",
                 "Update registry --all cannot be used with a list of artifact registries")
+DECLARE_MESSAGE(CmdUpdateRegistryExample3,
+                (),
+                "This is a command line, only the <artifact registry name> part should be localized.",
+                "vcpkg x-update-registry <artifact registry name>")
+DECLARE_MESSAGE(CmdUpdateRegistrySynopsis, (), "", "Re-downloads an artifact registry")
 DECLARE_MESSAGE(CmdUpdateRegistryAllOrTargets,
                 (),
                 "",
                 "Update registry requires either a list of artifact registry names or URiIs to update, or --all.")
-DECLARE_MESSAGE(CmdUpgradeOptAllowUnsupported,
-                (),
-                "",
-                "Instead of erroring on an unsupported port, continue with a warning.")
 DECLARE_MESSAGE(CmdUpgradeOptNoDryRun, (), "", "Actually upgrade")
 DECLARE_MESSAGE(CmdUpgradeOptNoKeepGoing, (), "", "Stop installing packages on failure")
+DECLARE_MESSAGE(CmdUseExample1,
+                (),
+                "This is a command line, only the <artifact name> part should be localized.",
+                "vcpkg use <artifact name>")
+DECLARE_MESSAGE(CmdUseSynopsis, (), "", "Activate a single artifact in this shell")
+DECLARE_MESSAGE(CmdVSInstancesSynopsis, (), "", "Lists detected Visual Studio instances")
 DECLARE_MESSAGE(CmdXDownloadOptHeader, (), "", "Additional header to use when fetching from URLs")
 DECLARE_MESSAGE(CmdXDownloadOptSha, (), "", "The hash of the file to be downloaded")
-DECLARE_MESSAGE(CmdXDownloadOptSkipSha, (), "", "Do not check the SHA512 of the downloaded file")
-DECLARE_MESSAGE(CmdXDownloadOptStore, (), "", "Indicates the file should be stored instead of fetched")
+DECLARE_MESSAGE(CmdXDownloadOptSkipSha, (), "", "Skips check of SHA512 of the downloaded file")
+DECLARE_MESSAGE(CmdXDownloadOptStore, (), "", "Stores the the file should father than fetching it")
 DECLARE_MESSAGE(CmdXDownloadOptUrl, (), "", "URL to download and store if missing from cache")
+DECLARE_MESSAGE(
+    CmdZApplocalSynopsis,
+    (),
+    "",
+    "Copies a binary's dependencies from the installed tree to where that binary's location for app-local deployment")
+DECLARE_MESSAGE(CmdZExtractExample1,
+                (),
+                "This is a command line, only the parts in <>s should be localized",
+                "vcpkg z-extract <archive path> <output directory>")
+DECLARE_MESSAGE(CmdZExtractExample2,
+                (),
+                "This is a command line, the example archive 'source.zip' and the example output directory "
+                "'source_dir' should be localized",
+                "vcpkg z-extract source.zip source_dir --strip 2")
+DECLARE_MESSAGE(CmdZExtractOptStrip, (), "", "The number of leading directories to strip from all paths")
 DECLARE_MESSAGE(CommandFailed,
                 (msg::command_line),
                 "",
                 "command:\n"
                 "{command_line}\n"
                 "failed with the following results:")
-DECLARE_MESSAGE(Commands, (), "", "Commands:")
-DECLARE_MESSAGE(CommunityTriplets, (), "", "VCPKG community triplets:")
+DECLARE_MESSAGE(CommunityTriplets, (), "", "Community Triplets:")
 DECLARE_MESSAGE(ComparingUtf8Decoders,
                 (),
                 "",
@@ -725,15 +984,16 @@ DECLARE_MESSAGE(DefaultBinaryCacheRequiresDirectory,
                 (msg::path),
                 "",
                 "Environment variable VCPKG_DEFAULT_BINARY_CACHE must be a directory (was: {path})")
-DECLARE_MESSAGE(DefaultBrowserLaunched, (msg::url), "", "Default browser launched to {url}.")
 DECLARE_MESSAGE(DefaultFlag, (msg::option), "", "Defaulting to --{option} being on.")
 DECLARE_MESSAGE(DefaultRegistryIsArtifact, (), "", "The default registry cannot be an artifact registry.")
-DECLARE_MESSAGE(DefaultTriplet,
-                (msg::triplet),
-                "",
-                "Starting with the September 2023 release, the default triplet for vcpkg libraries will change "
-                "from x86-windows to the detected host triplet ({triplet}). To resolve this message, add --triplet "
-                "x86-windows to keep the same behavior.")
+DECLARE_MESSAGE(
+    DefaultTripletChanged,
+    (msg::triplet),
+    "The parts naming --triplet are command line switches that should be unlocalized. The space after the last "
+    "'triplet' and the period is intended to avoid the period looking like it's part of the command line switch",
+    "In the September 2023 release, the default triplet for vcpkg libraries changed from x86-windows to "
+    "the detected host triplet ({triplet}). For the old behavior, add --triplet x86-windows . To "
+    "suppress this message, add --triplet {triplet} .")
 DECLARE_MESSAGE(DeleteVcpkgConfigFromManifest,
                 (msg::path),
                 "",
@@ -785,7 +1045,7 @@ DECLARE_MESSAGE(DownloadWinHttpError,
                 "{url}: {system_api} failed with exit code {exit_code}")
 DECLARE_MESSAGE(DownloadingVcpkgStandaloneBundle, (msg::version), "", "Downloading standalone bundle {version}.")
 DECLARE_MESSAGE(DownloadingVcpkgStandaloneBundleLatest, (), "", "Downloading latest standalone bundle.")
-DECLARE_MESSAGE(DownloadRootsDir, (msg::env_var), "", "Specify the downloads root directory.\n(default: {env_var})")
+DECLARE_MESSAGE(DownloadRootsDir, (msg::env_var), "", "Downloads directory (default: {env_var})")
 DECLARE_MESSAGE(DuplicatedKeyInObj,
                 (msg::value),
                 "{value} is a json property/object",
@@ -820,8 +1080,7 @@ DECLARE_MESSAGE(ErrorIndividualPackagesUnsupported,
                 (),
                 "",
                 "In manifest mode, `vcpkg install` does not support individual package arguments.\nTo install "
-                "additional "
-                "packages, edit vcpkg.json and then run `vcpkg install` without any package arguments.")
+                "additional packages, edit vcpkg.json and then run `vcpkg install` without any package arguments.")
 DECLARE_MESSAGE(ErrorInvalidClassicModeOption,
                 (msg::option),
                 "",
@@ -886,7 +1145,7 @@ DECLARE_MESSAGE(ErrorWhileFetchingBaseline,
                 "while fetching baseline `\"{value}\"` from repo {package_name}:")
 DECLARE_MESSAGE(ErrorWhileParsing, (msg::path), "", "Errors occurred while parsing {path}.")
 DECLARE_MESSAGE(ErrorWhileWriting, (msg::path), "", "Error occurred while writing {path}.")
-DECLARE_MESSAGE(Example, (), "", "example:")
+DECLARE_MESSAGE(ExamplesHeader, (), "Printed before a list of example command lines", "Examples:")
 DECLARE_MESSAGE(ExceededRecursionDepth, (), "", "Recursion depth exceeded.")
 DECLARE_MESSAGE(ExcludedPackage, (msg::spec), "", "Excluded {spec}")
 DECLARE_MESSAGE(ExcludedPackages, (), "", "The following packages are excluded:")
@@ -1040,7 +1299,6 @@ DECLARE_MESSAGE(FailedVendorAuthentication,
                 "",
                 "One or more {vendor} credential providers failed to authenticate. See '{url}' for more details "
                 "on how to provide credentials.")
-DECLARE_MESSAGE(FeedbackAppreciated, (), "", "Thank you for your feedback!")
 DECLARE_MESSAGE(FilesContainAbsolutePath1,
                 (),
                 "This message is printed before a list of found absolute paths, followed by FilesContainAbsolutePath2, "
@@ -1052,6 +1310,10 @@ DECLARE_MESSAGE(FindHelp,
                 "'artifact' and 'port' are what the user must literally type.",
                 "Searches for the indicated artifact or port. With no parameter after 'artifact' or 'port', "
                 "displays everything.")
+DECLARE_MESSAGE(FindVersionArtifactsOnly,
+                (),
+                "'--version', 'vcpkg search', and 'vcpkg find port' are command lines that must not be localized",
+                "--version can't be used with vcpkg search or vcpkg find port")
 DECLARE_MESSAGE(FieldKindDidNotHaveExpectedValue,
                 (msg::expected, msg::actual),
                 "{expected} is a list of literal kinds the user must type, separated by commas, {actual} is what "
@@ -1090,6 +1352,10 @@ DECLARE_MESSAGE(FormattedParseMessageExpression,
                 (msg::value),
                 "Example of {value} is 'x64 & windows'",
                 "on expression: {value}")
+DECLARE_MESSAGE(ForMoreHelp,
+                (),
+                "Printed before a suggestion for the user to run `vcpkg help <topic>`",
+                "For More Help")
 DECLARE_MESSAGE(GeneratedConfiguration, (msg::path), "", "Generated configuration {path}.")
 DECLARE_MESSAGE(GeneratedInstaller, (msg::path), "", "{path} installer generated.")
 DECLARE_MESSAGE(GenerateMsgErrorParsingFormatArgs,
@@ -1317,26 +1583,20 @@ DECLARE_MESSAGE(HelpBuiltinBase,
                 "transitively), then the version will resolve to the baseline of the top level manifest. Baselines "
                 "of transitive dependencies are ignored.")
 DECLARE_MESSAGE(HelpCachingClear, (), "", "Removes all previous sources, including defaults.")
-DECLARE_MESSAGE(HelpContactCommand, (), "", "Display contact information to send feedback.")
-DECLARE_MESSAGE(HelpCreateCommand, (), "", "Create a new port.")
-DECLARE_MESSAGE(HelpDependInfoCommand, (), "", "Display a list of dependencies for ports.")
+DECLARE_MESSAGE(HelpContactCommand, (), "", "Displays contact information to send feedback")
+DECLARE_MESSAGE(HelpCreateCommand, (), "", "Creates a new port")
+DECLARE_MESSAGE(HelpDependInfoCommand, (), "", "Displays a list of dependencies for ports")
 DECLARE_MESSAGE(HelpEditCommand,
                 (msg::env_var),
-                "",
-                "Open a port for editing (use the environment variable '{env_var}' to set an editor program, "
-                "defaults to 'code').")
-DECLARE_MESSAGE(HelpEnvCommand, (), "", "Creates a clean shell environment for development or compiling.")
-DECLARE_MESSAGE(HelpExampleCommand,
-                (),
-                "",
-                "For more help (including examples) see the accompanying README.md and docs folder.")
+                "\"code\" is the name of a program and should not be localized.",
+                "Edits a port, optionally with {env_var}, defaults to \"code\"")
+DECLARE_MESSAGE(HelpEnvCommand, (), "", "Creates a clean shell environment for development or compiling")
+DECLARE_MESSAGE(HelpExampleCommand, (), "", "For more help (including examples) see https://learn.microsoft.com/vcpkg")
 DECLARE_MESSAGE(HelpExampleManifest, (), "", "Example manifest:")
 DECLARE_MESSAGE(HelpExportCommand, (), "", "Exports a package.")
-DECLARE_MESSAGE(HelpFormatManifestCommand, (), "", "Formats all vcpkg.json files. Run this before committing to vcpkg.")
 DECLARE_MESSAGE(HelpHashCommand, (), "", "Hash a file by specific algorithm, default SHA512.")
-DECLARE_MESSAGE(HelpInitializeRegistryCommand, (), "", "Initializes a registry in the directory <path>.")
-DECLARE_MESSAGE(HelpInstallCommand, (), "", "Install a package.")
-DECLARE_MESSAGE(HelpListCommand, (), "", "List installed packages.")
+DECLARE_MESSAGE(HelpInstallCommand, (), "", "Installs a package")
+DECLARE_MESSAGE(HelpListCommand, (), "", "Lists installed packages")
 DECLARE_MESSAGE(HelpManifestConstraints,
                 (),
                 "",
@@ -1355,7 +1615,7 @@ DECLARE_MESSAGE(
     "allow a manifest to short-circuit dependency resolution and specify exactly the version to use. These can "
     "be used to handle version conflicts, such as with `version-string` dependencies. They will not be "
     "considered when transitively depended upon.")
-DECLARE_MESSAGE(HelpOwnsCommand, (), "", "Search for files in installed packages.")
+DECLARE_MESSAGE(HelpOwnsCommand, (), "", "Searches for the owner of a file in installed packages")
 DECLARE_MESSAGE(
     HelpPackagePublisher,
     (),
@@ -1370,69 +1630,70 @@ DECLARE_MESSAGE(
     "",
     "Each version additionally has a \"port-version\" which is a nonnegative integer. When rendered as "
     "text, the port version (if nonzero) is added as a suffix to the primary version text separated by a "
-    "hash (#). Port-versions are sorted lexographically after the primary version text, for example:\n1.0.0 < "
+    "hash (#). Port-versions are sorted lexicographically after the primary version text, for example:\n1.0.0 < "
     "1.0.0#1 < 1.0.1 < 1.0.1#5 < 2.0.0")
-DECLARE_MESSAGE(HelpRemoveCommand, (), "", "Uninstall a package.")
-DECLARE_MESSAGE(HelpRemoveOutdatedCommand, (), "", "Uninstall all out-of-date packages.")
-DECLARE_MESSAGE(HelpResponseFileCommand, (), "", "Specify a response file to provide additional parameters.")
-DECLARE_MESSAGE(HelpSearchCommand, (), "", "Search for packages available to be built.")
-DECLARE_MESSAGE(HelpTextOptFullDesc, (), "", "Do not truncate long text.")
-DECLARE_MESSAGE(HelpTopicCommand, (), "", "Display help for a specific topic.")
-DECLARE_MESSAGE(HelpTopicsCommand, (), "", "Display the list of help topics.")
+DECLARE_MESSAGE(HelpRemoveCommand, (), "", "Uninstalls a package")
+DECLARE_MESSAGE(HelpResponseFileCommand,
+                (),
+                "Describing what @response_file does on vcpkg's command line",
+                "Contains one argument per line expanded at that location")
+DECLARE_MESSAGE(HelpSearchCommand, (), "", "Searches for packages available to be built")
+DECLARE_MESSAGE(HelpTextOptFullDesc, (), "", "Does not truncate long text")
+DECLARE_MESSAGE(HelpTopicCommand, (), "", "Displays specific help topic")
+DECLARE_MESSAGE(HelpTopicsCommand, (), "", "Displays full list of help topics")
 DECLARE_MESSAGE(HelpTxtOptAllowUnsupportedPort,
                 (),
                 "",
-                "Instead of erroring on an unsupported port, continue with a warning.")
+                "Continues with a warning on unsupported ports, rather than failing")
 DECLARE_MESSAGE(HelpTxtOptCleanAfterBuild,
                 (),
                 "",
-                "Clean buildtrees, packages and downloads after building each package.")
-DECLARE_MESSAGE(HelpTxtOptCleanBuildTreesAfterBuild, (), "", "Clean buildtrees after building each package.")
-DECLARE_MESSAGE(HelpTxtOptCleanDownloadsAfterBuild, (), "", "Clean downloads after building each package.")
-DECLARE_MESSAGE(HelpTxtOptCleanPkgAfterBuild, (), "", "Clean packages after building each package.")
-DECLARE_MESSAGE(HelpTxtOptDryRun, (), "", "Do not actually build or install.")
+                "Cleans buildtrees, packages and downloads after building each package")
+DECLARE_MESSAGE(HelpTxtOptCleanBuildTreesAfterBuild, (), "", "Cleans buildtrees after building each package")
+DECLARE_MESSAGE(HelpTxtOptCleanDownloadsAfterBuild, (), "", "Cleans downloads after building each package")
+DECLARE_MESSAGE(HelpTxtOptCleanPkgAfterBuild, (), "", "Cleans packages after building each package")
+DECLARE_MESSAGE(HelpTxtOptDryRun, (), "", "Does not actually build or install")
 DECLARE_MESSAGE(HelpTxtOptEditable,
                 (),
                 "",
-                "Disable source re-extraction and binary caching for libraries on the command line (classic mode)")
+                "Disables source re-extraction and binary caching for libraries on the command line (classic mode)")
 DECLARE_MESSAGE(HelpTxtOptEnforcePortChecks,
                 (),
                 "",
-                "Fail install if a port has detected problems or attempts to use a deprecated feature")
-DECLARE_MESSAGE(HelpTxtOptKeepGoing, (), "", "Continue installing packages on failure.")
+                "Fails install if a port has detected problems or attempts to use a deprecated feature")
+DECLARE_MESSAGE(HelpTxtOptKeepGoing, (), "", "Continues installing packages on failure")
 DECLARE_MESSAGE(HelpTxtOptManifestFeature,
                 (),
                 "",
-                "Additional feature from the top-level manifest to install (manifest mode).")
+                "Additional features from the top-level manifest to install (manifest mode)")
 DECLARE_MESSAGE(HelpTxtOptManifestNoDefault,
                 (),
                 "",
-                "Don't install the default features from the top-level manifest (manifest mode).")
-DECLARE_MESSAGE(HelpTxtOptNoDownloads, (), "", "Do not download new sources.")
-DECLARE_MESSAGE(HelpTxtOptNoUsage, (), "", "Don't print CMake usage information after install.")
-DECLARE_MESSAGE(HelpTxtOptOnlyBinCache, (), "", "Fail if cached binaries are not available.")
-DECLARE_MESSAGE(HelpTxtOptOnlyDownloads, (), "", "Make a best-effort attempt to download sources without building.")
-DECLARE_MESSAGE(HelpTxtOptRecurse, (), "", "Allow removal of packages as part of installation.")
-DECLARE_MESSAGE(HelpTxtOptUseAria2, (), "", "Use aria2 to perform download tasks.")
+                "Does not install the default features from the top-level manifest (manifest mode)")
+DECLARE_MESSAGE(HelpTxtOptNoDownloads, (), "", "Does not download new sources")
+DECLARE_MESSAGE(HelpTxtOptNoUsage, (), "", "Does not print CMake usage information after install")
+DECLARE_MESSAGE(HelpTxtOptOnlyBinCache, (), "", "Fails if cached binaries are not available")
+DECLARE_MESSAGE(HelpTxtOptOnlyDownloads, (), "", "Makes best-effort attempt to download sources without building")
+DECLARE_MESSAGE(HelpTxtOptRecurse, (), "", "Allows removal of packages as part of installation")
+DECLARE_MESSAGE(HelpTxtOptUseAria2, (), "", "Uses aria2 to perform download tasks")
 DECLARE_MESSAGE(HelpTxtOptUseHeadVersion,
                 (),
                 "",
-                "Install the libraries on the command line using the latest upstream sources (classic mode).")
-DECLARE_MESSAGE(
-    HelpTxtOptWritePkgConfig,
-    (),
-    "",
-    "Writes out a NuGet packages.config-formatted file for use with external binary caching.\nSee `vcpkg help "
-    "binarycaching` for more information.")
+                "Installs the libraries on the command line using the latest upstream sources (classic mode)")
+DECLARE_MESSAGE(HelpTxtOptWritePkgConfig,
+                (),
+                "'vcpkg help binarycaching' is a command line and should not be localized.",
+                "Writes a NuGet packages.config-formatted file for use with external binary caching. See `vcpkg help "
+                "binarycaching` for more information")
 DECLARE_MESSAGE(HelpUpdateBaseline,
                 (),
                 "",
                 "The best approach to keep your libraries up to date is to update your baseline reference. This will "
                 "ensure all packages, including transitive ones, are updated. However if you need to update a package "
                 "independently, you can use a \"version>=\" constraint.")
-DECLARE_MESSAGE(HelpUpdateCommand, (), "", "List packages that can be updated.")
-DECLARE_MESSAGE(HelpUpgradeCommand, (), "", "Rebuild all outdated packages.")
-DECLARE_MESSAGE(HelpVersionCommand, (), "", "Display version information.")
+DECLARE_MESSAGE(HelpUpdateCommand, (), "", "Lists packages that can be upgraded")
+DECLARE_MESSAGE(HelpUpgradeCommand, (), "", "Rebuilds all outdated packages")
+DECLARE_MESSAGE(HelpVersionCommand, (), "", "Displays version information")
 DECLARE_MESSAGE(HelpVersionDateScheme, (), "", "A date (2021-01-01.5)")
 DECLARE_MESSAGE(HelpVersionGreater,
                 (),
@@ -1465,7 +1726,7 @@ DECLARE_MESSAGE(IncrementedUtf8Decoder, (), "", "Incremented Utf8Decoder at the 
 DECLARE_MESSAGE(InfoSetEnvVar,
                 (msg::env_var),
                 "In this context 'editor' means IDE",
-                "You can also set the environment variable '{env_var}' to your editor of choice.")
+                "You can also set {env_var} to your editor of choice.")
 DECLARE_MESSAGE(InitRegistryFailedNoRepo,
                 (msg::path, msg::command_line),
                 "",
@@ -1496,7 +1757,7 @@ DECLARE_MESSAGE(InstallPackageInstruction,
                 "'{value}' is the nuget id.",
                 "With a project open, go to Tools->NuGet Package Manager->Package Manager Console and "
                 "paste:\n Install-Package \"{value}\" -Source \"{path}\"")
-DECLARE_MESSAGE(InstallRootDir, (), "", "(Experimental) Specify the install root directory.")
+DECLARE_MESSAGE(InstallRootDir, (), "", "Installed directory (experimental)")
 DECLARE_MESSAGE(InstallSkippedUpToDateFile,
                 (msg::path_source, msg::path_destination),
                 "",
@@ -1516,23 +1777,34 @@ DECLARE_MESSAGE(InstallWithSystemManagerPkg,
 DECLARE_MESSAGE(IntegrateBashHelp,
                 (),
                 "'bash' is a terminal program which should be unlocalized.",
-                "Enable bash tab-completion.")
+                "Enable bash tab-completion. Non-Windows only")
 DECLARE_MESSAGE(IntegrateFishHelp,
                 (),
                 "'fish' is a terminal program which should be unlocalized.",
-                "Enable fish tab-completion.")
-DECLARE_MESSAGE(IntegrateInstallHelpLinux, (), "", "Make installed packages available user-wide.")
+                "Enable fish tab-completion. Non-Windows only")
+DECLARE_MESSAGE(IntegrateInstallHelpLinux, (), "", "Makes installed packages available user-wide")
 DECLARE_MESSAGE(IntegrateInstallHelpWindows,
                 (),
                 "",
-                "Make installed packages available user-wide. Requires admin privileges on first use.")
-DECLARE_MESSAGE(IntegratePowerShellHelp, (), "", "Enable PowerShell tab-completion.")
-DECLARE_MESSAGE(IntegrateProjectHelp, (), "", "Generate a referencing NuGet package for individual VS project use.")
-DECLARE_MESSAGE(IntegrateRemoveHelp, (), "", "Remove user-wide integration.")
+                "Makes installed packages available user-wide. Requires admin privileges on first use")
+DECLARE_MESSAGE(IntegrateNonWindowsOnly,
+                (msg::command_line),
+                "",
+                "{command_line} is non-Windows-only and not supported on this system.")
+DECLARE_MESSAGE(IntegratePowerShellHelp, (), "", "Enable PowerShell tab-completion. Windows-only")
+DECLARE_MESSAGE(IntegrateProjectHelp,
+                (),
+                "",
+                "Generates a referencing NuGet package for individual Visual Studio project use. Windows-only")
+DECLARE_MESSAGE(IntegrateRemoveHelp, (), "", "Removes user-wide integration")
+DECLARE_MESSAGE(IntegrateWindowsOnly,
+                (msg::command_line),
+                "",
+                "{command_line} is Windows-only and not supported on this system.")
 DECLARE_MESSAGE(IntegrateZshHelp,
                 (),
                 "'zsh' is a terminal program which should be unlocalized.",
-                "Enable zsh tab-completion.")
+                "Enable zsh tab-completion. Non-Windows only")
 DECLARE_MESSAGE(IntegrationFailedVS2015, (), "", "Integration was not applied for Visual Studio 2015.")
 DECLARE_MESSAGE(InternalCICommand,
                 (),
@@ -1669,7 +1941,7 @@ DECLARE_MESSAGE(
     "'{value}' is the linkage type vcpkg would did not understand. (Correct values would be static ofr dynamic)",
     "Invalid {system_name} linkage type: [{value}]")
 DECLARE_MESSAGE(InvalidLogicExpressionUnexpectedCharacter, (), "", "invalid logic expression, unexpected character")
-DECLARE_MESSAGE(InvalidLogicExpressionUsePipe, (), "", "invalid logic expression, use '|' instead of 'or'")
+DECLARE_MESSAGE(InvalidLogicExpressionUsePipe, (), "", "invalid logic expression, use '|' rather than 'or'")
 DECLARE_MESSAGE(InvalidNoVersions, (), "", "File contains no versions.")
 DECLARE_MESSAGE(InvalidOptionForRemove,
                 (),
@@ -1691,7 +1963,7 @@ DECLARE_MESSAGE(JsonFileMissingExtension,
                 (msg::path),
                 "",
                 "the JSON file {path} must have a .json (all lowercase) extension")
-DECLARE_MESSAGE(JsonSwitch, (), "", "(Experimental) Request JSON output.")
+DECLARE_MESSAGE(JsonSwitch, (), "", "Prints JSON rather than plain text")
 DECLARE_MESSAGE(JsonValueNotArray, (), "", "json value is not an array")
 DECLARE_MESSAGE(JsonValueNotObject, (), "", "json value is not an object")
 DECLARE_MESSAGE(JsonValueNotString, (), "", "json value is not a string")
@@ -1772,10 +2044,7 @@ DECLARE_MESSAGE(LinkageDynamicDebug, (), "", "Dynamic Debug (/MDd)")
 DECLARE_MESSAGE(LinkageDynamicRelease, (), "", "Dynamic Release (/MD)")
 DECLARE_MESSAGE(LinkageStaticDebug, (), "", "Static Debug (/MTd)")
 DECLARE_MESSAGE(LinkageStaticRelease, (), "", "Static Release (/MT)")
-DECLARE_MESSAGE(ListHelp,
-                (),
-                "",
-                "The argument should be a substring to search for, or no argument to display all installed libraries.")
+DECLARE_MESSAGE(ListHelp, (), "", "Lists installed libraries")
 DECLARE_MESSAGE(ListOfValidFieldsForControlFiles,
                 (),
                 "",
@@ -1885,7 +2154,6 @@ DECLARE_MESSAGE(MutuallyExclusiveOption,
                 (msg::value, msg::option),
                 "{value} is a second {option} switch",
                 "--{value} cannot be used with --{option}.")
-DECLARE_MESSAGE(NavigateToNPS, (msg::url), "", "Please navigate to {url} in your preferred browser.")
 DECLARE_MESSAGE(NewConfigurationAlreadyExists,
                 (msg::path),
                 "",
@@ -1903,7 +2171,6 @@ DECLARE_MESSAGE(NewSpecifyNameVersionOrApplication,
                 "--application to indicate that the manifest is not intended to be used as a port.")
 DECLARE_MESSAGE(NewVersionCannotBeEmpty, (), "", "--version cannot be empty.")
 DECLARE_MESSAGE(NoArgumentsForOption, (msg::option), "", "The option --{option} does not accept an argument.")
-DECLARE_MESSAGE(NoCachedPackages, (), "", "No packages are cached.")
 DECLARE_MESSAGE(NoError, (), "", "no error")
 DECLARE_MESSAGE(NoInstalledPackages,
                 (),
@@ -1948,7 +2215,6 @@ DECLARE_MESSAGE(NugetTimeoutExpectsSinglePositiveInteger,
                 (),
                 "",
                 "unexpected arguments: binary config 'nugettimeout' expects a single positive integer argument")
-DECLARE_MESSAGE(OptionalCommand, (), "", "optional command")
 DECLARE_MESSAGE(OptionMustBeInteger, (msg::option), "", "Value of --{option} must be an integer.")
 DECLARE_MESSAGE(OptionRequired, (msg::option), "", "--{option} option is required.")
 DECLARE_MESSAGE(OptionRequiresAValue, (msg::option), "", "the option '{option}' requires a value")
@@ -1966,16 +2232,22 @@ DECLARE_MESSAGE(OptionRequiresOption,
                 "--{value} requires --{option}")
 DECLARE_MESSAGE(Options, (), "Printed just before a list of options for a command", "Options")
 DECLARE_MESSAGE(OriginalBinParagraphHeader, (), "", "\nOriginal Binary Paragraph")
+DECLARE_MESSAGE(OtherCommandsHeader, (), "", "Other")
 DECLARE_MESSAGE(OverlayPatchDir, (msg::path), "", "Overlay path \"{path}\" must exist and must be a directory.")
-DECLARE_MESSAGE(OverlayTriplets, (msg::path), "", "Overlay triplets from {path} :")
+DECLARE_MESSAGE(OverlayPortsDirectoriesHelp, (msg::env_var), "", "Directories of overlay ports (also: {env_var})")
+DECLARE_MESSAGE(OverlayTripletDirectoriesHelp, (msg::env_var), "", "Directories of overlay triplets (also: {env_var})")
+DECLARE_MESSAGE(OverlayTriplets, (msg::path), "", "Overlay Triplets from \"{path}\":")
 DECLARE_MESSAGE(OverwritingFile, (msg::path), "", "File {path} was already present and will be overwritten")
 DECLARE_MESSAGE(PackageAlreadyRemoved, (msg::spec), "", "unable to remove {spec}: already removed")
-DECLARE_MESSAGE(PackageInfoHelp, (), "", "Display detailed information on packages.")
+DECLARE_MESSAGE(PackageDiscoveryHeader, (), "", "Package Discovery")
+DECLARE_MESSAGE(PackageManipulationHeader, (), "", "Package Manipulation")
+DECLARE_MESSAGE(PackageInfoHelp, (), "", "Display detailed information on packages")
 DECLARE_MESSAGE(PackageFailedtWhileExtracting,
                 (msg::value, msg::path),
                 "'{value}' is either a tool name or a package name.",
                 "'{value}' failed while extracting {path}.")
-DECLARE_MESSAGE(PackageRootDir, (), "", "(Experimental) Specify the packages root directory.")
+DECLARE_MESSAGE(PackageInstallationHeader, (), "", "Package Installation")
+DECLARE_MESSAGE(PackageRootDir, (), "", "Packages directory (experimental)")
 DECLARE_MESSAGE(PackagesToInstall, (), "", "The following packages will be built and installed:")
 DECLARE_MESSAGE(PackagesToInstallDirectly, (), "", "The following packages will be directly installed:")
 DECLARE_MESSAGE(PackagesToModify, (), "", "Additional packages (*) will be modified to complete this operation.")
@@ -2029,36 +2301,31 @@ DECLARE_MESSAGE(PathMustBeAbsolute,
                 (msg::path),
                 "",
                 "Value of environment variable X_VCPKG_REGISTRIES_CACHE is not absolute: {path}")
-DECLARE_MESSAGE(
-    PECoffHeaderTooShort,
-    (msg::path),
-    "Portable executable is a term-of-art, see https://learn.microsoft.com/en-us/windows/win32/debug/pe-format",
-    "While parsing Portable Executable {path}, size of COFF header too small to contain a valid PE header.")
-DECLARE_MESSAGE(
-    PEConfigCrossesSectionBoundary,
-    (msg::path),
-    "Portable executable is a term-of-art, see https://learn.microsoft.com/en-us/windows/win32/debug/pe-format",
-    "While parsing Portable Executable {path}, image config directory crosses a secion boundary.")
-DECLARE_MESSAGE(
-    PEImportCrossesSectionBoundary,
-    (msg::path),
-    "Portable executable is a term-of-art, see https://learn.microsoft.com/en-us/windows/win32/debug/pe-format",
-    "While parsing Portable Executable {path}, import table crosses a secion boundary.")
-DECLARE_MESSAGE(
-    PEPlusTagInvalid,
-    (msg::path),
-    "Portable executable is a term-of-art, see https://learn.microsoft.com/en-us/windows/win32/debug/pe-format",
-    "While parsing Portable Executable {path}, optional header was neither PE32 nor PE32+.")
+DECLARE_MESSAGE(PECoffHeaderTooShort,
+                (msg::path),
+                "Portable executable is a term-of-art, see https://learn.microsoft.com/windows/win32/debug/pe-format",
+                "While parsing Portable Executable {path}, size of COFF header too small to contain a valid PE header.")
+DECLARE_MESSAGE(PEConfigCrossesSectionBoundary,
+                (msg::path),
+                "Portable executable is a term-of-art, see https://learn.microsoft.com/windows/win32/debug/pe-format",
+                "While parsing Portable Executable {path}, image config directory crosses a secion boundary.")
+DECLARE_MESSAGE(PEImportCrossesSectionBoundary,
+                (msg::path),
+                "Portable executable is a term-of-art, see https://learn.microsoft.com/windows/win32/debug/pe-format",
+                "While parsing Portable Executable {path}, import table crosses a secion boundary.")
+DECLARE_MESSAGE(PEPlusTagInvalid,
+                (msg::path),
+                "Portable executable is a term-of-art, see https://learn.microsoft.com/windows/win32/debug/pe-format",
+                "While parsing Portable Executable {path}, optional header was neither PE32 nor PE32+.")
 DECLARE_MESSAGE(PERvaNotFound,
                 (msg::path, msg::value),
                 "{value:#X} is the Relative Virtual Address sought. Portable executable is a term-of-art, see "
-                "https://learn.microsoft.com/en-us/windows/win32/debug/pe-format",
+                "https://learn.microsoft.com/windows/win32/debug/pe-format",
                 "While parsing Portable Executable {path}, could not find RVA {value:#X}.")
-DECLARE_MESSAGE(
-    PESignatureMismatch,
-    (msg::path),
-    "Portable Executable is a term-of-art, see https://learn.microsoft.com/en-us/windows/win32/debug/pe-format",
-    "While parsing Portable Executable {path}, signature mismatch.")
+DECLARE_MESSAGE(PESignatureMismatch,
+                (msg::path),
+                "Portable Executable is a term-of-art, see https://learn.microsoft.com/windows/win32/debug/pe-format",
+                "While parsing Portable Executable {path}, signature mismatch.")
 DECLARE_MESSAGE(PerformingPostBuildValidation, (), "", "-- Performing post-build validation")
 DECLARE_MESSAGE(PortBugAllowRestrictedHeaders,
                 (msg::env_var),
@@ -2120,7 +2387,7 @@ DECLARE_MESSAGE(
     "{expected} is one of LinkageDynamicDebug/LinkageDynamicRelease/LinkageStaticDebug/LinkageStaticRelease. "
     "Immediately after this message is a file by file list with what linkages they contain. 'CRT' is an acronym "
     "meaning C Runtime. See also: "
-    "https://learn.microsoft.com/en-us/cpp/build/reference/md-mt-ld-use-run-time-library?view=msvc-170. This is "
+    "https://learn.microsoft.com/cpp/build/reference/md-mt-ld-use-run-time-library?view=msvc-170. This is "
     "complicated because a binary can link with more than one CRT.\n"
     "Example fully formatted message:\n"
     "The following binaries should use the Dynamic Debug (/MDd) CRT.\n"
@@ -2205,10 +2472,11 @@ DECLARE_MESSAGE(PortBugRemoveEmptyDirs,
                 "Only the 'empty directories left by the above renames' part should be translated",
                 "file(REMOVE_RECURSE empty directories left by the above renames)")
 DECLARE_MESSAGE(PortBugRestrictedHeaderPaths,
-                (msg::env_var),
-                "A list of restricted headers is printed after this message, one per line.",
+                (),
+                "A list of restricted headers is printed after this message, one per line. ",
                 "The following restricted headers can prevent the core C++ runtime and other packages from "
-                "compiling correctly. In exceptional circumstances, this policy can be disabled via {env_var}.")
+                "compiling correctly. In exceptional circumstances, this policy can be disabled by setting CMake "
+                "variable VCPKG_POLICY_ALLOW_RESTRICTED_HEADERS in portfile.cmake.")
 DECLARE_MESSAGE(PortBugSetDllsWithoutExports,
                 (),
                 "'exports' means an entry in a DLL's export table. After this message, one file path per line is "
@@ -2257,7 +2525,7 @@ DECLARE_MESSAGE(PushingVendorFailed,
                 "",
                 "Pushing {vendor} to \"{path}\" failed. Use --debug for more information.")
 DECLARE_MESSAGE(RegistryCreated, (msg::path), "", "Successfully created registry at {path}")
-DECLARE_MESSAGE(RegeneratesArtifactRegistry, (), "", "Regenerates an artifact registry.")
+DECLARE_MESSAGE(RegeneratesArtifactRegistry, (), "", "Regenerates an artifact registry")
 DECLARE_MESSAGE(RegistryValueWrongType, (msg::path), "", "The registry value {path} was an unexpected type.")
 DECLARE_MESSAGE(RemoveDependencies,
                 (),
@@ -2349,22 +2617,14 @@ DECLARE_MESSAGE(SpecifiedFeatureTurnedOff,
                 (msg::command_name, msg::option),
                 "",
                 "'{command_name}' feature specifically turned off, but --{option} was specified.")
-DECLARE_MESSAGE(SpecifyDirectoriesContaining,
-                (msg::env_var),
-                "",
-                "Specifiy directories containing triplets files.\n(also: '{env_var}')")
-DECLARE_MESSAGE(SpecifyDirectoriesWhenSearching,
-                (msg::env_var),
-                "",
-                "Specify directories to be used when searching for ports.\n(also: '{env_var}')")
 DECLARE_MESSAGE(SpecifyHostArch,
                 (msg::env_var),
-                "",
-                "Specify the host architecture triplet. See 'vcpkg help triplet'.\n(default: '{env_var}')")
+                "'vcpkg help triplet' is a command line that should not be localized",
+                "Host triplet. See 'vcpkg help triplet' (default: {env_var})")
 DECLARE_MESSAGE(SpecifyTargetArch,
                 (msg::env_var),
-                "",
-                "Specify the target architecture triplet. See 'vcpkg help triplet'.\n(default: '{env_var}')")
+                "'vcpkg help triplet' is a command line that should not be localized",
+                "Target triplet. See 'vcpkg help triplet' (default: {env_var})")
 DECLARE_MESSAGE(StartCodeUnitInContinue, (), "", "found start code unit in continue position")
 DECLARE_MESSAGE(StoredBinaryCache, (msg::path), "", "Stored binary cache: \"{path}\"")
 DECLARE_MESSAGE(StoredBinariesToDestinations,
@@ -2372,10 +2632,6 @@ DECLARE_MESSAGE(StoredBinariesToDestinations,
                 "",
                 "Stored binaries in {count} destinations in {elapsed}.")
 DECLARE_MESSAGE(StoreOptionMissingSha, (), "", "--store option is invalid without a sha512")
-DECLARE_MESSAGE(StripOption,
-                (msg::option),
-                "--{option} is a setting that can be passed to z-extract command.",
-                "--{option} specifies the number of leading directories to strip from all paths.")
 DECLARE_MESSAGE(SuccessfulyExported, (msg::package_name, msg::path), "", "Exported {package_name} to {path}")
 DECLARE_MESSAGE(SuggestGitPull, (), "", "The result may be outdated. Run `git pull` to get the latest results.")
 DECLARE_MESSAGE(SuggestResolution,
@@ -2392,6 +2648,7 @@ DECLARE_MESSAGE(SuggestUpdateVcpkg,
                 "You may need to update the vcpkg binary; try running {command_line} to update.")
 DECLARE_MESSAGE(SupportedPort, (msg::package_name), "", "Port {package_name} is supported.")
 DECLARE_MESSAGE(SwitchUsedMultipleTimes, (msg::option), "", "the switch '{option}' was specified multiple times")
+DECLARE_MESSAGE(SynopsisHeader, (), "Printed before a description of what a command does", "Synopsis:")
 DECLARE_MESSAGE(SystemApiErrorMessage,
                 (msg::system_api, msg::exit_code, msg::error_msg),
                 "",
@@ -2419,6 +2676,7 @@ DECLARE_MESSAGE(ToUpdatePackages,
                 "To update these packages and all dependencies, run\n{command_name} upgrade'")
 DECLARE_MESSAGE(TrailingCommaInArray, (), "", "Trailing comma in array")
 DECLARE_MESSAGE(TrailingCommaInObj, (), "", "Trailing comma in an object")
+DECLARE_MESSAGE(TripletLabel, (), "", "Triplet:")
 DECLARE_MESSAGE(TripletFileNotFound, (msg::triplet), "", "Triplet file {triplet}.cmake not found")
 DECLARE_MESSAGE(TwoFeatureFlagsSpecified,
                 (msg::value),
@@ -2673,6 +2931,12 @@ DECLARE_MESSAGE(
     "vcpkg has crashed. Please create an issue at https://github.com/microsoft/vcpkg containing a brief summary of "
     "what you were trying to do and the following information.")
 DECLARE_MESSAGE(VcpkgInvalidCommand, (msg::command_name), "", "invalid command: {command_name}")
+DECLARE_MESSAGE(VcpkgUsage,
+                (),
+                "This is describing a command line, everything should be localized except 'vcpkg'; symbols like <>s, "
+                "[]s, or --s should be preserved. @response_file should be localized to be consistent with the message "
+                "named 'ResponseFileCode'.",
+                "usage: vcpkg <command> [--switches] [--options=values] [arguments] @response_file")
 DECLARE_MESSAGE(InvalidUri, (msg::value), "{value} is the URI we attempted to parse.", "unable to parse uri: {value}")
 DECLARE_MESSAGE(VcpkgInVsPrompt,
                 (msg::value, msg::triplet),
@@ -2684,7 +2948,7 @@ DECLARE_MESSAGE(VcpkgRegistriesCacheIsNotDirectory,
                 "",
                 "Value of environment variable X_VCPKG_REGISTRIES_CACHE is not a directory: {path}")
 DECLARE_MESSAGE(VcpkgRootRequired, (), "", "Setting VCPKG_ROOT is required for standalone bootstrap.")
-DECLARE_MESSAGE(VcpkgRootsDir, (msg::env_var), "", "Specify the vcpkg root directory.\n(default: '{env_var}')")
+DECLARE_MESSAGE(VcpkgRootsDir, (msg::env_var), "", "The vcpkg root directory (default: {env_var})")
 DECLARE_MESSAGE(VcpkgSendMetricsButDisabled, (), "", "passed --sendmetrics, but metrics are disabled.")
 DECLARE_MESSAGE(VcvarsRunFailed, (), "", "failed to run vcvarsall.bat to get a Visual Studio environment")
 DECLARE_MESSAGE(VcvarsRunFailedExitCode,

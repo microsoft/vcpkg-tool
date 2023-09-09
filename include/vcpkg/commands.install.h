@@ -87,30 +87,27 @@ namespace vcpkg
                                    const InstalledPaths& installed,
                                    const BinaryParagraph& bpgh);
 
-    namespace Install
-    {
-        extern const CommandStructure COMMAND_STRUCTURE;
+    extern const CommandMetadata CommandInstallMetadata;
 
-        void print_usage_information(const BinaryParagraph& bpgh,
-                                     std::set<std::string>& printed_usages,
-                                     const ReadOnlyFilesystem& fs,
-                                     const InstalledPaths& installed);
+    void install_print_usage_information(const BinaryParagraph& bpgh,
+                                         std::set<std::string>& printed_usages,
+                                         const ReadOnlyFilesystem& fs,
+                                         const InstalledPaths& installed);
 
-        void preclear_packages(const VcpkgPaths& paths, const ActionPlan& action_plan);
+    void install_preclear_packages(const VcpkgPaths& paths, const ActionPlan& action_plan);
 
-        InstallSummary execute_plan(const VcpkgCmdArguments& args,
-                                    const ActionPlan& action_plan,
-                                    const KeepGoing keep_going,
-                                    const VcpkgPaths& paths,
-                                    StatusParagraphs& status_db,
-                                    BinaryCache& binary_cache,
-                                    const IBuildLogsRecorder& build_logs_recorder);
+    InstallSummary install_execute_plan(const VcpkgCmdArguments& args,
+                                        const ActionPlan& action_plan,
+                                        const KeepGoing keep_going,
+                                        const VcpkgPaths& paths,
+                                        StatusParagraphs& status_db,
+                                        BinaryCache& binary_cache,
+                                        const IBuildLogsRecorder& build_logs_recorder);
 
-        void perform_and_exit(const VcpkgCmdArguments& args,
-                              const VcpkgPaths& paths,
-                              Triplet default_triplet,
-                              Triplet host_triplet);
-    } // namespace vcpkg::Install
+    void command_install_and_exit(const VcpkgCmdArguments& args,
+                                  const VcpkgPaths& paths,
+                                  Triplet default_triplet,
+                                  Triplet host_triplet);
 
     void track_install_plan(const ActionPlan& plan);
 }

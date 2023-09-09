@@ -13,20 +13,7 @@ import { Normalize } from '../switches/normalize';
 
 export class RegenerateCommand extends Command {
   readonly command = 'regenerate';
-  readonly aliases = ['regen'];
   readonly normalize = new Normalize(this);
-  seeAlso = [];
-  argumentsHelp = [];
-
-  get summary() {
-    return i`regenerate the index for a registry`;
-  }
-
-  get description() {
-    return [
-      i`This allows the user to regenerate the ${registryIndexFile} files for a ${cli} registry.`,
-    ];
-  }
 
   override async run() {
     for (const input of this.inputs) {

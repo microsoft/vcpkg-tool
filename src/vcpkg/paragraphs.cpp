@@ -477,17 +477,12 @@ namespace vcpkg::Paragraphs
     {
         StatsTimer timer(g_load_ports_stats);
 
-        ExpectedL<std::vector<Paragraph>> pghs = get_paragraphs(fs, package_dir / "CONTROL");
-
-        if (auto p = pghs.get())
+        ExpectedL<std::vector<Paragraph>> maybe_paragraphs = get_paragraphs(fs, package_dir / "CONTROL");
+        if (auto pparagraphs = maybe_paragraphs.get())
         {
+            auto& paragraphs = *pparagraphs;
             BinaryControlFile bcf;
-            bcf.core_paragraph = BinaryParagraph(p->front());
-            p->erase(p->begin());
-
-            bcf.features =
-                Util::fmap(*p, [&](auto&& raw_feature) -> BinaryParagraph { return BinaryParagraph(raw_feature); });
-
+            bcf.core_paragraph = BinaryParagraph(std::move(paragraphs[0]));
             if (bcf.core_paragraph.spec != spec)
             {
                 return msg::format(msgMismatchedSpec,
@@ -496,30 +491,22 @@ namespace vcpkg::Paragraphs
                                    msg::actual = bcf.core_paragraph.spec);
             }
 
+            bcf.features.reserve(paragraphs.size() - 1);
+            for (std::size_t idx = 1; idx < paragraphs.size(); ++idx)
+            {
+                bcf.features.emplace_back(BinaryParagraph{std::move(paragraphs[idx])});
+            }
+
             return bcf;
         }
 
-        return pghs.error();
+        return maybe_paragraphs.error();
     }
 
     LoadResults try_load_all_registry_ports(const ReadOnlyFilesystem& fs, const RegistrySet& registries)
     {
         LoadResults ret;
-
-        std::vector<std::string> ports;
-
-        for (const auto& registry : registries.registries())
-        {
-            const auto packages = registry.packages();
-            ports.insert(end(ports), begin(packages), end(packages));
-        }
-        if (auto registry = registries.default_registry())
-        {
-            registry->get_all_port_names(ports);
-        }
-
-        Util::sort_unique_erase(ports);
-
+        std::vector<std::string> ports = registries.get_all_reachable_port_names();
         for (const auto& port_name : ports)
         {
             auto impl = registries.registry_for_port(port_name);

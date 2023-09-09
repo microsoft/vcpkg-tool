@@ -21,17 +21,16 @@
 #if __APPLE__
 extern "C"
 {
-#endif
+#endif // __APPLE__
 
 #include <unistd.h>
 
 #if __APPLE__
 }
-#endif
-
-#endif
+#endif // __APPLE__
 
 #include <sys/types.h>
 // glibc defines major and minor in sys/types.h, and should not
 #undef major
 #undef minor
+#endif // ^^^ Unix
