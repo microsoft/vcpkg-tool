@@ -44,7 +44,7 @@ namespace vcpkg
                             const std::vector<std::string>& secrets,
                             View<std::string> headers,
                             const Path& file);
-    ExpectedL<int> patch_file(const Filesystem& fs,
+    ExpectedL<Unit> patch_file(const Filesystem& fs,
                               StringView url,
                               View<std::string> headers,
                               const Path& file,

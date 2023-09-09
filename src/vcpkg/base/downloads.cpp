@@ -18,6 +18,8 @@
 
 namespace vcpkg
 {
+    static constexpr StringLiteral guid_marker = "9a1db05f-a65d-419b-aa72-037fb4d0672e";
+
     static std::string replace_secrets(std::string input, View<std::string> secrets)
     {
         const auto replacement = msg::format(msgSecretBanner);
@@ -571,8 +573,6 @@ namespace vcpkg
                             View<std::string> headers,
                             const Path& file)
     {
-        static constexpr StringLiteral guid_marker = "9a1db05f-a65d-419b-aa72-037fb4d0672e";
-
         if (Strings::starts_with(url, "ftp://"))
         {
             // HTTP headers are ignored for FTP clients
@@ -628,15 +628,16 @@ namespace vcpkg
         return res;
     }
 
-    ExpectedL<int> patch_file(const Filesystem& fs,
-                              StringView url,
-                              View<std::string> headers,
-                              const Path& file,
-                              std::size_t file_size,
-                              std::size_t chunk_size)
+    ExpectedL<Unit> patch_file(const Filesystem& fs,
+                               StringView url,
+                               View<std::string> headers,
+                               const Path& file,
+                               std::size_t file_size,
+                               std::size_t chunk_size)
     {
         Command base_cmd;
-        base_cmd.string_arg("curl").string_arg("-X").string_arg("PATCH");
+        base_cmd.string_arg("curl").string_arg("-X").string_arg("PATCH").string_arg("-w").string_arg(
+            "\\n" + guid_marker.to_string() + "%{http_code}");
         for (auto&& header : headers)
         {
             base_cmd.string_arg("-H").string_arg(header);
@@ -649,7 +650,11 @@ namespace vcpkg
         for (std::size_t i = 0; i < file_size; i += bytes_read)
         {
             bytes_read = file_ptr.read(buffer.data(), sizeof(decltype(buffer)::value_type), chunk_size);
-            if (!bytes_read) break;
+            if (!bytes_read)
+            {
+                return msg::format_error(
+                    msgFileReadFailed, msg::path = file, msg::byte_offset = i, msg::count = chunk_size);
+            }
 
             auto cmd = base_cmd;
             cmd.string_arg("-H")
@@ -657,20 +662,29 @@ namespace vcpkg
                 .string_arg("--data-binary")
                 .string_arg("@-");
 
-            auto res = cmd_execute_and_capture_output(cmd,
-                                                      default_working_directory,
-                                                      default_environment,
-                                                      Encoding::Utf8,
-                                                      EchoInDebug::Hide,
-                                                      StringView(buffer.data(), bytes_read));
-            if (!res.get() || res.get()->exit_code)
+            int code = 0;
+            auto res = cmd_execute_and_stream_lines(
+                cmd,
+                [&code](StringView line) {
+                    if (Strings::starts_with(line, guid_marker))
+                    {
+                        code = std::strtol(line.data() + guid_marker.size(), nullptr, 10);
+                    }
+                },
+                default_working_directory,
+                default_environment,
+                Encoding::Utf8,
+                StringView(buffer.data(), bytes_read));
+            if (!res.get() || *res.get() != 0 || (code >= 100 && code < 200) || code >= 300)
             {
-                return msg::format_error(
-                    msgCurlFailedToPut, msg::exit_code = res.get()->exit_code, msg::url = url.to_string());
+                return msg::format_error(msgCurlFailedToPutHttp,
+                                         msg::exit_code = res.has_value() ? *res.get() : -1,
+                                         msg::url = url,
+                                         msg::value = code);
             }
         }
 
-        return 0;
+        return Unit{};
     }
 
     std::string format_url_query(StringView base_url, View<std::string> query_params)
