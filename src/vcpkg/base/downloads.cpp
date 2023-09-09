@@ -18,8 +18,6 @@
 
 namespace vcpkg
 {
-    static constexpr StringLiteral guid_marker = "9a1db05f-a65d-419b-aa72-037fb4d0672e";
-
     static std::string replace_secrets(std::string input, View<std::string> secrets)
     {
         const auto replacement = msg::format(msgSecretBanner);
@@ -573,6 +571,8 @@ namespace vcpkg
                             View<std::string> headers,
                             const Path& file)
     {
+        static constexpr StringLiteral guid_marker = "9a1db05f-a65d-419b-aa72-037fb4d0672e";
+
         if (Strings::starts_with(url, "ftp://"))
         {
             // HTTP headers are ignored for FTP clients
@@ -635,6 +635,8 @@ namespace vcpkg
                                std::size_t file_size,
                                std::size_t chunk_size)
     {
+        static constexpr StringLiteral guid_marker = "9a1db05f-a65d-419b-aa72-037fb4d0672e";
+
         Command base_cmd;
         base_cmd.string_arg("curl").string_arg("-X").string_arg("PATCH").string_arg("-w").string_arg(
             "\\n" + guid_marker.to_string() + "%{http_code}\n");
