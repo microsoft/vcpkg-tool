@@ -85,18 +85,6 @@
           <Disp Icon="Str" />
         </Item>
       </Item>
-      <Item ItemId=";@ThisAllowsTheConsumerToActivateTheToolsRequiredForAProjectIfTheToolsAreNotAlreadyInstalledThisWillForceThemToBeDo" ItemType="0" PsrId="306" Leaf="false">
-        <Disp Icon="Dir" LocTbl="false" />
-        <Item ItemId=";(...) wnloadedAndInstalledBeforeActivation" ItemType="0" PsrId="306" Leaf="true">
-          <Str Cat="Text">
-            <Val><![CDATA[This allows the consumer to Activate the tools required for a project. If the tools are not already installed, this will force them to be downloaded and installed before activation.]]></Val>
-            <Tgt Cat="Text" Stat="Loc" Orig="New">
-              <Val><![CDATA[Consente all'utente di attivare gli strumenti necessari per un progetto. Se gli strumenti non sono già stati installati, ne verrà forzato il download e l'installazione prima dell'attivazione.]]></Val>
-            </Tgt>
-          </Str>
-          <Disp Icon="Str" />
-        </Item>
-      </Item>
       <Item ItemId=";ABaseline" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[a baseline]]></Val>
@@ -487,33 +475,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";AcquireArtifactsInTheRegistry" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Acquire artifacts in the registry]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Acquisisci artefatti nel Registro di sistema]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";AcquiresEverythingReferencedByAProjectWithoutActivating" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Acquires everything referenced by a project, without activating]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Acquisisce tutti gli elementi usati come riferimento da un progetto, senza l’attivazione]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ActivatesTheToolsRequiredForAProject" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Activates the tools required for a project]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Attiva gli strumenti necessari per un progetto]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";Activating$" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Activating: ${p0}]]></Val>
@@ -550,15 +511,6 @@
           <Prev Cat="Text">
             <Val><![CDATA[The first argument to '{command_line}' must be 'artifact' or 'port'.]A;]]></Val>
           </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";AddHelp" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Adds the indicated port or artifact to the manifest associated with the current directory.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Aggiunge la porta o l'artefatto indicati al manifesto associato alla directory corrente.]]></Val>
-          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -780,10 +732,13 @@
       </Item>
       <Item ItemId=";AddVersionSuggestNewVersionScheme" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Use the version scheme "{new_scheme}" instead of "{old_scheme}" in port "{package_name}".]A;Use --{option} to disable this check.]]></Val>
+          <Val><![CDATA[Use the version scheme "{new_scheme}" rather than "{old_scheme}" in port "{package_name}".]A;Use --{option} to disable this check.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Usare lo schema di versione "{new_scheme}" anziché "{old_scheme}" nella porta "{package_name}".]A;Usare --{option} per disabilitare il controllo.]]></Val>
+            <Val><![CDATA[Usare lo schema della versione "{new_scheme}" anziché "{old_scheme}" nella porta "{package_name}".]A;Usare --{option} per disabilitare questo controllo.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Use the version scheme "{new_scheme}" instead of "{old_scheme}" in port "{package_name}".]A;Use --{option} to disable this check.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -877,15 +832,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";AddsAnArtifactToTheProject" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Adds an artifact to the project]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Aggiunge un artefatto al progetto]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";AllArtifactsAreAlreadyInstalled" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[All artifacts are already installed]]></Val>
@@ -918,15 +864,6 @@
           <Val><![CDATA[All installed packages are up-to-date with the local portfile.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Tutti i pacchetti installati sono aggiornati con il portfile locale.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";AllowsTheUserToCleanOutTheCacheInstalledArtifactsEtc" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Allows the user to clean out the cache, installed artifacts, etc.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Consente all'utente di pulire la cache, gli artefatti installati e così via.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1230,73 +1167,97 @@
       </Item>
       <Item ItemId=";ArtifactsSwitchARM" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Force host detection to ARM when acquiring artifacts]]></Val>
+          <Val><![CDATA[Forces host detection to ARM when acquiring artifacts]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Forza il rilevamento dell'host su ARM durante l'acquisizione di artefatti]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Force host detection to ARM when acquiring artifacts]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ArtifactsSwitchARM64" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Force host detection to ARM64 when acquiring artifacts]]></Val>
+          <Val><![CDATA[Forces host detection to ARM64 when acquiring artifacts]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Forza il rilevamento dell'host su ARM64 durante l'acquisizione di artefatti]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Force host detection to ARM64 when acquiring artifacts]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ArtifactsSwitchAll" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Update all known artifact registries]]></Val>
+          <Val><![CDATA[Updates all known artifact registries]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Aggiorna tutti i registri artefatti noti]]></Val>
+            <Val><![CDATA[Aggiorna tutti i registri di artefatti noti]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Update all known artifact registries]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ArtifactsSwitchAllLanguages" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Acquire all language files when acquiring artifacts]]></Val>
+          <Val><![CDATA[Acquires all language files when acquiring artifacts]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Acquisisci tutti i file della lingua quando acquisisci artefatti]]></Val>
+            <Val><![CDATA[Acquisisce tutti i file di linguaggio durante l'acquisizione degli artefatti]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Acquire all language files when acquiring artifacts]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ArtifactsSwitchForce" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Force reacquire if an artifact is already acquired]]></Val>
+          <Val><![CDATA[Forces reacquire if an artifact is already acquired]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Forza la riacquisizione se un artefatto è già acquisito]]></Val>
+            <Val><![CDATA[Forza la riacquisizione se un artefatto è già stato acquisito]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Force reacquire if an artifact is already acquired]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ArtifactsSwitchFreebsd" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Force host detection to FreeBSD when acquiring artifacts]]></Val>
+          <Val><![CDATA[Forces host detection to FreeBSD when acquiring artifacts]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Forza il rilevamento dell'host su FreeBSD durante l'acquisizione di artefatti]]></Val>
+            <Val><![CDATA[Forza il rilevamento dell'host in FreeBSD durante l'acquisizione di artefatti]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Force host detection to FreeBSD when acquiring artifacts]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ArtifactsSwitchLinux" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Force host detection to Linux when acquiring artifacts]]></Val>
+          <Val><![CDATA[Forces host detection to Linux when acquiring artifacts]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Forza il rilevamento dell'host su Linux durante l'acquisizione di artefatti]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Force host detection to Linux when acquiring artifacts]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ArtifactsSwitchNormalize" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Apply any deprecation fixups]]></Val>
+          <Val><![CDATA[Applies any deprecation fixups]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Applica tutte le correzioni per deprecazione]]></Val>
+            <Val><![CDATA[Applica tutte le correzioni deprecate]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Apply any deprecation fixups]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -1329,73 +1290,97 @@
       </Item>
       <Item ItemId=";ArtifactsSwitchOsx" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Force host detection to MacOS when acquiring artifacts]]></Val>
+          <Val><![CDATA[Forces host detection to MacOS when acquiring artifacts]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Forza il rilevamento dell'host su MacOS durante l'acquisizione di artefatti]]></Val>
+            <Val><![CDATA[Forza il rilevamento host in MacOS durante l'acquisizione di artefatti]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Force host detection to MacOS when acquiring artifacts]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ArtifactsSwitchTargetARM" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Set target detection to ARM when acquiring artifacts]]></Val>
+          <Val><![CDATA[Sets target detection to ARM when acquiring artifacts]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Imposta il rilevamento del target su ARM durante l'acquisizione di artefatti]]></Val>
+            <Val><![CDATA[Imposta il rilevamento della destinazione su ARM durante l'acquisizione di artefatti]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Set target detection to ARM when acquiring artifacts]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ArtifactsSwitchTargetARM64" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Set target detection to ARM64 when acquiring artifacts]]></Val>
+          <Val><![CDATA[Sets target detection to ARM64 when acquiring artifacts]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Imposta il rilevamento del target su ARM64 durante l'acquisizione di artefatti]]></Val>
+            <Val><![CDATA[Imposta il rilevamento della destinazione su ARM64 durante l'acquisizione di artefatti]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Set target detection to ARM64 when acquiring artifacts]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ArtifactsSwitchTargetX64" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Set target detection to x64 when acquiring artifacts]]></Val>
+          <Val><![CDATA[Sets target detection to x64 when acquiring artifacts]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Imposta il rilevamento del target su x64 durante l'acquisizione di artefatti]]></Val>
+            <Val><![CDATA[Imposta il rilevamento di destinazione su x64 durante l'acquisizione di artefatti]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Set target detection to x64 when acquiring artifacts]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ArtifactsSwitchTargetX86" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Set target to x86 when acquiring artifacts]]></Val>
+          <Val><![CDATA[Sets target to x86 when acquiring artifacts]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Imposta il target su x86 quando acquisisci artefatti]]></Val>
+            <Val><![CDATA[Imposta la destinazione su x86 durante l'acquisizione di artefatti]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Set target to x86 when acquiring artifacts]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ArtifactsSwitchWindows" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Force host detection to Windows when acquiring artifacts]]></Val>
+          <Val><![CDATA[Forces host detection to Windows when acquiring artifacts]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Forza il rilevamento dell'host su Windows durante l'acquisizione di artefatti]]></Val>
+            <Val><![CDATA[Forza il rilevamento host in Windows durante l'acquisizione di artefatti]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Force host detection to Windows when acquiring artifacts]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ArtifactsSwitchX64" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Force host detection to x64 when acquiring artifacts]]></Val>
+          <Val><![CDATA[Forces host detection to x64 when acquiring artifacts]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Forza il rilevamento dell'host su x64 durante l'acquisizione di artefatti]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Force host detection to x64 when acquiring artifacts]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ArtifactsSwitchX86" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Force host detection to x86 when acquiring artifacts]]></Val>
+          <Val><![CDATA[Forces host detection to x86 when acquiring artifacts]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Forza il rilevamento dell'host su x86 durante l'acquisizione di artefatti]]></Val>
+            <Val><![CDATA[Forza il rilevamento host su x86 durante l'acquisizione di artefatti]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Force host detection to x86 when acquiring artifacts]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -1410,10 +1395,13 @@
       </Item>
       <Item ItemId=";AssetSourcesArg" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Add sources for asset caching. See 'vcpkg help assetcaching'.]]></Val>
+          <Val><![CDATA[Asset caching sources. See 'vcpkg help assetcaching']]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Aggiungere le origini per la memorizzazione nella cache degli asset. Vedere 'vcpkg help assetcaching'.]]></Val>
+            <Val><![CDATA[Origini di memorizzazione nella cache degli asset. Vedere "memorizzazione nella cache asset guida vcpkg"]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Add sources for asset caching. See 'vcpkg help assetcaching'.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -1476,15 +1464,6 @@
           <Val><![CDATA[Visual Studio 2017 and later can now #include any installed libraries. Linking will be handled automatically. Installing new libraries will make them instantly available.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Visual Studio 2017 e versioni successive può ora #includere qualsiasi libreria installata. Il collegamento verrà gestito automaticamente. L'installazione di nuove librerie le renderà immediatamente disponibili.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";AvailableArchitectureTriplets" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Available architecture triplets:]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Triplet di architettura disponibili:]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1579,12 +1558,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";BinarySourcesArg" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";BinarySourcesArg" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Add sources for binary caching. See 'vcpkg help binarycaching'.]]></Val>
+          <Val><![CDATA[Binary caching sources. See 'vcpkg help binarycaching']]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Aggiungere le origini per la memorizzazione nella cache binaria. Vedere 'vcpkg help binarycaching'.]]></Val>
+            <Val><![CDATA[Origini binarie di memorizzazione nella cache. Vedere 'memorizzazione nella cache binaria guida vcpkg']]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Add sources for binary caching. See 'vcpkg help binarycaching'.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -1722,10 +1704,13 @@
       </Item>
       <Item ItemId=";BuildTreesRootDir" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[(Experimental) Specify the buildtrees root directory.]]></Val>
+          <Val><![CDATA[Buildtrees directory (experimental)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[(Sperimentale) Specificare la directory radice dell'albero di compilazione.]]></Val>
+            <Val><![CDATA[Directory di compilazione (sperimentale)]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[(Experimental) Specify the buildtrees root directory.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -1818,10 +1803,13 @@
       </Item>
       <Item ItemId=";BuiltInTriplets" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[vcpkg built-in triplets:]]></Val>
+          <Val><![CDATA[Built-in Triplets:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Triplets predefiniti vcpkg:]]></Val>
+            <Val><![CDATA[Triplette integrate:]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[vcpkg built-in triplets:]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -1908,82 +1896,109 @@
       </Item>
       <Item ItemId=";CISettingsOptXUnit" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[File to output results in XUnit format (internal)]]></Val>
+          <Val><![CDATA[File to output results in XUnit format]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[File per l'output dei risultati in formato XUnit (interno)]]></Val>
+            <Val><![CDATA[File per l'output dei risultati in formato XUnit]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[File to output results in XUnit format (internal)]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CISettingsVerifyGitTree" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Verify that each git tree object matches its declared version (this is very slow)]]></Val>
+          <Val><![CDATA[Verifies that each git tree object matches its declared version (this is very slow)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Verifica che ogni oggetto dell'albero GIT corrisponda alla versione dichiarata (molto lento)]]></Val>
+            <Val><![CDATA[Verifica che ogni oggetto albero Git corrisponda alla versione dichiarata (molto lenta)]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Verify that each git tree object matches its declared version (this is very slow)]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CISettingsVerifyVersion" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Print result for each port instead of just errors.]]></Val>
+          <Val><![CDATA[Prints result for each port rather than only just errors]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Stampa il risultato per ogni porta anziché solo gli errori.]]></Val>
+            <Val><![CDATA[Stampa il risultato per ogni porta anziché solo gli errori]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Print result for each port instead of just errors.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CISkipInstallation" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";CISkipInstallation" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The following packages are already installed and not build again: {list}]]></Val>
+          <Val><![CDATA[The following packages are already installed and won't be built again:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[I pacchetti seguenti sono già installati e non vengono compilati di nuovo: {list}]]></Val>
+            <Val><![CDATA[I pacchetti seguenti sono già installati e non verranno compilati di nuovo:]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The following packages are already installed and not build again: {list}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CISwitchOptAllowUnexpectedPassing" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Indicates that 'Passing, remove from fail list' results should not be emitted.]]></Val>
+          <Val><![CDATA[Suppresses 'Passing, remove from fail list' results]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Indica che i risultati 'Passaggio, rimozione dall'elenco errori' non devono essere generati.]]></Val>
+            <Val><![CDATA[Elimina i risultati di 'Passaggio, rimozione dall'elenco di errori']]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Indicates that 'Passing, remove from fail list' results should not be emitted.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CISwitchOptDryRun" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Print out plan without execution]]></Val>
+          <Val><![CDATA[Prints out plan without execution]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Stampa il piano senza esecuzione]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Print out plan without execution]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CISwitchOptRandomize" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Randomize the install order]]></Val>
+          <Val><![CDATA[Randomizes the install order]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Scegli ordine di installazione in modo casuale]]></Val>
+            <Val><![CDATA[Genera in modo casuale l'ordine di installazione]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Randomize the install order]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CISwitchOptSkipFailures" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";CISwitchOptSkipFailures" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Indicates that ports marked `=fail` in ci.baseline.txt should be skipped.]]></Val>
+          <Val><![CDATA[Skips ports marked `=fail` in ci.baseline.txt]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Indica che le porte contrassegnate con '=fail' nel file ci.baseline.txt devono essere ignorate.]]></Val>
+            <Val><![CDATA[Ignora le porte contrassegnate come '=fail' in ci.baseline.txt]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Indicates that ports marked `=fail` in ci.baseline.txt should be skipped.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CISwitchOptXUnitAll" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Report also unchanged ports to the XUnit output (internal)]]></Val>
+          <Val><![CDATA[Reports unchanged ports in the XUnit output]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Segnala anche le porte non modificate all'output XUnit (interno)]]></Val>
+            <Val><![CDATA[Segnala le porte non modificate nell'output XUnit]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Report also unchanged ports to the XUnit output (internal)]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -2028,15 +2043,6 @@
           <Val><![CDATA[Cache folder cleared (${p0}) ]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Cartella cache cancellata (${p0}) ]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CacheHelp" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The argument should be a substring to search for or no argument to display all cached libraries.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[L'argomento deve essere una sottostringa da cercare oppure nessun argomento per visualizzare tutte le librerie memorizzate nella cache.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2215,47 +2221,260 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CmdAcquireExample1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg acquire <artifact>]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[acquisizione vcpkg <artefatto>]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdAcquireProjectSynopsis" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Acquires all artifacts referenced by a manifest]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Acquisisce tutti gli artefatti a cui fa riferimento un manifesto]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdAcquireSynopsis" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Acquires the named artifact]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Acquisisce l'artefatto denominato]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdActivateSynopsis" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Activates artifacts from a manifest]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Attiva gli artefatti da un manifesto]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdAddExample1" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg add port <port name>]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[aggiunta porta vcpkg <nome porta>]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdAddExample2" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg add artifact <artifact name>]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg aggiunge l'artefatto <nome dell'artefatto>]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdAddSynopsis" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Adds dependency to manifest]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Aggiunge la dipendenza al manifesto]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdAddVersionExample1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg x-add-version <port name>]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg x-add-version <nome porta>]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CmdAddVersionOptAll" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Process versions for all ports.]]></Val>
+          <Val><![CDATA[Processes versions for all ports]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Elabora le versioni per tutte le porte.]]></Val>
+            <Val><![CDATA[Elabora le versioni per tutte le porte]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Process versions for all ports.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdAddVersionOptOverwriteVersion" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Overwrite `git-tree` of an existing version.]]></Val>
+          <Val><![CDATA[Overwrites git-tree of an existing version]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Sovrascrivi 'git-tree' di una versione esistente.]]></Val>
+            <Val><![CDATA[Sovrascrive l'albero Git di una versione esistente]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Overwrite `git-tree` of an existing version.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdAddVersionOptSkipFormatChk" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Skips the formatting check of vcpkg.json files.]]></Val>
+          <Val><![CDATA[Skips the formatting check of vcpkg.json files]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Ignora il controllo della formattazione dei file vcpkg.json.]]></Val>
+            <Val><![CDATA[Ignora il controllo di formattazione dei file vcpkg.json]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Skips the formatting check of vcpkg.json files.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdAddVersionOptSkipVersionFormatChk" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Skips the version format check.]]></Val>
+          <Val><![CDATA[Skips the version format check]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Ignora il controllo del formato della versione.]]></Val>
+            <Val><![CDATA[Ignora il controllo del formato della versione]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Skips the version format check.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdAddVersionOptVerbose" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Print success messages instead of just errors.]]></Val>
+          <Val><![CDATA[Prints success messages rather than only errors]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Stampa i messaggi di esito positivo anziché solo gli errori.]]></Val>
+            <Val><![CDATA[Stampa i messaggi di esito positivo anziché solo gli errori]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Print success messages instead of just errors.]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdAddVersionSynopsis" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Adds a version to the version database]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Aggiunge una versione al database della versione]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdBootstrapStandaloneSynopsis" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Bootstraps a vcpkg root from only a vcpkg binary]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Esegue il bootstrap di una radice vcpkg solo da un file binario vcpkg]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdBuildExample1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg build <port spec>]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[build vcpkg <spec porta>]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdBuildExternalExample1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg build-external <port name> <source path>]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg build-external <nome porta> < percorso origine>]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdBuildExternalExample2" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg build-external zlib2 C:\path\to\dir\with\vcpkg.json]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg build-external zlib2 C:\path\to\dir\with\vcpkg.json]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdBuildExternalSynopsis" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Builds port from a path]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Compila la porta da un percorso]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdBuildSynopsis" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Builds a port]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Compila una porta]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdCacheExample1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg cache <search substring>]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[cache vcpkg <cerca sottostringa>]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdCacheSynopsis" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[List specs of packages]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Elenca le specifiche dei pacchetti]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdCheckSupportExample1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg x-check-support <port name>]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg x-check-support <nome porta>]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdCheckSupportSynopsis" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Tests whether a port is supported without building it]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Verifica se una porta è supportata senza compilarla]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdCiCleanSynopsis" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Clears all files to prepare for a CI run]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Cancella tutti i file da preparare per un'esecuzione CI]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdCiSynopsis" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Tries building all ports for CI testing]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Prova a compilare tutte le porte per il test CI]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdCiVerifyVersionsSynopsis" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Checks integrity of the version database]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Controlla l'integrità del database della versione]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2265,6 +2484,51 @@
           <Val><![CDATA[Launch default browser to the current vcpkg survey]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Avvia il browser predefinito per il sondaggio vcpkg corrente]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdCreateExample1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg create <port name> <uri>]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[creazione vcpkg <nome porta> <uri>]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdCreateExample2" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg create my-fancy-port https://example.com/sources.zip]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[creazione vcpkg my-fancy-port https://example.com/sources.zip]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdCreateExample3" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg create <port name> <uri> <downloaded filename>]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[creazione vcpkg <nome porta> <uri> <nome file scaricato>]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdDeactivateSynopsis" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Removes all artifact activations from the current shell]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Rimuove tutte le attivazioni degli artefatti dalla shell corrente]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdDependInfoExample1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg depend-info <port name>]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[informazioni-dipend vcpkg <nome porta>]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2280,12 +2544,12 @@
       </Item>
       <Item ItemId=";CmdDependInfoFormatHelp" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Choose output format, one of `list`, `tree`, `mermaid`, `dot`, or `dgml`.]]></Val>
+          <Val><![CDATA[Chooses output format, one of `list`, `tree`, `mermaid`, `dot`, or `dgml`]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Scegliere il formato di output: `list`, `tree`, `dot` o `dgml`.]]></Val>
+            <Val><![CDATA[Sceglie il formato di output, uno di 'list', 'tree', 'mermaid', 'dot' o 'dgml']]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[Choose output format, one of `list`, `tree`, `dot`, or `dgml`.]]></Val>
+            <Val><![CDATA[Choose output format, one of `list`, `tree`, `mermaid`, `dot`, or `dgml`.]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -2304,36 +2568,36 @@
       </Item>
       <Item ItemId=";CmdDependInfoOptDepth" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Show recursion depth in `list` output.]]></Val>
+          <Val><![CDATA[Shows recursion depth in `list` output]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Mostrare la profondità della ricorsione nell'output `list`.]]></Val>
+            <Val><![CDATA[Mostra la profondità della ricorsione nell'output 'elenco']]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[Show recursion depth in output]]></Val>
+            <Val><![CDATA[Show recursion depth in `list` output.]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdDependInfoOptMaxRecurse" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Set max recursion depth. Default is no limit.]]></Val>
+          <Val><![CDATA[Sets max recursion depth. Default is no limit]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Impostare la profondità massima di ricorsione. Il valore predefinito è senza limite.]]></Val>
+            <Val><![CDATA[Imposta la profondità massima di ricorsione. Il valore predefinito non è un limite]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[Set max recursion depth, a value of -1 indicates no limit]]></Val>
+            <Val><![CDATA[Set max recursion depth. Default is no limit.]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdDependInfoOptSort" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Choose sort order for the `list` format, one of `lexicographical`, `topological` (default), `reverse`]]></Val>
+          <Val><![CDATA[Chooses sort order for the `list` format, one of `lexicographical`, `topological` (default), `reverse`]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Scegliere l'ordinamento per il formato `list`, uno fra `lexicographical`, `topological` (impostazione predefinita) e `reverse`]]></Val>
+            <Val><![CDATA[Sceglie l'ordinamento per il formato `list`, uno fra `lexicographical`, `topological` (impostazione predefinita) e `reverse`]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[Set sort order for the list of dependencies, accepted values are: lexicographical, topological (default), x-tree, reverse]]></Val>
+            <Val><![CDATA[Choose sort order for the `list` format, one of `lexicographical`, `topological` (default), `reverse`]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -2356,30 +2620,84 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CmdDownloadExample1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg x-download <filepath> <sha512> --url=https://...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg x-download <percorso file> <sha512> --url=https://...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdDownloadExample2" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg x-download <filepath> --sha512=<sha512> --url=https://...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg x-download <filepath> --sha512=<sha512> --url=https://...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdDownloadExample3" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg x-download <filepath> --skip-sha512 --url=https://...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg x-download <percorso file> --skip-sha512 --url=https://...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdDownloadSynopsis" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Downloads a file]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Scarica un file]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdEditExample1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg edit <port name>]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[modifica vcpkg <nome porta>]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CmdEditOptAll" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Open editor into the port as well as the port-specific buildtree subfolder]]></Val>
+          <Val><![CDATA[Opens editor into the port as well as the port-specific buildtree subfolder]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Apri l'editor nella porta e nella sottocartella buildtree specifica della porta]]></Val>
+            <Val><![CDATA[Apre l'editor nella porta e nella sottocartella dell'albero di compilazione specifica della porta]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Open editor into the port as well as the port-specific buildtree subfolder]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdEditOptBuildTrees" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Open editor into the port-specific buildtree subfolder]]></Val>
+          <Val><![CDATA[Opens editor into the port-specific buildtree subfolder]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Apri l'editor nella sottocartella buildtree specifica della porta]]></Val>
+            <Val><![CDATA[Apre l'editor nella sottocartella dell'albero di compilazione specifico della porta]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Open editor into the port-specific buildtree subfolder]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdEnvOptions" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Add installed {path} to {env_var}]]></Val>
+          <Val><![CDATA[Adds installed {path} to {env_var}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Aggiungi {path} installato a {env_var}]]></Val>
+            <Val><![CDATA[Aggiunge {path} installato a {env_var}]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Add installed {path} to {env_var}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -2392,192 +2710,264 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CmdExportExample1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg export <port names> [--nuget]5D; [--directory=out_dir]5D;]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[esportazione vcpkg <nomi porte> [--nuget]5D; [--directory=out_dir]5D;]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CmdExportOpt7Zip" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Export to a 7zip (.7z) file]]></Val>
+          <Val><![CDATA[Exports to a 7zip (.7z) file]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Esporta in un file 7zip (.7z)]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Export to a 7zip (.7z) file]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdExportOptChocolatey" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Export a Chocolatey package (experimental feature)]]></Val>
+          <Val><![CDATA[Exports a Chocolatey package (experimental)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Esporta un pacchetto Chocolatey (funzionalità sperimentale)]]></Val>
+            <Val><![CDATA[Esporta un pacchetto Chocolatey (sperimentale)]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Export a Chocolatey package (experimental feature)]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdExportOptDebug" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Enable prefab debug]]></Val>
+          <Val><![CDATA[Enables prefab debug]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Abilita debug prefab]]></Val>
+            <Val><![CDATA[Abilita il debug prefab]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Enable prefab debug]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdExportOptDryRun" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Do not actually export.]]></Val>
+          <Val><![CDATA[Does not actually export]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Non esportare effettivamente.]]></Val>
+            <Val><![CDATA[Non esporta effettivamente]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Do not actually export.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdExportOptIFW" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Export to an IFW-based installer]]></Val>
+          <Val><![CDATA[Exports to an IFW-based installer]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Esporta in un programma di installazione basato su IFW]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Export to an IFW-based installer]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdExportOptInstalled" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Export all installed packages]]></Val>
+          <Val><![CDATA[Exports all installed packages]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Esporta tutti i pacchetti installati]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Export all installed packages]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdExportOptMaven" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Enable Maven]]></Val>
+          <Val><![CDATA[Enables Maven]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Abilita Maven]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Enable Maven]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdExportOptNuget" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Export a NuGet package]]></Val>
+          <Val><![CDATA[Exports a NuGet package]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Esporta un pacchetto NuGet]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Export a NuGet package]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdExportOptPrefab" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Export to Prefab format]]></Val>
+          <Val><![CDATA[Exports to Prefab format]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Esporta in formato Prefab]]></Val>
+            <Val><![CDATA[Esporta nel formato prefab]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Export to Prefab format]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdExportOptRaw" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Export to an uncompressed directory]]></Val>
+          <Val><![CDATA[Exports to an uncompressed directory]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Esporta in una directory non compressa]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Export to an uncompressed directory]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdExportOptZip" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Export to a zip file]]></Val>
+          <Val><![CDATA[Exports to a zip file]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Esporta in un file ZIP]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Export to a zip file]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdExportSettingChocolateyMaint" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Specify the maintainer for the exported Chocolatey package (experimental feature)]]></Val>
+          <Val><![CDATA[The maintainer for the exported Chocolatey package (experimental)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Specificare il gestore per il pacchetto Chocolatey esportato (funzionalità sperimentale)]]></Val>
+            <Val><![CDATA[Il gestore del pacchetto Chocolatey esportato (sperimentale)]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Specify the maintainer for the exported Chocolatey package (experimental feature)]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdExportSettingChocolateyVersion" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Specify the version suffix to add for the exported Chocolatey package (experimental feature)]]></Val>
+          <Val><![CDATA[The version suffix to add for the exported Chocolatey package (experimental)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Specificare il suffisso di versione da aggiungere per il pacchetto Chocolatey esportato (funzionalità sperimentale)]]></Val>
+            <Val><![CDATA[Suffisso di versione da aggiungere per il pacchetto Chocolatey esportato (sperimentale)]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Specify the version suffix to add for the exported Chocolatey package (experimental feature)]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdExportSettingConfigFile" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Specify the temporary file path for the installer configuration]]></Val>
+          <Val><![CDATA[The temporary file path for the installer configuration]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Specificare il percorso del file temporaneo per la configurazione del programma di installazione]]></Val>
+            <Val><![CDATA[Percorso del file temporaneo per la configurazione del programma di installazione]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Specify the temporary file path for the installer configuration]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdExportSettingInstallerPath" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Specify the file path for the exported installer]]></Val>
+          <Val><![CDATA[The file path for the exported installer]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Specificare il percorso del file per il programma di installazione esportato]]></Val>
+            <Val><![CDATA[Percorso del file per il programma di installazione esportato]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Specify the file path for the exported installer]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdExportSettingNugetDesc" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Specify a description for the exported NuGet package]]></Val>
+          <Val><![CDATA[Description for the exported NuGet package]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Specificare una descrizione per il pacchetto NuGet esportato]]></Val>
+            <Val><![CDATA[Descrizione del pacchetto NuGet esportato]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Specify a description for the exported NuGet package]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdExportSettingNugetID" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Specify the id for the exported NuGet package (overrides --output)]]></Val>
+          <Val><![CDATA[Id for the exported NuGet package (overrides --output)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Specificare l'ID per il pacchetto NuGet esportato (esegue l'override di --output)]]></Val>
+            <Val><![CDATA[ID per il pacchetto NuGet esportato (esegue l'override di --output)]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Specify the id for the exported NuGet package (overrides --output)]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdExportSettingNugetVersion" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Specify the version for the exported NuGet package]]></Val>
+          <Val><![CDATA[The version for the exported NuGet package]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Specificare la versione per il pacchetto NuGet esportato]]></Val>
+            <Val><![CDATA[Versione del pacchetto NuGet esportato]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Specify the version for the exported NuGet package]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdExportSettingOutput" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Specify the output name (used to construct filename)]]></Val>
+          <Val><![CDATA[The output name (used to construct filename)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Specificare il nome di output (usato per costruire il nome file)]]></Val>
+            <Val><![CDATA[Nome di output (usato per costruire il nome file)]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Specify the output name (used to construct filename)]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdExportSettingOutputDir" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Specify the output directory for produced artifacts]]></Val>
+          <Val><![CDATA[The output directory for produced artifacts]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Specificare la directory di output per gli artefatti prodotti]]></Val>
+            <Val><![CDATA[Directory di output per gli artefatti prodotti]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Specify the output directory for produced artifacts]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdExportSettingPkgDir" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Specify the temporary directory path for the repacked packages]]></Val>
+          <Val><![CDATA[The temporary directory path for the repacked packages]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Specificare il percorso della directory temporanea per i pacchetti ricreati]]></Val>
+            <Val><![CDATA[Percorso della directory temporanea per i pacchetti compressi di nuovo]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Specify the temporary directory path for the repacked packages]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -2610,234 +3000,609 @@
       </Item>
       <Item ItemId=";CmdExportSettingRepoDir" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Specify the directory path for the exported repository]]></Val>
+          <Val><![CDATA[The directory path for the exported repository]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Specificare il percorso della directory per il repository esportato]]></Val>
+            <Val><![CDATA[Percorso della directory per il repository esportato]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Specify the directory path for the exported repository]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdExportSettingRepoURL" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Specify the remote repository URL for the online installer]]></Val>
+          <Val><![CDATA[The remote repository URL for the online installer]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Specificare l'URL del repository remoto per il programma di installazione online]]></Val>
+            <Val><![CDATA[URL del repository remoto per il programma di installazione online]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Specify the remote repository URL for the online installer]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdExportSettingSDKMinVersion" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Android minimum supported SDK version]]></Val>
+          <Val><![CDATA[The Android minimum supported SDK version]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Versione minima supportata di Android SDK]]></Val>
+            <Val><![CDATA[Versione minima dell'SDK supportata per Android]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Android minimum supported SDK version]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdExportSettingSDKTargetVersion" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Android target sdk version]]></Val>
+          <Val><![CDATA[The Android target sdk version]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Versione Android SDK di destinazione]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Android target sdk version]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdExportSynopsis" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Creates a standalone deployment of installed ports]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Crea una distribuzione autonoma delle porte installate]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdFetchOptXStderrStatus" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Direct status/downloading messages to stderr rather than stdout. (Errors/failures still go to stdout)]]></Val>
+          <Val><![CDATA[Prints status/downloading messages to stderr rather than stdout (Errors/failures still go to stdout)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Indirizza messaggi di stato/download a stderr anziché a stdout (gli errori vanno comunque a stdout)]]></Val>
+            <Val><![CDATA[Stampa i messaggi di stato/download in stderr anziché stdout (gli errori vengono comunque visualizzati in stdout)]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Direct status/downloading messages to stderr rather than stdout. (Errors/failures still go to stdout)]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdFetchSynopsis" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Fetches something from the system or the internet]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Recupera un elemento dal sistema o da Internet]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdFindExample1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg find port <port name>]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[trova porta vcpkg <nome porta>]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdFindExample2" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg find artifact <artifact name>]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[trova artefatto vcpkg < nome artefatto>]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdFindSynopsis" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Finds a port or artifact that may be installed or activated]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Trova una porta o un artefatto che può essere installato o attivato]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdFormatManifestExample1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg format-manifest <vcpkg.json path>]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[formato-manifesto vcpkg <vcpkg.json path>]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdFormatManifestOptAll" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Format all ports' manifest files.]]></Val>
+          <Val><![CDATA[Formats all ports' manifest files]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Formatta i file manifesto di tutte le porte.]]></Val>
+            <Val><![CDATA[Formatta i file manifesto di tutte le porte]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Format all ports' manifest files.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdFormatManifestOptConvertControl" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Convert CONTROL files to manifest files.]]></Val>
+          <Val><![CDATA[Converts CONTROL files to manifest files]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Convertire i file CONTROL in file manifesto.]]></Val>
+            <Val><![CDATA[Converte i file CONTROL in file manifesto]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Convert CONTROL files to manifest files.]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdFormatManifestSynopsis" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Prettyfies vcpkg.json]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Prettyfies vcpkg.json]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdGenerateMSBuildPropsExample1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg generate-msbuild-props --msbuild-props <path>]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg generate-msbuild-props --msbuild-props <percorso>]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdGenerateMSBuildPropsExample2" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg generate-msbuild-props --msbuild-props out.props]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg generate-msbuild-props --msbuild-props out.props]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdGenerateMSBuildPropsSynopsis" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Generates msbuild .props files as if activating a manifest's artifact dependencies, without acquiring them]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Genera file msbuild con estensione props come se si attivassero le dipendenze dell'artefatto di un manifesto, senza acquisirle]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdGenerateMessageMapOptNoOutputComments" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[When generating the message map, exclude comments (useful for generating the English localization file)]]></Val>
+          <Val><![CDATA[Excludes comments when generating the message map (useful for generating the English localization file)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Durante la generazione della mappa messaggi, escludi i commenti (utile per la generazione del file di localizzazione in inglese)]]></Val>
+            <Val><![CDATA[Esclude i commenti durante la generazione della mappa messaggi (utile per la generazione del file di localizzazione in inglese)]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[When generating the message map, exclude comments (useful for generating the English localization file)]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdHashExample1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg hash <path>]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[hash vcpkg <percorso>]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdHashExample2" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg hash <path> SHA256]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[hash vcpkg <percorso> SHA256]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdHashSynopsis" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Gets a file's SHA256 or SHA512]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Ottiene SHA256 o SHA512 di un file]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdHelpCommandSynopsis" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Displays help detail for <command>]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Visualizza i dettagli della Guida per <comando>]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdHelpCommands" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[help <command>]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[guida <comando>]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdHelpCommandsSynopsis" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Displays full list of commands, including rare ones not listed here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Visualizza l'elenco completo dei comandi, inclusi quelli rari non elencati qui]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdHelpTopic" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[help <topic>]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[guida <argomento>]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdInfoOptInstalled" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[(experimental) Report on installed packages instead of available]]></Val>
+          <Val><![CDATA[(experimental) Reports installed packages rather than available]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[(sperimentale) Segnala i pacchetti installati anziché quelli disponibili]]></Val>
+            <Val><![CDATA[(sperimentale) Segnala i pacchetti installati anziché disponibili]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[(experimental) Report on installed packages instead of available]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdInfoOptTransitive" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[(experimental) Also report on dependencies of installed packages]]></Val>
+          <Val><![CDATA[(experimental) Also reports dependencies of installed packages]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[(sperimentale) Segnala anche le dipendenze dei pacchetti installati]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[(experimental) Also report on dependencies of installed packages]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdInitRegistryExample1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg x-init-registry <path>]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg x-init-registry <percorso>]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdInitRegistrySynopsis" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Creates a blank git registry]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Crea un registro Git vuoto]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdInstallExample1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg install <port name> <port name>...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[installazione vcpkg <nome porta> <nome porta>...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdIntegrateSynopsis" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Integrates vcpkg with machines, projects, or shells]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Integra vcpkg con computer, progetti o shell]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdListExample2" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg list <filter>]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[elenco vcpkg <filtro>]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdNewExample1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg new --name=example --version=1.0]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg new --name=example --version=1.0]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdNewOptApplication" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Create an application manifest (don't require name or version).]]></Val>
+          <Val><![CDATA[Creates an application manifest (don't require name or version)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Crea un manifesto dell'applicazione (non richiede nome o versione).]]></Val>
+            <Val><![CDATA[Crea un manifesto dell'applicazione (non richiede nome o versione)]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Create an application manifest (don't require name or version).]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdNewOptSingleFile" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Embed vcpkg-configuration.json into vcpkg.json.]]></Val>
+          <Val><![CDATA[Embeds vcpkg-configuration.json into vcpkg.json]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Incorpora vcpkg-configuration.json in vcpkg.json.]]></Val>
+            <Val><![CDATA[Incorpora vcpkg-configuration.json in vcpkg.json]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Embed vcpkg-configuration.json into vcpkg.json.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdNewOptVersionDate" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Interpret --version as an ISO 8601 date. (YYYY-MM-DD)]]></Val>
+          <Val><![CDATA[Interprets --version as an ISO 8601 date. (YYYY-MM-DD)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Interpreta --version come data ISO 8601. (AAAA-MM-GG)]]></Val>
+            <Val><![CDATA[Interpreta --versione come data ISO 8601. (AAAA-MM-GG)]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Interpret --version as an ISO 8601 date. (YYYY-MM-DD)]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdNewOptVersionRelaxed" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Interpret --version as a relaxed-numeric version. (Nonnegative numbers separated by dots)]]></Val>
+          <Val><![CDATA[Interprets --version as a relaxed-numeric version (Nonnegative numbers separated by dots)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Interpreta --version come versione numerica di tipo relaxed (numeri non negativi separati da punti).]]></Val>
+            <Val><![CDATA[Interpreta --versione come versione numerica di tipo relaxed (numeri non negativi separati da punti).]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Interpret --version as a relaxed-numeric version. (Nonnegative numbers separated by dots)]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdNewOptVersionString" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Interpret --version as a string with no ordering behavior.]]></Val>
+          <Val><![CDATA[Interprets --version as a string with no ordering behavior]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Interpreta --version come stringa senza alcun comportamento di ordinamento.]]></Val>
+            <Val><![CDATA[Interpreta --versione come stringa senza alcun comportamento di ordinamento]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Interpret --version as a string with no ordering behavior.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdNewSettingName" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Name for the new manifest.]]></Val>
+          <Val><![CDATA[Name for the new manifest]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Nome del nuovo manifesto.]]></Val>
+            <Val><![CDATA[Nome del nuovo manifesto]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Name for the new manifest.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdNewSettingVersion" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Version for the new manifest.]]></Val>
+          <Val><![CDATA[Version for the new manifest]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Versione del nuovo manifesto.]]></Val>
+            <Val><![CDATA[Versione del nuovo manifesto]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Version for the new manifest.]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdNewSynposis" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Creates a new manifest]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Crea un nuovo manifesto]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdOwnsExample1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg owns <pattern>]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg possiede <pattern>]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdPackageInfoExample1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg x-package-info <package name>...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg x-package-info <nome pacchetto>...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdPortsdiffExample1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg portsdiff <branch name>]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg portsdiff <nome rame>]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdPortsdiffExample2" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg portsdiff <from> <to>]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg portsdiff <da> <a>]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdPortsdiffSynopsis" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Diffs changes in port versions between commits]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Differenze nelle versioni delle porte tra commit]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdRegenerateOptDryRun" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[does not actually perform the action, shows only what would be done]]></Val>
+          <Val><![CDATA[Does not actually perform the action, shows only what would be done]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[non esegue effettivamente l'azione, mostra solo ciò che verrebbe fatto]]></Val>
+            <Val><![CDATA[Non esegue effettivamente l'azione, mostra solo le operazioni che verrebbero eseguite]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[does not actually perform the action, shows only what would be done]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdRegenerateOptForce" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[proceeds with the (potentially dangerous) action without confirmation]]></Val>
+          <Val><![CDATA[Proceeds with the (potentially dangerous) action without confirmation]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[procede con l'azione (potenzialmente pericolosa) senza conferma]]></Val>
+            <Val><![CDATA[Procede con l'azione (potenzialmente pericoloso) senza conferma]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[proceeds with the (potentially dangerous) action without confirmation]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdRegenerateOptNormalize" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[apply any deprecation fixups]]></Val>
+          <Val><![CDATA[Applies any deprecation fixes]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[applica tutte le correzioni per deprecazione]]></Val>
+            <Val><![CDATA[Applica eventuali correzioni deprecate]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[apply any deprecation fixups]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdRemoveExample1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg remove <package name>...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[rimozione vcpkg <nome pacchetto>...]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdRemoveOptDryRun" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Print the packages to be removed, but do not remove them]]></Val>
+          <Val><![CDATA[Prints the packages to be removed, but does not remove them]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Stampa i pacchetti da rimuovere, ma non rimuoverli]]></Val>
+            <Val><![CDATA[Stampa i pacchetti da rimuovere, ma non li rimuove]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Print the packages to be removed, but do not remove them]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdRemoveOptOutdated" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Select all packages with versions that do not match the portfiles]]></Val>
+          <Val><![CDATA[Removes all packages with versions that do not match the built-in registry]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Selezionare tutti i pacchetti con versioni che non corrispondono ai file di porta]]></Val>
+            <Val><![CDATA[Rimuove tutti i pacchetti con versioni che non corrispondono al registro di sistema predefinito]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Select all packages with versions that do not match the portfiles]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdRemoveOptRecurse" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Allow removal of packages not explicitly specified on the command line]]></Val>
+          <Val><![CDATA[Allows removal of dependent packages not explicitly specified]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Consenti la rimozione di pacchetti non specificati in modo esplicito nella riga di comando]]></Val>
+            <Val><![CDATA[Consente la rimozione di pacchetti dipendenti non specificati in modo esplicito]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Allow removal of packages not explicitly specified on the command line]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdSearchExample1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg search <pattern>]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[ricerca vcpkg <pattern>]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdSetInstalledExample1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg x-set-installed <package name> <package name>...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg x-set-installed <nome pacchetto> <nome pacchetto>...]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdSetInstalledOptDryRun" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Do not actually build or install]]></Val>
+          <Val><![CDATA[Does not actually build or install]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Non compilare o installare effettivamente]]></Val>
+            <Val><![CDATA[Non esegue effettivamente la compilazione o l'installazione]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Do not actually build or install]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdSetInstalledOptNoUsage" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Don't print CMake usage information after install.]]></Val>
+          <Val><![CDATA[Does not print CMake usage information after install]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Non stampare le informazioni sull'utilizzo di CMake dopo l'installazione.]]></Val>
+            <Val><![CDATA[Non stampa le informazioni sull'utilizzo di CMake dopo l'installazione]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Don't print CMake usage information after install.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CmdSetInstalledOptWritePkgConfig" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";CmdSetInstalledOptWritePkgConfig" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Writes out a NuGet packages.config-formatted file for use with external binary caching.]A;See `vcpkg help binarycaching` for more information.]]></Val>
+          <Val><![CDATA[Writes a NuGet packages.config-formatted file for use with external binary caching. See `vcpkg help binarycaching` for more information]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Scrive un file packages.config in formato NuGet da usare con la memorizzazione nella cache binaria esterna.]A;Per altre informazioni, vedere 'vcpkg help binarycaching'.]]></Val>
+            <Val><![CDATA[Scrive un file in formato NuGet packages.config da usare con la memorizzazione nella cache binaria esterna. Per altre informazioni, vedere 'vcpkg help binarycaching']]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Writes out a NuGet packages.config-formatted file for use with external binary caching.]A;See `vcpkg help binarycaching` for more information.]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdSetInstalledSynopsis" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Installs, upgrades, or removes packages such that that installed matches exactly those supplied]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Installa, aggiorna o rimuove i pacchetti in modo che quelli installati corrispondano esattamente a quelli forniti]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2880,28 +3645,46 @@
       </Item>
       <Item ItemId=";CmdUpdateBaselineOptDryRun" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Print out plan without execution]]></Val>
+          <Val><![CDATA[Prints out plan without execution]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Stampa il piano senza esecuzione]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Print out plan without execution]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdUpdateBaselineOptInitial" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[add a `builtin-baseline` to a vcpkg.json that doesn't already have it]]></Val>
+          <Val><![CDATA[Adds a `builtin-baseline` to a vcpkg.json that doesn't already have it]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[aggiungi una `builtin-baseline` a un file vcpkg.json che non la contiene già]]></Val>
+            <Val><![CDATA[Aggiunge una 'builtin-baseline' a un file vcpkg.json che non lo contiene già]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[add a `builtin-baseline` to a vcpkg.json that doesn't already have it]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdUpdateBaselineSynopsis" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Updates baselines of git registries in a manifest to those registries' HEAD commit]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Aggiorna le baseline dei registri Git in un manifesto al commit HEAD di tali registri]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdUpdateRegistryAll" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Update all known artifact registries]]></Val>
+          <Val><![CDATA[Updates all known artifact registries]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Aggiorna tutti i registri artefatti noti]]></Val>
+            <Val><![CDATA[Aggiorna tutti i registri di artefatti noti]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Update all known artifact registries]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -2923,11 +3706,20 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CmdUpgradeOptAllowUnsupported" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";CmdUpdateRegistryExample3" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Instead of erroring on an unsupported port, continue with a warning.]]></Val>
+          <Val><![CDATA[vcpkg x-update-registry <artifact registry name>]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Anziché generare un errore di porta non supportata, continua con un avviso.]]></Val>
+            <Val><![CDATA[vcpkg x-update-registry <nome del registro artefatti>]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdUpdateRegistrySynopsis" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Re-downloads an artifact registry]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Scarica nuovamente un registro artefatti]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2946,6 +3738,33 @@
           <Val><![CDATA[Stop installing packages on failure]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Interrompi l'installazione dei pacchetti in caso di errore]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdUseExample1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg use <artifact name>]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[utilizzo vcpkg <nome artefatto>]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdUseSynopsis" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Activate a single artifact in this shell]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Attivare un singolo artefatto in questa shell]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdVSInstancesSynopsis" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Lists detected Visual Studio instances]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Elenchi rilevati istanze Visual Studio]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2970,19 +3789,25 @@
       </Item>
       <Item ItemId=";CmdXDownloadOptSkipSha" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Do not check the SHA512 of the downloaded file]]></Val>
+          <Val><![CDATA[Skips check of SHA512 of the downloaded file]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Non controllare l'hash SHA512 del file scaricato]]></Val>
+            <Val><![CDATA[Ignora il controllo di SHA512 del file scaricato]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Do not check the SHA512 of the downloaded file]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdXDownloadOptStore" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Indicates the file should be stored instead of fetched]]></Val>
+          <Val><![CDATA[Stores the the file should father than fetching it]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Indica che il file deve essere archiviato anziché recuperato]]></Val>
+            <Val><![CDATA[Archivia il file in modo che non venga recuperato]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Indicates the file should be stored instead of fetched]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -2991,6 +3816,51 @@
           <Val><![CDATA[URL to download and store if missing from cache]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[URL per il download e l'archiviazione se mancante dalla cache]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdZApplocalSynopsis" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Copies a binary's dependencies from the installed tree to where that binary's location for app-local deployment]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Copia le dipendenze di un file binario dall'albero installato in cui si trova il percorso del file binario per la distribuzione locale dell'app]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdZExtractExample1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg z-extract <archive path> <output directory>]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg z-extract <percorso archivio> <directory uscita>]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdZExtractExample2" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg z-extract source.zip source_dir --strip 2]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg z-extract source.zip source_dir --strip 2]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdZExtractOptStrip" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The number of leading directories to strip from all paths]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Numero di directory iniziali da rimuovere da tutti i percorsi]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CommandEnvExample2" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg env "ninja -C <path>" --triplet x64-windows]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg env "ninja -C <percorso>" --triplet x64-windows]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -3007,21 +3877,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";Commands" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Commands:]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Comandi:]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";CommunityTriplets" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[VCPKG community triplets:]]></Val>
+          <Val><![CDATA[Community Triplets:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Triplet della community vcpkg:]]></Val>
+            <Val><![CDATA[Triplette della community:]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[VCPKG community triplets:]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -3382,15 +4246,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";DeactivatesTheCurrentSession" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Deactivates the current session]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Disattiva la sessione corrente]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";Deactivating$" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Deactivating: ${p0}]]></Val>
@@ -3445,11 +4300,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";DefaultTriplet" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";DefaultTripletChanged" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Starting with the September 2023 release, the default triplet for vcpkg libraries will change from x86-windows to the detected host triplet ({triplet}). To resolve this message, add --triplet x86-windows to keep the same behavior.]]></Val>
+          <Val><![CDATA[In the September 2023 release, the default triplet for vcpkg libraries changed from x86-windows to the detected host triplet ({triplet}). For the old behavior, add --triplet x86-windows . To suppress this message, add --triplet {triplet} .]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[A partire dalla versione di settembre 2023, la tripletta predefinita per le librerie vcpkg passerà da x86-windows alla tripletta host rilevata ({triplet}). Per risolvere il messaggio, aggiungere --triplet x86-windows per mantenere lo stesso comportamento.]]></Val>
+            <Val><![CDATA[Nella versione di settembre 2023 la tripletta predefinita per le librerie vcpkg è cambiata da x86-windows a tripletta host rilevata ({triplet}). Per il comportamento precedente, aggiungere --triplet x86-windows. Per eliminare questo messaggio, aggiungere --tripletta {triplet}.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -3459,15 +4314,6 @@
           <Val><![CDATA[-- Or remove "vcpkg-configuration" from the manifest file {path}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[-- In alternativa, rimuovere "vcpkg-configuration" dal file manifesto {path}.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";DeletesAnArtifactFromTheArtifactFolder" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Deletes an artifact from the artifact folder]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Elimina un artefatto dalla cartella dell'artefatto]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -3597,10 +4443,13 @@
       </Item>
       <Item ItemId=";DownloadRootsDir" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Specify the downloads root directory.]A;(default: {env_var})]]></Val>
+          <Val><![CDATA[Downloads directory (default: {env_var})]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Specificare la directory radice dei download.]A;(impostazione predefinita: {env_var})]]></Val>
+            <Val><![CDATA[Scarica la directory (impostazione predefinita: {env_var})]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Specify the downloads root directory.]A;(default: {env_var})]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -4156,11 +5005,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";Example" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";ExamplesHeader" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[example:]]></Val>
+          <Val><![CDATA[Examples:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[esempio:]]></Val>
+            <Val><![CDATA[Esempi:]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -5077,15 +5926,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";FindArtifactsInTheRegistry" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Find artifacts in the registry]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Trova artefatti nel Registro di sistema]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";FindHelp" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Searches for the indicated artifact or port. With no parameter after 'artifact' or 'port', displays everything.]]></Val>
@@ -5145,6 +5985,15 @@
           <Val><![CDATA[The following packages are up-to-date:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[I pacchetti seguenti sono aggiornati:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ForMoreHelp" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[For More Help]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Per altra guida]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -5250,15 +6099,6 @@
           <Val><![CDATA[{path} installer generated.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Il programma di installazione {path} è stato generato.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";GeneratesMSBuildPropertiesForAnActivationWithoutDownloadingAnythingForAProject" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Generates MSBuild properties for an activation without downloading anything for a project]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Genera le proprietà di MSBuild per un'attivazione senza scaricare alcun elemento per un progetto]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -5637,55 +6477,73 @@
       </Item>
       <Item ItemId=";HelpContactCommand" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Display contact information to send feedback.]]></Val>
+          <Val><![CDATA[Displays contact information to send feedback]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Visualizza le informazioni sul contatto per inviare il feedback.]]></Val>
+            <Val><![CDATA[Visualizza le informazioni di contatto per inviare feedback]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Display contact information to send feedback.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";HelpCreateCommand" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Create a new port.]]></Val>
+          <Val><![CDATA[Creates a new port]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Crea una nuova porta.]]></Val>
+            <Val><![CDATA[Crea una nuova porta]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Create a new port.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";HelpDependInfoCommand" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Display a list of dependencies for ports.]]></Val>
+          <Val><![CDATA[Displays a list of dependencies for ports]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Visualizza un elenco di dipendenze per le porte.]]></Val>
+            <Val><![CDATA[Visualizza un elenco di dipendenze per le porte]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Display a list of dependencies for ports.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";HelpEditCommand" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Open a port for editing (use the environment variable '{env_var}' to set an editor program, defaults to 'code').]]></Val>
+          <Val><![CDATA[Edits a port, optionally with {env_var}, defaults to "code"]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Aprire una porta per la modifica (usare la variabile di ambiente '{env_var}' per impostare un programma editor. Valore predefinito: 'code').]]></Val>
+            <Val><![CDATA[Modifica una porta, facoltativamente con {env_var}, il valore predefinito è "code"]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Open a port for editing (use the environment variable '{env_var}' to set an editor program, defaults to 'code').]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";HelpEnvCommand" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Creates a clean shell environment for development or compiling.]]></Val>
+          <Val><![CDATA[Creates a clean shell environment for development or compiling]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Crea un ambiente shell pulito per lo sviluppo o la compilazione.]]></Val>
+            <Val><![CDATA[Crea un ambiente shell pulito per lo sviluppo o la compilazione]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Creates a clean shell environment for development or compiling.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";HelpExampleCommand" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[For more help (including examples) see the accompanying README.md and docs folder.]]></Val>
+          <Val><![CDATA[For more help (including examples) see https://learn.microsoft.com/vcpkg]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Per altre informazioni, inclusi esempi, vedere il file README.md e la cartella docs.]]></Val>
+            <Val><![CDATA[Per altre informazioni (inclusi esempi), vedere https://learn.microsoft.com/vcpkg]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[For more help (including examples) see the accompanying README.md and docs folder.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -5707,15 +6565,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";HelpFormatManifestCommand" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Formats all vcpkg.json files. Run this before committing to vcpkg.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Formatta tutti i file vcpkg.json. Eseguire questa operazione prima di eseguire il commit in vcpkg.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";HelpHashCommand" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Hash a file by specific algorithm, default SHA512.]]></Val>
@@ -5725,30 +6574,27 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";HelpInitializeRegistryCommand" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Initializes a registry in the directory <path>.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Inizializza un Registro di sistema nella directory <path>.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";HelpInstallCommand" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Install a package.]]></Val>
+          <Val><![CDATA[Installs a package]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Installa un pacchetto.]]></Val>
+            <Val><![CDATA[Installa un pacchetto]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Install a package.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";HelpListCommand" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[List installed packages.]]></Val>
+          <Val><![CDATA[Lists installed packages]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Elenca i pacchetti installati.]]></Val>
+            <Val><![CDATA[Elenca i pacchetti installati]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[List installed packages.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -5781,10 +6627,13 @@
       </Item>
       <Item ItemId=";HelpOwnsCommand" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Search for files in installed packages.]]></Val>
+          <Val><![CDATA[Searches for the owner of a file in installed packages]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Cerca i file nei pacchetti installati.]]></Val>
+            <Val><![CDATA[Cerca il proprietario di un file nei pacchetti installati]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Search for files in installed packages.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -5799,280 +6648,313 @@
       </Item>
       <Item ItemId=";HelpPortVersionScheme" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Each version additionally has a "port-version" which is a nonnegative integer. When rendered as text, the port version (if nonzero) is added as a suffix to the primary version text separated by a hash (#). Port-versions are sorted lexographically after the primary version text, for example:]A;1.0.0 < 1.0.0#1 < 1.0.1 < 1.0.1#5 < 2.0.0]]></Val>
+          <Val><![CDATA[Each version additionally has a "port-version" which is a nonnegative integer. When rendered as text, the port version (if nonzero) is added as a suffix to the primary version text separated by a hash (#). Port-versions are sorted lexicographically after the primary version text, for example:]A;1.0.0 < 1.0.0#1 < 1.0.1 < 1.0.1#5 < 2.0.0]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Ogni versione ha anche un valore "port-version" che è un numero intero non negativo. Quando viene eseguito il rendering come testo, la versione della porta (se diversa da zero) viene aggiunta come suffisso al testo della versione primaria separata da cancelletto (#). Le versioni delle porte vengono ordinate in ordine alfabetico dopo il testo della versione primaria, ad esempio:]A;1.0.0 < 1.0.0#1 < 1.0.1 < 1.0.1#5 < 2.0.0]]></Val>
+            <Val><![CDATA[Ogni versione ha anche un valore "versione-porta" che è un numero intero non negativo. Quando viene eseguito il rendering come testo, la versione della porta (se diversa da zero) viene aggiunta come suffisso al testo della versione primaria separata da cancelletto (#). Le versioni delle porte vengono ordinate in ordine alfabetico dopo il testo della versione primaria, ad esempio:]A;1.0.0 < 1.0.0#1 < 1.0.1 < 1.0.1#5 < 2.0.0]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Each version additionally has a "port-version" which is a nonnegative integer. When rendered as text, the port version (if nonzero) is added as a suffix to the primary version text separated by a hash (#). Port-versions are sorted lexographically after the primary version text, for example:]A;1.0.0 < 1.0.0#1 < 1.0.1 < 1.0.1#5 < 2.0.0]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";HelpRemoveCommand" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Uninstall a package.]]></Val>
+          <Val><![CDATA[Uninstalls a package]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Disinstalla un pacchetto.]]></Val>
+            <Val><![CDATA[Disinstalla un pacchetto]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Uninstall a package.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";HelpRemoveOutdatedCommand" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";HelpResponseFileCommand" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Uninstall all out-of-date packages.]]></Val>
+          <Val><![CDATA[Contains one argument per line expanded at that location]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Disinstalla tutti i pacchetti non aggiornati.]]></Val>
+            <Val><![CDATA[Contiene un argomento per riga espanso in tale posizione]]></Val>
           </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";HelpResponseFileCommand" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Specify a response file to provide additional parameters.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Specificare un file di risposta per fornire parametri aggiuntivi.]]></Val>
-          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Specify a response file to provide additional parameters.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";HelpSearchCommand" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Search for packages available to be built.]]></Val>
+          <Val><![CDATA[Searches for packages available to be built]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Cerca i pacchetti disponibili per la compilazione.]]></Val>
+            <Val><![CDATA[Cerca i pacchetti disponibili per la compilazione]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Search for packages available to be built.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";HelpTextOptFullDesc" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Do not truncate long text.]]></Val>
+          <Val><![CDATA[Does not truncate long text]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Non troncare il testo lungo.]]></Val>
+            <Val><![CDATA[Non tronca il testo lungo]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[Do not truncate long text]]></Val>
+            <Val><![CDATA[Do not truncate long text.]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";HelpTopicCommand" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Display help for a specific topic.]]></Val>
+          <Val><![CDATA[Displays specific help topic]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Visualizza la Guida per un argomento specifico.]]></Val>
+            <Val><![CDATA[Visualizza l'argomento della Guida specifico]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Display help for a specific topic.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";HelpTopicsCommand" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Display the list of help topics.]]></Val>
+          <Val><![CDATA[Displays full list of help topics]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Visualizza l'elenco degli argomenti della Guida.]]></Val>
+            <Val><![CDATA[Visualizza l'elenco completo degli argomenti della Guida]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Display the list of help topics.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";HelpTxtOptAllowUnsupportedPort" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Instead of erroring on an unsupported port, continue with a warning.]]></Val>
+          <Val><![CDATA[Continues with a warning on unsupported ports, rather than failing]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Anziché generare un errore di porta non supportata, continua con un avviso.]]></Val>
+            <Val><![CDATA[Continua con un avviso sulle porte non supportate, anziché sugli errori]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Instead of erroring on an unsupported port, continue with a warning.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";HelpTxtOptCleanAfterBuild" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Clean buildtrees, packages and downloads after building each package.]]></Val>
+          <Val><![CDATA[Cleans buildtrees, packages and downloads after building each package]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Pulire gli alberi di compilazione, i pacchetti e i download dopo la compilazione di ogni pacchetto.]]></Val>
+            <Val><![CDATA[Pulisce gli alberi di compilazione, i pacchetti e i download dopo la compilazione di ogni pacchetto]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[Clean buildtrees, packages and downloads after building each package]]></Val>
+            <Val><![CDATA[Clean buildtrees, packages and downloads after building each package.]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";HelpTxtOptCleanBuildTreesAfterBuild" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Clean buildtrees after building each package.]]></Val>
+          <Val><![CDATA[Cleans buildtrees after building each package]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Pulire gli alberi di compilazione dopo la compilazione di ogni pacchetto.]]></Val>
+            <Val><![CDATA[Pulisce gli alberi di compilazione dopo la compilazione di ogni pacchetto]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[Clean buildtrees after building each package]]></Val>
+            <Val><![CDATA[Clean buildtrees after building each package.]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";HelpTxtOptCleanDownloadsAfterBuild" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Clean downloads after building each package.]]></Val>
+          <Val><![CDATA[Cleans downloads after building each package]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Pulire i download dopo la compilazione di ogni pacchetto.]]></Val>
+            <Val><![CDATA[Pulisce i download dopo la compilazione di ogni pacchetto]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[Clean downloads after building each package]]></Val>
+            <Val><![CDATA[Clean downloads after building each package.]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";HelpTxtOptCleanPkgAfterBuild" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Clean packages after building each package.]]></Val>
+          <Val><![CDATA[Cleans packages after building each package]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Pulire i pacchetti dopo la compilazione di ogni pacchetto.]]></Val>
+            <Val><![CDATA[Pulisce i pacchetti dopo la compilazione di ogni pacchetto]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[Clean packages after building each package]]></Val>
+            <Val><![CDATA[Clean packages after building each package.]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";HelpTxtOptDryRun" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Do not actually build or install.]]></Val>
+          <Val><![CDATA[Does not actually build or install]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Non compilare o installare realmente.]]></Val>
+            <Val><![CDATA[Non esegue effettivamente la compilazione o l'installazione]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Do not actually build or install.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";HelpTxtOptEditable" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Disable source re-extraction and binary caching for libraries on the command line (classic mode)]]></Val>
+          <Val><![CDATA[Disables source re-extraction and binary caching for libraries on the command line (classic mode)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Disabilitare la riestrazione dell'origine e la memorizzazione nella cache binaria per le librerie nella riga di comando (modalità classica)]]></Val>
+            <Val><![CDATA[Disabilita la riestrazione dell'origine e la memorizzazione nella cache binaria per le librerie nella riga di comando (modalità classica)]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Disable source re-extraction and binary caching for libraries on the command line (classic mode)]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";HelpTxtOptEnforcePortChecks" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Fail install if a port has detected problems or attempts to use a deprecated feature]]></Val>
+          <Val><![CDATA[Fails install if a port has detected problems or attempts to use a deprecated feature]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Non è possibile eseguire l'installazione se una porta ha rilevato problemi o tenta di usare una funzionalità deprecata]]></Val>
+            <Val><![CDATA[L'installazione non riesce se una porta ha rilevato problemi o tenta di usare una funzionalità deprecata]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Fail install if a port has detected problems or attempts to use a deprecated feature]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";HelpTxtOptKeepGoing" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Continue installing packages on failure.]]></Val>
+          <Val><![CDATA[Continues installing packages on failure]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Continuare l'installazione dei pacchetti in caso di errore.]]></Val>
+            <Val><![CDATA[Continua l'installazione dei pacchetti in caso di errore]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[Continue installing packages on failure]]></Val>
+            <Val><![CDATA[Continue installing packages on failure.]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";HelpTxtOptManifestFeature" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Additional feature from the top-level manifest to install (manifest mode).]]></Val>
+          <Val><![CDATA[Additional features from the top-level manifest to install (manifest mode)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Funzionalità aggiuntiva del manifesto di primo livello da installare (modalità manifesto).]]></Val>
+            <Val><![CDATA[Funzionalità aggiuntive del manifesto di primo livello da installare (modalità manifesto)]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Additional feature from the top-level manifest to install (manifest mode).]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";HelpTxtOptManifestNoDefault" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Don't install the default features from the top-level manifest (manifest mode).]]></Val>
+          <Val><![CDATA[Does not install the default features from the top-level manifest (manifest mode)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Non installare le funzionalità predefinite dal manifesto di primo livello (modalità manifesto).]]></Val>
+            <Val><![CDATA[Non installa le funzionalità predefinite dal manifesto di primo livello (modalità manifesto)]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Don't install the default features from the top-level manifest (manifest mode).]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";HelpTxtOptNoDownloads" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Do not download new sources.]]></Val>
+          <Val><![CDATA[Does not download new sources]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Non scaricare nuove origini.]]></Val>
+            <Val><![CDATA[Non scarica nuove origini]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[Do not download new sources]]></Val>
+            <Val><![CDATA[Do not download new sources.]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";HelpTxtOptNoUsage" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Don't print CMake usage information after install.]]></Val>
+          <Val><![CDATA[Does not print CMake usage information after install]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Non stampare le informazioni sull'utilizzo di CMake dopo l'installazione.]]></Val>
+            <Val><![CDATA[Non stampa le informazioni sull'utilizzo di CMake dopo l'installazione]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Don't print CMake usage information after install.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";HelpTxtOptOnlyBinCache" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Fail if cached binaries are not available.]]></Val>
+          <Val><![CDATA[Fails if cached binaries are not available]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Esito negativo se i file binari memorizzati nella cache non sono disponibili.]]></Val>
+            <Val><![CDATA[Non riesce se i file binari memorizzati nella cache non sono disponibili]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[Fail if cached binaries are not available]]></Val>
+            <Val><![CDATA[Fail if cached binaries are not available.]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";HelpTxtOptOnlyDownloads" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Make a best-effort attempt to download sources without building.]]></Val>
+          <Val><![CDATA[Makes best-effort attempt to download sources without building]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Eseguire un tentativo migliore di scaricare le origini senza compilare.]]></Val>
+            <Val><![CDATA[Effettua il massimo tentativo di scaricare le origini senza creare]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[Download sources but don't build packages]]></Val>
+            <Val><![CDATA[Make a best-effort attempt to download sources without building.]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";HelpTxtOptRecurse" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Allow removal of packages as part of installation.]]></Val>
+          <Val><![CDATA[Allows removal of packages as part of installation]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Consentire la rimozione dei pacchetti come parte dell'installazione.]]></Val>
+            <Val><![CDATA[Consente la rimozione dei pacchetti come parte dell'installazione]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[Allow removal of packages as part of installation]]></Val>
+            <Val><![CDATA[Allow removal of packages as part of installation.]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";HelpTxtOptUseAria2" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Use aria2 to perform download tasks.]]></Val>
+          <Val><![CDATA[Uses aria2 to perform download tasks]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Usare aria2 per eseguire attività di download.]]></Val>
+            <Val><![CDATA[Usa aria2 per eseguire attività di download]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[Use aria2 to perform download tasks]]></Val>
+            <Val><![CDATA[Use aria2 to perform download tasks.]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";HelpTxtOptUseHeadVersion" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Install the libraries on the command line using the latest upstream sources (classic mode).]]></Val>
+          <Val><![CDATA[Installs the libraries on the command line using the latest upstream sources (classic mode)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Installare le librerie nella riga di comando usando le origini upstream più recenti (modalità classica).]]></Val>
+            <Val><![CDATA[Installa le librerie nella riga di comando usando le origini upstream più recenti (modalità classica)]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[Install the libraries on the command line using the latest upstream sources (classic mode)]]></Val>
+            <Val><![CDATA[Install the libraries on the command line using the latest upstream sources (classic mode).]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";HelpTxtOptWritePkgConfig" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";HelpTxtOptWritePkgConfig" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Writes out a NuGet packages.config-formatted file for use with external binary caching.]A;See `vcpkg help binarycaching` for more information.]]></Val>
+          <Val><![CDATA[Writes a NuGet packages.config-formatted file for use with external binary caching. See `vcpkg help binarycaching` for more information]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Scrive un file packages.config in formato NuGet da usare con la memorizzazione nella cache binaria esterna.]A;Per altre informazioni, vedere 'vcpkg help binarycaching'.]]></Val>
+            <Val><![CDATA[Scrive un file in formato NuGet packages.config da usare con la memorizzazione nella cache binaria esterna. Per altre informazioni, vedere 'vcpkg help binarycaching']]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Writes out a NuGet packages.config-formatted file for use with external binary caching.]A;See `vcpkg help binarycaching` for more information.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -6090,28 +6972,37 @@
       </Item>
       <Item ItemId=";HelpUpdateCommand" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[List packages that can be updated.]]></Val>
+          <Val><![CDATA[Lists packages that can be upgraded]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Elenca i pacchetti che è possibile aggiornare.]]></Val>
+            <Val><![CDATA[Elenca i pacchetti che possono essere aggiornati]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[List packages that can be updated.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";HelpUpgradeCommand" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Rebuild all outdated packages.]]></Val>
+          <Val><![CDATA[Rebuilds all outdated packages]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Ricompila tutti i pacchetti obsoleti.]]></Val>
+            <Val><![CDATA[Ricompila tutti i pacchetti obsoleti]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Rebuild all outdated packages.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";HelpVersionCommand" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Display version information.]]></Val>
+          <Val><![CDATA[Displays version information]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Visualizza le informazioni sulla versione.]]></Val>
+            <Val><![CDATA[Visualizza le informazioni sulla versione]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Display version information.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -6252,12 +7143,12 @@
       </Item>
       <Item ItemId=";InfoSetEnvVar" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[You can also set the environment variable '{env_var}' to your editor of choice.]]></Val>
+          <Val><![CDATA[You can also set {env_var} to your editor of choice.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[È anche possibile impostare la variabile di ambiente '{env_var}' sull'editor preferito.]]></Val>
+            <Val><![CDATA[Puoi anche impostare {env_var} sul tuo editor preferito.]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[You can also set the environment variable {env_var} to your editor of choice.]]></Val>
+            <Val><![CDATA[You can also set the environment variable '{env_var}' to your editor of choice.]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -6309,10 +7200,13 @@
       </Item>
       <Item ItemId=";InstallRootDir" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[(Experimental) Specify the install root directory.]]></Val>
+          <Val><![CDATA[Installed directory (experimental)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[(Sperimentale) Specificare la directory radice di installazione.]]></Val>
+            <Val><![CDATA[Directory installata (sperimentale)]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[(Experimental) Specify the install root directory.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -6439,54 +7333,51 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";InstantlyActivatesAnArtifactOutsideOfTheProject" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Instantly activates an artifact outside of the project]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Attiva immediatamente un artefatto all'esterno del progetto]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";IntegrateBashHelp" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Enable bash tab-completion. Non-Windows only.]]></Val>
+          <Val><![CDATA[Enable bash tab-completion. Non-Windows only]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Abilitare il completamento tramite tabulazione bash. Solo non Windows.]]></Val>
+            <Val><![CDATA[Abilitare il completamento tramite tabulazione bash. Solo non Windows]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[Enable bash tab-completion.]]></Val>
+            <Val><![CDATA[Enable bash tab-completion. Non-Windows only.]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";IntegrateFishHelp" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Enable fish tab-completion. Non-Windows only.]]></Val>
+          <Val><![CDATA[Enable fish tab-completion. Non-Windows only]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Abilitare il completamento tramite tabulazione fish. Solo non Windows.]]></Val>
+            <Val><![CDATA[Abilitare il completamento tramite tabulazione fish. Solo non Windows]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[Enable fish tab-completion.]]></Val>
+            <Val><![CDATA[Enable fish tab-completion. Non-Windows only.]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";IntegrateInstallHelpLinux" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Make installed packages available user-wide.]]></Val>
+          <Val><![CDATA[Makes installed packages available user-wide]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Rende i pacchetti installati disponibili a livello di utente.]]></Val>
+            <Val><![CDATA[Rende disponibili i pacchetti installati a livello di utente]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Make installed packages available user-wide.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";IntegrateInstallHelpWindows" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Make installed packages available user-wide. Requires admin privileges on first use.]]></Val>
+          <Val><![CDATA[Makes installed packages available user-wide. Requires admin privileges on first use]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Rende i pacchetti installati disponibili a livello di utente. Richiede i privilegi di amministratore al primo utilizzo.]]></Val>
+            <Val><![CDATA[Rende disponibili i pacchetti installati a livello di utente. Richiede privilegi di amministratore al primo utilizzo]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Make installed packages available user-wide. Requires admin privileges on first use.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -6501,34 +7392,37 @@
       </Item>
       <Item ItemId=";IntegratePowerShellHelp" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Enable PowerShell tab-completion. Windows-only.]]></Val>
+          <Val><![CDATA[Enable PowerShell tab-completion. Windows-only]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Abilitare il completamento tramite tabulazione di PowerShell. Solo Windows.]]></Val>
+            <Val><![CDATA[Abilitare il completamento tramite tabulazione di PowerShell. Solo Windows]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[Enable PowerShell tab-completion.]]></Val>
+            <Val><![CDATA[Enable PowerShell tab-completion. Windows-only.]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";IntegrateProjectHelp" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Generate a referencing NuGet package for individual Visual Studio project use. Windows-only.]]></Val>
+          <Val><![CDATA[Generates a referencing NuGet package for individual Visual Studio project use. Windows-only]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Genera un pacchetto NuGet di riferimento per l'uso di singoli progetti Visual Studio. Solo Windows..]]></Val>
+            <Val><![CDATA[Genera un pacchetto NuGet di riferimento per l'uso di singoli progetti Visual Studio. Solo Windows]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[Generate a referencing NuGet package for individual VS project use.]]></Val>
+            <Val><![CDATA[Generate a referencing NuGet package for individual Visual Studio project use. Windows-only.]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";IntegrateRemoveHelp" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Remove user-wide integration.]]></Val>
+          <Val><![CDATA[Removes user-wide integration]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Rimuovere l'integrazione a livello di utente.]]></Val>
+            <Val><![CDATA[Rimuove l'integrazione a livello di utente]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Remove user-wide integration.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -6543,12 +7437,12 @@
       </Item>
       <Item ItemId=";IntegrateZshHelp" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Enable zsh tab-completion. Non-Windows only.]]></Val>
+          <Val><![CDATA[Enable zsh tab-completion. Non-Windows only]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Abilitare il completamento tramite tabulazione zsh. Solo non Windows.]]></Val>
+            <Val><![CDATA[Abilitare il completamento tramite tabulazione zsh. Solo non Windows]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[Enable zsh tab-completion.]]></Val>
+            <Val><![CDATA[Enable zsh tab-completion. Non-Windows only.]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -6972,10 +7866,13 @@
       </Item>
       <Item ItemId=";InvalidLogicExpressionUsePipe" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[invalid logic expression, use '|' instead of 'or']]></Val>
+          <Val><![CDATA[invalid logic expression, use '|' rather than 'or']]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[espressione logica non valida. Usare '|' invece di 'or']]></Val>
+            <Val><![CDATA[espressione logica non valida. Usare '|' anziché 'or']]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[invalid logic expression, use '|' instead of 'or']]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -7110,10 +8007,13 @@
       </Item>
       <Item ItemId=";JsonSwitch" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[(Experimental) Request JSON output.]]></Val>
+          <Val><![CDATA[Prints JSON rather than plain text]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[(Sperimentale) Richiedere l'output JSON.]]></Val>
+            <Val><![CDATA[Stampa JSON anziché testo normale]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[(Experimental) Request JSON output.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -7371,10 +8271,13 @@
       </Item>
       <Item ItemId=";ListHelp" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The argument should be a substring to search for, or no argument to display all installed libraries.]]></Val>
+          <Val><![CDATA[Lists installed libraries]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[L'argomento deve essere una sottostringa da cercare oppure nessun argomento per visualizzare tutte le librerie installate.]]></Val>
+            <Val><![CDATA[Elenca le librerie installate]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The argument should be a substring to search for, or no argument to display all installed libraries.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -7383,15 +8286,6 @@
           <Val><![CDATA[This is the list of valid fields for CONTROL files (case-sensitive):]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Elenco di campi validi per i file CONTROL (con distinzione tra maiuscole e minuscole):]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ListsTheArtifacts" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Lists the artifacts]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Elenca gli artefatti]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -7446,15 +8340,6 @@
           <Val><![CDATA[The message named {value} ends with a newline which should be added by formatting rather than by localization.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Il messaggio denominato {value} termina con una nuova riga che deve essere aggiunta tramite formattazione anziché tramite localizzazione.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ManagesTheDownloadCache" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Manages the download cache]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Gestisce la cache di download]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -7828,15 +8713,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";NoCachedPackages" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[No packages are cached.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Nessun pacchetto memorizzato nella cache.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";NoError" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[no error]]></Val>
@@ -8038,15 +8914,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";OptionalCommand" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[optional command]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[comando facoltativo]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";Options" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Options]]></Val>
@@ -8065,6 +8932,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";OtherCommandsHeader" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Other]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Altro]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";OverlayPatchDir" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Overlay path "{path}" must exist and must be a directory.]]></Val>
@@ -8074,12 +8950,33 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";OverlayPortsDirectoriesHelp" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Directories of overlay ports (also: {env_var})]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Directory delle porte di sovrapposizione (anche: {env_var})]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";OverlayTripletDirectoriesHelp" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Directories of overlay triplets (also: {env_var})]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Directory di triplette di sovrimpressione (anche: {env_var})]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";OverlayTriplets" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Overlay triplets from {path} :]]></Val>
+          <Val><![CDATA[Overlay Triplets from "{path}":]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Triplet di sovrapposizione da {path}:]]></Val>
+            <Val><![CDATA[Tripletta di sovrapposizione da “{path}”:]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Overlay triplets from {path} :]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -8158,6 +9055,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";PackageDiscoveryHeader" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Package Discovery]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Individuazione pacchetti]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";PackageFailedtWhileExtracting" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA['{value}' failed while extracting {path}.]]></Val>
@@ -8169,19 +9075,43 @@
       </Item>
       <Item ItemId=";PackageInfoHelp" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Display detailed information on packages.]]></Val>
+          <Val><![CDATA[Display detailed information on packages]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Visualizza informazioni dettagliate sui pacchetti.]]></Val>
+            <Val><![CDATA[Visualizza informazioni dettagliate sui pacchetti]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Display detailed information on packages.]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PackageInstallationHeader" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Package Installation]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Installazione del pacchetto]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PackageManipulationHeader" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Package Manipulation]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Manipolazione del pacchetto]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";PackageRootDir" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[(Experimental) Specify the packages root directory.]]></Val>
+          <Val><![CDATA[Packages directory (experimental)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[(Sperimentale) Specificare la directory radice dei pacchetti.]]></Val>
+            <Val><![CDATA[Directory dei pacchetti (sperimentale)]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[(Experimental) Specify the packages root directory.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -8769,10 +9699,13 @@
       </Item>
       <Item ItemId=";PortBugRestrictedHeaderPaths" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The following restricted headers can prevent the core C++ runtime and other packages from compiling correctly. In exceptional circumstances, this policy can be disabled via {env_var}.]]></Val>
+          <Val><![CDATA[The following restricted headers can prevent the core C++ runtime and other packages from compiling correctly. In exceptional circumstances, this policy can be disabled by setting CMake variable VCPKG_POLICY_ALLOW_RESTRICTED_HEADERS in portfile.cmake.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Le intestazioni con restrizioni seguenti possono impedire la corretta compilazione del runtime C++ di base e di altri pacchetti. In circostanze eccezionali, questo criterio può essere disabilitato tramite {env_var}.]]></Val>
+            <Val><![CDATA[Le intestazioni con restrizioni seguenti possono impedire la corretta compilazione del runtime C++ di base e di altri pacchetti. In circostanze eccezionali, questo criterio può essere disabilitato impostando la variabile CMake VCPKG_POLICY_ALLOW_RESTRICTED_HEADERS in portfile.cmake.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The following restricted headers can prevent the core C++ runtime and other packages from compiling correctly. In exceptional circumstances, this policy can be disabled via {env_var}.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -8946,10 +9879,13 @@
       </Item>
       <Item ItemId=";RegeneratesArtifactRegistry" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Regenerates an artifact registry.]]></Val>
+          <Val><![CDATA[Regenerates an artifact registry]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Rigenera un registro artefatti.]]></Val>
+            <Val><![CDATA[Rigenera un registro artefatti]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Regenerates an artifact registry.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -9016,15 +9952,6 @@
           <Prev Cat="Text">
             <Val><![CDATA[Another installed package matches the name of an unmatched request. Did you mean {spec}?]]></Val>
           </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";RemovesAnArtifactFromAProject" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Removes an artifact from a project]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Rimuove un artefatto da un progetto]]></Val>
-          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -9259,39 +10186,27 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";SpecifyDirectoriesContaining" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Specifiy directories containing triplets files.]A;(also: '{env_var}')]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Specificare le directory contenenti file di triplette.]A;(anche: '{env_var}')]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";SpecifyDirectoriesWhenSearching" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Specify directories to be used when searching for ports.]A;(also: '{env_var}')]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Specificare le directory da usare per la ricerca delle porte.]A;(anche: '{env_var}')]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";SpecifyHostArch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Specify the host architecture triplet. See 'vcpkg help triplet'.]A;(default: '{env_var}')]]></Val>
+          <Val><![CDATA[Host triplet. See 'vcpkg help triplet' (default: {env_var})]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Specificare la tripletta dell'architettura host. Vedere 'vcpkg help triplet'.]A;(impostazione predefinita: '{env_var}')]]></Val>
+            <Val><![CDATA[Tripletta host. Vedere 'tripletta host vcpkg' (impostazione predefinita: {env_var})]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Specify the host architecture triplet. See 'vcpkg help triplet'.]A;(default: '{env_var}')]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";SpecifyTargetArch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Specify the target architecture triplet. See 'vcpkg help triplet'.]A;(default: '{env_var}')]]></Val>
+          <Val><![CDATA[Target triplet. See 'vcpkg help triplet' (default: {env_var})]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Specificare la tripletta dell'architettura di destinazione. Vedere 'vcpkg help triplet'.]A;(impostazione predefinita: '{env_var}')]]></Val>
+            <Val><![CDATA[Tripletta di destinazione. Vedere 'tripletta guida vcpkg' (impostazione predefinita: {env_var})]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Specify the target architecture triplet. See 'vcpkg help triplet'.]A;(default: '{env_var}')]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -9343,15 +10258,6 @@
           <Prev Cat="Text">
             <Val><![CDATA[Stored binary cache: '{path}']]></Val>
           </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";StripOption" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[--{option} specifies the number of leading directories to strip from all paths.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[--{option} specifica il numero di directory iniziali da rimuovere da tutti i percorsi.]]></Val>
-          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -9427,6 +10333,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";SynopsisHeader" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Synopsis:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Sinossi:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";SystemApiErrorMessage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[calling {system_api} failed with {exit_code} ({error_msg})]]></Val>
@@ -9459,105 +10374,6 @@
           <Val><![CDATA[The info block is deprecated for consistency with vcpkg.json; move info members to the outside.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Il blocco di informazioni è deprecato per coerenza con vcpkg.json; sposta i membri delle informazioni all'esterno.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ThisAllowsTheConsumerToAcquiredownloadAndUnpackArtifactsArtifactsMustBeActivatedToBeUsed" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[This allows the consumer to acquire (download and unpack) artifacts. Artifacts must be activated to be used]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Ciò consente al consumer di acquisire (scaricare e decomprimere) gli artefatti. Per poter essere usati, è necessario attivare gli artefatti]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ThisAllowsTheConsumerToAddAnArtifactToTheProjectThisWillActivateTheProjectAsWell" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[This allows the consumer to add an artifact to the project. This will activate the project as well.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[In questo modo il consumer può aggiungere un artefatto al progetto. Verrà attivato anche il progetto.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ThisAllowsTheConsumerToListArtifacts" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[This allows the consumer to list artifacts.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[In questo modo il consumer può elencare gli artefatti.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ThisAllowsTheConsumerToPredownloadToolsRequiredForAProject" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[This allows the consumer to pre-download tools required for a project.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Ciò consente al consumer di pre-scaricare gli strumenti necessari per un progetto.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ThisAllowsTheConsumerToRemoveAnArtifactFromDisk" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[This allows the consumer to remove an artifact from disk.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Ciò consente al consumer di rimuovere un artefatto dal disco.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ThisAllowsTheConsumerToRemoveAnArtifactFromTheProjectForcesReactivationInThisWindow" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[This allows the consumer to remove an artifact from the project. Forces reactivation in this window.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[In questo modo il consumer può rimuovere un artefatto dal progetto. Forza la riattivazione in questa finestra.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ThisAllowsTheConsumerToRemoveEnvironmentSettingsForTheCurrentlyActiveSession" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[This allows the consumer to remove environment settings for the currently active session.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Ciò consente all'utente di rimuovere le impostazioni di ambiente per la sessione attualmente attiva.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ThisAllowsTheUserToFindArtifactsBasedOnSomeCriteria" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[This allows the user to find artifacts based on some criteria.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[In questo modo l'utente può trovare gli artefatti in base ad alcuni criteri.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ThisAllowsTheUserToRegenerateThe$FilesForA$Registry" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[This allows the user to regenerate the ${p0} files for a ${p1} registry.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[In questo modo l'utente può rigenerare i file ${p0} per un registro ${p1}.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ThisDownloadsTheLatestContentsOfTheRegistryFromTheRemoteService" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[This downloads the latest contents of the registry from the remote service.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Il contenuto più recente del registro viene scaricato dal servizio remoto.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ThisWillInstantlyActivateAnArtifact" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[This will instantly activate an artifact .]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Verrà attivato immediatamente un artefatto .]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -9666,6 +10482,15 @@
           <Val><![CDATA[Triplet file {triplet}.cmake not found]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Il file triplet {triplet}.cmake non è stato trovato]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";TripletLabel" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Triplet:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Tripletta:]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10770,10 +11595,13 @@
       </Item>
       <Item ItemId=";VcpkgRootsDir" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Specify the vcpkg root directory.]A;(default: '{env_var}')]]></Val>
+          <Val><![CDATA[The vcpkg root directory (default: {env_var})]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Specificare la directory radice vcpkg.]A;(impostazione predefinita: '{env_var}')]]></Val>
+            <Val><![CDATA[Directory radice vcpkg (impostazione predefinita: {env_var})]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Specify the vcpkg root directory.]A;(default: '{env_var}')]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -10786,6 +11614,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[Warning: passed --sendmetrics, but metrics are disabled.]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VcpkgUsage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[usage: vcpkg <command> [--switches]5D; [--options=values]5D; [arguments]5D; @response_file]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[utilizzo: vcpkg <comando> [--switches]5D; [--options=values]5D; [arguments]5D; @response_file]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -11314,15 +12151,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";cleansUp" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[cleans up]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Pulisce]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";descriptionShouldBeOfTypestringFound$" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[description should be of type 'string', found '${p0}']]></Val>
@@ -11485,15 +12313,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";regenerateTheIndexForARegistry" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[regenerate the index for a registry]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[rigenera l'indice per un registro]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";scheme$AlreadyRegistered" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[scheme '${p0}' already registered]]></Val>
@@ -11544,15 +12363,6 @@
           <Val><![CDATA[unpacking ${p0}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[disimballaggio ${p0}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";updateTheRegistryFromTheRemote" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[update the registry from the remote]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[aggiorna il registro dal computer remoto]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
