@@ -96,6 +96,42 @@
       },
       "else": false
     },
+    "choice": {
+      "description": "A choice of an option.",
+      "oneOf": [
+        {
+          "$ref": "#/definitions/identifier"
+        },
+        {
+          "$ref": "#/definitions/choice-object"
+        }
+      ]
+    },
+    "choice-object": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "$ref": "#/definitions/identifier"
+        },
+        "description": {
+          "$ref": "#/definitions/description-field"
+        },
+        "dependencies": {
+          "description": "Dependencies used by this choice.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/dependency"
+          }
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "patternProperties": {
+        "^\\$": {}
+      },
+      "additionalProperties": false
+    },
     "contact": {
       "type": "object",
       "properties": {
@@ -745,6 +781,139 @@
       "required": [
         "name",
         "version"
+      ],
+      "patternProperties": {
+        "^\\$": {}
+      },
+      "additionalProperties": false
+    },
+    "option": {
+      "description": "A package option that can be changed by consumers.",
+      "type": "object",
+      "properties": {
+        "description": {
+          "$ref": "#/definitions/description-field"
+        },
+        "choices": {
+          "description": "A map of choices supported by this option.",
+          "type": "object",
+          "patternProperties": {
+            "": {
+              "$ref": "#/definitions/choice"
+            }
+          },
+          "propertyNames": {
+            "$ref": "#/definitions/identifier"
+          }
+        },
+        "examples": {
+          "description": "Examples of valid values for this option.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "default": {
+          "description": "The default value of the option."
+        },
+        "type": {
+          "description": "The type of the option.",
+          "enum": [
+            "boolean",
+            "string"
+          ]
+        },
+        "dependencies": {
+          "description": "Dependencies used by this feature.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/dependency"
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "string"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "$comment": "if type is 'string' then 'default' must be a string or null",
+            "properties": {
+              "default": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          "else": {
+            "$comment": "examples are only valid for string options",
+            "not": {
+              "required": [
+                "examples"
+              ]
+            }
+          }
+        },
+        {
+          "$comment": "if there is an choises field 'default' must be a string",
+          "if": {
+            "required": [
+              "choices"
+            ]
+          },
+          "then": {
+            "properties": {
+              "default": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        {
+          "$comment": "if type is 'boolean' then 'default' must be a boolean",
+          "if": {
+            "properties": {
+              "type": {
+                "const": "boolean"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "properties": {
+              "default": {
+                "type": "boolean"
+              }
+            }
+          }
+        }
+      ],
+      "oneOf": [
+        {
+          "required": [
+            "type"
+          ]
+        },
+        {
+          "required": [
+            "choices"
+          ]
+        }
+      ],
+      "required": [
+        "description",
+        "default"
       ],
       "patternProperties": {
         "^\\$": {}
