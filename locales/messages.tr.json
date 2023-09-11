@@ -1079,7 +1079,7 @@
   "UpdateBaselineNoUpdate": "'{url}' kayıt defteri güncellenmedi: '{value}'",
   "UpdateBaselineRemoteGitError": "git, şu uzak depoyu getiremedi: '{url}'",
   "UpdateBaselineUpdatedBaseline": "'{url}' kayıt defteri güncellendi: taban çizgisi '{old_value}' -> '{new_value}'",
-  "UpgradeInManifest": "Yükseltme komutu şu anda bildirim modunu desteklemiyor. Bunun yerine vcpkg.json dosyanızı değiştirin ve kurulumu çalıştırın.",
+  "UpgradeInManifest": "Upgrade upgrades a classic mode installation and thus does not support manifest mode. Consider updating your dependencies by updating your baseline to a current value with vcpkg x-update-baseline and running vcpkg install.",
   "UpgradeRunWithNoDryRun": "Yukarıdaki paketleri yeniden derlemek istediğinizden eminseniz bu komutu --no-dry-run seçeneğiyle çalıştırın.",
   "UploadedBinaries": "İkili dosyalar şuraya yüklendi: {count} {vendor}.",
   "UploadedPackagesToVendor": "{count} paket {vendor} tarafına {elapsed} içinde yüklendi",

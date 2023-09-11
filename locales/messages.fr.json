@@ -1079,7 +1079,7 @@
   "UpdateBaselineNoUpdate": "registre '{url}' pas mis à jour : '{value}'",
   "UpdateBaselineRemoteGitError": "git n’a pas pu récupérer les '{url}' du dépôt distant",
   "UpdateBaselineUpdatedBaseline": "Registre '{url}' mis à jour : base de référence '{old_value}' -> '{new_value}'",
-  "UpgradeInManifest": "La commande de mise à niveau ne prend pas actuellement en charge le mode manifeste. Modifiez plutôt vcpkg.json et exécutez l’installation.",
+  "UpgradeInManifest": "Upgrade upgrades a classic mode installation and thus does not support manifest mode. Consider updating your dependencies by updating your baseline to a current value with vcpkg x-update-baseline and running vcpkg install.",
   "UpgradeRunWithNoDryRun": "Si vous voulez vraiment régénérer les packages ci-dessus, exécutez cette commande avec l’option --no-dry-run.",
   "UploadedBinaries": "Fichiers binaires chargés sur {count} {vendor}",
   "UploadedPackagesToVendor": "{count} package(s) chargé(s) sur {vendor} dans {elapsed}",

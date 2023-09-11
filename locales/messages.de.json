@@ -1079,7 +1079,7 @@
   "UpdateBaselineNoUpdate": "Registry „{url}“ nicht aktualisiert: „{value}",
   "UpdateBaselineRemoteGitError": "Git konnte das Remote-Repository „{url}“ nicht abrufen",
   "UpdateBaselineUpdatedBaseline": "aktualisierte Registry „{url}“: Baseline „{old_value}“ -> „{new_value}“",
-  "UpgradeInManifest": "Der Upgradebefehl unterstützt derzeit nicht den Manifestmodus. Ändern Sie stattdessen \"vcpkg.json\", und führen Sie die Installation aus.",
+  "UpgradeInManifest": "Upgrade upgrades a classic mode installation and thus does not support manifest mode. Consider updating your dependencies by updating your baseline to a current value with vcpkg x-update-baseline and running vcpkg install.",
   "UpgradeRunWithNoDryRun": "Wenn Sie sicher sind, dass Sie die obigen Pakete neu erstellen möchten, führen Sie diesen Befehl mit der Option \"--no-dry-run\" aus.",
   "UploadedBinaries": "Binärdateien wurden in {count} {vendor} hochgeladen.",
   "UploadedPackagesToVendor": "{count} Pakete in {vendor} in {elapsed} hochgeladen",

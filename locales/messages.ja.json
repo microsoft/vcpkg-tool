@@ -1079,7 +1079,7 @@
   "UpdateBaselineNoUpdate": "レジストリ '{url}' は更新されませんでした: '{value}'",
   "UpdateBaselineRemoteGitError": "git はリモートリポジトリ '{url}' の取り込みに失敗しました",
   "UpdateBaselineUpdatedBaseline": "レジストリ '{url}' を更新しました。ベースライン '{old_value}' -> '{new_value}'",
-  "UpgradeInManifest": "アップグレード コマンドは現在マニフェスト モードをサポートしていません。代わりに、vcpkg.json を変更してインストールを実行してください。",
+  "UpgradeInManifest": "Upgrade upgrades a classic mode installation and thus does not support manifest mode. Consider updating your dependencies by updating your baseline to a current value with vcpkg x-update-baseline and running vcpkg install.",
   "UpgradeRunWithNoDryRun": "上記のパッケージを再構築する場合は、--no-dry-run オプションを使用してこのコマンドを実行します。",
   "UploadedBinaries": "{count} {vendor} にバイナリをアップロードしました。",
   "UploadedPackagesToVendor": "{count} 個のパッケージを {elapsed} の {vendor} にアップロードしました",

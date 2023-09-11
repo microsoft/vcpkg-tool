@@ -1079,7 +1079,7 @@
   "UpdateBaselineNoUpdate": "'{url}' registru se neaktualizovala: '{value}'",
   "UpdateBaselineRemoteGitError": "Gitu se nepovedlo načíst vzdálené úložiště {url}.",
   "UpdateBaselineUpdatedBaseline": "aktualizovala se '{url}' registru: směrný plán '{old_value}' -> '{new_value}'",
-  "UpgradeInManifest": "Příkaz upgrade v současné době nepodporuje režim manifestu. Místo toho upravte soubor vcpkg.json a spusťte instalaci.",
+  "UpgradeInManifest": "Upgrade upgrades a classic mode installation and thus does not support manifest mode. Consider updating your dependencies by updating your baseline to a current value with vcpkg x-update-baseline and running vcpkg install.",
   "UpgradeRunWithNoDryRun": "Pokud jste si jistí, že chcete výše uvedené balíčky znovu sestavit, spusťte tento příkaz s možností --no-dry-run.",
   "UploadedBinaries": "Binární soubory se nahrály do {count} {vendor}.",
   "UploadedPackagesToVendor": "Počet balíčků nahraných do {vendor} za {elapsed}: {count}",

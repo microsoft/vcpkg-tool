@@ -1079,7 +1079,7 @@
   "UpdateBaselineNoUpdate": "注册表“{url}”未更新:“{value}”",
   "UpdateBaselineRemoteGitError": "git 无法提取远程存储库“{url}”",
   "UpdateBaselineUpdatedBaseline": "已更新注册表“{url}”: 基线“{old_value}”->“{new_value}”",
-  "UpgradeInManifest": "升级命令当前不支持清单模式。请改为修改 vcpkg.json 并运行安装。",
+  "UpgradeInManifest": "Upgrade upgrades a classic mode installation and thus does not support manifest mode. Consider updating your dependencies by updating your baseline to a current value with vcpkg x-update-baseline and running vcpkg install.",
   "UpgradeRunWithNoDryRun": "如果确实要重新生成上述包，请使用 --no-dry-run 选项运行此命令。",
   "UploadedBinaries": "已将二进制文件上传到 {count} 个 {vendor}。",
   "UploadedPackagesToVendor": "已在 {elapsed} 内将 {count} 个包上传到 {vendor}",
