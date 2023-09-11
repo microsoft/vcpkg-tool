@@ -733,8 +733,8 @@
       <Item ItemId=";AddVersionSuggestNewVersionScheme" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Use the version scheme "{new_scheme}" rather than "{old_scheme}" in port "{package_name}".]A;Use --{option} to disable this check.]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Используйте схему "{new_scheme}" вместо "{old_scheme}" в порте "{package_name}".]A;Чтобы отключить эту проверку, используйте --{option}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Используйте схему версий "{new_scheme}", а не "{old_scheme}" в порте "{package_name}".]A;Чтобы отключить эту проверку, используйте --{option}.]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Use the version scheme "{new_scheme}" instead of "{old_scheme}" in port "{package_name}".]A;Use --{option} to disable this check.]]></Val>
@@ -1396,8 +1396,8 @@
       <Item ItemId=";AssetSourcesArg" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Asset caching sources. See 'vcpkg help assetcaching']]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Добавление источников для кэширования ресурсов. См. раздел 'vcpkg help assetcaching'.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Источники для кэширования ресурсов. См. "vcpkg help assetcaching"]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Add sources for asset caching. See 'vcpkg help assetcaching'.]]></Val>
@@ -1561,8 +1561,8 @@
       <Item ItemId=";BinarySourcesArg" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Binary caching sources. See 'vcpkg help binarycaching']]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Добавьте источники для бинарного кэширования. См. "vcpkg help binarycaching".]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Источники для двоичного кэширования. См. "vcpkg help binarycaching"]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Add sources for binary caching. See 'vcpkg help binarycaching'.]]></Val>
@@ -1705,8 +1705,8 @@
       <Item ItemId=";BuildTreesRootDir" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Buildtrees directory (experimental)]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[(Экспериментально) Укажите корневой каталог buildtrees.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Каталог Buildtrees (экспериментальная функция)]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[(Experimental) Specify the buildtrees root directory.]]></Val>
@@ -1804,8 +1804,8 @@
       <Item ItemId=";BuiltInTriplets" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Built-in Triplets:]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Встроенные триплеты vcpkg:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Встроенные триплеты:]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[vcpkg built-in triplets:]]></Val>
@@ -1897,8 +1897,8 @@
       <Item ItemId=";CISettingsOptXUnit" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[File to output results in XUnit format]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Файл для вывода результатов в формате XUnit (внутренний)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Файл для вывода результатов в формате XUnit]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[File to output results in XUnit format (internal)]]></Val>
@@ -1909,8 +1909,8 @@
       <Item ItemId=";CISettingsVerifyGitTree" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Verifies that each git tree object matches its declared version (this is very slow)]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Проверьте, каждый ли объект дерева git соответствует объявленной версии (это очень медленно)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Проверяет, соответствует ли каждый объект дерева git объявленной версии (это очень медленно)]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Verify that each git tree object matches its declared version (this is very slow)]]></Val>
@@ -1921,8 +1921,8 @@
       <Item ItemId=";CISettingsVerifyVersion" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Prints result for each port rather than only just errors]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Печать результатов для каждого порта, а не только для ошибок.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Печатает результат для каждого порта, а не только для ошибок]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Print result for each port instead of just errors.]]></Val>
@@ -1945,8 +1945,8 @@
       <Item ItemId=";CISwitchOptAllowUnexpectedPassing" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Suppresses 'Passing, remove from fail list' results]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Указывает, что результаты "Передача, удаление из списка сбоев" не должны выдаваться.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Скрывает результаты "Передача, удаление из списка сбоев"]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Indicates that 'Passing, remove from fail list' results should not be emitted.]]></Val>
@@ -1969,8 +1969,8 @@
       <Item ItemId=";CISwitchOptRandomize" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Randomizes the install order]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Произвольный порядок установки]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Применяет произвольный порядок установки]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Randomize the install order]]></Val>
@@ -1981,8 +1981,8 @@
       <Item ItemId=";CISwitchOptSkipFailures" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Skips ports marked `=fail` in ci.baseline.txt]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Указывает, что порты с пометкой "=fail" в ci.baseline.txt следует пропускать.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Пропускает порты, помеченные как "=fail" в ci.baseline.txt]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Indicates that ports marked `=fail` in ci.baseline.txt should be skipped.]]></Val>
@@ -1993,8 +1993,8 @@
       <Item ItemId=";CISwitchOptXUnitAll" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Reports unchanged ports in the XUnit output]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Сообщать также о неизмененных портах на выходе XUnit (внутреннем)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Сообщает о неизмененных портах в выходных данных XUnit]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Report also unchanged ports to the XUnit output (internal)]]></Val>
@@ -2296,8 +2296,8 @@
       <Item ItemId=";CmdAddVersionOptAll" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Processes versions for all ports]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Обработать версии для всех портов.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Обрабатывает версии для всех портов]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Process versions for all ports.]]></Val>
@@ -2308,8 +2308,8 @@
       <Item ItemId=";CmdAddVersionOptOverwriteVersion" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Overwrites git-tree of an existing version]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Перезаписать "git-tree" существующей версии.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Перезаписывает git-tree существующей версии]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Overwrite `git-tree` of an existing version.]]></Val>
@@ -2320,8 +2320,8 @@
       <Item ItemId=";CmdAddVersionOptSkipFormatChk" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Skips the formatting check of vcpkg.json files]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Пропускает проверку форматирования файлов vcpkg.json.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Пропускает проверку форматирования файлов vcpkg.json]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Skips the formatting check of vcpkg.json files.]]></Val>
@@ -2332,8 +2332,8 @@
       <Item ItemId=";CmdAddVersionOptSkipVersionFormatChk" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Skips the version format check]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Пропускает проверку формата версии.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Пропускает проверку формата версии]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Skips the version format check.]]></Val>
@@ -2344,8 +2344,8 @@
       <Item ItemId=";CmdAddVersionOptVerbose" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Prints success messages rather than only errors]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Печатать сообщения об успехе, а не только об ошибках.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Печатает сообщения об успешном выполнении, а не только ошибки]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Print success messages instead of just errors.]]></Val>
@@ -2569,8 +2569,8 @@
       <Item ItemId=";CmdDependInfoOptDepth" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Shows recursion depth in `list` output]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Показывать глубину рекурсии в выходных данных "list".]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Показывает глубину рекурсии в выходных данных "list"]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Show recursion depth in `list` output.]]></Val>
@@ -2581,8 +2581,8 @@
       <Item ItemId=";CmdDependInfoOptMaxRecurse" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Sets max recursion depth. Default is no limit]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Задать максимальную глубину рекурсии. Значение по умолчанию — "Без ограничений".]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Задает максимальную глубину рекурсии. Значение по умолчанию — "Без ограничений"]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Set max recursion depth. Default is no limit.]]></Val>
@@ -2593,8 +2593,8 @@
       <Item ItemId=";CmdDependInfoOptSort" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Chooses sort order for the `list` format, one of `lexicographical`, `topological` (default), `reverse`]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Выберите одно из следующих значений для порядка сортировки формата "list": "lexicographical" (лексикографический), "topological" (топологический) (по умолчанию), "reverse" (обратный)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Выбирает одно из следующих значений для порядка сортировки формата "list": "lexicographical" (лексикографический), "topological" (топологический) (по умолчанию), "reverse" (обратный)]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Choose sort order for the `list` format, one of `lexicographical`, `topological` (default), `reverse`]]></Val>
@@ -2668,8 +2668,8 @@
       <Item ItemId=";CmdEditOptAll" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Opens editor into the port as well as the port-specific buildtree subfolder]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Откройте редактор в порте, а также в подпапке buildtree для конкретного порта.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Открывает редактор в порте, а также в подпапке дерева сборки для конкретного порта]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Open editor into the port as well as the port-specific buildtree subfolder]]></Val>
@@ -2692,8 +2692,8 @@
       <Item ItemId=";CmdEnvOptions" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Adds installed {path} to {env_var}]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Добавить установленный {path} в {env_var}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Добавляет установленный {path} в {env_var}]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Add installed {path} to {env_var}]]></Val>
@@ -2722,8 +2722,8 @@
       <Item ItemId=";CmdExportOpt7Zip" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Exports to a 7zip (.7z) file]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Экспорт в файл 7zip (.7z)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Экспортирует в файл 7zip (.7z)]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Export to a 7zip (.7z) file]]></Val>
@@ -2734,8 +2734,8 @@
       <Item ItemId=";CmdExportOptChocolatey" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Exports a Chocolatey package (experimental)]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Экспорт в пакет Chocolatey (экспериментальная функция)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Экспортирует в пакет Chocolatey (экспериментальная функция)]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Export a Chocolatey package (experimental feature)]]></Val>
@@ -2746,8 +2746,8 @@
       <Item ItemId=";CmdExportOptDebug" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Enables prefab debug]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Включить отладку prefab]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Включает отладку prefab]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Enable prefab debug]]></Val>
@@ -2758,8 +2758,8 @@
       <Item ItemId=";CmdExportOptDryRun" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Does not actually export]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Не экспортировать фактически.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Фактически не выполняет экспорт]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Do not actually export.]]></Val>
@@ -2770,8 +2770,8 @@
       <Item ItemId=";CmdExportOptIFW" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Exports to an IFW-based installer]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Экспорт в установщик на основе IFW]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Экспортирует в установщик на основе IFW]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Export to an IFW-based installer]]></Val>
@@ -2782,8 +2782,8 @@
       <Item ItemId=";CmdExportOptInstalled" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Exports all installed packages]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Экспорт всех установленных пакетов]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Экспортирует все установленные пакеты]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Export all installed packages]]></Val>
@@ -2806,8 +2806,8 @@
       <Item ItemId=";CmdExportOptNuget" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Exports a NuGet package]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Экспорт пакета NuGet]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Экспортирует пакет NuGet]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Export a NuGet package]]></Val>
@@ -2818,8 +2818,8 @@
       <Item ItemId=";CmdExportOptPrefab" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Exports to Prefab format]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Экспорт в формат Prefab]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Экспортирует в формат Prefab]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Export to Prefab format]]></Val>
@@ -2830,8 +2830,8 @@
       <Item ItemId=";CmdExportOptRaw" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Exports to an uncompressed directory]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Экспорт в несжатый каталог]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Экспортирует в несжатый каталог]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Export to an uncompressed directory]]></Val>
@@ -2842,8 +2842,8 @@
       <Item ItemId=";CmdExportOptZip" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Exports to a zip file]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Экспорт в ZIP-файл]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Экспортирует в ZIP-файл]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Export to a zip file]]></Val>
@@ -2854,8 +2854,8 @@
       <Item ItemId=";CmdExportSettingChocolateyMaint" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[The maintainer for the exported Chocolatey package (experimental)]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Указать программу обслуживания для экспортированного пакета Chocolatey (экспериментальная функция)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Программа обслуживания для экспортированного пакета Chocolatey (экспериментальная функция)]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Specify the maintainer for the exported Chocolatey package (experimental feature)]]></Val>
@@ -2866,8 +2866,8 @@
       <Item ItemId=";CmdExportSettingChocolateyVersion" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[The version suffix to add for the exported Chocolatey package (experimental)]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Укажите суффикс версии для добавления к экспортированному пакету Chocolatey (экспериментальная функция).]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Суффикс версии для добавления к экспортированному пакету Chocolatey (экспериментальная функция)]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Specify the version suffix to add for the exported Chocolatey package (experimental feature)]]></Val>
@@ -2890,8 +2890,8 @@
       <Item ItemId=";CmdExportSettingInstallerPath" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[The file path for the exported installer]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Указать путь к файлу экспортированного установщика]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Путь к файлу экспортированного установщика]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Specify the file path for the exported installer]]></Val>
@@ -2902,8 +2902,8 @@
       <Item ItemId=";CmdExportSettingNugetDesc" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Description for the exported NuGet package]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Укажите описание для экспортированного пакета NuGet.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Описание для экспортированного пакета NuGet]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Specify a description for the exported NuGet package]]></Val>
@@ -2914,8 +2914,8 @@
       <Item ItemId=";CmdExportSettingNugetID" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Id for the exported NuGet package (overrides --output)]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Указать идентификатор для экспортированного пакета NuGet (переопределяет параметр --output).]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Идентификатор для экспортированного пакета NuGet (переопределяет параметр --output)]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Specify the id for the exported NuGet package (overrides --output)]]></Val>
@@ -2926,8 +2926,8 @@
       <Item ItemId=";CmdExportSettingNugetVersion" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[The version for the exported NuGet package]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Указать версию экспортированного пакета NuGet.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Версия экспортированного пакета NuGet]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Specify the version for the exported NuGet package]]></Val>
@@ -2938,8 +2938,8 @@
       <Item ItemId=";CmdExportSettingOutput" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[The output name (used to construct filename)]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Указать выходное имя (используется для создания имени файла)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Выходное имя (используется для создания имени файла)]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Specify the output name (used to construct filename)]]></Val>
@@ -2950,8 +2950,8 @@
       <Item ItemId=";CmdExportSettingOutputDir" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[The output directory for produced artifacts]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Указать выходной каталог для производства артефактов]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Выходной каталог для производства артефактов]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Specify the output directory for produced artifacts]]></Val>
@@ -3001,8 +3001,8 @@
       <Item ItemId=";CmdExportSettingRepoDir" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[The directory path for the exported repository]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Указать путь к каталогу для экспортированного репозитория.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Путь к каталогу для экспортированного репозитория]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Specify the directory path for the exported repository]]></Val>
@@ -3037,7 +3037,7 @@
       <Item ItemId=";CmdExportSettingSDKTargetVersion" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[The Android target sdk version]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Версия целевого SDK для Android]]></Val>
           </Tgt>
           <Prev Cat="Text">
@@ -3058,8 +3058,8 @@
       <Item ItemId=";CmdFetchOptXStderrStatus" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Prints status/downloading messages to stderr rather than stdout (Errors/failures still go to stdout)]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Направлять сообщения о состоянии и скачивании на stderr, а не на stdout. (Ошибки и сбои по-прежнему отправляются на stdout)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Печатает сообщения о состоянии и скачивании в stderr, а не в stdout (ошибки и сбои по-прежнему отправляются в stdout)]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Direct status/downloading messages to stderr rather than stdout. (Errors/failures still go to stdout)]]></Val>
@@ -3115,8 +3115,8 @@
       <Item ItemId=";CmdFormatManifestOptAll" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Formats all ports' manifest files]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Форматирование файлов манифеста всех портов.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Форматирует файлы манифеста всех портов]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Format all ports' manifest files.]]></Val>
@@ -3127,8 +3127,8 @@
       <Item ItemId=";CmdFormatManifestOptConvertControl" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Converts CONTROL files to manifest files]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Преобразование файлов CONTROL в файлы манифеста.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Преобразует файлы CONTROL в файлы манифеста]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Convert CONTROL files to manifest files.]]></Val>
@@ -3175,8 +3175,8 @@
       <Item ItemId=";CmdGenerateMessageMapOptNoOutputComments" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Excludes comments when generating the message map (useful for generating the English localization file)]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[При создании карты сообщения исключить комментарии (полезно для создания файла локализации на английском языке)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Исключает комментарии при создании карты сообщения (удобно для создания файла локализации на английском языке)]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[When generating the message map, exclude comments (useful for generating the English localization file)]]></Val>
@@ -3250,8 +3250,8 @@
       <Item ItemId=";CmdInfoOptInstalled" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[(experimental) Reports installed packages rather than available]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[(экспериментально) Отчет об установленных пакетах вместо доступных]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Сообщает о установленных пакетах, а не о доступных (экспериментальная функция)]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[(experimental) Report on installed packages instead of available]]></Val>
@@ -3262,8 +3262,8 @@
       <Item ItemId=";CmdInfoOptTransitive" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[(experimental) Also reports dependencies of installed packages]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[(экспериментальная) Также сообщать о зависимостях установленных пакетов]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Также сообщает о зависимостях установленных пакетов (экспериментальная функция)]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[(experimental) Also report on dependencies of installed packages]]></Val>
@@ -3328,8 +3328,8 @@
       <Item ItemId=";CmdNewOptApplication" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Creates an application manifest (don't require name or version)]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Создать манифест приложения (не требует имени или версии).]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Создает манифест приложения (не требует имени или версии)]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Create an application manifest (don't require name or version).]]></Val>
@@ -3352,8 +3352,8 @@
       <Item ItemId=";CmdNewOptVersionDate" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Interprets --version as an ISO 8601 date. (YYYY-MM-DD)]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Интерпретировать --version как дату ISO 8601. (ДД-ММ-ГГГГ)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Интерпретирует --version как дату ISO 8601. (ДД-ММ-ГГГГ)]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Interpret --version as an ISO 8601 date. (YYYY-MM-DD)]]></Val>
@@ -3364,8 +3364,8 @@
       <Item ItemId=";CmdNewOptVersionRelaxed" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Interprets --version as a relaxed-numeric version (Nonnegative numbers separated by dots)]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Интерпретировать --version как упрощенно-числовую версию. (Неотрицательные числа разделены точками)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Интерпретирует --version как упрощенно-числовую версию (неотрицательные числа разделены точками)]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Interpret --version as a relaxed-numeric version. (Nonnegative numbers separated by dots)]]></Val>
@@ -3376,8 +3376,8 @@
       <Item ItemId=";CmdNewOptVersionString" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Interprets --version as a string with no ordering behavior]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Интерпретировать --version как строку без поведения упорядочения.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Интерпретирует --version как строку без поведения упорядочения]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Interpret --version as a string with no ordering behavior.]]></Val>
@@ -3388,8 +3388,8 @@
       <Item ItemId=";CmdNewSettingName" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Name for the new manifest]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Имя для нового манифеста.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Имя для нового манифеста]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Name for the new manifest.]]></Val>
@@ -3400,8 +3400,8 @@
       <Item ItemId=";CmdNewSettingVersion" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Version for the new manifest]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Версия нового манифеста.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Версия нового манифеста]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Version for the new manifest.]]></Val>
@@ -3466,8 +3466,8 @@
       <Item ItemId=";CmdRegenerateOptDryRun" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Does not actually perform the action, shows only what would be done]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[фактически не выполняет действие, отображает только то, что было бы выполнено]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Фактически не выполняет действие, отображает только то, что было бы выполнено]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[does not actually perform the action, shows only what would be done]]></Val>
@@ -3478,8 +3478,8 @@
       <Item ItemId=";CmdRegenerateOptForce" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Proceeds with the (potentially dangerous) action without confirmation]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[выполняется (потенциально опасное) действие без подтверждения]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Выполняет (потенциально опасное) действие без подтверждения]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[proceeds with the (potentially dangerous) action without confirmation]]></Val>
@@ -3490,8 +3490,8 @@
       <Item ItemId=";CmdRegenerateOptNormalize" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Applies any deprecation fixes]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[применить любые нерекомендуемые исправления]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Применяет все исправления нерекомендуемых элементов]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[apply any deprecation fixups]]></Val>
@@ -3511,8 +3511,8 @@
       <Item ItemId=";CmdRemoveOptDryRun" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Prints the packages to be removed, but does not remove them]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Распечатать удаляемые пакеты, но не удалять их]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Печатает удаляемые пакеты, но не удаляет их]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Print the packages to be removed, but do not remove them]]></Val>
@@ -3523,8 +3523,8 @@
       <Item ItemId=";CmdRemoveOptOutdated" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Removes all packages with versions that do not match the built-in registry]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Выбрать все пакеты с несоответствующими портам версиями]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Удаляет все пакеты с версиями, не соответствующими встроенному реестру]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Select all packages with versions that do not match the portfiles]]></Val>
@@ -3535,8 +3535,8 @@
       <Item ItemId=";CmdRemoveOptRecurse" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Allows removal of dependent packages not explicitly specified]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Разрешить удаление пакетов, не указанных явно в командной строке]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Позволяет удалять зависимые пакеты, не указанные явным образом]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Allow removal of packages not explicitly specified on the command line]]></Val>
@@ -3565,8 +3565,8 @@
       <Item ItemId=";CmdSetInstalledOptDryRun" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Does not actually build or install]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Не создавать сборку и не устанавливать]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Фактически не выполняет сборку и установку]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Do not actually build or install]]></Val>
@@ -3577,8 +3577,8 @@
       <Item ItemId=";CmdSetInstalledOptNoUsage" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Does not print CMake usage information after install]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Не печатать сведения об использовании CMake после установки.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Не печатает сведения об использовании CMake после установки]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Don't print CMake usage information after install.]]></Val>
@@ -3589,8 +3589,8 @@
       <Item ItemId=";CmdSetInstalledOptWritePkgConfig" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Writes a NuGet packages.config-formatted file for use with external binary caching. See `vcpkg help binarycaching` for more information]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Записывает файл в формате NuGet packages.config для использования с внешним двоичным кэшированием.]A;Смотрите "vcpkg help binarycaching" для получения дополнительных сведений.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Записывает файл в формате NuGet packages.config для использования с внешним двоичным кэшированием. Дополнительные сведения см. в "vcpkg help binarcaching"]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Writes out a NuGet packages.config-formatted file for use with external binary caching.]A;See `vcpkg help binarycaching` for more information.]]></Val>
@@ -3790,8 +3790,8 @@
       <Item ItemId=";CmdXDownloadOptSkipSha" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Skips check of SHA512 of the downloaded file]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Не проверять SHA512 загруженного файла]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Пропускает проверку SHA512 загруженного файла]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Do not check the SHA512 of the downloaded file]]></Val>
@@ -3802,8 +3802,8 @@
       <Item ItemId=";CmdXDownloadOptStore" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Stores the the file should father than fetching it]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Указывает, что файл следует сохранить, а не извлечь]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Сохраняет файл вместо его извлечения]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Indicates the file should be stored instead of fetched]]></Val>
@@ -3880,8 +3880,8 @@
       <Item ItemId=";CommunityTriplets" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Community Triplets:]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Триплеты сообщества VCPKG:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Триплеты сообщества:]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[VCPKG community triplets:]]></Val>
@@ -4444,8 +4444,8 @@
       <Item ItemId=";DownloadRootsDir" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Downloads directory (default: {env_var})]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Укажите корневой каталог загрузки.]A;(по умолчанию: {env_var})]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Скачивает каталог (по умолчанию: {env_var})]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Specify the downloads root directory.]A;(default: {env_var})]]></Val>
@@ -6478,8 +6478,8 @@
       <Item ItemId=";HelpContactCommand" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Displays contact information to send feedback]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Отображение контактных данных для отправки отзыва.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Отображает контактные данные для отправки отзыва]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Display contact information to send feedback.]]></Val>
@@ -6490,8 +6490,8 @@
       <Item ItemId=";HelpCreateCommand" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Creates a new port]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Создайте новый порт.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Создает новый порт]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Create a new port.]]></Val>
@@ -6502,8 +6502,8 @@
       <Item ItemId=";HelpDependInfoCommand" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Displays a list of dependencies for ports]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Отобразить список зависимостей для портов.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Отображает список зависимостей для портов]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Display a list of dependencies for ports.]]></Val>
@@ -6514,8 +6514,8 @@
       <Item ItemId=";HelpEditCommand" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Edits a port, optionally with {env_var}, defaults to "code"]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Откройте порт для редактирования (используйте переменную среды "{env_var}", чтобы установить программу-редактор, по умолчанию 'code').]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Изменяет порт, при необходимости с {env_var}, по умолчанию — "code"]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Open a port for editing (use the environment variable '{env_var}' to set an editor program, defaults to 'code').]]></Val>
@@ -6526,8 +6526,8 @@
       <Item ItemId=";HelpEnvCommand" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Creates a clean shell environment for development or compiling]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Создает среду чистой оболочки для разработки или компиляции.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Создает среду чистой оболочки для разработки или компиляции]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Creates a clean shell environment for development or compiling.]]></Val>
@@ -6538,8 +6538,8 @@
       <Item ItemId=";HelpExampleCommand" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[For more help (including examples) see https://learn.microsoft.com/vcpkg]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Дополнительную справку (включая примеры) см. в прилагаемой папке README.md и docs.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Дополнительные сведения (включая примеры) см. на странице https://learn.microsoft.com/vcpkg]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[For more help (including examples) see the accompanying README.md and docs folder.]]></Val>
@@ -6577,8 +6577,8 @@
       <Item ItemId=";HelpInstallCommand" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Installs a package]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Установка пакета]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Устанавливает пакет]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Install a package.]]></Val>
@@ -6589,8 +6589,8 @@
       <Item ItemId=";HelpListCommand" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Lists installed packages]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Список установленных пакетов.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Выводит список установленных пакетов]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[List installed packages.]]></Val>
@@ -6628,8 +6628,8 @@
       <Item ItemId=";HelpOwnsCommand" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Searches for the owner of a file in installed packages]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Поиск файлов в установленных пакетах.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Выполняет поиск владельца файла в установленных пакетах]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Search for files in installed packages.]]></Val>
@@ -6649,8 +6649,8 @@
       <Item ItemId=";HelpPortVersionScheme" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Each version additionally has a "port-version" which is a nonnegative integer. When rendered as text, the port version (if nonzero) is added as a suffix to the primary version text separated by a hash (#). Port-versions are sorted lexicographically after the primary version text, for example:]A;1.0.0 < 1.0.0#1 < 1.0.1 < 1.0.1#5 < 2.0.0]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Каждая версия дополнительно содержит "версию порта", представляющую собой неотрицательное целое число. При отображении в виде текста версия порта (если она не равна нулю) добавляется как суффикс к тексту основной версии, разделенному решеткой (#). Порт-версии сортируются лексографически после текста основной версии, например:]A;1.0.0 < 1.0.0#1 < 1.0.1 < 1.0.1#5 < 2.0.0]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Каждая версия дополнительно содержит "версию порта", представляющую собой неотрицательное целое число. При отображении в виде текста версия порта (если она не равна нулю) добавляется как суффикс к тексту основной версии, разделенному решеткой (#). Версии порта сортируются лексикографически после текста основной версии, например:]A;1.0.0 < 1.0.0#1 < 1.0.1 < 1.0.1#5 < 2.0.0]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Each version additionally has a "port-version" which is a nonnegative integer. When rendered as text, the port version (if nonzero) is added as a suffix to the primary version text separated by a hash (#). Port-versions are sorted lexographically after the primary version text, for example:]A;1.0.0 < 1.0.0#1 < 1.0.1 < 1.0.1#5 < 2.0.0]]></Val>
@@ -6661,8 +6661,8 @@
       <Item ItemId=";HelpRemoveCommand" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Uninstalls a package]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Удалить пакет.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Удаляет пакет]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Uninstall a package.]]></Val>
@@ -6673,8 +6673,8 @@
       <Item ItemId=";HelpResponseFileCommand" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Contains one argument per line expanded at that location]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Укажите файл отклика для предоставления дополнительных параметров.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Содержит один аргумент на строку, развернутую в этом расположении]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Specify a response file to provide additional parameters.]]></Val>
@@ -6685,8 +6685,8 @@
       <Item ItemId=";HelpSearchCommand" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Searches for packages available to be built]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Поиск пакетов, доступных для сборки.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Выполняет поиск пакетов, доступных для сборки]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Search for packages available to be built.]]></Val>
@@ -6697,8 +6697,8 @@
       <Item ItemId=";HelpTextOptFullDesc" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Does not truncate long text]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Не обрезать длинный текст.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Не обрезает длинный текст]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Do not truncate long text.]]></Val>
@@ -6709,8 +6709,8 @@
       <Item ItemId=";HelpTopicCommand" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Displays specific help topic]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Отображение справки по определенной теме.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Отображает конкретный раздел справки]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Display help for a specific topic.]]></Val>
@@ -6721,8 +6721,8 @@
       <Item ItemId=";HelpTopicsCommand" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Displays full list of help topics]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Показать список разделов справки.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Отображает полный список разделов справки]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Display the list of help topics.]]></Val>
@@ -6733,8 +6733,8 @@
       <Item ItemId=";HelpTxtOptAllowUnsupportedPort" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Continues with a warning on unsupported ports, rather than failing]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Вместо ошибки на неподдерживаемом порту продолжить с предупреждением.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Продолжает с предупреждением о неподдерживаемых портах вместо сбоя]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Instead of erroring on an unsupported port, continue with a warning.]]></Val>
@@ -6745,8 +6745,8 @@
       <Item ItemId=";HelpTxtOptCleanAfterBuild" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Cleans buildtrees, packages and downloads after building each package]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Очистка деревьев сборки, пакетов и загрузок после сборки каждого пакета.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Очищает деревья сборки, пакеты и загрузки после сборки каждого пакета]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Clean buildtrees, packages and downloads after building each package.]]></Val>
@@ -6769,8 +6769,8 @@
       <Item ItemId=";HelpTxtOptCleanDownloadsAfterBuild" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Cleans downloads after building each package]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Очистка загрузки после сборки каждого пакета.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Очищает загрузки после сборки каждого пакета]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Clean downloads after building each package.]]></Val>
@@ -6781,8 +6781,8 @@
       <Item ItemId=";HelpTxtOptCleanPkgAfterBuild" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Cleans packages after building each package]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Очистка пакетов после создания каждого пакета.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Очищает пакеты после сборки каждого пакета]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Clean packages after building each package.]]></Val>
@@ -6793,8 +6793,8 @@
       <Item ItemId=";HelpTxtOptDryRun" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Does not actually build or install]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Не создавать сборку фактически и не устанавливать.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Фактически не выполняет сборку и установку]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Do not actually build or install.]]></Val>
@@ -6973,8 +6973,8 @@
       <Item ItemId=";HelpUpdateCommand" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Lists packages that can be upgraded]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Список пакетов, которые можно обновить.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Перечисляет пакеты, которые можно обновить]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[List packages that can be updated.]]></Val>
@@ -6985,8 +6985,8 @@
       <Item ItemId=";HelpUpgradeCommand" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Rebuilds all outdated packages]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Пересоберите все устаревшие пакеты.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Перестраивает все устаревшие пакеты]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Rebuild all outdated packages.]]></Val>
@@ -6997,8 +6997,8 @@
       <Item ItemId=";HelpVersionCommand" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Displays version information]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Отображение сведений о версии.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Отображает сведения о версии]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Display version information.]]></Val>
@@ -7144,8 +7144,8 @@
       <Item ItemId=";InfoSetEnvVar" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[You can also set {env_var} to your editor of choice.]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Вы также можете задать переменную среды '{env_var}' в выбранном редакторе.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Вы также можете установить {env_var} в свой редактор.]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[You can also set the environment variable '{env_var}' to your editor of choice.]]></Val>
@@ -7201,8 +7201,8 @@
       <Item ItemId=";InstallRootDir" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Installed directory (experimental)]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[(Экспериментально) Укажите корневой каталог установки.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Каталог Installed (экспериментальная функция)]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[(Experimental) Specify the install root directory.]]></Val>
@@ -8008,8 +8008,8 @@
       <Item ItemId=";JsonSwitch" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Prints JSON rather than plain text]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[(Экспериментально) Запрос вывода JSON.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Печатает JSON вместо обычного текста]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[(Experimental) Request JSON output.]]></Val>
@@ -8971,8 +8971,8 @@
       <Item ItemId=";OverlayTriplets" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Overlay Triplets from "{path}":]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Триплеты наложения из {path}:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Триплеты наложения из "{path}":]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Overlay triplets from {path} :]]></Val>
@@ -9106,8 +9106,8 @@
       <Item ItemId=";PackageRootDir" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Packages directory (experimental)]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[(Экспериментально) Укажите корневой каталог пакетов.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Каталог Packages (экспериментальная функция)]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[(Experimental) Specify the packages root directory.]]></Val>
@@ -9700,8 +9700,8 @@
       <Item ItemId=";PortBugRestrictedHeaderPaths" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[The following restricted headers can prevent the core C++ runtime and other packages from compiling correctly. In exceptional circumstances, this policy can be disabled by setting CMake variable VCPKG_POLICY_ALLOW_RESTRICTED_HEADERS in portfile.cmake.]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Следующие ограниченные заголовки могут препятствовать правильной компиляции основной среды выполнения C++ и других пакетов. В исключительных случаях эту политику можно отключить с помощью {env_var}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Следующие ограниченные заголовки могут препятствовать правильной компиляции основной среды выполнения C++ и других пакетов. В исключительных случаях эту политику можно отключить путем настройки переменной CMake VCPKG_POLICY_ALLOW_RESTRICTED_HEADERS в portfile.cmake.]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[The following restricted headers can prevent the core C++ runtime and other packages from compiling correctly. In exceptional circumstances, this policy can be disabled via {env_var}.]]></Val>
@@ -10189,8 +10189,8 @@
       <Item ItemId=";SpecifyHostArch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Host triplet. See 'vcpkg help triplet' (default: {env_var})]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Укажите триплет архитектуры узла. См. 'vcpkg help triplet'.]A;(по умолчанию: '{env_var}')]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Триплет узла. См. "vcpkg help triplet" (по умолчанию: {env_var})]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Specify the host architecture triplet. See 'vcpkg help triplet'.]A;(default: '{env_var}')]]></Val>
@@ -10201,8 +10201,8 @@
       <Item ItemId=";SpecifyTargetArch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Target triplet. See 'vcpkg help triplet' (default: {env_var})]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Укажите триплет целевой архитектуры. См. 'vcpkg help triplet'.]A;(по умолчанию: '{env_var}')]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Триплет целевого объекта. См. "vcpkg help triplet" (по умолчанию: {env_var})]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Specify the target architecture triplet. See 'vcpkg help triplet'.]A;(default: '{env_var}')]]></Val>
@@ -11596,8 +11596,8 @@
       <Item ItemId=";VcpkgRootsDir" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[The vcpkg root directory (default: {env_var})]]></Val>
-          <Tgt Cat="Text" Stat="Update" Orig="New">
-            <Val><![CDATA[Укажите корневой каталог vcpkg. (по умолчанию:]A;'{env_var}')]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Корневой каталог vcpkg (по умолчанию: {env_var})]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Specify the vcpkg root directory.]A;(default: '{env_var}')]]></Val>
