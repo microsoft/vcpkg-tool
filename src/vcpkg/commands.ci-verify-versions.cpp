@@ -14,10 +14,10 @@
 #include <vcpkg/vcpkgpaths.h>
 #include <vcpkg/versiondeserializers.h>
 
+using namespace vcpkg;
+
 namespace
 {
-    using namespace vcpkg;
-
     std::string get_scheme_name(VersionScheme scheme)
     {
         switch (scheme)
@@ -29,38 +29,14 @@ namespace
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
-}
 
-namespace vcpkg::Commands::CIVerifyVersions
-{
-    static constexpr StringLiteral OPTION_EXCLUDE = "exclude";
-    static constexpr StringLiteral OPTION_VERBOSE = "verbose";
-    static constexpr StringLiteral OPTION_VERIFY_GIT_TREES = "verify-git-trees";
-
-    static constexpr CommandSwitch VERIFY_VERSIONS_SWITCHES[]{
-        {OPTION_VERBOSE, []() { return msg::format(msgCISettingsVerifyVersion); }},
-        {OPTION_VERIFY_GIT_TREES, []() { return msg::format(msgCISettingsVerifyGitTree); }},
-    };
-
-    static constexpr CommandSetting VERIFY_VERSIONS_SETTINGS[] = {
-        {OPTION_EXCLUDE, []() { return msg::format(msgCISettingsExclude); }},
-    };
-
-    const CommandStructure COMMAND_STRUCTURE{
-        [] { return create_example_string("x-ci-verify-versions"); },
-        0,
-        SIZE_MAX,
-        {{VERIFY_VERSIONS_SWITCHES}, {VERIFY_VERSIONS_SETTINGS}, {}},
-        nullptr,
-    };
-
-    static ExpectedL<LocalizedString> verify_version_in_db(const VcpkgPaths& paths,
-                                                           const std::map<std::string, Version, std::less<>> baseline,
-                                                           StringView port_name,
-                                                           const Path& port_path,
-                                                           const Path& versions_file_path,
-                                                           const std::string& local_git_tree,
-                                                           bool verify_git_trees)
+    ExpectedL<LocalizedString> verify_version_in_db(const VcpkgPaths& paths,
+                                                    const std::map<std::string, Version, std::less<>> baseline,
+                                                    StringView port_name,
+                                                    const Path& port_path,
+                                                    const Path& versions_file_path,
+                                                    const std::string& local_git_tree,
+                                                    bool verify_git_trees)
     {
         auto maybe_maybe_versions = vcpkg::get_builtin_versions(paths, port_name);
         const auto maybe_versions = maybe_maybe_versions.get();
@@ -234,15 +210,43 @@ namespace vcpkg::Commands::CIVerifyVersions
         };
     }
 
-    void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
+    constexpr StringLiteral OPTION_EXCLUDE = "exclude";
+    constexpr StringLiteral OPTION_VERBOSE = "verbose";
+    constexpr StringLiteral OPTION_VERIFY_GIT_TREES = "verify-git-trees";
+
+    constexpr CommandSwitch VERIFY_VERSIONS_SWITCHES[]{
+        {OPTION_VERBOSE, msgCISettingsVerifyVersion},
+        {OPTION_VERIFY_GIT_TREES, msgCISettingsVerifyGitTree},
+    };
+
+    constexpr CommandSetting VERIFY_VERSIONS_SETTINGS[] = {
+        {OPTION_EXCLUDE, msgCISettingsExclude},
+    };
+} // unnamed namespace
+
+namespace vcpkg
+{
+    constexpr CommandMetadata CommandCiVerifyVersionsMetadata{
+        "x-ci-verify-versions",
+        msgCmdCiVerifyVersionsSynopsis,
+        {"vcpkg x-ci-verify-versions"},
+        Undocumented,
+        AutocompletePriority::Internal,
+        0,
+        SIZE_MAX,
+        {VERIFY_VERSIONS_SWITCHES, VERIFY_VERSIONS_SETTINGS},
+        nullptr,
+    };
+
+    void command_ci_verify_versions_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
-        auto parsed_args = args.parse_arguments(COMMAND_STRUCTURE);
+        auto parsed_args = args.parse_arguments(CommandCiVerifyVersionsMetadata);
 
         bool verbose = Util::Sets::contains(parsed_args.switches, OPTION_VERBOSE);
         bool verify_git_trees = Util::Sets::contains(parsed_args.switches, OPTION_VERIFY_GIT_TREES);
 
         std::set<std::string> exclusion_set;
-        auto settings = parsed_args.settings;
+        auto& settings = parsed_args.settings;
         auto it_exclusions = settings.find(OPTION_EXCLUDE);
         if (it_exclusions != settings.end())
         {
@@ -348,4 +352,4 @@ namespace vcpkg::Commands::CIVerifyVersions
         }
         Checks::exit_success(VCPKG_LINE_INFO);
     }
-}
+} // namespace vcpkg

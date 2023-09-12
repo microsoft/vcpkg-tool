@@ -4,7 +4,8 @@
 
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 
-namespace vcpkg::Commands::InitRegistry
+namespace vcpkg
 {
-    void perform_and_exit(const VcpkgCmdArguments& args, const Filesystem& fs);
+    extern const CommandMetadata CommandInitRegistryMetadata;
+    void command_init_registry_and_exit(const VcpkgCmdArguments& args, const Filesystem& fs);
 }

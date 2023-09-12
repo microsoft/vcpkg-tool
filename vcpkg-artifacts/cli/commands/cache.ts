@@ -13,20 +13,7 @@ import { Clear } from '../switches/clear';
 
 export class CacheCommand extends Command {
   readonly command = 'cache';
-  readonly aliases = [];
-  seeAlso = [];
-  argumentsHelp = [];
   clear = new Clear(this);
-
-  get summary() {
-    return i`Manages the download cache`;
-  }
-
-  get description() {
-    return [
-      i`Manages the download cache`,
-    ];
-  }
 
   override async run() {
     if (this.clear.active) {

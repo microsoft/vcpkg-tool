@@ -7,8 +7,17 @@ namespace vcpkg
     struct CommandSetting;
     struct CommandMultiSetting;
     struct CommandOptionsStructure;
-    struct CommandStructure;
+
+    enum class AutocompletePriority
+    {
+        Public,
+        Internal,
+        Never
+    };
+
+    struct CommandMetadata;
     struct HelpTableFormatter;
     struct VcpkgCmdArguments;
     struct FeatureFlagSettings;
+    struct PortApplicableSetting;
 }

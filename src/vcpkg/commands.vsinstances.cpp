@@ -1,25 +1,28 @@
 #include <vcpkg/base/files.h>
 
-#include <vcpkg/commands.help.h>
 #include <vcpkg/commands.vsinstances.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 #include <vcpkg/visualstudio.h>
 
-namespace vcpkg::Commands::VSInstances
+namespace vcpkg
 {
-    const CommandStructure COMMAND_STRUCTURE = {
-        [] { return create_example_string("x-vsinstances"); },
+    constexpr CommandMetadata CommandVsInstancesMetadata{
+        "x-vsinstances",
+        msgCmdVSInstancesSynopsis,
+        {"vcpkg x-vsinstances"},
+        Undocumented,
+        AutocompletePriority::Public,
         0,
         0,
-        {{}, {}},
+        {},
         nullptr,
     };
 
-    void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
+    void command_vs_instances_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
 #if defined(_WIN32)
-        const ParsedArguments parsed_args = args.parse_arguments(COMMAND_STRUCTURE);
+        const ParsedArguments parsed_args = args.parse_arguments(CommandVsInstancesMetadata);
 
         const auto instances = vcpkg::VisualStudio::get_visual_studio_instances(paths.get_filesystem());
         for (const std::string& instance : instances)

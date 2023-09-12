@@ -48,7 +48,7 @@ namespace vcpkg
 
     LocalizedString& LocalizedString::append_indent(size_t indent)
     {
-        m_data.append(indent * 4, ' ');
+        m_data.append(indent * 2, ' ');
         return *this;
     }
 
@@ -100,6 +100,14 @@ namespace vcpkg
     LocalizedString::LocalizedString(StringView data) : m_data(data.data(), data.size()) { }
     LocalizedString::LocalizedString(std::string&& data) noexcept : m_data(std::move(data)) { }
 
+    LocalizedString format_environment_variable(StringView variable_name)
+    {
+#if defined(_WIN32)
+        return LocalizedString::from_raw(fmt::format("%{}%", variable_name));
+#else  // ^^^ _WIN32 / !_WIN32 vvv
+        return LocalizedString::from_raw(fmt::format("${}", variable_name));
+#endif // ^^^ !_WIN32
+    }
 }
 
 namespace vcpkg::msg
@@ -451,7 +459,7 @@ namespace vcpkg::msg
     }
 
     // LCIDs supported by VS:
-    // https://learn.microsoft.com/en-us/visualstudio/ide/reference/lcid-devenv-exe?view=vs-2022
+    // https://learn.microsoft.com/visualstudio/ide/reference/lcid-devenv-exe?view=vs-2022
     Optional<StringLiteral> get_language_tag(int LCID)
     {
         static constexpr std::pair<int, StringLiteral> languages[] = {

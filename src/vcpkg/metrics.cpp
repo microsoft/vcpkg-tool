@@ -604,7 +604,7 @@ namespace vcpkg
         if (ec) return;
         Command builder;
         builder.string_arg(temp_folder_path_exe);
-        builder.string_arg("x-upload-metrics");
+        builder.string_arg("z-upload-metrics");
         builder.string_arg(vcpkg_metrics_txt_path);
         cmd_execute_background(builder);
 #else

@@ -13,10 +13,11 @@
 
 #include <limits.h>
 
-#if defined(_WIN32)
+using namespace vcpkg;
+
 namespace
 {
-    using namespace vcpkg;
+#if defined(_WIN32)
     std::vector<Path> find_from_registry()
     {
         std::vector<Path> output;
@@ -79,37 +80,27 @@ namespace
         } while (!done);
         return Strings::to_utf8(result);
     }
-}
 #endif
 
-namespace vcpkg::Commands::Edit
-{
-    static constexpr StringLiteral OPTION_BUILDTREES = "buildtrees";
+    constexpr StringLiteral OPTION_BUILDTREES = "buildtrees";
 
-    static constexpr StringLiteral OPTION_ALL = "all";
+    constexpr StringLiteral OPTION_ALL = "all";
 
-    static std::vector<std::string> valid_arguments(const VcpkgPaths& paths)
+    std::vector<std::string> valid_arguments(const VcpkgPaths& paths)
     {
         return Util::fmap(
             paths.get_filesystem().get_directories_non_recursive(paths.builtin_ports_directory(), IgnoreErrors{}),
             [](const Path& p) { return p.filename().to_string(); });
     }
 
-    static constexpr std::array<CommandSwitch, 2> EDIT_SWITCHES = {
-        {{OPTION_BUILDTREES, []() { return msg::format(msgCmdEditOptBuildTrees); }},
-         {OPTION_ALL, []() { return msg::format(msgCmdEditOptAll); }}}};
-
-    const CommandStructure COMMAND_STRUCTURE = {
-        [] { return create_example_string("edit zlib"); },
-        1,
-        10,
-        {EDIT_SWITCHES, {}},
-        &valid_arguments,
+    constexpr CommandSwitch EDIT_SWITCHES[] = {
+        {OPTION_BUILDTREES, msgCmdEditOptBuildTrees},
+        {OPTION_ALL, msgCmdEditOptAll},
     };
 
-    static std::vector<std::string> create_editor_arguments(const VcpkgPaths& paths,
-                                                            const ParsedArguments& options,
-                                                            const std::vector<std::string>& ports)
+    std::vector<std::string> create_editor_arguments(const VcpkgPaths& paths,
+                                                     const ParsedArguments& options,
+                                                     const std::vector<std::string>& ports)
     {
         if (Util::Sets::contains(options.switches, OPTION_ALL))
         {
@@ -151,11 +142,27 @@ namespace vcpkg::Commands::Edit
         });
     }
 
-    void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
+} // unnamed namespace
+
+namespace vcpkg
+{
+    constexpr CommandMetadata CommandEditMetadata{
+        "edit",
+        [] { return msg::format(msgHelpEditCommand, msg::env_var = format_environment_variable("EDITOR")); },
+        {msgCmdEditExample1, "vcpkg edit zlib"},
+        Undocumented,
+        AutocompletePriority::Public,
+        1,
+        SIZE_MAX,
+        {EDIT_SWITCHES},
+        &valid_arguments,
+    };
+
+    void command_edit_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
         auto& fs = paths.get_filesystem();
 
-        const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
+        const ParsedArguments options = args.parse_arguments(CommandEditMetadata);
 
         const std::vector<std::string>& ports = options.command_arguments;
         for (auto&& port_name : ports)
@@ -248,11 +255,11 @@ namespace vcpkg::Commands::Edit
         const auto it = Util::find_if(candidate_paths, [&](const Path& p) { return fs.exists(p, IgnoreErrors{}); });
         if (it == candidate_paths.cend())
         {
-            msg::println_error(msg::format(msgErrorVsCodeNotFound, msg::env_var = "EDITOR")
+            msg::println_error(msg::format(msgErrorVsCodeNotFound, msg::env_var = format_environment_variable("EDITOR"))
                                    .append_raw('\n')
                                    .append(msgErrorVsCodeNotFoundPathExamined));
             print_paths(stdout_sink, candidate_paths);
-            msg::println(msgInfoSetEnvVar, msg::env_var = "EDITOR");
+            msg::println(msgInfoSetEnvVar, msg::env_var = format_environment_variable("EDITOR"));
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
@@ -273,4 +280,4 @@ namespace vcpkg::Commands::Edit
 
         Checks::exit_with_code(VCPKG_LINE_INFO, cmd_execute(cmd_line).value_or_exit(VCPKG_LINE_INFO));
     }
-}
+} // namespace vcpkg

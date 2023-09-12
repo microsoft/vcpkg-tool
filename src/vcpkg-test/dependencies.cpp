@@ -472,9 +472,9 @@ Both versions have scheme string but different primary text.
 
 This can be resolved by adding an explicit override to the preferred version. For example:
 
-    "overrides": [
-        { "name": "a", "version": "2" }
-    ]
+  "overrides": [
+    { "name": "a", "version": "2" }
+  ]
 
 See `vcpkg help versioning` or https://learn.microsoft.com/vcpkg/users/versioning for more information.)");
 }
@@ -1104,14 +1104,14 @@ TEST_CASE ("version install scheme failure", "[versionplan]")
             R"(error: version conflict on a:x86-windows: toplevel-spec required 1.0.1, which cannot be compared with the baseline version 1.0.0.
 
 The versions have incomparable schemes:
-    a@1.0.0 has scheme semver
-    a@1.0.1 has scheme string
+  a@1.0.0 has scheme semver
+  a@1.0.1 has scheme string
 
 This can be resolved by adding an explicit override to the preferred version. For example:
 
-    "overrides": [
-        { "name": "a", "version": "1.0.0" }
-    ]
+  "overrides": [
+    { "name": "a", "version": "1.0.0" }
+  ]
 
 See `vcpkg help versioning` or https://learn.microsoft.com/vcpkg/users/versioning for more information.)");
     }
@@ -1134,14 +1134,14 @@ See `vcpkg help versioning` or https://learn.microsoft.com/vcpkg/users/versionin
             R"(error: version conflict on a:x86-windows: toplevel-spec required 1.0.1, which cannot be compared with the baseline version 1.0.2.
 
 The versions have incomparable schemes:
-    a@1.0.2 has scheme semver
-    a@1.0.1 has scheme string
+  a@1.0.2 has scheme semver
+  a@1.0.1 has scheme string
 
 This can be resolved by adding an explicit override to the preferred version. For example:
 
-    "overrides": [
-        { "name": "a", "version": "1.0.2" }
-    ]
+  "overrides": [
+    { "name": "a", "version": "1.0.2" }
+  ]
 
 See `vcpkg help versioning` or https://learn.microsoft.com/vcpkg/users/versioning for more information.)");
     }
@@ -1226,14 +1226,14 @@ TEST_CASE ("version install scheme change in port version", "[versionplan]")
             R"(error: version conflict on b:x86-windows: a:x86-windows@2#1 required 1#1, which cannot be compared with the baseline version 1.
 
 The versions have incomparable schemes:
-    b@1 has scheme string
-    b@1#1 has scheme relaxed
+  b@1 has scheme string
+  b@1#1 has scheme relaxed
 
 This can be resolved by adding an explicit override to the preferred version. For example:
 
-    "overrides": [
-        { "name": "b", "version": "1" }
-    ]
+  "overrides": [
+    { "name": "b", "version": "1" }
+  ]
 
 See `vcpkg help versioning` or https://learn.microsoft.com/vcpkg/users/versioning for more information.)");
     }
@@ -2475,7 +2475,7 @@ TEST_CASE ("dependency graph API snapshot: host and target")
     };
     auto v = VcpkgCmdArguments::create_from_arg_sequence(nullptr, nullptr);
     v.imbue_from_fake_environment(envmap);
-    auto s = vcpkg::Commands::SetInstalled::create_dependency_graph_snapshot(v, plan);
+    auto s = create_dependency_graph_snapshot(v, plan);
 
     CHECK(s.has_value());
     auto obj = *s.get();

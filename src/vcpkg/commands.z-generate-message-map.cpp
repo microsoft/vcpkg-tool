@@ -4,21 +4,30 @@
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/util.h>
 
-#include <vcpkg/commands.generate-message-map.h>
+#include <vcpkg/commands.z-generate-message-map.h>
 
-namespace vcpkg::Commands
+using namespace vcpkg;
+
+namespace
 {
-    static constexpr StringLiteral OPTION_NO_OUTPUT_COMMENTS = "no-output-comments";
+    constexpr StringLiteral OPTION_NO_OUTPUT_COMMENTS = "no-output-comments";
 
-    static constexpr CommandSwitch GENERATE_MESSAGE_MAP_SWITCHES[]{
-        {OPTION_NO_OUTPUT_COMMENTS, []() { return msg::format(msgCmdGenerateMessageMapOptNoOutputComments); }},
+    constexpr CommandSwitch GENERATE_MESSAGE_MAP_SWITCHES[]{
+        {OPTION_NO_OUTPUT_COMMENTS, msgCmdGenerateMessageMapOptNoOutputComments},
     };
+} // unnamed namespace
 
-    const CommandStructure COMMAND_STRUCTURE = {
-        [] { return create_example_string("x-generate-default-message-map locales/messages.json"); },
+namespace vcpkg
+{
+    constexpr CommandMetadata CommandZGenerateDefaultMessageMapMetadata{
+        "z-generate-default-message-map",
+        {/*intentionally undocumented*/},
+        {},
+        Undocumented,
+        AutocompletePriority::Never,
         2,
         2,
-        {GENERATE_MESSAGE_MAP_SWITCHES, {}, {}},
+        {GENERATE_MESSAGE_MAP_SWITCHES},
         nullptr,
     };
 
@@ -124,9 +133,9 @@ namespace vcpkg::Commands
         return res;
     }
 
-    void command_generate_default_message_map_and_exit(const VcpkgCmdArguments& args, const Filesystem& fs)
+    void command_z_generate_default_message_map_and_exit(const VcpkgCmdArguments& args, const Filesystem& fs)
     {
-        auto parsed_args = args.parse_arguments(COMMAND_STRUCTURE);
+        auto parsed_args = args.parse_arguments(CommandZGenerateDefaultMessageMapMetadata);
         const bool output_comments = !Util::Sets::contains(parsed_args.switches, OPTION_NO_OUTPUT_COMMENTS);
 
         auto messages = msg::get_sorted_english_messages();

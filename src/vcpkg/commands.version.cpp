@@ -4,9 +4,10 @@
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
+using namespace vcpkg;
+
 namespace
 {
-    using namespace vcpkg;
     constexpr StringLiteral version_init = VCPKG_BASE_VERSION_AS_STRING "-" VCPKG_VERSION_AS_STRING
 #ifndef NDEBUG
                                                                         "-debug"
@@ -14,21 +15,25 @@ namespace
         ;
 }
 
-namespace vcpkg::Commands::Version
+namespace vcpkg
 {
-    constexpr StringLiteral version = version_init;
-    const CommandStructure COMMAND_STRUCTURE = {
-        [] { return create_example_string("version"); },
+    constexpr StringLiteral vcpkg_executable_version = version_init;
+    constexpr CommandMetadata CommandVersionMetadata{
+        "version",
+        msgHelpVersionCommand,
+        {"vcpkg version"},
+        "https://learn.microsoft.com/vcpkg/commands/version",
+        AutocompletePriority::Public,
         0,
         0,
         {},
         nullptr,
     };
 
-    void perform_and_exit(const VcpkgCmdArguments& args, const Filesystem&)
+    void command_version_and_exit(const VcpkgCmdArguments& args, const Filesystem&)
     {
-        (void)args.parse_arguments(COMMAND_STRUCTURE);
-        msg::println(msgVersionCommandHeader, msg::version = version);
+        (void)args.parse_arguments(CommandVersionMetadata);
+        msg::println(msgVersionCommandHeader, msg::version = vcpkg_executable_version);
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 }

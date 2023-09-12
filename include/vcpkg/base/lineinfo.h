@@ -16,9 +16,6 @@ namespace vcpkg
 }
 
 #define VCPKG_LINE_INFO                                                                                                \
-    vcpkg::LineInfo                                                                                                    \
-    {                                                                                                                  \
-        __LINE__, __FILE__                                                                                             \
-    }
+    vcpkg::LineInfo { __LINE__, __FILE__ }
 
 VCPKG_FORMAT_WITH_TO_STRING(vcpkg::LineInfo);

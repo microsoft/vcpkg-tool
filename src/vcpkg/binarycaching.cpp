@@ -1910,8 +1910,7 @@ namespace vcpkg
             {
                 if (!args.actions_cache_url.has_value() || !args.actions_runtime_token.has_value())
                     return msg::format_error(msgGHAParametersMissing,
-                                             msg::url =
-                                                 "https://learn.microsoft.com/en-us/vcpkg/users/binarycaching#gha");
+                                             msg::url = "https://learn.microsoft.com/vcpkg/users/binarycaching#gha");
             }
 
             if (!s.archives_to_read.empty() || !s.url_templates_to_get.empty() || !s.gcs_read_prefixes.empty() ||

@@ -6,7 +6,7 @@
 
 #include <vector>
 
-namespace vcpkg::Export::Chocolatey
+namespace vcpkg::Chocolatey
 {
     struct Options
     {

@@ -5,7 +5,7 @@
 
 #include <vcpkg/vcpkgcmdarguments.h>
 
-namespace vcpkg::Commands
+namespace vcpkg
 {
     struct FormatArgMismatches
     {
@@ -16,5 +16,6 @@ namespace vcpkg::Commands
     std::vector<StringView> get_all_format_args(StringView fstring, LocalizedString& error);
     FormatArgMismatches get_format_arg_mismatches(StringView value, StringView comment, LocalizedString& error);
 
-    void command_generate_default_message_map_and_exit(const VcpkgCmdArguments&, const Filesystem&);
+    extern const CommandMetadata CommandZGenerateDefaultMessageMapMetadata;
+    void command_z_generate_default_message_map_and_exit(const VcpkgCmdArguments&, const Filesystem&);
 }

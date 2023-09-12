@@ -10,44 +10,48 @@
 #include <vcpkg/vcpkgpaths.h>
 #include <vcpkg/versions.h>
 
+using namespace vcpkg;
+
 namespace
 {
-    using namespace vcpkg;
+    constexpr StringLiteral OPTION_APPLICATION = "application";
+    constexpr StringLiteral OPTION_SINGLE_FILE = "single-file";
 
-    static constexpr StringLiteral OPTION_APPLICATION = "application";
-    static constexpr StringLiteral OPTION_SINGLE_FILE = "single-file";
+    constexpr StringLiteral SETTING_NAME = "name";
+    constexpr StringLiteral SETTING_VERSION = "version";
 
-    static constexpr StringLiteral SETTING_NAME = "name";
-    static constexpr StringLiteral SETTING_VERSION = "version";
+    constexpr StringLiteral OPTION_VERSION_RELAXED = "version-relaxed";
+    constexpr StringLiteral OPTION_VERSION_DATE = "version-date";
+    constexpr StringLiteral OPTION_VERSION_STRING = "version-string";
 
-    static constexpr StringLiteral OPTION_VERSION_RELAXED = "version-relaxed";
-    static constexpr StringLiteral OPTION_VERSION_DATE = "version-date";
-    static constexpr StringLiteral OPTION_VERSION_STRING = "version-string";
-
-    const CommandSwitch SWITCHES[] = {
-        {OPTION_APPLICATION, []() { return msg::format(msgCmdNewOptApplication); }},
-        {OPTION_SINGLE_FILE, []() { return msg::format(msgCmdNewOptSingleFile); }},
-        {OPTION_VERSION_RELAXED, []() { return msg::format(msgCmdNewOptVersionRelaxed); }},
-        {OPTION_VERSION_DATE, []() { return msg::format(msgCmdNewOptVersionDate); }},
-        {OPTION_VERSION_STRING, []() { return msg::format(msgCmdNewOptVersionString); }},
+    constexpr CommandSwitch SWITCHES[] = {
+        {OPTION_APPLICATION, msgCmdNewOptApplication},
+        {OPTION_SINGLE_FILE, msgCmdNewOptSingleFile},
+        {OPTION_VERSION_RELAXED, msgCmdNewOptVersionRelaxed},
+        {OPTION_VERSION_DATE, msgCmdNewOptVersionDate},
+        {OPTION_VERSION_STRING, msgCmdNewOptVersionString},
     };
 
-    const CommandSetting SETTINGS[] = {
-        {SETTING_NAME, []() { return msg::format(msgCmdNewSettingName); }},
-        {SETTING_VERSION, []() { return msg::format(msgCmdNewSettingVersion); }},
+    constexpr CommandSetting SETTINGS[] = {
+        {SETTING_NAME, msgCmdNewSettingName},
+        {SETTING_VERSION, msgCmdNewSettingVersion},
     };
+} // unnamed namespace
 
-    const CommandStructure COMMAND_STRUCTURE = {
-        [] { return create_example_string("new --name=example --version=1.0 --version-kind=relaxed"); },
+namespace vcpkg
+{
+    constexpr CommandMetadata CommandNewMetadata{
+        "new",
+        msgCmdNewSynposis,
+        {msgCmdNewExample1, "vcpkg new --application"},
+        Undocumented,
+        AutocompletePriority::Public,
         0,
         0,
-        {SWITCHES, SETTINGS, {}},
+        {SWITCHES, SETTINGS},
         nullptr,
     };
-}
 
-namespace vcpkg::Commands
-{
     ExpectedL<Json::Object> build_prototype_manifest(const std::string* name,
                                                      const std::string* version,
                                                      bool option_application,
@@ -132,7 +136,7 @@ namespace vcpkg::Commands
     {
         auto& fs = paths.get_filesystem();
         const auto& current_configuration = paths.get_configuration();
-        const auto parsed = args.parse_arguments(COMMAND_STRUCTURE);
+        const auto parsed = args.parse_arguments(CommandNewMetadata);
 
         const bool option_application = Util::Sets::contains(parsed.switches, OPTION_APPLICATION);
         const bool option_single_file = Util::Sets::contains(parsed.switches, OPTION_SINGLE_FILE);
@@ -214,4 +218,4 @@ namespace vcpkg::Commands
         fs.write_contents(candidate_manifest_path, Json::stringify(manifest), VCPKG_LINE_INFO);
         Checks::exit_success(VCPKG_LINE_INFO);
     }
-}
+} // namespace vcpkg

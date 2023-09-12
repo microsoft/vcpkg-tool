@@ -15,31 +15,26 @@
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
-using namespace vcpkg;
+#include <limits.h>
 
-namespace
+namespace vcpkg
 {
-    const CommandStructure AddCommandStructure = {
-        [] {
-            return msg::format(msgAddHelp)
-                .append_raw('\n')
-                .append(create_example_string("add port png"))
-                .append_raw('\n')
-                .append(create_example_string("add artifact cmake"));
-        },
+    constexpr CommandMetadata CommandAddMetadata{
+        "add",
+        msgCmdAddSynopsis,
+        {msgCmdAddExample1, "vcpkg add port png", msgCmdAddExample2, "vcpkg add artifact cmake"},
+        Undocumented,
+        AutocompletePriority::Public,
         2,
         SIZE_MAX,
-        {{}, {}},
+        {{}, CommonSelectArtifactVersionSettings},
         nullptr,
     };
-}
 
-namespace vcpkg::Commands
-{
     void command_add_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
         MetricsSubmission metrics;
-        auto parsed = args.parse_arguments(AddCommandStructure);
+        auto parsed = args.parse_arguments(CommandAddMetadata);
         auto&& selector = parsed.command_arguments[0];
 
         if (selector == "artifact")
@@ -55,8 +50,17 @@ namespace vcpkg::Commands
             metrics.track_string(StringMetric::CommandArgs, artifact_hash);
             get_global_metrics_collector().track_submission(std::move(metrics));
 
-            std::string ce_args[] = {"add", artifact_name};
-            Checks::exit_with_code(VCPKG_LINE_INFO, run_configure_environment_command(paths, ce_args));
+            std::vector<std::string> ecmascript_args;
+            ecmascript_args.emplace_back("add");
+            ecmascript_args.emplace_back(artifact_name);
+            auto maybe_version = Util::lookup_value(parsed.settings, OPTION_VERSION);
+            if (auto version = maybe_version.get())
+            {
+                ecmascript_args.emplace_back("--version");
+                ecmascript_args.emplace_back(*version);
+            }
+
+            Checks::exit_with_code(VCPKG_LINE_INFO, run_configure_environment_command(paths, ecmascript_args));
         }
 
         if (selector == "port")
@@ -66,6 +70,11 @@ namespace vcpkg::Commands
             {
                 Checks::msg_exit_with_message(
                     VCPKG_LINE_INFO, msgAddPortRequiresManifest, msg::command_line = "vcpkg add port");
+            }
+
+            if (Util::Maps::contains(parsed.settings, OPTION_VERSION))
+            {
+                Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgAddVersionArtifactsOnly);
             }
 
             std::vector<ParsedQualifiedSpecifier> specs;

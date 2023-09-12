@@ -1,31 +1,26 @@
-#include <vcpkg/base/chrono.h>
-#include <vcpkg/base/files.h>
-#include <vcpkg/base/system.process.h>
-#include <vcpkg/base/util.h>
+#include <vcpkg/base/checks.h>
 
 #include <vcpkg/commands.contact.h>
-#include <vcpkg/commands.help.h>
-#include <vcpkg/metrics.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 
-namespace vcpkg::Commands::Contact
+namespace vcpkg
 {
-
-    const CommandStructure COMMAND_STRUCTURE = {
-        [] { return create_example_string("contact"); },
+    constexpr CommandMetadata CommandContactMetadata{
+        "contact",
+        msgHelpContactCommand,
+        {"vcpkg contact"},
+        Undocumented,
+        AutocompletePriority::Internal,
         0,
         0,
-        {{}, {}},
+        {},
         nullptr,
     };
 
-    void perform_and_exit(const VcpkgCmdArguments& args, const Filesystem& fs)
+    void command_contact_and_exit(const VcpkgCmdArguments& args, const Filesystem&)
     {
-        (void)fs;
-        const ParsedArguments parsed_args = args.parse_arguments(COMMAND_STRUCTURE);
-
+        (void)args.parse_arguments(CommandContactMetadata);
         msg::println(msgEmailVcpkgTeam, msg::url = "vcpkg@microsoft.com");
-
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 }

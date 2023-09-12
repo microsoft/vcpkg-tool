@@ -6,19 +6,23 @@
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
-namespace vcpkg::Commands::Hash
+namespace vcpkg
 {
-    const CommandStructure COMMAND_STRUCTURE = {
-        [] { return create_example_string("hash boost_1_62_0.tar.bz2"); },
+    constexpr CommandMetadata CommandHashMetadata{
+        "hash",
+        msgCmdHashSynopsis,
+        {msgCmdHashExample1, msgCmdHashExample2, "vcpkg hash boost_1_62_0.tar.bz2"},
+        Undocumented,
+        AutocompletePriority::Public,
         1,
         2,
         {},
         nullptr,
     };
 
-    void perform_and_exit(const VcpkgCmdArguments& args, const Filesystem& fs)
+    void command_hash_and_exit(const VcpkgCmdArguments& args, const Filesystem& fs)
     {
-        const auto parsed = args.parse_arguments(COMMAND_STRUCTURE);
+        const auto parsed = args.parse_arguments(CommandHashMetadata);
 
         const auto file_to_hash = (fs.current_path(VCPKG_LINE_INFO) / parsed.command_arguments[0]).lexically_normal();
 

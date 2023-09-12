@@ -1415,6 +1415,7 @@ namespace vcpkg
     {
         ReadFilePointer fp{std::move(other)};
         std::swap(m_fs, fp.m_fs);
+        std::swap(m_path, fp.m_path);
         return *this;
     }
 
@@ -1506,6 +1507,7 @@ namespace vcpkg
     {
         WriteFilePointer fp{std::move(other)};
         std::swap(m_fs, fp.m_fs);
+        std::swap(m_path, fp.m_path);
         return *this;
     }
 
