@@ -2868,11 +2868,12 @@ DECLARE_MESSAGE(UpdateBaselineUpdatedBaseline,
                 (msg::url, msg::old_value, msg::new_value),
                 "example of {old_value}, {new_value} is '5507daa796359fe8d45418e694328e878ac2b82f'",
                 "updated registry '{url}': baseline '{old_value}' -> '{new_value}'")
-DECLARE_MESSAGE(UpgradeInManifest,
-                (),
-                "",
-                "The upgrade command does not currently support manifest mode. Instead, modify your vcpkg.json and "
-                "run install.")
+DECLARE_MESSAGE(
+    UpgradeInManifest,
+    (),
+    "'vcpkg x-update-baseline' and 'vcpkg install' are command lines and should not be localized.",
+    "Upgrade upgrades a classic mode installation and thus does not support manifest mode. Consider updating your "
+    "dependencies by updating your baseline to a current value with vcpkg x-update-baseline and running vcpkg install.")
 DECLARE_MESSAGE(
     UpgradeRunWithNoDryRun,
     (),
