@@ -11329,12 +11329,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";UpgradeInManifest" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";UpgradeInManifest" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The upgrade command does not currently support manifest mode. Instead, modify your vcpkg.json and run install.]]></Val>
+          <Val><![CDATA[Upgrade upgrades a classic mode installation and thus does not support manifest mode. Consider updating your dependencies by updating your baseline to a current value with vcpkg x-update-baseline and running vcpkg install.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[업그레이드 명령은 현재 매니페스트 모드를 지원하지 않습니다. 대신 vcpkg.json을 수정하고 설치를 실행하세요.]]></Val>
+            <Val><![CDATA[업그레이드하면 클래식 모드 설치가 업그레이드되므로 매니페스트 모드를 지원하지 않습니다. vcpkg x-update-baseline을 사용하여 기준을 현재 값으로 업데이트하고 vcpkg 설치를 실행하여 종속성을 업데이트하는 것이 좋습니다.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The upgrade command does not currently support manifest mode. Instead, modify your vcpkg.json and run install.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
