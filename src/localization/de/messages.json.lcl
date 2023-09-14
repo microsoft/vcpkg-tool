@@ -11329,12 +11329,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";UpgradeInManifest" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";UpgradeInManifest" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The upgrade command does not currently support manifest mode. Instead, modify your vcpkg.json and run install.]]></Val>
+          <Val><![CDATA[Upgrade upgrades a classic mode installation and thus does not support manifest mode. Consider updating your dependencies by updating your baseline to a current value with vcpkg x-update-baseline and running vcpkg install.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Der Upgradebefehl unterstützt derzeit nicht den Manifestmodus. Ändern Sie stattdessen "vcpkg.json", und führen Sie die Installation aus.]]></Val>
+            <Val><![CDATA[Upgrade aktualisiert eine Installation im klassischen Modus und unterstützt daher keinen Manifestmodus. Erwägen Sie, Ihre Abhängigkeiten zu aktualisieren, indem Sie Ihre Baseline mit vcpkg x-update-baseline auf einen aktuellen Wert aktualisieren und die vcpkg-Installation ausführen.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The upgrade command does not currently support manifest mode. Instead, modify your vcpkg.json and run install.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>

@@ -11332,12 +11332,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";UpgradeInManifest" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";UpgradeInManifest" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The upgrade command does not currently support manifest mode. Instead, modify your vcpkg.json and run install.]]></Val>
+          <Val><![CDATA[Upgrade upgrades a classic mode installation and thus does not support manifest mode. Consider updating your dependencies by updating your baseline to a current value with vcpkg x-update-baseline and running vcpkg install.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[升級命令目前不支援資訊清單模式。請改為修改 vcpkg.json 並執行安裝。]]></Val>
+            <Val><![CDATA[升級會升級傳統模式安裝，因此不支援資訊清單模式。請考慮使用 vcpkg x-update-baseline 將基準更新為目前的值，並執行 vcpkg 安裝，以更新您的相依性。]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The upgrade command does not currently support manifest mode. Instead, modify your vcpkg.json and run install.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
