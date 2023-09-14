@@ -1240,7 +1240,7 @@ namespace
 
         ExpectedL<int> wait_for_termination()
         {
-            int exit_code;
+            int exit_code = -1;
             if (pid != -1)
             {
                 int status;
