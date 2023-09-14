@@ -1079,7 +1079,7 @@
   "UpdateBaselineNoUpdate": "registro '{url}' non aggiornato: '{value}'",
   "UpdateBaselineRemoteGitError": "GIT non è riuscito a recuperare il repository remoto '{url}'",
   "UpdateBaselineUpdatedBaseline": "registro aggiornato '{url}': baseline '{old_value}' -> '{new_value}'",
-  "UpgradeInManifest": "Upgrade upgrades a classic mode installation and thus does not support manifest mode. Consider updating your dependencies by updating your baseline to a current value with vcpkg x-update-baseline and running vcpkg install.",
+  "UpgradeInManifest": "L'aggiornamento aggiorna un'installazione in modalità classica e pertanto non supporta la modalità manifesto. È consigliabile aggiornare le dipendenze aggiornando la baseline a un valore corrente con vcpkg x-update-baseline ed eseguendo l'installazione di vcpkg.",
   "UpgradeRunWithNoDryRun": "Se si è certi di voler ricompilare i pacchetti precedenti, eseguire il comando con l'opzione --nessun test-controllato.",
   "UploadedBinaries": "File binari caricati in {count}.{vendor}.",
   "UploadedPackagesToVendor": "Sono stati caricati {count} pacchetti a {vendor} in {elapsed}",

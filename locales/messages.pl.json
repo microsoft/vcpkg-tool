@@ -1079,7 +1079,7 @@
   "UpdateBaselineNoUpdate": "nie zaktualizowano rejestru „{url}”: „{value}”",
   "UpdateBaselineRemoteGitError": "system git nie może pobrać repozytorium zdalnego „{url}”",
   "UpdateBaselineUpdatedBaseline": "zaktualizowany rejestr „{url}”: punkt odniesienia „{old_value}” -> „{new_value}”",
-  "UpgradeInManifest": "Upgrade upgrades a classic mode installation and thus does not support manifest mode. Consider updating your dependencies by updating your baseline to a current value with vcpkg x-update-baseline and running vcpkg install.",
+  "UpgradeInManifest": "Uaktualnienie uaktualnia instalację w trybie klasycznym i w związku z tym nie obsługuje trybu manifestu. Rozważ zaktualizowanie zależności, aktualizując punkt odniesienia do bieżącej wartości za pomocą polecenia vcpkg x-update-baseline i uruchamiając instalację programu vcpkg.",
   "UpgradeRunWithNoDryRun": "Jeśli chcesz ponownie skompilować powyższe pakiety, uruchom polecenie z opcją --no-dry-run.",
   "UploadedBinaries": "Przekazano dane binarne do {count} {vendor}.",
   "UploadedPackagesToVendor": "Przekazano następującą liczbę pakietów do dostawcy {vendor} w {elapsed}: {count}",

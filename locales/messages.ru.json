@@ -1079,7 +1079,7 @@
   "UpdateBaselineNoUpdate": "реестр \"{url}\" не обновлен: \"{value}\"",
   "UpdateBaselineRemoteGitError": "GIT не удалось получить удаленный репозиторий \"{url}\"",
   "UpdateBaselineUpdatedBaseline": "обновленный реестр \"{url}\": базовый план \"{old_value}\" -> \"{new_value}\"",
-  "UpgradeInManifest": "Upgrade upgrades a classic mode installation and thus does not support manifest mode. Consider updating your dependencies by updating your baseline to a current value with vcpkg x-update-baseline and running vcpkg install.",
+  "UpgradeInManifest": "Обновление обновляет установку в классическом режиме и поэтому не поддерживает режим манифеста. Попробуйте обновить зависимости, обновив базовый план до текущего значения с помощью vcpkg x-update-baseline и запустив установку vcpkg.",
   "UpgradeRunWithNoDryRun": "Если вы действительно хотите повторно собрать перечисленные выше пакеты, запустите эту команду с параметром --no-dry-run.",
   "UploadedBinaries": "Загружены двоичные файлы {count} {vendor}.",
   "UploadedPackagesToVendor": "Отправлено {count} пакетов из {vendor} за {elapsed}",
