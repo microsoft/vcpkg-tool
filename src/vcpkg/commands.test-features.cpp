@@ -102,9 +102,9 @@ namespace vcpkg
 {
     static constexpr StringLiteral OPTION_FAILURE_LOGS = "failure-logs";
     static constexpr StringLiteral OPTION_CI_FEATURE_BASELINE = "ci-feature-baseline";
-    static constexpr StringLiteral OPTION_DONT_TEST_FEATURE_CORE = "dont-test-feature-core";
-    static constexpr StringLiteral OPTION_DONT_TEST_FEATURES_COMBINED = "dont-test-features-combined";
-    static constexpr StringLiteral OPTION_DONT_TEST_FEATURES_SEPARATELY = "dont-test-features-separately";
+    static constexpr StringLiteral OPTION_NO_FEATURE_CORE_TEST = "no-feature-core-test";
+    static constexpr StringLiteral OPTION_NO_FEATURES_COMBINED_TEST = "no-features-combined-test";
+    static constexpr StringLiteral OPTION_NO_FEATURES_SEPARATED_TESTS = "no-features-separated-tests";
     static constexpr StringLiteral OPTION_OUTPUT_FAILURE_ABIS = "write-failure-abis-to";
     static constexpr StringLiteral OPTION_ALL_PORTS = "all";
 
@@ -125,13 +125,13 @@ namespace vcpkg
     static constexpr std::array<CommandSwitch, 4> CI_SWITCHES = {{
 
         {OPTION_ALL_PORTS, []() { return LocalizedString::from_raw("Runs the specified tests for all ports"); }},
-        {OPTION_DONT_TEST_FEATURE_CORE,
+        {OPTION_NO_FEATURE_CORE_TEST,
          []() { return LocalizedString::from_raw("Tests the 'core' feature for every specified port"); }},
-        {OPTION_DONT_TEST_FEATURES_SEPARATELY,
+        {OPTION_NO_FEATURES_SEPARATED_TESTS,
          []() {
              return LocalizedString::from_raw("Tests every feature of a port seperatly for every specified port");
          }},
-        {OPTION_DONT_TEST_FEATURES_COMBINED,
+        {OPTION_NO_FEATURES_COMBINED_TEST,
          []() {
              return LocalizedString::from_raw(
                  "Tests the combination of every feature of a port for every specified port");
@@ -139,9 +139,9 @@ namespace vcpkg
     }};
 
     constexpr CommandMetadata CommandTestFeaturesMetadata = {
-        "test-features",
+        "x-test-features",
         msgCmdTestFeaturesSynopsis,
-        {"vcpkg test-features gdal"},
+        {"vcpkg x-test-features gdal"},
         "https://learn.microsoft.com/vcpkg/commands/test-features",
         AutocompletePriority::Public,
         0,
@@ -160,10 +160,10 @@ namespace vcpkg
 
         const auto all_ports = Util::Sets::contains(options.switches, OPTION_ALL_PORTS);
 
-        const auto test_feature_core = !Util::Sets::contains(options.switches, OPTION_DONT_TEST_FEATURE_CORE);
-        const auto test_features_combined = !Util::Sets::contains(options.switches, OPTION_DONT_TEST_FEATURES_COMBINED);
+        const auto test_feature_core = !Util::Sets::contains(options.switches, OPTION_NO_FEATURE_CORE_TEST);
+        const auto test_features_combined = !Util::Sets::contains(options.switches, OPTION_NO_FEATURES_COMBINED_TEST);
         const auto test_features_seperatly =
-            !Util::Sets::contains(options.switches, OPTION_DONT_TEST_FEATURES_SEPARATELY);
+            !Util::Sets::contains(options.switches, OPTION_NO_FEATURES_SEPARATED_TESTS);
 
         auto binary_cache = BinaryCache::make(args, paths, stdout_sink).value_or_exit(VCPKG_LINE_INFO);
 
