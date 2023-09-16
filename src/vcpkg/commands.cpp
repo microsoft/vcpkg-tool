@@ -47,6 +47,7 @@
 #include <vcpkg/commands.vsinstances.h>
 #include <vcpkg/commands.z-applocal.h>
 #include <vcpkg/commands.z-ce.h>
+#include <vcpkg/commands.z-changelog.h>
 #include <vcpkg/commands.z-extract.h>
 #include <vcpkg/commands.z-generate-message-map.h>
 #include <vcpkg/commands.z-preregister-telemetry.h>
@@ -104,6 +105,7 @@ namespace vcpkg
         {CommandVsInstancesMetadata, command_vs_instances_and_exit},
         {CommandZCEMetadata, command_z_ce_and_exit},
         {CommandZExtractMetadata, command_z_extract_and_exit},
+        {CommandZChangelogMetadata, command_z_changelog_and_exit},
     };
 
     constexpr View<CommandRegistration<PathsCommandFn>> paths_commands = paths_commands_storage;

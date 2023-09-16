@@ -14,21 +14,10 @@ using namespace vcpkg;
 
 namespace
 {
-    struct UpdatedPort
-    {
-        static bool compare_by_name(const UpdatedPort& left, const UpdatedPort& right)
-        {
-            return left.port < right.port;
-        }
-
-        std::string port;
-        VersionDiff version_diff;
-    };
-
     template<class T>
     struct SetElementPresence
     {
-        static SetElementPresence create(std::vector<T> left, std::vector<T> right)
+        static SetElementPresence create(const std::vector<T>& left, const std::vector<T>& right)
         {
             // TODO: This can be done with one pass instead of three passes
             SetElementPresence output;
@@ -67,17 +56,22 @@ namespace
         return output;
     }
 
-    void do_print_name_and_version(const std::vector<std::string>& ports_to_print,
-                                   const std::map<std::string, Version>& names_and_versions)
+    void print_name_only(StringView name)
     {
-        for (const std::string& name : ports_to_print)
-        {
-            const Version& version = names_and_versions.at(name);
-            msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("\t- {:<15}{:<}\n", name, version));
-        }
+        msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("\t- {:<15}\n", name));
     }
 
-    std::map<std::string, Version> read_ports_from_commit(const VcpkgPaths& paths, const std::string& git_commit_id)
+    void print_name_and_version(StringView name, const Version& version)
+    {
+        msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("\t- {:<15}{:<}\n", name, version));
+    }
+
+    void print_name_and_version_diff(StringView name, const VersionDiff& version_diff)
+    {
+        msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("\t- {:<15}{:<}\n", name, version_diff));
+    }
+
+    std::map<std::string, Version> read_ports_from_commit(const VcpkgPaths& paths, StringView git_commit_id)
     {
         auto& fs = paths.get_filesystem();
         const auto dot_git_dir = paths.root / ".git";
@@ -110,7 +104,7 @@ namespace
         return names_and_versions;
     }
 
-    void check_commit_exists(const VcpkgPaths& paths, const std::string& git_commit_id)
+    void check_commit_exists(const VcpkgPaths& paths, StringView git_commit_id)
     {
         static constexpr StringLiteral VALID_COMMIT_OUTPUT = "commit\n";
         auto cmd = paths.git_cmd_builder(paths.root / ".git", paths.root)
@@ -127,6 +121,32 @@ namespace
 
 namespace vcpkg
 {
+    PortsDiff find_portsdiff(const VcpkgPaths& paths,
+                             StringView git_commit_id_for_previous_snapshot,
+                             StringView git_commit_id_for_current_snapshot)
+    {
+        check_commit_exists(paths, git_commit_id_for_current_snapshot);
+        check_commit_exists(paths, git_commit_id_for_previous_snapshot);
+
+        const auto current_names_and_versions = read_ports_from_commit(paths, git_commit_id_for_current_snapshot);
+        const auto previous_names_and_versions = read_ports_from_commit(paths, git_commit_id_for_previous_snapshot);
+
+        // Already sorted, so set_difference can work on std::vector too
+        const auto current_ports = Util::extract_keys(current_names_and_versions);
+        const auto previous_ports = Util::extract_keys(previous_names_and_versions);
+
+        const SetElementPresence<std::string> setp =
+            SetElementPresence<std::string>::create(current_ports, previous_ports);
+
+        return PortsDiff{
+            Util::fmap(setp.only_left,
+                       [&](const std::string& added_port) {
+                           return VersionSpec{added_port, current_names_and_versions.find(added_port)->second};
+                       }),
+            find_updated_ports(setp.both, previous_names_and_versions, current_names_and_versions),
+            setp.only_right};
+    }
+
     constexpr CommandMetadata CommandPortsdiffMetadata{
         "portsdiff",
         msgCmdPortsdiffSynopsis,
@@ -143,50 +163,39 @@ namespace vcpkg
     {
         const auto parsed = args.parse_arguments(CommandPortsdiffMetadata);
 
-        const std::string git_commit_id_for_previous_snapshot = parsed.command_arguments.at(0);
-        const std::string git_commit_id_for_current_snapshot =
-            parsed.command_arguments.size() < 2 ? "HEAD" : parsed.command_arguments.at(1);
+        const StringView git_commit_id_for_previous_snapshot = parsed.command_arguments[0];
+        const StringView git_commit_id_for_current_snapshot =
+            parsed.command_arguments.size() < 2 ? "HEAD" : parsed.command_arguments[1];
 
-        check_commit_exists(paths, git_commit_id_for_current_snapshot);
-        check_commit_exists(paths, git_commit_id_for_previous_snapshot);
-
-        const std::map<std::string, Version> current_names_and_versions =
-            read_ports_from_commit(paths, git_commit_id_for_current_snapshot);
-        const std::map<std::string, Version> previous_names_and_versions =
-            read_ports_from_commit(paths, git_commit_id_for_previous_snapshot);
-
-        // Already sorted, so set_difference can work on std::vector too
-        const std::vector<std::string> current_ports = Util::extract_keys(current_names_and_versions);
-        const std::vector<std::string> previous_ports = Util::extract_keys(previous_names_and_versions);
-
-        const SetElementPresence<std::string> setp =
-            SetElementPresence<std::string>::create(current_ports, previous_ports);
-
-        const std::vector<std::string>& added_ports = setp.only_left;
+        const auto portsdiff =
+            find_portsdiff(paths, git_commit_id_for_previous_snapshot, git_commit_id_for_current_snapshot);
+        const auto& added_ports = portsdiff.added_ports;
         if (!added_ports.empty())
         {
             msg::println(msgPortsAdded, msg::count = added_ports.size());
-            do_print_name_and_version(added_ports, current_names_and_versions);
+            for (auto&& added_port : added_ports)
+            {
+                print_name_and_version(added_port.port_name, added_port.version);
+            }
         }
 
-        const std::vector<std::string>& removed_ports = setp.only_right;
+        const auto& removed_ports = portsdiff.removed_ports;
         if (!removed_ports.empty())
         {
             msg::println(msgPortsRemoved, msg::count = removed_ports.size());
-            do_print_name_and_version(removed_ports, previous_names_and_versions);
+            for (auto&& removed_port : removed_ports)
+            {
+                print_name_only(removed_port);
+            }
         }
 
-        const std::vector<std::string>& common_ports = setp.both;
-        const std::vector<UpdatedPort> updated_ports =
-            find_updated_ports(common_ports, previous_names_and_versions, current_names_and_versions);
-
+        const auto& updated_ports = portsdiff.updated_ports;
         if (!updated_ports.empty())
         {
             msg::println(msgPortsUpdated, msg::count = updated_ports.size());
-            for (const UpdatedPort& p : updated_ports)
+            for (auto&& updated_port : updated_ports)
             {
-                msg::write_unlocalized_text_to_stdout(
-                    Color::none, fmt::format("\t- {:<15}{:<}\n", p.port, p.version_diff.to_string()));
+                print_name_and_version_diff(updated_port.port_name, updated_port.version_diff);
             }
         }
 
