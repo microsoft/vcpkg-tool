@@ -15,7 +15,5 @@ namespace vcpkg
         nullptr,
     };
 
-    void command_z_changelog_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) {
-
-    }
+    void command_z_changelog_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) { }
 }

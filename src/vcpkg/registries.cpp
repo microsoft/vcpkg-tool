@@ -711,8 +711,10 @@ namespace
         {
             load_all_port_names_from_registry_versions(out, fs, m_paths.builtin_registry_versions);
         }
-
-        m_files_impl->append_all_port_names(out);
+        else
+        {
+            m_files_impl->append_all_port_names(out);
+        }
     }
 
     bool BuiltinGitRegistry::try_append_all_port_names_no_network(std::vector<std::string>& port_names) const
