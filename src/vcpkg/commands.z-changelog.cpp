@@ -1,5 +1,10 @@
+#include <vcpkg/base/files.h>
+#include <vcpkg/base/format.h>
+
+#include <vcpkg/commands.portsdiff.h>
 #include <vcpkg/commands.z-changelog.h>
 #include <vcpkg/vcpkgcmdarguments.h>
+#include <vcpkg/vcpkgpaths.h>
 
 namespace vcpkg
 {
@@ -10,10 +15,100 @@ namespace vcpkg
         Undocumented,
         AutocompletePriority::Never,
         1,
-        2,
+        1,
         {},
         nullptr,
     };
 
-    void command_z_changelog_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) { }
+    void command_z_changelog_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
+    {
+        const auto parsed = args.parse_arguments(CommandZChangelogMetadata);
+        const StringView git_commit_id_for_previous_snapshot = parsed.command_arguments[0];
+        const auto portsdiff = find_portsdiff(paths, git_commit_id_for_previous_snapshot, "HEAD");
+
+        std::string result;
+        result.append("vcpkg (FROM - TO)\n");
+        result.append("---\n");
+        auto total_port_count = paths.get_filesystem()
+                                    .get_directories_non_recursive(paths.builtin_ports_directory(), VCPKG_LINE_INFO)
+                                    .size();
+        result.append(fmt::format("#### Total port count: {}\n", total_port_count));
+        result.append("#### Total port count per triplet (tested) (tentative): LINK\n");
+        result.append("|triplet|ports available|\n");
+        result.append("|---|---|\n");
+        result.append("|x86-windows|NUMBER|\n");
+        result.append("|**x64-windows**|NUMBER|\n");
+        result.append("|x64-windows-static|NUMBER|\n");
+        result.append("|x64-windows-static-md|NUMBER|\n");
+        result.append("|x64-uwp|NUMBER|\n");
+        result.append("|arm64-windows|NUMBER|\n");
+        result.append("|arm64-uwp|NUMBER|\n");
+        result.append("|**x64-osx**|NUMBER|\n");
+        result.append("|**x64-linux**|NUMBER|\n");
+        result.append("|arm-neon-android|NUMBER|\n");
+        result.append("|x64-android|NUMBER|\n");
+        result.append("|arm64-android|NUMBER|\n");
+        result.append("\n");
+
+        result.append("The following vcpkg-tool releases have occurred since the last registry release:\n");
+        result.append("* \n");
+        result.append("\n");
+
+        result.append("In those tool releases, the following changes are particularly meaningful:\n");
+        result.append("* \n");
+        result.append("\n");
+
+        if (!portsdiff.added_ports.empty())
+        {
+            result.append("<details>\n");
+            result.append(fmt::format("<summary><b>The following {} ports have been added:</b></summary>\n\n",
+                                      portsdiff.added_ports.size()));
+            result.append("|port|version|\n");
+            result.append("|---|---|\n");
+            for (auto&& added_port : portsdiff.added_ports)
+            {
+                result.append(fmt::format("|{}|{}|\n", added_port.port_name, added_port.version));
+            }
+
+            result.append("</details>\n\n");
+        }
+
+        if (!portsdiff.updated_ports.empty())
+        {
+            result.append("<details>\n");
+            result.append(fmt::format("<summary><b>The following {} ports have been updated:</b></summary>\n\n",
+                                      portsdiff.added_ports.size()));
+            result.append("|port|original version|new version|\n");
+            result.append("|---|---|---|\n");
+            for (auto&& updated_port : portsdiff.updated_ports)
+            {
+                result.append(fmt::format("|{}|{}|{}|\n",
+                                          updated_port.port_name,
+                                          updated_port.version_diff.left,
+                                          updated_port.version_diff.right));
+            }
+
+            result.append("</details>\n\n");
+        }
+
+        if (!portsdiff.removed_ports.empty())
+        {
+            result.append("<details>\n");
+            result.append(fmt::format("<summary><b>The following {} ports have been removed:</b></summary>\n\n",
+                                      portsdiff.removed_ports.size()));
+            result.append("|port|\n");
+            result.append("|---|\n");
+            for (auto&& removed_port : portsdiff.removed_ports)
+            {
+                result.append(fmt::format("|{}|\n", removed_port));
+            }
+
+            result.append("</details>\n\n");
+        }
+
+        result.append("#### New Contributors\n");
+
+        msg::write_unlocalized_text_to_stdout(Color::none, result);
+        Checks::exit_success(VCPKG_LINE_INFO);
+    }
 }
