@@ -2990,7 +2990,6 @@ DECLARE_MESSAGE(VersionBuiltinPortTreeEntryMissing,
                 "{expected} and {actual} are versions like 1.0.",
                 "no version database entry for {package_name} at {expected}; using the checked out ports tree "
                 "version ({actual}).")
-DECLARE_MESSAGE(VersionDatabaseEntriesMissing, (msg::package_name), "", "no version entries for {package_name}.")
 DECLARE_MESSAGE(VersionDatabaseEntryMissing,
                 (msg::package_name, msg::version),
                 "",

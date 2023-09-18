@@ -1623,24 +1623,15 @@ namespace vcpkg
     ExpectedL<Optional<std::vector<std::pair<SchemedVersion, std::string>>>> get_builtin_versions(
         const VcpkgPaths& paths, StringView port_name)
     {
-        auto maybe_maybe_versions =
-            load_versions_file(paths.get_filesystem(), VersionDbType::Git, paths.builtin_registry_versions, port_name);
-        auto maybe_versions = maybe_maybe_versions.get();
-        if (!maybe_versions)
-        {
-            return std::move(maybe_maybe_versions).error();
-        }
-
-        auto versions = maybe_versions->get();
-        if (!versions)
-        {
-            return Optional<std::vector<std::pair<SchemedVersion, std::string>>>{};
-        }
-
-        return Optional<std::vector<std::pair<SchemedVersion, std::string>>>{
-            Util::fmap(*versions, [](const VersionDbEntry& entry) -> std::pair<SchemedVersion, std::string> {
-                return {SchemedVersion{entry.scheme, entry.version}, entry.git_tree};
-            })};
+        return load_versions_file(
+                   paths.get_filesystem(), VersionDbType::Git, paths.builtin_registry_versions, port_name)
+            .map([](const auto& maybe_versions) {
+                return maybe_versions.map([](const auto& versions) {
+                    return Util::fmap(versions, [](const VersionDbEntry& entry) {
+                        return std::pair<SchemedVersion, std::string>{{entry.scheme, entry.version}, entry.git_tree};
+                    });
+                });
+            });
     }
 
     ExpectedL<Baseline> get_builtin_baseline(const VcpkgPaths& paths)

@@ -1663,8 +1663,6 @@
   "_VersionConstraintUnresolvable.comment": "An example of {package_name} is zlib. An example of {spec} is zlib:x64-windows.",
   "VersionConstraintViolated": "dependency {spec} was expected to be at least version {expected_version}, but is currently {actual_version}.",
   "_VersionConstraintViolated.comment": "An example of {spec} is zlib:x64-windows. An example of {expected_version} is 1.3.8. An example of {actual_version} is 1.3.8.",
-  "VersionDatabaseEntriesMissing": "no version entries for {package_name}.",
-  "_VersionDatabaseEntriesMissing.comment": "An example of {package_name} is zlib.",
   "VersionDatabaseEntryMissing": "no version entry for {package_name} at {version}.",
   "_VersionDatabaseEntryMissing.comment": "An example of {package_name} is zlib. An example of {version} is 1.3.8.",
   "VersionDatabaseFileMissing": "{package_name} is missing a version database file at {path}\nRun:\nvcpkg x-add-version {package_name}\nto create the versions file.",
