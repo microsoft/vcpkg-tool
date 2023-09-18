@@ -1289,12 +1289,15 @@ namespace vcpkg
         auto maybe_rc_output = cmd_execute_and_capture_output(actual_cmd_line, default_working_directory, env);
         if (!maybe_rc_output)
         {
-            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgVcvarsRunFailed);
+            Checks::msg_exit_with_error(
+                VCPKG_LINE_INFO, msg::format(msgVcvarsRunFailed).append_raw("\n").append(maybe_rc_output.error()));
         }
 
         auto& rc_output = maybe_rc_output.value_or_exit(VCPKG_LINE_INFO);
         if (rc_output.exit_code != 0)
         {
+            Debug::println("Output:");
+            Debug::println(rc_output.output);
             Checks::msg_exit_with_error(
                 VCPKG_LINE_INFO, msgVcvarsRunFailedExitCode, msg::exit_code = rc_output.exit_code);
         }

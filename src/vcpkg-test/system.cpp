@@ -150,6 +150,7 @@ TEST_CASE ("cmd_execute_and_capture_output_parallel", "[system]")
     {
 #if defined(_WIN32)
         vcpkg::Command cmd("cmd.exe");
+        cmd.string_arg("/d");
         cmd.string_arg("/c");
         cmd.string_arg(fmt::format("echo {}", i));
 #else
