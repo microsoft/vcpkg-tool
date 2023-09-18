@@ -1079,7 +1079,7 @@
   "UpdateBaselineNoUpdate": "登錄 '{url}' 未更新: '{value}'",
   "UpdateBaselineRemoteGitError": "git 無法擷取遠端存放庫 '{url}'",
   "UpdateBaselineUpdatedBaseline": "已更新登錄 '{url}': 比較基準 '{old_value}' -> '{new_value}'",
-  "UpgradeInManifest": "Upgrade upgrades a classic mode installation and thus does not support manifest mode. Consider updating your dependencies by updating your baseline to a current value with vcpkg x-update-baseline and running vcpkg install.",
+  "UpgradeInManifest": "升級會升級傳統模式安裝，因此不支援資訊清單模式。請考慮使用 vcpkg x-update-baseline 將基準更新為目前的值，並執行 vcpkg 安裝，以更新您的相依性。",
   "UpgradeRunWithNoDryRun": "如果您確定要重建上述套件，請以 --no-dry-run 選項執行此命令。",
   "UploadedBinaries": "已將二進位檔上傳至 {count} 位 {vendor}。",
   "UploadedPackagesToVendor": "已在 {elapsed} 中上傳 {count} 個套件至 {vendor}",

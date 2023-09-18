@@ -148,7 +148,10 @@ namespace vcpkg
 
     static void format_command_usage_entry(HelpTableFormatter& table, const CommandMetadata& metadata)
     {
-        table.format(metadata.name, metadata.synopsis.to_string());
+        if (metadata.synopsis)
+        {
+            table.format(metadata.name, metadata.synopsis.to_string());
+        }
     }
 
     void print_zero_args_usage()

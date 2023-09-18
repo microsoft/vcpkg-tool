@@ -1079,7 +1079,7 @@
   "UpdateBaselineNoUpdate": "레지스트리 '{url}'이(가) 업데이트되지 않았습니다. '{value}'",
   "UpdateBaselineRemoteGitError": "git에서 원격 리포지토리 '{url}'을(를) 가져오지 못했습니다.",
   "UpdateBaselineUpdatedBaseline": "업데이트된 레지스트리 '{url}': 기준 '{old_value}' -> '{new_value}'",
-  "UpgradeInManifest": "Upgrade upgrades a classic mode installation and thus does not support manifest mode. Consider updating your dependencies by updating your baseline to a current value with vcpkg x-update-baseline and running vcpkg install.",
+  "UpgradeInManifest": "업그레이드하면 클래식 모드 설치가 업그레이드되므로 매니페스트 모드를 지원하지 않습니다. vcpkg x-update-baseline을 사용하여 기준을 현재 값으로 업데이트하고 vcpkg 설치를 실행하여 종속성을 업데이트하는 것이 좋습니다.",
   "UpgradeRunWithNoDryRun": "위의 패키지를 다시 빌드하려는 경우 --no-dry-run 옵션을 사용하여 이 명령을 실행합니다.",
   "UploadedBinaries": "이진 파일을 {count} {vendor}에 업로드했습니다.",
   "UploadedPackagesToVendor": "{count}개의 패키지를 {elapsed}에서 {vendor}에 업로드함",

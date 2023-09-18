@@ -98,7 +98,7 @@ async function main() {
     error(e);
 
     await session.writeTelemetry();
-    return process.exit(result ? 0 : 1);
+    return process.exit(1);
   } finally {
     await session.writeTelemetry();
   }
