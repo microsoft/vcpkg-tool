@@ -140,25 +140,32 @@ namespace vcpkg
 
         virtual std::vector<Path> get_files_recursive(const Path& dir, std::error_code& ec) const = 0;
         std::vector<Path> get_files_recursive(const Path& dir, LineInfo li) const;
+        ExpectedL<std::vector<Path>> try_get_files_recursive(const Path& dir) const;
 
         virtual std::vector<Path> get_files_non_recursive(const Path& dir, std::error_code& ec) const = 0;
         std::vector<Path> get_files_non_recursive(const Path& dir, LineInfo li) const;
+        ExpectedL<std::vector<Path>> try_get_files_non_recursive(const Path& dir) const;
 
         virtual std::vector<Path> get_directories_recursive(const Path& dir, std::error_code& ec) const = 0;
         std::vector<Path> get_directories_recursive(const Path& dir, LineInfo li) const;
+        ExpectedL<std::vector<Path>> try_get_directories_recursive(const Path& dir) const;
 
         virtual std::vector<Path> get_directories_non_recursive(const Path& dir, std::error_code& ec) const = 0;
         std::vector<Path> get_directories_non_recursive(const Path& dir, LineInfo li) const;
+        ExpectedL<std::vector<Path>> try_get_directories_non_recursive(const Path& dir) const;
 
         virtual std::vector<Path> get_regular_files_recursive(const Path& dir, std::error_code& ec) const = 0;
         std::vector<Path> get_regular_files_recursive(const Path& dir, LineInfo li) const;
+        ExpectedL<std::vector<Path>> try_get_regular_files_recursive(const Path& dir) const;
 
         virtual std::vector<Path> get_regular_files_recursive_lexically_proximate(const Path& dir,
                                                                                   std::error_code& ec) const = 0;
         std::vector<Path> get_regular_files_recursive_lexically_proximate(const Path& dir, LineInfo li) const;
+        ExpectedL<std::vector<Path>> try_get_regular_files_recursive_lexically_proximate(const Path& dir) const;
 
         virtual std::vector<Path> get_regular_files_non_recursive(const Path& dir, std::error_code& ec) const = 0;
         std::vector<Path> get_regular_files_non_recursive(const Path& dir, LineInfo li) const;
+        ExpectedL<std::vector<Path>> try_get_regular_files_non_recursive(const Path& dir) const;
 
         bool exists(const Path& target, std::error_code& ec) const;
         bool exists(const Path& target, LineInfo li) const;

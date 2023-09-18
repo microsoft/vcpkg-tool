@@ -38,17 +38,18 @@ namespace
                                                     const std::string& local_git_tree,
                                                     bool verify_git_trees)
     {
-        auto maybe_versions = vcpkg::get_builtin_versions(paths, port_name);
-        if (!maybe_versions.has_value())
+        auto maybe_maybe_versions = vcpkg::get_builtin_versions(paths, port_name);
+        const auto maybe_versions = maybe_maybe_versions.get();
+        if (!maybe_versions)
         {
             return {msg::format_error(
                         msgWhileParsingVersionsForPort, msg::package_name = port_name, msg::path = versions_file_path)
-                        .append(std::move(maybe_versions).error()),
+                        .append(std::move(maybe_maybe_versions).error()),
                     expected_right_tag};
         }
 
-        const auto& versions = maybe_versions.value_or_exit(VCPKG_LINE_INFO);
-        if (versions.empty())
+        const auto versions = maybe_versions->get();
+        if (!versions || versions->empty())
         {
             return {msg::format_error(
                         msgWhileParsingVersionsForPort, msg::package_name = port_name, msg::path = versions_file_path)
@@ -59,7 +60,7 @@ namespace
 
         if (verify_git_trees)
         {
-            for (auto&& version_entry : versions)
+            for (auto&& version_entry : *versions)
             {
                 bool version_ok = false;
                 for (StringView control_file : {"CONTROL", "vcpkg.json"})
@@ -132,9 +133,9 @@ namespace
 
         const auto local_port_version = maybe_scf.value(VCPKG_LINE_INFO)->to_schemed_version();
 
-        auto versions_end = versions.end();
+        auto versions_end = versions->end();
         auto it =
-            std::find_if(versions.begin(), versions_end, [&](const std::pair<SchemedVersion, std::string>& entry) {
+            std::find_if(versions->begin(), versions_end, [&](const std::pair<SchemedVersion, std::string>& entry) {
                 return entry.first.version == local_port_version.version;
             });
         if (it == versions_end)
