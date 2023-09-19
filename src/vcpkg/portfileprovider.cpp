@@ -20,7 +20,7 @@ namespace
     {
         OverlayRegistryEntry(Path&& p, Version&& v) : root(p), version(v) { }
 
-        View<Version> get_port_versions() const override { return {&version, 1}; }
+        ExpectedL<View<Version>> get_port_versions() const override { return View<Version>{&version, 1}; }
         ExpectedL<PathAndLocation> get_version(const Version& v) const override
         {
             if (v == version)
@@ -167,7 +167,10 @@ namespace vcpkg
 
             virtual View<Version> get_port_versions(StringView port_name) const override
             {
-                return entry(port_name).value_or_exit(VCPKG_LINE_INFO)->get_port_versions();
+                return entry(port_name)
+                    .value_or_exit(VCPKG_LINE_INFO)
+                    ->get_port_versions()
+                    .value_or_exit(VCPKG_LINE_INFO);
             }
 
             ExpectedL<std::unique_ptr<SourceControlFileAndLocation>> load_control_file(

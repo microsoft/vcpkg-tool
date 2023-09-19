@@ -7,6 +7,8 @@
 #include <vcpkg/fwd/registries.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
+#include <vcpkg/base/expected.h>
+#include <vcpkg/base/optional.h>
 #include <vcpkg/base/path.h>
 #include <vcpkg/base/span.h>
 #include <vcpkg/base/stringview.h>
@@ -43,10 +45,10 @@ namespace vcpkg
             bool stale() const { return data->second.stale; }
             const std::string& uri() const { return data->first; }
 
-            void ensure_up_to_date(const VcpkgPaths& paths) const;
+            ExpectedL<Unit> ensure_up_to_date(const VcpkgPaths& paths) const;
         };
 
-        Entry get_or_fetch(const VcpkgPaths& paths, StringView repo, StringView reference);
+        ExpectedL<Entry> get_or_fetch(const VcpkgPaths& paths, StringView repo, StringView reference);
 
         LockDataType lockdata;
         bool modified = false;
@@ -63,7 +65,7 @@ namespace vcpkg
 
     struct RegistryEntry
     {
-        virtual View<Version> get_port_versions() const = 0;
+        virtual ExpectedL<View<Version>> get_port_versions() const = 0;
 
         virtual ExpectedL<PathAndLocation> get_version(const Version& version) const = 0;
 
@@ -75,16 +77,16 @@ namespace vcpkg
         virtual StringLiteral kind() const = 0;
 
         // returns nullptr if the port doesn't exist
-        virtual std::unique_ptr<RegistryEntry> get_port_entry(StringView port_name) const = 0;
+        virtual ExpectedL<std::unique_ptr<RegistryEntry>> get_port_entry(StringView port_name) const = 0;
 
         // appends the names of the ports to the out parameter
         // may result in duplicated port names; make sure to Util::sort_unique_erase at the end
-        virtual void append_all_port_names(std::vector<std::string>& port_names) const = 0;
+        virtual ExpectedL<Unit> append_all_port_names(std::vector<std::string>& port_names) const = 0;
 
         // appends the names of the ports to the out parameter if this can be known without
         // network access.
         // returns true if names were appended, otherwise returns false.
-        virtual bool try_append_all_port_names_no_network(std::vector<std::string>& port_names) const = 0;
+        virtual ExpectedL<bool> try_append_all_port_names_no_network(std::vector<std::string>& port_names) const = 0;
 
         virtual ExpectedL<Version> get_baseline_version(StringView port_name) const = 0;
 
@@ -142,10 +144,10 @@ namespace vcpkg
         bool has_modifications() const;
 
         // Returns a sorted vector of all reachable port names in this set.
-        std::vector<std::string> get_all_reachable_port_names() const;
+        ExpectedL<std::vector<std::string>> get_all_reachable_port_names() const;
 
         // Returns a sorted vector of all reachable port names we can provably determine without touching the network.
-        std::vector<std::string> get_all_known_reachable_port_names_no_network() const;
+        ExpectedL<std::vector<std::string>> get_all_known_reachable_port_names_no_network() const;
 
     private:
         std::unique_ptr<RegistryImplementation> default_registry_;
@@ -162,8 +164,8 @@ namespace vcpkg
                                                                      Path path,
                                                                      std::string baseline);
 
-    ExpectedL<std::vector<std::pair<SchemedVersion, std::string>>> get_builtin_versions(const VcpkgPaths& paths,
-                                                                                        StringView port_name);
+    ExpectedL<Optional<std::vector<std::pair<SchemedVersion, std::string>>>> get_builtin_versions(
+        const VcpkgPaths& paths, StringView port_name);
 
     ExpectedL<std::map<std::string, Version, std::less<>>> get_builtin_baseline(const VcpkgPaths& paths);
 
@@ -173,4 +175,25 @@ namespace vcpkg
     // No match is 0, exact match is SIZE_MAX, wildcard match is the length of the pattern.
     // Note that the * is included in the match size to distinguish from 0 == no match.
     size_t package_pattern_match(StringView name, StringView pattern);
+
+    struct VersionDbEntry
+    {
+        Version version;
+        VersionScheme scheme = VersionScheme::String;
+
+        // only one of these may be non-empty
+        std::string git_tree;
+        Path p;
+    };
+
+    // VersionDbType::Git => VersionDbEntry.git_tree is filled
+    // VersionDbType::Filesystem => VersionDbEntry.path is filled
+    enum class VersionDbType
+    {
+        Git,
+        Filesystem,
+    };
+
+    std::unique_ptr<Json::IDeserializer<std::vector<VersionDbEntry>>> make_version_db_deserializer(VersionDbType type,
+                                                                                                   const Path& root);
 }

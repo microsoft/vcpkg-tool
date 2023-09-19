@@ -651,7 +651,8 @@ namespace vcpkg
 
     static std::vector<std::string> get_all_known_reachable_port_names_no_network(const VcpkgPaths& paths)
     {
-        return paths.make_registry_set()->get_all_known_reachable_port_names_no_network();
+        return paths.make_registry_set()->get_all_known_reachable_port_names_no_network().value_or_exit(
+            VCPKG_LINE_INFO);
     }
 
     constexpr CommandMetadata CommandInstallMetadata{
