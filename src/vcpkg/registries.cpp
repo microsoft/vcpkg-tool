@@ -805,11 +805,11 @@ namespace
 
         if (fs.exists(m_paths.builtin_registry_versions, IgnoreErrors{}))
         {
-            load_all_port_names_from_registry_versions(out, fs, m_paths.builtin_registry_versions);
+            return load_all_port_names_from_registry_versions(out, fs, m_paths.builtin_registry_versions);
         }
         else
         {
-            m_files_impl->append_all_port_names(out);
+            return m_files_impl->append_all_port_names(out);
         }
     }
 
