@@ -431,11 +431,9 @@ namespace vcpkg::Paragraphs
             const auto exists = ec != std::errc::no_such_file_or_directory;
             if (exists)
             {
-                auto formatted = msg::format_error(msgFailedToParseManifest, msg::path = manifest_path)
-                                     .append_raw("\n")
-                                     .append(format_filesystem_call_error(ec, "read_contents", {manifest_path}));
-
-                return ParseControlErrorInfo::from_error(port_name, std::move(formatted));
+                return msg::format_error(msgFailedToParseManifest, msg::path = manifest_path)
+                    .append_raw("\n")
+                    .append(format_filesystem_call_error(ec, "read_contents", {manifest_path}));
             }
 
             if (fs.exists(control_path, IgnoreErrors{}))
