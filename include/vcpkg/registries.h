@@ -169,8 +169,14 @@ namespace vcpkg
                                                                      Path path,
                                                                      std::string baseline);
 
-    ExpectedL<Optional<std::vector<std::pair<SchemedVersion, std::string>>>> get_builtin_versions(
-        const VcpkgPaths& paths, StringView port_name);
+    struct GitVersionDbEntry
+    {
+        SchemedVersion version;
+        std::string git_tree;
+    };
+
+    ExpectedL<Optional<std::vector<GitVersionDbEntry>>> get_builtin_versions(const VcpkgPaths& paths,
+                                                                             StringView port_name);
 
     ExpectedL<std::map<std::string, Version, std::less<>>> get_builtin_baseline(const VcpkgPaths& paths);
 
@@ -181,24 +187,13 @@ namespace vcpkg
     // Note that the * is included in the match size to distinguish from 0 == no match.
     size_t package_pattern_match(StringView name, StringView pattern);
 
-    struct VersionDbEntry
+    struct FilesystemVersionDbEntry
     {
-        Version version;
-        VersionScheme scheme = VersionScheme::String;
-
-        // only one of these may be non-empty
-        std::string git_tree;
+        SchemedVersion version;
         Path p;
     };
 
-    // VersionDbType::Git => VersionDbEntry.git_tree is filled
-    // VersionDbType::Filesystem => VersionDbEntry.path is filled
-    enum class VersionDbType
-    {
-        Git,
-        Filesystem,
-    };
-
-    std::unique_ptr<Json::IDeserializer<std::vector<VersionDbEntry>>> make_version_db_deserializer(VersionDbType type,
-                                                                                                   const Path& root);
+    std::unique_ptr<Json::IDeserializer<std::vector<GitVersionDbEntry>>> make_git_version_db_deserializer();
+    std::unique_ptr<Json::IDeserializer<std::vector<FilesystemVersionDbEntry>>> make_filesystem_version_db_deserializer(
+        const Path& root);
 }

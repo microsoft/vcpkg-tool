@@ -36,7 +36,6 @@ namespace
         Updated,
         NotUpdated
     };
-    using VersionGitTree = std::pair<SchemedVersion, std::string>;
 
     void insert_version_to_json_object(Json::Object& obj, const Version& version, StringLiteral version_field)
     {
@@ -108,14 +107,14 @@ namespace
         return baseline_obj;
     }
 
-    Json::Object serialize_versions(const std::vector<VersionGitTree>& versions)
+    Json::Object serialize_versions(const std::vector<GitVersionDbEntry>& versions)
     {
         Json::Array versions_array;
         for (auto&& version : versions)
         {
             Json::Object version_obj;
-            version_obj.insert("git-tree", Json::Value::string(version.second));
-            insert_schemed_version_to_json_object(version_obj, version.first);
+            version_obj.insert("git-tree", Json::Value::string(version.git_tree));
+            insert_schemed_version_to_json_object(version_obj, version.version);
             versions_array.push_back(std::move(version_obj));
         }
 
@@ -134,7 +133,9 @@ namespace
         fs.rename(new_path, output_path, VCPKG_LINE_INFO);
     }
 
-    void write_versions_file(const Filesystem& fs, const std::vector<VersionGitTree>& versions, const Path& output_path)
+    void write_versions_file(const Filesystem& fs,
+                             const std::vector<GitVersionDbEntry>& versions,
+                             const Path& output_path)
     {
         auto new_path = output_path + ".tmp";
         fs.create_directories(output_path.parent_path(), VCPKG_LINE_INFO);
@@ -199,7 +200,7 @@ namespace
             {
                 check_used_version_scheme(port_version, port_name);
             }
-            std::vector<VersionGitTree> new_entry{{port_version, git_tree}};
+            std::vector<GitVersionDbEntry> new_entry{{port_version, git_tree}};
             write_versions_file(fs, new_entry, version_db_file_path);
             if (print_success)
             {
@@ -231,10 +232,10 @@ namespace
 
         const auto& versions_end = versions->end();
         auto found_same_sha = std::find_if(
-            versions->begin(), versions_end, [&](auto&& entry) -> bool { return entry.second == git_tree; });
+            versions->begin(), versions_end, [&](auto&& entry) -> bool { return entry.git_tree == git_tree; });
         if (found_same_sha != versions_end)
         {
-            if (found_same_sha->first.version == port_version.version)
+            if (found_same_sha->version.version == port_version.version)
             {
                 if (print_success)
                 {
@@ -247,7 +248,7 @@ namespace
             }
             msg::println_warning(msg::format(msgAddVersionPortFilesShaUnchanged,
                                              msg::package_name = port_name,
-                                             msg::version = found_same_sha->first.version)
+                                             msg::version = found_same_sha->version.version)
                                      .append_raw("\n-- SHA: ")
                                      .append_raw(git_tree)
                                      .append_raw("\n-- ")
@@ -259,10 +260,9 @@ namespace
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
-        auto it = std::find_if(
-            versions->begin(), versions_end, [&](const std::pair<SchemedVersion, std::string>& entry) -> bool {
-                return entry.first.version == port_version.version;
-            });
+        auto it = std::find_if(versions->begin(), versions_end, [&](const GitVersionDbEntry& entry) -> bool {
+            return entry.version.version == port_version.version;
+        });
 
         if (it != versions_end)
         {
@@ -273,7 +273,7 @@ namespace
                         .append_raw('\n')
                         .append(msgAddVersionVersionIs, msg::version = port_version.version)
                         .append_raw('\n')
-                        .append(msgAddVersionOldShaIs, msg::commit_sha = it->second)
+                        .append(msgAddVersionOldShaIs, msg::commit_sha = it->git_tree)
                         .append_raw('\n')
                         .append(msgAddVersionNewShaIs, msg::commit_sha = git_tree)
                         .append_raw('\n')
@@ -287,12 +287,12 @@ namespace
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
-            it->first = port_version;
-            it->second = git_tree;
+            it->version = port_version;
+            it->git_tree = git_tree;
         }
         else
         {
-            versions->insert(versions->begin(), std::make_pair(port_version, git_tree));
+            versions->insert(versions->begin(), GitVersionDbEntry{port_version, git_tree});
         }
 
         if (!skip_version_format_check)

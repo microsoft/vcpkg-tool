@@ -535,7 +535,7 @@ TEST_CASE ("registries ignored patterns warning", "[registries]")
 
 TEST_CASE ("git_version_db_parsing", "[registries]")
 {
-    auto filesystem_version_db = make_version_db_deserializer(VersionDbType::Git, "a/b");
+    auto filesystem_version_db = make_git_version_db_deserializer();
     Json::Reader r;
     auto test_json = parse_json(R"json(
 [
@@ -559,18 +559,18 @@ TEST_CASE ("git_version_db_parsing", "[registries]")
 
     auto results_opt = r.visit(test_json, *filesystem_version_db);
     auto& results = results_opt.value_or_exit(VCPKG_LINE_INFO);
-    CHECK(results[0].version == Version{"2021-06-26", 0});
+    CHECK(results[0].version == SchemedVersion{VersionScheme::Date, {"2021-06-26", 0}});
     CHECK(results[0].git_tree == "9b07f8a38bbc4d13f8411921e6734753e15f8d50");
-    CHECK(results[1].version == Version{"2021-01-14", 0});
+    CHECK(results[1].version == SchemedVersion{VersionScheme::Date, Version{"2021-01-14", 0}});
     CHECK(results[1].git_tree == "12b84a31469a78dd4b42dcf58a27d4600f6b2d48");
-    CHECK(results[2].version == Version{"2020-04-12", 0});
+    CHECK(results[2].version == SchemedVersion{VersionScheme::String, Version{"2020-04-12", 0}});
     CHECK(results[2].git_tree == "bd4565e8ab55bc5e098a1750fa5ff0bc4406ca9b");
     CHECK(r.errors().empty());
 }
 
 TEST_CASE ("filesystem_version_db_parsing", "[registries]")
 {
-    auto filesystem_version_db = make_version_db_deserializer(VersionDbType::Filesystem, "a/b");
+    auto filesystem_version_db = make_filesystem_version_db_deserializer("a/b");
 
     {
         Json::Reader r;
@@ -595,11 +595,11 @@ TEST_CASE ("filesystem_version_db_parsing", "[registries]")
     )json");
         auto results_opt = r.visit(test_json, *filesystem_version_db);
         auto& results = results_opt.value_or_exit(VCPKG_LINE_INFO);
-        CHECK(results[0].version == Version{"puppies", 0});
+        CHECK(results[0].version == SchemedVersion{VersionScheme::String, {"puppies", 0}});
         CHECK(results[0].p == "a/b" VCPKG_PREFERRED_SEPARATOR "c/d");
-        CHECK(results[1].version == Version{"doggies", 0});
+        CHECK(results[1].version == SchemedVersion{VersionScheme::String, {"doggies", 0}});
         CHECK(results[1].p == "a/b" VCPKG_PREFERRED_SEPARATOR "e/d");
-        CHECK(results[2].version == Version{"1.2.3", 0});
+        CHECK(results[2].version == SchemedVersion{VersionScheme::Semver, {"1.2.3", 0}});
         CHECK(results[2].p == "a/b" VCPKG_PREFERRED_SEPARATOR "semvers/here");
         CHECK(r.errors().empty());
     }
