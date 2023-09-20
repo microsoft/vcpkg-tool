@@ -65,7 +65,7 @@ namespace
                 bool version_ok = false;
                 for (StringView control_file : {"CONTROL", "vcpkg.json"})
                 {
-                    auto treeish = Strings::concat(version_entry.second, ':', control_file);
+                    auto treeish = Strings::concat(version_entry.git_tree, ':', control_file);
                     auto maybe_file = paths.git_show(Strings::concat(treeish), paths.root / ".git");
                     if (!maybe_file) continue;
 
@@ -78,7 +78,7 @@ namespace
                                                   msg::package_name = port_name,
                                                   msg::path = versions_file_path)
                                     .append_raw('\n')
-                                    .append(msgWhileValidatingVersion, msg::version = version_entry.first.version)
+                                    .append(msgWhileValidatingVersion, msg::version = version_entry.version.version)
                                     .append_raw('\n')
                                     .append(msgWhileLoadingPortFromGitTree, msg::commit_sha = treeish)
                                     .append_raw('\n')
@@ -88,18 +88,18 @@ namespace
 
                     const auto& scf = maybe_scf.value(VCPKG_LINE_INFO);
                     auto&& git_tree_version = scf->to_schemed_version();
-                    if (version_entry.first.version != git_tree_version.version)
+                    if (version_entry.version.version != git_tree_version.version)
                     {
                         return {
                             msg::format_error(msgWhileParsingVersionsForPort,
                                               msg::package_name = port_name,
                                               msg::path = versions_file_path)
                                 .append_raw('\n')
-                                .append(msgWhileValidatingVersion, msg::version = version_entry.first.version)
+                                .append(msgWhileValidatingVersion, msg::version = version_entry.version.version)
                                 .append_raw('\n')
                                 .append(msgVersionInDeclarationDoesNotMatch, msg::version = git_tree_version.version)
                                 .append_raw('\n')
-                                .append(msgCheckedOutGitSha, msg::commit_sha = version_entry.second),
+                                .append(msgCheckedOutGitSha, msg::commit_sha = version_entry.git_tree),
                             expected_right_tag};
                     }
                     version_ok = true;
@@ -112,11 +112,11 @@ namespace
                                               msg::package_name = port_name,
                                               msg::path = versions_file_path)
                                 .append_raw('\n')
-                                .append(msgWhileValidatingVersion, msg::version = version_entry.first.version)
+                                .append(msgWhileValidatingVersion, msg::version = version_entry.version.version)
                                 .append_raw('\n')
                                 .append(msgCheckedOutObjectMissingManifest)
                                 .append_raw('\n')
-                                .append(msgCheckedOutGitSha, msg::commit_sha = version_entry.second),
+                                .append(msgCheckedOutGitSha, msg::commit_sha = version_entry.git_tree),
                             expected_right_tag};
                 }
             }
@@ -134,10 +134,9 @@ namespace
         const auto local_port_version = maybe_scf.value(VCPKG_LINE_INFO)->to_schemed_version();
 
         auto versions_end = versions->end();
-        auto it =
-            std::find_if(versions->begin(), versions_end, [&](const std::pair<SchemedVersion, std::string>& entry) {
-                return entry.first.version == local_port_version.version;
-            });
+        auto it = std::find_if(versions->begin(), versions_end, [&](const GitVersionDbEntry& entry) {
+            return entry.version.version == local_port_version.version;
+        });
         if (it == versions_end)
         {
             return {msg::format_error(
@@ -150,28 +149,28 @@ namespace
         }
         auto& entry = *it;
 
-        if (entry.first.scheme != local_port_version.scheme)
+        if (entry.version.scheme != local_port_version.scheme)
         {
             return {msg::format_error(
                         msgWhileParsingVersionsForPort, msg::package_name = port_name, msg::path = versions_file_path)
                         .append_raw('\n')
                         .append(msgVersionSchemeMismatch,
-                                msg::version = entry.first.version,
-                                msg::expected = get_scheme_name(entry.first.scheme),
+                                msg::version = entry.version.version,
+                                msg::expected = get_scheme_name(entry.version.scheme),
                                 msg::actual = get_scheme_name(local_port_version.scheme),
                                 msg::path = port_path,
                                 msg::package_name = port_name),
                     expected_right_tag};
         }
 
-        if (local_git_tree != entry.second)
+        if (local_git_tree != entry.git_tree)
         {
             return {msg::format_error(
                         msgWhileParsingVersionsForPort, msg::package_name = port_name, msg::path = versions_file_path)
                         .append_raw('\n')
                         .append(msgVersionShaMismatch,
-                                msg::version = entry.first.version,
-                                msg::expected = entry.second,
+                                msg::version = entry.version.version,
+                                msg::expected = entry.git_tree,
                                 msg::actual = local_git_tree,
                                 msg::package_name = port_name),
                     expected_right_tag};
@@ -190,13 +189,13 @@ namespace
         }
 
         auto&& baseline_version = maybe_baseline->second;
-        if (baseline_version != entry.first.version)
+        if (baseline_version != entry.version.version)
         {
             return {msg::format_error(
                         msgWhileParsingVersionsForPort, msg::package_name = port_name, msg::path = versions_file_path)
                         .append_raw('\n')
                         .append(msgVersionBaselineMismatch,
-                                msg::expected = entry.first.version,
+                                msg::expected = entry.version.version,
                                 msg::actual = baseline_version,
                                 msg::package_name = port_name),
                     expected_right_tag};
@@ -204,8 +203,8 @@ namespace
 
         return {
             msg::format(msgVersionVerifiedOK,
-                        msg::version_spec = Strings::concat(port_name, '@', entry.first.version),
-                        msg::commit_sha = entry.second),
+                        msg::version_spec = Strings::concat(port_name, '@', entry.version.version),
+                        msg::commit_sha = entry.git_tree),
             expected_left_tag,
         };
     }
