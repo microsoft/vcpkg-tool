@@ -30,11 +30,7 @@ such as https://github.com/microsoft/vcpkg/pull/23757
         `. <(curl https://github.com/microsoft/vcpkg-tool/releases/download/2023-03-29/vcpkg-init -L)`
   (and test that `vcpkg use cmake` works from each of these)
 1. In the vcpkg repo, run `\scripts\update-vcpkg-tool-metadata.ps1 -Date 2023-03-29`
-  with the new release date, which updates SHAs as appropriate. It will also emit a code block for
-  the next vscode-embedded-tools repo step.
-1. In the DevDiv vscode-embedded-tools repo, follow the
-  [update instructions](https://devdiv.visualstudio.com/DefaultCollection/DevDiv/_git/vscode-embedded-tools?path=/docs/updating-vcpkg.md&_a=preview)
-  to make a VS Code update PR.
+  with the new release date, which updates SHAs as appropriate.
 1. If changes in this release that might affect ports, submit a new full tree rebuild by
   microsoft.vcpkg.ci (https://dev.azure.com/vcpkg/public/_build?definitionId=29 as of this writing)
   targeting `refs/pull/NUMBER/head`
@@ -77,13 +73,6 @@ flowchart TD
     smoke_test_cmd{Smoke Test vcpkg-init.cmd}
     smoke_test_ps1{Smoke Test vcpkg-init.ps1}
     smoke_test_bash{Smoke Test vcpkg-init.sh}
-    subgraph vs_code_update_pr [Visual Studio Code Update PR]
-        direction LR
-        package_json[(package.json)]
-        changelog_md[(CHANGELOG.md)]
-        vs_embedded_tools_repo[(vs_embedded_tools Repo)]
-    end
-    create_vs_code_update_pr{Create Visual Studio Code Update PR}
     symweb[(//symweb, etc.)]
     
     %% Build the Release
@@ -109,13 +98,6 @@ flowchart TD
     run_insertion --> vs_repo
     vs_update_pr --> create_vs_pr
     
-    %% VS Code Update
-    update_vcpkg_tool_metadata_ps1 --> package_json
-    release_version --> changelog_md
-    package_json --> vs_embedded_tools_repo
-    changelog_md --> vs_embedded_tools_repo
-    vs_code_update_pr --> create_vs_code_update_pr
-    
     %% Smoke Testing
     create_vs_pr --> smoke_test_vs
     vcpkg_tool_releases --> smoke_test_cmd
@@ -128,7 +110,6 @@ flowchart TD
     smoke_test_bash --> merge
     smoke_test_vs --> merge
     run_full_tree_rebuild --> merge
-    create_vs_code_update_pr --> merge
 ```
 
 * [vcpkg Signed Binaries (from GitHub)](https://devdiv.visualstudio.com/DevDiv/_build?definitionId=17772&_a=summary) Uses the azure-pipelines/signing.yml file in the vcpkg-tool repo.
@@ -136,8 +117,6 @@ flowchart TD
 * [devdiv/VS-CoreXtFeeds NuGet Feed](https://devdiv.visualstudio.com/DefaultCollection/DevDiv/_artifacts/feed/VS-CoreXtFeeds/NuGet/VS.Redist.Vcpkg.amd64/)
 * [devdiv VS Repo](https://devdiv.visualstudio.com/DefaultCollection/DevDiv/_git/VS)
   * Run VcpkgInsertionUtility at `$/src/vc/projbld/Vcpkg/VcpkgInsertionUtility/run.cmd`
-* [vscode-embedded-tools Repo](https://devdiv.visualstudio.com/DefaultCollection/DevDiv/_git/vscode-embedded-tools)
-  * `package.json` and `CHANGELOG.md` are in `$/app/vscode-embedded-tools`
 * Run Full Rebuild: Queue a [microsoft.vcpkg.ci](https://dev.azure.com/vcpkg/public/_build?definitionId=29) run for `refs/pull/NUMBER/head`
   * Example: https://dev.azure.com/vcpkg/public/_build/results?buildId=73664&view=results
 
