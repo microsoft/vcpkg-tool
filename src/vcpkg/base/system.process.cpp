@@ -1294,15 +1294,12 @@ namespace vcpkg
         }
 
         auto& rc_output = maybe_rc_output.value_or_exit(VCPKG_LINE_INFO);
+        Debug::print(rc_output.output, "\n");
         if (rc_output.exit_code != 0)
         {
-            Debug::println("Output:");
-            Debug::println(rc_output.output);
             Checks::msg_exit_with_error(
                 VCPKG_LINE_INFO, msgVcvarsRunFailedExitCode, msg::exit_code = rc_output.exit_code);
         }
-
-        Debug::print(rc_output.output, "\n");
 
         auto it = Strings::search(rc_output.output, magic_string);
         const char* const last = rc_output.output.data() + rc_output.output.size();
