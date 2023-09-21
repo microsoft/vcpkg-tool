@@ -915,14 +915,10 @@ DECLARE_MESSAGE(CouldNotFindBaseline,
                 (msg::commit_sha, msg::path),
                 "",
                 "Could not find explicitly specified baseline `\"{commit_sha}\"` in baseline file {path}")
-DECLARE_MESSAGE(CouldNotFindBaselineForRepo,
-                (msg::commit_sha, msg::package_name),
-                "",
-                "Couldn't find baseline `\"{commit_sha}\"` for repo {package_name}")
 DECLARE_MESSAGE(CouldNotFindBaselineInCommit,
-                (msg::commit_sha, msg::package_name),
+                (msg::url, msg::commit_sha, msg::package_name),
                 "",
-                "Couldn't find baseline in commit `\"{commit_sha}\"` from repo {package_name}:")
+                "Couldn't find baseline in {url} at {commit_sha} for {package_name}.")
 DECLARE_MESSAGE(CouldNotFindGitTreeAtCommit,
                 (msg::package_name, msg::commit_sha),
                 "",
@@ -1226,10 +1222,7 @@ DECLARE_MESSAGE(FailedToDetermineArchitecture,
 DECLARE_MESSAGE(FailedToDetermineCurrentCommit, (), "", "Failed to determine the current commit:")
 DECLARE_MESSAGE(FailedToDownloadFromMirrorSet, (), "", "Failed to download from mirror set")
 DECLARE_MESSAGE(FailedToExtract, (msg::path), "", "Failed to extract \"{path}\":")
-DECLARE_MESSAGE(FailedToFetchError,
-                (msg::error_msg, msg::package_name),
-                "",
-                "{error_msg}\nFailed to fetch {package_name}:")
+DECLARE_MESSAGE(FailedToFetchRepo, (msg::url), "", "Failed to fetch {url}.")
 DECLARE_MESSAGE(FailedToFindBaseline, (), "", "Failed to find baseline.json")
 DECLARE_MESSAGE(FailedToFindPortFeature,
                 (msg::feature, msg::package_name),
@@ -1385,12 +1378,12 @@ DECLARE_MESSAGE(GitFailedToFetch,
                 "{value} is a git ref like 'origin/main'",
                 "failed to fetch ref {value} from repository {url}")
 DECLARE_MESSAGE(GitFailedToInitializeLocalRepository, (msg::path), "", "failed to initialize local repository {path}")
-DECLARE_MESSAGE(GitRegistryMustHaveBaseline,
-                (msg::package_name, msg::value),
-                "{value} is a commit sha",
-                "The git registry entry for \"{package_name}\" must have a \"baseline\" field that is a valid git "
-                "commit SHA (40 hexadecimal characters).\n"
-                "The current HEAD of that repo is \"{value}\".")
+DECLARE_MESSAGE(
+    GitRegistryMustHaveBaseline,
+    (msg::url, msg::commit_sha),
+    "",
+    "The git registry \"{url}\" must have a \"baseline\" field that is a valid git commit SHA (40 hexadecimal "
+    "characters).\nTo use the current latest versions, set baseline to that repo's HEAD, \"{commit_sha}\".")
 DECLARE_MESSAGE(GitStatusOutputExpectedFileName, (), "", "expected a file name")
 DECLARE_MESSAGE(GitStatusOutputExpectedNewLine, (), "", "expected new line")
 DECLARE_MESSAGE(GitStatusOutputExpectedRenameOrNewline, (), "", "expected renamed file or new lines")
