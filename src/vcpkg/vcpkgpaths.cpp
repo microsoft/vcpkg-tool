@@ -73,28 +73,19 @@ namespace
     {
         std::error_code ec;
         auto manifest_path = manifest_dir / "vcpkg.json";
-        auto manifest_opt = Json::parse_file(fs, manifest_path, ec);
-        if (ec)
+        auto maybe_manifest_object = fs.try_read_contents(manifest_path).then([](FileContents&& contents) {
+            return Json::parse_object(contents.content, contents.origin);
+        });
+
+        if (auto manifest_object = maybe_manifest_object.get())
         {
-            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                           msg::format(msgFailedToLoadManifest, msg::path = manifest_dir)
-                                               .append_raw('\n')
-                                               .append_raw(ec.message()));
+            return ManifestAndPath{std::move(*manifest_object), std::move(manifest_path)};
         }
 
-        if (!manifest_opt)
-        {
-            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                           LocalizedString::from_raw(manifest_opt.error()->to_string()));
-        }
-
-        auto manifest_value = std::move(manifest_opt).value(VCPKG_LINE_INFO).value;
-        if (!manifest_value.is_object())
-        {
-            msg::println_error(msgFailedToParseNoTopLevelObj, msg::path = manifest_path);
-            Checks::exit_fail(VCPKG_LINE_INFO);
-        }
-        return {std::move(manifest_value).object(VCPKG_LINE_INFO), std::move(manifest_path)};
+        Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
+                                       msg::format(msgFailedToLoadManifest, msg::path = manifest_dir)
+                                           .append_raw('\n')
+                                           .append(maybe_manifest_object.error()));
     }
 
     static Optional<ManifestConfiguration> config_from_manifest(const Optional<ManifestAndPath>& manifest_doc)

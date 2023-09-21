@@ -26,51 +26,77 @@ namespace vcpkg
             return;
         }
 
-        target.append(msg::format_error(msgParseControlErrorInfoWhileLoading, msg::path = name).extract_data());
+        bool newline_needed = false;
         if (!error.empty())
         {
-            target.push_back('\n');
             target.append(error.data());
+            newline_needed = true;
         }
 
-        if (!other_errors.empty())
+        for (auto&& msg : other_errors)
         {
-            for (auto&& msg : other_errors)
+            if (newline_needed)
             {
                 target.push_back('\n');
-                target.append(msg.data());
             }
+
+            target.append(msg.data());
+            newline_needed = true;
         }
 
         if (!extra_fields.empty())
         {
-            target.push_back('\n');
-            target.append(msg::format(msgParseControlErrorInfoInvalidFields)
+            if (newline_needed)
+            {
+                target.push_back('\n');
+            }
+
+            target.append(msg::format_error(msgParseControlErrorInfoWhileLoading, msg::path = name)
+                              .append_raw(' ')
+                              .append(msgParseControlErrorInfoInvalidFields)
                               .append_raw(' ')
                               .append_raw(Strings::join(", ", extra_fields))
                               .extract_data());
+            newline_needed = true;
         }
 
         if (!missing_fields.empty())
         {
-            target.push_back('\n');
-            target.append(msg::format(msgParseControlErrorInfoMissingFields)
+            if (newline_needed)
+            {
+                target.push_back('\n');
+            }
+
+            target.append(msg::format_error(msgParseControlErrorInfoWhileLoading, msg::path = name)
+                              .append_raw(' ')
+                              .append(msgParseControlErrorInfoMissingFields)
                               .append_raw(' ')
                               .append_raw(Strings::join(", ", missing_fields))
                               .extract_data());
+            newline_needed = true;
         }
 
         if (!expected_types.empty())
         {
-            auto expected_types_component = msg::format_error(msgParseControlErrorInfoWrongTypeFields);
-            for (auto&& pr : expected_types)
+            if (newline_needed)
             {
-                expected_types_component.append_raw('\n').append_indent().append(
-                    msgParseControlErrorInfoTypesEntry, msg::value = pr.first, msg::expected = pr.second);
+                target.push_back('\n');
             }
 
-            target.push_back('\n');
-            target.append(expected_types_component.extract_data());
+            target.append(msg::format_error(msgParseControlErrorInfoWhileLoading, msg::path = name)
+                              .append_raw(' ')
+                              .append(msgParseControlErrorInfoWrongTypeFields)
+                              .extract_data());
+            for (auto&& pr : expected_types)
+            {
+                target.append(
+                    LocalizedString::from_raw("\n")
+                        .append_indent()
+                        .append(msgParseControlErrorInfoTypesEntry, msg::value = pr.first, msg::expected = pr.second)
+                        .extract_data());
+            }
+
+            newline_needed = true;
         }
     }
 
@@ -375,50 +401,47 @@ namespace vcpkg::Paragraphs
                fs.exists(maybe_directory / "vcpkg.json", IgnoreErrors{});
     }
 
-    static ExpectedL<std::unique_ptr<SourceControlFile>> try_load_manifest_text(const std::string& text,
-                                                                                StringView origin,
-                                                                                MessageSink& warning_sink)
-    {
-        auto res = Json::parse(text, origin);
-        if (auto val = res.get())
-        {
-            if (val->value.is_object())
-            {
-                return map_parse_expected_to_localized_string(SourceControlFile::parse_port_manifest_object(
-                    origin, val->value.object(VCPKG_LINE_INFO), warning_sink));
-            }
-
-            return msg::format(msgJsonValueNotObject);
-        }
-
-        return LocalizedString::from_raw(res.error()->to_string());
-    }
-
-    ExpectedL<std::unique_ptr<SourceControlFile>> try_load_port_text(const std::string& text,
-                                                                     StringView origin,
-                                                                     bool is_manifest,
-                                                                     MessageSink& warning_sink)
+    ExpectedL<SourceControlFileAndLocation> try_load_port_manifest_text(StringView text,
+                                                                        StringView origin,
+                                                                        MessageSink& warning_sink)
     {
         StatsTimer timer(g_load_ports_stats);
-
-        if (is_manifest)
+        auto maybe_object = Json::parse_object(text, origin);
+        if (auto object = maybe_object.get())
         {
-            return try_load_manifest_text(text, origin, warning_sink);
+            auto maybe_parsed = map_parse_expected_to_localized_string(
+                SourceControlFile::parse_port_manifest_object(origin, *object, warning_sink));
+            if (auto parsed = maybe_parsed.get())
+            {
+                return SourceControlFileAndLocation{std::move(*parsed), origin.to_string()};
+            }
+
+            return std::move(maybe_parsed).error();
         }
 
-        ExpectedL<std::vector<Paragraph>> pghs = parse_paragraphs(StringView{text}, origin);
+        return std::move(maybe_object).error();
+    }
+
+    ExpectedL<SourceControlFileAndLocation> try_load_control_file_text(StringView text, StringView origin)
+    {
+        StatsTimer timer(g_load_ports_stats);
+        ExpectedL<std::vector<Paragraph>> pghs = parse_paragraphs(text, origin);
         if (auto vector_pghs = pghs.get())
         {
-            return map_parse_expected_to_localized_string(
+            auto maybe_parsed = map_parse_expected_to_localized_string(
                 SourceControlFile::parse_control_file(origin, std::move(*vector_pghs)));
+            if (auto parsed = maybe_parsed.get())
+            {
+                return SourceControlFileAndLocation{std::move(*parsed), origin.to_string()};
+            }
+
+            return std::move(maybe_parsed).error();
         }
 
         return std::move(pghs).error();
     }
 
-    ExpectedL<std::unique_ptr<SourceControlFile>> try_load_port(const ReadOnlyFilesystem& fs,
-                                                                StringView port_name,
-                                                                const Path& port_directory)
+    PortLoadResult try_load_port(const ReadOnlyFilesystem& fs, StringView port_name, const Path& port_directory)
     {
         StatsTimer timer(g_load_ports_stats);
 
@@ -428,73 +451,75 @@ namespace vcpkg::Paragraphs
         auto manifest_contents = fs.read_contents(manifest_path, ec);
         if (ec)
         {
-            const auto exists = ec != std::errc::no_such_file_or_directory;
-            if (exists)
+            auto manifest_exists = ec != std::errc::no_such_file_or_directory;
+            if (manifest_exists)
             {
-                return msg::format_error(msgFailedToParseManifest, msg::path = manifest_path)
-                    .append_raw("\n")
-                    .append(format_filesystem_call_error(ec, "read_contents", {manifest_path}));
+                return PortLoadResult{LocalizedString::from_raw(port_directory)
+                                          .append_raw(": ")
+                                          .append(format_filesystem_call_error(ec, "read_contents", {manifest_path})),
+                                      std::string{}};
             }
 
-            if (fs.exists(control_path, IgnoreErrors{}))
+            auto control_contents = fs.read_contents(control_path, ec);
+            if (ec)
             {
-                ExpectedL<std::vector<Paragraph>> pghs = get_paragraphs(fs, control_path);
-                if (auto vector_pghs = pghs.get())
+                if (ec != std::errc::no_such_file_or_directory)
                 {
-                    auto maybe_parsed_control =
-                        SourceControlFile::parse_control_file(control_path, std::move(*vector_pghs));
-                    if (auto parsed_control = maybe_parsed_control.get())
-                    {
-                        return std::move(*parsed_control);
-                    }
-
-                    return LocalizedString::from_raw(maybe_parsed_control.error()->to_string());
+                    return PortLoadResult{
+                        LocalizedString::from_raw(port_directory)
+                            .append_raw(": ")
+                            .append(format_filesystem_call_error(ec, "read_contents", {control_path})),
+                        std::string{}};
                 }
 
-                return std::move(pghs).error();
+                if (fs.exists(port_directory, IgnoreErrors{}))
+                {
+                    return PortLoadResult{LocalizedString::from_raw(port_directory)
+                                              .append_raw(": ")
+                                              .append(msgErrorMessage)
+                                              .append(msgPortMissingManifest2, msg::package_name = port_name),
+                                          std::string{}};
+                }
+
+                return PortLoadResult{LocalizedString::from_raw(port_directory)
+                                          .append_raw(": ")
+                                          .append(msgErrorMessage)
+                                          .append(msgPortDoesNotExist, msg::package_name = port_name),
+                                      std::string{}};
             }
 
-            if (fs.exists(port_directory, IgnoreErrors{}))
-            {
-                return msg::format_error(
-                    msgPortMissingManifest, msg::package_name = port_name, msg::path = port_directory);
-            }
-
-            return std::unique_ptr<SourceControlFile>();
+            return PortLoadResult{try_load_control_file_text(control_contents, control_path), control_contents};
         }
 
         if (fs.exists(control_path, IgnoreErrors{}))
         {
-            return msg::format_error(msgManifestConflict, msg::path = port_directory);
+            return PortLoadResult{LocalizedString::from_raw(port_directory)
+                                      .append_raw(": ")
+                                      .append(msgErrorMessage)
+                                      .append(msgManifestConflict2),
+                                  std::string{}};
         }
 
-        auto maybe_parsed = try_load_manifest_text(manifest_contents, manifest_path, stdout_sink);
-        if (auto parsed = maybe_parsed.get())
-        {
-            return std::move(*parsed);
-        }
-
-        return std::move(maybe_parsed).error();
+        return PortLoadResult{try_load_port_manifest_text(manifest_contents, manifest_path, stdout_sink),
+                              manifest_contents};
     }
 
-    ExpectedL<std::unique_ptr<SourceControlFile>> try_load_port_required(const ReadOnlyFilesystem& fs,
-                                                                         StringView port_name,
-                                                                         const Path& port_directory)
+    PortLoadResult try_load_port_required(const ReadOnlyFilesystem& fs,
+                                          StringView port_name,
+                                          const Path& port_directory)
     {
         auto maybe_maybe_res = try_load_port(fs, port_name, port_directory);
-        auto maybe_res = maybe_maybe_res.get();
-        if (!maybe_res)
+        auto maybe_res = maybe_maybe_res.maybe_scfl.get();
+        if (maybe_res)
         {
-            return std::move(maybe_maybe_res).error();
+            auto res = maybe_res->source_control_file.get();
+            if (!res)
+            {
+                maybe_maybe_res.maybe_scfl = msg::format_error(msgPortDoesNotExist, msg::package_name = port_name);
+            }
         }
 
-        auto res = maybe_res->get();
-        if (!res)
-        {
-            return msg::format_error(msgPortDoesNotExist, msg::package_name = port_name);
-        }
-
-        return std::move(*maybe_res);
+        return maybe_maybe_res;
     }
 
     ExpectedL<BinaryControlFile> try_load_cached_package(const ReadOnlyFilesystem& fs,
@@ -554,14 +579,10 @@ namespace vcpkg::Paragraphs
             auto maybe_port_location = (*port_entry)->get_version(*baseline_version);
             const auto port_location = maybe_port_location.get();
             if (!port_location) continue; // baseline version was not in version db (registry consistency issue)
-            auto maybe_spgh = try_load_port_required(fs, port_name, port_location->path);
+            auto maybe_spgh = try_load_port_required(fs, port_name, port_location->path).maybe_scfl;
             if (const auto spgh = maybe_spgh.get())
             {
-                ret.paragraphs.push_back({
-                    std::move(*spgh),
-                    std::move(port_location->path),
-                    std::move(port_location->location),
-                });
+                ret.paragraphs.push_back(std::move(*spgh));
             }
             else
             {
@@ -620,10 +641,10 @@ namespace vcpkg::Paragraphs
         for (auto&& path : port_dirs)
         {
             auto port_name = path.filename();
-            auto maybe_spgh = try_load_port_required(fs, port_name, path);
+            auto maybe_spgh = try_load_port_required(fs, port_name, path).maybe_scfl;
             if (const auto spgh = maybe_spgh.get())
             {
-                ret.paragraphs.push_back({std::move(*spgh), std::move(path)});
+                ret.paragraphs.push_back(std::move(*spgh));
             }
             else
             {

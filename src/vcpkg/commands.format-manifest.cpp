@@ -2,13 +2,12 @@
 
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/files.h>
-#include <vcpkg/base/json.h>
+#include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.debug.h>
+#include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.format-manifest.h>
 #include <vcpkg/paragraphs.h>
-#include <vcpkg/portfileprovider.h>
-#include <vcpkg/sourceparagraph.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
@@ -18,87 +17,17 @@ namespace
 {
     struct ToWrite
     {
-        SourceControlFile scf;
-        Path file_to_write;
-        Path original_path;
         std::string original_source;
+        SourceControlFileAndLocation scf;
+        Path file_to_write;
     };
-
-    Optional<ToWrite> read_manifest(const ReadOnlyFilesystem& fs, Path&& manifest_path)
-    {
-        const auto& path_string = manifest_path.native();
-        Debug::println("Reading ", path_string);
-        auto contents = fs.read_contents(manifest_path, VCPKG_LINE_INFO);
-        auto parsed_json_opt = Json::parse(contents, manifest_path);
-        if (!parsed_json_opt)
-        {
-            msg::println(Color::error, LocalizedString::from_raw(parsed_json_opt.error()->to_string()));
-            return nullopt;
-        }
-
-        const auto& parsed_json = parsed_json_opt.value(VCPKG_LINE_INFO).value;
-        if (!parsed_json.is_object())
-        {
-            msg::println_error(msgJsonErrorMustBeAnObject, msg::path = path_string);
-            return nullopt;
-        }
-
-        auto parsed_json_obj = parsed_json.object(VCPKG_LINE_INFO);
-
-        auto scf = SourceControlFile::parse_project_manifest_object(path_string, parsed_json_obj, stdout_sink);
-        if (!scf)
-        {
-            msg::println_error(msgFailedToParseManifest, msg::path = path_string);
-            print_error_message(LocalizedString::from_raw(scf.error()->to_string()));
-            msg::println();
-            return nullopt;
-        }
-
-        return ToWrite{
-            std::move(*scf.value(VCPKG_LINE_INFO)),
-            manifest_path,
-            manifest_path,
-            std::move(contents),
-        };
-    }
-
-    Optional<ToWrite> read_control_file(const ReadOnlyFilesystem& fs, Path&& control_path)
-    {
-        Debug::println("Reading ", control_path);
-
-        auto manifest_path = Path(control_path.parent_path()) / "vcpkg.json";
-        auto contents = fs.read_contents(control_path, VCPKG_LINE_INFO);
-        auto paragraphs = Paragraphs::parse_paragraphs(contents, control_path);
-
-        if (!paragraphs)
-        {
-            msg::println_error(msg::format(msgFailedToReadParagraph, msg::path = control_path)
-                                   .append_raw(": ")
-                                   .append_raw(paragraphs.error()));
-            return {};
-        }
-        auto scf_res =
-            SourceControlFile::parse_control_file(control_path, std::move(paragraphs).value(VCPKG_LINE_INFO));
-        if (!scf_res)
-        {
-            msg::println_error(msgFailedToParseControl, msg::path = control_path);
-            print_error_message(LocalizedString::from_raw(scf_res.error()->to_string()));
-            return {};
-        }
-
-        return ToWrite{
-            std::move(*scf_res.value(VCPKG_LINE_INFO)),
-            manifest_path,
-            control_path,
-            std::move(contents),
-        };
-    }
 
     void open_for_write(const Filesystem& fs, const ToWrite& data)
     {
-        const auto& original_path_string = data.original_path.native();
+        const auto& original_path_string = data.scf.source_location.native();
         const auto& file_to_write_string = data.file_to_write.native();
-        if (data.file_to_write == data.original_path)
+        bool in_place = data.file_to_write == original_path_string;
+        if (in_place)
         {
             Debug::println("Formatting ", file_to_write_string);
         }
@@ -107,14 +36,15 @@ namespace
             Debug::println("Converting ", file_to_write_string, " -> ", original_path_string);
         }
 
-        auto res = serialize_manifest(data.scf);
+        auto res = serialize_manifest(*data.scf.source_control_file);
 
         // reparse res to ensure no semantic changes were made
-        auto maybe_reparsed = SourceControlFile::parse_project_manifest_object(StringView{}, res, null_sink);
+        auto maybe_reparsed =
+            SourceControlFile::parse_project_manifest_object(StringLiteral{"Researialized manifest"}, res, null_sink);
         bool reparse_matches;
         if (auto reparsed = maybe_reparsed.get())
         {
-            reparse_matches = **reparsed == data.scf;
+            reparse_matches = **reparsed == *data.scf.source_control_file;
         }
         else
         {
@@ -132,26 +62,10 @@ namespace
                                             Json::stringify(res, {}))));
         }
 
-        // the manifest scf is correct
-        std::error_code ec;
-        fs.write_contents(data.file_to_write, Json::stringify(res), ec);
-        if (ec)
+        fs.write_contents(data.file_to_write, Json::stringify(res), VCPKG_LINE_INFO);
+        if (!in_place)
         {
-            Checks::msg_exit_with_error(VCPKG_LINE_INFO,
-                                        msg::format(msgFailedToWriteManifest, msg::path = file_to_write_string)
-                                            .append_raw(": ")
-                                            .append_raw(ec.message()));
-        }
-        if (data.original_path != data.file_to_write)
-        {
-            fs.remove(data.original_path, ec);
-            if (ec)
-            {
-                Checks::msg_exit_with_error(VCPKG_LINE_INFO,
-                                            msg::format(msgFailedToRemoveControl, msg::path = original_path_string)
-                                                .append_raw(": ")
-                                                .append_raw(ec.message()));
-            }
+            fs.remove(original_path_string, VCPKG_LINE_INFO);
         }
     }
 
@@ -200,18 +114,6 @@ namespace vcpkg
         }
 
         std::vector<ToWrite> to_write;
-
-        const auto add_file = [&to_write, &has_error](Optional<ToWrite>&& opt) {
-            if (auto t = opt.get())
-            {
-                to_write.push_back(std::move(*t));
-            }
-            else
-            {
-                has_error = true;
-            }
-        };
-
         for (Path path : parsed_args.command_arguments)
         {
             if (path.is_relative())
@@ -219,13 +121,42 @@ namespace vcpkg
                 path = paths.original_cwd / path;
             }
 
+            auto maybe_contents = fs.try_read_contents(path);
+            auto contents = maybe_contents.get();
+            if (!contents)
+            {
+                has_error = true;
+                msg::println(maybe_contents.error());
+                continue;
+            }
+
             if (path.filename() == "CONTROL")
             {
-                add_file(read_control_file(fs, std::move(path)));
+                auto maybe_control = Paragraphs::try_load_control_file_text(contents->content, contents->origin);
+                if (auto control = maybe_control.get())
+                {
+                    to_write.push_back(
+                        ToWrite{contents->content, std::move(*control), Path(path.parent_path()) / "vcpkg.json"});
+                }
+                else
+                {
+                    has_error = true;
+                    msg::println(maybe_control.error());
+                }
             }
             else
             {
-                add_file(read_manifest(fs, std::move(path)));
+                auto maybe_manifest =
+                    Paragraphs::try_load_port_manifest_text(contents->content, contents->origin, stdout_sink);
+                if (auto manifest = maybe_manifest.get())
+                {
+                    to_write.push_back(ToWrite{contents->content, std::move(*manifest), path});
+                }
+                else
+                {
+                    has_error = true;
+                    msg::println(maybe_manifest.error());
+                }
             }
         }
 
@@ -233,23 +164,17 @@ namespace vcpkg
         {
             for (const auto& dir : fs.get_directories_non_recursive(paths.builtin_ports_directory(), VCPKG_LINE_INFO))
             {
-                auto control_path = dir / "CONTROL";
-                auto manifest_path = dir / "vcpkg.json";
-                auto manifest_exists = fs.exists(manifest_path, IgnoreErrors{});
-                auto control_exists = fs.exists(control_path, IgnoreErrors{});
-
-                if (manifest_exists && control_exists)
+                auto maybe_manifest = Paragraphs::try_load_port_required(fs, dir.filename(), dir);
+                if (auto manifest = maybe_manifest.maybe_scfl.get())
                 {
-                    Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgControlAndManifestFilesPresent, msg::path = dir);
+                    auto original = manifest->source_location;
+                    to_write.push_back(
+                        ToWrite{maybe_manifest.on_disk_contents, std::move(*manifest), std::move(original)});
                 }
-
-                if (manifest_exists)
+                else
                 {
-                    add_file(read_manifest(fs, std::move(manifest_path)));
-                }
-                if (convert_control && control_exists)
-                {
-                    add_file(read_control_file(fs, std::move(control_path)));
+                    has_error = true;
+                    msg::println(maybe_manifest.maybe_scfl.error());
                 }
             }
         }
