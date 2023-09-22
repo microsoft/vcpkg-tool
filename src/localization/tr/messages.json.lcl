@@ -4063,21 +4063,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CouldNotFindBaselineForRepo" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Couldn't find baseline `"{commit_sha}"` for repo {package_name}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{package_name} deposu için temel ""{commit_sha}"" bulunamadı]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";CouldNotFindBaselineInCommit" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Couldn't find baseline in commit `"{commit_sha}"` from repo {package_name}:]]></Val>
+          <Val><![CDATA[Couldn't find baseline in {url} at {commit_sha} for {package_name}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{package_name} deposundan `"{commit_sha}"` taahhüdünde temel bulunamadı:]]></Val>
+            <Val><![CDATA[{package_name} için {commit_sha} konumunda {url} içinde temel bulunamadı.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Couldn't find baseline in commit `"{commit_sha}"` from repo {package_name}:]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -5473,11 +5467,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";FailedToFetchError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";FailedToFetchRepo" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[{error_msg}]A;Failed to fetch {package_name}:]]></Val>
+          <Val><![CDATA[Failed to fetch {url}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{error_msg}]A; {package_name} getirilemedi:]]></Val>
+            <Val><![CDATA[{url} getirilemedi.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -6177,10 +6171,13 @@
       </Item>
       <Item ItemId=";GitRegistryMustHaveBaseline" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The git registry entry for "{package_name}" must have a "baseline" field that is a valid git commit SHA (40 hexadecimal characters).]A;The current HEAD of that repo is "{value}".]]></Val>
+          <Val><![CDATA[The git registry "{url}" must have a "baseline" field that is a valid git commit SHA (40 hexadecimal characters).]A;To use the current latest versions, set baseline to that repo's HEAD, "{commit_sha}".]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA["{package_name}" için git kayıt defteri girdisi, geçerli bir git commit SHA (40 onaltılık karakter) olan bir "temel" alana sahip olmalıdır.]A;Bu deponun mevcut HEAD'i "{value}".]]></Val>
+            <Val><![CDATA[Git kayıt defteri "{url}", geçerli bir git taahhüt SHA'sı (40 onaltılık karakter) olan bir "temel" alana sahip olmalıdır.]A;Geçerli en son sürümleri kullanmak için tabanı bu deponun HEAD'i olan "{commit_sha}" olarak ayarlayın.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The git registry entry for "{package_name}" must have a "baseline" field that is a valid git commit SHA (40 hexadecimal characters).]A;The current HEAD of that repo is "{value}".]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>

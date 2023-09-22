@@ -4063,21 +4063,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CouldNotFindBaselineForRepo" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Couldn't find baseline `"{commit_sha}"` for repo {package_name}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Die Baseline "{commit_sha}" für das Repository "{package_name}" wurde nicht gefunden.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";CouldNotFindBaselineInCommit" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Couldn't find baseline in commit `"{commit_sha}"` from repo {package_name}:]]></Val>
+          <Val><![CDATA[Couldn't find baseline in {url} at {commit_sha} for {package_name}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Die Baseline wurde im Commit "{commit_sha}" aus dem Repository "{package_name}" nicht gefunden:]]></Val>
+            <Val><![CDATA[Die Baseline wurde in {url} unter {commit_sha} für {package_name} nicht gefunden.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Couldn't find baseline in commit `"{commit_sha}"` from repo {package_name}:]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -5473,11 +5467,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";FailedToFetchError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";FailedToFetchRepo" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[{error_msg}]A;Failed to fetch {package_name}:]]></Val>
+          <Val><![CDATA[Failed to fetch {url}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{error_msg}]A;Fehler beim Abrufen von "{package_name}":]]></Val>
+            <Val><![CDATA[Fehler beim Abrufen von {url}.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -6177,10 +6171,13 @@
       </Item>
       <Item ItemId=";GitRegistryMustHaveBaseline" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The git registry entry for "{package_name}" must have a "baseline" field that is a valid git commit SHA (40 hexadecimal characters).]A;The current HEAD of that repo is "{value}".]]></Val>
+          <Val><![CDATA[The git registry "{url}" must have a "baseline" field that is a valid git commit SHA (40 hexadecimal characters).]A;To use the current latest versions, set baseline to that repo's HEAD, "{commit_sha}".]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Der Git-Registrierungseintrag für "{package_name}" muss ein Feld "Baseline" aufweisen, das ein gültiger Git-Commit-SHA (40 Hexadezimalzeichen) ist.]A;Der aktuelle HEAD-Wert dieses Repositorys ist "{value}".]]></Val>
+            <Val><![CDATA[Die Git-Registrierung "{url}" muss über ein "Baseline"-Feld verfügen, das ein gültiges GIT-Commit-SHA (40 Hexadezimalzeichen) ist.]A;Um die aktuellen Versionen zu verwenden, legen Sie die Baseline auf HEAD dieses Repositorys fest: "{commit_sha}".]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The git registry entry for "{package_name}" must have a "baseline" field that is a valid git commit SHA (40 hexadecimal characters).]A;The current HEAD of that repo is "{value}".]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
