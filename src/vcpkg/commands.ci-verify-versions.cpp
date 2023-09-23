@@ -317,6 +317,118 @@ namespace
         }
     }
 
+    bool verify_dependency_and_version_constraint(
+        const Dependency& dependency,
+        const std::string* feature_name,
+        LocalizedString& errors,
+        const CiVerifyVersionsDbEntry& db,
+        const std::map<std::string, CiVerifyVersionsDbEntry, std::less<>>& versions_database)
+    {
+        auto dependent_versions = versions_database.find(dependency.name);
+        if (dependent_versions == versions_database.end())
+        {
+            errors.append_raw(db.scf.source_location)
+                .append_raw(": ")
+                .append(msgErrorMessage)
+                .append(msgDependencyNotInVersionDatabase, msg::package_name = dependency.name)
+                .append_raw('\n');
+            if (feature_name)
+            {
+                errors.append(msgNoteMessage)
+                    .append(msgDependencyInFeature, msg::feature = *feature_name)
+                    .append_raw('\n');
+            }
+
+            return false;
+        }
+
+        auto maybe_minimum_version = dependency.constraint.try_get_minimum_version();
+        auto minimum_version = maybe_minimum_version.get();
+        if (minimum_version && Util::none_of(dependent_versions->second.entries, [=](const GitVersionDbEntry& entry) {
+                return entry.version.version == *minimum_version;
+            }))
+        {
+            errors.append_raw(db.scf.source_location)
+                .append_raw(": ")
+                .append(msgErrorMessage)
+                .append(msgVersionConstraintNotInDatabase,
+                        msg::package_name = dependency.name,
+                        msg::version = *minimum_version,
+                        msg::path = dependent_versions->second.versions_file_path)
+                .append_raw('\n');
+            if (feature_name)
+            {
+                errors.append(msgNoteMessage)
+                    .append(msgDependencyInFeature, msg::feature = *feature_name)
+                    .append_raw('\n');
+            }
+
+            return false;
+        }
+
+        return true;
+    }
+
+    void verify_all_dependencies_and_version_constraints(
+        LocalizedString& errors,
+        MessageSink& success_sink,
+        const CiVerifyVersionsDbEntry& db,
+        const std::map<std::string, CiVerifyVersionsDbEntry, std::less<>>& versions_database)
+    {
+        bool success = true;
+
+        for (auto&& core_dependency : db.scf.source_control_file->core_paragraph->dependencies)
+        {
+            success &=
+                verify_dependency_and_version_constraint(core_dependency, nullptr, errors, db, versions_database);
+        }
+
+        for (auto&& feature : db.scf.source_control_file->feature_paragraphs)
+        {
+            for (auto&& feature_dependency : feature->dependencies)
+            {
+                success &= verify_dependency_and_version_constraint(
+                    feature_dependency, &feature->name, errors, db, versions_database);
+            }
+        }
+
+        for (auto&& override_ : db.scf.source_control_file->core_paragraph->overrides)
+        {
+            auto override_versions = versions_database.find(override_.name);
+            if (override_versions == versions_database.end())
+            {
+                success = false;
+                errors.append_raw(db.scf.source_location)
+                    .append_raw(": ")
+                    .append(msgErrorMessage)
+                    .append(msgVersionOverrideNotInVersionDatabase, msg::package_name = override_.name)
+                    .append_raw('\n');
+                continue;
+            }
+
+            if (Util::none_of(override_versions->second.entries, [&](const GitVersionDbEntry& entry) {
+                    return entry.version.version == override_.version.version;
+                }))
+            {
+                success = false;
+                errors.append_raw(db.scf.source_location)
+                    .append_raw(": ")
+                    .append(msgErrorMessage)
+                    .append(msgVersionOverrideVersionNotInVersionDatabase,
+                            msg::package_name = override_.name,
+                            msg::version = override_.version.version,
+                            msg::path = override_versions->second.versions_file_path)
+                    .append_raw('\n');
+            }
+        }
+
+        if (success)
+        {
+            success_sink.println(
+                LocalizedString::from_raw(db.scf.source_location).append_raw(": ").append(msgVersionConstraintOk));
+        }
+    }
+
     constexpr StringLiteral OPTION_VERBOSE = "verbose";
     constexpr StringLiteral OPTION_VERIFY_GIT_TREES = "verify-git-trees";
 
@@ -429,6 +541,8 @@ namespace vcpkg
             {
                 verify_all_historical_git_trees(errors, success_sink, paths, port_name, db);
             }
+
+            verify_all_dependencies_and_version_constraints(errors, success_sink, db, versions_database);
         }
 
         if (!errors.empty())

@@ -414,6 +414,12 @@ namespace vcpkg::Util
         return std::any_of(rng.begin(), rng.end(), std::move(pred));
     }
 
+    template<class Range, class Pred>
+    bool none_of(Range&& rng, Pred pred)
+    {
+        return std::none_of(rng.begin(), rng.end(), std::move(pred));
+    }
+
     template<class Range, class Comp = std::less<>>
     Range&& sort_unique_erase(Range&& cont, Comp comp = Comp())
     {

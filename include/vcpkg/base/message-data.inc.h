@@ -993,6 +993,11 @@ DECLARE_MESSAGE(DeleteVcpkgConfigFromManifest,
 DECLARE_MESSAGE(DependencyGraphCalculation, (), "", "Dependency graph submission enabled.")
 DECLARE_MESSAGE(DependencyGraphFailure, (), "", "Dependency graph submission failed.")
 DECLARE_MESSAGE(DependencyGraphSuccess, (), "", "Dependency graph submission successful.")
+DECLARE_MESSAGE(DependencyInFeature, (msg::feature), "", "the dependency is in the feature named {feature}.")
+DECLARE_MESSAGE(DependencyNotInVersionDatabase,
+                (msg::package_name),
+                "",
+                "the dependency {package_name} does not exist in the version database; does that port exist?")
 DECLARE_MESSAGE(DeprecatedPrefabDebugOption, (), "", "--prefab-debug is now deprecated.")
 DECLARE_MESSAGE(DetectCompilerHash, (msg::triplet), "", "Detecting compiler hash for triplet {triplet}...")
 DECLARE_MESSAGE(DocumentedFieldsSuggestUpdate,
@@ -2954,6 +2959,11 @@ DECLARE_MESSAGE(VersionBaselineMismatch,
                 "git add versions\n"
                 "git commit -m \"Update version database\"\n"
                 "to update the baseline version.")
+DECLARE_MESSAGE(VersionBuiltinPortTreeEntryMissing,
+                (msg::package_name, msg::expected, msg::actual),
+                "{expected} and {actual} are versions like 1.0.",
+                "no version database entry for {package_name} at {expected}; using the checked out ports tree "
+                "version ({actual}).")
 DECLARE_MESSAGE(VersionCommandHeader,
                 (msg::version),
                 "",
@@ -2963,6 +2973,13 @@ DECLARE_MESSAGE(
     (msg::path, msg::expected_version, msg::actual_version),
     "",
     "Expected {path} version: [{expected_version}], but was [{actual_version}]. Please re-run bootstrap-vcpkg.")
+DECLARE_MESSAGE(VersionConstraintNotInDatabase,
+                (msg::package_name, msg::version, msg::path),
+                "",
+                "the \"version>=\" constraint to {package_name} names version {version} which does not exist in the "
+                "version database. All versions must exist in the version database to be interpreted by vcpkg. "
+                "Consider removing the version constraint or choosing a value declared in {path}.")
+DECLARE_MESSAGE(VersionConstraintOk, (), "", "All version constraints are consistent with the version database")
 DECLARE_MESSAGE(VersionConstraintPortVersionMustBePositiveInteger,
                 (),
                 "",
@@ -2984,11 +3001,6 @@ DECLARE_MESSAGE(VersionDatabaseFileMissing,
                 "",
                 "missing a version database file at {path}\n"
                 "note: run 'vcpkg x-add-version {package_name}' to create the version database file.")
-DECLARE_MESSAGE(VersionBuiltinPortTreeEntryMissing,
-                (msg::package_name, msg::expected, msg::actual),
-                "{expected} and {actual} are versions like 1.0.",
-                "no version database entry for {package_name} at {expected}; using the checked out ports tree "
-                "version ({actual}).")
 DECLARE_MESSAGE(VersionDatabaseEntryMissing,
                 (msg::package_name, msg::version),
                 "",
@@ -3049,6 +3061,17 @@ DECLARE_MESSAGE(VersionNotFoundInVersionsFile2,
                 "",
                 "{version_spec} was not found in versions database {path}.\n"
                 "note: run 'vcpkg x-add-version {package_name}' to add the new port version.")
+DECLARE_MESSAGE(VersionOverrideNotInVersionDatabase,
+                (msg::package_name),
+                "",
+                "the version override {package_name} does not exist in the version database; does that port exist?")
+DECLARE_MESSAGE(
+    VersionOverrideVersionNotInVersionDatabase,
+    (msg::package_name, msg::version, msg::path),
+    "",
+    "the override of {package_name} names version {version} which does not exist in the "
+    "version database. Installing this port at the top level will fail as that version will be unresolvable. "
+    "Consider removing the version override or choosing a value declared in {path}.")
 DECLARE_MESSAGE(VersionRejectedDueToBaselineMissing,
                 (msg::path, msg::json_field),
                 "",
