@@ -1091,6 +1091,25 @@ TEST_CASE ("SourceParagraph manifest default feature missing name", "[manifests]
     REQUIRE(!m_pgh.has_value());
 }
 
+TEST_CASE ("SourceParagraph manifest default feature reserved name", "[manifests]")
+{
+    auto m_pgh = test_parse_port_manifest(R"json({
+        "name": "a",
+        "version-string": "1.0",
+        "default-features": ["core"]
+    })json",
+                                          PrintErrors::No);
+    REQUIRE(!m_pgh.has_value());
+
+    m_pgh = test_parse_port_manifest(R"json({
+        "name": "a",
+        "version-string": "1.0",
+        "default-features": [{"name": "core", "platform": "!windows"}]
+    })json",
+                                     PrintErrors::No);
+    REQUIRE(!m_pgh.has_value());
+}
+
 TEST_CASE ("SourceParagraph manifest description paragraph", "[manifests]")
 {
     auto m_pgh = test_parse_port_manifest(R"json({

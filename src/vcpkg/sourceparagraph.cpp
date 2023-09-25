@@ -510,10 +510,15 @@ namespace vcpkg
             return t;
         }
 
+        static std::string map_illegal_names(std::string&& name)
+        {
+            return Json::IdentifierDeserializer::is_ident(name) ? std::move(name) : "<error>";
+        }
+
         Optional<DependencyRequestedFeature> visit_string(Json::Reader& r, StringView sv) const override
         {
             return Json::IdentifierDeserializer::instance.visit_string(r, sv).map(
-                [](std::string&& name) { return std::move(name); });
+                [](std::string&& name) { return map_illegal_names(std::move(name)); });
         }
 
         Optional<DependencyRequestedFeature> visit_object(Json::Reader& r, const Json::Object& obj) const override
@@ -523,7 +528,7 @@ namespace vcpkg
             r.required_object_field(type_name(), obj, NAME, name, Json::IdentifierDeserializer::instance);
             r.optional_object_field(obj, PLATFORM, platform, PlatformExprDeserializer::instance);
             if (name.empty()) return nullopt;
-            return DependencyRequestedFeature{std::move(name), std::move(platform)};
+            return DependencyRequestedFeature{map_illegal_names(std::move(name)), std::move(platform)};
         }
 
         const static DependencyFeatureDeserializer instance;
