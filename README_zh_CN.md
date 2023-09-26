@@ -26,7 +26,7 @@ vcpkg-artifacts 目前还处于 '预览' 阶段 -- 从现在到'发布'(在采�
 它
  - 将自身集成到你的shell (Powershell, CMD, bash/zsh)中。
  - 可以根据自定义的清单文件来恢复二进制缓存的内容。
- - 提供可发现的接口
+ - 提供可发现的接口。
 
 ## 安装说明
 
@@ -48,12 +48,12 @@ vcpkg-artifacts 目前还处于 '预览' 阶段 -- 从现在到'发布'(在采�
 
 | 术语       | 解释                                                 |
 |------------|-----------------------------------------------------|
-| `artifact` | 存储构建工具或其组件的存档 (.zip or .tar.gz-like), 包 (.nupkg, .vsix) 和二进制缓存. |
+| `artifact` | 存储构建工具或其组件的存档 (.zip or .tar.gz-like)， 包 (.nupkg, .vsix) 和二进制缓存。 |
 | `artifact metadata` | 对一个或者多个工件的位置描述的元数据，还包括对于每一个所部署的工件关于主机架构，目标架构或者其他属性规则的描述。|
-| `artifact identity` | 一个短字符串，唯一可被引用来描述给定的工件(和它的元数据) . 它可以是以下几种形式：:<br> `full/identity/path` - 表示一个工件在源中的完整路径<br>`sourcename:full/identity/path` - 表示一个工件在指定前缀名称源中的完整路径<br>`shortname` - 表示一个 工件在源中的简写名称<br>`sourcename:shortname` - 表示 一个工件在指定前缀名称源中的简写名称<br>简写名称是基于所给源中最短的唯一标识路径生成的。 |
-| `artifact source` | 它也被称为 “原料”. 它用来存放多个工件(注意：目前只能有一个工件源). |
-| `activation` | 表示获取一组特定的工件并使其能够在调用命令程序中使用的过程.|
-| `versions` | 版本号被指定使用Semver语义格式。 如果没有指定特定的版本, 则假定最新的版本范围(*)。 可以使用npm semver匹配语法来指定版本或者版本范围。 当存储版本时，可以使用指定的版本范围来存储，一个空格和所要找寻的版本即可。(即：第一个版本时所要求的版本，第二个时所安装的版本。不需要单独指定文件。) |
+| `artifact identity` | 一个短字符串，唯一可被引用来描述给定的工件(和它的元数据)， 它可以是以下几种形式：:<br> `full/identity/path` - 表示一个工件在源中的完整路径<br>`sourcename:full/identity/path` - 表示一个工件在指定前缀名称源中的完整路径<br>`shortname` - 表示一个 工件在源中的简写名称<br>`sourcename:shortname` - 表示 一个工件在指定前缀名称源中的简写名称<br>简写名称是基于所给源中最短的唯一标识路径生成的。 |
+| `artifact source` | 它也被称为 “原料”。 它用来存放多个工件(注意：目前只能有一个工件源). |
+| `activation` | 表示获取一组特定的工件并使其能够在调用命令程序中使用的过程。|
+| `versions` | 版本号被指定使用Semver语义格式。 如果没有指定特定的版本， 则假定最新的版本范围(*)。 可以使用npm semver匹配语法来指定版本或者版本范围。 当存储版本时，可以使用指定的版本范围来存储，一个空格和所要找寻的版本即可。(即：第一个版本时所要求的版本，第二个时所安装的版本。不需要单独指定文件。) |
 
 
 # 贡献
@@ -64,7 +64,7 @@ vcpkg-artifacts 目前还处于 '预览' 阶段 -- 从现在到'发布'(在采�
 获取更多信息请查看 [行为准则 FAQ][contributing:coc-faq] 或联系 [opencode@microsoft.com](mailto:opencode@microsoft.com) 提出其他问题或意见。
 
 [贡献:提交问题]: https://github.com/microsoft/vcpkg/issues/new/choose
-[贡献:提价-拉取请求]: https://github.com/microsoft/vcpkg/pulls
+[贡献:提交-拉取请求]: https://github.com/microsoft/vcpkg/pulls
 [贡献:行为准则]: https://opensource.microsoft.com/codeofconduct/
 [贡献:行为准则-常见问题]: https://opensource.microsoft.com/codeofconduct/
 
