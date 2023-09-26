@@ -345,10 +345,15 @@
             "enum": [
               "filesystem"
             ]
+          },
+          "baseline": {
+            "type": "string",
+            "description": "An identifier used to choose a set of versions in the filesystem registry's baseline.json."
           }
         },
         "required": [
-          "kind"
+          "kind",
+          "baseline"
         ]
       },
       "then": {
@@ -359,6 +364,10 @@
               "filesystem"
             ]
           },
+          "baseline": {
+            "type": "string",
+            "description": "An identifier used to choose a set of versions in the filesystem registry's baseline.json."
+          },
           "path": {
             "type": "string",
             "description": "The location on the filesystem where the registry is rooted."
@@ -367,6 +376,7 @@
         },
         "required": [
           "kind",
+          "baseline",
           "path"
         ],
         "patternProperties": {

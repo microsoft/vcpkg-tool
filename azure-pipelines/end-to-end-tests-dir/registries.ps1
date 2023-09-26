@@ -212,6 +212,7 @@ try
             @{
                 "kind" = "filesystem";
                 "path" = $filesystemRegistry;
+                "baseline" = "default";
                 "packages" = @( "vcpkg-internal-e2e-test-port" )
             }
         )
@@ -258,6 +259,7 @@ try
             @{
                 "kind" = "filesystem";
                 "path" = "../filesystem-registry";
+                "baseline" = "default";
                 "packages" = @( "vcpkg-internal-e2e-test-port" )
             }
         )

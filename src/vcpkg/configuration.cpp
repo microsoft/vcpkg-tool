@@ -61,14 +61,14 @@ namespace
 
     const RegistryImplementationKindDeserializer RegistryImplementationKindDeserializer::instance;
 
-    struct BaselineShaDeserializer : Json::StringDeserializer
+    struct BaselineIdentifierDeserializer : Json::StringDeserializer
     {
         LocalizedString type_name() const override { return msg::format(msgABaseline); }
 
-        static const BaselineShaDeserializer instance;
+        static const BaselineIdentifierDeserializer instance;
     };
 
-    const BaselineShaDeserializer BaselineShaDeserializer::instance;
+    const BaselineIdentifierDeserializer BaselineIdentifierDeserializer::instance;
 
     struct GitUrlDeserializer : Json::StringDeserializer
     {
@@ -249,19 +249,18 @@ namespace
         {
             auto& baseline = res.baseline.emplace();
             r.required_object_field(
-                msg::format(msgABuiltinRegistry), obj, BASELINE, baseline, BaselineShaDeserializer::instance);
+                msg::format(msgABuiltinRegistry), obj, BASELINE, baseline, BaselineIdentifierDeserializer::instance);
             r.check_for_unexpected_fields(obj, valid_builtin_fields(), msg::format(msgABuiltinRegistry));
         }
         else if (kind == KIND_FILESYSTEM)
         {
-            std::string baseline;
-            if (r.optional_object_field(obj, BASELINE, baseline, BaselineShaDeserializer::instance))
-            {
-                res.baseline = std::move(baseline);
-            }
-
             r.required_object_field(
                 msg::format(msgAFilesystemRegistry), obj, PATH, res.path.emplace(), Json::PathDeserializer::instance);
+            r.required_object_field(msg::format(msgAFilesystemRegistry),
+                                    obj,
+                                    BASELINE,
+                                    res.baseline.emplace(),
+                                    BaselineIdentifierDeserializer::instance);
 
             r.check_for_unexpected_fields(obj, valid_filesystem_fields(), msg::format(msgAFilesystemRegistry));
         }
@@ -275,8 +274,11 @@ namespace
                 res.reference = nullopt;
             }
 
-            r.required_object_field(
-                msg::format(msgAGitRegistry), obj, BASELINE, res.baseline.emplace(), BaselineShaDeserializer::instance);
+            r.required_object_field(msg::format(msgAGitRegistry),
+                                    obj,
+                                    BASELINE,
+                                    res.baseline.emplace(),
+                                    BaselineIdentifierDeserializer::instance);
 
             r.check_for_unexpected_fields(obj, valid_git_fields(), msg::format(msgAGitRegistry));
         }
