@@ -4,6 +4,7 @@
     {
       "kind": "filesystem",
       "path": "./vcpkg_registry",
+      "baseline": "default",
       "packages": [
         "arrow",
         "bloom-filter"
