@@ -2,6 +2,7 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/message_sinks.h>
 #include <vcpkg/base/messages.h>
+#include <vcpkg/base/parallel-algorithms.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
@@ -1281,13 +1282,17 @@ namespace vcpkg
         const auto stringview_paths = Util::fmap(string_paths, [](std::string& s) { return StringView(s); });
 
         std::vector<Path> failing_files;
-        for (auto&& file : fs.get_regular_files_recursive(dir, IgnoreErrors{}))
-        {
+        std::mutex mtx;
+        auto files = fs.get_regular_files_recursive(dir, IgnoreErrors{});
+        auto work = [&](auto&& file) {
             if (file_contains_absolute_paths(fs, file, stringview_paths))
             {
-                failing_files.push_back(file);
+                std::lock_guard lock{mtx};
+                failing_files.push_back(std::move(file));
             }
-        }
+        };
+
+        vcpkg_par_unseq_for_each(files.begin(), files.end(), work);
 
         if (failing_files.empty())
         {
