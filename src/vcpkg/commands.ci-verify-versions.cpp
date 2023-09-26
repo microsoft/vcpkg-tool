@@ -207,7 +207,7 @@ namespace
         if (it == versions_end)
         {
             success = false;
-            errors.append_raw(db.scf.source_location)
+            errors.append_raw(db.scf.control_location)
                 .append_raw(": ")
                 .append(msgErrorMessage)
                 .append(msgVersionNotFoundInVersionsFile2,
@@ -287,7 +287,7 @@ namespace
         auto maybe_baseline = baseline.find(port_name);
         if (maybe_baseline == baseline.end())
         {
-            errors.append_raw(db.scf.source_location)
+            errors.append_raw(db.scf.control_location)
                 .append_raw(": ")
                 .append(msgErrorMessage)
                 .append(msgBaselineMissing, msg::package_name = port_name, msg::version = local_port_version.version)
@@ -327,7 +327,7 @@ namespace
         auto dependent_versions = versions_database.find(dependency.name);
         if (dependent_versions == versions_database.end())
         {
-            errors.append_raw(db.scf.source_location)
+            errors.append_raw(db.scf.control_location)
                 .append_raw(": ")
                 .append(msgErrorMessage)
                 .append(msgDependencyNotInVersionDatabase, msg::package_name = dependency.name)
@@ -348,7 +348,7 @@ namespace
                 return entry.version.version == *minimum_version;
             }))
         {
-            errors.append_raw(db.scf.source_location)
+            errors.append_raw(db.scf.control_location)
                 .append_raw(": ")
                 .append(msgErrorMessage)
                 .append(msgVersionConstraintNotInDatabase,
@@ -398,7 +398,7 @@ namespace
             if (override_versions == versions_database.end())
             {
                 success = false;
-                errors.append_raw(db.scf.source_location)
+                errors.append_raw(db.scf.control_location)
                     .append_raw(": ")
                     .append(msgErrorMessage)
                     .append(msgVersionOverrideNotInVersionDatabase, msg::package_name = override_.name)
@@ -411,7 +411,7 @@ namespace
                 }))
             {
                 success = false;
-                errors.append_raw(db.scf.source_location)
+                errors.append_raw(db.scf.control_location)
                     .append_raw(": ")
                     .append(msgErrorMessage)
                     .append(msgVersionOverrideVersionNotInVersionDatabase,
@@ -425,7 +425,7 @@ namespace
         if (success)
         {
             success_sink.println(
-                LocalizedString::from_raw(db.scf.source_location).append_raw(": ").append(msgVersionConstraintOk));
+                LocalizedString::from_raw(db.scf.control_location).append_raw(": ").append(msgVersionConstraintOk));
         }
     }
 
@@ -498,7 +498,7 @@ namespace vcpkg
             auto versions_db = maybe_versions_db->get();
             if (!versions_db)
             {
-                errors.append_raw(loaded_port->source_location)
+                errors.append_raw(loaded_port->control_location)
                     .append_raw(": ")
                     .append(msgErrorMessage)
                     .append(msgVersionDatabaseFileMissing,
@@ -523,7 +523,7 @@ namespace vcpkg
             auto git_tree_it = port_git_tree_map.find(port_name);
             if (git_tree_it == port_git_tree_map.end())
             {
-                errors.append_raw(db.scf.source_location)
+                errors.append_raw(db.scf.control_location)
                     .append_raw(": ")
                     .append(msgErrorMessage)
                     .append(msgVersionShaMissing, msg::package_name = port_name, msg::path = db.port_directory)

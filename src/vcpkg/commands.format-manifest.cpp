@@ -24,7 +24,7 @@ namespace
 
     void open_for_write(const Filesystem& fs, const ToWrite& data)
     {
-        const auto& original_path_string = data.scf.source_location.native();
+        const auto& original_path_string = data.scf.control_location.native();
         const auto& file_to_write_string = data.file_to_write.native();
         bool in_place = data.file_to_write == original_path_string;
         if (in_place)
@@ -167,7 +167,7 @@ namespace vcpkg
                 auto maybe_manifest = Paragraphs::try_load_port_required(fs, dir.filename(), dir);
                 if (auto manifest = maybe_manifest.maybe_scfl.get())
                 {
-                    auto original = manifest->source_location;
+                    auto original = manifest->control_location;
                     to_write.push_back(
                         ToWrite{maybe_manifest.on_disk_contents, std::move(*manifest), std::move(original)});
                 }

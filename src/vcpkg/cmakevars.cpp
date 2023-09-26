@@ -367,7 +367,7 @@ endfunction()
         for (const auto& install_action : action_plan.install_actions)
         {
             auto& scfl = install_action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
-            const auto override_path = scfl.source_location / "vcpkg-abi-settings.cmake";
+            const auto override_path = scfl.port_directory() / "vcpkg-abi-settings.cmake";
             spec_abi_settings.emplace_back(FullPackageSpec{install_action.spec, install_action.feature_list},
                                            override_path.generic_u8string());
         }
