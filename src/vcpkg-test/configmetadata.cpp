@@ -86,6 +86,7 @@ TEST_CASE ("config registries only", "[ce-metadata]")
         {
             "kind": "filesystem",
             "path": "path/to/registry",
+            "baseline": "default",
             "packages": [ "zlib" ]
         },
         {
@@ -96,6 +97,7 @@ TEST_CASE ("config registries only", "[ce-metadata]")
         {
             "kind": "filesystem",
             "path": "path/to/registry",
+            "baseline": "default",
             "packages": [ ]
         }
     ]

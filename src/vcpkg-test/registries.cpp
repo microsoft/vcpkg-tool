@@ -319,6 +319,7 @@ TEST_CASE ("registry_parsing", "[registries]")
         auto test_json = parse_json(R"json(
 {
     "kind": "filesystem",
+    "baseline": "default",
     "path": "a/b/c"
 }
     )json");
@@ -329,6 +330,7 @@ TEST_CASE ("registry_parsing", "[registries]")
         test_json = parse_json(R"json(
 {
     "kind": "filesystem",
+    "baseline": "default",
     "path": "/a/b/c"
 }
     )json");
