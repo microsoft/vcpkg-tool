@@ -1,6 +1,9 @@
 # Vcpkg: 总览
 
-[English Overview](README.md)
+[中文总览](https://github.com/microsoft/vcpkg/blob/master/README_zh_CN.md)
+[Español](https://github.com/microsoft/vcpkg/blob/master/README_es.md)
+[한국어](https://github.com/microsoft/vcpkg/blob/master/README_ko_KR.md)
+[Français](https://github.com/microsoft/vcpkg/blob/master/README_fr.md)
 
 Vcpkg 可帮助您在 Windows、 Linux 和 MacOS 上管理 C 和 C++ 库。
 这个工具和生态链正在不断发展，我们一直期待您的贡献！
