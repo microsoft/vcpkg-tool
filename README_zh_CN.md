@@ -8,7 +8,7 @@
 Vcpkg 可帮助您在 Windows、 Linux 和 MacOS 上管理 C 和 C++ 库。
 这个工具和生态链正在不断发展，我们一直期待您的贡献！
 
-你可以通过参阅存储库 https://github.com/microsoft/vcpkg 来进行功能讨论，问题跟踪和完善vcpkg的库。
+你可以通过参阅存储库 https://github.com/microsoft/vcpkg 来进行功能讨论，问题跟踪和完善Vcpkg的库。
 
 # Vcpkg-tool: 总览
 
@@ -92,11 +92,11 @@ sudo npm install -g @microsoft/rush
 
 # 数据收集
 
-vcpkg 会收集使用情况数据，以帮助我们改善您的体验。
+Vcpkg 会收集使用情况数据，以帮助我们改善您的体验。
 Microsoft 收集的数据是匿名的。
 您也可以通过以下步骤禁用数据收集：
 - 将选项 `-disableMetrics` 传递给 bootstrap-vcpkg 脚本并重新运行此脚本
-- 向 vcpkg 命令传递选项 `--disable-metrics`
+- 向 Vcpkg 命令传递选项 `--disable-metrics`
 - 设置环境变量 `VCPKG_DISABLE_METRICS`
 
-请在 [https://learn.microsoft.com/vcpkg/about/privacy](https://learn.microsoft.com/vcpkg/about/privacy) 中了解有关 vcpkg 数据收集的更多信息。
+请在 [https://learn.microsoft.com/vcpkg/about/privacy](https://learn.microsoft.com/vcpkg/about/privacy) 中了解有关 Vcpkg 数据收集的更多信息。
