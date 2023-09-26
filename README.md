@@ -13,6 +13,8 @@ tracking, and edits to which libraries are available.
 
 # Vcpkg-tool: Overview
 
+[中文总览](README_zh_CN.md)
+
 This repository contains the contents formerly at https://github.com/microsoft/vcpkg in the
 "toolsrc" tree, and build support.
 
