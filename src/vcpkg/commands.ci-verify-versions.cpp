@@ -53,11 +53,21 @@ namespace
             return success;
         }
 
-        auto load_result = Paragraphs::try_load_port(paths.get_filesystem(), port_name, *extracted_tree);
+        auto load_result = Paragraphs::try_load_port_required(paths.get_filesystem(), port_name, *extracted_tree);
         auto scfl = load_result.maybe_scfl.get();
         if (!scfl)
         {
             success = false;
+            // This output is technically wrong as it prints both the versions file path and the temporary extracted
+            // path, like this:
+            //
+            // C:\Dev\vcpkg\versions\a-\abseil.json:
+            // C:\Dev\vcpkg\buildtrees\versioning_\versions\abseil\28fa609b06eec70bb06e61891e94b94f35f7d06e\vcpkg.json:
+            // error: $.features: mismatched type: expected a set of features note: while validating version:
+            // 2020-03-03#7
+            //
+            // However including both paths likely helps investigation and there isn't an easy way to replace only that
+            // file path right now
             errors_sink.print(Color::error,
                               LocalizedString::from_raw(versions_file_path)
                                   .append_raw(": ")
