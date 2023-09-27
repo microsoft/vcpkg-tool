@@ -978,10 +978,7 @@ namespace vcpkg
     }
 
     bool cmake_args_sets_variable(const VcpkgCmdArguments& args) {
-        auto sets_variable = [] (std::string_view str) {
-            return (str.find("-D") == 0); // starts_with is c++20
-        };
-        return std::any_of(args.cmake_args.cbegin(), args.cmake_args.cend(),sets_variable);
+        return Utils::any_of(args, [](auto &s){ return Strings::starts_with(s, "-D"); });
     }
 
     void command_install_and_exit(const VcpkgCmdArguments& args,
