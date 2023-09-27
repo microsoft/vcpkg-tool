@@ -977,7 +977,7 @@ namespace vcpkg
         return ret;
     }
 
-    bool cmake_args_sets_variable(const VcpkgCmdArguments& args) {
+    static bool cmake_args_sets_variable(const VcpkgCmdArguments& args) {
         return Util::any_of(args.cmake_args, [](auto &s){ return Strings::starts_with(s, "-D"); });
     }
 
