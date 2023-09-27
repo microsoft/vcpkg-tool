@@ -3,6 +3,7 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/chrono.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/parallel-algorithms.h>
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.debug.h>
@@ -674,44 +675,11 @@ namespace vcpkg
                                                                                       const Environment& env)
     {
         std::vector<ExpectedL<ExitCodeAndOutput>> res(cmd_lines.size(), LocalizedString{});
-        if (cmd_lines.empty())
-        {
-            return res;
-        }
 
-        if (cmd_lines.size() == 1)
-        {
-            res[0] = cmd_execute_and_capture_output(cmd_lines[0], wd, env);
-            return res;
-        }
+        parallel_transform(cmd_lines.begin(), cmd_lines.size(), res.begin(), [&](const Command& cmd_line) {
+            return cmd_execute_and_capture_output(cmd_line, wd, env);
+        });
 
-        std::atomic<size_t> work_item{0};
-        const auto num_threads =
-            std::max(static_cast<size_t>(1), std::min(static_cast<size_t>(get_concurrency()), cmd_lines.size()));
-
-        auto work = [&]() {
-            std::size_t item;
-            while (item = work_item.fetch_add(1), item < cmd_lines.size())
-            {
-                res[item] = cmd_execute_and_capture_output(cmd_lines[item], wd, env);
-            }
-        };
-
-        std::vector<std::future<void>> workers;
-        workers.reserve(num_threads - 1);
-        for (size_t x = 0; x < num_threads - 1; ++x)
-        {
-            workers.emplace_back(std::async(std::launch::async | std::launch::deferred, work));
-            if (work_item >= cmd_lines.size())
-            {
-                break;
-            }
-        }
-        work();
-        for (auto&& w : workers)
-        {
-            w.get();
-        }
         return res;
     }
 
