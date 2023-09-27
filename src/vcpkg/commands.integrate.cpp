@@ -541,8 +541,8 @@ namespace vcpkg
         }
         else
         {
-            const Path home_path = get_environment_variable("HOME").value_or_exit(VCPKG_LINE_INFO);
-            fish_completions_path = home_path / ".config";
+            Path home_path = get_environment_variable("HOME").value_or_exit(VCPKG_LINE_INFO);
+            fish_completions_path = std::move(home_path) / ".config";
         }
 
         fish_completions_path = fish_completions_path / "fish/completions";
