@@ -52,7 +52,7 @@ namespace vcpkg
         nullptr,
     };
 
-    bool isValidName(const std::string& name)
+    static bool isValidName(const std::string& name)
     {
         for (char ch : name)
         {
@@ -91,7 +91,9 @@ namespace vcpkg
 
             if (!isValidName(*name))
             {
-                return msg::format_error(msgParseIdentifierError, msg::value = *name, msg::url = "https://learn.microsoft.com/vcpkg/commands/new");
+                return msg::format_error(msgParseIdentifierError,
+                                         msg::value = *name,
+                                         msg::url = "https://learn.microsoft.com/vcpkg/commands/new");
             }
 
             manifest.insert("name", *name);
