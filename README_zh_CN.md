@@ -8,7 +8,7 @@
 Vcpkg 可帮助您在 Windows、 Linux 和 MacOS 上管理 C 和 C++ 库。
 这个工具和生态链正在不断发展，我们一直期待您的贡献！
 
-你可以通过参阅存储库 https://github.com/microsoft/vcpkg 来进行功能讨论，问题跟踪和完善Vcpkg的库。
+您可以通过参阅存储库 https://github.com/microsoft/vcpkg 来进行功能讨论，问题跟踪以及对可用库的编辑。
 
 # Vcpkg-tool: 总览
 
@@ -17,7 +17,7 @@ Vcpkg 可帮助您在 Windows、 Linux 和 MacOS 上管理 C 和 C++ 库。
 
 # vcpkg-artifacts
 
-vcpkg-artifacts 目前还处于 '预览' 阶段 -- 从现在到'发布'(在采纳用户反馈的基础上)期间,它的内容一定会发生变化。
+vcpkg-artifacts 目前还处于 '预览' 阶段 -- 从现在到 ‘发布’（在采纳用户反馈的基础上）期间，它的内容一定会发生变化。
 
 你可以使用它, 但是请注意，我们可能会对格式、命令等做出更改。
 
@@ -25,7 +25,7 @@ vcpkg-artifacts 目前还处于 '预览' 阶段 -- 从现在到'发布'(在采�
 
 它
  - 将自身集成到你的shell (Powershell, CMD, bash/zsh)中。
- - 可以根据自定义的清单文件来恢复二进制缓存的内容。
+ - 可以根据自定义的清单文件来恢复工件。
  - 提供可发现的接口。
 
 ## 安装说明
