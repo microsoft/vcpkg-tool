@@ -494,6 +494,7 @@ namespace vcpkg
             if (loaded_port)
             {
                 local_ports.emplace(port_name, std::move(*loaded_port));
+                continue;
             }
 
             errors.append(std::move(maybe_loaded_port).error()).append_raw('\n');
