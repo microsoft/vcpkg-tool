@@ -36,7 +36,7 @@ namespace vcpkg
         const auto num_threads = static_cast<size_t>(
             std::max(static_cast<ptrdiff_t>(1), std::min(static_cast<ptrdiff_t>(thread_count), work_count)));
 
-        std::vector<std::future<void>> workers;
+        std::vector<std::thread> workers;
         workers.reserve(num_threads);
 
         std::atomic_size_t next{0};
@@ -50,13 +50,13 @@ namespace vcpkg
 
         for (size_t i = 0; i < num_threads - 1; ++i)
         {
-            workers.emplace_back(std::async(std::launch::async, work));
+            workers.emplace_back(work);
         }
         work();
 
         for (auto&& w : workers)
         {
-            w.get();
+            w.join();
         }
     }
 }
