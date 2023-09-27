@@ -545,14 +545,14 @@ namespace vcpkg
             fish_completions_path = std::move(home_path) / ".config";
         }
 
-        fish_completions_path = fish_completions_path / "fish/completions";
+        fish_completions_path /= "fish/completions";
 
         auto& fs = paths.get_filesystem();
 
         std::error_code ec;
         fs.create_directories(fish_completions_path, ec);
 
-        fish_completions_path = fish_completions_path / "vcpkg.fish";
+        fish_completions_path /= "vcpkg.fish";
 
         if (fs.exists(fish_completions_path, IgnoreErrors{}))
         {
