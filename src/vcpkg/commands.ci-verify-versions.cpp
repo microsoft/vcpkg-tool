@@ -54,71 +54,35 @@ namespace
                          const GitVersionDbEntry& version_entry)
     {
         bool success = true;
-        auto treeish = version_entry.git_tree + ":CONTROL";
-        auto maybe_maybe_loaded_manifest =
-            paths.git_show(treeish, paths.root / ".git")
-                .then([&](std::string&& file) -> ExpectedL<SourceControlFileAndLocation> {
-                    auto maybe_scf = Paragraphs::try_load_control_file_text(file, treeish);
-                    if (!maybe_scf)
-                    {
-                        add_parse_from_git_tree_failure_notes(
-                            maybe_scf.error(), port_name, versions_file_path, version_entry.version, treeish);
-                    }
-
-                    return maybe_scf;
-                });
-
-        auto maybe_loaded_manifest = maybe_maybe_loaded_manifest.get();
-        if (!maybe_loaded_manifest)
+        auto maybe_extracted_tree = paths.git_checkout_port(port_name, version_entry.git_tree, paths.root / ".git");
+        auto extracted_tree = maybe_extracted_tree.get();
+        if (!extracted_tree)
         {
             success = false;
-            errors.append(std::move(maybe_maybe_loaded_manifest).error()).append_raw('\n');
+            add_parse_from_git_tree_failure_notes(maybe_extracted_tree.error(),
+                                                  port_name,
+                                                  versions_file_path,
+                                                  version_entry.version,
+                                                  version_entry.git_tree);
+            errors.append(std::move(maybe_extracted_tree).error()).append_raw('\n');
             return;
         }
 
-        if (!maybe_loaded_manifest->source_control_file)
+        auto load_result = Paragraphs::try_load_port(paths.get_filesystem(), port_name, *extracted_tree);
+        auto scfl = load_result.maybe_scfl.get();
+        if (!scfl)
         {
-            treeish = version_entry.git_tree + ":vcpkg.json";
-            paths.git_show(treeish, paths.root / ".git")
-                .then([&](std::string&& file) -> ExpectedL<SourceControlFileAndLocation> {
-                    auto maybe_scf = Paragraphs::try_load_port_manifest_text(file, treeish, stdout_sink);
-                    if (!maybe_scf)
-                    {
-                        add_parse_from_git_tree_failure_notes(
-                            maybe_scf.error(), port_name, versions_file_path, version_entry.version, treeish);
-                    }
-
-                    return maybe_scf;
-                });
-
-            maybe_loaded_manifest = maybe_maybe_loaded_manifest.get();
-            if (!maybe_loaded_manifest)
-            {
-                success = false;
-                errors.append(std::move(maybe_maybe_loaded_manifest).error()).append_raw('\n');
-                return;
-            }
-
-            if (!maybe_loaded_manifest->source_control_file)
-            {
-                success = false;
-                errors.append_raw(versions_file_path)
-                    .append_raw(": ")
-                    .append(msgErrorMessage)
-                    .append(msgCheckedOutObjectMissingManifest)
-                    .append_raw('\n')
-                    .append(msgNoteMessage)
-                    .append(msgCheckedOutGitSha, msg::commit_sha = treeish)
-                    .append_raw('\n')
-                    .append(msgNoteMessage)
-                    .append(msgWhileValidatingVersion, msg::version = version_entry.version.version)
-                    .append_raw('\n');
-                return;
-            }
+            success = false;
+            add_parse_from_git_tree_failure_notes(load_result.maybe_scfl.error(),
+                                                  port_name,
+                                                  versions_file_path,
+                                                  version_entry.version,
+                                                  version_entry.git_tree);
+            errors.append(std::move(load_result.maybe_scfl).error()).append_raw('\n');
+            return;
         }
 
-        auto& scf = *maybe_loaded_manifest->source_control_file;
-        auto&& git_tree_version = scf.to_schemed_version();
+        auto&& git_tree_version = scfl->source_control_file->to_schemed_version();
         if (version_entry.version.version != git_tree_version.version)
         {
             success = false;
@@ -128,7 +92,7 @@ namespace
                 .append(msgVersionInDeclarationDoesNotMatch, msg::version = git_tree_version.version)
                 .append_raw('\n')
                 .append(msgNoteMessage)
-                .append(msgCheckedOutGitSha, msg::commit_sha = treeish)
+                .append(msgCheckedOutGitSha, msg::commit_sha = version_entry.git_tree)
                 .append_raw('\n')
                 .append(msgNoteMessage)
                 .append(msgWhileValidatingVersion, msg::version = version_entry.version.version)
@@ -145,7 +109,7 @@ namespace
                         msg::version = version_entry.version.version,
                         msg::expected = get_scheme_name(version_entry.version.scheme),
                         msg::actual = get_scheme_name(git_tree_version.scheme),
-                        msg::path = treeish,
+                        msg::path = version_entry.git_tree,
                         msg::package_name = port_name)
                 .append_raw('\n');
         }

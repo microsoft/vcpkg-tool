@@ -416,10 +416,6 @@ DECLARE_MESSAGE(BuildTroubleshootingMessage4,
 DECLARE_MESSAGE(BuiltInTriplets, (), "", "Built-in Triplets:")
 DECLARE_MESSAGE(BuiltWithIncorrectArchitecture, (), "", "The following files were built for an incorrect architecture:")
 DECLARE_MESSAGE(CheckedOutGitSha, (msg::commit_sha), "", "Checked out Git SHA: {commit_sha}")
-DECLARE_MESSAGE(CheckedOutObjectMissingManifest,
-                (),
-                "",
-                "The checked-out object does not contain a CONTROL file or vcpkg.json file.")
 DECLARE_MESSAGE(ChecksFailedCheck, (), "", "vcpkg has crashed; no additional details are available.")
 DECLARE_MESSAGE(ChecksUnreachableCode, (), "", "unreachable code was reached")
 DECLARE_MESSAGE(ChecksUpdateVcpkg, (), "", "updating vcpkg by rerunning bootstrap-vcpkg may resolve this failure.")
