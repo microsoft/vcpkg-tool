@@ -52,6 +52,18 @@ namespace vcpkg
         nullptr,
     };
 
+    bool isValidName(const std::string& name)
+    {
+        for (char ch : name)
+        {
+            if (!(std::islower(ch) || ch == '-'))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
     ExpectedL<Json::Object> build_prototype_manifest(const std::string* name,
                                                      const std::string* version,
                                                      bool option_application,
@@ -75,6 +87,11 @@ namespace vcpkg
             if (name->empty())
             {
                 return msg::format_error(msgNewNameCannotBeEmpty);
+            }
+
+            if (!isValidName(*name))
+            {
+                return msg::format_error(msgParseIdentifierError, msg::value = *name, msg::url = "https://learn.microsoft.com/vcpkg/commands/new");
             }
 
             manifest.insert("name", *name);
