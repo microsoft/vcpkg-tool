@@ -561,7 +561,6 @@ namespace vcpkg
 
         if (!errors.empty())
         {
-            errors.append_raw('\n');
             Checks::msg_exit_with_message(VCPKG_LINE_INFO, errors);
         }
 
