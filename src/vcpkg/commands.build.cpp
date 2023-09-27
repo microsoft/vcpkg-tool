@@ -821,11 +821,11 @@ namespace vcpkg
         std::vector<std::string> port_configs;
         for (const PackageSpec& dependency : action.package_dependencies)
         {
-            const Path port_config_path = paths.installed().vcpkg_port_config_cmake(dependency);
+            Path port_config_path = paths.installed().vcpkg_port_config_cmake(dependency);
 
             if (fs.is_regular_file(port_config_path))
             {
-                port_configs.emplace_back(port_config_path.native());
+                port_configs.emplace_back(std::move(port_config_path).native());
             }
         }
 
@@ -1270,7 +1270,7 @@ namespace vcpkg
 
         auto current_build_tree = paths.build_dir(action.spec);
         fs.create_directory(current_build_tree, VCPKG_LINE_INFO);
-        auto abi_file_path = current_build_tree / (triplet_canonical_name + ".vcpkg_abi_info.txt");
+        auto abi_file_path = std::move(current_build_tree) / (triplet_canonical_name + ".vcpkg_abi_info.txt");
         fs.write_contents(abi_file_path, full_abi_info, VCPKG_LINE_INFO);
 
         auto& scf = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_control_file;
