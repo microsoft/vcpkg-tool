@@ -1247,7 +1247,6 @@ DECLARE_MESSAGE(FailedToLoadPortFrom, (msg::path), "", "Failed to load port from
 DECLARE_MESSAGE(FailedToLoadUnnamedPortFromPath, (msg::path), "", "Failed to load port from {path}")
 DECLARE_MESSAGE(FailedToLocateSpec, (msg::spec), "", "Failed to locate spec in graph: {spec}")
 DECLARE_MESSAGE(FailedToObtainDependencyVersion, (), "", "Cannot find desired dependency version.")
-DECLARE_MESSAGE(FailedToObtainLocalPortGitSha, (), "", "Failed to obtain git SHAs for local ports.")
 DECLARE_MESSAGE(FailedToObtainPackageVersion, (), "", "Cannot find desired package version.")
 DECLARE_MESSAGE(FailedToOpenAlgorithm,
                 (msg::value),
@@ -2622,10 +2621,6 @@ DECLARE_MESSAGE(StoredBinariesToDestinations,
 DECLARE_MESSAGE(StoreOptionMissingSha, (), "", "--store option is invalid without a sha512")
 DECLARE_MESSAGE(SuccessfulyExported, (msg::package_name, msg::path), "", "Exported {package_name} to {path}")
 DECLARE_MESSAGE(SuggestGitPull, (), "", "The result may be outdated. Run `git pull` to get the latest results.")
-DECLARE_MESSAGE(SuggestResolution,
-                (msg::command_name, msg::option),
-                "",
-                "To attempt to resolve all errors at once, run:\nvcpkg {command_name} --{option}")
 DECLARE_MESSAGE(SuggestStartingBashShell,
                 (),
                 "",

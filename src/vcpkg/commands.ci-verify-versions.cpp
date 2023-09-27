@@ -29,14 +29,6 @@ namespace
         }
     }
 
-    struct CiVerifyVersionsDbEntry
-    {
-        SourceControlFileAndLocation scf;
-        Path port_directory;
-        std::vector<GitVersionDbEntry> entries;
-        Path versions_file_path;
-    };
-
     void add_parse_from_git_tree_failure_notes(LocalizedString& target,
                                                const std::string& port_name,
                                                const Path& versions_file_path,
@@ -168,52 +160,63 @@ namespace
         }
     }
 
-    void verify_all_historical_git_trees(LocalizedString& errors,
-                                         MessageSink& success_sink,
-                                         const VcpkgPaths& paths,
-                                         const std::string& port_name,
-                                         const CiVerifyVersionsDbEntry& versions)
-    {
-        for (auto&& version_entry : versions.entries)
-        {
-            verify_git_tree(errors, success_sink, paths, port_name, versions.versions_file_path, version_entry);
-        }
-    }
-
     void verify_local_port_matches_version_database(LocalizedString& errors,
                                                     MessageSink& success_sink,
                                                     const std::string& port_name,
-                                                    const CiVerifyVersionsDbEntry& db,
+                                                    const SourceControlFileAndLocation& scfl,
+                                                    FullGitVersionsDatabase& versions_database,
                                                     const std::string& local_git_tree)
     {
         bool success = true;
-        if (db.entries.empty())
+        const auto& versions_database_entry = versions_database.lookup(port_name);
+        auto maybe_entries = versions_database_entry.entries.get();
+        if (!maybe_entries)
+        {
+            // exists, but parse or file I/O error happened
+            return;
+        }
+
+        auto entries = maybe_entries->get();
+        if (!entries)
         {
             success = false;
-            errors.append_raw(db.versions_file_path)
+            errors.append_raw(scfl.control_location)
+                .append_raw(": ")
+                .append(msgErrorMessage)
+                .append(msgVersionDatabaseFileMissing,
+                        msg::package_name = port_name,
+                        msg::path = versions_database_entry.versions_file_path)
+                .append_raw('\n');
+            return;
+        }
+
+        if (entries->empty())
+        {
+            success = false;
+            errors.append_raw(versions_database_entry.versions_file_path)
                 .append_raw(": ")
                 .append(msgErrorMessage)
                 .append(msgInvalidNoVersions)
                 .append_raw('\n');
         }
 
-        const auto local_port_version = db.scf.source_control_file->to_schemed_version();
+        const auto local_port_version = scfl.source_control_file->to_schemed_version();
 
-        auto versions_end = db.entries.end();
-        auto it = std::find_if(db.entries.begin(), versions_end, [&](const GitVersionDbEntry& entry) {
+        auto versions_end = entries->end();
+        auto it = std::find_if(entries->begin(), versions_end, [&](const GitVersionDbEntry& entry) {
             return entry.version.version == local_port_version.version;
         });
 
         if (it == versions_end)
         {
             success = false;
-            errors.append_raw(db.scf.control_location)
+            errors.append_raw(scfl.control_location)
                 .append_raw(": ")
                 .append(msgErrorMessage)
                 .append(msgVersionNotFoundInVersionsFile2,
                         msg::version_spec = VersionSpec{port_name, local_port_version.version},
                         msg::package_name = port_name,
-                        msg::path = db.versions_file_path)
+                        msg::path = versions_database_entry.versions_file_path)
                 .append_raw('\n');
             return;
         }
@@ -223,14 +226,14 @@ namespace
         {
             success = false;
             // assume the port is correct, so report the error on the version database file
-            errors.append_raw(db.versions_file_path)
+            errors.append_raw(versions_database_entry.versions_file_path)
                 .append_raw(": ")
                 .append(msgErrorMessage)
                 .append(msgVersionSchemeMismatch,
                         msg::version = version_entry.version.version,
                         msg::expected = get_scheme_name(version_entry.version.scheme),
                         msg::actual = get_scheme_name(local_port_version.scheme),
-                        msg::path = db.port_directory,
+                        msg::path = scfl.port_directory(),
                         msg::package_name = port_name)
                 .append_raw('\n');
         }
@@ -238,7 +241,7 @@ namespace
         if (local_git_tree != version_entry.git_tree)
         {
             success = false;
-            errors.append_raw(db.versions_file_path)
+            errors.append_raw(versions_database_entry.versions_file_path)
                 .append_raw(": ")
                 .append(msgErrorMessage)
                 .append(msgVersionShaMismatch1,
@@ -246,7 +249,7 @@ namespace
                         msg::expected = version_entry.git_tree,
                         msg::actual = local_git_tree,
                         msg::package_name = port_name,
-                        msg::path = db.port_directory)
+                        msg::path = scfl.port_directory())
                 .append_raw('\n')
                 .append_indent()
                 .append_raw("vcpkg x-add-version " + port_name + "\n")
@@ -268,7 +271,7 @@ namespace
 
         if (success)
         {
-            success_sink.println(LocalizedString::from_raw(db.port_directory)
+            success_sink.println(LocalizedString::from_raw(scfl.port_directory())
                                      .append_raw(": ")
                                      .append(msgVersionVerifiedOK2,
                                              msg::version_spec = VersionSpec{port_name, local_port_version.version},
@@ -281,13 +284,13 @@ namespace
                                             const std::map<std::string, Version, std::less<>> baseline,
                                             const Path& baseline_path,
                                             const std::string& port_name,
-                                            const CiVerifyVersionsDbEntry& db)
+                                            const SourceControlFileAndLocation& scfl)
     {
-        const auto local_port_version = db.scf.source_control_file->to_schemed_version();
+        const auto local_port_version = scfl.source_control_file->to_schemed_version();
         auto maybe_baseline = baseline.find(port_name);
         if (maybe_baseline == baseline.end())
         {
-            errors.append_raw(db.scf.control_location)
+            errors.append_raw(scfl.control_location)
                 .append_raw(": ")
                 .append(msgErrorMessage)
                 .append(msgBaselineMissing, msg::package_name = port_name, msg::version = local_port_version.version)
@@ -317,17 +320,24 @@ namespace
         }
     }
 
-    bool verify_dependency_and_version_constraint(
-        const Dependency& dependency,
-        const std::string* feature_name,
-        LocalizedString& errors,
-        const CiVerifyVersionsDbEntry& db,
-        const std::map<std::string, CiVerifyVersionsDbEntry, std::less<>>& versions_database)
+    bool verify_dependency_and_version_constraint(const Dependency& dependency,
+                                                  const std::string* feature_name,
+                                                  LocalizedString& errors,
+                                                  const SourceControlFileAndLocation& scfl,
+                                                  FullGitVersionsDatabase& versions_database)
     {
-        auto dependent_versions = versions_database.find(dependency.name);
-        if (dependent_versions == versions_database.end())
+        auto dependent_versions_db_entry = versions_database.lookup(dependency.name);
+        auto maybe_dependent_entries = dependent_versions_db_entry.entries.get();
+        if (!maybe_dependent_entries)
         {
-            errors.append_raw(db.scf.control_location)
+            // versions database parse or I/O error
+            return false;
+        }
+
+        auto dependent_entries = maybe_dependent_entries->get();
+        if (!dependent_entries)
+        {
+            errors.append_raw(scfl.control_location)
                 .append_raw(": ")
                 .append(msgErrorMessage)
                 .append(msgDependencyNotInVersionDatabase, msg::package_name = dependency.name)
@@ -344,17 +354,17 @@ namespace
 
         auto maybe_minimum_version = dependency.constraint.try_get_minimum_version();
         auto minimum_version = maybe_minimum_version.get();
-        if (minimum_version && Util::none_of(dependent_versions->second.entries, [=](const GitVersionDbEntry& entry) {
+        if (minimum_version && Util::none_of(*dependent_entries, [=](const GitVersionDbEntry& entry) {
                 return entry.version.version == *minimum_version;
             }))
         {
-            errors.append_raw(db.scf.control_location)
+            errors.append_raw(scfl.control_location)
                 .append_raw(": ")
                 .append(msgErrorMessage)
                 .append(msgVersionConstraintNotInDatabase,
                         msg::package_name = dependency.name,
                         msg::version = *minimum_version,
-                        msg::path = dependent_versions->second.versions_file_path)
+                        msg::path = dependent_versions_db_entry.versions_file_path)
                 .append_raw('\n');
             if (feature_name)
             {
@@ -369,36 +379,43 @@ namespace
         return true;
     }
 
-    void verify_all_dependencies_and_version_constraints(
-        LocalizedString& errors,
-        MessageSink& success_sink,
-        const CiVerifyVersionsDbEntry& db,
-        const std::map<std::string, CiVerifyVersionsDbEntry, std::less<>>& versions_database)
+    void verify_all_dependencies_and_version_constraints(LocalizedString& errors,
+                                                         MessageSink& success_sink,
+                                                         const SourceControlFileAndLocation& scfl,
+                                                         FullGitVersionsDatabase& versions_database)
     {
         bool success = true;
 
-        for (auto&& core_dependency : db.scf.source_control_file->core_paragraph->dependencies)
+        for (auto&& core_dependency : scfl.source_control_file->core_paragraph->dependencies)
         {
             success &=
-                verify_dependency_and_version_constraint(core_dependency, nullptr, errors, db, versions_database);
+                verify_dependency_and_version_constraint(core_dependency, nullptr, errors, scfl, versions_database);
         }
 
-        for (auto&& feature : db.scf.source_control_file->feature_paragraphs)
+        for (auto&& feature : scfl.source_control_file->feature_paragraphs)
         {
             for (auto&& feature_dependency : feature->dependencies)
             {
                 success &= verify_dependency_and_version_constraint(
-                    feature_dependency, &feature->name, errors, db, versions_database);
+                    feature_dependency, &feature->name, errors, scfl, versions_database);
             }
         }
 
-        for (auto&& override_ : db.scf.source_control_file->core_paragraph->overrides)
+        for (auto&& override_ : scfl.source_control_file->core_paragraph->overrides)
         {
-            auto override_versions = versions_database.find(override_.name);
-            if (override_versions == versions_database.end())
+            auto override_versions_db_entry = versions_database.lookup(override_.name);
+            auto maybe_override_entries = override_versions_db_entry.entries.get();
+            if (!maybe_override_entries)
             {
                 success = false;
-                errors.append_raw(db.scf.control_location)
+                continue;
+            }
+
+            auto override_entries = maybe_override_entries->get();
+            if (!override_entries)
+            {
+                success = false;
+                errors.append_raw(scfl.control_location)
                     .append_raw(": ")
                     .append(msgErrorMessage)
                     .append(msgVersionOverrideNotInVersionDatabase, msg::package_name = override_.name)
@@ -406,18 +423,18 @@ namespace
                 continue;
             }
 
-            if (Util::none_of(override_versions->second.entries, [&](const GitVersionDbEntry& entry) {
+            if (Util::none_of(*override_entries, [&](const GitVersionDbEntry& entry) {
                     return entry.version.version == override_.version.version;
                 }))
             {
                 success = false;
-                errors.append_raw(db.scf.control_location)
+                errors.append_raw(scfl.control_location)
                     .append_raw(": ")
                     .append(msgErrorMessage)
                     .append(msgVersionOverrideVersionNotInVersionDatabase,
                             msg::package_name = override_.name,
                             msg::version = override_.version.version,
-                            msg::path = override_versions->second.versions_file_path)
+                            msg::path = override_versions_db_entry.versions_file_path)
                     .append_raw('\n');
             }
         }
@@ -425,7 +442,7 @@ namespace
         if (success)
         {
             success_sink.println(
-                LocalizedString::from_raw(db.scf.control_location).append_raw(": ").append(msgVersionConstraintOk));
+                LocalizedString::from_raw(scfl.control_location).append_raw(": ").append(msgVersionConstraintOk));
         }
     }
 
@@ -460,95 +477,90 @@ namespace vcpkg
         bool verbose = Util::Sets::contains(parsed_args.switches, OPTION_VERBOSE);
         bool verify_git_trees = Util::Sets::contains(parsed_args.switches, OPTION_VERIFY_GIT_TREES);
 
-        auto maybe_port_git_tree_map = paths.git_get_local_port_treeish_map();
-        if (!maybe_port_git_tree_map)
-        {
-            Checks::msg_exit_with_error(VCPKG_LINE_INFO,
-                                        msg::format(msgFailedToObtainLocalPortGitSha)
-                                            .append_raw('\n')
-                                            .append_raw(maybe_port_git_tree_map.error()));
-        }
-
-        auto& port_git_tree_map = maybe_port_git_tree_map.value_or_exit(VCPKG_LINE_INFO);
-
-        // Baseline is required.
-        auto baseline = get_builtin_baseline(paths).value_or_exit(VCPKG_LINE_INFO);
+        auto port_git_tree_map = paths.git_get_local_port_treeish_map().value_or_exit(VCPKG_LINE_INFO);
         auto& fs = paths.get_filesystem();
+        auto versions_database =
+            load_all_git_versions_files(fs, paths.builtin_registry_versions).value_or_exit(VCPKG_LINE_INFO);
+        auto baseline = get_builtin_baseline(paths).value_or_exit(VCPKG_LINE_INFO);
+
+        std::map<std::string, SourceControlFileAndLocation, std::less<>> local_ports;
+
         LocalizedString errors;
-        std::map<std::string, CiVerifyVersionsDbEntry, std::less<>> versions_database;
         for (auto&& port_path : fs.get_directories_non_recursive(paths.builtin_ports_directory(), VCPKG_LINE_INFO))
         {
             auto port_name = port_path.stem().to_string();
             auto maybe_loaded_port = Paragraphs::try_load_port_required(fs, port_name, port_path).maybe_scfl;
             auto loaded_port = maybe_loaded_port.get();
-            if (!loaded_port)
+            if (loaded_port)
             {
-                errors.append(std::move(maybe_loaded_port).error()).append_raw('\n');
-                continue;
+                local_ports.emplace(port_name, std::move(*loaded_port));
             }
 
-            auto load_versions_result = load_git_versions_file(fs, paths.builtin_registry_versions, port_name);
-            auto maybe_versions_db = load_versions_result.entries.get();
-            if (!maybe_versions_db)
-            {
-                errors.append(std::move(load_versions_result.entries).error()).append_raw('\n');
-                continue;
-            }
-
-            auto versions_db = maybe_versions_db->get();
-            if (!versions_db)
-            {
-                errors.append_raw(loaded_port->control_location)
-                    .append_raw(": ")
-                    .append(msgErrorMessage)
-                    .append(msgVersionDatabaseFileMissing,
-                            msg::package_name = port_name,
-                            msg::path = load_versions_result.versions_file_path)
-                    .append_raw('\n');
-                continue;
-            }
-
-            versions_database.emplace(std::move(port_name),
-                                      CiVerifyVersionsDbEntry{std::move(*loaded_port),
-                                                              std::move(port_path),
-                                                              std::move(*versions_db),
-                                                              std::move(load_versions_result.versions_file_path)});
+            errors.append(std::move(maybe_loaded_port).error()).append_raw('\n');
         }
 
         auto& success_sink = verbose ? stdout_sink : null_sink;
-        for (const auto& port : versions_database)
+        for (const auto& local_port : local_ports)
         {
-            const auto& port_name = port.first;
-            const auto& db = port.second;
+            const auto& port_name = local_port.first;
+            const auto& scfl = local_port.second;
             auto git_tree_it = port_git_tree_map.find(port_name);
             if (git_tree_it == port_git_tree_map.end())
             {
-                errors.append_raw(db.scf.control_location)
+                errors.append_raw(scfl.control_location)
                     .append_raw(": ")
                     .append(msgErrorMessage)
-                    .append(msgVersionShaMissing, msg::package_name = port_name, msg::path = db.port_directory)
+                    .append(msgVersionShaMissing, msg::package_name = port_name, msg::path = scfl.port_directory())
                     .append_raw('\n');
             }
             else
             {
-                verify_local_port_matches_version_database(errors, success_sink, port_name, db, git_tree_it->second);
+                verify_local_port_matches_version_database(
+                    errors, success_sink, port_name, scfl, versions_database, git_tree_it->second);
             }
 
             verify_local_port_matches_baseline(
-                errors, success_sink, baseline, paths.builtin_registry_versions / "baseline.json", port_name, db);
+                errors, success_sink, baseline, paths.builtin_registry_versions / "baseline.json", port_name, scfl);
+
+            verify_all_dependencies_and_version_constraints(errors, success_sink, scfl, versions_database);
+        }
+
+        // We run version database checks at the end in case any of the above created new cache entries
+        for (auto&& versions_cache_entry : versions_database.cache())
+        {
+            auto&& port_name = versions_cache_entry.first;
+            auto maybe_entries = versions_cache_entry.second.entries.get();
+            if (!maybe_entries)
+            {
+                errors.append(versions_cache_entry.second.entries.error()).append_raw('\n');
+                continue;
+            }
+
+            auto entries = maybe_entries->get();
+            if (!entries)
+            {
+                // missing version database entry is OK; should have been reported as one of the other error categories
+                // by one of the other checks
+                continue;
+            }
 
             if (verify_git_trees)
             {
-                verify_all_historical_git_trees(errors, success_sink, paths, port_name, db);
+                for (auto&& version_entry : *entries)
+                {
+                    verify_git_tree(errors,
+                                    success_sink,
+                                    paths,
+                                    port_name,
+                                    versions_cache_entry.second.versions_file_path,
+                                    version_entry);
+                }
             }
-
-            verify_all_dependencies_and_version_constraints(errors, success_sink, db, versions_database);
         }
 
         if (!errors.empty())
         {
             errors.append_raw('\n');
-            errors.append(msgSuggestResolution, msg::command_name = "x-add-version", msg::option = "all");
             Checks::msg_exit_with_message(VCPKG_LINE_INFO, errors);
         }
 

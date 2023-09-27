@@ -1688,6 +1688,83 @@ namespace vcpkg
         return {std::move(result), std::move(versions_file_path)};
     }
 
+    FullGitVersionsDatabase::FullGitVersionsDatabase(
+        const ReadOnlyFilesystem& fs,
+        const Path& registry_versions,
+        std::map<std::string, GitVersionsLoadResult, std::less<>>&& initial)
+        : m_fs(&fs), m_registry_versions(registry_versions), m_cache(std::move(initial))
+    {
+    }
+
+    FullGitVersionsDatabase::FullGitVersionsDatabase(const FullGitVersionsDatabase&) = default;
+    FullGitVersionsDatabase::FullGitVersionsDatabase(FullGitVersionsDatabase&&) = default;
+    FullGitVersionsDatabase& FullGitVersionsDatabase::operator=(const FullGitVersionsDatabase&) = default;
+    FullGitVersionsDatabase& FullGitVersionsDatabase::operator=(FullGitVersionsDatabase&&) = default;
+
+    const GitVersionsLoadResult& FullGitVersionsDatabase::lookup(StringView port_name)
+    {
+        auto it = m_cache.lower_bound(port_name);
+        if (it != m_cache.end() && port_name >= it->first)
+        {
+            return it->second;
+        }
+
+        return m_cache.emplace_hint(it, port_name, load_git_versions_file(*m_fs, m_registry_versions, port_name))
+            ->second;
+    }
+
+    const std::map<std::string, GitVersionsLoadResult, std::less<>>& FullGitVersionsDatabase::cache() const
+    {
+        return m_cache;
+    }
+
+    ExpectedL<FullGitVersionsDatabase> load_all_git_versions_files(const ReadOnlyFilesystem& fs,
+                                                                   const Path& registry_versions)
+    {
+        auto maybe_letter_directories = fs.try_get_directories_non_recursive(registry_versions);
+        auto letter_directories = maybe_letter_directories.get();
+        if (!letter_directories)
+        {
+            return std::move(maybe_letter_directories).error();
+        }
+
+        std::map<std::string, GitVersionsLoadResult, std::less<>> initial_result;
+        for (auto&& letter_directory : *letter_directories)
+        {
+            auto maybe_versions_files = fs.try_get_files_non_recursive(letter_directory);
+            auto versions_files = maybe_versions_files.get();
+            if (!versions_files)
+            {
+                return std::move(maybe_versions_files).error();
+            }
+
+            for (auto&& versions_file : *versions_files)
+            {
+                auto port_name_json = versions_file.filename();
+                static constexpr StringLiteral dot_json = ".json";
+                if (!Strings::ends_with(port_name_json, dot_json))
+                {
+                    continue;
+                }
+
+                StringView port_name{port_name_json.data(), port_name_json.size() - dot_json.size()};
+                auto maybe_port_versions = load_git_versions_file_impl(fs, versions_file);
+                if (!maybe_port_versions)
+                {
+                    maybe_port_versions.error()
+                        .append_raw('\n')
+                        .append(msgNoteMessage)
+                        .append(
+                            msgWhileParsingVersionsForPort, msg::package_name = port_name, msg::path = versions_file);
+                }
+
+                initial_result.emplace(port_name, GitVersionsLoadResult{std::move(maybe_port_versions), versions_file});
+            }
+        }
+
+        return FullGitVersionsDatabase{fs, registry_versions, std::move(initial_result)};
+    }
+
     ExpectedL<Optional<std::vector<FilesystemVersionDbEntry>>> load_filesystem_versions_file(
         const ReadOnlyFilesystem& fs, const Path& registry_versions, StringView port_name, const Path& registry_root)
     {
