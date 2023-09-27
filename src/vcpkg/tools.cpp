@@ -542,7 +542,8 @@ namespace vcpkg
             }
         }
 
-        virtual void add_system_paths(const ReadOnlyFilesystem& fs, std::vector<Path>& out_candidate_paths) const override
+        virtual void add_system_paths(const ReadOnlyFilesystem& fs,
+                                      std::vector<Path>& out_candidate_paths) const override
         {
             const auto& program_files = get_program_files_platform_bitness();
             if (const auto pf = program_files.get())
