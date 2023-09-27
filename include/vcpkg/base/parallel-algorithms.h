@@ -1,18 +1,7 @@
 #pragma once
 
-// At this time only MSVC supports parallel algorithms by default
-// Gcc needs tbb as a runtime dependency
-// Clang doesn't support parallel algorithms at all
+#include <vcpkg/base/system.h>
 
-#if defined(_MSC_VER)
-#include <algorithm>
-#include <execution>
-#include <mutex>
-
-#define vcpkg_parallel_for_each(BEGIN, END, CB) std::for_each(std::execution::par, BEGIN, END, CB)
-#define vcpkg_par_unseq_for_each(BEGIN, END, CB) std::for_each(std::execution::par_unseq, BEGIN, END, CB)
-
-#else
 #include <atomic>
 #include <future>
 #include <vector>
@@ -20,47 +9,42 @@
 namespace vcpkg
 {
     template<class It, class F>
-    void parallel_for_each(It begin, It end, F&& cb)
+    void parallel_for_each(It begin, size_t work_count, F&& cb)
     {
-        if (begin == end)
+        if (work_count == 0)
         {
             return;
         }
-        if (begin + 1 == end)
+        if (work_count == 1)
         {
-            return cb(std::move(*begin));
+            cb(*begin);
+            return;
         }
 
-        const auto thread_count = std::thread::hardware_concurrency() * 2;
-        const ptrdiff_t work_count = std::distance(begin, end);
-        const auto num_threads = static_cast<size_t>(
-            std::max(static_cast<ptrdiff_t>(1), std::min(static_cast<ptrdiff_t>(thread_count), work_count)));
+        const size_t thread_count = static_cast<size_t>(get_concurrency());
+        const size_t num_threads = std::max(static_cast<size_t>(1), std::min(thread_count, work_count));
 
-        std::vector<std::thread> workers;
-        workers.reserve(num_threads);
+        std::vector<std::future<void>> workers;
+        workers.reserve(num_threads - 1);
 
         std::atomic_size_t next{0};
         auto work = [&]() {
             size_t i;
-            while (i = next.fetch_add(1, std::memory_order_relaxed), i < static_cast<size_t>(work_count))
+            while (i = next.fetch_add(1, std::memory_order_relaxed), i < work_count)
             {
-                cb(std::move(*(begin + i)));
+                cb(*(begin + i));
             }
         };
 
         for (size_t i = 0; i < num_threads - 1; ++i)
         {
-            workers.emplace_back(work);
+            workers.emplace_back(std::async(std::launch::async, [&work]() { work(); }));
         }
         work();
 
         for (auto&& w : workers)
         {
-            w.join();
+            w.get();
         }
     }
 }
-
-#define vcpkg_parallel_for_each(BEGIN, END, CB) ::vcpkg::parallel_for_each(BEGIN, END, CB)
-#define vcpkg_par_unseq_for_each(BEGIN, END, CB) vcpkg_parallel_for_each(BEGIN, END, CB)
-#endif

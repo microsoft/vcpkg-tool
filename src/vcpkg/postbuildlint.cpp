@@ -1284,15 +1284,14 @@ namespace vcpkg
         std::vector<Path> failing_files;
         std::mutex mtx;
         auto files = fs.get_regular_files_recursive(dir, IgnoreErrors{});
-        auto work = [&](auto&& file) {
+
+        parallel_for_each(files.begin(), files.size(), [&](const Path& file) {
             if (file_contains_absolute_paths(fs, file, stringview_paths))
             {
                 std::lock_guard lock{mtx};
-                failing_files.push_back(std::move(file));
+                failing_files.push_back(file);
             }
-        };
-
-        vcpkg_parallel_for_each(files.begin(), files.end(), work);
+        });
 
         if (failing_files.empty())
         {
