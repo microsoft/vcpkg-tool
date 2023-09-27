@@ -96,7 +96,7 @@ Vcpkg 会收集使用情况数据，以帮助我们改善您的体验。
 Microsoft 收集的数据是匿名的。
 您也可以通过以下步骤禁用数据收集：
 - 将选项 `-disableMetrics` 传递给 bootstrap-vcpkg 脚本并重新运行此脚本
-- 向 Vcpkg 命令传递选项 `--disable-metrics`
+- 向 vcpkg 命令传递选项 `--disable-metrics`
 - 设置环境变量 `VCPKG_DISABLE_METRICS`
 
-请在 [https://learn.microsoft.com/vcpkg/about/privacy](https://learn.microsoft.com/vcpkg/about/privacy) 中了解有关 Vcpkg 数据收集的更多信息。
+请在 [https://learn.microsoft.com/vcpkg/about/privacy](https://learn.microsoft.com/vcpkg/about/privacy) 中了解有关 vcpkg 数据收集的更多信息。
