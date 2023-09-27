@@ -147,7 +147,7 @@ namespace vcpkg
             else
             {
                 auto maybe_manifest =
-                    Paragraphs::try_load_port_manifest_text(contents->content, contents->origin, stdout_sink);
+                    Paragraphs::try_load_project_manifest_text(contents->content, contents->origin, stdout_sink);
                 if (auto manifest = maybe_manifest.get())
                 {
                     to_write.push_back(ToWrite{contents->content, std::move(*manifest), path});

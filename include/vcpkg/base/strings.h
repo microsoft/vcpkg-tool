@@ -110,7 +110,7 @@ namespace vcpkg::Strings
         if (first != last)
         {
             Strings::append(output, transformer(*first));
-            for (++first; first != last; ++first)
+            while (++first != last)
             {
                 output.append(delimiter.data(), delimiter.size());
                 Strings::append(output, transformer(*first));

@@ -40,6 +40,9 @@ namespace vcpkg::Paragraphs
     PortLoadResult try_load_port_required(const ReadOnlyFilesystem& fs,
                                           StringView port_name,
                                           const Path& port_directory);
+    ExpectedL<SourceControlFileAndLocation> try_load_project_manifest_text(StringView text,
+                                                                           StringView origin,
+                                                                           MessageSink& warning_sink);
     ExpectedL<SourceControlFileAndLocation> try_load_port_manifest_text(StringView text,
                                                                         StringView origin,
                                                                         MessageSink& warning_sink);

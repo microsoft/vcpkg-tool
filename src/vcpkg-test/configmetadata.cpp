@@ -41,9 +41,9 @@ static Configuration parse_test_configuration(StringView text)
 {
     auto object = Json::parse_object(text).value_or_exit(VCPKG_LINE_INFO);
 
-    Json::Reader reader;
+    Json::Reader reader{"test"};
     auto parsed_config_opt = reader.visit(object, get_configuration_deserializer());
-    REQUIRE(reader.errors().empty());
+    REQUIRE(reader.messages().empty());
 
     return std::move(parsed_config_opt).value_or_exit(VCPKG_LINE_INFO);
 }
@@ -60,11 +60,11 @@ static void check_errors(const std::string& config_text, const std::string& expe
 {
     auto object = Json::parse_object(config_text).value_or_exit(VCPKG_LINE_INFO);
 
-    Json::Reader reader;
+    Json::Reader reader{"test"};
     auto parsed_config_opt = reader.visit(object, get_configuration_deserializer());
-    REQUIRE(!reader.errors().empty());
+    REQUIRE(reader.error_count() != 0);
 
-    CHECK_LINES(Strings::join("\n", reader.errors()), expected_errors);
+    CHECK_LINES(Json::join(reader.messages()).data(), expected_errors);
 }
 
 TEST_CASE ("config registries only", "[ce-metadata]")
@@ -154,7 +154,7 @@ TEST_CASE ("config registries only", "[ce-metadata]")
     }
 })json";
         check_errors(raw_no_baseline, R"(
-$.default-registry (a builtin registry): missing required field 'baseline' (a baseline)
+test: error: $.default-registry (a builtin registry): missing required field 'baseline' (a baseline)
 )");
 
         std::string raw_with_packages = R"json({
@@ -165,7 +165,7 @@ $.default-registry (a builtin registry): missing required field 'baseline' (a ba
     }
 })json";
         check_errors(raw_with_packages, R"(
-$.default-registry (a registry): unexpected field 'packages', did you mean 'path'?
+test: error: $.default-registry (a registry): unexpected field 'packages', did you mean 'path'?
 )");
 
         std::string raw_default_artifact = R"json({
@@ -176,7 +176,7 @@ $.default-registry (a registry): unexpected field 'packages', did you mean 'path
     }
 })json";
         check_errors(raw_default_artifact, R"(
-$ (a configuration object): The default registry cannot be an artifact registry.
+test: error: $ (a configuration object): The default registry cannot be an artifact registry.
 )");
         std::string raw_bad_kind = R"json({
     "registries": [{
@@ -184,8 +184,8 @@ $ (a configuration object): The default registry cannot be an artifact registry.
     }]
 })json";
         check_errors(raw_bad_kind, R"(
-$.registries[0] (a registry): "kind" did not have an expected value: (expected one of: builtin, filesystem, git, artifact; found custom)
-$.registries[0]: mismatched type: expected a registry
+test: error: $.registries[0] (a registry): "kind" did not have an expected value: (expected one of: builtin, filesystem, git, artifact; found custom)
+test: error: $.registries[0]: mismatched type: expected a registry
 )");
 
         std::string raw_bad_fs_registry = R"json({
@@ -197,8 +197,8 @@ $.registries[0]: mismatched type: expected a registry
     }]
 })json";
         check_errors(raw_bad_fs_registry, R"(
-$.registries[0] (a filesystem registry): unexpected field 'reference', did you mean 'baseline'?
-$.registries[0] (a registry): missing required field 'packages' (a package pattern array)
+test: error: $.registries[0] (a filesystem registry): unexpected field 'reference', did you mean 'baseline'?
+test: error: $.registries[0] (a registry): missing required field 'packages' (a package pattern array)
 )");
 
         std::string raw_bad_git_registry = R"json({
@@ -211,11 +211,11 @@ $.registries[0] (a registry): missing required field 'packages' (a package patte
     }]
 })json";
         check_errors(raw_bad_git_registry, R"(
-$.registries[0] (a registry): unexpected field 'no-repository', did you mean 'repository'?
-$.registries[0] (a git registry): missing required field 'repository' (a git repository URL)
-$.registries[0].reference: mismatched type: expected a git reference (for example, a branch)
-$.registries[0] (a git registry): unexpected field 'no-repository', did you mean 'repository'?
-$.registries[0].packages: mismatched type: expected a package pattern array
+test: error: $.registries[0] (a registry): unexpected field 'no-repository', did you mean 'repository'?
+test: error: $.registries[0] (a git registry): missing required field 'repository' (a git repository URL)
+test: error: $.registries[0].reference: mismatched type: expected a git reference (for example, a branch)
+test: error: $.registries[0] (a git registry): unexpected field 'no-repository', did you mean 'repository'?
+test: error: $.registries[0].packages: mismatched type: expected a package pattern array
 )");
 
         std::string raw_bad_artifact_registry = R"json({
@@ -227,12 +227,12 @@ $.registries[0].packages: mismatched type: expected a package pattern array
     }]
 })json";
         check_errors(raw_bad_artifact_registry, R"(
-$.registries[0] (a registry): unexpected field 'no-location', did you mean 'location'?
-$.registries[0] (an artifacts registry): missing required field 'name' (an identifier)
-$.registries[0] (an artifacts registry): missing required field 'location' (an artifacts git registry URL)
-$.registries[0] (an artifacts registry): unexpected field 'no-location', did you mean 'location'?
-$.registries[0] (an artifacts registry): unexpected field 'baseline', did you mean 'kind'?
-$.registries[0] (an artifacts registry): unexpected field 'packages', did you mean 'name'?
+test: error: $.registries[0] (a registry): unexpected field 'no-location', did you mean 'location'?
+test: error: $.registries[0] (an artifacts registry): missing required field 'name' (an identifier)
+test: error: $.registries[0] (an artifacts registry): missing required field 'location' (an artifacts git registry URL)
+test: error: $.registries[0] (an artifacts registry): unexpected field 'no-location', did you mean 'location'?
+test: error: $.registries[0] (an artifacts registry): unexpected field 'baseline', did you mean 'kind'?
+test: error: $.registries[0] (an artifacts registry): unexpected field 'packages', did you mean 'name'?
 )");
     }
 }
@@ -320,9 +320,9 @@ TEST_CASE ("metadata strings", "[ce-metadata]")
 })json";
 
         check_errors(invalid_raw, R"(
-$.error: mismatched type: expected a string
-$.warning: mismatched type: expected a string
-$.message: mismatched type: expected a string
+test: error: $.error: mismatched type: expected a string
+test: error: $.warning: mismatched type: expected a string
+test: error: $.message: mismatched type: expected a string
 )");
     }
 }
@@ -382,12 +382,12 @@ TEST_CASE ("metadata dictionaries", "[ce-metadata]")
     }
 })json";
         check_errors(invalid_raw, R"(
-$ (settings): expected an object
-$.requires (a "string": "string" dictionary): value of ["fruits/a/apple"] must be a string
-$.requires (a "string": "string" dictionary): value of ["fruits/a/avocado"] must be a string
-$.demands (settings): expected an object
-$.demands.requires (a "string": "string" dictionary): value of ["fruits/a/apple"] must be a string
-$.demands.requires (a "string": "string" dictionary): value of ["fruits/a/avocado"] must be a string
+test: error: $ (settings): expected an object
+test: error: $.requires (a "string": "string" dictionary): value of ["fruits/a/apple"] must be a string
+test: error: $.requires (a "string": "string" dictionary): value of ["fruits/a/avocado"] must be a string
+test: error: $.demands (settings): expected an object
+test: error: $.demands.requires (a "string": "string" dictionary): value of ["fruits/a/apple"] must be a string
+test: error: $.demands.requires (a "string": "string" dictionary): value of ["fruits/a/avocado"] must be a string
 )");
     }
 }
@@ -455,12 +455,12 @@ TEST_CASE ("metadata demands", "[ce-metadata]")
     }
 })json";
         check_errors(invalid_raw, R"(
-$.demands (a demand object): value of ["a"] must be an object
-$.demands (a demand object): value of ["b"] must be an object
-$.demands (a demand object): value of ["c"] must be an object
-$.demands (a demand object): value of ["d"] must be an object
-$.demands (a demand object): value of ["e"] must be an object
-$.demands (a demand object): ["f"] contains a nested `demands` object (nested `demands` have no effect)
+test: error: $.demands (a demand object): value of ["a"] must be an object
+test: error: $.demands (a demand object): value of ["b"] must be an object
+test: error: $.demands (a demand object): value of ["c"] must be an object
+test: error: $.demands (a demand object): value of ["d"] must be an object
+test: error: $.demands (a demand object): value of ["e"] must be an object
+test: error: $.demands (a demand object): ["f"] contains a nested `demands` object (nested `demands` have no effect)
 )");
     }
 }
@@ -492,7 +492,7 @@ TEST_CASE ("serialize configuration", "[ce-metadata]")
 	]
 })json";
         check_errors(raw, R"(
-$.overlay-ports[2]: mismatched type: expected an overlay path
+test: error: $.overlay-ports[2]: mismatched type: expected an overlay path
 )");
     }
 
@@ -516,7 +516,7 @@ $.overlay-ports[2]: mismatched type: expected an overlay path
 	]
 })json";
         check_errors(raw, R"(
-$.overlay-triplets[0]: mismatched type: expected a triplet path
+test: error: $.overlay-triplets[0]: mismatched type: expected a triplet path
 )");
     }
 

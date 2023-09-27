@@ -39,34 +39,35 @@ enum class PrintErrors : bool
     Yes,
 };
 
-static ParseExpected<SourceControlFile> test_parse_project_manifest(const Json::Object& obj,
-                                                                    PrintErrors print = PrintErrors::Yes)
+static ExpectedL<std::unique_ptr<SourceControlFile>> test_parse_project_manifest(const Json::Object& obj,
+                                                                                 PrintErrors print = PrintErrors::Yes)
 {
     auto res = SourceControlFile::parse_project_manifest_object("<test manifest>", obj, null_sink);
     if (!res.has_value() && print == PrintErrors::Yes)
     {
-        print_error_message(LocalizedString::from_raw(res.error()->to_string()));
+        msg::println(Color::error, res.error());
     }
     return res;
 }
 
-static ParseExpected<SourceControlFile> test_parse_port_manifest(const Json::Object& obj,
-                                                                 PrintErrors print = PrintErrors::Yes)
+static ExpectedL<std::unique_ptr<SourceControlFile>> test_parse_port_manifest(const Json::Object& obj,
+                                                                              PrintErrors print = PrintErrors::Yes)
 {
     auto res = SourceControlFile::parse_port_manifest_object("<test manifest>", obj, null_sink);
     if (!res.has_value() && print == PrintErrors::Yes)
     {
-        print_error_message(LocalizedString::from_raw(res.error()->to_string()));
+        msg::println(Color::error, res.error());
     }
     return res;
 }
 
-static ParseExpected<SourceControlFile> test_parse_project_manifest(StringView obj,
-                                                                    PrintErrors print = PrintErrors::Yes)
+static ExpectedL<std::unique_ptr<SourceControlFile>> test_parse_project_manifest(StringView obj,
+                                                                                 PrintErrors print = PrintErrors::Yes)
 {
     return test_parse_project_manifest(parse_json_object(obj), print);
 }
-static ParseExpected<SourceControlFile> test_parse_port_manifest(StringView obj, PrintErrors print = PrintErrors::Yes)
+static ExpectedL<std::unique_ptr<SourceControlFile>> test_parse_port_manifest(StringView obj,
+                                                                              PrintErrors print = PrintErrors::Yes)
 {
     return test_parse_port_manifest(parse_json_object(obj), print);
 }
@@ -886,7 +887,7 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
     auto res = SourceControlFile::parse_port_manifest_object("<test manifest>", object, null_sink);
     if (!res.has_value())
     {
-        print_error_message(LocalizedString::from_raw(res.error()->to_string()));
+        msg::println(Color::error, res.error());
     }
     REQUIRE(res.has_value());
     REQUIRE(*res.get() != nullptr);

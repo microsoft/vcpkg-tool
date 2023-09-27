@@ -1227,7 +1227,6 @@ DECLARE_MESSAGE(FailedToDetermineCurrentCommit, (), "", "Failed to determine the
 DECLARE_MESSAGE(FailedToDownloadFromMirrorSet, (), "", "Failed to download from mirror set")
 DECLARE_MESSAGE(FailedToExtract, (msg::path), "", "Failed to extract \"{path}\":")
 DECLARE_MESSAGE(FailedToFetchRepo, (msg::url), "", "Failed to fetch {url}.")
-DECLARE_MESSAGE(FailedToFindBaseline, (), "", "Failed to find baseline.json")
 DECLARE_MESSAGE(FailedToFindPortFeature,
                 (msg::feature, msg::package_name),
                 "",
@@ -1258,9 +1257,6 @@ DECLARE_MESSAGE(FailedToParseCMakeConsoleOut,
                 (),
                 "",
                 "Failed to parse CMake console output to locate block start/end markers.")
-DECLARE_MESSAGE(FailedToParseBaseline, (msg::path), "", "Failed to parse baseline: {path}")
-DECLARE_MESSAGE(FailedToParseConfig, (msg::path), "", "Failed to parse configuration: {path}")
-DECLARE_MESSAGE(FailedToParseControl, (msg::path), "", "Failed to parse CONTROL file: {path}")
 DECLARE_MESSAGE(FailedToParseNoTopLevelObj, (msg::path), "", "Failed to parse {path}, expected a top-level object.")
 DECLARE_MESSAGE(FailedToParseNoVersionsArray, (msg::path), "", "Failed to parse {path}, expected a 'versions' array.")
 DECLARE_MESSAGE(FailedToParseSerializedBinParagraph,
@@ -1269,7 +1265,6 @@ DECLARE_MESSAGE(FailedToParseSerializedBinParagraph,
                 "[sanity check] Failed to parse a serialized binary paragraph.\nPlease open an issue at "
                 "https://github.com/microsoft/vcpkg, "
                 "with the following output:\n{error_msg}\nSerialized Binary Paragraph:")
-DECLARE_MESSAGE(FailedToParseVersionsFile, (msg::path), "", "failed to parse versions file {path}")
 DECLARE_MESSAGE(FailedToParseVersionXML,
                 (msg::tool_name, msg::version),
                 "",
@@ -3150,7 +3145,6 @@ DECLARE_MESSAGE(WarningMessageMustUsePrintWarning,
                 "The message named {value} starts with warning:, it must be changed to prepend "
                 "WarningMessage in code instead.")
 DECLARE_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors")
-DECLARE_MESSAGE(WarnOnParseConfig, (msg::path), "", "Found the following warnings in configuration {path}:")
 DECLARE_MESSAGE(WhileCheckingOutBaseline, (msg::commit_sha), "", "while checking out baseline {commit_sha}")
 DECLARE_MESSAGE(WhileCheckingOutPortTreeIsh,
                 (msg::package_name, msg::commit_sha),

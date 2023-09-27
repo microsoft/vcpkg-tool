@@ -1322,19 +1322,15 @@ namespace
             return {nullopt, expected_left_tag};
         }
 
-        Json::Reader r;
+        Json::Reader r{origin};
         std::map<std::string, Version, std::less<>> result;
         r.visit_in_key(*baseline_value, real_baseline, result, BaselineDeserializer::instance);
-        if (r.errors().empty())
+        if (r.error_count() == 0)
         {
-            return {std::move(result), expected_left_tag};
+            return Optional<Baseline>{std::move(result)};
         }
-        else
-        {
-            return msg::format_error(msgFailedToParseBaseline, msg::path = origin)
-                .append_raw('\n')
-                .append_raw(Strings::join("\n", r.errors()));
-        }
+
+        return join(r.messages());
     }
 
     ExpectedL<Optional<Baseline>> load_baseline_versions(const ReadOnlyFilesystem& fs,
@@ -1347,7 +1343,6 @@ namespace
         {
             if (ec == std::errc::no_such_file_or_directory)
             {
-                msg::println(msgFailedToFindBaseline);
                 return {nullopt, expected_left_tag};
             }
 
@@ -1623,12 +1618,11 @@ namespace
 
         std::vector<GitVersionDbEntry> db_entries;
         GitVersionDbEntryArrayDeserializer deserializer{};
-        Json::Reader r;
+        Json::Reader r{versions_file_path};
         r.visit_in_key(*maybe_versions_array, "versions", db_entries, deserializer);
-        if (!r.errors().empty())
+        if (r.error_count() != 0)
         {
-            return msg::format_error(msgFailedToParseVersionsFile, msg::path = versions_file_path)
-                .append_raw(Strings::join("\n", r.errors()));
+            return join(r.messages());
         }
 
         return db_entries;
@@ -1664,12 +1658,11 @@ namespace
 
         std::vector<FilesystemVersionDbEntry> db_entries;
         FilesystemVersionDbEntryArrayDeserializer deserializer{registry_root};
-        Json::Reader r;
+        Json::Reader r{versions_file_path};
         r.visit_in_key(*maybe_versions_array, "versions", db_entries, deserializer);
-        if (!r.errors().empty())
+        if (r.error_count() != 0)
         {
-            return msg::format_error(msgFailedToParseVersionsFile, msg::path = versions_file_path)
-                .append_raw(Strings::join("\n", r.errors()));
+            return join(r.messages());
         }
 
         return db_entries;

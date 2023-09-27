@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vcpkg/base/fwd/json.h>
+#include <vcpkg/base/fwd/parse.h>
 
 #include <vcpkg/base/chrono.h>
 #include <vcpkg/base/json.h>
@@ -42,20 +43,34 @@ namespace vcpkg::Json
         IDeserializer& operator=(IDeserializer&&) = default;
     };
 
+    struct ReaderMessage
+    {
+        MessageKind kind;
+        LocalizedString message;
+
+        ReaderMessage(MessageKind kind, LocalizedString&& message);
+        ReaderMessage(const ReaderMessage&);
+        ReaderMessage(ReaderMessage&&);
+        ReaderMessage& operator=(const ReaderMessage&);
+        ReaderMessage& operator=(ReaderMessage&&);
+    };
+
+    LocalizedString join(const std::vector<ReaderMessage>& messages);
+    LocalizedString flatten_reader_messages(const std::vector<ReaderMessage>& messages, MessageSink& warningsSink);
+
     struct Reader
     {
-        Reader();
+        explicit Reader(StringView origin);
 
-        const std::vector<LocalizedString>& errors() const { return m_errors; }
+        const std::vector<ReaderMessage>& messages() const { return m_messages; }
+        std::size_t error_count() const { return m_error_count; }
 
         void add_missing_field_error(const LocalizedString& type, StringView key, const LocalizedString& key_type);
         void add_expected_type_error(const LocalizedString& expected_type);
         void add_extra_field_error(const LocalizedString& type, StringView fields, StringView suggestion = {});
-        void add_generic_error(const LocalizedString& type, LocalizedString&& message);
+        void add_generic_error(const LocalizedString& type, StringView message);
 
         void add_warning(LocalizedString type, StringView msg);
-
-        const std::vector<LocalizedString>& warnings() const { return m_warnings; }
 
         std::string path() const noexcept;
 
@@ -63,8 +78,8 @@ namespace vcpkg::Json
         template<class Type>
         friend struct IDeserializer;
 
-        std::vector<LocalizedString> m_errors;
-        std::vector<LocalizedString> m_warnings;
+        std::vector<ReaderMessage> m_messages;
+        std::size_t m_error_count;
         struct JsonPathElement
         {
             constexpr JsonPathElement() = default;
@@ -88,6 +103,7 @@ namespace vcpkg::Json
             std::vector<JsonPathElement>& m_path;
         };
 
+        StringView m_origin;
         std::vector<JsonPathElement> m_path;
 
     public:

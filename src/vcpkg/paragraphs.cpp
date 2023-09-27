@@ -15,6 +15,8 @@
 
 #include <tuple>
 
+using namespace vcpkg;
+
 static std::atomic<uint64_t> g_load_ports_stats(0);
 
 namespace vcpkg
@@ -400,17 +402,21 @@ namespace vcpkg::Paragraphs
         return fs.exists(maybe_directory / "CONTROL", IgnoreErrors{}) ||
                fs.exists(maybe_directory / "vcpkg.json", IgnoreErrors{});
     }
+} // namespace vcpkg::Paragraphs
 
-    ExpectedL<SourceControlFileAndLocation> try_load_port_manifest_text(StringView text,
-                                                                        StringView origin,
-                                                                        MessageSink& warning_sink)
+namespace
+{
+    ExpectedL<SourceControlFileAndLocation> try_load_any_manifest_text(
+        StringView text,
+        StringView origin,
+        MessageSink& warning_sink,
+        ExpectedL<std::unique_ptr<SourceControlFile>> (*do_parse)(StringView, const Json::Object&, MessageSink&))
     {
         StatsTimer timer(g_load_ports_stats);
         auto maybe_object = Json::parse_object(text, origin);
         if (auto object = maybe_object.get())
         {
-            auto maybe_parsed = map_parse_expected_to_localized_string(
-                SourceControlFile::parse_port_manifest_object(origin, *object, warning_sink));
+            auto maybe_parsed = do_parse(origin, *object, warning_sink);
             if (auto parsed = maybe_parsed.get())
             {
                 return SourceControlFileAndLocation{std::move(*parsed), origin.to_string()};
@@ -420,6 +426,23 @@ namespace vcpkg::Paragraphs
         }
 
         return std::move(maybe_object).error();
+    }
+}
+
+namespace vcpkg::Paragraphs
+{
+    ExpectedL<SourceControlFileAndLocation> try_load_project_manifest_text(StringView text,
+                                                                           StringView origin,
+                                                                           MessageSink& warning_sink)
+    {
+        return try_load_any_manifest_text(text, origin, warning_sink, SourceControlFile::parse_project_manifest_object);
+    }
+
+    ExpectedL<SourceControlFileAndLocation> try_load_port_manifest_text(StringView text,
+                                                                        StringView origin,
+                                                                        MessageSink& warning_sink)
+    {
+        return try_load_any_manifest_text(text, origin, warning_sink, SourceControlFile::parse_port_manifest_object);
     }
 
     ExpectedL<SourceControlFileAndLocation> try_load_control_file_text(StringView text, StringView origin)

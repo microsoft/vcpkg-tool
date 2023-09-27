@@ -1299,37 +1299,16 @@ namespace vcpkg
                                                                   StringView origin,
                                                                   MessageSink& warningsSink)
     {
-        Json::Reader reader;
+        Json::Reader reader{origin};
         auto res = reader.visit(manifest, ManifestConfigurationDeserializer::instance);
 
-        if (!reader.warnings().empty())
+        LocalizedString flat_errors = flatten_reader_messages(reader.messages(), warningsSink);
+        if (flat_errors.empty())
         {
-            warningsSink.println(Color::warning, msgWarnOnParseConfig, msg::path = origin);
-            for (auto&& warning : reader.warnings())
-            {
-                warningsSink.println(Color::warning, LocalizedString::from_raw(warning));
-            }
-            warningsSink.println(Color::warning, msgExtendedDocumentationAtUrl, msg::url = docs::registries_url);
-            warningsSink.println(Color::warning, msgExtendedDocumentationAtUrl, msg::url = docs::manifests_url);
+            return std::move(res).value_or_exit(VCPKG_LINE_INFO);
         }
 
-        if (!reader.errors().empty())
-        {
-            LocalizedString ret;
-            ret.append(msgFailedToParseConfig, msg::path = origin);
-            ret.append_raw('\n');
-            for (auto&& err : reader.errors())
-            {
-                ret.append_indent().append(err).append_raw("\n");
-            }
-            ret.append(msgExtendedDocumentationAtUrl, msg::url = docs::registries_url);
-            ret.append_raw('\n');
-            ret.append(msgExtendedDocumentationAtUrl, msg::url = docs::manifests_url);
-            ret.append_raw('\n');
-            return std::move(ret);
-        }
-
-        return std::move(res).value_or_exit(VCPKG_LINE_INFO);
+        return flat_errors;
     }
 
     SourceControlFile SourceControlFile::clone() const
@@ -1344,46 +1323,34 @@ namespace vcpkg
     }
 
     template<class ManifestDeserializerType>
-    static ParseExpected<SourceControlFile> parse_manifest_object_impl(StringView origin,
-                                                                       const Json::Object& manifest,
-                                                                       MessageSink& warnings_sink)
+    static ExpectedL<std::unique_ptr<SourceControlFile>> parse_manifest_object_impl(StringView origin,
+                                                                                    const Json::Object& manifest,
+                                                                                    MessageSink& warnings_sink)
     {
-        Json::Reader reader;
-
+        Json::Reader reader{origin};
         auto res = reader.visit(manifest, ManifestDeserializerType::instance);
+        LocalizedString flat_errors = flatten_reader_messages(reader.messages(), warnings_sink);
+        if (flat_errors.empty())
+        {
+            if (auto p = res.get())
+            {
+                return std::move(*p);
+            }
 
-        for (auto&& w : reader.warnings())
-        {
-            warnings_sink.print(Color::warning, LocalizedString::from_raw(Strings::concat(origin, ": ", w, '\n')));
-        }
-
-        if (!reader.errors().empty())
-        {
-            auto err = std::make_unique<ParseControlErrorInfo>();
-            err->name = origin.to_string();
-            err->other_errors = std::move(reader.errors());
-            return err;
-        }
-        else if (auto p = res.get())
-        {
-            return std::move(*p);
-        }
-        else
-        {
             Checks::unreachable(VCPKG_LINE_INFO);
         }
+
+        return flat_errors;
     }
 
-    ParseExpected<SourceControlFile> SourceControlFile::parse_project_manifest_object(StringView origin,
-                                                                                      const Json::Object& manifest,
-                                                                                      MessageSink& warnings_sink)
+    ExpectedL<std::unique_ptr<SourceControlFile>> SourceControlFile::parse_project_manifest_object(
+        StringView origin, const Json::Object& manifest, MessageSink& warnings_sink)
     {
         return parse_manifest_object_impl<ProjectManifestDeserializer>(origin, manifest, warnings_sink);
     }
 
-    ParseExpected<SourceControlFile> SourceControlFile::parse_port_manifest_object(StringView origin,
-                                                                                   const Json::Object& manifest,
-                                                                                   MessageSink& warnings_sink)
+    ExpectedL<std::unique_ptr<SourceControlFile>> SourceControlFile::parse_port_manifest_object(
+        StringView origin, const Json::Object& manifest, MessageSink& warnings_sink)
     {
         return parse_manifest_object_impl<PortManifestDeserializer>(origin, manifest, warnings_sink);
     }

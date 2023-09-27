@@ -99,8 +99,11 @@ namespace vcpkg
             auto pmanifest_scf = maybe_manifest_scf.get();
             if (!pmanifest_scf)
             {
-                print_error_message(LocalizedString::from_raw(maybe_manifest_scf.error()->to_string()));
-                msg::println(Color::error, msg::msgSeeURL, msg::url = docs::manifests_url);
+                msg::println(Color::error,
+                             std::move(maybe_manifest_scf)
+                                 .error()
+                                 .append_raw('\n')
+                                 .append(msg::msgSeeURL, msg::url = docs::manifests_url));
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
