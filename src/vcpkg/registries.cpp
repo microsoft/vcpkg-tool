@@ -1696,9 +1696,7 @@ namespace vcpkg
     {
     }
 
-    FullGitVersionsDatabase::FullGitVersionsDatabase(const FullGitVersionsDatabase&) = default;
     FullGitVersionsDatabase::FullGitVersionsDatabase(FullGitVersionsDatabase&&) = default;
-    FullGitVersionsDatabase& FullGitVersionsDatabase::operator=(const FullGitVersionsDatabase&) = default;
     FullGitVersionsDatabase& FullGitVersionsDatabase::operator=(FullGitVersionsDatabase&&) = default;
 
     const GitVersionsLoadResult& FullGitVersionsDatabase::lookup(StringView port_name)

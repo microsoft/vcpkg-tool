@@ -192,9 +192,7 @@ namespace vcpkg
         explicit FullGitVersionsDatabase(const ReadOnlyFilesystem& fs,
                                          const Path& registry_versions,
                                          std::map<std::string, GitVersionsLoadResult, std::less<>>&& initial);
-        FullGitVersionsDatabase(const FullGitVersionsDatabase&);
         FullGitVersionsDatabase(FullGitVersionsDatabase&&);
-        FullGitVersionsDatabase& operator=(const FullGitVersionsDatabase&);
         FullGitVersionsDatabase& operator=(FullGitVersionsDatabase&&);
 
         const GitVersionsLoadResult& lookup(StringView port_name);
