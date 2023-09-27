@@ -1292,7 +1292,7 @@ namespace vcpkg
             }
         };
 
-        vcpkg_par_unseq_for_each(files.begin(), files.end(), work);
+        vcpkg_parallel_for_each(files.begin(), files.end(), work);
 
         if (failing_files.empty())
         {
