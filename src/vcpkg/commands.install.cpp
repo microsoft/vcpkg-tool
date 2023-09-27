@@ -977,6 +977,13 @@ namespace vcpkg
         return ret;
     }
 
+    bool cmake_args_sets_variable(const VcpkgCmdArguments& args) {
+        auto sets_variable = [] (std::string_view str) {
+            return (str.find("-D") == 0); // starts_with is c++20
+        };
+        return std::any_of(args.cmake_args.cbegin(), args.cmake_args.cend(),sets_variable);
+    }
+
     void command_install_and_exit(const VcpkgCmdArguments& args,
                                   const VcpkgPaths& paths,
                                   Triplet default_triplet,
@@ -991,7 +998,7 @@ namespace vcpkg
         const bool only_downloads = Util::Sets::contains(options.switches, (OPTION_ONLY_DOWNLOADS));
         const bool no_build_missing = Util::Sets::contains(options.switches, OPTION_ONLY_BINARYCACHING);
         const bool is_recursive = Util::Sets::contains(options.switches, (OPTION_RECURSE));
-        const bool is_editable = Util::Sets::contains(options.switches, (OPTION_EDITABLE)) || !args.cmake_args.empty();
+        const bool is_editable = Util::Sets::contains(options.switches, (OPTION_EDITABLE)) || cmake_args_sets_variable(args);
         const bool use_aria2 = Util::Sets::contains(options.switches, (OPTION_USE_ARIA2));
         const bool clean_after_build = Util::Sets::contains(options.switches, (OPTION_CLEAN_AFTER_BUILD));
         const bool clean_buildtrees_after_build =
