@@ -5,6 +5,7 @@ DECLARE_MESSAGE(ABuiltinRegistry, (), "", "a builtin registry")
 DECLARE_MESSAGE(AConfigurationObject, (), "", "a configuration object")
 DECLARE_MESSAGE(ADependency, (), "", "a dependency")
 DECLARE_MESSAGE(ADependencyFeature, (), "", "a feature in a dependency")
+DECLARE_MESSAGE(ADependencyFeatureName, (), "", "the name of a feature of a dependency")
 DECLARE_MESSAGE(ADemandObject,
                 (),
                 "'demands' are a concept in the schema of a JSON file the user can edit",
@@ -994,6 +995,19 @@ DECLARE_MESSAGE(DeleteVcpkgConfigFromManifest,
                 (msg::path),
                 "",
                 "-- Or remove \"vcpkg-configuration\" from the manifest file {path}.")
+DECLARE_MESSAGE(DependencyCoreFeature,
+                (),
+                "The word 'core' is an on-disk name that must not be localized. The 'default-features' part is JSON "
+                "syntax that must be copied verbatim into the user's file.",
+                "The feature 'core' cannot be in a dependency's feature list. To turn off default features, add "
+                "\"default-features\": false instead.")
+DECLARE_MESSAGE(DependencyDefaultFeature,
+                (),
+                "The word 'default' is an on-disk name that must not be localized. The 'default-features' part is JSON "
+                "syntax that must be copied verbatim into the user's file.",
+                "The feature 'default' cannot be in a dependency's feature list. To turn on default features, add "
+                "\"default-features\": true instead.")
+DECLARE_MESSAGE(DependencyEmptyFeature, (), "", "the name of a dependent feature can't be empty.")
 DECLARE_MESSAGE(DependencyGraphCalculation, (), "", "Dependency graph submission enabled.")
 DECLARE_MESSAGE(DependencyGraphFailure, (), "", "Dependency graph submission failed.")
 DECLARE_MESSAGE(DependencyGraphSuccess, (), "", "Dependency graph submission successful.")
