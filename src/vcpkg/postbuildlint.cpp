@@ -1465,11 +1465,8 @@ namespace vcpkg
         error_count += check_pkgconfig_dir_only_in_lib_dir(fs, package_dir, msg_sink);
         if (!build_info.policies.is_enabled(BuildPolicy::SKIP_ABSOLUTE_PATHS_CHECK))
         {
-            error_count += check_no_absolute_paths_in(
-                fs,
-                package_dir,
-                std::array<Path, 4>{package_dir, paths.installed().root(), paths.build_dir(spec), paths.downloads},
-                msg_sink);
+            Path tests[] = {package_dir, paths.installed().root(), paths.build_dir(spec), paths.downloads};
+            error_count += check_no_absolute_paths_in(fs, package_dir, tests, msg_sink);
         }
 
         return error_count;

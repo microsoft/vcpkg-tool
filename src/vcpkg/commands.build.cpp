@@ -1268,9 +1268,9 @@ namespace vcpkg
             return;
         }
 
-        auto current_build_tree = paths.build_dir(action.spec);
-        fs.create_directory(current_build_tree, VCPKG_LINE_INFO);
-        auto abi_file_path = std::move(current_build_tree) / (triplet_canonical_name + ".vcpkg_abi_info.txt");
+        auto abi_file_path = paths.build_dir(action.spec);
+        fs.create_directory(abi_file_path, VCPKG_LINE_INFO);
+        abi_file_path /= triplet_canonical_name + ".vcpkg_abi_info.txt";
         fs.write_contents(abi_file_path, full_abi_info, VCPKG_LINE_INFO);
 
         auto& scf = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_control_file;
