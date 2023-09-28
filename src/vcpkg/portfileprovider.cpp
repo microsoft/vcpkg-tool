@@ -208,8 +208,12 @@ namespace vcpkg
                         else
                         {
                             // This should change to a soft error when ParseExpected is eliminated.
-                            print_error_message(maybe_control_file.error());
-                            msg::println();
+                            print_error_message(
+                                maybe_control_file.error()
+                                    .append_raw('\n')
+                                    .append(msgNoteMessage)
+                                    .append(msgWhileLoadingPortVersion, msg::version_spec = version_spec)
+                                    .append_raw('\n'));
                             Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
                         }
                     }
