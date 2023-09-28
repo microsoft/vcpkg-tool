@@ -1238,9 +1238,6 @@ DECLARE_MESSAGE(
     "The control or manifest file for {package_name} could not be loaded due to the following error. Please "
     "remove {package_name} and try again.")
 DECLARE_MESSAGE(FailedToLoadManifest, (msg::path), "", "Failed to load manifest from directory {path}")
-DECLARE_MESSAGE(FailedToLoadPort, (msg::package_name, msg::path), "", "Failed to load port {package_name} from {path}")
-DECLARE_MESSAGE(FailedToLoadPortFrom, (msg::path), "", "Failed to load port from {path}")
-DECLARE_MESSAGE(FailedToLoadUnnamedPortFromPath, (msg::path), "", "Failed to load port from {path}")
 DECLARE_MESSAGE(FailedToLocateSpec, (msg::spec), "", "Failed to locate spec in graph: {spec}")
 DECLARE_MESSAGE(FailedToObtainDependencyVersion, (), "", "Cannot find desired dependency version.")
 DECLARE_MESSAGE(FailedToObtainPackageVersion, (), "", "Cannot find desired package version.")

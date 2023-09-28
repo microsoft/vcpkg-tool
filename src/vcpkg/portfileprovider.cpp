@@ -209,10 +209,8 @@ namespace vcpkg
                         {
                             // This should change to a soft error when ParseExpected is eliminated.
                             print_error_message(maybe_control_file.error());
-                            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                                           msgFailedToLoadPort,
-                                                           msg::package_name = version_spec.port_name,
-                                                           msg::path = path->path);
+                            msg::println();
+                            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
                         }
                     }
                     else
@@ -300,10 +298,8 @@ namespace vcpkg
                         else
                         {
                             print_error_message(maybe_scf.error());
-                            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                                           msgFailedToLoadPort,
-                                                           msg::package_name = port_name,
-                                                           msg::path = ports_dir);
+                            msg::println();
+                            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
                         }
 
                         continue;
@@ -322,8 +318,9 @@ namespace vcpkg
 
                             Checks::msg_exit_maybe_upgrade(
                                 VCPKG_LINE_INFO,
-                                msg::format(msgFailedToLoadPort, msg::package_name = port_name, msg::path = ports_spec)
-                                    .append_raw('\n')
+                                LocalizedString::from_raw(ports_spec)
+                                    .append_raw(": ")
+                                    .append(msgErrorMessage)
                                     .append(msgMismatchedNames,
                                             msg::package_name = port_name,
                                             msg::actual = scfp->source_control_file->core_paragraph->name));
@@ -331,10 +328,8 @@ namespace vcpkg
                         else
                         {
                             print_error_message(found_scf.error());
-                            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                                           msgFailedToLoadPort,
-                                                           msg::package_name = port_name,
-                                                           msg::path = ports_dir);
+                            msg::println();
+                            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
                         }
                     }
                 }
@@ -375,8 +370,8 @@ namespace vcpkg
                         else
                         {
                             print_error_message(maybe_scf.error());
-                            Checks::msg_exit_maybe_upgrade(
-                                VCPKG_LINE_INFO, msgFailedToLoadUnnamedPortFromPath, msg::path = ports_dir);
+                            msg::println();
+                            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
                         }
 
                         continue;
