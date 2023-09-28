@@ -1,5 +1,6 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/jsonreader.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.new.h>
@@ -52,18 +53,6 @@ namespace vcpkg
         nullptr,
     };
 
-    static bool isValidName(const std::string& name)
-    {
-        for (char ch : name)
-        {
-            if (!(std::islower(ch) || ch == '-'))
-            {
-                return false;
-            }
-        }
-        return true;
-    }
-
     ExpectedL<Json::Object> build_prototype_manifest(const std::string* name,
                                                      const std::string* version,
                                                      bool option_application,
@@ -89,7 +78,7 @@ namespace vcpkg
                 return msg::format_error(msgNewNameCannotBeEmpty);
             }
 
-            if (!isValidName(*name))
+            if (!Json::IdentifierDeserializer::is_ident(*name))
             {
                 return msg::format_error(msgParseIdentifierError,
                                          msg::value = *name,
