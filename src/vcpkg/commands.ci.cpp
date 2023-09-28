@@ -69,7 +69,7 @@ namespace
                 for (const Path& p : children)
                 {
                     filesystem.copy_file(
-                        p, std::move(target_path) / p.filename(), CopyOptions::overwrite_existing, VCPKG_LINE_INFO);
+                        p, target_path / p.filename(), CopyOptions::overwrite_existing, VCPKG_LINE_INFO);
                 }
             }
         }
