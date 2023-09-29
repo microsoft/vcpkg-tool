@@ -24,8 +24,8 @@ namespace vcpkg
         constexpr const char* begin() const noexcept { return m_ptr; }
         constexpr const char* end() const noexcept { return m_ptr + m_size; }
 
-        const char& front() const noexcept { return *m_ptr; }
-        const char& back() const noexcept { return m_ptr[m_size - 1]; }
+        constexpr const char& front() const noexcept { return *m_ptr; }
+        constexpr const char& back() const noexcept { return m_ptr[m_size - 1]; }
 
         std::reverse_iterator<const char*> rbegin() const noexcept { return std::make_reverse_iterator(end()); }
         std::reverse_iterator<const char*> rend() const noexcept { return std::make_reverse_iterator(begin()); }
@@ -41,7 +41,20 @@ namespace vcpkg
         void to_string(std::string& out) const;
         explicit operator std::string() const { return to_string(); }
 
-        StringView substr(size_t pos, size_t count = std::numeric_limits<size_t>::max()) const noexcept;
+        constexpr StringView substr(size_t pos, size_t count = std::numeric_limits<size_t>::max()) const noexcept
+        {
+            if (pos > m_size)
+            {
+                return StringView();
+            }
+
+            if (count > m_size - pos)
+            {
+                return StringView(m_ptr + pos, m_size - pos);
+            }
+
+            return StringView(m_ptr + pos, count);
+        }
 
         constexpr char operator[](size_t pos) const noexcept { return m_ptr[pos]; }
         friend std::string operator+(std::string&& l, const StringView& r);
@@ -73,7 +86,15 @@ namespace vcpkg
 
         // Note that only the 1 parameter version of substr is provided to preserve null termination
         // (The name from the base class is intentionally hidden)
-        ZStringView substr(size_t pos) const noexcept;
+        constexpr ZStringView substr(size_t pos) const noexcept
+        {
+            if (pos < size())
+            {
+                return ZStringView{data() + pos, size() - pos};
+            }
+
+            return ZStringView{};
+        }
     };
 
     struct StringLiteral : ZStringView
