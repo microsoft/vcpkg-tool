@@ -215,7 +215,7 @@ namespace vcpkg
                     }
                     else
                     {
-                        dependency.features.emplace_back(feature);
+                        dependency.features.push_back(DependencyRequestedFeature{feature});
                     }
                 }
                 return dependency;
