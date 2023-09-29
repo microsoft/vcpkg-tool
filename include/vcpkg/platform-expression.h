@@ -24,11 +24,8 @@ namespace vcpkg::PlatformExpression
         static Expr And(std::vector<Expr>&& exprs);
         static Expr Or(std::vector<Expr>&& exprs);
 
-        // The empty expression is always true
-        static Expr Empty() { return Expr(); }
-
         // since ExprImpl is not yet defined, we need to define the ctor and dtor in the C++ file
-        Expr();
+        Expr(); // always true
         Expr(const Expr&);
         Expr(Expr&&);
         Expr& operator=(const Expr& e);

@@ -112,7 +112,7 @@ namespace vcpkg
                 });
                 const auto features = Util::fmap(spec.features.value_or({}), [](const std::string& feature) {
                     Checks::check_exit(VCPKG_LINE_INFO, !feature.empty() && feature != "core" && feature != "default");
-                    return DependencyRequestedFeature{feature, PlatformExpression::Expr::Empty()};
+                    return DependencyRequestedFeature{feature};
                 });
                 if (dep == manifest_scf.core_paragraph->dependencies.end())
                 {

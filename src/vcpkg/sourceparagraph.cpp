@@ -506,7 +506,7 @@ namespace vcpkg
             else
             {
                 r.add_generic_error(type_name(), std::move(opt).error());
-                return PlatformExpression::Expr::Empty();
+                return PlatformExpression::Expr();
             }
         }
 
