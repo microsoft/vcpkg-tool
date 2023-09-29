@@ -185,8 +185,6 @@ namespace vcpkg
         return valid_fields;
     }
 
-    void print_error_message(Span<const std::unique_ptr<ParseControlErrorInfo>> error_info_list);
-
     static void trim_all(std::vector<std::string>& arr)
     {
         for (auto& el : arr)
@@ -1521,19 +1519,16 @@ namespace vcpkg
         return Strings::starts_with(sv, "Error") || Strings::starts_with(sv, "error: ");
     }
 
-    void print_error_message(View<LocalizedString> error_info_list)
+    void print_error_message(const LocalizedString& message)
     {
-        auto msg = Strings::join("\n", error_info_list, [](const LocalizedString& ls) { return ls.data(); });
-        msg.push_back('\n');
-
         // To preserve previous behavior, each line starting with "Error" should be error-colored. All other lines
         // should be neutral color.
 
         // To minimize the number of print calls on Windows (which is a significant performance bottleneck), this
         // algorithm chunks groups of similarly-colored lines.
-        const char* start_of_chunk = msg.data();
-        const char* end_of_chunk = msg.data();
-        const char* const last = msg.data() + msg.size();
+        const char* start_of_chunk = message.data().data();
+        const char* end_of_chunk = start_of_chunk;
+        const char* const last = start_of_chunk + message.data().size();
         while (end_of_chunk != last)
         {
             while (end_of_chunk != last && starts_with_error({end_of_chunk, last}))
@@ -1556,6 +1551,14 @@ namespace vcpkg
                 start_of_chunk = end_of_chunk;
             }
         }
+
+        msg::println();
+    }
+
+    void print_error_message(const std::unique_ptr<ParseControlErrorInfo>& error_info_list)
+    {
+        print_error_message(LocalizedString::from_raw(
+            ParseControlErrorInfo::format_errors(View<std::unique_ptr<ParseControlErrorInfo>>{&error_info_list, 1})));
     }
 
     Optional<const FeatureParagraph&> SourceControlFile::find_feature(StringView featurename) const

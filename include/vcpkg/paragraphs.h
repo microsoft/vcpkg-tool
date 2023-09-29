@@ -27,8 +27,8 @@ namespace vcpkg::Paragraphs
     bool is_port_directory(const ReadOnlyFilesystem& fs, const Path& maybe_directory);
 
     // If an error occurs, the Expected will be in the error state.
-    // Otherwise, if the port is known, the Optional contains the loaded port information.
-    // Otherwise, the Optional is disengaged.
+    // Otherwise, if the port is known, the unique_ptr contains the loaded port information.
+    // Otherwise, the unique_ptr is nullptr.
     ExpectedL<std::unique_ptr<SourceControlFile>> try_load_port(const ReadOnlyFilesystem& fs,
                                                                 StringView port_name,
                                                                 const Path& port_directory);

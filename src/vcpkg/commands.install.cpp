@@ -1104,7 +1104,7 @@ namespace vcpkg
                 SourceControlFile::parse_project_manifest_object(manifest->path, manifest->manifest, stdout_sink);
             if (!maybe_manifest_scf)
             {
-                print_error_message(LocalizedString::from_raw(maybe_manifest_scf.error()->to_string()));
+                print_error_message(maybe_manifest_scf.error());
                 msg::println(msgExtendedDocumentationAtUrl, msg::url = docs::manifests_url);
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
