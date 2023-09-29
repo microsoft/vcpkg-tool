@@ -37,6 +37,10 @@ $testEvilProjects | % {
        -or $output -notmatch 'error: Failed to parse manifest file: ' + $fullEscaped) {
         throw "error not detected in $full"
     }
+
+    if ($output -match 'mismatched type:') {
+        throw "duplicate mismatched type error"
+    }
 }
 
 Write-Trace "test re-serializing every manifest"

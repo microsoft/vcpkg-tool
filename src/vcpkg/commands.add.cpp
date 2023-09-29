@@ -111,6 +111,7 @@ namespace vcpkg
                            structurally_equal(spec.platform.value_or(PlatformExpression::Expr()), dep.platform);
                 });
                 const auto features = Util::fmap(spec.features.value_or({}), [](const std::string& feature) {
+                    Checks::check_exit(VCPKG_LINE_INFO, !feature.empty() && feature != "core" && feature != "default");
                     return DependencyRequestedFeature{feature, PlatformExpression::Expr::Empty()};
                 });
                 if (dep == manifest_scf.core_paragraph->dependencies.end())

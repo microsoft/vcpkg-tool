@@ -1,8 +1,0 @@
-{
-    "dependencies": [
-        {
-            "name": "icu",
-            "features": ["core"]
-        }
-    ]
-}

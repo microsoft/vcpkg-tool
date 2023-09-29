@@ -1,5 +1,6 @@
 ﻿DECLARE_MESSAGE(ABaseline, (), "", "a baseline")
 DECLARE_MESSAGE(ABaselineObject, (), "", "a baseline object")
+DECLARE_MESSAGE(ADefaultFeature, (), "", "a default feature")
 DECLARE_MESSAGE(ABoolean, (), "", "a boolean")
 DECLARE_MESSAGE(ABuiltinRegistry, (), "", "a builtin registry")
 DECLARE_MESSAGE(AConfigurationObject, (), "", "a configuration object")
@@ -124,6 +125,7 @@ DECLARE_MESSAGE(AmbiguousConfigDeleteConfigFile,
                 "configuration file {path}")
 DECLARE_MESSAGE(AnArtifactsGitRegistryUrl, (), "", "an artifacts git registry URL")
 DECLARE_MESSAGE(AnArtifactsRegistry, (), "", "an artifacts registry")
+DECLARE_MESSAGE(AnArrayOfDefaultFeatures, (), "", "an array of default features")
 DECLARE_MESSAGE(AnArrayOfDependencies, (), "", "an array of dependencies")
 DECLARE_MESSAGE(AnArrayOfDependencyOverrides, (), "", "an array of dependency overrides")
 DECLARE_MESSAGE(AnArrayOfFeatures, (), "", "an array of features")
@@ -981,6 +983,16 @@ DECLARE_MESSAGE(DefaultBinaryCacheRequiresDirectory,
                 (msg::path),
                 "",
                 "Environment variable VCPKG_DEFAULT_BINARY_CACHE must be a directory (was: {path})")
+DECLARE_MESSAGE(DefaultFeatureCore,
+                (),
+                "The word 'core' is an on-disk name that must not be localized.",
+                "the feature 'core' turns off default features and thus can't be in the default features list")
+DECLARE_MESSAGE(
+    DefaultFeatureDefault,
+    (),
+    "The word 'default' is an on-disk name that must not be localized.",
+    "the feature 'default' refers to the set of default features and thus can't be in the default features list")
+DECLARE_MESSAGE(DefaultFeatureIdentifier, (), "", "the names of default features must be identifiers")
 DECLARE_MESSAGE(DefaultFlag, (msg::option), "", "Defaulting to --{option} being on.")
 DECLARE_MESSAGE(DefaultRegistryIsArtifact, (), "", "The default registry cannot be an artifact registry.")
 DECLARE_MESSAGE(
@@ -995,19 +1007,18 @@ DECLARE_MESSAGE(DeleteVcpkgConfigFromManifest,
                 (msg::path),
                 "",
                 "-- Or remove \"vcpkg-configuration\" from the manifest file {path}.")
-DECLARE_MESSAGE(DependencyCoreFeature,
+DECLARE_MESSAGE(DependencyFeatureCore,
                 (),
                 "The word 'core' is an on-disk name that must not be localized. The 'default-features' part is JSON "
                 "syntax that must be copied verbatim into the user's file.",
                 "The feature 'core' cannot be in a dependency's feature list. To turn off default features, add "
                 "\"default-features\": false instead.")
-DECLARE_MESSAGE(DependencyDefaultFeature,
+DECLARE_MESSAGE(DependencyFeatureDefault,
                 (),
                 "The word 'default' is an on-disk name that must not be localized. The 'default-features' part is JSON "
                 "syntax that must be copied verbatim into the user's file.",
                 "The feature 'default' cannot be in a dependency's feature list. To turn on default features, add "
                 "\"default-features\": true instead.")
-DECLARE_MESSAGE(DependencyEmptyFeature, (), "", "the name of a dependent feature can't be empty.")
 DECLARE_MESSAGE(DependencyGraphCalculation, (), "", "Dependency graph submission enabled.")
 DECLARE_MESSAGE(DependencyGraphFailure, (), "", "Dependency graph submission failed.")
 DECLARE_MESSAGE(DependencyGraphSuccess, (), "", "Dependency graph submission successful.")

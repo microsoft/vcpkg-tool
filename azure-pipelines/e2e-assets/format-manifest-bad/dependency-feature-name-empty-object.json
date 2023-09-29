@@ -1,0 +1,8 @@
+{
+  "dependencies": [
+    {
+      "name": "icu",
+      "features": [ { "name": "" } ]
+    }
+  ]
+}

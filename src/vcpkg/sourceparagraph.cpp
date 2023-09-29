@@ -371,8 +371,31 @@ namespace vcpkg
         auto maybe_default_features = parse_default_features_list(buf, origin, textrowcol);
         if (const auto default_features = maybe_default_features.get())
         {
-            spgh->default_features = Util::fmap(
-                *default_features, [](const std::string& feature) { return DependencyRequestedFeature{feature}; });
+            for (auto&& default_feature : *default_features)
+            {
+                if (default_feature == "core")
+                {
+                    return ParseControlErrorInfo::from_error(origin, msg::format_error(msgDefaultFeatureCore));
+                }
+
+                if (default_feature == "default")
+                {
+                    return ParseControlErrorInfo::from_error(origin, msg::format_error(msgDefaultFeatureDefault));
+                }
+
+                if (!Json::IdentifierDeserializer::is_ident(default_feature))
+                {
+                    return ParseControlErrorInfo::from_error(origin,
+                                                             msg::format_error(msgDefaultFeatureIdentifier)
+                                                                 .append_raw('\n')
+                                                                 .append(msgNoteMessage)
+                                                                 .append(msgParseIdentifierError,
+                                                                         msg::value = default_feature,
+                                                                         msg::url = docs::manifests_url));
+                }
+
+                spgh->default_features.emplace_back(std::move(default_feature));
+            }
         }
         else
         {
@@ -491,6 +514,73 @@ namespace vcpkg
     };
     const PlatformExprDeserializer PlatformExprDeserializer::instance;
 
+    struct DefaultFeatureNameDeserializer : Json::IDeserializer<std::string>
+    {
+        virtual LocalizedString type_name() const override { return msg::format(msgADefaultFeature); }
+        virtual Optional<std::string> visit_string(Json::Reader& r, StringView sv) const override
+        {
+            if (sv == "core")
+            {
+                r.add_generic_error(type_name(), msg::format(msgDefaultFeatureCore));
+                return sv.to_string();
+            }
+
+            if (sv == "default")
+            {
+                r.add_generic_error(type_name(), msg::format(msgDefaultFeatureDefault));
+                return sv.to_string();
+            }
+
+            return Json::IdentifierDeserializer::instance.visit_string(r, sv);
+        }
+        static const DefaultFeatureNameDeserializer instance;
+    };
+
+    const DefaultFeatureNameDeserializer DefaultFeatureNameDeserializer::instance;
+
+    struct DefaultFeatureDeserializer : Json::IDeserializer<DependencyRequestedFeature>
+    {
+        LocalizedString type_name() const override { return msg::format(msgADefaultFeature); }
+
+        constexpr static StringLiteral NAME = "name";
+        constexpr static StringLiteral PLATFORM = "platform";
+
+        Span<const StringView> valid_fields() const override
+        {
+            static const StringView t[] = {
+                NAME,
+                PLATFORM,
+            };
+            return t;
+        }
+
+        Optional<DependencyRequestedFeature> visit_string(Json::Reader& r, StringView sv) const override
+        {
+            return DefaultFeatureNameDeserializer::instance.visit_string(r, sv).map(
+                [](std::string&& name) -> DependencyRequestedFeature { return std::move(name); });
+        }
+
+        Optional<DependencyRequestedFeature> visit_object(Json::Reader& r, const Json::Object& obj) const override
+        {
+            std::string name;
+            PlatformExpression::Expr platform;
+            r.required_object_field(type_name(), obj, NAME, name, DefaultFeatureNameDeserializer::instance);
+            r.optional_object_field(obj, PLATFORM, platform, PlatformExprDeserializer::instance);
+            return DependencyRequestedFeature{std::move(name), std::move(platform)};
+        }
+
+        const static DefaultFeatureDeserializer instance;
+    };
+    const DefaultFeatureDeserializer DefaultFeatureDeserializer::instance;
+
+    struct DefaultFeatureArrayDeserializer : Json::ArrayDeserializer<DefaultFeatureDeserializer>
+    {
+        LocalizedString type_name() const override { return msg::format(msgAnArrayOfDefaultFeatures); }
+
+        static const DefaultFeatureArrayDeserializer instance;
+    };
+    const DefaultFeatureArrayDeserializer DefaultFeatureArrayDeserializer::instance;
+
     struct DependencyFeatureNameDeserializer : Json::IDeserializer<std::string>
     {
         virtual LocalizedString type_name() const override { return msg::format(msgADependencyFeatureName); }
@@ -498,14 +588,14 @@ namespace vcpkg
         {
             if (sv == "core")
             {
-                r.add_generic_error(type_name(), msg::format(msgDependencyCoreFeature));
-                return nullopt;
+                r.add_generic_error(type_name(), msg::format(msgDependencyFeatureCore));
+                return sv.to_string();
             }
 
             if (sv == "default")
             {
-                r.add_generic_error(type_name(), msg::format(msgDependencyDefaultFeature));
-                return nullopt;
+                r.add_generic_error(type_name(), msg::format(msgDependencyFeatureDefault));
+                return sv.to_string();
             }
 
             return Json::IdentifierDeserializer::instance.visit_string(r, sv);
@@ -543,7 +633,6 @@ namespace vcpkg
             PlatformExpression::Expr platform;
             r.required_object_field(type_name(), obj, NAME, name, DependencyFeatureNameDeserializer::instance);
             r.optional_object_field(obj, PLATFORM, platform, PlatformExprDeserializer::instance);
-            if (name.empty()) return nullopt;
             return DependencyRequestedFeature{std::move(name), std::move(platform)};
         }
 
@@ -1196,7 +1285,7 @@ namespace vcpkg
 
             r.optional_object_field(obj, SUPPORTS, spgh.supports_expression, PlatformExprDeserializer::instance);
             r.optional_object_field(
-                obj, DEFAULT_FEATURES, spgh.default_features, DependencyFeatureArrayDeserializer::instance);
+                obj, DEFAULT_FEATURES, spgh.default_features, DefaultFeatureArrayDeserializer::instance);
 
             FeaturesObject features_tmp;
             r.optional_object_field(obj, FEATURES, features_tmp, FeaturesFieldDeserializer::instance);

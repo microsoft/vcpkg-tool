@@ -48,7 +48,6 @@ namespace vcpkg
         DependencyRequestedFeature(const std::string& name, PlatformExpression::Expr&& platform)
             : name(name), platform(std::move(platform))
         {
-            Checks::check_exit(VCPKG_LINE_INFO, !this->name.empty() && this->name != "core" && this->name != "default");
         }
         friend bool operator==(const DependencyRequestedFeature& lhs, const DependencyRequestedFeature& rhs);
         friend bool operator!=(const DependencyRequestedFeature& lhs, const DependencyRequestedFeature& rhs);
