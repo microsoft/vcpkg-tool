@@ -584,12 +584,13 @@ namespace vcpkg
         const auto arch = to_vcvarsall_toolchain(pre_build_info.target_architecture, toolset, pre_build_info.triplet);
         const auto target = to_vcvarsall_target(pre_build_info.cmake_system_name);
 
-        return vcpkg::Command{"cmd"}.string_arg("/c").raw_arg(fmt::format(R"("{}" {} {} {} {} 2>&1 <NUL)",
-                                                                          toolset.vcvarsall,
-                                                                          Strings::join(" ", toolset.vcvarsall_options),
-                                                                          arch,
-                                                                          target,
-                                                                          tonull));
+        return vcpkg::Command{"cmd"}.string_arg("/d").string_arg("/c").raw_arg(
+            fmt::format(R"("{}" {} {} {} {} 2>&1 <NUL)",
+                        toolset.vcvarsall,
+                        Strings::join(" ", toolset.vcvarsall_options),
+                        arch,
+                        target,
+                        tonull));
 #endif
     }
 
