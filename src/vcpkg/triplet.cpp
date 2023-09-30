@@ -159,7 +159,7 @@ namespace vcpkg
         return is_valid_triplet_canonical_name(Strings::ascii_to_lowercase(name));
     }
 
-    bool TripletDatabase ::is_valid_triplet_canonical_name(StringView name) const
+    bool TripletDatabase::is_valid_triplet_canonical_name(StringView name) const
     {
         return Util::any_of(available_triplets, [=](const TripletFile& tf) { return tf.name == name; });
     }
