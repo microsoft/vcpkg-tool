@@ -86,7 +86,7 @@ namespace vcpkg
 
         // Appends the names of the ports to the out parameter if this can be known without
         // network access.
-        // Returns true iff names were appended.
+        // Returns true iff names were checked without network access.
         virtual ExpectedL<bool> try_append_all_port_names_no_network(std::vector<std::string>& port_names) const = 0;
 
         // If an error occurs, the ExpectedL will be in an error state.

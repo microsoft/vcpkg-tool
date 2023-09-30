@@ -1108,7 +1108,9 @@ namespace vcpkg
                              std::move(maybe_manifest_scf)
                                  .error()
                                  .append_raw('\n')
-                                 .append(msgExtendedDocumentationAtUrl, msg::url = docs::manifests_url));
+								 .append(msgNoteMessage)
+                                 .append(msgExtendedDocumentationAtUrl, msg::url = docs::manifests_url)
+								 .append_raw('\n');
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
