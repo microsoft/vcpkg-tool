@@ -37,7 +37,8 @@ namespace
                          const GitVersionDbEntry& version_entry)
     {
         bool success = true;
-        auto maybe_extracted_tree = paths.git_checkout_port(port_name, version_entry.git_tree, paths.root / ".git");
+        auto maybe_extracted_tree = paths.git_checkout_port(
+            port_name, version_entry.git_tree, Path{paths.builtin_registry_versions.parent_path()} / ".git");
         auto extracted_tree = maybe_extracted_tree.get();
         if (!extracted_tree)
         {
@@ -81,20 +82,19 @@ namespace
         }
 
         auto&& git_tree_version = scfl->source_control_file->to_schemed_version();
-        if (version_entry.version.version != git_tree_version.version)
+        auto version_entry_spec = VersionSpec{port_name, version_entry.version.version};
+        auto scfl_spec = scfl->source_control_file->to_version_spec();
+        if (version_entry_spec != scfl_spec)
         {
             success = false;
             errors_sink.print(Color::error,
                               LocalizedString::from_raw(versions_file_path)
                                   .append_raw(": ")
                                   .append(msgErrorMessage)
-                                  .append(msgVersionInDeclarationDoesNotMatch, msg::version = git_tree_version.version)
-                                  .append_raw('\n')
-                                  .append(msgNoteMessage)
-                                  .append(msgCheckedOutGitSha, msg::commit_sha = version_entry.git_tree)
-                                  .append_raw('\n')
-                                  .append(msgNoteMessage)
-                                  .append(msgWhileValidatingVersion, msg::version = version_entry.version.version)
+                                  .append(msgVersionInDeclarationDoesNotMatch,
+                                          msg::commit_sha = version_entry.git_tree,
+                                          msg::expected = version_entry_spec,
+                                          msg::actual = scfl_spec)
                                   .append_raw('\n'));
         }
 
@@ -105,12 +105,20 @@ namespace
                               LocalizedString::from_raw(versions_file_path)
                                   .append_raw(": ")
                                   .append(msgErrorMessage)
-                                  .append(msgVersionSchemeMismatch,
+                                  .append(msgVersionSchemeMismatch1Old,
                                           msg::version = version_entry.version.version,
                                           msg::expected = get_scheme_name(version_entry.version.scheme),
                                           msg::actual = get_scheme_name(git_tree_version.scheme),
-                                          msg::path = version_entry.git_tree,
-                                          msg::package_name = port_name)
+                                          msg::package_name = port_name,
+                                          msg::commit_sha = version_entry.git_tree)
+                                  .append_raw('\n')
+                                  .append_raw(scfl->control_location)
+                                  .append_raw(": ")
+                                  .append(msgNoteMessage)
+                                  .append(msgPortDeclaredHere, msg::package_name = port_name)
+                                  .append_raw('\n')
+                                  .append(msgNoteMessage)
+                                  .append(msgVersionSchemeMismatch2)
                                   .append_raw('\n'));
         }
 
@@ -158,17 +166,6 @@ namespace
             return success;
         }
 
-        if (entries->empty())
-        {
-            success = false;
-            errors_sink.print(Color::error,
-                              LocalizedString::from_raw(versions_database_entry.versions_file_path)
-                                  .append_raw(": ")
-                                  .append(msgErrorMessage)
-                                  .append(msgInvalidNoVersions)
-                                  .append_raw('\n'));
-        }
-
         const auto local_port_version = scfl.source_control_file->to_schemed_version();
 
         auto versions_end = entries->end();
@@ -196,17 +193,29 @@ namespace
         {
             success = false;
             // assume the port is correct, so report the error on the version database file
-            errors_sink.print(Color::error,
-                              LocalizedString::from_raw(versions_database_entry.versions_file_path)
-                                  .append_raw(": ")
-                                  .append(msgErrorMessage)
-                                  .append(msgVersionSchemeMismatch,
-                                          msg::version = version_entry.version.version,
-                                          msg::expected = get_scheme_name(version_entry.version.scheme),
-                                          msg::actual = get_scheme_name(local_port_version.scheme),
-                                          msg::path = scfl.port_directory(),
-                                          msg::package_name = port_name)
-                                  .append_raw('\n'));
+            errors_sink.print(
+                Color::error,
+                LocalizedString::from_raw(versions_database_entry.versions_file_path)
+                    .append_raw(": ")
+                    .append(msgErrorMessage)
+                    .append(msgVersionSchemeMismatch1,
+                            msg::version = version_entry.version.version,
+                            msg::expected = get_scheme_name(version_entry.version.scheme),
+                            msg::actual = get_scheme_name(local_port_version.scheme),
+                            msg::package_name = port_name)
+                    .append_raw('\n')
+                    .append_raw(scfl.control_location)
+                    .append_raw(": ")
+                    .append(msgNoteMessage)
+                    .append(msgPortDeclaredHere, msg::package_name = port_name)
+                    .append_raw('\n')
+                    .append(msgNoteMessage)
+                    .append(msgVersionSchemeMismatch2)
+                    .append_raw('\n')
+                    .append(msgNoteMessage)
+                    .append(msgVersionOverwriteVersion,
+                            msg::version_spec = VersionSpec{port_name, local_port_version.version})
+                    .append_raw(fmt::format("\nvcpkg x-add-version {} --overwrite-version\n", port_name)));
         }
 
         if (local_git_tree != version_entry.git_tree)
@@ -267,12 +276,25 @@ namespace
         if (maybe_baseline == baseline.end())
         {
             errors_sink.print(Color::error,
-                              LocalizedString::from_raw(scfl.control_location)
+                              LocalizedString::from_raw(baseline_path)
                                   .append_raw(": ")
                                   .append(msgErrorMessage)
-                                  .append(msgBaselineMissing,
-                                          msg::package_name = port_name,
-                                          msg::version = local_port_version.version)
+                                  .append(msgBaselineMissing, msg::package_name = port_name)
+                                  .append_raw('\n')
+                                  .append_raw(scfl.control_location)
+                                  .append_raw(": ")
+                                  .append(msgNoteMessage)
+                                  .append(msgPortDeclaredHere, msg::package_name = port_name)
+                                  .append_raw('\n')
+                                  .append(msgNoteMessage)
+                                  .append(msgAddVersionInstructions, msg::package_name = port_name)
+                                  .append_raw('\n')
+                                  .append_indent()
+                                  .append_raw(fmt::format("vcpkg x-add-version {}\n", port_name))
+                                  .append_indent()
+                                  .append_raw("git add versions\n")
+                                  .append_indent()
+                                  .append(msgGitCommitUpdateVersionDatabase)
                                   .append_raw('\n'));
             return false;
         }
@@ -297,6 +319,21 @@ namespace
                                       msg::expected = local_port_version.version,
                                       msg::actual = baseline_version,
                                       msg::package_name = port_name)
+                              .append_raw('\n')
+                              .append_raw(scfl.control_location)
+                              .append_raw(": ")
+                              .append(msgNoteMessage)
+                              .append(msgPortDeclaredHere, msg::package_name = port_name)
+                              .append_raw('\n')
+                              .append(msgNoteMessage)
+                              .append(msgAddVersionInstructions, msg::package_name = port_name)
+                              .append_raw('\n')
+                              .append_indent()
+                              .append_raw(fmt::format("vcpkg x-add-version {}\n", port_name))
+                              .append_indent()
+                              .append_raw("git add versions\n")
+                              .append_indent()
+                              .append(msgGitCommitUpdateVersionDatabase)
                               .append_raw('\n'));
         return false;
     }
@@ -540,8 +577,8 @@ namespace vcpkg
             auto entries = maybe_entries->get();
             if (!entries)
             {
-                // missing version database entry is OK; should have been reported as one of the other error categories
-                // by one of the other checks
+                // missing version database entry is OK; should have been reported as one of the other error
+                // categories by one of the other checks
                 continue;
             }
 

@@ -654,7 +654,7 @@ namespace
         {
             const auto destination_tmp = destination_parent / "baseline.json.tmp";
             auto treeish = Strings::concat(commit_sha, ":versions/baseline.json");
-            auto maybe_contents = paths.git_show(treeish, paths.root / ".git");
+            auto maybe_contents = paths.git_show(treeish, Path{paths.builtin_registry_versions.parent_path()} / ".git");
             if (auto contents = maybe_contents.get())
             {
                 std::error_code ec;
@@ -1162,7 +1162,8 @@ namespace
         }
 
         const auto& git_tree = port_versions_soa.git_trees()[it - port_versions.begin()];
-        return m_paths.git_checkout_port(port_name, git_tree, m_paths.root / ".git")
+        return m_paths
+            .git_checkout_port(port_name, git_tree, Path{m_paths.builtin_registry_versions.parent_path()} / ".git")
             .map([&git_tree](Path&& p) -> PortLocation {
                 return {
                     std::move(p),

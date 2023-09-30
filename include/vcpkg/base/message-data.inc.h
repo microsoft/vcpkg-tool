@@ -56,7 +56,10 @@ DECLARE_MESSAGE(AddVersionIgnoringOptionAll,
                 (msg::option),
                 "The -- before {option} must be preserved as they're part of the help message for the user.",
                 "ignoring --{option} since a port name argument was provided")
-DECLARE_MESSAGE(AddVersionLoadPortFailed, (msg::package_name), "", "can't load port {package_name}")
+DECLARE_MESSAGE(AddVersionInstructions,
+                (msg::package_name),
+                "",
+                "you can run the following commands to add the current version of {package_name} automatically:")
 DECLARE_MESSAGE(AddVersionNewFile, (), "", "(new file)")
 DECLARE_MESSAGE(AddVersionNewShaIs, (msg::commit_sha), "", "new SHA: {commit_sha}")
 DECLARE_MESSAGE(AddVersionNoFilesUpdated, (), "", "No files were updated")
@@ -292,14 +295,7 @@ DECLARE_MESSAGE(BaselineGitShowFailed,
                 "",
                 "while checking out baseline from commit '{commit_sha}', failed to `git show` "
                 "versions/baseline.json. This may be fixed by fetching commits with `git fetch`.")
-DECLARE_MESSAGE(BaselineMissing,
-                (msg::package_name, msg::version),
-                "",
-                "Baseline version not found. Run:\n"
-                "vcpkg x-add-version {package_name}\n"
-                "git add versions\n"
-                "git commit -m \"Update version database\"\n"
-                "to set {version} as the baseline version.")
+DECLARE_MESSAGE(BaselineMissing, (msg::package_name), "", "no version of {package_name} is set")
 DECLARE_MESSAGE(BaselineMissingDefault,
                 (msg::commit_sha, msg::url),
                 "",
@@ -418,7 +414,6 @@ DECLARE_MESSAGE(BuildTroubleshootingMessage4,
                 "Please use the prefilled template from {path} when reporting your issue.")
 DECLARE_MESSAGE(BuiltInTriplets, (), "", "Built-in Triplets:")
 DECLARE_MESSAGE(BuiltWithIncorrectArchitecture, (), "", "The following files were built for an incorrect architecture:")
-DECLARE_MESSAGE(CheckedOutGitSha, (msg::commit_sha), "", "Checked out Git SHA: {commit_sha}")
 DECLARE_MESSAGE(ChecksFailedCheck, (), "", "vcpkg has crashed; no additional details are available.")
 DECLARE_MESSAGE(ChecksUnreachableCode, (), "", "unreachable code was reached")
 DECLARE_MESSAGE(ChecksUpdateVcpkg, (), "", "updating vcpkg by rerunning bootstrap-vcpkg may resolve this failure.")
@@ -1016,7 +1011,7 @@ DECLARE_MESSAGE(
 DECLARE_MESSAGE(DependencyGraphCalculation, (), "", "Dependency graph submission enabled.")
 DECLARE_MESSAGE(DependencyGraphFailure, (), "", "Dependency graph submission failed.")
 DECLARE_MESSAGE(DependencyGraphSuccess, (), "", "Dependency graph submission successful.")
-DECLARE_MESSAGE(DependencyInFeature, (msg::feature), "", "the dependency is in the feature named {feature}.")
+DECLARE_MESSAGE(DependencyInFeature, (msg::feature), "", "the dependency is in the feature named {feature}")
 DECLARE_MESSAGE(DependencyNotInVersionDatabase,
                 (msg::package_name),
                 "",
@@ -1388,6 +1383,10 @@ DECLARE_MESSAGE(GHAParametersMissing,
                 "The GHA binary source requires the ACTIONS_RUNTIME_TOKEN and ACTIONS_CACHE_URL environment variables "
                 "to be set. See {url} for details.")
 DECLARE_MESSAGE(GitCommandFailed, (msg::command_line), "", "failed to execute: {command_line}")
+DECLARE_MESSAGE(GitCommitUpdateVersionDatabase,
+                (),
+                "This is a command line; only the 'update version database' part should be localized",
+                "git commit -m \"Update version database\"")
 DECLARE_MESSAGE(GitFailedToFetch,
                 (msg::value, msg::url),
                 "{value} is a git ref like 'origin/main'",
@@ -1410,10 +1409,6 @@ DECLARE_MESSAGE(GitUnexpectedCommandOutputCmd,
                 (msg::command_line),
                 "",
                 "git produced unexpected output when running {command_line}")
-DECLARE_MESSAGE(GitCommitUpdateVersionDatabase,
-                (),
-                "This is a command line; only the 'update version database' part should be localized",
-                "git commit -m \"Update version database\"")
 DECLARE_MESSAGE(GraphCycleDetected,
                 (msg::package_name),
                 "A list of package names comprising the cycle will be printed after this message.",
@@ -1946,7 +1941,6 @@ DECLARE_MESSAGE(
     "Invalid {system_name} linkage type: [{value}]")
 DECLARE_MESSAGE(InvalidLogicExpressionUnexpectedCharacter, (), "", "invalid logic expression, unexpected character")
 DECLARE_MESSAGE(InvalidLogicExpressionUsePipe, (), "", "invalid logic expression, use '|' rather than 'or'")
-DECLARE_MESSAGE(InvalidNoVersions, (), "", "File contains no versions.")
 DECLARE_MESSAGE(InvalidOptionForRemove,
                 (),
                 "'remove' is a command that should not be changed.",
@@ -2495,6 +2489,10 @@ DECLARE_MESSAGE(PortBugSetDllsWithoutExports,
                 "following line in the portfile:\n"
                 "set(VCPKG_POLICY_DLLS_WITHOUT_EXPORTS enabled)\n"
                 "The following DLLs have no exports:")
+DECLARE_MESSAGE(PortDeclaredHere,
+                (msg::package_name),
+                "This is printed after NoteMessage to tell the user the path on disk of a related port",
+                "{package_name} is declared here")
 DECLARE_MESSAGE(PortDependencyConflict,
                 (msg::package_name),
                 "",
@@ -2965,13 +2963,8 @@ DECLARE_MESSAGE(VcvarsRunFailedExitCode,
 DECLARE_MESSAGE(VersionBaselineMatch, (msg::version_spec), "", "message: {version_spec} matches the current baseline")
 DECLARE_MESSAGE(VersionBaselineMismatch,
                 (msg::expected, msg::actual, msg::package_name),
-                "{expected} and {actual} are versions",
-                "The latest version is {expected}, but the baseline file contains {actual}.\n"
-                "Run:\n"
-                "vcpkg x-add-version {package_name}\n"
-                "git add versions\n"
-                "git commit -m \"Update version database\"\n"
-                "to update the baseline version.")
+                "{actual} and {expected} are versions",
+                "{package_name} is declared at version {actual}, but the local port is {expected}")
 DECLARE_MESSAGE(VersionBuiltinPortTreeEntryMissing,
                 (msg::package_name, msg::expected, msg::actual),
                 "{expected} and {actual} are versions like 1.0.",
@@ -3039,9 +3032,9 @@ DECLARE_MESSAGE(VersionIncomparable3,
                 "This can be resolved by adding an explicit override to the preferred version. For example:")
 DECLARE_MESSAGE(VersionIncomparable4, (msg::url), "", "See `vcpkg help versioning` or {url} for more information.")
 DECLARE_MESSAGE(VersionInDeclarationDoesNotMatch,
-                (msg::version),
-                "",
-                "The version declared in file does not match checked-out version: {version}")
+                (msg::commit_sha, msg::expected, msg::actual),
+                "{expected} and {actual} are version specs",
+                "{commit_sha} is declared to contain {expected}, but appears to contain {actual}")
 DECLARE_MESSAGE(
     VersionInvalidDate,
     (msg::version),
@@ -3085,6 +3078,10 @@ DECLARE_MESSAGE(
     "the override of {package_name} names version {version} which does not exist in the "
     "version database. Installing this port at the top level will fail as that version will be unresolvable. "
     "Consider removing the version override or choosing a value declared in {path}.")
+DECLARE_MESSAGE(VersionOverwriteVersion,
+                (msg::version_spec),
+                "",
+                "you can overwrite {version_spec} with correct local values by running:")
 DECLARE_MESSAGE(VersionRejectedDueToBaselineMissing,
                 (msg::path, msg::json_field),
                 "",
@@ -3097,28 +3094,32 @@ DECLARE_MESSAGE(VersionRejectedDueToFeatureFlagOff,
                 "{path} was rejected because it uses \"{json_field}\" and the `versions` feature flag is disabled. "
                 "This can be fixed by removing \"{json_field}\" or enabling the `versions` feature flag.\nSee "
                 "`vcpkg help versioning` for more information.")
-DECLARE_MESSAGE(VersionSchemeMismatch,
-                (msg::version, msg::expected, msg::actual, msg::path, msg::package_name),
+DECLARE_MESSAGE(VersionSchemeMismatch1,
+                (msg::version, msg::expected, msg::actual, msg::package_name),
                 "{expected} and {actual} are version schemes; it here refers to the {version}",
-                "The version database declares {version} as {expected}, but {path} declares it as {actual}. "
-                "Versions must be unique, even if they are declared with different schemes.\n"
-                "note: run:\n"
-                "vcpkg x-add-version {package_name} --overwrite-version\n"
-                "to overwrite the scheme declared in the version database with that declared in the port.")
+                "{version} is declared {expected}, but {package_name} is declared with {actual}")
+DECLARE_MESSAGE(VersionSchemeMismatch1Old,
+                (msg::version, msg::expected, msg::actual, msg::package_name, msg::commit_sha),
+                "{expected} and {actual} are version schemes; it here refers to the {version}",
+                "{version} is declared {expected}, but {package_name}@{commit_sha} is declared with {actual}")
+DECLARE_MESSAGE(VersionSchemeMismatch2,
+                (),
+                "",
+                "versions must be unique, even if they are declared with different schemes")
 DECLARE_MESSAGE(
     VersionShaMismatch1,
     (msg::version_spec, msg::expected, msg::actual, msg::package_name, msg::path),
     "{expected} and {actual} are git tree SHAs. Console commands the user can run are printed after. 'git tree' is "
     "https://git-scm.com/docs/gitglossary#Documentation/gitglossary.txt-aiddeftree-ishatree-ishalsotreeish",
     "{version_spec} is declared to have git tree {expected}, but the local port {path} has git tree "
-    "{actual}.\n"
+    "{actual}\n"
     "note: If {version_spec} is already published, update the {package_name} manifest with a new version or "
     "port-version, then add the new version by running:")
 DECLARE_MESSAGE(VersionShaMismatch2,
                 (msg::version_spec),
                 "Console commands the user can run are printed after. 'git tree' is "
                 "https://git-scm.com/docs/gitglossary#Documentation/gitglossary.txt-aiddeftree-ishatree-ishalsotreeish",
-                "note: If {version_spec} is not yet published, overwrite the previous git tree by running:")
+                "note: if {version_spec} is not yet published, overwrite the previous git tree by running:")
 DECLARE_MESSAGE(VersionShaMissing,
                 (msg::package_name, msg::path),
                 "",

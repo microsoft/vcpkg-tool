@@ -403,7 +403,6 @@ namespace vcpkg
             auto scf = maybe_scf.get();
             if (!scf)
             {
-                msg::println_error(msgAddVersionLoadPortFailed, msg::package_name = port_name);
                 msg::println(Color::error, maybe_scf.error());
                 Checks::check_exit(VCPKG_LINE_INFO, !add_all);
                 continue;
