@@ -158,7 +158,7 @@ if (Test-Path $installedDir)
                                msg::option = "x-maintainer");
 
         const Filesystem& fs = paths.get_filesystem();
-        const auto vcpkg_root_path = paths.root;
+        const auto& vcpkg_root_path = paths.root;
         const auto raw_exported_dir_path = vcpkg_root_path / "chocolatey";
         const auto exported_dir_path = vcpkg_root_path / "chocolatey_exports";
         const Path& nuget_exe = paths.get_tool_exe(Tools::NUGET, stdout_sink);
