@@ -100,12 +100,12 @@ namespace vcpkg
             if (!pmanifest_scf)
             {
                 msg::print(Color::error,
-                             std::move(maybe_manifest_scf)
-                                 .error()
-                                 .append_raw('\n')
-								 .append(msgNoteMessage)
-                                 .append(msg::msgSeeURL, msg::url = docs::manifests_url)
-								 .append_raw('\n'));
+                           std::move(maybe_manifest_scf)
+                               .error()
+                               .append_raw('\n')
+                               .append(msgNoteMessage)
+                               .append(msg::msgSeeURL, msg::url = docs::manifests_url)
+                               .append_raw('\n'));
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
