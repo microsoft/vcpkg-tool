@@ -394,7 +394,7 @@ namespace vcpkg
                                                                          msg::url = docs::manifests_url));
                 }
 
-                spgh->default_features.push_back(DependencyRequestedFeature{std::move(default_feature)});
+                spgh->default_features.push_back({std::move(default_feature)});
             }
         }
         else

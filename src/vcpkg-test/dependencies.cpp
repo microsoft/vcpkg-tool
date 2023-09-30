@@ -1619,7 +1619,7 @@ TEST_CASE ("version install default features", "[versionplan]")
 
     auto a_x = make_fpgh("x");
     auto& a_scf = vp.emplace("a", {"1", 0}, VersionScheme::Relaxed).source_control_file;
-    a_scf->core_paragraph->default_features.push_back(DependencyRequestedFeature{"x"});
+    a_scf->core_paragraph->default_features.push_back({"x"});
     a_scf->feature_paragraphs.push_back(std::move(a_x));
 
     MockCMakeVarProvider var_provider;
@@ -1640,7 +1640,7 @@ TEST_CASE ("version dont install default features", "[versionplan]")
 
     auto a_x = make_fpgh("x");
     auto& a_scf = vp.emplace("a", {"1", 0}, VersionScheme::Relaxed).source_control_file;
-    a_scf->core_paragraph->default_features.push_back(DependencyRequestedFeature{"x"});
+    a_scf->core_paragraph->default_features.push_back({"x"});
     a_scf->feature_paragraphs.push_back(std::move(a_x));
 
     MockCMakeVarProvider var_provider;
@@ -1661,7 +1661,7 @@ TEST_CASE ("version install transitive default features", "[versionplan]")
 
     auto a_x = make_fpgh("x");
     auto& a_scf = vp.emplace("a", {"1", 0}, VersionScheme::Relaxed).source_control_file;
-    a_scf->core_paragraph->default_features.push_back(DependencyRequestedFeature{"x"});
+    a_scf->core_paragraph->default_features.push_back({"x"});
     a_scf->feature_paragraphs.push_back(std::move(a_x));
 
     auto& b_scf = vp.emplace("b", {"1", 0}, VersionScheme::Relaxed).source_control_file;
@@ -1752,7 +1752,7 @@ TEST_CASE ("version install qualified default suppression", "[versionplan]")
     MockVersionedPortfileProvider vp;
 
     auto& a_scf = vp.emplace("a", {"1", 0}, VersionScheme::Relaxed).source_control_file;
-    a_scf->core_paragraph->default_features.push_back(DependencyRequestedFeature{"x"});
+    a_scf->core_paragraph->default_features.push_back({"x"});
     a_scf->feature_paragraphs.push_back(make_fpgh("x"));
 
     vp.emplace("b", {"1", 0}, VersionScheme::Relaxed)
@@ -1837,17 +1837,17 @@ TEST_CASE ("version install qualified features", "[versionplan]")
     MockVersionedPortfileProvider vp;
 
     auto& b_scf = vp.emplace("b", {"1", 0}, VersionScheme::Relaxed).source_control_file;
-    b_scf->core_paragraph->default_features.push_back(DependencyRequestedFeature{"x"});
+    b_scf->core_paragraph->default_features.push_back({"x"});
     b_scf->feature_paragraphs.push_back(make_fpgh("x"));
     b_scf->feature_paragraphs.back()->dependencies.push_back({"a", {}, parse_platform("!linux")});
 
     auto& a_scf = vp.emplace("a", {"1", 0}, VersionScheme::Relaxed).source_control_file;
-    a_scf->core_paragraph->default_features.push_back(DependencyRequestedFeature{"y"});
+    a_scf->core_paragraph->default_features.push_back({"y"});
     a_scf->feature_paragraphs.push_back(make_fpgh("y"));
     a_scf->feature_paragraphs.back()->dependencies.push_back({"c", {}, parse_platform("linux")});
 
     auto& c_scf = vp.emplace("c", {"1", 0}, VersionScheme::Relaxed).source_control_file;
-    c_scf->core_paragraph->default_features.push_back(DependencyRequestedFeature{"z"});
+    c_scf->core_paragraph->default_features.push_back({"z"});
     c_scf->feature_paragraphs.push_back(make_fpgh("z"));
     c_scf->feature_paragraphs.back()->dependencies.push_back({"d", {}, parse_platform("linux")});
 
@@ -2313,8 +2313,8 @@ TEST_CASE ("respect platform expressions in default features", "[versionplan]")
         a_x->name = "x";
         auto& scf = vp.emplace("a", {"1", 0}).source_control_file;
         scf->feature_paragraphs.push_back(std::move(a_x));
-        scf->core_paragraph->default_features.push_back(DependencyRequestedFeature{
-            "x", parse_platform_expression("linux", MultipleBinaryOperators::Deny).value_or_exit(VCPKG_LINE_INFO)});
+        scf->core_paragraph->default_features.push_back(
+            {"x", parse_platform_expression("linux", MultipleBinaryOperators::Deny).value_or_exit(VCPKG_LINE_INFO)});
     }
 
     MockCMakeVarProvider var_provider;

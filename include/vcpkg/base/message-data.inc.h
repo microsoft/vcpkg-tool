@@ -1007,16 +1007,17 @@ DECLARE_MESSAGE(DeleteVcpkgConfigFromManifest,
                 (msg::path),
                 "",
                 "-- Or remove \"vcpkg-configuration\" from the manifest file {path}.")
-DECLARE_MESSAGE(DependencyFeatureCore,
-                (),
-                "The word \"core\" is an on-disk name that must not be localized. The 'default-features' part is JSON "
-                "syntax that must be copied verbatim into the user's file.",
-                "the feature \"core\" cannot be in a dependency's feature list. To turn off default features, add "
-                "\"default-features\": false instead.")
+DECLARE_MESSAGE(
+    DependencyFeatureCore,
+    (),
+    "The word \"core\" is an on-disk name that must not be localized. The \"default-features\" part is JSON "
+    "syntax that must be copied verbatim into the user's file.",
+    "the feature \"core\" cannot be in a dependency's feature list. To turn off default features, add "
+    "\"default-features\": false instead.")
 DECLARE_MESSAGE(
     DependencyFeatureDefault,
     (),
-    "The word \"default\" is an on-disk name that must not be localized. The 'default-features' part is JSON "
+    "The word \"default\" is an on-disk name that must not be localized. The \"default-features\" part is JSON "
     "syntax that must be copied verbatim into the user's file.",
     "the feature \"default\" cannot be in a dependency's feature list. To turn on default features, add "
     "\"default-features\": true instead.")
@@ -2325,11 +2326,11 @@ DECLARE_MESSAGE(PECoffHeaderTooShort,
 DECLARE_MESSAGE(PEConfigCrossesSectionBoundary,
                 (msg::path),
                 "Portable executable is a term-of-art, see https://learn.microsoft.com/windows/win32/debug/pe-format",
-                "While parsing Portable Executable {path}, image config directory crosses a secion boundary.")
+                "While parsing Portable Executable {path}, image config directory crosses a section boundary.")
 DECLARE_MESSAGE(PEImportCrossesSectionBoundary,
                 (msg::path),
                 "Portable executable is a term-of-art, see https://learn.microsoft.com/windows/win32/debug/pe-format",
-                "While parsing Portable Executable {path}, import table crosses a secion boundary.")
+                "While parsing Portable Executable {path}, import table crosses a section boundary.")
 DECLARE_MESSAGE(PEPlusTagInvalid,
                 (msg::path),
                 "Portable executable is a term-of-art, see https://learn.microsoft.com/windows/win32/debug/pe-format",
