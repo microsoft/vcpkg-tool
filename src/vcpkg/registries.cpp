@@ -251,7 +251,7 @@ namespace
                          std::vector<GitVersionDbEntry>&& version_entries);
 
         ExpectedL<View<Version>> get_port_versions() const override;
-        ExpectedL<PathAndLocation> get_version(const Version& version) const override;
+        ExpectedL<PortLocation> get_version(const Version& version) const override;
 
     private:
         ExpectedL<Unit> ensure_not_stale() const;
@@ -412,11 +412,11 @@ namespace
         }
 
         ExpectedL<View<Version>> get_port_versions() const override { return View<Version>{&version, 1}; }
-        ExpectedL<PathAndLocation> get_version(const Version& v) const override
+        ExpectedL<PortLocation> get_version(const Version& v) const override
         {
             if (v == version)
             {
-                return PathAndLocation{root, "git+https://github.com/Microsoft/vcpkg#ports/" + name};
+                return PortLocation{root, "git+https://github.com/Microsoft/vcpkg#ports/" + name};
             }
 
             return msg::format_error(msgVersionBuiltinPortTreeEntryMissing,
@@ -438,7 +438,7 @@ namespace
         {
             return View<Version>{port_versions_soa.port_versions()};
         }
-        ExpectedL<PathAndLocation> get_version(const Version& version) const override;
+        ExpectedL<PortLocation> get_version(const Version& version) const override;
 
         const VcpkgPaths& m_paths;
 
@@ -453,7 +453,7 @@ namespace
 
         ExpectedL<View<Version>> get_port_versions() const override { return View<Version>{port_versions}; }
 
-        ExpectedL<PathAndLocation> get_version(const Version& version) const override;
+        ExpectedL<PortLocation> get_version(const Version& version) const override;
 
         std::string port_name;
         // these two map port versions to paths
@@ -490,8 +490,9 @@ namespace
     private:
         const ExpectedL<SourceControlFileAndLocation>& get_scf(StringView port_name, const Path& path) const
         {
-            return m_scfs.get_lazy(path,
-                                   [&, this]() { return Paragraphs::try_load_port(m_fs, port_name, path).maybe_scfl; });
+            return m_scfs.get_lazy(path, [&, this]() {
+                return Paragraphs::try_load_port(m_fs, port_name, PortLocation{path}).maybe_scfl;
+            });
         }
 
         const ReadOnlyFilesystem& m_fs;
@@ -1148,7 +1149,7 @@ namespace
     // { RegistryEntry
 
     // { BuiltinRegistryEntry::RegistryEntry
-    ExpectedL<PathAndLocation> BuiltinGitRegistryEntry::get_version(const Version& version) const
+    ExpectedL<PortLocation> BuiltinGitRegistryEntry::get_version(const Version& version) const
     {
         auto& port_versions = port_versions_soa.port_versions();
         auto it = std::find(port_versions.begin(), port_versions.end(), version);
@@ -1162,7 +1163,7 @@ namespace
 
         const auto& git_tree = port_versions_soa.git_trees()[it - port_versions.begin()];
         return m_paths.git_checkout_port(port_name, git_tree, m_paths.root / ".git")
-            .map([&git_tree](Path&& p) -> PathAndLocation {
+            .map([&git_tree](Path&& p) -> PortLocation {
                 return {
                     std::move(p),
                     "git+https://github.com/Microsoft/vcpkg@" + git_tree,
@@ -1172,7 +1173,7 @@ namespace
     // } BuiltinRegistryEntry::RegistryEntry
 
     // { FilesystemRegistryEntry::RegistryEntry
-    ExpectedL<PathAndLocation> FilesystemRegistryEntry::get_version(const Version& version) const
+    ExpectedL<PortLocation> FilesystemRegistryEntry::get_version(const Version& version) const
     {
         auto it = std::find(port_versions.begin(), port_versions.end(), version);
         if (it == port_versions.end())
@@ -1180,10 +1181,8 @@ namespace
             return msg::format_error(
                 msgVersionDatabaseEntryMissing, msg::package_name = port_name, msg::version = version);
         }
-        return PathAndLocation{
-            version_paths[it - port_versions.begin()],
-            "",
-        };
+
+        return PortLocation{version_paths[it - port_versions.begin()]};
     }
     // } FilesystemRegistryEntry::RegistryEntry
 
@@ -1235,7 +1234,7 @@ namespace
         return std::move(maybe_not_stale).error();
     }
 
-    ExpectedL<PathAndLocation> GitRegistryEntry::get_version(const Version& version) const
+    ExpectedL<PortLocation> GitRegistryEntry::get_version(const Version& version) const
     {
         auto it = std::find(last_loaded.port_versions().begin(), last_loaded.port_versions().end(), version);
         if (it == last_loaded.port_versions().end() && stale)
@@ -1257,7 +1256,7 @@ namespace
 
         const auto& git_tree = last_loaded.git_trees()[it - last_loaded.port_versions().begin()];
         return parent.m_paths.git_extract_tree_from_remote_registry(git_tree).map(
-            [this, &git_tree](Path&& p) -> PathAndLocation {
+            [this, &git_tree](Path&& p) -> PortLocation {
                 return {
                     std::move(p),
                     Strings::concat("git+", parent.m_repo, "@", git_tree),

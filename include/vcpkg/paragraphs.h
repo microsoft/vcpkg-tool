@@ -35,18 +35,22 @@ namespace vcpkg::Paragraphs
     // If an error occurs, the Expected will be in the error state.
     // Otherwise, if the port is known, the maybe_scfl->source_control_file contains the loaded port information.
     // Otherwise, maybe_scfl->source_control_file is nullptr.
-    PortLoadResult try_load_port(const ReadOnlyFilesystem& fs, StringView port_name, const Path& port_directory);
+    PortLoadResult try_load_port(const ReadOnlyFilesystem& fs, StringView port_name, const PortLocation& port_location);
     // Identical to try_load_port, but the port unknown condition is mapped to an error.
     PortLoadResult try_load_port_required(const ReadOnlyFilesystem& fs,
                                           StringView port_name,
-                                          const Path& port_directory);
+                                          const PortLocation& port_location);
     ExpectedL<SourceControlFileAndLocation> try_load_project_manifest_text(StringView text,
                                                                            StringView origin,
+                                                                           StringView spdx_location,
                                                                            MessageSink& warning_sink);
     ExpectedL<SourceControlFileAndLocation> try_load_port_manifest_text(StringView text,
                                                                         StringView origin,
+                                                                        StringView spdx_location,
                                                                         MessageSink& warning_sink);
-    ExpectedL<SourceControlFileAndLocation> try_load_control_file_text(StringView text, StringView origin);
+    ExpectedL<SourceControlFileAndLocation> try_load_control_file_text(StringView text,
+                                                                       StringView origin,
+                                                                       StringView spdx_location);
 
     ExpectedL<BinaryControlFile> try_load_cached_package(const ReadOnlyFilesystem& fs,
                                                          const Path& package_dir,

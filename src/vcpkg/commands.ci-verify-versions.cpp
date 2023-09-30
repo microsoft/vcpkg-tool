@@ -53,7 +53,8 @@ namespace
             return success;
         }
 
-        auto load_result = Paragraphs::try_load_port_required(paths.get_filesystem(), port_name, *extracted_tree);
+        auto load_result =
+            Paragraphs::try_load_port_required(paths.get_filesystem(), port_name, PortLocation{*extracted_tree});
         auto scfl = load_result.maybe_scfl.get();
         if (!scfl)
         {
@@ -478,7 +479,8 @@ namespace vcpkg
         for (auto&& port_path : fs.get_directories_non_recursive(paths.builtin_ports_directory(), VCPKG_LINE_INFO))
         {
             auto port_name = port_path.stem().to_string();
-            auto maybe_loaded_port = Paragraphs::try_load_port_required(fs, port_name, port_path).maybe_scfl;
+            auto maybe_loaded_port =
+                Paragraphs::try_load_port_required(fs, port_name, PortLocation{port_path}).maybe_scfl;
             auto loaded_port = maybe_loaded_port.get();
             if (loaded_port)
             {

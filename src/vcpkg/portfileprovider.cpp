@@ -22,11 +22,11 @@ namespace
         OverlayRegistryEntry(Path&& p, Version&& v) : root(p), version(v) { }
 
         ExpectedL<View<Version>> get_port_versions() const override { return View<Version>{&version, 1}; }
-        ExpectedL<PathAndLocation> get_version(const Version& v) const override
+        ExpectedL<PortLocation> get_version(const Version& v) const override
         {
             if (v == version)
             {
-                return PathAndLocation{root, ""};
+                return PortLocation{root};
             }
             return msg::format(msgVersionNotFound, msg::expected = v, msg::actual = version);
         }
@@ -188,7 +188,7 @@ namespace vcpkg
                     if (auto path = maybe_path.get())
                     {
                         auto maybe_control_file =
-                            Paragraphs::try_load_port_required(m_fs, version_spec.port_name, path->path).maybe_scfl;
+                            Paragraphs::try_load_port_required(m_fs, version_spec.port_name, *path).maybe_scfl;
                         if (auto scf = maybe_control_file.get())
                         {
                             auto scf_vspec = scf->source_control_file.get()->to_version_spec();
@@ -200,7 +200,7 @@ namespace vcpkg
                             {
                                 return msg::format(msg::msgErrorMessage)
                                     .append(msgVersionSpecMismatch,
-                                            msg::path = path->path,
+                                            msg::path = path->port_directory,
                                             msg::expected_version = version_spec,
                                             msg::actual_version = scf_vspec);
                             }
@@ -291,7 +291,8 @@ namespace vcpkg
                     // Try loading individual port
                     if (Paragraphs::is_port_directory(m_fs, ports_dir))
                     {
-                        auto maybe_scf = Paragraphs::try_load_port_required(m_fs, port_name, ports_dir).maybe_scfl;
+                        auto maybe_scf =
+                            Paragraphs::try_load_port_required(m_fs, port_name, PortLocation{ports_dir}).maybe_scfl;
                         if (auto scfp = maybe_scf.get())
                         {
                             if (scfp->source_control_file->core_paragraph->name == port_name)
@@ -312,7 +313,8 @@ namespace vcpkg
                     auto ports_spec = ports_dir / port_name;
                     if (Paragraphs::is_port_directory(m_fs, ports_spec))
                     {
-                        auto found_scf = Paragraphs::try_load_port_required(m_fs, port_name, ports_spec).maybe_scfl;
+                        auto found_scf =
+                            Paragraphs::try_load_port_required(m_fs, port_name, PortLocation{ports_spec}).maybe_scfl;
                         if (auto scfp = found_scf.get())
                         {
                             if (scfp->source_control_file->core_paragraph->name == port_name)
@@ -362,7 +364,8 @@ namespace vcpkg
                     if (Paragraphs::is_port_directory(m_fs, ports_dir))
                     {
                         auto maybe_scf =
-                            Paragraphs::try_load_port_required(m_fs, ports_dir.filename(), ports_dir).maybe_scfl;
+                            Paragraphs::try_load_port_required(m_fs, ports_dir.filename(), PortLocation{ports_dir})
+                                .maybe_scfl;
                         if (auto scfp = maybe_scf.get())
                         {
                             // copy name before moving *scfp

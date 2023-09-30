@@ -132,7 +132,8 @@ namespace vcpkg
 
             if (path.filename() == "CONTROL")
             {
-                auto maybe_control = Paragraphs::try_load_control_file_text(contents->content, contents->origin);
+                auto maybe_control =
+                    Paragraphs::try_load_control_file_text(contents->content, contents->origin, StringView{});
                 if (auto control = maybe_control.get())
                 {
                     to_write.push_back(
@@ -146,8 +147,8 @@ namespace vcpkg
             }
             else
             {
-                auto maybe_manifest =
-                    Paragraphs::try_load_project_manifest_text(contents->content, contents->origin, stdout_sink);
+                auto maybe_manifest = Paragraphs::try_load_project_manifest_text(
+                    contents->content, contents->origin, StringView{}, stdout_sink);
                 if (auto manifest = maybe_manifest.get())
                 {
                     to_write.push_back(ToWrite{contents->content, std::move(*manifest), path});
@@ -164,7 +165,7 @@ namespace vcpkg
         {
             for (const auto& dir : fs.get_directories_non_recursive(paths.builtin_ports_directory(), VCPKG_LINE_INFO))
             {
-                auto maybe_manifest = Paragraphs::try_load_port_required(fs, dir.filename(), dir);
+                auto maybe_manifest = Paragraphs::try_load_port_required(fs, dir.filename(), PortLocation{dir});
                 if (auto manifest = maybe_manifest.maybe_scfl.get())
                 {
                     auto original = manifest->control_location;

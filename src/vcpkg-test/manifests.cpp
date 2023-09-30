@@ -1431,8 +1431,8 @@ TEST_CASE ("dependency-feature-name-default-object errors", "[manifests]")
     REQUIRE(!m_pgh.has_value());
     REQUIRE(
         m_pgh.error().data() ==
-        "<test manifest>: error: $.dependencies[0].features[0].name (a feature name): the feature \"default\" cannot be "
-        "in a dependency's feature list. To turn on default features, add \"default-features\": true instead.");
+        "<test manifest>: error: $.dependencies[0].features[0].name (a feature name): the feature \"default\" cannot "
+        "be in a dependency's feature list. To turn on default features, add \"default-features\": true instead.");
 }
 TEST_CASE ("dependency-feature-name-empty errors", "[manifests]")
 {

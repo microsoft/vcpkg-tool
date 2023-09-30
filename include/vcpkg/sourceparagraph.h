@@ -141,6 +141,15 @@ namespace vcpkg
         friend bool operator!=(const SourceParagraph& lhs, const SourceParagraph& rhs) { return !(lhs == rhs); }
     };
 
+    struct PortLocation
+    {
+        Path port_directory;
+
+        /// Should model SPDX PackageDownloadLocation. Empty implies NOASSERTION.
+        /// See https://spdx.github.io/spdx-spec/package-information/#77-package-download-location-field
+        std::string spdx_location;
+    };
+
     /// <summary>
     /// Full metadata of a package: core and other features.
     /// </summary>
@@ -200,6 +209,10 @@ namespace vcpkg
 
         std::unique_ptr<SourceControlFile> source_control_file;
         Path control_location;
+
+        /// Should model SPDX PackageDownloadLocation. Empty implies NOASSERTION.
+        /// See https://spdx.github.io/spdx-spec/package-information/#77-package-download-location-field
+        std::string spdx_location;
     };
 
     void print_error_message(const LocalizedString& message);
@@ -209,6 +222,6 @@ namespace vcpkg
 
     // Exposed for testing
     ExpectedL<std::vector<Dependency>> parse_dependencies_list(const std::string& str,
-                                                               StringView origin = "<unknown>",
+                                                               StringView origin,
                                                                TextRowCol textrowcol = {});
 }

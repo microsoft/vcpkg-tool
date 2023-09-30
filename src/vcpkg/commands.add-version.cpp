@@ -397,9 +397,9 @@ namespace vcpkg
         {
             auto port_dir = paths.builtin_ports_directory() / port_name;
 
-            auto maybe_scf =
-                Paragraphs::try_load_port_required(fs, port_name, paths.builtin_ports_directory() / port_name)
-                    .maybe_scfl;
+            auto maybe_scf = Paragraphs::try_load_port_required(
+                                 fs, port_name, PortLocation{paths.builtin_ports_directory() / port_name})
+                                 .maybe_scfl;
             auto scf = maybe_scf.get();
             if (!scf)
             {
