@@ -1,10 +1,17 @@
 . "$PSScriptRoot/../end-to-end-tests-prelude.ps1"
 
 Refresh-TestRoot
+
+$gitConfigOptions = @(
+  '-c', 'user.name=Nobody',
+  '-c', 'user.email=nobody@example.com',
+  '-c', 'core.autocrlf=false'
+)
+
 Copy-Item -Recurse "$PSScriptRoot/../e2e-assets/ci-verify-versions-registry" "$TestingRoot/ci-verify-versions-registry"
-git -C "$TestingRoot/ci-verify-versions-registry" init
-git -C "$TestingRoot/ci-verify-versions-registry" add -A
-git -C "$TestingRoot/ci-verify-versions-registry" commit -m testing
+git -C "$TestingRoot/ci-verify-versions-registry" @gitConfigOptions init
+git -C "$TestingRoot/ci-verify-versions-registry" @gitConfigOptions add -A
+git -C "$TestingRoot/ci-verify-versions-registry" @gitConfigOptions commit -m testing
 $git = (Get-Command git).Path
 $expected = @"
 $TestingRoot/ci-verify-versions-registry/ports/malformed/vcpkg.json:4:3: error: Unexpected character; expected property name
