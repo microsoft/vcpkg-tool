@@ -133,17 +133,20 @@ note: versions must be unique, even if they are declared with different schemes
 $TestingRoot/ci-verify-versions-registry/versions/v-/version-scheme-mismatch.json: error: 1.0 is declared version-string, but version-scheme-mismatch@89c88798a9fa17ea6753da87887a1fec48c421b0 is declared with version
 $buildtreesRoot/versioning_/versions/version-scheme-mismatch/89c88798a9fa17ea6753da87887a1fec48c421b0/vcpkg.json: note: version-scheme-mismatch is declared here
 note: versions must be unique, even if they are declared with different schemes
-
 "@
 
 $actual = Run-VcpkgAndCaptureOutput x-ci-verify-versions @directoryArgs "--x-builtin-ports-root=$TestingRoot/ci-verify-versions-registry/ports" "--x-builtin-registry-versions-dir=$TestingRoot/ci-verify-versions-registry/versions" --verbose --verify-git-trees
 Throw-IfNotFailed
 
-$workTreeRegex = 'error: failed to execute:[^\r\n]+' # Git command line has an unpredictable PID inside
-$expected = $expected.Replace('\', '/')
-$expected = [System.Text.RegularExpressions.Regex]::Replace($expected, $workTreeRegex, '')
-$actual = $actual.Replace('\', '/')
-$actual = [System.Text.RegularExpressions.Regex]::Replace($actual, $workTreeRegex, '')
+function Sanitize() {
+  Param([string]$text)
+  $workTreeRegex = 'error: failed to execute:[^\r\n]+' # Git command line has an unpredictable PID inside
+  $text = $text.Replace('\', '/').Replace('`r`n', '`n').Trim()
+  $text = [System.Text.RegularExpressions.Regex]::Replace($text, $workTreeRegex, '')
+}
+
+$expected = Sanitize $expected
+$actual = Sanitize $actual
 if ($actual -ne $expected) {
     Write-Host "Expected:"
     Write-Host $expected
