@@ -6,7 +6,6 @@ Copy-Item -Recurse "$PSScriptRoot/../e2e-assets/ci-verify-versions-registry" "$T
 git -C "$TestingRoot/ci-verify-versions-registry" @gitConfigOptions init
 git -C "$TestingRoot/ci-verify-versions-registry" @gitConfigOptions add -A
 git -C "$TestingRoot/ci-verify-versions-registry" @gitConfigOptions commit -m testing
-$git = (Get-Command git).Path
 $expected = @"
 $TestingRoot/ci-verify-versions-registry/ports/malformed/vcpkg.json:4:3: error: Unexpected character; expected property name
   on expression:   ~broken
@@ -94,12 +93,12 @@ note: you can overwrite version-scheme-mismatch@1.1 with correct local values by
 vcpkg x-add-version version-scheme-mismatch --overwrite-version
 $TestingRoot/ci-verify-versions-registry/versions/baseline.json: message: version-scheme-mismatch@1.1 matches the current baseline
 $TestingRoot/ci-verify-versions-registry/ports/version-scheme-mismatch/vcpkg.json: All version constraints are consistent with the version database
-$TestingRoot/ci-verify-versions-registry/versions/b-/bad-git-tree.json: error: failed to execute: `"$git`" `"--git-dir=$TestingRoot/ci-verify-versions-registry/.git`" `"--work-tree=$buildtreesRoot/versioning_/versions/bad-git-tree/000000070c5f496fcf1a97cf654d5e81f0d2685a_82336.tmp`" -c core.autocrlf=false read-tree -m -u 000000070c5f496fcf1a97cf654d5e81f0d2685a
+$TestingRoot/ci-verify-versions-registry/versions/b-/bad-git-tree.json: error: failed to execute: `"C:\Program Files\Git\cmd\git.exe`" `"--git-dir=$TestingRoot/ci-verify-versions-registry/.git`" `"--work-tree=$buildtreesRoot/versioning_/versions/bad-git-tree/000000070c5f496fcf1a97cf654d5e81f0d2685a_82336.tmp`" -c core.autocrlf=false read-tree -m -u 000000070c5f496fcf1a97cf654d5e81f0d2685a
 error: git failed with exit code: (128).
 fatal: failed to unpack tree object 000000070c5f496fcf1a97cf654d5e81f0d2685a
 note: while checking out port bad-git-tree with git tree 000000070c5f496fcf1a97cf654d5e81f0d2685a
 note: while validating version: 1.1
-$TestingRoot/ci-verify-versions-registry/versions/b-/bad-git-tree.json: error: failed to execute: `"$git`" `"--git-dir=$TestingRoot/ci-verify-versions-registry/.git`" `"--work-tree=$buildtreesRoot/versioning_/versions/bad-git-tree/00000005fb6b76058ce09252f521847363c6b266_82336.tmp`" -c core.autocrlf=false read-tree -m -u 00000005fb6b76058ce09252f521847363c6b266
+$TestingRoot/ci-verify-versions-registry/versions/b-/bad-git-tree.json: error: failed to execute: `"C:\Program Files\Git\cmd\git.exe`" `"--git-dir=$TestingRoot/ci-verify-versions-registry/.git`" `"--work-tree=$buildtreesRoot/versioning_/versions/bad-git-tree/00000005fb6b76058ce09252f521847363c6b266_82336.tmp`" -c core.autocrlf=false read-tree -m -u 00000005fb6b76058ce09252f521847363c6b266
 error: git failed with exit code: (128).
 fatal: failed to unpack tree object 00000005fb6b76058ce09252f521847363c6b266
 note: while checking out port bad-git-tree with git tree 00000005fb6b76058ce09252f521847363c6b266
@@ -140,7 +139,7 @@ note: versions must be unique, even if they are declared with different schemes
 $actual = Run-VcpkgAndCaptureOutput x-ci-verify-versions @directoryArgs "--x-builtin-ports-root=$TestingRoot/ci-verify-versions-registry/ports" "--x-builtin-registry-versions-dir=$TestingRoot/ci-verify-versions-registry/versions" --verbose --verify-git-trees
 Throw-IfNotFailed
 
-$workTreeRegex = '"--work-tree=[^"]+\.tmp' # This has an unpredictable PID inside
+$workTreeRegex = 'error: failed to execute:[^\r\n]+' # Git command line has an unpredictable PID inside
 $expected = $expected.Replace('\', '/')
 $expected = [System.Text.RegularExpressions.Regex]::Replace($expected, $workTreeRegex, '')
 $actual = $actual.Replace('\', '/')
