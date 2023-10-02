@@ -812,6 +812,12 @@ namespace vcpkg
         }
     }
 
+    ExpectedL<Path> VcpkgPaths::versions_dot_git_dir() const
+    {
+        return m_pimpl->m_fs.try_find_file_recursively_up(builtin_registry_versions.parent_path(), ".git")
+            .map([](Path&& dot_git_parent) { return std::move(dot_git_parent) / ".git"; });
+    }
+
     std::string VcpkgPaths::get_toolver_diagnostics() const
     {
         std::string ret;
@@ -952,7 +958,6 @@ namespace vcpkg
 
     ExpectedL<std::map<std::string, std::string, std::less<>>> VcpkgPaths::git_get_local_port_treeish_map() const
     {
-        const auto local_repo = Path{this->builtin_registry_versions.parent_path()} / ".git";
         const auto git_cmd = git_cmd_builder({}, {})
                                  .string_arg("-C")
                                  .string_arg(this->builtin_ports_directory())

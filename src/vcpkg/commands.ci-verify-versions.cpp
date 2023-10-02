@@ -37,8 +37,8 @@ namespace
                          const GitVersionDbEntry& version_entry)
     {
         bool success = true;
-        auto maybe_extracted_tree = paths.git_checkout_port(
-            port_name, version_entry.git_tree, Path{paths.builtin_registry_versions.parent_path()} / ".git");
+        auto maybe_extracted_tree = paths.versions_dot_git_dir().then(
+            [&](Path&& dot_git) { return paths.git_checkout_port(port_name, version_entry.git_tree, dot_git); });
         auto extracted_tree = maybe_extracted_tree.get();
         if (!extracted_tree)
         {
