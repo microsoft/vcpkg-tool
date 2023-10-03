@@ -4,7 +4,7 @@
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/jsonreader.h>
 #include <vcpkg/base/messages.h>
-#include <vcpkg/base/system.debug.h>
+#include <vcpkg/base/strings.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/documentation.h>
@@ -12,7 +12,6 @@
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/registries.h>
 #include <vcpkg/sourceparagraph.h>
-#include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 #include <vcpkg/versiondeserializers.h>
 #include <vcpkg/versions.h>
@@ -43,131 +42,159 @@ namespace
     };
     const RegistryPathStringDeserializer RegistryPathStringDeserializer::instance;
 
-    struct VersionDbEntryDeserializer final : Json::IDeserializer<VersionDbEntry>
+    struct GitVersionDbEntryDeserializer final : Json::IDeserializer<GitVersionDbEntry>
     {
         static constexpr StringLiteral GIT_TREE = "git-tree";
+
+        LocalizedString type_name() const override;
+        View<StringView> valid_fields() const override;
+        Optional<GitVersionDbEntry> visit_object(Json::Reader& r, const Json::Object& obj) const override;
+    };
+    constexpr StringLiteral GitVersionDbEntryDeserializer::GIT_TREE;
+    LocalizedString GitVersionDbEntryDeserializer::type_name() const { return msg::format(msgAVersionDatabaseEntry); }
+    View<StringView> GitVersionDbEntryDeserializer::valid_fields() const
+    {
+        static constexpr StringView u_git[] = {GIT_TREE};
+        static const auto t_git = vcpkg::Util::Vectors::concat<StringView>(schemed_deserializer_fields(), u_git);
+
+        return t_git;
+    }
+
+    Optional<GitVersionDbEntry> GitVersionDbEntryDeserializer::visit_object(Json::Reader& r,
+                                                                            const Json::Object& obj) const
+    {
+        GitVersionDbEntry ret;
+        ret.version = visit_required_schemed_deserializer(type_name(), r, obj);
+        r.required_object_field(type_name(), obj, GIT_TREE, ret.git_tree, GitTreeStringDeserializer::instance);
+        return ret;
+    }
+
+    struct GitVersionDbEntryArrayDeserializer final : Json::IDeserializer<std::vector<GitVersionDbEntry>>
+    {
+        virtual LocalizedString type_name() const override;
+        virtual Optional<std::vector<GitVersionDbEntry>> visit_array(Json::Reader& r,
+                                                                     const Json::Array& arr) const override;
+
+    private:
+        GitVersionDbEntryDeserializer underlying;
+    };
+    LocalizedString GitVersionDbEntryArrayDeserializer::type_name() const { return msg::format(msgAnArrayOfVersions); }
+
+    Optional<std::vector<GitVersionDbEntry>> GitVersionDbEntryArrayDeserializer::visit_array(
+        Json::Reader& r, const Json::Array& arr) const
+    {
+        return r.array_elements(arr, underlying);
+    }
+
+    struct FilesystemVersionDbEntryDeserializer final : Json::IDeserializer<FilesystemVersionDbEntry>
+    {
         static constexpr StringLiteral PATH = "path";
 
         LocalizedString type_name() const override;
         View<StringView> valid_fields() const override;
-        Optional<VersionDbEntry> visit_object(Json::Reader& r, const Json::Object& obj) const override;
-        VersionDbEntryDeserializer(VersionDbType type, const Path& root) : type(type), registry_root(root) { }
+        Optional<FilesystemVersionDbEntry> visit_object(Json::Reader& r, const Json::Object& obj) const override;
+        FilesystemVersionDbEntryDeserializer(const Path& root) : registry_root(root) { }
 
     private:
-        VersionDbType type;
         Path registry_root;
     };
-    constexpr StringLiteral VersionDbEntryDeserializer::GIT_TREE;
-    constexpr StringLiteral VersionDbEntryDeserializer::PATH;
-    LocalizedString VersionDbEntryDeserializer::type_name() const { return msg::format(msgAVersionDatabaseEntry); }
-    View<StringView> VersionDbEntryDeserializer::valid_fields() const
+    constexpr StringLiteral FilesystemVersionDbEntryDeserializer::PATH;
+    LocalizedString FilesystemVersionDbEntryDeserializer::type_name() const
     {
-        static constexpr StringView u_git[] = {GIT_TREE};
+        return msg::format(msgAVersionDatabaseEntry);
+    }
+    View<StringView> FilesystemVersionDbEntryDeserializer::valid_fields() const
+    {
         static constexpr StringView u_path[] = {PATH};
-        static const auto t_git = vcpkg::Util::Vectors::concat<StringView>(schemed_deserializer_fields(), u_git);
         static const auto t_path = vcpkg::Util::Vectors::concat<StringView>(schemed_deserializer_fields(), u_path);
-
-        return type == VersionDbType::Git ? t_git : t_path;
+        return t_path;
     }
 
-    Optional<VersionDbEntry> VersionDbEntryDeserializer::visit_object(Json::Reader& r, const Json::Object& obj) const
+    Optional<FilesystemVersionDbEntry> FilesystemVersionDbEntryDeserializer::visit_object(Json::Reader& r,
+                                                                                          const Json::Object& obj) const
     {
-        VersionDbEntry ret;
+        FilesystemVersionDbEntry ret;
+        ret.version = visit_required_schemed_deserializer(type_name(), r, obj);
 
-        auto schemed_version = visit_required_schemed_deserializer(type_name(), r, obj);
-        ret.scheme = schemed_version.scheme;
-        ret.version = std::move(schemed_version.version);
-        switch (type)
+        std::string path_res;
+        r.required_object_field(type_name(), obj, PATH, path_res, RegistryPathStringDeserializer::instance);
+        if (!Strings::starts_with(path_res, "$/"))
         {
-            case VersionDbType::Git:
+            r.add_generic_error(msg::format(msgARegistryPath), msg::format(msgARegistryPathMustStartWithDollar));
+            return nullopt;
+        }
+
+        if (Strings::contains(path_res, '\\') || Strings::contains(path_res, "//"))
+        {
+            r.add_generic_error(msg::format(msgARegistryPath),
+                                msg::format(msgARegistryPathMustBeDelimitedWithForwardSlashes));
+            return nullopt;
+        }
+
+        auto first = path_res.begin();
+        const auto last = path_res.end();
+        for (std::string::iterator candidate;; first = candidate)
+        {
+            candidate = std::find(first, last, '/');
+            if (candidate == last)
             {
-                r.required_object_field(type_name(), obj, GIT_TREE, ret.git_tree, GitTreeStringDeserializer::instance);
                 break;
             }
-            case VersionDbType::Filesystem:
+
+            ++candidate;
+            if (candidate == last)
             {
-                std::string path_res;
-                r.required_object_field(type_name(), obj, PATH, path_res, RegistryPathStringDeserializer::instance);
-                if (!Strings::starts_with(path_res, "$/"))
-                {
-                    r.add_generic_error(msg::format(msgARegistryPath),
-                                        msg::format(msgARegistryPathMustStartWithDollar));
-                    return nullopt;
-                }
-
-                if (Strings::contains(path_res, '\\') || Strings::contains(path_res, "//"))
-                {
-                    r.add_generic_error(msg::format(msgARegistryPath),
-                                        msg::format(msgARegistryPathMustBeDelimitedWithForwardSlashes));
-                    return nullopt;
-                }
-
-                auto first = path_res.begin();
-                const auto last = path_res.end();
-                for (std::string::iterator candidate;; first = candidate)
-                {
-                    candidate = std::find(first, last, '/');
-                    if (candidate == last)
-                    {
-                        break;
-                    }
-
-                    ++candidate;
-                    if (candidate == last)
-                    {
-                        break;
-                    }
-
-                    if (*candidate != '.')
-                    {
-                        continue;
-                    }
-
-                    ++candidate;
-                    if (candidate == last || *candidate == '/')
-                    {
-                        r.add_generic_error(msg::format(msgARegistryPath),
-                                            msg::format(msgARegistryPathMustNotHaveDots));
-                        return nullopt;
-                    }
-
-                    if (*candidate != '.')
-                    {
-                        first = candidate;
-                        continue;
-                    }
-
-                    ++candidate;
-                    if (candidate == last || *candidate == '/')
-                    {
-                        r.add_generic_error(msg::format(msgARegistryPath),
-                                            msg::format(msgARegistryPathMustNotHaveDots));
-                        return nullopt;
-                    }
-                }
-
-                ret.p = registry_root / StringView{path_res}.substr(2);
                 break;
+            }
+
+            if (*candidate != '.')
+            {
+                continue;
+            }
+
+            ++candidate;
+            if (candidate == last || *candidate == '/')
+            {
+                r.add_generic_error(msg::format(msgARegistryPath), msg::format(msgARegistryPathMustNotHaveDots));
+                return nullopt;
+            }
+
+            if (*candidate != '.')
+            {
+                first = candidate;
+                continue;
+            }
+
+            ++candidate;
+            if (candidate == last || *candidate == '/')
+            {
+                r.add_generic_error(msg::format(msgARegistryPath), msg::format(msgARegistryPathMustNotHaveDots));
+                return nullopt;
             }
         }
+
+        ret.p = registry_root / StringView{path_res}.substr(2);
 
         return ret;
     }
 
-    struct VersionDbEntryArrayDeserializer final : Json::IDeserializer<std::vector<VersionDbEntry>>
+    struct FilesystemVersionDbEntryArrayDeserializer final : Json::IDeserializer<std::vector<FilesystemVersionDbEntry>>
     {
         virtual LocalizedString type_name() const override;
-        virtual Optional<std::vector<VersionDbEntry>> visit_array(Json::Reader& r,
-                                                                  const Json::Array& arr) const override;
-        VersionDbEntryArrayDeserializer(VersionDbType type, const Path& root) : underlying{type, root} { }
+        virtual Optional<std::vector<FilesystemVersionDbEntry>> visit_array(Json::Reader& r,
+                                                                            const Json::Array& arr) const override;
+        FilesystemVersionDbEntryArrayDeserializer(const Path& root) : underlying{root} { }
 
     private:
-        VersionDbEntryDeserializer underlying;
+        FilesystemVersionDbEntryDeserializer underlying;
     };
-    LocalizedString VersionDbEntryArrayDeserializer::type_name() const { return msg::format(msgAnArrayOfVersions); }
+    LocalizedString FilesystemVersionDbEntryArrayDeserializer::type_name() const
+    {
+        return msg::format(msgAnArrayOfVersions);
+    }
 
-    Optional<std::vector<VersionDbEntry>> VersionDbEntryArrayDeserializer::visit_array(Json::Reader& r,
-                                                                                       const Json::Array& arr) const
+    Optional<std::vector<FilesystemVersionDbEntry>> FilesystemVersionDbEntryArrayDeserializer::visit_array(
+        Json::Reader& r, const Json::Array& arr) const
     {
         return r.array_elements(arr, underlying);
     }
@@ -186,12 +213,12 @@ namespace
         PortVersionsGitTreesStructOfArrays& operator=(const PortVersionsGitTreesStructOfArrays&) = default;
         PortVersionsGitTreesStructOfArrays& operator=(PortVersionsGitTreesStructOfArrays&&) = default;
 
-        explicit PortVersionsGitTreesStructOfArrays(std::vector<VersionDbEntry>&& db_entries)
+        explicit PortVersionsGitTreesStructOfArrays(std::vector<GitVersionDbEntry>&& db_entries)
         {
             assign(std::move(db_entries));
         }
 
-        void assign(std::vector<VersionDbEntry>&& db_entries)
+        void assign(std::vector<GitVersionDbEntry>&& db_entries)
         {
             m_port_versions.reserve(db_entries.size());
             m_git_trees.reserve(db_entries.size());
@@ -199,7 +226,7 @@ namespace
             m_git_trees.clear();
             for (auto& entry : db_entries)
             {
-                m_port_versions.push_back(std::move(entry.version));
+                m_port_versions.push_back(std::move(entry.version.version));
                 m_git_trees.push_back(std::move(entry.git_tree));
             }
 
@@ -221,7 +248,7 @@ namespace
         GitRegistryEntry(StringView port_name,
                          const GitRegistry& parent,
                          bool stale,
-                         std::vector<VersionDbEntry>&& version_entries);
+                         std::vector<GitVersionDbEntry>&& version_entries);
 
         ExpectedL<View<Version>> get_port_versions() const override;
         ExpectedL<PathAndLocation> get_version(const Version& version) const override;
@@ -567,11 +594,12 @@ namespace
     };
 
     Path relative_path_to_versions(StringView port_name);
-    ExpectedL<Optional<std::vector<VersionDbEntry>>> load_versions_file(const ReadOnlyFilesystem& fs,
-                                                                        VersionDbType vdb,
-                                                                        const Path& port_versions,
-                                                                        StringView port_name,
-                                                                        const Path& registry_root = {});
+    ExpectedL<Optional<std::vector<GitVersionDbEntry>>> load_git_versions_file(const ReadOnlyFilesystem& fs,
+                                                                               const Path& registry_versions,
+                                                                               StringView port_name);
+
+    ExpectedL<Optional<std::vector<FilesystemVersionDbEntry>>> load_filesystem_versions_file(
+        const ReadOnlyFilesystem& fs, const Path& registry_versions, StringView port_name, const Path& registry_root);
 
     // returns nullopt if the baseline is valid, but doesn't contain the specified baseline,
     // or (equivalently) if the baseline does not exist.
@@ -582,13 +610,13 @@ namespace
 
     ExpectedL<Unit> load_all_port_names_from_registry_versions(std::vector<std::string>& out,
                                                                const ReadOnlyFilesystem& fs,
-                                                               const Path& port_versions_path)
+                                                               const Path& registry_versions)
     {
-        auto maybe_super_directories = fs.try_get_directories_non_recursive(port_versions_path);
+        auto maybe_super_directories = fs.try_get_directories_non_recursive(registry_versions);
         const auto super_directories = maybe_super_directories.get();
         if (!super_directories)
         {
-            return std::move(maybe_super_directories.error());
+            return std::move(maybe_super_directories).error();
         }
 
         for (auto&& super_directory : *super_directories)
@@ -752,8 +780,7 @@ namespace
         const auto& fs = m_paths.get_filesystem();
 
         auto versions_path = m_paths.builtin_registry_versions / relative_path_to_versions(port_name);
-        auto maybe_maybe_version_entries =
-            load_versions_file(fs, VersionDbType::Git, m_paths.builtin_registry_versions, port_name);
+        auto maybe_maybe_version_entries = load_git_versions_file(fs, m_paths.builtin_registry_versions, port_name);
         auto maybe_version_entries = maybe_maybe_version_entries.get();
         if (!maybe_version_entries)
         {
@@ -860,7 +887,7 @@ namespace
     ExpectedL<std::unique_ptr<RegistryEntry>> FilesystemRegistry::get_port_entry(StringView port_name) const
     {
         auto maybe_maybe_version_entries =
-            load_versions_file(m_fs, VersionDbType::Filesystem, m_path / registry_versions_dir_name, port_name, m_path);
+            load_filesystem_versions_file(m_fs, m_path / registry_versions_dir_name, port_name, m_path);
         auto maybe_version_entries = maybe_maybe_version_entries.get();
         if (!maybe_version_entries)
         {
@@ -876,7 +903,7 @@ namespace
         auto res = std::make_unique<FilesystemRegistryEntry>(port_name.to_string());
         for (auto&& version_entry : *version_entries)
         {
-            res->port_versions.push_back(std::move(version_entry.version));
+            res->port_versions.push_back(std::move(version_entry.version.version));
             res->version_paths.push_back(std::move(version_entry.p));
         }
 
@@ -907,7 +934,7 @@ namespace
         {
             // try to load using "stale" version database
             auto maybe_maybe_version_entries =
-                load_versions_file(m_paths.get_filesystem(), VersionDbType::Git, stale_vtp->p, port_name);
+                load_git_versions_file(m_paths.get_filesystem(), stale_vtp->p, port_name);
             auto maybe_version_entries = maybe_maybe_version_entries.get();
             if (!maybe_version_entries)
             {
@@ -936,8 +963,7 @@ namespace
         }
 
         {
-            auto maybe_maybe_version_entries =
-                load_versions_file(m_paths.get_filesystem(), VersionDbType::Git, *live_vcb, port_name);
+            auto maybe_maybe_version_entries = load_git_versions_file(m_paths.get_filesystem(), *live_vcb, port_name);
             auto maybe_version_entries = maybe_maybe_version_entries.get();
             if (!maybe_version_entries)
             {
@@ -958,7 +984,7 @@ namespace
     GitRegistryEntry::GitRegistryEntry(StringView port_name,
                                        const GitRegistry& parent,
                                        bool stale,
-                                       std::vector<VersionDbEntry>&& version_entries)
+                                       std::vector<GitVersionDbEntry>&& version_entries)
         : port_name(port_name.data(), port_name.size())
         , parent(parent)
         , stale(stale)
@@ -1165,7 +1191,7 @@ namespace
             }
 
             auto maybe_maybe_version_entries =
-                load_versions_file(parent.m_paths.get_filesystem(), VersionDbType::Git, *live_vdb, port_name);
+                load_git_versions_file(parent.m_paths.get_filesystem(), *live_vdb, port_name);
             auto maybe_version_entries = maybe_maybe_version_entries.get();
             if (!maybe_version_entries)
             {
@@ -1271,13 +1297,53 @@ namespace
         return Path(prefix) / port_name.to_string() + ".json";
     }
 
-    ExpectedL<Optional<std::vector<VersionDbEntry>>> load_versions_file(const ReadOnlyFilesystem& fs,
-                                                                        VersionDbType type,
-                                                                        const Path& registry_versions,
-                                                                        StringView port_name,
-                                                                        const Path& registry_root)
+    ExpectedL<Optional<std::vector<GitVersionDbEntry>>> load_git_versions_file(const ReadOnlyFilesystem& fs,
+                                                                               const Path& registry_versions,
+                                                                               StringView port_name)
     {
-        if (type == VersionDbType::Filesystem && registry_root.empty())
+        auto versions_file_path = registry_versions / relative_path_to_versions(port_name);
+        std::error_code ec;
+        auto contents = fs.read_contents(versions_file_path, ec);
+        if (ec)
+        {
+            if (ec == std::errc::no_such_file_or_directory)
+            {
+                return Optional<std::vector<GitVersionDbEntry>>{};
+            }
+
+            return format_filesystem_call_error(ec, "read_contents", {versions_file_path});
+        }
+
+        auto maybe_versions_json = Json::parse_object(contents, versions_file_path);
+        auto versions_json = maybe_versions_json.get();
+        if (!versions_json)
+        {
+            return std::move(maybe_versions_json).error();
+        }
+
+        auto maybe_versions_array = versions_json->get("versions");
+        if (!maybe_versions_array || !maybe_versions_array->is_array())
+        {
+            return msg::format_error(msgFailedToParseNoVersionsArray, msg::path = versions_file_path);
+        }
+
+        std::vector<GitVersionDbEntry> db_entries;
+        GitVersionDbEntryArrayDeserializer deserializer{};
+        Json::Reader r;
+        r.visit_in_key(*maybe_versions_array, "versions", db_entries, deserializer);
+        if (!r.errors().empty())
+        {
+            return msg::format_error(msgFailedToParseVersionsFile, msg::path = versions_file_path)
+                .append_raw(Strings::join("\n", r.errors()));
+        }
+
+        return db_entries;
+    }
+
+    ExpectedL<Optional<std::vector<FilesystemVersionDbEntry>>> load_filesystem_versions_file(
+        const ReadOnlyFilesystem& fs, const Path& registry_versions, StringView port_name, const Path& registry_root)
+    {
+        if (registry_root.empty())
         {
             Checks::unreachable(VCPKG_LINE_INFO, "type should never = Filesystem when registry_root is empty.");
         }
@@ -1289,43 +1355,33 @@ namespace
         {
             if (ec == std::errc::no_such_file_or_directory)
             {
-                return Optional<std::vector<VersionDbEntry>>{};
+                return Optional<std::vector<FilesystemVersionDbEntry>>{};
             }
 
             return format_filesystem_call_error(ec, "read_contents", {versions_file_path});
         }
 
-        auto maybe_versions_json = Json::parse(contents);
+        auto maybe_versions_json = Json::parse_object(contents, versions_file_path);
         auto versions_json = maybe_versions_json.get();
         if (!versions_json)
         {
-            return LocalizedString::from_raw(maybe_versions_json.error()->to_string());
+            return std::move(maybe_versions_json).error();
         }
 
-        if (!versions_json->value.is_object())
-        {
-            return msg::format_error(msgFailedToParseNoTopLevelObj, msg::path = versions_file_path);
-        }
-
-        const auto& versions_object = versions_json->value.object(VCPKG_LINE_INFO);
-        auto maybe_versions_array = versions_object.get("versions");
+        auto maybe_versions_array = versions_json->get("versions");
         if (!maybe_versions_array || !maybe_versions_array->is_array())
         {
             return msg::format_error(msgFailedToParseNoVersionsArray, msg::path = versions_file_path);
         }
 
-        std::vector<VersionDbEntry> db_entries;
-        VersionDbEntryArrayDeserializer deserializer{type, registry_root};
-        // Avoid warning treated as error.
-        if (maybe_versions_array != nullptr)
+        std::vector<FilesystemVersionDbEntry> db_entries;
+        FilesystemVersionDbEntryArrayDeserializer deserializer{registry_root};
+        Json::Reader r;
+        r.visit_in_key(*maybe_versions_array, "versions", db_entries, deserializer);
+        if (!r.errors().empty())
         {
-            Json::Reader r;
-            r.visit_in_key(*maybe_versions_array, "versions", db_entries, deserializer);
-            if (!r.errors().empty())
-            {
-                return msg::format_error(msgFailedToParseVersionsFile, msg::path = versions_file_path)
-                    .append_raw(Strings::join("\n", r.errors()));
-            }
+            return msg::format_error(msgFailedToParseVersionsFile, msg::path = versions_file_path)
+                .append_raw(Strings::join("\n", r.errors()));
         }
 
         return db_entries;
@@ -1622,18 +1678,10 @@ namespace vcpkg
         return result;
     }
 
-    ExpectedL<Optional<std::vector<std::pair<SchemedVersion, std::string>>>> get_builtin_versions(
-        const VcpkgPaths& paths, StringView port_name)
+    ExpectedL<Optional<std::vector<GitVersionDbEntry>>> get_builtin_versions(const VcpkgPaths& paths,
+                                                                             StringView port_name)
     {
-        return load_versions_file(
-                   paths.get_filesystem(), VersionDbType::Git, paths.builtin_registry_versions, port_name)
-            .map([](const auto& maybe_versions) {
-                return maybe_versions.map([](const auto& versions) {
-                    return Util::fmap(versions, [](const VersionDbEntry& entry) {
-                        return std::pair<SchemedVersion, std::string>{{entry.scheme, entry.version}, entry.git_tree};
-                    });
-                });
-            });
+        return load_git_versions_file(paths.get_filesystem(), paths.builtin_registry_versions, port_name);
     }
 
     ExpectedL<Baseline> get_builtin_baseline(const VcpkgPaths& paths)
@@ -1697,9 +1745,14 @@ namespace vcpkg
         return std::make_unique<FilesystemRegistry>(fs, std::move(path), std::move(baseline));
     }
 
-    std::unique_ptr<Json::IDeserializer<std::vector<VersionDbEntry>>> make_version_db_deserializer(VersionDbType type,
-                                                                                                   const Path& root)
+    std::unique_ptr<Json::IDeserializer<std::vector<GitVersionDbEntry>>> make_git_version_db_deserializer()
     {
-        return std::make_unique<VersionDbEntryArrayDeserializer>(type, root);
+        return std::make_unique<GitVersionDbEntryArrayDeserializer>();
+    }
+
+    std::unique_ptr<Json::IDeserializer<std::vector<FilesystemVersionDbEntry>>> make_filesystem_version_db_deserializer(
+        const Path& root)
+    {
+        return std::make_unique<FilesystemVersionDbEntryArrayDeserializer>(root);
     }
 }

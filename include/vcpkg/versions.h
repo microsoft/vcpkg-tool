@@ -71,6 +71,8 @@ namespace vcpkg
     {
         VersionScheme scheme;
         Version version;
+
+        friend bool operator==(const SchemedVersion& lhs, const SchemedVersion& rhs);
     };
 
     StringLiteral to_string_literal(VersionScheme scheme);
