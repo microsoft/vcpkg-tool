@@ -139,6 +139,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ADefaultFeature" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[a default feature]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[默认功能]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ADemandObject" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[a demand object]]></Val>
@@ -159,10 +168,13 @@
       </Item>
       <Item ItemId=";ADependencyFeature" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[a feature in a dependency]]></Val>
+          <Val><![CDATA[a feature of a dependency]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[依赖项中的一个功能]]></Val>
+            <Val><![CDATA[依赖项的功能]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[a feature in a dependency]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -180,6 +192,15 @@
           <Val><![CDATA[a feature]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[功能]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AFeatureName" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[a feature name]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[功能名称]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -891,6 +912,15 @@
           <Val><![CDATA[Ambiguous vcpkg configuration provided by both manifest and configuration file.]A;-- Delete configuration file {path}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[清单和配置文件提供的 vcpkg 配置不明确。]A;-- 请删除配置文件 {path}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AnArrayOfDefaultFeatures" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[an array of default features]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[默认功能的数组]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4276,6 +4306,33 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";DefaultFeatureCore" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the feature "core" turns off default features and thus can't be in the default features list]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[功能“核心”关闭默认功能，因此不能位于默认功能列表中]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DefaultFeatureDefault" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the feature "default" refers to the set of default features and thus can't be in the default features list]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[功能“default”引用默认功能集，因此不能位于默认功能列表中]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DefaultFeatureIdentifier" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the names of default features must be identifiers]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[默认功能的名称必须是标识符]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";DefaultFlag" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Defaulting to --{option} being on.]]></Val>
@@ -4326,6 +4383,24 @@
           <Val><![CDATA[Dependency]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[依赖项]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DependencyFeatureCore" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the feature "core" cannot be in a dependency's feature list. To turn off default features, add "default-features": false instead.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[功能“核心”不能位于依赖项的功能列表中。要关闭默认功能，请改为添加 "default-features": false。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DependencyFeatureDefault" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the feature "default" cannot be in a dependency's feature list. To turn on default features, add "default-features": true instead.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[功能“默认”不能位于依赖项的功能列表中。要打开默认功能，请改为添加“default-features”: true。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -7753,15 +7828,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";InvalidDependency" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[dependencies must be lowercase alphanumeric+hyphens, and not one of the reserved names]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[依赖项必须是小写字母数字+连字符，而不是保留名称之一]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";InvalidEscapeSequence" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Invalid escape sequence]]></Val>
@@ -8997,19 +9063,25 @@
       </Item>
       <Item ItemId=";PEConfigCrossesSectionBoundary" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[While parsing Portable Executable {path}, image config directory crosses a secion boundary.]]></Val>
+          <Val><![CDATA[While parsing Portable Executable {path}, image config directory crosses a section boundary.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[分析可移植可执行文件 {path} 时，映像配置目录跨越了一个分区边界。]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[While parsing Portable Executable {path}, image config directory crosses a secion boundary.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";PEImportCrossesSectionBoundary" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[While parsing Portable Executable {path}, import table crosses a secion boundary.]]></Val>
+          <Val><![CDATA[While parsing Portable Executable {path}, import table crosses a section boundary.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[分析可移植可执行文件 {path} 时，导入表跨越了分区边界。]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[While parsing Portable Executable {path}, import table crosses a secion boundary.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -9313,30 +9385,48 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ParseFeatureNameError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA["{package_name}" is not a valid feature name. Feature names must be lowercase alphanumeric+hypens and not reserved (see {url} for more information).]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[“{package_name}”不是有效的功能名称。功能名称必须由小写字母数字字符和连字符组成，且不得为预留值(有关详细信息，请参阅 {url})。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ParseIdentifierError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA["{value}" is not a valid identifier. Identifiers must be lowercase alphanumeric+hypens and not reserved (see {url} for more information)]]></Val>
+          <Val><![CDATA["{value}" is not a valid identifier. Identifiers must be lowercase alphanumeric+hypens and not reserved (see {url} for more information).]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA["{value}" 不是有效的标识符。标识符必须由小写字母数字字符和连字符组成，且不得为预留值(有关详细信息，请参阅 {url})]]></Val>
+            <Val><![CDATA["{value}" 不是有效的标识符。标识符必须由小写字母数字字符和连字符组成，且不得为预留值(有关详细信息，请参阅 {url})。]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA["{value}" is not a valid identifier. Identifiers must be lowercase alphanumeric+hypens and not reserved (see {url} for more information)]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ParsePackageNameError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA["{package_name}" is not a valid package name. Package names must be lowercase alphanumeric+hypens and not reserved (see {url} for more information)]]></Val>
+          <Val><![CDATA["{package_name}" is not a valid package name. Package names must be lowercase alphanumeric+hypens and not reserved (see {url} for more information).]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[“{package_name}”不是有效的包名称。包名称必须由小写字母数字字符和连字符组成，且不得为预留值(有关详细信息，请参阅 {url})]]></Val>
+            <Val><![CDATA[“{package_name}”不是有效的包名称。包名称必须由小写字母数字字符和连字符组成，且不得为预留值(有关详细信息，请参阅 {url})。]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA["{package_name}" is not a valid package name. Package names must be lowercase alphanumeric+hypens and not reserved (see {url} for more information)]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ParsePackagePatternError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA["{package_name}" is not a valid package pattern. Package patterns must use only one wildcard character (*) and it must be the last character in the pattern (see {url} for more information)]]></Val>
+          <Val><![CDATA["{package_name}" is not a valid package pattern. Package patterns must use only one wildcard character (*) and it must be the last character in the pattern (see {url} for more information).]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[“{package_name}”不是有效的包模式。包模式只能使用一个通配符(*)，并且它必须是模式中的最后一个字符(有关详细信息，请参阅 {url})]]></Val>
+            <Val><![CDATA[“{package_name}”不是有效的包模式。包模式只能使用一个通配符(*)，并且它必须是模式中的最后一个字符(有关详细信息，请参阅 {url})。]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA["{package_name}" is not a valid package pattern. Package patterns must use only one wildcard character (*) and it must be the last character in the pattern (see {url} for more information)]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
