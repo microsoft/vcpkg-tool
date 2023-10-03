@@ -6,6 +6,9 @@
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
+#include <iterator>
+#include <string>
+
 namespace vcpkg
 {
     constexpr CommandMetadata CommandZChangelogMetadata{
@@ -32,7 +35,7 @@ namespace vcpkg
         auto total_port_count = paths.get_filesystem()
                                     .get_directories_non_recursive(paths.builtin_ports_directory(), VCPKG_LINE_INFO)
                                     .size();
-        result.append(fmt::format("#### Total port count: {}\n", total_port_count));
+        fmt::format_to(std::back_inserter(result), "#### Total port count: {}\n", total_port_count);
         result.append("#### Total port count per triplet (tested) (tentative): LINK\n");
         result.append("|triplet|ports available|\n");
         result.append("|---|---|\n");
@@ -61,13 +64,14 @@ namespace vcpkg
         if (!portsdiff.added_ports.empty())
         {
             result.append("<details>\n");
-            result.append(fmt::format("<summary><b>The following {} ports have been added:</b></summary>\n\n",
-                                      portsdiff.added_ports.size()));
+            fmt::format_to(std::back_inserter(result),
+                           "<summary><b>The following {} ports have been added:</b></summary>\n\n",
+                           portsdiff.added_ports.size());
             result.append("|port|version|\n");
             result.append("|---|---|\n");
             for (auto&& added_port : portsdiff.added_ports)
             {
-                result.append(fmt::format("|{}|{}|\n", added_port.port_name, added_port.version));
+                fmt::format_to(std::back_inserter(result), "|{}|{}|\n", added_port.port_name, added_port.version);
             }
 
             result.append("</details>\n\n");
@@ -76,16 +80,18 @@ namespace vcpkg
         if (!portsdiff.updated_ports.empty())
         {
             result.append("<details>\n");
-            result.append(fmt::format("<summary><b>The following {} ports have been updated:</b></summary>\n\n",
-                                      portsdiff.added_ports.size()));
+            fmt::format_to(std::back_inserter(result),
+                           "<summary><b>The following {} ports have been updated:</b></summary>\n\n",
+                           portsdiff.added_ports.size());
             result.append("|port|original version|new version|\n");
             result.append("|---|---|---|\n");
             for (auto&& updated_port : portsdiff.updated_ports)
             {
-                result.append(fmt::format("|{}|{}|{}|\n",
-                                          updated_port.port_name,
-                                          updated_port.version_diff.left,
-                                          updated_port.version_diff.right));
+                fmt::format_to(std::back_inserter(result),
+                               "|{}|{}|{}|\n",
+                               updated_port.port_name,
+                               updated_port.version_diff.left,
+                               updated_port.version_diff.right);
             }
 
             result.append("</details>\n\n");
@@ -94,13 +100,14 @@ namespace vcpkg
         if (!portsdiff.removed_ports.empty())
         {
             result.append("<details>\n");
-            result.append(fmt::format("<summary><b>The following {} ports have been removed:</b></summary>\n\n",
-                                      portsdiff.removed_ports.size()));
+            fmt::format_to(std::back_inserter(result),
+                           "<summary><b>The following {} ports have been removed:</b></summary>\n\n",
+                           portsdiff.removed_ports.size());
             result.append("|port|\n");
             result.append("|---|\n");
             for (auto&& removed_port : portsdiff.removed_ports)
             {
-                result.append(fmt::format("|{}|\n", removed_port));
+                fmt::format_to(std::back_inserter(result), "|{}|\n", removed_port);
             }
 
             result.append("</details>\n\n");
