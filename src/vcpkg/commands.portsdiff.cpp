@@ -37,7 +37,7 @@ namespace
         const auto temp_checkout_path = paths.root / fmt::format("{}-{}", ports_dir_name, git_commit_id);
         fs.create_directory(temp_checkout_path, IgnoreErrors{});
         const auto checkout_this_dir =
-            fmt::format(R"(.\{})", ports_dir_name); // Must be relative to the root of the repository
+            fmt::format("./{}", ports_dir_name); // Must be relative to the root of the repository
 
         auto cmd = paths.git_cmd_builder(dot_git_dir, temp_checkout_path)
                        .string_arg("checkout")
