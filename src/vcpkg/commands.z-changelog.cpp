@@ -36,21 +36,21 @@ namespace vcpkg
                                     .get_directories_non_recursive(paths.builtin_ports_directory(), VCPKG_LINE_INFO)
                                     .size();
         fmt::format_to(std::back_inserter(result), "#### Total port count: {}\n", total_port_count);
-        result.append("#### Total port count per triplet (tested) (tentative): LINK\n");
+        result.append("#### Total port count per triplet (tested): LINK\n");
         result.append("|triplet|ports available|\n");
         result.append("|---|---|\n");
-        result.append("|x86-windows|NUMBER|\n");
-        result.append("|**x64-windows**|NUMBER|\n");
-        result.append("|x64-windows-static|NUMBER|\n");
-        result.append("|x64-windows-static-md|NUMBER|\n");
-        result.append("|x64-uwp|NUMBER|\n");
-        result.append("|arm64-windows|NUMBER|\n");
-        result.append("|arm64-uwp|NUMBER|\n");
-        result.append("|**x64-osx**|NUMBER|\n");
-        result.append("|**x64-linux**|NUMBER|\n");
-        result.append("|arm-neon-android|NUMBER|\n");
-        result.append("|x64-android|NUMBER|\n");
-        result.append("|arm64-android|NUMBER|\n");
+        result.append("|x86-windows|Building...|\n");
+        result.append("|**x64-windows**|Building...|\n");
+        result.append("|x64-windows-static|Building...|\n");
+        result.append("|x64-windows-static-md|Building...|\n");
+        result.append("|x64-uwp|Building...|\n");
+        result.append("|arm64-windows|Building...|\n");
+        result.append("|arm64-uwp|Building...|\n");
+        result.append("|**x64-osx**|Building...|\n");
+        result.append("|**x64-linux**|Building...|\n");
+        result.append("|arm-neon-android|Building...|\n");
+        result.append("|x64-android|Building...|\n");
+        result.append("|arm64-android|Building...|\n");
         result.append("\n");
 
         result.append("The following vcpkg-tool releases have occurred since the last registry release:\n");
