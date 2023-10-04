@@ -955,7 +955,7 @@
   "PortsDiffHelp": "Das Argument muss zum Auschecken ein Branch/Tag/Hash sein.",
   "PortsNoDiff": "Es wurden keine Änderungen an den Ports zwischen den beiden Commits vorgenommen.",
   "PortsRemoved": "Die folgenden {count} Ports wurden entfernt:",
-  "PortsUpdated": "\nDie folgenden {count} Ports wurden entfernt:",
+  "PortsUpdated": "The following {count} ports were updated:",
   "PrebuiltPackages": "Es gibt Pakete, die nicht erstellt wurden. Führen Sie die folgenden Ausführungen aus, um sie zu erstellen:",
   "PreviousIntegrationFileRemains": "Die vorherige Integrationsdatei wurde nicht entfernt.",
   "ProgramReturnedNonzeroExitCode": "Fehler bei {tool_name}. Exitcode: ({exit_code}).",

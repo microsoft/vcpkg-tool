@@ -955,7 +955,7 @@
   "PortsDiffHelp": "Argument powinien być gałęzią/tagiem/skrótem do wyewidencjonowania.",
   "PortsNoDiff": "Między tymi dwoma zatwierdzeniami nie wprowadzono żadnych zmian w portach.",
   "PortsRemoved": "Następujące porty ({count}) zostały usunięte:",
-  "PortsUpdated": "\nAktualizowano następujące porty ({count}):",
+  "PortsUpdated": "The following {count} ports were updated:",
   "PrebuiltPackages": "Istnieją pakiety, które nie zostały skompilowane. Aby je skompilować, uruchom:",
   "PreviousIntegrationFileRemains": "Poprzedni plik integracji nie został usunięty.",
   "ProgramReturnedNonzeroExitCode": "Operacja {tool_name} nie powiodła się. Kod zakończenia: ({exit_code}).",

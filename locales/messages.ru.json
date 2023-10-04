@@ -955,7 +955,7 @@
   "PortsDiffHelp": "Аргумент должен быть ветвью, тегом или хэшом для извлечения.",
   "PortsNoDiff": "Порты между двумя фиксациями не изменились.",
   "PortsRemoved": "Удалены следующие порты ({count}):",
-  "PortsUpdated": "\nОбновлены следующие порты ({count}):",
+  "PortsUpdated": "The following {count} ports were updated:",
   "PrebuiltPackages": "Существуют несобранные пакеты. Чтобы собрать их, выполните:",
   "PreviousIntegrationFileRemains": "Предыдущий файл интеграции не был удален.",
   "ProgramReturnedNonzeroExitCode": "Сбой средства {tool_name} с кодом завершения {exit_code}.",

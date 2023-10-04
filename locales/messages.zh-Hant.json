@@ -955,7 +955,7 @@
   "PortsDiffHelp": "引數應為要簽出的分支/標籤/雜湊。",
   "PortsNoDiff": "兩個認可之間的連接埠中沒有變更。",
   "PortsRemoved": "已移除下列 {count} 個連接埠:",
-  "PortsUpdated": "\n已更新下列 {count} 個連接埠:",
+  "PortsUpdated": "The following {count} ports were updated:",
   "PrebuiltPackages": "有些套件尚未建置。若要建置，請執行:",
   "PreviousIntegrationFileRemains": "未移除先前的整合檔案。",
   "ProgramReturnedNonzeroExitCode": "{tool_name} 失敗，結束代碼: ({exit_code})。",

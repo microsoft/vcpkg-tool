@@ -955,7 +955,7 @@
   "PortsDiffHelp": "인수는 체크 아웃할 분기/태그/해시여야 합니다.",
   "PortsNoDiff": "두 커밋 사이의 포트에 변경 내용이 없습니다.",
   "PortsRemoved": "다음 {count}개 포트가 제거되었습니다.",
-  "PortsUpdated": "\n다음 {count}개 포트가 업데이트되었습니다.",
+  "PortsUpdated": "The following {count} ports were updated:",
   "PrebuiltPackages": "빌드되지 않은 패키지가 있습니다. 빌드하려면 다음을 실행하세요.",
   "PreviousIntegrationFileRemains": "이전 통합 파일이 제거되지 않았습니다.",
   "ProgramReturnedNonzeroExitCode": "{tool_name}이(가) 종료 코드 ({exit_code})과(와) 함께 실패했습니다.",

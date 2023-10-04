@@ -955,7 +955,7 @@
   "PortsDiffHelp": "O argumento deve ser um branch/tag/hash para checkout.",
   "PortsNoDiff": "Não houve alterações nas portas entre as duas confirmações.",
   "PortsRemoved": "As seguintes {count} portas foram removidas:",
-  "PortsUpdated": "\nAs seguintes portas {count} foram atualizadas:",
+  "PortsUpdated": "The following {count} ports were updated:",
   "PrebuiltPackages": "Existem pacotes que não foram construídos. Para construí-los execute:",
   "PreviousIntegrationFileRemains": "O arquivo de integração anterior não foi removido.",
   "ProgramReturnedNonzeroExitCode": "{tool_name} falhou com o código de saída: ({exit_code}).",
