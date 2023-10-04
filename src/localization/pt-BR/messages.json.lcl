@@ -139,6 +139,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ADefaultFeature" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[a default feature]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[um recurso padrão]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ADemandObject" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[a demand object]]></Val>
@@ -159,10 +168,13 @@
       </Item>
       <Item ItemId=";ADependencyFeature" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[a feature in a dependency]]></Val>
+          <Val><![CDATA[a feature of a dependency]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[um recurso em uma dependência]]></Val>
+            <Val><![CDATA[um recurso de uma dependência]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[a feature in a dependency]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -180,6 +192,15 @@
           <Val><![CDATA[a feature]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[um recurso]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AFeatureName" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[a feature name]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[um nome de recurso]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -891,6 +912,15 @@
           <Val><![CDATA[Ambiguous vcpkg configuration provided by both manifest and configuration file.]A;-- Delete configuration file {path}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Configuração vcpkg ambígua fornecida pelo manifesto e pelo arquivo de configuração.]A;-- Excluir arquivo de configuração {path}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AnArrayOfDefaultFeatures" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[an array of default features]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[uma matriz de recursos padrão]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4276,6 +4306,33 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";DefaultFeatureCore" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the feature "core" turns off default features and thus can't be in the default features list]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[o recurso "core" desabilita os recursos padrão e, portanto, não pode estar na lista de recursos padrão]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DefaultFeatureDefault" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the feature "default" refers to the set of default features and thus can't be in the default features list]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[o recurso "padrão" refere-se ao conjunto de recursos padrão e, portanto, não pode estar na lista de recursos padrão]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DefaultFeatureIdentifier" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the names of default features must be identifiers]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[os nomes dos recursos padrão devem ser identificadores]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";DefaultFlag" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Defaulting to --{option} being on.]]></Val>
@@ -4326,6 +4383,24 @@
           <Val><![CDATA[Dependency]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Dependência]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DependencyFeatureCore" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the feature "core" cannot be in a dependency's feature list. To turn off default features, add "default-features": false instead.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[o recurso "core" não pode estar na lista de recursos de uma dependência. Para desabilitar os recursos padrão, adicione "default-features": false.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DependencyFeatureDefault" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the feature "default" cannot be in a dependency's feature list. To turn on default features, add "default-features": true instead.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[o recurso "padrão" não pode estar na lista de recursos de uma dependência. Para habilitar os recursos padrão, adicione "default-features": true.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -7753,15 +7828,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";InvalidDependency" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[dependencies must be lowercase alphanumeric+hyphens, and not one of the reserved names]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[as dependências devem ser alfanuméricos e hifens minúsculos e não um dos nomes reservados]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";InvalidEscapeSequence" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Invalid escape sequence]]></Val>
@@ -8994,19 +9060,25 @@
       </Item>
       <Item ItemId=";PEConfigCrossesSectionBoundary" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[While parsing Portable Executable {path}, image config directory crosses a secion boundary.]]></Val>
+          <Val><![CDATA[While parsing Portable Executable {path}, image config directory crosses a section boundary.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Ao analisar o Executável Portátil {path}, o diretório de configuração de imagem cruza um limite de seção.]]></Val>
+            <Val><![CDATA[Ao analisar o Executável Portátil {path}, o diretório de configuração da imagem cruza o limite da seção.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[While parsing Portable Executable {path}, image config directory crosses a secion boundary.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";PEImportCrossesSectionBoundary" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[While parsing Portable Executable {path}, import table crosses a secion boundary.]]></Val>
+          <Val><![CDATA[While parsing Portable Executable {path}, import table crosses a section boundary.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Ao analisar o Executável Portátil {path}, a tabela de importação cruza um limite de seção.]]></Val>
+            <Val><![CDATA[Ao analisar o Executável Portátil {path}, a tabela de importação cruza o limite de uma seção.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[While parsing Portable Executable {path}, import table crosses a secion boundary.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -9310,30 +9382,48 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ParseFeatureNameError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA["{package_name}" is not a valid feature name. Feature names must be lowercase alphanumeric+hypens and not reserved (see {url} for more information).]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA["{package_name}" não é um nome de recurso válido. Os nomes dos recursos devem ser alfanuméricos minúsculos + hifens e não reservados (consulte {url} para obter mais informações).]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ParseIdentifierError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA["{value}" is not a valid identifier. Identifiers must be lowercase alphanumeric+hypens and not reserved (see {url} for more information)]]></Val>
+          <Val><![CDATA["{value}" is not a valid identifier. Identifiers must be lowercase alphanumeric+hypens and not reserved (see {url} for more information).]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA["{value}" não é um identificador válido. Os identificadores devem ser alfanuméricos minúsculos + hifens e não reservados (consulte {url} para obter mais informações)]]></Val>
+            <Val><![CDATA["{value}" não é um identificador válido. Os identificadores devem ser alfanuméricos minúsculos + hifens e não reservados (consulte {url} para obter mais informações).]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA["{value}" is not a valid identifier. Identifiers must be lowercase alphanumeric+hypens and not reserved (see {url} for more information)]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ParsePackageNameError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA["{package_name}" is not a valid package name. Package names must be lowercase alphanumeric+hypens and not reserved (see {url} for more information)]]></Val>
+          <Val><![CDATA["{package_name}" is not a valid package name. Package names must be lowercase alphanumeric+hypens and not reserved (see {url} for more information).]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA["{Package_name}" não é um nome de pacote válido. Os nomes dos pacotes devem ser alfanuméricos minúsculos + hifens e não reservados (consulte {url} para obter mais informações)]]></Val>
+            <Val><![CDATA["{Package_name}" não é um nome de pacote válido. Os nomes dos pacotes devem ser alfanuméricos minúsculos + hifens e não reservados (consulte {url} para obter mais informações).]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA["{package_name}" is not a valid package name. Package names must be lowercase alphanumeric+hypens and not reserved (see {url} for more information)]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ParsePackagePatternError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA["{package_name}" is not a valid package pattern. Package patterns must use only one wildcard character (*) and it must be the last character in the pattern (see {url} for more information)]]></Val>
+          <Val><![CDATA["{package_name}" is not a valid package pattern. Package patterns must use only one wildcard character (*) and it must be the last character in the pattern (see {url} for more information).]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA["{Package_name}" não é um padrão de pacote válido. Os padrões de pacote devem usar somente um caractere (*) e deve ser o último caractere no padrão (consulte {url} para obter mais informações)]]></Val>
+            <Val><![CDATA["{Package_name}" não é um padrão de pacote válido. Os padrões de pacote devem usar apenas um caractere curinga (*) e deve ser o último caractere do padrão (consulte {url} para obter mais informações).]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA["{package_name}" is not a valid package pattern. Package patterns must use only one wildcard character (*) and it must be the last character in the pattern (see {url} for more information)]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
