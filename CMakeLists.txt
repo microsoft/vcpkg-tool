@@ -454,7 +454,7 @@ if (VCPKG_ARTIFACTS_DEVELOPMENT)
 endif()
 
 add_custom_target(generate-message-map
-    COMMAND "$<TARGET_FILE:vcpkg>" x-generate-default-message-map locales/messages.json "${VCPKG_ARTIFACTS_SOURCE_DIR}/locales/messages.json"
+    COMMAND "$<TARGET_FILE:vcpkg>" z-generate-default-message-map locales/messages.json "${VCPKG_ARTIFACTS_SOURCE_DIR}/locales/messages.json"
     DEPENDS ${GENERATE_MESSAGE_MAP_DEPENDENCIES}
     WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}"
     COMMENT "Update locales/messages.json"

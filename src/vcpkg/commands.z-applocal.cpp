@@ -13,10 +13,10 @@
 #include <set>
 #include <string>
 
+using namespace vcpkg;
+
 namespace
 {
-    using namespace vcpkg;
-
     WriteFilePointer maybe_create_log(const std::map<std::string, std::string, std::less<>>& settings,
                                       StringLiteral setting,
                                       const Filesystem& fs)
@@ -540,36 +540,38 @@ namespace
         bool m_magnum_installed;
         bool m_qt_installed;
     };
-}
 
-namespace vcpkg::Commands
+    constexpr StringLiteral OPTION_TARGET_BINARY = "target-binary";
+    constexpr StringLiteral OPTION_INSTALLED_DIR = "installed-bin-dir";
+    constexpr StringLiteral OPTION_TLOG_FILE = "tlog-file";
+    constexpr StringLiteral OPTION_COPIED_FILES_LOG = "copied-files-log";
+
+    constexpr CommandSetting SETTINGS[] = {
+        {OPTION_TARGET_BINARY, msgCmdSettingTargetBin},
+        {OPTION_INSTALLED_DIR, msgCmdSettingInstalledDir},
+        {OPTION_TLOG_FILE, msgCmdSettingTLogFile},
+        {OPTION_COPIED_FILES_LOG, msgCmdSettingCopiedFilesLog},
+    };
+} // unnamed namespace
+
+namespace vcpkg
 {
+    constexpr CommandMetadata CommandZApplocalMetadata{
+        "z-applocal",
+        msgCmdZApplocalSynopsis,
+        {"vcpkg z-applocal --target-binary=\"Path/to/binary\" --installed-bin-dir=\"Path/to/installed/bin\" "
+         "--tlog-file=\"Path/to/tlog.tlog\" --copied-files-log=\"Path/to/copiedFilesLog.log\""},
+        Undocumented,
+        AutocompletePriority::Internal,
+        0,
+        0,
+        {{}, SETTINGS},
+        nullptr,
+    };
+
     void command_z_applocal_and_exit(const VcpkgCmdArguments& args, const Filesystem&)
     {
-        static constexpr StringLiteral OPTION_TARGET_BINARY = "target-binary";
-        static constexpr StringLiteral OPTION_INSTALLED_DIR = "installed-bin-dir";
-        static constexpr StringLiteral OPTION_TLOG_FILE = "tlog-file";
-        static constexpr StringLiteral OPTION_COPIED_FILES_LOG = "copied-files-log";
-
-        static constexpr CommandSetting SETTINGS[] = {
-            {OPTION_TARGET_BINARY, []() { return msg::format(msgCmdSettingTargetBin); }},
-            {OPTION_INSTALLED_DIR, []() { return msg::format(msgCmdSettingInstalledDir); }},
-            {OPTION_TLOG_FILE, []() { return msg::format(msgCmdSettingTLogFile); }},
-            {OPTION_COPIED_FILES_LOG, []() { return msg::format(msgCmdSettingCopiedFilesLog); }},
-        };
-
-        const CommandStructure COMMAND_STRUCTURE = {
-            [] {
-                return LocalizedString::from_raw(
-                    "--target-binary=\"Path/to/binary\" --installed-bin-dir=\"Path/to/installed/bin\" --tlog-file="
-                    "\"Path/to/tlog.tlog\" --copied-files-log=\"Path/to/copiedFilesLog.log\"");
-            },
-            0,
-            0,
-            {{}, SETTINGS, {}},
-            nullptr};
-
-        auto parsed = args.parse_arguments(COMMAND_STRUCTURE);
+        auto parsed = args.parse_arguments(CommandZApplocalMetadata);
         const auto target_binary = parsed.settings.find(OPTION_TARGET_BINARY);
         if (target_binary == parsed.settings.end())
         {
@@ -596,5 +598,5 @@ namespace vcpkg::Commands
         invocation.resolve(target_binary_path);
         Checks::exit_success(VCPKG_LINE_INFO);
     }
-}
-#endif
+} // namespace vcpkg
+#endif // ^^^ _WIN32

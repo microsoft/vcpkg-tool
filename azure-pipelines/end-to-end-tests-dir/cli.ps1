@@ -11,7 +11,7 @@ Run-Vcpkg -TestArgs ($commonArgs + @("install", "vcpkg-hello-world-1", "--fast")
 Throw-IfNotFailed
 
 if ($IsWindows) {
-    $warningText = 'Starting with the September 2023 release'
+    $warningText = 'In the September 2023 release'
 
     # build-external not tested
     # ci not tested
@@ -34,6 +34,12 @@ if ($IsWindows) {
     Throw-IfFailed
     if ($output.Contains($warningText)) {
         throw 'depend-info with arg should not emit the triplet warning'
+    }
+
+    $output = Run-VcpkgAndCaptureOutput -TestArgs ($directoryArgs + @('depend-info', 'vcpkg-hello-world-1', '--triplet', 'x64-windows'))
+    Throw-IfFailed
+    if ($output.Contains($warningText)) {
+        throw 'depend-info with new default arg should not emit the triplet warning'
     }
 
     # set-installed

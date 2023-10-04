@@ -336,6 +336,11 @@ namespace vcpkg
         return ret;
     }
 
+    bool operator==(const SchemedVersion& lhs, const SchemedVersion& rhs)
+    {
+        return lhs.scheme == rhs.scheme && lhs.version == rhs.version;
+    }
+
     StringLiteral to_string_literal(VersionScheme scheme)
     {
         static constexpr StringLiteral MISSING = "missing";

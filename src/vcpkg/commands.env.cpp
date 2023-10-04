@@ -12,45 +12,73 @@
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
-namespace vcpkg::Commands::Env
+using namespace vcpkg;
+
+namespace
 {
-    static constexpr StringLiteral OPTION_BIN = "bin";
-    static constexpr StringLiteral OPTION_INCLUDE = "include";
-    static constexpr StringLiteral OPTION_DEBUG_BIN = "debug-bin";
-    static constexpr StringLiteral OPTION_TOOLS = "tools";
-    static constexpr StringLiteral OPTION_PYTHON = "python";
+    constexpr StringLiteral OPTION_BIN = "bin";
+    constexpr StringLiteral OPTION_INCLUDE = "include";
+    constexpr StringLiteral OPTION_DEBUG_BIN = "debug-bin";
+    constexpr StringLiteral OPTION_TOOLS = "tools";
+    constexpr StringLiteral OPTION_PYTHON = "python";
 
-    static constexpr std::array<CommandSwitch, 5> SWITCHES = {{
-        {OPTION_BIN, []() { return msg::format(msgCmdEnvOptions, msg::path = "bin/", msg::env_var = "PATH"); }},
+    constexpr CommandSwitch SWITCHES[] = {
+        {OPTION_BIN,
+         [] {
+             return msg::format(
+                 msgCmdEnvOptions, msg::path = "bin/", msg::env_var = format_environment_variable("PATH"));
+         }},
         {OPTION_INCLUDE,
-         []() { return msg::format(msgCmdEnvOptions, msg::path = "include/", msg::env_var = "INCLUDE"); }},
+         [] {
+             return msg::format(
+                 msgCmdEnvOptions, msg::path = "include/", msg::env_var = format_environment_variable("INCLUDE"));
+         }},
         {OPTION_DEBUG_BIN,
-         []() { return msg::format(msgCmdEnvOptions, msg::path = "debug/bin/", msg::env_var = "PATH"); }},
-        {OPTION_TOOLS, []() { return msg::format(msgCmdEnvOptions, msg::path = "tools/*/", msg::env_var = "PATH"); }},
+         [] {
+             return msg::format(
+                 msgCmdEnvOptions, msg::path = "debug/bin/", msg::env_var = format_environment_variable("PATH"));
+         }},
+        {OPTION_TOOLS,
+         [] {
+             return msg::format(
+                 msgCmdEnvOptions, msg::path = "tools/*/", msg::env_var = format_environment_variable("PATH"));
+         }},
         {OPTION_PYTHON,
-         []() { return msg::format(msgCmdEnvOptions, msg::path = "python/", msg::env_var = "PYTHONPATH"); }},
-    }};
+         [] {
+             return msg::format(
+                 msgCmdEnvOptions, msg::path = "python/", msg::env_var = format_environment_variable("PYTHONPATH"));
+         }},
+    };
 
-    const CommandStructure COMMAND_STRUCTURE = {
-        [] {
-            return create_example_string(
-                fmt::format("env <{}> --triplet x64-windows", msg::format(msgOptionalCommand)));
+} // unnamed namespace
+
+namespace vcpkg
+{
+    constexpr CommandMetadata CommandEnvMetadata{
+        "env",
+        msgHelpEnvCommand,
+        {
+            "vcpkg env --triplet x64-windows",
+            msgCommandEnvExample2,
+            "vcpkg env \"ninja --version\" --triplet x64-windows",
         },
+        Undocumented,
+        AutocompletePriority::Public,
         0,
         1,
-        {SWITCHES, {}},
+        {SWITCHES},
         nullptr,
     };
 
     // This command should probably optionally take a port
-    void perform_and_exit(const VcpkgCmdArguments& args,
-                          const VcpkgPaths& paths,
-                          Triplet triplet,
-                          Triplet /*host_triplet*/)
+    void command_env_and_exit(const VcpkgCmdArguments& args,
+                              const VcpkgPaths& paths,
+                              Triplet triplet,
+                              Triplet /*host_triplet*/)
     {
         const auto& fs = paths.get_filesystem();
 
-        const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
+        const ParsedArguments options = args.parse_arguments(CommandEnvMetadata);
 
         auto registry_set = paths.make_registry_set();
         PathsPortFileProvider provider(
@@ -112,6 +140,7 @@ namespace vcpkg::Commands::Env
 
 #if defined(_WIN32)
         Command cmd("cmd");
+        cmd.string_arg("/d");
 #else  // ^^^ _WIN32 / !_WIN32 vvv
         Command cmd("");
         Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgEnvPlatformNotSupported);
@@ -129,4 +158,4 @@ namespace vcpkg::Commands::Env
 #endif
         Checks::exit_with_code(VCPKG_LINE_INFO, rc.value_or_exit(VCPKG_LINE_INFO));
     }
-}
+} // namespace vcpkg

@@ -542,7 +542,8 @@ namespace vcpkg
             }
         }
 
-        virtual void add_system_paths(const ReadOnlyFilesystem& fs, std::vector<Path>& out_candidate_paths) const
+        virtual void add_system_paths(const ReadOnlyFilesystem& fs,
+                                      std::vector<Path>& out_candidate_paths) const override
         {
             const auto& program_files = get_program_files_platform_bitness();
             if (const auto pf = program_files.get())
@@ -842,7 +843,8 @@ namespace vcpkg
             s.append(msgToolFetchFailed, msg::tool_name = tool.tool_data_name());
             if (env_force_system_binaries && download_available)
             {
-                s.append_raw(' ').append(msgDownloadAvailable, msg::env_var = s_env_vcpkg_force_system_binaries);
+                s.append_raw(' ').append(msgDownloadAvailable,
+                                         msg::env_var = format_environment_variable(s_env_vcpkg_force_system_binaries));
             }
             if (consider_system)
             {

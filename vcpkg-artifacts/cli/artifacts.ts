@@ -219,6 +219,12 @@ class NoTtyProgressRenderer implements Partial<ProgressRenderer> {
     }
   }
 
+  stop(): void {
+    if (this.#downloadTimeoutId) {
+      clearTimeout(this.#downloadTimeoutId);
+    }
+  }
+
   unpackArchiveStart(archiveUri: Uri) {
     this.channels.message(i`Unpacking ${archiveUri.fsPath}...`);
   }

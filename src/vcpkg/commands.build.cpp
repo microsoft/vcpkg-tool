@@ -54,41 +54,63 @@ namespace
     static const NullBuildLogsRecorder null_build_logs_recorder_instance;
 }
 
-namespace vcpkg::Build
+namespace vcpkg
 {
-    void perform_and_exit_ex(const VcpkgCmdArguments& args,
-                             const FullPackageSpec& full_spec,
-                             Triplet host_triplet,
-                             const PathsPortFileProvider& provider,
-                             const IBuildLogsRecorder& build_logs_recorder,
-                             const VcpkgPaths& paths)
+    void command_build_and_exit_ex(const VcpkgCmdArguments& args,
+                                   const FullPackageSpec& full_spec,
+                                   Triplet host_triplet,
+                                   const PathsPortFileProvider& provider,
+                                   const IBuildLogsRecorder& build_logs_recorder,
+                                   const VcpkgPaths& paths)
     {
         Checks::exit_with_code(VCPKG_LINE_INFO,
-                               perform_ex(args, full_spec, host_triplet, provider, build_logs_recorder, paths));
+                               command_build_ex(args, full_spec, host_triplet, provider, build_logs_recorder, paths));
     }
 
-    const CommandStructure COMMAND_STRUCTURE = {
-        [] { return create_example_string("build zlib:x64-windows"); },
+    constexpr CommandMetadata CommandBuildMetadata{
+        "build",
+        msgCmdBuildSynopsis,
+        {msgCmdBuildExample1, "vcpkg build zlib:x64-windows"},
+        Undocumented,
+        AutocompletePriority::Internal,
         1,
         1,
-        {{}, {}},
+        {},
         nullptr,
     };
 
-    void perform_and_exit(const VcpkgCmdArguments& args,
-                          const VcpkgPaths& paths,
-                          Triplet default_triplet,
-                          Triplet host_triplet)
+    void command_build_and_exit(const VcpkgCmdArguments& args,
+                                const VcpkgPaths& paths,
+                                Triplet default_triplet,
+                                Triplet host_triplet)
     {
-        Checks::exit_with_code(VCPKG_LINE_INFO, perform(args, paths, default_triplet, host_triplet));
+        // Build only takes a single package and all dependencies must already be installed
+        const ParsedArguments options = args.parse_arguments(CommandBuildMetadata);
+        bool default_triplet_used = false;
+        const FullPackageSpec spec = check_and_get_full_package_spec(options.command_arguments[0],
+                                                                     default_triplet,
+                                                                     default_triplet_used,
+                                                                     CommandBuildMetadata.get_example_text(),
+                                                                     paths.get_triplet_db());
+        if (default_triplet_used)
+        {
+            print_default_triplet_warning(args, paths.get_triplet_db());
+        }
+
+        auto& fs = paths.get_filesystem();
+        auto registry_set = paths.make_registry_set();
+        PathsPortFileProvider provider(
+            fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
+        Checks::exit_with_code(VCPKG_LINE_INFO,
+                               command_build_ex(args, spec, host_triplet, provider, null_build_logs_recorder(), paths));
     }
 
-    int perform_ex(const VcpkgCmdArguments& args,
-                   const FullPackageSpec& full_spec,
-                   Triplet host_triplet,
-                   const PathsPortFileProvider& provider,
-                   const IBuildLogsRecorder& build_logs_recorder,
-                   const VcpkgPaths& paths)
+    int command_build_ex(const VcpkgCmdArguments& args,
+                         const FullPackageSpec& full_spec,
+                         Triplet host_triplet,
+                         const PathsPortFileProvider& provider,
+                         const IBuildLogsRecorder& build_logs_recorder,
+                         const VcpkgPaths& paths)
     {
         const PackageSpec& spec = full_spec.package_spec;
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
@@ -175,31 +197,6 @@ namespace vcpkg::Build
         return 0;
     }
 
-    int perform(const VcpkgCmdArguments& args, const VcpkgPaths& paths, Triplet default_triplet, Triplet host_triplet)
-    {
-        // Build only takes a single package and all dependencies must already be installed
-        const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
-        bool default_triplet_used = false;
-        const FullPackageSpec spec = check_and_get_full_package_spec(options.command_arguments[0],
-                                                                     default_triplet,
-                                                                     default_triplet_used,
-                                                                     COMMAND_STRUCTURE.get_example_text(),
-                                                                     paths.get_triplet_db());
-        if (default_triplet_used)
-        {
-            print_default_triplet_warning(args, paths.get_triplet_db());
-        }
-
-        auto& fs = paths.get_filesystem();
-        auto registry_set = paths.make_registry_set();
-        PathsPortFileProvider provider(
-            fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
-        return perform_ex(args, spec, host_triplet, provider, null_build_logs_recorder(), paths);
-    }
-} // namespace vcpkg::Build
-
-namespace vcpkg
-{
     static constexpr StringLiteral NAME_EMPTY_PACKAGE = "PolicyEmptyPackage";
     static constexpr StringLiteral NAME_DLLS_WITHOUT_LIBS = "PolicyDLLsWithoutLIBs";
     static constexpr StringLiteral NAME_DLLS_WITHOUT_EXPORTS = "PolicyDLLsWithoutExports";
@@ -393,7 +390,7 @@ namespace vcpkg
 
             if (proxy_from_env)
             {
-                msg::println(msgUseEnvVar, msg::env_var = "HTTP(S)_PROXY");
+                msg::println(msgUseEnvVar, msg::env_var = format_environment_variable("HTTP(S)_PROXY"));
             }
             else
             {
@@ -433,20 +430,26 @@ namespace vcpkg
 
                                 protocol = Strings::concat(Strings::ascii_to_uppercase(protocol), "_PROXY");
                                 env.emplace(protocol, address);
-                                msg::println(msgSettingEnvVar, msg::env_var = protocol, msg::url = address);
+                                msg::println(msgSettingEnvVar,
+                                             msg::env_var = format_environment_variable(protocol),
+                                             msg::url = address);
                             }
                         }
                     }
                     // Specified http:// prefix
                     else if (Strings::starts_with(server, "http://"))
                     {
-                        msg::println(msgSettingEnvVar, msg::env_var = "HTTP_PROXY", msg::url = server);
+                        msg::println(msgSettingEnvVar,
+                                     msg::env_var = format_environment_variable("HTTP_PROXY"),
+                                     msg::url = server);
                         env.emplace("HTTP_PROXY", server);
                     }
                     // Specified https:// prefix
                     else if (Strings::starts_with(server, "https://"))
                     {
-                        msg::println(msgSettingEnvVar, msg::env_var = "HTTPS_PROXY", msg::url = server);
+                        msg::println(msgSettingEnvVar,
+                                     msg::env_var = format_environment_variable("HTTPS_PROXY"),
+                                     msg::url = server);
                         env.emplace("HTTPS_PROXY", server);
                     }
                     // Most common case: "ip:port" style, apply to HTTP and HTTPS proxies.
@@ -457,7 +460,9 @@ namespace vcpkg
                     // We simply set "ip:port" to HTTP(S)_PROXY variables because it works on most common cases.
                     else
                     {
-                        msg::println(msgAutoSettingEnvVar, msg::env_var = "HTTP(S)_PROXY", msg::url = server);
+                        msg::println(msgAutoSettingEnvVar,
+                                     msg::env_var = format_environment_variable("HTTP(S)_PROXY"),
+                                     msg::url = server);
 
                         env.emplace("HTTP_PROXY", server.c_str());
                         env.emplace("HTTPS_PROXY", server.c_str());
@@ -579,12 +584,13 @@ namespace vcpkg
         const auto arch = to_vcvarsall_toolchain(pre_build_info.target_architecture, toolset, pre_build_info.triplet);
         const auto target = to_vcvarsall_target(pre_build_info.cmake_system_name);
 
-        return vcpkg::Command{"cmd"}.string_arg("/c").raw_arg(fmt::format(R"("{}" {} {} {} {} 2>&1 <NUL)",
-                                                                          toolset.vcvarsall,
-                                                                          Strings::join(" ", toolset.vcvarsall_options),
-                                                                          arch,
-                                                                          target,
-                                                                          tonull));
+        return vcpkg::Command{"cmd"}.string_arg("/d").string_arg("/c").raw_arg(
+            fmt::format(R"("{}" {} {} {} {} 2>&1 <NUL)",
+                        toolset.vcvarsall,
+                        Strings::join(" ", toolset.vcvarsall_options),
+                        arch,
+                        target,
+                        tonull));
 #endif
     }
 
@@ -771,6 +777,24 @@ namespace vcpkg
             variables.emplace_back("ARIA2", paths.get_tool_exe(Tools::ARIA2, stdout_sink));
         }
 
+        if (auto cmake_debug = args.cmake_debug.get())
+        {
+            if (cmake_debug->is_port_affected(scf.core_paragraph->name))
+            {
+                variables.emplace_back("--debugger");
+                variables.emplace_back(fmt::format("--debugger-pipe={}", cmake_debug->value));
+            }
+        }
+
+        if (auto cmake_configure_debug = args.cmake_configure_debug.get())
+        {
+            if (cmake_configure_debug->is_port_affected(scf.core_paragraph->name))
+            {
+                variables.emplace_back(fmt::format("-DVCPKG_CMAKE_CONFIGURE_OPTIONS=--debugger;--debugger-pipe={}",
+                                                   cmake_configure_debug->value));
+            }
+        }
+
         for (const auto& cmake_arg : args.cmake_args)
         {
             variables.emplace_back(cmake_arg);
@@ -797,11 +821,11 @@ namespace vcpkg
         std::vector<std::string> port_configs;
         for (const PackageSpec& dependency : action.package_dependencies)
         {
-            const Path port_config_path = paths.installed().vcpkg_port_config_cmake(dependency);
+            Path port_config_path = paths.installed().vcpkg_port_config_cmake(dependency);
 
             if (fs.is_regular_file(port_config_path))
             {
-                port_configs.emplace_back(port_config_path.native());
+                port_configs.emplace_back(std::move(port_config_path).native());
             }
         }
 
@@ -1244,15 +1268,19 @@ namespace vcpkg
             return;
         }
 
-        auto current_build_tree = paths.build_dir(action.spec);
-        fs.create_directory(current_build_tree, VCPKG_LINE_INFO);
-        auto abi_file_path = current_build_tree / (triplet_canonical_name + ".vcpkg_abi_info.txt");
+        auto abi_file_path = paths.build_dir(action.spec);
+        fs.create_directory(abi_file_path, VCPKG_LINE_INFO);
+        abi_file_path /= triplet_canonical_name + ".vcpkg_abi_info.txt";
         fs.write_contents(abi_file_path, full_abi_info, VCPKG_LINE_INFO);
+
+        auto& scf = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_control_file;
+
         abi_info.package_abi = Hash::get_string_sha256(full_abi_info);
         abi_info.abi_tag_file.emplace(std::move(abi_file_path));
         abi_info.relative_port_files = std::move(files);
         abi_info.relative_port_hashes = std::move(hashes);
-        abi_info.heuristic_resources.push_back(run_resource_heuristics(portfile_cmake_contents));
+        abi_info.heuristic_resources.push_back(
+            run_resource_heuristics(portfile_cmake_contents, scf->core_paragraph->raw_version));
     }
 
     void compute_all_abis(const VcpkgPaths& paths,
