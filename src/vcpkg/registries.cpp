@@ -832,10 +832,12 @@ namespace
 
         if (fs.exists(m_paths.builtin_registry_versions, IgnoreErrors{}))
         {
-            load_all_port_names_from_registry_versions(out, fs, m_paths.builtin_registry_versions);
+            return load_all_port_names_from_registry_versions(out, fs, m_paths.builtin_registry_versions);
         }
-
-        return m_files_impl->append_all_port_names(out);
+        else
+        {
+            return m_files_impl->append_all_port_names(out);
+        }
     }
 
     ExpectedL<bool> BuiltinGitRegistry::try_append_all_port_names_no_network(std::vector<std::string>& port_names) const

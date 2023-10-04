@@ -1409,7 +1409,7 @@
   "PortsNoDiff": "There were no changes in the ports between the two commits.",
   "PortsRemoved": "The following {count} ports were removed:",
   "_PortsRemoved.comment": "An example of {count} is 42.",
-  "PortsUpdated": "\nThe following {count} ports were updated:",
+  "PortsUpdated": "The following {count} ports were updated:",
   "_PortsUpdated.comment": "An example of {count} is 42.",
   "PrebuiltPackages": "There are packages that have not been built. To build them run:",
   "PreviousIntegrationFileRemains": "Previous integration file was not removed.",
