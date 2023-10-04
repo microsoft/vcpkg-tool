@@ -731,6 +731,7 @@ namespace
                                            StringView cmd_line,
                                            const WorkingDirectory& wd,
                                            const Environment& env,
+                                           BOOL bInheritHandles,
                                            DWORD dwCreationFlags,
                                            STARTUPINFOEXW& startup_info) noexcept
     {
@@ -764,7 +765,7 @@ namespace
                             Strings::to_utf16(cmd_line).data(),
                             nullptr,
                             nullptr,
-                            TRUE,
+                            bInheritHandles,
                             IDLE_PRIORITY_CLASS | CREATE_UNICODE_ENVIRONMENT | EXTENDED_STARTUPINFO_PRESENT |
                                 dwCreationFlags,
                             call_environment,
@@ -1118,7 +1119,7 @@ namespace
         startup_info_ex.lpAttributeList = proc_attribute_list.get();
 
         auto process_create =
-            windows_create_process(debug_id, ret.proc_info, cmd_line, wd, env, dwCreationFlags, startup_info_ex);
+            windows_create_process(debug_id, ret.proc_info, cmd_line, wd, env, TRUE, dwCreationFlags, startup_info_ex);
 
         if (!process_create)
         {
@@ -1320,28 +1321,12 @@ namespace vcpkg
         startup_info_ex.StartupInfo.cb = sizeof(STARTUPINFOEXW);
         startup_info_ex.StartupInfo.dwFlags = STARTF_USESHOWWINDOW;
         startup_info_ex.StartupInfo.wShowWindow = SW_HIDE;
-
-        ProcAttributeList proc_attribute_list;
-        auto proc_attribute_list_create = proc_attribute_list.create(1);
-        if (!proc_attribute_list_create)
-        {
-            debug_print_cmd_execute_background_failure(debug_id, proc_attribute_list_create.error());
-            return;
-        }
-
-        auto maybe_error = proc_attribute_list.update_attribute(PROC_THREAD_ATTRIBUTE_HANDLE_LIST, nullptr, 0);
-        if (!maybe_error)
-        {
-            debug_print_cmd_execute_background_failure(debug_id, maybe_error.error());
-            return;
-        }
-
-        startup_info_ex.lpAttributeList = proc_attribute_list.get();
         auto process_create = windows_create_process(debug_id,
                                                      process_info,
                                                      cmd_line.command_line(),
                                                      default_working_directory,
                                                      default_environment,
+                                                     FALSE,
                                                      CREATE_NEW_CONSOLE | CREATE_NO_WINDOW | CREATE_BREAKAWAY_FROM_JOB,
                                                      startup_info_ex);
         if (!process_create)
@@ -1408,7 +1393,7 @@ namespace vcpkg
         SpawnProcessGuard spawn_process_guard;
         ProcessInfo process_info;
         auto process_create =
-            windows_create_process(debug_id, process_info, cmd_line.command_line(), wd, env, 0, startup_info_ex);
+            windows_create_process(debug_id, process_info, cmd_line.command_line(), wd, env, TRUE, 0, startup_info_ex);
         if (!process_create)
         {
             return std::move(process_create).error();
