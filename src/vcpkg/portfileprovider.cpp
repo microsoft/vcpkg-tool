@@ -129,7 +129,7 @@ namespace vcpkg
 
         private:
             const RegistrySet& registry_set;
-            mutable Cache<std::string, ExpectedL<Version>> m_baseline_cache;
+            Cache<std::string, ExpectedL<Version>> m_baseline_cache;
         };
 
         struct VersionedPortfileProviderImpl : IFullVersionedPortfileProvider

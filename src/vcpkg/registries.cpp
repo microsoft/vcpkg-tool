@@ -588,7 +588,7 @@ namespace
 
         Path m_path;
         std::string m_baseline_identifier;
-        DelayedInit<ExpectedL<Optional<Baseline>>> m_baseline;
+        DelayedInit<ExpectedL<Baseline>> m_baseline;
     };
 
     Path relative_path_to_versions(StringView port_name);
@@ -601,10 +601,10 @@ namespace
 
     // returns nullopt if the baseline is valid, but doesn't contain the specified baseline,
     // or (equivalently) if the baseline does not exist.
-    ExpectedL<Optional<Baseline>> parse_baseline_versions(StringView contents, StringView baseline, StringView origin);
-    ExpectedL<Optional<Baseline>> load_baseline_versions(const ReadOnlyFilesystem& fs,
-                                                         const Path& baseline_path,
-                                                         StringView identifier = {});
+    ExpectedL<Baseline> parse_baseline_versions(StringView contents, StringView baseline, StringView origin);
+    ExpectedL<Baseline> load_baseline_versions(const ReadOnlyFilesystem& fs,
+                                               const Path& baseline_path,
+                                               StringView identifier = {});
 
     ExpectedL<Unit> load_all_port_names_from_registry_versions(std::vector<std::string>& out,
                                                                const ReadOnlyFilesystem& fs,
@@ -808,31 +808,12 @@ namespace
     ExpectedL<Optional<Version>> BuiltinGitRegistry::get_baseline_version(StringView port_name) const
     {
         const auto& maybe_baseline = m_baseline.get([this]() -> ExpectedL<Baseline> {
-            auto maybe_path = git_checkout_baseline(m_paths, m_baseline_identifier);
-            auto path = maybe_path.get();
-            if (!path)
-            {
-                return std::move(maybe_path)
-                    .error()
-                    .append_raw('\n')
-                    .append_raw(m_paths.get_current_git_sha_baseline_message());
-            }
-
-            auto maybe_maybe_baseline = load_baseline_versions(m_paths.get_filesystem(), *path);
-            auto maybe_baseline = maybe_maybe_baseline.get();
-            if (!maybe_baseline)
-            {
-                return std::move(maybe_maybe_baseline).error();
-            }
-
-            auto baseline = maybe_baseline->get();
-            if (!baseline)
-            {
-                return msg::format_error(
-                    msgCouldNotFindBaseline, msg::commit_sha = m_baseline_identifier, msg::path = *path);
-            }
-
-            return std::move(*baseline);
+            return git_checkout_baseline(m_paths, m_baseline_identifier)
+                .then([&](Path&& path) { return load_baseline_versions(m_paths.get_filesystem(), path); })
+                .map_error([&](LocalizedString&& error) {
+                    return std::move(error).append(msgWhileCheckingOutBaseline,
+                                                   msg::commit_sha = m_baseline_identifier);
+                });
         });
 
         auto baseline = maybe_baseline.get();
@@ -871,30 +852,20 @@ namespace
     // { FilesystemRegistry::RegistryImplementation
     ExpectedL<Optional<Version>> FilesystemRegistry::get_baseline_version(StringView port_name) const
     {
-        const auto& maybe_maybe_baseline = m_baseline.get([this]() -> ExpectedL<Optional<Baseline>> {
-            auto path_to_baseline = m_path / registry_versions_dir_name / "baseline.json";
-            return load_baseline_versions(m_fs, path_to_baseline, m_baseline_identifier);
-        });
+        return m_baseline
+            .get([this]() {
+                return load_baseline_versions(
+                    m_fs, m_path / registry_versions_dir_name / "baseline.json", m_baseline_identifier);
+            })
+            .then([&](const Baseline& baseline) -> ExpectedL<Optional<Version>> {
+                auto it = baseline.find(port_name);
+                if (it != baseline.end())
+                {
+                    return it->second;
+                }
 
-        auto maybe_baseline = maybe_maybe_baseline.get();
-        if (!maybe_baseline)
-        {
-            return maybe_maybe_baseline.error();
-        }
-
-        auto baseline = maybe_baseline->get();
-        if (!baseline)
-        {
-            return Optional<Version>();
-        }
-
-        auto it = baseline->find(port_name);
-        if (it != baseline->end())
-        {
-            return it->second;
-        }
-
-        return Optional<Version>();
+                return Optional<Version>();
+            });
     }
 
     ExpectedL<std::unique_ptr<RegistryEntry>> FilesystemRegistry::get_port_entry(StringView port_name) const
@@ -1075,23 +1046,15 @@ namespace
             }
 
             auto contents = maybe_contents.get();
-            auto res_baseline = parse_baseline_versions(*contents, "default", path_to_baseline);
-            if (auto opt_baseline = res_baseline.get())
-            {
-                if (auto p = opt_baseline->get())
-                {
-                    return std::move(*p);
-                }
-
-                get_global_metrics_collector().track_define(DefineMetric::RegistriesErrorCouldNotFindBaseline);
-                return msg::format_error(
-                    msgBaselineMissingDefault, msg::commit_sha = m_baseline_identifier, msg::url = m_repo);
-            }
-
-            return msg::format_error(
-                       msgErrorWhileFetchingBaseline, msg::value = m_baseline_identifier, msg::package_name = m_repo)
-                .append_raw('\n')
-                .append(res_baseline.error());
+            return parse_baseline_versions(*contents, "default", path_to_baseline)
+                .map_error([&](LocalizedString&& error) {
+                    get_global_metrics_collector().track_define(DefineMetric::RegistriesErrorCouldNotFindBaseline);
+                    return msg::format_error(msgErrorWhileFetchingBaseline,
+                                             msg::value = m_baseline_identifier,
+                                             msg::package_name = m_repo)
+                        .append_raw('\n')
+                        .append(error);
+                });
         });
 
         auto baseline = maybe_baseline.get();
@@ -1399,7 +1362,7 @@ namespace
         return db_entries;
     }
 
-    ExpectedL<Optional<Baseline>> parse_baseline_versions(StringView contents, StringView baseline, StringView origin)
+    ExpectedL<Baseline> parse_baseline_versions(StringView contents, StringView baseline, StringView origin)
     {
         auto maybe_value = Json::parse(contents, origin);
         if (!maybe_value)
@@ -1414,20 +1377,24 @@ namespace
         }
 
         auto real_baseline = baseline.size() == 0 ? "default" : baseline;
-
         const auto& obj = value.value.object(VCPKG_LINE_INFO);
         auto baseline_value = obj.get(real_baseline);
         if (!baseline_value)
         {
-            return {nullopt, expected_left_tag};
+            return LocalizedString::from_raw(origin)
+                .append_raw(": ")
+                .append(msgErrorMessage)
+                .append(msgMissingRequiredField,
+                        msg::json_field = baseline,
+                        msg::json_type = msg::format(msgABaselineObject));
         }
 
         Json::Reader r;
-        std::map<std::string, Version, std::less<>> result;
+        Baseline result;
         r.visit_in_key(*baseline_value, real_baseline, result, BaselineDeserializer::instance);
         if (r.errors().empty())
         {
-            return {std::move(result), expected_left_tag};
+            return std::move(result);
         }
         else
         {
@@ -1437,24 +1404,13 @@ namespace
         }
     }
 
-    ExpectedL<Optional<Baseline>> load_baseline_versions(const ReadOnlyFilesystem& fs,
-                                                         const Path& baseline_path,
-                                                         StringView baseline)
+    ExpectedL<Baseline> load_baseline_versions(const ReadOnlyFilesystem& fs,
+                                               const Path& baseline_path,
+                                               StringView baseline)
     {
-        std::error_code ec;
-        auto contents = fs.read_contents(baseline_path, ec);
-        if (ec)
-        {
-            if (ec == std::errc::no_such_file_or_directory)
-            {
-                msg::println(msgFailedToFindBaseline);
-                return {nullopt, expected_left_tag};
-            }
-
-            return format_filesystem_call_error(ec, "read_contents", {baseline_path});
-        }
-
-        return parse_baseline_versions(contents, baseline, baseline_path);
+        return fs.try_read_contents(baseline_path).then([&](FileContents&& fc) {
+            return parse_baseline_versions(fc.content, baseline, fc.origin);
+        });
     }
 }
 
@@ -1698,16 +1654,7 @@ namespace vcpkg
 
     ExpectedL<Baseline> get_builtin_baseline(const VcpkgPaths& paths)
     {
-        auto baseline_path = paths.builtin_registry_versions / "baseline.json";
-        return load_baseline_versions(paths.get_filesystem(), baseline_path)
-            .then([&](Optional<Baseline>&& b) -> ExpectedL<Baseline> {
-                if (auto p = b.get())
-                {
-                    return std::move(*p);
-                }
-
-                return msg::format_error(msgBaselineFileNoDefaultFieldPath, msg::path = baseline_path);
-            });
+        return load_baseline_versions(paths.get_filesystem(), paths.builtin_registry_versions / "baseline.json");
     }
 
     bool is_git_commit_sha(StringView sv)
