@@ -21,7 +21,7 @@ int main(int argc, const char* argv[])
         return 1;
     }
 
-    for (size_t idx = 1; idx < argc; ++idx)
+    for (int idx = 1; idx < argc; ++idx)
     {
         if (fputs(argv[idx], f) < 0)
         {
