@@ -6,11 +6,6 @@ int main(int argc, const char* argv[])
 {
     const char* path;
     FILE* f;
-    if (argc != 4)
-    {
-        puts("bad arg count");
-        return 1;
-    }
 
     path = getenv("VCPKG_TEST_OUTPUT");
     if (!path)
@@ -26,7 +21,7 @@ int main(int argc, const char* argv[])
         return 1;
     }
 
-    for (size_t idx = 1; idx < 4; ++idx)
+    for (size_t idx = 1; idx < argc; ++idx)
     {
         if (fputs(argv[idx], f) < 0)
         {
