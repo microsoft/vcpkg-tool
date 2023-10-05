@@ -955,7 +955,7 @@
   "PortsDiffHelp": "Aby šel rezervovat, argument by měl být větev, značka nebo hodnota hash.",
   "PortsNoDiff": "Mezi těmito dvěma potvrzeními nedošlo k žádným změnám portů.",
   "PortsRemoved": "Odebraly se tyto porty (celkem {count}):",
-  "PortsUpdated": "The following {count} ports were updated:",
+  "PortsUpdated": "Aktualizovaly se tyto porty (celkem {count}):",
   "PrebuiltPackages": "Existují balíčky, které nebyly sestaveny. Pokud je chcete sestavit, spusťte:",
   "PreviousIntegrationFileRemains": "Předchozí integrační soubor nebyl odebrán.",
   "ProgramReturnedNonzeroExitCode": "Nástroj {tool_name} selhal s ukončovacím kódem {exit_code}.",

@@ -955,7 +955,7 @@
   "PortsDiffHelp": "L'argomento deve essere un ramo/tag/hash da estrarre.",
   "PortsNoDiff": "Non sono state apportate modifiche alle porte tra i due commit.",
   "PortsRemoved": "Sono state rimosse le porte {count} seguenti:",
-  "PortsUpdated": "The following {count} ports were updated:",
+  "PortsUpdated": "Le porte {count} seguenti sono state aggiornate:",
   "PrebuiltPackages": "Sono presenti pacchetti che non sono stati compilati. Per compilarli, eseguire:",
   "PreviousIntegrationFileRemains": "Il file di integrazione precedente non è stato rimosso.",
   "ProgramReturnedNonzeroExitCode": "{tool_name} non riuscito con codice di uscita: ({exit_code}).",

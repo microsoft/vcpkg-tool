@@ -955,7 +955,7 @@
   "PortsDiffHelp": "El argumento debe ser una rama, etiqueta o hash para restaurar.",
   "PortsNoDiff": "No hubo cambios en los puertos entre las dos confirmaciones.",
   "PortsRemoved": "Se quitaron los siguientes {count} puertos:",
-  "PortsUpdated": "The following {count} ports were updated:",
+  "PortsUpdated": "Se actualizaron los siguientes {count} puertos:",
   "PrebuiltPackages": "Hay paquetes que no se han compilado. Para compilarlos, ejecute:",
   "PreviousIntegrationFileRemains": "No se quitó el archivo de integración anterior.",
   "ProgramReturnedNonzeroExitCode": "Error de {tool_name} con código de salida: ({exit_code})",

@@ -955,7 +955,7 @@
   "PortsDiffHelp": "L’argument doit être une branche/balise/hachage à extraire.",
   "PortsNoDiff": "Il n’y a eu aucune modification dans les ports entre les deux validations.",
   "PortsRemoved": "Les {count} ports suivants ont été supprimés :",
-  "PortsUpdated": "The following {count} ports were updated:",
+  "PortsUpdated": "Les {count} ports suivants ont été mis à jour :",
   "PrebuiltPackages": "Certains packages n’ont pas été générés. Pour les générer, exécutez :",
   "PreviousIntegrationFileRemains": "Le fichier d’intégration précédent n’a pas été supprimé.",
   "ProgramReturnedNonzeroExitCode": "Échec de {tool_name} avec le code de sortie : ({exit_code}).",

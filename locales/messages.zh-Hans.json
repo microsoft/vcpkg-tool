@@ -955,7 +955,7 @@
   "PortsDiffHelp": "参数应为要签出的分支/标记/哈希。",
   "PortsNoDiff": "两次提交之间的端口没有变化。",
   "PortsRemoved": "删除了以下 {count} 个端口:",
-  "PortsUpdated": "The following {count} ports were updated:",
+  "PortsUpdated": "以下 {count} 个端口已更新:",
   "PrebuiltPackages": "存在尚未生成的包。如果要生成它们，请运行:",
   "PreviousIntegrationFileRemains": "未删除以前的集成文件。",
   "ProgramReturnedNonzeroExitCode": "{tool_name} 失败，退出代码: {exit_code}。",
