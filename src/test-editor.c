@@ -32,7 +32,7 @@ int main(int argc, const char* argv[])
         {
             puts("bad write");
         }
-    
+
         if (fputs("\n", f) < 0)
         {
             puts("bad write newline");
