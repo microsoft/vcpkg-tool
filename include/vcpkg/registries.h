@@ -76,19 +76,24 @@ namespace vcpkg
     {
         virtual StringLiteral kind() const = 0;
 
-        // returns nullptr if the port doesn't exist
+        // If an error occurs, the ExpectedL will be in an error state.
+        // Otherwise, if the port is known, returns a pointer to RegistryEntry describing the port.
+        // Otherwise, returns a nullptr unique_ptr.
         virtual ExpectedL<std::unique_ptr<RegistryEntry>> get_port_entry(StringView port_name) const = 0;
 
-        // appends the names of the ports to the out parameter
-        // may result in duplicated port names; make sure to Util::sort_unique_erase at the end
+        // Appends the names of the known ports to the out parameter.
+        // May result in duplicated port names; make sure to Util::sort_unique_erase at the end
         virtual ExpectedL<Unit> append_all_port_names(std::vector<std::string>& port_names) const = 0;
 
-        // appends the names of the ports to the out parameter if this can be known without
+        // Appends the names of the ports to the out parameter if this can be known without
         // network access.
-        // returns true if names were appended, otherwise returns false.
+        // Returns true iff names were checked without network access.
         virtual ExpectedL<bool> try_append_all_port_names_no_network(std::vector<std::string>& port_names) const = 0;
 
-        virtual ExpectedL<Version> get_baseline_version(StringView port_name) const = 0;
+        // If an error occurs, the ExpectedL will be in an error state.
+        // Otherwise, if the port is in the baseline, returns the version that baseline denotes.
+        // Otherwise, the Optional is disengaged.
+        virtual ExpectedL<Optional<Version>> get_baseline_version(StringView port_name) const = 0;
 
         virtual ~RegistryImplementation() = default;
     };
@@ -130,7 +135,7 @@ namespace vcpkg
         // the returned list is sorted by priority.
         std::vector<const RegistryImplementation*> registries_for_port(StringView name) const;
 
-        ExpectedL<Version> baseline_for_port(StringView port_name) const;
+        ExpectedL<Optional<Version>> baseline_for_port(StringView port_name) const;
 
         View<Registry> registries() const { return registries_; }
 

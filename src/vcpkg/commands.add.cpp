@@ -96,14 +96,15 @@ namespace vcpkg
 
             auto maybe_manifest_scf =
                 SourceControlFile::parse_project_manifest_object(manifest->path, manifest->manifest, stdout_sink);
-            if (!maybe_manifest_scf)
+            auto pmanifest_scf = maybe_manifest_scf.get();
+            if (!pmanifest_scf)
             {
                 print_error_message(maybe_manifest_scf.error());
                 msg::println(Color::error, msg::msgSeeURL, msg::url = docs::manifests_url);
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
-            auto& manifest_scf = *maybe_manifest_scf.value(VCPKG_LINE_INFO);
+            auto& manifest_scf = **pmanifest_scf;
             for (const auto& spec : specs)
             {
                 auto dep = Util::find_if(manifest_scf.core_paragraph->dependencies, [&spec](Dependency& dep) {

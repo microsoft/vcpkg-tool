@@ -28,7 +28,7 @@ namespace
             return !no_network_port_names.empty();
         }
 
-        ExpectedL<Version> get_baseline_version(StringView) const override
+        ExpectedL<Optional<Version>> get_baseline_version(StringView) const override
         {
             return LocalizedString::from_raw("error");
         }
