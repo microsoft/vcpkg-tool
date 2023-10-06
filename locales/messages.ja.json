@@ -951,7 +951,7 @@
   "PortsDiffHelp": "引数は、チェックアウトするブランチ/タグ/ハッシュである必要があります。",
   "PortsNoDiff": "2 つのコミットの間にポートの変更点はありませんでした。",
   "PortsRemoved": "次の {count} 個のポートが削除されました。",
-  "PortsUpdated": "The following {count} ports were updated:",
+  "PortsUpdated": "次の {count} 個のポートが更新されました。",
   "PrebuiltPackages": "ビルドされていないパッケージがあります。ビルドするには、次のコマンドを実行します:",
   "PreviousIntegrationFileRemains": "以前の統合ファイルは削除されませんでした。",
   "ProgramReturnedNonzeroExitCode": "{tool_name} が終了コード: ({exit_code}) で失敗しました。",

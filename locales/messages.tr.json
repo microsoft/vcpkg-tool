@@ -951,7 +951,7 @@
   "PortsDiffHelp": "Bağımsız değişken, sonuçlandırma için bir dal/etiket/karma olmalıdır.",
   "PortsNoDiff": "İki işleme arasındaki bağlantı noktalarında herhangi bir değişiklik olmadı.",
   "PortsRemoved": "Aşağıdaki {count} bağlantı noktası kaldırıldı:",
-  "PortsUpdated": "The following {count} ports were updated:",
+  "PortsUpdated": "Aşağıdaki {count} bağlantı noktası güncelleştirildi:",
   "PrebuiltPackages": "Oluşturulmamış paketler var. Bunları oluşturmak için çalıştırın:",
   "PreviousIntegrationFileRemains": "Önceki integral alma dosyası kaldırılamadı.",
   "ProgramReturnedNonzeroExitCode": "{tool_name}, şu çıkış koduyla başarısız oldu: ({exit_code}).",
