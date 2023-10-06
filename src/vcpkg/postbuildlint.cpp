@@ -1392,7 +1392,8 @@ namespace vcpkg
         std::vector<Path> release_libs = fs.get_regular_files_recursive(release_lib_dir, IgnoreErrors{});
         Util::erase_remove_if(release_libs, lib_filter);
 
-        if (!pre_build_info.build_type && !build_info.policies.is_enabled(BuildPolicy::MISMATCHED_NUMBER_OF_BINARIES))
+        if (pre_build_info.build_type == ConfigurationType::BOTH &&
+            !build_info.policies.is_enabled(BuildPolicy::MISMATCHED_NUMBER_OF_BINARIES))
         {
             error_count += check_matching_debug_and_release_binaries(debug_libs, release_libs, msg_sink);
         }
@@ -1424,7 +1425,7 @@ namespace vcpkg
             {
                 case LinkageType::DYNAMIC:
                 {
-                    if (!pre_build_info.build_type &&
+                    if (pre_build_info.build_type == ConfigurationType::BOTH &&
                         !build_info.policies.is_enabled(BuildPolicy::MISMATCHED_NUMBER_OF_BINARIES))
                         error_count += check_matching_debug_and_release_binaries(debug_dlls, release_dlls, msg_sink);
 

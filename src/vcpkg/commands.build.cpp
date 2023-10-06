@@ -1789,7 +1789,7 @@ namespace vcpkg
                     break;
                 case VcpkgTripletVar::BUILD_TYPE:
                     if (variable_value.empty())
-                        build_type = nullopt;
+                        build_type = ConfigurationType::BOTH;
                     else if (Strings::case_insensitive_ascii_equals(variable_value, "debug"))
                         build_type = ConfigurationType::DEBUG;
                     else if (Strings::case_insensitive_ascii_equals(variable_value, "release"))
