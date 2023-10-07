@@ -2629,6 +2629,12 @@ DECLARE_MESSAGE(SpecifyTargetArch,
                 (msg::env_var),
                 "'vcpkg help triplet' is a command line that should not be localized",
                 "Target triplet. See 'vcpkg help triplet' (default: {env_var})")
+DECLARE_MESSAGE(SpecifyBuildType,
+                (msg::env_var),
+                "",
+                "Build type (experimental). Possible values are: debug, release. Defaults to both Debug and Release if "
+                "not specified. "
+                "Overrides {env_var}, may be overridden by the VCPKG_BUILD_TYPE variable of the triplet file.")
 DECLARE_MESSAGE(StartCodeUnitInContinue, (), "", "found start code unit in continue position")
 DECLARE_MESSAGE(StoredBinaryCache, (msg::path), "", "Stored binary cache: \"{path}\"")
 DECLARE_MESSAGE(StoredBinariesToDestinations,

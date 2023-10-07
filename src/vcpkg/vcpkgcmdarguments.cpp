@@ -325,6 +325,11 @@ namespace vcpkg
             args.triplet,
             msg::format(msgSpecifyTargetArch, msg::env_var = format_environment_variable("VCPKG_DEFAULT_TRIPLET")));
         args.parser.parse_option(
+            BUILD_TYPE_ARG,
+            StabilityTag::Experimental,
+            args.build_type,
+            msg::format(msgSpecifyBuildType, msg::env_var = format_environment_variable("VCPKG_DEFAULT_BUILD_TYPE")));
+        args.parser.parse_option(
             HOST_TRIPLET_ARG,
             StabilityTag::Standard,
             args.host_triplet,
@@ -547,6 +552,7 @@ namespace vcpkg
 
         from_env(get_env, TRIPLET_ENV, triplet);
         from_env(get_env, HOST_TRIPLET_ENV, host_triplet);
+        from_env(get_env, BUILD_TYPE_ENV, build_type);
         vcpkg_root_dir_env = get_env(VCPKG_ROOT_DIR_ENV);
         from_env(get_env, DOWNLOADS_ROOT_DIR_ENV, downloads_root_dir);
         from_env(get_env, ASSET_SOURCES_ENV, asset_sources_template_env);

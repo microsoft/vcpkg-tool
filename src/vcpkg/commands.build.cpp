@@ -282,6 +282,26 @@ namespace vcpkg
 
     std::string to_string(DownloadTool tool) { return to_string_view(tool).to_string(); }
 
+    ConfigurationType parse_configuration_type(const std::string& str)
+    {
+        if (str.empty()) return ConfigurationType::BOTH;
+        if (Strings::case_insensitive_ascii_equals(str, "debug")) return ConfigurationType::DEBUG;
+        if (Strings::case_insensitive_ascii_equals(str, "release")) return ConfigurationType::RELEASE;
+        Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgUnknownSettingForBuildType, msg::option = str);
+    }
+
+    StringLiteral to_string_view(ConfigurationType config_type)
+    {
+        switch (config_type)
+        {
+            case ConfigurationType::DEBUG: return "debug";
+            case ConfigurationType::RELEASE: return "release";
+            default: return "both";
+        }
+    }
+
+    std::string to_string(ConfigurationType config_type) { return to_string_view(config_type).to_string(); }
+
     Optional<LinkageType> to_linkage_type(StringView str)
     {
         if (str == "dynamic") return LinkageType::DYNAMIC;
@@ -777,6 +797,11 @@ namespace vcpkg
             variables.emplace_back("ARIA2", paths.get_tool_exe(Tools::ARIA2, stdout_sink));
         }
 
+        if (action.build_options.build_type != ConfigurationType::BOTH)
+        {
+            variables.emplace_back("VCPKG_DEFAULT_BUILD_TYPE", to_string(action.build_options.build_type));
+        }
+
         if (auto cmake_debug = args.cmake_debug.get())
         {
             if (cmake_debug->is_port_affected(scf.core_paragraph->name))
@@ -1166,6 +1191,10 @@ namespace vcpkg
         const auto& triplet_canonical_name = action.spec.triplet().canonical_name();
         abi_tag_entries.emplace_back("triplet", triplet_canonical_name);
         abi_tag_entries.emplace_back("triplet_abi", triplet_abi);
+        if (action.build_options.build_type != ConfigurationType::BOTH)
+        {
+            abi_tag_entries.emplace_back("build_type", to_string(action.build_options.build_type));
+        }
         auto& fs = paths.get_filesystem();
         abi_entries_from_pre_build_info(fs, grdk_cache, pre_build_info, abi_tag_entries);
 
@@ -1787,17 +1816,7 @@ namespace vcpkg
                 case VcpkgTripletVar::CHAINLOAD_TOOLCHAIN_FILE:
                     external_toolchain_file = variable_value.empty() ? nullopt : Optional<std::string>{variable_value};
                     break;
-                case VcpkgTripletVar::BUILD_TYPE:
-                    if (variable_value.empty())
-                        build_type = ConfigurationType::BOTH;
-                    else if (Strings::case_insensitive_ascii_equals(variable_value, "debug"))
-                        build_type = ConfigurationType::DEBUG;
-                    else if (Strings::case_insensitive_ascii_equals(variable_value, "release"))
-                        build_type = ConfigurationType::RELEASE;
-                    else
-                        Checks::msg_exit_with_message(
-                            VCPKG_LINE_INFO, msgUnknownSettingForBuildType, msg::option = variable_value);
-                    break;
+                case VcpkgTripletVar::BUILD_TYPE: build_type = parse_configuration_type(variable_value); break;
                 case VcpkgTripletVar::ENV_PASSTHROUGH:
                     passthrough_env_vars_tracked = Strings::split(variable_value, ';');
                     Util::Vectors::append(&passthrough_env_vars, passthrough_env_vars_tracked);

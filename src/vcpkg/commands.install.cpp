@@ -1090,7 +1090,8 @@ namespace vcpkg
             PurgeDecompressFailure::NO,
             Util::Enum::to_enum<Editable>(is_editable),
             prohibit_backcompat_features ? BackcompatFeatures::PROHIBIT : BackcompatFeatures::ALLOW,
-            print_cmake_usage};
+            print_cmake_usage,
+            parse_configuration_type(args.build_type.value_or(""))};
 
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;

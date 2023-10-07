@@ -60,6 +60,10 @@ namespace vcpkg
     StringLiteral to_string_view(DownloadTool tool);
     std::string to_string(DownloadTool tool);
 
+    ConfigurationType parse_configuration_type(const std::string& s);
+    StringLiteral to_string_view(ConfigurationType config_type);
+    std::string to_string(ConfigurationType config_type);
+
     struct BuildPackageOptions
     {
         BuildMissing build_missing;
@@ -74,6 +78,7 @@ namespace vcpkg
         Editable editable;
         BackcompatFeatures backcompat_features;
         PrintUsage print_usage;
+        ConfigurationType build_type;
     };
 
     static constexpr BuildPackageOptions default_build_package_options{
@@ -89,6 +94,7 @@ namespace vcpkg
         Editable::NO,
         BackcompatFeatures::ALLOW,
         PrintUsage::YES,
+        ConfigurationType::BOTH,
     };
 
     static constexpr BuildPackageOptions backcompat_prohibiting_package_options{
@@ -104,6 +110,7 @@ namespace vcpkg
         Editable::NO,
         BackcompatFeatures::PROHIBIT,
         PrintUsage::YES,
+        ConfigurationType::BOTH,
     };
 
     struct BuildResultCounts
