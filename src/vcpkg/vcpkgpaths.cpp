@@ -258,8 +258,6 @@ namespace
     {
         Lazy<TripletDatabase> triplets_db;
         Lazy<ToolsetsInformation> toolsets;
-        Lazy<std::map<std::string, std::string>> cmake_script_hashes;
-        Lazy<std::string> ports_cmake_hash;
         Optional<vcpkg::LockFile> m_installed_lock;
     };
 
@@ -720,33 +718,6 @@ namespace vcpkg
             }
 
             return TripletDatabase{triplets, community_triplets, std::move(available_triplets)};
-        });
-    }
-
-    const std::map<std::string, std::string>& VcpkgPaths::get_cmake_script_hashes() const
-    {
-        return m_pimpl->cmake_script_hashes.get_lazy([this]() -> std::map<std::string, std::string> {
-            auto& fs = this->get_filesystem();
-            std::map<std::string, std::string> helpers;
-            auto files = fs.get_regular_files_non_recursive(this->scripts / "cmake", VCPKG_LINE_INFO);
-            for (auto&& file : files)
-            {
-                if (file.filename() == ".DS_Store")
-                {
-                    continue;
-                }
-                helpers.emplace(file.stem().to_string(),
-                                Hash::get_file_hash(fs, file, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO));
-            }
-            return helpers;
-        });
-    }
-
-    StringView VcpkgPaths::get_ports_cmake_hash() const
-    {
-        return m_pimpl->ports_cmake_hash.get_lazy([this]() -> std::string {
-            return Hash::get_file_hash(get_filesystem(), ports_cmake, Hash::Algorithm::Sha256)
-                .value_or_exit(VCPKG_LINE_INFO);
         });
     }
 

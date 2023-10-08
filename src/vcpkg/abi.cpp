@@ -20,11 +20,17 @@
 #include <mutex>
 #include <utility>
 
-namespace
+namespace vcpkg
 {
-    using namespace vcpkg;
+    // This struct caches precomputable abis
+    struct AbiCache
+    {
+        std::vector<AbiEntry> cmake_script_hashes;
+    };
+    
+    
 
-    std::string grdk_hash(const Filesystem& fs,
+    static std::string grdk_hash(const Filesystem& fs,
                           Cache<Path, Optional<std::string>>& grdk_cache,
                           const PreBuildInfo& pre_build_info)
     {
@@ -52,7 +58,7 @@ namespace
         return "none";
     }
 
-    void abi_entries_from_pre_build_info(const Filesystem& fs,
+    static void abi_entries_from_pre_build_info(const Filesystem& fs,
                                          Cache<Path, Optional<std::string>>& grdk_cache,
                                          const PreBuildInfo& pre_build_info,
                                          std::vector<AbiEntry>& abi_tag_entries)
@@ -81,11 +87,14 @@ namespace
         }
     }
 
-    // Calculate abi hashes that are the same for each port during one run
-    void get_system_abi(const VcpkgPaths& paths, std::vector<AbiEntry>& abi_entries)
+
+    static std::vector<AbiEntry> get_common_abi(const VcpkgPaths& paths)
     {
+        std::vector<AbiEntry> abi_entries;
+        auto& fs = paths.get_filesystem();
+        
         abi_entries.emplace_back("cmake", paths.get_tool_version(Tools::CMAKE, stdout_sink));
-        abi_entries.emplace_back("ports.cmake", paths.get_ports_cmake_hash().to_string());
+        abi_entries.emplace_back("ports.cmake", Hash::get_file_hash(fs, paths.ports_cmake, Hash::Algorithm::Sha256));
         abi_entries.emplace_back("post_build_checks", "2");
 
         // This #ifdef is mirrored in tools.cpp's PowershellProvider
@@ -94,7 +103,28 @@ namespace
 #endif
     }
 
-    std::vector<std::pair<Path, std::string>> get_ports_files_and_contents(const Filesystem& fs,
+
+    static std::vector<AbiEntry> get_cmake_script_hashes(Filesystem& fs, const Path& scripts_dir)
+    {
+        auto files = fs.get_regular_files_non_recursive(scripts_dir / "cmake", VCPKG_LINE_INFO);
+
+        std::vector<AbiEntry> helpers;
+        helpers.reserve(files.size());
+
+        for (auto&& file : files)
+        {
+            if (file.filename() == ".DS_Store")
+            {
+                continue;
+            }
+            helpers.emplace_back(file.stem().to_string(),
+                            Hash::get_file_hash(fs, file, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO));
+        }
+        return helpers;
+    }
+
+
+    static std::vector<std::pair<Path, std::string>> get_ports_files_and_contents(const Filesystem& fs,
                                                                            const Path& port_root_dir)
     {
         auto files = fs.get_regular_files_recursive_lexically_proximate(port_root_dir, VCPKG_LINE_INFO);
@@ -115,7 +145,7 @@ namespace
     }
 
     // Get abi for per-port files
-    std::pair<std::vector<std::string>, std::string> get_port_files(const Filesystem& fs,
+    static std::pair<std::vector<std::string>, std::string> get_port_files(const Filesystem& fs,
                                                                     std::vector<AbiEntry> abi_entries,
                                                                     const SourceControlFileAndLocation& scfl)
     {
@@ -151,7 +181,7 @@ namespace
     }
 
 
-    void get_feature_abi(InternalFeatureSet sorted_feature_list, std::vector<AbiEntry>& abi_entries)
+    static void get_feature_abi(InternalFeatureSet sorted_feature_list, std::vector<AbiEntry>& abi_entries)
     {
         // Check that no "default" feature is present. Default features must be resolved before attempting to calculate
         // a package ABI, so the "default" should not have made it here.
@@ -172,12 +202,13 @@ namespace
 
 
     // calculate abi of port-internal files and system environment
-    Optional<std::vector<AbiEntry>> make_private_abi(const VcpkgPaths& paths,
+    static Optional<std::vector<AbiEntry>> make_private_abi(const VcpkgPaths& paths,
                                            InstallPlanAction& action,
                                            std::unique_ptr<PreBuildInfo>&& proto_pre_build_info,
                                            Cache<Path, Optional<std::string>>& grdk_cache)
     {
         const auto& pre_build_info = *proto_pre_build_info;
+        // Cant't be called in parallel
         const auto& toolset = paths.get_toolset(pre_build_info);
         auto& abi_info = action.abi_info.emplace();
         abi_info.pre_build_info = std::move(proto_pre_build_info);
@@ -201,7 +232,6 @@ namespace
         auto& fs = paths.get_filesystem();
         std::vector<AbiEntry> abi_tag_entries;
         abi_entries_from_pre_build_info(fs, grdk_cache, *action.abi_info.get()->pre_build_info, abi_tag_entries);
-        get_system_abi(paths, abi_tag_entries);
 
         auto& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
         auto&& [port_files, cmake_contents] = get_port_files(fs, abi_tag_entries, scfl);
@@ -220,133 +250,6 @@ namespace
         return abi_tag_entries;
     }
 
-} // anonymos namespace
-
-namespace vcpkg
-{
-
-#define ABI_PERF
-#ifdef ABI_PERF
-    static Optional<std::pair<Path, std::string>> populate_abi_tag(const VcpkgPaths& paths,
-#else
-    static void populate_abi_tag(const VcpkgPaths& paths,
-#endif
-                                                                   InstallPlanAction& action,
-                                                                   Cache<Path, Optional<std::string>>& grdk_cache)
-    {
-        std::vector<AbiEntry> abi_tag_entries(dependency_abis.begin(), dependency_abis.end());
-
-        const auto& triplet_abi = paths.get_triplet_info(*abi_info.pre_build_info, *abi_info.toolset.get());
-        abi_info.triplet_abi.emplace(triplet_abi);
-        const auto& triplet_canonical_name = action.spec.triplet().canonical_name();
-        abi_tag_entries.emplace_back("triplet", triplet_canonical_name);
-        abi_tag_entries.emplace_back("triplet_abi", triplet_abi);
-        auto& fs = paths.get_filesystem();
-        abi_entries_from_pre_build_info(fs, grdk_cache, *abi_info.pre_build_info, abi_tag_entries);
-
-        abi_info.compiler_info = paths.get_compiler_info(*abi_info.pre_build_info, toolset);
-        for (auto&& dep_abi : dependency_abis)
-        {
-            if (dep_abi.value.empty())
-            {
-                Debug::print("Binary caching for package ",
-                             action.spec,
-                             " is disabled due to missing abi info for ",
-                             dep_abi.key,
-                             '\n');
-                return false;
-            }
-        }
-        return true;
-
-        auto system_abi = get_system_abi(paths);
-        abi_tag_entries.insert(abi_tag_entries.end(), system_abi.begin(), system_abi.end());
-
-        auto&& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
-        auto&& [port_files_abi, cmake_contents] = get_port_abi_and_cmake_content(fs, scfl);
-
-        for (auto&& helper : paths.get_cmake_script_hashes())
-        {
-            if (Strings::case_insensitive_ascii_contains(cmake_contents, helper.first))
-            {
-#ifdef PERF
-                abi_tag_entries.emplace_back(helper.first, helper.second.value_or_exit(VCPKG_LINE_INFO));
-#else
-                abi_tag_entries.emplace_back(helper.first, helper.second);
-#endif
-            }
-        }
-
-        InternalFeatureSet sorted_feature_list = action.feature_list;
-        // Check that no "default" feature is present. Default features must be resolved before attempting to calculate
-        // a package ABI, so the "default" should not have made it here.
-        static constexpr StringLiteral default_literal{"default"};
-        const bool has_no_pseudo_features = std::none_of(
-            sorted_feature_list.begin(), sorted_feature_list.end(), [](StringView s) { return s == default_literal; });
-        Checks::check_exit(VCPKG_LINE_INFO, has_no_pseudo_features);
-        Util::sort_unique_erase(sorted_feature_list);
-
-        // Check that the "core" feature is present. After resolution into InternalFeatureSet "core" meaning "not
-        // default" should have already been handled so "core" should be here.
-        Checks::check_exit(
-            VCPKG_LINE_INFO,
-            std::binary_search(sorted_feature_list.begin(), sorted_feature_list.end(), StringLiteral{"core"}));
-
-        abi_tag_entries.emplace_back("features", Strings::join(";", sorted_feature_list));
-
-        Util::sort(abi_tag_entries);
-
-        std::string full_abi_info =
-            Strings::join("", abi_tag_entries, [](const AbiEntry& p) { return p.key + " " + p.value + "\n"; });
-
-        if (Debug::g_debugging)
-        {
-            std::string message = Strings::concat("[DEBUG] <abientries for ", action.spec, ">\n");
-            for (auto&& entry : abi_tag_entries)
-            {
-                Strings::append(message, "[DEBUG]   ", entry.key, "|", entry.value, "\n");
-            }
-            Strings::append(message, "[DEBUG] </abientries>\n");
-            msg::write_unlocalized_text_to_stdout(Color::none, message);
-        }
-
-        auto abi_tag_entries_missing = Util::filter(abi_tag_entries, [](const AbiEntry& p) { return p.value.empty(); });
-        if (!abi_tag_entries_missing.empty())
-        {
-            Debug::println("Warning: abi keys are missing values:\n",
-                           Strings::join("\n", abi_tag_entries_missing, [](const AbiEntry& e) -> const std::string& {
-                               return e.key;
-                           }));
-#ifdef ABI_PERF
-            return nullopt;
-#else
-            return;
-#endif
-        }
-#ifdef ABI_PERF
-        auto abi_file_path = paths.build_dir(action.spec);
-        abi_file_path /= triplet_canonical_name + ".vcpkg_abi_info.txt";
-
-        abi_info.package_abi = Hash::get_string_sha256(full_abi_info);
-        abi_info.abi_tag_file.emplace(abi_file_path);
-
-        return std::make_pair(std::move(abi_file_path), std::move(full_abi_info));
-#else
-        auto abi_file_path = paths.build_dir(action.spec);
-        fs.create_directory(abi_file_path, VCPKG_LINE_INFO);
-        abi_file_path /= triplet_canonical_name + ".vcpkg_abi_info.txt";
-        fs.write_contents(abi_file_path, full_abi_info, VCPKG_LINE_INFO);
-
-        auto& scf = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_control_file;
-
-        abi_info.package_abi = Hash::get_string_sha256(full_abi_info);
-        abi_info.abi_tag_file.emplace(std::move(abi_file_path));
-        abi_info.relative_port_files = std::move(files);
-        abi_info.relative_port_hashes = std::move(hashes);
-        abi_info.heuristic_resources.push_back(
-            run_resource_heuristics(portfile_cmake_contents, scf->core_paragraph->raw_version));
-#endif
-    }
 
     void compute_all_abis(const VcpkgPaths& paths,
                           ActionPlan& action_plan,
@@ -354,9 +257,6 @@ namespace vcpkg
                           const StatusParagraphs& status_db)
     {
         Cache<Path, Optional<std::string>> grdk_cache;
-#ifdef ABI_PERF
-        std::vector<std::pair<Path, std::string>> abi_files_and_contents;
-#endif
 
         std::vector<std::reference_wrapper<InstallPlanAction>> must_make_private_abi;
 
