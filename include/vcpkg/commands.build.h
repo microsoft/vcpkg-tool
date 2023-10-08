@@ -237,46 +237,12 @@ namespace vcpkg
 
     BuildInfo read_build_info(const ReadOnlyFilesystem& fs, const Path& filepath);
 
-    struct AbiEntry
-    {
-        std::string key;
-        std::string value;
-
-        AbiEntry() = default;
-        AbiEntry(StringView key, StringView value) : key(key.to_string()), value(value.to_string()) { }
-
-        bool operator<(const AbiEntry& other) const
-        {
-            return key < other.key || (key == other.key && value < other.value);
-        }
-    };
-
     struct CompilerInfo
     {
         std::string id;
         std::string version;
         std::string hash;
     };
-
-    struct AbiInfo
-    {
-        // These should always be known if an AbiInfo exists
-        std::unique_ptr<PreBuildInfo> pre_build_info;
-        Optional<const Toolset&> toolset;
-        // These might not be known if compiler tracking is turned off or the port is --editable
-        Optional<const CompilerInfo&> compiler_info;
-        Optional<const std::string&> triplet_abi;
-        std::string package_abi;
-        Optional<Path> abi_tag_file;
-        std::vector<Path> relative_port_files;
-        std::vector<std::string> relative_port_hashes;
-        std::vector<Json::Value> heuristic_resources;
-    };
-
-    void compute_all_abis(const VcpkgPaths& paths,
-                          ActionPlan& action_plan,
-                          const CMakeVars::CMakeVarProvider& var_provider,
-                          const StatusParagraphs& status_db);
 
     struct EnvCache
     {

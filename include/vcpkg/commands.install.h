@@ -59,14 +59,18 @@ namespace vcpkg
         const Path& destination() const;
         const Path& listfile() const;
     };
-
+    #define INSTALL_FILES_PERF
     void install_package_and_write_listfile(const Filesystem& fs,
                                             const Path& source_dir,
                                             const InstallDir& destination_dir);
 
     void install_files_and_write_listfile(const Filesystem& fs,
                                           const Path& source_dir,
-                                          const std::vector<Path>& files,
+        #ifdef INSTALL_FILES_PERF
+                                          std::vector<Path>&& files,
+        #else
+                                           const std::vector<Path>& files,
+        #endif
                                           const InstallDir& destination_dir);
 
     InstallResult install_package(const VcpkgPaths& paths,

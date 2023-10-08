@@ -117,9 +117,7 @@ namespace vcpkg
     struct PreBuildInfo;
     struct ExtendedBuildResult;
     struct BuildInfo;
-    struct AbiEntry;
     struct CompilerInfo;
-    struct AbiInfo;
     struct EnvCache;
     struct BuildCommand;
 }

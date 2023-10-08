@@ -1,3 +1,4 @@
+#include <vcpkg/abi.h>
 #include <vcpkg/dependencies.h>
 #include <vcpkg/spdx.h>
 

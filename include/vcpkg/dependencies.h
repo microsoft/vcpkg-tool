@@ -5,6 +5,7 @@
 
 #include <vcpkg/base/optional.h>
 
+#include <vcpkg/abi.h>
 #include <vcpkg/commands.build.h>
 #include <vcpkg/packagespec.h>
 #include <vcpkg/statusparagraph.h>

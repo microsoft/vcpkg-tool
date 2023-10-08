@@ -9,6 +9,7 @@
 #include <vcpkg/base/util.h>
 #include <vcpkg/base/xmlserializer.h>
 
+#include <vcpkg/abi.h>
 #include <vcpkg/binarycaching.h>
 #include <vcpkg/ci-baseline.h>
 #include <vcpkg/cmakevars.h>
