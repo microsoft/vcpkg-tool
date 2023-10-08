@@ -63,6 +63,7 @@ namespace vcpkg
                                             const Path& source_dir,
                                             const InstallDir& destination_dir);
 
+
     void install_files_and_write_listfile(const Filesystem& fs,
                                           const Path& source_dir,
                                           const std::vector<Path>& files,
