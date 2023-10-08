@@ -584,12 +584,13 @@ namespace vcpkg
         const auto arch = to_vcvarsall_toolchain(pre_build_info.target_architecture, toolset, pre_build_info.triplet);
         const auto target = to_vcvarsall_target(pre_build_info.cmake_system_name);
 
-        return vcpkg::Command{"cmd"}.string_arg("/c").raw_arg(fmt::format(R"("{}" {} {} {} {} 2>&1 <NUL)",
-                                                                          toolset.vcvarsall,
-                                                                          Strings::join(" ", toolset.vcvarsall_options),
-                                                                          arch,
-                                                                          target,
-                                                                          tonull));
+        return vcpkg::Command{"cmd"}.string_arg("/d").string_arg("/c").raw_arg(
+            fmt::format(R"("{}" {} {} {} {} 2>&1 <NUL)",
+                        toolset.vcvarsall,
+                        Strings::join(" ", toolset.vcvarsall_options),
+                        arch,
+                        target,
+                        tonull));
 #endif
     }
 
@@ -820,11 +821,11 @@ namespace vcpkg
         std::vector<std::string> port_configs;
         for (const PackageSpec& dependency : action.package_dependencies)
         {
-            const Path port_config_path = paths.installed().vcpkg_port_config_cmake(dependency);
+            Path port_config_path = paths.installed().vcpkg_port_config_cmake(dependency);
 
             if (fs.is_regular_file(port_config_path))
             {
-                port_configs.emplace_back(port_config_path.native());
+                port_configs.emplace_back(std::move(port_config_path).native());
             }
         }
 
@@ -1267,9 +1268,9 @@ namespace vcpkg
             return;
         }
 
-        auto current_build_tree = paths.build_dir(action.spec);
-        fs.create_directory(current_build_tree, VCPKG_LINE_INFO);
-        auto abi_file_path = current_build_tree / (triplet_canonical_name + ".vcpkg_abi_info.txt");
+        auto abi_file_path = paths.build_dir(action.spec);
+        fs.create_directory(abi_file_path, VCPKG_LINE_INFO);
+        abi_file_path /= triplet_canonical_name + ".vcpkg_abi_info.txt";
         fs.write_contents(abi_file_path, full_abi_info, VCPKG_LINE_INFO);
 
         auto& scf = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_control_file;

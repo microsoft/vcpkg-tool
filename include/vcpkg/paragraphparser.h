@@ -35,6 +35,8 @@ namespace vcpkg
         static std::string format_errors(View<std::unique_ptr<ParseControlErrorInfo>> errors);
         void to_string(std::string& target) const;
         std::string to_string() const;
+
+        static std::unique_ptr<ParseControlErrorInfo> from_error(StringView port_name, LocalizedString&& ls);
     };
 } // namespace vcpkg
 
@@ -45,6 +47,11 @@ namespace vcpkg
     inline std::string to_string(const std::unique_ptr<ParseControlErrorInfo>& up) { return up->to_string(); }
     template<class P>
     using ParseExpected = vcpkg::ExpectedT<std::unique_ptr<P>, std::unique_ptr<ParseControlErrorInfo>>;
+
+    static constexpr struct ToLocalizedString_t
+    {
+        LocalizedString operator()(std::unique_ptr<ParseControlErrorInfo> p) const;
+    } ToLocalizedString;
 
     using Paragraph = std::map<std::string, std::pair<std::string, TextRowCol>, std::less<>>;
 

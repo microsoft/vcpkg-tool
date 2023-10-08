@@ -84,27 +84,42 @@ namespace vcpkg
         static LocalizedString from_raw(std::basic_string<T>&& s) noexcept;
         static LocalizedString from_raw(StringView s);
 
-        LocalizedString& append_raw(char c);
-        LocalizedString& append_raw(StringView s);
+        LocalizedString& append_raw(char c) &;
+        LocalizedString&& append_raw(char c) &&;
+        LocalizedString& append_raw(StringView s) &;
+        LocalizedString&& append_raw(StringView s) &&;
         template<class T, class = decltype(std::declval<const T&>().to_string(std::declval<std::string&>()))>
-        LocalizedString& append_raw(const T& s)
+        LocalizedString& append_raw(const T& s) &
         {
             s.to_string(m_data);
             return *this;
         }
-        LocalizedString& append(const LocalizedString& s);
+        template<class T, class = decltype(std::declval<const T&>().to_string(std::declval<std::string&>()))>
+        LocalizedString&& append_raw(const T& s) &&
+        {
+            return std::move(append_raw(s));
+        }
+        LocalizedString& append(const LocalizedString& s) &;
+        LocalizedString&& append(const LocalizedString& s) &&;
         template<VCPKG_DECL_MSG_TEMPLATE>
-        LocalizedString& append(VCPKG_DECL_MSG_ARGS)
+        LocalizedString& append(VCPKG_DECL_MSG_ARGS) &
         {
             msg::format_to(*this, VCPKG_EXPAND_MSG_ARGS);
             return *this;
         }
-        LocalizedString& append_indent(size_t indent = 1);
+        template<VCPKG_DECL_MSG_TEMPLATE>
+        LocalizedString&& append(VCPKG_DECL_MSG_ARGS) &&
+        {
+            return std::move(append(VCPKG_EXPAND_MSG_ARGS));
+        }
+        LocalizedString& append_indent(size_t indent = 1) &;
+        LocalizedString&& append_indent(size_t indent = 1) &&;
 
         // 0 items - Does nothing
         // 1 item - .append_raw(' ').append(item)
         // 2+ items - foreach: .append_raw('\n').append_indent(indent).append(item)
-        LocalizedString& append_floating_list(int indent, View<LocalizedString> items);
+        LocalizedString& append_floating_list(int indent, View<LocalizedString> items) &;
+        LocalizedString&& append_floating_list(int indent, View<LocalizedString> items) &&;
         friend bool operator==(const LocalizedString& lhs, const LocalizedString& rhs) noexcept;
         friend bool operator!=(const LocalizedString& lhs, const LocalizedString& rhs) noexcept;
         friend bool operator<(const LocalizedString& lhs, const LocalizedString& rhs) noexcept;

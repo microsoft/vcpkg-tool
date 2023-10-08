@@ -1795,7 +1795,7 @@ namespace vcpkg
         if (auto p = args.vcpkg_nuget_repository.get())
         {
             get_global_metrics_collector().track_define(DefineMetric::VcpkgNugetRepository);
-            return {std::move(*p)};
+            return {*p};
         }
 
         auto gh_repo = get_environment_variable("GITHUB_REPOSITORY").value_or("");
