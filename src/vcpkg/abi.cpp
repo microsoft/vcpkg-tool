@@ -2,6 +2,7 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
+#include <vcpkg/base/lazy.h>
 #include <vcpkg/base/lineinfo.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/parallel-algorithms.h>
@@ -103,19 +104,13 @@ namespace vcpkg
     static std::vector<AbiEntry> get_cmake_script_hashes(const Filesystem& fs, const Path& scripts_dir)
     {
         auto files = fs.get_regular_files_non_recursive(scripts_dir / "cmake", VCPKG_LINE_INFO);
+        Util::erase_remove_if(files, [](const Path& file) { return file.filename() == ".DS_Store"; });
 
-        std::vector<AbiEntry> helpers;
-        helpers.reserve(files.size());
+        std::vector<AbiEntry> helpers(files.size());
 
-        for (auto&& file : files)
-        {
-            if (file.filename() == ".DS_Store")
-            {
-                continue;
-            }
-            helpers.emplace_back(file.stem().to_string(),
-                                 Hash::get_file_hash(fs, file, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO));
-        }
+        parallel_transform(files.begin(), files.size(), helpers.begin(), [&fs](auto&& file) {
+            return AbiEntry{file.stem().to_string(), Hash::get_file_hash(fs, file, Hash::Algorithm::Sha256)};
+        });
         return helpers;
     }
 
@@ -242,7 +237,11 @@ namespace vcpkg
         return abi_tag_entries;
     }
 
-    void populate_abi_tag_ex()
+    void populate_abi_tag_ex(const VcpkgPaths& paths,
+                             InstallPlanAction& action,
+                             std::unique_ptr<PreBuildInfo>&& proto_pre_build_info,
+                             Span<const AbiEntry> dependency_abis,
+                             const AsyncLazy<std::vector<AbiEntry>>& cmake_script_hashes)
     {
         // get toolset (not in parallel)
         // get prebuildinfo
@@ -308,9 +307,10 @@ namespace vcpkg
                 if (status_it == status_db.end())
                 {
                     // also not installed --> can't be true
-                    Checks::unreachable(
-                        VCPKG_LINE_INFO,
-                        fmt::format("Failed to find dependency abi for {} -> {}", current_action->spec, dependency_spec));
+                    Checks::unreachable(VCPKG_LINE_INFO,
+                                        fmt::format("Failed to find dependency abi for {} -> {}",
+                                                    current_action->spec,
+                                                    dependency_spec));
                 }
 
                 dependency_abis.emplace_back(dependency_spec.name(), status_it->get()->package.abi);
@@ -329,19 +329,26 @@ namespace vcpkg
                              const CMakeVars::CMakeVarProvider& var_provider,
                              const StatusParagraphs& status_db)
     {
-        const auto cmake_script_hashes = get_cmake_script_hashes(paths.get_filesystem(), paths.scripts);
+        const AsyncLazy<std::vector<AbiEntry>> cmake_script_hashes(
+            [&paths]() { get_cmake_script_hashes(paths.get_filesystem(), paths.scripts); });
         // 1. system abi (ports.cmake/ PS version/ CMake version)
         const auto common_abi = get_common_abi(paths);
+
+        std::vector<AbiEntry> dependency_abis;
 
         for (auto it = action_plan.install_actions.begin(); it != action_plan.install_actions.end(); ++it)
         {
             auto& action = *it;
-            std::vector<AbiEntry> dependency_abis;
 
             if (!Util::Enum::to_bool(action.build_options.only_downloads))
             {
                 dependency_abis = get_dependency_abis(action_plan.install_actions.begin(), it, status_db);
             }
+            auto pre_build_info = std::make_unique<PreBuildInfo>(
+                paths, action.spec.triplet(), var_provider.get_tag_vars(action.spec).value_or_exit(VCPKG_LINE_INFO));
+
+            populate_abi_tag_ex(paths, action, std::move(pre_build_info), dependency_abis, cmake_script_hashes);
+            dependency_abis.clear();
         }
 
         // get prebuildinfo (not in parallel)

@@ -1,5 +1,8 @@
 #pragma once
 
+#include <future>
+#include <variant>
+
 namespace vcpkg
 {
     template<class T>
@@ -8,7 +11,7 @@ namespace vcpkg
         Lazy() : value(T()), initialized(false) { }
 
         template<class F>
-        T const& get_lazy(const F& f) const
+        const T& get_lazy(const F& f) const
         {
             if (!initialized)
             {
@@ -21,5 +24,26 @@ namespace vcpkg
     private:
         mutable T value;
         mutable bool initialized;
+    };
+
+    template<class T>
+    struct AsyncLazy
+    {
+        template<class F>
+        AsyncLazy(F work) : value(std::async(std::launch::async | std::launch::deferred, [&work]() { return work(); }))
+        {
+        }
+
+        const T& get() const
+        {
+            if (std::holds_alternative<std::future<T>>(value))
+            {
+                value = std::get<std::future<T>>(value).get();
+            }
+            return std::get<T>(value);
+        }
+
+    private:
+        mutable std::variant<std::future<T>, T> value;
     };
 }
