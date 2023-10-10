@@ -291,7 +291,7 @@ DECLARE_MESSAGE(BaselineGitShowFailed,
                 "",
                 "while checking out baseline from commit '{commit_sha}', failed to `git show` "
                 "versions/baseline.json. This may be fixed by fetching commits with `git fetch`.")
-DECLARE_MESSAGE(BaselineMissing, (msg::package_name), "", "no version of {package_name} is set")
+DECLARE_MESSAGE(BaselineMissing, (msg::package_name), "", "{package_name} is not assigned a version")
 DECLARE_MESSAGE(BinaryCacheVendorHTTP, (), "", "HTTP servers")
 DECLARE_MESSAGE(BinarySourcesArg,
                 (),
@@ -2951,7 +2951,7 @@ DECLARE_MESSAGE(VersionBaselineMatch, (msg::version_spec), "", "message: {versio
 DECLARE_MESSAGE(VersionBaselineMismatch,
                 (msg::expected, msg::actual, msg::package_name),
                 "{actual} and {expected} are versions",
-                "{package_name} is declared at version {actual}, but the local port is {expected}")
+                "{package_name} is assigned {actual}, but the local port is {expected}")
 DECLARE_MESSAGE(VersionBuiltinPortTreeEntryMissing,
                 (msg::package_name, msg::expected, msg::actual),
                 "{expected} and {actual} are versions like 1.0.",
@@ -3100,7 +3100,7 @@ DECLARE_MESSAGE(
     "https://git-scm.com/docs/gitglossary#Documentation/gitglossary.txt-aiddeftree-ishatree-ishalsotreeish",
     "{version_spec} is declared to have git tree {expected}, but the local port {path} has git tree "
     "{actual}\n"
-    "note: If {version_spec} is already published, update the {package_name} manifest with a new version or "
+    "note: if {version_spec} is already published, update the {package_name} manifest with a new version or "
     "port-version, then add the new version by running:")
 DECLARE_MESSAGE(VersionShaMismatch2,
                 (msg::version_spec),

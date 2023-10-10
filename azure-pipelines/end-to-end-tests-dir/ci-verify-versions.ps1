@@ -25,7 +25,7 @@ $TestingRoot/ci-verify-versions-registry/ports/bad-history-name: message: bad-hi
 $TestingRoot/ci-verify-versions-registry/versions/baseline.json: message: bad-history-name@1.1 matches the current baseline
 $TestingRoot/ci-verify-versions-registry/ports/bad-history-name/vcpkg.json: All version constraints are consistent with the version database
 $TestingRoot/ci-verify-versions-registry/ports/baseline-version-mismatch: message: baseline-version-mismatch@1.1 is correctly in the version database (cf8a1faa9f94f7ceb9513d65093d407e11ac1402)
-$TestingRoot/ci-verify-versions-registry/versions/baseline.json: error: baseline-version-mismatch is declared at version 1.0, but the local port is 1.1
+$TestingRoot/ci-verify-versions-registry/versions/baseline.json: error: baseline-version-mismatch is assigned 1.0, but the local port is 1.1
 $TestingRoot/ci-verify-versions-registry/ports/baseline-version-mismatch/vcpkg.json: note: baseline-version-mismatch is declared here
 note: you can run the following commands to add the current version of baseline-version-mismatch automatically:
   vcpkg x-add-version baseline-version-mismatch
@@ -33,7 +33,7 @@ note: you can run the following commands to add the current version of baseline-
   git commit -m `"Update version database`"
 $TestingRoot/ci-verify-versions-registry/ports/baseline-version-mismatch/vcpkg.json: All version constraints are consistent with the version database
 $TestingRoot/ci-verify-versions-registry/ports/baseline-version-missing: message: baseline-version-missing@1.0 is correctly in the version database (a5c21769008f52ed66afa344f13b786dde4b8d7d)
-$TestingRoot/ci-verify-versions-registry/versions/baseline.json: error: no version of baseline-version-missing is set
+$TestingRoot/ci-verify-versions-registry/versions/baseline.json: error: baseline-version-missing is not assigned a version
 $TestingRoot/ci-verify-versions-registry/ports/baseline-version-missing/vcpkg.json: note: baseline-version-missing is declared here
 note: you can run the following commands to add the current version of baseline-version-missing automatically:
   vcpkg x-add-version baseline-version-missing
@@ -58,7 +58,7 @@ $TestingRoot/ci-verify-versions-registry/ports/good: message: good@1.0 is correc
 $TestingRoot/ci-verify-versions-registry/versions/baseline.json: message: good@1.0 matches the current baseline
 $TestingRoot/ci-verify-versions-registry/ports/good/vcpkg.json: All version constraints are consistent with the version database
 $TestingRoot/ci-verify-versions-registry/versions/m-/mismatch-git-tree.json: error: mismatch-git-tree@1.0 is declared to have git tree 41d20d2a02d75343b0933b624faf9f061b112dad, but the local port $TestingRoot/ci-verify-versions-registry/ports/mismatch-git-tree has git tree 34b3289caaa7a97950828905d354dc971c3c15a7
-note: If mismatch-git-tree@1.0 is already published, update the mismatch-git-tree manifest with a new version or port-version, then add the new version by running:
+note: if mismatch-git-tree@1.0 is already published, update the mismatch-git-tree manifest with a new version or port-version, then add the new version by running:
   vcpkg x-add-version mismatch-git-tree
   git add versions
   git commit -m `"Update version database`"
