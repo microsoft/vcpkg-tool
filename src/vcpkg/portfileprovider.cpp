@@ -203,7 +203,7 @@ namespace vcpkg
                             }
                             else
                             {
-                                return msg::format(msg::msgErrorMessage)
+                                return msg::format(msgErrorMessage)
                                     .append(msgVersionSpecMismatch,
                                             msg::path = path->path,
                                             msg::expected_version = version_spec,

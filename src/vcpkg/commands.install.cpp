@@ -1026,7 +1026,7 @@ namespace vcpkg
             if (!options.command_arguments.empty())
             {
                 msg::println_error(msgErrorIndividualPackagesUnsupported);
-                msg::println(Color::error, msg::msgSeeURL, msg::url = docs::manifests_url);
+                msg::println(Color::error, msgSeeURL, msg::url = docs::manifests_url);
                 failure = true;
             }
             if (use_head_version)

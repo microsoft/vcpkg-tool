@@ -76,9 +76,9 @@ namespace
         auto manifest_opt = Json::parse_file(fs, manifest_path, ec);
         if (ec)
         {
-            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                           msg::format(msgFailedToLoadManifest, msg::path = manifest_dir)
-                                               .append_raw('\n')
+        Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
+                                       msg::format(msgFailedToLoadManifest, msg::path = manifest_dir)
+                                           .append_raw('\n')
                                                .append_raw(ec.message()));
         }
 
@@ -947,7 +947,7 @@ namespace vcpkg
 
         return std::move(maybe_tree)
             .error()
-            .append(msg::msgNoteMessage)
+            .append(msgNoteMessage)
             .append(msgWhileCheckingOutPortTreeIsh, msg::package_name = port_name, msg::commit_sha = git_tree);
     }
 
@@ -1009,7 +1009,7 @@ namespace vcpkg
             .append_raw('\n')
             .append(std::move(maybe_output).error())
             .append_raw('\n')
-            .append(msg::msgNoteMessage)
+            .append(msgNoteMessage)
             .append(msgWhileGettingLocalTreeIshObjectsForPorts);
     }
 
@@ -1194,7 +1194,7 @@ namespace vcpkg
         fs.rename_with_retry(git_tree_temp, destination, ec);
         if (ec)
         {
-            return msg::format(msg::msgErrorMessage)
+            return msg::format(msgErrorMessage)
                 .append(format_filesystem_call_error(ec, "rename_with_retry", {git_tree_temp, destination}));
         }
 
