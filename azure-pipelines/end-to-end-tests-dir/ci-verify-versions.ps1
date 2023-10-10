@@ -161,7 +161,7 @@ Throw-IfNotFailed
 function Sanitize() {
   Param([string]$text)
   $workTreeRegex = 'error: failed to execute:[^\r\n]+' # Git command line has an unpredictable PID inside
-  $text = $text.Replace('\', '/').Replace('`r`n', '`n').Trim()
+  $text = $text.Replace('\', '/').Replace("`r`n", "`n").Trim()
   $text = [System.Text.RegularExpressions.Regex]::Replace($text, $workTreeRegex, '')
   return $text
 }
