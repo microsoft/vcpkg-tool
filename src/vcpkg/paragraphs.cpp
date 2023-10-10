@@ -535,18 +535,18 @@ namespace vcpkg::Paragraphs
                                           StringView port_name,
                                           const PortLocation& port_location)
     {
-        auto maybe_maybe_res = try_load_port(fs, port_name, port_location);
-        auto maybe_res = maybe_maybe_res.maybe_scfl.get();
+        auto load_result = try_load_port(fs, port_name, port_location);
+        auto maybe_res = load_result.maybe_scfl.get();
         if (maybe_res)
         {
             auto res = maybe_res->source_control_file.get();
             if (!res)
             {
-                maybe_maybe_res.maybe_scfl = msg::format_error(msgPortDoesNotExist, msg::package_name = port_name);
+                load_result.maybe_scfl = msg::format_error(msgPortDoesNotExist, msg::package_name = port_name);
             }
         }
 
-        return maybe_maybe_res;
+        return load_result;
     }
 
     ExpectedL<BinaryControlFile> try_load_cached_package(const ReadOnlyFilesystem& fs,

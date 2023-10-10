@@ -3158,6 +3158,10 @@ DECLARE_MESSAGE(WhileCheckingOutPortTreeIsh,
                 "while checking out port {package_name} with git tree {commit_sha}")
 DECLARE_MESSAGE(WhileGettingLocalTreeIshObjectsForPorts, (), "", "while getting local treeish objects for ports")
 DECLARE_MESSAGE(WhileLookingForSpec, (msg::spec), "", "while looking for {spec}:")
+DECLARE_MESSAGE(WhileLoadingBaselineVersionForPort,
+                (msg::package_name),
+                "",
+                "while loading baseline version for {package_name}")
 DECLARE_MESSAGE(WhileLoadingPortVersion, (msg::version_spec), "", "while loading {version_spec}")
 DECLARE_MESSAGE(WhileParsingVersionsForPort,
                 (msg::package_name, msg::path),

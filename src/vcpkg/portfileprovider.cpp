@@ -110,20 +110,16 @@ namespace vcpkg
             virtual ExpectedL<Version> get_baseline_version(StringView port_name) const override
             {
                 return m_baseline_cache.get_lazy(port_name, [this, port_name]() -> ExpectedL<Version> {
-                    auto maybe_maybe_version = registry_set.baseline_for_port(port_name);
-                    auto maybe_version = maybe_maybe_version.get();
-                    if (!maybe_version)
-                    {
-                        return std::move(maybe_maybe_version).error();
-                    }
+                    return registry_set.baseline_for_port(port_name).then(
+                        [&](Optional<Version>&& maybe_version) -> ExpectedL<Version> {
+                            auto version = maybe_version.get();
+                            if (!version)
+                            {
+                                return msg::format_error(msgPortNotInBaseline, msg::package_name = port_name);
+                            }
 
-                    auto version = maybe_version->get();
-                    if (!version)
-                    {
-                        return msg::format_error(msgPortNotInBaseline, msg::package_name = port_name);
-                    }
-
-                    return std::move(*version);
+                            return std::move(*version);
+                        });
                 });
             }
 

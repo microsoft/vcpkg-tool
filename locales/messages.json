@@ -1726,6 +1726,8 @@
   "WhileCheckingOutPortTreeIsh": "while checking out port {package_name} with git tree {commit_sha}",
   "_WhileCheckingOutPortTreeIsh.comment": "An example of {package_name} is zlib. An example of {commit_sha} is 7cfad47ae9f68b183983090afd6337cd60fd4949.",
   "WhileGettingLocalTreeIshObjectsForPorts": "while getting local treeish objects for ports",
+  "WhileLoadingBaselineVersionForPort": "while loading baseline version for {package_name}",
+  "_WhileLoadingBaselineVersionForPort.comment": "An example of {package_name} is zlib.",
   "WhileLoadingPortVersion": "while loading {version_spec}",
   "_WhileLoadingPortVersion.comment": "An example of {version_spec} is zlib:x64-windows@1.0.0.",
   "WhileLookingForSpec": "while looking for {spec}:",
