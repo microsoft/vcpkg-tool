@@ -100,7 +100,7 @@ namespace vcpkg
             if (!pmanifest_scf)
             {
                 print_error_message(maybe_manifest_scf.error());
-                msg::println(Color::error, msg::msgSeeURL, msg::url = docs::manifests_url);
+                msg::println(Color::error, msgSeeURL, msg::url = docs::manifests_url);
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 

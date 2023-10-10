@@ -50,9 +50,9 @@ Messages in vcpkg are written in American English. They should not contain:
     if you need to add more than one indentation, you can use `append_indent(N)`
   - Any other interesting characters (like `- ` for lists, for example) should use `append_raw(...)`
 * or for the prefixes:
-  - `"warning: "`, instead use `msg::format(msg::msgWarningMessage).append(msgMyWarning)`
-  - `"error: "`, instead use `msg::msgErrorMessage`
-  - `"internal error: "`, instead use `msg::msgInternalErrorMessage`.
+  - `"warning: "`, instead use `msg::format(msgWarningMessage).append(msgMyWarning)`
+  - `"error: "`, instead use `msgErrorMessage`
+  - `"internal error: "`, instead use `msgInternalErrorMessage`.
 
 They should also not be simple, locale-invariant messages -- something like, for example,
 `{file}:{line}:{column}: ` should be done with `LocalizedString::from_raw(fmt::format("{}:{}:{}", file, line, column))`.
