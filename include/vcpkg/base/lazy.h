@@ -43,14 +43,6 @@ namespace vcpkg
             return std::get<T>(value);
         }
 
-        ~AsyncLazy()
-        {
-            if (std::holds_alternative<std::future<T>>(value))
-            {
-                value = std::get<std::future<T>>(value).get();
-            }
-        }
-
     private:
         mutable std::variant<std::future<T>, T> value;
     };
