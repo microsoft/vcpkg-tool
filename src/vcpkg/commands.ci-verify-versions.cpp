@@ -92,7 +92,7 @@ namespace
                                   .append_raw(": ")
                                   .append(msgErrorMessage)
                                   .append(msgVersionInDeclarationDoesNotMatch,
-                                          msg::commit_sha = version_entry.git_tree,
+                                          msg::git_tree_sha = version_entry.git_tree,
                                           msg::expected = version_entry_spec,
                                           msg::actual = scfl_spec)
                                   .append_raw('\n'));
@@ -110,7 +110,7 @@ namespace
                                           msg::expected = get_scheme_name(version_entry.version.scheme),
                                           msg::actual = get_scheme_name(git_tree_version.scheme),
                                           msg::package_name = port_name,
-                                          msg::commit_sha = version_entry.git_tree)
+                                          msg::git_tree_sha = version_entry.git_tree)
                                   .append_raw('\n')
                                   .append_raw(scfl->control_location)
                                   .append_raw(": ")
@@ -128,7 +128,7 @@ namespace
                                    .append_raw(": ")
                                    .append(msgVersionVerifiedOK2,
                                            msg::version_spec = VersionSpec{port_name, version_entry.version.version},
-                                           msg::commit_sha = version_entry.git_tree)
+                                           msg::git_tree_sha = version_entry.git_tree)
                                    .append_raw('\n'));
         }
 
@@ -159,14 +159,22 @@ namespace
                               LocalizedString::from_raw(scfl.control_location)
                                   .append_raw(": ")
                                   .append(msgErrorMessage)
-                                  .append(msgVersionDatabaseFileMissing,
-                                          msg::package_name = port_name,
-                                          msg::path = versions_database_entry.versions_file_path)
+                                  .append(msgVersionDatabaseFileMissing)
+                                  .append_raw('\n')
+                                  .append_raw(versions_database_entry.versions_file_path)
+                                  .append_raw(": ")
+                                  .append(msgNoteMessage)
+                                  .append(msgVersionDatabaseFileMissing2)
+                                  .append_raw('\n')
+                                  .append(msgNoteMessage)
+                                  .append(msgVersionDatabaseFileMissing3,
+                                          msg::command_line = fmt::format("vcpkg x-add-version {}", port_name))
                                   .append_raw('\n'));
             return success;
         }
 
         const auto local_port_version = scfl.source_control_file->to_schemed_version();
+        const auto local_version_spec = VersionSpec{port_name, local_port_version.version};
 
         auto versions_end = entries->end();
         auto it = std::find_if(entries->begin(), versions_end, [&](const GitVersionDbEntry& entry) {
@@ -181,9 +189,16 @@ namespace
                                   .append_raw(": ")
                                   .append(msgErrorMessage)
                                   .append(msgVersionNotFoundInVersionsFile2,
-                                          msg::version_spec = VersionSpec{port_name, local_port_version.version},
-                                          msg::package_name = port_name,
-                                          msg::path = versions_database_entry.versions_file_path)
+                                          msg::version_spec = VersionSpec{port_name, local_port_version.version})
+                                  .append_raw('\n')
+                                  .append_raw(versions_database_entry.versions_file_path)
+                                  .append_raw(": ")
+                                  .append(msgNoteMessage)
+                                  .append(msgVersionNotFoundInVersionsFile3)
+                                  .append_raw('\n')
+                                  .append(msgNoteMessage)
+                                  .append(msgVersionNotFoundInVersionsFile4,
+                                          msg::command_line = fmt::format("vcpkg x-add-version {}", port_name))
                                   .append_raw('\n'));
             return success;
         }
@@ -213,8 +228,7 @@ namespace
                     .append(msgVersionSchemeMismatch2)
                     .append_raw('\n')
                     .append(msgNoteMessage)
-                    .append(msgVersionOverwriteVersion,
-                            msg::version_spec = VersionSpec{port_name, local_port_version.version})
+                    .append(msgVersionOverwriteVersion, msg::version_spec = local_version_spec)
                     .append_raw(fmt::format("\nvcpkg x-add-version {} --overwrite-version\n", port_name)));
         }
 
@@ -226,24 +240,31 @@ namespace
                                   .append_raw(": ")
                                   .append(msgErrorMessage)
                                   .append(msgVersionShaMismatch1,
-                                          msg::version_spec = VersionSpec{port_name, local_port_version.version},
-                                          msg::expected = version_entry.git_tree,
-                                          msg::actual = local_git_tree,
-                                          msg::package_name = port_name,
-                                          msg::path = scfl.port_directory())
+                                          msg::version_spec = local_version_spec,
+                                          msg::git_tree_sha = version_entry.git_tree)
+                                  .append_raw('\n')
+                                  .append_raw(scfl.port_directory())
+                                  .append_raw(": ")
+                                  .append(msgNoteMessage)
+                                  .append(msgVersionShaMismatch2, msg::git_tree_sha = local_git_tree)
+                                  .append_raw('\n')
+                                  .append_raw(scfl.control_location)
+                                  .append_raw(": ")
+                                  .append(msgNoteMessage)
+                                  .append(msgVersionShaMismatch3, msg::version_spec = local_version_spec)
                                   .append_raw('\n')
                                   .append_indent()
-                                  .append_raw("vcpkg x-add-version " + port_name + "\n")
+                                  .append_raw(fmt::format("vcpkg x-add-version {}\n", port_name))
                                   .append_indent()
                                   .append_raw("git add versions\n")
                                   .append_indent()
                                   .append(msgGitCommitUpdateVersionDatabase)
                                   .append_raw('\n')
-                                  .append(msgVersionShaMismatch2,
-                                          msg::version_spec = VersionSpec{port_name, local_port_version.version})
+                                  .append(msgNoteMessage)
+                                  .append(msgVersionShaMismatch4, msg::version_spec = local_version_spec)
                                   .append_raw('\n')
                                   .append_indent()
-                                  .append_raw("vcpkg x-add-version " + port_name + " --overwrite-version\n")
+                                  .append_raw(fmt::format("vcpkg x-add-version {} --overwrite-version\n", port_name))
                                   .append_indent()
                                   .append_raw("git add versions\n")
                                   .append_indent()
@@ -256,8 +277,8 @@ namespace
             success_sink.print(LocalizedString::from_raw(scfl.port_directory())
                                    .append_raw(": ")
                                    .append(msgVersionVerifiedOK2,
-                                           msg::version_spec = VersionSpec{port_name, local_port_version.version},
-                                           msg::commit_sha = version_entry.git_tree)
+                                           msg::version_spec = local_version_spec,
+                                           msg::git_tree_sha = version_entry.git_tree)
                                    .append_raw('\n'));
         }
 
@@ -380,10 +401,14 @@ namespace
             auto this_error = LocalizedString::from_raw(scfl.control_location)
                                   .append_raw(": ")
                                   .append(msgErrorMessage)
-                                  .append(msgVersionConstraintNotInDatabase,
+                                  .append(msgVersionConstraintNotInDatabase1,
                                           msg::package_name = dependency.name,
-                                          msg::version = *minimum_version,
-                                          msg::path = dependent_versions_db_entry.versions_file_path)
+                                          msg::version = *minimum_version)
+                                  .append_raw('\n')
+                                  .append_raw(dependent_versions_db_entry.versions_file_path)
+                                  .append_raw(": ")
+                                  .append(msgNoteMessage)
+                                  .append(msgVersionConstraintNotInDatabase2)
                                   .append_raw('\n');
             if (feature_name)
             {
@@ -454,10 +479,14 @@ namespace
                                   LocalizedString::from_raw(scfl.control_location)
                                       .append_raw(": ")
                                       .append(msgErrorMessage)
-                                      .append(msgVersionOverrideVersionNotInVersionDatabase,
+                                      .append(msgVersionOverrideVersionNotInVersionDatabase1,
                                               msg::package_name = override_.name,
-                                              msg::version = override_.version.version,
-                                              msg::path = override_versions_db_entry.versions_file_path)
+                                              msg::version = override_.version.version)
+                                      .append_raw('\n')
+                                      .append_raw(override_versions_db_entry.versions_file_path)
+                                      .append_raw(": ")
+                                      .append(msgNoteMessage)
+                                      .append(msgVersionOverrideVersionNotInVersionDatabase2)
                                       .append_raw('\n'));
             }
         }
@@ -466,6 +495,7 @@ namespace
         {
             success_sink.print(LocalizedString::from_raw(scfl.control_location)
                                    .append_raw(": ")
+                                   .append(msgMessageMessage)
                                    .append(msgVersionConstraintOk)
                                    .append_raw('\n'));
         }
@@ -543,8 +573,22 @@ namespace vcpkg
                     LocalizedString::from_raw(scfl.control_location)
                         .append_raw(": ")
                         .append(msgErrorMessage)
-                        .append(msgVersionShaMissing, msg::package_name = port_name, msg::path = scfl.port_directory())
-                        .append_raw('\n'));
+                        .append(msgVersionShaMissing1)
+                        .append_raw('\n')
+                        .append(msgNoteMessage)
+                        .append(msgVersionShaMissing2)
+                        .append_raw('\n')
+                        .append_indent()
+                        .append_raw(fmt::format("git add \"{}\"\n", scfl.port_directory()))
+                        .append_indent()
+                        .append_raw(fmt::format("git commit -m {}\n", msg::format(msgVersionShaMissing3)))
+                        .append_indent()
+                        .append_raw(fmt::format("vcpkg x-add-version {}\n", port_name))
+                        .append_indent()
+                        .append_raw("git add versions\n")
+                        .append_indent()
+                        .append_raw(fmt::format("git commit --amend -m \"{}\"\n",
+                                                msg::format(msgVersionShaMissing4, msg::package_name = port_name))));
             }
             else
             {

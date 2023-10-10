@@ -104,7 +104,7 @@ namespace vcpkg
                                .error()
                                .append_raw('\n')
                                .append(msgNoteMessage)
-                               .append(msg::msgSeeURL, msg::url = docs::manifests_url)
+                               .append(msgSeeURL, msg::url = docs::manifests_url)
                                .append_raw('\n'));
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }

@@ -36,6 +36,10 @@
       "baseline": "1.0",
       "port-version": 0
     },
+    "has-local-edits": {
+      "baseline": "1.0.0",
+      "port-version": 0
+    },
     "malformed": {
       "baseline": "1.0",
       "port-version": 0

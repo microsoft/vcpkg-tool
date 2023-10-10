@@ -2307,23 +2307,23 @@ ExpectedL<DownloadManagerConfig> vcpkg::parse_download_configuration(const Optio
     {
         return LocalizedString::from_raw(err->to_string()) // note that this already contains error:
             .append_raw('\n')
-            .append(msg::msgNoteMessage)
-            .append(msg::msgSeeURL, msg::url = docs::assetcaching_url);
+            .append(msgNoteMessage)
+            .append(msgSeeURL, msg::url = docs::assetcaching_url);
     }
 
     if (s.azblob_templates_to_put.size() > 1)
     {
         return msg::format_error(msgAMaximumOfOneAssetWriteUrlCanBeSpecified)
             .append_raw('\n')
-            .append(msg::msgNoteMessage)
-            .append(msg::msgSeeURL, msg::url = docs::assetcaching_url);
+            .append(msgNoteMessage)
+            .append(msgSeeURL, msg::url = docs::assetcaching_url);
     }
     if (s.url_templates_to_get.size() > 1)
     {
         return msg::format_error(msgAMaximumOfOneAssetReadUrlCanBeSpecified)
             .append_raw('\n')
-            .append(msg::msgNoteMessage)
-            .append(msg::msgSeeURL, msg::url = docs::assetcaching_url);
+            .append(msgNoteMessage)
+            .append(msgSeeURL, msg::url = docs::assetcaching_url);
     }
 
     Optional<std::string> get_url;
