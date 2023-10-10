@@ -858,7 +858,7 @@ namespace
     ExpectedL<std::unique_ptr<RegistryEntry>> FilesystemRegistry::get_port_entry(StringView port_name) const
     {
         return load_filesystem_versions_file(m_fs, m_path / registry_versions_dir_name, port_name, m_path)
-            .then([this, &port_name](Optional<std::vector<FilesystemVersionDbEntry>>&& maybe_version_entries)
+            .then([&](Optional<std::vector<FilesystemVersionDbEntry>>&& maybe_version_entries)
                       -> ExpectedL<std::unique_ptr<RegistryEntry>> {
                 auto version_entries = maybe_version_entries.get();
                 if (!version_entries)
@@ -951,7 +951,7 @@ namespace
 
     ExpectedL<Optional<Version>> GitRegistry::get_baseline_version(StringView port_name) const
     {
-        const auto& maybe_baseline = m_baseline.get([this, port_name]() -> ExpectedL<Baseline> {
+        return lookup_in_maybe_baseline(m_baseline.get([this, port_name]() -> ExpectedL<Baseline> {
             // We delay baseline validation until here to give better error messages and suggestions
             if (!is_git_commit_sha(m_baseline_identifier))
             {
@@ -1028,21 +1028,8 @@ namespace
                         .append_raw('\n')
                         .append(error);
                 });
-        });
-
-        auto baseline = maybe_baseline.get();
-        if (!baseline)
-        {
-            return maybe_baseline.error();
-        }
-
-        auto it = baseline->find(port_name);
-        if (it != baseline->end())
-        {
-            return it->second;
-        }
-
-        return Optional<Version>();
+        }),
+                                        port_name);
     }
 
     ExpectedL<Unit> GitRegistry::append_all_port_names(std::vector<std::string>& out) const
