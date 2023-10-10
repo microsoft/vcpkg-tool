@@ -76,9 +76,9 @@ namespace
         auto manifest_opt = Json::parse_file(fs, manifest_path, ec);
         if (ec)
         {
-        Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                       msg::format(msgFailedToLoadManifest, msg::path = manifest_dir)
-                                           .append_raw('\n')
+            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
+                                           msg::format(msgFailedToLoadManifest, msg::path = manifest_dir)
+                                               .append_raw('\n')
                                                .append_raw(ec.message()));
         }
 
