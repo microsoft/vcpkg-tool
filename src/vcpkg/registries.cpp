@@ -1523,29 +1523,25 @@ namespace
             return format_filesystem_call_error(ec, "read_contents", {versions_file_path});
         }
 
-        auto maybe_versions_json = Json::parse_object(contents, versions_file_path);
-        auto versions_json = maybe_versions_json.get();
-        if (!versions_json)
-        {
-            return std::move(maybe_versions_json).error();
-        }
+        return Json::parse_object(contents, versions_file_path)
+            .then([&](Json::Object&& versions_json) -> ExpectedL<Optional<std::vector<GitVersionDbEntry>>> {
+                auto maybe_versions_array = versions_json.get("versions");
+                if (!maybe_versions_array || !maybe_versions_array->is_array())
+                {
+                    return msg::format_error(msgFailedToParseNoVersionsArray, msg::path = versions_file_path);
+                }
 
-        auto maybe_versions_array = versions_json->get("versions");
-        if (!maybe_versions_array || !maybe_versions_array->is_array())
-        {
-            return msg::format_error(msgFailedToParseNoVersionsArray, msg::path = versions_file_path);
-        }
+                std::vector<GitVersionDbEntry> db_entries;
+                GitVersionDbEntryArrayDeserializer deserializer{};
+                Json::Reader r{versions_file_path};
+                r.visit_in_key(*maybe_versions_array, "versions", db_entries, deserializer);
+                if (r.error_count() != 0)
+                {
+                    return join(r.messages());
+                }
 
-        std::vector<GitVersionDbEntry> db_entries;
-        GitVersionDbEntryArrayDeserializer deserializer{};
-        Json::Reader r{versions_file_path};
-        r.visit_in_key(*maybe_versions_array, "versions", db_entries, deserializer);
-        if (r.error_count() != 0)
-        {
-            return join(r.messages());
-        }
-
-        return db_entries;
+                return db_entries;
+            });
     }
 
     ExpectedL<Optional<std::vector<FilesystemVersionDbEntry>>> load_filesystem_versions_file_impl(
@@ -1557,35 +1553,31 @@ namespace
         {
             if (ec == std::errc::no_such_file_or_directory)
             {
-                return Optional<std::vector<FilesystemVersionDbEntry>>{};
+                return nullopt;
             }
 
             return format_filesystem_call_error(ec, "read_contents", {versions_file_path});
         }
 
-        auto maybe_versions_json = Json::parse_object(contents, versions_file_path);
-        auto versions_json = maybe_versions_json.get();
-        if (!versions_json)
-        {
-            return std::move(maybe_versions_json).error();
-        }
+        return Json::parse_object(contents, versions_file_path)
+            .then([&](Json::Object&& versions_json) -> ExpectedL<Optional<std::vector<FilesystemVersionDbEntry>>> {
+                auto maybe_versions_array = versions_json.get("versions");
+                if (!maybe_versions_array || !maybe_versions_array->is_array())
+                {
+                    return msg::format_error(msgFailedToParseNoVersionsArray, msg::path = versions_file_path);
+                }
 
-        auto maybe_versions_array = versions_json->get("versions");
-        if (!maybe_versions_array || !maybe_versions_array->is_array())
-        {
-            return msg::format_error(msgFailedToParseNoVersionsArray, msg::path = versions_file_path);
-        }
+                std::vector<FilesystemVersionDbEntry> db_entries;
+                FilesystemVersionDbEntryArrayDeserializer deserializer{registry_root};
+                Json::Reader r{versions_file_path};
+                r.visit_in_key(*maybe_versions_array, "versions", db_entries, deserializer);
+                if (r.error_count() != 0)
+                {
+                    return join(r.messages());
+                }
 
-        std::vector<FilesystemVersionDbEntry> db_entries;
-        FilesystemVersionDbEntryArrayDeserializer deserializer{registry_root};
-        Json::Reader r{versions_file_path};
-        r.visit_in_key(*maybe_versions_array, "versions", db_entries, deserializer);
-        if (r.error_count() != 0)
-        {
-            return join(r.messages());
-        }
-
-        return db_entries;
+                return db_entries;
+            });
     }
 } // unnamed namespace
 
