@@ -1398,16 +1398,21 @@ namespace vcpkg::Json
         LocalizedString result;
         auto first = messages.begin();
         const auto last = messages.end();
-        if (first != last)
+        if (first == last)
         {
-            result.append(first->message);
-            while (++first != last)
-            {
-                result.append_raw('\n').append(first->message);
-            }
+            return result;
         }
 
-        return result;
+        for (;;)
+        {
+            result.append(first->message);
+            if (++first == last)
+            {
+                return result;
+            }
+
+            result.append_raw('\n');
+        }
     }
 
     LocalizedString flatten_reader_messages(const std::vector<ReaderMessage>& messages, MessageSink& warningsSink)
