@@ -286,21 +286,12 @@ DECLARE_MESSAGE(BaselineFileNoDefaultField,
                 (msg::commit_sha),
                 "",
                 "The baseline file at commit {commit_sha} was invalid (no \"default\" field).")
-DECLARE_MESSAGE(BaselineFileNoDefaultFieldPath,
-                (msg::path),
-                "",
-                "baseline file at {path} was invalid (no \"default\" field)")
 DECLARE_MESSAGE(BaselineGitShowFailed,
                 (msg::commit_sha),
                 "",
                 "while checking out baseline from commit '{commit_sha}', failed to `git show` "
                 "versions/baseline.json. This may be fixed by fetching commits with `git fetch`.")
 DECLARE_MESSAGE(BaselineMissing, (msg::package_name), "", "no version of {package_name} is set")
-DECLARE_MESSAGE(BaselineMissingDefault,
-                (msg::commit_sha, msg::url),
-                "",
-                "The baseline.json from commit `\"{commit_sha}\"` in the repo {url} was invalid (did not "
-                "contain a \"default\" field).")
 DECLARE_MESSAGE(BinaryCacheVendorHTTP, (), "", "HTTP servers")
 DECLARE_MESSAGE(BinarySourcesArg,
                 (),
@@ -901,10 +892,6 @@ DECLARE_MESSAGE(CouldNotDeduceNugetIdAndVersion,
                 (msg::path),
                 "",
                 "Could not deduce nuget id and version from filename: {path}")
-DECLARE_MESSAGE(CouldNotFindBaseline,
-                (msg::commit_sha, msg::path),
-                "",
-                "Could not find explicitly specified baseline `\"{commit_sha}\"` in baseline file {path}")
 DECLARE_MESSAGE(CouldNotFindBaselineInCommit,
                 (msg::url, msg::commit_sha, msg::package_name),
                 "",
@@ -2510,7 +2497,7 @@ DECLARE_MESSAGE(PortMissingManifest2,
                 "{package_name} port manifest missing (no vcpkg.json or CONTROL file)")
 DECLARE_MESSAGE(PortsNoDiff, (), "", "There were no changes in the ports between the two commits.")
 DECLARE_MESSAGE(PortsRemoved, (msg::count), "", "The following {count} ports were removed:")
-DECLARE_MESSAGE(PortsUpdated, (msg::count), "", "\nThe following {count} ports were updated:")
+DECLARE_MESSAGE(PortsUpdated, (msg::count), "", "The following {count} ports were updated:")
 DECLARE_MESSAGE(PortSupportsField, (msg::supports_expression), "", "(supports: \"{supports_expression}\")")
 DECLARE_MESSAGE(PortVersionConflict, (), "", "The following packages differ from their port versions:")
 DECLARE_MESSAGE(PortVersionMultipleSpecification,

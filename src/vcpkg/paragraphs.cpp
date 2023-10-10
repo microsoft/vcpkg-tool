@@ -109,6 +109,11 @@ namespace vcpkg
         return result;
     }
 
+    LocalizedString ToLocalizedString_t::operator()(std::unique_ptr<ParseControlErrorInfo> p) const
+    {
+        return LocalizedString::from_raw(p->to_string());
+    }
+
     std::unique_ptr<ParseControlErrorInfo> ParseControlErrorInfo::from_error(StringView name, LocalizedString&& ls)
     {
         auto error_info = std::make_unique<ParseControlErrorInfo>();
@@ -414,19 +419,11 @@ namespace
         ExpectedL<std::unique_ptr<SourceControlFile>> (*do_parse)(StringView, const Json::Object&, MessageSink&))
     {
         StatsTimer timer(g_load_ports_stats);
-        auto maybe_object = Json::parse_object(text, origin);
-        if (auto object = maybe_object.get())
-        {
-            auto maybe_parsed = do_parse(origin, *object, warning_sink);
-            if (auto parsed = maybe_parsed.get())
-            {
-                return SourceControlFileAndLocation{std::move(*parsed), origin.to_string(), spdx_location.to_string()};
-            }
-
-            return std::move(maybe_parsed).error();
-        }
-
-        return std::move(maybe_object).error();
+        return Json::parse_object(text, origin).then([&](Json::Object&& object) {
+            return do_parse(origin, std::move(object), warning_sink).map([&](std::unique_ptr<SourceControlFile>&& scf) {
+                return SourceControlFileAndLocation{std::move(scf), origin.to_string(), spdx_location.to_string()};
+            });
+        });
     }
 }
 
@@ -455,20 +452,17 @@ namespace vcpkg::Paragraphs
                                                                        StringView spdx_location)
     {
         StatsTimer timer(g_load_ports_stats);
-        ExpectedL<std::vector<Paragraph>> pghs = parse_paragraphs(text, origin);
-        if (auto vector_pghs = pghs.get())
-        {
-            auto maybe_parsed = map_parse_expected_to_localized_string(
-                SourceControlFile::parse_control_file(origin, std::move(*vector_pghs)));
-            if (auto parsed = maybe_parsed.get())
-            {
-                return SourceControlFileAndLocation{std::move(*parsed), origin.to_string(), spdx_location.to_string()};
-            }
+        return parse_paragraphs(text, origin)
+            .then([&](std::vector<Paragraph>&& vector_pghs) -> ExpectedL<SourceControlFileAndLocation> {
+                auto maybe_parsed = SourceControlFile::parse_control_file(origin, std::move(vector_pghs));
+                if (auto parsed = maybe_parsed.get())
+                {
+                    return SourceControlFileAndLocation{
+                        std::move(*parsed), origin.to_string(), spdx_location.to_string()};
+                }
 
-            return std::move(maybe_parsed).error();
-        }
-
-        return std::move(pghs).error();
+                return ToLocalizedString(std::move(maybe_parsed).error());
+            });
     }
 
     PortLoadResult try_load_port(const ReadOnlyFilesystem& fs, StringView port_name, const PortLocation& port_location)

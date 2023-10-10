@@ -530,6 +530,12 @@ set_property(TARGET closes-stdout PROPERTY PDB_NAME "closes-stdout${VCPKG_PDB_SU
 set(READS_STDIN_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/reads-stdin.c")
 add_executable(reads-stdin ${READS_STDIN_SOURCES} "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg.manifest")
 set_property(TARGET reads-stdin PROPERTY PDB_NAME "reads-stdin${VCPKG_PDB_SUFFIX}")
+
+# === Target: test-editor ===
+
+set(TEST_EDITOR_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/test-editor.c")
+add_executable(test-editor ${TEST_EDITOR_SOURCES} "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg.manifest")
+set_property(TARGET test-editor PROPERTY PDB_NAME "test-editor${VCPKG_PDB_SUFFIX}")
 endif()
 
 # === Target: format ===
@@ -554,6 +560,7 @@ if(CLANG_FORMAT)
         COMMAND "${CLANG_FORMAT}" -i -verbose ${CLOSES_STDIN_SOURCES}
         COMMAND "${CLANG_FORMAT}" -i -verbose ${CLOSES_STDOUT_SOURCES}
         COMMAND "${CLANG_FORMAT}" -i -verbose ${READS_STDIN_SOURCES}
+        COMMAND "${CLANG_FORMAT}" -i -verbose ${TEST_EDITOR_SOURCES}
     )
 endif()
 

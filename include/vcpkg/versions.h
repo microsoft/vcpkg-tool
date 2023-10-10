@@ -173,6 +173,7 @@ namespace vcpkg
     bool try_extract_external_dot_version(ParsedExternalVersion& out, StringView version);
 }
 
+VCPKG_FORMAT_WITH_TO_STRING(vcpkg::Version);
+VCPKG_FORMAT_WITH_TO_STRING(vcpkg::VersionDiff);
 VCPKG_FORMAT_WITH_TO_STRING_LITERAL_NONMEMBER(vcpkg::VersionScheme);
 VCPKG_FORMAT_WITH_TO_STRING(vcpkg::VersionSpec);
-VCPKG_FORMAT_WITH_TO_STRING(vcpkg::Version);
