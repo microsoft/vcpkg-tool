@@ -169,11 +169,8 @@ function Sanitize() {
 $expected = Sanitize $expected
 $actual = Sanitize $actual
 if ($actual -ne $expected) {
-    Write-Host "========= Expected ========="
-    Write-Host $expected
     Set-Content -Value $expected -LiteralPath "$TestingRoot/expected.txt"
-    Write-Host "========= Actual ========="
-    Write-Host $actual
     Set-Content -Value $actual -LiteralPath "$TestingRoot/actual.txt"
+    git diff --no-index -- "$TestingRoot/expected.txt" "$TestingRoot/actual.txt"
     throw "Bad x-ci-verify-versions output."
 }
