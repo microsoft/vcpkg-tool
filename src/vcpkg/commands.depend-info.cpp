@@ -4,7 +4,7 @@
 #include <vcpkg/base/xmlserializer.h>
 
 #include <vcpkg/cmakevars.h>
-#include <vcpkg/commands.dependinfo.h>
+#include <vcpkg/commands.depend-info.h>
 #include <vcpkg/commands.help.h>
 #include <vcpkg/commands.install.h>
 #include <vcpkg/dependencies.h>
@@ -86,15 +86,15 @@ namespace
     constexpr StringLiteral OPTION_FORMAT = "format";
 
     constexpr CommandSwitch DEPEND_SWITCHES[] = {
-        {OPTION_DOT, nullptr},
-        {OPTION_DGML, nullptr},
-        {OPTION_SHOW_DEPTH, []() { return msg::format(msgCmdDependInfoOptDepth); }},
+        {OPTION_DOT, {}},
+        {OPTION_DGML, {}},
+        {OPTION_SHOW_DEPTH, msgCmdDependInfoOptDepth},
     };
 
     constexpr CommandSetting DEPEND_SETTINGS[] = {
-        {OPTION_MAX_RECURSE, []() { return msg::format(msgCmdDependInfoOptMaxRecurse); }},
-        {OPTION_SORT, []() { return msg::format(msgCmdDependInfoOptSort); }},
-        {OPTION_FORMAT, [] { return msg::format(msgCmdDependInfoFormatHelp); }},
+        {OPTION_MAX_RECURSE, msgCmdDependInfoOptMaxRecurse},
+        {OPTION_SORT, msgCmdDependInfoOptSort},
+        {OPTION_FORMAT, msgCmdDependInfoFormatHelp},
     };
 
     void assign_depth_to_dependencies(const std::string& package,
@@ -241,8 +241,12 @@ namespace vcpkg
         return s;
     }
 
-    constexpr CommandMetadata CommandDependinfoMetadata = {
-        [] { return create_example_string("depend-info sqlite3"); },
+    constexpr CommandMetadata CommandDependInfoMetadata{
+        "depend-info",
+        msgHelpDependInfoCommand,
+        {msgCmdDependInfoExample1, "vcpkg depend-info zlib"},
+        "https://learn.microsoft.com/vcpkg/commands/depend-info",
+        AutocompletePriority::Public,
         1,
         1,
         {DEPEND_SWITCHES, DEPEND_SETTINGS},
@@ -386,12 +390,12 @@ namespace vcpkg
         return result;
     }
 
-    void command_dependinfo_and_exit(const VcpkgCmdArguments& args,
-                                     const VcpkgPaths& paths,
-                                     Triplet default_triplet,
-                                     Triplet host_triplet)
+    void command_depend_info_and_exit(const VcpkgCmdArguments& args,
+                                      const VcpkgPaths& paths,
+                                      Triplet default_triplet,
+                                      Triplet host_triplet)
     {
-        const ParsedArguments options = args.parse_arguments(CommandDependinfoMetadata);
+        const ParsedArguments options = args.parse_arguments(CommandDependInfoMetadata);
         const auto strategy = determine_depend_info_mode(options).value_or_exit(VCPKG_LINE_INFO);
 
         bool default_triplet_used = false;
@@ -399,7 +403,7 @@ namespace vcpkg
             return check_and_get_full_package_spec(arg,
                                                    default_triplet,
                                                    default_triplet_used,
-                                                   CommandDependinfoMetadata.get_example_text(),
+                                                   CommandDependInfoMetadata.get_example_text(),
                                                    paths.get_triplet_db());
         });
 

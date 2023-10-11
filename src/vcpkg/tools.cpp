@@ -542,7 +542,8 @@ namespace vcpkg
             }
         }
 
-        virtual void add_system_paths(const ReadOnlyFilesystem& fs, std::vector<Path>& out_candidate_paths) const
+        virtual void add_system_paths(const ReadOnlyFilesystem& fs,
+                                      std::vector<Path>& out_candidate_paths) const override
         {
             const auto& program_files = get_program_files_platform_bitness();
             if (const auto pf = program_files.get())
@@ -838,11 +839,12 @@ namespace vcpkg
             }
 
             // If no acceptable tool was found and downloading was unavailable, emit an error message
-            LocalizedString s = msg::format(msg::msgErrorMessage);
+            LocalizedString s = msg::format(msgErrorMessage);
             s.append(msgToolFetchFailed, msg::tool_name = tool.tool_data_name());
             if (env_force_system_binaries && download_available)
             {
-                s.append_raw(' ').append(msgDownloadAvailable, msg::env_var = s_env_vcpkg_force_system_binaries);
+                s.append_raw(' ').append(msgDownloadAvailable,
+                                         msg::env_var = format_environment_variable(s_env_vcpkg_force_system_binaries));
             }
             if (consider_system)
             {
@@ -906,7 +908,7 @@ namespace vcpkg
         const auto tools = fs.find_from_PATH(Tools::TAR);
         if (tools.empty())
         {
-            return msg::format(msg::msgErrorMessage)
+            return msg::format(msgErrorMessage)
                 .append(msgToolFetchFailed, msg::tool_name = Tools::TAR)
 #if defined(_WIN32)
                 .append(msgToolInWin10)
@@ -946,7 +948,7 @@ namespace vcpkg
         }
 #endif
 
-        return msg::format(msg::msgErrorMessage)
+        return msg::format(msgErrorMessage)
             .append(msgToolFetchFailed, msg::tool_name = Tools::CMAKE)
 #if !defined(_WIN32)
             .append(msgInstallWithSystemManager)

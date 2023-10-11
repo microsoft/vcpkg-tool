@@ -6,6 +6,7 @@
 
 namespace vcpkg
 {
+    extern const CommandMetadata CommandZPrintConfigMetadata;
     void command_z_print_config_and_exit(const VcpkgCmdArguments& args,
                                          const VcpkgPaths& paths,
                                          Triplet default_triplet,

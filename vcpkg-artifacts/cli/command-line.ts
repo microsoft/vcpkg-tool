@@ -1,21 +1,13 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { strict } from 'assert';
 import { tmpdir } from 'os';
 import { join, resolve } from 'path';
-import { i } from '../i18n';
 import { intersect } from '../util/intersect';
 import { Command } from './command';
-import { cmdSwitch } from './format';
 
 export type switches = {
   [key: string]: Array<string>;
-}
-
-export interface Help {
-  readonly help: Array<string>;
-  readonly title: string;
 }
 
 class Ctx {
@@ -129,13 +121,11 @@ export class CommandLine {
 
   get language() {
     const l = this.switches['language'] || [];
-    strict.ok((l?.length || 0) < 2, i`Expected a single value for ${cmdSwitch('language')} - found multiple`);
     return l[0];
   }
 
   get allLanguages(): boolean {
     const l = this.switches['all-languages'] || [];
-    strict.ok((l?.length || 0) < 2, i`Expected a single value for ${cmdSwitch('all-languages')} - found multiple`);
     return !!l[0];
   }
 
@@ -159,7 +149,7 @@ export class CommandLine {
 
   /** parses the command line and returns the command that has been requested */
   get command() {
-    return this.commands.find(cmd => cmd.command === this.inputs[0] || !!cmd.aliases.find(alias => alias === this.inputs[0]));
+    return this.commands.find(cmd => cmd.command === this.inputs[0]);
   }
 
   constructor(args: Array<string>) {

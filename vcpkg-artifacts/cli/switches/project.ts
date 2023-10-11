@@ -19,11 +19,6 @@ interface ResolvedProjectUri {
 
 export class Project extends Switch {
   switch = 'project';
-  get help() {
-    return [
-      i`override the path to the project folder`
-    ];
-  }
 
   async resolveProjectUri() : Promise<ResolvedProjectUri | undefined> {
     const v = this.value;

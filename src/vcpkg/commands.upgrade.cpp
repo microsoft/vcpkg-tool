@@ -26,19 +26,23 @@ namespace
     constexpr StringLiteral OPTION_ALLOW_UNSUPPORTED_PORT = "allow-unsupported";
 
     constexpr CommandSwitch SWITCHES[] = {
-        {OPTION_NO_DRY_RUN, []() { return msg::format(msgCmdUpgradeOptNoDryRun); }},
-        {OPTION_NO_KEEP_GOING, []() { return msg::format(msgCmdUpgradeOptNoKeepGoing); }},
-        {OPTION_ALLOW_UNSUPPORTED_PORT, []() { return msg::format(msgCmdUpgradeOptAllowUnsupported); }},
+        {OPTION_NO_DRY_RUN, msgCmdUpgradeOptNoDryRun},
+        {OPTION_NO_KEEP_GOING, msgCmdUpgradeOptNoKeepGoing},
+        {OPTION_ALLOW_UNSUPPORTED_PORT, msgHelpTxtOptAllowUnsupportedPort},
     };
 } // unnamed namespace
 
 namespace vcpkg
 {
     constexpr CommandMetadata CommandUpgradeMetadata = {
-        [] { return create_example_string("upgrade --no-dry-run"); },
+        "upgrade",
+        msgHelpUpgradeCommand,
+        {"vcpkg upgrade --no-dry-run"},
+        "https://learn.microsoft.com/vcpkg/commands/upgrade",
+        AutocompletePriority::Public,
         0,
         SIZE_MAX,
-        {SWITCHES, {}},
+        {SWITCHES},
         nullptr,
     };
 

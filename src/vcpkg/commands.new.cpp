@@ -1,5 +1,6 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/jsonreader.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.new.h>
@@ -25,26 +26,30 @@ namespace
     constexpr StringLiteral OPTION_VERSION_STRING = "version-string";
 
     constexpr CommandSwitch SWITCHES[] = {
-        {OPTION_APPLICATION, []() { return msg::format(msgCmdNewOptApplication); }},
-        {OPTION_SINGLE_FILE, []() { return msg::format(msgCmdNewOptSingleFile); }},
-        {OPTION_VERSION_RELAXED, []() { return msg::format(msgCmdNewOptVersionRelaxed); }},
-        {OPTION_VERSION_DATE, []() { return msg::format(msgCmdNewOptVersionDate); }},
-        {OPTION_VERSION_STRING, []() { return msg::format(msgCmdNewOptVersionString); }},
+        {OPTION_APPLICATION, msgCmdNewOptApplication},
+        {OPTION_SINGLE_FILE, msgCmdNewOptSingleFile},
+        {OPTION_VERSION_RELAXED, msgCmdNewOptVersionRelaxed},
+        {OPTION_VERSION_DATE, msgCmdNewOptVersionDate},
+        {OPTION_VERSION_STRING, msgCmdNewOptVersionString},
     };
 
     constexpr CommandSetting SETTINGS[] = {
-        {SETTING_NAME, []() { return msg::format(msgCmdNewSettingName); }},
-        {SETTING_VERSION, []() { return msg::format(msgCmdNewSettingVersion); }},
+        {SETTING_NAME, msgCmdNewSettingName},
+        {SETTING_VERSION, msgCmdNewSettingVersion},
     };
 } // unnamed namespace
 
 namespace vcpkg
 {
-    constexpr CommandMetadata CommandNewMetadata = {
-        [] { return create_example_string("new --name=example --version=1.0 --version-kind=relaxed"); },
+    constexpr CommandMetadata CommandNewMetadata{
+        "new",
+        msgCmdNewSynposis,
+        {msgCmdNewExample1, "vcpkg new --application"},
+        Undocumented,
+        AutocompletePriority::Public,
         0,
         0,
-        {SWITCHES, SETTINGS, {}},
+        {SWITCHES, SETTINGS},
         nullptr,
     };
 
@@ -71,6 +76,13 @@ namespace vcpkg
             if (name->empty())
             {
                 return msg::format_error(msgNewNameCannotBeEmpty);
+            }
+
+            if (!Json::IdentifierDeserializer::is_ident(*name))
+            {
+                return msg::format_error(msgParseIdentifierError,
+                                         msg::value = *name,
+                                         msg::url = "https://learn.microsoft.com/vcpkg/commands/new");
             }
 
             manifest.insert("name", *name);

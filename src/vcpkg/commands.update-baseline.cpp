@@ -47,8 +47,8 @@ namespace
     constexpr StringLiteral OPTION_DRY_RUN = "dry-run";
 
     constexpr CommandSwitch switches[] = {
-        {OPTION_ADD_INITIAL_BASELINE, []() { return msg::format(msgCmdUpdateBaselineOptInitial); }},
-        {OPTION_DRY_RUN, []() { return msg::format(msgCmdUpdateBaselineOptDryRun); }},
+        {OPTION_ADD_INITIAL_BASELINE, msgCmdUpdateBaselineOptInitial},
+        {OPTION_DRY_RUN, msgCmdUpdateBaselineOptDryRun},
     };
 
 } // unnamed namespace
@@ -56,10 +56,15 @@ namespace
 namespace vcpkg
 {
     constexpr CommandMetadata CommandUpdateBaselineMetadata{
-        [] { return create_example_string("x-update-baseline"); },
+        "x-update-baseline",
+        msgCmdUpdateBaselineSynopsis,
+        {"vcpkg x-update-baseline"},
+        "https://learn.microsoft.com/vcpkg/commands/update-baseline",
+        AutocompletePriority::Public,
         0,
         0,
         {switches},
+        nullptr,
     };
 
     void command_update_baseline_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)

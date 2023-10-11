@@ -67,21 +67,22 @@ namespace vcpkg
                                command_build_ex(args, full_spec, host_triplet, provider, build_logs_recorder, paths));
     }
 
-    constexpr CommandMetadata CommandBuildMetadata = {
-        [] { return create_example_string("build zlib:x64-windows"); },
+    constexpr CommandMetadata CommandBuildMetadata{
+        "build",
+        msgCmdBuildSynopsis,
+        {msgCmdBuildExample1, "vcpkg build zlib:x64-windows"},
+        Undocumented,
+        AutocompletePriority::Internal,
         1,
         1,
-        {{}, {}},
+        {},
         nullptr,
     };
-} // namespace vcpkg
 
-namespace
-{
-    int command_build(const VcpkgCmdArguments& args,
-                      const VcpkgPaths& paths,
-                      Triplet default_triplet,
-                      Triplet host_triplet)
+    void command_build_and_exit(const VcpkgCmdArguments& args,
+                                const VcpkgPaths& paths,
+                                Triplet default_triplet,
+                                Triplet host_triplet)
     {
         // Build only takes a single package and all dependencies must already be installed
         const ParsedArguments options = args.parse_arguments(CommandBuildMetadata);
@@ -100,19 +101,8 @@ namespace
         auto registry_set = paths.make_registry_set();
         PathsPortFileProvider provider(
             fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
-        return command_build_ex(args, spec, host_triplet, provider, null_build_logs_recorder(), paths);
-    }
-} // unnamed namespace
-
-namespace vcpkg
-{
-
-    void command_build_and_exit(const VcpkgCmdArguments& args,
-                                const VcpkgPaths& paths,
-                                Triplet default_triplet,
-                                Triplet host_triplet)
-    {
-        Checks::exit_with_code(VCPKG_LINE_INFO, command_build(args, paths, default_triplet, host_triplet));
+        Checks::exit_with_code(VCPKG_LINE_INFO,
+                               command_build_ex(args, spec, host_triplet, provider, null_build_logs_recorder(), paths));
     }
 
     int command_build_ex(const VcpkgCmdArguments& args,
@@ -176,7 +166,7 @@ namespace vcpkg
         msg::print(msgElapsedForPackage, msg::spec = spec, msg::elapsed = build_timer);
         if (result.code == BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES)
         {
-            LocalizedString errorMsg = msg::format(msg::msgErrorMessage).append(msgBuildDependenciesMissing);
+            LocalizedString errorMsg = msg::format(msgErrorMessage).append(msgBuildDependenciesMissing);
             for (const auto& p : result.unmet_dependencies)
             {
                 errorMsg.append_raw('\n').append_indent().append_raw(p.to_string());
@@ -349,7 +339,7 @@ namespace vcpkg
                            msg::arch = target_architecture,
                            msg::path = toolset.visual_studio_root_path,
                            msg::list = toolset_list);
-        msg::println(msg::msgSeeURL, msg::url = docs::vcpkg_visual_studio_path_url);
+        msg::println(msgSeeURL, msg::url = docs::vcpkg_visual_studio_path_url);
         Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
     }
 #endif
@@ -400,7 +390,7 @@ namespace vcpkg
 
             if (proxy_from_env)
             {
-                msg::println(msgUseEnvVar, msg::env_var = "HTTP(S)_PROXY");
+                msg::println(msgUseEnvVar, msg::env_var = format_environment_variable("HTTP(S)_PROXY"));
             }
             else
             {
@@ -440,20 +430,26 @@ namespace vcpkg
 
                                 protocol = Strings::concat(Strings::ascii_to_uppercase(protocol), "_PROXY");
                                 env.emplace(protocol, address);
-                                msg::println(msgSettingEnvVar, msg::env_var = protocol, msg::url = address);
+                                msg::println(msgSettingEnvVar,
+                                             msg::env_var = format_environment_variable(protocol),
+                                             msg::url = address);
                             }
                         }
                     }
                     // Specified http:// prefix
                     else if (Strings::starts_with(server, "http://"))
                     {
-                        msg::println(msgSettingEnvVar, msg::env_var = "HTTP_PROXY", msg::url = server);
+                        msg::println(msgSettingEnvVar,
+                                     msg::env_var = format_environment_variable("HTTP_PROXY"),
+                                     msg::url = server);
                         env.emplace("HTTP_PROXY", server);
                     }
                     // Specified https:// prefix
                     else if (Strings::starts_with(server, "https://"))
                     {
-                        msg::println(msgSettingEnvVar, msg::env_var = "HTTPS_PROXY", msg::url = server);
+                        msg::println(msgSettingEnvVar,
+                                     msg::env_var = format_environment_variable("HTTPS_PROXY"),
+                                     msg::url = server);
                         env.emplace("HTTPS_PROXY", server);
                     }
                     // Most common case: "ip:port" style, apply to HTTP and HTTPS proxies.
@@ -464,7 +460,9 @@ namespace vcpkg
                     // We simply set "ip:port" to HTTP(S)_PROXY variables because it works on most common cases.
                     else
                     {
-                        msg::println(msgAutoSettingEnvVar, msg::env_var = "HTTP(S)_PROXY", msg::url = server);
+                        msg::println(msgAutoSettingEnvVar,
+                                     msg::env_var = format_environment_variable("HTTP(S)_PROXY"),
+                                     msg::url = server);
 
                         env.emplace("HTTP_PROXY", server.c_str());
                         env.emplace("HTTPS_PROXY", server.c_str());
@@ -586,12 +584,13 @@ namespace vcpkg
         const auto arch = to_vcvarsall_toolchain(pre_build_info.target_architecture, toolset, pre_build_info.triplet);
         const auto target = to_vcvarsall_target(pre_build_info.cmake_system_name);
 
-        return vcpkg::Command{"cmd"}.string_arg("/c").raw_arg(fmt::format(R"("{}" {} {} {} {} 2>&1 <NUL)",
-                                                                          toolset.vcvarsall,
-                                                                          Strings::join(" ", toolset.vcvarsall_options),
-                                                                          arch,
-                                                                          target,
-                                                                          tonull));
+        return vcpkg::Command{"cmd"}.string_arg("/d").string_arg("/c").raw_arg(
+            fmt::format(R"("{}" {} {} {} {} 2>&1 <NUL)",
+                        toolset.vcvarsall,
+                        Strings::join(" ", toolset.vcvarsall_options),
+                        arch,
+                        target,
+                        tonull));
 #endif
     }
 
@@ -778,6 +777,24 @@ namespace vcpkg
             variables.emplace_back("ARIA2", paths.get_tool_exe(Tools::ARIA2, stdout_sink));
         }
 
+        if (auto cmake_debug = args.cmake_debug.get())
+        {
+            if (cmake_debug->is_port_affected(scf.core_paragraph->name))
+            {
+                variables.emplace_back("--debugger");
+                variables.emplace_back(fmt::format("--debugger-pipe={}", cmake_debug->value));
+            }
+        }
+
+        if (auto cmake_configure_debug = args.cmake_configure_debug.get())
+        {
+            if (cmake_configure_debug->is_port_affected(scf.core_paragraph->name))
+            {
+                variables.emplace_back(fmt::format("-DVCPKG_CMAKE_CONFIGURE_OPTIONS=--debugger;--debugger-pipe={}",
+                                                   cmake_configure_debug->value));
+            }
+        }
+
         for (const auto& cmake_arg : args.cmake_args)
         {
             variables.emplace_back(cmake_arg);
@@ -804,11 +821,11 @@ namespace vcpkg
         std::vector<std::string> port_configs;
         for (const PackageSpec& dependency : action.package_dependencies)
         {
-            const Path port_config_path = paths.installed().vcpkg_port_config_cmake(dependency);
+            Path port_config_path = paths.installed().vcpkg_port_config_cmake(dependency);
 
             if (fs.is_regular_file(port_config_path))
             {
-                port_configs.emplace_back(port_config_path.native());
+                port_configs.emplace_back(std::move(port_config_path).native());
             }
         }
 
@@ -1251,15 +1268,19 @@ namespace vcpkg
             return;
         }
 
-        auto current_build_tree = paths.build_dir(action.spec);
-        fs.create_directory(current_build_tree, VCPKG_LINE_INFO);
-        auto abi_file_path = current_build_tree / (triplet_canonical_name + ".vcpkg_abi_info.txt");
+        auto abi_file_path = paths.build_dir(action.spec);
+        fs.create_directory(abi_file_path, VCPKG_LINE_INFO);
+        abi_file_path /= triplet_canonical_name + ".vcpkg_abi_info.txt";
         fs.write_contents(abi_file_path, full_abi_info, VCPKG_LINE_INFO);
+
+        auto& scf = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_control_file;
+
         abi_info.package_abi = Hash::get_string_sha256(full_abi_info);
         abi_info.abi_tag_file.emplace(std::move(abi_file_path));
         abi_info.relative_port_files = std::move(files);
         abi_info.relative_port_hashes = std::move(hashes);
-        abi_info.heuristic_resources.push_back(run_resource_heuristics(portfile_cmake_contents));
+        abi_info.heuristic_resources.push_back(
+            run_resource_heuristics(portfile_cmake_contents, scf->core_paragraph->raw_version));
     }
 
     void compute_all_abis(const VcpkgPaths& paths,

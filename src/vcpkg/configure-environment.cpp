@@ -18,9 +18,10 @@
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
+using namespace vcpkg;
+
 namespace
 {
-    using namespace vcpkg;
     void track_telemetry(const Filesystem& fs, const Path& telemetry_file_path)
     {
         std::error_code ec;
@@ -70,7 +71,33 @@ namespace
             Debug::println("No artifacts activated.");
         }
     }
-}
+
+    constexpr const StringLiteral* ArtifactOperatingSystemsSwitchNamesStorage[] = {
+        &SWITCH_WINDOWS, &SWITCH_OSX, &SWITCH_LINUX, &SWITCH_FREEBSD};
+    constexpr const StringLiteral* ArtifactHostPlatformSwitchNamesStorage[] = {
+        &SWITCH_X86, &SWITCH_X64, &SWITCH_ARM, &SWITCH_ARM64};
+    constexpr const StringLiteral* ArtifactTargetPlatformSwitchNamesStorage[] = {
+        &SWITCH_TARGET_X86, &SWITCH_TARGET_X64, &SWITCH_TARGET_ARM, &SWITCH_TARGET_ARM64};
+
+    bool more_than_one_mapped(View<const StringLiteral*> candidates, const std::set<std::string, std::less<>>& switches)
+    {
+        bool seen = false;
+        for (auto&& candidate : candidates)
+        {
+            if (Util::Sets::contains(switches, *candidate))
+            {
+                if (seen)
+                {
+                    return true;
+                }
+
+                seen = true;
+            }
+        }
+
+        return false;
+    }
+} // unnamed namespace
 
 namespace vcpkg
 {
@@ -207,12 +234,33 @@ namespace vcpkg
         return result;
     }
 
-    int run_configure_environment_command(const VcpkgPaths& paths, StringView arg0, View<std::string> args)
+    void forward_common_artifacts_arguments(std::vector<std::string>& appended_to, const ParsedArguments& parsed)
     {
-        std::vector<std::string> all_args;
-        all_args.reserve(args.size() + 1);
-        all_args.emplace_back(arg0.data(), arg0.size());
-        all_args.insert(all_args.end(), args.begin(), args.end());
-        return run_configure_environment_command(paths, all_args);
+        auto&& switches = parsed.switches;
+        for (auto&& parsed_switch : switches)
+        {
+            appended_to.push_back(fmt::format("--{}", parsed_switch));
+        }
+
+        if (more_than_one_mapped(ArtifactOperatingSystemsSwitchNamesStorage, parsed.switches))
+        {
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgArtifactsSwitchOnlyOneOperatingSystem);
+        }
+
+        if (more_than_one_mapped(ArtifactHostPlatformSwitchNamesStorage, parsed.switches))
+        {
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgArtifactsSwitchOnlyOneHostPlatform);
+        }
+
+        if (more_than_one_mapped(ArtifactTargetPlatformSwitchNamesStorage, parsed.switches))
+        {
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgArtifactsSwitchOnlyOneTargetPlatform);
+        }
+
+        for (auto&& parsed_option : parsed.settings)
+        {
+            appended_to.push_back(fmt::format("--{}", parsed_option.first));
+            appended_to.push_back(parsed_option.second);
+        }
     }
-}
+} // namespace vcpkg

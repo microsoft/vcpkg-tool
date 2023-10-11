@@ -13,8 +13,22 @@
 
 namespace vcpkg
 {
+    constexpr CommandMetadata CommandBootstrapStandaloneMetadata{
+        "bootstrap-standalone",
+        msgCmdBootstrapStandaloneSynopsis,
+        {"vcpkg bootstrap-standalone"},
+        Undocumented,
+        AutocompletePriority::Never,
+        0,
+        0,
+        {},
+        nullptr,
+    };
+
     void command_bootstrap_standalone_and_exit(const VcpkgCmdArguments& args, const Filesystem& fs)
     {
+        (void)args.parse_arguments(CommandBootstrapStandaloneMetadata);
+
         DownloadManager download_manager{{}};
         const auto maybe_vcpkg_root_env = args.vcpkg_root_dir_env.get();
         if (!maybe_vcpkg_root_env)
@@ -22,7 +36,7 @@ namespace vcpkg
             Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgVcpkgRootRequired);
         }
 
-        const auto& vcpkg_root = fs.almost_canonical(*maybe_vcpkg_root_env, VCPKG_LINE_INFO);
+        const auto vcpkg_root = fs.almost_canonical(*maybe_vcpkg_root_env, VCPKG_LINE_INFO);
         fs.create_directories(vcpkg_root, VCPKG_LINE_INFO);
         auto tarball =
             download_vcpkg_standalone_bundle(download_manager, fs, vcpkg_root).value_or_exit(VCPKG_LINE_INFO);

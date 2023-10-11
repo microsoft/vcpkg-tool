@@ -7,6 +7,8 @@
 #include <vcpkg/fwd/registries.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
+#include <vcpkg/base/expected.h>
+#include <vcpkg/base/optional.h>
 #include <vcpkg/base/path.h>
 #include <vcpkg/base/span.h>
 #include <vcpkg/base/stringview.h>
@@ -43,10 +45,10 @@ namespace vcpkg
             bool stale() const { return data->second.stale; }
             const std::string& uri() const { return data->first; }
 
-            void ensure_up_to_date(const VcpkgPaths& paths) const;
+            ExpectedL<Unit> ensure_up_to_date(const VcpkgPaths& paths) const;
         };
 
-        Entry get_or_fetch(const VcpkgPaths& paths, StringView repo, StringView reference);
+        ExpectedL<Entry> get_or_fetch(const VcpkgPaths& paths, StringView repo, StringView reference);
 
         LockDataType lockdata;
         bool modified = false;
@@ -63,7 +65,7 @@ namespace vcpkg
 
     struct RegistryEntry
     {
-        virtual View<Version> get_port_versions() const = 0;
+        virtual ExpectedL<View<Version>> get_port_versions() const = 0;
 
         virtual ExpectedL<PathAndLocation> get_version(const Version& version) const = 0;
 
@@ -74,19 +76,24 @@ namespace vcpkg
     {
         virtual StringLiteral kind() const = 0;
 
-        // returns nullptr if the port doesn't exist
-        virtual std::unique_ptr<RegistryEntry> get_port_entry(StringView port_name) const = 0;
+        // If an error occurs, the ExpectedL will be in an error state.
+        // Otherwise, if the port is known, returns a pointer to RegistryEntry describing the port.
+        // Otherwise, returns a nullptr unique_ptr.
+        virtual ExpectedL<std::unique_ptr<RegistryEntry>> get_port_entry(StringView port_name) const = 0;
 
-        // appends the names of the ports to the out parameter
-        // may result in duplicated port names; make sure to Util::sort_unique_erase at the end
-        virtual void append_all_port_names(std::vector<std::string>& port_names) const = 0;
+        // Appends the names of the known ports to the out parameter.
+        // May result in duplicated port names; make sure to Util::sort_unique_erase at the end
+        virtual ExpectedL<Unit> append_all_port_names(std::vector<std::string>& port_names) const = 0;
 
-        // appends the names of the ports to the out parameter if this can be known without
+        // Appends the names of the ports to the out parameter if this can be known without
         // network access.
-        // returns true if names were appended, otherwise returns false.
-        virtual bool try_append_all_port_names_no_network(std::vector<std::string>& port_names) const = 0;
+        // Returns true iff names were checked without network access.
+        virtual ExpectedL<bool> try_append_all_port_names_no_network(std::vector<std::string>& port_names) const = 0;
 
-        virtual ExpectedL<Version> get_baseline_version(StringView port_name) const = 0;
+        // If an error occurs, the ExpectedL will be in an error state.
+        // Otherwise, if the port is in the baseline, returns the version that baseline denotes.
+        // Otherwise, the Optional is disengaged.
+        virtual ExpectedL<Optional<Version>> get_baseline_version(StringView port_name) const = 0;
 
         virtual ~RegistryImplementation() = default;
     };
@@ -128,7 +135,7 @@ namespace vcpkg
         // the returned list is sorted by priority.
         std::vector<const RegistryImplementation*> registries_for_port(StringView name) const;
 
-        ExpectedL<Version> baseline_for_port(StringView port_name) const;
+        ExpectedL<Optional<Version>> baseline_for_port(StringView port_name) const;
 
         View<Registry> registries() const { return registries_; }
 
@@ -142,10 +149,10 @@ namespace vcpkg
         bool has_modifications() const;
 
         // Returns a sorted vector of all reachable port names in this set.
-        std::vector<std::string> get_all_reachable_port_names() const;
+        ExpectedL<std::vector<std::string>> get_all_reachable_port_names() const;
 
         // Returns a sorted vector of all reachable port names we can provably determine without touching the network.
-        std::vector<std::string> get_all_known_reachable_port_names_no_network() const;
+        ExpectedL<std::vector<std::string>> get_all_known_reachable_port_names_no_network() const;
 
     private:
         std::unique_ptr<RegistryImplementation> default_registry_;
@@ -162,8 +169,14 @@ namespace vcpkg
                                                                      Path path,
                                                                      std::string baseline);
 
-    ExpectedL<std::vector<std::pair<SchemedVersion, std::string>>> get_builtin_versions(const VcpkgPaths& paths,
-                                                                                        StringView port_name);
+    struct GitVersionDbEntry
+    {
+        SchemedVersion version;
+        std::string git_tree;
+    };
+
+    ExpectedL<Optional<std::vector<GitVersionDbEntry>>> get_builtin_versions(const VcpkgPaths& paths,
+                                                                             StringView port_name);
 
     ExpectedL<std::map<std::string, Version, std::less<>>> get_builtin_baseline(const VcpkgPaths& paths);
 
@@ -173,4 +186,14 @@ namespace vcpkg
     // No match is 0, exact match is SIZE_MAX, wildcard match is the length of the pattern.
     // Note that the * is included in the match size to distinguish from 0 == no match.
     size_t package_pattern_match(StringView name, StringView pattern);
+
+    struct FilesystemVersionDbEntry
+    {
+        SchemedVersion version;
+        Path p;
+    };
+
+    std::unique_ptr<Json::IDeserializer<std::vector<GitVersionDbEntry>>> make_git_version_db_deserializer();
+    std::unique_ptr<Json::IDeserializer<std::vector<FilesystemVersionDbEntry>>> make_filesystem_version_db_deserializer(
+        const Path& root);
 }

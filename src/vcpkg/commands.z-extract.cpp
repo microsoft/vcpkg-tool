@@ -16,17 +16,21 @@ namespace
     constexpr StringLiteral OPTION_STRIP = "strip";
 
     constexpr CommandSetting EXTRACT_SETTINGS[] = {
-        {OPTION_STRIP, []() { return msg::format(msgStripOption, msg::option = "strip"); }},
+        {OPTION_STRIP, msgCmdZExtractOptStrip},
     };
 } // unnamed namespace
 
 namespace vcpkg
 {
-    constexpr CommandMetadata CommandZExtractMetadata = {
-        [] { return msg::format(msgExtractHelp); },
+    constexpr CommandMetadata CommandZExtractMetadata{
+        "z-extract",
+        msgExtractHelp,
+        {msgCmdZExtractExample1, msgCmdZExtractExample2},
+        Undocumented,
+        AutocompletePriority::Internal,
         2,
         3,
-        {{}, {EXTRACT_SETTINGS}, {}},
+        {{}, {EXTRACT_SETTINGS}},
         nullptr,
     };
 

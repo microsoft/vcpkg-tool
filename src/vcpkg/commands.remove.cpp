@@ -148,10 +148,10 @@ namespace
     constexpr StringLiteral OPTION_OUTDATED = "outdated";
 
     constexpr CommandSwitch SWITCHES[] = {
-        {OPTION_PURGE, nullptr},
-        {OPTION_RECURSE, []() { return msg::format(msgCmdRemoveOptRecurse); }},
-        {OPTION_DRY_RUN, []() { return msg::format(msgCmdRemoveOptDryRun); }},
-        {OPTION_OUTDATED, []() { return msg::format(msgCmdRemoveOptOutdated); }},
+        {OPTION_PURGE, {}},
+        {OPTION_RECURSE, msgCmdRemoveOptRecurse},
+        {OPTION_DRY_RUN, msgCmdRemoveOptDryRun},
+        {OPTION_OUTDATED, msgCmdRemoveOptOutdated},
     };
 
     std::vector<std::string> valid_arguments(const VcpkgPaths& paths)
@@ -165,11 +165,15 @@ namespace
 
 namespace vcpkg
 {
-    constexpr CommandMetadata CommandRemoveMetadata = {
-        [] { return create_example_string("remove zlib zlib:x64-windows curl boost"); },
+    constexpr CommandMetadata CommandRemoveMetadata{
+        "remove",
+        msgHelpRemoveCommand,
+        {msgCmdRemoveExample1, "vcpkg remove zlib zlib:x64-windows curl boost", "vcpkg remove --outdated"},
+        "https://learn.microsoft.com/vcpkg/commands/remove",
+        AutocompletePriority::Public,
         0,
         SIZE_MAX,
-        {SWITCHES, {}},
+        {SWITCHES},
         &valid_arguments,
     };
 

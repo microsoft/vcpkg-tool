@@ -622,52 +622,77 @@ namespace vcpkg
     static constexpr StringLiteral OPTION_NO_PRINT_USAGE = "no-print-usage";
 
     static constexpr CommandSwitch INSTALL_SWITCHES[] = {
-        {OPTION_DRY_RUN, []() { return msg::format(msgHelpTxtOptDryRun); }},
-        {OPTION_USE_HEAD_VERSION, []() { return msg::format(msgHelpTxtOptUseHeadVersion); }},
-        {OPTION_NO_DOWNLOADS, []() { return msg::format(msgHelpTxtOptNoDownloads); }},
-        {OPTION_ONLY_DOWNLOADS, []() { return msg::format(msgHelpTxtOptOnlyDownloads); }},
-        {OPTION_ONLY_BINARYCACHING, []() { return msg::format(msgHelpTxtOptOnlyBinCache); }},
-        {OPTION_RECURSE, []() { return msg::format(msgHelpTxtOptRecurse); }},
-        {OPTION_KEEP_GOING, []() { return msg::format(msgHelpTxtOptKeepGoing); }},
-        {OPTION_EDITABLE, []() { return msg::format(msgHelpTxtOptEditable); }},
-        {OPTION_USE_ARIA2, []() { return msg::format(msgHelpTxtOptUseAria2); }},
-        {OPTION_CLEAN_AFTER_BUILD, []() { return msg::format(msgHelpTxtOptCleanAfterBuild); }},
-        {OPTION_CLEAN_BUILDTREES_AFTER_BUILD, []() { return msg::format(msgHelpTxtOptCleanBuildTreesAfterBuild); }},
-        {OPTION_CLEAN_PACKAGES_AFTER_BUILD, []() { return msg::format(msgHelpTxtOptCleanPkgAfterBuild); }},
-        {OPTION_CLEAN_DOWNLOADS_AFTER_BUILD, []() { return msg::format(msgHelpTxtOptCleanDownloadsAfterBuild); }},
-        {OPTION_MANIFEST_NO_DEFAULT_FEATURES, []() { return msg::format(msgHelpTxtOptManifestNoDefault); }},
-        {OPTION_ENFORCE_PORT_CHECKS, []() { return msg::format(msgHelpTxtOptEnforcePortChecks); }},
-        {OPTION_PROHIBIT_BACKCOMPAT_FEATURES, nullptr},
-        {OPTION_ALLOW_UNSUPPORTED_PORT, []() { return msg::format(msgHelpTxtOptAllowUnsupportedPort); }},
-        {OPTION_NO_PRINT_USAGE, []() { return msg::format(msgHelpTxtOptNoUsage); }},
+        {OPTION_DRY_RUN, msgHelpTxtOptDryRun},
+        {OPTION_USE_HEAD_VERSION, msgHelpTxtOptUseHeadVersion},
+        {OPTION_NO_DOWNLOADS, msgHelpTxtOptNoDownloads},
+        {OPTION_ONLY_DOWNLOADS, msgHelpTxtOptOnlyDownloads},
+        {OPTION_ONLY_BINARYCACHING, msgHelpTxtOptOnlyBinCache},
+        {OPTION_RECURSE, msgHelpTxtOptRecurse},
+        {OPTION_KEEP_GOING, msgHelpTxtOptKeepGoing},
+        {OPTION_EDITABLE, msgHelpTxtOptEditable},
+        {OPTION_USE_ARIA2, msgHelpTxtOptUseAria2},
+        {OPTION_CLEAN_AFTER_BUILD, msgHelpTxtOptCleanAfterBuild},
+        {OPTION_CLEAN_BUILDTREES_AFTER_BUILD, msgHelpTxtOptCleanBuildTreesAfterBuild},
+        {OPTION_CLEAN_PACKAGES_AFTER_BUILD, msgHelpTxtOptCleanPkgAfterBuild},
+        {OPTION_CLEAN_DOWNLOADS_AFTER_BUILD, msgHelpTxtOptCleanDownloadsAfterBuild},
+        {OPTION_MANIFEST_NO_DEFAULT_FEATURES, msgHelpTxtOptManifestNoDefault},
+        {OPTION_ENFORCE_PORT_CHECKS, msgHelpTxtOptEnforcePortChecks},
+        {OPTION_PROHIBIT_BACKCOMPAT_FEATURES, {}},
+        {OPTION_ALLOW_UNSUPPORTED_PORT, msgHelpTxtOptAllowUnsupportedPort},
+        {OPTION_NO_PRINT_USAGE, msgHelpTxtOptNoUsage},
     };
 
     static constexpr CommandSetting INSTALL_SETTINGS[] = {
-        {OPTION_XUNIT, nullptr}, // internal use
-        {OPTION_WRITE_PACKAGES_CONFIG, []() { return msg::format(msgHelpTxtOptWritePkgConfig); }},
+        {OPTION_XUNIT, {}}, // internal use
+        {OPTION_WRITE_PACKAGES_CONFIG, msgHelpTxtOptWritePkgConfig},
     };
 
     static constexpr CommandMultiSetting INSTALL_MULTISETTINGS[] = {
-        {OPTION_MANIFEST_FEATURE, []() { return msg::format(msgHelpTxtOptManifestFeature); }},
+        {OPTION_MANIFEST_FEATURE, msgHelpTxtOptManifestFeature},
     };
 
     static std::vector<std::string> get_all_known_reachable_port_names_no_network(const VcpkgPaths& paths)
     {
-        return paths.make_registry_set()->get_all_known_reachable_port_names_no_network();
+        return paths.make_registry_set()->get_all_known_reachable_port_names_no_network().value_or_exit(
+            VCPKG_LINE_INFO);
     }
 
-    constexpr CommandMetadata CommandInstallMetadata = {
-        [] { return create_example_string("install zlib zlib:x64-windows curl boost"); },
+    constexpr CommandMetadata CommandInstallMetadata{
+        "install",
+        msgHelpInstallCommand,
+        {msgCmdInstallExample1,
+         "vcpkg install zlib zlib:x64-windows curl boost",
+         "vcpkg install --triplet x64-windows"},
+        "https://learn.microsoft.com/vcpkg/commands/install",
+        AutocompletePriority::Public,
         0,
         SIZE_MAX,
         {INSTALL_SWITCHES, INSTALL_SETTINGS, INSTALL_MULTISETTINGS},
         &get_all_known_reachable_port_names_no_network,
     };
 
-    // This command metadata must share "critical" values (switches, number of arguments). It exists only to provide a
-    // better example string.
-    constexpr CommandMetadata ManifestCommandMetadata = {
-        [] { return create_example_string("install --triplet x64-windows"); },
+    // These command metadata must share "critical" values (switches, number of arguments). They exist only to provide
+    // better example strings.
+    constexpr CommandMetadata CommandInstallMetadataClassic{
+        "install",
+        msgHelpInstallCommand,
+        {msgCmdInstallExample1, "vcpkg install zlib zlib:x64-windows curl boost"},
+        "https://learn.microsoft.com/vcpkg/commands/install",
+        AutocompletePriority::Public,
+        0,
+        SIZE_MAX,
+        {INSTALL_SWITCHES, INSTALL_SETTINGS, INSTALL_MULTISETTINGS},
+        &get_all_known_reachable_port_names_no_network,
+    };
+
+    constexpr CommandMetadata CommandInstallMetadataManifest{
+        "install",
+        msgHelpInstallCommand,
+        {msgCmdInstallExample1,
+         "vcpkg install zlib zlib:x64-windows curl boost",
+         "vcpkg install --triplet x64-windows"},
+        "https://learn.microsoft.com/vcpkg/commands/install",
+        AutocompletePriority::Public,
         0,
         SIZE_MAX,
         {INSTALL_SWITCHES, INSTALL_SETTINGS, INSTALL_MULTISETTINGS},
@@ -954,13 +979,18 @@ namespace vcpkg
         return ret;
     }
 
+    static bool cmake_args_sets_variable(const VcpkgCmdArguments& args)
+    {
+        return Util::any_of(args.cmake_args, [](auto& s) { return Strings::starts_with(s, "-D"); });
+    }
+
     void command_install_and_exit(const VcpkgCmdArguments& args,
                                   const VcpkgPaths& paths,
                                   Triplet default_triplet,
                                   Triplet host_triplet)
     {
-        const ParsedArguments options =
-            args.parse_arguments(paths.manifest_mode_enabled() ? ManifestCommandMetadata : CommandInstallMetadata);
+        const ParsedArguments options = args.parse_arguments(
+            paths.manifest_mode_enabled() ? CommandInstallMetadataManifest : CommandInstallMetadataClassic);
 
         const bool dry_run = Util::Sets::contains(options.switches, OPTION_DRY_RUN);
         const bool use_head_version = Util::Sets::contains(options.switches, (OPTION_USE_HEAD_VERSION));
@@ -968,7 +998,8 @@ namespace vcpkg
         const bool only_downloads = Util::Sets::contains(options.switches, (OPTION_ONLY_DOWNLOADS));
         const bool no_build_missing = Util::Sets::contains(options.switches, OPTION_ONLY_BINARYCACHING);
         const bool is_recursive = Util::Sets::contains(options.switches, (OPTION_RECURSE));
-        const bool is_editable = Util::Sets::contains(options.switches, (OPTION_EDITABLE)) || !args.cmake_args.empty();
+        const bool is_editable =
+            Util::Sets::contains(options.switches, (OPTION_EDITABLE)) || cmake_args_sets_variable(args);
         const bool use_aria2 = Util::Sets::contains(options.switches, (OPTION_USE_ARIA2));
         const bool clean_after_build = Util::Sets::contains(options.switches, (OPTION_CLEAN_AFTER_BUILD));
         const bool clean_buildtrees_after_build =
@@ -997,7 +1028,7 @@ namespace vcpkg
             if (!options.command_arguments.empty())
             {
                 msg::println_error(msgErrorIndividualPackagesUnsupported);
-                msg::println(Color::error, msg::msgSeeURL, msg::url = docs::manifests_url);
+                msg::println(Color::error, msgSeeURL, msg::url = docs::manifests_url);
                 failure = true;
             }
             if (use_head_version)
@@ -1013,7 +1044,7 @@ namespace vcpkg
             if (failure)
             {
                 msg::println(msgUsingManifestAt, msg::path = p->path);
-                print_usage(ManifestCommandMetadata);
+                print_usage(CommandInstallMetadataManifest);
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
@@ -1039,7 +1070,7 @@ namespace vcpkg
             }
             if (failure)
             {
-                print_usage(CommandInstallMetadata);
+                print_usage(CommandInstallMetadataClassic);
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
         }
@@ -1082,6 +1113,7 @@ namespace vcpkg
             if (!maybe_manifest_scf)
             {
                 print_error_message(maybe_manifest_scf.error());
+                msg::println();
                 msg::println(msgExtendedDocumentationAtUrl, msg::url = docs::manifests_url);
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
@@ -1217,7 +1249,7 @@ namespace vcpkg
             return check_and_get_full_package_spec(arg,
                                                    default_triplet,
                                                    default_triplet_used,
-                                                   CommandInstallMetadata.get_example_text(),
+                                                   CommandInstallMetadataClassic.get_example_text(),
                                                    paths.get_triplet_db());
         });
 

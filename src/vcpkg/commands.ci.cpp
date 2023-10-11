@@ -92,21 +92,21 @@ namespace
     constexpr StringLiteral OPTION_PARENT_HASHES = "parent-hashes";
 
     constexpr CommandSetting CI_SETTINGS[] = {
-        {OPTION_EXCLUDE, []() { return msg::format(msgCISettingsOptExclude); }},
-        {OPTION_HOST_EXCLUDE, []() { return msg::format(msgCISettingsOptHostExclude); }},
-        {OPTION_XUNIT, []() { return msg::format(msgCISettingsOptXUnit); }},
-        {OPTION_CI_BASELINE, []() { return msg::format(msgCISettingsOptCIBase); }},
-        {OPTION_FAILURE_LOGS, []() { return msg::format(msgCISettingsOptFailureLogs); }},
-        {OPTION_OUTPUT_HASHES, []() { return msg::format(msgCISettingsOptOutputHashes); }},
-        {OPTION_PARENT_HASHES, []() { return msg::format(msgCISettingsOptParentHashes); }},
+        {OPTION_EXCLUDE, msgCISettingsOptExclude},
+        {OPTION_HOST_EXCLUDE, msgCISettingsOptHostExclude},
+        {OPTION_XUNIT, msgCISettingsOptXUnit},
+        {OPTION_CI_BASELINE, msgCISettingsOptCIBase},
+        {OPTION_FAILURE_LOGS, msgCISettingsOptFailureLogs},
+        {OPTION_OUTPUT_HASHES, msgCISettingsOptOutputHashes},
+        {OPTION_PARENT_HASHES, msgCISettingsOptParentHashes},
     };
 
     constexpr CommandSwitch CI_SWITCHES[] = {
-        {OPTION_DRY_RUN, []() { return msg::format(msgCISwitchOptDryRun); }},
-        {OPTION_RANDOMIZE, []() { return msg::format(msgCISwitchOptRandomize); }},
-        {OPTION_ALLOW_UNEXPECTED_PASSING, []() { return msg::format(msgCISwitchOptAllowUnexpectedPassing); }},
-        {OPTION_SKIP_FAILURES, []() { return msg::format(msgCISwitchOptSkipFailures); }},
-        {OPTION_XUNIT_ALL, []() { return msg::format(msgCISwitchOptXUnitAll); }},
+        {OPTION_DRY_RUN, msgCISwitchOptDryRun},
+        {OPTION_RANDOMIZE, msgCISwitchOptRandomize},
+        {OPTION_ALLOW_UNEXPECTED_PASSING, msgCISwitchOptAllowUnexpectedPassing},
+        {OPTION_SKIP_FAILURES, msgCISwitchOptSkipFailures},
+        {OPTION_XUNIT_ALL, msgCISwitchOptXUnitAll},
     };
 
     struct UnknownCIPortsResults
@@ -316,8 +316,12 @@ namespace
 
 namespace vcpkg
 {
-    constexpr CommandMetadata CommandCiMetadata = {
-        [] { return create_example_string("ci --triplet=x64-windows"); },
+    constexpr CommandMetadata CommandCiMetadata{
+        "ci",
+        msgCmdCiSynopsis,
+        {"vcpkg ci --triplet=x64-windows"},
+        Undocumented,
+        AutocompletePriority::Internal,
         0,
         0,
         {CI_SWITCHES, CI_SETTINGS},
@@ -509,7 +513,12 @@ namespace vcpkg
                            [&](auto& spec) { return Util::Sets::contains(split_specs->known, spec); });
             if (!already_installed.empty())
             {
-                msg::println_warning(msgCISkipInstallation, msg::list = Strings::join(", ", already_installed));
+                LocalizedString warning;
+                warning.append(msgCISkipInstallation);
+                warning.append_floating_list(1, Util::fmap(already_installed, [](const PackageSpec& spec) {
+                                                 return LocalizedString::from_raw(spec.to_string());
+                                             }));
+                msg::println_warning(warning);
             }
 
             install_preclear_packages(paths, action_plan);
@@ -522,7 +531,11 @@ namespace vcpkg
                 split_specs->known.erase(result.get_spec());
             }
 
-            msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("\nTriplet: {}\n", target_triplet));
+            msg::print(LocalizedString::from_raw("\n")
+                           .append(msgTripletLabel)
+                           .append_raw(' ')
+                           .append_raw(target_triplet)
+                           .append_raw('\n'));
             summary.print();
             print_regressions(summary.results,
                               split_specs->known,

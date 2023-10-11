@@ -2,6 +2,7 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/message_sinks.h>
 #include <vcpkg/base/messages.h>
+#include <vcpkg/base/parallel-algorithms.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
@@ -183,11 +184,9 @@ namespace vcpkg
 
         if (!violations.empty())
         {
-            msg_sink.println_warning(msgPortBugRestrictedHeaderPaths,
-                                     msg::env_var = to_cmake_variable(BuildPolicy::ALLOW_RESTRICTED_HEADERS));
+            msg_sink.println_warning(msgPortBugRestrictedHeaderPaths);
             print_paths(msg_sink, violations);
-            msg_sink.println(msgPortBugRestrictedHeaderPaths,
-                             msg::env_var = to_cmake_variable(BuildPolicy::ALLOW_RESTRICTED_HEADERS));
+            msg_sink.println(msgPortBugRestrictedHeaderPaths);
             return LintStatus::PROBLEM_DETECTED;
         }
 
@@ -1108,7 +1107,7 @@ namespace vcpkg
             }
 
             msg_sink.println(msg::format(msgPortBugInspectFiles, msg::extension = "lib")
-                                 .append_raw("\n    dumpbin.exe /directives mylibfile.lib"));
+                                 .append_raw("\n  dumpbin.exe /directives mylibfile.lib"));
             return LintStatus::PROBLEM_DETECTED;
         }
 
@@ -1149,10 +1148,10 @@ namespace vcpkg
             msg_sink.println_warning(msgPortBugOutdatedCRT);
             for (const OutdatedDynamicCrtAndFile& btf : dlls_with_outdated_crt)
             {
-                msg_sink.print(Color::warning, fmt::format("    {}:{}\n", btf.file, btf.outdated_crt));
+                msg_sink.print(Color::warning, fmt::format("  {}:{}\n", btf.file, btf.outdated_crt));
             }
             msg_sink.println(msg::format(msgPortBugInspectFiles, msg::extension = "dll")
-                                 .append_raw("\n    dumpbin.exe /dependents mylibfile.dll"));
+                                 .append_raw("\n  dumpbin.exe /dependents mylibfile.dll"));
             return LintStatus::PROBLEM_DETECTED;
         }
 
@@ -1194,7 +1193,7 @@ namespace vcpkg
         }
 
         msg_sink.println(msg::format(msgPortBugInspectFiles, msg::extension = "dll")
-                             .append_raw("\n    dumpbin.exe /dependents mylibfile.dll"));
+                             .append_raw("\n  dumpbin.exe /dependents mylibfile.dll"));
         return LintStatus::PROBLEM_DETECTED;
     }
 
@@ -1283,13 +1282,16 @@ namespace vcpkg
         const auto stringview_paths = Util::fmap(string_paths, [](std::string& s) { return StringView(s); });
 
         std::vector<Path> failing_files;
-        for (auto&& file : fs.get_regular_files_recursive(dir, IgnoreErrors{}))
-        {
+        std::mutex mtx;
+        auto files = fs.get_regular_files_recursive(dir, IgnoreErrors{});
+
+        parallel_for_each_n(files.begin(), files.size(), [&](const Path& file) {
             if (file_contains_absolute_paths(fs, file, stringview_paths))
             {
+                std::lock_guard lock{mtx};
                 failing_files.push_back(file);
             }
-        }
+        });
 
         if (failing_files.empty())
         {
@@ -1467,11 +1469,8 @@ namespace vcpkg
         error_count += check_pkgconfig_dir_only_in_lib_dir(fs, package_dir, msg_sink);
         if (!build_info.policies.is_enabled(BuildPolicy::SKIP_ABSOLUTE_PATHS_CHECK))
         {
-            error_count += check_no_absolute_paths_in(
-                fs,
-                package_dir,
-                std::vector<Path>{package_dir, paths.installed().root(), paths.build_dir(spec), paths.downloads},
-                msg_sink);
+            Path tests[] = {package_dir, paths.installed().root(), paths.build_dir(spec), paths.downloads};
+            error_count += check_no_absolute_paths_in(fs, package_dir, tests, msg_sink);
         }
 
         return error_count;

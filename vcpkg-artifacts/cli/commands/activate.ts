@@ -16,22 +16,9 @@ import { Project } from '../switches/project';
 
 export class ActivateCommand extends Command {
   readonly command = 'activate';
-  readonly aliases = [];
-  seeAlso = [];
-  argumentsHelp = [];
   project: Project = new Project(this);
   msbuildProps: MSBuildProps = new MSBuildProps(this);
   json : Json = new Json(this);
-
-  get summary() {
-    return i`Activates the tools required for a project`;
-  }
-
-  get description() {
-    return [
-      i`This allows the consumer to Activate the tools required for a project. If the tools are not already installed, this will force them to be downloaded and installed before activation.`,
-    ];
-  }
 
   override async run() {
     const projectManifest = await this.project.manifest;

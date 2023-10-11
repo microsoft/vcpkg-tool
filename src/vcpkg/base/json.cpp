@@ -1518,4 +1518,19 @@ namespace vcpkg::Json
     }
 
     const PackageNameDeserializer PackageNameDeserializer::instance;
+
+    LocalizedString FeatureNameDeserializer::type_name() const { return msg::format(msgAFeatureName); }
+
+    Optional<std::string> FeatureNameDeserializer::visit_string(Json::Reader& r, StringView sv) const
+    {
+        if (!IdentifierDeserializer::is_ident(sv))
+        {
+            r.add_generic_error(
+                type_name(),
+                msg::format(msgParseFeatureNameError, msg::package_name = sv, msg::url = docs::manifests_url));
+        }
+        return sv.to_string();
+    }
+
+    const FeatureNameDeserializer FeatureNameDeserializer::instance;
 }

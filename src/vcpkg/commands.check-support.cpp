@@ -93,14 +93,18 @@ namespace
 
     constexpr StringLiteral OPTION_JSON{"x-json"};
     constexpr CommandSwitch CHECK_SUPPORT_SWITCHES[] = {
-        {OPTION_JSON, []() { return msg::format(msgJsonSwitch); }},
+        {OPTION_JSON, msgJsonSwitch},
     };
 } // unnamed namespace
 
 namespace vcpkg
 {
-    constexpr CommandMetadata CommandCheckSupportMetadata = {
-        [] { return create_example_string("x-check-support <package>..."); },
+    constexpr CommandMetadata CommandCheckSupportMetadata{
+        "x-check-support",
+        msgCmdCheckSupportSynopsis,
+        {msgCmdCheckSupportExample1, "vcpkg x-check-support zlib"},
+        Undocumented,
+        AutocompletePriority::Public,
         1,
         SIZE_MAX,
         {CHECK_SUPPORT_SWITCHES},

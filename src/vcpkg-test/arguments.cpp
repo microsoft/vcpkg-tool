@@ -7,10 +7,7 @@
 #include <map>
 #include <vector>
 
-using vcpkg::CommandMetadata;
-using vcpkg::CommandSetting;
-using vcpkg::CommandSwitch;
-using vcpkg::VcpkgCmdArguments;
+using namespace vcpkg;
 
 TEST_CASE ("VcpkgCmdArguments from lowercase argument sequence", "[arguments]")
 {
@@ -90,8 +87,18 @@ TEST_CASE ("VcpkgCmdArguments from argument sequence with valued options", "[arg
 {
     SECTION ("case 1")
     {
-        CommandSetting settings[] = {{"a", nullptr}};
-        CommandMetadata cmdstruct = {nullptr, 0, SIZE_MAX, {{}, settings}, nullptr};
+        CommandSetting settings[] = {{"a", {}}};
+        CommandMetadata cmdstruct = {
+            "command",
+            {},
+            {},
+            Undocumented,
+            AutocompletePriority::Public,
+            0,
+            SIZE_MAX,
+            {{}, settings},
+            nullptr,
+        };
 
         std::vector<std::string> t = {"--a=b", "command", "argument"};
         auto v = VcpkgCmdArguments::create_from_arg_sequence(t.data(), t.data() + t.size());
@@ -105,9 +112,19 @@ TEST_CASE ("VcpkgCmdArguments from argument sequence with valued options", "[arg
 
     SECTION ("case 2")
     {
-        CommandSwitch switches[] = {{"a", nullptr}, {"c", nullptr}};
-        CommandSetting settings[] = {{"b", nullptr}, {"d", nullptr}};
-        CommandMetadata cmdstruct = {nullptr, 0, SIZE_MAX, {switches, settings}, nullptr};
+        CommandSwitch switches[] = {{"a", {}}, {"c", {}}};
+        CommandSetting settings[] = {{"b", {}}, {"d", {}}};
+        CommandMetadata cmdstruct = {
+            "command",
+            {},
+            {},
+            Undocumented,
+            AutocompletePriority::Public,
+            0,
+            SIZE_MAX,
+            {switches, settings},
+            nullptr,
+        };
 
         std::vector<std::string> t = {"--a", "--b=c"};
         auto v = VcpkgCmdArguments::create_from_arg_sequence(t.data(), t.data() + t.size());
@@ -159,4 +176,25 @@ TEST_CASE ("Feature flag off", "[arguments]")
     std::vector<std::string> t = {"--feature-flags=-versions"};
     auto v = VcpkgCmdArguments::create_from_arg_sequence(t.data(), t.data() + t.size());
     CHECK(!v.versions_enabled());
+}
+
+TEST_CASE ("CMake debugger flags", "[arguments]")
+{
+    std::vector<std::string> t = {"--x-cmake-debug",
+                                  "\\\\.\\pipe\\tespipe;zlib;bar;baz",
+                                  "--x-cmake-configure-debug",
+                                  "\\\\.\\pipe\\configure-pipe"};
+    auto v = VcpkgCmdArguments::create_from_arg_sequence(t.data(), t.data() + t.size());
+    auto& cmake_debug = v.cmake_debug.value_or_exit(VCPKG_LINE_INFO);
+    REQUIRE(cmake_debug.value == "\\\\.\\pipe\\tespipe");
+    REQUIRE(!cmake_debug.is_port_affected("7zip"));
+    REQUIRE(cmake_debug.is_port_affected("zlib"));
+    REQUIRE(cmake_debug.is_port_affected("bar"));
+    REQUIRE(cmake_debug.is_port_affected("baz"));
+    REQUIRE(!cmake_debug.is_port_affected("bazz"));
+
+    auto& cmake_configure_debug = v.cmake_configure_debug.value_or_exit(VCPKG_LINE_INFO);
+    REQUIRE(cmake_configure_debug.value == "\\\\.\\pipe\\configure-pipe");
+    REQUIRE(cmake_configure_debug.is_port_affected("7zip"));
+    REQUIRE(cmake_configure_debug.is_port_affected("zlib"));
 }

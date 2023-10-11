@@ -23,28 +23,50 @@ namespace
     constexpr StringLiteral OPTION_PYTHON = "python";
 
     constexpr CommandSwitch SWITCHES[] = {
-        {OPTION_BIN, []() { return msg::format(msgCmdEnvOptions, msg::path = "bin/", msg::env_var = "PATH"); }},
+        {OPTION_BIN,
+         [] {
+             return msg::format(
+                 msgCmdEnvOptions, msg::path = "bin/", msg::env_var = format_environment_variable("PATH"));
+         }},
         {OPTION_INCLUDE,
-         []() { return msg::format(msgCmdEnvOptions, msg::path = "include/", msg::env_var = "INCLUDE"); }},
+         [] {
+             return msg::format(
+                 msgCmdEnvOptions, msg::path = "include/", msg::env_var = format_environment_variable("INCLUDE"));
+         }},
         {OPTION_DEBUG_BIN,
-         []() { return msg::format(msgCmdEnvOptions, msg::path = "debug/bin/", msg::env_var = "PATH"); }},
-        {OPTION_TOOLS, []() { return msg::format(msgCmdEnvOptions, msg::path = "tools/*/", msg::env_var = "PATH"); }},
+         [] {
+             return msg::format(
+                 msgCmdEnvOptions, msg::path = "debug/bin/", msg::env_var = format_environment_variable("PATH"));
+         }},
+        {OPTION_TOOLS,
+         [] {
+             return msg::format(
+                 msgCmdEnvOptions, msg::path = "tools/*/", msg::env_var = format_environment_variable("PATH"));
+         }},
         {OPTION_PYTHON,
-         []() { return msg::format(msgCmdEnvOptions, msg::path = "python/", msg::env_var = "PYTHONPATH"); }},
+         [] {
+             return msg::format(
+                 msgCmdEnvOptions, msg::path = "python/", msg::env_var = format_environment_variable("PYTHONPATH"));
+         }},
     };
 
 } // unnamed namespace
 
 namespace vcpkg
 {
-    constexpr CommandMetadata CommandEnvMetadata = {
-        [] {
-            return create_example_string(
-                fmt::format("env <{}> --triplet x64-windows", msg::format(msgOptionalCommand)));
+    constexpr CommandMetadata CommandEnvMetadata{
+        "env",
+        msgHelpEnvCommand,
+        {
+            "vcpkg env --triplet x64-windows",
+            msgCommandEnvExample2,
+            "vcpkg env \"ninja --version\" --triplet x64-windows",
         },
+        Undocumented,
+        AutocompletePriority::Public,
         0,
         1,
-        {SWITCHES, {}},
+        {SWITCHES},
         nullptr,
     };
 
@@ -118,6 +140,7 @@ namespace vcpkg
 
 #if defined(_WIN32)
         Command cmd("cmd");
+        cmd.string_arg("/d");
 #else  // ^^^ _WIN32 / !_WIN32 vvv
         Command cmd("");
         Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgEnvPlatformNotSupported);

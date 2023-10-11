@@ -13,22 +13,9 @@ import { Version } from '../switches/version';
 
 export class AddCommand extends Command {
   readonly command = 'add';
-  readonly aliases = [];
-  seeAlso = [];
-  argumentsHelp = [];
 
   version = new Version(this);
   project: Project = new Project(this);
-
-  get summary() {
-    return i`Adds an artifact to the project`;
-  }
-
-  get description() {
-    return [
-      i`This allows the consumer to add an artifact to the project. This will activate the project as well.`,
-    ];
-  }
 
   override async run() {
     const projectManifest = await this.project.manifest;

@@ -38,17 +38,18 @@ namespace
                                                     const std::string& local_git_tree,
                                                     bool verify_git_trees)
     {
-        auto maybe_versions = vcpkg::get_builtin_versions(paths, port_name);
-        if (!maybe_versions.has_value())
+        auto maybe_maybe_versions = vcpkg::get_builtin_versions(paths, port_name);
+        const auto maybe_versions = maybe_maybe_versions.get();
+        if (!maybe_versions)
         {
             return {msg::format_error(
                         msgWhileParsingVersionsForPort, msg::package_name = port_name, msg::path = versions_file_path)
-                        .append(std::move(maybe_versions).error()),
+                        .append(std::move(maybe_maybe_versions).error()),
                     expected_right_tag};
         }
 
-        const auto& versions = maybe_versions.value_or_exit(VCPKG_LINE_INFO);
-        if (versions.empty())
+        const auto versions = maybe_versions->get();
+        if (!versions || versions->empty())
         {
             return {msg::format_error(
                         msgWhileParsingVersionsForPort, msg::package_name = port_name, msg::path = versions_file_path)
@@ -59,46 +60,46 @@ namespace
 
         if (verify_git_trees)
         {
-            for (auto&& version_entry : versions)
+            for (auto&& version_entry : *versions)
             {
                 bool version_ok = false;
                 for (StringView control_file : {"CONTROL", "vcpkg.json"})
                 {
-                    auto treeish = Strings::concat(version_entry.second, ':', control_file);
+                    auto treeish = Strings::concat(version_entry.git_tree, ':', control_file);
                     auto maybe_file = paths.git_show(Strings::concat(treeish), paths.root / ".git");
                     if (!maybe_file) continue;
 
                     const auto& file = maybe_file.value_or_exit(VCPKG_LINE_INFO);
                     auto maybe_scf =
                         Paragraphs::try_load_port_text(file, treeish, control_file == "vcpkg.json", stdout_sink);
-                    if (!maybe_scf)
+                    auto scf = maybe_scf.get();
+                    if (!scf)
                     {
                         return {msg::format_error(msgWhileParsingVersionsForPort,
                                                   msg::package_name = port_name,
                                                   msg::path = versions_file_path)
                                     .append_raw('\n')
-                                    .append(msgWhileValidatingVersion, msg::version = version_entry.first.version)
+                                    .append(msgWhileValidatingVersion, msg::version = version_entry.version.version)
                                     .append_raw('\n')
                                     .append(msgWhileLoadingPortFromGitTree, msg::commit_sha = treeish)
                                     .append_raw('\n')
-                                    .append_raw(maybe_scf.error()->error),
+                                    .append(maybe_scf.error()),
                                 expected_right_tag};
                     }
 
-                    const auto& scf = maybe_scf.value(VCPKG_LINE_INFO);
-                    auto&& git_tree_version = scf->to_schemed_version();
-                    if (version_entry.first.version != git_tree_version.version)
+                    auto&& git_tree_version = (*scf)->to_schemed_version();
+                    if (version_entry.version.version != git_tree_version.version)
                     {
                         return {
                             msg::format_error(msgWhileParsingVersionsForPort,
                                               msg::package_name = port_name,
                                               msg::path = versions_file_path)
                                 .append_raw('\n')
-                                .append(msgWhileValidatingVersion, msg::version = version_entry.first.version)
+                                .append(msgWhileValidatingVersion, msg::version = version_entry.version.version)
                                 .append_raw('\n')
                                 .append(msgVersionInDeclarationDoesNotMatch, msg::version = git_tree_version.version)
                                 .append_raw('\n')
-                                .append(msgCheckedOutGitSha, msg::commit_sha = version_entry.second),
+                                .append(msgCheckedOutGitSha, msg::commit_sha = version_entry.git_tree),
                             expected_right_tag};
                     }
                     version_ok = true;
@@ -111,32 +112,32 @@ namespace
                                               msg::package_name = port_name,
                                               msg::path = versions_file_path)
                                 .append_raw('\n')
-                                .append(msgWhileValidatingVersion, msg::version = version_entry.first.version)
+                                .append(msgWhileValidatingVersion, msg::version = version_entry.version.version)
                                 .append_raw('\n')
                                 .append(msgCheckedOutObjectMissingManifest)
                                 .append_raw('\n')
-                                .append(msgCheckedOutGitSha, msg::commit_sha = version_entry.second),
+                                .append(msgCheckedOutGitSha, msg::commit_sha = version_entry.git_tree),
                             expected_right_tag};
                 }
             }
         }
 
-        auto maybe_scf = Paragraphs::try_load_port(paths.get_filesystem(), port_path);
-        if (!maybe_scf)
+        auto maybe_scf = Paragraphs::try_load_port_required(paths.get_filesystem(), port_name, port_path);
+        auto scf = maybe_scf.get();
+        if (!scf)
         {
             return {msg::format_error(msgWhileLoadingLocalPort, msg::package_name = port_name)
                         .append_raw('\n')
-                        .append_raw(maybe_scf.error()->error),
+                        .append(maybe_scf.error()),
                     expected_right_tag};
         }
 
-        const auto local_port_version = maybe_scf.value(VCPKG_LINE_INFO)->to_schemed_version();
+        const auto local_port_version = (*scf)->to_schemed_version();
 
-        auto versions_end = versions.end();
-        auto it =
-            std::find_if(versions.begin(), versions_end, [&](const std::pair<SchemedVersion, std::string>& entry) {
-                return entry.first.version == local_port_version.version;
-            });
+        auto versions_end = versions->end();
+        auto it = std::find_if(versions->begin(), versions_end, [&](const GitVersionDbEntry& entry) {
+            return entry.version.version == local_port_version.version;
+        });
         if (it == versions_end)
         {
             return {msg::format_error(
@@ -149,28 +150,28 @@ namespace
         }
         auto& entry = *it;
 
-        if (entry.first.scheme != local_port_version.scheme)
+        if (entry.version.scheme != local_port_version.scheme)
         {
             return {msg::format_error(
                         msgWhileParsingVersionsForPort, msg::package_name = port_name, msg::path = versions_file_path)
                         .append_raw('\n')
                         .append(msgVersionSchemeMismatch,
-                                msg::version = entry.first.version,
-                                msg::expected = get_scheme_name(entry.first.scheme),
+                                msg::version = entry.version.version,
+                                msg::expected = get_scheme_name(entry.version.scheme),
                                 msg::actual = get_scheme_name(local_port_version.scheme),
                                 msg::path = port_path,
                                 msg::package_name = port_name),
                     expected_right_tag};
         }
 
-        if (local_git_tree != entry.second)
+        if (local_git_tree != entry.git_tree)
         {
             return {msg::format_error(
                         msgWhileParsingVersionsForPort, msg::package_name = port_name, msg::path = versions_file_path)
                         .append_raw('\n')
                         .append(msgVersionShaMismatch,
-                                msg::version = entry.first.version,
-                                msg::expected = entry.second,
+                                msg::version = entry.version.version,
+                                msg::expected = entry.git_tree,
                                 msg::actual = local_git_tree,
                                 msg::package_name = port_name),
                     expected_right_tag};
@@ -189,13 +190,13 @@ namespace
         }
 
         auto&& baseline_version = maybe_baseline->second;
-        if (baseline_version != entry.first.version)
+        if (baseline_version != entry.version.version)
         {
             return {msg::format_error(
                         msgWhileParsingVersionsForPort, msg::package_name = port_name, msg::path = versions_file_path)
                         .append_raw('\n')
                         .append(msgVersionBaselineMismatch,
-                                msg::expected = entry.first.version,
+                                msg::expected = entry.version.version,
                                 msg::actual = baseline_version,
                                 msg::package_name = port_name),
                     expected_right_tag};
@@ -203,8 +204,8 @@ namespace
 
         return {
             msg::format(msgVersionVerifiedOK,
-                        msg::version_spec = Strings::concat(port_name, '@', entry.first.version),
-                        msg::commit_sha = entry.second),
+                        msg::version_spec = Strings::concat(port_name, '@', entry.version.version),
+                        msg::commit_sha = entry.git_tree),
             expected_left_tag,
         };
     }
@@ -214,22 +215,26 @@ namespace
     constexpr StringLiteral OPTION_VERIFY_GIT_TREES = "verify-git-trees";
 
     constexpr CommandSwitch VERIFY_VERSIONS_SWITCHES[]{
-        {OPTION_VERBOSE, []() { return msg::format(msgCISettingsVerifyVersion); }},
-        {OPTION_VERIFY_GIT_TREES, []() { return msg::format(msgCISettingsVerifyGitTree); }},
+        {OPTION_VERBOSE, msgCISettingsVerifyVersion},
+        {OPTION_VERIFY_GIT_TREES, msgCISettingsVerifyGitTree},
     };
 
     constexpr CommandSetting VERIFY_VERSIONS_SETTINGS[] = {
-        {OPTION_EXCLUDE, []() { return msg::format(msgCISettingsExclude); }},
+        {OPTION_EXCLUDE, msgCISettingsExclude},
     };
 } // unnamed namespace
 
 namespace vcpkg
 {
     constexpr CommandMetadata CommandCiVerifyVersionsMetadata{
-        [] { return create_example_string("x-ci-verify-versions"); },
+        "x-ci-verify-versions",
+        msgCmdCiVerifyVersionsSynopsis,
+        {"vcpkg x-ci-verify-versions"},
+        Undocumented,
+        AutocompletePriority::Internal,
         0,
         SIZE_MAX,
-        {{VERIFY_VERSIONS_SWITCHES}, {VERIFY_VERSIONS_SETTINGS}, {}},
+        {VERIFY_VERSIONS_SWITCHES, VERIFY_VERSIONS_SETTINGS},
         nullptr,
     };
 
