@@ -41,15 +41,7 @@ namespace vcpkg
     {
         std::string name;
         PlatformExpression::Expr platform;
-        DependencyRequestedFeature(std::string name)
-            : DependencyRequestedFeature(std::move(name), PlatformExpression::Expr::Empty())
-        {
-        }
-        DependencyRequestedFeature(std::string name, PlatformExpression::Expr platform)
-            : name(std::move(name)), platform(std::move(platform))
-        {
-            Checks::check_exit(VCPKG_LINE_INFO, !this->name.empty() && this->name != "core" && this->name != "default");
-        }
+
         friend bool operator==(const DependencyRequestedFeature& lhs, const DependencyRequestedFeature& rhs);
         friend bool operator!=(const DependencyRequestedFeature& lhs, const DependencyRequestedFeature& rhs);
     };
@@ -214,11 +206,8 @@ namespace vcpkg
         std::string registry_location;
     };
 
-    void print_error_message(Span<const std::unique_ptr<ParseControlErrorInfo>> error_info_list);
-    inline void print_error_message(const std::unique_ptr<ParseControlErrorInfo>& error_info_list)
-    {
-        return print_error_message({&error_info_list, 1});
-    }
+    void print_error_message(const LocalizedString& message);
+    void print_error_message(const std::unique_ptr<ParseControlErrorInfo>& error_info_list);
 
     std::string parse_spdx_license_expression(StringView sv, ParseMessages& messages);
 

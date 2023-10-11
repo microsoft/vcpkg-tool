@@ -565,7 +565,7 @@ namespace vcpkg::Hash
         auto file = fs.open_for_read(path, ec);
         if (ec)
         {
-            return msg::format(msg::msgErrorMessage)
+            return msg::format(msgErrorMessage)
                 .append(msgHashFileFailureToRead, msg::path = path)
                 .append_raw(ec.message());
         }
@@ -582,7 +582,7 @@ namespace vcpkg::Hash
                 }
                 else if ((ec = file.error()))
                 {
-                    return msg::format(msg::msgErrorMessage)
+                    return msg::format(msgErrorMessage)
                         .append(msgHashFileFailureToRead, msg::path = path)
                         .append_raw(ec.message());
                 }

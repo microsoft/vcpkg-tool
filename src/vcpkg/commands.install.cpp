@@ -651,7 +651,8 @@ namespace vcpkg
 
     static std::vector<std::string> get_all_known_reachable_port_names_no_network(const VcpkgPaths& paths)
     {
-        return paths.make_registry_set()->get_all_known_reachable_port_names_no_network();
+        return paths.make_registry_set()->get_all_known_reachable_port_names_no_network().value_or_exit(
+            VCPKG_LINE_INFO);
     }
 
     constexpr CommandMetadata CommandInstallMetadata{
@@ -976,6 +977,11 @@ namespace vcpkg
         return ret;
     }
 
+    static bool cmake_args_sets_variable(const VcpkgCmdArguments& args)
+    {
+        return Util::any_of(args.cmake_args, [](auto& s) { return Strings::starts_with(s, "-D"); });
+    }
+
     void command_install_and_exit(const VcpkgCmdArguments& args,
                                   const VcpkgPaths& paths,
                                   Triplet default_triplet,
@@ -990,7 +996,8 @@ namespace vcpkg
         const bool only_downloads = Util::Sets::contains(options.switches, (OPTION_ONLY_DOWNLOADS));
         const bool no_build_missing = Util::Sets::contains(options.switches, OPTION_ONLY_BINARYCACHING);
         const bool is_recursive = Util::Sets::contains(options.switches, (OPTION_RECURSE));
-        const bool is_editable = Util::Sets::contains(options.switches, (OPTION_EDITABLE)) || !args.cmake_args.empty();
+        const bool is_editable =
+            Util::Sets::contains(options.switches, (OPTION_EDITABLE)) || cmake_args_sets_variable(args);
         const bool use_aria2 = Util::Sets::contains(options.switches, (OPTION_USE_ARIA2));
         const bool clean_after_build = Util::Sets::contains(options.switches, (OPTION_CLEAN_AFTER_BUILD));
         const bool clean_buildtrees_after_build =
@@ -1019,7 +1026,7 @@ namespace vcpkg
             if (!options.command_arguments.empty())
             {
                 msg::println_error(msgErrorIndividualPackagesUnsupported);
-                msg::println(Color::error, msg::msgSeeURL, msg::url = docs::manifests_url);
+                msg::println(Color::error, msgSeeURL, msg::url = docs::manifests_url);
                 failure = true;
             }
             if (use_head_version)
@@ -1104,6 +1111,7 @@ namespace vcpkg
             if (!maybe_manifest_scf)
             {
                 print_error_message(maybe_manifest_scf.error());
+                msg::println();
                 msg::println(msgExtendedDocumentationAtUrl, msg::url = docs::manifests_url);
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }

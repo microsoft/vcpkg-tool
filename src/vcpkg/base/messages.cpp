@@ -28,31 +28,39 @@ namespace vcpkg
     template LocalizedString LocalizedString::from_raw<char>(std::basic_string<char>&& s) noexcept;
     LocalizedString LocalizedString::from_raw(StringView s) { return LocalizedString(s); }
 
-    LocalizedString& LocalizedString::append_raw(char c)
+    LocalizedString& LocalizedString::append_raw(char c) &
     {
         m_data.push_back(c);
         return *this;
     }
 
-    LocalizedString& LocalizedString::append_raw(StringView s)
+    LocalizedString&& LocalizedString::append_raw(char c) && { return std::move(append_raw(c)); }
+
+    LocalizedString& LocalizedString::append_raw(StringView s) &
     {
         m_data.append(s.begin(), s.size());
         return *this;
     }
 
-    LocalizedString& LocalizedString::append(const LocalizedString& s)
+    LocalizedString&& LocalizedString::append_raw(StringView s) && { return std::move(append_raw(s)); }
+
+    LocalizedString& LocalizedString::append(const LocalizedString& s) &
     {
         m_data.append(s.m_data);
         return *this;
     }
 
-    LocalizedString& LocalizedString::append_indent(size_t indent)
+    LocalizedString&& LocalizedString::append(const LocalizedString& s) && { return std::move(append(s)); }
+
+    LocalizedString& LocalizedString::append_indent(size_t indent) &
     {
         m_data.append(indent * 2, ' ');
         return *this;
     }
 
-    LocalizedString& LocalizedString::append_floating_list(int indent, View<LocalizedString> items)
+    LocalizedString&& LocalizedString::append_indent(size_t indent) && { return std::move(append_indent(indent)); }
+
+    LocalizedString& LocalizedString::append_floating_list(int indent, View<LocalizedString> items) &
     {
         switch (items.size())
         {
@@ -68,6 +76,11 @@ namespace vcpkg
         }
 
         return *this;
+    }
+
+    LocalizedString&& LocalizedString::append_floating_list(int indent, View<LocalizedString> items) &&
+    {
+        return std::move(append_floating_list(indent, items));
     }
 
     bool operator==(const LocalizedString& lhs, const LocalizedString& rhs) noexcept
@@ -263,17 +276,6 @@ namespace vcpkg
 
 #include <vcpkg/base/message-data.inc.h>
 #undef DECLARE_MESSAGE
-
-    namespace msg
-    {
-        const decltype(vcpkg::msgErrorMessage) msgErrorMessage = vcpkg::msgErrorMessage;
-        const decltype(vcpkg::msgWarningMessage) msgWarningMessage = vcpkg::msgWarningMessage;
-        const decltype(vcpkg::msgNoteMessage) msgNoteMessage = vcpkg::msgNoteMessage;
-        const decltype(vcpkg::msgSeeURL) msgSeeURL = vcpkg::msgSeeURL;
-        const decltype(vcpkg::msgInternalErrorMessage) msgInternalErrorMessage = vcpkg::msgInternalErrorMessage;
-        const decltype(vcpkg::msgInternalErrorMessageContact) msgInternalErrorMessageContact =
-            vcpkg::msgInternalErrorMessageContact;
-    }
 }
 namespace vcpkg::msg
 {

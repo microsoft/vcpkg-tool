@@ -96,22 +96,24 @@ namespace vcpkg
 
             auto maybe_manifest_scf =
                 SourceControlFile::parse_project_manifest_object(manifest->path, manifest->manifest, stdout_sink);
-            if (!maybe_manifest_scf)
+            auto pmanifest_scf = maybe_manifest_scf.get();
+            if (!pmanifest_scf)
             {
                 print_error_message(maybe_manifest_scf.error());
-                msg::println(Color::error, msg::msgSeeURL, msg::url = docs::manifests_url);
+                msg::println(Color::error, msgSeeURL, msg::url = docs::manifests_url);
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
-            auto& manifest_scf = *maybe_manifest_scf.value(VCPKG_LINE_INFO);
+            auto& manifest_scf = **pmanifest_scf;
             for (const auto& spec : specs)
             {
                 auto dep = Util::find_if(manifest_scf.core_paragraph->dependencies, [&spec](Dependency& dep) {
                     return dep.name == spec.name && !dep.host &&
                            structurally_equal(spec.platform.value_or(PlatformExpression::Expr()), dep.platform);
                 });
-                const auto features = Util::fmap(spec.features.value_or({}), [](auto& feature) {
-                    return DependencyRequestedFeature{feature, PlatformExpression::Expr::Empty()};
+                const auto features = Util::fmap(spec.features.value_or({}), [](const std::string& feature) {
+                    Checks::check_exit(VCPKG_LINE_INFO, !feature.empty() && feature != "core" && feature != "default");
+                    return DependencyRequestedFeature{feature};
                 });
                 if (dep == manifest_scf.core_paragraph->dependencies.end())
                 {

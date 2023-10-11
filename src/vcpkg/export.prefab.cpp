@@ -261,7 +261,7 @@ namespace vcpkg::Prefab
                 VCPKG_LINE_INFO, is_supported(*build_info), msgExportPrefabRequiresAndroidTriplet);
         }
 
-        const auto triplet_db = paths.get_triplet_db();
+        const auto& triplet_db = paths.get_triplet_db();
 
         std::unordered_map<CPUArchitecture, std::string> required_archs = {{CPUArchitecture::ARM, "armeabi-v7a"},
                                                                            {CPUArchitecture::ARM64, "arm64-v8a"},

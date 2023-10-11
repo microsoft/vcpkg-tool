@@ -3,6 +3,7 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/chrono.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/parallel-algorithms.h>
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.debug.h>
@@ -674,44 +675,11 @@ namespace vcpkg
                                                                                       const Environment& env)
     {
         std::vector<ExpectedL<ExitCodeAndOutput>> res(cmd_lines.size(), LocalizedString{});
-        if (cmd_lines.empty())
-        {
-            return res;
-        }
 
-        if (cmd_lines.size() == 1)
-        {
-            res[0] = cmd_execute_and_capture_output(cmd_lines[0], wd, env);
-            return res;
-        }
+        parallel_transform(cmd_lines.begin(), cmd_lines.size(), res.begin(), [&](const Command& cmd_line) {
+            return cmd_execute_and_capture_output(cmd_line, wd, env);
+        });
 
-        std::atomic<size_t> work_item{0};
-        const auto num_threads =
-            std::max(static_cast<size_t>(1), std::min(static_cast<size_t>(get_concurrency()), cmd_lines.size()));
-
-        auto work = [&]() {
-            std::size_t item;
-            while (item = work_item.fetch_add(1), item < cmd_lines.size())
-            {
-                res[item] = cmd_execute_and_capture_output(cmd_lines[item], wd, env);
-            }
-        };
-
-        std::vector<std::future<void>> workers;
-        workers.reserve(num_threads - 1);
-        for (size_t x = 0; x < num_threads - 1; ++x)
-        {
-            workers.emplace_back(std::async(std::launch::async | std::launch::deferred, work));
-            if (work_item >= cmd_lines.size())
-            {
-                break;
-            }
-        }
-        work();
-        for (auto&& w : workers)
-        {
-            w.get();
-        }
         return res;
     }
 
@@ -763,6 +731,7 @@ namespace
                                            StringView cmd_line,
                                            const WorkingDirectory& wd,
                                            const Environment& env,
+                                           BOOL bInheritHandles,
                                            DWORD dwCreationFlags,
                                            STARTUPINFOEXW& startup_info) noexcept
     {
@@ -796,7 +765,7 @@ namespace
                             Strings::to_utf16(cmd_line).data(),
                             nullptr,
                             nullptr,
-                            TRUE,
+                            bInheritHandles,
                             IDLE_PRIORITY_CLASS | CREATE_UNICODE_ENVIRONMENT | EXTENDED_STARTUPINFO_PRESENT |
                                 dwCreationFlags,
                             call_environment,
@@ -1150,7 +1119,7 @@ namespace
         startup_info_ex.lpAttributeList = proc_attribute_list.get();
 
         auto process_create =
-            windows_create_process(debug_id, ret.proc_info, cmd_line, wd, env, dwCreationFlags, startup_info_ex);
+            windows_create_process(debug_id, ret.proc_info, cmd_line, wd, env, TRUE, dwCreationFlags, startup_info_ex);
 
         if (!process_create)
         {
@@ -1240,7 +1209,7 @@ namespace
 
         ExpectedL<int> wait_for_termination()
         {
-            int exit_code;
+            int exit_code = -1;
             if (pid != -1)
             {
                 int status;
@@ -1289,17 +1258,17 @@ namespace vcpkg
         auto maybe_rc_output = cmd_execute_and_capture_output(actual_cmd_line, default_working_directory, env);
         if (!maybe_rc_output)
         {
-            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgVcvarsRunFailed);
+            Checks::msg_exit_with_error(
+                VCPKG_LINE_INFO, msg::format(msgVcvarsRunFailed).append_raw("\n").append(maybe_rc_output.error()));
         }
 
         auto& rc_output = maybe_rc_output.value_or_exit(VCPKG_LINE_INFO);
+        Debug::print(rc_output.output, "\n");
         if (rc_output.exit_code != 0)
         {
             Checks::msg_exit_with_error(
                 VCPKG_LINE_INFO, msgVcvarsRunFailedExitCode, msg::exit_code = rc_output.exit_code);
         }
-
-        Debug::print(rc_output.output, "\n");
 
         auto it = Strings::search(rc_output.output, magic_string);
         const char* const last = rc_output.output.data() + rc_output.output.size();
@@ -1352,28 +1321,12 @@ namespace vcpkg
         startup_info_ex.StartupInfo.cb = sizeof(STARTUPINFOEXW);
         startup_info_ex.StartupInfo.dwFlags = STARTF_USESHOWWINDOW;
         startup_info_ex.StartupInfo.wShowWindow = SW_HIDE;
-
-        ProcAttributeList proc_attribute_list;
-        auto proc_attribute_list_create = proc_attribute_list.create(1);
-        if (!proc_attribute_list_create)
-        {
-            debug_print_cmd_execute_background_failure(debug_id, proc_attribute_list_create.error());
-            return;
-        }
-
-        auto maybe_error = proc_attribute_list.update_attribute(PROC_THREAD_ATTRIBUTE_HANDLE_LIST, nullptr, 0);
-        if (!maybe_error)
-        {
-            debug_print_cmd_execute_background_failure(debug_id, maybe_error.error());
-            return;
-        }
-
-        startup_info_ex.lpAttributeList = proc_attribute_list.get();
         auto process_create = windows_create_process(debug_id,
                                                      process_info,
                                                      cmd_line.command_line(),
                                                      default_working_directory,
                                                      default_environment,
+                                                     FALSE,
                                                      CREATE_NEW_CONSOLE | CREATE_NO_WINDOW | CREATE_BREAKAWAY_FROM_JOB,
                                                      startup_info_ex);
         if (!process_create)
@@ -1440,7 +1393,7 @@ namespace vcpkg
         SpawnProcessGuard spawn_process_guard;
         ProcessInfo process_info;
         auto process_create =
-            windows_create_process(debug_id, process_info, cmd_line.command_line(), wd, env, 0, startup_info_ex);
+            windows_create_process(debug_id, process_info, cmd_line.command_line(), wd, env, TRUE, 0, startup_info_ex);
         if (!process_create)
         {
             return std::move(process_create).error();

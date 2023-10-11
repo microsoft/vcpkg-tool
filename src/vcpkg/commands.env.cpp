@@ -140,6 +140,7 @@ namespace vcpkg
 
 #if defined(_WIN32)
         Command cmd("cmd");
+        cmd.string_arg("/d");
 #else  // ^^^ _WIN32 / !_WIN32 vvv
         Command cmd("");
         Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgEnvPlatformNotSupported);
