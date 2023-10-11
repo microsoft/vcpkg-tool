@@ -139,6 +139,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ADefaultFeature" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[a default feature]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[既定の機能]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ADemandObject" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[a demand object]]></Val>
@@ -159,10 +168,13 @@
       </Item>
       <Item ItemId=";ADependencyFeature" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[a feature in a dependency]]></Val>
+          <Val><![CDATA[a feature of a dependency]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[依存関係の機能]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[a feature in a dependency]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -180,6 +192,15 @@
           <Val><![CDATA[a feature]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[機能]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AFeatureName" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[a feature name]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[機能名]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -891,6 +912,15 @@
           <Val><![CDATA[Ambiguous vcpkg configuration provided by both manifest and configuration file.]A;-- Delete configuration file {path}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[マニフェストと構成ファイルの両方によって提供される vcpkg 構成があいまいです。]A;-- 構成ファイル {path} の削除]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AnArrayOfDefaultFeatures" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[an array of default features]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[既定の機能の配列]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4063,21 +4093,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CouldNotFindBaselineForRepo" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Couldn't find baseline `"{commit_sha}"` for repo {package_name}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[リポジトリ {package_name} のベースライン `"{commit_sha}"` が見つかりませんでした]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";CouldNotFindBaselineInCommit" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Couldn't find baseline in commit `"{commit_sha}"` from repo {package_name}:]]></Val>
+          <Val><![CDATA[Couldn't find baseline in {url} at {commit_sha} for {package_name}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[リポジトリ {package_name} からコミット`"{commit_sha}"` にベースラインが見つかりませんでした:]]></Val>
+            <Val><![CDATA[{package_name} の {commit_sha} で {url} にベースラインが見つかりませんでした。]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Couldn't find baseline in commit `"{commit_sha}"` from repo {package_name}:]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -4282,6 +4306,33 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";DefaultFeatureCore" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the feature "core" turns off default features and thus can't be in the default features list]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA["コア" 機能は既定の機能をオフにするため、既定の機能一覧に含めることはできません]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DefaultFeatureDefault" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the feature "default" refers to the set of default features and thus can't be in the default features list]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA["既定" 機能は既定の機能のセットを参照するため、既定の機能の一覧に含めることはできません]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DefaultFeatureIdentifier" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the names of default features must be identifiers]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[既定の機能の名前は識別子である必要があります]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";DefaultFlag" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Defaulting to --{option} being on.]]></Val>
@@ -4332,6 +4383,24 @@
           <Val><![CDATA[Dependency]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[依存関係]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DependencyFeatureCore" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the feature "core" cannot be in a dependency's feature list. To turn off default features, add "default-features": false instead.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA["コア" 機能を依存関係の機能一覧に含めることはできません。既定の機能を無効にするには、代わりに "default-features": false を追加してください。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DependencyFeatureDefault" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the feature "default" cannot be in a dependency's feature list. To turn on default features, add "default-features": true instead.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA["既定" 機能を依存関係の機能一覧に含めることはできません。既定の機能を有効にするには、代わりに "default-features": true を追加してください。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -5473,11 +5542,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";FailedToFetchError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";FailedToFetchRepo" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[{error_msg}]A;Failed to fetch {package_name}:]]></Val>
+          <Val><![CDATA[Failed to fetch {url}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{error_msg}]A; {package_name} をフェッチできませんでした:]]></Val>
+            <Val><![CDATA[{url} をフェッチできませんでした。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -6177,10 +6246,13 @@
       </Item>
       <Item ItemId=";GitRegistryMustHaveBaseline" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The git registry entry for "{package_name}" must have a "baseline" field that is a valid git commit SHA (40 hexadecimal characters).]A;The current HEAD of that repo is "{value}".]]></Val>
+          <Val><![CDATA[The git registry "{url}" must have a "baseline" field that is a valid git commit SHA (40 hexadecimal characters).]A;To use the current latest versions, set baseline to that repo's HEAD, "{commit_sha}".]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA["{package_name}" の Git レジストリ エントリには、有効な Git コミット SHA (40 文字の 16 進数) である "ベースライン" フィールドが必要です。]A;そのリポジトリの現在の HEAD は"{value}" です。]]></Val>
+            <Val><![CDATA[Git レジストリ "{url}" には、有効な Git コミット SHA (40 文字の 16 進数) である "ベースライン" フィールドが必要です。]A;現在の最新バージョンを使用するには、ベースラインをそのリポジトリの HEAD、"{commit_sha}" に設定します。]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The git registry entry for "{package_name}" must have a "baseline" field that is a valid git commit SHA (40 hexadecimal characters).]A;The current HEAD of that repo is "{value}".]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -7756,15 +7828,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";InvalidDependency" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[dependencies must be lowercase alphanumeric+hyphens, and not one of the reserved names]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[依存関係は、予約された名前の 1 つではなく、小文字の英数字とハイフンにする必要があります]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";InvalidEscapeSequence" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Invalid escape sequence]]></Val>
@@ -9000,19 +9063,25 @@
       </Item>
       <Item ItemId=";PEConfigCrossesSectionBoundary" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[While parsing Portable Executable {path}, image config directory crosses a secion boundary.]]></Val>
+          <Val><![CDATA[While parsing Portable Executable {path}, image config directory crosses a section boundary.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[ポータブル実行可能ファイル {path} の解析中に、イメージ構成ディレクトリがセッション境界を越えています。]]></Val>
+            <Val><![CDATA[ポータブル実行可能ファイル {パス} の解析中に、イメージ構成ディレクトリがセッション境界を越えています。]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[While parsing Portable Executable {path}, image config directory crosses a secion boundary.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";PEImportCrossesSectionBoundary" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[While parsing Portable Executable {path}, import table crosses a secion boundary.]]></Val>
+          <Val><![CDATA[While parsing Portable Executable {path}, import table crosses a section boundary.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[ポータブル実行可能ファイル {path} の解析中に、インポート テーブルがセッション境界を越えています。]]></Val>
+            <Val><![CDATA[ポータブル実行可能ファイル {パス} の解析中に、インポート テーブルがセッション境界を越えています。]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[While parsing Portable Executable {path}, import table crosses a secion boundary.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -9316,30 +9385,48 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ParseFeatureNameError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA["{package_name}" is not a valid feature name. Feature names must be lowercase alphanumeric+hypens and not reserved (see {url} for more information).]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA["{package_name}" は有効な機能名ではありません。機能名は小文字の英数字とハイフンにする必要があり、また、予約されていないことが必須になります (詳細については、{url} を参照してください)。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ParseIdentifierError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA["{value}" is not a valid identifier. Identifiers must be lowercase alphanumeric+hypens and not reserved (see {url} for more information)]]></Val>
+          <Val><![CDATA["{value}" is not a valid identifier. Identifiers must be lowercase alphanumeric+hypens and not reserved (see {url} for more information).]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA["{value}" は有効な識別子ではありません。識別子は小文字の英数字とハイフンにする必要があり、また、予約されていないことが必須になります (詳細については、{url} を参照してください)]]></Val>
+            <Val><![CDATA["{値}" は有効な識別子ではありません。識別子は小文字の英数字とハイフンにする必要があり、また、予約されていないことが必須になります (詳細については、{url} を参照してください)。]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA["{value}" is not a valid identifier. Identifiers must be lowercase alphanumeric+hypens and not reserved (see {url} for more information)]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ParsePackageNameError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA["{package_name}" is not a valid package name. Package names must be lowercase alphanumeric+hypens and not reserved (see {url} for more information)]]></Val>
+          <Val><![CDATA["{package_name}" is not a valid package name. Package names must be lowercase alphanumeric+hypens and not reserved (see {url} for more information).]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA["{package_name}" は有効なパッケージ名ではありません。パッケージ名は小文字の英数字とハイフンにする必要があり、また、予約されていないことが必須になります (詳細については、{url} を参照してください)]]></Val>
+            <Val><![CDATA["{package_name}" は有効なパッケージ名ではありません。パッケージ名は小文字の英数字とハイフンにする必要があり、また、予約されていないことが必須になります (詳細については、{url} を参照してください)。]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA["{package_name}" is not a valid package name. Package names must be lowercase alphanumeric+hypens and not reserved (see {url} for more information)]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ParsePackagePatternError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA["{package_name}" is not a valid package pattern. Package patterns must use only one wildcard character (*) and it must be the last character in the pattern (see {url} for more information)]]></Val>
+          <Val><![CDATA["{package_name}" is not a valid package pattern. Package patterns must use only one wildcard character (*) and it must be the last character in the pattern (see {url} for more information).]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA["{package_name}" は有効なパッケージ パターンではありません。パッケージ パターンではワイルドカード文字 (*) を 1 つだけ使用し、それをそのパターンの最後の文字にする必要があります (詳細については、{url} を参照してください)]]></Val>
+            <Val><![CDATA["{package_name}" は有効なパッケージ パターンではありません。パッケージ パターンではワイルドカード文字 (*) を 1 つだけ使用し、それをそのパターンの最後の文字にする必要があります (詳細については、{url} を参照してください)。]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA["{package_name}" is not a valid package pattern. Package patterns must use only one wildcard character (*) and it must be the last character in the pattern (see {url} for more information)]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -9822,10 +9909,13 @@
       </Item>
       <Item ItemId=";PortsUpdated" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[]A;The following {count} ports were updated:]]></Val>
+          <Val><![CDATA[The following {count} ports were updated:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[]A;次の {count} 個のポートが更新されました。]]></Val>
+            <Val><![CDATA[次の {count} 個のポートが更新されました。]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[]A;The following {count} ports were updated:]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -11332,12 +11422,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";UpgradeInManifest" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";UpgradeInManifest" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The upgrade command does not currently support manifest mode. Instead, modify your vcpkg.json and run install.]]></Val>
+          <Val><![CDATA[Upgrade upgrades a classic mode installation and thus does not support manifest mode. Consider updating your dependencies by updating your baseline to a current value with vcpkg x-update-baseline and running vcpkg install.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[アップグレード コマンドは現在マニフェスト モードをサポートしていません。代わりに、vcpkg.json を変更してインストールを実行してください。]]></Val>
+            <Val><![CDATA[アップグレードでは、クラシック モードのインストールがアップグレードされるため、マニフェスト モードはサポートされていません。vcpkg x-update-baseline を使用してベースラインを現在の値に更新し、vcpkg インストールを実行して、依存関係を更新することを検討してください。]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The upgrade command does not currently support manifest mode. Instead, modify your vcpkg.json and run install.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>

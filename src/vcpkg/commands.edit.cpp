@@ -272,8 +272,8 @@ namespace vcpkg
         if (editor_exe == "Code.exe" || editor_exe == "Code - Insiders.exe")
         {
             // note that we are invoking cmd silently but Code.exe is relaunched from there
-            cmd_execute_background(
-                Command("cmd").string_arg("/c").raw_arg(Strings::concat('"', cmd_line.command_line(), R"( <NUL")")));
+            cmd_execute_background(Command("cmd").string_arg("/d").string_arg("/c").raw_arg(
+                Strings::concat('"', cmd_line.command_line(), R"( <NUL")")));
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 #endif // ^^^ _WIN32

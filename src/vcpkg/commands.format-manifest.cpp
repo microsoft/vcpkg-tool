@@ -50,7 +50,6 @@ namespace
         {
             msg::println_error(msgFailedToParseManifest, msg::path = path_string);
             print_error_message(scf.error());
-            msg::println();
             return nullopt;
         }
 
