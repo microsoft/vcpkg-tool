@@ -2122,24 +2122,25 @@ namespace vcpkg
                                                               MessageSink& sink)
     {
         return make_binary_providers(args, paths)
-            .then([&](BinaryProviders&& p) -> ExpectedL<std::unique_ptr<BinaryCache>> {
-                std::unique_ptr<BinaryCache> b(new BinaryCache(std::move(p), paths.get_filesystem()));
-                b->m_needs_nuspec_data =
-                    Util::any_of(b->m_config.write, [](auto&& p) { return p->needs_nuspec_data(); });
-                b->m_needs_zip_file = Util::any_of(b->m_config.write, [](auto&& p) { return p->needs_zip_file(); });
-                if (b->m_needs_zip_file)
+            .then([&](BinaryProviders&& providers) -> ExpectedL<std::unique_ptr<BinaryCache>> {
+                std::unique_ptr<BinaryCache> cache(new BinaryCache(std::move(providers), paths.get_filesystem()));
+                cache->m_needs_nuspec_data =
+                    Util::any_of(cache->m_config.write, [](auto&& p) { return p->needs_nuspec_data(); });
+                cache->m_needs_zip_file =
+                    Util::any_of(cache->m_config.write, [](auto&& p) { return p->needs_zip_file(); });
+                if (cache->m_needs_zip_file)
                 {
-                    auto maybe_zt = ZipTool::make(paths.get_tool_cache(), sink);
-                    if (auto z = maybe_zt.get())
+                    auto maybe_zip_tool = ZipTool::make(paths.get_tool_cache(), sink);
+                    if (auto zip_tool = maybe_zip_tool.get())
                     {
-                        b->m_zip_tool.emplace(std::move(*z));
+                        cache->m_zip_tool.emplace(std::move(*zip_tool));
                     }
                     else
                     {
-                        return std::move(maybe_zt).error();
+                        return std::move(maybe_zip_tool).error();
                     }
                 }
-                return std::move(b);
+                return std::move(cache);
             });
     }
 
@@ -2151,7 +2152,7 @@ namespace vcpkg
 
     {
     }
-    BinaryCache::~BinaryCache() { wait_for_async_complete(); }
+    BinaryCache::~BinaryCache() { wait_for_async_complete_and_join(); }
 
     void BinaryCache::push_success(const InstallPlanAction& action)
     {
@@ -2186,7 +2187,7 @@ namespace vcpkg
 
     void BinaryCache::print_push_success_messages() { m_bg_msg_sink.print_published(); }
 
-    void BinaryCache::wait_for_async_complete()
+    void BinaryCache::wait_for_async_complete_and_join()
     {
         bool have_remaining_packages = m_remaining_packages_to_push > 0;
         if (have_remaining_packages)

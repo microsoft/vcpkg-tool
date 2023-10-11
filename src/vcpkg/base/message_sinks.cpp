@@ -105,9 +105,9 @@ namespace vcpkg
                 return;
             }
 
-            for (auto&& m : tmp)
+            for (auto&& msg : tmp)
             {
-                out_sink.print(m.first, m.second);
+                out_sink.print(msg.first, msg.second);
             }
 
             tmp.clear();
@@ -122,9 +122,9 @@ namespace vcpkg
         m_print_directly_to_out_sink = true;
         for (auto& messages : {&m_published, &m_unpublished})
         {
-            for (auto&& m : *messages)
+            for (auto&& msg : *messages)
             {
-                out_sink.print(m.first, m.second);
+                out_sink.print(msg.first, msg.second);
             }
             messages->clear();
         }

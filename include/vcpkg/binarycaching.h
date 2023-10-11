@@ -213,7 +213,7 @@ namespace vcpkg
         void push_success(const InstallPlanAction& action);
 
         void print_push_success_messages();
-        void wait_for_async_complete();
+        void wait_for_async_complete_and_join();
 
     private:
         BinaryCache(BinaryProviders&& providers, const Filesystem& fs);

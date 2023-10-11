@@ -579,7 +579,7 @@ namespace vcpkg
                     it_xunit->second, xunitTestResults.build_xml(target_triplet), VCPKG_LINE_INFO);
             }
         }
-        binary_cache->wait_for_async_complete();
+        binary_cache->wait_for_async_complete_and_join();
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 } // namespace vcpkg

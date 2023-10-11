@@ -588,7 +588,7 @@ namespace vcpkg
                         issue_body_path, create_github_issue(args, result, paths, action), VCPKG_LINE_INFO);
                     return issue_body_path;
                 }));
-                binary_cache.wait_for_async_complete();
+                binary_cache.wait_for_async_complete_and_join();
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
@@ -1380,7 +1380,7 @@ namespace vcpkg
                 install_print_usage_information(*bpgh, printed_usages, fs, paths.installed());
             }
         }
-        binary_cache->wait_for_async_complete();
+        binary_cache->wait_for_async_complete_and_join();
         Checks::exit_with_code(VCPKG_LINE_INFO, summary.failed());
     }
 
