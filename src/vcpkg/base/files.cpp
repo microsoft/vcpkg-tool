@@ -1566,6 +1566,19 @@ namespace vcpkg
         return result;
     }
 
+    ExpectedL<Path> ReadOnlyFilesystem::try_find_file_recursively_up(const Path& starting_dir,
+                                                                     const Path& filename) const
+    {
+        std::error_code ec;
+        auto result = this->find_file_recursively_up(starting_dir, filename, ec);
+        if (ec)
+        {
+            return format_filesystem_call_error(ec, __func__, {starting_dir, filename});
+        }
+
+        return result;
+    }
+
     std::vector<Path> ReadOnlyFilesystem::get_files_recursive(const Path& dir, LineInfo li) const
     {
         return this->try_get_files_recursive(dir).value_or_exit(li);
