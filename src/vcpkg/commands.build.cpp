@@ -282,14 +282,6 @@ namespace vcpkg
 
     std::string to_string(DownloadTool tool) { return to_string_view(tool).to_string(); }
 
-    ConfigurationType parse_configuration_type(const std::string& str)
-    {
-        if (str.empty()) return ConfigurationType::BOTH;
-        if (Strings::case_insensitive_ascii_equals(str, "debug")) return ConfigurationType::DEBUG;
-        if (Strings::case_insensitive_ascii_equals(str, "release")) return ConfigurationType::RELEASE;
-        Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgUnknownSettingForBuildType, msg::option = str);
-    }
-
     StringLiteral to_string_view(ConfigurationType config_type)
     {
         switch (config_type)
@@ -1816,7 +1808,17 @@ namespace vcpkg
                 case VcpkgTripletVar::CHAINLOAD_TOOLCHAIN_FILE:
                     external_toolchain_file = variable_value.empty() ? nullopt : Optional<std::string>{variable_value};
                     break;
-                case VcpkgTripletVar::BUILD_TYPE: build_type = parse_configuration_type(variable_value); break;
+                case VcpkgTripletVar::BUILD_TYPE:
+                    if (variable_value.empty())
+                        build_type = ConfigurationType::BOTH;
+                    else if (Strings::case_insensitive_ascii_equals(variable_value, "debug"))
+                        build_type = ConfigurationType::DEBUG;
+                    else if (Strings::case_insensitive_ascii_equals(variable_value, "release"))
+                        build_type = ConfigurationType::RELEASE;
+                    else
+                        Checks::msg_exit_with_message(
+                            VCPKG_LINE_INFO, msgUnknownSettingForBuildType, msg::option = variable_value);
+                    break;
                 case VcpkgTripletVar::ENV_PASSTHROUGH:
                     passthrough_env_vars_tracked = Strings::split(variable_value, ';');
                     Util::Vectors::append(&passthrough_env_vars, passthrough_env_vars_tracked);

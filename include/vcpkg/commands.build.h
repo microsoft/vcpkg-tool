@@ -60,7 +60,6 @@ namespace vcpkg
     StringLiteral to_string_view(DownloadTool tool);
     std::string to_string(DownloadTool tool);
 
-    ConfigurationType parse_configuration_type(const std::string& s);
     StringLiteral to_string_view(ConfigurationType config_type);
     std::string to_string(ConfigurationType config_type);
 

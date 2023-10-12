@@ -260,9 +260,6 @@ namespace vcpkg
         constexpr static StringLiteral OVERLAY_TRIPLETS_ARG = "overlay-triplets";
         std::vector<std::string> cli_overlay_triplets;
         std::vector<std::string> env_overlay_triplets;
-        constexpr static StringLiteral BUILD_TYPE_ENV = "VCPKG_DEFAULT_BUILD_TYPE";
-        constexpr static StringLiteral BUILD_TYPE_ARG = "build-type";
-        Optional<std::string> build_type;
 
         constexpr static StringLiteral BINARY_SOURCES_ENV = "VCPKG_BINARY_SOURCES";
         constexpr static StringLiteral BINARY_SOURCES_ARG = "binarysource";

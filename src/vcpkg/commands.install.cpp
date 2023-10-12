@@ -618,6 +618,7 @@ namespace vcpkg
     static constexpr StringLiteral OPTION_ENFORCE_PORT_CHECKS = "enforce-port-checks";
     static constexpr StringLiteral OPTION_ALLOW_UNSUPPORTED_PORT = "allow-unsupported";
     static constexpr StringLiteral OPTION_NO_PRINT_USAGE = "no-print-usage";
+    static constexpr StringLiteral OPTION_DEFAULT_BUILD_TYPE = "x-build-type";
 
     static constexpr CommandSwitch INSTALL_SWITCHES[] = {
         {OPTION_DRY_RUN, msgHelpTxtOptDryRun},
@@ -643,6 +644,7 @@ namespace vcpkg
     static constexpr CommandSetting INSTALL_SETTINGS[] = {
         {OPTION_XUNIT, {}}, // internal use
         {OPTION_WRITE_PACKAGES_CONFIG, msgHelpTxtOptWritePkgConfig},
+        {OPTION_DEFAULT_BUILD_TYPE, msgHelpTxtBuildType},
     };
 
     static constexpr CommandMultiSetting INSTALL_MULTISETTINGS[] = {
@@ -1017,6 +1019,7 @@ namespace vcpkg
                                                  : UnsupportedPortAction::Error;
         const PrintUsage print_cmake_usage =
             Util::Sets::contains(options.switches, OPTION_NO_PRINT_USAGE) ? PrintUsage::NO : PrintUsage::YES;
+        ConfigurationType build_type = ConfigurationType::BOTH;
 
         get_global_metrics_collector().track_bool(BoolMetric::InstallManifestMode, paths.manifest_mode_enabled());
 
@@ -1038,6 +1041,27 @@ namespace vcpkg
             {
                 msg::println_error(msgErrorInvalidManifestModeOption, msg::option = OPTION_EDITABLE);
                 failure = true;
+            }
+            if (auto it = options.settings.find(OPTION_DEFAULT_BUILD_TYPE); it != options.settings.end())
+            {
+                auto& str = it->second;
+                if (str.empty())
+                {
+                    build_type = ConfigurationType::BOTH;
+                }
+                else if (Strings::case_insensitive_ascii_equals(str, "debug"))
+                {
+                    build_type = ConfigurationType::DEBUG;
+                }
+                else if (Strings::case_insensitive_ascii_equals(str, "release"))
+                {
+                    build_type = ConfigurationType::RELEASE;
+                }
+                else
+                {
+                    msg::println_error(msgUnknownSettingForBuildType, msg::option = str);
+                    failure = true;
+                }
             }
             if (failure)
             {
@@ -1066,6 +1090,11 @@ namespace vcpkg
                 msg::println_error(msgErrorInvalidClassicModeOption, msg::option = OPTION_MANIFEST_FEATURE);
                 failure = true;
             }
+            if (Util::Sets::contains(options.settings, OPTION_DEFAULT_BUILD_TYPE))
+            {
+                msg::println_error(msgErrorInvalidClassicModeOption, msg::option = OPTION_DEFAULT_BUILD_TYPE);
+                failure = true;
+            }
             if (failure)
             {
                 print_usage(CommandInstallMetadataClassic);
@@ -1091,7 +1120,7 @@ namespace vcpkg
             Util::Enum::to_enum<Editable>(is_editable),
             prohibit_backcompat_features ? BackcompatFeatures::PROHIBIT : BackcompatFeatures::ALLOW,
             print_cmake_usage,
-            parse_configuration_type(args.build_type.value_or(""))};
+            build_type};
 
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
