@@ -388,16 +388,44 @@ namespace vcpkg
         if (const auto p = args.debug_env.get()) args.debug = *p;
 
         auto maybe_command = args.parser.extract_first_command_like_arg_lowercase();
+        args.forwardable_arguments = args.parser.get_remaining_args();
+        bool use_stderr = Util::contains(args.forwardable_arguments, "--x-json");
         if (auto command = maybe_command.get())
         {
             args.command = *command;
+            if (*command == "depend-info")
+            {
+                bool found = false;
+                for (const auto& arg : args.forwardable_arguments)
+                {
+                    if (found)
+                    {
+                        const auto value = Strings::ascii_to_lowercase(arg);
+                        use_stderr = value == "dot" || value == "mermaid" || value == "dgml";
+                        break;
+                    }
+                    if (Strings::case_insensitive_ascii_starts_with(arg, "--format"))
+                    {
+                        if (arg.length() > 9)
+                        {
+                            const auto value = Strings::ascii_to_lowercase(StringView(arg).substr(9));
+                            use_stderr = value == "dot" || value == "mermaid" || value == "dgml";
+                            break;
+                        }
+                        found = true;
+                    }
+                }
+            }
         }
 
-        args.forwardable_arguments = args.parser.get_remaining_args();
+        if (use_stderr)
+        {
+            msg::set_default_output_stream(OutputStream::StdErr);
+        }
         auto&& initial_parser_errors = args.parser.get_errors();
         if (!initial_parser_errors.empty())
         {
-            msg::write_unlocalized_text_to_stdout(Color::error, Strings::join("\n", initial_parser_errors) + "\n");
+            msg::write_unlocalized_text(Color::error, Strings::join("\n", initial_parser_errors) + "\n");
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 

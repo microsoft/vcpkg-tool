@@ -88,7 +88,7 @@ namespace vcpkg
             msg::println(msgPortVersionConflict);
             for (auto&& package : outdated_packages)
             {
-                msg::write_unlocalized_text_to_stdout(
+                msg::write_unlocalized_text(
                     Color::none, fmt::format("\t{:<32} {}\n", package.spec, package.version_diff.to_string()));
             }
 

@@ -185,7 +185,7 @@ namespace vcpkg::Checks
                                               Paragraphs::get_load_ports_stats(),
                                               g_total_time.to_string(),
                                               static_cast<int64_t>(elapsed_us_inner));
-            msg::write_unlocalized_text_to_stdout(Color::none, exit_debug_msg);
+            msg::write_unlocalized_text(Color::none, exit_debug_msg);
         }
     }
 }
@@ -282,9 +282,9 @@ int main(const int argc, const char* const* const argv)
     VcpkgCmdArguments::imbue_or_apply_process_recursion(args);
     if (const auto p = args.debug_env.get(); p && *p)
     {
-        msg::write_unlocalized_text_to_stdout(Color::none,
-                                              "[DEBUG] The following environment variables are currently set:\n" +
-                                                  get_environment_variables() + '\n');
+        msg::write_unlocalized_text(Color::none,
+                                    "[DEBUG] The following environment variables are currently set:\n" +
+                                        get_environment_variables() + '\n');
     }
     else if (Debug::g_debugging)
     {

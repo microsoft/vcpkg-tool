@@ -1778,7 +1778,7 @@ namespace vcpkg
                        Strings::append(output, sv);
                        if (echo_in_debug == EchoInDebug::Show && Debug::g_debugging)
                        {
-                           msg::write_unlocalized_text_to_stdout(Color::none, sv);
+                           msg::write_unlocalized_text(Color::none, sv);
                        }
                    },
                    wd,

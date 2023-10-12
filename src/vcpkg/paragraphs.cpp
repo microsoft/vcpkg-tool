@@ -463,7 +463,7 @@ namespace vcpkg::Paragraphs
             return msg::format_error(msgManifestConflict, msg::path = port_directory);
         }
 
-        return try_load_manifest_text(manifest_contents, manifest_path, stdout_sink);
+        return try_load_manifest_text(manifest_contents, manifest_path, out_sink);
     }
 
     ExpectedL<std::unique_ptr<SourceControlFile>> try_load_port_required(const ReadOnlyFilesystem& fs,

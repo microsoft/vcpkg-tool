@@ -36,7 +36,7 @@ namespace
                 desc.push_back(Json::Value::string(line));
             }
         }
-        msg::write_unlocalized_text_to_stdout(Color::none, Json::stringify(obj));
+        msg::write_unlocalized_text(Color::none, Json::stringify(obj));
     }
     constexpr const int s_name_and_ver_columns = 41;
     void do_print(const SourceParagraph& source_paragraph, bool full_desc)
@@ -44,11 +44,11 @@ namespace
         auto full_version = Version(source_paragraph.raw_version, source_paragraph.port_version).to_string();
         if (full_desc)
         {
-            msg::write_unlocalized_text_to_stdout(Color::none,
-                                                  fmt::format("{:20} {:16} {}\n",
-                                                              source_paragraph.name,
-                                                              full_version,
-                                                              Strings::join("\n    ", source_paragraph.description)));
+            msg::write_unlocalized_text(Color::none,
+                                        fmt::format("{:20} {:16} {}\n",
+                                                    source_paragraph.name,
+                                                    full_version,
+                                                    Strings::join("\n    ", source_paragraph.description)));
         }
         else
         {
@@ -63,13 +63,13 @@ namespace
             used_columns += std::max<size_t>(full_version.size(), ver_size) + 1;
             size_t description_size = used_columns < (119 - 40) ? 119 - used_columns : 40;
 
-            msg::write_unlocalized_text_to_stdout(Color::none,
-                                                  fmt::format("{1:{0}} {3:{2}} {4}\n",
-                                                              name_columns,
-                                                              source_paragraph.name,
-                                                              ver_size,
-                                                              full_version,
-                                                              vcpkg::shorten_text(description, description_size)));
+            msg::write_unlocalized_text(Color::none,
+                                        fmt::format("{1:{0}} {3:{2}} {4}\n",
+                                                    name_columns,
+                                                    source_paragraph.name,
+                                                    ver_size,
+                                                    full_version,
+                                                    vcpkg::shorten_text(description, description_size)));
         }
     }
 
@@ -78,7 +78,7 @@ namespace
         auto full_feature_name = Strings::concat(name, "[", feature_paragraph.name, "]");
         if (full_desc)
         {
-            msg::write_unlocalized_text_to_stdout(
+            msg::write_unlocalized_text(
                 Color::none,
                 fmt::format("{:37} {}\n", full_feature_name, Strings::join("\n   ", feature_paragraph.description)));
         }
@@ -91,11 +91,11 @@ namespace
             }
             size_t desc_length =
                 119 - std::min<size_t>(60, 1 + std::max<size_t>(s_name_and_ver_columns, full_feature_name.size()));
-            msg::write_unlocalized_text_to_stdout(Color::none,
-                                                  fmt::format("{1:{0}} {2}\n",
-                                                              s_name_and_ver_columns,
-                                                              full_feature_name,
-                                                              vcpkg::shorten_text(description, desc_length)));
+            msg::write_unlocalized_text(Color::none,
+                                        fmt::format("{1:{0}} {2}\n",
+                                                    s_name_and_ver_columns,
+                                                    full_feature_name,
+                                                    vcpkg::shorten_text(description, desc_length)));
         }
     }
 

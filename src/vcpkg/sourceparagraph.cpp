@@ -1639,7 +1639,7 @@ namespace vcpkg
             }
             if (start_of_chunk != end_of_chunk)
             {
-                msg::write_unlocalized_text_to_stdout(Color::error, StringView{start_of_chunk, end_of_chunk});
+                msg::write_unlocalized_text(Color::error, StringView{start_of_chunk, end_of_chunk});
                 start_of_chunk = end_of_chunk;
             }
 
@@ -1649,7 +1649,7 @@ namespace vcpkg
             }
             if (start_of_chunk != end_of_chunk)
             {
-                msg::write_unlocalized_text_to_stdout(Color::error, StringView{start_of_chunk, end_of_chunk});
+                msg::write_unlocalized_text(Color::error, StringView{start_of_chunk, end_of_chunk});
                 start_of_chunk = end_of_chunk;
             }
         }
@@ -1851,7 +1851,7 @@ namespace vcpkg
         if (auto configuration = scf.core_paragraph->vcpkg_configuration.get())
         {
             auto maybe_configuration =
-                parse_configuration(*configuration, ManifestDeserializer::VCPKG_CONFIGURATION, stdout_sink);
+                parse_configuration(*configuration, ManifestDeserializer::VCPKG_CONFIGURATION, out_sink);
             obj.insert(ManifestDeserializer::VCPKG_CONFIGURATION,
                        maybe_configuration.value_or_exit(VCPKG_LINE_INFO).serialize());
         }

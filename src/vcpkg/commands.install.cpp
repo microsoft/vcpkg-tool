@@ -268,9 +268,9 @@ namespace vcpkg
                 auto next =
                     std::find_if(i, intersection.end(), [i](const auto& val) { return i->second != val.second; });
 
-                msg::write_unlocalized_text_to_stdout(
+                msg::write_unlocalized_text(
                     Color::none, Strings::join("\n    ", i, next, [](const file_pack& file) { return file.first; }));
-                msg::write_unlocalized_text_to_stdout(Color::none, "\n\n");
+                msg::write_unlocalized_text(Color::none, "\n\n");
 
                 i = next;
             }
@@ -708,7 +708,7 @@ namespace vcpkg
             auto existing = printed_usages.lower_bound(message);
             if (existing == printed_usages.end() || *existing != message)
             {
-                msg::write_unlocalized_text_to_stdout(Color::none, message);
+                msg::write_unlocalized_text(Color::none, message);
                 printed_usages.insert(existing, std::move(message));
             }
         }
@@ -1107,7 +1107,7 @@ namespace vcpkg
                 pkgsconfig = Path(it_pkgsconfig->second);
             }
             auto maybe_manifest_scf =
-                SourceControlFile::parse_project_manifest_object(manifest->path, manifest->manifest, stdout_sink);
+                SourceControlFile::parse_project_manifest_object(manifest->path, manifest->manifest, out_sink);
             if (!maybe_manifest_scf)
             {
                 print_error_message(maybe_manifest_scf.error());
@@ -1337,7 +1337,7 @@ namespace vcpkg
         install_preclear_packages(paths, action_plan);
 
         auto binary_cache = only_downloads ? BinaryCache(paths.get_filesystem())
-                                           : BinaryCache::make(args, paths, stdout_sink).value_or_exit(VCPKG_LINE_INFO);
+                                           : BinaryCache::make(args, paths, out_sink).value_or_exit(VCPKG_LINE_INFO);
         binary_cache.fetch(action_plan.install_actions);
         const InstallSummary summary = install_execute_plan(
             args, action_plan, keep_going, paths, status_db, binary_cache, null_build_logs_recorder());

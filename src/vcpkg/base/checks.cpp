@@ -54,7 +54,7 @@ namespace vcpkg
 
     [[noreturn]] void Checks::unreachable(const LineInfo& line_info, StringView message)
     {
-        msg::write_unlocalized_text_to_stdout(Color::error, locale_invariant_lineinfo(line_info).append_raw(message));
+        msg::write_unlocalized_text(Color::error, locale_invariant_lineinfo(line_info).append_raw(message));
 #ifndef NDEBUG
         std::abort();
 #else
@@ -74,8 +74,8 @@ namespace vcpkg
 
     [[noreturn]] void Checks::exit_with_message(const LineInfo& line_info, StringView error_message)
     {
-        msg::write_unlocalized_text_to_stdout(Color::error, error_message);
-        msg::write_unlocalized_text_to_stdout(Color::error, "\n");
+        msg::write_unlocalized_text(Color::error, error_message);
+        msg::write_unlocalized_text(Color::error, "\n");
         exit_fail(line_info);
     }
     [[noreturn]] void Checks::msg_exit_with_message(const LineInfo& line_info, const LocalizedString& error_message)
@@ -133,8 +133,8 @@ namespace vcpkg
 
     [[noreturn]] void Checks::exit_maybe_upgrade(const LineInfo& line_info, StringView error_message)
     {
-        msg::write_unlocalized_text_to_stdout(Color::error, error_message);
-        msg::write_unlocalized_text_to_stdout(Color::error, "\n");
+        msg::write_unlocalized_text(Color::error, error_message);
+        msg::write_unlocalized_text(Color::error, "\n");
         display_upgrade_message();
         exit_fail(line_info);
     }

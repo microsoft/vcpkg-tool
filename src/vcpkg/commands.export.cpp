@@ -171,9 +171,9 @@ namespace
         // -NoDefaultExcludes is needed for ".vcpkg-root"
         Command cmd;
 #ifndef _WIN32
-        cmd.string_arg(paths.get_tool_exe(Tools::MONO, stdout_sink));
+        cmd.string_arg(paths.get_tool_exe(Tools::MONO, out_sink));
 #endif
-        cmd.string_arg(paths.get_tool_exe(Tools::NUGET, stdout_sink))
+        cmd.string_arg(paths.get_tool_exe(Tools::NUGET, out_sink))
             .string_arg("pack")
             .string_arg(nuspec_file_path)
             .string_arg("-OutputDirectory")
@@ -222,7 +222,7 @@ namespace
                            const Path& output_dir,
                            const ArchiveFormat& format)
     {
-        const Path& cmake_exe = paths.get_tool_exe(Tools::CMAKE, stdout_sink);
+        const Path& cmake_exe = paths.get_tool_exe(Tools::CMAKE, out_sink);
 
         const auto exported_dir_filename = raw_exported_dir.filename();
         const auto exported_archive_filename = fmt::format("{}.{}", exported_dir_filename, format.extension());
@@ -413,7 +413,7 @@ namespace
             !ret.prefab)
         {
             msg::println_error(msgProvideExportType);
-            msg::write_unlocalized_text_to_stdout(Color::none, CommandExportMetadata.get_example_text());
+            msg::write_unlocalized_text(Color::none, CommandExportMetadata.get_example_text());
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 

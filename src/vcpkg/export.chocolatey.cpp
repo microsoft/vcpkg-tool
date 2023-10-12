@@ -161,7 +161,7 @@ if (Test-Path $installedDir)
         const auto& vcpkg_root_path = paths.root;
         const auto raw_exported_dir_path = vcpkg_root_path / "chocolatey";
         const auto exported_dir_path = vcpkg_root_path / "chocolatey_exports";
-        const Path& nuget_exe = paths.get_tool_exe(Tools::NUGET, stdout_sink);
+        const Path& nuget_exe = paths.get_tool_exe(Tools::NUGET, out_sink);
 
         fs.remove_all(raw_exported_dir_path, VCPKG_LINE_INFO);
         fs.create_directory(raw_exported_dir_path, VCPKG_LINE_INFO);

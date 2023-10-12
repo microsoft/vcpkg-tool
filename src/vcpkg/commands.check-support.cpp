@@ -210,7 +210,7 @@ namespace vcpkg
 
         if (use_json)
         {
-            msg::write_unlocalized_text_to_stdout(Color::none, Json::stringify(json_to_print));
+            msg::write_unlocalized_text(Color::none, Json::stringify(json_to_print));
         }
     }
 } // namespace vcpkg

@@ -117,7 +117,7 @@ namespace vcpkg
                 }
             }
             response.insert("results", std::move(results));
-            msg::write_unlocalized_text_to_stdout(Color::none, Json::stringify(response));
+            msg::write_unlocalized_text(Color::none, Json::stringify(response));
         }
         else
         {
@@ -153,7 +153,7 @@ namespace vcpkg
                 }
             }
             response.insert("results", std::move(results));
-            msg::write_unlocalized_text_to_stdout(Color::none, Json::stringify(response));
+            msg::write_unlocalized_text(Color::none, Json::stringify(response));
         }
     }
 } // namespace vcpkg
