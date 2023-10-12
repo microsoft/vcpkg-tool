@@ -7,7 +7,9 @@
 #include <vcpkg/fwd/registries.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
-#include <vcpkg/base/jsonreader.h>
+#include <vcpkg/base/expected.h>
+#include <vcpkg/base/optional.h>
+#include <vcpkg/base/path.h>
 #include <vcpkg/base/span.h>
 #include <vcpkg/base/stringview.h>
 
@@ -43,10 +45,10 @@ namespace vcpkg
             bool stale() const { return data->second.stale; }
             const std::string& uri() const { return data->first; }
 
-            void ensure_up_to_date(const VcpkgPaths& paths) const;
+            ExpectedL<Unit> ensure_up_to_date(const VcpkgPaths& paths) const;
         };
 
-        Entry get_or_fetch(const VcpkgPaths& paths, StringView repo, StringView reference);
+        ExpectedL<Entry> get_or_fetch(const VcpkgPaths& paths, StringView repo, StringView reference);
 
         LockDataType lockdata;
         bool modified = false;
@@ -63,7 +65,7 @@ namespace vcpkg
 
     struct RegistryEntry
     {
-        virtual View<Version> get_port_versions() const = 0;
+        virtual ExpectedL<View<Version>> get_port_versions() const = 0;
 
         virtual ExpectedL<PathAndLocation> get_version(const Version& version) const = 0;
 
@@ -74,14 +76,24 @@ namespace vcpkg
     {
         virtual StringLiteral kind() const = 0;
 
-        // returns nullptr if the port doesn't exist
-        virtual std::unique_ptr<RegistryEntry> get_port_entry(StringView port_name) const = 0;
+        // If an error occurs, the ExpectedL will be in an error state.
+        // Otherwise, if the port is known, returns a pointer to RegistryEntry describing the port.
+        // Otherwise, returns a nullptr unique_ptr.
+        virtual ExpectedL<std::unique_ptr<RegistryEntry>> get_port_entry(StringView port_name) const = 0;
 
-        // appends the names of the ports to the out parameter
-        // may result in duplicated port names; make sure to Util::sort_unique_erase at the end
-        virtual void get_all_port_names(std::vector<std::string>& port_names) const = 0;
+        // Appends the names of the known ports to the out parameter.
+        // May result in duplicated port names; make sure to Util::sort_unique_erase at the end
+        virtual ExpectedL<Unit> append_all_port_names(std::vector<std::string>& port_names) const = 0;
 
-        virtual ExpectedL<Version> get_baseline_version(StringView port_name) const = 0;
+        // Appends the names of the ports to the out parameter if this can be known without
+        // network access.
+        // Returns true iff names were checked without network access.
+        virtual ExpectedL<bool> try_append_all_port_names_no_network(std::vector<std::string>& port_names) const = 0;
+
+        // If an error occurs, the ExpectedL will be in an error state.
+        // Otherwise, if the port is in the baseline, returns the version that baseline denotes.
+        // Otherwise, the Optional is disengaged.
+        virtual ExpectedL<Optional<Version>> get_baseline_version(StringView port_name) const = 0;
 
         virtual ~RegistryImplementation() = default;
     };
@@ -89,18 +101,16 @@ namespace vcpkg
     struct Registry
     {
         // requires: static_cast<bool>(implementation)
-        Registry(std::vector<std::string>&& packages, std::unique_ptr<RegistryImplementation>&& implementation);
+        Registry(std::vector<std::string>&& patterns, std::unique_ptr<RegistryImplementation>&& implementation);
 
         Registry(std::vector<std::string>&&, std::nullptr_t) = delete;
 
-        // always ordered lexicographically
-        View<std::string> packages() const { return packages_; }
+        // always ordered lexicographically; note the JSON name is "packages"
+        View<std::string> patterns() const { return patterns_; }
         const RegistryImplementation& implementation() const { return *implementation_; }
 
-        friend RegistrySet; // for experimental_set_builtin_registry_baseline
-
     private:
-        std::vector<std::string> packages_;
+        std::vector<std::string> patterns_;
         std::unique_ptr<RegistryImplementation> implementation_;
     };
 
@@ -112,8 +122,8 @@ namespace vcpkg
     // configuration fields.
     struct RegistrySet
     {
-        RegistrySet(std::unique_ptr<RegistryImplementation>&& x, std::vector<Registry>&& y)
-            : default_registry_(std::move(x)), registries_(std::move(y))
+        RegistrySet(std::unique_ptr<RegistryImplementation>&& default_registry, std::vector<Registry>&& registries)
+            : default_registry_(std::move(default_registry)), registries_(std::move(registries))
         {
         }
 
@@ -125,7 +135,7 @@ namespace vcpkg
         // the returned list is sorted by priority.
         std::vector<const RegistryImplementation*> registries_for_port(StringView name) const;
 
-        ExpectedL<Version> baseline_for_port(StringView port_name) const;
+        ExpectedL<Optional<Version>> baseline_for_port(StringView port_name) const;
 
         View<Registry> registries() const { return registries_; }
 
@@ -138,6 +148,12 @@ namespace vcpkg
         // for checking against the registry feature flag.
         bool has_modifications() const;
 
+        // Returns a sorted vector of all reachable port names in this set.
+        ExpectedL<std::vector<std::string>> get_all_reachable_port_names() const;
+
+        // Returns a sorted vector of all reachable port names we can provably determine without touching the network.
+        ExpectedL<std::vector<std::string>> get_all_known_reachable_port_names_no_network() const;
+
     private:
         std::unique_ptr<RegistryImplementation> default_registry_;
         std::vector<Registry> registries_;
@@ -149,60 +165,35 @@ namespace vcpkg
                                                               std::string repo,
                                                               std::string reference,
                                                               std::string baseline);
-    std::unique_ptr<RegistryImplementation> make_filesystem_registry(const Filesystem& fs,
+    std::unique_ptr<RegistryImplementation> make_filesystem_registry(const ReadOnlyFilesystem& fs,
                                                                      Path path,
                                                                      std::string baseline);
 
-    ExpectedL<std::vector<std::pair<SchemedVersion, std::string>>> get_builtin_versions(const VcpkgPaths& paths,
-                                                                                        StringView port_name);
+    struct GitVersionDbEntry
+    {
+        SchemedVersion version;
+        std::string git_tree;
+    };
+
+    ExpectedL<Optional<std::vector<GitVersionDbEntry>>> get_builtin_versions(const VcpkgPaths& paths,
+                                                                             StringView port_name);
 
     ExpectedL<std::map<std::string, Version, std::less<>>> get_builtin_baseline(const VcpkgPaths& paths);
 
     bool is_git_commit_sha(StringView sv);
 
-    struct VersionDbEntry
-    {
-        Version version;
-        VersionScheme scheme = VersionScheme::String;
+    // Returns the effective match length of the package pattern `pattern` against `name`.
+    // No match is 0, exact match is SIZE_MAX, wildcard match is the length of the pattern.
+    // Note that the * is included in the match size to distinguish from 0 == no match.
+    size_t package_pattern_match(StringView name, StringView pattern);
 
-        // only one of these may be non-empty
-        std::string git_tree;
+    struct FilesystemVersionDbEntry
+    {
+        SchemedVersion version;
         Path p;
     };
 
-    // VersionDbType::Git => VersionDbEntry.git_tree is filled
-    // VersionDbType::Filesystem => VersionDbEntry.path is filled
-    enum class VersionDbType
-    {
-        Git,
-        Filesystem,
-    };
-
-    struct VersionDbEntryDeserializer final : Json::IDeserializer<VersionDbEntry>
-    {
-        static constexpr StringLiteral GIT_TREE = "git-tree";
-        static constexpr StringLiteral PATH = "path";
-
-        LocalizedString type_name() const override;
-        View<StringView> valid_fields() const override;
-        Optional<VersionDbEntry> visit_object(Json::Reader& r, const Json::Object& obj) const override;
-        VersionDbEntryDeserializer(VersionDbType type, const Path& root) : type(type), registry_root(root) { }
-
-    private:
-        VersionDbType type;
-        Path registry_root;
-    };
-
-    struct VersionDbEntryArrayDeserializer final : Json::IDeserializer<std::vector<VersionDbEntry>>
-    {
-        virtual LocalizedString type_name() const override;
-        virtual Optional<std::vector<VersionDbEntry>> visit_array(Json::Reader& r,
-                                                                  const Json::Array& arr) const override;
-        VersionDbEntryArrayDeserializer(VersionDbType type, const Path& root) : underlying{type, root} { }
-
-    private:
-        VersionDbEntryDeserializer underlying;
-    };
-
-    size_t package_match_prefix(StringView name, StringView pattern);
+    std::unique_ptr<Json::IDeserializer<std::vector<GitVersionDbEntry>>> make_git_version_db_deserializer();
+    std::unique_ptr<Json::IDeserializer<std::vector<FilesystemVersionDbEntry>>> make_filesystem_version_db_deserializer(
+        const Path& root);
 }

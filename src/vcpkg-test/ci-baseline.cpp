@@ -3,8 +3,8 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/parse.h>
 
-#include <vcpkg/build.h>
 #include <vcpkg/ci-baseline.h>
+#include <vcpkg/commands.build.h>
 #include <vcpkg/triplet.h>
 
 #include <ostream>
@@ -261,65 +261,65 @@ static void check_error(const std::string& input, const std::string& expected_er
 TEST_CASE ("Parse Errors", "[ci-baseline]")
 {
     check_error("hello", R"(test:1:6: error: expected ':' here
-    on expression: hello
-                       ^)");
+  on expression: hello
+                     ^)");
 
     check_error("hello\n:", R"(test:1:6: error: expected ':' here
-    on expression: hello
-                        ^)");
+  on expression: hello
+                      ^)");
 
     check_error("?example:x64-windows=fail",
                 R"(test:1:1: error: expected a port name here (must be lowercase, digits, '-')
-    on expression: ?example:x64-windows=fail
-                   ^)");
+  on expression: ?example:x64-windows=fail
+                 ^)");
 
     check_error("x64-windows:", R"(test:1:13: error: expected a triplet name here (must be lowercase, digits, '-')
-    on expression: x64-windows:
-                              ^)");
+  on expression: x64-windows:
+                            ^)");
 
     check_error("x64-windows:\nport:x64-windows=skip",
                 R"(test:1:13: error: expected a triplet name here (must be lowercase, digits, '-')
-    on expression: x64-windows:
-                               ^)");
+  on expression: x64-windows:
+                             ^)");
 
     check_error("x64-windows:#", R"(test:1:13: error: expected a triplet name here (must be lowercase, digits, '-')
-    on expression: x64-windows:#
-                               ^)");
+  on expression: x64-windows:#
+                             ^)");
 
     // clang-format off
     check_error("   \tx64-windows:", R"(test:1:21: error: expected a triplet name here (must be lowercase, digits, '-')
-    on expression:    )" "\t" R"(x64-windows:
-                      )" "\t" R"(           ^)");
+  on expression:    )" "\t" R"(x64-windows:
+                    )" "\t" R"(           ^)");
     // clang-format on
 
     check_error("port:x64-windows\n=fail", R"(test:1:17: error: expected '=' here
-    on expression: port:x64-windows
-                                   ^)");
+  on expression: port:x64-windows
+                                 ^)");
 
     check_error("example:x64-windows   =  \n  fail", R"(test:1:26: error: expected 'fail', 'skip', or 'pass' here
-    on expression: example:x64-windows   =  
-                                            ^)");
+  on expression: example:x64-windows   =  
+                                          ^)");
 
     // note that there is 'fail' but doesn't end on a word boundary:
     check_error("example:x64-windows   =    fails", R"(test:1:28: error: expected 'fail', 'skip', or 'pass' here
-    on expression: example:x64-windows   =    fails
-                                              ^)");
+  on expression: example:x64-windows   =    fails
+                                            ^)");
 
     check_error("example:x64-windows   =    fail extra stuff",
                 R"(test:1:33: error: unrecognizable baseline entry; expected 'port:triplet=(fail|skip|pass)'
-    on expression: example:x64-windows   =    fail extra stuff
-                                                   ^)");
+  on expression: example:x64-windows   =    fail extra stuff
+                                                 ^)");
 
     check_error("example:x64-windows   =    fail example:x64-windows   =    fail",
                 R"(test:1:33: error: unrecognizable baseline entry; expected 'port:triplet=(fail|skip|pass)'
-    on expression: example:x64-windows   =    fail example:x64-windows   =    fail
-                                                   ^)");
+  on expression: example:x64-windows   =    fail example:x64-windows   =    fail
+                                                 ^)");
 
     check_error("example:x64-windows   =    fail  # extra stuff\n"
                 "example:x64-uwp=skip extra stuff\n",
                 R"(test:2:22: error: unrecognizable baseline entry; expected 'port:triplet=(fail|skip|pass)'
-    on expression: example:x64-uwp=skip extra stuff
-                                        ^)");
+  on expression: example:x64-uwp=skip extra stuff
+                                      ^)");
 }
 
 TEST_CASE ("format_ci_result 1", "[ci-baseline]")

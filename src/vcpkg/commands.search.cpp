@@ -1,31 +1,41 @@
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.find.h>
+#include <vcpkg/commands.help.h>
 #include <vcpkg/commands.search.h>
-#include <vcpkg/help.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
-namespace vcpkg::Commands
+using namespace vcpkg;
+
+namespace
 {
-    static constexpr StringLiteral OPTION_FULLDESC = "x-full-desc"; // TODO: This should find a better home, eventually
-    static constexpr StringLiteral OPTION_JSON = "x-json";
+    constexpr StringLiteral OPTION_FULLDESC = "x-full-desc"; // TODO: This should find a better home, eventually
+    constexpr StringLiteral OPTION_JSON = "x-json";
 
-    static constexpr std::array<CommandSwitch, 2> SearchSwitches = {
-        {{OPTION_FULLDESC, []() { return msg::format(msgHelpTextOptFullDesc); }},
-         {OPTION_JSON, []() { return msg::format(msgJsonSwitch); }}}};
+    constexpr CommandSwitch SearchSwitches[] = {
+        {OPTION_FULLDESC, msgHelpTextOptFullDesc},
+        {OPTION_JSON, msgJsonSwitch},
+    };
+} // unnamed namespace
 
-    const CommandStructure SearchCommandStructure = {
-        [] { return msg::format(msgSearchHelp).append_raw('\n').append(create_example_string("search png")); },
+namespace vcpkg
+{
+    constexpr CommandMetadata CommandSearchMetadata = {
+        "search",
+        msgHelpSearchCommand,
+        {msgCmdSearchExample1, "vcpkg search png"},
+        "https://learn.microsoft.com/vcpkg/commands/search",
+        AutocompletePriority::Public,
         0,
         1,
         {SearchSwitches, {}},
         nullptr,
     };
 
-    void SearchCommand::perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const
+    void command_search_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
-        const ParsedArguments options = args.parse_arguments(SearchCommandStructure);
+        const ParsedArguments options = args.parse_arguments(CommandSearchMetadata);
         const bool full_description = Util::Sets::contains(options.switches, OPTION_FULLDESC);
         Optional<StringView> filter;
         if (!options.command_arguments.empty())
@@ -36,4 +46,4 @@ namespace vcpkg::Commands
         perform_find_port_and_exit(
             paths, full_description, Util::Sets::contains(options.switches, OPTION_JSON), filter, paths.overlay_ports);
     }
-}
+} // namespace vcpkg

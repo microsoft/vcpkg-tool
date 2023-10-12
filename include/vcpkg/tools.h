@@ -52,10 +52,10 @@ namespace vcpkg
                                                           std::string&& output,
                                                           const Path& exe_path);
 
-    ExpectedL<Path> find_system_tar(const Filesystem& fs);
-    ExpectedL<Path> find_system_cmake(const Filesystem& fs);
+    ExpectedL<Path> find_system_tar(const ReadOnlyFilesystem& fs);
+    ExpectedL<Path> find_system_cmake(const ReadOnlyFilesystem& fs);
 
-    std::unique_ptr<ToolCache> get_tool_cache(Filesystem& fs,
+    std::unique_ptr<ToolCache> get_tool_cache(const Filesystem& fs,
                                               std::shared_ptr<const DownloadManager> downloader,
                                               Path downloads,
                                               Path xml_config,

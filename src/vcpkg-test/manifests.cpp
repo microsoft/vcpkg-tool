@@ -838,7 +838,13 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
         "description": "d",
         "builtin-baseline": "123",
         "dependencies": ["bd"],
-        "default-features": ["df"],
+        "default-features": [
+            "df",
+            {
+                "name": "zuko",
+                "platform": "windows & arm"
+            }
+        ],
         "features": {
             "$feature-level-comment": "hi",
             "$feature-level-comment2": "123456",
@@ -849,19 +855,30 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
                     "firebending",
                     {
                         "name": "order-white-lotus",
-                        "features": [ "the-ancient-ways" ],
+                        "features": [
+                            "the-ancient-ways",
+                            {
+                                "name": "windows-tests",
+                                "platform": "windows"
+                            }
+                        ],
                         "platform": "!(windows & arm)"
-                },
-                {
-                    "$extra": [],
-                    "$my": [],
-                    "name": "tea"
+                    },
+                    {
+                        "$extra": [],
+                        "$my": [],
+                        "name": "tea"
+                    },
+                    {
+                        "name": "z-no-defaults",
+                        "default-features": false
                     }
                 ]
             },
             "zuko": {
                 "description": ["son of the fire lord", "firebending 師父"],
-                "supports": "!(windows & arm)"
+                "supports": "!(windows & arm)",
+                "license": "MIT"
             }
         }
 })json";
@@ -893,8 +910,11 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
     REQUIRE(pgh.core_paragraph->description[0] == "d");
     REQUIRE(pgh.core_paragraph->dependencies.size() == 1);
     REQUIRE(pgh.core_paragraph->dependencies[0].name == "bd");
-    REQUIRE(pgh.core_paragraph->default_features.size() == 1);
-    REQUIRE(pgh.core_paragraph->default_features[0] == "df");
+    REQUIRE(pgh.core_paragraph->default_features.size() == 2);
+    REQUIRE(pgh.core_paragraph->default_features[0].name == "df");
+    REQUIRE(pgh.core_paragraph->default_features[0].platform.is_empty());
+    REQUIRE(pgh.core_paragraph->default_features[1].name == "zuko");
+    REQUIRE(to_string(pgh.core_paragraph->default_features[1].platform) == "windows & arm");
     REQUIRE(pgh.core_paragraph->supports_expression.is_empty());
     REQUIRE(pgh.core_paragraph->builtin_baseline == "123");
 
@@ -903,12 +923,21 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
     REQUIRE(pgh.feature_paragraphs[0]->name == "iroh");
     REQUIRE(pgh.feature_paragraphs[0]->description.size() == 1);
     REQUIRE(pgh.feature_paragraphs[0]->description[0] == "zuko's uncle");
-    REQUIRE(pgh.feature_paragraphs[0]->dependencies.size() == 3);
+    REQUIRE(pgh.feature_paragraphs[0]->dependencies.size() == 4);
     REQUIRE(pgh.feature_paragraphs[0]->dependencies[0].name == "firebending");
 
     REQUIRE(pgh.feature_paragraphs[0]->dependencies[1].name == "order-white-lotus");
-    REQUIRE(pgh.feature_paragraphs[0]->dependencies[1].features.size() == 1);
-    REQUIRE(pgh.feature_paragraphs[0]->dependencies[1].features[0] == "the-ancient-ways");
+    REQUIRE(pgh.feature_paragraphs[0]->dependencies[1].default_features == true);
+    REQUIRE(pgh.feature_paragraphs[0]->dependencies[1].features.size() == 2);
+    REQUIRE(pgh.feature_paragraphs[0]->dependencies[1].features[0].name == "the-ancient-ways");
+    REQUIRE(pgh.feature_paragraphs[0]->dependencies[1].features[0].platform.is_empty());
+    REQUIRE(pgh.feature_paragraphs[0]->dependencies[1].features[1].name == "windows-tests");
+    REQUIRE_FALSE(pgh.feature_paragraphs[0]->dependencies[1].features[1].platform.is_empty());
+    REQUIRE(
+        pgh.feature_paragraphs[0]->dependencies[1].features[1].platform.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", ""}}));
+    REQUIRE_FALSE(pgh.feature_paragraphs[0]->dependencies[1].features[1].platform.evaluate(
+        {{"VCPKG_CMAKE_SYSTEM_NAME", "Linux"}}));
+
     REQUIRE_FALSE(pgh.feature_paragraphs[0]->dependencies[1].platform.evaluate(
         {{"VCPKG_CMAKE_SYSTEM_NAME", ""}, {"VCPKG_TARGET_ARCHITECTURE", "arm"}}));
     REQUIRE(pgh.feature_paragraphs[0]->dependencies[1].platform.evaluate(
@@ -917,6 +946,8 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
         {{"VCPKG_CMAKE_SYSTEM_NAME", "Linux"}, {"VCPKG_TARGET_ARCHITECTURE", "x86"}}));
 
     REQUIRE(pgh.feature_paragraphs[0]->dependencies[2].name == "tea");
+    REQUIRE(pgh.feature_paragraphs[0]->dependencies[3].name == "z-no-defaults");
+    REQUIRE(pgh.feature_paragraphs[0]->dependencies[3].default_features == false);
 
     REQUIRE(pgh.feature_paragraphs[1]->name == "zuko");
     REQUIRE(pgh.feature_paragraphs[1]->description.size() == 2);
@@ -927,6 +958,8 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
         {{"VCPKG_CMAKE_SYSTEM_NAME", ""}, {"VCPKG_TARGET_ARCHITECTURE", "arm"}}));
     REQUIRE(pgh.feature_paragraphs[1]->supports_expression.evaluate(
         {{"VCPKG_CMAKE_SYSTEM_NAME", ""}, {"VCPKG_TARGET_ARCHITECTURE", "x86"}}));
+    REQUIRE(pgh.feature_paragraphs[1]->license.has_value());
+    REQUIRE(*pgh.feature_paragraphs[1]->license.get() == "MIT");
 
     check_json_eq_ordered(serialize_manifest(pgh), object);
 }
@@ -1035,7 +1068,27 @@ TEST_CASE ("SourceParagraph manifest default features", "[manifests]")
     auto& pgh = **m_pgh.get();
 
     REQUIRE(pgh.core_paragraph->default_features.size() == 1);
-    REQUIRE(pgh.core_paragraph->default_features[0] == "a1");
+    REQUIRE(pgh.core_paragraph->default_features[0].name == "a1");
+    REQUIRE(pgh.core_paragraph->default_features[0].platform.is_empty());
+}
+
+TEST_CASE ("SourceParagraph manifest default feature missing name", "[manifests]")
+{
+    auto m_pgh = test_parse_port_manifest(R"json({
+        "name": "a",
+        "version-string": "1.0",
+        "default-features": [{"platform": "!windows"}]
+    })json",
+                                          PrintErrors::No);
+    REQUIRE(!m_pgh.has_value());
+
+    m_pgh = test_parse_port_manifest(R"json({
+        "name": "a",
+        "version-string": "1.0",
+        "default-features": [{"name": "", "platform": "!windows"}]
+    })json",
+                                     PrintErrors::No);
+    REQUIRE(!m_pgh.has_value());
 }
 
 TEST_CASE ("SourceParagraph manifest description paragraph", "[manifests]")
@@ -1176,30 +1229,30 @@ TEST_CASE ("license error messages", "[manifests][license]")
     parse_spdx_license_expression("", messages);
     REQUIRE(messages.error);
     CHECK(messages.error->to_string() == R"(<license string>:1:1: error: SPDX license expression was empty.
-    on expression: 
-                   ^)");
+  on expression: 
+                 ^)");
 
     parse_spdx_license_expression("MIT ()", messages);
     REQUIRE(messages.error);
     CHECK(messages.error->to_string() ==
           R"(<license string>:1:5: error: Expected a compound or the end of the string, found a parenthesis.
-    on expression: MIT ()
-                       ^)");
+  on expression: MIT ()
+                     ^)");
 
     parse_spdx_license_expression("MIT +", messages);
     REQUIRE(messages.error);
     CHECK(
         messages.error->to_string() ==
         R"(<license string>:1:5: error: SPDX license expression contains an extra '+'. These are only allowed directly after a license identifier.
-    on expression: MIT +
-                       ^)");
+  on expression: MIT +
+                     ^)");
 
     parse_spdx_license_expression("MIT AND", messages);
     REQUIRE(messages.error);
     CHECK(messages.error->to_string() ==
           R"(<license string>:1:8: error: Expected a license name, found the end of the string.
-    on expression: MIT AND
-                         ^)");
+  on expression: MIT AND
+                       ^)");
 
     parse_spdx_license_expression("MIT AND unknownlicense", messages);
     CHECK(!messages.error);
@@ -1207,6 +1260,219 @@ TEST_CASE ("license error messages", "[manifests][license]")
     CHECK(
         test_format_parse_warning(messages.warnings[0]) ==
         R"(<license string>:1:9: warning: Unknown license identifier 'unknownlicense'. Known values are listed at https://spdx.org/licenses/
-    on expression: MIT AND unknownlicense
-                           ^)");
+  on expression: MIT AND unknownlicense
+                         ^)");
+}
+
+TEST_CASE ("default-feature-core errors", "[manifests]")
+{
+    auto m_pgh = test_parse_project_manifest(R"json({
+      "default-features": ["core"]
+    })json",
+                                             PrintErrors::No);
+    REQUIRE(!m_pgh.has_value());
+    REQUIRE(m_pgh.error()->to_string() == "error: while loading <test manifest>:\n"
+                                          "$.default-features[0] (a default feature): the feature \"core\" turns off "
+                                          "default features and thus can't be in the default features list");
+}
+
+TEST_CASE ("default-feature-core-object errors", "[manifests]")
+{
+    auto m_pgh = test_parse_project_manifest(R"json({
+      "default-features": [ { "name": "core" } ]
+    })json",
+                                             PrintErrors::No);
+    REQUIRE(!m_pgh.has_value());
+    REQUIRE(m_pgh.error()->to_string() == "error: while loading <test manifest>:\n"
+                                          "$.default-features[0].name (a default feature): the feature \"core\" turns "
+                                          "off default features and thus can't be in the default features list");
+}
+
+TEST_CASE ("default-feature-default errors", "[manifests]")
+{
+    auto m_pgh = test_parse_project_manifest(R"json({
+      "default-features": ["default"]
+    })json",
+                                             PrintErrors::No);
+    REQUIRE(!m_pgh.has_value());
+    REQUIRE(m_pgh.error()->to_string() ==
+            "error: while loading <test manifest>:\n"
+            "$.default-features[0] (a default feature): the feature \"default\" refers to "
+            "the set of default features and thus can't be in the default features list");
+}
+
+TEST_CASE ("default-feature-default-object errors", "[manifests]")
+{
+    auto m_pgh = test_parse_project_manifest(R"json({
+      "default-features": [ { "name": "default" } ]
+    })json",
+                                             PrintErrors::No);
+    REQUIRE(!m_pgh.has_value());
+    REQUIRE(m_pgh.error()->to_string() ==
+            "error: while loading <test manifest>:\n"
+            "$.default-features[0].name (a default feature): the feature \"default\" refers to the set of default "
+            "features and thus can't be in the default features list");
+}
+
+TEST_CASE ("default-feature-empty errors", "[manifests]")
+{
+    auto m_pgh = test_parse_project_manifest(R"json({
+      "default-features": [""]
+    })json",
+                                             PrintErrors::No);
+    REQUIRE(!m_pgh.has_value());
+    REQUIRE(m_pgh.error()->to_string() == "error: while loading <test manifest>:\n"
+                                          "$.default-features[0] (a feature name): \"\" is not a valid feature name. "
+                                          "Feature names must be lowercase alphanumeric+hypens and not reserved (see "
+                                          "https://learn.microsoft.com/vcpkg/users/manifests for more information).");
+}
+
+TEST_CASE ("default-feature-empty-object errors", "[manifests]")
+{
+    auto m_pgh = test_parse_project_manifest(R"json({
+      "default-features": [ { "name": "" } ]
+    })json",
+                                             PrintErrors::No);
+    REQUIRE(!m_pgh.has_value());
+    REQUIRE(m_pgh.error()->to_string() ==
+            "error: while loading <test manifest>:\n"
+            "$.default-features[0].name (a feature name): \"\" is not a valid feature name. "
+            "Feature names must be lowercase alphanumeric+hypens and not reserved (see "
+            "https://learn.microsoft.com/vcpkg/users/manifests for more information).");
+}
+
+TEST_CASE ("dependency-name-empty errors", "[manifests]")
+{
+    auto m_pgh = test_parse_project_manifest(R"json({
+      "dependencies": [ "" ]
+    })json",
+                                             PrintErrors::No);
+    REQUIRE(!m_pgh.has_value());
+    REQUIRE(m_pgh.error()->to_string() == "error: while loading <test manifest>:\n"
+                                          "$.dependencies[0] (a package name): \"\" is not a valid package name. "
+                                          "Package names must be lowercase alphanumeric+hypens and not reserved (see "
+                                          "https://learn.microsoft.com/vcpkg/users/manifests for more information).");
+}
+
+TEST_CASE ("dependency-name-empty-object errors", "[manifests]")
+{
+    auto m_pgh = test_parse_project_manifest(R"json({
+      "dependencies": [ { "name": "" } ]
+    })json",
+                                             PrintErrors::No);
+    REQUIRE(!m_pgh.has_value());
+    REQUIRE(m_pgh.error()->to_string() == "error: while loading <test manifest>:\n"
+                                          "$.dependencies[0].name (a package name): \"\" is not a valid package name. "
+                                          "Package names must be lowercase alphanumeric+hypens and not reserved (see "
+                                          "https://learn.microsoft.com/vcpkg/users/manifests for more information).");
+}
+
+TEST_CASE ("dependency-feature-name-core errors", "[manifests]")
+{
+    auto m_pgh = test_parse_project_manifest(R"json({
+      "dependencies": [
+        {
+          "name": "icu",
+          "features": [ "core" ]
+        }
+      ]
+    })json",
+                                             PrintErrors::No);
+    REQUIRE(!m_pgh.has_value());
+    REQUIRE(m_pgh.error()->to_string() ==
+            "error: while loading <test manifest>:\n"
+            "$.dependencies[0].features[0] (a feature name): the feature \"core\" cannot be in a dependency's feature "
+            "list. To turn off default features, add \"default-features\": false instead.");
+}
+
+TEST_CASE ("dependency-feature-name-core-object errors", "[manifests]")
+{
+    auto m_pgh = test_parse_project_manifest(R"json({
+      "dependencies": [
+        {
+          "name": "icu",
+          "features": [ { "name": "core" } ]
+        }
+      ]
+    })json",
+                                             PrintErrors::No);
+    REQUIRE(!m_pgh.has_value());
+    REQUIRE(
+        m_pgh.error()->to_string() ==
+        "error: while loading <test manifest>:\n"
+        "$.dependencies[0].features[0].name (a feature name): the feature \"core\" cannot be in a dependency's feature "
+        "list. To turn off default features, add \"default-features\": false instead.");
+}
+
+TEST_CASE ("dependency-feature-name-default errors", "[manifests]")
+{
+    auto m_pgh = test_parse_project_manifest(R"json({
+      "dependencies": [
+        {
+          "name": "icu",
+          "features": [ "default" ]
+        }
+      ]
+    })json",
+                                             PrintErrors::No);
+    REQUIRE(!m_pgh.has_value());
+    REQUIRE(m_pgh.error()->to_string() ==
+            "error: while loading <test manifest>:\n"
+            "$.dependencies[0].features[0] (a feature name): the feature \"default\" cannot be in a dependency's "
+            "feature list. To turn on default features, add \"default-features\": true instead.");
+}
+
+TEST_CASE ("dependency-feature-name-default-object errors", "[manifests]")
+{
+    auto m_pgh = test_parse_project_manifest(R"json({
+      "dependencies": [
+        {
+          "name": "icu",
+          "features": [ { "name": "default" } ]
+        }
+      ]
+    })json",
+                                             PrintErrors::No);
+    REQUIRE(!m_pgh.has_value());
+    REQUIRE(m_pgh.error()->to_string() ==
+            "error: while loading <test manifest>:\n"
+            "$.dependencies[0].features[0].name (a feature name): the feature \"default\" cannot be in a dependency's "
+            "feature list. To turn on default features, add \"default-features\": true instead.");
+}
+TEST_CASE ("dependency-feature-name-empty errors", "[manifests]")
+{
+    auto m_pgh = test_parse_project_manifest(R"json({
+      "dependencies": [
+        {
+          "name": "icu",
+          "features": [ "" ]
+        }
+      ]
+    })json",
+                                             PrintErrors::No);
+    REQUIRE(!m_pgh.has_value());
+    REQUIRE(m_pgh.error()->to_string() ==
+            "error: while loading <test manifest>:\n"
+            "$.dependencies[0].features[0] (a feature name): \"\" is not a valid feature name. Feature names must be "
+            "lowercase alphanumeric+hypens and not reserved (see https://learn.microsoft.com/vcpkg/users/manifests for "
+            "more information).");
+}
+
+TEST_CASE ("dependency-feature-name-empty-object errors", "[manifests]")
+{
+    auto m_pgh = test_parse_project_manifest(R"json({
+      "dependencies": [
+        {
+          "name": "icu",
+          "features": [ { "name": "" } ]
+        }
+      ]
+    })json",
+                                             PrintErrors::No);
+    REQUIRE(!m_pgh.has_value());
+    REQUIRE(m_pgh.error()->to_string() ==
+            "error: while loading <test manifest>:\n"
+            "$.dependencies[0].features[0].name (a feature name): \"\" is not a valid feature name. Feature names must "
+            "be lowercase alphanumeric+hypens and not reserved (see https://learn.microsoft.com/vcpkg/users/manifests "
+            "for more information).");
 }

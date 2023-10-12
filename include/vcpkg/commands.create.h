@@ -1,15 +1,11 @@
 #pragma once
 
-#include <vcpkg/commands.interface.h>
+#include <vcpkg/fwd/vcpkgcmdarguments.h>
+#include <vcpkg/fwd/vcpkgpaths.h>
 
-namespace vcpkg::Commands::Create
+namespace vcpkg
 {
-    extern const CommandStructure COMMAND_STRUCTURE;
-    int perform(const VcpkgCmdArguments& args, const VcpkgPaths& paths);
-    void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths);
-
-    struct CreateCommand : PathsCommand
-    {
-        virtual void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const override;
-    };
+    extern const CommandMetadata CommandCreateMetadata;
+    int command_create(const VcpkgCmdArguments& args, const VcpkgPaths& paths);
+    void command_create_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths);
 }

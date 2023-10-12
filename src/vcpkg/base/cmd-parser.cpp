@@ -13,7 +13,7 @@ namespace
     void help_table_newline_indent(std::string& target)
     {
         target.push_back('\n');
-        target.append(34, ' ');
+        target.append(25, ' ');
     }
 
     static constexpr ptrdiff_t S_MAX_LINE_LENGTH = 100;
@@ -265,7 +265,7 @@ namespace vcpkg
     void HelpTableFormatter::format(StringView col1, StringView col2)
     {
         static constexpr std::size_t initial_space = 2;
-        static constexpr std::size_t col1_capacity = 31;
+        static constexpr std::size_t col1_capacity = 22;
         static constexpr std::size_t seperating_space = 1;
 
         m_str.append(initial_space, ' ');
@@ -360,6 +360,7 @@ namespace vcpkg
             auto maybe_response_file_lines = response_file_source.read_lines(file_name);
             if (auto response_file_lines = maybe_response_file_lines.get())
             {
+                Strings::inplace_trim_all_and_remove_whitespace_strings(*response_file_lines);
                 if (response_file_lines->empty())
                 {
                     first = inputs.erase(first);
@@ -691,6 +692,12 @@ namespace vcpkg
                 {
                     argument_parsed[idx] = true;
                     return "version";
+                }
+
+                if (this_arg == "--help" || this_arg == "/?" || this_arg == "-?")
+                {
+                    argument_parsed[idx] = true;
+                    return "help";
                 }
 
                 if (!Strings::starts_with(this_arg, "--"))

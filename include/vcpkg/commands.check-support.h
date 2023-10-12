@@ -1,19 +1,14 @@
 #pragma once
 
-#include <vcpkg/commands.interface.h>
+#include <vcpkg/fwd/triplet.h>
+#include <vcpkg/fwd/vcpkgcmdarguments.h>
+#include <vcpkg/fwd/vcpkgpaths.h>
 
-namespace vcpkg::Commands::CheckSupport
+namespace vcpkg
 {
-    void perform_and_exit(const VcpkgCmdArguments& args,
-                          const VcpkgPaths& paths,
-                          Triplet default_triplet,
-                          Triplet host_triplet);
-
-    struct CheckSupportCommand : TripletCommand
-    {
-        void perform_and_exit(const VcpkgCmdArguments& args,
-                              const VcpkgPaths& paths,
-                              Triplet default_triplet,
-                              Triplet host_triplet) const override;
-    };
+    extern const CommandMetadata CommandCheckSupportMetadata;
+    void command_check_support_and_exit(const VcpkgCmdArguments& args,
+                                        const VcpkgPaths& paths,
+                                        Triplet default_triplet,
+                                        Triplet host_triplet);
 }

@@ -61,13 +61,11 @@ namespace vcpkg
         Optional<uint64_t> as_numeric(StringView str)
         {
             uint64_t res = 0;
-            size_t digits = 0;
             for (auto&& ch : str)
             {
                 uint64_t digit_value = static_cast<unsigned char>(ch) - static_cast<unsigned char>('0');
                 if (digit_value > 9) return nullopt;
                 if (res > std::numeric_limits<uint64_t>::max() / 10 - digit_value) return nullopt;
-                ++digits;
                 res = res * 10 + digit_value;
             }
             return res;
@@ -305,7 +303,7 @@ namespace vcpkg
 
     static LocalizedString format_invalid_date_version(StringView version)
     {
-        return msg::format(msg::msgErrorMessage).append(msg::format(msgVersionInvalidDate, msg::version = version));
+        return msg::format(msgErrorMessage).append(msg::format(msgVersionInvalidDate, msg::version = version));
     }
 
     ExpectedL<DateVersion> DateVersion::try_parse(StringView version)
@@ -323,8 +321,7 @@ namespace vcpkg
         // (\.(0|[1-9][0-9]*))*
         while (*cur == '.')
         {
-            ret.identifiers.push_back(0);
-            cur = parse_skip_number(cur + 1, &ret.identifiers.back());
+            cur = parse_skip_number(cur + 1, &ret.identifiers.emplace_back(0));
             if (!cur)
             {
                 return format_invalid_date_version(version);
@@ -337,6 +334,11 @@ namespace vcpkg
         }
 
         return ret;
+    }
+
+    bool operator==(const SchemedVersion& lhs, const SchemedVersion& rhs)
+    {
+        return lhs.scheme == rhs.scheme && lhs.version == rhs.version;
     }
 
     StringLiteral to_string_literal(VersionScheme scheme)
@@ -401,6 +403,11 @@ namespace vcpkg
     static inline VerComp portversion_vercomp(VerComp base, int a, int b)
     {
         return base == VerComp::eq ? integer_vercomp(a, b) : base;
+    }
+
+    VerComp compare_versions(const SchemedVersion& a, const SchemedVersion& b)
+    {
+        return compare_versions(a.scheme, a.version, b.scheme, b.version);
     }
 
     VerComp compare_versions(VersionScheme sa, const Version& a, VersionScheme sb, const Version& b)

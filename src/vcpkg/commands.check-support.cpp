@@ -14,111 +14,125 @@
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
-namespace vcpkg::Commands
-{
-    static constexpr StringLiteral OPTION_JSON{"x-json"};
-    static constexpr std::array<CommandSwitch, 1> CHECK_SUPPORT_SWITCHES = {
-        {{OPTION_JSON, []() { return msg::format(msgJsonSwitch); }}}};
+using namespace vcpkg;
 
-    const CommandStructure COMMAND_STRUCTURE = {
-        [] { return create_example_string("x-check-support <package>..."); },
+namespace
+{
+    struct Port
+    {
+        std::string port_name;
+        std::vector<std::string> features;
+        Triplet triplet;
+        std::string supports_expr;
+    };
+
+    Json::Object to_object(const Port& p)
+    {
+        Json::Object res;
+        res.insert("name", Json::Value::string(p.port_name));
+        res.insert("triplet", Json::Value::string(p.triplet.to_string()));
+
+        Json::Array& features = res.insert("features", Json::Array{});
+        for (const auto& feature : p.features)
+        {
+            features.push_back(Json::Value::string(feature));
+        }
+
+        if (!p.supports_expr.empty())
+        {
+            res.insert("supports", Json::Value::string(p.supports_expr));
+        }
+
+        return res;
+    }
+
+    void print_port_supported(const Port& p, bool is_top_level_supported, View<Port> reasons)
+    {
+        const auto full_port_name = [](const Port& port) {
+            return fmt::format(
+                "{}[{}]:{}", port.port_name, Strings::join(",", port.features), port.triplet.to_string());
+        };
+
+        if (reasons.size() == 0)
+        {
+            if (is_top_level_supported)
+            {
+                // supported!
+                msg::println(msgSupportedPort, msg::package_name = full_port_name(p));
+            }
+            else
+            {
+                msg::println(msg::format(msgUnsupportedPort, msg::package_name = full_port_name(p))
+                                 .append_raw('\n')
+                                 .append(msgPortSupportsField, msg::supports_expression = p.supports_expr));
+            }
+
+            return;
+        }
+        auto message = msg::format(msgUnsupportedPort, msg::package_name = full_port_name(p)).append_raw('\n');
+        if (is_top_level_supported)
+        {
+            message.append(msgPortDependencyConflict, msg::package_name = full_port_name(p));
+        }
+        else
+        {
+            message.append(msgPortSupportsField, msg::supports_expression = p.supports_expr)
+                .append_raw('\n')
+                .append(msgPortDependencyConflict, msg::package_name = full_port_name(p));
+        }
+
+        for (const Port& reason : reasons)
+        {
+            message.append_raw('\n')
+                .append_indent()
+                .append(msgUnsupportedPortDependency, msg::value = full_port_name(p))
+                .append(msgPortSupportsField, msg::supports_expression = reason.supports_expr);
+        }
+        msg::println(message);
+    }
+
+    constexpr StringLiteral OPTION_JSON{"x-json"};
+    constexpr CommandSwitch CHECK_SUPPORT_SWITCHES[] = {
+        {OPTION_JSON, msgJsonSwitch},
+    };
+} // unnamed namespace
+
+namespace vcpkg
+{
+    constexpr CommandMetadata CommandCheckSupportMetadata{
+        "x-check-support",
+        msgCmdCheckSupportSynopsis,
+        {msgCmdCheckSupportExample1, "vcpkg x-check-support zlib"},
+        Undocumented,
+        AutocompletePriority::Public,
         1,
         SIZE_MAX,
         {CHECK_SUPPORT_SWITCHES},
         nullptr,
     };
 
-    namespace
-    {
-        struct Port
-        {
-            std::string port_name;
-            std::vector<std::string> features;
-            Triplet triplet;
-            std::string supports_expr;
-        };
-
-        Json::Object to_object(const Port& p)
-        {
-            Json::Object res;
-            res.insert("name", Json::Value::string(p.port_name));
-            res.insert("triplet", Json::Value::string(p.triplet.to_string()));
-
-            Json::Array& features = res.insert("features", Json::Array{});
-            for (const auto& feature : p.features)
-            {
-                features.push_back(Json::Value::string(feature));
-            }
-
-            if (!p.supports_expr.empty())
-            {
-                res.insert("supports", Json::Value::string(p.supports_expr));
-            }
-
-            return res;
-        }
-
-        void print_port_supported(const Port& p, bool is_top_level_supported, View<Port> reasons)
-        {
-            const auto full_port_name = [](const Port& port) {
-                return fmt::format(
-                    "{}[{}]:{}", port.port_name, Strings::join(",", port.features), port.triplet.to_string());
-            };
-
-            if (reasons.size() == 0)
-            {
-                if (is_top_level_supported)
-                {
-                    // supported!
-                    msg::println(msgSupportedPort, msg::package_name = full_port_name(p));
-                }
-                else
-                {
-                    msg::println(msg::format(msgUnsupportedPort, msg::package_name = full_port_name(p))
-                                     .append_raw('\n')
-                                     .append(msgPortSupportsField, msg::supports_expression = p.supports_expr));
-                }
-
-                return;
-            }
-            auto message = msg::format(msgUnsupportedPort, msg::package_name = full_port_name(p)).append_raw('\n');
-            if (is_top_level_supported)
-            {
-                message.append(msgPortDependencyConflict, msg::package_name = full_port_name(p));
-            }
-            else
-            {
-                message.append(msgPortSupportsField, msg::supports_expression = p.supports_expr)
-                    .append_raw('\n')
-                    .append(msgPortDependencyConflict, msg::package_name = full_port_name(p));
-            }
-
-            for (const Port& reason : reasons)
-            {
-                message.append_raw('\n')
-                    .append_indent()
-                    .append(msgUnsupportedPortDependency, msg::value = full_port_name(p))
-                    .append(msgPortSupportsField, msg::supports_expression = reason.supports_expr);
-            }
-            msg::println(message);
-        }
-    }
-
-    void CheckSupport::perform_and_exit(const VcpkgCmdArguments& args,
+    void command_check_support_and_exit(const VcpkgCmdArguments& args,
                                         const VcpkgPaths& paths,
                                         Triplet default_triplet,
                                         Triplet host_triplet)
     {
-        const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
+        const ParsedArguments options = args.parse_arguments(CommandCheckSupportMetadata);
         const bool use_json = Util::Sets::contains(options.switches, OPTION_JSON);
         Json::Array json_to_print; // only used when `use_json`
 
+        bool default_triplet_used = false;
         const std::vector<FullPackageSpec> specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
-            return check_and_get_full_package_spec(
-                std::string(arg), default_triplet, COMMAND_STRUCTURE.get_example_text(), paths);
+            return check_and_get_full_package_spec(arg,
+                                                   default_triplet,
+                                                   default_triplet_used,
+                                                   CommandCheckSupportMetadata.get_example_text(),
+                                                   paths.get_triplet_db());
         });
 
-        print_default_triplet_warning(args, options.command_arguments);
+        if (default_triplet_used)
+        {
+            print_default_triplet_warning(args, paths.get_triplet_db());
+        }
 
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();
@@ -127,11 +141,12 @@ namespace vcpkg::Commands
         auto cmake_vars = CMakeVars::make_triplet_cmake_var_provider(paths);
 
         // for each spec in the user-requested specs, check all dependencies
+        CreateInstallPlanOptions create_options{host_triplet, paths.packages()};
         for (const auto& user_spec : specs)
         {
-            auto action_plan = create_feature_install_plan(provider, *cmake_vars, {&user_spec, 1}, {}, {host_triplet});
+            auto action_plan = create_feature_install_plan(provider, *cmake_vars, {&user_spec, 1}, {}, create_options);
 
-            cmake_vars->load_tag_vars(action_plan, provider, host_triplet);
+            cmake_vars->load_tag_vars(action_plan, host_triplet);
 
             Port user_port;
             user_port.port_name = user_spec.package_spec.name();
@@ -198,12 +213,4 @@ namespace vcpkg::Commands
             msg::write_unlocalized_text_to_stdout(Color::none, Json::stringify(json_to_print));
         }
     }
-
-    void CheckSupport::CheckSupportCommand::perform_and_exit(const VcpkgCmdArguments& args,
-                                                             const VcpkgPaths& paths,
-                                                             Triplet default_triplet,
-                                                             Triplet host_triplet) const
-    {
-        return CheckSupport::perform_and_exit(args, paths, default_triplet, host_triplet);
-    }
-}
+} // namespace vcpkg

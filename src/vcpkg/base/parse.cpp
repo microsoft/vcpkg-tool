@@ -38,11 +38,11 @@ namespace vcpkg
             res = LocalizedString::from_raw(fmt::format("{}:{}:{}: ", origin, location.row, location.column));
         if (kind == MessageKind::Warning)
         {
-            res.append(msg::msgWarningMessage);
+            res.append(msgWarningMessage);
         }
         else
         {
-            res.append(msg::msgErrorMessage);
+            res.append(msgErrorMessage);
         }
         res.append(message);
 

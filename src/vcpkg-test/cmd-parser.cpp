@@ -25,7 +25,7 @@ TEST_CASE ("Smoke test help table formatter", "[cmd_parser]")
     uut.format("a-really-long-arg-that-does-not-fit-in-the-first-column-and-keeps-going", "shorty");
     uut.format("short-arg",
                "some really long help text that does not fit on the same line because we have a 100 character line "
-               "limit and oh god it keeps going and going");
+               "limit and oh no it keeps going and going");
     uut.format("a-really-long-arg-combined-with-some-really-long-help-text",
                "another instance of that really long help text goes here to demonstrate that the worst case combo can "
                "be accommodated");
@@ -35,15 +35,14 @@ TEST_CASE ("Smoke test help table formatter", "[cmd_parser]")
     uut.text("this is some text");
 
     const char* const expected = R"(This is a header:
-  short-arg                       short help text
+  short-arg              short help text
   a-really-long-arg-that-does-not-fit-in-the-first-column-and-keeps-going
-                                  shorty
-  short-arg                       some really long help text that does not fit on the same line
-                                  because we have a 100 character line limit and oh god it keeps
-                                  going and going
+                         shorty
+  short-arg              some really long help text that does not fit on the same line because we
+                         have a 100 character line limit and oh no it keeps going and going
   a-really-long-arg-combined-with-some-really-long-help-text
-                                  another instance of that really long help text goes here to
-                                  demonstrate that the worst case combo can be accommodated
+                         another instance of that really long help text goes here to demonstrate
+                         that the worst case combo can be accommodated
 
 some example command
 this is some text)";
@@ -174,6 +173,13 @@ TEST_CASE ("Response file parameters can be processed", "[cmd_parser]")
         std::vector<std::string> multi_insert_last{"a", "b", "@filename"};
         replace_response_file_parameters(multi_insert_last, FakeReadLines{xy}).value_or_exit(VCPKG_LINE_INFO);
         CHECK(multi_insert_last == std::vector<std::string>{"a", "b", "x", "y"});
+    }
+
+    const std::vector<std::string> blanks{"x", "", "    ", "\r", "y"};
+    {
+        std::vector<std::string> insert_middle_blanks{"a", "@filename", "b"};
+        replace_response_file_parameters(insert_middle_blanks, FakeReadLines{blanks}).value_or_exit(VCPKG_LINE_INFO);
+        CHECK(insert_middle_blanks == std::vector<std::string>{"a", "x", "y", "b"});
     }
 }
 
@@ -599,22 +605,22 @@ TEST_CASE ("Help table is generated", "[cmd_parser]")
 
     const auto expected = LocalizedString::from_raw(
         R"(Options:
-  --x-b                           b help
-  --x-d                           d help
-  --x-f                           f help
-  --g=...                         g help
-  --i=...                         i help
-  --x-j=...                       j help
-  --k=...                         k help
-  --x-l=...                       l help
-  --m=...                         m help
-  --x-n=...                       n help
-  --o=...                         m help
-  --x-p=...                       n help
-  --x-w=...                       w help
-  --x                             x help
-  --y                             y help
-  --z                             z help
+  --x-b                  b help
+  --x-d                  d help
+  --x-f                  f help
+  --g=...                g help
+  --i=...                i help
+  --x-j=...              j help
+  --k=...                k help
+  --x-l=...              l help
+  --m=...                m help
+  --x-n=...              n help
+  --o=...                m help
+  --x-p=...              n help
+  --x-w=...              w help
+  --x                    x help
+  --y                    y help
+  --z                    z help
 )");
     LocalizedString actual;
     uut.append_options_table(actual);
@@ -1080,6 +1086,31 @@ TEST_CASE ("real world commands", "[cmd_parser]")
                                              "error: unexpected switch: --x-tree",
                                              "error: unexpected switch: --zlib"}));
         CHECK(uut.get_remaining_args().empty());
+    }
+
+    {
+        CmdParser uut{std::vector<std::string>{"version"}};
+        CHECK(uut.extract_first_command_like_arg_lowercase().value_or_exit(VCPKG_LINE_INFO) == "version");
+    }
+
+    {
+        CmdParser uut{std::vector<std::string>{"--version"}};
+        CHECK(uut.extract_first_command_like_arg_lowercase().value_or_exit(VCPKG_LINE_INFO) == "version");
+    }
+
+    {
+        CmdParser uut{std::vector<std::string>{"/?"}};
+        CHECK(uut.extract_first_command_like_arg_lowercase().value_or_exit(VCPKG_LINE_INFO) == "help");
+    }
+
+    {
+        CmdParser uut{std::vector<std::string>{"-?"}};
+        CHECK(uut.extract_first_command_like_arg_lowercase().value_or_exit(VCPKG_LINE_INFO) == "help");
+    }
+
+    {
+        CmdParser uut{std::vector<std::string>{"--help"}};
+        CHECK(uut.extract_first_command_like_arg_lowercase().value_or_exit(VCPKG_LINE_INFO) == "help");
     }
 }
 

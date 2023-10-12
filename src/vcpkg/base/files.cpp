@@ -2,6 +2,7 @@
 
 #include <vcpkg/base/chrono.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/message_sinks.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/span.h>
 #include <vcpkg/base/system.debug.h>
@@ -45,18 +46,6 @@ namespace
     using namespace vcpkg;
 
     std::atomic<uint64_t> g_us_filesystem_stats(0);
-
-    struct IsSlash
-    {
-        bool operator()(const char c) const noexcept
-        {
-            return c == '/'
-#if defined(_WIN32)
-                   || c == '\\'
-#endif // _WIN32
-                ;
-        }
-    };
 
     constexpr IsSlash is_slash;
 
@@ -679,14 +668,7 @@ namespace
 
         int get() const noexcept { return fd; }
 
-        void close() noexcept
-        {
-            if (fd >= 0)
-            {
-                Checks::check_exit(VCPKG_LINE_INFO, ::close(fd) == 0);
-                fd = -1;
-            }
-        }
+        void close() noexcept { close_mark_invalid(fd); }
 
         ~PosixFd() { close(); }
 
@@ -1433,6 +1415,7 @@ namespace vcpkg
     {
         ReadFilePointer fp{std::move(other)};
         std::swap(m_fs, fp.m_fs);
+        std::swap(m_path, fp.m_path);
         return *this;
     }
 
@@ -1469,6 +1452,33 @@ namespace vcpkg
         return try_seek_to(offset).then([&](Unit) { return try_read_all(buffer, size); });
     }
 
+    std::string ReadFilePointer::read_to_end(std::error_code& ec)
+    {
+        std::string output;
+        constexpr std::size_t buffer_size = 1024 * 32;
+        char buffer[buffer_size];
+        do
+        {
+            const auto this_read = this->read(buffer, 1, buffer_size);
+            if (this_read != 0)
+            {
+                output.append(buffer, this_read);
+            }
+            else if ((ec = this->error()))
+            {
+                return std::string();
+            }
+        } while (!this->eof());
+
+        if (Strings::starts_with(output, "\xEF\xBB\xBF"))
+        {
+            // remove byte-order mark from the beginning of the string
+            output.erase(output.begin(), output.begin() + 3);
+        }
+
+        return output;
+    }
+
     WriteFilePointer::WriteFilePointer() noexcept = default;
 
     WriteFilePointer::WriteFilePointer(WriteFilePointer&&) noexcept = default;
@@ -1497,6 +1507,7 @@ namespace vcpkg
     {
         WriteFilePointer fp{std::move(other)};
         std::swap(m_fs, fp.m_fs);
+        std::swap(m_path, fp.m_path);
         return *this;
     }
 
@@ -1507,9 +1518,19 @@ namespace vcpkg
 
     int WriteFilePointer::put(int c) const noexcept { return ::fputc(c, m_fs); }
 
-    ILineReader::~ILineReader() = default;
+    uint64_t ReadOnlyFilesystem::file_size(const Path& file_path, LineInfo li) const
+    {
+        std::error_code ec;
+        auto maybe_contents = this->file_size(file_path, ec);
+        if (ec)
+        {
+            exit_filesystem_call_error(li, ec, __func__, {file_path});
+        }
 
-    std::string Filesystem::read_contents(const Path& file_path, LineInfo li) const
+        return maybe_contents;
+    }
+
+    std::string ReadOnlyFilesystem::read_contents(const Path& file_path, LineInfo li) const
     {
         std::error_code ec;
         auto maybe_contents = this->read_contents(file_path, ec);
@@ -1521,7 +1542,7 @@ namespace vcpkg
         return maybe_contents;
     }
 
-    ExpectedL<FileContents> Filesystem::try_read_contents(const Path& file_path) const
+    ExpectedL<FileContents> ReadOnlyFilesystem::try_read_contents(const Path& file_path) const
     {
         std::error_code ec;
         auto maybe_contents = this->read_contents(file_path, ec);
@@ -1533,7 +1554,7 @@ namespace vcpkg
         return FileContents{std::move(maybe_contents), file_path.native()};
     }
 
-    Path Filesystem::find_file_recursively_up(const Path& starting_dir, const Path& filename, LineInfo li) const
+    Path ReadOnlyFilesystem::find_file_recursively_up(const Path& starting_dir, const Path& filename, LineInfo li) const
     {
         std::error_code ec;
         auto result = this->find_file_recursively_up(starting_dir, filename, ec);
@@ -1545,91 +1566,296 @@ namespace vcpkg
         return result;
     }
 
-    std::vector<Path> Filesystem::get_files_recursive(const Path& dir, LineInfo li) const
+    ExpectedL<Path> ReadOnlyFilesystem::try_find_file_recursively_up(const Path& starting_dir,
+                                                                     const Path& filename) const
+    {
+        std::error_code ec;
+        auto result = this->find_file_recursively_up(starting_dir, filename, ec);
+        if (ec)
+        {
+            return format_filesystem_call_error(ec, __func__, {starting_dir, filename});
+        }
+
+        return result;
+    }
+
+    std::vector<Path> ReadOnlyFilesystem::get_files_recursive(const Path& dir, LineInfo li) const
+    {
+        return this->try_get_files_recursive(dir).value_or_exit(li);
+    }
+
+    ExpectedL<std::vector<Path>> ReadOnlyFilesystem::try_get_files_recursive(const Path& dir) const
     {
         std::error_code ec;
         auto maybe_files = this->get_files_recursive(dir, ec);
         if (ec)
         {
-            exit_filesystem_call_error(li, ec, __func__, {dir});
+            return format_filesystem_call_error(ec, __func__, {dir});
         }
 
         return maybe_files;
     }
 
-    std::vector<Path> Filesystem::get_files_non_recursive(const Path& dir, LineInfo li) const
+    std::vector<Path> ReadOnlyFilesystem::get_files_non_recursive(const Path& dir, LineInfo li) const
+    {
+        return this->try_get_files_non_recursive(dir).value_or_exit(li);
+    }
+
+    ExpectedL<std::vector<Path>> ReadOnlyFilesystem::try_get_files_non_recursive(const Path& dir) const
     {
         std::error_code ec;
         auto maybe_files = this->get_files_non_recursive(dir, ec);
         if (ec)
         {
-            exit_filesystem_call_error(li, ec, __func__, {dir});
+            return format_filesystem_call_error(ec, __func__, {dir});
         }
 
         return maybe_files;
     }
 
-    std::vector<Path> Filesystem::get_directories_recursive(const Path& dir, LineInfo li) const
+    std::vector<Path> ReadOnlyFilesystem::get_directories_recursive(const Path& dir, LineInfo li) const
+    {
+        return this->try_get_directories_recursive(dir).value_or_exit(li);
+    }
+
+    ExpectedL<std::vector<Path>> ReadOnlyFilesystem::try_get_directories_recursive(const Path& dir) const
     {
         std::error_code ec;
         auto maybe_directories = this->get_directories_recursive(dir, ec);
         if (ec)
         {
-            exit_filesystem_call_error(li, ec, __func__, {dir});
+            return format_filesystem_call_error(ec, __func__, {dir});
         }
 
         return maybe_directories;
     }
 
-    std::vector<Path> Filesystem::get_directories_non_recursive(const Path& dir, LineInfo li) const
+    std::vector<Path> ReadOnlyFilesystem::get_directories_non_recursive(const Path& dir, LineInfo li) const
+    {
+        return this->try_get_directories_non_recursive(dir).value_or_exit(li);
+    }
+
+    ExpectedL<std::vector<Path>> ReadOnlyFilesystem::try_get_directories_non_recursive(const Path& dir) const
     {
         std::error_code ec;
         auto maybe_directories = this->get_directories_non_recursive(dir, ec);
         if (ec)
         {
-            exit_filesystem_call_error(li, ec, __func__, {dir});
+            return format_filesystem_call_error(ec, __func__, {dir});
         }
 
         return maybe_directories;
     }
 
-    std::vector<Path> Filesystem::get_regular_files_recursive(const Path& dir, LineInfo li) const
+    std::vector<Path> ReadOnlyFilesystem::get_regular_files_recursive(const Path& dir, LineInfo li) const
+    {
+        return this->try_get_regular_files_recursive(dir).value_or_exit(li);
+    }
+
+    ExpectedL<std::vector<Path>> ReadOnlyFilesystem::try_get_regular_files_recursive(const Path& dir) const
     {
         std::error_code ec;
         auto maybe_directories = this->get_regular_files_recursive(dir, ec);
         if (ec)
         {
-            exit_filesystem_call_error(li, ec, __func__, {dir});
+            return format_filesystem_call_error(ec, __func__, {dir});
         }
 
         return maybe_directories;
     }
 
-    std::vector<Path> Filesystem::get_regular_files_recursive_lexically_proximate(const Path& dir, LineInfo li) const
+    std::vector<Path> ReadOnlyFilesystem::get_regular_files_recursive_lexically_proximate(const Path& dir,
+                                                                                          LineInfo li) const
+    {
+        return this->try_get_regular_files_recursive_lexically_proximate(dir).value_or_exit(li);
+    }
+
+    ExpectedL<std::vector<Path>> ReadOnlyFilesystem::try_get_regular_files_recursive_lexically_proximate(
+        const Path& dir) const
     {
         std::error_code ec;
         auto maybe_directories = this->get_regular_files_recursive_lexically_proximate(dir, ec);
         if (ec)
         {
-            exit_filesystem_call_error(li, ec, __func__, {dir});
+            return format_filesystem_call_error(ec, __func__, {dir});
         }
 
         return maybe_directories;
     }
 
-    std::vector<Path> Filesystem::get_regular_files_non_recursive(const Path& dir, LineInfo li) const
+    std::vector<Path> ReadOnlyFilesystem::get_regular_files_non_recursive(const Path& dir, LineInfo li) const
+    {
+        return this->try_get_regular_files_non_recursive(dir).value_or_exit(li);
+    }
+
+    ExpectedL<std::vector<Path>> ReadOnlyFilesystem::try_get_regular_files_non_recursive(const Path& dir) const
     {
         std::error_code ec;
         auto maybe_directories = this->get_regular_files_non_recursive(dir, ec);
         if (ec)
         {
-            exit_filesystem_call_error(li, ec, __func__, {dir});
+            return format_filesystem_call_error(ec, __func__, {dir});
         }
 
         return maybe_directories;
     }
 
-    void Filesystem::write_contents(const Path& file_path, StringView data, LineInfo li)
+    bool ReadOnlyFilesystem::exists(const Path& target, std::error_code& ec) const
+    {
+        return vcpkg::exists(this->symlink_status(target, ec));
+    }
+
+    bool ReadOnlyFilesystem::exists(const Path& target, LineInfo li) const
+    {
+        std::error_code ec;
+        auto result = this->exists(target, ec);
+        if (ec)
+        {
+            exit_filesystem_call_error(li, ec, __func__, {target});
+        }
+
+        return result;
+    }
+
+    bool ReadOnlyFilesystem::is_empty(const Path& target, LineInfo li) const
+    {
+        std::error_code ec;
+        auto result = this->is_empty(target, ec);
+        if (ec)
+        {
+            exit_filesystem_call_error(li, ec, __func__, {target});
+        }
+
+        return result;
+    }
+
+    FileType ReadOnlyFilesystem::status(const Path& target, vcpkg::LineInfo li) const noexcept
+    {
+        std::error_code ec;
+        auto result = this->status(target, ec);
+        if (ec)
+        {
+            exit_filesystem_call_error(li, ec, __func__, {target});
+        }
+
+        return result;
+    }
+
+    FileType ReadOnlyFilesystem::symlink_status(const Path& target, vcpkg::LineInfo li) const noexcept
+    {
+        std::error_code ec;
+        auto result = this->symlink_status(target, ec);
+        if (ec)
+        {
+            exit_filesystem_call_error(li, ec, __func__, {target});
+        }
+
+        return result;
+    }
+
+    int64_t ReadOnlyFilesystem::last_write_time(const Path& target, LineInfo li) const noexcept
+    {
+        std::error_code ec;
+        auto result = this->last_write_time(target, ec);
+        if (ec)
+        {
+            exit_filesystem_call_error(li, ec, __func__, {target});
+        }
+
+        return result;
+    }
+
+    Path ReadOnlyFilesystem::almost_canonical(const Path& target, LineInfo li) const
+    {
+        std::error_code ec;
+        const auto result = this->almost_canonical(target, ec);
+        if (ec)
+        {
+            exit_filesystem_call_error(li, ec, __func__, {target});
+        }
+
+        return result;
+    }
+
+    Path ReadOnlyFilesystem::current_path(LineInfo li) const
+    {
+        std::error_code ec;
+        const auto result = this->current_path(ec);
+        if (ec)
+        {
+            exit_filesystem_call_error(li, ec, __func__, {});
+        }
+
+        return result;
+    }
+
+    Path ReadOnlyFilesystem::absolute(const Path& target, LineInfo li) const
+    {
+        std::error_code ec;
+        const auto result = this->absolute(target, ec);
+        if (ec)
+        {
+            exit_filesystem_call_error(li, ec, __func__, {target});
+        }
+
+        return result;
+    }
+
+    std::vector<Path> ReadOnlyFilesystem::find_from_PATH(StringView stem) const
+    {
+        return this->find_from_PATH(View<StringView>{&stem, 1});
+    }
+
+    ReadFilePointer ReadOnlyFilesystem::open_for_read(const Path& file_path, LineInfo li) const
+    {
+        std::error_code ec;
+        auto ret = this->open_for_read(file_path, ec);
+        if (ec)
+        {
+            exit_filesystem_call_error(li, ec, __func__, {file_path});
+        }
+
+        return ret;
+    }
+
+    ExpectedL<ReadFilePointer> ReadOnlyFilesystem::try_open_for_read(const Path& file_path) const
+    {
+        std::error_code ec;
+        auto ret = this->open_for_read(file_path, ec);
+        if (ec)
+        {
+            return format_filesystem_call_error(ec, __func__, {file_path});
+        }
+
+        return ExpectedL<ReadFilePointer>{std::move(ret)};
+    }
+
+    ExpectedL<bool> ReadOnlyFilesystem::check_update_required(const Path& version_path,
+                                                              StringView expected_version) const
+    {
+        std::error_code ec;
+        auto read_handle = open_for_read(version_path, ec);
+        if (ec)
+        {
+            translate_not_found_to_success(ec);
+            if (ec)
+            {
+                return format_filesystem_call_error(ec, __func__, {version_path, expected_version});
+            }
+
+            return true;
+        }
+
+        auto actual_version = read_handle.read_to_end(ec);
+        if (ec)
+        {
+            return format_filesystem_call_error(ec, __func__, {version_path, expected_version});
+        }
+
+        return actual_version != expected_version;
+    }
+
+    void Filesystem::write_contents(const Path& file_path, StringView data, LineInfo li) const
     {
         std::error_code ec;
         this->write_contents(file_path, data, ec);
@@ -1638,14 +1864,17 @@ namespace vcpkg
             exit_filesystem_call_error(li, ec, __func__, {file_path});
         }
     }
-    void Filesystem::write_rename_contents(const Path& file_path, const Path& temp_name, StringView data, LineInfo li)
+    void Filesystem::write_rename_contents(const Path& file_path,
+                                           const Path& temp_name,
+                                           StringView data,
+                                           LineInfo li) const
     {
         auto temp_path = file_path;
         temp_path.replace_filename(temp_name);
         this->write_contents(temp_path, data, li);
         this->rename(temp_path, file_path, li);
     }
-    void Filesystem::write_contents_and_dirs(const Path& file_path, StringView data, LineInfo li)
+    void Filesystem::write_contents_and_dirs(const Path& file_path, StringView data, LineInfo li) const
     {
         std::error_code ec;
         this->write_contents_and_dirs(file_path, data, ec);
@@ -1654,7 +1883,7 @@ namespace vcpkg
             exit_filesystem_call_error(li, ec, __func__, {file_path});
         }
     }
-    void Filesystem::rename(const Path& old_path, const Path& new_path, LineInfo li)
+    void Filesystem::rename(const Path& old_path, const Path& new_path, LineInfo li) const
     {
         std::error_code ec;
         this->rename(old_path, new_path, ec);
@@ -1663,7 +1892,7 @@ namespace vcpkg
             exit_filesystem_call_error(li, ec, __func__, {old_path, new_path});
         }
     }
-    void Filesystem::rename_with_retry(const Path& old_path, const Path& new_path, LineInfo li)
+    void Filesystem::rename_with_retry(const Path& old_path, const Path& new_path, LineInfo li) const
     {
         std::error_code ec;
         this->rename_with_retry(old_path, new_path, ec);
@@ -1672,7 +1901,7 @@ namespace vcpkg
             exit_filesystem_call_error(li, ec, __func__, {old_path, new_path});
         }
     }
-    void Filesystem::rename_with_retry(const Path& old_path, const Path& new_path, std::error_code& ec)
+    void Filesystem::rename_with_retry(const Path& old_path, const Path& new_path, std::error_code& ec) const
     {
         this->rename(old_path, new_path, ec);
         using namespace std::chrono_literals;
@@ -1688,7 +1917,7 @@ namespace vcpkg
         }
     }
 
-    bool Filesystem::remove(const Path& target, LineInfo li)
+    bool Filesystem::remove(const Path& target, LineInfo li) const
     {
         std::error_code ec;
         auto r = this->remove(target, ec);
@@ -1700,36 +1929,7 @@ namespace vcpkg
         return r;
     }
 
-    bool Filesystem::exists(const Path& target, std::error_code& ec) const
-    {
-        return vcpkg::exists(this->symlink_status(target, ec));
-    }
-
-    bool Filesystem::exists(const Path& target, LineInfo li) const
-    {
-        std::error_code ec;
-        auto result = this->exists(target, ec);
-        if (ec)
-        {
-            exit_filesystem_call_error(li, ec, __func__, {target});
-        }
-
-        return result;
-    }
-
-    bool Filesystem::is_empty(const Path& target, LineInfo li) const
-    {
-        std::error_code ec;
-        auto result = this->is_empty(target, ec);
-        if (ec)
-        {
-            exit_filesystem_call_error(li, ec, __func__, {target});
-        }
-
-        return result;
-    }
-
-    bool Filesystem::create_directory(const Path& new_directory, LineInfo li)
+    bool Filesystem::create_directory(const Path& new_directory, LineInfo li) const
     {
         std::error_code ec;
         bool result = this->create_directory(new_directory, ec);
@@ -1741,7 +1941,7 @@ namespace vcpkg
         return result;
     }
 
-    bool Filesystem::create_directories(const Path& new_directory, LineInfo li)
+    bool Filesystem::create_directories(const Path& new_directory, LineInfo li) const
     {
         std::error_code ec;
         bool result = this->create_directories(new_directory, ec);
@@ -1753,7 +1953,7 @@ namespace vcpkg
         return result;
     }
 
-    Path Filesystem::create_or_get_temp_directory(LineInfo li)
+    Path Filesystem::create_or_get_temp_directory(LineInfo li) const
     {
         std::error_code ec;
         Path result = this->create_or_get_temp_directory(ec);
@@ -1765,7 +1965,7 @@ namespace vcpkg
         return result;
     }
 
-    void Filesystem::create_symlink(const Path& to, const Path& from, LineInfo li)
+    void Filesystem::create_symlink(const Path& to, const Path& from, LineInfo li) const
     {
         std::error_code ec;
         this->create_symlink(to, from, ec);
@@ -1775,7 +1975,7 @@ namespace vcpkg
         }
     }
 
-    void Filesystem::create_directory_symlink(const Path& to, const Path& from, LineInfo li)
+    void Filesystem::create_directory_symlink(const Path& to, const Path& from, LineInfo li) const
     {
         std::error_code ec;
         this->create_directory_symlink(to, from, ec);
@@ -1785,7 +1985,7 @@ namespace vcpkg
         }
     }
 
-    void Filesystem::create_hard_link(const Path& to, const Path& from, LineInfo li)
+    void Filesystem::create_hard_link(const Path& to, const Path& from, LineInfo li) const
     {
         std::error_code ec;
         this->create_hard_link(to, from, ec);
@@ -1795,7 +1995,7 @@ namespace vcpkg
         }
     }
 
-    void Filesystem::create_best_link(const Path& to, const Path& from, std::error_code& ec)
+    void Filesystem::create_best_link(const Path& to, const Path& from, std::error_code& ec) const
     {
         this->create_hard_link(to, from, ec);
         if (!ec) return;
@@ -1804,7 +2004,7 @@ namespace vcpkg
         this->copy_file(from, to, CopyOptions::none, ec);
     }
 
-    void Filesystem::create_best_link(const Path& to, const Path& from, LineInfo li)
+    void Filesystem::create_best_link(const Path& to, const Path& from, LineInfo li) const
     {
         std::error_code ec;
         this->create_best_link(to, from, ec);
@@ -1814,7 +2014,7 @@ namespace vcpkg
         }
     }
 
-    void Filesystem::copy_regular_recursive(const Path& source, const Path& destination, LineInfo li)
+    void Filesystem::copy_regular_recursive(const Path& source, const Path& destination, LineInfo li) const
     {
         std::error_code ec;
         this->copy_regular_recursive(source, destination, ec);
@@ -1824,7 +2024,7 @@ namespace vcpkg
         }
     }
 
-    bool Filesystem::copy_file(const Path& source, const Path& destination, CopyOptions options, LineInfo li)
+    bool Filesystem::copy_file(const Path& source, const Path& destination, CopyOptions options, LineInfo li) const
     {
         std::error_code ec;
         const bool result = this->copy_file(source, destination, options, ec);
@@ -1836,7 +2036,7 @@ namespace vcpkg
         return result;
     }
 
-    void Filesystem::copy_symlink(const Path& source, const Path& destination, LineInfo li)
+    void Filesystem::copy_symlink(const Path& source, const Path& destination, LineInfo li) const
     {
         std::error_code ec;
         this->copy_symlink(source, destination, ec);
@@ -1846,43 +2046,7 @@ namespace vcpkg
         }
     }
 
-    FileType Filesystem::status(const Path& target, vcpkg::LineInfo li) const noexcept
-    {
-        std::error_code ec;
-        auto result = this->status(target, ec);
-        if (ec)
-        {
-            exit_filesystem_call_error(li, ec, __func__, {target});
-        }
-
-        return result;
-    }
-
-    FileType Filesystem::symlink_status(const Path& target, vcpkg::LineInfo li) const noexcept
-    {
-        std::error_code ec;
-        auto result = this->symlink_status(target, ec);
-        if (ec)
-        {
-            exit_filesystem_call_error(li, ec, __func__, {target});
-        }
-
-        return result;
-    }
-
-    int64_t Filesystem::last_write_time(const Path& target, vcpkg::LineInfo li) const noexcept
-    {
-        std::error_code ec;
-        auto result = this->last_write_time(target, ec);
-        if (ec)
-        {
-            exit_filesystem_call_error(li, ec, __func__, {target});
-        }
-
-        return result;
-    }
-
-    void Filesystem::write_lines(const Path& file_path, const std::vector<std::string>& lines, LineInfo li)
+    void Filesystem::write_lines(const Path& file_path, const std::vector<std::string>& lines, LineInfo li) const
     {
         std::error_code ec;
         this->write_lines(file_path, lines, ec);
@@ -1892,7 +2056,7 @@ namespace vcpkg
         }
     }
 
-    void Filesystem::remove_all(const Path& base, LineInfo li)
+    void Filesystem::remove_all(const Path& base, LineInfo li) const
     {
         std::error_code ec;
         Path failure_point;
@@ -1909,13 +2073,13 @@ namespace vcpkg
         }
     }
 
-    void Filesystem::remove_all(const Path& base, std::error_code& ec)
+    void Filesystem::remove_all(const Path& base, std::error_code& ec) const
     {
         Path failure_point;
         this->remove_all(base, ec, failure_point);
     }
 
-    void Filesystem::remove_all_inside(const Path& base, std::error_code& ec, Path& failure_point)
+    void Filesystem::remove_all_inside(const Path& base, std::error_code& ec, Path& failure_point) const
     {
         for (auto&& subdir : this->get_directories_non_recursive(base, ec))
         {
@@ -1943,7 +2107,7 @@ namespace vcpkg
         }
     }
 
-    void Filesystem::remove_all_inside(const Path& base, LineInfo li)
+    void Filesystem::remove_all_inside(const Path& base, LineInfo li) const
     {
         std::error_code ec;
         Path failure_point;
@@ -1960,48 +2124,13 @@ namespace vcpkg
         }
     }
 
-    void Filesystem::remove_all_inside(const Path& base, std::error_code& ec)
+    void Filesystem::remove_all_inside(const Path& base, std::error_code& ec) const
     {
         Path failure_point;
         this->remove_all_inside(base, ec, failure_point);
     }
 
-    Path Filesystem::absolute(const Path& target, LineInfo li) const
-    {
-        std::error_code ec;
-        const auto result = this->absolute(target, ec);
-        if (ec)
-        {
-            exit_filesystem_call_error(li, ec, __func__, {target});
-        }
-
-        return result;
-    }
-
-    Path Filesystem::almost_canonical(const Path& target, LineInfo li) const
-    {
-        std::error_code ec;
-        const auto result = this->almost_canonical(target, ec);
-        if (ec)
-        {
-            exit_filesystem_call_error(li, ec, __func__, {target});
-        }
-
-        return result;
-    }
-
-    Path Filesystem::current_path(LineInfo li) const
-    {
-        std::error_code ec;
-        const auto result = this->current_path(ec);
-        if (ec)
-        {
-            exit_filesystem_call_error(li, ec, __func__, {});
-        }
-
-        return result;
-    }
-    void Filesystem::current_path(const Path& new_current_path, LineInfo li)
+    void Filesystem::current_path(const Path& new_current_path, LineInfo li) const
     {
         std::error_code ec;
         this->current_path(new_current_path, ec);
@@ -2011,7 +2140,7 @@ namespace vcpkg
         }
     }
 
-    std::unique_ptr<IExclusiveFileLock> Filesystem::take_exclusive_file_lock(const Path& lockfile, LineInfo li)
+    std::unique_ptr<IExclusiveFileLock> Filesystem::take_exclusive_file_lock(const Path& lockfile, LineInfo li) const
     {
         std::error_code ec;
         auto sh = this->take_exclusive_file_lock(lockfile, ec);
@@ -2023,7 +2152,8 @@ namespace vcpkg
         return sh;
     }
 
-    std::unique_ptr<IExclusiveFileLock> Filesystem::try_take_exclusive_file_lock(const Path& lockfile, LineInfo li)
+    std::unique_ptr<IExclusiveFileLock> Filesystem::try_take_exclusive_file_lock(const Path& lockfile,
+                                                                                 LineInfo li) const
     {
         std::error_code ec;
         auto sh = this->try_take_exclusive_file_lock(lockfile, ec);
@@ -2035,36 +2165,7 @@ namespace vcpkg
         return sh;
     }
 
-    std::vector<Path> Filesystem::find_from_PATH(StringView stem) const
-    {
-        return this->find_from_PATH(View<StringView>{&stem, 1});
-    }
-
-    ReadFilePointer Filesystem::open_for_read(const Path& file_path, LineInfo li) const
-    {
-        std::error_code ec;
-        auto ret = this->open_for_read(file_path, ec);
-        if (ec)
-        {
-            exit_filesystem_call_error(li, ec, __func__, {file_path});
-        }
-
-        return ret;
-    }
-
-    ExpectedL<ReadFilePointer> Filesystem::try_open_for_read(const Path& file_path) const
-    {
-        std::error_code ec;
-        auto ret = this->open_for_read(file_path, ec);
-        if (ec)
-        {
-            return format_filesystem_call_error(ec, __func__, {file_path});
-        }
-
-        return ExpectedL<ReadFilePointer>{std::move(ret)};
-    }
-
-    WriteFilePointer Filesystem::open_for_write(const Path& file_path, Append append, LineInfo li)
+    WriteFilePointer Filesystem::open_for_write(const Path& file_path, Append append, LineInfo li) const
     {
         std::error_code ec;
         auto ret = this->open_for_write(file_path, append, ec);
@@ -2076,18 +2177,34 @@ namespace vcpkg
         return ret;
     }
 
-    WriteFilePointer Filesystem::open_for_write(const Path& file_path, std::error_code& ec)
+    WriteFilePointer Filesystem::open_for_write(const Path& file_path, std::error_code& ec) const
     {
         return open_for_write(file_path, Append::NO, ec);
     }
 
-    WriteFilePointer Filesystem::open_for_write(const Path& file_path, LineInfo li)
+    WriteFilePointer Filesystem::open_for_write(const Path& file_path, LineInfo li) const
     {
         return open_for_write(file_path, Append::NO, li);
     }
 
     struct RealFilesystem final : Filesystem
     {
+        virtual uint64_t file_size(const Path& file_path, std::error_code& ec) const override
+        {
+#ifdef _WIN32
+            return stdfs::file_size(to_stdfs_path(file_path), ec);
+#else
+            struct stat st;
+            if (stat(file_path.c_str(), &st) != 0)
+            {
+                ec.assign(errno, std::generic_category());
+                return 0;
+            }
+
+            return st.st_size;
+#endif // defined(_WIN32)
+        }
+
         virtual std::string read_contents(const Path& file_path, std::error_code& ec) const override
         {
             StatsTimer t(g_us_filesystem_stats);
@@ -2098,29 +2215,7 @@ namespace vcpkg
                 return std::string();
             }
 
-            std::string output;
-            constexpr std::size_t buffer_size = 1024 * 32;
-            char buffer[buffer_size];
-            do
-            {
-                const auto this_read = file.read(buffer, 1, buffer_size);
-                if (this_read != 0)
-                {
-                    output.append(buffer, this_read);
-                }
-                else if ((ec = file.error()))
-                {
-                    return std::string();
-                }
-            } while (!file.eof());
-
-            if (Strings::starts_with(output, "\xEF\xBB\xBF"))
-            {
-                // remove byte-order mark from the beginning of the string
-                output.erase(output.begin(), output.begin() + 3);
-            }
-
-            return output;
+            return file.read_to_end(ec);
         }
         virtual ExpectedL<std::vector<std::string>> read_lines(const Path& file_path) const override
         {
@@ -2646,108 +2741,6 @@ namespace vcpkg
         }
 #endif // ^^^ !_WIN32
 
-        virtual void write_lines(const Path& file_path,
-                                 const std::vector<std::string>& lines,
-                                 std::error_code& ec) override
-        {
-            vcpkg::WriteFilePointer output{file_path, Append::NO, ec};
-            if (!ec)
-            {
-                for (const auto& line : lines)
-                {
-                    if (output.write(line.c_str(), 1, line.size()) != line.size() || output.put('\n') != '\n')
-                    {
-                        ec.assign(errno, std::generic_category());
-                        return;
-                    }
-                }
-            }
-        }
-        virtual void rename(const Path& old_path, const Path& new_path, std::error_code& ec) override
-        {
-#if defined(_WIN32)
-            stdfs::rename(to_stdfs_path(old_path), to_stdfs_path(new_path), ec);
-#else  // ^^^ _WIN32 // !_WIN32 vvv
-            if (::rename(old_path.c_str(), new_path.c_str()) == 0)
-            {
-                ec.clear();
-            }
-            else
-            {
-                ec.assign(errno, std::generic_category());
-            }
-#endif // ^^^ !_WIN32
-        }
-        virtual void rename_or_copy(const Path& old_path,
-                                    const Path& new_path,
-                                    StringLiteral temp_suffix,
-                                    std::error_code& ec) override
-        {
-            this->rename(old_path, new_path, ec);
-            (void)temp_suffix;
-#if !defined(_WIN32)
-            if (ec)
-            {
-                auto dst = new_path + temp_suffix;
-                this->copy_file(old_path, dst, CopyOptions::overwrite_existing, ec);
-                if (ec)
-                {
-                    return;
-                }
-
-                this->rename(dst, new_path, ec);
-                if (ec)
-                {
-                    return;
-                }
-
-                this->remove(old_path, ec);
-            }
-#endif // ^^^ !defined(_WIN32)
-        }
-
-        virtual bool remove(const Path& target, std::error_code& ec) override
-        {
-#if defined(_WIN32)
-            auto as_stdfs = to_stdfs_path(target);
-            bool result = stdfs::remove(as_stdfs, ec);
-            if (ec && ec == std::error_code(ERROR_ACCESS_DENIED, std::system_category()))
-            {
-                remove_file_attribute_readonly(as_stdfs, ec);
-                if (ec)
-                {
-                    return false;
-                }
-
-                return stdfs::remove(as_stdfs, ec);
-            }
-
-            return result;
-#else  // ^^^ _WIN32 // !_WIN32 vvv
-            if (::remove(target.c_str()) == 0)
-            {
-                ec.clear();
-                return true;
-            }
-
-            const auto remove_errno = errno;
-            if (remove_errno == ENOENT || remove_errno == ENOTDIR)
-            {
-                ec.clear();
-            }
-            else
-            {
-                ec.assign(remove_errno, std::generic_category());
-            }
-
-            return false;
-#endif // _WIN32
-        }
-        virtual void remove_all(const Path& base, std::error_code& ec, Path& failure_point) override
-        {
-            vcpkg_remove_all(base, ec, failure_point);
-        }
-
         virtual bool is_directory(const Path& target) const override
         {
 #if defined(_WIN32)
@@ -2776,6 +2769,7 @@ namespace vcpkg
             return S_ISREG(s.st_mode);
 #endif // ^^^ !_WIN32
         }
+
         virtual bool is_empty(const Path& target, std::error_code& ec) const override
         {
 #if defined(_WIN32)
@@ -2812,6 +2806,285 @@ namespace vcpkg
 #endif // ^^^ !_WIN32
         }
 
+        virtual FileType status(const Path& target, std::error_code& ec) const override
+        {
+#if defined(_WIN32)
+            auto result = stdfs::status(to_stdfs_path(target), ec);
+            translate_not_found_to_success(ec);
+            return convert_file_type(result.type());
+#else  // ^^^ _WIN32 // !_WIN32 vvv
+            struct stat s;
+            if (::stat(target.c_str(), &s) == 0)
+            {
+                ec.clear();
+                return posix_translate_stat_mode_to_file_type(s.st_mode);
+            }
+
+            if (errno == ENOENT || errno == ENOTDIR)
+            {
+                ec.clear();
+                return FileType::not_found;
+            }
+
+            ec.assign(errno, std::generic_category());
+            return FileType::unknown;
+#endif // ^^^ !_WIN32
+        }
+
+        virtual FileType symlink_status(const Path& target, std::error_code& ec) const override
+        {
+#if defined(_WIN32)
+            auto result = stdfs::symlink_status(to_stdfs_path(target), ec);
+            translate_not_found_to_success(ec);
+            return convert_file_type(result.type());
+#else  // ^^^ _WIN32 // !_WIN32 vvv
+            struct stat s;
+            if (::lstat(target.c_str(), &s) == 0)
+            {
+                ec.clear();
+                return posix_translate_stat_mode_to_file_type(s.st_mode);
+            }
+
+            if (errno == ENOENT || errno == ENOTDIR)
+            {
+                ec.clear();
+                return FileType::not_found;
+            }
+
+            ec.assign(errno, std::generic_category());
+            return FileType::unknown;
+#endif // ^^^ !_WIN32
+        }
+
+        virtual int64_t last_write_time(const Path& target, std::error_code& ec) const override
+        {
+#if defined(_WIN32)
+            auto result = stdfs::last_write_time(to_stdfs_path(target), ec);
+            return result.time_since_epoch().count();
+#else // ^^^ _WIN32 // !_WIN32 vvv
+            struct stat s;
+            if (::lstat(target.c_str(), &s) == 0)
+            {
+                ec.clear();
+#ifdef __APPLE__
+                return s.st_mtimespec.tv_sec * 1'000'000'000 + s.st_mtimespec.tv_nsec;
+#else
+                return s.st_mtim.tv_sec * 1'000'000'000 + s.st_mtim.tv_nsec;
+#endif
+            }
+
+            ec.assign(errno, std::generic_category());
+            return {};
+#endif // ^^^ !_WIN32
+        }
+
+        virtual Path absolute(const Path& target, std::error_code& ec) const override
+        {
+#if defined(_WIN32)
+            return from_stdfs_path(stdfs::absolute(to_stdfs_path(target), ec));
+#else  // ^^^ _WIN32 / !_WIN32 vvv
+            if (target.is_absolute())
+            {
+                return target;
+            }
+            else
+            {
+                auto current_path = this->current_path(ec);
+                if (ec) return Path();
+                return std::move(current_path) / target;
+            }
+#endif // ^^^ !_WIN32
+        }
+
+        virtual Path almost_canonical(const Path& target, std::error_code& ec) const override
+        {
+            auto result = this->absolute(target, ec);
+            if (ec)
+            {
+                return result;
+            }
+
+            result = result.lexically_normal();
+#if defined(_WIN32)
+            result = vcpkg::win32_fix_path_case(result);
+#endif // _WIN32
+            return result;
+        }
+
+        virtual Path current_path(std::error_code& ec) const override
+        {
+#if defined(_WIN32)
+            return from_stdfs_path(stdfs::current_path(ec));
+#else  // ^^^ _WIN32 // !_WIN32
+            std::string buf;
+            buf.resize(PATH_MAX);
+            for (;;)
+            {
+                if (getcwd(&buf[0], buf.size() + 1) != nullptr)
+                {
+                    buf.resize(strlen(buf.c_str()));
+                    ec.clear();
+                    break;
+                }
+
+                if (errno != ERANGE)
+                {
+                    ec.assign(errno, std::generic_category());
+                    buf.clear();
+                    break;
+                }
+
+                // the current working directory is too big for the size of the string; resize and try again.
+                buf.append(PATH_MAX, '\0');
+            }
+
+            return Path{std::move(buf)};
+#endif // ^^^ !_WIN32
+        }
+
+        virtual std::vector<Path> find_from_PATH(View<StringView> stems) const override
+        {
+            std::vector<Path> ret;
+
+            if (!stems.empty())
+            {
+#if defined(_WIN32)
+                static constexpr StringLiteral extensions[] = {".cmd", ".exe", ".bat"};
+#else  // ^^^ _WIN32 // !_WIN32 vvv
+                static constexpr StringLiteral extensions[] = {""};
+#endif // ^^^!_WIN32
+
+                static const std::vector<Path> path_bases = calculate_path_bases();
+                for (const Path& path_base : path_bases)
+                {
+                    for (auto&& stem : stems)
+                    {
+                        auto base_name = path_base / stem;
+                        for (auto&& extension : extensions)
+                        {
+                            auto with_extension = base_name + extension;
+                            if (!Util::Vectors::contains(ret, with_extension) &&
+                                this->exists(with_extension, IgnoreErrors{}))
+                            {
+                                Debug::print("Found path: ", with_extension, '\n');
+                                ret.push_back(std::move(with_extension));
+                            }
+                        }
+                    }
+                }
+            }
+
+            return ret;
+        }
+
+        virtual ReadFilePointer open_for_read(const Path& file_path, std::error_code& ec) const override
+        {
+            return ReadFilePointer{file_path, ec};
+        }
+
+        virtual void write_lines(const Path& file_path,
+                                 const std::vector<std::string>& lines,
+                                 std::error_code& ec) const override
+        {
+            vcpkg::WriteFilePointer output{file_path, Append::NO, ec};
+            if (!ec)
+            {
+                for (const auto& line : lines)
+                {
+                    if (output.write(line.c_str(), 1, line.size()) != line.size() || output.put('\n') != '\n')
+                    {
+                        ec.assign(errno, std::generic_category());
+                        return;
+                    }
+                }
+            }
+        }
+
+        virtual void rename(const Path& old_path, const Path& new_path, std::error_code& ec) const override
+        {
+#if defined(_WIN32)
+            stdfs::rename(to_stdfs_path(old_path), to_stdfs_path(new_path), ec);
+#else  // ^^^ _WIN32 // !_WIN32 vvv
+            if (::rename(old_path.c_str(), new_path.c_str()) == 0)
+            {
+                ec.clear();
+            }
+            else
+            {
+                ec.assign(errno, std::generic_category());
+            }
+#endif // ^^^ !_WIN32
+        }
+        virtual void rename_or_copy(const Path& old_path,
+                                    const Path& new_path,
+                                    StringLiteral temp_suffix,
+                                    std::error_code& ec) const override
+        {
+            this->rename(old_path, new_path, ec);
+            (void)temp_suffix;
+#if !defined(_WIN32)
+            if (ec)
+            {
+                auto dst = new_path + temp_suffix;
+                this->copy_file(old_path, dst, CopyOptions::overwrite_existing, ec);
+                if (ec)
+                {
+                    return;
+                }
+
+                this->rename(dst, new_path, ec);
+                if (ec)
+                {
+                    return;
+                }
+
+                this->remove(old_path, ec);
+            }
+#endif // ^^^ !defined(_WIN32)
+        }
+
+        virtual bool remove(const Path& target, std::error_code& ec) const override
+        {
+#if defined(_WIN32)
+            auto as_stdfs = to_stdfs_path(target);
+            bool result = stdfs::remove(as_stdfs, ec);
+            if (ec && ec == std::error_code(ERROR_ACCESS_DENIED, std::system_category()))
+            {
+                remove_file_attribute_readonly(as_stdfs, ec);
+                if (ec)
+                {
+                    return false;
+                }
+
+                return stdfs::remove(as_stdfs, ec);
+            }
+
+            return result;
+#else  // ^^^ _WIN32 // !_WIN32 vvv
+            if (::remove(target.c_str()) == 0)
+            {
+                ec.clear();
+                return true;
+            }
+
+            const auto remove_errno = errno;
+            if (remove_errno == ENOENT || remove_errno == ENOTDIR)
+            {
+                ec.clear();
+            }
+            else
+            {
+                ec.assign(remove_errno, std::generic_category());
+            }
+
+            return false;
+#endif // _WIN32
+        }
+        virtual void remove_all(const Path& base, std::error_code& ec, Path& failure_point) const override
+        {
+            vcpkg_remove_all(base, ec, failure_point);
+        }
+
 #if !defined(_WIN32)
         static int posix_create_directory(const char* new_directory)
         {
@@ -2841,7 +3114,7 @@ namespace vcpkg
         }
 #endif // ^^^ !_WIN32
 
-        virtual bool create_directory(const Path& new_directory, std::error_code& ec) override
+        virtual bool create_directory(const Path& new_directory, std::error_code& ec) const override
         {
 #if defined(_WIN32)
             return stdfs::create_directory(to_stdfs_path(new_directory), ec);
@@ -2857,7 +3130,7 @@ namespace vcpkg
             return false;
 #endif // ^^^ !_WIN32
         }
-        virtual bool create_directories(const Path& new_directory, std::error_code& ec) override
+        virtual bool create_directories(const Path& new_directory, std::error_code& ec) const override
         {
             StatsTimer t(g_us_filesystem_stats);
 #if defined(_WIN32)
@@ -2911,14 +3184,15 @@ namespace vcpkg
 #endif // _WIN32
         }
 
-        virtual Path create_or_get_temp_directory(std::error_code& ec) override
+        virtual Path create_or_get_temp_directory(std::error_code& ec) const override
         {
 #if defined(_WIN32)
             wchar_t temp_folder[MAX_PATH + 1];
             DWORD length_without_null = GetTempPathW(MAX_PATH + 1, temp_folder);
             Path temp_folder_path = Path(Strings::to_utf8(temp_folder, length_without_null)) / "vcpkg";
 #else  // ^^^ _WIN32 // !_WIN32 vvv
-            const Path temp_folder_path = "/tmp/vcpkg";
+            const Path temp_folder_path =
+                Path(get_environment_variable("TMPDIR").value_or(std::string("/tmp"))) / "vcpkg";
 #endif // ^^^ !_WIN32
 
             this->create_directories(temp_folder_path, ec);
@@ -2939,7 +3213,7 @@ namespace vcpkg
         }
 #endif // !_WIN32
 
-        virtual void create_symlink(const Path& to, const Path& from, std::error_code& ec) override
+        virtual void create_symlink(const Path& to, const Path& from, std::error_code& ec) const override
         {
 #if defined(_WIN32)
             stdfs::create_symlink(to_stdfs_path(to), to_stdfs_path(from), ec);
@@ -2947,7 +3221,7 @@ namespace vcpkg
             posix_create_symlink(to, from, ec);
 #endif // _WIN32
         }
-        virtual void create_directory_symlink(const Path& to, const Path& from, std::error_code& ec) override
+        virtual void create_directory_symlink(const Path& to, const Path& from, std::error_code& ec) const override
         {
 #if defined(_WIN32)
             stdfs::create_directory_symlink(to_stdfs_path(to), to_stdfs_path(from), ec);
@@ -2955,12 +3229,12 @@ namespace vcpkg
             posix_create_symlink(to, from, ec);
 #endif // _WIN32
         }
-        virtual void create_hard_link(const Path& to, const Path& from, std::error_code& ec) override
+        virtual void create_hard_link(const Path& to, const Path& from, std::error_code& ec) const override
         {
 #if defined(_WIN32)
             stdfs::create_hard_link(to_stdfs_path(to), to_stdfs_path(from), ec);
 #else  // ^^^ _WIN32 // !_WIN32 vvv
-            if (::link(from.c_str(), to.c_str()) == 0)
+            if (::link(to.c_str(), from.c_str()) == 0)
             {
                 ec.clear();
             }
@@ -2971,12 +3245,14 @@ namespace vcpkg
 #endif // _WIN32
         }
 
-        virtual void copy_regular_recursive(const Path& source, const Path& destination, std::error_code& ec) override
+        virtual void copy_regular_recursive(const Path& source,
+                                            const Path& destination,
+                                            std::error_code& ec) const override
         {
             StatsTimer t(g_us_filesystem_stats);
             copy_regular_recursive_impl(source, destination, ec);
         }
-        void copy_regular_recursive_impl(const Path& source, const Path& destination, std::error_code& ec)
+        void copy_regular_recursive_impl(const Path& source, const Path& destination, std::error_code& ec) const
         {
 #if defined(_WIN32)
             stdfs::copy(to_stdfs_path(source), to_stdfs_path(destination), stdfs::copy_options::recursive, ec);
@@ -3017,7 +3293,7 @@ namespace vcpkg
         virtual bool copy_file(const Path& source,
                                const Path& destination,
                                CopyOptions options,
-                               std::error_code& ec) override
+                               std::error_code& ec) const override
         {
 #if defined(_WIN32)
             DWORD last_error;
@@ -3244,7 +3520,7 @@ namespace vcpkg
 #endif // ^^^ !_WIN32
         }
 
-        virtual void copy_symlink(const Path& source, const Path& destination, std::error_code& ec) override
+        virtual void copy_symlink(const Path& source, const Path& destination, std::error_code& ec) const override
         {
 #if defined(_WIN32)
             stdfs::copy_symlink(to_stdfs_path(source), to_stdfs_path(destination), ec);
@@ -3285,78 +3561,7 @@ namespace vcpkg
 #endif // ^^^ !_WIN32
         }
 
-        virtual FileType status(const Path& target, std::error_code& ec) const override
-        {
-#if defined(_WIN32)
-            auto result = stdfs::status(to_stdfs_path(target), ec);
-            translate_not_found_to_success(ec);
-            return convert_file_type(result.type());
-#else  // ^^^ _WIN32 // !_WIN32 vvv
-            struct stat s;
-            if (::stat(target.c_str(), &s) == 0)
-            {
-                ec.clear();
-                return posix_translate_stat_mode_to_file_type(s.st_mode);
-            }
-
-            if (errno == ENOENT || errno == ENOTDIR)
-            {
-                ec.clear();
-                return FileType::not_found;
-            }
-
-            ec.assign(errno, std::generic_category());
-            return FileType::unknown;
-#endif // ^^^ !_WIN32
-        }
-        virtual FileType symlink_status(const Path& target, std::error_code& ec) const override
-        {
-#if defined(_WIN32)
-            auto result = stdfs::symlink_status(to_stdfs_path(target), ec);
-            translate_not_found_to_success(ec);
-            return convert_file_type(result.type());
-#else  // ^^^ _WIN32 // !_WIN32 vvv
-            struct stat s;
-            if (::lstat(target.c_str(), &s) == 0)
-            {
-                ec.clear();
-                return posix_translate_stat_mode_to_file_type(s.st_mode);
-            }
-
-            if (errno == ENOENT || errno == ENOTDIR)
-            {
-                ec.clear();
-                return FileType::not_found;
-            }
-
-            ec.assign(errno, std::generic_category());
-            return FileType::unknown;
-#endif // ^^^ !_WIN32
-        }
-
-        virtual int64_t last_write_time(const Path& target, std::error_code& ec) const override
-        {
-#if defined(_WIN32)
-            auto result = stdfs::last_write_time(to_stdfs_path(target), ec);
-            return result.time_since_epoch().count();
-#else // ^^^ _WIN32 // !_WIN32 vvv
-            struct stat s;
-            if (::lstat(target.c_str(), &s) == 0)
-            {
-                ec.clear();
-#ifdef __APPLE__
-                return s.st_mtimespec.tv_sec * 1'000'000'000 + s.st_mtimespec.tv_nsec;
-#else
-                return s.st_mtim.tv_sec * 1'000'000'000 + s.st_mtim.tv_nsec;
-#endif
-            }
-
-            ec.assign(errno, std::generic_category());
-            return {};
-#endif // ^^^ !_WIN32
-        }
-
-        virtual void write_contents(const Path& file_path, StringView data, std::error_code& ec) override
+        virtual void write_contents(const Path& file_path, StringView data, std::error_code& ec) const override
         {
             StatsTimer t(g_us_filesystem_stats);
             auto f = open_for_write(file_path, Append::NO, ec);
@@ -3370,7 +3575,7 @@ namespace vcpkg
             }
         }
 
-        virtual void write_contents_and_dirs(const Path& file_path, StringView data, std::error_code& ec) override
+        virtual void write_contents_and_dirs(const Path& file_path, StringView data, std::error_code& ec) const override
         {
             write_contents(file_path, data, ec);
             if (ec)
@@ -3384,70 +3589,7 @@ namespace vcpkg
             }
         }
 
-        virtual Path absolute(const Path& target, std::error_code& ec) const override
-        {
-#if defined(_WIN32)
-            return from_stdfs_path(stdfs::absolute(to_stdfs_path(target), ec));
-#else  // ^^^ _WIN32 / !_WIN32 vvv
-            if (target.is_absolute())
-            {
-                return target;
-            }
-            else
-            {
-                auto current_path = this->current_path(ec);
-                if (ec) return Path();
-                return std::move(current_path) / target;
-            }
-#endif // ^^^ !_WIN32
-        }
-
-        virtual Path almost_canonical(const Path& target, std::error_code& ec) const override
-        {
-            auto result = this->absolute(target, ec);
-            if (ec)
-            {
-                return result;
-            }
-
-            result = result.lexically_normal();
-#if defined(_WIN32)
-            result = vcpkg::win32_fix_path_case(result);
-#endif // _WIN32
-            return result;
-        }
-
-        virtual Path current_path(std::error_code& ec) const override
-        {
-#if defined(_WIN32)
-            return from_stdfs_path(stdfs::current_path(ec));
-#else  // ^^^ _WIN32 // !_WIN32
-            std::string buf;
-            buf.resize(PATH_MAX);
-            for (;;)
-            {
-                if (getcwd(&buf[0], buf.size() + 1) != nullptr)
-                {
-                    buf.resize(strlen(buf.c_str()));
-                    ec.clear();
-                    break;
-                }
-
-                if (errno != ERANGE)
-                {
-                    ec.assign(errno, std::generic_category());
-                    buf.clear();
-                    break;
-                }
-
-                // the current working directory is too big for the size of the string; resize and try again.
-                buf.append(PATH_MAX, '\0');
-            }
-
-            return Path{std::move(buf)};
-#endif // ^^^ !_WIN32
-        }
-        virtual void current_path(const Path& new_current_path, std::error_code& ec) override
+        virtual void current_path(const Path& new_current_path, std::error_code& ec) const override
         {
 #if defined(_WIN32)
             stdfs::current_path(to_stdfs_path(new_current_path), ec);
@@ -3542,7 +3684,7 @@ namespace vcpkg
         };
 
         virtual std::unique_ptr<IExclusiveFileLock> take_exclusive_file_lock(const Path& lockfile,
-                                                                             std::error_code& ec) override
+                                                                             std::error_code& ec) const override
         {
             auto result = std::make_unique<ExclusiveFileLock>(lockfile, ec);
             if (!ec && !result->lock_attempt(ec) && !ec)
@@ -3558,7 +3700,7 @@ namespace vcpkg
         }
 
         virtual std::unique_ptr<IExclusiveFileLock> try_take_exclusive_file_lock(const Path& lockfile,
-                                                                                 std::error_code& ec) override
+                                                                                 std::error_code& ec) const override
         {
             auto result = std::make_unique<ExclusiveFileLock>(lockfile, ec);
             if (!ec && !result->lock_attempt(ec) && !ec)
@@ -3585,57 +3727,16 @@ namespace vcpkg
             return std::move(result);
         }
 
-        virtual std::vector<Path> find_from_PATH(View<StringView> stems) const override
-        {
-            std::vector<Path> ret;
-
-            if (!stems.empty())
-            {
-#if defined(_WIN32)
-                static constexpr StringLiteral extensions[] = {".cmd", ".exe", ".bat"};
-#else  // ^^^ _WIN32 // !_WIN32 vvv
-                static constexpr StringLiteral extensions[] = {""};
-#endif // ^^^!_WIN32
-
-                static const std::vector<Path> path_bases = calculate_path_bases();
-                for (const Path& path_base : path_bases)
-                {
-                    for (auto&& stem : stems)
-                    {
-                        auto base_name = path_base / stem;
-                        for (auto&& extension : extensions)
-                        {
-                            auto with_extension = base_name + extension;
-                            if (!Util::Vectors::contains(ret, with_extension) &&
-                                this->exists(with_extension, IgnoreErrors{}))
-                            {
-                                Debug::print("Found path: ", with_extension, '\n');
-                                ret.push_back(std::move(with_extension));
-                            }
-                        }
-                    }
-                }
-            }
-
-            return ret;
-        }
-
-        virtual ReadFilePointer open_for_read(const Path& file_path, std::error_code& ec) const override
-        {
-            return ReadFilePointer{file_path, ec};
-        }
-
-        virtual WriteFilePointer open_for_write(const Path& file_path, Append append, std::error_code& ec) override
+        virtual WriteFilePointer open_for_write(const Path& file_path,
+                                                Append append,
+                                                std::error_code& ec) const override
         {
             return WriteFilePointer{file_path, append, ec};
         }
     };
 
-    Filesystem& get_real_filesystem()
-    {
-        static RealFilesystem real_fs;
-        return real_fs;
-    }
+    static constexpr RealFilesystem real_filesystem_instance;
+    constexpr const Filesystem& real_filesystem = real_filesystem_instance;
 
     constexpr StringLiteral FILESYSTEM_INVALID_CHARACTERS = R"(\/:*?"<>|)";
 
@@ -3645,7 +3746,7 @@ namespace vcpkg
                std::string::npos;
     }
 
-    void print_paths(const std::vector<Path>& paths)
+    void print_paths(MessageSink& msg_sink, const std::vector<Path>& paths)
     {
         LocalizedString ls;
         ls.append_raw('\n');
@@ -3657,7 +3758,7 @@ namespace vcpkg
         }
 
         ls.append_raw('\n');
-        msg::print(ls);
+        msg_sink.print(ls);
     }
 
     IExclusiveFileLock::~IExclusiveFileLock() = default;
@@ -3778,4 +3879,15 @@ namespace vcpkg
             return Strings::case_insensitive_ascii_equals(extension, ext);
         });
     }
+
+#if !defined(_WIN32)
+    void close_mark_invalid(int& fd) noexcept
+    {
+        if (fd >= 0)
+        {
+            Checks::check_exit(VCPKG_LINE_INFO, ::close(fd) == 0);
+            fd = -1;
+        }
+    }
+#endif // ^^^ !_WIN32
 }

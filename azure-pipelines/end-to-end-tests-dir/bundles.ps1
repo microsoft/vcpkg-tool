@@ -150,7 +150,7 @@ foreach ($k in $b.keys) {
 
 Run-Vcpkg install vcpkg-hello-world-1 --dry-run @commonArgs `
     --x-buildtrees-root=$buildtreesRoot `
-    --x-builtin-ports-root=$deploy/ports `
+    --x-builtin-ports-root=$deployment/ports `
     --x-install-root=$installRoot `
     --x-packages-root=$packagesRoot
 Throw-IfNotFailed
@@ -164,7 +164,7 @@ $CurrentTest = "Testing bundle.usegitregistry"
 Run-Vcpkg install --dry-run @commonArgs `
     --x-manifest-root=$manifestdir `
     --x-buildtrees-root=$buildtreesRoot `
-    --x-builtin-ports-root=$deploy/ports `
+    --x-builtin-ports-root=$deployment/ports `
     --x-install-root=$installRoot `
     --x-packages-root=$packagesRoot
 Throw-IfNotFailed
@@ -184,7 +184,7 @@ New-Item -ItemType Directory -Force $manifestdir2 | Out-Null
 Run-Vcpkg install @commonArgs `
     --x-manifest-root=$manifestdir2 `
     --x-buildtrees-root=$buildtreesRoot `
-    --x-builtin-ports-root=$deploy/ports `
+    --x-builtin-ports-root=$deployment/ports `
     --x-install-root=$installRoot `
     --x-packages-root=$packagesRoot
 Throw-IfFailed
@@ -192,7 +192,7 @@ Throw-IfFailed
 Run-Vcpkg search vcpkg-hello-world-1 @commonArgs `
     --x-manifest-root=$manifestdir2 `
     --x-buildtrees-root=$buildtreesRoot `
-    --x-builtin-ports-root=$deploy/ports `
+    --x-builtin-ports-root=$deployment/ports `
     --x-install-root=$installRoot `
     --x-packages-root=$packagesRoot
 Throw-IfFailed

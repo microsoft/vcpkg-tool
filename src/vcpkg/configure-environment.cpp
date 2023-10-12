@@ -2,11 +2,13 @@
 
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/downloads.h>
+#include <vcpkg/base/files.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/setup-messages.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
 #include <vcpkg/base/system.process.h>
+#include <vcpkg/base/uuid.h>
 
 #include <vcpkg/archives.h>
 #include <vcpkg/commands.version.h>
@@ -16,57 +18,11 @@
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
-#if defined(VCPKG_CE_SHA)
-#define VCPKG_CE_SHA_AS_STRING MACRO_TO_STRING(VCPKG_CE_SHA)
-#endif // ^^^ VCPKG_CE_SHA
-#include <vcpkg/base/uuid.h>
+using namespace vcpkg;
 
 namespace
 {
-    using namespace vcpkg;
-#if !defined(VCPKG_ARTIFACTS_PATH)
-    void extract_ce_tarball(const VcpkgPaths& paths,
-                            const Path& ce_tarball,
-                            const Path& node_path,
-                            const Path& ce_base_path)
-    {
-        auto& fs = paths.get_filesystem();
-        if (!fs.is_regular_file(ce_tarball))
-        {
-            Debug::println("Download succeeded but file isn't present?");
-            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgFailedToProvisionCe);
-        }
-
-        fs.remove_all(ce_base_path, VCPKG_LINE_INFO);
-        fs.create_directories(ce_base_path, VCPKG_LINE_INFO);
-        Path node_root = node_path.parent_path();
-        auto npm_path = node_root / "node_modules" / "npm" / "bin" / "npm-cli.js";
-        if (!fs.exists(npm_path, VCPKG_LINE_INFO))
-        {
-            npm_path = Path(node_root.parent_path()) / "lib" / "node_modules" / "npm" / "bin" / "npm-cli.js";
-        }
-
-        Command cmd_provision(node_path);
-        cmd_provision.string_arg(npm_path);
-        cmd_provision.string_arg("--force");
-        cmd_provision.string_arg("install");
-        cmd_provision.string_arg("--no-save");
-        cmd_provision.string_arg("--no-lockfile");
-        cmd_provision.string_arg("--scripts-prepend-node-path=true");
-        cmd_provision.string_arg("--silent");
-        cmd_provision.string_arg(ce_tarball);
-        auto env = get_modified_clean_environment({}, node_root);
-        const auto provision_status = cmd_execute(cmd_provision, WorkingDirectory{ce_base_path}, env);
-        fs.remove(ce_tarball, VCPKG_LINE_INFO);
-        if (!succeeded(provision_status))
-        {
-            fs.remove_all(ce_base_path, VCPKG_LINE_INFO);
-            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgFailedToProvisionCe);
-        }
-    }
-#endif // ^^^ !defined(VCPKG_ARTIFACTS_PATH)
-
-    void track_telemetry(Filesystem& fs, const Path& telemetry_file_path)
+    void track_telemetry(const Filesystem& fs, const Path& telemetry_file_path)
     {
         std::error_code ec;
         auto telemetry_file = fs.read_contents(telemetry_file_path, ec);
@@ -115,57 +71,122 @@ namespace
             Debug::println("No artifacts activated.");
         }
     }
-}
+
+    constexpr const StringLiteral* ArtifactOperatingSystemsSwitchNamesStorage[] = {
+        &SWITCH_WINDOWS, &SWITCH_OSX, &SWITCH_LINUX, &SWITCH_FREEBSD};
+    constexpr const StringLiteral* ArtifactHostPlatformSwitchNamesStorage[] = {
+        &SWITCH_X86, &SWITCH_X64, &SWITCH_ARM, &SWITCH_ARM64};
+    constexpr const StringLiteral* ArtifactTargetPlatformSwitchNamesStorage[] = {
+        &SWITCH_TARGET_X86, &SWITCH_TARGET_X64, &SWITCH_TARGET_ARM, &SWITCH_TARGET_ARM64};
+
+    bool more_than_one_mapped(View<const StringLiteral*> candidates, const std::set<std::string, std::less<>>& switches)
+    {
+        bool seen = false;
+        for (auto&& candidate : candidates)
+        {
+            if (Util::Sets::contains(switches, *candidate))
+            {
+                if (seen)
+                {
+                    return true;
+                }
+
+                seen = true;
+            }
+        }
+
+        return false;
+    }
+} // unnamed namespace
 
 namespace vcpkg
 {
+    ExpectedL<Path> download_vcpkg_standalone_bundle(const DownloadManager& download_manager,
+                                                     const Filesystem& fs,
+                                                     const Path& download_root)
+    {
+#if defined(VCPKG_STANDALONE_BUNDLE_SHA)
+        const auto bundle_tarball = download_root / "vcpkg-standalone-bundle-" VCPKG_BASE_VERSION_AS_STRING ".tar.gz";
+        msg::println(msgDownloadingVcpkgStandaloneBundle, msg::version = VCPKG_BASE_VERSION_AS_STRING);
+        const auto bundle_uri =
+            "https://github.com/microsoft/vcpkg-tool/releases/download/" VCPKG_BASE_VERSION_AS_STRING
+            "/vcpkg-standalone-bundle.tar.gz";
+        download_manager.download_file(
+            fs, bundle_uri, {}, bundle_tarball, MACRO_TO_STRING(VCPKG_STANDALONE_BUNDLE_SHA), null_sink);
+#else  // ^^^ VCPKG_STANDALONE_BUNDLE_SHA / !VCPKG_STANDALONE_BUNDLE_SHA vvv
+        const auto bundle_tarball = download_root / "vcpkg-standalone-bundle-latest.tar.gz";
+        msg::println(Color::warning, msgDownloadingVcpkgStandaloneBundleLatest);
+        fs.remove(bundle_tarball, VCPKG_LINE_INFO);
+        const auto bundle_uri =
+            "https://github.com/microsoft/vcpkg-tool/releases/latest/download/vcpkg-standalone-bundle.tar.gz";
+        download_manager.download_file(fs, bundle_uri, {}, bundle_tarball, nullopt, null_sink);
+#endif // ^^^ !VCPKG_STANDALONE_BUNDLE_SHA
+        return bundle_tarball;
+    }
+
     int run_configure_environment_command(const VcpkgPaths& paths, View<std::string> args)
     {
         msg::println_warning(msgVcpkgCeIsExperimental);
         auto& fs = paths.get_filesystem();
-        auto& download_manager = paths.get_download_manager();
-        auto node_path = paths.get_tool_exe(Tools::NODE, stdout_sink);
-#if defined(VCPKG_ARTIFACTS_PATH)
-        // use hard coded in-source copy
-        (void)fs;
-        (void)download_manager;
-        Path ce_path = MACRO_TO_STRING(VCPKG_ARTIFACTS_PATH);
-        // development support: intentionally unlocalized
-        msg::println(Color::warning,
-                     LocalizedString::from_raw("Using in-development vcpkg-artifacts built at: ").append_raw(ce_path));
-#else // ^^^ VCPKG_ARTIFACTS_PATH / might need to download vvv
-#if defined(VCPKG_CE_SHA)
-        auto base_path =
-            get_platform_cache_vcpkg().value_or_exit(VCPKG_LINE_INFO) / "artifacts-" VCPKG_BASE_VERSION_AS_STRING;
-        Debug::println("vcpkg-artifacts base path: ", base_path);
-        auto ce_path = base_path / "node_modules" / "vcpkg-ce";
-        bool needs_provisioning = !fs.is_directory(ce_path);
-        if (needs_provisioning)
+
+        // if artifacts is deployed in development, with Visual Studio, or with the One Liner, it will be deployed here
+        Path vcpkg_artifacts_path = get_exe_path_of_current_process();
+        vcpkg_artifacts_path.replace_filename("vcpkg-artifacts");
+        vcpkg_artifacts_path.make_preferred();
+        Path vcpkg_artifacts_main_path = vcpkg_artifacts_path / "main.js";
+        // Official / Development / None
+        // cross with
+        // Git / OneLiner / VS
+        //
+        // Official Git: Check for matching version number, use if set
+        // Development Git: Use development copy
+        // None Git: Use latest copy, download every time
+        if (paths.try_provision_vcpkg_artifacts())
         {
-            msg::println(msgDownloadingVcpkgCeBundle, msg::version = VCPKG_BASE_VERSION_AS_STRING);
-            const auto ce_uri =
-                "https://github.com/microsoft/vcpkg-tool/releases/download/" VCPKG_BASE_VERSION_AS_STRING
-                "/vcpkg-ce.tgz";
-            const auto ce_tarball = paths.downloads / "vcpkg-ce-" VCPKG_BASE_VERSION_AS_STRING ".tgz";
-            download_manager.download_file(fs, ce_uri, {}, ce_tarball, VCPKG_CE_SHA_AS_STRING, null_sink);
-            extract_ce_tarball(paths, ce_tarball, node_path, base_path);
+#if defined(VCPKG_STANDALONE_BUNDLE_SHA)
+            Path vcpkg_artifacts_version_path = vcpkg_artifacts_path / "version.txt";
+            bool out_of_date = fs.check_update_required(vcpkg_artifacts_version_path, VCPKG_BASE_VERSION_AS_STRING)
+                                   .value_or_exit(VCPKG_LINE_INFO);
+#else  // ^^^ VCPKG_STANDALONE_BUNDLE_SHA / !VCPKG_STANDALONE_BUNDLE_SHA vvv
+            bool out_of_date = !fs.exists(vcpkg_artifacts_path / "artifacts-development.txt", VCPKG_LINE_INFO);
+#endif // ^^^ !VCPKG_STANDALONE_BUNDLE_SHA
+            if (out_of_date)
+            {
+                fs.remove_all(vcpkg_artifacts_path, VCPKG_LINE_INFO);
+                auto temp = get_exe_path_of_current_process();
+                temp.replace_filename("vcpkg-artifacts-temp");
+                auto tarball = download_vcpkg_standalone_bundle(paths.get_download_manager(), fs, paths.downloads)
+                                   .value_or_exit(VCPKG_LINE_INFO);
+                set_directory_to_archive_contents(fs, paths.get_tool_cache(), null_sink, tarball, temp);
+                fs.rename_with_retry(temp / "vcpkg-artifacts", vcpkg_artifacts_path, VCPKG_LINE_INFO);
+                fs.remove(tarball, VCPKG_LINE_INFO);
+                fs.remove_all(temp, VCPKG_LINE_INFO);
+#if defined(VCPKG_STANDALONE_BUNDLE_SHA)
+                fs.write_contents(vcpkg_artifacts_version_path, VCPKG_BASE_VERSION_AS_STRING, VCPKG_LINE_INFO);
+#endif // ^^^ VCPKG_STANDALONE_BUNDLE_SHA
+            }
+
+            if (!fs.exists(vcpkg_artifacts_main_path, VCPKG_LINE_INFO))
+            {
+                Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgArtifactsBootstrapFailed);
+            }
         }
-#else  // ^^^ VCPKG_CE_SHA (official build) // always get latest vvv
-        auto base_path = get_platform_cache_vcpkg().value_or_exit(VCPKG_LINE_INFO) / "artifacts-latest";
-        Debug::println("vcpkg-artifacts base path: ", base_path);
-        auto ce_path = base_path / "node_modules" / "vcpkg-ce";
-        msg::println(Color::warning, msgDownloadingVcpkgCeBundleLatest);
-        const auto ce_uri = "https://github.com/microsoft/vcpkg-tool/releases/latest/download/vcpkg-ce.tgz";
-        const auto ce_tarball = paths.downloads / "vcpkg-ce-latest.tgz";
-        download_manager.download_file(fs, ce_uri, {}, ce_tarball, nullopt, null_sink);
-        extract_ce_tarball(paths, ce_tarball, node_path, base_path);
-#endif // ^^^ always get latest
-#endif // ^^^ might need to download
+        else if (!fs.exists(vcpkg_artifacts_path, VCPKG_LINE_INFO))
+        {
+            // Official OneLiner: Do nothing, should be handled by z-boostrap-standalone
+            // Development OneLiner: (N/A)
+            // None OneLiner: (N/A)
+            //
+            // Official VS: Do nothing, should be bundled by VS
+            // Development VS: (N/A)
+            // None VS: (N/A)
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgArtifactsNotInstalledReadonlyRoot);
+        }
 
         auto temp_directory = fs.create_or_get_temp_directory(VCPKG_LINE_INFO);
 
-        Command cmd_run(node_path);
-        cmd_run.string_arg(ce_path);
+        Command cmd_run(paths.get_tool_exe(Tools::NODE, stdout_sink));
+        cmd_run.string_arg(vcpkg_artifacts_main_path);
         cmd_run.forwarded_args(args);
         if (Debug::g_debugging)
         {
@@ -204,15 +225,42 @@ namespace vcpkg
             track_telemetry(fs, *telemetry_file_path);
         }
 
+        // workaround some systems which only keep the lower 7 bits
+        if (result < 0 || result > 127)
+        {
+            result = 1;
+        }
+
         return result;
     }
 
-    int run_configure_environment_command(const VcpkgPaths& paths, StringView arg0, View<std::string> args)
+    void forward_common_artifacts_arguments(std::vector<std::string>& appended_to, const ParsedArguments& parsed)
     {
-        std::vector<std::string> all_args;
-        all_args.reserve(args.size() + 1);
-        all_args.emplace_back(arg0.data(), arg0.size());
-        all_args.insert(all_args.end(), args.begin(), args.end());
-        return run_configure_environment_command(paths, all_args);
+        auto&& switches = parsed.switches;
+        for (auto&& parsed_switch : switches)
+        {
+            appended_to.push_back(fmt::format("--{}", parsed_switch));
+        }
+
+        if (more_than_one_mapped(ArtifactOperatingSystemsSwitchNamesStorage, parsed.switches))
+        {
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgArtifactsSwitchOnlyOneOperatingSystem);
+        }
+
+        if (more_than_one_mapped(ArtifactHostPlatformSwitchNamesStorage, parsed.switches))
+        {
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgArtifactsSwitchOnlyOneHostPlatform);
+        }
+
+        if (more_than_one_mapped(ArtifactTargetPlatformSwitchNamesStorage, parsed.switches))
+        {
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgArtifactsSwitchOnlyOneTargetPlatform);
+        }
+
+        for (auto&& parsed_option : parsed.settings)
+        {
+            appended_to.push_back(fmt::format("--{}", parsed_option.first));
+            appended_to.push_back(parsed_option.second);
+        }
     }
-}
+} // namespace vcpkg

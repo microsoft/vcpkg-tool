@@ -1,11 +1,10 @@
 #pragma once
 
-#include <vcpkg/commands.interface.h>
+#include <vcpkg/fwd/vcpkgcmdarguments.h>
+#include <vcpkg/fwd/vcpkgpaths.h>
 
-namespace vcpkg::Commands
+namespace vcpkg
 {
-    struct GenerateMSBuildPropsCommand : PathsCommand
-    {
-        void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const override;
-    };
+    extern const CommandMetadata CommandGenerateMsbuildPropsMetadata;
+    void command_generate_msbuild_props_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths);
 }

@@ -72,8 +72,9 @@ if ([string]::IsNullOrEmpty($VcpkgExe))
     }
 }
 
-$VcpkgExe = (Get-Item $VcpkgExe).FullName
-$VcpkgPs1 = Join-Path ((Get-Item $VcpkgExe).Directory) "vcpkg.ps1"
+$VcpkgItem = Get-Item $VcpkgExe
+$VcpkgExe = $VcpkgItem.FullName
+$VcpkgPs1 = Join-Path $VcpkgItem.Directory "vcpkg.ps1"
 
 [Array]$AllTests = Get-ChildItem $PSScriptRoot/end-to-end-tests-dir/*.ps1
 if ($Filter -ne $Null) {
@@ -99,7 +100,11 @@ $envvars = $envvars_clear + @("VCPKG_DOWNLOADS", "X_VCPKG_REGISTRIES_CACHE", "PA
 
 foreach ($Test in $AllTests)
 {
-    Write-Host -ForegroundColor Green "[end-to-end-tests.ps1] [$n/$m] Running suite $Test"
+    if ($env:GITHUB_ACTIONS) {
+        Write-Host -ForegroundColor Green "::group::[end-to-end-tests.ps1] [$n/$m] Running suite $Test"
+    } else {
+        Write-Host -ForegroundColor Green "[end-to-end-tests.ps1] [$n/$m] Running suite $Test"
+    }
 
     $envbackup = @{}
     foreach ($var in $envvars)
@@ -136,8 +141,11 @@ foreach ($Test in $AllTests)
             }
         }
     }
+    if ($env:GITHUB_ACTIONS) {
+        Write-Host "::endgroup::"
+    }
     $n += 1
 }
 
 Write-Host -ForegroundColor Green "[end-to-end-tests.ps1] All tests passed."
-$LASTEXITCODE = 0
+$global:LASTEXITCODE = 0

@@ -8,24 +8,11 @@
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
-namespace vcpkg::Commands
+using namespace vcpkg;
+
+namespace
 {
-    static constexpr StringLiteral OPTION_ADD_INITIAL_BASELINE = "add-initial-baseline";
-    static constexpr StringLiteral OPTION_DRY_RUN = "dry-run";
-
-    static constexpr CommandSwitch switches[] = {
-        {OPTION_ADD_INITIAL_BASELINE, []() { return msg::format(msgCmdUpdateBaselineOptInitial); }},
-        {OPTION_DRY_RUN, []() { return msg::format(msgCmdUpdateBaselineOptDryRun); }},
-    };
-
-    static const CommandStructure COMMAND_STRUCTURE{
-        [] { return create_example_string("x-update-baseline"); },
-        0,
-        0,
-        {switches},
-    };
-
-    static void update_baseline_in_config(const VcpkgPaths& paths, RegistryConfig& reg)
+    void update_baseline_in_config(const VcpkgPaths& paths, RegistryConfig& reg)
     {
         auto url = reg.pretty_location();
         auto new_baseline_res = reg.get_latest_baseline(paths);
@@ -56,14 +43,39 @@ namespace vcpkg::Commands
                 .append(new_baseline_res.error()));
     }
 
-    void UpdateBaselineCommand::perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const
+    constexpr StringLiteral OPTION_ADD_INITIAL_BASELINE = "add-initial-baseline";
+    constexpr StringLiteral OPTION_DRY_RUN = "dry-run";
+
+    constexpr CommandSwitch switches[] = {
+        {OPTION_ADD_INITIAL_BASELINE, msgCmdUpdateBaselineOptInitial},
+        {OPTION_DRY_RUN, msgCmdUpdateBaselineOptDryRun},
+    };
+
+} // unnamed namespace
+
+namespace vcpkg
+{
+    constexpr CommandMetadata CommandUpdateBaselineMetadata{
+        "x-update-baseline",
+        msgCmdUpdateBaselineSynopsis,
+        {"vcpkg x-update-baseline"},
+        "https://learn.microsoft.com/vcpkg/commands/update-baseline",
+        AutocompletePriority::Public,
+        0,
+        0,
+        {switches},
+        nullptr,
+    };
+
+    void command_update_baseline_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
-        auto options = args.parse_arguments(COMMAND_STRUCTURE);
+        auto options = args.parse_arguments(CommandUpdateBaselineMetadata);
 
         const bool add_builtin_baseline = Util::Sets::contains(options.switches, OPTION_ADD_INITIAL_BASELINE);
         const bool dry_run = Util::Sets::contains(options.switches, OPTION_DRY_RUN);
 
         auto configuration = paths.get_configuration();
+
         const bool has_manifest = paths.get_manifest().has_value();
         auto manifest = has_manifest ? *paths.get_manifest().get() : ManifestAndPath{};
 
@@ -135,4 +147,4 @@ namespace vcpkg::Commands
 
         Checks::exit_success(VCPKG_LINE_INFO);
     }
-}
+} // namespace vcpkg

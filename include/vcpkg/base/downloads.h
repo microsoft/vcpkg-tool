@@ -5,6 +5,7 @@
 #include <vcpkg/base/fwd/messages.h>
 
 #include <vcpkg/base/expected.h>
+#include <vcpkg/base/json.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/span.h>
 #include <vcpkg/base/stringview.h>
@@ -24,22 +25,34 @@ namespace vcpkg
     // e.g. {"https","//example.org", "/index.html"}
     ExpectedL<SplitURIView> split_uri_view(StringView uri);
 
-    void verify_downloaded_file_hash(const Filesystem& fs,
+    void verify_downloaded_file_hash(const ReadOnlyFilesystem& fs,
                                      StringView sanitized_url,
                                      const Path& downloaded_path,
                                      StringView sha512);
 
     View<std::string> azure_blob_headers();
 
-    std::vector<int> download_files(Filesystem& fs,
+    std::vector<int> download_files(const Filesystem& fs,
                                     View<std::pair<std::string, Path>> url_pairs,
                                     View<std::string> headers);
-    ExpectedL<int> put_file(const Filesystem&,
+
+    bool send_snapshot_to_api(const std::string& github_token,
+                              const std::string& github_repository,
+                              const Json::Object& snapshot);
+    ExpectedL<int> put_file(const ReadOnlyFilesystem&,
                             StringView url,
                             const std::vector<std::string>& secrets,
                             View<std::string> headers,
                             const Path& file,
-                            StringView request = "PUT");
+                            StringView method = "PUT");
+
+    ExpectedL<std::string> invoke_http_request(StringView method,
+                                               View<std::string> headers,
+                                               StringView url,
+                                               StringView data = {});
+
+    std::string format_url_query(StringView base_url, View<std::string> query_params);
+
     std::vector<int> url_heads(View<std::string> urls, View<std::string> headers, View<std::string> secrets);
 
     struct DownloadManagerConfig
@@ -60,7 +73,7 @@ namespace vcpkg
         explicit DownloadManager(const DownloadManagerConfig& config) : m_config(config) { }
         explicit DownloadManager(DownloadManagerConfig&& config) : m_config(std::move(config)) { }
 
-        void download_file(Filesystem& fs,
+        void download_file(const Filesystem& fs,
                            const std::string& url,
                            View<std::string> headers,
                            const Path& download_path,
@@ -68,14 +81,16 @@ namespace vcpkg
                            MessageSink& progress_sink) const;
 
         // Returns url that was successfully downloaded from
-        std::string download_file(Filesystem& fs,
+        std::string download_file(const Filesystem& fs,
                                   View<std::string> urls,
                                   View<std::string> headers,
                                   const Path& download_path,
                                   const Optional<std::string>& sha512,
                                   MessageSink& progress_sink) const;
 
-        ExpectedL<int> put_file_to_mirror(const Filesystem& fs, const Path& file_to_put, StringView sha512) const;
+        ExpectedL<int> put_file_to_mirror(const ReadOnlyFilesystem& fs,
+                                          const Path& file_to_put,
+                                          StringView sha512) const;
 
     private:
         DownloadManagerConfig m_config;

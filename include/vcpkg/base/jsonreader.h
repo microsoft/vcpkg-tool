@@ -3,9 +3,9 @@
 #include <vcpkg/base/fwd/json.h>
 
 #include <vcpkg/base/chrono.h>
-#include <vcpkg/base/files.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/optional.h>
+#include <vcpkg/base/path.h>
 #include <vcpkg/base/span.h>
 #include <vcpkg/base/stringview.h>
 
@@ -360,31 +360,11 @@ namespace vcpkg::Json
         static const PackageNameDeserializer instance;
     };
 
-    /// <summary>
-    /// A registry package pattern (e.g.: boost*) and the in-file location where it was declared.
-    /// </summary>
-    struct PackagePatternDeclaration
-    {
-        std::string pattern;
-        std::string location;
-    };
-
-    /// <summary>
-    /// Deserializes a list of package names and patterns along with their respective in-file declaration locations.
-    /// </summary>
-    struct PackagePatternDeserializer final : Json::IDeserializer<PackagePatternDeclaration>
+    struct FeatureNameDeserializer final : Json::IDeserializer<std::string>
     {
         virtual LocalizedString type_name() const override;
-        virtual Optional<PackagePatternDeclaration> visit_string(Json::Reader&, StringView sv) const override;
-
-        static bool is_package_pattern(StringView sv);
-        static const PackagePatternDeserializer instance;
-    };
-
-    struct PackagePatternArrayDeserializer final : Json::ArrayDeserializer<PackagePatternDeserializer>
-    {
-        virtual LocalizedString type_name() const override;
-        static const PackagePatternArrayDeserializer instance;
+        virtual Optional<std::string> visit_string(Json::Reader&, StringView sv) const override;
+        static const FeatureNameDeserializer instance;
     };
 
 }

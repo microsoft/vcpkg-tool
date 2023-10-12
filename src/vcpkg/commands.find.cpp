@@ -1,11 +1,12 @@
 #include <vcpkg/base/hash.h>
+#include <vcpkg/base/span.h>
 #include <vcpkg/base/strings.h>
 
 #include <vcpkg/commands.find.h>
+#include <vcpkg/commands.help.h>
 #include <vcpkg/configure-environment.h>
 #include <vcpkg/dependencies.h>
 #include <vcpkg/globalstate.h>
-#include <vcpkg/help.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/portfileprovider.h>
@@ -101,27 +102,33 @@ namespace
     constexpr StringLiteral OPTION_FULLDESC = "x-full-desc"; // TODO: This should find a better home, eventually
     constexpr StringLiteral OPTION_JSON = "x-json";
 
-    constexpr std::array<CommandSwitch, 2> FindSwitches = {{
-        {OPTION_FULLDESC, []() { return msg::format(msgHelpTextOptFullDesc); }},
-        {OPTION_JSON, []() { return msg::format(msgJsonSwitch); }},
-    }};
-
-    const CommandStructure FindCommandStructure = {
-        [] {
-            return msg::format(msgFindHelp)
-                .append_raw('\n')
-                .append(create_example_string("find port png"))
-                .append_raw('\n')
-                .append(create_example_string("find artifact cmake"));
-        },
-        1,
-        2,
-        {FindSwitches, {}},
-        nullptr,
+    constexpr CommandSwitch FindSwitches[] = {
+        {OPTION_FULLDESC, msgHelpTextOptFullDesc},
+        {OPTION_JSON, msgJsonSwitch},
     };
-}
 
-namespace vcpkg::Commands
+    void perform_find_artifact_and_exit(const VcpkgPaths& paths,
+                                        Optional<StringView> filter,
+                                        Optional<StringView> version)
+    {
+        std::vector<std::string> ce_args;
+        ce_args.emplace_back("find");
+        if (auto* filter_str = filter.get())
+        {
+            ce_args.emplace_back(filter_str->data(), filter_str->size());
+        }
+
+        if (auto v = version.get())
+        {
+            ce_args.emplace_back("--version");
+            ce_args.emplace_back(*v);
+        }
+
+        Checks::exit_with_code(VCPKG_LINE_INFO, run_configure_environment_command(paths, ce_args));
+    }
+} // unnamed namespace
+
+namespace vcpkg
 {
     void perform_find_port_and_exit(const VcpkgPaths& paths,
                                     bool full_description,
@@ -207,21 +214,26 @@ namespace vcpkg::Commands
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 
-    void perform_find_artifact_and_exit(const VcpkgPaths& paths, Optional<StringView> filter)
-    {
-        std::vector<std::string> ce_args;
-        ce_args.emplace_back("find");
-        if (auto* filter_str = filter.get())
+    constexpr CommandMetadata CommandFindMetadata{
+        "find",
+        msgCmdFindSynopsis,
         {
-            ce_args.emplace_back(filter_str->data(), filter_str->size());
-        }
+            msgCmdFindExample1,
+            "vcpkg find port png",
+            msgCmdFindExample2,
+            "vcpkg find artifact cmake",
+        },
+        Undocumented,
+        AutocompletePriority::Public,
+        1,
+        2,
+        {FindSwitches, CommonSelectArtifactVersionSettings},
+        nullptr,
+    };
 
-        Checks::exit_with_code(VCPKG_LINE_INFO, run_configure_environment_command(paths, ce_args));
-    }
-
-    void FindCommand::perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths) const
+    void command_find_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
-        const ParsedArguments options = args.parse_arguments(FindCommandStructure);
+        const ParsedArguments options = args.parse_arguments(CommandFindMetadata);
         const bool full_description = Util::Sets::contains(options.switches, OPTION_FULLDESC);
         const bool enable_json = Util::Sets::contains(options.switches, OPTION_JSON);
         auto&& selector = options.command_arguments[0];
@@ -244,7 +256,6 @@ namespace vcpkg::Commands
             }
 
             Optional<std::string> filter_hash = filter.map(Hash::get_string_sha256);
-            auto args_hash = Hash::get_string_hash(filter.value_or_exit(VCPKG_LINE_INFO), Hash::Algorithm::Sha256);
             MetricsSubmission metrics;
             metrics.track_string(StringMetric::CommandContext, "artifact");
             if (auto p_filter_hash = filter_hash.get())
@@ -253,11 +264,16 @@ namespace vcpkg::Commands
             }
 
             get_global_metrics_collector().track_submission(std::move(metrics));
-            perform_find_artifact_and_exit(paths, filter);
+            perform_find_artifact_and_exit(paths, filter, Util::lookup_value(options.settings, OPTION_VERSION));
         }
 
         if (selector == "port")
         {
+            if (Util::Maps::contains(options.settings, OPTION_VERSION))
+            {
+                Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgFindVersionArtifactsOnly);
+            }
+
             Optional<std::string> filter_hash = filter.map(Hash::get_string_sha256);
             MetricsSubmission metrics;
             metrics.track_string(StringMetric::CommandContext, "port");
@@ -272,4 +288,4 @@ namespace vcpkg::Commands
 
         Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgAddCommandFirstArg);
     }
-}
+} // namespace vcpkg

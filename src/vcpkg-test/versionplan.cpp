@@ -25,21 +25,18 @@ TEST_CASE ("parse depends", "[dependencies]")
 TEST_CASE ("filter depends", "[dependencies]")
 {
     const std::vector<std::string> defaults{"core", "default"};
-    const std::vector<std::string> core{"core"};
 
     const std::unordered_map<std::string, std::string> x64_win_cmake_vars{{"VCPKG_TARGET_ARCHITECTURE", "x64"},
                                                                           {"VCPKG_CMAKE_SYSTEM_NAME", ""}};
 
     const std::unordered_map<std::string, std::string> arm_uwp_cmake_vars{{"VCPKG_TARGET_ARCHITECTURE", "arm"},
                                                                           {"VCPKG_CMAKE_SYSTEM_NAME", "WindowsStore"}};
-
     auto deps_ = parse_dependencies_list("liba (!uwp), libb, libc (uwp)");
     REQUIRE(deps_);
     auto& deps = *deps_.get();
     SECTION ("x64-windows")
     {
-        auto v =
-            filter_dependencies(deps, Test::X64_WINDOWS, Test::X86_WINDOWS, x64_win_cmake_vars, ImplicitDefault::YES);
+        auto v = filter_dependencies(deps, Test::X64_WINDOWS, Test::X86_WINDOWS, x64_win_cmake_vars);
         REQUIRE(v.size() == 2);
         REQUIRE(v.at(0).package_spec.name() == "liba");
         REQUIRE(v.at(0).features == defaults);
@@ -49,12 +46,12 @@ TEST_CASE ("filter depends", "[dependencies]")
 
     SECTION ("arm-uwp")
     {
-        auto v2 = filter_dependencies(deps, Test::ARM_UWP, Test::X86_WINDOWS, arm_uwp_cmake_vars, ImplicitDefault::NO);
+        auto v2 = filter_dependencies(deps, Test::ARM_UWP, Test::X86_WINDOWS, arm_uwp_cmake_vars);
         REQUIRE(v2.size() == 2);
         REQUIRE(v2.at(0).package_spec.name() == "libb");
-        REQUIRE(v2.at(0).features == core);
+        REQUIRE(v2.at(0).features == defaults);
         REQUIRE(v2.at(1).package_spec.name() == "libc");
-        REQUIRE(v2.at(1).features == core);
+        REQUIRE(v2.at(1).features == defaults);
     }
 }
 
@@ -88,14 +85,19 @@ TEST_CASE ("qualified dependency", "[dependencies]")
 
     MapPortFileProvider map_port{spec_map.map};
     MockCMakeVarProvider var_provider;
-    var_provider.dep_info_vars[{"a", Triplet::from_canonical_name("x64-linux")}].emplace("VCPKG_CMAKE_SYSTEM_NAME",
-                                                                                         "Linux");
+    var_provider.dep_info_vars[{"a", Test::X64_LINUX}].emplace("VCPKG_CMAKE_SYSTEM_NAME", "Linux");
 
-    auto plan = vcpkg::create_feature_install_plan(map_port, var_provider, Test::parse_test_fspecs("a"), {});
+    const CreateInstallPlanOptions create_options{Test::X64_ANDROID, "pkg"};
+
+    auto plan =
+        vcpkg::create_feature_install_plan(map_port, var_provider, Test::parse_test_fspecs("a"), {}, create_options);
     REQUIRE(plan.install_actions.size() == 2);
     REQUIRE(plan.install_actions.at(0).feature_list == std::vector<std::string>{"core"});
+    REQUIRE(plan.install_actions[0].package_dir == "pkg" VCPKG_PREFERRED_SEPARATOR "b_x86-windows");
 
-    auto plan2 = vcpkg::create_feature_install_plan(map_port, var_provider, Test::parse_test_fspecs("a:x64-linux"), {});
+    auto plan2 = vcpkg::create_feature_install_plan(
+        map_port, var_provider, Test::parse_test_fspecs("a:x64-linux"), {}, create_options);
     REQUIRE(plan2.install_actions.size() == 2);
-    REQUIRE(plan2.install_actions.at(0).feature_list == std::vector<std::string>{"b1", "core"});
+    REQUIRE(plan2.install_actions[0].feature_list == std::vector<std::string>{"b1", "core"});
+    REQUIRE(plan2.install_actions[0].package_dir == "pkg" VCPKG_PREFERRED_SEPARATOR "b_x64-linux");
 }

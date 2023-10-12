@@ -1,11 +1,12 @@
 #pragma once
 
 #include <vcpkg/fwd/configuration.h>
+#include <vcpkg/fwd/packagespec.h>
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 
 #include <vcpkg/base/expected.h>
-#include <vcpkg/base/files.h>
 #include <vcpkg/base/json.h>
+#include <vcpkg/base/path.h>
 #include <vcpkg/base/span.h>
 
 #include <vcpkg/packagespec.h>
@@ -21,11 +22,68 @@ namespace vcpkg
         Path path;
     };
 
+    struct DependencyConstraint
+    {
+        VersionConstraintKind type = VersionConstraintKind::None;
+        std::string value;
+        int port_version = 0;
+
+        friend bool operator==(const DependencyConstraint& lhs, const DependencyConstraint& rhs);
+        friend bool operator!=(const DependencyConstraint& lhs, const DependencyConstraint& rhs)
+        {
+            return !(lhs == rhs);
+        }
+
+        Optional<Version> try_get_minimum_version() const;
+    };
+
+    struct DependencyRequestedFeature
+    {
+        std::string name;
+        PlatformExpression::Expr platform;
+
+        friend bool operator==(const DependencyRequestedFeature& lhs, const DependencyRequestedFeature& rhs);
+        friend bool operator!=(const DependencyRequestedFeature& lhs, const DependencyRequestedFeature& rhs);
+    };
+
+    struct Dependency
+    {
+        std::string name;
+        // a list of "real" features without "core" or "default". Use member default_features instead.
+        std::vector<DependencyRequestedFeature> features;
+        PlatformExpression::Expr platform;
+        DependencyConstraint constraint;
+        bool host = false;
+
+        bool default_features = true;
+        bool has_platform_expressions() const;
+
+        Json::Object extra_info;
+
+        /// @param id adds "default" if `default_features` is false.
+        FullPackageSpec to_full_spec(View<std::string> features, Triplet target, Triplet host) const;
+
+        friend bool operator==(const Dependency& lhs, const Dependency& rhs);
+        friend bool operator!=(const Dependency& lhs, const Dependency& rhs) { return !(lhs == rhs); }
+    };
+
+    struct DependencyOverride
+    {
+        std::string name;
+        std::string version;
+        int port_version = 0;
+        VersionScheme version_scheme = VersionScheme::String;
+
+        Json::Object extra_info;
+
+        friend bool operator==(const DependencyOverride& lhs, const DependencyOverride& rhs);
+        friend bool operator!=(const DependencyOverride& lhs, const DependencyOverride& rhs) { return !(lhs == rhs); }
+    };
+
     std::vector<FullPackageSpec> filter_dependencies(const std::vector<Dependency>& deps,
                                                      Triplet t,
                                                      Triplet host,
-                                                     const std::unordered_map<std::string, std::string>& cmake_vars,
-                                                     ImplicitDefault id);
+                                                     const std::unordered_map<std::string, std::string>& cmake_vars);
 
     /// <summary>
     /// Port metadata of additional feature in a package (part of CONTROL file)
@@ -36,6 +94,10 @@ namespace vcpkg
         std::vector<std::string> description;
         std::vector<Dependency> dependencies;
         PlatformExpression::Expr supports_expression;
+        // there are two distinct "empty" states here
+        // "user did not provide a license" -> nullopt
+        // "user provided license = null" -> {""}
+        Optional<std::string> license; // SPDX license expression
 
         Json::Object extra_info;
 
@@ -59,7 +121,7 @@ namespace vcpkg
         std::string documentation;
         std::vector<Dependency> dependencies;
         std::vector<DependencyOverride> overrides;
-        std::vector<std::string> default_features;
+        std::vector<DependencyRequestedFeature> default_features;
 
         // there are two distinct "empty" states here
         // "user did not provide a license" -> nullopt
@@ -134,6 +196,8 @@ namespace vcpkg
     struct SourceControlFileAndLocation
     {
         Version to_version() const { return source_control_file->to_version(); }
+        VersionScheme scheme() const { return source_control_file->core_paragraph->version_scheme; }
+        SchemedVersion schemed_version() const { return {scheme(), to_version()}; }
 
         std::unique_ptr<SourceControlFile> source_control_file;
         Path source_location;
@@ -142,11 +206,13 @@ namespace vcpkg
         std::string registry_location;
     };
 
-    void print_error_message(Span<const std::unique_ptr<ParseControlErrorInfo>> error_info_list);
-    inline void print_error_message(const std::unique_ptr<ParseControlErrorInfo>& error_info_list)
-    {
-        return print_error_message({&error_info_list, 1});
-    }
+    void print_error_message(const LocalizedString& message);
+    void print_error_message(const std::unique_ptr<ParseControlErrorInfo>& error_info_list);
 
     std::string parse_spdx_license_expression(StringView sv, ParseMessages& messages);
+
+    // Exposed for testing
+    ExpectedL<std::vector<Dependency>> parse_dependencies_list(const std::string& str,
+                                                               StringView origin = "<unknown>",
+                                                               TextRowCol textrowcol = {});
 }

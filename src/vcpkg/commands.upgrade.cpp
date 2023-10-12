@@ -3,54 +3,60 @@
 
 #include <vcpkg/binarycaching.h>
 #include <vcpkg/cmakevars.h>
+#include <vcpkg/commands.help.h>
+#include <vcpkg/commands.install.h>
+#include <vcpkg/commands.update.h>
 #include <vcpkg/commands.upgrade.h>
 #include <vcpkg/dependencies.h>
 #include <vcpkg/globalstate.h>
-#include <vcpkg/help.h>
 #include <vcpkg/input.h>
-#include <vcpkg/install.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/registries.h>
 #include <vcpkg/statusparagraphs.h>
-#include <vcpkg/update.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
 
 using namespace vcpkg;
 
-namespace vcpkg::Commands::Upgrade
+namespace
 {
-    static constexpr StringLiteral OPTION_NO_DRY_RUN = "no-dry-run";
-    static constexpr StringLiteral OPTION_NO_KEEP_GOING = "no-keep-going";
-    static constexpr StringLiteral OPTION_ALLOW_UNSUPPORTED_PORT = "allow-unsupported";
+    constexpr StringLiteral OPTION_NO_DRY_RUN = "no-dry-run";
+    constexpr StringLiteral OPTION_NO_KEEP_GOING = "no-keep-going";
+    constexpr StringLiteral OPTION_ALLOW_UNSUPPORTED_PORT = "allow-unsupported";
 
-    static constexpr std::array<CommandSwitch, 3> INSTALL_SWITCHES = {{
-        {OPTION_NO_DRY_RUN, []() { return msg::format(msgCmdUpgradeOptNoDryRun); }},
-        {OPTION_NO_KEEP_GOING, []() { return msg::format(msgCmdUpgradeOptNoKeepGoing); }},
-        {OPTION_ALLOW_UNSUPPORTED_PORT, []() { return msg::format(msgCmdUpgradeOptAllowUnsupported); }},
-    }};
+    constexpr CommandSwitch SWITCHES[] = {
+        {OPTION_NO_DRY_RUN, msgCmdUpgradeOptNoDryRun},
+        {OPTION_NO_KEEP_GOING, msgCmdUpgradeOptNoKeepGoing},
+        {OPTION_ALLOW_UNSUPPORTED_PORT, msgHelpTxtOptAllowUnsupportedPort},
+    };
+} // unnamed namespace
 
-    const CommandStructure COMMAND_STRUCTURE = {
-        [] { return create_example_string("upgrade --no-dry-run"); },
+namespace vcpkg
+{
+    constexpr CommandMetadata CommandUpgradeMetadata = {
+        "upgrade",
+        msgHelpUpgradeCommand,
+        {"vcpkg upgrade --no-dry-run"},
+        "https://learn.microsoft.com/vcpkg/commands/upgrade",
+        AutocompletePriority::Public,
         0,
         SIZE_MAX,
-        {INSTALL_SWITCHES, {}},
+        {SWITCHES},
         nullptr,
     };
 
-    void perform_and_exit(const VcpkgCmdArguments& args,
-                          const VcpkgPaths& paths,
-                          Triplet default_triplet,
-                          Triplet host_triplet)
+    void command_upgrade_and_exit(const VcpkgCmdArguments& args,
+                                  const VcpkgPaths& paths,
+                                  Triplet default_triplet,
+                                  Triplet host_triplet)
     {
         if (paths.manifest_mode_enabled())
         {
-            msg::println_error(msgUpgradeInManifest);
-            Checks::unreachable(VCPKG_LINE_INFO);
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgUpgradeInManifest);
         }
 
-        const ParsedArguments options = args.parse_arguments(COMMAND_STRUCTURE);
+        const ParsedArguments options = args.parse_arguments(CommandUpgradeMetadata);
 
         const bool no_dry_run = Util::Sets::contains(options.switches, OPTION_NO_DRY_RUN);
         const KeepGoing keep_going =
@@ -59,7 +65,6 @@ namespace vcpkg::Commands::Upgrade
                                                  ? UnsupportedPortAction::Warn
                                                  : UnsupportedPortAction::Error;
 
-        BinaryCache binary_cache{args, paths};
         StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
 
         // Load ports from ports dirs
@@ -70,17 +75,11 @@ namespace vcpkg::Commands::Upgrade
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
 
-        // input sanitization
-        const std::vector<PackageSpec> specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
-            return check_and_get_package_spec(
-                std::string(arg), default_triplet, COMMAND_STRUCTURE.get_example_text(), paths);
-        });
-
         ActionPlan action_plan;
-        if (specs.empty())
+        if (options.command_arguments.empty())
         {
             // If no packages specified, upgrade all outdated packages.
-            auto outdated_packages = Update::find_outdated_packages(provider, status_db);
+            auto outdated_packages = find_outdated_packages(provider, status_db);
 
             if (outdated_packages.empty())
             {
@@ -91,13 +90,26 @@ namespace vcpkg::Commands::Upgrade
             action_plan = create_upgrade_plan(
                 provider,
                 var_provider,
-                Util::fmap(outdated_packages, [](const Update::OutdatedPackage& package) { return package.spec; }),
+                Util::fmap(outdated_packages, [](const OutdatedPackage& package) { return package.spec; }),
                 status_db,
-                {host_triplet, unsupported_port_action});
+                {host_triplet, paths.packages(), unsupported_port_action});
         }
         else
         {
-            print_default_triplet_warning(args, options.command_arguments);
+            // input sanitization
+            bool default_triplet_used = false;
+            const std::vector<PackageSpec> specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
+                return check_and_get_package_spec(arg,
+                                                  default_triplet,
+                                                  default_triplet_used,
+                                                  CommandUpgradeMetadata.get_example_text(),
+                                                  paths.get_triplet_db());
+            });
+
+            if (default_triplet_used)
+            {
+                print_default_triplet_warning(args, paths.get_triplet_db());
+            }
 
             std::vector<PackageSpec> not_installed;
             std::vector<PackageSpec> no_control_file;
@@ -174,8 +186,11 @@ namespace vcpkg::Commands::Upgrade
 
             if (to_upgrade.empty()) Checks::exit_success(VCPKG_LINE_INFO);
 
-            action_plan = create_upgrade_plan(
-                provider, var_provider, to_upgrade, status_db, {host_triplet, unsupported_port_action});
+            action_plan = create_upgrade_plan(provider,
+                                              var_provider,
+                                              to_upgrade,
+                                              status_db,
+                                              {host_triplet, paths.packages(), unsupported_port_action});
         }
 
         Checks::check_exit(VCPKG_LINE_INFO, !action_plan.empty());
@@ -194,10 +209,13 @@ namespace vcpkg::Commands::Upgrade
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
-        var_provider.load_tag_vars(action_plan, provider, host_triplet);
+        var_provider.load_tag_vars(action_plan, host_triplet);
 
-        const InstallSummary summary = Install::perform(
-            args, action_plan, keep_going, paths, status_db, binary_cache, null_build_logs_recorder(), var_provider);
+        auto binary_cache = BinaryCache::make(args, paths, stdout_sink).value_or_exit(VCPKG_LINE_INFO);
+        compute_all_abis(paths, action_plan, var_provider, status_db);
+        binary_cache.fetch(action_plan.install_actions);
+        const InstallSummary summary = install_execute_plan(
+            args, action_plan, keep_going, paths, status_db, binary_cache, null_build_logs_recorder());
 
         if (keep_going == KeepGoing::YES)
         {
@@ -206,12 +224,4 @@ namespace vcpkg::Commands::Upgrade
 
         Checks::exit_success(VCPKG_LINE_INFO);
     }
-
-    void UpgradeCommand::perform_and_exit(const VcpkgCmdArguments& args,
-                                          const VcpkgPaths& paths,
-                                          Triplet default_triplet,
-                                          Triplet host_triplet) const
-    {
-        Upgrade::perform_and_exit(args, paths, default_triplet, host_triplet);
-    }
-}
+} // namespace vcpkg
