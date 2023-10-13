@@ -1251,13 +1251,9 @@ namespace
         {
             std::map<std::string, Version, std::less<>> result;
 
-            for (auto pr : obj)
+            for (auto&& pr : obj)
             {
-                const auto& version_value = pr.second;
-                Version version;
-                r.visit_in_key(version_value, pr.first, version, get_versiontag_deserializer_instance());
-
-                result.emplace(pr.first.to_string(), std::move(version));
+                r.visit_in_key(pr, result[pr.key], get_versiontag_deserializer_instance());
             }
 
             return result;

@@ -678,14 +678,7 @@ namespace vcpkg
         virtual Optional<Dependency> visit_object(Json::Reader& r, const Json::Object& obj) const override
         {
             Dependency dep;
-
-            for (const auto& el : obj)
-            {
-                if (Strings::starts_with(el.first, "$"))
-                {
-                    dep.extra_info.insert_or_replace(el.first.to_string(), el.second);
-                }
-            }
+            dep.extra_info = obj.clone_comments();
 
             r.required_object_field(type_name(), obj, NAME, dep.name, Json::PackageNameDeserializer::instance);
             r.optional_object_field(obj, FEATURES, dep.features, DependencyFeatureArrayDeserializer::instance);
@@ -777,14 +770,7 @@ namespace vcpkg
         virtual Optional<DependencyOverride> visit_object(Json::Reader& r, const Json::Object& obj) const override
         {
             DependencyOverride dep;
-
-            for (const auto& el : obj)
-            {
-                if (Strings::starts_with(el.first, "$"))
-                {
-                    dep.extra_info.insert_or_replace(el.first.to_string(), el.second);
-                }
-            }
+            dep.extra_info = obj.clone_comments();
 
             visit_impl(type_name(), r, obj, dep.name, dep.version, dep.version_scheme, dep.port_version);
 
@@ -1087,13 +1073,7 @@ namespace vcpkg
                                                                          const Json::Object& obj) const override
         {
             auto feature = std::make_unique<FeatureParagraph>();
-            for (const auto& el : obj)
-            {
-                if (Strings::starts_with(el.first, "$"))
-                {
-                    feature->extra_info.insert_or_replace(el.first.to_string(), el.second);
-                }
-            }
+            feature->extra_info = obj.clone_comments();
 
             r.required_object_field(
                 type_name(), obj, DESCRIPTION, feature->description, Json::ParagraphDeserializer::instance);
@@ -1136,21 +1116,21 @@ namespace vcpkg
 
             for (const auto& pr : obj)
             {
-                if (Strings::starts_with(pr.first, "$"))
+                if (Strings::starts_with(pr.key, "$"))
                 {
-                    res.extra_features_info.insert(pr.first.to_string(), pr.second);
+                    res.extra_features_info.insert(pr.key, pr.value);
                     continue;
                 }
-                if (!Json::IdentifierDeserializer::is_ident(pr.first))
+                if (!Json::IdentifierDeserializer::is_ident(pr.key))
                 {
                     r.add_generic_error(type_name(), msg::format(msgInvalidFeature));
                     continue;
                 }
                 std::unique_ptr<FeatureParagraph> v;
-                r.visit_in_key(pr.second, pr.first, v, FeatureDeserializer::instance);
+                r.visit_in_key(pr.value, pr.key, v, FeatureDeserializer::instance);
                 if (v)
                 {
-                    v->name = pr.first.to_string();
+                    v->name = pr.key;
                     res.feature_paragraphs.push_back(std::move(v));
                 }
             }
@@ -1243,13 +1223,7 @@ namespace vcpkg
             vcpkg::Json::Reader& r,
             std::unique_ptr<vcpkg::SourceControlFile>& control_file) const
         {
-            for (const auto& el : obj)
-            {
-                if (Strings::starts_with(el.first, "$"))
-                {
-                    spgh.extra_info.insert_or_replace(el.first.to_string(), el.second);
-                }
-            }
+            spgh.extra_info = obj.clone_comments();
 
             r.optional_object_field(obj, MAINTAINERS, spgh.maintainers, Json::ParagraphDeserializer::instance);
             r.optional_object_field(obj, CONTACTS, spgh.contacts, ContactsDeserializer::instance);
@@ -1282,16 +1256,13 @@ namespace vcpkg
             control_file->feature_paragraphs = std::move(features_tmp.feature_paragraphs);
             control_file->extra_features_info = std::move(features_tmp.extra_features_info);
 
+            Unit u;
+            r.optional_object_field(obj, VCPKG_CONFIGURATION, u, artifacts_object_validator);
             if (auto configuration = obj.get(VCPKG_CONFIGURATION))
             {
-                if (!configuration->is_object())
+                if (configuration->is_object())
                 {
-                    r.add_generic_error(type_name(),
-                                        msg::format(msgJsonFieldNotObject, msg::json_field = VCPKG_CONFIGURATION));
-                }
-                else
-                {
-                    spgh.vcpkg_configuration = make_optional(configuration->object(VCPKG_LINE_INFO));
+                    spgh.vcpkg_configuration = configuration->object(VCPKG_LINE_INFO);
                 }
             }
 
@@ -1787,11 +1758,7 @@ namespace vcpkg
             }
             else
             {
-                auto& dep_obj = arr.push_back(Json::Object());
-                for (const auto& el : dep.extra_info)
-                {
-                    dep_obj.insert(el.first.to_string(), el.second);
-                }
+                auto& dep_obj = arr.push_back(Json::Object(dep.extra_info));
 
                 dep_obj.insert(DependencyDeserializer::NAME, dep.name);
                 if (dep.host) dep_obj.insert(DependencyDeserializer::HOST, Json::Value::boolean(true));
@@ -1815,11 +1782,7 @@ namespace vcpkg
         };
 
         auto serialize_override = [&](Json::Array& arr, const DependencyOverride& dep) {
-            auto& dep_obj = arr.push_back(Json::Object());
-            for (const auto& el : dep.extra_info)
-            {
-                dep_obj.insert(el.first.to_string(), el.second);
-            }
+            auto& dep_obj = arr.push_back(Json::Object(dep.extra_info));
 
             dep_obj.insert(DependencyOverrideDeserializer::NAME, Json::Value::string(dep.name));
 
@@ -1841,12 +1804,7 @@ namespace vcpkg
                 }
             };
 
-        Json::Object obj;
-
-        for (const auto& el : scf.core_paragraph->extra_info)
-        {
-            obj.insert(el.first.to_string(), el.second);
-        }
+        Json::Object obj = scf.core_paragraph->extra_info;
 
         if (auto configuration = scf.core_paragraph->vcpkg_configuration.get())
         {
@@ -1901,19 +1859,10 @@ namespace vcpkg
 
         if (!scf.feature_paragraphs.empty() || !scf.extra_features_info.is_empty())
         {
-            auto& map = obj.insert(ManifestDeserializer::FEATURES, Json::Object());
-            for (const auto& pr : scf.extra_features_info)
-            {
-                map.insert(pr.first.to_string(), pr.second);
-            }
+            auto& map = obj.insert(ManifestDeserializer::FEATURES, scf.extra_features_info);
             for (const auto& feature : scf.feature_paragraphs)
             {
-                auto& feature_obj = map.insert(feature->name, Json::Object());
-                for (const auto& el : feature->extra_info)
-                {
-                    feature_obj.insert(el.first.to_string(), el.second);
-                }
-
+                auto& feature_obj = map.insert(feature->name, feature->extra_info);
                 serialize_paragraph(feature_obj, FeatureDeserializer::DESCRIPTION, feature->description, true);
                 serialize_optional_string(
                     feature_obj, FeatureDeserializer::SUPPORTS, to_string(feature->supports_expression));

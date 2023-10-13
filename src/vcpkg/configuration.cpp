@@ -341,56 +341,46 @@ namespace
         return impl;
     }
 
-    struct DictionaryDeserializer final : Json::IDeserializer<Json::Object>
+    struct DictionaryValidator final : Json::IDeserializer<Unit>
     {
         virtual LocalizedString type_name() const override { return msg::format(msgAStringStringDictionary); }
 
-        virtual Optional<Json::Object> visit_object(Json::Reader& r, const Json::Object& obj) const override;
+        virtual Optional<Unit> visit_object(Json::Reader& r, const Json::Object& obj) const override;
 
-        static const DictionaryDeserializer instance;
+        static const DictionaryValidator instance;
     };
 
-    const DictionaryDeserializer DictionaryDeserializer::instance;
+    const DictionaryValidator DictionaryValidator::instance;
 
-    struct CeMetadataDeserializer final : Json::IDeserializer<Json::Object>
+    struct CeMetadataValidator final : Json::IDeserializer<Unit>
     {
+        constexpr CeMetadataValidator(bool b) : allow_demands(b) { }
+
         virtual LocalizedString type_name() const override
         {
             return msg::format(msgAnObjectContainingVcpkgArtifactsMetadata);
         }
 
-        constexpr static StringLiteral CE_ERROR = "error";
-        constexpr static StringLiteral CE_WARNING = "warning";
-        constexpr static StringLiteral CE_MESSAGE = "message";
-        constexpr static StringLiteral CE_APPLY = "apply";
-        constexpr static StringLiteral CE_SETTINGS = "settings";
-        constexpr static StringLiteral CE_REQUIRES = "requires";
+        virtual Optional<Unit> visit_object(Json::Reader& r, const Json::Object& obj) const override;
 
-        virtual Optional<Json::Object> visit_object(Json::Reader& r, const Json::Object& obj) const override;
+        const bool allow_demands = false;
 
-        static const CeMetadataDeserializer instance;
+        static const CeMetadataValidator instance;
+        static const CeMetadataValidator nested_instance;
     };
 
-    const CeMetadataDeserializer CeMetadataDeserializer::instance;
-    constexpr StringLiteral CeMetadataDeserializer::CE_ERROR;
-    constexpr StringLiteral CeMetadataDeserializer::CE_WARNING;
-    constexpr StringLiteral CeMetadataDeserializer::CE_MESSAGE;
-    constexpr StringLiteral CeMetadataDeserializer::CE_APPLY;
-    constexpr StringLiteral CeMetadataDeserializer::CE_SETTINGS;
-    constexpr StringLiteral CeMetadataDeserializer::CE_REQUIRES;
+    const CeMetadataValidator CeMetadataValidator::instance{true};
+    const CeMetadataValidator CeMetadataValidator::nested_instance{false};
 
-    struct DemandsDeserializer final : Json::IDeserializer<Json::Object>
+    struct DemandsValidator final : Json::IDeserializer<Unit>
     {
         virtual LocalizedString type_name() const override { return msg::format(msgADemandObject); }
 
-        constexpr static StringLiteral CE_DEMANDS = "demands";
+        virtual Optional<Unit> visit_object(Json::Reader& r, const Json::Object& obj) const override;
 
-        virtual Optional<Json::Object> visit_object(Json::Reader& r, const Json::Object& obj) const override;
-
-        static DemandsDeserializer instance;
+        static DemandsValidator instance;
     };
-    DemandsDeserializer DemandsDeserializer::instance;
-    constexpr StringLiteral DemandsDeserializer::CE_DEMANDS;
+    DemandsValidator DemandsValidator::instance;
 
     struct ConfigurationDeserializer final : Json::IDeserializer<Configuration>
     {
@@ -400,6 +390,13 @@ namespace
         constexpr static StringLiteral REGISTRIES = "registries";
         constexpr static StringLiteral OVERLAY_PORTS = "overlay-ports";
         constexpr static StringLiteral OVERLAY_TRIPLETS = "overlay-triplets";
+        constexpr static StringLiteral CE_ERROR = "error";
+        constexpr static StringLiteral CE_WARNING = "warning";
+        constexpr static StringLiteral CE_MESSAGE = "message";
+        constexpr static StringLiteral CE_APPLY = "apply";
+        constexpr static StringLiteral CE_SETTINGS = "settings";
+        constexpr static StringLiteral CE_REQUIRES = "requires";
+        constexpr static StringLiteral CE_DEMANDS = "demands";
 
         virtual Optional<Configuration> visit_object(Json::Reader& r, const Json::Object& obj) const override;
 
@@ -410,108 +407,75 @@ namespace
     constexpr StringLiteral ConfigurationDeserializer::REGISTRIES;
     constexpr StringLiteral ConfigurationDeserializer::OVERLAY_PORTS;
     constexpr StringLiteral ConfigurationDeserializer::OVERLAY_TRIPLETS;
+    constexpr StringLiteral ConfigurationDeserializer::CE_ERROR;
+    constexpr StringLiteral ConfigurationDeserializer::CE_WARNING;
+    constexpr StringLiteral ConfigurationDeserializer::CE_MESSAGE;
+    constexpr StringLiteral ConfigurationDeserializer::CE_APPLY;
+    constexpr StringLiteral ConfigurationDeserializer::CE_SETTINGS;
+    constexpr StringLiteral ConfigurationDeserializer::CE_REQUIRES;
+    constexpr StringLiteral ConfigurationDeserializer::CE_DEMANDS;
 
-    Optional<Json::Object> DictionaryDeserializer::visit_object(Json::Reader& r, const Json::Object& obj) const
+    struct ArtifactsObjectValidator : Json::IDeserializer<Unit>
     {
-        Json::Object ret;
+        virtual LocalizedString type_name() const override
+        {
+            return msg::format(msgAnObjectContainingVcpkgArtifactsMetadata);
+        }
+
+        virtual Optional<Unit> visit_object(Json::Reader&, const Json::Object&) const override { return Unit{}; }
+
+        static const ArtifactsObjectValidator instance;
+    };
+    const ArtifactsObjectValidator ArtifactsObjectValidator::instance;
+
+    struct UntypedStringValidator : Json::IDeserializer<Unit>
+    {
+        virtual LocalizedString type_name() const override { return msg::format(msgAString); }
+
+        virtual Optional<Unit> visit_string(Json::Reader&, StringView) const override { return Unit{}; }
+
+        static const UntypedStringValidator instance;
+    };
+
+    const UntypedStringValidator UntypedStringValidator::instance;
+
+    Optional<Unit> DictionaryValidator::visit_object(Json::Reader& r, const Json::Object& obj) const
+    {
+        Unit u;
         for (const auto& el : obj)
         {
-            if (!el.second.is_string())
-            {
-                r.add_generic_error(type_name(), msg::format(msgJsonFieldNotString, msg::json_field = el.first));
-                continue;
-            }
-
-            ret.insert_or_replace(el.first, el.second);
+            r.visit_in_key(el.value, el.key, u, UntypedStringValidator::instance);
         }
-        return ret;
+        return Unit{};
     }
 
-    Optional<Json::Object> CeMetadataDeserializer::visit_object(Json::Reader& r, const Json::Object& obj) const
+    Optional<Unit> CeMetadataValidator::visit_object(Json::Reader& r, const Json::Object& obj) const
     {
-        auto extract_string = [&](const Json::Object& obj, StringView key, Json::Object& put_into) {
-            std::string value;
-            const auto errors_count = r.errors();
-            if (r.optional_object_field(obj, key, value, Json::UntypedStringDeserializer::instance))
-            {
-                if (errors_count != r.errors()) return;
-                put_into.insert_or_replace(key, std::move(value));
-            }
-        };
-        auto extract_object = [&](const Json::Object& obj, StringView key, Json::Object& put_into) {
-            if (auto value = obj.get(key))
-            {
-                if (!value->is_object())
-                {
-                    r.add_generic_error(LocalizedString::from_raw(key), msg::format(msgExpectedAnObject));
-                }
-                else
-                {
-                    put_into.insert_or_replace(key, *value);
-                }
-            }
-        };
-        auto extract_dictionary = [&](const Json::Object& obj, StringView key, Json::Object& put_into) {
-            Json::Object value;
-            const auto errors_count = r.errors();
-            if (r.optional_object_field(obj, key, value, DictionaryDeserializer::instance))
-            {
-                if (errors_count != r.errors()) return;
-                put_into.insert_or_replace(key, value);
-            }
-        };
-
-        Json::Object ret;
-        for (const auto& el : obj)
+        Unit u;
+        r.optional_object_field(obj, ConfigurationDeserializer::CE_ERROR, u, UntypedStringValidator::instance);
+        r.optional_object_field(obj, ConfigurationDeserializer::CE_WARNING, u, UntypedStringValidator::instance);
+        r.optional_object_field(obj, ConfigurationDeserializer::CE_MESSAGE, u, UntypedStringValidator::instance);
+        r.optional_object_field(obj, ConfigurationDeserializer::CE_APPLY, u, ArtifactsObjectValidator::instance);
+        r.optional_object_field(obj, ConfigurationDeserializer::CE_SETTINGS, u, ArtifactsObjectValidator::instance);
+        r.optional_object_field(obj, ConfigurationDeserializer::CE_REQUIRES, u, DictionaryValidator::instance);
+        if (!allow_demands && obj.contains(ConfigurationDeserializer::CE_DEMANDS))
         {
-            auto&& key = el.first;
-            if (Util::find(Configuration::known_fields(), key) == std::end(Configuration::known_fields()))
-            {
-                ret.insert_or_replace(key, el.second);
-            }
+            r.add_extra_field_error(type_name(), ConfigurationDeserializer::CE_DEMANDS);
         }
-        extract_string(obj, CE_ERROR, ret);
-        extract_string(obj, CE_WARNING, ret);
-        extract_string(obj, CE_MESSAGE, ret);
-        extract_object(obj, CE_APPLY, ret);
-        extract_object(obj, CE_SETTINGS, ret);
-        extract_dictionary(obj, CE_REQUIRES, ret);
-        return ret;
+        return u;
     }
 
-    Optional<Json::Object> DemandsDeserializer::visit_object(Json::Reader& r, const Json::Object& obj) const
+    Optional<Unit> DemandsValidator::visit_object(Json::Reader& r, const Json::Object& obj) const
     {
-        Json::Object ret;
+        Unit u;
         for (const auto& el : obj)
         {
-            const auto key = el.first;
-            if (Strings::starts_with(key, "$"))
+            if (!Strings::starts_with(el.key, "$"))
             {
-                // Put comments back without attempting to parse.
-                ret.insert_or_replace(key, el.second);
-                continue;
-            }
-
-            if (!el.second.is_object())
-            {
-                r.add_generic_error(type_name(), msg::format(msgJsonFieldNotObject, msg::json_field = key));
-                continue;
-            }
-
-            const auto& demand_obj = el.second.object(VCPKG_LINE_INFO);
-            if (demand_obj.contains(CE_DEMANDS))
-            {
-                r.add_generic_error(type_name(),
-                                    msg::format(msgConfigurationNestedDemands, msg::json_field = el.first));
-            }
-
-            auto maybe_demand = r.visit(demand_obj, CeMetadataDeserializer::instance);
-            if (maybe_demand.has_value())
-            {
-                ret.insert_or_replace(key, maybe_demand.value_or_exit(VCPKG_LINE_INFO));
+                r.visit_in_key(el.value, el.key, u, CeMetadataValidator::nested_instance);
             }
         }
-        return ret;
+        return u;
     }
 
     LocalizedString& append_declaration_warning(LocalizedString& msg,
@@ -585,16 +549,24 @@ namespace
 
     Optional<Configuration> ConfigurationDeserializer::visit_object(Json::Reader& r, const Json::Object& obj) const
     {
-        Configuration ret;
-        Json::Object& extra_info = ret.extra_info;
+        static constexpr StringLiteral handled_fields[] = {
+            ConfigurationDeserializer::DEFAULT_REGISTRY,
+            ConfigurationDeserializer::REGISTRIES,
+            ConfigurationDeserializer::OVERLAY_PORTS,
+            ConfigurationDeserializer::OVERLAY_TRIPLETS,
+        };
 
-        std::vector<std::string> comment_keys;
-        for (const auto& el : obj)
+        Configuration ret;
+        for (auto&& kv : obj)
         {
-            if (Strings::starts_with(el.first, "$"))
+            if (!kv.key.empty() && kv.key[0] == '$')
             {
-                extra_info.insert_or_replace(el.first, el.second);
-                comment_keys.emplace_back(el.first);
+                ret.extra_info.insert_or_replace(kv.key, kv.value);
+            }
+            else if (std::find(std::begin(handled_fields), std::end(handled_fields), kv.key) ==
+                     std::end(handled_fields))
+            {
+                ret.ce_metadata.insert_or_replace(kv.key, kv.value);
             }
         }
 
@@ -619,81 +591,10 @@ namespace
             r.add_warning(type_name(), warning);
         }
 
-        Json::Object& ce_metadata_obj = ret.ce_metadata;
-        auto maybe_ce_metadata = r.visit(obj, CeMetadataDeserializer::instance);
-        if (maybe_ce_metadata.has_value())
-        {
-            ce_metadata_obj = maybe_ce_metadata.value_or_exit(VCPKG_LINE_INFO);
-        }
-
-        Json::Object demands_obj;
-        if (r.optional_object_field(obj, DemandsDeserializer::CE_DEMANDS, demands_obj, DemandsDeserializer::instance))
-        {
-            ce_metadata_obj.insert_or_replace(DemandsDeserializer::CE_DEMANDS, demands_obj);
-        }
-
-        // Remove comments duplicated in ce_metadata
-        for (auto&& comment_key : comment_keys)
-        {
-            ce_metadata_obj.remove(comment_key);
-        }
-
+        CeMetadataValidator::instance.visit_object(r, obj);
+        Unit u;
+        r.optional_object_field(obj, CE_DEMANDS, u, DemandsValidator::instance);
         return std::move(ret);
-    }
-
-    static void serialize_ce_metadata(const Json::Object& ce_metadata, Json::Object& put_into)
-    {
-        auto extract_object = [](const Json::Object& obj, StringView key, Json::Object& put_into) {
-            if (auto value = obj.get(key))
-            {
-                put_into.insert_or_replace(key, *value);
-            }
-        };
-
-        auto serialize_demands = [](const Json::Object& obj, Json::Object& put_into) {
-            if (auto demands = obj.get(DemandsDeserializer::CE_DEMANDS))
-            {
-                if (!demands->is_object())
-                {
-                    return;
-                }
-
-                Json::Object serialized_demands;
-                for (const auto& el : demands->object(VCPKG_LINE_INFO))
-                {
-                    auto key = el.first;
-                    if (Strings::starts_with(key, "$"))
-                    {
-                        serialized_demands.insert_or_replace(key, el.second);
-                        continue;
-                    }
-
-                    if (el.second.is_object())
-                    {
-                        auto& inserted = serialized_demands.insert_or_replace(key, Json::Object{});
-                        serialize_ce_metadata(el.second.object(VCPKG_LINE_INFO), inserted);
-                    }
-                }
-                put_into.insert_or_replace(DemandsDeserializer::CE_DEMANDS, serialized_demands);
-            }
-        };
-
-        // Unknown fields are left as-is
-        for (const auto& el : ce_metadata)
-        {
-            if (Util::find(Configuration::known_fields(), el.first) == std::end(Configuration::known_fields()))
-            {
-                put_into.insert_or_replace(el.first, el.second);
-            }
-        }
-
-        extract_object(ce_metadata, CeMetadataDeserializer::CE_MESSAGE, put_into);
-        extract_object(ce_metadata, CeMetadataDeserializer::CE_WARNING, put_into);
-        extract_object(ce_metadata, CeMetadataDeserializer::CE_ERROR, put_into);
-        extract_object(ce_metadata, CeMetadataDeserializer::CE_SETTINGS, put_into);
-        extract_object(ce_metadata, CeMetadataDeserializer::CE_APPLY, put_into);
-        extract_object(ce_metadata, CeMetadataDeserializer::CE_REQUIRES, put_into);
-        serialize_demands(ce_metadata, put_into);
     }
 
     static void find_unknown_fields_impl(const Json::Object& obj, std::vector<std::string>& out, StringView path)
@@ -701,7 +602,7 @@ namespace
         std::vector<StringView> ret;
         for (const auto& el : obj)
         {
-            auto key = el.first;
+            auto key = el.key;
             if (Strings::starts_with(key, "$"))
             {
                 continue;
@@ -716,24 +617,24 @@ namespace
                 out.push_back(Strings::concat(path, ".", key));
             }
 
-            if (el.first == DemandsDeserializer::CE_DEMANDS)
+            if (el.key == ConfigurationDeserializer::CE_DEMANDS)
             {
-                if (!el.second.is_object())
+                if (!el.value.is_object())
                 {
                     continue;
                 }
 
-                for (const auto& demand : el.second.object(VCPKG_LINE_INFO))
+                for (const auto& demand : el.value.object(VCPKG_LINE_INFO))
                 {
-                    if (Strings::starts_with(demand.first, "$"))
+                    if (Strings::starts_with(demand.key, "$"))
                     {
                         continue;
                     }
 
                     find_unknown_fields_impl(
-                        demand.second.object(VCPKG_LINE_INFO),
+                        demand.value.object(VCPKG_LINE_INFO),
                         out,
-                        Strings::concat(path, ".", DemandsDeserializer::CE_DEMANDS, ".", demand.first));
+                        Strings::concat(path, ".", ConfigurationDeserializer::CE_DEMANDS, ".", demand.key));
                 }
             }
         }
@@ -820,13 +721,13 @@ namespace vcpkg
             ConfigurationDeserializer::REGISTRIES,
             ConfigurationDeserializer::OVERLAY_PORTS,
             ConfigurationDeserializer::OVERLAY_TRIPLETS,
-            CeMetadataDeserializer::CE_MESSAGE,
-            CeMetadataDeserializer::CE_WARNING,
-            CeMetadataDeserializer::CE_ERROR,
-            CeMetadataDeserializer::CE_SETTINGS,
-            CeMetadataDeserializer::CE_APPLY,
-            CeMetadataDeserializer::CE_REQUIRES,
-            DemandsDeserializer::CE_DEMANDS,
+            ConfigurationDeserializer::CE_MESSAGE,
+            ConfigurationDeserializer::CE_WARNING,
+            ConfigurationDeserializer::CE_ERROR,
+            ConfigurationDeserializer::CE_SETTINGS,
+            ConfigurationDeserializer::CE_APPLY,
+            ConfigurationDeserializer::CE_REQUIRES,
+            ConfigurationDeserializer::CE_DEMANDS,
         };
         return known_fields;
     }
@@ -877,6 +778,8 @@ namespace vcpkg
     }
 
     Json::IDeserializer<Configuration>& get_configuration_deserializer() { return ConfigurationDeserializer::instance; }
+
+    const Json::IDeserializer<Unit>& artifacts_object_validator = ArtifactsObjectValidator::instance;
 
     Optional<Configuration> parse_configuration(StringView contents, StringView origin, MessageSink& messageSink)
     {
@@ -990,7 +893,7 @@ namespace vcpkg
 
         for (const auto& el : extra_info)
         {
-            obj.insert(el.first, el.second);
+            obj.insert(el.key, el.value);
         }
 
         if (auto default_registry = default_reg.get())
@@ -1025,11 +928,7 @@ namespace vcpkg
             }
         }
 
-        if (!ce_metadata.is_empty())
-        {
-            serialize_ce_metadata(ce_metadata, obj);
-        }
-
+        obj.insert_or_replace_all(ce_metadata);
         return obj;
     }
 

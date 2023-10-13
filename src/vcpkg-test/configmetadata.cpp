@@ -382,12 +382,12 @@ TEST_CASE ("metadata dictionaries", "[ce-metadata]")
     }
 })json";
         check_errors(invalid_raw, R"(
-$ (settings): expected an object
-$.requires (a "string": "string" dictionary): value of ["fruits/a/apple"] must be a string
-$.requires (a "string": "string" dictionary): value of ["fruits/a/avocado"] must be a string
-$.demands (settings): expected an object
-$.demands.requires (a "string": "string" dictionary): value of ["fruits/a/apple"] must be a string
-$.demands.requires (a "string": "string" dictionary): value of ["fruits/a/avocado"] must be a string
+$.settings: mismatched type: expected a vcpkg-artifacts metadata object
+$.requires.fruits/a/apple: mismatched type: expected a string
+$.requires.fruits/a/avocado: mismatched type: expected a string
+$.demands.nested.settings: mismatched type: expected a vcpkg-artifacts metadata object
+$.demands.nested.requires.fruits/a/apple: mismatched type: expected a string
+$.demands.nested.requires.fruits/a/avocado: mismatched type: expected a string
 )");
     }
 }
@@ -455,12 +455,12 @@ TEST_CASE ("metadata demands", "[ce-metadata]")
     }
 })json";
         check_errors(invalid_raw, R"(
-$.demands (a demand object): value of ["a"] must be an object
-$.demands (a demand object): value of ["b"] must be an object
-$.demands (a demand object): value of ["c"] must be an object
-$.demands (a demand object): value of ["d"] must be an object
-$.demands (a demand object): value of ["e"] must be an object
-$.demands (a demand object): ["f"] contains a nested `demands` object (nested `demands` have no effect)
+$.demands.a: mismatched type: expected a vcpkg-artifacts metadata object
+$.demands.b: mismatched type: expected a vcpkg-artifacts metadata object
+$.demands.c: mismatched type: expected a vcpkg-artifacts metadata object
+$.demands.d: mismatched type: expected a vcpkg-artifacts metadata object
+$.demands.e: mismatched type: expected a vcpkg-artifacts metadata object
+$.demands.f (a vcpkg-artifacts metadata object): unexpected field 'demands'
 )");
     }
 }
