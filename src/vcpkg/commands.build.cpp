@@ -288,7 +288,7 @@ namespace vcpkg
         {
             case ConfigurationType::DEBUG: return "debug";
             case ConfigurationType::RELEASE: return "release";
-            default: return "both";
+            default: return "";
         }
     }
 

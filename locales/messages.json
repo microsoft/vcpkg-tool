@@ -948,6 +948,7 @@
   "HelpTextOptFullDesc": "Does not truncate long text",
   "HelpTopicCommand": "Displays specific help topic",
   "HelpTopicsCommand": "Displays full list of help topics",
+  "HelpTxtBuildType": "Build type (debug, release or both if not specified) (manifest mode)",
   "HelpTxtOptAllowUnsupportedPort": "Continues with a warning on unsupported ports, rather than failing",
   "HelpTxtOptCleanAfterBuild": "Cleans buildtrees, packages and downloads after building each package",
   "HelpTxtOptCleanBuildTreesAfterBuild": "Cleans buildtrees after building each package",
