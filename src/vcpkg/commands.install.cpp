@@ -1122,7 +1122,7 @@ namespace vcpkg
             print_cmake_usage,
             build_type};
 
-        auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
+        auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths, build_type);
         auto& var_provider = *var_provider_storage;
 
         const CreateInstallPlanOptions create_options{host_triplet, paths.packages(), unsupported_port_action};
