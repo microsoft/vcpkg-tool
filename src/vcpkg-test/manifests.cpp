@@ -892,7 +892,6 @@ TEST_CASE ("manifest embed configuration", "[manifests]")
     ]
 })json");
     auto m_pgh = test_parse_port_manifest(raw);
-
     REQUIRE(m_pgh.has_value());
     auto& pgh = **m_pgh.get();
     REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_without_versioning));

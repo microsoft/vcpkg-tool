@@ -200,11 +200,23 @@ namespace vcpkg::Json
 
     struct Object
     {
-    private:
-        using value_type = std::pair<std::string, Value>;
-        using underlying_t = std::vector<value_type>;
+        struct value_type
+        {
+            value_type(std::string sv, Value&& v) : key(std::move(sv)), value(std::move(v)) { }
+            value_type(std::string sv, const Value& v) : key(std::move(sv)), value(v) { }
 
-        underlying_t::const_iterator internal_find_key(StringView key) const noexcept;
+            std::string key;
+            Value value;
+
+            friend bool operator==(const value_type& v1, const value_type& v2)
+            {
+                return v1.key == v2.key && v1.value == v2.value;
+            }
+            friend bool operator!=(const value_type& v1, const value_type& v2) { return !(v1 == v2); }
+        };
+
+    private:
+        using underlying_t = std::vector<value_type>;
 
     public:
         // these are here for better diagnostics
@@ -244,6 +256,10 @@ namespace vcpkg::Json
         Array& insert_or_replace(StringView key, Array&& value);
         Array& insert_or_replace(StringView key, const Array& value);
 
+        void insert_or_replace_all(const Object& other);
+        Object clone_comments() const;
+        void remove_comments() noexcept;
+
         // returns whether the key existed
         bool remove(StringView key) noexcept;
 
@@ -280,39 +296,15 @@ namespace vcpkg::Json
         // sorts keys alphabetically
         void sort_keys();
 
-        struct const_iterator
-        {
-            using value_type = std::pair<StringView, const Value&>;
-            using reference = value_type;
-            using iterator_category = std::forward_iterator_tag;
-
-            value_type operator*() const noexcept { return *underlying_; }
-            const_iterator& operator++() noexcept
-            {
-                ++underlying_;
-                return *this;
-            }
-            const_iterator operator++(int) noexcept
-            {
-                auto res = *this;
-                ++underlying_;
-                return res;
-            }
-
-            bool operator==(const_iterator other) const noexcept { return this->underlying_ == other.underlying_; }
-            bool operator!=(const_iterator other) const noexcept { return !(this->underlying_ == other.underlying_); }
-
-        private:
-            friend Object;
-            explicit const_iterator(const underlying_t::const_iterator& it) : underlying_(it) { }
-            underlying_t::const_iterator underlying_;
-        };
-        using iterator = const_iterator;
+        using iterator = underlying_t::const_iterator;
+        using const_iterator = iterator;
 
         const_iterator begin() const noexcept { return this->cbegin(); }
         const_iterator end() const noexcept { return this->cend(); }
         const_iterator cbegin() const noexcept { return const_iterator{this->underlying_.begin()}; }
         const_iterator cend() const noexcept { return const_iterator{this->underlying_.end()}; }
+
+        const_iterator find(StringView key) const noexcept;
 
         friend bool operator==(const Object& lhs, const Object& rhs);
         friend bool operator!=(const Object& lhs, const Object& rhs) { return !(lhs == rhs); }

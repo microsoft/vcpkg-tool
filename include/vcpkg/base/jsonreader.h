@@ -134,6 +134,22 @@ namespace vcpkg::Json
             }
         }
 
+        // value_type should be from iterating in an object
+        template<class Type>
+        void visit_in_key(const Object::value_type& kv, Type& place, const IDeserializer<Type>& visitor)
+        {
+            PathGuard guard{m_path, kv.key};
+            auto opt = visitor.visit(*this, kv.value);
+            if (auto p_opt = opt.get())
+            {
+                place = std::move(*p_opt);
+            }
+            else
+            {
+                add_expected_type_error(visitor.type_name());
+            }
+        }
+
         // value should be the value at key of the currently visited object
         template<class Type>
         void visit_at_index(const Value& value, int64_t index, Type& place, const IDeserializer<Type>& visitor)
