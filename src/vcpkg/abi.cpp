@@ -220,9 +220,10 @@ namespace vcpkg
         }
     }
 
+    // PRE: !action.abi_info.has_value()
     static bool initialize_abi_info(const VcpkgPaths& paths,
-                            InstallPlanAction& action,
-                            std::unique_ptr<PreBuildInfo>&& proto_pre_build_info)
+                                    InstallPlanAction& action,
+                                    std::unique_ptr<PreBuildInfo>&& proto_pre_build_info)
     {
         const auto& pre_build_info = *proto_pre_build_info;
         // get toolset (not in parallel)
@@ -388,6 +389,8 @@ namespace vcpkg
         {
             auto& action = *it;
 
+            Checks::check_exit(VCPKG_LINE_INFO, !action.abi_info.has_value());
+
             // get prebuildinfo (not in parallel)
             auto pre_build_info = std::make_unique<PreBuildInfo>(
                 paths, action.spec.triplet(), var_provider.get_tag_vars(action.spec).value_or_exit(VCPKG_LINE_INFO));
@@ -408,6 +411,7 @@ namespace vcpkg
                     continue;
                 }
             }
+
 
         }
         // populate abi tag
