@@ -136,7 +136,7 @@ namespace vcpkg
 
     // Get abi for per-port files
     static std::pair<std::vector<std::string>, std::string> get_port_files(const Filesystem& fs,
-                                                                           std::vector<AbiEntry> abi_entries,
+                                                                           std::vector<AbiEntry>& abi_entries,
                                                                            const SourceControlFileAndLocation& scfl)
     {
         auto files_and_content = get_ports_files_and_contents(fs, scfl.source_location);
@@ -153,7 +153,6 @@ namespace vcpkg
         }
 
         std::vector<std::string> port_files;
-        abi_entries.reserve(files_and_content.size());
 
         std::string portfile_cmake_contents;
         for (auto&& [port_file, contents] : files_and_content)
@@ -189,93 +188,141 @@ namespace vcpkg
         abi_entries.emplace_back("features", Strings::join(";", sorted_feature_list));
     }
 
-    // calculate abi of port-internal files and system environment
-    static Optional<std::vector<AbiEntry>> make_private_abi(const VcpkgPaths& paths,
-                                                            InstallPlanAction& action,
-                                                            std::unique_ptr<PreBuildInfo>&& proto_pre_build_info,
-                                                            Cache<Path, Optional<std::string>>& grdk_cache)
+    // PRE: Check if debugging is enabled
+    static void print_debug_info(const PackageSpec& spec, View<AbiEntry> abi_entries)
+    {
+        std::string message = Strings::concat("[DEBUG] <abientries for ", spec, ">\n");
+        for (auto&& entry : abi_entries)
+        {
+            Strings::append(message, "[DEBUG]   ", entry.key, "|", entry.value, "\n");
+        }
+        Strings::append(message, "[DEBUG] </abientries>\n");
+        msg::write_unlocalized_text_to_stdout(Color::none, message);
+    }
+
+    static void print_missing_abi_tags(View<AbiEntry> abi_entries)
+    {
+        bool printed_first_line = false;
+        for (const auto& abi_tag : abi_entries)
+        {
+            if (!abi_tag.value.empty())
+            {
+                continue;
+            }
+            if (!printed_first_line)
+            {
+                Debug::print("Warning: abi keys are missing values:\n");
+                printed_first_line = true;
+            }
+            Debug::println(abi_tag.key);
+        }
+    }
+
+    bool initialize_abi_info(const VcpkgPaths& paths,
+                            InstallPlanAction& action,
+                            std::unique_ptr<PreBuildInfo>&& proto_pre_build_info)
     {
         const auto& pre_build_info = *proto_pre_build_info;
-        // Cant't be called in parallel
+        // get toolset (not in parallel)
         const auto& toolset = paths.get_toolset(pre_build_info);
         auto& abi_info = action.abi_info.emplace();
         abi_info.pre_build_info = std::move(proto_pre_build_info);
-        abi_info.toolset.emplace(toolset);
 
-        if (Util::Enum::to_bool(action.build_options.only_downloads)) return nullopt;
-
+        // return when using editable or head flags
         if (action.build_options.use_head_version == UseHeadVersion::YES)
         {
             Debug::print("Binary caching for package ", action.spec, " is disabled due to --head\n");
-            return nullopt;
+            return false;
         }
         if (action.build_options.editable == Editable::YES)
         {
             Debug::print("Binary caching for package ", action.spec, " is disabled due to --editable\n");
-            return nullopt;
+            return false;
         }
-
-        auto& fs = paths.get_filesystem();
-        std::vector<AbiEntry> abi_tag_entries;
-        abi_entries_from_pre_build_info(fs, grdk_cache, *action.abi_info.get()->pre_build_info, abi_tag_entries);
-
-        auto& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
-        auto&& [port_files, cmake_contents] = get_port_files(fs, abi_tag_entries, scfl);
-
-        for (auto&& helper : paths.get_cmake_script_hashes())
-        {
-            if (Strings::case_insensitive_ascii_contains(cmake_contents, helper.first))
-            {
-                abi_tag_entries.emplace_back(helper.first, helper.second);
-            }
-        }
-        abi_info.heuristic_resources.push_back(
-            run_resource_heuristics(cmake_contents, scfl.source_control_file->core_paragraph->raw_version));
-
-        get_feature_abi(action.feature_list, abi_tag_entries);
-
-        return abi_tag_entries;
-    }
-
-    void populate_abi_tag_ex(const VcpkgPaths& paths,
-                             InstallPlanAction& action,
-                             std::unique_ptr<PreBuildInfo>&& proto_pre_build_info,
-                             Span<const AbiEntry> dependency_abis,
-                             const AsyncLazy<std::vector<AbiEntry>>& cmake_script_hashes)
-    {
-        // get toolset (not in parallel)
-        // get prebuildinfo
-        // return when using editable or head flags
 
         // get compiler info (not in parallel)
-
-        // check if all dependencies have a hash if not, return (not in parallel) (sequencial)
-
+        abi_info.compiler_info = paths.get_compiler_info(pre_build_info, toolset);
         // get triplet info (not in parallel)
+        abi_info.triplet_abi.emplace(paths.get_triplet_info(pre_build_info, toolset));
+
+        return true;
+    }
+
+    // check if all dependencies have a hash
+    static bool check_dependency_hashes(View<AbiEntry> dependency_abis, const PackageSpec& spec)
+    {
+        auto dep_no_hash_it = std::find_if(
+            dependency_abis.begin(), dependency_abis.end(), [](const auto& dep_abi) { return dep_abi.value.empty(); });
+        if (dep_no_hash_it != dependency_abis.end())
+        {
+            Debug::print("Binary caching for package ",
+                         spec,
+                         " is disabled due to missing abi info for ",
+                         dep_no_hash_it->key,
+                         '\n');
+            return false;
+        }
+    }
+
+    // PRE: initialize_abi_tag() was called and returned true
+    void make_abi_tag(const Filesystem& fs,
+                      InstallPlanAction& action, 
+                      View<AbiEntry> common_abi,
+                      std::vector<AbiEntry>&& dependency_abis,
+                      const AsyncLazy<std::vector<AbiEntry>>& cmake_script_hashes)
+    {
+        auto& abi_info = action.abi_info;
+        auto abi_tag_entries = std::move(dependency_abis);
+
+        abi_tag_entries.emplace_back("triplet", action.spec.triplet().canonical_name());
+        abi_tag_entries.emplace_back("triplet_abi", *abi_info.triplet_abi.get());
 
         // abi tags from prebuildinfo
+        abi_entries_from_pre_build_info(fs, grdk_cache, *abi_info.pre_build_info, abi_tag_entries);
+        
+        auto& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
 
         // portfile hashes/contents
+        auto&& [port_files, cmake_contents] = get_port_files(fs, abi_tag_entries, scfl);
+        
         // cmake helpers (access to cmake helper hashes in cache not in parallel)
+        for (auto&& helper : cmake_script_hashes.get())
+        {
+            if (Strings::case_insensitive_ascii_contains(cmake_contents, helper.key))
+            {
+                abi_tag_entries.emplace_back(helper.key, helper.value);
+            }
+        }
 
         // cmake/ PS version (precompute, same for all)
         // ports.cmake version (precompute, same for all)
-
-        // ports.cmake
+        // ports.cmake (precompute, same for all)
         // post build lint (not updated in 3 years! still needed?)
+        abi_tag_entries.insert(abi_tag_entries.end(), common_abi.begin(), common_abi.end());
 
         // port features
+        get_feature_abi(action.feature_list, abi_tag_entries);
 
         // sort
-        // debug output
+        Util::sort(abi_tag_entries);
 
-        // check for missing abi tags
+        if (Debug::g_debugging)
+        {
+            // debug output
+            print_debug_info(action.spec, abi_tag_entries);
 
-        // fillout port abi
-        // fillout infos for sbom
+            // check for missing abi tags
+            print_missing_abi_tags(abi_tag_entries);
+        }
+
+        // fill out port abi
+        // fill out infos for sbom
         // write abi file
 
         // write sbom file?
+
+        std::string full_abi_info =
+            Strings::join("", abi_tag_entries, [](const AbiEntry& p) { return p.key + " " + p.value + "\n"; });
     }
 
     static std::vector<AbiEntry> get_dependency_abis(std::vector<vcpkg::InstallPlanAction>::iterator action_plan_begin,
@@ -324,139 +371,42 @@ namespace vcpkg
         return dependency_abis;
     }
 
-    void compute_all_abis_ex(const VcpkgPaths& paths,
-                             ActionPlan& action_plan,
-                             const CMakeVars::CMakeVarProvider& var_provider,
-                             const StatusParagraphs& status_db)
+    void compute_all_abis(const VcpkgPaths& paths,
+                          ActionPlan& action_plan,
+                          const CMakeVars::CMakeVarProvider& var_provider,
+                          const StatusParagraphs& status_db)
     {
         const AsyncLazy<std::vector<AbiEntry>> cmake_script_hashes(
             [&paths]() { get_cmake_script_hashes(paths.get_filesystem(), paths.scripts); });
         // 1. system abi (ports.cmake/ PS version/ CMake version)
         const auto common_abi = get_common_abi(paths);
 
-        std::vector<AbiEntry> dependency_abis;
-
         for (auto it = action_plan.install_actions.begin(); it != action_plan.install_actions.end(); ++it)
         {
             auto& action = *it;
 
-            if (!Util::Enum::to_bool(action.build_options.only_downloads))
-            {
-                dependency_abis = get_dependency_abis(action_plan.install_actions.begin(), it, status_db);
-            }
+            // get prebuildinfo (not in parallel)
             auto pre_build_info = std::make_unique<PreBuildInfo>(
                 paths, action.spec.triplet(), var_provider.get_tag_vars(action.spec).value_or_exit(VCPKG_LINE_INFO));
 
-            populate_abi_tag_ex(paths, action, std::move(pre_build_info), dependency_abis, cmake_script_hashes);
-            dependency_abis.clear();
-        }
+            bool should_proceed = initialize_abi_info(paths, action, std::move(pre_build_info));
 
-        // get prebuildinfo (not in parallel)
-        // populate abi tag
-    }
-
-    void compute_all_abis(const VcpkgPaths& paths,
-                          ActionPlan& action_plan,
-                          const CMakeVars::CMakeVarProvider& var_provider,
-                          const StatusParagraphs& status_db)
-    {
-        Cache<Path, Optional<std::string>> grdk_cache;
-
-        std::vector<std::reference_wrapper<InstallPlanAction>> must_make_private_abi;
-
-        for (auto& action : action_plan.install_actions)
-        {
-            if (action.abi_info.has_value()) continue;
-
-            must_make_private_abi.push_back(action);
-        }
-
-        std::vector<Optional<std::vector<AbiEntry>>> action_private_abis(must_make_private_abi.size());
-
-        // get "private" abi
-        parallel_transform(must_make_private_abi.begin(),
-                           must_make_private_abi.size(),
-                           action_private_abis.begin(),
-                           [&](auto&& action) {
-                               return populate_abi_tag(paths, action, grdk_cache);
-                               make_private_abi(
-                                   paths,
-                                   action,
-                                   std::make_unique<PreBuildInfo>(
-                                       paths,
-                                       action.spec.triplet(),
-                                       var_provider.get_tag_vars(action.spec).value_or_exit(VCPKG_LINE_INFO)),
-                                   grdk_cache);
-                           });
-
-        for (auto&& maybe_abi_entry : action_private_abis)
-        {
-            if (!maybe_abi_entry.has_value())
+            if (!should_proceed)
             {
                 continue;
             }
-        }
 
-        // get dependencies abi
-        for (auto it = action_plan.install_actions.begin(); it != action_plan.install_actions.end(); ++it)
-        {
-            auto& action = *it;
             std::vector<AbiEntry> dependency_abis;
-            for (auto&& pspec : action.package_dependencies)
+            if (!Util::Enum::to_bool(action.build_options.only_downloads))
             {
-                if (pspec == action.spec) continue;
-
-                auto pred = [&](const InstallPlanAction& ipa) { return ipa.spec == pspec; };
-                auto it2 = std::find_if(action_plan.install_actions.begin(), it, pred);
-                if (it2 == it)
+                dependency_abis = get_dependency_abis(action_plan.install_actions.begin(), it, status_db);
+                if (!check_dependency_hashes(dependency_abis, action.spec))
                 {
-                    // Finally, look in current installed
-                    auto status_it = status_db.find(pspec);
-                    if (status_it == status_db.end())
-                    {
-                        Checks::unreachable(
-                            VCPKG_LINE_INFO,
-                            fmt::format("Failed to find dependency abi for {} -> {}", action.spec, pspec));
-                    }
-
-                    dependency_abis.emplace_back(pspec.name(), status_it->get()->package.abi);
-                }
-                else
-                {
-                    dependency_abis.emplace_back(pspec.name(), it2->public_abi());
+                    continue;
                 }
             }
 
-#ifdef ABI_PERF
-            auto maybe_abi_path_and_file =
-#endif
-                populate_abi_tag(paths, action, dependency_abis, grdk_cache);
-#ifdef ABI_PERF
-            if (auto abi_path_and_file = maybe_abi_path_and_file.get())
-            {
-                abi_files_and_contents.emplace_back(std::move(*abi_path_and_file));
-            }
-#endif
         }
-#ifdef ABI_PERF
-        std::mutex mtx;
-        auto& fs = paths.get_filesystem();
-        bool should_exit = false;
-        parallel_for_each_n(abi_files_and_contents.begin(), abi_files_and_contents.size(), [&](const auto& abi_entry) {
-            std::error_code ec;
-
-            fs.write_contents_and_dirs(abi_entry.first, abi_entry.second, ec);
-            if (ec)
-            {
-                std::lock_guard lock(mtx);
-                msg::println_error(format_filesystem_call_error(ec, "create_directory", {abi_entry.first}));
-                should_exit = true;
-            }
-        });
-        if (should_exit)
-        {
-            Checks::exit_fail(VCPKG_LINE_INFO);
-        }
-#endif
+        // populate abi tag
     }
 } // namespace vcpkg
