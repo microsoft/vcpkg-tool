@@ -20,6 +20,7 @@
 #include <array>
 #include <mutex>
 #include <utility>
+#include <vector>
 
 namespace vcpkg
 {
@@ -92,13 +93,14 @@ namespace vcpkg
         auto& fs = paths.get_filesystem();
 
         abi_entries.emplace_back("cmake", paths.get_tool_version(Tools::CMAKE, stdout_sink));
-        abi_entries.emplace_back("ports.cmake", Hash::get_file_hash(fs, paths.ports_cmake, Hash::Algorithm::Sha256));
+        abi_entries.emplace_back("ports.cmake", Hash::get_file_hash(fs, paths.ports_cmake, Hash::Algorithm::Sha256).value_or(""));
         abi_entries.emplace_back("post_build_checks", "2");
 
         // This #ifdef is mirrored in tools.cpp's PowershellProvider
 #if defined(_WIN32)
         abi_entries.emplace_back("powershell", paths.get_tool_version("powershell-core", stdout_sink));
 #endif
+        return abi_entries;
     }
 
     static std::vector<AbiEntry> get_cmake_script_hashes(const Filesystem& fs, const Path& scripts_dir)
@@ -109,7 +111,7 @@ namespace vcpkg
         std::vector<AbiEntry> helpers(files.size());
 
         parallel_transform(files.begin(), files.size(), helpers.begin(), [&fs](auto&& file) {
-            return AbiEntry{file.stem().to_string(), Hash::get_file_hash(fs, file, Hash::Algorithm::Sha256)};
+            return AbiEntry{file.stem().to_string(), Hash::get_file_hash(fs, file, Hash::Algorithm::Sha256).value_or("")};
         });
         return helpers;
     }
@@ -218,7 +220,7 @@ namespace vcpkg
         }
     }
 
-    bool initialize_abi_info(const VcpkgPaths& paths,
+    static bool initialize_abi_info(const VcpkgPaths& paths,
                             InstallPlanAction& action,
                             std::unique_ptr<PreBuildInfo>&& proto_pre_build_info)
     {
@@ -262,16 +264,17 @@ namespace vcpkg
                          '\n');
             return false;
         }
+        return true;
     }
 
     // PRE: initialize_abi_tag() was called and returned true
-    void make_abi_tag(const Filesystem& fs,
+    static void make_abi_tag(const Filesystem& fs,
                       InstallPlanAction& action, 
                       View<AbiEntry> common_abi,
                       std::vector<AbiEntry>&& dependency_abis,
                       const AsyncLazy<std::vector<AbiEntry>>& cmake_script_hashes)
     {
-        auto& abi_info = action.abi_info;
+        AbiInfo& abi_info = *action.abi_info.get();
         auto abi_tag_entries = std::move(dependency_abis);
 
         abi_tag_entries.emplace_back("triplet", action.spec.triplet().canonical_name());
@@ -377,7 +380,7 @@ namespace vcpkg
                           const StatusParagraphs& status_db)
     {
         const AsyncLazy<std::vector<AbiEntry>> cmake_script_hashes(
-            [&paths]() { get_cmake_script_hashes(paths.get_filesystem(), paths.scripts); });
+            [&paths]() { return get_cmake_script_hashes(paths.get_filesystem(), paths.scripts); });
         // 1. system abi (ports.cmake/ PS version/ CMake version)
         const auto common_abi = get_common_abi(paths);
 
