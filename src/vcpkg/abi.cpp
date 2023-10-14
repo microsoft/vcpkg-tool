@@ -254,16 +254,19 @@ namespace vcpkg
     // check if all dependencies have a hash
     static bool check_dependency_hashes(View<AbiEntry> dependency_abis, const PackageSpec& spec)
     {
-        auto dep_no_hash_it = std::find_if(
-            dependency_abis.begin(), dependency_abis.end(), [](const auto& dep_abi) { return dep_abi.value.empty(); });
-        if (dep_no_hash_it != dependency_abis.end())
+        if (!dependency_abis.empty())
         {
-            Debug::print("Binary caching for package ",
-                         spec,
-                         " is disabled due to missing abi info for ",
-                         dep_no_hash_it->key,
-                         '\n');
-            return false;
+            auto dep_no_hash_it = std::find_if(
+                dependency_abis.begin(), dependency_abis.end(), [](const auto& dep_abi) { return dep_abi.value.empty(); });
+            if (dep_no_hash_it != dependency_abis.end())
+            {
+                Debug::print("Binary caching for package ",
+                            spec,
+                            " is disabled due to missing abi info for ",
+                            dep_no_hash_it->key,
+                            '\n');
+                return false;
+            }
         }
         return true;
     }
@@ -382,6 +385,7 @@ namespace vcpkg
     {
         const AsyncLazy<std::vector<AbiEntry>> cmake_script_hashes(
             [&paths]() { return get_cmake_script_hashes(paths.get_filesystem(), paths.scripts); });
+        
         // 1. system abi (ports.cmake/ PS version/ CMake version)
         const auto common_abi = get_common_abi(paths);
 
