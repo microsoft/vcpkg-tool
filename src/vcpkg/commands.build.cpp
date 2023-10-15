@@ -899,35 +899,6 @@ namespace vcpkg
         }
     }
 
-    static void write_sbom(const VcpkgPaths& paths,
-                           const InstallPlanAction& action,
-                           std::vector<Json::Value> heuristic_resources)
-    {
-        auto& fs = paths.get_filesystem();
-        const auto& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
-        const auto& scf = *scfl.source_control_file;
-
-        auto doc_ns = Strings::concat("https://spdx.org/spdxdocs/",
-                                      scf.core_paragraph->name,
-                                      '-',
-                                      action.spec.triplet(),
-                                      '-',
-                                      scf.to_version(),
-                                      '-',
-                                      generate_random_UUID());
-
-        const auto now = CTime::now_string();
-        const auto& abi = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
-
-        const auto json_path =
-            action.package_dir.value_or_exit(VCPKG_LINE_INFO) / "share" / action.spec.name() / "vcpkg.spdx.json";
-        fs.write_contents_and_dirs(
-            json_path,
-            create_spdx_sbom(
-                action, abi.relative_port_files, abi.relative_port_hashes, now, doc_ns, std::move(heuristic_resources)),
-            VCPKG_LINE_INFO);
-    }
-
     static ExtendedBuildResult do_build_package(const VcpkgCmdArguments& args,
                                                 const VcpkgPaths& paths,
                                                 const InstallPlanAction& action,
@@ -1040,7 +1011,6 @@ namespace vcpkg
 
         std::unique_ptr<BinaryControlFile> bcf = create_binary_control_file(action, build_info);
 
-        write_sbom(paths, action, abi_info.heuristic_resources);
         write_binary_control_file(paths.get_filesystem(), action.package_dir.value_or_exit(VCPKG_LINE_INFO), *bcf);
         return {BuildResult::SUCCEEDED, std::move(bcf)};
     }

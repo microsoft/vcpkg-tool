@@ -7,7 +7,10 @@
 
 #include <vcpkg/base/span.h>
 
+#include <vcpkg/commands.build.h>
+
 #include <string>
+#include <vector>
 
 namespace vcpkg
 {
@@ -21,11 +24,14 @@ namespace vcpkg
     /// @param resource_docs Additional documents to concatenate into the created document. These are intended to
     /// capture fetched resources, such as tools or source archives.
     std::string create_spdx_sbom(const InstallPlanAction& action,
-                                 View<Path> relative_paths,
-                                 View<std::string> hashes,
+                                 View<AbiEntry> port_files_abi,
                                  std::string created_time,
                                  std::string document_namespace,
                                  std::vector<Json::Value>&& resource_docs);
 
     Json::Value run_resource_heuristics(StringView contents, StringView portRawVersion);
+    void write_sbom(const VcpkgPaths& paths,
+                    const InstallPlanAction& action,
+                    std::vector<Json::Value> heuristic_resources,
+                    const std::vector<AbiEntry>& port_files_abi);
 }
