@@ -31,9 +31,9 @@ namespace vcpkg
     };
 
     static std::string grdk_hash(const Filesystem& fs,
-                                 Cache<Path, Optional<std::string>>& grdk_cache,
                                  const PreBuildInfo& pre_build_info)
     {
+        static const Cache<Path, Optional<std::string>> grdk_cache;
         if (auto game_dk_latest = pre_build_info.gamedk_latest_path.get())
         {
             const auto grdk_header_path = *game_dk_latest / "GRDK/gameKit/Include/grdk.h";
@@ -59,7 +59,6 @@ namespace vcpkg
     }
 
     static void abi_entries_from_pre_build_info(const Filesystem& fs,
-                                                Cache<Path, Optional<std::string>>& grdk_cache,
                                                 const PreBuildInfo& pre_build_info,
                                                 std::vector<AbiEntry>& abi_tag_entries)
     {
@@ -67,8 +66,7 @@ namespace vcpkg
         {
             abi_tag_entries.emplace_back(
                 "public_abi_override",
-                Hash::get_string_hash(pre_build_info.public_abi_override.value_or_exit(VCPKG_LINE_INFO),
-                                      Hash::Algorithm::Sha256));
+                Hash::get_string_sha256(pre_build_info.public_abi_override.value_or_exit(VCPKG_LINE_INFO)));
         }
 
         for (const auto& env_var : pre_build_info.passthrough_env_vars_tracked)
@@ -76,14 +74,13 @@ namespace vcpkg
             auto maybe_env_var_value = get_environment_variable(env_var);
             if (auto env_var_value = maybe_env_var_value.get())
             {
-                abi_tag_entries.emplace_back("ENV:" + env_var,
-                                             Hash::get_string_hash(*env_var_value, Hash::Algorithm::Sha256));
+                abi_tag_entries.emplace_back("ENV:" + env_var, Hash::get_string_sha256(*env_var_value));
             }
         }
 
         if (pre_build_info.target_is_xbox)
         {
-            abi_tag_entries.emplace_back("grdk.h", grdk_hash(fs, grdk_cache, pre_build_info));
+            abi_tag_entries.emplace_back("grdk.h", grdk_hash(fs, pre_build_info));
         }
     }
 
@@ -273,10 +270,10 @@ namespace vcpkg
 
     // PRE: initialize_abi_tag() was called and returned true
     static void make_abi_tag(const Filesystem& fs,
-                      InstallPlanAction& action, 
-                      View<AbiEntry> common_abi,
-                      std::vector<AbiEntry>&& dependency_abis,
-                      const AsyncLazy<std::vector<AbiEntry>>& cmake_script_hashes)
+                             InstallPlanAction& action, 
+                             View<AbiEntry> common_abi,
+                             std::vector<AbiEntry>&& dependency_abis,
+                             const AsyncLazy<std::vector<AbiEntry>>& cmake_script_hashes)
     {
         AbiInfo& abi_info = *action.abi_info.get();
         auto abi_tag_entries = std::move(dependency_abis);
@@ -285,7 +282,7 @@ namespace vcpkg
         abi_tag_entries.emplace_back("triplet_abi", *abi_info.triplet_abi.get());
 
         // abi tags from prebuildinfo
-        abi_entries_from_pre_build_info(fs, grdk_cache, *abi_info.pre_build_info, abi_tag_entries);
+        abi_entries_from_pre_build_info(fs, *abi_info.pre_build_info, abi_tag_entries);
         
         auto& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
 
@@ -330,6 +327,7 @@ namespace vcpkg
 
         std::string full_abi_info =
             Strings::join("", abi_tag_entries, [](const AbiEntry& p) { return p.key + " " + p.value + "\n"; });
+        abi_info.package_abi = Hash::get_string_sha256(full_abi_info);
     }
 
     static std::vector<AbiEntry> get_dependency_abis(std::vector<vcpkg::InstallPlanAction>::iterator action_plan_begin,
@@ -383,11 +381,11 @@ namespace vcpkg
                           const CMakeVars::CMakeVarProvider& var_provider,
                           const StatusParagraphs& status_db)
     {
-        const AsyncLazy<std::vector<AbiEntry>> cmake_script_hashes(
+        static const AsyncLazy<std::vector<AbiEntry>> cmake_script_hashes(
             [&paths]() { return get_cmake_script_hashes(paths.get_filesystem(), paths.scripts); });
         
         // 1. system abi (ports.cmake/ PS version/ CMake version)
-        const auto common_abi = get_common_abi(paths);
+        static const auto common_abi = get_common_abi(paths);
 
         for (auto it = action_plan.install_actions.begin(); it != action_plan.install_actions.end(); ++it)
         {
