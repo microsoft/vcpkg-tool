@@ -1036,7 +1036,6 @@ namespace vcpkg
         return result;
     }
 
-
     ExtendedBuildResult build_package(const VcpkgCmdArguments& args,
                                       const VcpkgPaths& paths,
                                       const InstallPlanAction& action,

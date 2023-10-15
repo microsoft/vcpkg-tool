@@ -13,7 +13,6 @@
 #include <vcpkg/statusparagraphs.h>
 #include <vcpkg/vcpkgpaths.h>
 
-
 #include <memory>
 #include <string>
 #include <vector>

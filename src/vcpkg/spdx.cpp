@@ -258,27 +258,25 @@ void vcpkg::write_sbom(const VcpkgPaths& paths,
                        const InstallPlanAction& action,
                        std::vector<Json::Value> heuristic_resources,
                        const std::vector<AbiEntry>& port_files_abi)
-    {
-        auto& fs = paths.get_filesystem();
-        const auto& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
-        const auto& scf = *scfl.source_control_file;
+{
+    auto& fs = paths.get_filesystem();
+    const auto& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
+    const auto& scf = *scfl.source_control_file;
 
-        auto doc_ns = Strings::concat("https://spdx.org/spdxdocs/",
-                                      scf.core_paragraph->name,
-                                      '-',
-                                      action.spec.triplet(),
-                                      '-',
-                                      scf.to_version(),
-                                      '-',
-                                      generate_random_UUID());
+    auto doc_ns = Strings::concat("https://spdx.org/spdxdocs/",
+                                  scf.core_paragraph->name,
+                                  '-',
+                                  action.spec.triplet(),
+                                  '-',
+                                  scf.to_version(),
+                                  '-',
+                                  generate_random_UUID());
 
-        const auto now = CTime::now_string();
+    const auto now = CTime::now_string();
 
-        const auto json_path =
-            action.package_dir.value_or_exit(VCPKG_LINE_INFO) / "share" / action.spec.name() / "vcpkg.spdx.json";
-        fs.write_contents_and_dirs(
-            json_path,
-            create_spdx_sbom(
-                action, port_files_abi, now, doc_ns, std::move(heuristic_resources)),
-            VCPKG_LINE_INFO);
-    }
+    const auto json_path =
+        action.package_dir.value_or_exit(VCPKG_LINE_INFO) / "share" / action.spec.name() / "vcpkg.spdx.json";
+    fs.write_contents_and_dirs(json_path,
+                               create_spdx_sbom(action, port_files_abi, now, doc_ns, std::move(heuristic_resources)),
+                               VCPKG_LINE_INFO);
+}

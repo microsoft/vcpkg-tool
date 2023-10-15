@@ -38,8 +38,7 @@ namespace vcpkg
         std::vector<AbiEntry> port_files_abi;
     };
 
-    static std::string grdk_hash(const Filesystem& fs,
-                                 const PreBuildInfo& pre_build_info)
+    static std::string grdk_hash(const Filesystem& fs, const PreBuildInfo& pre_build_info)
     {
         static const Cache<Path, Optional<std::string>> grdk_cache;
         if (auto game_dk_latest = pre_build_info.gamedk_latest_path.get())
@@ -98,7 +97,8 @@ namespace vcpkg
         auto& fs = paths.get_filesystem();
 
         abi_entries.emplace_back("cmake", paths.get_tool_version(Tools::CMAKE, stdout_sink));
-        abi_entries.emplace_back("ports.cmake", Hash::get_file_hash(fs, paths.ports_cmake, Hash::Algorithm::Sha256).value_or(""));
+        abi_entries.emplace_back("ports.cmake",
+                                 Hash::get_file_hash(fs, paths.ports_cmake, Hash::Algorithm::Sha256).value_or(""));
         abi_entries.emplace_back("post_build_checks", "2");
 
         // This #ifdef is mirrored in tools.cpp's PowershellProvider
@@ -116,7 +116,8 @@ namespace vcpkg
         std::vector<AbiEntry> helpers(files.size());
 
         parallel_transform(files.begin(), files.size(), helpers.begin(), [&fs](auto&& file) {
-            return AbiEntry{file.stem().to_string(), Hash::get_file_hash(fs, file, Hash::Algorithm::Sha256).value_or("")};
+            return AbiEntry{file.stem().to_string(),
+                            Hash::get_file_hash(fs, file, Hash::Algorithm::Sha256).value_or("")};
         });
         return helpers;
     }
@@ -260,15 +261,16 @@ namespace vcpkg
     {
         if (!dependency_abis.empty())
         {
-            auto dep_no_hash_it = std::find_if(
-                dependency_abis.begin(), dependency_abis.end(), [](const auto& dep_abi) { return dep_abi.value.empty(); });
+            auto dep_no_hash_it = std::find_if(dependency_abis.begin(), dependency_abis.end(), [](const auto& dep_abi) {
+                return dep_abi.value.empty();
+            });
             if (dep_no_hash_it != dependency_abis.end())
             {
                 Debug::print("Binary caching for package ",
-                            spec,
-                            " is disabled due to missing abi info for ",
-                            dep_no_hash_it->key,
-                            '\n');
+                             spec,
+                             " is disabled due to missing abi info for ",
+                             dep_no_hash_it->key,
+                             '\n');
                 return false;
             }
         }
@@ -277,10 +279,10 @@ namespace vcpkg
 
     // PRE: initialize_abi_tag() was called and returned true
     static PackageAbiResult make_abi_tag(const VcpkgPaths& paths,
-                             InstallPlanAction& action, 
-                             View<AbiEntry> common_abi,
-                             std::vector<AbiEntry>&& dependency_abis,
-                             const AsyncLazy<std::vector<AbiEntry>>& cmake_script_hashes)
+                                         InstallPlanAction& action,
+                                         View<AbiEntry> common_abi,
+                                         std::vector<AbiEntry>&& dependency_abis,
+                                         const AsyncLazy<std::vector<AbiEntry>>& cmake_script_hashes)
     {
         auto& fs = paths.get_filesystem();
         AbiInfo& abi_info = *action.abi_info.get();
@@ -291,13 +293,13 @@ namespace vcpkg
 
         // abi tags from prebuildinfo
         abi_entries_from_pre_build_info(fs, *abi_info.pre_build_info, abi_tag_entries);
-        
+
         auto& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
 
         // portfile hashes/contents
         auto&& [port_files_abi, cmake_contents] = get_port_files(fs, scfl);
         abi_tag_entries.insert(abi_tag_entries.end(), port_files_abi.cbegin(), port_files_abi.cend());
-        
+
         // cmake helpers (access to cmake helper hashes in cache not in parallel)
         for (auto&& helper : cmake_script_hashes.get())
         {
@@ -332,7 +334,8 @@ namespace vcpkg
         std::string full_abi_info =
             Strings::join("", abi_tag_entries, [](const AbiEntry& p) { return p.key + " " + p.value + "\n"; });
         abi_info.package_abi = Hash::get_string_sha256(full_abi_info);
-        abi_info.abi_tag_file.emplace(paths.build_dir(action.spec) / action.spec.triplet().canonical_name() + ".vcpkg_abi_info.txt");
+        abi_info.abi_tag_file.emplace(paths.build_dir(action.spec) / action.spec.triplet().canonical_name() +
+                                      ".vcpkg_abi_info.txt");
 
         return {action, std::move(full_abi_info), std::move(cmake_contents), std::move(port_files_abi)};
     }
@@ -382,7 +385,7 @@ namespace vcpkg
         }
         return dependency_abis;
     }
-    
+
     void compute_all_abis(const VcpkgPaths& paths,
                           ActionPlan& action_plan,
                           const CMakeVars::CMakeVarProvider& var_provider,
@@ -424,17 +427,23 @@ namespace vcpkg
                 }
             }
 
-            abi_results.push_back(make_abi_tag(paths, action, common_abi, std::move(dependency_abis), cmake_script_hashes));
+            abi_results.push_back(
+                make_abi_tag(paths, action, common_abi, std::move(dependency_abis), cmake_script_hashes));
         }
         // populate abi tag
         for (auto&& abi_result : abi_results)
         {
             // write abi tag file
-            fs.write_contents_and_dirs(abi_result.action.abi_info.value_or_exit(VCPKG_LINE_INFO).abi_tag_file.value_or_exit(VCPKG_LINE_INFO), abi_result.abi_str, VCPKG_LINE_INFO);
-            
+            fs.write_contents_and_dirs(
+                abi_result.action.abi_info.value_or_exit(VCPKG_LINE_INFO).abi_tag_file.value_or_exit(VCPKG_LINE_INFO),
+                abi_result.abi_str,
+                VCPKG_LINE_INFO);
+
             // make and write sbom file
-            auto& scf = abi_result.action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_control_file;
-            std::vector<Json::Value> heuristic_resources{run_resource_heuristics(abi_result.cmake_content, scf->core_paragraph->raw_version)};
+            auto& scf =
+                abi_result.action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_control_file;
+            std::vector<Json::Value> heuristic_resources{
+                run_resource_heuristics(abi_result.cmake_content, scf->core_paragraph->raw_version)};
             write_sbom(paths, abi_result.action, std::move(heuristic_resources), abi_result.port_files_abi);
         }
     }

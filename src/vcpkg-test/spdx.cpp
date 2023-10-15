@@ -26,18 +26,11 @@ TEST_CASE ("spdx maximum serialization", "[spdx]")
     auto& abi = *(ipa.abi_info = AbiInfo{}).get();
     abi.package_abi = "ABIHASH";
 
-    std::vector<AbiEntry> port_abi{
-        {"vcpkg.json", "vcpkg.json-hash"},
-        {"portfile.cmake", "portfile.cmake-hash"},
-        {"patches/patch1.diff", "patch1.diff-hash"}
-    };
+    std::vector<AbiEntry> port_abi{{"vcpkg.json", "vcpkg.json-hash"},
+                                   {"portfile.cmake", "portfile.cmake-hash"},
+                                   {"patches/patch1.diff", "patch1.diff-hash"}};
 
-    const auto sbom =
-        create_spdx_sbom(ipa,
-                         port_abi,
-                         "now",
-                         "https://test-document-namespace",
-                         {});
+    const auto sbom = create_spdx_sbom(ipa, port_abi, "now", "https://test-document-namespace", {});
 
     auto expected = Json::parse(R"json(
 {
@@ -184,16 +177,9 @@ TEST_CASE ("spdx minimum serialization", "[spdx]")
     InstallPlanAction ipa(spec, scfl, "test_packages_root", RequestType::USER_REQUESTED, Test::X86_WINDOWS, {}, {}, {});
     auto& abi = *(ipa.abi_info = AbiInfo{}).get();
     abi.package_abi = "deadbeef";
-    std::vector<AbiEntry> port_abi{
-        {"vcpkg.json", "hash-vcpkg.json"},
-        {"portfile.cmake", "hash-portfile.cmake"}
-    };
+    std::vector<AbiEntry> port_abi{{"vcpkg.json", "hash-vcpkg.json"}, {"portfile.cmake", "hash-portfile.cmake"}};
 
-    const auto sbom = create_spdx_sbom(ipa,
-                                       port_abi,
-                                       "now+1",
-                                       "https://test-document-namespace-2",
-                                       {});
+    const auto sbom = create_spdx_sbom(ipa, port_abi, "now+1", "https://test-document-namespace-2", {});
 
     auto expected = Json::parse(R"json(
 {
