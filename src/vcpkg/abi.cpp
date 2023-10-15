@@ -389,8 +389,7 @@ namespace vcpkg
                           const StatusParagraphs& status_db)
     {
         auto& fs = paths.get_filesystem();
-        static const AsyncLazy<std::vector<AbiEntry>> cmake_script_hashes(
-            [&paths, &fs]() { return get_cmake_script_hashes(fs, paths.scripts); });
+        static const std::vector<AbiEntry> cmake_script_hashes = get_cmake_script_hashes(fs, paths.scripts);
         
         // 1. system abi (ports.cmake/ PS version/ CMake version)
         static const auto common_abi = get_common_abi(paths);
