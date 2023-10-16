@@ -282,7 +282,7 @@ namespace vcpkg
                                          InstallPlanAction& action,
                                          View<AbiEntry> common_abi,
                                          std::vector<AbiEntry>&& dependency_abis,
-                                         const AsyncLazy<std::vector<AbiEntry>>& cmake_script_hashes)
+                                         const std::vector<AbiEntry>& cmake_script_hashes)
     {
         auto& fs = paths.get_filesystem();
         AbiInfo& abi_info = *action.abi_info.get();
@@ -301,7 +301,7 @@ namespace vcpkg
         abi_tag_entries.insert(abi_tag_entries.end(), port_files_abi.cbegin(), port_files_abi.cend());
 
         // cmake helpers (access to cmake helper hashes in cache not in parallel)
-        for (auto&& helper : cmake_script_hashes.get())
+        for (auto&& helper : cmake_script_hashes)
         {
             if (Strings::case_insensitive_ascii_contains(cmake_contents, helper.key))
             {
