@@ -200,7 +200,7 @@ namespace vcpkg
             T* get() && = delete;
 
             template<class... Args>
-            T& emplace(Args&&... args) noexcept(std::is_nothrow_constructible<T, Args...>)
+            T& emplace(Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...>)
             {
                 if (m_is_present) destroy();
                 new (&m_t) T(static_cast<Args&&>(args)...);
