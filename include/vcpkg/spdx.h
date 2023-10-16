@@ -31,6 +31,6 @@ namespace vcpkg
 
     Json::Value run_resource_heuristics(StringView contents, StringView portRawVersion);
     std::string write_sbom(const InstallPlanAction& action,
-                    std::vector<Json::Value> heuristic_resources,
-                    const std::vector<AbiEntry>& port_files_abi);
+                           std::vector<Json::Value> heuristic_resources,
+                           const std::vector<AbiEntry>& port_files_abi);
 }

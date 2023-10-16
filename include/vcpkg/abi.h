@@ -52,8 +52,8 @@ namespace vcpkg
             sbom_file_contents.emplace(std::move(sbom_file));
         }
 
-        //PRE: abi_tag_complete() == true
-        // dir: Directory where the files should be saved, usually packages_dir/share
+        // PRE: abi_tag_complete() == true
+        //  dir: Directory where the files should be saved, usually packages_dir/share
         void save_abi_files(const Filesystem& fs, Path&& dir) const;
 
     private:

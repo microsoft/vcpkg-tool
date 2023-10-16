@@ -254,10 +254,9 @@ std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
     return Json::stringify(doc);
 }
 
-std::string vcpkg::write_sbom(
-                       const InstallPlanAction& action,
-                       std::vector<Json::Value> heuristic_resources,
-                       const std::vector<AbiEntry>& port_files_abi)
+std::string vcpkg::write_sbom(const InstallPlanAction& action,
+                              std::vector<Json::Value> heuristic_resources,
+                              const std::vector<AbiEntry>& port_files_abi)
 {
     const auto& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
     const auto& scf = *scfl.source_control_file;

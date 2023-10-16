@@ -266,10 +266,10 @@ namespace vcpkg
 
     // PRE: initialize_abi_tag() was called and returned true
     static void make_abi_tag(const VcpkgPaths& paths,
-                                         InstallPlanAction& action,
-                                         View<AbiEntry> common_abi,
-                                         std::vector<AbiEntry>&& dependency_abis,
-                                         const std::vector<AbiEntry>& cmake_script_hashes)
+                             InstallPlanAction& action,
+                             View<AbiEntry> common_abi,
+                             std::vector<AbiEntry>&& dependency_abis,
+                             const std::vector<AbiEntry>& cmake_script_hashes)
     {
         auto& fs = paths.get_filesystem();
         AbiInfo& abi_info = *action.abi_info.get();
@@ -383,7 +383,7 @@ namespace vcpkg
     {
         auto& fs = paths.get_filesystem();
         static const std::vector<AbiEntry> cmake_script_hashes = get_cmake_script_hashes(fs, paths.scripts);
-        
+
         // 1. system abi (ports.cmake/ PS version/ CMake version)
         static const auto common_abi = get_common_abi(paths);
 
@@ -424,7 +424,7 @@ namespace vcpkg
         {
             Checks::unreachable(VCPKG_LINE_INFO);
         }
-        
+
         // write abi tag file
         fs.write_contents_and_dirs(dir / "vcpkg_abi_info.txt", *abi_tag_file_contents.get(), VCPKG_LINE_INFO);
 
