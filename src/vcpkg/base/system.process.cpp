@@ -961,6 +961,7 @@ namespace
         RedirectedProcessInfo& operator=(const RedirectedProcessInfo&) = delete;
         ~RedirectedProcessInfo() = default;
 
+        VCPKG_MSVC_WARNING(suppress : 6262) // function uses 32k of stack
         int wait_and_stream_output(int32_t debug_id,
                                    const char* input,
                                    DWORD input_size,
