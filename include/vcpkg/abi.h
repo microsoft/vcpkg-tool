@@ -42,7 +42,23 @@ namespace vcpkg
         Optional<const CompilerInfo&> compiler_info;
         Optional<const std::string&> triplet_abi;
         std::string package_abi;
-        Optional<Path> abi_tag_file;
+
+        // Checks if full abi tag was created
+        bool abi_tag_complete() const noexcept { return package_abi.size() != 0; }
+
+        void abi_file_contents(std::string&& abi_tag, std::string&& sbom_file) noexcept
+        {
+            abi_tag_file_contents.emplace(std::move(abi_tag));
+            sbom_file_contents.emplace(std::move(sbom_file));
+        }
+
+        //PRE: abi_tag_complete() == true
+        // dir: Directory where the files should be saved, usually packages_dir/share
+        void save_abi_files(const Filesystem& fs, Path&& dir) const;
+
+    private:
+        Optional<std::string> abi_tag_file_contents;
+        Optional<std::string> sbom_file_contents;
     };
 
     void compute_all_abis(const VcpkgPaths& paths,

@@ -1081,14 +1081,11 @@ namespace vcpkg
         auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
         ExtendedBuildResult result =
             do_build_package_and_clean_buildtrees(args, paths, action, all_dependencies_satisfied);
-        if (abi_info.abi_tag_file)
+        if (abi_info.abi_tag_complete())
         {
-            auto& abi_file = *abi_info.abi_tag_file.get();
-            const auto abi_package_dir = action.package_dir.value_or_exit(VCPKG_LINE_INFO) / "share" / spec.name();
-            const auto abi_file_in_package = abi_package_dir / "vcpkg_abi_info.txt";
             build_logs_recorder.record_build_result(paths, spec, result.code);
-            filesystem.create_directories(abi_package_dir, VCPKG_LINE_INFO);
-            filesystem.copy_file(abi_file, abi_file_in_package, CopyOptions::none, VCPKG_LINE_INFO);
+            auto abi_package_dir = action.package_dir.value_or_exit(VCPKG_LINE_INFO) / "share" / spec.name();
+            abi_info.save_abi_files(filesystem, std::move(abi_package_dir));
         }
 
         return result;

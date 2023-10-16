@@ -24,20 +24,6 @@
 
 namespace vcpkg
 {
-    // This struct caches precomputable abis
-    struct AbiCache
-    {
-        std::vector<AbiEntry> cmake_script_hashes;
-    };
-
-    struct PackageAbiResult
-    {
-        const InstallPlanAction& action;
-        std::string abi_str;
-        std::string cmake_content;
-        std::vector<AbiEntry> port_files_abi;
-    };
-
     static std::string grdk_hash(const Filesystem& fs, const PreBuildInfo& pre_build_info)
     {
         static const Cache<Path, Optional<std::string>> grdk_cache;
@@ -279,7 +265,7 @@ namespace vcpkg
     }
 
     // PRE: initialize_abi_tag() was called and returned true
-    static PackageAbiResult make_abi_tag(const VcpkgPaths& paths,
+    static void make_abi_tag(const VcpkgPaths& paths,
                                          InstallPlanAction& action,
                                          View<AbiEntry> common_abi,
                                          std::vector<AbiEntry>&& dependency_abis,
@@ -335,10 +321,13 @@ namespace vcpkg
         std::string full_abi_info =
             Strings::join("", abi_tag_entries, [](const AbiEntry& p) { return p.key + " " + p.value + "\n"; });
         abi_info.package_abi = Hash::get_string_sha256(full_abi_info);
-        abi_info.abi_tag_file.emplace(paths.build_dir(action.spec) / action.spec.triplet().canonical_name() +
-                                      ".vcpkg_abi_info.txt");
 
-        return {action, std::move(full_abi_info), std::move(cmake_contents), std::move(port_files_abi)};
+        // make sbom file
+        std::vector<Json::Value> heuristic_resources{
+            run_resource_heuristics(cmake_contents, scfl.source_control_file->core_paragraph->raw_version)};
+        std::string sbom_str = write_sbom(action, std::move(heuristic_resources), port_files_abi);
+
+        abi_info.abi_file_contents(std::move(full_abi_info), std::move(sbom_str));
     }
 
     static std::vector<AbiEntry> get_dependency_abis(std::vector<vcpkg::InstallPlanAction>::iterator action_plan_begin,
@@ -398,9 +387,6 @@ namespace vcpkg
         // 1. system abi (ports.cmake/ PS version/ CMake version)
         static const auto common_abi = get_common_abi(paths);
 
-        std::vector<PackageAbiResult> abi_results;
-        abi_results.reserve(action_plan.install_actions.size());
-
         for (auto it = action_plan.install_actions.begin(); it != action_plan.install_actions.end(); ++it)
         {
             auto& action = *it;
@@ -428,24 +414,21 @@ namespace vcpkg
                 }
             }
 
-            abi_results.push_back(
-                make_abi_tag(paths, action, common_abi, std::move(dependency_abis), cmake_script_hashes));
+            make_abi_tag(paths, action, common_abi, std::move(dependency_abis), cmake_script_hashes);
         }
-        // populate abi tag
-        for (auto&& abi_result : abi_results)
-        {
-            // write abi tag file
-            fs.write_contents_and_dirs(
-                abi_result.action.abi_info.value_or_exit(VCPKG_LINE_INFO).abi_tag_file.value_or_exit(VCPKG_LINE_INFO),
-                abi_result.abi_str,
-                VCPKG_LINE_INFO);
+    }
 
-            // make and write sbom file
-            auto& scf =
-                abi_result.action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_control_file;
-            std::vector<Json::Value> heuristic_resources{
-                run_resource_heuristics(abi_result.cmake_content, scf->core_paragraph->raw_version)};
-            write_sbom(paths, abi_result.action, std::move(heuristic_resources), abi_result.port_files_abi);
+    void AbiInfo::save_abi_files(const Filesystem& fs, Path&& dir) const
+    {
+        if (!abi_tag_file_contents.has_value() || !sbom_file_contents.has_value())
+        {
+            Checks::unreachable(VCPKG_LINE_INFO);
         }
+        
+        // write abi tag file
+        fs.write_contents_and_dirs(dir / "vcpkg_abi_info.txt", *abi_tag_file_contents.get(), VCPKG_LINE_INFO);
+
+        // write sbom file
+        fs.write_contents(std::move(dir) / "vcpkg.spdx.json", *sbom_file_contents.get(), VCPKG_LINE_INFO);
     }
 } // namespace vcpkg
