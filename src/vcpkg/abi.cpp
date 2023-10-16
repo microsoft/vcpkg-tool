@@ -235,6 +235,7 @@ namespace vcpkg
         const auto& toolset = paths.get_toolset(pre_build_info);
         auto& abi_info = action.abi_info.emplace();
         abi_info.pre_build_info = std::move(proto_pre_build_info);
+        abi_info.toolset.emplace(toolset);
 
         // return when using editable or head flags
         if (action.build_options.use_head_version == UseHeadVersion::YES)
