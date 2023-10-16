@@ -432,49 +432,49 @@ namespace vcpkg::Paragraphs
         const auto control_path = port_directory / "CONTROL";
         std::error_code ec;
         auto manifest_contents = fs.read_contents(manifest_path, ec);
-        if (ec)
+        if (!ec)
         {
-            auto manifest_exists = ec != std::errc::no_such_file_or_directory;
-            if (manifest_exists)
+            if (fs.exists(control_path, IgnoreErrors{}))
             {
-                return msg::format_error(msgFailedToParseManifest, msg::path = manifest_path)
-                    .append_raw("\n")
-                    .append(format_filesystem_call_error(ec, "read_contents", {manifest_path}));
+                return msg::format_error(msgManifestConflict, msg::path = port_directory);
             }
 
-            auto control_contents = fs.read_contents(control_path, ec);
-            if (ec)
-            {
-                if (ec != std::errc::no_such_file_or_directory)
-                {
-                    return LocalizedString::from_raw(port_directory)
-                        .append_raw(": ")
-                        .append(format_filesystem_call_error(ec, "read_contents", {control_path}));
-                }
+            return try_load_port_manifest_text(manifest_contents, manifest_path, stdout_sink);
+        }
 
-                if (fs.exists(port_directory, IgnoreErrors{}))
-                {
-                    return LocalizedString::from_raw(port_directory)
-                        .append_raw(": ")
-                        .append(msgErrorMessage)
-                        .append(msgPortMissingManifest2, msg::package_name = port_name);
-                }
+        auto manifest_exists = ec != std::errc::no_such_file_or_directory;
+        if (manifest_exists)
+        {
+            return msg::format_error(msgFailedToParseManifest, msg::path = manifest_path)
+                .append_raw("\n")
+                .append(format_filesystem_call_error(ec, "read_contents", {manifest_path}));
+        }
 
-                return LocalizedString::from_raw(port_directory)
-                    .append_raw(": ")
-                    .append(msgErrorMessage)
-                    .append(msgPortDoesNotExist, msg::package_name = port_name);
-            }
-
+        auto control_contents = fs.read_contents(control_path, ec);
+        if (!ec)
+        {
             return try_load_control_file_text(control_contents, control_path);
         }
 
-        if (fs.exists(control_path, IgnoreErrors{}))
+        if (ec != std::errc::no_such_file_or_directory)
         {
-            return msg::format_error(msgManifestConflict, msg::path = port_directory);
+            return LocalizedString::from_raw(port_directory)
+                .append_raw(": ")
+                .append(format_filesystem_call_error(ec, "read_contents", {control_path}));
         }
 
-        return try_load_port_manifest_text(manifest_contents, manifest_path, stdout_sink);
+        if (fs.exists(port_directory, IgnoreErrors{}))
+        {
+            return LocalizedString::from_raw(port_directory)
+                .append_raw(": ")
+                .append(msgErrorMessage)
+                .append(msgPortMissingManifest2, msg::package_name = port_name);
+        }
+
+        return LocalizedString::from_raw(port_directory)
+            .append_raw(": ")
+            .append(msgErrorMessage)
+            .append(msgPortDoesNotExist, msg::package_name = port_name);
     }
 
     ExpectedL<std::unique_ptr<SourceControlFile>> try_load_port_required(const ReadOnlyFilesystem& fs,
