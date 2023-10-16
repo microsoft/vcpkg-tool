@@ -35,7 +35,7 @@ if ($IsWindows) {
     [string]$vcpkgExeForwardSlashes = $vcpkgExe.Replace("\", "/")
     [string]$tarballForwardSlashes = "$PSScriptRoot/../e2e-assets/extract/a-tar-with-plus-x.tar.gz".Replace("\", "/")
     [string]$outForwardSlashes = $out.Replace("\", "/")
-    & $bash -c "`"$vcpkgExeForwardSlashes`" z-extract `"$tarballForwardSlashes`" `"$outForwardSlashes`" --debug"
+    & $bash -c "`"$vcpkgExeForwardSlashes`" z-extract `"$tarballForwardSlashes`" `"$outForwardSlashes`""
     $extractedFilePath = Join-Path $out "myExe"
     if (-Not (Test-Path $extractedFilePath)) {
         throw "Extraction Failed"
