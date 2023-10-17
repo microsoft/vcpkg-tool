@@ -10,7 +10,7 @@
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
 
-namespace vcpkg::Update
+namespace vcpkg
 {
     bool OutdatedPackage::compare_by_name(const OutdatedPackage& left, const OutdatedPackage& right)
     {
@@ -47,22 +47,26 @@ namespace vcpkg::Update
         return output;
     }
 
-    const CommandStructure COMMAND_STRUCTURE = {
-        [] { return create_example_string("update"); },
+    constexpr CommandMetadata CommandUpdateMetadata{
+        "update",
+        msgHelpUpdateCommand,
+        {"vcpkg update"},
+        "https://learn.microsoft.com/vcpkg/commands/update",
+        AutocompletePriority::Public,
         0,
         0,
         {},
         nullptr,
     };
 
-    void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
+    void command_update_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
         if (paths.manifest_mode_enabled())
         {
             Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, msgUnsupportedUpdateCMD);
         }
 
-        (void)args.parse_arguments(COMMAND_STRUCTURE);
+        (void)args.parse_arguments(CommandUpdateMetadata);
         msg::println(msgLocalPortfileVersion);
 
         auto& fs = paths.get_filesystem();

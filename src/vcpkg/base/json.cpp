@@ -1189,7 +1189,7 @@ namespace vcpkg::Json
             void append_quoted_json_string(StringView sv)
             {
                 // Table 66: JSON Single Character Escape Sequences
-                constexpr static std::array<std::pair<char32_t, const char*>, 7> escape_sequences = {{
+                constexpr static std::pair<char32_t, const char*> escape_sequences[] = {
                     {0x0008, R"(\b)"}, // BACKSPACE
                     {0x0009, R"(\t)"}, // CHARACTER TABULATION
                     {0x000A, R"(\n)"}, // LINE FEED (LF)
@@ -1197,7 +1197,7 @@ namespace vcpkg::Json
                     {0x000D, R"(\r)"}, // CARRIAGE RETURN (CR)
                     {0x0022, R"(\")"}, // QUOTATION MARK
                     {0x005C, R"(\\)"}  // REVERSE SOLIDUS
-                }};
+                };
                 // 1. Let product be the String value consisting solely of the code unit 0x0022 (QUOTATION MARK).
                 buffer.push_back('"');
 
@@ -1518,4 +1518,19 @@ namespace vcpkg::Json
     }
 
     const PackageNameDeserializer PackageNameDeserializer::instance;
+
+    LocalizedString FeatureNameDeserializer::type_name() const { return msg::format(msgAFeatureName); }
+
+    Optional<std::string> FeatureNameDeserializer::visit_string(Json::Reader& r, StringView sv) const
+    {
+        if (!IdentifierDeserializer::is_ident(sv))
+        {
+            r.add_generic_error(
+                type_name(),
+                msg::format(msgParseFeatureNameError, msg::package_name = sv, msg::url = docs::manifests_url));
+        }
+        return sv.to_string();
+    }
+
+    const FeatureNameDeserializer FeatureNameDeserializer::instance;
 }

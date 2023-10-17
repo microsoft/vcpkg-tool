@@ -45,7 +45,7 @@ namespace
     void invalid_command(const VcpkgCmdArguments& args)
     {
         msg::println_error(msgVcpkgInvalidCommand, msg::command_name = args.get_command());
-        print_command_list_usage();
+        print_zero_args_usage();
         Checks::exit_fail(VCPKG_LINE_INFO);
     }
 
@@ -93,17 +93,17 @@ namespace
     void inner(const Filesystem& fs, const VcpkgCmdArguments& args, const BundleSettings& bundle)
     {
         // track version on each invocation
-        get_global_metrics_collector().track_string(StringMetric::VcpkgVersion, Commands::Version::version.to_string());
+        get_global_metrics_collector().track_string(StringMetric::VcpkgVersion, vcpkg_executable_version);
 
         if (args.get_command().empty())
         {
-            print_command_list_usage();
+            print_zero_args_usage();
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
         static const auto find_command = [&](auto&& commands) {
             auto it = Util::find_if(commands, [&](auto&& commandc) {
-                return Strings::case_insensitive_ascii_equals(commandc.name, args.get_command());
+                return Strings::case_insensitive_ascii_equals(commandc.metadata.name, args.get_command());
             });
             using std::end;
             if (it != end(commands))
@@ -118,9 +118,9 @@ namespace
 
         get_global_metrics_collector().track_bool(BoolMetric::DetectedContainer, detect_container(fs));
 
-        if (const auto command_function = find_command(Commands::basic_commands))
+        if (const auto command_function = find_command(basic_commands))
         {
-            get_global_metrics_collector().track_string(StringMetric::CommandName, command_function->name);
+            get_global_metrics_collector().track_string(StringMetric::CommandName, command_function->metadata.name);
             return command_function->function(args, fs);
         }
 
@@ -130,17 +130,17 @@ namespace
 
         fs.current_path(paths.root, VCPKG_LINE_INFO);
 
-        if (const auto command_function = find_command(Commands::paths_commands))
+        if (const auto command_function = find_command(paths_commands))
         {
-            get_global_metrics_collector().track_string(StringMetric::CommandName, command_function->name);
+            get_global_metrics_collector().track_string(StringMetric::CommandName, command_function->metadata.name);
             return command_function->function(args, paths);
         }
 
         Triplet default_triplet = vcpkg::default_triplet(args, paths.get_triplet_db());
         Triplet host_triplet = vcpkg::default_host_triplet(args, paths.get_triplet_db());
-        if (const auto command_function = find_command(Commands::triplet_commands))
+        if (const auto command_function = find_command(triplet_commands))
         {
-            get_global_metrics_collector().track_string(StringMetric::CommandName, command_function->name);
+            get_global_metrics_collector().track_string(StringMetric::CommandName, command_function->metadata.name);
             return command_function->function(args, paths, default_triplet, host_triplet);
         }
 
@@ -415,7 +415,7 @@ int main(const int argc, const char* const* const argv)
     msg::println();
     LocalizedString data_blob;
     data_blob.append_raw("Version=")
-        .append_raw(Commands::Version::version)
+        .append_raw(vcpkg_executable_version)
         .append_raw("\nEXCEPTION=")
         .append_raw(exc_msg)
         .append_raw("\nCMD=\n");

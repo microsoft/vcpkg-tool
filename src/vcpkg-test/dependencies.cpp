@@ -82,11 +82,6 @@ struct MockVersionedPortfileProvider : IVersionedPortfileProvider
 
         return it2->second;
     }
-
-    virtual void load_all_control_files(std::map<std::string, const SourceControlFileAndLocation*>&) const override
-    {
-        Checks::unreachable(VCPKG_LINE_INFO);
-    }
 };
 
 struct CoreDependency : Dependency
@@ -212,11 +207,6 @@ struct MockOverlayProvider : IOverlayProvider
     }
 
     SourceControlFileAndLocation& emplace(const std::string& name) { return emplace(name, {"1", 0}); }
-
-    virtual void load_all_control_files(std::map<std::string, const SourceControlFileAndLocation*>&) const override
-    {
-        Checks::unreachable(VCPKG_LINE_INFO);
-    }
 
 private:
     std::map<std::string, SourceControlFileAndLocation, std::less<>> mappings;
@@ -504,9 +494,9 @@ Both versions have scheme string but different primary text.
 
 This can be resolved by adding an explicit override to the preferred version. For example:
 
-    "overrides": [
-        { "name": "a", "version": "2" }
-    ]
+  "overrides": [
+    { "name": "a", "version": "2" }
+  ]
 
 See `vcpkg help versioning` or https://learn.microsoft.com/vcpkg/users/versioning for more information.)");
 }
@@ -1136,14 +1126,14 @@ TEST_CASE ("version install scheme failure", "[versionplan]")
             R"(error: version conflict on a:x86-windows: toplevel-spec required 1.0.1, which cannot be compared with the baseline version 1.0.0.
 
 The versions have incomparable schemes:
-    a@1.0.0 has scheme semver
-    a@1.0.1 has scheme string
+  a@1.0.0 has scheme semver
+  a@1.0.1 has scheme string
 
 This can be resolved by adding an explicit override to the preferred version. For example:
 
-    "overrides": [
-        { "name": "a", "version": "1.0.0" }
-    ]
+  "overrides": [
+    { "name": "a", "version": "1.0.0" }
+  ]
 
 See `vcpkg help versioning` or https://learn.microsoft.com/vcpkg/users/versioning for more information.)");
     }
@@ -1166,14 +1156,14 @@ See `vcpkg help versioning` or https://learn.microsoft.com/vcpkg/users/versionin
             R"(error: version conflict on a:x86-windows: toplevel-spec required 1.0.1, which cannot be compared with the baseline version 1.0.2.
 
 The versions have incomparable schemes:
-    a@1.0.2 has scheme semver
-    a@1.0.1 has scheme string
+  a@1.0.2 has scheme semver
+  a@1.0.1 has scheme string
 
 This can be resolved by adding an explicit override to the preferred version. For example:
 
-    "overrides": [
-        { "name": "a", "version": "1.0.2" }
-    ]
+  "overrides": [
+    { "name": "a", "version": "1.0.2" }
+  ]
 
 See `vcpkg help versioning` or https://learn.microsoft.com/vcpkg/users/versioning for more information.)");
     }
@@ -1258,14 +1248,14 @@ TEST_CASE ("version install scheme change in port version", "[versionplan]")
             R"(error: version conflict on b:x86-windows: a:x86-windows@2#1 required 1#1, which cannot be compared with the baseline version 1.
 
 The versions have incomparable schemes:
-    b@1 has scheme string
-    b@1#1 has scheme relaxed
+  b@1 has scheme string
+  b@1#1 has scheme relaxed
 
 This can be resolved by adding an explicit override to the preferred version. For example:
 
-    "overrides": [
-        { "name": "b", "version": "1" }
-    ]
+  "overrides": [
+    { "name": "b", "version": "1" }
+  ]
 
 See `vcpkg help versioning` or https://learn.microsoft.com/vcpkg/users/versioning for more information.)");
     }
@@ -1651,7 +1641,7 @@ TEST_CASE ("version install default features", "[versionplan]")
 
     auto a_x = make_fpgh("x");
     auto& a_scf = vp.emplace("a", {"1", 0}, VersionScheme::Relaxed).source_control_file;
-    a_scf->core_paragraph->default_features.emplace_back("x");
+    a_scf->core_paragraph->default_features.push_back({"x"});
     a_scf->feature_paragraphs.push_back(std::move(a_x));
 
     MockCMakeVarProvider var_provider;
@@ -1746,7 +1736,7 @@ TEST_CASE ("version dont install default features", "[versionplan]")
 
     auto a_x = make_fpgh("x");
     auto& a_scf = vp.emplace("a", {"1", 0}, VersionScheme::Relaxed).source_control_file;
-    a_scf->core_paragraph->default_features.emplace_back("x");
+    a_scf->core_paragraph->default_features.push_back({"x"});
     a_scf->feature_paragraphs.push_back(std::move(a_x));
 
     MockCMakeVarProvider var_provider;
@@ -1767,7 +1757,7 @@ TEST_CASE ("version install transitive default features", "[versionplan]")
 
     auto a_x = make_fpgh("x");
     auto& a_scf = vp.emplace("a", {"1", 0}, VersionScheme::Relaxed).source_control_file;
-    a_scf->core_paragraph->default_features.emplace_back("x");
+    a_scf->core_paragraph->default_features.push_back({"x"});
     a_scf->feature_paragraphs.push_back(std::move(a_x));
 
     auto& b_scf = vp.emplace("b", {"1", 0}, VersionScheme::Relaxed).source_control_file;
@@ -1858,7 +1848,7 @@ TEST_CASE ("version install qualified default suppression", "[versionplan]")
     MockVersionedPortfileProvider vp;
 
     auto& a_scf = vp.emplace("a", {"1", 0}, VersionScheme::Relaxed).source_control_file;
-    a_scf->core_paragraph->default_features.emplace_back("x");
+    a_scf->core_paragraph->default_features.push_back({"x"});
     a_scf->feature_paragraphs.push_back(make_fpgh("x"));
 
     vp.emplace("b", {"1", 0}, VersionScheme::Relaxed)
@@ -1943,17 +1933,17 @@ TEST_CASE ("version install qualified features", "[versionplan]")
     MockVersionedPortfileProvider vp;
 
     auto& b_scf = vp.emplace("b", {"1", 0}, VersionScheme::Relaxed).source_control_file;
-    b_scf->core_paragraph->default_features.emplace_back("x");
+    b_scf->core_paragraph->default_features.push_back({"x"});
     b_scf->feature_paragraphs.push_back(make_fpgh("x"));
     b_scf->feature_paragraphs.back()->dependencies.push_back({"a", {}, parse_platform("!linux")});
 
     auto& a_scf = vp.emplace("a", {"1", 0}, VersionScheme::Relaxed).source_control_file;
-    a_scf->core_paragraph->default_features.emplace_back("y");
+    a_scf->core_paragraph->default_features.push_back({"y"});
     a_scf->feature_paragraphs.push_back(make_fpgh("y"));
     a_scf->feature_paragraphs.back()->dependencies.push_back({"c", {}, parse_platform("linux")});
 
     auto& c_scf = vp.emplace("c", {"1", 0}, VersionScheme::Relaxed).source_control_file;
-    c_scf->core_paragraph->default_features.emplace_back("z");
+    c_scf->core_paragraph->default_features.push_back({"z"});
     c_scf->feature_paragraphs.push_back(make_fpgh("z"));
     c_scf->feature_paragraphs.back()->dependencies.push_back({"d", {}, parse_platform("linux")});
 
@@ -2419,8 +2409,8 @@ TEST_CASE ("respect platform expressions in default features", "[versionplan]")
         a_x->name = "x";
         auto& scf = vp.emplace("a", {"1", 0}).source_control_file;
         scf->feature_paragraphs.push_back(std::move(a_x));
-        scf->core_paragraph->default_features.emplace_back(
-            "x", parse_platform_expression("linux", MultipleBinaryOperators::Deny).value_or_exit(VCPKG_LINE_INFO));
+        scf->core_paragraph->default_features.push_back(
+            {"x", parse_platform_expression("linux", MultipleBinaryOperators::Deny).value_or_exit(VCPKG_LINE_INFO)});
     }
 
     MockCMakeVarProvider var_provider;
@@ -2581,7 +2571,7 @@ TEST_CASE ("dependency graph API snapshot: host and target")
     };
     auto v = VcpkgCmdArguments::create_from_arg_sequence(nullptr, nullptr);
     v.imbue_from_fake_environment(envmap);
-    auto s = vcpkg::Commands::SetInstalled::create_dependency_graph_snapshot(v, plan);
+    auto s = create_dependency_graph_snapshot(v, plan);
 
     CHECK(s.has_value());
     auto obj = *s.get();

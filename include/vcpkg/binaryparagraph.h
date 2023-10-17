@@ -12,7 +12,7 @@ namespace vcpkg
     struct BinaryParagraph
     {
         BinaryParagraph();
-        explicit BinaryParagraph(Paragraph fields);
+        explicit BinaryParagraph(Paragraph&& fields);
         BinaryParagraph(const SourceParagraph& spgh,
                         const std::vector<std::string>& default_features,
                         Triplet triplet,

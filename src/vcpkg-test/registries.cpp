@@ -5,7 +5,6 @@
 
 #include <vcpkg/configuration.h>
 #include <vcpkg/registries.h>
-#include <vcpkg/registries.private.h>
 
 using namespace vcpkg;
 
@@ -15,23 +14,50 @@ namespace
     {
         StringLiteral kind() const override { return "test"; }
 
-        std::unique_ptr<RegistryEntry> get_port_entry(StringView) const override { return nullptr; }
+        ExpectedL<std::unique_ptr<RegistryEntry>> get_port_entry(StringView) const override { return nullptr; }
 
-        void get_all_port_names(std::vector<std::string>&) const override { }
+        ExpectedL<Unit> append_all_port_names(std::vector<std::string>& port_names) const override
+        {
+            port_names.insert(port_names.end(), all_port_names.begin(), all_port_names.end());
+            return Unit{};
+        }
 
-        ExpectedL<Version> get_baseline_version(StringView) const override
+        ExpectedL<bool> try_append_all_port_names_no_network(std::vector<std::string>& port_names) const override
+        {
+            port_names.insert(port_names.end(), no_network_port_names.begin(), no_network_port_names.end());
+            return !no_network_port_names.empty();
+        }
+
+        ExpectedL<Optional<Version>> get_baseline_version(StringView) const override
         {
             return LocalizedString::from_raw("error");
         }
 
         int number;
+        std::vector<std::string> all_port_names;
+        std::vector<std::string> no_network_port_names;
 
-        TestRegistryImplementation(int n) : number(n) { }
+        TestRegistryImplementation(int n) : number(n), all_port_names(), no_network_port_names() { }
+        TestRegistryImplementation(int n,
+                                   std::vector<std::string>&& all_port_names,
+                                   std::vector<std::string>&& no_network_port_names)
+            : number(n), all_port_names(all_port_names), no_network_port_names(no_network_port_names)
+        {
+        }
     };
 
-    Registry make_registry(int n, std::vector<std::string>&& port_names)
+    Registry make_registry(int n, std::vector<std::string>&& patterns)
     {
-        return {std::move(port_names), std::make_unique<TestRegistryImplementation>(n)};
+        return {std::move(patterns), std::make_unique<TestRegistryImplementation>(n)};
+    }
+
+    Registry make_registry(int n,
+                           std::vector<std::string>&& patterns,
+                           std::vector<std::string>&& known_no_network,
+                           std::vector<std::string>&& known_network)
+    {
+        return {std::move(patterns),
+                std::make_unique<TestRegistryImplementation>(n, std::move(known_no_network), std::move(known_network))};
     }
 
     int get_tri_num(const RegistryImplementation& r)
@@ -138,19 +164,19 @@ TEST_CASE ("check valid package patterns", "[registries]")
 
 TEST_CASE ("calculate prefix priority", "[registries]")
 {
-    CHECK(package_match_prefix("boost", "*") == 1);
-    CHECK(package_match_prefix("boost", "b*") == 2);
-    CHECK(package_match_prefix("boost", "boost*") == 6);
-    CHECK(package_match_prefix("boost", "boost") == SIZE_MAX);
+    CHECK(package_pattern_match("boost", "*") == 1);
+    CHECK(package_pattern_match("boost", "b*") == 2);
+    CHECK(package_pattern_match("boost", "boost*") == 6);
+    CHECK(package_pattern_match("boost", "boost") == SIZE_MAX);
 
-    CHECK(package_match_prefix("", "") == SIZE_MAX);
-    CHECK(package_match_prefix("", "*") == 1);
-    CHECK(package_match_prefix("", "a") == 0);
-    CHECK(package_match_prefix("boost", "") == 0);
-    CHECK(package_match_prefix("boost", "c*") == 0);
-    CHECK(package_match_prefix("boost", "*c") == 0);
-    CHECK(package_match_prefix("boost", "c**") == 0);
-    CHECK(package_match_prefix("boost", "c*a") == 0);
+    CHECK(package_pattern_match("", "") == SIZE_MAX);
+    CHECK(package_pattern_match("", "*") == 1);
+    CHECK(package_pattern_match("", "a") == 0);
+    CHECK(package_pattern_match("boost", "") == 0);
+    CHECK(package_pattern_match("boost", "c*") == 0);
+    CHECK(package_pattern_match("boost", "*c") == 0);
+    CHECK(package_pattern_match("boost", "c**") == 0);
+    CHECK(package_pattern_match("boost", "c*a") == 0);
 }
 
 TEST_CASE ("select highest priority registry", "[registries]")
@@ -396,15 +422,15 @@ TEST_CASE ("registries report pattern errors", "[registries]")
     CHECK(errors[0] ==
           "$.registries[0].packages[1] (a package pattern): \"\" is not a valid package pattern. Package patterns must "
           "use only one wildcard character (*) and it must be the last character in the pattern (see "
-          "https://learn.microsoft.com/vcpkg/users/registries for more information)");
+          "https://learn.microsoft.com/vcpkg/users/registries for more information).");
     CHECK(errors[1] ==
           "$.registries[0].packages[2] (a package pattern): \"a*a\" is not a valid package pattern. Package patterns "
           "must use only one wildcard character (*) and it must be the last character in the pattern (see "
-          "https://learn.microsoft.com/vcpkg/users/registries for more information)");
+          "https://learn.microsoft.com/vcpkg/users/registries for more information).");
     CHECK(errors[2] ==
           "$.registries[0].packages[3] (a package pattern): \"*a\" is not a valid package pattern. Package patterns "
           "must use only one wildcard character (*) and it must be the last character in the pattern (see "
-          "https://learn.microsoft.com/vcpkg/users/registries for more information)");
+          "https://learn.microsoft.com/vcpkg/users/registries for more information).");
 }
 
 TEST_CASE ("registries ignored patterns warning", "[registries]")
@@ -476,40 +502,40 @@ TEST_CASE ("registries ignored patterns warning", "[registries]")
     const auto& warnings = r.warnings();
     REQUIRE(warnings.size() == 3);
     CHECK(warnings[0] == R"($ (a configuration object): warning: Package "*" is duplicated.
-    First declared in:
-        location: $.registries[0].packages[0]
-        registry: https://github.com/Microsoft/vcpkg
+  First declared in:
+    location: $.registries[0].packages[0]
+    registry: https://github.com/Microsoft/vcpkg
 
-    The following redeclarations will be ignored:
-        location: $.registries[2].packages[0]
-        registry: https://github.com/another-remote/another-vcpkg-registry
+  The following redeclarations will be ignored:
+    location: $.registries[2].packages[0]
+    registry: https://github.com/another-remote/another-vcpkg-registry
 )");
     CHECK(warnings[1] == R"($ (a configuration object): warning: Package "bei*" is duplicated.
-    First declared in:
-        location: $.registries[1].packages[0]
-        registry: https://github.com/northwindtraders/vcpkg-registry
+  First declared in:
+    location: $.registries[1].packages[0]
+    registry: https://github.com/northwindtraders/vcpkg-registry
 
-    The following redeclarations will be ignored:
-        location: $.registries[2].packages[1]
-        registry: https://github.com/another-remote/another-vcpkg-registry
+  The following redeclarations will be ignored:
+    location: $.registries[2].packages[1]
+    registry: https://github.com/another-remote/another-vcpkg-registry
 )");
     CHECK(warnings[2] == R"($ (a configuration object): warning: Package "zlib" is duplicated.
-    First declared in:
-        location: $.registries[0].packages[2]
-        registry: https://github.com/Microsoft/vcpkg
+  First declared in:
+    location: $.registries[0].packages[2]
+    registry: https://github.com/Microsoft/vcpkg
 
-    The following redeclarations will be ignored:
-        location: $.registries[1].packages[1]
-        registry: https://github.com/northwindtraders/vcpkg-registry
+  The following redeclarations will be ignored:
+    location: $.registries[1].packages[1]
+    registry: https://github.com/northwindtraders/vcpkg-registry
 
-        location: $.registries[2].packages[2]
-        registry: https://github.com/another-remote/another-vcpkg-registry
+    location: $.registries[2].packages[2]
+    registry: https://github.com/another-remote/another-vcpkg-registry
 )");
 }
 
 TEST_CASE ("git_version_db_parsing", "[registries]")
 {
-    auto filesystem_version_db = make_version_db_deserializer(VersionDbType::Git, "a/b");
+    auto filesystem_version_db = make_git_version_db_deserializer();
     Json::Reader r;
     auto test_json = parse_json(R"json(
 [
@@ -533,18 +559,18 @@ TEST_CASE ("git_version_db_parsing", "[registries]")
 
     auto results_opt = r.visit(test_json, *filesystem_version_db);
     auto& results = results_opt.value_or_exit(VCPKG_LINE_INFO);
-    CHECK(results[0].version == Version{"2021-06-26", 0});
+    CHECK(results[0].version == SchemedVersion{VersionScheme::Date, {"2021-06-26", 0}});
     CHECK(results[0].git_tree == "9b07f8a38bbc4d13f8411921e6734753e15f8d50");
-    CHECK(results[1].version == Version{"2021-01-14", 0});
+    CHECK(results[1].version == SchemedVersion{VersionScheme::Date, Version{"2021-01-14", 0}});
     CHECK(results[1].git_tree == "12b84a31469a78dd4b42dcf58a27d4600f6b2d48");
-    CHECK(results[2].version == Version{"2020-04-12", 0});
+    CHECK(results[2].version == SchemedVersion{VersionScheme::String, Version{"2020-04-12", 0}});
     CHECK(results[2].git_tree == "bd4565e8ab55bc5e098a1750fa5ff0bc4406ca9b");
     CHECK(r.errors().empty());
 }
 
 TEST_CASE ("filesystem_version_db_parsing", "[registries]")
 {
-    auto filesystem_version_db = make_version_db_deserializer(VersionDbType::Filesystem, "a/b");
+    auto filesystem_version_db = make_filesystem_version_db_deserializer("a/b");
 
     {
         Json::Reader r;
@@ -569,11 +595,11 @@ TEST_CASE ("filesystem_version_db_parsing", "[registries]")
     )json");
         auto results_opt = r.visit(test_json, *filesystem_version_db);
         auto& results = results_opt.value_or_exit(VCPKG_LINE_INFO);
-        CHECK(results[0].version == Version{"puppies", 0});
+        CHECK(results[0].version == SchemedVersion{VersionScheme::String, {"puppies", 0}});
         CHECK(results[0].p == "a/b" VCPKG_PREFERRED_SEPARATOR "c/d");
-        CHECK(results[1].version == Version{"doggies", 0});
+        CHECK(results[1].version == SchemedVersion{VersionScheme::String, {"doggies", 0}});
         CHECK(results[1].p == "a/b" VCPKG_PREFERRED_SEPARATOR "e/d");
-        CHECK(results[2].version == Version{"1.2.3", 0});
+        CHECK(results[2].version == SchemedVersion{VersionScheme::Semver, {"1.2.3", 0}});
         CHECK(results[2].p == "a/b" VCPKG_PREFERRED_SEPARATOR "semvers/here");
         CHECK(r.errors().empty());
     }
@@ -711,5 +737,59 @@ TEST_CASE ("filesystem_version_db_parsing", "[registries]")
     )json");
         CHECK(r.visit(test_json, *filesystem_version_db).value_or_exit(VCPKG_LINE_INFO).empty());
         CHECK(!r.errors().empty());
+    }
+}
+
+TEST_CASE ("get_all_port_names", "[registries]")
+{
+    std::vector<Registry> registries;
+    // no network 0 known ports, unrelated and example are not selected
+    registries.emplace_back(make_registry(1,
+                                          {"hello", "world", "abc*", "notpresent"},
+                                          {"hello", "world", "unrelated", "example", "abcdefg", "abc", "abcde"},
+                                          {}));
+    // no network has some known ports
+    registries.emplace_back(
+        make_registry(2,
+                      {"two*"},
+                      {"hello", "world", "unrelated", "twoRegistry", "abcdefgXXX", "abcXXX", "abcdeXXX"},
+                      {"old", "ports", "abcdefgsuper", "twoOld"}));
+
+    SECTION ("with default registry")
+    {
+        RegistrySet with_default_registry{std::make_unique<TestRegistryImplementation>(
+                                              1,
+                                              std::vector<std::string>{"aDefault", "bDefault", "cDefault"},
+                                              std::vector<std::string>{"aDefaultOld", "bDefaultOld", "cDefaultOld"}),
+                                          std::move(registries)};
+
+        // All the known ports from the default registry
+        // hello, world, abcdefg, abc, abcde from the first registry
+        // twoRegistry from the second registry
+        CHECK(with_default_registry.get_all_reachable_port_names().value_or_exit(VCPKG_LINE_INFO) ==
+              std::vector<std::string>{
+                  "aDefault", "abc", "abcde", "abcdefg", "bDefault", "cDefault", "hello", "twoRegistry", "world"});
+
+        // All the old ports from the default registry
+        // hello, world, notpresent from the first registry (since network was unknown)
+        // twoOld from the second registry
+        CHECK(with_default_registry.get_all_known_reachable_port_names_no_network().value_or_exit(VCPKG_LINE_INFO) ==
+              std::vector<std::string>{
+                  "aDefaultOld", "bDefaultOld", "cDefaultOld", "hello", "notpresent", "twoOld", "world"});
+    }
+
+    SECTION ("without default registry")
+    {
+        RegistrySet without_default_registry{nullptr, std::move(registries)};
+
+        // hello, world, abcdefg, abc, abcde from the first registry
+        // twoRegistry from the second registry
+        CHECK(without_default_registry.get_all_reachable_port_names().value_or_exit(VCPKG_LINE_INFO) ==
+              std::vector<std::string>{"abc", "abcde", "abcdefg", "hello", "twoRegistry", "world"});
+
+        // hello, world, notpresent from the first registry
+        // twoOld from the second registry
+        CHECK(without_default_registry.get_all_known_reachable_port_names_no_network().value_or_exit(VCPKG_LINE_INFO) ==
+              std::vector<std::string>{"hello", "notpresent", "twoOld", "world"});
     }
 }

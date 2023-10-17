@@ -5,8 +5,12 @@
 #include <vcpkg/fwd/registries.h>
 
 #include <vcpkg/base/expected.h>
+#include <vcpkg/base/stringview.h>
 
 #include <vcpkg/sourceparagraph.h>
+
+#include <utility>
+#include <vector>
 
 namespace vcpkg::Paragraphs
 {
@@ -22,11 +26,20 @@ namespace vcpkg::Paragraphs
 
     bool is_port_directory(const ReadOnlyFilesystem& fs, const Path& maybe_directory);
 
-    ParseExpected<SourceControlFile> try_load_port(const ReadOnlyFilesystem& fs, const Path& port_directory);
-    ParseExpected<SourceControlFile> try_load_port_text(const std::string& text,
-                                                        StringView origin,
-                                                        bool is_manifest,
-                                                        MessageSink& warning_sink);
+    // If an error occurs, the Expected will be in the error state.
+    // Otherwise, if the port is known, the unique_ptr contains the loaded port information.
+    // Otherwise, the unique_ptr is nullptr.
+    ExpectedL<std::unique_ptr<SourceControlFile>> try_load_port(const ReadOnlyFilesystem& fs,
+                                                                StringView port_name,
+                                                                const Path& port_directory);
+    // Identical to try_load_port, but the port unknown condition is mapped to an error.
+    ExpectedL<std::unique_ptr<SourceControlFile>> try_load_port_required(const ReadOnlyFilesystem& fs,
+                                                                         StringView port_name,
+                                                                         const Path& port_directory);
+    ExpectedL<std::unique_ptr<SourceControlFile>> try_load_port_text(const std::string& text,
+                                                                     StringView origin,
+                                                                     bool is_manifest,
+                                                                     MessageSink& warning_sink);
 
     ExpectedL<BinaryControlFile> try_load_cached_package(const ReadOnlyFilesystem& fs,
                                                          const Path& package_dir,
@@ -35,23 +48,8 @@ namespace vcpkg::Paragraphs
     struct LoadResults
     {
         std::vector<SourceControlFileAndLocation> paragraphs;
-        std::vector<std::unique_ptr<ParseControlErrorInfo>> errors;
+        std::vector<std::pair<std::string, LocalizedString>> errors;
     };
-
-    // this allows one to pass this around as an overload set to stuff like `Util::fmap`,
-    // as opposed to making it a function
-    constexpr struct
-    {
-        const std::string& operator()(const SourceControlFileAndLocation* loc) const
-        {
-            return (*this)(*loc->source_control_file);
-        }
-        const std::string& operator()(const SourceControlFileAndLocation& loc) const
-        {
-            return (*this)(*loc.source_control_file);
-        }
-        const std::string& operator()(const SourceControlFile& scf) const { return scf.core_paragraph->name; }
-    } get_name_of_control_file;
 
     LoadResults try_load_all_registry_ports(const ReadOnlyFilesystem& fs, const RegistrySet& registries);
 

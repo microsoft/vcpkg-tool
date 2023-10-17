@@ -62,6 +62,7 @@ namespace vcpkg
     XmlSerializer& XmlSerializer::text(StringView sv)
     {
         emit_pending_indent();
+        buf.reserve(sv.size());
         for (auto ch : sv)
         {
             if (ch == '&')

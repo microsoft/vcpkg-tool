@@ -386,7 +386,11 @@ namespace vcpkg
             .string_arg("-o" + dst.native())
             .string_arg("-y");
 #else
-        cmd.string_arg("unzip").string_arg("-qq").string_arg(archive_path).string_arg("-d" + dst.native());
+        cmd.string_arg("unzip")
+            .string_arg("-DD")
+            .string_arg("-qq")
+            .string_arg(archive_path)
+            .string_arg("-d" + dst.native());
 #endif
         return cmd;
     }

@@ -173,9 +173,9 @@ namespace vcpkg
     std::string CTime::to_string() const { return this->strftime("%Y-%m-%dT%H:%M:%SZ"); }
     std::string CTime::strftime(const char* format) const
     {
-        std::array<char, 80> date{};
-        ::strftime(date.data(), date.size(), format, &m_tm);
-        return date.data();
+        char date[80]{};
+        ::strftime(date, sizeof(date), format, &m_tm);
+        return date;
     }
     std::chrono::system_clock::time_point CTime::to_time_point() const
     {

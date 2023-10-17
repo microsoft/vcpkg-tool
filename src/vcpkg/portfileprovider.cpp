@@ -1,3 +1,4 @@
+#include <vcpkg/base/cache.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/system.debug.h>
@@ -20,7 +21,7 @@ namespace
     {
         OverlayRegistryEntry(Path&& p, Version&& v) : root(p), version(v) { }
 
-        View<Version> get_port_versions() const override { return {&version, 1}; }
+        ExpectedL<View<Version>> get_port_versions() const override { return View<Version>{&version, 1}; }
         ExpectedL<PathAndLocation> get_version(const Version& v) const override
         {
             if (v == version)
@@ -37,6 +38,8 @@ namespace
 
 namespace vcpkg
 {
+    PortFileProvider::~PortFileProvider() = default;
+
     MapPortFileProvider::MapPortFileProvider(const std::unordered_map<std::string, SourceControlFileAndLocation>& map)
         : ports(map)
     {
@@ -54,9 +57,15 @@ namespace vcpkg
         return Util::fmap(ports, [](auto&& kvpair) -> const SourceControlFileAndLocation* { return &kvpair.second; });
     }
 
+    IVersionedPortfileProvider::~IVersionedPortfileProvider() = default;
+
+    IBaselineProvider::~IBaselineProvider() = default;
+
+    IOverlayProvider::~IOverlayProvider() = default;
+
     PathsPortFileProvider::PathsPortFileProvider(const ReadOnlyFilesystem& fs,
                                                  const RegistrySet& registry_set,
-                                                 std::unique_ptr<IOverlayProvider>&& overlay)
+                                                 std::unique_ptr<IFullOverlayProvider>&& overlay)
         : m_baseline(make_baseline_provider(registry_set))
         , m_versioned(make_versioned_portfile_provider(fs, registry_set))
         , m_overlay(std::move(overlay))
@@ -100,25 +109,30 @@ namespace vcpkg
 
             virtual ExpectedL<Version> get_baseline_version(StringView port_name) const override
             {
-                auto it = m_baseline_cache.find(port_name);
-                if (it != m_baseline_cache.end())
-                {
-                    return it->second;
-                }
-                else
-                {
-                    auto version = registry_set.baseline_for_port(port_name);
-                    m_baseline_cache.emplace(port_name.to_string(), version);
-                    return version;
-                }
+                return m_baseline_cache.get_lazy(port_name, [this, port_name]() -> ExpectedL<Version> {
+                    auto maybe_maybe_version = registry_set.baseline_for_port(port_name);
+                    auto maybe_version = maybe_maybe_version.get();
+                    if (!maybe_version)
+                    {
+                        return std::move(maybe_maybe_version).error();
+                    }
+
+                    auto version = maybe_version->get();
+                    if (!version)
+                    {
+                        return msg::format_error(msgPortNotInBaseline, msg::package_name = port_name);
+                    }
+
+                    return std::move(*version);
+                });
             }
 
         private:
             const RegistrySet& registry_set;
-            mutable std::map<std::string, ExpectedL<Version>, std::less<>> m_baseline_cache;
+            Cache<std::string, ExpectedL<Version>> m_baseline_cache;
         };
 
-        struct VersionedPortfileProviderImpl : IVersionedPortfileProvider
+        struct VersionedPortfileProviderImpl : IFullVersionedPortfileProvider
         {
             VersionedPortfileProviderImpl(const ReadOnlyFilesystem& fs, const RegistrySet& rset)
                 : m_fs(fs), m_registry_set(rset)
@@ -159,7 +173,10 @@ namespace vcpkg
 
             virtual View<Version> get_port_versions(StringView port_name) const override
             {
-                return entry(port_name).value_or_exit(VCPKG_LINE_INFO)->get_port_versions();
+                return entry(port_name)
+                    .value_or_exit(VCPKG_LINE_INFO)
+                    ->get_port_versions()
+                    .value_or_exit(VCPKG_LINE_INFO);
             }
 
             ExpectedL<std::unique_ptr<SourceControlFileAndLocation>> load_control_file(
@@ -171,7 +188,8 @@ namespace vcpkg
                     auto maybe_path = ent->get()->get_version(version_spec.version);
                     if (auto path = maybe_path.get())
                     {
-                        auto maybe_control_file = Paragraphs::try_load_port(m_fs, path->path);
+                        auto maybe_control_file =
+                            Paragraphs::try_load_port_required(m_fs, version_spec.port_name, path->path);
                         if (auto scf = maybe_control_file.get())
                         {
                             auto scf_vspec = scf->get()->to_version_spec();
@@ -185,7 +203,7 @@ namespace vcpkg
                             }
                             else
                             {
-                                return msg::format(msg::msgErrorMessage)
+                                return msg::format(msgErrorMessage)
                                     .append(msgVersionSpecMismatch,
                                             msg::path = path->path,
                                             msg::expected_version = version_spec,
@@ -248,7 +266,7 @@ namespace vcpkg
             mutable std::map<std::string, ExpectedL<std::unique_ptr<RegistryEntry>>, std::less<>> m_entry_cache;
         };
 
-        struct OverlayProviderImpl : IOverlayProvider
+        struct OverlayProviderImpl : IFullOverlayProvider
         {
             OverlayProviderImpl(const ReadOnlyFilesystem& fs, const Path& original_cwd, View<std::string> overlay_ports)
                 : m_fs(fs), m_overlay_ports(Util::fmap(overlay_ports, [&original_cwd](const std::string& s) -> Path {
@@ -278,7 +296,7 @@ namespace vcpkg
                     // Try loading individual port
                     if (Paragraphs::is_port_directory(m_fs, ports_dir))
                     {
-                        auto maybe_scf = Paragraphs::try_load_port(m_fs, ports_dir);
+                        auto maybe_scf = Paragraphs::try_load_port_required(m_fs, port_name, ports_dir);
                         if (auto scfp = maybe_scf.get())
                         {
                             auto& scf = *scfp;
@@ -302,7 +320,7 @@ namespace vcpkg
                     auto ports_spec = ports_dir / port_name;
                     if (Paragraphs::is_port_directory(m_fs, ports_spec))
                     {
-                        auto found_scf = Paragraphs::try_load_port(m_fs, ports_spec);
+                        auto found_scf = Paragraphs::try_load_port_required(m_fs, port_name, ports_spec);
                         if (auto scfp = found_scf.get())
                         {
                             auto& scf = *scfp;
@@ -310,6 +328,7 @@ namespace vcpkg
                             {
                                 return SourceControlFileAndLocation{std::move(scf), std::move(ports_spec)};
                             }
+
                             Checks::msg_exit_maybe_upgrade(
                                 VCPKG_LINE_INFO,
                                 msg::format(msgFailedToLoadPort, msg::package_name = port_name, msg::path = ports_spec)
@@ -352,7 +371,7 @@ namespace vcpkg
                     // Try loading individual port
                     if (Paragraphs::is_port_directory(m_fs, ports_dir))
                     {
-                        auto maybe_scf = Paragraphs::try_load_port(m_fs, ports_dir);
+                        auto maybe_scf = Paragraphs::try_load_port_required(m_fs, ports_dir.filename(), ports_dir);
                         if (auto scfp = maybe_scf.get())
                         {
                             SourceControlFileAndLocation scfl{std::move(*scfp), ports_dir};
@@ -389,7 +408,7 @@ namespace vcpkg
             mutable std::map<std::string, Optional<SourceControlFileAndLocation>, std::less<>> m_overlay_cache;
         };
 
-        struct ManifestProviderImpl : IOverlayProvider
+        struct ManifestProviderImpl : IFullOverlayProvider
         {
             ManifestProviderImpl(const ReadOnlyFilesystem& fs,
                                  const Path& original_cwd,
@@ -431,15 +450,15 @@ namespace vcpkg
         return std::make_unique<BaselineProviderImpl>(registry_set);
     }
 
-    std::unique_ptr<IVersionedPortfileProvider> make_versioned_portfile_provider(const ReadOnlyFilesystem& fs,
-                                                                                 const RegistrySet& registry_set)
+    std::unique_ptr<IFullVersionedPortfileProvider> make_versioned_portfile_provider(const ReadOnlyFilesystem& fs,
+                                                                                     const RegistrySet& registry_set)
     {
         return std::make_unique<VersionedPortfileProviderImpl>(fs, registry_set);
     }
 
-    std::unique_ptr<IOverlayProvider> make_overlay_provider(const ReadOnlyFilesystem& fs,
-                                                            const Path& original_cwd,
-                                                            View<std::string> overlay_ports)
+    std::unique_ptr<IFullOverlayProvider> make_overlay_provider(const ReadOnlyFilesystem& fs,
+                                                                const Path& original_cwd,
+                                                                View<std::string> overlay_ports)
     {
         return std::make_unique<OverlayProviderImpl>(fs, original_cwd, overlay_ports);
     }

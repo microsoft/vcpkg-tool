@@ -824,7 +824,7 @@ namespace vcpkg
     std::string VcpkgPaths::get_toolver_diagnostics() const
     {
         std::string ret;
-        Strings::append(ret, "    vcpkg-tool version: ", Commands::Version::version, "\n");
+        Strings::append(ret, "    vcpkg-tool version: ", vcpkg_executable_version, "\n");
         if (m_pimpl->m_bundle.read_only)
         {
             Strings::append(ret, "    vcpkg-readonly: true\n");
@@ -947,7 +947,7 @@ namespace vcpkg
 
         return std::move(maybe_tree)
             .error()
-            .append(msg::msgNoteMessage)
+            .append(msgNoteMessage)
             .append(msgWhileCheckingOutPortTreeIsh, msg::package_name = port_name, msg::commit_sha = git_tree);
     }
 
@@ -1009,7 +1009,7 @@ namespace vcpkg
             .append_raw('\n')
             .append(std::move(maybe_output).error())
             .append_raw('\n')
-            .append(msg::msgNoteMessage)
+            .append(msgNoteMessage)
             .append(msgWhileGettingLocalTreeIshObjectsForPorts);
     }
 
@@ -1194,7 +1194,7 @@ namespace vcpkg
         fs.rename_with_retry(git_tree_temp, destination, ec);
         if (ec)
         {
-            return msg::format(msg::msgErrorMessage)
+            return msg::format(msgErrorMessage)
                 .append(format_filesystem_call_error(ec, "rename_with_retry", {git_tree_temp, destination}));
         }
 
@@ -1338,19 +1338,19 @@ namespace vcpkg
 #endif
     }
 
-    const Environment& VcpkgPaths::get_action_env(const AbiInfo& abi_info) const
+    const Environment& VcpkgPaths::get_action_env(const PreBuildInfo& pre_build_info, const Toolset& toolset) const
     {
-        return m_pimpl->m_env_cache.get_action_env(*this, abi_info);
+        return m_pimpl->m_env_cache.get_action_env(*this, pre_build_info, toolset);
     }
 
-    const std::string& VcpkgPaths::get_triplet_info(const AbiInfo& abi_info) const
+    const std::string& VcpkgPaths::get_triplet_info(const PreBuildInfo& pre_build_info, const Toolset& toolset) const
     {
-        return m_pimpl->m_env_cache.get_triplet_info(*this, abi_info);
+        return m_pimpl->m_env_cache.get_triplet_info(*this, pre_build_info, toolset);
     }
 
-    const CompilerInfo& VcpkgPaths::get_compiler_info(const AbiInfo& abi_info) const
+    const CompilerInfo& VcpkgPaths::get_compiler_info(const PreBuildInfo& pre_build_info, const Toolset& toolset) const
     {
-        return m_pimpl->m_env_cache.get_compiler_info(*this, abi_info);
+        return m_pimpl->m_env_cache.get_compiler_info(*this, pre_build_info, toolset);
     }
 
     const FeatureFlagSettings& VcpkgPaths::get_feature_flags() const { return m_pimpl->m_ff_settings; }

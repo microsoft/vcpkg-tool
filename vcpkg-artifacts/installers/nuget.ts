@@ -15,5 +15,5 @@ export async function installNuGet(session: Session, name: string, version: stri
     session,
     file.fsPath,
     targetLocation.fsPath,
-   "--strip=" + install.strip);
+    install.strip);
 }

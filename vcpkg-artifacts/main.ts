@@ -16,16 +16,13 @@ import { DeactivateCommand } from './cli/commands/deactivate';
 import { DeleteCommand } from './cli/commands/delete';
 import { FindCommand } from './cli/commands/find';
 import { GenerateMSBuildPropsCommand } from './cli/commands/generate-msbuild-props';
-import { HelpCommand } from './cli/commands/help';
 import { ListCommand } from './cli/commands/list';
 import { RegenerateCommand } from './cli/commands/regenerate-index';
 import { RemoveCommand } from './cli/commands/remove';
 import { UpdateCommand } from './cli/commands/update';
 import { UseCommand } from './cli/commands/use';
-import { cli } from './cli/constants';
-import { command as formatCommand, hint } from './cli/format';
 import { error, initStyling, log } from './cli/styling';
-import { i, setLocale } from './i18n';
+import { setLocale } from './i18n';
 import { Session } from './session';
 
 // parse the command line
@@ -52,8 +49,6 @@ async function main() {
   // start up the session and init the channel listeners.
   await session.init();
 
-  const help = new HelpCommand(commandline);
-
   const find = new FindCommand(commandline);
   const list = new ListCommand(commandline);
 
@@ -75,14 +70,6 @@ async function main() {
   const cache = new CacheCommand(commandline);
   const clean = new CleanCommand(commandline);
 
-  const needsHelp = !!(commandline.switches['help'] || commandline.switches['?'] || (['-h', '-help', '-?', '/?'].find(each => argv.includes(each))));
-  // check if --help -h -? --? /? are asked for
-  if (needsHelp) {
-    // let's just run general help
-    await help.run();
-    return process.exit(0);
-  }
-
   const command = commandline.command;
   if (!command) {
     // no command recognized.
@@ -90,12 +77,9 @@ async function main() {
     // did they specify inputs?
     if (commandline.inputs.length > 0) {
       // unrecognized command
-      error(i`Unrecognized command '${commandline.inputs[0]}'`);
-      log(hint(i`Use ${formatCommand(`${cli} ${help.command}`)} to get help`));
+      error(`Unrecognized command '${commandline.inputs[0]}'`);
       return process.exitCode = 1;
     }
-
-    log(hint(i`Use ${formatCommand(`${cli} ${help.command}`)} to get help`));
 
     return process.exitCode = 0;
   }
@@ -114,7 +98,7 @@ async function main() {
     error(e);
 
     await session.writeTelemetry();
-    return process.exit(result ? 0 : 1);
+    return process.exit(1);
   } finally {
     await session.writeTelemetry();
   }

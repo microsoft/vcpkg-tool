@@ -668,14 +668,7 @@ namespace
 
         int get() const noexcept { return fd; }
 
-        void close() noexcept
-        {
-            if (fd >= 0)
-            {
-                Checks::check_exit(VCPKG_LINE_INFO, ::close(fd) == 0);
-                fd = -1;
-            }
-        }
+        void close() noexcept { close_mark_invalid(fd); }
 
         ~PosixFd() { close(); }
 
@@ -1422,6 +1415,7 @@ namespace vcpkg
     {
         ReadFilePointer fp{std::move(other)};
         std::swap(m_fs, fp.m_fs);
+        std::swap(m_path, fp.m_path);
         return *this;
     }
 
@@ -1513,6 +1507,7 @@ namespace vcpkg
     {
         WriteFilePointer fp{std::move(other)};
         std::swap(m_fs, fp.m_fs);
+        std::swap(m_path, fp.m_path);
         return *this;
     }
 
@@ -1571,13 +1566,31 @@ namespace vcpkg
         return result;
     }
 
+    ExpectedL<Path> ReadOnlyFilesystem::try_find_file_recursively_up(const Path& starting_dir,
+                                                                     const Path& filename) const
+    {
+        std::error_code ec;
+        auto result = this->find_file_recursively_up(starting_dir, filename, ec);
+        if (ec)
+        {
+            return format_filesystem_call_error(ec, __func__, {starting_dir, filename});
+        }
+
+        return result;
+    }
+
     std::vector<Path> ReadOnlyFilesystem::get_files_recursive(const Path& dir, LineInfo li) const
+    {
+        return this->try_get_files_recursive(dir).value_or_exit(li);
+    }
+
+    ExpectedL<std::vector<Path>> ReadOnlyFilesystem::try_get_files_recursive(const Path& dir) const
     {
         std::error_code ec;
         auto maybe_files = this->get_files_recursive(dir, ec);
         if (ec)
         {
-            exit_filesystem_call_error(li, ec, __func__, {dir});
+            return format_filesystem_call_error(ec, __func__, {dir});
         }
 
         return maybe_files;
@@ -1585,11 +1598,16 @@ namespace vcpkg
 
     std::vector<Path> ReadOnlyFilesystem::get_files_non_recursive(const Path& dir, LineInfo li) const
     {
+        return this->try_get_files_non_recursive(dir).value_or_exit(li);
+    }
+
+    ExpectedL<std::vector<Path>> ReadOnlyFilesystem::try_get_files_non_recursive(const Path& dir) const
+    {
         std::error_code ec;
         auto maybe_files = this->get_files_non_recursive(dir, ec);
         if (ec)
         {
-            exit_filesystem_call_error(li, ec, __func__, {dir});
+            return format_filesystem_call_error(ec, __func__, {dir});
         }
 
         return maybe_files;
@@ -1597,11 +1615,16 @@ namespace vcpkg
 
     std::vector<Path> ReadOnlyFilesystem::get_directories_recursive(const Path& dir, LineInfo li) const
     {
+        return this->try_get_directories_recursive(dir).value_or_exit(li);
+    }
+
+    ExpectedL<std::vector<Path>> ReadOnlyFilesystem::try_get_directories_recursive(const Path& dir) const
+    {
         std::error_code ec;
         auto maybe_directories = this->get_directories_recursive(dir, ec);
         if (ec)
         {
-            exit_filesystem_call_error(li, ec, __func__, {dir});
+            return format_filesystem_call_error(ec, __func__, {dir});
         }
 
         return maybe_directories;
@@ -1609,11 +1632,16 @@ namespace vcpkg
 
     std::vector<Path> ReadOnlyFilesystem::get_directories_non_recursive(const Path& dir, LineInfo li) const
     {
+        return this->try_get_directories_non_recursive(dir).value_or_exit(li);
+    }
+
+    ExpectedL<std::vector<Path>> ReadOnlyFilesystem::try_get_directories_non_recursive(const Path& dir) const
+    {
         std::error_code ec;
         auto maybe_directories = this->get_directories_non_recursive(dir, ec);
         if (ec)
         {
-            exit_filesystem_call_error(li, ec, __func__, {dir});
+            return format_filesystem_call_error(ec, __func__, {dir});
         }
 
         return maybe_directories;
@@ -1621,11 +1649,16 @@ namespace vcpkg
 
     std::vector<Path> ReadOnlyFilesystem::get_regular_files_recursive(const Path& dir, LineInfo li) const
     {
+        return this->try_get_regular_files_recursive(dir).value_or_exit(li);
+    }
+
+    ExpectedL<std::vector<Path>> ReadOnlyFilesystem::try_get_regular_files_recursive(const Path& dir) const
+    {
         std::error_code ec;
         auto maybe_directories = this->get_regular_files_recursive(dir, ec);
         if (ec)
         {
-            exit_filesystem_call_error(li, ec, __func__, {dir});
+            return format_filesystem_call_error(ec, __func__, {dir});
         }
 
         return maybe_directories;
@@ -1634,11 +1667,17 @@ namespace vcpkg
     std::vector<Path> ReadOnlyFilesystem::get_regular_files_recursive_lexically_proximate(const Path& dir,
                                                                                           LineInfo li) const
     {
+        return this->try_get_regular_files_recursive_lexically_proximate(dir).value_or_exit(li);
+    }
+
+    ExpectedL<std::vector<Path>> ReadOnlyFilesystem::try_get_regular_files_recursive_lexically_proximate(
+        const Path& dir) const
+    {
         std::error_code ec;
         auto maybe_directories = this->get_regular_files_recursive_lexically_proximate(dir, ec);
         if (ec)
         {
-            exit_filesystem_call_error(li, ec, __func__, {dir});
+            return format_filesystem_call_error(ec, __func__, {dir});
         }
 
         return maybe_directories;
@@ -1646,11 +1685,16 @@ namespace vcpkg
 
     std::vector<Path> ReadOnlyFilesystem::get_regular_files_non_recursive(const Path& dir, LineInfo li) const
     {
+        return this->try_get_regular_files_non_recursive(dir).value_or_exit(li);
+    }
+
+    ExpectedL<std::vector<Path>> ReadOnlyFilesystem::try_get_regular_files_non_recursive(const Path& dir) const
+    {
         std::error_code ec;
         auto maybe_directories = this->get_regular_files_non_recursive(dir, ec);
         if (ec)
         {
-            exit_filesystem_call_error(li, ec, __func__, {dir});
+            return format_filesystem_call_error(ec, __func__, {dir});
         }
 
         return maybe_directories;
@@ -3801,4 +3845,15 @@ namespace vcpkg
             return Strings::case_insensitive_ascii_equals(extension, ext);
         });
     }
+
+#if !defined(_WIN32)
+    void close_mark_invalid(int& fd) noexcept
+    {
+        if (fd >= 0)
+        {
+            Checks::check_exit(VCPKG_LINE_INFO, ::close(fd) == 0);
+            fd = -1;
+        }
+    }
+#endif // ^^^ !_WIN32
 }

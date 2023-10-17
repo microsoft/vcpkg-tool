@@ -38,30 +38,24 @@ namespace vcpkg
 
     const IBuildLogsRecorder& null_build_logs_recorder() noexcept;
 
-    namespace Build
-    {
-        int perform_ex(const VcpkgCmdArguments& args,
-                       const FullPackageSpec& full_spec,
-                       Triplet host_triplet,
-                       const PathsPortFileProvider& provider,
-                       const IBuildLogsRecorder& build_logs_recorder,
-                       const VcpkgPaths& paths);
-        void perform_and_exit_ex(const VcpkgCmdArguments& args,
-                                 const FullPackageSpec& full_spec,
-                                 Triplet host_triplet,
-                                 const PathsPortFileProvider& provider,
-                                 const IBuildLogsRecorder& build_logs_recorder,
-                                 const VcpkgPaths& paths);
+    extern const CommandMetadata CommandBuildMetadata;
+    int command_build_ex(const VcpkgCmdArguments& args,
+                         const FullPackageSpec& full_spec,
+                         Triplet host_triplet,
+                         const PathsPortFileProvider& provider,
+                         const IBuildLogsRecorder& build_logs_recorder,
+                         const VcpkgPaths& paths);
+    void command_build_and_exit_ex(const VcpkgCmdArguments& args,
+                                   const FullPackageSpec& full_spec,
+                                   Triplet host_triplet,
+                                   const PathsPortFileProvider& provider,
+                                   const IBuildLogsRecorder& build_logs_recorder,
+                                   const VcpkgPaths& paths);
 
-        int perform(const VcpkgCmdArguments& args,
-                    const VcpkgPaths& paths,
-                    Triplet default_triplet,
-                    Triplet host_triplet);
-        void perform_and_exit(const VcpkgCmdArguments& args,
-                              const VcpkgPaths& paths,
-                              Triplet default_triplet,
-                              Triplet host_triplet);
-    } // namespace vcpkg::Build
+    void command_build_and_exit(const VcpkgCmdArguments& args,
+                                const VcpkgPaths& paths,
+                                Triplet default_triplet,
+                                Triplet host_triplet);
 
     StringLiteral to_string_view(DownloadTool tool);
     std::string to_string(DownloadTool tool);
@@ -266,12 +260,14 @@ namespace vcpkg
 
     struct AbiInfo
     {
+        // These should always be known if an AbiInfo exists
         std::unique_ptr<PreBuildInfo> pre_build_info;
         Optional<const Toolset&> toolset;
+        // These might not be known if compiler tracking is turned off or the port is --editable
+        Optional<const CompilerInfo&> compiler_info;
         Optional<const std::string&> triplet_abi;
         std::string package_abi;
         Optional<Path> abi_tag_file;
-        Optional<const CompilerInfo&> compiler_info;
         std::vector<Path> relative_port_files;
         std::vector<std::string> relative_port_hashes;
         std::vector<Json::Value> heuristic_resources;
@@ -286,9 +282,15 @@ namespace vcpkg
     {
         explicit EnvCache(bool compiler_tracking) : m_compiler_tracking(compiler_tracking) { }
 
-        const Environment& get_action_env(const VcpkgPaths& paths, const AbiInfo& abi_info);
-        const std::string& get_triplet_info(const VcpkgPaths& paths, const AbiInfo& abi_info);
-        const CompilerInfo& get_compiler_info(const VcpkgPaths& paths, const AbiInfo& abi_info);
+        const Environment& get_action_env(const VcpkgPaths& paths,
+                                          const PreBuildInfo& pre_build_info,
+                                          const Toolset& toolset);
+        const std::string& get_triplet_info(const VcpkgPaths& paths,
+                                            const PreBuildInfo& pre_build_info,
+                                            const Toolset& toolset);
+        const CompilerInfo& get_compiler_info(const VcpkgPaths& paths,
+                                              const PreBuildInfo& pre_build_info,
+                                              const Toolset& toolset);
 
     private:
         struct TripletMapEntry
