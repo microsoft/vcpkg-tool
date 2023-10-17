@@ -942,7 +942,7 @@
   "PortBugSetDllsWithoutExports": "DLL без операций экспорта, скорее всего, являются ошибкой в скрипте сборки. Если так и должно быть, добавьте следующую строку в файл порта:\nset(VCPKG_POLICY_DLLS_WITHOUT_EXPORTS enabled)\nСледующие DLL не содержат операций экспорта:",
   "PortDependencyConflict": "Порт {package_name} имеет следующие неподдерживаемые зависимости:",
   "PortDoesNotExist": "{package_name} не существует",
-  "PortMissingManifest": "{package_name} не имеет файла vcpkg.json или CONTROL в {path}",
+  "PortMissingManifest2": "{package_name} port manifest missing (no vcpkg.json or CONTROL file)",
   "PortNotInBaseline": "В базовом плане нет записи для порта {package_name}.",
   "PortSupportsField": "(поддерживает: \"{supports_expression}\")",
   "PortVersionConflict": "Следующие пакеты отличаются от версий портов:",

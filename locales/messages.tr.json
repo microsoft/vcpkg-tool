@@ -942,7 +942,7 @@
   "PortBugSetDllsWithoutExports": "Dışarı aktarma içermeyen DLL'ler büyük olasılıkla derleme betiğinde bir hatadır. Bu amaçlandıysa, portfile’da şu satırı ekleyin:\nset(VCPKG_POLICY_DLLS_WITHOUT_EXPORTS etkin)\nAşağıdaki DLL'lerde dışarı aktarma yok:",
   "PortDependencyConflict": "{package_name} bağlantı noktası aşağıdaki desteklenmeyen bağımlılıklara sahip:",
   "PortDoesNotExist": "{package_name} yok",
-  "PortMissingManifest": "{package_name} içinde vcpkg.json ya da {path} içindeki DENETİM dosyası yok",
+  "PortMissingManifest2": "{package_name} port manifest missing (no vcpkg.json or CONTROL file)",
   "PortNotInBaseline": "taban çizgisi {package_name} bağlantı noktası için bir giriş içermiyor",
   "PortSupportsField": "(destekler: \"{supports_expression}\")",
   "PortVersionConflict": "Şu paketler bağlantı noktası sürümlerinden farklı:",

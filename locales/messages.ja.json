@@ -942,7 +942,7 @@
   "PortBugSetDllsWithoutExports": "エクスポートを行わない DLL は、ビルド スクリプトのバグである可能性があります。これが意図されている場合は、以下の行を portfile を追加します:\nset(VCPKG_POLICY_DLLS_WITHOUT_EXPORTS enabled)\n次の DLL にはエクスポートがありません:",
   "PortDependencyConflict": "ポート {package_name} には、次のサポートされていない依存関係があります。",
   "PortDoesNotExist": "{package_name} は存在しません",
-  "PortMissingManifest": "{package_name}{path} に vcpkg.json またはコントロール ファイルがありません",
+  "PortMissingManifest2": "{package_name} port manifest missing (no vcpkg.json or CONTROL file)",
   "PortNotInBaseline": "ベースラインにポート {package_name} のエントリが含まれていません",
   "PortSupportsField": "(supports: \"{supports_expression}\")",
   "PortVersionConflict": "次のパッケージは、ポート バージョンとは異なります。",
