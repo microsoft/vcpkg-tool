@@ -394,7 +394,7 @@ namespace vcpkg
         }
         for (auto&& url : urls)
         {
-            cmd.string_arg(url);
+            cmd.string_arg(url_encode_spaces(url));
         }
 
         std::vector<std::string> lines;
@@ -465,7 +465,7 @@ namespace vcpkg
             }
             for (auto&& url : url_pairs)
             {
-                cmd.string_arg(url.first).string_arg("-o").string_arg(url.second);
+                cmd.string_arg(url_encode_spaces(url.first)).string_arg("-o").string_arg(url.second);
             }
             auto res =
                 cmd_execute_and_stream_lines(cmd, [out](StringView line) {
@@ -536,8 +536,8 @@ namespace vcpkg
         std::string res = "Authorization: Bearer " + github_token;
         cmd.string_arg("-H").string_arg(res);
         cmd.string_arg("-H").string_arg("X-GitHub-Api-Version: 2022-11-28");
-        cmd.string_arg(
-            Strings::concat("https://api.github.com/repos/", github_repository, "/dependency-graph/snapshots"));
+        cmd.string_arg(Strings::concat(
+            "https://api.github.com/repos/", url_encode_spaces(github_repository), "/dependency-graph/snapshots"));
         cmd.string_arg("-d").string_arg("@-");
         int code = 0;
         auto result = cmd_execute_and_stream_lines(
@@ -579,7 +579,7 @@ namespace vcpkg
             // HTTP headers are ignored for FTP clients
             Command cmd;
             cmd.string_arg("curl");
-            cmd.string_arg(url);
+            cmd.string_arg(url_encode_spaces(url));
             cmd.string_arg("-T").string_arg(file);
             auto maybe_res = cmd_execute_and_capture_output(cmd);
             if (auto res = maybe_res.get())
@@ -664,7 +664,7 @@ namespace vcpkg
             cmd.string_arg("--data-raw").string_arg(data);
         }
 
-        cmd.string_arg(url);
+        cmd.string_arg(url_encode_spaces(url));
 
         return flatten_out(cmd_execute_and_capture_output(cmd), "curl");
     }
@@ -838,7 +838,7 @@ namespace vcpkg
         cmd.string_arg("curl")
             .string_arg("--fail")
             .string_arg("-L")
-            .string_arg(url)
+            .string_arg(url_encode_spaces(url))
             .string_arg("--create-dirs")
             .string_arg("--output")
             .string_arg(download_path_part_path);
@@ -1192,4 +1192,6 @@ namespace vcpkg
 
         return result;
     }
+
+    std::string url_encode_spaces(StringView url) { return Strings::replace_all(url, StringLiteral{" "}, "%20"); }
 }
