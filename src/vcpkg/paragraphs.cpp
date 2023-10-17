@@ -15,6 +15,8 @@
 
 #include <tuple>
 
+using namespace vcpkg;
+
 static std::atomic<uint64_t> g_load_ports_stats(0);
 
 namespace vcpkg
@@ -379,46 +381,45 @@ namespace vcpkg::Paragraphs
         return fs.exists(maybe_directory / "CONTROL", IgnoreErrors{}) ||
                fs.exists(maybe_directory / "vcpkg.json", IgnoreErrors{});
     }
+} // namespace vcpkg::Paragraphs
 
-    static ExpectedL<std::unique_ptr<SourceControlFile>> try_load_manifest_text(const std::string& text,
-                                                                                StringView origin,
-                                                                                MessageSink& warning_sink)
-    {
-        auto res = Json::parse(text, origin);
-        if (auto val = res.get())
-        {
-            if (val->value.is_object())
-            {
-                return SourceControlFile::parse_port_manifest_object(
-                           origin, val->value.object(VCPKG_LINE_INFO), warning_sink)
-                    .map_error(ToLocalizedString);
-            }
-
-            return msg::format(msgJsonValueNotObject);
-        }
-
-        return LocalizedString::from_raw(res.error()->to_string());
-    }
-
-    ExpectedL<std::unique_ptr<SourceControlFile>> try_load_port_text(const std::string& text,
-                                                                     StringView origin,
-                                                                     bool is_manifest,
-                                                                     MessageSink& warning_sink)
+namespace
+{
+    ExpectedL<std::unique_ptr<SourceControlFile>> try_load_any_manifest_text(
+        StringView text,
+        StringView origin,
+        MessageSink& warning_sink,
+        ParseExpected<SourceControlFile> (*do_parse)(StringView, const Json::Object&, MessageSink&))
     {
         StatsTimer timer(g_load_ports_stats);
+        return Json::parse_object(text, origin).then([&](Json::Object&& object) {
+            return do_parse(origin, std::move(object), warning_sink).map_error(ToLocalizedString);
+        });
+    }
+}
 
-        if (is_manifest)
-        {
-            return try_load_manifest_text(text, origin, warning_sink);
-        }
+namespace vcpkg::Paragraphs
+{
+    ExpectedL<std::unique_ptr<SourceControlFile>> try_load_project_manifest_text(StringView text,
+                                                                                 StringView origin,
+                                                                                 MessageSink& warning_sink)
+    {
+        return try_load_any_manifest_text(text, origin, warning_sink, SourceControlFile::parse_project_manifest_object);
+    }
 
-        auto pghs = parse_paragraphs(StringView{text}, origin);
-        if (auto vector_pghs = pghs.get())
-        {
-            return SourceControlFile::parse_control_file(origin, std::move(*vector_pghs)).map_error(ToLocalizedString);
-        }
+    ExpectedL<std::unique_ptr<SourceControlFile>> try_load_port_manifest_text(StringView text,
+                                                                              StringView origin,
+                                                                              MessageSink& warning_sink)
+    {
+        return try_load_any_manifest_text(text, origin, warning_sink, SourceControlFile::parse_port_manifest_object);
+    }
 
-        return std::move(pghs).error();
+    ExpectedL<std::unique_ptr<SourceControlFile>> try_load_control_file_text(StringView text, StringView origin)
+    {
+        StatsTimer timer(g_load_ports_stats);
+        return parse_paragraphs(text, origin).then([&](std::vector<Paragraph>&& vector_pghs) {
+            return SourceControlFile::parse_control_file(origin, std::move(vector_pghs)).map_error(ToLocalizedString);
+        });
     }
 
     ExpectedL<std::unique_ptr<SourceControlFile>> try_load_port(const ReadOnlyFilesystem& fs,
@@ -431,39 +432,49 @@ namespace vcpkg::Paragraphs
         const auto control_path = port_directory / "CONTROL";
         std::error_code ec;
         auto manifest_contents = fs.read_contents(manifest_path, ec);
-        if (ec)
+        if (!ec)
         {
-            const auto exists = ec != std::errc::no_such_file_or_directory;
-            if (exists)
-            {
-                return msg::format_error(msgFailedToParseManifest, msg::path = manifest_path)
-                    .append_raw("\n")
-                    .append(format_filesystem_call_error(ec, "read_contents", {manifest_path}));
-            }
-
             if (fs.exists(control_path, IgnoreErrors{}))
             {
-                return get_paragraphs(fs, control_path).then([&](std::vector<Paragraph>&& vector_pghs) {
-                    return SourceControlFile::parse_control_file(control_path, std::move(vector_pghs))
-                        .map_error(ToLocalizedString);
-                });
+                return msg::format_error(msgManifestConflict, msg::path = port_directory);
             }
 
-            if (fs.exists(port_directory, IgnoreErrors{}))
-            {
-                return msg::format_error(
-                    msgPortMissingManifest, msg::package_name = port_name, msg::path = port_directory);
-            }
-
-            return std::unique_ptr<SourceControlFile>();
+            return try_load_port_manifest_text(manifest_contents, manifest_path, stdout_sink);
         }
 
-        if (fs.exists(control_path, IgnoreErrors{}))
+        auto manifest_exists = ec != std::errc::no_such_file_or_directory;
+        if (manifest_exists)
         {
-            return msg::format_error(msgManifestConflict, msg::path = port_directory);
+            return msg::format_error(msgFailedToParseManifest, msg::path = manifest_path)
+                .append_raw("\n")
+                .append(format_filesystem_call_error(ec, "read_contents", {manifest_path}));
         }
 
-        return try_load_manifest_text(manifest_contents, manifest_path, stdout_sink);
+        auto control_contents = fs.read_contents(control_path, ec);
+        if (!ec)
+        {
+            return try_load_control_file_text(control_contents, control_path);
+        }
+
+        if (ec != std::errc::no_such_file_or_directory)
+        {
+            return LocalizedString::from_raw(port_directory)
+                .append_raw(": ")
+                .append(format_filesystem_call_error(ec, "read_contents", {control_path}));
+        }
+
+        if (fs.exists(port_directory, IgnoreErrors{}))
+        {
+            return LocalizedString::from_raw(port_directory)
+                .append_raw(": ")
+                .append(msgErrorMessage)
+                .append(msgPortMissingManifest2, msg::package_name = port_name);
+        }
+
+        return LocalizedString::from_raw(port_directory)
+            .append_raw(": ")
+            .append(msgErrorMessage)
+            .append(msgPortDoesNotExist, msg::package_name = port_name);
     }
 
     ExpectedL<std::unique_ptr<SourceControlFile>> try_load_port_required(const ReadOnlyFilesystem& fs,

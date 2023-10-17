@@ -70,8 +70,9 @@ namespace
                     if (!maybe_file) continue;
 
                     const auto& file = maybe_file.value_or_exit(VCPKG_LINE_INFO);
-                    auto maybe_scf =
-                        Paragraphs::try_load_port_text(file, treeish, control_file == "vcpkg.json", stdout_sink);
+                    auto maybe_scf = control_file == "vcpkg.json"
+                                         ? Paragraphs::try_load_port_manifest_text(file, treeish, stdout_sink)
+                                         : Paragraphs::try_load_control_file_text(file, treeish);
                     auto scf = maybe_scf.get();
                     if (!scf)
                     {
@@ -306,8 +307,10 @@ namespace vcpkg
             if (!manifest_exists && !control_exists)
             {
                 msg::write_unlocalized_text_to_stdout(Color::error, fmt::format("FAIL: {}\n", port_name));
-                errors.emplace(
-                    msg::format(msgPortMissingManifest, msg::package_name = port_name, msg::path = port_path));
+                errors.emplace(LocalizedString::from_raw(port_path)
+                                   .append_raw(": ")
+                                   .append(msgErrorMessage)
+                                   .append(msgPortMissingManifest2, msg::package_name = port_name));
                 continue;
             }
 

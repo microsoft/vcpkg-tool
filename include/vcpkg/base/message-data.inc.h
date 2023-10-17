@@ -2500,10 +2500,10 @@ DECLARE_MESSAGE(PortNotInBaseline,
 DECLARE_MESSAGE(PortsAdded, (msg::count), "", "The following {count} ports were added:")
 DECLARE_MESSAGE(PortsDiffHelp, (), "", "The argument should be a branch/tag/hash to checkout.")
 DECLARE_MESSAGE(PortDoesNotExist, (msg::package_name), "", "{package_name} does not exist")
-DECLARE_MESSAGE(PortMissingManifest,
-                (msg::package_name, msg::path),
+DECLARE_MESSAGE(PortMissingManifest2,
+                (msg::package_name),
                 "",
-                "{package_name} has no vcpkg.json or CONTROL file in {path}")
+                "{package_name} port manifest missing (no vcpkg.json or CONTROL file)")
 DECLARE_MESSAGE(PortsNoDiff, (), "", "There were no changes in the ports between the two commits.")
 DECLARE_MESSAGE(PortsRemoved, (msg::count), "", "The following {count} ports were removed:")
 DECLARE_MESSAGE(PortsUpdated, (msg::count), "", "The following {count} ports were updated:")
