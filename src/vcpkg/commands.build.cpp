@@ -760,7 +760,7 @@ namespace vcpkg
 
         std::vector<CMakeVariable> variables{
             {"ALL_FEATURES", all_features},
-            {"CURRENT_PORT_DIR", scfl.source_location},
+            {"CURRENT_PORT_DIR", scfl.port_directory()},
             {"_HOST_TRIPLET", action.host_triplet.canonical_name()},
             {"FEATURES", Strings::join(";", action.feature_list)},
             {"PORT", scf.core_paragraph->name},
@@ -951,9 +951,9 @@ namespace vcpkg
             msg::println(msgLoadingOverlayTriplet, msg::path = triplet_file_path);
         }
 
-        if (!Strings::starts_with(scfl.source_location, paths.builtin_ports_directory()))
+        if (!Strings::starts_with(scfl.control_location, paths.builtin_ports_directory()))
         {
-            msg::println(msgInstallingFromLocation, msg::path = scfl.source_location);
+            msg::println(msgInstallingFromLocation, msg::path = scfl.control_location);
         }
 
         const ElapsedTimer timer;
@@ -1030,7 +1030,7 @@ namespace vcpkg
             FileSink file_sink{fs, stdoutlog, Append::YES};
             CombiningSink combo_sink{stdout_sink, file_sink};
             error_count = perform_post_build_lint_checks(
-                action.spec, paths, pre_build_info, build_info, scfl.source_location, combo_sink);
+                action.spec, paths, pre_build_info, build_info, scfl.port_directory(), combo_sink);
         };
         if (error_count != 0 && action.build_options.backcompat_features == BackcompatFeatures::PROHIBIT)
         {
@@ -1174,7 +1174,8 @@ namespace vcpkg
         constexpr int max_port_file_count = 100;
 
         std::string portfile_cmake_contents;
-        auto&& port_dir = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_location;
+        auto&& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
+        auto port_dir = scfl.port_directory();
         auto raw_files = fs.get_regular_files_recursive_lexically_proximate(port_dir, VCPKG_LINE_INFO);
         if (raw_files.size() > max_port_file_count)
         {
@@ -1273,8 +1274,7 @@ namespace vcpkg
         abi_file_path /= triplet_canonical_name + ".vcpkg_abi_info.txt";
         fs.write_contents(abi_file_path, full_abi_info, VCPKG_LINE_INFO);
 
-        auto& scf = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_control_file;
-
+        auto& scf = scfl.source_control_file;
         abi_info.package_abi = Hash::get_string_sha256(full_abi_info);
         abi_info.abi_tag_file.emplace(std::move(abi_file_path));
         abi_info.relative_port_files = std::move(files);

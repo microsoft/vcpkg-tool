@@ -445,9 +445,9 @@ namespace vcpkg
         if (auto scfl = action.source_control_file_and_location.get())
         {
             if (!builtin_ports_dir.empty() &&
-                !Strings::case_insensitive_ascii_starts_with(scfl->source_location, builtin_ports_dir))
+                !Strings::case_insensitive_ascii_starts_with(scfl->control_location, builtin_ports_dir))
             {
-                out.append_raw(" -- ").append_raw(scfl->source_location);
+                out.append_raw(" -- ").append_raw(scfl->control_location);
             }
         }
     }
