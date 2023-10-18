@@ -1554,15 +1554,13 @@ TEST_CASE ("version install overrides", "[versionplan]")
     bp.v["b"] = {"2", 0};
     bp.v["c"] = {"2", 0};
 
+    DependencyOverride bdo{"b", SchemedVersion{VersionScheme::String, Version{"1", 0}}};
+    DependencyOverride cdo{"c", SchemedVersion{VersionScheme::String, Version{"1", 0}}};
     SECTION ("string")
     {
-        auto install_plan = create_versioned_install_plan(vp,
-                                                          bp,
-                                                          var_provider,
-                                                          {Dependency{"c"}},
-                                                          {DependencyOverride{"b", "1"}, DependencyOverride{"c", "1"}},
-                                                          toplevel_spec())
-                                .value_or_exit(VCPKG_LINE_INFO);
+        auto install_plan =
+            create_versioned_install_plan(vp, bp, var_provider, {Dependency{"c"}}, {bdo, cdo}, toplevel_spec())
+                .value_or_exit(VCPKG_LINE_INFO);
 
         REQUIRE(install_plan.size() == 1);
         check_name_and_version(install_plan.install_actions[0], "c", {"1", 0});
@@ -1570,13 +1568,9 @@ TEST_CASE ("version install overrides", "[versionplan]")
 
     SECTION ("relaxed")
     {
-        auto install_plan = create_versioned_install_plan(vp,
-                                                          bp,
-                                                          var_provider,
-                                                          {Dependency{"b"}},
-                                                          {DependencyOverride{"b", "1"}, DependencyOverride{"c", "1"}},
-                                                          toplevel_spec())
-                                .value_or_exit(VCPKG_LINE_INFO);
+        auto install_plan =
+            create_versioned_install_plan(vp, bp, var_provider, {Dependency{"b"}}, {bdo, cdo}, toplevel_spec())
+                .value_or_exit(VCPKG_LINE_INFO);
 
         REQUIRE(install_plan.size() == 1);
         check_name_and_version(install_plan.install_actions[0], "b", {"1", 0});
@@ -1600,13 +1594,10 @@ TEST_CASE ("version install transitive overrides", "[versionplan]")
     bp.v["b"] = {"2", 0};
     bp.v["c"] = {"2", 1};
 
+    DependencyOverride bdo{"b", SchemedVersion{VersionScheme::String, Version{"1", 0}}};
+    DependencyOverride cdo{"c", SchemedVersion{VersionScheme::String, Version{"1", 0}}};
     WITH_EXPECTED(install_plan,
-                  create_versioned_install_plan(vp,
-                                                bp,
-                                                var_provider,
-                                                {Dependency{"b"}},
-                                                {DependencyOverride{"b", "1"}, DependencyOverride{"c", "1"}},
-                                                toplevel_spec()));
+                  create_versioned_install_plan(vp, bp, var_provider, {Dependency{"b"}}, {bdo, cdo}, toplevel_spec()));
 
     REQUIRE(install_plan.size() == 2);
     check_name_and_version(install_plan.install_actions[0], "c", {"1", 0});
@@ -2144,36 +2135,37 @@ TEST_CASE ("version overlay ports", "[versionplan]")
     }
     SECTION ("constraint+override")
     {
-        auto install_plan =
-            create_versioned_install_plan(vp,
-                                          bp,
-                                          oprovider,
-                                          var_provider,
-                                          {
-                                              Dependency{"a", {}, {}, {VersionConstraintKind::Minimum, "1", 1}},
-                                          },
-                                          {
-                                              DependencyOverride{"a", "2", 0},
-                                          },
-                                          toplevel_spec())
-                .value_or_exit(VCPKG_LINE_INFO);
+        auto install_plan = create_versioned_install_plan(
+                                vp,
+                                bp,
+                                oprovider,
+                                var_provider,
+                                {
+                                    Dependency{"a", {}, {}, {VersionConstraintKind::Minimum, "1", 1}},
+                                },
+                                {
+                                    DependencyOverride{"a", SchemedVersion{VersionScheme::String, Version{"2", 0}}},
+                                },
+                                toplevel_spec())
+                                .value_or_exit(VCPKG_LINE_INFO);
 
         REQUIRE(install_plan.size() == 1);
         check_name_and_version(install_plan.install_actions[0], "a", {"overlay", 0});
     }
     SECTION ("override")
     {
-        auto install_plan = create_versioned_install_plan(vp,
-                                                          bp,
-                                                          oprovider,
-                                                          var_provider,
-                                                          {
-                                                              Dependency{"a"},
-                                                          },
-                                                          {
-                                                              DependencyOverride{"a", "2", 0},
-                                                          },
-                                                          toplevel_spec())
+        auto install_plan = create_versioned_install_plan(
+                                vp,
+                                bp,
+                                oprovider,
+                                var_provider,
+                                {
+                                    Dependency{"a"},
+                                },
+                                {
+                                    DependencyOverride{"a", SchemedVersion{VersionScheme::String, Version{"2", 0}}},
+                                },
+                                toplevel_spec())
                                 .value_or_exit(VCPKG_LINE_INFO);
 
         REQUIRE(install_plan.size() == 1);
@@ -2204,12 +2196,24 @@ TEST_CASE ("respect supports expression", "[versionplan]")
         // override from non supported to supported version
         MockOverlayProvider oprovider;
         install_plan = create_versioned_install_plan(
-            vp, bp, oprovider, var_provider, {Dependency{"a"}}, {DependencyOverride{"a", "1", 1}}, toplevel_spec());
+            vp,
+            bp,
+            oprovider,
+            var_provider,
+            {Dependency{"a"}},
+            {DependencyOverride{"a", SchemedVersion{VersionScheme::String, Version{"1", 1}}}},
+            toplevel_spec());
         CHECK(install_plan.has_value());
         // override from supported to non supported version
         bp.v["a"] = {"1", 1};
         install_plan = create_versioned_install_plan(
-            vp, bp, oprovider, var_provider, {Dependency{"a"}}, {DependencyOverride{"a", "1", 0}}, toplevel_spec());
+            vp,
+            bp,
+            oprovider,
+            var_provider,
+            {Dependency{"a"}},
+            {DependencyOverride{"a", SchemedVersion{VersionScheme::String, Version{"1", 0}}}},
+            toplevel_spec());
         CHECK_FALSE(install_plan.has_value());
     }
 }
@@ -2241,23 +2245,25 @@ TEST_CASE ("respect supports expressions of features", "[versionplan]")
     {
         // override from non supported to supported version
         MockOverlayProvider oprovider;
-        install_plan = create_versioned_install_plan(vp,
-                                                     bp,
-                                                     oprovider,
-                                                     var_provider,
-                                                     {Dependency{"a", {{"x"}}}},
-                                                     {DependencyOverride{"a", "1", 1}},
-                                                     toplevel_spec());
+        install_plan = create_versioned_install_plan(
+            vp,
+            bp,
+            oprovider,
+            var_provider,
+            {Dependency{"a", {{"x"}}}},
+            {DependencyOverride{"a", SchemedVersion{VersionScheme::String, Version{"1", 1}}}},
+            toplevel_spec());
         CHECK(install_plan.has_value());
         // override from supported to non supported version
         bp.v["a"] = {"1", 1};
-        install_plan = create_versioned_install_plan(vp,
-                                                     bp,
-                                                     oprovider,
-                                                     var_provider,
-                                                     {Dependency{"a", {{"x"}}}},
-                                                     {DependencyOverride{"a", "1", 0}},
-                                                     toplevel_spec());
+        install_plan = create_versioned_install_plan(
+            vp,
+            bp,
+            oprovider,
+            var_provider,
+            {Dependency{"a", {{"x"}}}},
+            {DependencyOverride{"a", SchemedVersion{VersionScheme::String, Version{"1", 0}}}},
+            toplevel_spec());
         CHECK_FALSE(install_plan.has_value());
     }
 }

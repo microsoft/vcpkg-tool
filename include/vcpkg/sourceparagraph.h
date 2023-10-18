@@ -70,9 +70,7 @@ namespace vcpkg
     struct DependencyOverride
     {
         std::string name;
-        std::string version;
-        int port_version = 0;
-        VersionScheme version_scheme = VersionScheme::String;
+        SchemedVersion version;
 
         Json::Object extra_info;
 
