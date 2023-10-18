@@ -942,7 +942,7 @@
   "PortBugSetDllsWithoutExports": "Biblioteki DLL bez żadnych eksportów są prawdopodobnie usterką w skrypcie kompilacji. Jeśli jest to zamierzone, dodaj następujący wiersz w pliku portfile:\nustaw(VCPKG_POLICY_DLLS_WITHOUT_EXPORTS włączone)\nNastępujące biblioteki DLL nie mają eksportów:",
   "PortDependencyConflict": "Port {package_name} ma następujące nieobsługiwane zależności:",
   "PortDoesNotExist": "Pakiet {package_name} nie istnieje",
-  "PortMissingManifest": "Pakiet {package_name} nie ma pliku vcpkg.json ani pliku CONTROL w ścieżce {path}",
+  "PortMissingManifest2": "{package_name} port manifest missing (no vcpkg.json or CONTROL file)",
   "PortNotInBaseline": "punkt odniesienia nie zawiera wpisu dla portu {package_name}",
   "PortSupportsField": "(obsługuje: „{supports_expression}”)",
   "PortVersionConflict": "Następujące pakiety różnią się od ich wersji portów:",

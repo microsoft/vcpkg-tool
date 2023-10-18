@@ -942,7 +942,7 @@
   "PortBugSetDllsWithoutExports": "不带任何导出的 DLL 可能是生成脚本中的 bug。如果希望这样，请在端口文件:\nset(已启用 VCPKG_POLICY_DLLS_WITHOUT_EXPORTS)\n中添加以下行: 以下 DLL 没有导出:",
   "PortDependencyConflict": "端口 {package_name} 具有以下不受支持的依赖项:",
   "PortDoesNotExist": "{package_name} 不存在",
-  "PortMissingManifest": "{package_name} 在 {path} 中没有 vcpkg.json 或 CONTROL 文件",
+  "PortMissingManifest2": "{package_name} port manifest missing (no vcpkg.json or CONTROL file)",
   "PortNotInBaseline": "基线不包含端口 {package_name} 的条目",
   "PortSupportsField": "(支持: “{supports_expression}”)",
   "PortVersionConflict": "以下包不同于其端口版本:",

@@ -473,62 +473,61 @@ namespace vcpkg::Paragraphs
         const auto control_path = port_location.port_directory / "CONTROL";
         std::error_code ec;
         auto manifest_contents = fs.read_contents(manifest_path, ec);
-        if (ec)
+        if (!ec)
         {
-            auto manifest_exists = ec != std::errc::no_such_file_or_directory;
-            if (manifest_exists)
+            if (fs.exists(control_path, IgnoreErrors{}))
             {
-                return PortLoadResult{LocalizedString::from_raw(port_location.port_directory)
-                                          .append_raw(": ")
-                                          .append(format_filesystem_call_error(ec, "read_contents", {manifest_path})),
-                                      std::string{}};
-            }
-
-            auto control_contents = fs.read_contents(control_path, ec);
-            if (ec)
-            {
-                if (ec != std::errc::no_such_file_or_directory)
-                {
-                    return PortLoadResult{
-                        LocalizedString::from_raw(port_location.port_directory)
-                            .append_raw(": ")
-                            .append(format_filesystem_call_error(ec, "read_contents", {control_path})),
-                        std::string{}};
-                }
-
-                if (fs.exists(port_location.port_directory, IgnoreErrors{}))
-                {
-                    return PortLoadResult{LocalizedString::from_raw(port_location.port_directory)
-                                              .append_raw(": ")
-                                              .append(msgErrorMessage)
-                                              .append(msgPortMissingManifest2, msg::package_name = port_name),
-                                          std::string{}};
-                }
-
                 return PortLoadResult{LocalizedString::from_raw(port_location.port_directory)
                                           .append_raw(": ")
                                           .append(msgErrorMessage)
-                                          .append(msgPortDoesNotExist, msg::package_name = port_name),
+                                          .append(msgManifestConflict2),
                                       std::string{}};
             }
 
+            return PortLoadResult{
+                try_load_port_manifest_text(manifest_contents, manifest_path, port_location.spdx_location, stdout_sink),
+                manifest_contents};
+        }
+
+        auto manifest_exists = ec != std::errc::no_such_file_or_directory;
+        if (manifest_exists)
+        {
+            return PortLoadResult{LocalizedString::from_raw(port_location.port_directory)
+                                      .append_raw(": ")
+                                      .append(format_filesystem_call_error(ec, "read_contents", {manifest_path})),
+                                  std::string{}};
+        }
+
+        auto control_contents = fs.read_contents(control_path, ec);
+        if (!ec)
+        {
             return PortLoadResult{
                 try_load_control_file_text(control_contents, control_path, port_location.spdx_location),
                 control_contents};
         }
 
-        if (fs.exists(control_path, IgnoreErrors{}))
+        if (ec != std::errc::no_such_file_or_directory)
+        {
+            return PortLoadResult{LocalizedString::from_raw(port_location.port_directory)
+                                      .append_raw(": ")
+                                      .append(format_filesystem_call_error(ec, "read_contents", {control_path})),
+                                  std::string{}};
+        }
+
+        if (fs.exists(port_location.port_directory, IgnoreErrors{}))
         {
             return PortLoadResult{LocalizedString::from_raw(port_location.port_directory)
                                       .append_raw(": ")
                                       .append(msgErrorMessage)
-                                      .append(msgManifestConflict2),
+                                      .append(msgPortMissingManifest2, msg::package_name = port_name),
                                   std::string{}};
         }
 
-        return PortLoadResult{
-            try_load_port_manifest_text(manifest_contents, manifest_path, port_location.spdx_location, stdout_sink),
-            manifest_contents};
+        return PortLoadResult{LocalizedString::from_raw(port_location.port_directory)
+                                  .append_raw(": ")
+                                  .append(msgErrorMessage)
+                                  .append(msgPortDoesNotExist, msg::package_name = port_name),
+                              std::string{}};
     }
 
     PortLoadResult try_load_port_required(const ReadOnlyFilesystem& fs,

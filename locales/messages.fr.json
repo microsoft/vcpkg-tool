@@ -942,7 +942,7 @@
   "PortBugSetDllsWithoutExports": "Les DLL sans aucune exportation sont probablement un bogue dans le script de build. Si tel est le cas, ajoutez la ligne suivante dans le fichier de port :\nset(VCPKG_POLICY_DLLS_WITHOUT_EXPORTS enabled)\nLes DLL suivantes n’ont pas d’exportations :",
   "PortDependencyConflict": "Le port {package_name} a les dépendances non prises en charge suivantes :",
   "PortDoesNotExist": "{package_name} n'existe pas.",
-  "PortMissingManifest": "{package_name} n’a pas de fichier vcpkg.json ou CONTROL dans {path}",
+  "PortMissingManifest2": "{package_name} port manifest missing (no vcpkg.json or CONTROL file)",
   "PortNotInBaseline": "la base de référence ne contient pas d’entrée pour le port {package_name}.",
   "PortSupportsField": "(prend en charge : « {supports_expression} »)",
   "PortVersionConflict": "Les packages suivants diffèrent de leur version de port :",
