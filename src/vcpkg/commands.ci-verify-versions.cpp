@@ -204,9 +204,11 @@ namespace
         }
 
         return {
-            msg::format(msgVersionVerifiedOK,
+            msg::format(msgMessageMessage)
+                .append_raw(": ")
+                .append(msgVersionVerifiedOK,
                         msg::version_spec = Strings::concat(port_name, '@', entry.version.version),
-                        msg::commit_sha = entry.git_tree),
+                        msg::git_tree_sha = entry.git_tree),
             expected_left_tag,
         };
     }

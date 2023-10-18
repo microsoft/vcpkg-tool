@@ -1099,7 +1099,11 @@ DECLARE_MESSAGE(ErrorInvalidManifestModeOption,
                 (msg::option),
                 "",
                 "The option --{option} is not supported in manifest mode.")
-DECLARE_MESSAGE(ErrorMessage, (), "", "error: ")
+DECLARE_MESSAGE(ErrorMessage,
+                (),
+                "This identifies errors printed on the command line; Visual Studio and other IDEs look for this so "
+                "it's possible that it should remain unlocalized?",
+                "error: ")
 DECLARE_MESSAGE(
     ErrorMessageMustUsePrintError,
     (msg::value),
@@ -2079,6 +2083,10 @@ DECLARE_MESSAGE(ManifestConflict,
                 "",
                 "Found both a manifest and CONTROL files in port \"{path}\"; please rename one or the other")
 DECLARE_MESSAGE(ManifestFormatCompleted, (), "", "Succeeded in formatting the manifest files.")
+DECLARE_MESSAGE(MessageMessage,
+                (),
+                "printed after a path and before an informational message on the terminal",
+                "message: ")
 DECLARE_MESSAGE(MismatchedBinParagraphs,
                 (),
                 "",
@@ -2198,7 +2206,10 @@ DECLARE_MESSAGE(NonZeroRemainingArgs,
                 "the command '{command_name}' does not accept any additional arguments")
 DECLARE_MESSAGE(NoOutdatedPackages, (), "", "There are no outdated packages.")
 DECLARE_MESSAGE(NoRegistryForPort, (msg::package_name), "", "no registry configured for port {package_name}")
-DECLARE_MESSAGE(NoteMessage, (), "", "note: ")
+DECLARE_MESSAGE(NoteMessage,
+                (),
+                "This is stapled to ErrorMessage or WarningMessage to provide additional context",
+                "note: ")
 DECLARE_MESSAGE(NoUrlsAndHashSpecified, (msg::sha), "", "No urls specified to download SHA: {sha}")
 DECLARE_MESSAGE(NoUrlsAndNoHashSpecified, (), "", "No urls specified and no hash specified.")
 DECLARE_MESSAGE(NugetOutputNotCapturedBecauseInteractiveSpecified,
@@ -3122,13 +3133,20 @@ DECLARE_MESSAGE(VersionSpecMismatch,
                 "Failed to load port because versions are inconsistent. The file \"{path}\" contains the version "
                 "{actual_version}, but the version database indicates that it should be {expected_version}.")
 DECLARE_MESSAGE(VersionTableHeader, (), "", "Version")
-DECLARE_MESSAGE(VersionVerifiedOK, (msg::version_spec, msg::commit_sha), "", "OK: {version_spec} -> {commit_sha}")
+DECLARE_MESSAGE(VersionVerifiedOK,
+                (msg::version_spec, msg::git_tree_sha),
+                "",
+                "{version_spec} is correctly in the version database ({git_tree_sha})")
 DECLARE_MESSAGE(VSExaminedInstances, (), "", "The following Visual Studio instances were considered:")
 DECLARE_MESSAGE(VSExaminedPaths, (), "", "The following paths were examined for Visual Studio instances:")
 DECLARE_MESSAGE(VSNoInstances, (), "", "Could not locate a complete Visual Studio instance")
 DECLARE_MESSAGE(WaitingForChildrenToExit, (), "", "Waiting for child processes to exit...")
 DECLARE_MESSAGE(WaitingToTakeFilesystemLock, (msg::path), "", "waiting to take filesystem lock on {path}...")
-DECLARE_MESSAGE(WarningMessage, (), "", "warning: ")
+DECLARE_MESSAGE(WarningMessage,
+                (),
+                "This identifies warnings printed on the command line; Visual Studio and other IDEs look for this so "
+                "it's possible that it should remain unlocalized?",
+                "warning: ")
 DECLARE_MESSAGE(WarningMessageMustUsePrintWarning,
                 (msg::value),
                 "{value} is is a localized message name like WarningMessageMustUsePrintWarning",
@@ -3138,9 +3156,9 @@ DECLARE_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interp
 DECLARE_MESSAGE(WarnOnParseConfig, (msg::path), "", "Found the following warnings in configuration {path}:")
 DECLARE_MESSAGE(WhileCheckingOutBaseline, (msg::commit_sha), "", "while checking out baseline {commit_sha}")
 DECLARE_MESSAGE(WhileCheckingOutPortTreeIsh,
-                (msg::package_name, msg::commit_sha),
+                (msg::package_name, msg::git_tree_sha),
                 "",
-                "while checking out port {package_name} with git tree {commit_sha}")
+                "while checking out port {package_name} with git tree {git_tree_sha}")
 DECLARE_MESSAGE(WhileGettingLocalTreeIshObjectsForPorts, (), "", "while getting local treeish objects for ports")
 DECLARE_MESSAGE(WhileLoadingLocalPort, (msg::package_name), "", "while attempting to load local port {package_name}")
 DECLARE_MESSAGE(WhileLoadingPortFromGitTree, (msg::commit_sha), "", "while trying to load port from: {commit_sha}")
