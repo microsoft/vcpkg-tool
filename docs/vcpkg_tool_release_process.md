@@ -29,19 +29,28 @@ such as https://github.com/microsoft/vcpkg/pull/23757
     * Bash:
         `. <(curl https://github.com/microsoft/vcpkg-tool/releases/download/2023-03-29/vcpkg-init -L)`
   (and test that `vcpkg use cmake` works from each of these)
+1. Create a new task in the DevDiv VS instance for this release. (PRs into VS Code and VS require an associated work
+   item in order to be merged.)
 1. In the vcpkg repo, run `\scripts\update-vcpkg-tool-metadata.ps1 -Date 2023-03-29`
   with the new release date, which updates SHAs as appropriate. It will also emit a code block for
-  the next vscode-embedded-tools repo step.
+  the next vscode-embedded-tools repo step. Commit these changes and submit as a PR.
 1. In the DevDiv vscode-embedded-tools repo, follow the
   [update instructions](https://devdiv.visualstudio.com/DefaultCollection/DevDiv/_git/vscode-embedded-tools?path=/docs/updating-vcpkg.md&_a=preview)
-  to make a VS Code update PR.
+  to make a VS Code update PR. Don't forget to attach the work item created in the previous step.
+  Example: https://devdiv.visualstudio.com/DefaultCollection/DevDiv/_git/vscode-embedded-tools/pullrequest/498107
 1. If changes in this release that might affect ports, submit a new full tree rebuild by
   microsoft.vcpkg.ci (https://dev.azure.com/vcpkg/public/_build?definitionId=29 as of this writing)
   targeting `refs/pull/NUMBER/head`
 1. (Probably the next day) Check over the failures and ensure any differences with the most recent
   full rebuild using the previous tool version are understood.
-1. In the DevDiv VS repo, update `default.config`, run the VcpkgInsertionUtility, and submit a PR
-  with those changes.
+1. In the DevDiv VS repo ( https://devdiv.visualstudio.com/DefaultCollection/DevDiv/_git/VS ),
+   update `.corext\Configs\default.config`, and `src\ConfigData\Packages\Redist\Setup.props`
+1. The first time you try to do a VS update on a machine, open a developer command prompt, go to
+   `src\vc\projbld\Vcpkg\VcpkgInsertionUtility`, and run `csc Program.cs` which will write the
+   VcpkgInsertionUtility as `Program.exe` in this directory.
+1. Go to the root of the VS repo and run `init.cmd -CoreXTProfileName VSPartners`
+1. Submit this as a change to the VS repo. Example: https://devdiv.visualstudio.com/DefaultCollection/DevDiv/_git/VS/pullrequest/498110
+   Don't forget to attach the work item number from the previous step.
 1. Smoke test the copy of vcpkg inserted into VS. See smoke test steps below.
 1. (After all tests have passed, at the same time) Merge all 3 PRs, and change the github release
   in vcpkg-tool from "prerelease" to "release". (This automatically updates the aka.ms links)
@@ -143,8 +152,6 @@ flowchart TD
 
 # Smoke Testing VS
 
-1. Update the copy of vcpkg in default.config in the VS repo.
-1. Submit a PR which will give you a prototype of VS with that vcpkg inside.
 1. Install the prototype version of VS with the vcpkg inserted. Ensure the native desktop workload is selected, and that vcpkg and cmake bits are installed. Don't forget about preinstall.
 1. Open a developer command prompt and run `vcpkg integrate install` (this step hopefully removed soon)
     * This also verifies that vcpkg installed into the developer command prompt correctly.
