@@ -70,9 +70,11 @@ namespace
                     if (!maybe_file) continue;
 
                     const auto& file = maybe_file.value_or_exit(VCPKG_LINE_INFO);
-                    auto maybe_scf =
-                        Paragraphs::try_load_port_text(file, treeish, control_file == "vcpkg.json", stdout_sink);
-                    if (!maybe_scf)
+                    auto maybe_scf = control_file == "vcpkg.json"
+                                         ? Paragraphs::try_load_port_manifest_text(file, treeish, stdout_sink)
+                                         : Paragraphs::try_load_control_file_text(file, treeish);
+                    auto scf = maybe_scf.get();
+                    if (!scf)
                     {
                         return {msg::format_error(msgWhileParsingVersionsForPort,
                                                   msg::package_name = port_name,
@@ -82,12 +84,11 @@ namespace
                                     .append_raw('\n')
                                     .append(msgWhileLoadingPortFromGitTree, msg::commit_sha = treeish)
                                     .append_raw('\n')
-                                    .append_raw(maybe_scf.error()->error),
+                                    .append(maybe_scf.error()),
                                 expected_right_tag};
                     }
 
-                    const auto& scf = maybe_scf.value(VCPKG_LINE_INFO);
-                    auto&& git_tree_version = scf->to_schemed_version();
+                    auto&& git_tree_version = (*scf)->to_schemed_version();
                     if (version_entry.version.version != git_tree_version.version)
                     {
                         return {
@@ -122,16 +123,17 @@ namespace
             }
         }
 
-        auto maybe_scf = Paragraphs::try_load_port(paths.get_filesystem(), port_path);
-        if (!maybe_scf)
+        auto maybe_scf = Paragraphs::try_load_port_required(paths.get_filesystem(), port_name, port_path);
+        auto scf = maybe_scf.get();
+        if (!scf)
         {
             return {msg::format_error(msgWhileLoadingLocalPort, msg::package_name = port_name)
                         .append_raw('\n')
-                        .append_raw(maybe_scf.error()->error),
+                        .append(maybe_scf.error()),
                     expected_right_tag};
         }
 
-        const auto local_port_version = maybe_scf.value(VCPKG_LINE_INFO)->to_schemed_version();
+        const auto local_port_version = (*scf)->to_schemed_version();
 
         auto versions_end = versions->end();
         auto it = std::find_if(versions->begin(), versions_end, [&](const GitVersionDbEntry& entry) {
@@ -305,8 +307,10 @@ namespace vcpkg
             if (!manifest_exists && !control_exists)
             {
                 msg::write_unlocalized_text_to_stdout(Color::error, fmt::format("FAIL: {}\n", port_name));
-                errors.emplace(
-                    msg::format(msgPortMissingManifest, msg::package_name = port_name, msg::path = port_path));
+                errors.emplace(LocalizedString::from_raw(port_path)
+                                   .append_raw(": ")
+                                   .append(msgErrorMessage)
+                                   .append(msgPortMissingManifest2, msg::package_name = port_name));
                 continue;
             }
 

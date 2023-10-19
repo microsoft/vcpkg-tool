@@ -1,3 +1,4 @@
+#include <vcpkg/base/cache.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/system.debug.h>
@@ -108,22 +109,27 @@ namespace vcpkg
 
             virtual ExpectedL<Version> get_baseline_version(StringView port_name) const override
             {
-                auto it = m_baseline_cache.find(port_name);
-                if (it != m_baseline_cache.end())
-                {
-                    return it->second;
-                }
-                else
-                {
-                    auto version = registry_set.baseline_for_port(port_name);
-                    m_baseline_cache.emplace(port_name.to_string(), version);
-                    return version;
-                }
+                return m_baseline_cache.get_lazy(port_name, [this, port_name]() -> ExpectedL<Version> {
+                    auto maybe_maybe_version = registry_set.baseline_for_port(port_name);
+                    auto maybe_version = maybe_maybe_version.get();
+                    if (!maybe_version)
+                    {
+                        return std::move(maybe_maybe_version).error();
+                    }
+
+                    auto version = maybe_version->get();
+                    if (!version)
+                    {
+                        return msg::format_error(msgPortNotInBaseline, msg::package_name = port_name);
+                    }
+
+                    return std::move(*version);
+                });
             }
 
         private:
             const RegistrySet& registry_set;
-            mutable std::map<std::string, ExpectedL<Version>, std::less<>> m_baseline_cache;
+            Cache<std::string, ExpectedL<Version>> m_baseline_cache;
         };
 
         struct VersionedPortfileProviderImpl : IFullVersionedPortfileProvider
@@ -182,7 +188,8 @@ namespace vcpkg
                     auto maybe_path = ent->get()->get_version(version_spec.version);
                     if (auto path = maybe_path.get())
                     {
-                        auto maybe_control_file = Paragraphs::try_load_port(m_fs, path->path);
+                        auto maybe_control_file =
+                            Paragraphs::try_load_port_required(m_fs, version_spec.port_name, path->path);
                         if (auto scf = maybe_control_file.get())
                         {
                             auto scf_vspec = scf->get()->to_version_spec();
@@ -196,7 +203,7 @@ namespace vcpkg
                             }
                             else
                             {
-                                return msg::format(msg::msgErrorMessage)
+                                return msg::format(msgErrorMessage)
                                     .append(msgVersionSpecMismatch,
                                             msg::path = path->path,
                                             msg::expected_version = version_spec,
@@ -289,7 +296,7 @@ namespace vcpkg
                     // Try loading individual port
                     if (Paragraphs::is_port_directory(m_fs, ports_dir))
                     {
-                        auto maybe_scf = Paragraphs::try_load_port(m_fs, ports_dir);
+                        auto maybe_scf = Paragraphs::try_load_port_required(m_fs, port_name, ports_dir);
                         if (auto scfp = maybe_scf.get())
                         {
                             auto& scf = *scfp;
@@ -313,7 +320,7 @@ namespace vcpkg
                     auto ports_spec = ports_dir / port_name;
                     if (Paragraphs::is_port_directory(m_fs, ports_spec))
                     {
-                        auto found_scf = Paragraphs::try_load_port(m_fs, ports_spec);
+                        auto found_scf = Paragraphs::try_load_port_required(m_fs, port_name, ports_spec);
                         if (auto scfp = found_scf.get())
                         {
                             auto& scf = *scfp;
@@ -321,6 +328,7 @@ namespace vcpkg
                             {
                                 return SourceControlFileAndLocation{std::move(scf), std::move(ports_spec)};
                             }
+
                             Checks::msg_exit_maybe_upgrade(
                                 VCPKG_LINE_INFO,
                                 msg::format(msgFailedToLoadPort, msg::package_name = port_name, msg::path = ports_spec)
@@ -363,7 +371,7 @@ namespace vcpkg
                     // Try loading individual port
                     if (Paragraphs::is_port_directory(m_fs, ports_dir))
                     {
-                        auto maybe_scf = Paragraphs::try_load_port(m_fs, ports_dir);
+                        auto maybe_scf = Paragraphs::try_load_port_required(m_fs, ports_dir.filename(), ports_dir);
                         if (auto scfp = maybe_scf.get())
                         {
                             SourceControlFileAndLocation scfl{std::move(*scfp), ports_dir};

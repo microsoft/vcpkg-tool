@@ -283,10 +283,6 @@ DECLARE_MESSAGE(BaselineFileNoDefaultField,
                 (msg::commit_sha),
                 "",
                 "The baseline file at commit {commit_sha} was invalid (no \"default\" field).")
-DECLARE_MESSAGE(BaselineFileNoDefaultFieldPath,
-                (msg::path),
-                "",
-                "baseline file at {path} was invalid (no \"default\" field)")
 DECLARE_MESSAGE(BaselineGitShowFailed,
                 (msg::commit_sha),
                 "",
@@ -300,11 +296,6 @@ DECLARE_MESSAGE(BaselineMissing,
                 "git add versions\n"
                 "git commit -m \"Update version database\"\n"
                 "to set {version} as the baseline version.")
-DECLARE_MESSAGE(BaselineMissingDefault,
-                (msg::commit_sha, msg::url),
-                "",
-                "The baseline.json from commit `\"{commit_sha}\"` in the repo {url} was invalid (did not "
-                "contain a \"default\" field).")
 DECLARE_MESSAGE(BinaryCacheVendorHTTP, (), "", "HTTP servers")
 DECLARE_MESSAGE(BinarySourcesArg,
                 (),
@@ -914,10 +905,6 @@ DECLARE_MESSAGE(CouldNotDeduceNugetIdAndVersion,
                 (msg::path),
                 "",
                 "Could not deduce nuget id and version from filename: {path}")
-DECLARE_MESSAGE(CouldNotFindBaseline,
-                (msg::commit_sha, msg::path),
-                "",
-                "Could not find explicitly specified baseline `\"{commit_sha}\"` in baseline file {path}")
 DECLARE_MESSAGE(CouldNotFindBaselineInCommit,
                 (msg::url, msg::commit_sha, msg::package_name),
                 "",
@@ -1250,7 +1237,6 @@ DECLARE_MESSAGE(FailedToDetermineCurrentCommit, (), "", "Failed to determine the
 DECLARE_MESSAGE(FailedToDownloadFromMirrorSet, (), "", "Failed to download from mirror set")
 DECLARE_MESSAGE(FailedToExtract, (msg::path), "", "Failed to extract \"{path}\":")
 DECLARE_MESSAGE(FailedToFetchRepo, (msg::url), "", "Failed to fetch {url}.")
-DECLARE_MESSAGE(FailedToFindBaseline, (), "", "Failed to find baseline.json")
 DECLARE_MESSAGE(FailedToFindPortFeature,
                 (msg::feature, msg::package_name),
                 "",
@@ -2514,10 +2500,10 @@ DECLARE_MESSAGE(PortNotInBaseline,
 DECLARE_MESSAGE(PortsAdded, (msg::count), "", "The following {count} ports were added:")
 DECLARE_MESSAGE(PortsDiffHelp, (), "", "The argument should be a branch/tag/hash to checkout.")
 DECLARE_MESSAGE(PortDoesNotExist, (msg::package_name), "", "{package_name} does not exist")
-DECLARE_MESSAGE(PortMissingManifest,
-                (msg::package_name, msg::path),
+DECLARE_MESSAGE(PortMissingManifest2,
+                (msg::package_name),
                 "",
-                "{package_name} has no vcpkg.json or CONTROL file in {path}")
+                "{package_name} port manifest missing (no vcpkg.json or CONTROL file)")
 DECLARE_MESSAGE(PortsNoDiff, (), "", "There were no changes in the ports between the two commits.")
 DECLARE_MESSAGE(PortsRemoved, (msg::count), "", "The following {count} ports were removed:")
 DECLARE_MESSAGE(PortsUpdated, (msg::count), "", "The following {count} ports were updated:")

@@ -167,7 +167,7 @@ namespace vcpkg
         msg::print(msgElapsedForPackage, msg::spec = spec, msg::elapsed = build_timer);
         if (result.code == BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES)
         {
-            LocalizedString errorMsg = msg::format(msg::msgErrorMessage).append(msgBuildDependenciesMissing);
+            LocalizedString errorMsg = msg::format(msgErrorMessage).append(msgBuildDependenciesMissing);
             for (const auto& p : result.unmet_dependencies)
             {
                 errorMsg.append_raw('\n').append_indent().append_raw(p.to_string());
@@ -340,7 +340,7 @@ namespace vcpkg
                            msg::arch = target_architecture,
                            msg::path = toolset.visual_studio_root_path,
                            msg::list = toolset_list);
-        msg::println(msg::msgSeeURL, msg::url = docs::vcpkg_visual_studio_path_url);
+        msg::println(msgSeeURL, msg::url = docs::vcpkg_visual_studio_path_url);
         Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
     }
 #endif

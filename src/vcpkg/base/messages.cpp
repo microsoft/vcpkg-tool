@@ -276,17 +276,6 @@ namespace vcpkg
 
 #include <vcpkg/base/message-data.inc.h>
 #undef DECLARE_MESSAGE
-
-    namespace msg
-    {
-        const decltype(vcpkg::msgErrorMessage) msgErrorMessage = vcpkg::msgErrorMessage;
-        const decltype(vcpkg::msgWarningMessage) msgWarningMessage = vcpkg::msgWarningMessage;
-        const decltype(vcpkg::msgNoteMessage) msgNoteMessage = vcpkg::msgNoteMessage;
-        const decltype(vcpkg::msgSeeURL) msgSeeURL = vcpkg::msgSeeURL;
-        const decltype(vcpkg::msgInternalErrorMessage) msgInternalErrorMessage = vcpkg::msgInternalErrorMessage;
-        const decltype(vcpkg::msgInternalErrorMessageContact) msgInternalErrorMessageContact =
-            vcpkg::msgInternalErrorMessageContact;
-    }
 }
 namespace vcpkg::msg
 {
