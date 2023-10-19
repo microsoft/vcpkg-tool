@@ -942,7 +942,7 @@
   "PortBugSetDllsWithoutExports": "Knihovny DLL bez exportů jsou pravděpodobně chybou ve skriptu sestavení. Pokud je to záměrné, přidejte do souboru portfile:\nset(VCPKG_POLICY_DLLS_WITHOUT_EXPORTS povoleno).\nNásledující knihovny DLL nemají žádné exporty:",
   "PortDependencyConflict": "{package_name} portu má následující nepodporované závislosti:",
   "PortDoesNotExist": "{package_name} neexistuje.",
-  "PortMissingManifest2": "{package_name} port manifest missing (no vcpkg.json or CONTROL file)",
+  "PortMissingManifest2": "Chybí manifest portu {package_name} (žádný soubor vcpkg.json ani CONTROL)",
   "PortNotInBaseline": "směrný plán neobsahuje položku pro port {package_name}",
   "PortSupportsField": "(podporuje: {supports_expression})",
   "PortVersionConflict": "Následující balíčky se liší od jejich verzí portů:",
