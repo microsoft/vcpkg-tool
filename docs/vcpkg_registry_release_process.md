@@ -19,7 +19,6 @@ This document describes the acceptance criteria / process we use when doing a vc
 1. Copy the contents to the end of `path/to/results.md` (the `#### New Contributors` part should line up)
 1. Change the link to the full rebuild.
 1. Fill out the block about tool release changes.
-1. Change FROM and TO at the top to be the previous tag and the new one.
 1. Copy `path/to/results.md` into the github release and publish it. (You can delete `path/to/results.md` now :))
 1. After the full rebuild submission completes, change all the 'Building...'s to actual counts in the release.
 1. After a blog post for that release is authored, add a link to the blog post to the release.
