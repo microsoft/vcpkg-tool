@@ -471,7 +471,7 @@ namespace
             }
 
             if (Util::none_of(*override_entries, [&](const GitVersionDbEntry& entry) {
-                    return entry.version.version == override_.version.version;
+                    return entry.version.version == override_.version;
                 }))
             {
                 success = false;
@@ -481,7 +481,7 @@ namespace
                                       .append(msgErrorMessage)
                                       .append(msgVersionOverrideVersionNotInVersionDatabase1,
                                               msg::package_name = override_.name,
-                                              msg::version = override_.version.version)
+                                              msg::version = override_.version)
                                       .append_raw('\n')
                                       .append_raw(override_versions_db_entry.versions_file_path)
                                       .append_raw(": ")
