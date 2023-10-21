@@ -219,3 +219,9 @@ flowchart TD
     build_artifact\program.exe
     ```
     and check that the cmake version acquired by artifacts is printed during the cmake configure, and that a reasonable zlib version is printed.
+1. Close Visual Studio.
+1. Back in the developer command prompt, run:
+    ```
+    vcpkg add artifact cmake
+    ```
+1. Open Visual Studio and use "Open Folder" on the directory containing the vcxproj. Verify that vcpkg activation happens in the terminal.
