@@ -71,10 +71,9 @@ namespace vcpkg
 
     bool operator==(const DependencyOverride& lhs, const DependencyOverride& rhs)
     {
-        if (lhs.version_scheme != rhs.version_scheme) return false;
-        if (lhs.port_version != rhs.port_version) return false;
         if (lhs.name != rhs.name) return false;
         if (lhs.version != rhs.version) return false;
+        if (lhs.scheme != rhs.scheme) return false;
         return lhs.extra_info == rhs.extra_info;
     }
     bool operator!=(const DependencyOverride& lhs, const DependencyOverride& rhs);
@@ -758,22 +757,6 @@ namespace vcpkg
             return t;
         }
 
-        static void visit_impl(const LocalizedString& type_name,
-                               Json::Reader& r,
-                               const Json::Object& obj,
-                               std::string& name,
-                               std::string& version,
-                               VersionScheme& version_scheme,
-                               int& port_version)
-        {
-            r.required_object_field(type_name, obj, NAME, name, Json::PackageNameDeserializer::instance);
-
-            auto schemed_version = visit_required_schemed_deserializer(type_name, r, obj, true);
-            version = schemed_version.version.text();
-            version_scheme = schemed_version.scheme;
-            port_version = schemed_version.version.port_version();
-        }
-
         virtual Optional<DependencyOverride> visit_object(Json::Reader& r, const Json::Object& obj) const override
         {
             DependencyOverride dep;
@@ -786,7 +769,11 @@ namespace vcpkg
                 }
             }
 
-            visit_impl(type_name(), r, obj, dep.name, dep.version, dep.version_scheme, dep.port_version);
+            const auto type_name = this->type_name();
+            r.required_object_field(type_name, obj, NAME, dep.name, Json::PackageNameDeserializer::instance);
+            auto schemed_version = visit_required_schemed_deserializer(type_name, r, obj, true);
+            dep.version = std::move(schemed_version.version);
+            dep.scheme = schemed_version.scheme;
 
             return dep;
         }
@@ -1823,7 +1810,7 @@ namespace vcpkg
 
             dep_obj.insert(DependencyOverrideDeserializer::NAME, Json::Value::string(dep.name));
 
-            serialize_schemed_version(dep_obj, dep.version_scheme, dep.version, dep.port_version);
+            serialize_schemed_version(dep_obj, dep.scheme, dep.version.text(), dep.version.port_version());
         };
 
         auto serialize_license =

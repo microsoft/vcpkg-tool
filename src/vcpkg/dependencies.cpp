@@ -2007,7 +2007,7 @@ namespace vcpkg
             provider, bprovider, oprovider, var_provider, options.host_triplet, options.packages_dir);
         for (auto&& o : overrides)
         {
-            vpg.add_override(o.name, {o.version, o.port_version});
+            vpg.add_override(o.name, o.version);
         }
 
         vpg.solve_with_roots(deps, toplevel);
