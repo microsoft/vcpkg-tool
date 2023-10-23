@@ -161,6 +161,10 @@ namespace vcpkg
             "local.h",
             "slice.h",
             "platform.h",
+            "base64.h",
+            "Makefile.am",
+            "Makefile.in",
+            "Makefile",
         };
         static constexpr Span<const StringLiteral> restricted_lists[] = {
             restricted_sys_filenames, restricted_crt_filenames, restricted_general_filenames};
