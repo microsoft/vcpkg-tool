@@ -30,8 +30,6 @@ namespace vcpkg
         const auto portsdiff = find_portsdiff(paths, git_commit_id_for_previous_snapshot, "HEAD");
 
         std::string result;
-        result.append("vcpkg (FROM - TO)\n");
-        result.append("---\n");
         auto total_port_count = paths.get_filesystem()
                                     .get_directories_non_recursive(paths.builtin_ports_directory(), VCPKG_LINE_INFO)
                                     .size();
@@ -82,7 +80,7 @@ namespace vcpkg
             result.append("<details>\n");
             fmt::format_to(std::back_inserter(result),
                            "<summary><b>The following {} ports have been updated:</b></summary>\n\n",
-                           portsdiff.added_ports.size());
+                           portsdiff.updated_ports.size());
             result.append("|port|original version|new version|\n");
             result.append("|---|---|---|\n");
             for (auto&& updated_port : portsdiff.updated_ports)
