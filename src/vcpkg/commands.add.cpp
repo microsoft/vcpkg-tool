@@ -142,7 +142,10 @@ namespace vcpkg
                             dep->features.push_back(feature);
                         }
                     }
-                    dep->default_features = !is_core;
+                    if (!is_core)
+                    {
+                        dep->default_features = true;
+                    }
                 }
             }
 
