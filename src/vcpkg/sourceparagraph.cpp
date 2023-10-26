@@ -1271,14 +1271,14 @@ namespace vcpkg
 
             if (auto configuration = obj.get(VCPKG_CONFIGURATION))
             {
-                if (!configuration->is_object())
+                if (configuration->is_object())
                 {
-                    r.add_generic_error(type_name(),
-                                        msg::format(msgJsonFieldNotObject, msg::json_field = VCPKG_CONFIGURATION));
+                    spgh.vcpkg_configuration.emplace(configuration->object(VCPKG_LINE_INFO));
                 }
                 else
                 {
-                    spgh.vcpkg_configuration = make_optional(configuration->object(VCPKG_LINE_INFO));
+                    r.add_generic_error(type_name(),
+                                        msg::format(msgJsonFieldNotObject, msg::json_field = VCPKG_CONFIGURATION));
                 }
             }
 
