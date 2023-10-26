@@ -390,20 +390,14 @@ namespace
         StringView origin,
         StringView spdx_location,
         MessageSink& warning_sink,
-        ParseExpected<SourceControlFile> (*do_parse)(StringView, const Json::Object&, MessageSink&))
+        ExpectedL<std::unique_ptr<SourceControlFile>> (*do_parse)(StringView, const Json::Object&, MessageSink&))
     {
         StatsTimer timer(g_load_ports_stats);
-        return Json::parse_object(text, origin)
-            .then([&](Json::Object&& object) -> ExpectedL<SourceControlFileAndLocation> {
-                auto maybe_parsed = do_parse(origin, std::move(object), warning_sink);
-                if (auto parsed = maybe_parsed.get())
-                {
-                    return SourceControlFileAndLocation{
-                        std::move(*parsed), origin.to_string(), spdx_location.to_string()};
-                }
-
-                return ToLocalizedString(std::move(maybe_parsed).error());
+        return Json::parse_object(text, origin).then([&](Json::Object&& object) {
+            return do_parse(origin, std::move(object), warning_sink).map([&](std::unique_ptr<SourceControlFile>&& scf) {
+                return SourceControlFileAndLocation{std::move(scf), spdx_location.to_string()};
             });
+        });
     }
 }
 

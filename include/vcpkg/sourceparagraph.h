@@ -70,9 +70,8 @@ namespace vcpkg
     struct DependencyOverride
     {
         std::string name;
-        std::string version;
-        int port_version = 0;
-        VersionScheme version_scheme = VersionScheme::String;
+        Version version;
+        VersionScheme scheme;
 
         Json::Object extra_info;
 
@@ -158,13 +157,13 @@ namespace vcpkg
     struct SourceControlFile
     {
         SourceControlFile clone() const;
-        static ParseExpected<SourceControlFile> parse_project_manifest_object(StringView origin,
-                                                                              const Json::Object& object,
-                                                                              MessageSink& warnings_sink);
+        static ExpectedL<std::unique_ptr<SourceControlFile>> parse_project_manifest_object(StringView origin,
+                                                                                           const Json::Object& object,
+                                                                                           MessageSink& warnings_sink);
 
-        static ParseExpected<SourceControlFile> parse_port_manifest_object(StringView origin,
-                                                                           const Json::Object& object,
-                                                                           MessageSink& warnings_sink);
+        static ExpectedL<std::unique_ptr<SourceControlFile>> parse_port_manifest_object(StringView origin,
+                                                                                        const Json::Object& object,
+                                                                                        MessageSink& warnings_sink);
 
         static ParseExpected<SourceControlFile> parse_control_file(StringView origin,
                                                                    std::vector<Paragraph>&& control_paragraphs);

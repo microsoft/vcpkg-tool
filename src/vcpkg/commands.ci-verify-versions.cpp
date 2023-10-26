@@ -66,7 +66,8 @@ namespace
                 for (StringView control_file : {"CONTROL", "vcpkg.json"})
                 {
                     auto treeish = Strings::concat(version_entry.git_tree, ':', control_file);
-                    auto maybe_file = paths.git_show(Strings::concat(treeish), paths.root / ".git");
+                    auto maybe_file = paths.git_show(Strings::concat(treeish),
+                                                     paths.versions_dot_git_dir().value_or_exit(VCPKG_LINE_INFO));
                     if (!maybe_file) continue;
 
                     const auto& file = maybe_file.value_or_exit(VCPKG_LINE_INFO);

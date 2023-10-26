@@ -942,7 +942,7 @@
   "PortBugSetDllsWithoutExports": "沒有匯出的 DLL 可能是組建指令碼中的錯誤。如果這是想要的，請在設定檔中新增下列行:\n已啟用 set(VCPKG_POLICY_DLLS_WITHOUT_EXPORTS)\n下列 DLL 沒有匯出:",
   "PortDependencyConflict": "連接埠 {package_name} 具有下列不支援的相依性:",
   "PortDoesNotExist": "{package_name} 不存在",
-  "PortMissingManifest2": "{package_name} port manifest missing (no vcpkg.json or CONTROL file)",
+  "PortMissingManifest2": "{package_name} 連接埠清單遺失 (沒有 vcpkg.json 或 CONTROL 檔案)",
   "PortNotInBaseline": "基準不包含連接埠 {package_name} 的項目",
   "PortSupportsField": "(supports: \"{supports_expression}\")",
   "PortVersionConflict": "下列套件與其連接埠版本不同:",

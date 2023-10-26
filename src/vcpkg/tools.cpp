@@ -905,6 +905,22 @@ namespace vcpkg
 
     ExpectedL<Path> find_system_tar(const ReadOnlyFilesystem& fs)
     {
+#if defined(_WIN32)
+        const auto& maybe_system32 = get_system32();
+        if (auto system32 = maybe_system32.get())
+        {
+            auto shipped_with_windows = *system32 / "tar.exe";
+            if (fs.is_regular_file(shipped_with_windows))
+            {
+                return shipped_with_windows;
+            }
+        }
+        else
+        {
+            return maybe_system32.error();
+        }
+#endif // ^^^ _WIN32
+
         const auto tools = fs.find_from_PATH(Tools::TAR);
         if (tools.empty())
         {
