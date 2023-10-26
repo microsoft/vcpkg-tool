@@ -395,7 +395,7 @@ namespace
         StatsTimer timer(g_load_ports_stats);
         return Json::parse_object(text, origin).then([&](Json::Object&& object) {
             return do_parse(origin, std::move(object), warning_sink).map([&](std::unique_ptr<SourceControlFile>&& scf) {
-                return SourceControlFileAndLocation{std::move(scf), spdx_location.to_string()};
+                return SourceControlFileAndLocation{std::move(scf), origin.to_string(), spdx_location.to_string()};
             });
         });
     }
