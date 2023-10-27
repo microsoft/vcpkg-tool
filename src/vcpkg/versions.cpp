@@ -8,9 +8,9 @@
 
 namespace vcpkg
 {
-    Version::Version() noexcept : m_text("0.0.0"), m_port_version(0) { }
-    Version::Version(std::string&& value, int port_version) : m_text(std::move(value)), m_port_version(port_version) { }
-    Version::Version(const std::string& value, int port_version) : m_text(value), m_port_version(port_version) { }
+    Version::Version() noexcept : text("0.0.0"), port_version(0) { }
+    Version::Version(std::string&& value, int port_version) : text(std::move(value)), port_version(port_version) { }
+    Version::Version(const std::string& value, int port_version) : text(value), port_version(port_version) { }
 
     std::string Version::to_string() const
     {
@@ -21,22 +21,23 @@ namespace vcpkg
 
     void Version::to_string(std::string& out) const
     {
-        out.append(m_text);
-        if (m_port_version)
+        out.append(text);
+        if (port_version)
         {
-            fmt::format_to(std::back_inserter(out), "#{}", m_port_version);
+            fmt::format_to(std::back_inserter(out), "#{}", port_version);
         }
     }
 
     bool operator==(const Version& left, const Version& right)
     {
-        return left.m_port_version == right.m_port_version && left.m_text == right.m_text;
+        return left.text == right.text
+            && left.port_version == right.port_version;
     }
     bool operator!=(const Version& left, const Version& right) { return !(left == right); }
 
     bool VersionMapLess::operator()(const Version& left, const Version& right) const
     {
-        auto cmp = left.m_text.compare(right.m_text);
+        auto cmp = left.text.compare(right.text);
         if (cmp < 0)
         {
             return true;
@@ -46,7 +47,7 @@ namespace vcpkg
             return false;
         }
 
-        return left.m_port_version < right.m_port_version;
+        return left.port_version < right.port_version;
     }
 
     VersionDiff::VersionDiff() noexcept : left(), right() { }
@@ -378,20 +379,20 @@ namespace vcpkg
     {
         if (sa == VersionScheme::String && sb == VersionScheme::String)
         {
-            return a.text() == b.text() ? VerComp::eq : VerComp::unk;
+            return a.text == b.text ? VerComp::eq : VerComp::unk;
         }
 
         if (sa == VersionScheme::Date && sb == VersionScheme::Date)
         {
-            return compare(DateVersion::try_parse(a.text()).value_or_exit(VCPKG_LINE_INFO),
-                           DateVersion::try_parse(b.text()).value_or_exit(VCPKG_LINE_INFO));
+            return compare(DateVersion::try_parse(a.text).value_or_exit(VCPKG_LINE_INFO),
+                           DateVersion::try_parse(b.text).value_or_exit(VCPKG_LINE_INFO));
         }
 
         if ((sa == VersionScheme::Semver || sa == VersionScheme::Relaxed) &&
             (sb == VersionScheme::Semver || sb == VersionScheme::Relaxed))
         {
-            return compare(DotVersion::try_parse(a.text(), sa).value_or_exit(VCPKG_LINE_INFO),
-                           DotVersion::try_parse(b.text(), sb).value_or_exit(VCPKG_LINE_INFO));
+            return compare(DotVersion::try_parse(a.text, sa).value_or_exit(VCPKG_LINE_INFO),
+                           DotVersion::try_parse(b.text, sb).value_or_exit(VCPKG_LINE_INFO));
         }
 
         return VerComp::unk;
@@ -414,7 +415,7 @@ namespace vcpkg
 
     VerComp compare_versions(VersionScheme sa, const Version& a, VersionScheme sb, const Version& b)
     {
-        return portversion_vercomp(compare_version_texts(sa, a, sb, b), a.port_version(), b.port_version());
+        return portversion_vercomp(compare_version_texts(sa, a, sb, b), a.port_version, b.port_version);
     }
 
     VerComp compare(const DateVersion& a, const DateVersion& b)
@@ -429,27 +430,27 @@ namespace vcpkg
 
     VerComp compare_any(const Version& a, const Version& b)
     {
-        if (a.text() == b.text())
+        if (a.text == b.text)
         {
-            return integer_vercomp(a.port_version(), b.port_version());
+            return integer_vercomp(a.port_version, b.port_version);
         }
-        auto date_a = DateVersion::try_parse(a.text());
+        auto date_a = DateVersion::try_parse(a.text);
         if (auto p_date_a = date_a.get())
         {
-            auto date_b = DateVersion::try_parse(b.text());
+            auto date_b = DateVersion::try_parse(b.text);
             if (auto p_date_b = date_b.get())
             {
-                return portversion_vercomp(compare(*p_date_a, *p_date_b), a.port_version(), b.port_version());
+                return portversion_vercomp(compare(*p_date_a, *p_date_b), a.port_version, b.port_version);
             }
         }
 
-        auto dot_a = DotVersion::try_parse_relaxed(a.text());
+        auto dot_a = DotVersion::try_parse_relaxed(a.text);
         if (auto p_dot_a = dot_a.get())
         {
-            auto dot_b = DotVersion::try_parse_relaxed(b.text());
+            auto dot_b = DotVersion::try_parse_relaxed(b.text);
             if (auto p_dot_b = dot_b.get())
             {
-                return portversion_vercomp(compare(*p_dot_a, *p_dot_b), a.port_version(), b.port_version());
+                return portversion_vercomp(compare(*p_dot_a, *p_dot_b), a.port_version, b.port_version);
             }
         }
         return VerComp::unk;

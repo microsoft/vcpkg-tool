@@ -1319,9 +1319,9 @@ namespace vcpkg
             auto maybe_schemed_version = visit_optional_schemed_deserializer(type_name(), r, obj, false);
             if (auto p = maybe_schemed_version.get())
             {
-                spgh.raw_version = p->version.text();
+                spgh.raw_version = p->version.text;
                 spgh.version_scheme = p->scheme;
-                spgh.port_version = p->version.port_version();
+                spgh.port_version = p->version.port_version;
             }
             else
             {
@@ -1348,9 +1348,9 @@ namespace vcpkg
 
             r.required_object_field(type_name(), obj, NAME, spgh.name, Json::PackageNameDeserializer::instance);
             auto schemed_version = visit_required_schemed_deserializer(type_name(), r, obj, false);
-            spgh.raw_version = schemed_version.version.text();
+            spgh.raw_version = schemed_version.version.text;
             spgh.version_scheme = schemed_version.scheme;
-            spgh.port_version = schemed_version.version.port_version();
+            spgh.port_version = schemed_version.version.port_version;
 
             return visit_object_common(obj, spgh, r, control_file);
         }
@@ -1808,7 +1808,7 @@ namespace vcpkg
 
             dep_obj.insert(DependencyOverrideDeserializer::NAME, Json::Value::string(dep.name));
 
-            serialize_schemed_version(dep_obj, dep.scheme, dep.version.text(), dep.version.port_version());
+            serialize_schemed_version(dep_obj, dep.scheme, dep.version.text, dep.version.port_version);
         };
 
         auto serialize_license =

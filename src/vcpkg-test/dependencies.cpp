@@ -72,8 +72,8 @@ struct MockVersionedPortfileProvider : IVersionedPortfileProvider
             auto scf = std::make_unique<SourceControlFile>();
             auto core = std::make_unique<SourceParagraph>();
             core->name = name;
-            core->raw_version = version.text();
-            core->port_version = version.port_version();
+            core->raw_version = version.text;
+            core->port_version = version.port_version;
             core->version_scheme = scheme;
             scf->core_paragraph = std::move(core);
             it2 = version_map.emplace(version, SourceControlFileAndLocation{std::move(scf), name}).first;
@@ -121,8 +121,8 @@ static void check_name_and_version(const InstallPlanAction& ipa,
     check_name_and_features(ipa, name, features);
     if (auto scfl = ipa.source_control_file_and_location.get())
     {
-        CHECK(scfl->source_control_file->core_paragraph->raw_version == v.text());
-        CHECK(scfl->source_control_file->core_paragraph->port_version == v.port_version());
+        CHECK(scfl->source_control_file->core_paragraph->raw_version == v.text);
+        CHECK(scfl->source_control_file->core_paragraph->port_version == v.port_version);
     }
 }
 
@@ -195,8 +195,8 @@ struct MockOverlayProvider : IOverlayProvider
             auto scf = std::make_unique<SourceControlFile>();
             auto core = std::make_unique<SourceParagraph>();
             core->name = name;
-            core->raw_version = version.text();
-            core->port_version = version.port_version();
+            core->raw_version = std::move(version.text);
+            core->port_version = version.port_version;
             core->version_scheme = scheme;
             scf->core_paragraph = std::move(core);
             it = mappings.emplace(name, SourceControlFileAndLocation{std::move(scf), name}).first;
