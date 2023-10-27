@@ -139,8 +139,7 @@ namespace vcpkg
                 const auto& control_paragraph = *control_file.source_control_file->core_paragraph;
                 auto control_version = Version(control_paragraph.raw_version, control_paragraph.port_version);
                 const auto& installed_paragraph = (*installed_status)->package;
-                auto installed_version = Version(installed_paragraph.version, installed_paragraph.port_version);
-                if (control_version == installed_version)
+                if (control_version == installed_paragraph.version)
                 {
                     up_to_date.push_back(spec);
                 }

@@ -106,7 +106,8 @@ namespace vcpkg
         }
         return ret;
     }
-    Version InstalledPackageView::version() const { return {core->package.version, core->package.port_version}; }
+
+    const Version& InstalledPackageView::version() const { return core->package.version; }
 
     std::vector<PackageSpec> InstalledPackageView::dependencies() const
     {

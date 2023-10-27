@@ -31,11 +31,9 @@ namespace vcpkg
             {
                 const auto& latest_pgh = *p_scfl->source_control_file->core_paragraph;
                 auto latest_version = Version(latest_pgh.raw_version, latest_pgh.port_version);
-                auto installed_version = Version(pgh->package.version, pgh->package.port_version);
-                if (latest_version != installed_version)
+                if (latest_version != pgh->package.version)
                 {
-                    output.push_back(
-                        {pgh->package.spec, VersionDiff(std::move(installed_version), std::move(latest_version))});
+                    output.push_back({pgh->package.spec, VersionDiff(pgh->package.version, std::move(latest_version))});
                 }
             }
             else

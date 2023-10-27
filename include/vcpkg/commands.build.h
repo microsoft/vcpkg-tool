@@ -230,7 +230,7 @@ namespace vcpkg
         LinkageType crt_linkage = LinkageType::DYNAMIC;
         LinkageType library_linkage = LinkageType::DYNAMIC;
 
-        Optional<std::string> version;
+        Optional<Version> version;
 
         BuildPolicies policies;
     };

@@ -1,6 +1,7 @@
 #include <vcpkg/base/format.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/parse.h>
+#include <vcpkg/base/strings.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/util.h>
 
@@ -8,9 +9,14 @@
 
 namespace vcpkg
 {
-    Version::Version() noexcept : text("0.0.0"), port_version(0) { }
-    Version::Version(std::string&& value, int port_version) : text(std::move(value)), port_version(port_version) { }
-    Version::Version(const std::string& value, int port_version) : text(value), port_version(port_version) { }
+    Version::Version() noexcept : text(), port_version(0) { }
+    Version::Version(std::string&& value, int port_version) noexcept
+        : text(std::move(value)), port_version(port_version)
+    {
+    }
+    Version::Version(StringView value, int port_version) : text(value.data(), value.size()), port_version(port_version)
+    {
+    }
 
     std::string Version::to_string() const
     {
@@ -28,10 +34,40 @@ namespace vcpkg
         }
     }
 
+    ExpectedL<Version> Version::parse(StringView content)
+    {
+        const auto hash = std::find(content.begin(), content.end(), '#');
+        auto port_version_text_start = hash;
+        if (port_version_text_start != content.end())
+        {
+            ++port_version_text_start;
+        }
+
+        return parse(StringView{content.begin(), hash}, StringView{port_version_text_start, content.end()});
+    }
+
+    ExpectedL<Version> parse(StringView version_text, StringView port_version_text) {
+        int port_version = 0;
+        if (!port_version_text.empty())
+        {
+            auto maybe_parsed = Strings::strto<int>(port_version_text);
+            auto parsed = maybe_parsed.get();
+            if (parsed && *parsed >= 0)
+            {
+                port_version = *parsed;
+            }
+            else
+            {
+                return msg::format_error(msgPortVersionNonnegativeInteger, msg::value = port_version_text);
+            }
+        }
+
+        return Version{version_text, port_version};
+    }
+
     bool operator==(const Version& left, const Version& right)
     {
-        return left.text == right.text
-            && left.port_version == right.port_version;
+        return left.text == right.text && left.port_version == right.port_version;
     }
     bool operator!=(const Version& left, const Version& right) { return !(left == right); }
 

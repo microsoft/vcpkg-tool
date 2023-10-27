@@ -10,11 +10,17 @@ namespace vcpkg
     struct Version
     {
         Version() noexcept;
-        Version(std::string&& value, int port_version);
-        Version(const std::string& value, int port_version);
+        Version(std::string&& value, int port_version) noexcept;
+        Version(StringView value, int port_version);
+        template<int N>
+        Version(const char (&str)[N], int port_version) : Version(StringLiteral{str}, port_version)
+        {
+        }
 
         std::string to_string() const;
         void to_string(std::string& out) const;
+        static ExpectedL<Version> parse(StringView content);
+        static ExpectedL<Version> parse(StringView version_text, StringView port_version_text);
 
         friend bool operator==(const Version& left, const Version& right);
         friend bool operator!=(const Version& left, const Version& right);

@@ -4,8 +4,7 @@
 
 #include <vcpkg/paragraphs.h>
 
-namespace Strings = vcpkg::Strings;
-using vcpkg::Paragraph;
+using namespace vcpkg;
 
 namespace
 {
@@ -216,7 +215,25 @@ TEST_CASE ("BinaryParagraph construct minimum", "[paragraph]")
     });
 
     REQUIRE(pgh.spec.name() == "zlib");
-    REQUIRE(pgh.version == "1.2.8");
+    REQUIRE(pgh.version == Version{"1.2.8", 0});
+    REQUIRE(pgh.maintainers.empty());
+    REQUIRE(pgh.description.empty());
+    REQUIRE(pgh.spec.triplet().canonical_name() == "x86-windows");
+    REQUIRE(pgh.dependencies.size() == 0);
+}
+
+TEST_CASE ("BinaryParagraph construct minimum with port-version", "[paragraph]")
+{
+    auto pgh = test_make_binary_paragraph({
+        {"Package", "zlib"},
+        {"Version", "1.2.8"},
+        {"Port-Version", "2"},
+        {"Architecture", "x86-windows"},
+        {"Multi-Arch", "same"},
+    });
+
+    REQUIRE(pgh.spec.name() == "zlib");
+    REQUIRE(pgh.version == Version{"1.2.8", 2});
     REQUIRE(pgh.maintainers.empty());
     REQUIRE(pgh.description.empty());
     REQUIRE(pgh.spec.triplet().canonical_name() == "x86-windows");
@@ -236,7 +253,7 @@ TEST_CASE ("BinaryParagraph construct maximum", "[paragraph]")
     });
 
     REQUIRE(pgh.spec.name() == "s");
-    REQUIRE(pgh.version == "v");
+    REQUIRE(pgh.version == Version{"v", 0});
     REQUIRE(pgh.maintainers.size() == 1);
     REQUIRE(pgh.maintainers[0] == "m");
     REQUIRE(pgh.description.size() == 1);

@@ -2513,6 +2513,10 @@ DECLARE_MESSAGE(PortVersionMultipleSpecification,
                 (),
                 "",
                 "\"port_version\" cannot be combined with an embedded '#' in the version")
+DECLARE_MESSAGE(PortVersionNonnegativeInteger,
+                (msg::value),
+                "{value} is what the user entered",
+                "port-version (after the '#') must be a non-negative integer, but was {value}")
 DECLARE_MESSAGE(PrebuiltPackages, (), "", "There are packages that have not been built. To build them run:")
 DECLARE_MESSAGE(PreviousIntegrationFileRemains, (), "", "Previous integration file was not removed.")
 DECLARE_MESSAGE(ProgramReturnedNonzeroExitCode,
