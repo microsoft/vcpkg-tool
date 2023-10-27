@@ -1,4 +1,4 @@
-#include <catch2/catch.hpp>
+#include <vcpkg-test/util.h>
 
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/parse.h>
@@ -9,8 +9,6 @@
 
 #include <ostream>
 #include <utility>
-
-#include <vcpkg-test/util.h>
 
 using namespace vcpkg;
 

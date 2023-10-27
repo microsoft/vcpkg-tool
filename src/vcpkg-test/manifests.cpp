@@ -1,4 +1,4 @@
-#include <catch2/catch.hpp>
+#include <vcpkg-test/util.h>
 
 #include <vcpkg/base/fwd/message_sinks.h>
 
@@ -9,8 +9,6 @@
 #include <vcpkg/sourceparagraph.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
-
-#include <vcpkg-test/util.h>
 
 using namespace vcpkg;
 using namespace vcpkg::Paragraphs;
