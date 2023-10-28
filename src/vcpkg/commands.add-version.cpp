@@ -420,14 +420,14 @@ namespace vcpkg
             {
                 // check if manifest file is property formatted
 
-                if (scf->control_location.filename() == "vcpkg.json")
+                if (scf->control_path.filename() == "vcpkg.json")
                 {
-                    const auto current_file_content = fs.read_contents(scf->control_location, VCPKG_LINE_INFO);
+                    const auto current_file_content = fs.read_contents(scf->control_path, VCPKG_LINE_INFO);
                     const auto json = serialize_manifest(*scf->source_control_file);
                     const auto formatted_content = Json::stringify(json);
                     if (current_file_content != formatted_content)
                     {
-                        auto command_line = fmt::format("vcpkg format-manifest {}", scf->control_location);
+                        auto command_line = fmt::format("vcpkg format-manifest {}", scf->control_path);
                         msg::println_error(
                             msg::format(msgAddVersionPortHasImproperFormat, msg::package_name = port_name)
                                 .append_raw('\n')

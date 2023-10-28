@@ -206,10 +206,10 @@ namespace vcpkg
         Version to_version() const { return source_control_file->to_version(); }
         VersionScheme scheme() const { return source_control_file->core_paragraph->version_scheme; }
         SchemedVersion schemed_version() const { return {scheme(), to_version()}; }
-        Path port_directory() const { return control_location.parent_path(); }
+        Path port_directory() const { return control_path.parent_path(); }
 
         std::unique_ptr<SourceControlFile> source_control_file;
-        Path control_location;
+        Path control_path;
 
         /// Should model SPDX PackageDownloadLocation. Empty implies NOASSERTION.
         /// See https://spdx.github.io/spdx-spec/package-information/#77-package-download-location-field

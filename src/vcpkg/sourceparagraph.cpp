@@ -1439,7 +1439,7 @@ namespace vcpkg
     }
 
     template<class ManifestDeserializerType>
-    static ExpectedL<std::unique_ptr<SourceControlFile>> parse_manifest_object_impl(StringView origin,
+    static ExpectedL<std::unique_ptr<SourceControlFile>> parse_manifest_object_impl(StringView control_path,
                                                                                     const Json::Object& manifest,
                                                                                     MessageSink& warnings_sink)
     {
@@ -1449,13 +1449,14 @@ namespace vcpkg
 
         for (auto&& w : reader.warnings())
         {
-            warnings_sink.print(Color::warning, LocalizedString::from_raw(Strings::concat(origin, ": ", w, '\n')));
+            warnings_sink.print(Color::warning,
+                                LocalizedString::from_raw(Strings::concat(control_path, ": ", w, '\n')));
         }
 
         if (!reader.errors().empty())
         {
             ParseControlErrorInfo err;
-            err.name = origin.to_string();
+            err.name = control_path.to_string();
             err.other_errors = std::move(reader.errors());
             return LocalizedString::from_raw(err.to_string());
         }
@@ -1470,15 +1471,15 @@ namespace vcpkg
     }
 
     ExpectedL<std::unique_ptr<SourceControlFile>> SourceControlFile::parse_project_manifest_object(
-        StringView origin, const Json::Object& manifest, MessageSink& warnings_sink)
+        StringView control_path, const Json::Object& manifest, MessageSink& warnings_sink)
     {
-        return parse_manifest_object_impl<ProjectManifestDeserializer>(origin, manifest, warnings_sink);
+        return parse_manifest_object_impl<ProjectManifestDeserializer>(control_path, manifest, warnings_sink);
     }
 
     ExpectedL<std::unique_ptr<SourceControlFile>> SourceControlFile::parse_port_manifest_object(
-        StringView origin, const Json::Object& manifest, MessageSink& warnings_sink)
+        StringView control_path, const Json::Object& manifest, MessageSink& warnings_sink)
     {
-        return parse_manifest_object_impl<PortManifestDeserializer>(origin, manifest, warnings_sink);
+        return parse_manifest_object_impl<PortManifestDeserializer>(control_path, manifest, warnings_sink);
     }
 
     ExpectedL<Unit> SourceControlFile::check_against_feature_flags(const Path& origin,

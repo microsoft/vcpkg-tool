@@ -381,62 +381,24 @@ namespace vcpkg::Paragraphs
         return fs.exists(maybe_directory / "CONTROL", IgnoreErrors{}) ||
                fs.exists(maybe_directory / "vcpkg.json", IgnoreErrors{});
     }
-} // namespace vcpkg::Paragraphs
 
-namespace
-{
-    ExpectedL<SourceControlFileAndLocation> try_load_any_manifest_text(
-        StringView text,
-        StringView origin,
-        StringView spdx_location,
-        MessageSink& warning_sink,
-        ExpectedL<std::unique_ptr<SourceControlFile>> (*do_parse)(StringView, const Json::Object&, MessageSink&))
+    ExpectedL<std::unique_ptr<SourceControlFile>> try_load_port_manifest_text(StringView text,
+                                                                              StringView control_path,
+                                                                              MessageSink& warning_sink)
     {
         StatsTimer timer(g_load_ports_stats);
-        return Json::parse_object(text, origin).then([&](Json::Object&& object) {
-            return do_parse(origin, std::move(object), warning_sink).map([&](std::unique_ptr<SourceControlFile>&& scf) {
-                return SourceControlFileAndLocation{std::move(scf), origin.to_string(), spdx_location.to_string()};
-            });
+        return Json::parse_object(text, control_path).then([&](Json::Object&& object) {
+            return SourceControlFile::parse_port_manifest_object(control_path, std::move(object), warning_sink);
         });
     }
-}
 
-namespace vcpkg::Paragraphs
-{
-    ExpectedL<SourceControlFileAndLocation> try_load_project_manifest_text(StringView text,
-                                                                           StringView origin,
-                                                                           StringView spdx_location,
-                                                                           MessageSink& warning_sink)
-    {
-        return try_load_any_manifest_text(
-            text, origin, spdx_location, warning_sink, SourceControlFile::parse_project_manifest_object);
-    }
-
-    ExpectedL<SourceControlFileAndLocation> try_load_port_manifest_text(StringView text,
-                                                                        StringView origin,
-                                                                        StringView spdx_location,
-                                                                        MessageSink& warning_sink)
-    {
-        return try_load_any_manifest_text(
-            text, origin, spdx_location, warning_sink, SourceControlFile::parse_port_manifest_object);
-    }
-
-    ExpectedL<SourceControlFileAndLocation> try_load_control_file_text(StringView text,
-                                                                       StringView origin,
-                                                                       StringView spdx_location)
+    ExpectedL<std::unique_ptr<SourceControlFile>> try_load_control_file_text(StringView text, StringView control_path)
     {
         StatsTimer timer(g_load_ports_stats);
-        return parse_paragraphs(text, origin)
-            .then([&](std::vector<Paragraph>&& vector_pghs) -> ExpectedL<SourceControlFileAndLocation> {
-                auto maybe_parsed = SourceControlFile::parse_control_file(origin, std::move(vector_pghs));
-                if (auto parsed = maybe_parsed.get())
-                {
-                    return SourceControlFileAndLocation{
-                        std::move(*parsed), origin.to_string(), spdx_location.to_string()};
-                }
-
-                return ToLocalizedString(std::move(maybe_parsed).error());
-            });
+        return parse_paragraphs(text, control_path).then([&](std::vector<Paragraph>&& vector_pghs) {
+            return SourceControlFile::parse_control_file(control_path, std::move(vector_pghs))
+                .map_error(ToLocalizedString);
+        });
     }
 
     ExpectedL<SourceControlFileAndLocation> try_load_port(const ReadOnlyFilesystem& fs,
@@ -456,8 +418,10 @@ namespace vcpkg::Paragraphs
                 return msg::format_error(msgManifestConflict, msg::path = port_location.port_directory);
             }
 
-            return try_load_port_manifest_text(
-                manifest_contents, manifest_path, port_location.spdx_location, stdout_sink);
+            return try_load_port_manifest_text(manifest_contents, manifest_path, stdout_sink)
+                .map([&](std::unique_ptr<SourceControlFile>&& scf) {
+                    return SourceControlFileAndLocation{std::move(scf), manifest_path, port_location.spdx_location};
+                });
         }
 
         auto manifest_exists = ec != std::errc::no_such_file_or_directory;
@@ -471,7 +435,10 @@ namespace vcpkg::Paragraphs
         auto control_contents = fs.read_contents(control_path, ec);
         if (!ec)
         {
-            return try_load_control_file_text(control_contents, control_path, port_location.spdx_location);
+            return try_load_control_file_text(control_contents, control_path)
+                .map([&](std::unique_ptr<SourceControlFile>&& scf) {
+                    return SourceControlFileAndLocation{std::move(scf), control_path, port_location.spdx_location};
+                });
         }
 
         if (ec != std::errc::no_such_file_or_directory)

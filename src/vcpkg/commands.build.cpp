@@ -951,9 +951,9 @@ namespace vcpkg
             msg::println(msgLoadingOverlayTriplet, msg::path = triplet_file_path);
         }
 
-        if (!Strings::starts_with(scfl.control_location, paths.builtin_ports_directory()))
+        if (!Strings::starts_with(scfl.control_path, paths.builtin_ports_directory()))
         {
-            msg::println(msgInstallingFromLocation, msg::path = scfl.control_location);
+            msg::println(msgInstallingFromLocation, msg::path = scfl.control_path);
         }
 
         const ElapsedTimer timer;
