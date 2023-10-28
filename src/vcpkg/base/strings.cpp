@@ -476,7 +476,7 @@ bool Strings::contains_any(StringView source, View<StringView> to_find)
 {
     for (const auto& subject : to_find)
     {
-        auto found =std::search(
+        auto found = std::search(
             source.begin(), source.end(), std::boyer_moore_horspool_searcher(subject.begin(), subject.end()));
         if (found != source.end())
         {
