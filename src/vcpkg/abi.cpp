@@ -118,7 +118,7 @@ namespace vcpkg
     }
 
     static std::vector<std::pair<Path, std::string>> get_ports_files_and_contents(const Filesystem& fs,
-                                                                                  const Path& port_root_dir)
+                                                                                  Path port_root_dir)
     {
         auto files = fs.get_regular_files_recursive_lexically_proximate(port_root_dir, VCPKG_LINE_INFO);
 
@@ -131,7 +131,7 @@ namespace vcpkg
             {
                 continue;
             }
-            std::string contents = fs.read_contents(port_root_dir / file, VCPKG_LINE_INFO);
+            std::string contents = fs.read_contents(std::move(port_root_dir) / file, VCPKG_LINE_INFO);
             files_and_content.emplace_back(std::move(file), std::move(contents));
         }
         return files_and_content;
@@ -164,9 +164,7 @@ namespace vcpkg
             {
                 portfile_cmake_contents += contents;
             }
-
-            std::string path_str = std::move(port_file).generic_u8string();
-            abi_entries.emplace_back(std::move(path_str), Hash::get_string_sha256(contents));
+            abi_entries.emplace_back(std::move(port_file).generic_u8string(), Hash::get_string_sha256(contents));
         }
         return {std::move(abi_entries), std::move(portfile_cmake_contents)};
     }
@@ -405,7 +403,6 @@ namespace vcpkg
                           const StatusParagraphs& status_db)
     {
         auto& fs = paths.get_filesystem();
-        ElapsedTimer timer;
 
         // 1. system abi (ports.cmake/ PS version/ CMake version)
         static AbiEntries common_abi = get_common_abi(paths);
@@ -459,8 +456,6 @@ namespace vcpkg
 
             make_abi_tag(paths, action, std::move(dependency_abis), std::move(*private_abis[i].get()));
         }
-        msg::write_unlocalized_text_to_stdout(
-            Color::none, fmt::format("Calculated abi in {}\n", timer.elapsed().to_string()));
     }
 
     void AbiInfo::save_abi_files(const Filesystem& fs, Path&& dir) const
