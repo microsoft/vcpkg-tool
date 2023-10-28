@@ -654,19 +654,15 @@ namespace vcpkg
                                              const Toolset& toolset,
                                              std::vector<CMakeVariable>& out_vars)
     {
-        Util::Vectors::append(&out_vars,
-                              std::initializer_list<CMakeVariable>{
-                                  {"CMD", "BUILD"},
-                                  {"DOWNLOADS", paths.downloads},
-                                  {"TARGET_TRIPLET", triplet.canonical_name()},
-                                  {"TARGET_TRIPLET_FILE", paths.get_triplet_db().get_triplet_file_path(triplet)},
-                                  {"VCPKG_BASE_VERSION", VCPKG_BASE_VERSION_AS_STRING},
-                                  {"VCPKG_CONCURRENCY", std::to_string(get_concurrency())},
-                                  {"VCPKG_PLATFORM_TOOLSET", toolset.version.c_str()},
-                              });
+        out_vars.emplace_back("CMD", "BUILD");
+        out_vars.emplace_back("DOWNLOADS", paths.downloads);
+        out_vars.emplace_back("TARGET_TRIPLET", triplet.canonical_name());
+        out_vars.emplace_back("TARGET_TRIPLET_FILE", paths.get_triplet_db().get_triplet_file_path(triplet));
+        out_vars.emplace_back("VCPKG_BASE_VERSION", VCPKG_BASE_VERSION_AS_STRING);
+        out_vars.emplace_back("VCPKG_CONCURRENCY", std::to_string(get_concurrency()));
+        out_vars.emplace_back("VCPKG_PLATFORM_TOOLSET", toolset.version);
         // Make sure GIT could be found
-        const Path& git_exe_path = paths.get_tool_exe(Tools::GIT, stdout_sink);
-        out_vars.emplace_back("GIT", git_exe_path);
+        out_vars.emplace_back("GIT", paths.get_tool_exe(Tools::GIT, stdout_sink));
     }
 
     static CompilerInfo load_compiler_info(const VcpkgPaths& paths,
@@ -1800,10 +1796,13 @@ namespace vcpkg
                     break;
                 case VcpkgTripletVar::ENV_PASSTHROUGH:
                     passthrough_env_vars_tracked = Strings::split(variable_value, ';');
-                    Util::Vectors::append(&passthrough_env_vars, passthrough_env_vars_tracked);
+                    std::copy(passthrough_env_vars_tracked.begin(),
+                              passthrough_env_vars_tracked.end(),
+                              std::back_inserter(passthrough_env_vars));
                     break;
                 case VcpkgTripletVar::ENV_PASSTHROUGH_UNTRACKED:
-                    Util::Vectors::append(&passthrough_env_vars, Strings::split(variable_value, ';'));
+                    auto untracked_vars = Strings::split(variable_value, ';');
+                    std::move(untracked_vars.begin(), untracked_vars.end(), std::back_inserter(passthrough_env_vars));
                     break;
                 case VcpkgTripletVar::PUBLIC_ABI_OVERRIDE:
                     public_abi_override = variable_value.empty() ? nullopt : Optional<std::string>{variable_value};
