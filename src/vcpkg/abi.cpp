@@ -29,7 +29,8 @@ namespace vcpkg
     struct PrivateAbi
     {
         AbiEntries abi_entries;
-        std::string sbom_str;
+        std::vector<Json::Value> heuristic_resources;
+        AbiEntries port_files_abi;
     };
 
     static std::string grdk_hash(const Filesystem& fs, const PreBuildInfo& pre_build_info)
@@ -286,6 +287,7 @@ namespace vcpkg
 
         // portfile hashes/contents
         auto&& [port_files_abi, cmake_contents] = get_port_files(fs, scfl);
+        std::copy(port_files_abi.begin(), port_files_abi.end(), std::back_inserter(abi_entries));
 
         // cmake helpers (access to cmake helper hashes in cache not in parallel)
         for (auto&& helper : cmake_script_hashes)
@@ -308,11 +310,8 @@ namespace vcpkg
         // make sbom file
         std::vector<Json::Value> heuristic_resources{
             run_resource_heuristics(cmake_contents, scfl.source_control_file->core_paragraph->raw_version)};
-        std::string sbom_str = write_sbom(action, std::move(heuristic_resources), port_files_abi);
 
-        std::move(port_files_abi.begin(), port_files_abi.end(), std::back_inserter(abi_entries));
-
-        return PrivateAbi{std::move(abi_entries), std::move(sbom_str)};
+        return PrivateAbi{std::move(abi_entries), std::move(heuristic_resources), std::move(port_files_abi)};
     }
 
     // PRE: initialize_abi_tag() was called and returned true
@@ -347,7 +346,10 @@ namespace vcpkg
         std::string full_abi_info =
             Strings::join("", abi_tag_entries, [](const AbiEntry& p) { return p.key + " " + p.value + "\n"; });
         abi_info.package_abi = Hash::get_string_sha256(full_abi_info);
-        abi_info.abi_file_contents(std::move(full_abi_info), std::move(private_abi.sbom_str));
+
+        std::string sbom_str = write_sbom(action, std::move(private_abi.heuristic_resources), private_abi.port_files_abi);
+
+        abi_info.abi_file_contents(std::move(full_abi_info), std::move(sbom_str));
     }
 
     static AbiEntries get_dependency_abis(std::vector<InstallPlanAction>::const_iterator action_plan_begin,
