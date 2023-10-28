@@ -1,6 +1,6 @@
 #include <vcpkg/base/system-headers.h>
 
-#include <catch2/catch.hpp>
+#include <vcpkg-test/util.h>
 
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/strings.h>
