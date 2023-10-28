@@ -186,13 +186,13 @@ namespace
         return ret;
     }
 
-    NugetReference make_nugetref(const PackageSpec& spec, StringView raw_version, StringView abi_tag, StringView prefix)
+    NugetReference make_nugetref(const PackageSpec& spec, const Version& version, StringView abi_tag, StringView prefix)
     {
-        return {Strings::concat(prefix, spec.dir()), format_version_for_nugetref(raw_version, abi_tag)};
+        return {Strings::concat(prefix, spec.dir()), format_version_for_nugetref(version.text, abi_tag)};
     }
     NugetReference make_nugetref(const BinaryPackageReadInfo& info, StringView prefix)
     {
-        return make_nugetref(info.spec, info.raw_version, info.package_abi, prefix);
+        return make_nugetref(info.spec, info.version, info.package_abi, prefix);
     }
 
     void clean_prepare_dir(const Filesystem& fs, const Path& dir)
@@ -1770,7 +1770,7 @@ namespace vcpkg
                                  [&](std::string& out, StringView key) {
                                      if (key == "version")
                                      {
-                                         out += info.raw_version;
+                                         out += info.version.to_string();
                                      }
                                      else if (key == "name")
                                      {
@@ -2286,8 +2286,8 @@ namespace vcpkg
     BinaryPackageReadInfo::BinaryPackageReadInfo(const InstallPlanAction& action)
         : package_abi(action.package_abi().value_or_exit(VCPKG_LINE_INFO))
         , spec(action.spec)
-        , raw_version(action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO)
-                          .source_control_file->core_paragraph->raw_version)
+        , version(
+              action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_control_file->to_version())
         , package_dir(action.package_dir.value_or_exit(VCPKG_LINE_INFO))
     {
     }
@@ -2381,25 +2381,25 @@ ExpectedL<BinaryConfigParserState> vcpkg::parse_binary_provider_configs(const st
     return s;
 }
 
-std::string vcpkg::format_version_for_nugetref(StringView version, StringView abi_tag)
+std::string vcpkg::format_version_for_nugetref(StringView version_text, StringView abi_tag)
 {
     // this cannot use DotVersion::try_parse or DateVersion::try_parse,
     // since this is a subtly different algorithm
     // and ignores random extra stuff from the end
 
     ParsedExternalVersion parsed_version;
-    if (try_extract_external_date_version(parsed_version, version))
+    if (try_extract_external_date_version(parsed_version, version_text))
     {
         parsed_version.normalize();
         return fmt::format(
             "{}.{}.{}-vcpkg{}", parsed_version.major, parsed_version.minor, parsed_version.patch, abi_tag);
     }
 
-    if (!version.empty() && version[0] == 'v')
+    if (!version_text.empty() && version_text[0] == 'v')
     {
-        version = version.substr(1);
+        version_text = version_text.substr(1);
     }
-    if (try_extract_external_dot_version(parsed_version, version))
+    if (try_extract_external_dot_version(parsed_version, version_text))
     {
         parsed_version.normalize();
         return fmt::format(
@@ -2416,7 +2416,7 @@ std::string vcpkg::generate_nuspec(const Path& package_dir,
 {
     auto& spec = action.spec;
     auto& scf = *action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_control_file;
-    auto& version = scf.core_paragraph->raw_version;
+    auto& version = scf.core_paragraph->version;
     const auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
     const auto& compiler_info = abi_info.compiler_info.value_or_exit(VCPKG_LINE_INFO);
     auto ref = make_nugetref(action, id_prefix);
@@ -2572,7 +2572,7 @@ NugetReference vcpkg::make_nugetref(const InstallPlanAction& action, StringView 
 {
     return ::make_nugetref(action.spec,
                            action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO)
-                               .source_control_file->core_paragraph->raw_version,
+                               .source_control_file->core_paragraph->version,
                            action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi,
                            prefix);
 }

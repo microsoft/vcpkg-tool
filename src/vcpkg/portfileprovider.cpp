@@ -247,10 +247,10 @@ namespace vcpkg
                 auto all_ports = Paragraphs::load_all_registry_ports(m_fs, m_registry_set);
                 for (auto&& scfl : all_ports)
                 {
-                    auto port_name = scfl.source_control_file->core_paragraph->name;
-                    auto version = scfl.source_control_file->core_paragraph->to_version();
+                    // make version spec before moving from scfl
+                    auto version_spec = scfl.source_control_file->to_version_spec();
                     auto it = m_control_cache
-                                  .emplace(VersionSpec{port_name, version},
+                                  .emplace(std::move(version_spec),
                                            std::make_unique<SourceControlFileAndLocation>(std::move(scfl)))
                                   .first;
                     out.emplace(it->first.port_name, it->second.value_or_exit(VCPKG_LINE_INFO).get());

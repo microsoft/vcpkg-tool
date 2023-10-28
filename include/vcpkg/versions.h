@@ -3,6 +3,8 @@
 #include <vcpkg/base/fwd/format.h>
 #include <vcpkg/base/fwd/stringview.h>
 
+#include <vcpkg/fwd/versions.h>
+
 #include <vcpkg/base/expected.h>
 
 namespace vcpkg
@@ -49,25 +51,8 @@ namespace vcpkg
         bool operator()(const Version& left, const Version& right) const;
     };
 
-    enum class VerComp
-    {
-        unk = -2,
-        lt = -1, // these values are chosen to align with traditional -1/0/1 for less/equal/greater
-        eq = 0,
-        gt = 1,
-    };
-
     // converts a strcmp <0/0/>0 style integer into a VerComp
     VerComp int_to_vercomp(int comparison_result);
-
-    enum class VersionScheme
-    {
-        Missing,
-        Relaxed,
-        Semver,
-        Date,
-        String
-    };
 
     struct SchemedVersion
     {
@@ -150,12 +135,6 @@ namespace vcpkg
 
     VerComp compare_versions(const SchemedVersion& a, const SchemedVersion& b);
     VerComp compare_versions(VersionScheme sa, const Version& a, VersionScheme sb, const Version& b);
-
-    enum class VersionConstraintKind
-    {
-        None,
-        Minimum
-    };
 
     // this is for version parsing that isn't in vcpkg ports
     // stuff like tools, nuget, etc.

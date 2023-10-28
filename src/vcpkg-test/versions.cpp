@@ -6,7 +6,7 @@ using namespace vcpkg;
 
 TEST_CASE ("parse version", "[versions]")
 {
-    CHECK(Version::parse("").value_or_exit(VCPKG_LINE_INFO) == Version{"", 0});
+    CHECK(Version::parse("").value_or_exit(VCPKG_LINE_INFO) == Version{});
     CHECK(Version::parse("#1").value_or_exit(VCPKG_LINE_INFO) == Version{"", 1});
     CHECK(Version::parse("a#1").value_or_exit(VCPKG_LINE_INFO) == Version{"a", 1});
     CHECK(Version::parse("example").value_or_exit(VCPKG_LINE_INFO) == Version{"example", 0});

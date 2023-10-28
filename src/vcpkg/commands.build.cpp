@@ -770,7 +770,7 @@ namespace vcpkg
             {"_HOST_TRIPLET", action.host_triplet.canonical_name()},
             {"FEATURES", Strings::join(";", action.feature_list)},
             {"PORT", scf.core_paragraph->name},
-            {"VERSION", scf.core_paragraph->raw_version},
+            {"VERSION", scf.core_paragraph->version.text},
             {"VCPKG_USE_HEAD_VERSION", Util::Enum::to_bool(action.build_options.use_head_version) ? "1" : "0"},
             {"_VCPKG_DOWNLOAD_TOOL", to_string_view(action.build_options.download_tool)},
             {"_VCPKG_EDITABLE", Util::Enum::to_bool(action.build_options.editable) ? "1" : "0"},
@@ -1286,7 +1286,7 @@ namespace vcpkg
         abi_info.relative_port_files = std::move(files);
         abi_info.relative_port_hashes = std::move(hashes);
         abi_info.heuristic_resources.push_back(
-            run_resource_heuristics(portfile_cmake_contents, scf->core_paragraph->raw_version));
+            run_resource_heuristics(portfile_cmake_contents, scf->core_paragraph->version.text));
     }
 
     void compute_all_abis(const VcpkgPaths& paths,

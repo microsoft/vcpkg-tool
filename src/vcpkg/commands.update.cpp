@@ -29,11 +29,10 @@ namespace vcpkg
             auto maybe_scfl = provider.get_control_file(pgh->package.spec.name());
             if (auto p_scfl = maybe_scfl.get())
             {
-                const auto& latest_pgh = *p_scfl->source_control_file->core_paragraph;
-                auto latest_version = Version(latest_pgh.raw_version, latest_pgh.port_version);
+                const auto& latest_version = p_scfl->source_control_file->core_paragraph->version;
                 if (latest_version != pgh->package.version)
                 {
-                    output.push_back({pgh->package.spec, VersionDiff(pgh->package.version, std::move(latest_version))});
+                    output.push_back({pgh->package.spec, VersionDiff(pgh->package.version, latest_version)});
                 }
             }
             else

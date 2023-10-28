@@ -105,7 +105,7 @@ namespace vcpkg
                                      const std::string& abi_tag,
                                      std::vector<PackageSpec> deps)
         : spec(spgh.name, triplet)
-        , version(Version{spgh.raw_version, spgh.port_version})
+        , version(spgh.version)
         , description(spgh.description)
         , maintainers(spgh.maintainers)
         , feature()

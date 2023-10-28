@@ -46,7 +46,8 @@ namespace vcpkg
         return parse(StringView{content.begin(), hash}, StringView{port_version_text_start, content.end()});
     }
 
-    ExpectedL<Version> parse(StringView version_text, StringView port_version_text) {
+    ExpectedL<Version> Version::parse(StringView version_text, StringView port_version_text)
+    {
         int port_version = 0;
         if (!port_version_text.empty())
         {
