@@ -118,7 +118,7 @@ namespace vcpkg
     }
 
     static std::vector<std::pair<Path, std::string>> get_ports_files_and_contents(const Filesystem& fs,
-                                                                                  Path port_root_dir)
+                                                                                  const Path& port_root_dir)
     {
         auto files = fs.get_regular_files_recursive_lexically_proximate(port_root_dir, VCPKG_LINE_INFO);
 
@@ -131,7 +131,7 @@ namespace vcpkg
             {
                 continue;
             }
-            std::string contents = fs.read_contents(std::move(port_root_dir) / file, VCPKG_LINE_INFO);
+            std::string contents = fs.read_contents(port_root_dir / file, VCPKG_LINE_INFO);
             files_and_content.emplace_back(std::move(file), std::move(contents));
         }
         return files_and_content;
