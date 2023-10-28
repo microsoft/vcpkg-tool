@@ -1801,9 +1801,11 @@ namespace vcpkg
                               std::back_inserter(passthrough_env_vars));
                     break;
                 case VcpkgTripletVar::ENV_PASSTHROUGH_UNTRACKED:
+                {
                     auto untracked_vars = Strings::split(variable_value, ';');
                     std::move(untracked_vars.begin(), untracked_vars.end(), std::back_inserter(passthrough_env_vars));
                     break;
+                }
                 case VcpkgTripletVar::PUBLIC_ABI_OVERRIDE:
                     public_abi_override = variable_value.empty() ? nullopt : Optional<std::string>{variable_value};
                     break;
