@@ -317,6 +317,19 @@ namespace vcpkg
             std::move(abi_entries), std::move(heuristic_resources), std::move(port_files_abi), generate_random_UUID()};
     }
 
+    static std::string abi_entries_to_string(View<AbiEntry> abi_entries)
+    {
+        std::string out;
+        for (const auto& abi_entry : abi_entries)
+        {
+            out.append(abi_entry.key);
+            out.push_back(' ');
+            out.append(abi_entry.value);
+            out.push_back('\n');
+        }
+        return out;
+    }
+
     // PRE: initialize_abi_tag() was called and returned true
     static void make_abi_tag(const VcpkgPaths& paths,
                              InstallPlanAction& action,
@@ -346,8 +359,7 @@ namespace vcpkg
         }
 
         // fill out port abi
-        std::string full_abi_info =
-            Strings::join("", abi_tag_entries, [](const AbiEntry& p) { return p.key + " " + p.value + "\n"; });
+        std::string full_abi_info = abi_entries_to_string(abi_tag_entries);
         abi_info.package_abi = Hash::get_string_sha256(full_abi_info);
 
         std::string sbom_str = write_sbom(
