@@ -1,8 +1,5 @@
 #pragma once
 
-#include <future>
-#include <variant>
-
 namespace vcpkg
 {
     template<class T>
@@ -11,7 +8,7 @@ namespace vcpkg
         Lazy() : value(T()), initialized(false) { }
 
         template<class F>
-        const T& get_lazy(const F& f) const
+        T const& get_lazy(const F& f) const
         {
             if (!initialized)
             {
