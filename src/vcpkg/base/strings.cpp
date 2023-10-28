@@ -11,7 +11,6 @@
 #include <stdarg.h>
 
 #include <algorithm>
-#include <functional>
 #include <iterator>
 #include <string>
 #include <vector>
@@ -474,6 +473,9 @@ bool Strings::contains_any_ignoring_hash_comments(StringView source, View<String
 
 bool Strings::contains_any(StringView source, View<StringView> to_find)
 {
+#ifdef __APPLE__
+    return Util::any_of(to_find, [=](StringView s) { return Strings::contains(source, s); });
+#else
     for (const auto& subject : to_find)
     {
         auto found = std::search(
@@ -484,6 +486,7 @@ bool Strings::contains_any(StringView source, View<StringView> to_find)
         }
     }
     return false;
+#endif
 }
 
 bool Strings::equals(StringView a, StringView b)
