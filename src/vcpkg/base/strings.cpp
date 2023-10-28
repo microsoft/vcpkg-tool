@@ -473,7 +473,16 @@ bool Strings::contains_any_ignoring_hash_comments(StringView source, View<String
 
 bool Strings::contains_any(StringView source, View<StringView> to_find)
 {
-    return Util::any_of(to_find, [=](StringView s) { return Strings::contains(source, s); });
+    for (const auto& subject : to_find)
+    {
+        auto found =
+            std::search(source.begin(), source.end(), std::boyer_moore_horspool_searcher(subject.begin(), subject.end()));
+        if (found != source.end())
+        {
+            return true;
+        }
+    }
+    return false;
 }
 
 bool Strings::equals(StringView a, StringView b)
