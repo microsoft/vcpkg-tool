@@ -431,6 +431,12 @@ namespace vcpkg
         for (auto it = action_plan.install_actions.begin(); it != action_plan.install_actions.end(); ++it)
         {
             auto& action = *it;
+            size_t i = static_cast<size_t>(std::distance(action_plan.install_actions.begin(), it));
+
+            if (!private_abis[i].has_value())
+            {
+                continue;
+            }
 
             AbiEntries dependency_abis;
             if (!Util::Enum::to_bool(action.build_options.only_downloads))
@@ -442,7 +448,6 @@ namespace vcpkg
                 }
             }
 
-            size_t i = static_cast<size_t>(std::distance(action_plan.install_actions.begin(), it));
             make_abi_tag(paths, action, std::move(dependency_abis), std::move(*private_abis[i].get()));
         }
     }
