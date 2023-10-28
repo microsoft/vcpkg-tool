@@ -10,6 +10,7 @@
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
 #include <vcpkg/base/util.h>
+#include <vcpkg/base/uuid.h>
 
 #include <vcpkg/abi.h>
 #include <vcpkg/dependencies.h>
@@ -31,6 +32,7 @@ namespace vcpkg
         AbiEntries abi_entries;
         std::vector<Json::Value> heuristic_resources;
         AbiEntries port_files_abi;
+        std::string sbom_uuid;
     };
 
     static std::string grdk_hash(const Filesystem& fs, const PreBuildInfo& pre_build_info)
@@ -311,7 +313,8 @@ namespace vcpkg
         std::vector<Json::Value> heuristic_resources{
             run_resource_heuristics(cmake_contents, scfl.source_control_file->core_paragraph->raw_version)};
 
-        return PrivateAbi{std::move(abi_entries), std::move(heuristic_resources), std::move(port_files_abi)};
+        return PrivateAbi{
+            std::move(abi_entries), std::move(heuristic_resources), std::move(port_files_abi), generate_random_UUID()};
     }
 
     // PRE: initialize_abi_tag() was called and returned true
@@ -347,7 +350,8 @@ namespace vcpkg
             Strings::join("", abi_tag_entries, [](const AbiEntry& p) { return p.key + " " + p.value + "\n"; });
         abi_info.package_abi = Hash::get_string_sha256(full_abi_info);
 
-        std::string sbom_str = write_sbom(action, std::move(private_abi.heuristic_resources), private_abi.port_files_abi);
+        std::string sbom_str = write_sbom(
+            action, std::move(private_abi.heuristic_resources), private_abi.port_files_abi, private_abi.sbom_uuid);
 
         abi_info.abi_file_contents(std::move(full_abi_info), std::move(sbom_str));
     }

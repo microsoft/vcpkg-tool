@@ -2,7 +2,6 @@
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/util.h>
-#include <vcpkg/base/uuid.h>
 
 #include <vcpkg/commands.version.h>
 #include <vcpkg/dependencies.h>
@@ -255,8 +254,9 @@ std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
 }
 
 std::string vcpkg::write_sbom(const InstallPlanAction& action,
-                              std::vector<Json::Value> heuristic_resources,
-                              const std::vector<AbiEntry>& port_files_abi)
+                              std::vector<Json::Value>&& heuristic_resources,
+                              const std::vector<AbiEntry>& port_files_abi,
+                              StringView uuid)
 {
     const auto& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
     const auto& scf = *scfl.source_control_file;
@@ -268,7 +268,7 @@ std::string vcpkg::write_sbom(const InstallPlanAction& action,
                                   '-',
                                   scf.to_version(),
                                   '-',
-                                  generate_random_UUID());
+                                  uuid);
 
     const auto now = CTime::now_string();
     return create_spdx_sbom(action, port_files_abi, now, doc_ns, std::move(heuristic_resources));

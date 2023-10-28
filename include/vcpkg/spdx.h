@@ -3,11 +3,11 @@
 #include <vcpkg/base/fwd/files.h>
 #include <vcpkg/base/fwd/json.h>
 
+#include <vcpkg/fwd/abi.h>
 #include <vcpkg/fwd/dependencies.h>
 
 #include <vcpkg/base/span.h>
-
-#include <vcpkg/commands.build.h>
+#include <vcpkg/base/stringview.h>
 
 #include <string>
 #include <vector>
@@ -31,6 +31,7 @@ namespace vcpkg
 
     Json::Value run_resource_heuristics(StringView contents, StringView portRawVersion);
     std::string write_sbom(const InstallPlanAction& action,
-                           std::vector<Json::Value> heuristic_resources,
-                           const std::vector<AbiEntry>& port_files_abi);
+                           std::vector<Json::Value>&& heuristic_resources,
+                           const std::vector<AbiEntry>& port_files_abi,
+                           StringView uuid);
 }
