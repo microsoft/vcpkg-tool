@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vcpkg/base/fwd/format.h>
+#include <vcpkg/base/fwd/optional.h>
 #include <vcpkg/base/fwd/stringview.h>
 
 #include <vcpkg/fwd/versions.h>
@@ -22,7 +23,7 @@ namespace vcpkg
         std::string to_string() const;
         void to_string(std::string& out) const;
         static ExpectedL<Version> parse(StringView content);
-        static ExpectedL<Version> parse(StringView version_text, StringView port_version_text);
+        static ExpectedL<Version> parse(StringView version_text, const Optional<StringView>& maybe_port_version_text);
 
         friend bool operator==(const Version& left, const Version& right);
         friend bool operator!=(const Version& left, const Version& right);

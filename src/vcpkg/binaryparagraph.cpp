@@ -172,7 +172,7 @@ namespace vcpkg
 
     std::string BinaryParagraph::fullstem() const
     {
-        return fmt::format("{}_{}_{}", this->spec.name(), this->version, this->spec.triplet());
+        return fmt::format("{}_{}_{}", this->spec.name(), this->version.text, this->spec.triplet());
     }
 
     bool operator==(const BinaryParagraph& lhs, const BinaryParagraph& rhs)

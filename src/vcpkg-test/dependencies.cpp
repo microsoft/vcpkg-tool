@@ -73,9 +73,9 @@ struct MockVersionedPortfileProvider : IVersionedPortfileProvider
             auto core = std::make_unique<SourceParagraph>();
             core->name = name;
             core->version_scheme = scheme;
-            core->version = std::move(version);
+            core->version = version;
             scf->core_paragraph = std::move(core);
-            it2 = version_map.emplace(version, SourceControlFileAndLocation{std::move(scf), name}).first;
+            it2 = version_map.emplace(std::move(version), SourceControlFileAndLocation{std::move(scf), name}).first;
         }
 
         return it2->second;

@@ -1670,10 +1670,15 @@ namespace vcpkg
             }
         }
 
-        auto version =
-            Version::parse(parser.optional_field(Fields::VERSION), parser.optional_field(Fields::PORT_VERSION))
-                .value_or_exit(VCPKG_LINE_INFO);
-        if (!version.text.empty()) build_info.version = std::move(version);
+        auto version_text = parser.optional_field(Fields::VERSION);
+        auto port_version_text = parser.optional_field(Fields::PORT_VERSION);
+        if (!version_text.empty())
+        {
+            auto version =
+                Version::parse(version_text, port_version_text.empty() ? Optional<StringView>{} : port_version_text)
+                    .value_or_exit(VCPKG_LINE_INFO);
+            build_info.version = std::move(version);
+        }
 
         std::unordered_map<BuildPolicy, bool> policies;
         for (const auto& policy : ALL_POLICIES)

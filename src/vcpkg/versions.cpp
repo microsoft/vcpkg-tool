@@ -38,20 +38,21 @@ namespace vcpkg
     {
         const auto hash = std::find(content.begin(), content.end(), '#');
         auto port_version_text_start = hash;
+        Optional<StringView> maybe_port_version_text;
         if (port_version_text_start != content.end())
         {
-            ++port_version_text_start;
+            maybe_port_version_text.emplace(++port_version_text_start, content.end());
         }
 
-        return parse(StringView{content.begin(), hash}, StringView{port_version_text_start, content.end()});
+        return parse(StringView{content.begin(), hash}, maybe_port_version_text);
     }
 
-    ExpectedL<Version> Version::parse(StringView version_text, StringView port_version_text)
+    ExpectedL<Version> Version::parse(StringView version_text, const Optional<StringView>& maybe_port_version_text)
     {
         int port_version = 0;
-        if (!port_version_text.empty())
+        if (auto port_version_text = maybe_port_version_text.get())
         {
-            auto maybe_parsed = Strings::strto<int>(port_version_text);
+            auto maybe_parsed = Strings::strto<int>(*port_version_text);
             auto parsed = maybe_parsed.get();
             if (parsed && *parsed >= 0)
             {
@@ -59,7 +60,7 @@ namespace vcpkg
             }
             else
             {
-                return msg::format_error(msgPortVersionNonnegativeInteger, msg::value = port_version_text);
+                return msg::format_error(msgPortVersionNonnegativeInteger, msg::value = *port_version_text);
             }
         }
 
