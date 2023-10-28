@@ -1,5 +1,4 @@
 #include <vcpkg/base/cache.h>
-#include <vcpkg/base/chrono.h>
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
