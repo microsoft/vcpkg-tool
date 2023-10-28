@@ -350,8 +350,8 @@ namespace vcpkg
         abi_info.abi_file_contents(std::move(full_abi_info), std::move(private_abi.sbom_str));
     }
 
-    static AbiEntries get_dependency_abis(std::vector<InstallPlanAction>::iterator action_plan_begin,
-                                          std::vector<InstallPlanAction>::iterator current_action,
+    static AbiEntries get_dependency_abis(std::vector<InstallPlanAction>::const_iterator action_plan_begin,
+                                          std::vector<InstallPlanAction>::const_iterator current_action,
                                           const StatusParagraphs& status_db)
     {
         AbiEntries dependency_abis;
