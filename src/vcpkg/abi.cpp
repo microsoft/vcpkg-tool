@@ -284,7 +284,6 @@ namespace vcpkg
 
         // portfile hashes/contents
         auto&& [port_files_abi, cmake_contents] = get_port_files(fs, scfl);
-        abi_entries.insert(abi_entries.end(), port_files_abi.cbegin(), port_files_abi.cend());
 
         // cmake helpers (access to cmake helper hashes in cache not in parallel)
         for (auto&& helper : cmake_script_hashes)
@@ -304,11 +303,12 @@ namespace vcpkg
         // port features
         get_feature_abi(action.feature_list, abi_entries);
 
-
         // make sbom file
         std::vector<Json::Value> heuristic_resources{
             run_resource_heuristics(cmake_contents, scfl.source_control_file->core_paragraph->raw_version)};
         std::string sbom_str = write_sbom(action, std::move(heuristic_resources), port_files_abi);
+
+        std::move(port_files_abi.begin(), port_files_abi.end(), std::back_inserter(abi_entries));
 
         return PrivateAbi{std::move(abi_entries), std::move(sbom_str)};
     }
