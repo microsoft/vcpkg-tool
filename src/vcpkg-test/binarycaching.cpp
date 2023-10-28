@@ -1,4 +1,4 @@
-#include <catch2/catch.hpp>
+#include <vcpkg-test/util.h>
 
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/xmlserializer.h>
@@ -13,8 +13,6 @@
 #include <vcpkg/vcpkgcmdarguments.h>
 
 #include <string>
-
-#include <vcpkg-test/util.h>
 
 using namespace vcpkg;
 

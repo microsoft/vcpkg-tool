@@ -51,9 +51,12 @@ such as https://github.com/microsoft/vcpkg/pull/23757
 1. Go to the root of the VS repo and run `init.cmd -CoreXTProfileName VSPartners`
 1. Submit this as a change to the VS repo. Example: https://devdiv.visualstudio.com/DefaultCollection/DevDiv/_git/VS/pullrequest/498110
    Don't forget to attach the work item number from the previous step.
-1. Smoke test the copy of vcpkg inserted into VS. See smoke test steps below.
+1. Smoke test the copy of vcpkg inserted into VS. See smoke test steps below. The prototype copy is
+  at "CloudBuild - PR -> Extensions\VS Enterprise\Release Channel" as of 2023-10-19 but this UI
+  changes frequently.
 1. (After all tests have passed, at the same time) Merge all 3 PRs, and change the github release
   in vcpkg-tool from "prerelease" to "release". (This automatically updates the aka.ms links)
+1. Mark any `requires:vcpkg-tool-release` issues as fixed by the tool release.
 
 # Release Data Flow
 
@@ -152,7 +155,7 @@ flowchart TD
 
 # Smoke Testing VS
 
-1. Install the prototype version of VS with the vcpkg inserted. Ensure the native desktop workload is selected, and that vcpkg and cmake bits are installed. Don't forget about preinstall.
+1. Install the prototype version of VS with the vcpkg inserted. Ensure the native desktop workload is selected, and that vcpkg and cmake bits are installed. Don't forget about preinstall. ( `\\vspreinstall\preinstall\preinstall.cmd` ? )
 1. Open a developer command prompt and run `vcpkg integrate install` (this step hopefully removed soon)
     * This also verifies that vcpkg installed into the developer command prompt correctly.
 1. Create a new C++ console project.
@@ -216,3 +219,9 @@ flowchart TD
     build_artifact\program.exe
     ```
     and check that the cmake version acquired by artifacts is printed during the cmake configure, and that a reasonable zlib version is printed.
+1. Close Visual Studio.
+1. Back in the developer command prompt, run:
+    ```
+    vcpkg add artifact cmake
+    ```
+1. Open Visual Studio and use "Open Folder" on the directory containing the vcxproj. Verify that vcpkg activation happens in the terminal.

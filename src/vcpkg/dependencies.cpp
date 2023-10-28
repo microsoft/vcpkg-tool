@@ -264,7 +264,7 @@ namespace vcpkg
                 }
 
                 Checks::check_exit(VCPKG_LINE_INFO, !m_install_info.has_value());
-                m_install_info = make_optional(ClusterInstallInfo{});
+                m_install_info.emplace();
 
                 if (defaults_requested)
                 {
@@ -1046,12 +1046,12 @@ namespace vcpkg
 
         ActionPlan plan;
 
-        for (auto&& p_cluster : remove_toposort)
+        for (const auto* p_cluster : remove_toposort)
         {
             plan.remove_actions.emplace_back(p_cluster->m_spec, p_cluster->request_type);
         }
 
-        for (auto&& p_cluster : insert_toposort)
+        for (const auto* p_cluster : insert_toposort)
         {
             // Every cluster that has an install_info needs to be built
             // If a cluster only has an installed object and is marked as user requested we should still report it.
@@ -1121,7 +1121,7 @@ namespace vcpkg
                                                   m_graph->m_host_triplet,
                                                   std::move(computed_edges),
                                                   std::move(constraint_violations),
-                                                  std::move(info_ptr->default_features));
+                                                  info_ptr->default_features);
             }
             else if (p_cluster->request_type == RequestType::USER_REQUESTED && p_cluster->m_installed.has_value())
             {
@@ -2008,7 +2008,7 @@ namespace vcpkg
             provider, bprovider, oprovider, var_provider, options.host_triplet, options.packages_dir);
         for (auto&& o : overrides)
         {
-            vpg.add_override(o.name, {o.version, o.port_version});
+            vpg.add_override(o.name, o.version);
         }
 
         vpg.solve_with_roots(deps, toplevel);

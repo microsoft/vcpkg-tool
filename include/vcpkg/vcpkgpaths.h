@@ -87,6 +87,7 @@ namespace vcpkg
         const Path& downloads;
         const Path& tools;
         const Path builtin_registry_versions;
+        ExpectedL<Path> versions_dot_git_dir() const;
         const Path prefab;
         const Path buildsystems;
         const Path buildsystems_msbuild_targets;
