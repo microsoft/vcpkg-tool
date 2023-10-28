@@ -138,7 +138,7 @@ namespace vcpkg
 
     // Get abi for per-port files
     static std::pair<AbiEntries, std::string> get_port_files(const Filesystem& fs,
-                                                                        const SourceControlFileAndLocation& scfl)
+                                                             const SourceControlFileAndLocation& scfl)
     {
         auto files_and_content = get_ports_files_and_contents(fs, scfl.source_location);
 
@@ -271,9 +271,13 @@ namespace vcpkg
         return true;
     }
 
-    static Optional<PrivateAbi> get_private_abi(const Filesystem& fs, const InstallPlanAction& action, View<AbiEntry> common_abi, View<AbiEntry> cmake_script_hashes)
+    static Optional<PrivateAbi> get_private_abi(const Filesystem& fs,
+                                                const InstallPlanAction& action,
+                                                View<AbiEntry> common_abi,
+                                                View<AbiEntry> cmake_script_hashes)
     {
-        if (action.build_options.use_head_version == UseHeadVersion::YES || action.build_options.editable == Editable::YES)
+        if (action.build_options.use_head_version == UseHeadVersion::YES ||
+            action.build_options.editable == Editable::YES)
         {
             return nullopt;
         }
@@ -349,8 +353,8 @@ namespace vcpkg
     }
 
     static AbiEntries get_dependency_abis(std::vector<InstallPlanAction>::iterator action_plan_begin,
-                                                     std::vector<InstallPlanAction>::iterator current_action,
-                                                     const StatusParagraphs& status_db)
+                                          std::vector<InstallPlanAction>::iterator current_action,
+                                          const StatusParagraphs& status_db)
     {
         AbiEntries dependency_abis;
         dependency_abis.reserve(current_action->package_dependencies.size());
@@ -401,7 +405,7 @@ namespace vcpkg
     {
         auto& fs = paths.get_filesystem();
 
-        auto private_abi_future = std::async(std::launch::async | std::launch::deferred, [&](){
+        auto private_abi_future = std::async(std::launch::async | std::launch::deferred, [&]() {
             static AbiEntries cmake_script_hashes = get_cmake_script_hashes(fs, paths.scripts);
 
             // 1. system abi (ports.cmake/ PS version/ CMake version)
@@ -409,9 +413,12 @@ namespace vcpkg
 
             std::vector<Optional<PrivateAbi>> ret(action_plan.install_actions.size());
 
-            parallel_transform(action_plan.install_actions.begin(), action_plan.install_actions.size(), ret.begin(), [&](const InstallPlanAction& action){
-                return get_private_abi(fs, action, common_abi, cmake_script_hashes);
-            });
+            parallel_transform(action_plan.install_actions.begin(),
+                               action_plan.install_actions.size(),
+                               ret.begin(),
+                               [&](const InstallPlanAction& action) {
+                                   return get_private_abi(fs, action, common_abi, cmake_script_hashes);
+                               });
             return ret;
         });
 
