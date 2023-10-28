@@ -1,4 +1,5 @@
 #include <vcpkg/base/cache.h>
+#include <vcpkg/base/chrono.h>
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
@@ -404,12 +405,13 @@ namespace vcpkg
                           const StatusParagraphs& status_db)
     {
         auto& fs = paths.get_filesystem();
+        ElapsedTimer timer;
+
+        // 1. system abi (ports.cmake/ PS version/ CMake version)
+        static AbiEntries common_abi = get_common_abi(paths);
 
         auto private_abi_future = std::async(std::launch::async | std::launch::deferred, [&]() {
             static AbiEntries cmake_script_hashes = get_cmake_script_hashes(fs, paths.scripts);
-
-            // 1. system abi (ports.cmake/ PS version/ CMake version)
-            static AbiEntries common_abi = get_common_abi(paths);
 
             std::vector<Optional<PrivateAbi>> ret(action_plan.install_actions.size());
 
@@ -457,6 +459,8 @@ namespace vcpkg
 
             make_abi_tag(paths, action, std::move(dependency_abis), std::move(*private_abis[i].get()));
         }
+        msg::write_unlocalized_text_to_stdout(
+            Color::none, fmt::format("Calculated abi in {}\n", timer.elapsed().to_string()));
     }
 
     void AbiInfo::save_abi_files(const Filesystem& fs, Path&& dir) const
