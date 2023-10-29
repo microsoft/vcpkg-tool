@@ -1488,54 +1488,75 @@ namespace vcpkg
         return res;
     }
 
-    struct CreateLogDetails
+    static void append_log(const Filesystem& fs, const Path& path, int max_size, std::string& out)
     {
-        const Filesystem& fs;
-
-        std::string operator()(const Path& path) const
+        max_size -= path.native().size() + 80 /* size of all static text */;
+        if (max_size < 100)
         {
-            static constexpr auto MAX_LOG_LENGTH = 50'000;
-            static constexpr auto START_BLOCK_LENGTH = 3'000;
-            static constexpr auto START_BLOCK_MAX_LENGTH = 5'000;
-            static constexpr auto END_BLOCK_LENGTH = 43'000;
-            static constexpr auto END_BLOCK_MAX_LENGTH = 45'000;
-            auto log = fs.read_contents(path, VCPKG_LINE_INFO);
-            if (log.size() > MAX_LOG_LENGTH)
-            {
-                auto first_block_end = log.find_first_of('\n', START_BLOCK_LENGTH);
-                if (first_block_end == std::string::npos || first_block_end > START_BLOCK_MAX_LENGTH)
-                {
-                    first_block_end = START_BLOCK_LENGTH;
-                }
-
-                auto last_block_end = log.find_last_of('\n', log.size() - END_BLOCK_LENGTH);
-                if (last_block_end == std::string::npos || last_block_end < log.size() - END_BLOCK_MAX_LENGTH)
-                {
-                    last_block_end = log.size() - END_BLOCK_LENGTH;
-                }
-
-                auto first = log.begin() + first_block_end;
-                auto last = log.begin() + last_block_end;
-                auto skipped_lines = std::count(first, last, '\n');
-                log.replace(first, last, fmt::format("\n...\nSkipped {} lines\n...", skipped_lines));
-            }
-
-            while (!log.empty() && log.back() == '\n')
-            {
-                log.pop_back();
-            }
-
-            return fmt::format("<details><summary>{}</summary>\n\n```\n{}\n```\n</details>", path.native(), log);
+            return;
         }
-    };
+        out += "<details><summary>";
+        out += path.native();
+        out += "</summary>\n\n```\n";
+
+        const auto max_log_length = static_cast<size_t>(max_size);
+        const auto start_block_length = max_log_length * 4 / 12;
+        const auto start_block_max_length = max_log_length * 5 / 12;
+        const auto end_block_length = max_log_length * 7 / 12;
+        const auto end_block_max_length = max_log_length - start_block_max_length;
+        auto log = fs.read_contents(path, VCPKG_LINE_INFO);
+        if (log.size() > max_log_length)
+        {
+            auto first_block_end = log.find_first_of('\n', start_block_length);
+            if (first_block_end == std::string::npos || first_block_end > start_block_max_length)
+            {
+                first_block_end = start_block_max_length;
+            }
+
+            auto last_block_start = log.find_last_of('\n', log.size() - end_block_length);
+            if (last_block_start == std::string::npos || last_block_start < log.size() - end_block_max_length)
+            {
+                last_block_start = log.size() - end_block_max_length;
+            }
+
+            auto first = log.begin() + first_block_end;
+            auto last = log.begin() + last_block_start;
+            auto skipped_lines = std::count(first, last, '\n');
+            out.append(log, 0, first_block_end);
+            fmt::format_to(std::back_inserter(out), "\n...\nSkipped {} lines\n...", skipped_lines);
+            out.append(log, last_block_start);
+        }
+
+        while (!out.empty() && out.back() == '\n')
+        {
+            out.pop_back();
+        }
+        out += "\n```\n</details>";
+    }
+
+    static void append_logs(const Filesystem& fs, const std::vector<std::string>& logs, int max_size, std::string& out)
+    {
+        int extra_size = 0;
+        max_size -= logs.size() * 2;
+        auto size_per_log = max_size / logs.size();
+        for (auto& log : logs)
+        {
+            const auto old_size = out.size();
+            append_log(fs, log, size_per_log + extra_size, out);
+            extra_size += size_per_log - (out.size() - old_size);
+            out += "\n\n";
+        }
+    }
 
     std::string create_github_issue(const VcpkgCmdArguments& args,
                                     const ExtendedBuildResult& build_result,
                                     const VcpkgPaths& paths,
                                     const InstallPlanAction& action)
     {
+        constexpr int MAX_ISSUE_SIZE = 65536;
         const auto& fs = paths.get_filesystem();
         std::string result;
+        result.reserve(MAX_ISSUE_SIZE);
         fmt::format_to(std::back_inserter(result),
                        "Package: {} -> {}\n\n**Host Environment**\n\n- Host: {}-{}\n",
                        action.displayname(),
@@ -1561,16 +1582,24 @@ namespace vcpkg
                        "**Failure logs**\n\n```\n{}\n```\n",
                        paths.get_filesystem().read_contents(build_result.stdoutlog.value_or_exit(VCPKG_LINE_INFO),
                                                             VCPKG_LINE_INFO));
-        result.append(Strings::join("\n", build_result.error_logs, CreateLogDetails{fs}));
 
+        std::string postfix;
         const auto maybe_manifest = paths.get_manifest();
         if (auto manifest = maybe_manifest.get())
         {
-            fmt::format_to(
-                std::back_inserter(result),
-                "**Additional context**\n\n<details><summary>vcpkg.json</summary>\n\n```\n{}\n```\n</details>\n",
-                Json::stringify(manifest->manifest));
+            if (args.get_command() != "x-set-installed" || manifest->manifest.contains("builtin-baseline"))
+            {
+                fmt::format_to(
+                    std::back_inserter(postfix),
+                    "**Additional context**\n\n<details><summary>vcpkg.json</summary>\n\n```\n{}\n```\n</details>\n",
+                    Json::stringify(manifest->manifest));
+            }
         }
+
+        int max_body_size = MAX_ISSUE_SIZE - result.size() - postfix.size();
+        append_logs(fs, build_result.error_logs, max_body_size, result);
+
+        result.append(postfix);
 
         return result;
     }
@@ -1580,11 +1609,13 @@ namespace vcpkg
         return "https://github.com/microsoft/vcpkg/issues?q=is%3Aissue+is%3Aopen+in%3Atitle+" + spec_name;
     }
 
-    static std::string make_gh_issue_open_url(StringView spec_name, StringView path)
+    static std::string make_gh_issue_open_url(StringView spec_name, StringView triplet, StringView path)
     {
         return Strings::concat("https://github.com/microsoft/vcpkg/issues/new?title=[",
                                spec_name,
-                               "]+Build+error&body=Copy+issue+body+from+",
+                               "]+Build+error+on+",
+                               triplet,
+                               "&body=Copy+issue+body+from+",
                                Strings::percent_encode(path));
     }
 
@@ -1593,18 +1624,19 @@ namespace vcpkg
                                                         const Optional<Path>& issue_body)
     {
         const auto& spec_name = action.spec.name();
+        const auto& triplet_name = action.spec.triplet().to_string();
         LocalizedString result = msg::format(msgBuildTroubleshootingMessage1).append_raw('\n');
         result.append_indent().append_raw(make_gh_issue_search_url(spec_name)).append_raw('\n');
         result.append(msgBuildTroubleshootingMessage2).append_raw('\n');
         if (issue_body.has_value())
         {
             const auto path = issue_body.get()->generic_u8string();
-            result.append_indent().append_raw(make_gh_issue_open_url(spec_name, path)).append_raw('\n');
+            result.append_indent().append_raw(make_gh_issue_open_url(spec_name, triplet_name, path)).append_raw('\n');
             if (!paths.get_filesystem().find_from_PATH("gh").empty())
             {
                 Command gh("gh");
                 gh.string_arg("issue").string_arg("create").string_arg("-R").string_arg("microsoft/vcpkg");
-                gh.string_arg("--title").string_arg(fmt::format("[{}] Build failure", spec_name));
+                gh.string_arg("--title").string_arg(fmt::format("[{}] Build failure on {}", spec_name, triplet_name));
                 gh.string_arg("--body-file").string_arg(path);
 
                 result.append(msgBuildTroubleshootingMessageGH).append_raw('\n');
@@ -1617,7 +1649,9 @@ namespace vcpkg
                 .append_raw("https://github.com/microsoft/vcpkg/issues/"
                             "new?template=report-package-build-failure.md&title=[")
                 .append_raw(spec_name)
-                .append_raw("]+Build+error\n");
+                .append_raw("]+Build+error+on+")
+                .append_raw(triplet_name)
+                .append_raw("\n");
             result.append(msgBuildTroubleshootingMessage3, msg::package_name = spec_name).append_raw('\n');
             result.append_raw(paths.get_toolver_diagnostics()).append_raw('\n');
         }
