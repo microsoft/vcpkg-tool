@@ -3,6 +3,7 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/messages.h>
+#include <vcpkg/base/parallel-algorithms.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
 #include <vcpkg/base/util.h>
@@ -62,8 +63,6 @@ namespace vcpkg
                                           const std::vector<Path>& files,
                                           const InstallDir& destination_dir)
     {
-        std::vector<std::string> output;
-
         const size_t prefix_length = source_dir.native().size();
         const Path& destination = destination_dir.destination();
         std::string destination_subdirectory = destination.filename().to_string();
@@ -73,50 +72,89 @@ namespace vcpkg
         const auto listfile_parent = listfile.parent_path();
         fs.create_directories(listfile_parent, VCPKG_LINE_INFO);
 
-        output.push_back(destination_subdirectory + "/");
-        for (auto&& file : files)
-        {
+        std::vector<Optional<FileType>> symlink_statuses(files.size());
+
+        parallel_transform(files.begin(), files.size(), symlink_statuses.begin(), [&fs](auto&& file) -> Optional<FileType> {
             std::error_code ec;
-            const auto status = fs.symlink_status(file, ec);
+            auto status = fs.symlink_status(file, ec);
             if (ec)
             {
                 msg::println_warning(format_filesystem_call_error(ec, "symlink_status", {file}));
+                return nullopt;
+            }
+            return status;
+        });
+
+        std::vector<std::string> dir_output;
+        dir_output.push_back(destination_subdirectory + "/");
+
+        std::vector<std::pair<Path, Optional<FileType>>> files_and_status;
+        files_and_status.reserve(files.size());
+
+        for (size_t i = 0; i < files.size(); ++i)
+        {
+            if (!symlink_statuses[i].has_value())
+            {
+                continue;
+            }
+            auto status = *symlink_statuses[i].get();
+
+            if (is_directory(status))
+            {
+                const auto suffix = files[i].generic_u8string().substr(prefix_length + 1);
+                const auto target = destination / suffix;
+                auto this_output = Strings::concat(destination_subdirectory, "/", suffix);
+
+                std::error_code ec;
+                fs.create_directory(target, ec);
+                if (ec)
+                {
+                    msg::println_error(msgInstallFailed, msg::path = target, msg::error_msg = ec.message());
+                }
+
+                // Trailing backslash for directories
+                this_output.push_back('/');
+                dir_output.push_back(std::move(this_output));
                 continue;
             }
 
-            const auto filename = file.filename();
-            if (vcpkg::is_regular_file(status) &&
+            const auto filename = files[i].filename();
+
+            if (is_regular_file(status) &&
                 (filename == "CONTROL" || filename == "vcpkg.json" || filename == "BUILD_INFO"))
             {
                 // Do not copy the control file or manifest file
                 continue;
             }
 
-            const auto suffix = file.generic_u8string().substr(prefix_length + 1);
-            const auto target = destination / suffix;
-
-            bool use_hard_link = true;
-            auto this_output = Strings::concat(destination_subdirectory, "/", suffix);
-            switch (status)
+            if (!is_regular_file(status) && !is_symlink(status))
             {
-                case FileType::directory:
-                {
-                    fs.create_directory(target, ec);
-                    if (ec)
-                    {
-                        msg::println_error(msgInstallFailed, msg::path = target, msg::error_msg = ec.message());
-                    }
+                msg::println_error(msgInvalidFileType, msg::path = files[i]);
+                continue;
+            }
+            files_and_status.emplace_back(std::move(files[i]), std::move(symlink_statuses[i]));
+        }
 
-                    // Trailing backslash for directories
-                    this_output.push_back('/');
-                    output.push_back(std::move(this_output));
-                    break;
-                }
-                case FileType::regular:
+        std::vector<std::string> output(files_and_status.size());
+
+        parallel_transform(
+            files_and_status.begin(), files_and_status.size(), output.begin(), [&](auto&& file_and_status) {
+                auto&& [file, maybe_status] = file_and_status;
+                
+                const auto status = *maybe_status.get();
+                std::error_code ec;
+
+                const auto suffix = file.generic_u8string().substr(prefix_length + 1);
+                const auto target = destination / suffix;
+
+                bool use_hard_link = true;
+                auto this_output = Strings::concat(destination_subdirectory, "/", suffix);
+                if (is_regular_file(status))
                 {
                     if (fs.exists(target, IgnoreErrors{}))
                     {
                         msg::println_warning(msgOverwritingFile, msg::path = target);
+                        //TODO: Does this remove only the file? if not, we have a problem
                         fs.remove_all(target, IgnoreErrors{});
                     }
                     if (use_hard_link)
@@ -139,12 +177,8 @@ namespace vcpkg
                     {
                         msg::println_error(msgInstallFailed, msg::path = target, msg::error_msg = ec.message());
                     }
-
-                    output.push_back(std::move(this_output));
-                    break;
                 }
-                case FileType::symlink:
-                case FileType::junction:
+                else if (is_symlink(status))
                 {
                     if (fs.exists(target, IgnoreErrors{}))
                     {
@@ -156,14 +190,15 @@ namespace vcpkg
                     {
                         msg::println_error(msgInstallFailed, msg::path = target, msg::error_msg = ec.message());
                     }
-
-                    output.push_back(std::move(this_output));
-                    break;
                 }
-                default: msg::println_error(msgInvalidFileType, msg::path = file); break;
-            }
-        }
+                else
+                {
+                    Checks::unreachable(VCPKG_LINE_INFO);
+                }
+                return this_output;
+            });
 
+        std::move(dir_output.begin(), dir_output.end(), std::back_inserter(output));
         std::sort(output.begin(), output.end());
         fs.write_lines(listfile, output, VCPKG_LINE_INFO);
     }
