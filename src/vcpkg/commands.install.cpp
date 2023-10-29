@@ -72,8 +72,9 @@ namespace vcpkg
         const Path& listfile = destination_dir.listfile();
 
         fs.create_directories(destination, VCPKG_LINE_INFO);
-        auto list_file_dir = std::async(std::launch::async | std::launch::deferred,
-                   [&fs, &listfile]() { return fs.create_directories(listfile.parent_path(), VCPKG_LINE_INFO); });
+        auto list_file_dir = std::async(std::launch::async | std::launch::deferred, [&fs, &listfile]() {
+            return fs.create_directories(listfile.parent_path(), VCPKG_LINE_INFO);
+        });
 
         std::vector<Optional<FileType>> symlink_statuses(files.size());
 
