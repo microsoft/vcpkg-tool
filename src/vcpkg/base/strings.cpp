@@ -477,15 +477,15 @@ bool Strings::contains_any_ignoring_hash_comments(StringView source, View<String
 
 bool Strings::contains_any(StringView source, View<StringView> to_find)
 {
+#ifdef __APPLE__
+    using std::experimental::boyer_moore_horspool_searcher;
+#else
+    using std::boyer_moore_horspool_searcher;
+#endif
     for (const auto& subject : to_find)
     {
         auto found = std::search(
-            source.begin(), source.end(),
-#ifdef __APPLE__
-            std::experimental::boyer_moore_horspool_searcher(subject.begin(), subject.end()));
-#else
-            std::boyer_moore_horspool_searcher(subject.begin(), subject.end()));
-#endif
+            source.begin(), source.end(), boyer_moore_horspool_searcher(subject.begin(), subject.end()));
         if (found != source.end())
         {
             return true;
