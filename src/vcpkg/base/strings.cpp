@@ -15,6 +15,10 @@
 #include <string>
 #include <vector>
 
+#ifdef __APPLE__
+#include <experimental/functional>
+#endif
+
 #include <fmt/compile.h>
 
 using namespace vcpkg;
@@ -473,20 +477,21 @@ bool Strings::contains_any_ignoring_hash_comments(StringView source, View<String
 
 bool Strings::contains_any(StringView source, View<StringView> to_find)
 {
-#ifdef __APPLE__
-    return Util::any_of(to_find, [=](StringView s) { return Strings::contains(source, s); });
-#else
     for (const auto& subject : to_find)
     {
         auto found = std::search(
-            source.begin(), source.end(), std::boyer_moore_horspool_searcher(subject.begin(), subject.end()));
+            source.begin(), source.end(),
+#ifdef __APPLE__
+            std::experimental::boyer_moore_horspool_searcher(subject.begin(), subject.end()));
+#else
+            std::boyer_moore_horspool_searcher(subject.begin(), subject.end()));
+#endif
         if (found != source.end())
         {
             return true;
         }
     }
     return false;
-#endif
 }
 
 bool Strings::equals(StringView a, StringView b)
