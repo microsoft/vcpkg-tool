@@ -72,8 +72,8 @@ namespace vcpkg
         const Path& listfile = destination_dir.listfile();
 
         fs.create_directories(destination, VCPKG_LINE_INFO);
-        const auto listfile_parent = listfile.parent_path();
-        fs.create_directories(listfile_parent, VCPKG_LINE_INFO);
+        auto list_file_dir = std::async(std::launch::async | std::launch::deferred,
+                   [&fs, &listfile]() { return fs.create_directories(listfile.parent_path(), VCPKG_LINE_INFO); });
 
         std::vector<Optional<FileType>> symlink_statuses(files.size());
 
@@ -166,8 +166,8 @@ namespace vcpkg
                         if (ec)
                         {
                             Debug::println("Install from packages to installed: Fallback to copy "
-                                "instead creating hard links because of: ",
-                                ec.message());
+                                           "instead creating hard links because of: ",
+                                           ec.message());
                             use_hard_link = false;
                         }
                     }
@@ -207,6 +207,7 @@ namespace vcpkg
 #else
         std::sort(output.begin(), output.end());
 #endif
+        list_file_dir.get();
         fs.write_lines(listfile, output, VCPKG_LINE_INFO);
     }
 

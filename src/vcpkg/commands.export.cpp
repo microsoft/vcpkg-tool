@@ -527,7 +527,8 @@ namespace
                     files.push_back(paths.installed().root() / suffix);
                 }
 
-                install_files_and_write_listfile(fs, paths.installed().triplet_dir(action.spec.triplet()), std::move(files), dirs);
+                install_files_and_write_listfile(
+                    fs, paths.installed().triplet_dir(action.spec.triplet()), std::move(files), dirs);
             }
         }
 
