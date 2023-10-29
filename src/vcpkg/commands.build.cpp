@@ -1490,7 +1490,7 @@ namespace vcpkg
 
     static void append_log(const Filesystem& fs, const Path& path, int max_size, std::string& out)
     {
-        max_size -= path.native().size() + 80 /* size of all static text */;
+        max_size -= static_cast<int>(path.native().size()) + 80 /* size of all static text */;
         if (max_size < 100)
         {
             return;
@@ -1537,13 +1537,13 @@ namespace vcpkg
     static void append_logs(const Filesystem& fs, const std::vector<std::string>& logs, int max_size, std::string& out)
     {
         int extra_size = 0;
-        max_size -= logs.size() * 2;
-        auto size_per_log = max_size / logs.size();
+        max_size -= static_cast<int>(logs.size()) * 2;
+        auto size_per_log = max_size / static_cast<int>(logs.size());
         for (auto& log : logs)
         {
             const auto old_size = out.size();
             append_log(fs, log, size_per_log + extra_size, out);
-            extra_size += size_per_log - (out.size() - old_size);
+            extra_size += size_per_log - static_cast<int>(out.size() - old_size);
             out += "\n\n";
         }
     }
@@ -1596,7 +1596,7 @@ namespace vcpkg
             }
         }
 
-        int max_body_size = MAX_ISSUE_SIZE - result.size() - postfix.size();
+        int max_body_size = MAX_ISSUE_SIZE - static_cast<int>(result.size()) - static_cast<int>(postfix.size());
         append_logs(fs, build_result.error_logs, max_body_size, result);
 
         result.append(postfix);
