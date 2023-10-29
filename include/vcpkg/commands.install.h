@@ -66,7 +66,7 @@ namespace vcpkg
 
     void install_files_and_write_listfile(const Filesystem& fs,
                                           const Path& source_dir,
-                                          const std::vector<Path>& files,
+                                          std::vector<Path>&& files,
                                           const InstallDir& destination_dir);
 
     InstallResult install_package(const VcpkgPaths& paths,

@@ -30,6 +30,9 @@
 #include <vcpkg/xunitwriter.h>
 
 #include <iterator>
+#ifdef _WIN32
+#include <execution>
+#endif
 
 namespace vcpkg
 {
@@ -56,11 +59,11 @@ namespace vcpkg
                            Strings::concat("Source directory ", source_dir, "does not exist"));
         auto files = fs.get_files_recursive(source_dir, VCPKG_LINE_INFO);
         Util::erase_remove_if(files, [](Path& path) { return path.filename() == ".DS_Store"; });
-        install_files_and_write_listfile(fs, source_dir, files, destination_dir);
+        install_files_and_write_listfile(fs, source_dir, std::move(files), destination_dir);
     }
     void install_files_and_write_listfile(const Filesystem& fs,
                                           const Path& source_dir,
-                                          const std::vector<Path>& files,
+                                          std::vector<Path>&& files,
                                           const InstallDir& destination_dir)
     {
         const size_t prefix_length = source_dir.native().size();
@@ -74,16 +77,17 @@ namespace vcpkg
 
         std::vector<Optional<FileType>> symlink_statuses(files.size());
 
-        parallel_transform(files.begin(), files.size(), symlink_statuses.begin(), [&fs](auto&& file) -> Optional<FileType> {
-            std::error_code ec;
-            auto status = fs.symlink_status(file, ec);
-            if (ec)
-            {
-                msg::println_warning(format_filesystem_call_error(ec, "symlink_status", {file}));
-                return nullopt;
-            }
-            return status;
-        });
+        parallel_transform(
+            files.begin(), files.size(), symlink_statuses.begin(), [&fs](auto&& file) -> Optional<FileType> {
+                std::error_code ec;
+                auto status = fs.symlink_status(file, ec);
+                if (ec)
+                {
+                    msg::println_warning(format_filesystem_call_error(ec, "symlink_status", {file}));
+                    return nullopt;
+                }
+                return status;
+            });
 
         std::vector<std::string> dir_output;
         dir_output.push_back(destination_subdirectory + "/");
@@ -140,7 +144,7 @@ namespace vcpkg
         parallel_transform(
             files_and_status.begin(), files_and_status.size(), output.begin(), [&](auto&& file_and_status) {
                 auto&& [file, maybe_status] = file_and_status;
-                
+
                 const auto status = *maybe_status.get();
                 std::error_code ec;
 
@@ -154,8 +158,7 @@ namespace vcpkg
                     if (fs.exists(target, IgnoreErrors{}))
                     {
                         msg::println_warning(msgOverwritingFile, msg::path = target);
-                        //TODO: Does this remove only the file? if not, we have a problem
-                        fs.remove_all(target, IgnoreErrors{});
+                        fs.remove(target, IgnoreErrors{});
                     }
                     if (use_hard_link)
                     {
@@ -163,8 +166,8 @@ namespace vcpkg
                         if (ec)
                         {
                             Debug::println("Install from packages to installed: Fallback to copy "
-                                           "instead creating hard links because of: ",
-                                           ec.message());
+                                "instead creating hard links because of: ",
+                                ec.message());
                             use_hard_link = false;
                         }
                     }
@@ -199,7 +202,11 @@ namespace vcpkg
             });
 
         std::move(dir_output.begin(), dir_output.end(), std::back_inserter(output));
+#ifdef _WIN32
+        std::sort(std::execution::par_unseq, output.begin(), output.end());
+#else
         std::sort(output.begin(), output.end());
+#endif
         fs.write_lines(listfile, output, VCPKG_LINE_INFO);
     }
 
