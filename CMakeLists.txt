@@ -480,6 +480,8 @@ if (BUILD_TESTING)
         target_link_libraries(vcpkg-test PRIVATE log)
     endif()
 
+    add_dependencies(vcpkg-test reads-stdin closes-stdin closes-stdout test-editor)
+
     if(CMAKE_VERSION GREATER_EQUAL "3.16")
         target_precompile_headers(vcpkg-test REUSE_FROM vcpkglib)
     elseif(NOT MSVC)
