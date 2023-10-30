@@ -471,11 +471,9 @@ TEST_CASE ("manifest constraints", "[manifests]")
     REQUIRE(Json::stringify(serialize_manifest(pgh), Json::JsonStyle::with_spaces(4)) == raw);
     REQUIRE(pgh.core_paragraph->dependencies.size() == 3);
     REQUIRE(pgh.core_paragraph->dependencies[0].name == "a");
-    REQUIRE(pgh.core_paragraph->dependencies[0].constraint ==
-            DependencyConstraint{VersionConstraintKind::None, Version{}});
+    REQUIRE(pgh.core_paragraph->dependencies[0].constraint == DependencyConstraint{});
     REQUIRE(pgh.core_paragraph->dependencies[1].name == "c");
-    REQUIRE(pgh.core_paragraph->dependencies[1].constraint ==
-            DependencyConstraint{VersionConstraintKind::None, Version{}});
+    REQUIRE(pgh.core_paragraph->dependencies[1].constraint == DependencyConstraint{});
     REQUIRE(pgh.core_paragraph->dependencies[2].name == "d");
     REQUIRE(pgh.core_paragraph->dependencies[2].constraint ==
             DependencyConstraint{VersionConstraintKind::Minimum, Version{"2018-09-01", 0}});
@@ -830,11 +828,9 @@ TEST_CASE ("manifest embed configuration", "[manifests]")
     REQUIRE(pgh.core_paragraph->builtin_baseline == "089fa4de7dca22c67dcab631f618d5cd0697c8d4");
     REQUIRE(pgh.core_paragraph->dependencies.size() == 3);
     REQUIRE(pgh.core_paragraph->dependencies[0].name == "a");
-    REQUIRE(pgh.core_paragraph->dependencies[0].constraint ==
-            DependencyConstraint{VersionConstraintKind::None, Version{}});
+    REQUIRE(pgh.core_paragraph->dependencies[0].constraint == DependencyConstraint{});
     REQUIRE(pgh.core_paragraph->dependencies[1].name == "b");
-    REQUIRE(pgh.core_paragraph->dependencies[1].constraint ==
-            DependencyConstraint{VersionConstraintKind::None, Version{}});
+    REQUIRE(pgh.core_paragraph->dependencies[1].constraint == DependencyConstraint{});
     REQUIRE(pgh.core_paragraph->dependencies[2].name == "c");
     REQUIRE(pgh.core_paragraph->dependencies[2].constraint ==
             DependencyConstraint{VersionConstraintKind::Minimum, Version{"2018-09-01", 0}});
