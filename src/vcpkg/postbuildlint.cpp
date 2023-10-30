@@ -1216,9 +1216,10 @@ namespace vcpkg
         return LintStatus::SUCCESS;
     }
 
-    static bool file_contains_absolute_paths(const ReadOnlyFilesystem& fs,
-                                             const Path& file,
-                                             const std::vector<StringView> stringview_paths)
+    static bool file_contains_absolute_paths(
+        const ReadOnlyFilesystem& fs,
+        const Path& file,
+        const std::vector<Strings::boyer_moore_horspool_searcher>& stringview_paths)
     {
         const auto extension = file.extension();
         if (extension == ".h" || extension == ".hpp" || extension == ".hxx")
@@ -1279,7 +1280,7 @@ namespace vcpkg
 
         Util::sort_unique_erase(string_paths);
 
-        const auto stringview_paths = Util::fmap(string_paths, [](std::string& s) {
+        const auto searcher_paths = Util::fmap(string_paths, [](std::string& s) {
             return Strings::boyer_moore_horspool_searcher(s.begin(), s.end());
         });
 
@@ -1288,7 +1289,7 @@ namespace vcpkg
         auto files = fs.get_regular_files_recursive(dir, IgnoreErrors{});
 
         parallel_for_each_n(files.begin(), files.size(), [&](const Path& file) {
-            if (file_contains_absolute_paths(fs, file, stringview_paths))
+            if (file_contains_absolute_paths(fs, file, searcher_paths))
             {
                 std::lock_guard lock{mtx};
                 failing_files.push_back(file);
