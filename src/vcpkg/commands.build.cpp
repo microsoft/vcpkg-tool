@@ -1490,14 +1490,16 @@ namespace vcpkg
 
     static void append_log(const Filesystem& fs, const Path& path, int max_size, std::string& out)
     {
-        max_size -= static_cast<int>(path.native().size()) + 80 /* size of all static text */;
+        StringLiteral details_start = "<details><summary>{}</summary>\n\n```\n";
+        StringLiteral skipped_msg = "\n...\nSkipped {} lines\n...";
+        StringLiteral details_end = "\n```\n</details>";
+        max_size -= static_cast<int>(path.native().size() + details_start.size() + details_end.size() +
+                                     skipped_msg.size() + 6 /* digits for skipped count */);
         if (max_size < 100)
         {
             return;
         }
-        out += "<details><summary>";
-        out += path.native();
-        out += "</summary>\n\n```\n";
+        fmt::format_to(std::back_inserter(out), details_start.c_str(), path.native());
 
         const auto max_log_length = static_cast<size_t>(max_size);
         const auto start_block_length = max_log_length * 4 / 12;
@@ -1522,16 +1524,16 @@ namespace vcpkg
             auto first = log.begin() + first_block_end;
             auto last = log.begin() + last_block_start;
             auto skipped_lines = std::count(first, last, '\n');
-            out.append(log, 0, first_block_end);
-            fmt::format_to(std::back_inserter(out), "\n...\nSkipped {} lines\n...", skipped_lines);
-            out.append(log, last_block_start);
+            out.append(log.begin(), first);
+            fmt::format_to(std::back_inserter(out), skipped_msg.c_str(), skipped_lines);
+            out.append(last, log.end());
         }
 
         while (!out.empty() && out.back() == '\n')
         {
             out.pop_back();
         }
-        out += "\n```\n</details>";
+        Strings::append(out, details_end);
     }
 
     static void append_logs(const Filesystem& fs, const std::vector<std::string>& logs, int max_size, std::string& out)
@@ -1555,9 +1557,10 @@ namespace vcpkg
     {
         constexpr int MAX_ISSUE_SIZE = 65536;
         const auto& fs = paths.get_filesystem();
-        std::string result;
-        result.reserve(MAX_ISSUE_SIZE);
-        fmt::format_to(std::back_inserter(result),
+        std::string issue_body;
+        // The logs excerpts are as large as possible. So the issue body will often reach MAX_ISSUE_SIZE.
+        issue_body.reserve(MAX_ISSUE_SIZE);
+        fmt::format_to(std::back_inserter(issue_body),
                        "Package: {} -> {}\n\n**Host Environment**\n\n- Host: {}-{}\n",
                        action.displayname(),
                        action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).to_version(),
@@ -1569,16 +1572,16 @@ namespace vcpkg
             if (const auto* compiler_info = abi_info->compiler_info.get())
             {
                 fmt::format_to(
-                    std::back_inserter(result), "- Compiler: {} {}\n", compiler_info->id, compiler_info->version);
+                    std::back_inserter(issue_body), "- Compiler: {} {}\n", compiler_info->id, compiler_info->version);
             }
         }
 
-        fmt::format_to(std::back_inserter(result), "-{}\n", paths.get_toolver_diagnostics());
-        fmt::format_to(std::back_inserter(result),
+        fmt::format_to(std::back_inserter(issue_body), "-{}\n", paths.get_toolver_diagnostics());
+        fmt::format_to(std::back_inserter(issue_body),
                        "**To Reproduce**\n\n`vcpkg {} {}`\n",
                        args.get_command(),
                        Strings::join(" ", args.get_forwardable_arguments()));
-        fmt::format_to(std::back_inserter(result),
+        fmt::format_to(std::back_inserter(issue_body),
                        "**Failure logs**\n\n```\n{}\n```\n",
                        paths.get_filesystem().read_contents(build_result.stdoutlog.value_or_exit(VCPKG_LINE_INFO),
                                                             VCPKG_LINE_INFO));
@@ -1596,12 +1599,12 @@ namespace vcpkg
             }
         }
 
-        int max_body_size = MAX_ISSUE_SIZE - static_cast<int>(result.size()) - static_cast<int>(postfix.size());
-        append_logs(fs, build_result.error_logs, max_body_size, result);
+        int max_body_size = MAX_ISSUE_SIZE - static_cast<int>(issue_body.size() + postfix.size());
+        append_logs(fs, build_result.error_logs, max_body_size, issue_body);
 
-        result.append(postfix);
+        issue_body.append(postfix);
 
-        return result;
+        return issue_body;
     }
 
     static std::string make_gh_issue_search_url(const std::string& spec_name)
