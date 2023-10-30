@@ -56,7 +56,7 @@ namespace vcpkg
     {
         Checks::check_exit(VCPKG_LINE_INFO,
                            fs.exists(source_dir, IgnoreErrors{}),
-                           Strings::concat("Source directory ", source_dir, "does not exist"));
+                           Strings::concat("Source directory ", source_dir, " does not exist"));
         auto files = fs.get_files_recursive(source_dir, VCPKG_LINE_INFO);
         Util::erase_remove_if(files, [](Path& path) { return path.filename() == ".DS_Store"; });
         install_files_and_write_listfile(fs, source_dir, std::move(files), destination_dir);
