@@ -603,8 +603,7 @@ namespace vcpkg
         return ret;
     }
 
-    static std::unique_ptr<BinaryControlFile> create_binary_control_file(const InstallPlanAction& action,
-                                                                         const BuildInfo& build_info)
+    static std::unique_ptr<BinaryControlFile> create_binary_control_file(const InstallPlanAction& action)
     {
         const auto& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
 
@@ -617,10 +616,7 @@ namespace vcpkg
                              action.spec.triplet(),
                              action.public_abi(),
                              fspecs_to_pspecs(find_itr->second));
-        if (const auto p_ver = build_info.version.get())
-        {
-            bpgh.version = *p_ver;
-        }
+
         bcf->core_paragraph = std::move(bpgh);
 
         bcf->features.reserve(action.feature_list.size());
@@ -1037,7 +1033,7 @@ namespace vcpkg
             return ExtendedBuildResult{BuildResult::POST_BUILD_CHECKS_FAILED};
         }
 
-        std::unique_ptr<BinaryControlFile> bcf = create_binary_control_file(action, build_info);
+        std::unique_ptr<BinaryControlFile> bcf = create_binary_control_file(action);
 
         write_sbom(paths, action, abi_info.heuristic_resources);
         write_binary_control_file(paths.get_filesystem(), action.package_dir.value_or_exit(VCPKG_LINE_INFO), *bcf);
@@ -1664,8 +1660,7 @@ namespace vcpkg
             }
         }
 
-        std::string version = parser.optional_field("Version");
-        if (!version.empty()) build_info.version = std::move(version);
+        (void)parser.optional_field("Version");
 
         std::unordered_map<BuildPolicy, bool> policies;
         for (const auto& policy : ALL_POLICIES)
