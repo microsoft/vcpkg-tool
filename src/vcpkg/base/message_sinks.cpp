@@ -32,12 +32,12 @@ namespace vcpkg
 
     void MessageSink::println_warning(const LocalizedString& s)
     {
-        println(Color::warning, format(msgWarningMessage).append(s));
+        println(Color::warning, LocalizedString::from_raw(WarningPrefix).append(s));
     }
 
     void MessageSink::println_error(const LocalizedString& s)
     {
-        println(Color::error, format(msgErrorMessage).append(s));
+        println(Color::error, LocalizedString::from_raw(ErrorPrefix).append(s));
     }
 
     MessageSink& null_sink = null_sink_instance;

@@ -89,7 +89,7 @@ namespace vcpkg
         if (!expression)
         {
             msg::println(Color::error,
-                         msg::format(msgInternalErrorMessage)
+                         LocalizedString::from_raw(InternalErrorPrefix)
                              .append(locale_invariant_lineinfo(line_info))
                              .append(msgChecksFailedCheck)
                              .append_raw('\n')
@@ -103,7 +103,7 @@ namespace vcpkg
         if (!expression)
         {
             msg::println(Color::error,
-                         msg::format(msgInternalErrorMessage)
+                         LocalizedString::from_raw(InternalErrorPrefix)
                              .append(locale_invariant_lineinfo(line_info))
                              .append_raw(error_message)
                              .append_raw('\n')
@@ -122,7 +122,7 @@ namespace vcpkg
 
     static void display_upgrade_message()
     {
-        msg::println(Color::error, msg::format(msgNoteMessage).append(msgChecksUpdateVcpkg));
+        msg::println(Color::error, LocalizedString::from_raw(NotePrefix).append(msgChecksUpdateVcpkg));
     }
 
     [[noreturn]] void Checks::exit_maybe_upgrade(const LineInfo& line_info)

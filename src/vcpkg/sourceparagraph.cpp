@@ -385,7 +385,7 @@ namespace vcpkg
                     return ParseControlErrorInfo::from_error(origin,
                                                              msg::format_error(msgDefaultFeatureIdentifier)
                                                                  .append_raw('\n')
-                                                                 .append(msgNoteMessage)
+                                                                 .append_raw(NotePrefix)
                                                                  .append(msgParseIdentifierError,
                                                                          msg::value = default_feature,
                                                                          msg::url = docs::manifests_url));

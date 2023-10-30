@@ -303,7 +303,7 @@ namespace vcpkg
 
     static LocalizedString format_invalid_date_version(StringView version)
     {
-        return msg::format(msgErrorMessage).append(msg::format(msgVersionInvalidDate, msg::version = version));
+        return msg::format_error(msgVersionInvalidDate, msg::version = version);
     }
 
     ExpectedL<DateVersion> DateVersion::try_parse(StringView version)

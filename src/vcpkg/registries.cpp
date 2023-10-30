@@ -667,30 +667,30 @@ namespace
                 fs.create_directories(destination_parent, ec);
                 if (ec)
                 {
-                    return {msg::format(msgErrorMessage)
+                    return {LocalizedString::from_raw(ErrorPrefix)
                                 .append(format_filesystem_call_error(ec, "create_directories", {destination_parent}))
                                 .append_raw('\n')
-                                .append(msgNoteMessage)
+                                .append_raw(NotePrefix)
                                 .append(msgWhileCheckingOutBaseline, msg::commit_sha = commit_sha),
                             expected_right_tag};
                 }
                 fs.write_contents(destination_tmp, *contents, ec);
                 if (ec)
                 {
-                    return {msg::format(msgErrorMessage)
+                    return {LocalizedString::from_raw(ErrorPrefix)
                                 .append(format_filesystem_call_error(ec, "write_contents", {destination_tmp}))
                                 .append_raw('\n')
-                                .append(msgNoteMessage)
+                                .append_raw(NotePrefix)
                                 .append(msgWhileCheckingOutBaseline, msg::commit_sha = commit_sha),
                             expected_right_tag};
                 }
                 fs.rename(destination_tmp, destination, ec);
                 if (ec)
                 {
-                    return {msg::format(msgErrorMessage)
+                    return {LocalizedString::from_raw(ErrorPrefix)
                                 .append(format_filesystem_call_error(ec, "rename", {destination_tmp, destination}))
                                 .append_raw('\n')
-                                .append(msgNoteMessage)
+                                .append_raw(NotePrefix)
                                 .append(msgWhileCheckingOutBaseline, msg::commit_sha = commit_sha),
                             expected_right_tag};
                 }
@@ -1126,7 +1126,7 @@ namespace
         {
             return format_version_git_entry_missing(port_name, version, port_versions)
                 .append_raw('\n')
-                .append(msgNoteMessage)
+                .append_raw(NotePrefix)
                 .append(msgChecksUpdateVcpkg);
         }
 
@@ -1388,7 +1388,7 @@ namespace
         {
             return LocalizedString::from_raw(origin)
                 .append_raw(": ")
-                .append(msgErrorMessage)
+                .append_raw(ErrorPrefix)
                 .append(msgMissingRequiredField,
                         msg::json_field = baseline,
                         msg::json_type = msg::format(msgABaselineObject));
@@ -1547,7 +1547,7 @@ namespace vcpkg
     ExpectedL<Optional<Version>> RegistrySet::baseline_for_port(StringView port_name) const
     {
         auto impl = registry_for_port(port_name);
-        if (!impl) return msg::format(msgErrorMessage).append(msgNoRegistryForPort, msg::package_name = port_name);
+        if (!impl) return msg::format_error(msgNoRegistryForPort, msg::package_name = port_name);
         return impl->get_baseline_version(port_name);
     }
 

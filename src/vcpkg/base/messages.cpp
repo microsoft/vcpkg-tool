@@ -492,11 +492,12 @@ namespace vcpkg::msg
         return nullopt;
     }
 
-    LocalizedString format_error() { return format(msgErrorMessage); }
-    LocalizedString format_error(const LocalizedString& s) { return format(msgErrorMessage).append(s); }
+    LocalizedString format_error(const LocalizedString& s) { return LocalizedString::from_raw(ErrorPrefix).append(s); }
     void println_error(const LocalizedString& s) { println(Color::error, format_error(s)); }
 
-    LocalizedString format_warning() { return format(msgWarningMessage); }
-    LocalizedString format_warning(const LocalizedString& s) { return format(msgWarningMessage).append(s); }
+    LocalizedString format_warning(const LocalizedString& s)
+    {
+        return LocalizedString::from_raw(WarningPrefix).append(s);
+    }
     void println_warning(const LocalizedString& s) { println(Color::warning, format_warning(s)); }
 }
