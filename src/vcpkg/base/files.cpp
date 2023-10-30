@@ -1331,11 +1331,6 @@ namespace vcpkg
 
     const char* to_printf_arg(const Path& p) noexcept { return p.m_str.c_str(); }
 
-    bool is_symlink(FileType s) { return s == FileType::symlink || s == FileType::junction; }
-    bool is_regular_file(FileType s) { return s == FileType::regular; }
-    bool is_directory(FileType s) { return s == FileType::directory; }
-    bool exists(FileType s) { return s != FileType::not_found && s != FileType::none; }
-
     FilePointer::FilePointer(const Path& path) : m_fs(nullptr), m_path(path) { }
     FilePointer::FilePointer() noexcept : m_fs(nullptr), m_path{} { }
 
