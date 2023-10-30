@@ -15,10 +15,6 @@
 #include <string>
 #include <vector>
 
-#ifdef __APPLE__
-#include <experimental/functional>
-#endif
-
 #include <fmt/compile.h>
 
 using namespace vcpkg;
@@ -384,7 +380,8 @@ Optional<StringView> Strings::find_at_most_one_enclosed(StringView input, String
     return result.front();
 }
 
-bool vcpkg::Strings::contains_any_ignoring_c_comments(const std::string& source, View<StringView> to_find)
+bool vcpkg::Strings::contains_any_ignoring_c_comments(const std::string& source,
+                                                      View<boyer_moore_horspool_searcher> to_find)
 {
     std::string::size_type offset = 0;
     std::string::size_type no_comment_offset = 0;
@@ -448,7 +445,7 @@ bool vcpkg::Strings::contains_any_ignoring_c_comments(const std::string& source,
     return false;
 }
 
-bool Strings::contains_any_ignoring_hash_comments(StringView source, View<StringView> to_find)
+bool Strings::contains_any_ignoring_hash_comments(StringView source, View<boyer_moore_horspool_searcher> to_find)
 {
     auto first = source.data();
     auto block_start = first;
@@ -475,17 +472,11 @@ bool Strings::contains_any_ignoring_hash_comments(StringView source, View<String
     return Strings::contains_any(StringView{block_start, last}, to_find);
 }
 
-bool Strings::contains_any(StringView source, View<StringView> to_find)
+bool Strings::contains_any(StringView source, View<boyer_moore_horspool_searcher> to_find)
 {
-#ifdef __APPLE__
-    using std::experimental::boyer_moore_horspool_searcher;
-#else
-    using std::boyer_moore_horspool_searcher;
-#endif
     for (const auto& subject : to_find)
     {
-        auto found =
-            std::search(source.begin(), source.end(), boyer_moore_horspool_searcher(subject.begin(), subject.end()));
+        auto found = std::search(source.begin(), source.end(), subject);
         if (found != source.end())
         {
             return true;

@@ -1279,7 +1279,9 @@ namespace vcpkg
 
         Util::sort_unique_erase(string_paths);
 
-        const auto stringview_paths = Util::fmap(string_paths, [](std::string& s) { return StringView(s); });
+        const auto stringview_paths = Util::fmap(string_paths, [](std::string& s) {
+            return Strings::boyer_moore_horspool_searcher(s.begin(), s.end());
+        });
 
         std::vector<Path> failing_files;
         std::mutex mtx;
