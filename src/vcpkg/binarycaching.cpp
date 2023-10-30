@@ -1770,7 +1770,7 @@ namespace vcpkg
                                  [&](std::string& out, StringView key) {
                                      if (key == "version")
                                      {
-                                         out += info.version.to_string();
+                                         out += info.version.text;
                                      }
                                      else if (key == "name")
                                      {
