@@ -184,10 +184,10 @@ namespace vcpkg
 
         // Copy files/symlinks
         parallel_for_each_n(filtered_files.begin(), filtered_files.size(), [&](const auto& file_and_status) {
-            Path& file = file_and_status.path;
+            auto& file = file_and_status.path;
             auto& status = file_and_status.type;
 
-            if (is_directory(status)) continue;
+            if (is_directory(status)) return;
 
             if (!is_regular_file(status) && !is_symlink(status))
             {
