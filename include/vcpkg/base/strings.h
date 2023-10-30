@@ -183,8 +183,7 @@ namespace vcpkg::Strings
 
     bool contains_any_ignoring_hash_comments(StringView source, View<boyer_moore_horspool_searcher> to_find);
 
-    // Note: It makes sense to call this function only if source is long
-    bool contains_any(StringView source, View<boyer_moore_horspool_searcher> to_find);
+    bool long_string_contains_any(StringView source, View<boyer_moore_horspool_searcher> to_find);
 
     [[nodiscard]] bool equals(StringView a, StringView b);
 

@@ -1229,7 +1229,7 @@ namespace vcpkg
         if (extension == ".cfg" || extension == ".ini" || file.filename() == "usage")
         {
             const auto contents = fs.read_contents(file, IgnoreErrors{});
-            return Strings::contains_any(contents, searcher_paths);
+            return Strings::long_string_contains_any(contents, searcher_paths);
         }
 
         if (extension == ".py" || extension == ".sh" || extension == ".cmake" || extension == ".pc" ||

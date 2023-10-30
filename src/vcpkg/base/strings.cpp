@@ -391,14 +391,14 @@ bool vcpkg::Strings::contains_any_ignoring_c_comments(const std::string& source,
         auto start = source.find_first_of("/\"", no_comment_offset);
         if (start == std::string::npos || start + 1 == source.size() || no_comment_offset == std::string::npos)
         {
-            return Strings::contains_any(StringView(source).substr(offset), to_find);
+            return Strings::long_string_contains_any(StringView(source).substr(offset), to_find);
         }
 
         if (source[start] == '/')
         {
             if (source[start + 1] == '/' || source[start + 1] == '*')
             {
-                if (Strings::contains_any(StringView(source).substr(offset, start - offset), to_find))
+                if (Strings::long_string_contains_any(StringView(source).substr(offset, start - offset), to_find))
                 {
                     return true;
                 }
@@ -454,7 +454,7 @@ bool Strings::contains_any_ignoring_hash_comments(StringView source, View<boyer_
     {
         if (*first == '#')
         {
-            if (Strings::contains_any(StringView{block_start, first}, to_find))
+            if (Strings::long_string_contains_any(StringView{block_start, first}, to_find))
             {
                 return true;
             }
@@ -469,10 +469,10 @@ bool Strings::contains_any_ignoring_hash_comments(StringView source, View<boyer_
         }
     }
 
-    return Strings::contains_any(StringView{block_start, last}, to_find);
+    return Strings::long_string_contains_any(StringView{block_start, last}, to_find);
 }
 
-bool Strings::contains_any(StringView source, View<boyer_moore_horspool_searcher> to_find)
+bool Strings::long_string_contains_any(StringView source, View<boyer_moore_horspool_searcher> to_find)
 {
     for (const auto& subject : to_find)
     {
