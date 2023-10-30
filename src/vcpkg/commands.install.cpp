@@ -93,7 +93,7 @@ namespace vcpkg
         std::vector<std::string> dir_output;
         dir_output.push_back(destination_subdirectory + "/");
 
-        std::vector<std::pair<Path, Optional<FileType>>> files_and_status;
+        std::vector<std::pair<Path, FileType>> files_and_status;
         files_and_status.reserve(files.size());
 
         for (size_t i = 0; i < files.size(); ++i)
@@ -108,7 +108,9 @@ namespace vcpkg
             {
                 const auto suffix = files[i].generic_u8string().substr(prefix_length + 1);
                 const auto target = destination / suffix;
-                auto this_output = Strings::concat(destination_subdirectory, "/", suffix);
+                auto this_output = destination_subdirectory;
+                this_output.push_back('/');
+                this_output.append(suffix);
 
                 std::error_code ec;
                 fs.create_directory(target, ec);
@@ -137,23 +139,24 @@ namespace vcpkg
                 msg::println_error(msgInvalidFileType, msg::path = files[i]);
                 continue;
             }
-            files_and_status.emplace_back(std::move(files[i]), std::move(symlink_statuses[i]));
+            files_and_status.emplace_back(std::move(files[i]), status);
         }
 
         std::vector<std::string> output(files_and_status.size());
 
         parallel_transform(
             files_and_status.begin(), files_and_status.size(), output.begin(), [&](auto&& file_and_status) {
-                auto&& [file, maybe_status] = file_and_status;
-
-                const auto status = *maybe_status.get();
+                auto&& [file, status] = file_and_status;
                 std::error_code ec;
 
                 const auto suffix = file.generic_u8string().substr(prefix_length + 1);
                 const auto target = destination / suffix;
 
                 bool use_hard_link = true;
-                auto this_output = Strings::concat(destination_subdirectory, "/", suffix);
+                auto this_output = destination_subdirectory;
+                this_output.push_back('/');
+                this_output.append(suffix);
+
                 if (is_regular_file(status))
                 {
                     if (fs.exists(target, IgnoreErrors{}))
