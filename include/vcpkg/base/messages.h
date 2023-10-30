@@ -72,6 +72,15 @@ namespace vcpkg::msg
 
 namespace vcpkg
 {
+    // constants for the
+    // <file>:line:col: <prefix>: <content>
+    // error message format
+    inline constexpr StringLiteral ErrorPrefix = "error: ";
+    inline constexpr StringLiteral InternalErrorPrefix = "internal error: ";
+    inline constexpr StringLiteral MessagePrefix = "message: ";
+    inline constexpr StringLiteral NotePrefix = "note: ";
+    inline constexpr StringLiteral WarningPrefix = "warning: ";
+
     struct LocalizedString
     {
         LocalizedString() = default;
@@ -187,12 +196,11 @@ namespace vcpkg::msg
         msg::write_unlocalized_text_to_stdout(Color::none, "\n");
     }
 
-    [[nodiscard]] LocalizedString format_error();
     [[nodiscard]] LocalizedString format_error(const LocalizedString& s);
     template<VCPKG_DECL_MSG_TEMPLATE>
     [[nodiscard]] LocalizedString format_error(VCPKG_DECL_MSG_ARGS)
     {
-        auto s = format_error();
+        auto s = LocalizedString::from_raw(ErrorPrefix);
         msg::format_to(s, VCPKG_EXPAND_MSG_ARGS);
         return s;
     }
@@ -200,17 +208,16 @@ namespace vcpkg::msg
     template<VCPKG_DECL_MSG_TEMPLATE>
     void println_error(VCPKG_DECL_MSG_ARGS)
     {
-        auto s = format_error();
+        auto s = LocalizedString::from_raw(ErrorPrefix);
         msg::format_to(s, VCPKG_EXPAND_MSG_ARGS);
         println(Color::error, s);
     }
 
-    [[nodiscard]] LocalizedString format_warning();
     [[nodiscard]] LocalizedString format_warning(const LocalizedString& s);
     template<VCPKG_DECL_MSG_TEMPLATE>
     [[nodiscard]] LocalizedString format_warning(VCPKG_DECL_MSG_ARGS)
     {
-        auto s = format_warning();
+        auto s = LocalizedString::from_raw(WarningPrefix);
         msg::format_to(s, VCPKG_EXPAND_MSG_ARGS);
         return s;
     }
@@ -218,7 +225,7 @@ namespace vcpkg::msg
     template<VCPKG_DECL_MSG_TEMPLATE>
     void println_warning(VCPKG_DECL_MSG_ARGS)
     {
-        auto s = format_warning();
+        auto s = LocalizedString::from_raw(WarningPrefix);
         msg::format_to(s, VCPKG_EXPAND_MSG_ARGS);
         println(Color::warning, s);
     }

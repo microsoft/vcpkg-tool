@@ -15,6 +15,12 @@ namespace
     constexpr CommandSwitch GENERATE_MESSAGE_MAP_SWITCHES[]{
         {OPTION_NO_OUTPUT_COMMENTS, msgCmdGenerateMessageMapOptNoOutputComments},
     };
+
+    struct BadPrefixTest
+    {
+        StringLiteral prefix;
+        StringLiteral prefix_name;
+    };
 } // unnamed namespace
 
 namespace vcpkg
@@ -143,52 +149,75 @@ namespace vcpkg
         bool has_errors = false;
         LocalizedString format_string_parsing_error;
         Json::Object obj;
+
+        std::vector<BadPrefixTest> tests{
+            {"error:", "ErrorPrefix"},
+            {"internal error:", "InternalErrorPrefix"},
+            {"message:", "MessagePrefix"},
+            {"note:", "NotePrefix"},
+            {"warning:", "WarningPrefix"},
+        };
+
         for (auto& msg : messages)
         {
-            if (msg.name != "ErrorMessage" && Strings::case_insensitive_ascii_starts_with(msg.value, "error:"))
+            for (auto&& test : tests)
             {
-                has_errors = true;
-                msg::println_error(msgErrorMessageMustUsePrintError, msg::value = msg.name);
-            }
-
-            if (msg.name != "WarningMessage" && Strings::case_insensitive_ascii_starts_with(msg.value, "warning:"))
-            {
-                has_errors = true;
-                msg::println_error(msgWarningMessageMustUsePrintWarning, msg::value = msg.name);
+                if (Strings::case_insensitive_ascii_starts_with(msg.value, test.prefix))
+                {
+                    has_errors = true;
+                    msg::print(LocalizedString::from_raw(ErrorPrefix)
+                                   .append_raw(fmt::format("The message named {} starts with {}, it must be changed "
+                                                           "to prepend {} in code instead.\n",
+                                                           msg.name,
+                                                           test.prefix,
+                                                           test.prefix_name)));
+                }
             }
 
             if (Strings::contains(msg.value, "   "))
             {
                 has_errors = true;
-                msg::println_error(msgLocalizedMessageMustNotContainIndents, msg::value = msg.name);
+                msg::print(LocalizedString::from_raw(ErrorPrefix)
+                               .append_raw(fmt::format(
+                                   "The message named {} contains what appears to be indenting which must be "
+                                   "changed to use LocalizedString::append_indent instead.\n",
+                                   msg.name)));
             }
 
             if (!msg.value.empty() && msg.value.back() == '\n')
             {
                 has_errors = true;
-                msg::println_error(msgLocalizedMessageMustNotEndWithNewline, msg::value = msg.name);
+                msg::print(LocalizedString::from_raw(ErrorPrefix)
+                               .append_raw(fmt::format("The message named {} ends with a newline which should be added "
+                                                       "by formatting rather than by localization.",
+                                                       msg.name)));
             }
 
             auto mismatches = get_format_arg_mismatches(msg.value, msg.comment, format_string_parsing_error);
             if (!format_string_parsing_error.data().empty())
             {
                 has_errors = true;
-                msg::println_error(msg::format(msgGenerateMsgErrorParsingFormatArgs, msg::value = msg.name)
-                                       .append(format_string_parsing_error));
+                msg::print(LocalizedString::from_raw(ErrorPrefix)
+                               .append_raw(fmt::format("parsing format string for {}:\n", msg.name)));
             }
 
             if (!mismatches.arguments_without_comment.empty() || !mismatches.comments_without_argument.empty())
             {
                 has_errors = true;
-                msg::println_error(msgGenerateMsgIncorrectComment, msg::value = msg.name);
+                msg::print(LocalizedString::from_raw(ErrorPrefix)
+                               .append_raw(fmt::format("message {} has an incorrect comment:\n", msg.name)));
 
                 for (const auto& arg : mismatches.arguments_without_comment)
                 {
-                    msg::println(Color::error, msgGenerateMsgNoCommentValue, msg::value = arg);
+                    msg::print(LocalizedString::from_raw(ErrorPrefix)
+                                   .append_raw(fmt::format(
+                                       "{{{}}} was specified in a comment, but was not used in the message.\n", arg)));
                 }
                 for (const auto& comment : mismatches.comments_without_argument)
                 {
-                    msg::println(Color::error, msgGenerateMsgNoArgumentValue, msg::value = comment);
+                    msg::print(
+                        LocalizedString::from_raw(ErrorPrefix)
+                            .append_raw(fmt::format("{{{}}} was used in the message, but not commented.\n", comment)));
                 }
             }
 

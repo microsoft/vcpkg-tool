@@ -32,9 +32,11 @@ namespace
     std::vector<VersionSpec> read_ports_from_commit(const VcpkgPaths& paths, StringView git_commit_id)
     {
         auto& fs = paths.get_filesystem();
-        const auto dot_git_dir = paths.root / ".git";
+        const auto dot_git_dir = fs.try_find_file_recursively_up(paths.builtin_ports_directory().parent_path(), ".git")
+                                     .map([](Path&& dot_git_parent) { return std::move(dot_git_parent) / ".git"; })
+                                     .value_or_exit(VCPKG_LINE_INFO);
         const auto ports_dir_name = paths.builtin_ports_directory().filename();
-        const auto temp_checkout_path = paths.root / fmt::format("{}-{}", ports_dir_name, git_commit_id);
+        const auto temp_checkout_path = paths.buildtrees() / fmt::format("{}-{}", ports_dir_name, git_commit_id);
         fs.create_directory(temp_checkout_path, IgnoreErrors{});
         const auto checkout_this_dir =
             fmt::format("./{}", ports_dir_name); // Must be relative to the root of the repository

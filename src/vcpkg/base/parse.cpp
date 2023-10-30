@@ -38,14 +38,14 @@ namespace vcpkg
             res = LocalizedString::from_raw(fmt::format("{}:{}:{}: ", origin, location.row, location.column));
         if (kind == MessageKind::Warning)
         {
-            res.append(msgWarningMessage);
+            res.append_raw(WarningPrefix);
         }
         else
         {
-            res.append(msgErrorMessage);
+            res.append_raw(ErrorPrefix);
         }
-        res.append(message);
 
+        res.append(message);
         res.append_raw('\n');
 
         auto line_end = Util::find_if(location.it, ParserBase::is_lineend);

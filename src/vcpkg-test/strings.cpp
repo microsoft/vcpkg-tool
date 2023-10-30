@@ -1,4 +1,4 @@
-#include <catch2/catch.hpp>
+#include <vcpkg-test/util.h>
 
 #include <vcpkg/base/api-stable-format.h>
 #include <vcpkg/base/expected.h>

@@ -166,7 +166,7 @@ namespace vcpkg
         msg::print(msgElapsedForPackage, msg::spec = spec, msg::elapsed = build_timer);
         if (result.code == BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES)
         {
-            LocalizedString errorMsg = msg::format(msgErrorMessage).append(msgBuildDependenciesMissing);
+            LocalizedString errorMsg = msg::format_error(msgBuildDependenciesMissing);
             for (const auto& p : result.unmet_dependencies)
             {
                 errorMsg.append_raw('\n').append_indent().append_raw(p.to_string());
