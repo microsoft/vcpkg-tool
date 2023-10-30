@@ -37,6 +37,7 @@ TEST_CASE ("captures-output", "[system.process]")
     expected.push_back('\r');
 #endif // ^^^ _WIN32
     expected.push_back('\n');
+
     auto run = cmd_execute_and_capture_output(
                    cmd, default_working_directory, default_environment, Encoding::Utf8, EchoInDebug::Hide, input)
                    .value_or_exit(VCPKG_LINE_INFO);
