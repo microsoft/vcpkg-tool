@@ -757,12 +757,12 @@ namespace
             environment_block.push_back('\0');
             call_environment = environment_block.data();
         }
-
+        auto cmd_line_w = Strings::to_utf16(cmd_line);
         // Leaking process information handle 'process_info.proc_info.hProcess'
         // /analyze can't tell that we transferred ownership here
         VCPKG_MSVC_WARNING(suppress : 6335)
         if (!CreateProcessW(nullptr,
-                            Strings::to_utf16(cmd_line).data(),
+                            cmd_line_w.data(),
                             nullptr,
                             nullptr,
                             bInheritHandles,
