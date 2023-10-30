@@ -1216,28 +1216,27 @@ namespace vcpkg
         return LintStatus::SUCCESS;
     }
 
-    static bool file_contains_absolute_paths(
-        const ReadOnlyFilesystem& fs,
-        const Path& file,
-        const std::vector<Strings::boyer_moore_horspool_searcher>& stringview_paths)
+    static bool file_contains_absolute_paths(const ReadOnlyFilesystem& fs,
+                                             const Path& file,
+                                             View<Strings::boyer_moore_horspool_searcher> searcher_paths)
     {
         const auto extension = file.extension();
         if (extension == ".h" || extension == ".hpp" || extension == ".hxx")
         {
-            return Strings::contains_any_ignoring_c_comments(fs.read_contents(file, IgnoreErrors{}), stringview_paths);
+            return Strings::contains_any_ignoring_c_comments(fs.read_contents(file, IgnoreErrors{}), searcher_paths);
         }
 
         if (extension == ".cfg" || extension == ".ini" || file.filename() == "usage")
         {
             const auto contents = fs.read_contents(file, IgnoreErrors{});
-            return Strings::contains_any(contents, stringview_paths);
+            return Strings::contains_any(contents, searcher_paths);
         }
 
         if (extension == ".py" || extension == ".sh" || extension == ".cmake" || extension == ".pc" ||
             extension == ".conf")
         {
             const auto contents = fs.read_contents(file, IgnoreErrors{});
-            return Strings::contains_any_ignoring_hash_comments(contents, stringview_paths);
+            return Strings::contains_any_ignoring_hash_comments(contents, searcher_paths);
         }
 
         if (extension.empty())
@@ -1251,7 +1250,7 @@ namespace vcpkg
                 Strings::starts_with(StringView(buffer, sizeof(buffer)), "\xEF\xBB\xBF#!") /* ignore byte-order mark */)
             {
                 const auto contents = fs.read_contents(file, IgnoreErrors{});
-                return Strings::contains_any_ignoring_hash_comments(contents, stringview_paths);
+                return Strings::contains_any_ignoring_hash_comments(contents, searcher_paths);
             }
             return false;
         }
