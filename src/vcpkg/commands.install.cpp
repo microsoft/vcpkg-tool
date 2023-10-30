@@ -49,7 +49,7 @@ namespace vcpkg
     struct PathAndType
     {
         Path path;
-        FileType type;
+        FileType type = FileType::none;
 
         bool operator<(const PathAndType& other) const noexcept
         {
