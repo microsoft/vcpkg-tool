@@ -193,7 +193,7 @@ namespace vcpkg
             {
                 Checks::unreachable(VCPKG_LINE_INFO);
             }
-            
+
             const Path target = destination / file.generic_u8string().substr(prefix_length + 1);
             bool use_hard_link = true;
             std::error_code ec;
