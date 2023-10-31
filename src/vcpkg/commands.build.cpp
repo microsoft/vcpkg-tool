@@ -1796,16 +1796,11 @@ namespace vcpkg
                     break;
                 case VcpkgTripletVar::ENV_PASSTHROUGH:
                     passthrough_env_vars_tracked = Strings::split(variable_value, ';');
-                    std::copy(passthrough_env_vars_tracked.begin(),
-                              passthrough_env_vars_tracked.end(),
-                              std::back_inserter(passthrough_env_vars));
+                    Util::Vectors::append(&passthrough_env_vars, passthrough_env_vars_tracked);
                     break;
                 case VcpkgTripletVar::ENV_PASSTHROUGH_UNTRACKED:
-                {
-                    auto untracked_vars = Strings::split(variable_value, ';');
-                    std::move(untracked_vars.begin(), untracked_vars.end(), std::back_inserter(passthrough_env_vars));
+                    Util::Vectors::append(&passthrough_env_vars, Strings::split(variable_value, ';'));
                     break;
-                }
                 case VcpkgTripletVar::PUBLIC_ABI_OVERRIDE:
                     public_abi_override = variable_value.empty() ? nullopt : Optional<std::string>{variable_value};
                     break;
