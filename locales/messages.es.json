@@ -942,7 +942,7 @@
   "PortBugSetDllsWithoutExports": "Es probable que las DLL sin exportaciones sean un error en el script de compilación. Si se trata de esto, agregue la siguiente línea en el archivo de puerto:\nset(VCPKG_POLICY_DLLS_WITHOUT_EXPORTS habilitado)\nLas siguientes DLL no tienen exportaciones:",
   "PortDependencyConflict": "El puerto {package_name} tiene las siguientes dependencias no admitidas:",
   "PortDoesNotExist": "{package_name} no existe",
-  "PortMissingManifest2": "{package_name} port manifest missing (no vcpkg.json or CONTROL file)",
+  "PortMissingManifest2": "{package_name} falta el manifiesto del puerto (no hay archivo vcpkg.json o CONTROL)",
   "PortNotInBaseline": "la línea base no contiene una entrada para el puerto {package_name}",
   "PortSupportsField": "(admite: \" {supports_expression}\")",
   "PortVersionConflict": "Los siguientes paquetes difieren de sus versiones de puerto:",

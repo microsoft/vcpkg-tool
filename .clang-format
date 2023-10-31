@@ -59,6 +59,8 @@ IncludeCategories:
     Priority: -1
   - Regex: '^<catch2/catch\.hpp>$'
     Priority: 1
+  - Regex: '^<vcpkg-test/util\.h>$'
+    Priority: 1
   - Regex: '^<vcpkg/base/fwd/.*\.h>$'
     Priority: 2
   - Regex: '^<vcpkg/fwd/.*\.h>$'

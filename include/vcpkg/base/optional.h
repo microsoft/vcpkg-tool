@@ -27,10 +27,17 @@ namespace vcpkg
         struct OptionalStorage
         {
             constexpr OptionalStorage() noexcept : m_is_present(false), m_inactive() { }
-            constexpr OptionalStorage(const T& t) : m_is_present(true), m_t(t) { }
-            constexpr OptionalStorage(T&& t) : m_is_present(true), m_t(std::move(t)) { }
+            constexpr OptionalStorage(const T& t) noexcept(std::is_nothrow_copy_constructible_v<T>)
+                : m_is_present(true), m_t(t)
+            {
+            }
+            constexpr OptionalStorage(T&& t) noexcept(std::is_nothrow_move_constructible_v<T>)
+                : m_is_present(true), m_t(std::move(t))
+            {
+            }
             template<class U, class = std::enable_if_t<!std::is_reference_v<U>>>
-            explicit OptionalStorage(Optional<U>&& t) : m_is_present(false), m_inactive()
+            explicit OptionalStorage(Optional<U>&& t) noexcept(std::is_nothrow_constructible_v<T, U>)
+                : m_is_present(false), m_inactive()
             {
                 if (auto p = t.get())
                 {
@@ -39,7 +46,8 @@ namespace vcpkg
                 }
             }
             template<class U>
-            explicit OptionalStorage(const Optional<U>& t) : m_is_present(false), m_inactive()
+            explicit OptionalStorage(const Optional<U>& t) noexcept(std::is_nothrow_constructible_v<T, const U&>)
+                : m_is_present(false), m_inactive()
             {
                 if (auto p = t.get())
                 {
@@ -48,17 +56,19 @@ namespace vcpkg
                 }
             }
 
-            ~OptionalStorage() noexcept
+            ~OptionalStorage()
             {
                 if (m_is_present) m_t.~T();
             }
 
-            OptionalStorage(const OptionalStorage& o) : m_is_present(o.m_is_present), m_inactive()
+            OptionalStorage(const OptionalStorage& o) noexcept(std::is_nothrow_copy_constructible_v<T>)
+                : m_is_present(o.m_is_present), m_inactive()
             {
                 if (m_is_present) new (&m_t) T(o.m_t);
             }
 
-            OptionalStorage(OptionalStorage&& o) noexcept : m_is_present(o.m_is_present), m_inactive()
+            OptionalStorage(OptionalStorage&& o) noexcept(std::is_nothrow_move_constructible_v<T>)
+                : m_is_present(o.m_is_present), m_inactive()
             {
                 if (m_is_present)
                 {
@@ -66,7 +76,8 @@ namespace vcpkg
                 }
             }
 
-            OptionalStorage& operator=(const OptionalStorage& o)
+            OptionalStorage& operator=(const OptionalStorage& o) noexcept(
+                std::is_nothrow_copy_constructible_v<T>&& std::is_nothrow_copy_assignable_v<T>)
             {
                 if (m_is_present && o.m_is_present)
                 {
@@ -84,7 +95,7 @@ namespace vcpkg
                 return *this;
             }
 
-            OptionalStorage& operator=(OptionalStorage&& o) noexcept
+            OptionalStorage& operator=(OptionalStorage&& o) noexcept // enforces termination
             {
                 if (m_is_present && o.m_is_present)
                 {
@@ -102,17 +113,17 @@ namespace vcpkg
                 return *this;
             }
 
-            constexpr bool has_value() const { return m_is_present; }
+            constexpr bool has_value() const noexcept { return m_is_present; }
 
-            const T& value() const { return this->m_t; }
-            T& value() { return this->m_t; }
+            const T& value() const noexcept { return this->m_t; }
+            T& value() noexcept { return this->m_t; }
 
-            const T* get() const& { return m_is_present ? &m_t : nullptr; }
-            T* get() & { return m_is_present ? &m_t : nullptr; }
+            const T* get() const& noexcept { return m_is_present ? &m_t : nullptr; }
+            T* get() & noexcept { return m_is_present ? &m_t : nullptr; }
             const T* get() const&& = delete;
             T* get() && = delete;
 
-            void destroy()
+            void destroy() noexcept // enforces termination
             {
                 m_is_present = false;
                 m_t.~T();
@@ -120,7 +131,7 @@ namespace vcpkg
             }
 
             template<class... Args>
-            T& emplace(Args&&... args)
+            T& emplace(Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...>)
             {
                 if (m_is_present) destroy();
                 new (&m_t) T(static_cast<Args&&>(args)...);
@@ -141,14 +152,18 @@ namespace vcpkg
         struct OptionalStorage<T, false>
         {
             constexpr OptionalStorage() noexcept : m_is_present(false), m_inactive() { }
-            constexpr OptionalStorage(T&& t) : m_is_present(true), m_t(std::move(t)) { }
+            constexpr OptionalStorage(T&& t) noexcept(std::is_nothrow_move_constructible_v<T>)
+                : m_is_present(true), m_t(std::move(t))
+            {
+            }
 
-            ~OptionalStorage() noexcept
+            ~OptionalStorage()
             {
                 if (m_is_present) m_t.~T();
             }
 
-            OptionalStorage(OptionalStorage&& o) noexcept : m_is_present(o.m_is_present), m_inactive()
+            OptionalStorage(OptionalStorage&& o) noexcept(std::is_nothrow_move_constructible_v<T>)
+                : m_is_present(o.m_is_present), m_inactive()
             {
                 if (m_is_present)
                 {
@@ -156,7 +171,7 @@ namespace vcpkg
                 }
             }
 
-            OptionalStorage& operator=(OptionalStorage&& o) noexcept
+            OptionalStorage& operator=(OptionalStorage&& o) noexcept // enforces termination
             {
                 if (m_is_present && o.m_is_present)
                 {
@@ -174,18 +189,18 @@ namespace vcpkg
                 return *this;
             }
 
-            constexpr bool has_value() const { return m_is_present; }
+            constexpr bool has_value() const noexcept { return m_is_present; }
 
-            const T& value() const { return this->m_t; }
-            T& value() { return this->m_t; }
+            const T& value() const noexcept { return this->m_t; }
+            T& value() noexcept { return this->m_t; }
 
-            const T* get() const& { return m_is_present ? &m_t : nullptr; }
-            T* get() & { return m_is_present ? &m_t : nullptr; }
+            const T* get() const& noexcept { return m_is_present ? &m_t : nullptr; }
+            T* get() & noexcept { return m_is_present ? &m_t : nullptr; }
             const T* get() const&& = delete;
             T* get() && = delete;
 
             template<class... Args>
-            T& emplace(Args&&... args)
+            T& emplace(Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...>)
             {
                 if (m_is_present) destroy();
                 new (&m_t) T(static_cast<Args&&>(args)...);
@@ -193,7 +208,7 @@ namespace vcpkg
                 return m_t;
             }
 
-            void destroy()
+            void destroy() noexcept
             {
                 m_is_present = false;
                 m_t.~T();
@@ -213,22 +228,22 @@ namespace vcpkg
         struct OptionalStorage<T&, B>
         {
             constexpr OptionalStorage() noexcept : m_t(nullptr) { }
-            constexpr OptionalStorage(T& t) : m_t(&t) { }
-            constexpr OptionalStorage(Optional<T>& t) : m_t(t.get()) { }
+            constexpr OptionalStorage(T& t) noexcept : m_t(&t) { }
+            constexpr OptionalStorage(Optional<T>& t) noexcept : m_t(t.get()) { }
 
-            constexpr bool has_value() const { return m_t != nullptr; }
+            constexpr bool has_value() const noexcept { return m_t != nullptr; }
 
-            T& value() const { return *this->m_t; }
+            T& value() const noexcept { return *this->m_t; }
 
-            T& emplace(T& t)
+            T& emplace(T& t) noexcept
             {
                 m_t = &t;
                 return *m_t;
             }
 
-            T* get() const { return m_t; }
+            T* get() const noexcept { return m_t; }
 
-            void destroy() { m_t = nullptr; }
+            void destroy() noexcept { m_t = nullptr; }
 
         private:
             T* m_t;
@@ -238,25 +253,25 @@ namespace vcpkg
         struct OptionalStorage<const T&, B>
         {
             constexpr OptionalStorage() noexcept : m_t(nullptr) { }
-            constexpr OptionalStorage(const T& t) : m_t(&t) { }
-            constexpr OptionalStorage(const Optional<T>& t) : m_t(t.get()) { }
-            constexpr OptionalStorage(const Optional<const T>& t) : m_t(t.get()) { }
+            constexpr OptionalStorage(const T& t) noexcept : m_t(&t) { }
+            constexpr OptionalStorage(const Optional<T>& t) noexcept : m_t(t.get()) { }
+            constexpr OptionalStorage(const Optional<const T>& t) noexcept : m_t(t.get()) { }
             constexpr OptionalStorage(Optional<T>&& t) = delete;
             constexpr OptionalStorage(Optional<const T>&& t) = delete;
 
-            constexpr bool has_value() const { return m_t != nullptr; }
+            constexpr bool has_value() const noexcept { return m_t != nullptr; }
 
-            const T& value() const { return *this->m_t; }
+            const T& value() const noexcept { return *this->m_t; }
 
-            const T* get() const { return m_t; }
+            const T* get() const noexcept { return m_t; }
 
-            const T& emplace(const T& t)
+            const T& emplace(const T& t) noexcept
             {
                 m_t = &t;
                 return *m_t;
             }
 
-            void destroy() { m_t = nullptr; }
+            void destroy() noexcept { m_t = nullptr; }
 
         private:
             const T* m_t;
@@ -270,13 +285,14 @@ namespace vcpkg
         constexpr Optional() noexcept { }
 
         // Constructors are intentionally implicit
-        constexpr Optional(NullOpt) { }
+        constexpr Optional(NullOpt) noexcept { }
 
         template<class U,
                  std::enable_if_t<!std::is_same_v<std::decay_t<U>, Optional> &&
                                       std::is_constructible_v<details::OptionalStorage<T>, U>,
                                   int> = 0>
-        constexpr Optional(U&& t) : details::OptionalStorage<T>(static_cast<U&&>(t))
+        constexpr Optional(U&& t) noexcept(std::is_nothrow_constructible_v<details::OptionalStorage<T>, U>)
+            : details::OptionalStorage<T>(static_cast<U&&>(t))
         {
         }
 
@@ -284,25 +300,25 @@ namespace vcpkg
         using details::OptionalStorage<T>::has_value;
         using details::OptionalStorage<T>::get;
 
-        T&& value_or_exit(const LineInfo& line_info) &&
+        T&& value_or_exit(const LineInfo& line_info) && noexcept
         {
             Checks::check_exit(line_info, this->has_value(), "Value was null");
             return std::move(this->value());
         }
 
-        T& value_or_exit(const LineInfo& line_info) &
+        T& value_or_exit(const LineInfo& line_info) & noexcept
         {
             Checks::check_exit(line_info, this->has_value(), "Value was null");
             return this->value();
         }
 
-        const T& value_or_exit(const LineInfo& line_info) const&
+        const T& value_or_exit(const LineInfo& line_info) const& noexcept
         {
             Checks::check_exit(line_info, this->has_value(), "Value was null");
             return this->value();
         }
 
-        constexpr explicit operator bool() const { return this->has_value(); }
+        constexpr explicit operator bool() const noexcept { return this->has_value(); }
 
         template<class U>
         T value_or(U&& default_value) const&
@@ -371,7 +387,7 @@ namespace vcpkg
             return nullopt;
         }
 
-        void clear()
+        void clear() noexcept
         {
             if (this->has_value())
             {
@@ -395,12 +411,6 @@ namespace vcpkg
         }
         friend bool operator!=(const Optional& lhs, const Optional& rhs) noexcept { return !(lhs == rhs); }
     };
-
-    template<class U>
-    Optional<std::decay_t<U>> make_optional(U&& u)
-    {
-        return Optional<std::decay_t<U>>(std::forward<U>(u));
-    }
 
     // these cannot be hidden friends, unfortunately
     template<class T, class U>
