@@ -72,7 +72,12 @@ TEST_CASE ("find_first_of", "[strings]")
 TEST_CASE ("contains_any_ignoring_c_comments", "[strings]")
 {
     using vcpkg::Strings::contains_any_ignoring_c_comments;
-    vcpkg::StringView to_find[] = {"abc", "wer"};
+    std::string a = "abc";
+    std::string b = "wer";
+
+    vcpkg::Strings::boyer_moore_horspool_searcher to_find[] = {
+        vcpkg::Strings::boyer_moore_horspool_searcher(a.begin(), a.end()),
+        vcpkg::Strings::boyer_moore_horspool_searcher(b.begin(), b.end())};
     REQUIRE(contains_any_ignoring_c_comments(R"(abc)", to_find));
     REQUIRE(contains_any_ignoring_c_comments(R"("abc")", to_find));
     REQUIRE_FALSE(contains_any_ignoring_c_comments(R"("" //abc)", to_find));
@@ -127,7 +132,12 @@ TEST_CASE ("contains_any_ignoring_c_comments", "[strings]")
 TEST_CASE ("contains_any_ignoring_hash_comments", "[strings]")
 {
     using vcpkg::Strings::contains_any_ignoring_hash_comments;
-    vcpkg::StringView to_find[] = {"abc", "wer"};
+    std::string a = "abc";
+    std::string b = "wer";
+
+    vcpkg::Strings::boyer_moore_horspool_searcher to_find[] = {
+        vcpkg::Strings::boyer_moore_horspool_searcher(a.begin(), a.end()),
+        vcpkg::Strings::boyer_moore_horspool_searcher(b.begin(), b.end())};
     REQUIRE(contains_any_ignoring_hash_comments("abc", to_find));
     REQUIRE(contains_any_ignoring_hash_comments("wer", to_find));
     REQUIRE(contains_any_ignoring_hash_comments("wer # test", to_find));
