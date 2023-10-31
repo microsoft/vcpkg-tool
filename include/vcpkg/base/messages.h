@@ -139,6 +139,18 @@ namespace vcpkg
     };
 
     LocalizedString format_environment_variable(StringView variable_name);
+
+    // constants for the
+    // <file>:line:col: <prefix>: <content>
+    // error message format
+    inline constexpr StringLiteral ErrorPrefix = "error: ";
+    LocalizedString error_prefix();
+    inline constexpr StringLiteral InternalErrorPrefix = "internal error: ";
+    LocalizedString internal_error_prefix();
+    inline constexpr StringLiteral NotePrefix = "note: ";
+    LocalizedString note_prefix();
+    inline constexpr StringLiteral WarningPrefix = "warning: ";
+    LocalizedString warning_prefix();
 }
 
 VCPKG_FORMAT_AS(vcpkg::LocalizedString, vcpkg::StringView);
@@ -187,12 +199,11 @@ namespace vcpkg::msg
         msg::write_unlocalized_text_to_stdout(Color::none, "\n");
     }
 
-    [[nodiscard]] LocalizedString format_error();
     [[nodiscard]] LocalizedString format_error(const LocalizedString& s);
     template<VCPKG_DECL_MSG_TEMPLATE>
     [[nodiscard]] LocalizedString format_error(VCPKG_DECL_MSG_ARGS)
     {
-        auto s = format_error();
+        auto s = error_prefix();
         msg::format_to(s, VCPKG_EXPAND_MSG_ARGS);
         return s;
     }
@@ -200,17 +211,16 @@ namespace vcpkg::msg
     template<VCPKG_DECL_MSG_TEMPLATE>
     void println_error(VCPKG_DECL_MSG_ARGS)
     {
-        auto s = format_error();
+        auto s = error_prefix();
         msg::format_to(s, VCPKG_EXPAND_MSG_ARGS);
         println(Color::error, s);
     }
 
-    [[nodiscard]] LocalizedString format_warning();
     [[nodiscard]] LocalizedString format_warning(const LocalizedString& s);
     template<VCPKG_DECL_MSG_TEMPLATE>
     [[nodiscard]] LocalizedString format_warning(VCPKG_DECL_MSG_ARGS)
     {
-        auto s = format_warning();
+        auto s = warning_prefix();
         msg::format_to(s, VCPKG_EXPAND_MSG_ARGS);
         return s;
     }
@@ -218,7 +228,7 @@ namespace vcpkg::msg
     template<VCPKG_DECL_MSG_TEMPLATE>
     void println_warning(VCPKG_DECL_MSG_ARGS)
     {
-        auto s = format_warning();
+        auto s = LocalizedString::from_raw(WarningPrefix);
         msg::format_to(s, VCPKG_EXPAND_MSG_ARGS);
         println(Color::warning, s);
     }

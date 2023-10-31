@@ -310,7 +310,7 @@ namespace vcpkg
                 msg::write_unlocalized_text_to_stdout(Color::error, fmt::format("FAIL: {}\n", port_name));
                 errors.emplace(LocalizedString::from_raw(port_path)
                                    .append_raw(": ")
-                                   .append(msgErrorMessage)
+                                   .append_raw(ErrorPrefix)
                                    .append(msgPortMissingManifest2, msg::package_name = port_name));
                 continue;
             }

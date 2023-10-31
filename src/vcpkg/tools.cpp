@@ -839,8 +839,7 @@ namespace vcpkg
             }
 
             // If no acceptable tool was found and downloading was unavailable, emit an error message
-            LocalizedString s = msg::format(msgErrorMessage);
-            s.append(msgToolFetchFailed, msg::tool_name = tool.tool_data_name());
+            LocalizedString s = msg::format_error(msgToolFetchFailed, msg::tool_name = tool.tool_data_name());
             if (env_force_system_binaries && download_available)
             {
                 s.append_raw(' ').append(msgDownloadAvailable,
@@ -924,8 +923,7 @@ namespace vcpkg
         const auto tools = fs.find_from_PATH(Tools::TAR);
         if (tools.empty())
         {
-            return msg::format(msgErrorMessage)
-                .append(msgToolFetchFailed, msg::tool_name = Tools::TAR)
+            return msg::format_error(msgToolFetchFailed, msg::tool_name = Tools::TAR)
 #if defined(_WIN32)
                 .append(msgToolInWin10)
 #else
@@ -964,8 +962,7 @@ namespace vcpkg
         }
 #endif
 
-        return msg::format(msgErrorMessage)
-            .append(msgToolFetchFailed, msg::tool_name = Tools::CMAKE)
+        return msg::format_error(msgToolFetchFailed, msg::tool_name = Tools::CMAKE)
 #if !defined(_WIN32)
             .append(msgInstallWithSystemManager)
 #endif
