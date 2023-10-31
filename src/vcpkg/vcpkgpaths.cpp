@@ -1191,8 +1191,8 @@ namespace vcpkg
         fs.rename_with_retry(git_tree_temp, destination, ec);
         if (ec)
         {
-            return LocalizedString::from_raw(ErrorPrefix)
-                .append(format_filesystem_call_error(ec, "rename_with_retry", {git_tree_temp, destination}));
+            return error_prefix().append(
+                format_filesystem_call_error(ec, "rename_with_retry", {git_tree_temp, destination}));
         }
 
         fs.remove(git_tree_index, IgnoreErrors{});

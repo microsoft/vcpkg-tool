@@ -121,6 +121,11 @@ namespace vcpkg
         return LocalizedString::from_raw(fmt::format("${}", variable_name));
 #endif // ^^^ !_WIN32
     }
+
+    LocalizedString error_prefix() { return LocalizedString::from_raw(ErrorPrefix); }
+    LocalizedString internal_error_prefix() { return LocalizedString::from_raw(InternalErrorPrefix); }
+    LocalizedString note_prefix() { return LocalizedString::from_raw(NotePrefix); }
+    LocalizedString warning_prefix() { return LocalizedString::from_raw(WarningPrefix); }
 }
 
 namespace vcpkg::msg
@@ -492,12 +497,8 @@ namespace vcpkg::msg
         return nullopt;
     }
 
-    LocalizedString format_error(const LocalizedString& s) { return LocalizedString::from_raw(ErrorPrefix).append(s); }
+    LocalizedString format_error(const LocalizedString& s) { return error_prefix().append(s); }
     void println_error(const LocalizedString& s) { println(Color::error, format_error(s)); }
-
-    LocalizedString format_warning(const LocalizedString& s)
-    {
-        return LocalizedString::from_raw(WarningPrefix).append(s);
-    }
+    LocalizedString format_warning(const LocalizedString& s) { return warning_prefix().append(s); }
     void println_warning(const LocalizedString& s) { println(Color::warning, format_warning(s)); }
 }

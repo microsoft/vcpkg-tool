@@ -164,59 +164,54 @@ namespace vcpkg
                 if (Strings::case_insensitive_ascii_starts_with(msg.value, test.prefix))
                 {
                     has_errors = true;
-                    msg::print(LocalizedString::from_raw(ErrorPrefix)
-                                   .append_raw(fmt::format("The message named {} starts with {}, it must be changed "
-                                                           "to prepend {} in code instead.\n",
-                                                           msg.name,
-                                                           test.prefix,
-                                                           test.prefix_name)));
+                    msg::print(
+                        error_prefix().append_raw(fmt::format("The message named {} starts with {}, it must be changed "
+                                                              "to prepend {} in code instead.\n",
+                                                              msg.name,
+                                                              test.prefix,
+                                                              test.prefix_name)));
                 }
             }
 
             if (Strings::contains(msg.value, "   "))
             {
                 has_errors = true;
-                msg::print(LocalizedString::from_raw(ErrorPrefix)
-                               .append_raw(fmt::format(
-                                   "The message named {} contains what appears to be indenting which must be "
-                                   "changed to use LocalizedString::append_indent instead.\n",
-                                   msg.name)));
+                msg::print(error_prefix().append_raw(
+                    fmt::format("The message named {} contains what appears to be indenting which must be "
+                                "changed to use LocalizedString::append_indent instead.\n",
+                                msg.name)));
             }
 
             if (!msg.value.empty() && msg.value.back() == '\n')
             {
                 has_errors = true;
-                msg::print(LocalizedString::from_raw(ErrorPrefix)
-                               .append_raw(fmt::format("The message named {} ends with a newline which should be added "
-                                                       "by formatting rather than by localization.",
-                                                       msg.name)));
+                msg::print(error_prefix().append_raw(
+                    fmt::format("The message named {} ends with a newline which should be added "
+                                "by formatting rather than by localization.",
+                                msg.name)));
             }
 
             auto mismatches = get_format_arg_mismatches(msg.value, msg.comment, format_string_parsing_error);
             if (!format_string_parsing_error.data().empty())
             {
                 has_errors = true;
-                msg::print(LocalizedString::from_raw(ErrorPrefix)
-                               .append_raw(fmt::format("parsing format string for {}:\n", msg.name)));
+                msg::print(error_prefix().append_raw(fmt::format("parsing format string for {}:\n", msg.name)));
             }
 
             if (!mismatches.arguments_without_comment.empty() || !mismatches.comments_without_argument.empty())
             {
                 has_errors = true;
-                msg::print(LocalizedString::from_raw(ErrorPrefix)
-                               .append_raw(fmt::format("message {} has an incorrect comment:\n", msg.name)));
+                msg::print(error_prefix().append_raw(fmt::format("message {} has an incorrect comment:\n", msg.name)));
 
                 for (const auto& arg : mismatches.arguments_without_comment)
                 {
-                    msg::print(LocalizedString::from_raw(ErrorPrefix)
-                                   .append_raw(fmt::format(
-                                       "{{{}}} was specified in a comment, but was not used in the message.\n", arg)));
+                    msg::print(error_prefix().append_raw(
+                        fmt::format("{{{}}} is in the message, but is not commented\n", arg)));
                 }
                 for (const auto& comment : mismatches.comments_without_argument)
                 {
-                    msg::print(
-                        LocalizedString::from_raw(ErrorPrefix)
-                            .append_raw(fmt::format("{{{}}} was used in the message, but not commented.\n", comment)));
+                    msg::print(error_prefix().append_raw(
+                        fmt::format("{{{}}} is in the comment, but not used in the message\n", comment)));
                 }
             }
 
