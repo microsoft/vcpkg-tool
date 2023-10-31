@@ -71,7 +71,7 @@ TEST_CASE ("set_duplicates", "[util]")
     set_duplicates_test_case({1, 1, 2, 3, 4, 4}, {1, 4});
 }
 
-TEST_CASE("append", "[util]")
+TEST_CASE ("append", "[util]")
 {
     {
         std::vector<std::string> a;
