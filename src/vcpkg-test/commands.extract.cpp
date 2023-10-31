@@ -1,4 +1,4 @@
-#include <catch2/catch.hpp>
+#include <vcpkg-test/util.h>
 
 #include <vcpkg/base/files.h>
 
@@ -7,8 +7,6 @@
 #include <vcpkg/vcpkgpaths.h>
 
 #include <limits.h>
-
-#include <vcpkg-test/util.h>
 
 using namespace vcpkg;
 

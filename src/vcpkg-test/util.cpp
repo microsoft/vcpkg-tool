@@ -1,4 +1,4 @@
-#include <catch2/catch.hpp>
+#include <vcpkg-test/util.h>
 
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/system.h>
@@ -14,8 +14,6 @@
 #include <numeric>
 #include <set>
 #include <vector>
-
-#include <vcpkg-test/util.h>
 
 namespace vcpkg::Test
 {

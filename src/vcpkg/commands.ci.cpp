@@ -274,7 +274,7 @@ namespace
                            const LocalizedString& not_supported_regressions,
                            bool allow_unexpected_passing)
     {
-        bool has_error = false;
+        bool has_error = !not_supported_regressions.empty();
         LocalizedString output = msg::format(msgCiBaselineRegressionHeader);
         output.append_raw('\n');
         output.append(not_supported_regressions);

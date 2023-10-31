@@ -389,11 +389,11 @@ namespace
         StringView text,
         StringView origin,
         MessageSink& warning_sink,
-        ParseExpected<SourceControlFile> (*do_parse)(StringView, const Json::Object&, MessageSink&))
+        ExpectedL<std::unique_ptr<SourceControlFile>> (*do_parse)(StringView, const Json::Object&, MessageSink&))
     {
         StatsTimer timer(g_load_ports_stats);
         return Json::parse_object(text, origin).then([&](Json::Object&& object) {
-            return do_parse(origin, std::move(object), warning_sink).map_error(ToLocalizedString);
+            return do_parse(origin, std::move(object), warning_sink);
         });
     }
 }
