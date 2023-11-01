@@ -205,10 +205,9 @@ namespace
         }
 
         return {
-            LocalizedString::from_raw(MessagePrefix)
-                .append(msgVersionVerifiedOK,
-                        msg::version_spec = Strings::concat(port_name, '@', entry.version.version),
-                        msg::git_tree_sha = entry.git_tree),
+            message_prefix().append(msgVersionVerifiedOK,
+                                    msg::version_spec = Strings::concat(port_name, '@', entry.version.version),
+                                    msg::git_tree_sha = entry.git_tree),
             expected_left_tag,
         };
     }

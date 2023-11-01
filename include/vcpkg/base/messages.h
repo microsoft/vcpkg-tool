@@ -72,15 +72,6 @@ namespace vcpkg::msg
 
 namespace vcpkg
 {
-    // constants for the
-    // <file>:line:col: <prefix>: <content>
-    // error message format
-    inline constexpr StringLiteral ErrorPrefix = "error: ";
-    inline constexpr StringLiteral InternalErrorPrefix = "internal error: ";
-    inline constexpr StringLiteral MessagePrefix = "message: ";
-    inline constexpr StringLiteral NotePrefix = "note: ";
-    inline constexpr StringLiteral WarningPrefix = "warning: ";
-
     struct LocalizedString
     {
         LocalizedString() = default;
@@ -148,6 +139,20 @@ namespace vcpkg
     };
 
     LocalizedString format_environment_variable(StringView variable_name);
+
+    // constants for the
+    // <file>:line:col: <prefix>: <content>
+    // error message format
+    inline constexpr StringLiteral ErrorPrefix = "error: ";
+    LocalizedString error_prefix();
+    inline constexpr StringLiteral InternalErrorPrefix = "internal error: ";
+    LocalizedString internal_error_prefix();
+    inline constexpr StringLiteral MessagePrefix = "message: ";
+    LocalizedString message_prefix();
+    inline constexpr StringLiteral NotePrefix = "note: ";
+    LocalizedString note_prefix();
+    inline constexpr StringLiteral WarningPrefix = "warning: ";
+    LocalizedString warning_prefix();
 }
 
 VCPKG_FORMAT_AS(vcpkg::LocalizedString, vcpkg::StringView);
@@ -200,7 +205,7 @@ namespace vcpkg::msg
     template<VCPKG_DECL_MSG_TEMPLATE>
     [[nodiscard]] LocalizedString format_error(VCPKG_DECL_MSG_ARGS)
     {
-        auto s = LocalizedString::from_raw(ErrorPrefix);
+        auto s = error_prefix();
         msg::format_to(s, VCPKG_EXPAND_MSG_ARGS);
         return s;
     }
@@ -208,7 +213,7 @@ namespace vcpkg::msg
     template<VCPKG_DECL_MSG_TEMPLATE>
     void println_error(VCPKG_DECL_MSG_ARGS)
     {
-        auto s = LocalizedString::from_raw(ErrorPrefix);
+        auto s = error_prefix();
         msg::format_to(s, VCPKG_EXPAND_MSG_ARGS);
         println(Color::error, s);
     }
@@ -217,7 +222,7 @@ namespace vcpkg::msg
     template<VCPKG_DECL_MSG_TEMPLATE>
     [[nodiscard]] LocalizedString format_warning(VCPKG_DECL_MSG_ARGS)
     {
-        auto s = LocalizedString::from_raw(WarningPrefix);
+        auto s = warning_prefix();
         msg::format_to(s, VCPKG_EXPAND_MSG_ARGS);
         return s;
     }

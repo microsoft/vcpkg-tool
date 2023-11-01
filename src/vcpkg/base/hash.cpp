@@ -565,9 +565,7 @@ namespace vcpkg::Hash
         auto file = fs.open_for_read(path, ec);
         if (ec)
         {
-            return LocalizedString::from_raw(ErrorPrefix)
-                .append(msgHashFileFailureToRead, msg::path = path)
-                .append_raw(ec.message());
+            return error_prefix().append(msgHashFileFailureToRead, msg::path = path).append_raw(ec.message());
         }
 
         return do_hash<ExpectedL<std::string>>(algo, [&](Hasher& hasher) -> ExpectedL<std::string> {
@@ -582,9 +580,7 @@ namespace vcpkg::Hash
                 }
                 else if ((ec = file.error()))
                 {
-                    return LocalizedString::from_raw(ErrorPrefix)
-                        .append(msgHashFileFailureToRead, msg::path = path)
-                        .append_raw(ec.message());
+                    return error_prefix().append(msgHashFileFailureToRead, msg::path = path).append_raw(ec.message());
                 }
             } while (!file.eof());
 

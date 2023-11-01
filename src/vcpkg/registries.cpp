@@ -667,7 +667,7 @@ namespace
                 fs.create_directories(destination_parent, ec);
                 if (ec)
                 {
-                    return {LocalizedString::from_raw(ErrorPrefix)
+                    return {error_prefix()
                                 .append(format_filesystem_call_error(ec, "create_directories", {destination_parent}))
                                 .append_raw('\n')
                                 .append_raw(NotePrefix)
@@ -677,7 +677,7 @@ namespace
                 fs.write_contents(destination_tmp, *contents, ec);
                 if (ec)
                 {
-                    return {LocalizedString::from_raw(ErrorPrefix)
+                    return {error_prefix()
                                 .append(format_filesystem_call_error(ec, "write_contents", {destination_tmp}))
                                 .append_raw('\n')
                                 .append_raw(NotePrefix)
@@ -687,7 +687,7 @@ namespace
                 fs.rename(destination_tmp, destination, ec);
                 if (ec)
                 {
-                    return {LocalizedString::from_raw(ErrorPrefix)
+                    return {error_prefix()
                                 .append(format_filesystem_call_error(ec, "rename", {destination_tmp, destination}))
                                 .append_raw('\n')
                                 .append_raw(NotePrefix)
