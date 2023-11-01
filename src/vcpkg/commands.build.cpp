@@ -617,7 +617,7 @@ namespace vcpkg
                              action.spec.triplet(),
                              action.public_abi(),
                              fspecs_to_pspecs(find_itr->second));
-        if (const auto p_ver = build_info.version.get())
+        if (const auto p_ver = build_info.detected_head_version.get())
         {
             bpgh.version = *p_ver;
         }
@@ -1665,7 +1665,11 @@ namespace vcpkg
         }
 
         std::string version = parser.optional_field("Version");
-        if (!version.empty()) build_info.version = std::move(version);
+        if (!version.empty())
+        {
+            sanitize_version_string(version);
+            build_info.detected_head_version = std::move(version);
+        }
 
         std::unordered_map<BuildPolicy, bool> policies;
         for (const auto& policy : ALL_POLICIES)
