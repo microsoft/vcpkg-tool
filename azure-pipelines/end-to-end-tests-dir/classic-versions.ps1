@@ -24,5 +24,5 @@ Throw-IfFailed
 $listResults = Run-VcpkgAndCaptureOutput @commonArgs list
 if (-Not ($listResults.Trim() -match "set-detected-head-version:[\S]+[\s]+detected-head"))
 {
-    throw "Expected list to list the declared version"
+    throw "Expected list to list the detected version"
 }
