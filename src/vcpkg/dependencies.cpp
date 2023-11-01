@@ -245,7 +245,7 @@ namespace vcpkg
                     }
                 }
 
-                Util::Vectors::append(&out_new_dependencies, dep_list);
+                Util::Vectors::append(&out_new_dependencies, std::move(dep_list));
             }
 
             void create_install_info(std::vector<FeatureSpec>& out_reinstall_requirements)
