@@ -102,11 +102,10 @@ namespace vcpkg
         std::sort(output.begin(), output.end());
 #endif
         auto begin_filter = std::find(output.begin(), output.end(), invalid);
-        if (begin_filter == output.end())
+        if (begin_filter != output.end())
         {
-            return output;
+            output.erase(begin_filter, output.end());
         }
-        output.erase(begin_filter, output.end());
         return output;
     }
 
