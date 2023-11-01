@@ -153,6 +153,7 @@ namespace vcpkg
         std::vector<BadPrefixTest> tests{
             {"error:", "ErrorPrefix"},
             {"internal error:", "InternalErrorPrefix"},
+            {"message:", "MessagePrefix"},
             {"note:", "NotePrefix"},
             {"warning:", "WarningPrefix"},
         };

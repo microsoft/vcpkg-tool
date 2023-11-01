@@ -945,7 +945,7 @@ namespace vcpkg
         return std::move(maybe_tree)
             .error()
             .append_raw(NotePrefix)
-            .append(msgWhileCheckingOutPortTreeIsh, msg::package_name = port_name, msg::commit_sha = git_tree);
+            .append(msgWhileCheckingOutPortTreeIsh, msg::package_name = port_name, msg::git_tree_sha = git_tree);
     }
 
     ExpectedL<std::string> VcpkgPaths::git_show(StringView treeish, const Path& dot_git_dir) const

@@ -3087,7 +3087,10 @@ DECLARE_MESSAGE(VersionSpecMismatch,
                 "Failed to load port because versions are inconsistent. The file \"{path}\" contains the version "
                 "{actual_version}, but the version database indicates that it should be {expected_version}.")
 DECLARE_MESSAGE(VersionTableHeader, (), "", "Version")
-DECLARE_MESSAGE(VersionVerifiedOK, (msg::version_spec, msg::commit_sha), "", "OK: {version_spec} -> {commit_sha}")
+DECLARE_MESSAGE(VersionVerifiedOK,
+                (msg::version_spec, msg::git_tree_sha),
+                "",
+                "{version_spec} is correctly in the version database ({git_tree_sha})")
 DECLARE_MESSAGE(VSExaminedInstances, (), "", "The following Visual Studio instances were considered:")
 DECLARE_MESSAGE(VSExaminedPaths, (), "", "The following paths were examined for Visual Studio instances:")
 DECLARE_MESSAGE(VSNoInstances, (), "", "Could not locate a complete Visual Studio instance")
@@ -3097,9 +3100,9 @@ DECLARE_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interp
 DECLARE_MESSAGE(WarnOnParseConfig, (msg::path), "", "Found the following warnings in configuration {path}:")
 DECLARE_MESSAGE(WhileCheckingOutBaseline, (msg::commit_sha), "", "while checking out baseline {commit_sha}")
 DECLARE_MESSAGE(WhileCheckingOutPortTreeIsh,
-                (msg::package_name, msg::commit_sha),
+                (msg::package_name, msg::git_tree_sha),
                 "",
-                "while checking out port {package_name} with git tree {commit_sha}")
+                "while checking out port {package_name} with git tree {git_tree_sha}")
 DECLARE_MESSAGE(WhileGettingLocalTreeIshObjectsForPorts, (), "", "while getting local treeish objects for ports")
 DECLARE_MESSAGE(WhileLoadingLocalPort, (msg::package_name), "", "while attempting to load local port {package_name}")
 DECLARE_MESSAGE(WhileLoadingPortFromGitTree, (msg::commit_sha), "", "while trying to load port from: {commit_sha}")

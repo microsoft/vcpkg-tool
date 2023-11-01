@@ -147,6 +147,8 @@ namespace vcpkg
     LocalizedString error_prefix();
     inline constexpr StringLiteral InternalErrorPrefix = "internal error: ";
     LocalizedString internal_error_prefix();
+    inline constexpr StringLiteral MessagePrefix = "message: ";
+    LocalizedString message_prefix();
     inline constexpr StringLiteral NotePrefix = "note: ";
     LocalizedString note_prefix();
     inline constexpr StringLiteral WarningPrefix = "warning: ";
