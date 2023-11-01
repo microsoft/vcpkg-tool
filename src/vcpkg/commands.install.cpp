@@ -191,19 +191,25 @@ namespace vcpkg
             if (!is_regular_file(status) && !is_symlink(status))
             {
                 Checks::unreachable(VCPKG_LINE_INFO);
+                return;
             }
 
             const Path target = destination / file.generic_u8string().substr(prefix_length + 1);
+
+            if (fs.exists(target, IgnoreErrors{}))
+            {
+                msg::println_warning(msgOverwritingFile, msg::path = target);
+                if (is_regular_file(status))
+                {
+                    fs.remove(target, IgnoreErrors{});
+                }
+            }
+
             bool use_hard_link = true;
             std::error_code ec;
 
             if (is_regular_file(status))
             {
-                if (fs.exists(target, IgnoreErrors{}))
-                {
-                    msg::println_warning(msgOverwritingFile, msg::path = target);
-                    fs.remove(target, IgnoreErrors{});
-                }
                 if (use_hard_link)
                 {
                     fs.create_hard_link(file, target, ec);
@@ -225,13 +231,9 @@ namespace vcpkg
                     msg::println_error(msgInstallFailed, msg::path = target, msg::error_msg = ec.message());
                 }
             }
-            else if (is_symlink(status))
+            else
             {
-                if (fs.exists(target, IgnoreErrors{}))
-                {
-                    msg::println_warning(msgOverwritingFile, msg::path = target);
-                }
-
+                // file is symlink
                 fs.copy_symlink(file, target, ec);
                 if (ec)
                 {
