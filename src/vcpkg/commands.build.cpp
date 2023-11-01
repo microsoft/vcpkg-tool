@@ -654,19 +654,15 @@ namespace vcpkg
                                              const Toolset& toolset,
                                              std::vector<CMakeVariable>& out_vars)
     {
-        Util::Vectors::append(&out_vars,
-                              std::initializer_list<CMakeVariable>{
-                                  {"CMD", "BUILD"},
-                                  {"DOWNLOADS", paths.downloads},
-                                  {"TARGET_TRIPLET", triplet.canonical_name()},
-                                  {"TARGET_TRIPLET_FILE", paths.get_triplet_db().get_triplet_file_path(triplet)},
-                                  {"VCPKG_BASE_VERSION", VCPKG_BASE_VERSION_AS_STRING},
-                                  {"VCPKG_CONCURRENCY", std::to_string(get_concurrency())},
-                                  {"VCPKG_PLATFORM_TOOLSET", toolset.version.c_str()},
-                              });
+        out_vars.emplace_back("CMD", "BUILD");
+        out_vars.emplace_back("DOWNLOADS", paths.downloads);
+        out_vars.emplace_back("TARGET_TRIPLET", triplet.canonical_name());
+        out_vars.emplace_back("TARGET_TRIPLET_FILE", paths.get_triplet_db().get_triplet_file_path(triplet));
+        out_vars.emplace_back("VCPKG_BASE_VERSION", VCPKG_BASE_VERSION_AS_STRING);
+        out_vars.emplace_back("VCPKG_CONCURRENCY", std::to_string(get_concurrency()));
+        out_vars.emplace_back("VCPKG_PLATFORM_TOOLSET", toolset.version);
         // Make sure GIT could be found
-        const Path& git_exe_path = paths.get_tool_exe(Tools::GIT, stdout_sink);
-        out_vars.emplace_back("GIT", git_exe_path);
+        out_vars.emplace_back("GIT", paths.get_tool_exe(Tools::GIT, stdout_sink));
     }
 
     static CompilerInfo load_compiler_info(const VcpkgPaths& paths,
