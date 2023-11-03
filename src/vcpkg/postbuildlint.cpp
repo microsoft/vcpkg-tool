@@ -1290,7 +1290,7 @@ namespace vcpkg
         std::mutex mtx;
         auto files = fs.get_regular_files_recursive(dir, IgnoreErrors{});
 
-        parallel_for_each(View<Path>(files), [&](const Path& file) {
+        parallel_for_each(files, [&](const Path& file) {
             if (file_contains_absolute_paths(fs, file, searcher_paths))
             {
                 std::lock_guard lock{mtx};
