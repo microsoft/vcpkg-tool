@@ -1,6 +1,5 @@
 #pragma once
 
-#include <vcpkg/base/span.h>
 #include <vcpkg/base/system.h>
 
 #include <atomic>
@@ -30,8 +29,8 @@ namespace vcpkg
         }
     }
 
-    template<class T, class F>
-    void parallel_for_each(View<T> view, F cb) noexcept
+    template<class Container, class F>
+    void parallel_for_each(Container&& view, F cb) noexcept
     {
         if (view.size() == 0)
         {
@@ -57,8 +56,8 @@ namespace vcpkg
         });
     }
 
-    template<class T, class RanItTarget, class F>
-    void parallel_transform(View<T> view, RanItTarget out_begin, F&& cb) noexcept
+    template<class Container, class RanItTarget, class F>
+    void parallel_transform(Container&& view, RanItTarget out_begin, F&& cb) noexcept
     {
         if (view.size() == 0)
         {
