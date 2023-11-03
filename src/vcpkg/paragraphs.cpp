@@ -389,11 +389,11 @@ namespace
         StringView text,
         StringView origin,
         MessageSink& warning_sink,
-        ParseExpected<SourceControlFile> (*do_parse)(StringView, const Json::Object&, MessageSink&))
+        ExpectedL<std::unique_ptr<SourceControlFile>> (*do_parse)(StringView, const Json::Object&, MessageSink&))
     {
         StatsTimer timer(g_load_ports_stats);
         return Json::parse_object(text, origin).then([&](Json::Object&& object) {
-            return do_parse(origin, std::move(object), warning_sink).map_error(ToLocalizedString);
+            return do_parse(origin, std::move(object), warning_sink);
         });
     }
 }
@@ -467,13 +467,13 @@ namespace vcpkg::Paragraphs
         {
             return LocalizedString::from_raw(port_directory)
                 .append_raw(": ")
-                .append(msgErrorMessage)
+                .append_raw(ErrorPrefix)
                 .append(msgPortMissingManifest2, msg::package_name = port_name);
         }
 
         return LocalizedString::from_raw(port_directory)
             .append_raw(": ")
-            .append(msgErrorMessage)
+            .append_raw(ErrorPrefix)
             .append(msgPortDoesNotExist, msg::package_name = port_name);
     }
 

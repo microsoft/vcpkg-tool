@@ -1,4 +1,4 @@
-#include <catch2/catch.hpp>
+#include <vcpkg-test/util.h>
 
 #include <vcpkg/fwd/packagespec.h>
 
@@ -17,7 +17,6 @@
 #include <vector>
 
 #include <vcpkg-test/mockcmakevarprovider.h>
-#include <vcpkg-test/util.h>
 
 using namespace vcpkg;
 

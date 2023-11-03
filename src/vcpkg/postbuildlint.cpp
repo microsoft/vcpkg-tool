@@ -1222,25 +1222,25 @@ namespace vcpkg
 
     static bool file_contains_absolute_paths(const ReadOnlyFilesystem& fs,
                                              const Path& file,
-                                             const std::vector<StringView> stringview_paths)
+                                             View<Strings::boyer_moore_horspool_searcher> searcher_paths)
     {
         const auto extension = file.extension();
         if (extension == ".h" || extension == ".hpp" || extension == ".hxx")
         {
-            return Strings::contains_any_ignoring_c_comments(fs.read_contents(file, IgnoreErrors{}), stringview_paths);
+            return Strings::contains_any_ignoring_c_comments(fs.read_contents(file, IgnoreErrors{}), searcher_paths);
         }
 
         if (extension == ".cfg" || extension == ".ini" || file.filename() == "usage")
         {
             const auto contents = fs.read_contents(file, IgnoreErrors{});
-            return Strings::contains_any(contents, stringview_paths);
+            return Strings::long_string_contains_any(contents, searcher_paths);
         }
 
         if (extension == ".py" || extension == ".sh" || extension == ".cmake" || extension == ".pc" ||
             extension == ".conf")
         {
             const auto contents = fs.read_contents(file, IgnoreErrors{});
-            return Strings::contains_any_ignoring_hash_comments(contents, stringview_paths);
+            return Strings::contains_any_ignoring_hash_comments(contents, searcher_paths);
         }
 
         if (extension.empty())
@@ -1254,7 +1254,7 @@ namespace vcpkg
                 Strings::starts_with(StringView(buffer, sizeof(buffer)), "\xEF\xBB\xBF#!") /* ignore byte-order mark */)
             {
                 const auto contents = fs.read_contents(file, IgnoreErrors{});
-                return Strings::contains_any_ignoring_hash_comments(contents, stringview_paths);
+                return Strings::contains_any_ignoring_hash_comments(contents, searcher_paths);
             }
             return false;
         }
@@ -1283,14 +1283,15 @@ namespace vcpkg
 
         Util::sort_unique_erase(string_paths);
 
-        const auto stringview_paths = Util::fmap(string_paths, [](std::string& s) { return StringView(s); });
+        const auto searcher_paths = Util::fmap(
+            string_paths, [](std::string& s) { return Strings::boyer_moore_horspool_searcher(s.begin(), s.end()); });
 
         std::vector<Path> failing_files;
         std::mutex mtx;
         auto files = fs.get_regular_files_recursive(dir, IgnoreErrors{});
 
         parallel_for_each(View<Path>(files), [&](const Path& file) {
-            if (file_contains_absolute_paths(fs, file, stringview_paths))
+            if (file_contains_absolute_paths(fs, file, searcher_paths))
             {
                 std::lock_guard lock{mtx};
                 failing_files.push_back(file);
