@@ -172,7 +172,7 @@ namespace vcpkg
     // /(\d+)(\.\d+|$)(\.\d+)?.*/
     bool try_extract_external_dot_version(ParsedExternalVersion& out, StringView version);
 
-    // remove as few characters as possible from `target` to make it a valid `version-string` [^#]*(#\d+)?
+    // remove as few characters as possible from `target` to make it a valid `version-string` [^#]+(#\d+)?, or empty
     void sanitize_version_string(std::string& target);
 }
 
