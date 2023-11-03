@@ -342,7 +342,7 @@ namespace vcpkg
 
     static LocalizedString format_invalid_date_version(StringView version)
     {
-        return msg::format(msgErrorMessage).append(msg::format(msgVersionInvalidDate, msg::version = version));
+        return msg::format_error(msgVersionInvalidDate, msg::version = version);
     }
 
     ExpectedL<DateVersion> DateVersion::try_parse(StringView version)
@@ -577,5 +577,64 @@ namespace vcpkg
         out.patch = StringView{minor_last + 1, patch_last};
 
         return true;
+    }
+
+    void sanitize_version_string(std::string& target)
+    {
+        // try to save a port-version, if any
+        const auto first = target.begin();
+        const auto last = target.end();
+
+        auto port_version_first = last; // given [^#]+(#\d+)?, points to the #
+        for (;;)
+        {
+            if (first == port_version_first)
+            {
+                // entire version number is digits
+                return;
+            }
+
+            auto prev = port_version_first;
+            --prev;
+            if (*prev == '#')
+            {
+                // found the port-version
+                if (prev == first)
+                {
+                    // entire version looks like a port version; the string part of version-string can't be empty, so
+                    // treat it as just the number
+                    target.erase(first);
+                    return;
+                }
+
+                if (port_version_first == last)
+                {
+                    // version ends with just a #, remove it
+                }
+                else
+                {
+                    port_version_first = prev;
+                }
+
+                break;
+            }
+
+            if (!ParserBase::is_ascii_digit(*prev))
+            {
+                // string does not end in a port-version
+                port_version_first = last;
+                break;
+            }
+
+            port_version_first = prev;
+        }
+
+        // remove any #s in the version
+        auto new_version_last = std::remove(first, port_version_first, '#');
+        // shift down the port-version part
+        if (new_version_last != port_version_first)
+        {
+            target.erase(std::copy(port_version_first, last, new_version_last), last);
+        }
     }
 }

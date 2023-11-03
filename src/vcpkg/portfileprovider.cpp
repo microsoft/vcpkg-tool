@@ -203,11 +203,10 @@ namespace vcpkg
                             }
                             else
                             {
-                                return msg::format(msgErrorMessage)
-                                    .append(msgVersionSpecMismatch,
-                                            msg::path = path->path,
-                                            msg::expected_version = version_spec,
-                                            msg::actual_version = scf_vspec);
+                                return msg::format_error(msgVersionSpecMismatch,
+                                                         msg::path = path->path,
+                                                         msg::expected_version = version_spec,
+                                                         msg::actual_version = scf_vspec);
                             }
                         }
                         else

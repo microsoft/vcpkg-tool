@@ -70,3 +70,50 @@ TEST_CASE ("set_duplicates", "[util]")
     // multiple duplicates
     set_duplicates_test_case({1, 1, 2, 3, 4, 4}, {1, 4});
 }
+
+TEST_CASE ("append", "[util]")
+{
+    {
+        std::vector<std::string> a;
+        a.emplace_back("abc");
+        a.emplace_back("def");
+        a.emplace_back("ghi");
+        std::vector<std::string> b;
+        b.emplace_back("jkl");
+        b.emplace_back("mno");
+        b.emplace_back("pqr");
+        vcpkg::Util::Vectors::append(&a, std::move(b));
+        REQUIRE(b.size() == 3);
+        REQUIRE(b[0] == "");
+        REQUIRE(a.size() == 6);
+    }
+    {
+        std::vector<std::string> a;
+        a.emplace_back("abc");
+        a.emplace_back("def");
+        a.emplace_back("ghi");
+        std::vector<std::string> b;
+        b.emplace_back("jkl");
+        b.emplace_back("mno");
+        b.emplace_back("pqr");
+        vcpkg::Util::Vectors::append(&a, b);
+        REQUIRE(b.size() == 3);
+        REQUIRE(b[0] == "jkl");
+        REQUIRE(a.size() == 6);
+    }
+    {
+        std::vector<std::string> a;
+        a.emplace_back("abc");
+        a.emplace_back("def");
+        a.emplace_back("ghi");
+        const std::vector<std::string> b{
+            "jkl",
+            "mno",
+            "pqr",
+        };
+        vcpkg::Util::Vectors::append(&a, b);
+        REQUIRE(b.size() == 3);
+        REQUIRE(b[0] == "jkl");
+        REQUIRE(a.size() == 6);
+    }
+}
