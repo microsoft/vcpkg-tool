@@ -1,6 +1,5 @@
 #pragma once
 
-#include <vcpkg/base/span.h>
 #include <vcpkg/base/system.h>
 
 #include <atomic>
@@ -58,7 +57,7 @@ namespace vcpkg
     }
 
     template<class Container, class RanItTarget, class F>
-    void parallel_transform(const Container& c, RanItTarget out_begin, F&& cb) noexcept
+    void parallel_transform(View<T> view, RanItTarget out_begin, F&& cb) noexcept
     {
         if (c.size() == 0)
         {
