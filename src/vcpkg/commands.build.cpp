@@ -1488,7 +1488,7 @@ namespace vcpkg
         return res;
     }
 
-    static void append_log(const Filesystem& fs, const Path& path, int max_size, std::string& out)
+    void append_log(const Path& path, const std::string& log, int max_size, std::string& out)
     {
         StringLiteral details_start = "<details><summary>{}</summary>\n\n```\n";
         StringLiteral skipped_msg = "\n...\nSkipped {} lines\n...";
@@ -1502,21 +1502,18 @@ namespace vcpkg
         fmt::format_to(std::back_inserter(out), details_start.c_str(), path.native());
 
         const auto max_log_length = static_cast<size_t>(max_size);
-        const auto start_block_length = max_log_length * 4 / 12;
-        const auto start_block_max_length = max_log_length * 5 / 12;
-        const auto end_block_length = max_log_length * 7 / 12;
+        const auto start_block_max_length = max_log_length * 1 / 3;
         const auto end_block_max_length = max_log_length - start_block_max_length;
-        auto log = fs.read_contents(path, VCPKG_LINE_INFO);
         if (log.size() > max_log_length)
         {
-            auto first_block_end = log.find_first_of('\n', start_block_length);
-            if (first_block_end == std::string::npos || first_block_end > start_block_max_length)
+            auto first_block_end = log.find_last_of('\n', start_block_max_length);
+            if (first_block_end == std::string::npos)
             {
                 first_block_end = start_block_max_length;
             }
 
-            auto last_block_start = log.find_last_of('\n', log.size() - end_block_length);
-            if (last_block_start == std::string::npos || last_block_start < log.size() - end_block_max_length)
+            auto last_block_start = log.find_first_of('\n', log.size() - end_block_max_length);
+            if (last_block_start == std::string::npos)
             {
                 last_block_start = log.size() - end_block_max_length;
             }
@@ -1528,6 +1525,10 @@ namespace vcpkg
             fmt::format_to(std::back_inserter(out), skipped_msg.c_str(), skipped_lines);
             out.append(last, log.end());
         }
+        else
+        {
+            out += log;
+        }
 
         while (!out.empty() && out.back() == '\n')
         {
@@ -1536,17 +1537,20 @@ namespace vcpkg
         Strings::append(out, details_end);
     }
 
-    static void append_logs(const Filesystem& fs, const std::vector<std::string>& logs, int max_size, std::string& out)
+    void append_logs(View<std::pair<Path, std::string>> logs, int max_size, std::string& out)
     {
         int extra_size = 0;
         max_size -= static_cast<int>(logs.size()) * 2;
         auto size_per_log = max_size / static_cast<int>(logs.size());
-        for (auto& log : logs)
+        for (auto& entry : logs)
         {
             const auto old_size = out.size();
-            append_log(fs, log, size_per_log + extra_size, out);
+            append_log(entry.first, entry.second, size_per_log + extra_size, out);
             extra_size += size_per_log - static_cast<int>(out.size() - old_size);
-            out += "\n\n";
+            if (out.size() != old_size)
+            {
+                out += "\n\n";
+            }
         }
     }
 
@@ -1600,7 +1604,10 @@ namespace vcpkg
         }
 
         int max_body_size = MAX_ISSUE_SIZE - static_cast<int>(issue_body.size() + postfix.size());
-        append_logs(fs, build_result.error_logs, max_body_size, issue_body);
+        auto logs = Util::fmap(build_result.error_logs, [&](auto&& path) -> std::pair<Path, std::string> {
+            return {path, fs.read_contents(path, VCPKG_LINE_INFO)};
+        });
+        append_logs(logs, max_body_size, issue_body);
 
         issue_body.append(postfix);
 
