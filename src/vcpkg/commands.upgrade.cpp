@@ -213,16 +213,16 @@ namespace vcpkg
 
         auto binary_cache = BinaryCache::make(args, paths, stdout_sink).value_or_exit(VCPKG_LINE_INFO);
         compute_all_abis(paths, action_plan, var_provider, status_db);
-        binary_cache->fetch(action_plan.install_actions);
+        binary_cache.fetch(action_plan.install_actions);
         const InstallSummary summary = install_execute_plan(
-            args, action_plan, keep_going, paths, status_db, *binary_cache, null_build_logs_recorder());
+            args, action_plan, keep_going, paths, status_db, binary_cache, null_build_logs_recorder());
 
         if (keep_going == KeepGoing::YES)
         {
             summary.print();
         }
 
-        binary_cache->wait_for_async_complete_and_join();
+        binary_cache.wait_for_async_complete_and_join();
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 } // namespace vcpkg

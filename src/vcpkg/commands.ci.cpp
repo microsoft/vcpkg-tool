@@ -421,7 +421,7 @@ namespace vcpkg
 
         auto action_plan = compute_full_plan(paths, provider, var_provider, all_default_full_specs, serialize_options);
         auto binary_cache = BinaryCache::make(args, paths, stdout_sink).value_or_exit(VCPKG_LINE_INFO);
-        const auto precheck_results = binary_cache->precheck(action_plan.install_actions);
+        const auto precheck_results = binary_cache.precheck(action_plan.install_actions);
         auto split_specs = compute_action_statuses(ExclusionPredicate{&exclusions_map}, precheck_results, action_plan);
         LocalizedString regressions;
         {
@@ -522,9 +522,9 @@ namespace vcpkg
             }
 
             install_preclear_packages(paths, action_plan);
-            binary_cache->fetch(action_plan.install_actions);
+            binary_cache.fetch(action_plan.install_actions);
             auto summary = install_execute_plan(
-                args, action_plan, KeepGoing::YES, paths, status_db, *binary_cache, build_logs_recorder);
+                args, action_plan, KeepGoing::YES, paths, status_db, binary_cache, build_logs_recorder);
 
             for (auto&& result : summary.results)
             {
@@ -579,7 +579,7 @@ namespace vcpkg
                     it_xunit->second, xunitTestResults.build_xml(target_triplet), VCPKG_LINE_INFO);
             }
         }
-        binary_cache->wait_for_async_complete_and_join();
+        binary_cache.wait_for_async_complete_and_join();
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 } // namespace vcpkg
