@@ -112,7 +112,7 @@ namespace vcpkg
 
         AbiEntries helpers(files.size());
 
-        parallel_transform(files.begin(), files.size(), helpers.begin(), [&fs](auto&& file) {
+        parallel_transform(files, helpers.begin(), [&fs](auto&& file) {
             return AbiEntry{file.stem().to_string(),
                             Hash::get_file_hash(fs, file, Hash::Algorithm::Sha256).value_or("")};
         });
@@ -429,12 +429,9 @@ namespace vcpkg
 
             std::vector<Optional<PrivateAbi>> ret(action_plan.install_actions.size());
 
-            parallel_transform(action_plan.install_actions.begin(),
-                               action_plan.install_actions.size(),
-                               ret.begin(),
-                               [&](const InstallPlanAction& action) {
-                                   return get_private_abi(fs, action, common_abi, cmake_script_hashes);
-                               });
+            parallel_transform(action_plan.install_actions, ret.begin(), [&](const InstallPlanAction& action) {
+                return get_private_abi(fs, action, common_abi, cmake_script_hashes);
+            });
             return ret;
         });
 
