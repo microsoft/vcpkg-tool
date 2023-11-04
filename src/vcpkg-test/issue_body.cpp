@@ -39,10 +39,10 @@ TEST_CASE ("Testing append_log", "[github-issue-body]")
         append_log("test", file_content, 100, out);
         CHECK(out == ""); // Not enough space at all
         out.clear();
-        append_log("test 2", file_content, file_content.size(), out);
+        append_log("test 2", file_content, static_cast<int>(file_content.size()), out);
         CHECK(out == expected_body); // Not enough space
         out.clear();
-        append_log("test", file_content, file_content.size() + 100, out);
+        append_log("test", file_content, static_cast<int>(file_content.size() + 100), out);
         CHECK(out == prefix + file_content + postfix); // Enough space
     }
 }
