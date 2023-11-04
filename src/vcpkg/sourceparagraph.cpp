@@ -71,10 +71,9 @@ namespace vcpkg
 
     bool operator==(const DependencyOverride& lhs, const DependencyOverride& rhs)
     {
-        if (lhs.version_scheme != rhs.version_scheme) return false;
-        if (lhs.port_version != rhs.port_version) return false;
         if (lhs.name != rhs.name) return false;
         if (lhs.version != rhs.version) return false;
+        if (lhs.scheme != rhs.scheme) return false;
         return lhs.extra_info == rhs.extra_info;
     }
     bool operator!=(const DependencyOverride& lhs, const DependencyOverride& rhs);
@@ -386,7 +385,7 @@ namespace vcpkg
                     return ParseControlErrorInfo::from_error(origin,
                                                              msg::format_error(msgDefaultFeatureIdentifier)
                                                                  .append_raw('\n')
-                                                                 .append(msgNoteMessage)
+                                                                 .append_raw(NotePrefix)
                                                                  .append(msgParseIdentifierError,
                                                                          msg::value = default_feature,
                                                                          msg::url = docs::manifests_url));
@@ -758,22 +757,6 @@ namespace vcpkg
             return t;
         }
 
-        static void visit_impl(const LocalizedString& type_name,
-                               Json::Reader& r,
-                               const Json::Object& obj,
-                               std::string& name,
-                               std::string& version,
-                               VersionScheme& version_scheme,
-                               int& port_version)
-        {
-            r.required_object_field(type_name, obj, NAME, name, Json::PackageNameDeserializer::instance);
-
-            auto schemed_version = visit_required_schemed_deserializer(type_name, r, obj, true);
-            version = schemed_version.version.text();
-            version_scheme = schemed_version.scheme;
-            port_version = schemed_version.version.port_version();
-        }
-
         virtual Optional<DependencyOverride> visit_object(Json::Reader& r, const Json::Object& obj) const override
         {
             DependencyOverride dep;
@@ -786,7 +769,11 @@ namespace vcpkg
                 }
             }
 
-            visit_impl(type_name(), r, obj, dep.name, dep.version, dep.version_scheme, dep.port_version);
+            const auto type_name = this->type_name();
+            r.required_object_field(type_name, obj, NAME, dep.name, Json::PackageNameDeserializer::instance);
+            auto schemed_version = visit_required_schemed_deserializer(type_name, r, obj, true);
+            dep.version = std::move(schemed_version.version);
+            dep.scheme = schemed_version.scheme;
 
             return dep;
         }
@@ -1284,14 +1271,14 @@ namespace vcpkg
 
             if (auto configuration = obj.get(VCPKG_CONFIGURATION))
             {
-                if (!configuration->is_object())
+                if (configuration->is_object())
                 {
-                    r.add_generic_error(type_name(),
-                                        msg::format(msgJsonFieldNotObject, msg::json_field = VCPKG_CONFIGURATION));
+                    spgh.vcpkg_configuration.emplace(configuration->object(VCPKG_LINE_INFO));
                 }
                 else
                 {
-                    spgh.vcpkg_configuration = make_optional(configuration->object(VCPKG_LINE_INFO));
+                    r.add_generic_error(type_name(),
+                                        msg::format(msgJsonFieldNotObject, msg::json_field = VCPKG_CONFIGURATION));
                 }
             }
 
@@ -1452,9 +1439,9 @@ namespace vcpkg
     }
 
     template<class ManifestDeserializerType>
-    static ParseExpected<SourceControlFile> parse_manifest_object_impl(StringView origin,
-                                                                       const Json::Object& manifest,
-                                                                       MessageSink& warnings_sink)
+    static ExpectedL<std::unique_ptr<SourceControlFile>> parse_manifest_object_impl(StringView origin,
+                                                                                    const Json::Object& manifest,
+                                                                                    MessageSink& warnings_sink)
     {
         Json::Reader reader;
 
@@ -1467,10 +1454,10 @@ namespace vcpkg
 
         if (!reader.errors().empty())
         {
-            auto err = std::make_unique<ParseControlErrorInfo>();
-            err->name = origin.to_string();
-            err->other_errors = std::move(reader.errors());
-            return err;
+            ParseControlErrorInfo err;
+            err.name = origin.to_string();
+            err.other_errors = std::move(reader.errors());
+            return LocalizedString::from_raw(err.to_string());
         }
         else if (auto p = res.get())
         {
@@ -1482,16 +1469,14 @@ namespace vcpkg
         }
     }
 
-    ParseExpected<SourceControlFile> SourceControlFile::parse_project_manifest_object(StringView origin,
-                                                                                      const Json::Object& manifest,
-                                                                                      MessageSink& warnings_sink)
+    ExpectedL<std::unique_ptr<SourceControlFile>> SourceControlFile::parse_project_manifest_object(
+        StringView origin, const Json::Object& manifest, MessageSink& warnings_sink)
     {
         return parse_manifest_object_impl<ProjectManifestDeserializer>(origin, manifest, warnings_sink);
     }
 
-    ParseExpected<SourceControlFile> SourceControlFile::parse_port_manifest_object(StringView origin,
-                                                                                   const Json::Object& manifest,
-                                                                                   MessageSink& warnings_sink)
+    ExpectedL<std::unique_ptr<SourceControlFile>> SourceControlFile::parse_port_manifest_object(
+        StringView origin, const Json::Object& manifest, MessageSink& warnings_sink)
     {
         return parse_manifest_object_impl<PortManifestDeserializer>(origin, manifest, warnings_sink);
     }
@@ -1823,7 +1808,7 @@ namespace vcpkg
 
             dep_obj.insert(DependencyOverrideDeserializer::NAME, Json::Value::string(dep.name));
 
-            serialize_schemed_version(dep_obj, dep.version_scheme, dep.version, dep.port_version);
+            serialize_schemed_version(dep_obj, dep.scheme, dep.version.text(), dep.version.port_version());
         };
 
         auto serialize_license =

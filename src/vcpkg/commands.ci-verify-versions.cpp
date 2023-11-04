@@ -66,12 +66,14 @@ namespace
                 for (StringView control_file : {"CONTROL", "vcpkg.json"})
                 {
                     auto treeish = Strings::concat(version_entry.git_tree, ':', control_file);
-                    auto maybe_file = paths.git_show(Strings::concat(treeish), paths.root / ".git");
+                    auto maybe_file = paths.git_show(Strings::concat(treeish),
+                                                     paths.versions_dot_git_dir().value_or_exit(VCPKG_LINE_INFO));
                     if (!maybe_file) continue;
 
                     const auto& file = maybe_file.value_or_exit(VCPKG_LINE_INFO);
-                    auto maybe_scf =
-                        Paragraphs::try_load_port_text(file, treeish, control_file == "vcpkg.json", stdout_sink);
+                    auto maybe_scf = control_file == "vcpkg.json"
+                                         ? Paragraphs::try_load_port_manifest_text(file, treeish, stdout_sink)
+                                         : Paragraphs::try_load_control_file_text(file, treeish);
                     auto scf = maybe_scf.get();
                     if (!scf)
                     {
@@ -203,9 +205,9 @@ namespace
         }
 
         return {
-            msg::format(msgVersionVerifiedOK,
-                        msg::version_spec = Strings::concat(port_name, '@', entry.version.version),
-                        msg::commit_sha = entry.git_tree),
+            message_prefix().append(msgVersionVerifiedOK,
+                                    msg::version_spec = Strings::concat(port_name, '@', entry.version.version),
+                                    msg::git_tree_sha = entry.git_tree),
             expected_left_tag,
         };
     }
@@ -306,8 +308,10 @@ namespace vcpkg
             if (!manifest_exists && !control_exists)
             {
                 msg::write_unlocalized_text_to_stdout(Color::error, fmt::format("FAIL: {}\n", port_name));
-                errors.emplace(
-                    msg::format(msgPortMissingManifest, msg::package_name = port_name, msg::path = port_path));
+                errors.emplace(LocalizedString::from_raw(port_path)
+                                   .append_raw(": ")
+                                   .append_raw(ErrorPrefix)
+                                   .append(msgPortMissingManifest2, msg::package_name = port_name));
                 continue;
             }
 
