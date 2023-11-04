@@ -14,6 +14,10 @@
 #include <algorithm>
 #include <vector>
 
+#ifdef __APPLE__
+#include <experimental/functional>
+#endif
+
 namespace vcpkg::Strings::details
 {
     void append_internal(std::string& into, char c);
@@ -43,6 +47,12 @@ namespace vcpkg::Strings::details
 
 namespace vcpkg::Strings
 {
+#ifdef __APPLE__
+    using boyer_moore_horspool_searcher = std::experimental::boyer_moore_horspool_searcher<std::string::const_iterator>;
+#else
+    using boyer_moore_horspool_searcher = std::boyer_moore_horspool_searcher<std::string::const_iterator>;
+#endif
+
     template<class... Args>
     std::string& append(std::string& into, const Args&... args)
     {
@@ -171,11 +181,11 @@ namespace vcpkg::Strings
                                                                  StringView left_tag,
                                                                  StringView right_tag);
 
-    bool contains_any_ignoring_c_comments(const std::string& source, View<StringView> to_find);
+    bool contains_any_ignoring_c_comments(const std::string& source, View<boyer_moore_horspool_searcher> to_find);
 
-    bool contains_any_ignoring_hash_comments(StringView source, View<StringView> to_find);
+    bool contains_any_ignoring_hash_comments(StringView source, View<boyer_moore_horspool_searcher> to_find);
 
-    bool contains_any(StringView source, View<StringView> to_find);
+    bool long_string_contains_any(StringView source, View<boyer_moore_horspool_searcher> to_find);
 
     [[nodiscard]] bool equals(StringView a, StringView b);
 

@@ -92,6 +92,10 @@ namespace vcpkg
         {
             return CPUArchitecture::LOONGARCH64;
         }
+        if (Strings::starts_with(this->canonical_name(), "mips64-"))
+        {
+            return CPUArchitecture::MIPS64;
+        }
 
         return nullopt;
     }

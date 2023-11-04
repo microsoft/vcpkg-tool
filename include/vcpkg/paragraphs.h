@@ -36,10 +36,13 @@ namespace vcpkg::Paragraphs
     ExpectedL<std::unique_ptr<SourceControlFile>> try_load_port_required(const ReadOnlyFilesystem& fs,
                                                                          StringView port_name,
                                                                          const Path& port_directory);
-    ExpectedL<std::unique_ptr<SourceControlFile>> try_load_port_text(const std::string& text,
-                                                                     StringView origin,
-                                                                     bool is_manifest,
-                                                                     MessageSink& warning_sink);
+    ExpectedL<std::unique_ptr<SourceControlFile>> try_load_project_manifest_text(StringView text,
+                                                                                 StringView origin,
+                                                                                 MessageSink& warning_sink);
+    ExpectedL<std::unique_ptr<SourceControlFile>> try_load_port_manifest_text(StringView text,
+                                                                              StringView origin,
+                                                                              MessageSink& warning_sink);
+    ExpectedL<std::unique_ptr<SourceControlFile>> try_load_control_file_text(StringView text, StringView origin);
 
     ExpectedL<BinaryControlFile> try_load_cached_package(const ReadOnlyFilesystem& fs,
                                                          const Path& package_dir,

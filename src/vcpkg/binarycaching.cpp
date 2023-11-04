@@ -2371,7 +2371,7 @@ ExpectedL<DownloadManagerConfig> vcpkg::parse_download_configuration(const Optio
     {
         return LocalizedString::from_raw(err->to_string()) // note that this already contains error:
             .append_raw('\n')
-            .append(msgNoteMessage)
+            .append_raw(NotePrefix)
             .append(msgSeeURL, msg::url = docs::assetcaching_url);
     }
 
@@ -2379,14 +2379,14 @@ ExpectedL<DownloadManagerConfig> vcpkg::parse_download_configuration(const Optio
     {
         return msg::format_error(msgAMaximumOfOneAssetWriteUrlCanBeSpecified)
             .append_raw('\n')
-            .append(msgNoteMessage)
+            .append_raw(NotePrefix)
             .append(msgSeeURL, msg::url = docs::assetcaching_url);
     }
     if (s.url_templates_to_get.size() > 1)
     {
         return msg::format_error(msgAMaximumOfOneAssetReadUrlCanBeSpecified)
             .append_raw('\n')
-            .append(msgNoteMessage)
+            .append_raw(NotePrefix)
             .append(msgSeeURL, msg::url = docs::assetcaching_url);
     }
 

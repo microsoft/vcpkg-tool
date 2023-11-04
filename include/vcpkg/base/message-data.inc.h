@@ -482,7 +482,7 @@ DECLARE_MESSAGE(CISwitchOptSkipFailures,
                 "Skips ports marked `=fail` in ci.baseline.txt")
 DECLARE_MESSAGE(CISwitchOptXUnitAll, (), "", "Reports unchanged ports in the XUnit output")
 DECLARE_MESSAGE(ClearingContents, (msg::path), "", "Clearing contents of {path}")
-DECLARE_MESSAGE(CmakeTargetsExcluded, (msg::count), "", "note: {count} additional targets are not displayed.")
+DECLARE_MESSAGE(CmakeTargetsExcluded, (msg::count), "", "{count} additional targets are not displayed.")
 DECLARE_MESSAGE(CMakeTargetsUsage,
                 (msg::package_name),
                 "'targets' are a CMake and Makefile concept",
@@ -1099,12 +1099,6 @@ DECLARE_MESSAGE(ErrorInvalidManifestModeOption,
                 (msg::option),
                 "",
                 "The option --{option} is not supported in manifest mode.")
-DECLARE_MESSAGE(ErrorMessage, (), "", "error: ")
-DECLARE_MESSAGE(
-    ErrorMessageMustUsePrintError,
-    (msg::value),
-    "{value} is is a localized message name like ErrorMessageMustUsePrintError",
-    "The message named {value} starts with error:, it must be changed to prepend ErrorMessage in code instead.")
 DECLARE_MESSAGE(
     ErrorMissingVcpkgRoot,
     (),
@@ -1360,22 +1354,6 @@ DECLARE_MESSAGE(ForMoreHelp,
                 "For More Help")
 DECLARE_MESSAGE(GeneratedConfiguration, (msg::path), "", "Generated configuration {path}.")
 DECLARE_MESSAGE(GeneratedInstaller, (msg::path), "", "{path} installer generated.")
-DECLARE_MESSAGE(GenerateMsgErrorParsingFormatArgs,
-                (msg::value),
-                "example of {value} 'GenerateMsgNoComment'",
-                "parsing format string for {value}:")
-DECLARE_MESSAGE(GenerateMsgIncorrectComment,
-                (msg::value),
-                "example of {value} is 'GenerateMsgNoComment'",
-                R"(message {value} has an incorrect comment:)")
-DECLARE_MESSAGE(GenerateMsgNoArgumentValue,
-                (msg::value),
-                "example of {value} is 'arch'",
-                R"({{{value}}} was specified in a comment, but was not used in the message.)")
-DECLARE_MESSAGE(GenerateMsgNoCommentValue,
-                (msg::value),
-                "example of {value} is 'arch'",
-                R"({{{value}}} was used in the message, but not commented.)")
 DECLARE_MESSAGE(GeneratingConfiguration, (msg::path), "", "Generating configuration {path}...")
 DECLARE_MESSAGE(GeneratingInstaller, (msg::path), "", "Generating installer {path}...")
 DECLARE_MESSAGE(GeneratingRepo, (msg::path), "", "Generating repository {path}...")
@@ -1812,7 +1790,6 @@ DECLARE_MESSAGE(InternalCICommand,
                 (),
                 "",
                 "vcpkg ci is an internal command which will change incompatibly or be removed at any time.")
-DECLARE_MESSAGE(InternalErrorMessage, (), "", "internal error: ")
 DECLARE_MESSAGE(
     InternalErrorMessageContact,
     (),
@@ -2059,17 +2036,6 @@ DECLARE_MESSAGE(LoadingOverlayTriplet,
                 (msg::path),
                 "'-- [OVERLAY]' at the beginning must be preserved",
                 "-- [OVERLAY] Loading triplet configuration from: {path}")
-DECLARE_MESSAGE(LocalizedMessageMustNotContainIndents,
-                (msg::value),
-                "{value} is is a localized message name like LocalizedMessageMustNotContainIndents. "
-                "The 'LocalizedString::append_indent' part is locale-invariant.",
-                "The message named {value} contains what appears to be indenting which must be "
-                "changed to use LocalizedString::append_indent instead.")
-DECLARE_MESSAGE(LocalizedMessageMustNotEndWithNewline,
-                (msg::value),
-                "{value} is a localized message name like LocalizedMessageMustNotEndWithNewline",
-                "The message named {value} ends with a newline which should be added by formatting "
-                "rather than by localization.")
 DECLARE_MESSAGE(LocalPortfileVersion,
                 (),
                 "",
@@ -2198,7 +2164,6 @@ DECLARE_MESSAGE(NonZeroRemainingArgs,
                 "the command '{command_name}' does not accept any additional arguments")
 DECLARE_MESSAGE(NoOutdatedPackages, (), "", "There are no outdated packages.")
 DECLARE_MESSAGE(NoRegistryForPort, (msg::package_name), "", "no registry configured for port {package_name}")
-DECLARE_MESSAGE(NoteMessage, (), "", "note: ")
 DECLARE_MESSAGE(NoUrlsAndHashSpecified, (msg::sha), "", "No urls specified to download SHA: {sha}")
 DECLARE_MESSAGE(NoUrlsAndNoHashSpecified, (), "", "No urls specified and no hash specified.")
 DECLARE_MESSAGE(NugetOutputNotCapturedBecauseInteractiveSpecified,
@@ -2500,10 +2465,10 @@ DECLARE_MESSAGE(PortNotInBaseline,
 DECLARE_MESSAGE(PortsAdded, (msg::count), "", "The following {count} ports were added:")
 DECLARE_MESSAGE(PortsDiffHelp, (), "", "The argument should be a branch/tag/hash to checkout.")
 DECLARE_MESSAGE(PortDoesNotExist, (msg::package_name), "", "{package_name} does not exist")
-DECLARE_MESSAGE(PortMissingManifest,
-                (msg::package_name, msg::path),
+DECLARE_MESSAGE(PortMissingManifest2,
+                (msg::package_name),
                 "",
-                "{package_name} has no vcpkg.json or CONTROL file in {path}")
+                "{package_name} port manifest missing (no vcpkg.json or CONTROL file)")
 DECLARE_MESSAGE(PortsNoDiff, (), "", "There were no changes in the ports between the two commits.")
 DECLARE_MESSAGE(PortsRemoved, (msg::count), "", "The following {count} ports were removed:")
 DECLARE_MESSAGE(PortsUpdated, (msg::count), "", "The following {count} ports were updated:")
@@ -3117,26 +3082,23 @@ DECLARE_MESSAGE(VersionSpecMismatch,
                 "Failed to load port because versions are inconsistent. The file \"{path}\" contains the version "
                 "{actual_version}, but the version database indicates that it should be {expected_version}.")
 DECLARE_MESSAGE(VersionTableHeader, (), "", "Version")
-DECLARE_MESSAGE(VersionVerifiedOK, (msg::version_spec, msg::commit_sha), "", "OK: {version_spec} -> {commit_sha}")
+DECLARE_MESSAGE(VersionVerifiedOK,
+                (msg::version_spec, msg::git_tree_sha),
+                "",
+                "{version_spec} is correctly in the version database ({git_tree_sha})")
 DECLARE_MESSAGE(VSExaminedInstances, (), "", "The following Visual Studio instances were considered:")
 DECLARE_MESSAGE(VSExaminedPaths, (), "", "The following paths were examined for Visual Studio instances:")
 DECLARE_MESSAGE(VSNoInstances, (), "", "Could not locate a complete Visual Studio instance")
 DECLARE_MESSAGE(WaitingForChildrenToExit, (), "", "Waiting for child processes to exit...")
 DECLARE_MESSAGE(WaitingToTakeFilesystemLock, (msg::path), "", "waiting to take filesystem lock on {path}...")
 DECLARE_MESSAGE(WaitUntilPackagesUploaded, (msg::count), "", "Wait until the remaining packages ({count}) are uploaded")
-DECLARE_MESSAGE(WarningMessage, (), "", "warning: ")
-DECLARE_MESSAGE(WarningMessageMustUsePrintWarning,
-                (msg::value),
-                "{value} is is a localized message name like WarningMessageMustUsePrintWarning",
-                "The message named {value} starts with warning:, it must be changed to prepend "
-                "WarningMessage in code instead.")
 DECLARE_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors")
 DECLARE_MESSAGE(WarnOnParseConfig, (msg::path), "", "Found the following warnings in configuration {path}:")
 DECLARE_MESSAGE(WhileCheckingOutBaseline, (msg::commit_sha), "", "while checking out baseline {commit_sha}")
 DECLARE_MESSAGE(WhileCheckingOutPortTreeIsh,
-                (msg::package_name, msg::commit_sha),
+                (msg::package_name, msg::git_tree_sha),
                 "",
-                "while checking out port {package_name} with git tree {commit_sha}")
+                "while checking out port {package_name} with git tree {git_tree_sha}")
 DECLARE_MESSAGE(WhileGettingLocalTreeIshObjectsForPorts, (), "", "while getting local treeish objects for ports")
 DECLARE_MESSAGE(WhileLoadingLocalPort, (msg::package_name), "", "while attempting to load local port {package_name}")
 DECLARE_MESSAGE(WhileLoadingPortFromGitTree, (msg::commit_sha), "", "while trying to load port from: {commit_sha}")

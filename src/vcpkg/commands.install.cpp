@@ -943,6 +943,7 @@ namespace vcpkg
                     {
                         msg.append_indent()
                             .append_raw("# ")
+                            .append_raw(NotePrefix)
                             .append(msgCmakeTargetsExcluded, msg::count = omitted)
                             .append_raw('\n');
                     }

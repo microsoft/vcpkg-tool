@@ -73,6 +73,7 @@ namespace vcpkg
         Version version;
 
         friend bool operator==(const SchemedVersion& lhs, const SchemedVersion& rhs);
+        friend bool operator!=(const SchemedVersion& lhs, const SchemedVersion& rhs);
     };
 
     StringLiteral to_string_literal(VersionScheme scheme);
@@ -170,6 +171,9 @@ namespace vcpkg
     bool try_extract_external_date_version(ParsedExternalVersion& out, StringView version);
     // /(\d+)(\.\d+|$)(\.\d+)?.*/
     bool try_extract_external_dot_version(ParsedExternalVersion& out, StringView version);
+
+    // remove as few characters as possible from `target` to make it a valid `version-string` [^#]+(#\d+)?, or empty
+    void sanitize_version_string(std::string& target);
 }
 
 VCPKG_FORMAT_WITH_TO_STRING(vcpkg::Version);

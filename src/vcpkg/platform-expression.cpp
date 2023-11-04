@@ -19,6 +19,7 @@ namespace vcpkg::PlatformExpression
         arm32,
         arm64,
         wasm32,
+        mips64,
 
         windows,
         mingw,
@@ -47,6 +48,7 @@ namespace vcpkg::PlatformExpression
             {"arm32", Identifier::arm32},
             {"arm64", Identifier::arm64},
             {"wasm32", Identifier::wasm32},
+            {"mips64", Identifier::mips64},
             {"windows", Identifier::windows},
             {"mingw", Identifier::mingw},
             {"linux", Identifier::linux},
