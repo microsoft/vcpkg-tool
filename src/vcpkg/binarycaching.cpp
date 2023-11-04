@@ -405,10 +405,15 @@ namespace
                         {
                             auto start = parser.it().pointer_to_current();
                             auto id = parser.match_until([](auto c) { return c == ';'; });
-                            parser.require_character(';');
-                            auto size = parser.match_until(ParserBase::is_lineend);
-
-                            parser.skip_newline();
+                            if (parser.require_character(';'))
+                            {
+                                break;
+                            }
+                            auto size = parser.match_until([](auto c) { return c == '\n'; });
+                            if (parser.require_character('\n'))
+                            {
+                                break;
+                            }
                             auto end = parser.it().pointer_to_current();
                             cur_size += (end - start);
                             func(id, size);
