@@ -186,8 +186,8 @@ namespace vcpkg
         std::vector<std::string> error_logs;
     };
 
-    void append_log(const Path& path, const std::string& log, int max_size, std::string& out);
-    void append_logs(View<std::pair<Path, std::string>> logs, int max_size, std::string& out);
+    void append_log(const Path& path, const std::string& log, size_t max_size, std::string& out);
+    void append_logs(std::vector<std::pair<Path, std::string>>&& logs, size_t max_size, std::string& out);
 
     LocalizedString create_error_message(const ExtendedBuildResult& build_result, const PackageSpec& spec);
 
