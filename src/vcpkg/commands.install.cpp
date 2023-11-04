@@ -71,7 +71,7 @@ namespace vcpkg
         std::vector<PathAndType> output(files.size());
         static const PathAndType invalid{"", FileType::none};
 
-        parallel_transform(files.begin(), files.size(), output.begin(), [&](auto&& file) -> PathAndType {
+        parallel_transform(files, output.begin(), [&](auto&& file) -> PathAndType {
             std::error_code ec;
             auto status = fs.symlink_status(file, ec);
             if (ec)
@@ -182,7 +182,7 @@ namespace vcpkg
         }
 
         // Copy files/symlinks
-        parallel_for_each_n(filtered_files.begin(), filtered_files.size(), [&](const auto& file_and_status) {
+        parallel_for_each(filtered_files, [&](const auto& file_and_status) {
             auto& file = file_and_status.path;
             auto& status = file_and_status.type;
 
