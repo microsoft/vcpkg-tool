@@ -35,17 +35,12 @@ namespace vcpkg
     {
         LocalizedString res;
         if (!origin.empty())
-            res = LocalizedString::from_raw(fmt::format("{}:{}:{}: ", origin, location.row, location.column));
-        if (kind == MessageKind::Warning)
         {
-            res.append(msgWarningMessage);
+            res.append_raw(fmt::format("{}:{}:{}: ", origin, location.row, location.column));
         }
-        else
-        {
-            res.append(msgErrorMessage);
-        }
-        res.append(message);
 
+        res.append_raw(kind == MessageKind::Warning ? WarningPrefix : ErrorPrefix);
+        res.append(message);
         res.append_raw('\n');
 
         auto line_end = Util::find_if(location.it, ParserBase::is_lineend);

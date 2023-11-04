@@ -1,7 +1,7 @@
+#include <vcpkg-test/util.h>
+
 #include <vcpkg/dependencies.h>
 #include <vcpkg/spdx.h>
-
-#include <vcpkg-test/util.h>
 
 using namespace vcpkg;
 

@@ -452,13 +452,13 @@ namespace vcpkg::Paragraphs
         {
             return LocalizedString::from_raw(port_location.port_directory)
                 .append_raw(": ")
-                .append(msgErrorMessage)
+                .append_raw(ErrorPrefix)
                 .append(msgPortMissingManifest2, msg::package_name = port_name);
         }
 
         return LocalizedString::from_raw(port_location.port_directory)
             .append_raw(": ")
-            .append(msgErrorMessage)
+            .append_raw(ErrorPrefix)
             .append(msgPortDoesNotExist, msg::package_name = port_name);
     }
 

@@ -308,8 +308,8 @@ namespace vcpkg::Json
             case ValueKind::Integer: return lhs.underlying_->integer == rhs.underlying_->integer;
             case ValueKind::Number: return lhs.underlying_->number == rhs.underlying_->number;
             case ValueKind::String: return lhs.underlying_->string == rhs.underlying_->string;
-            case ValueKind::Array: return lhs.underlying_->string == rhs.underlying_->string;
-            case ValueKind::Object: return lhs.underlying_->string == rhs.underlying_->string;
+            case ValueKind::Array: return lhs.underlying_->array == rhs.underlying_->array;
+            case ValueKind::Object: return lhs.underlying_->object == rhs.underlying_->object;
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
