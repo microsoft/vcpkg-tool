@@ -27,8 +27,8 @@ Skipped 4 lines
 ```
 </details>)";
 
-    const auto prefix = "<details><summary>test</summary>\n\n```\n";
-    const auto postfix = "\n```\n</details>";
+    const auto block_prefix = "<details><summary>test</summary>\n\n```\n";
+    const auto block_postfix = "\n```\n</details>";
 }
 
 TEST_CASE ("Testing append_log", "[github-issue-body]")
@@ -43,7 +43,7 @@ TEST_CASE ("Testing append_log", "[github-issue-body]")
         CHECK(out == expected_body); // Not enough space
         out.clear();
         append_log("test", file_content, static_cast<int>(file_content.size() + 100), out);
-        CHECK(out == prefix + file_content + postfix); // Enough space
+        CHECK(out == block_prefix + file_content + block_postfix); // Enough space
     }
 }
 
@@ -55,6 +55,6 @@ TEST_CASE ("Testing append_log extra_size", "[github-issue-body]")
         std::vector<std::pair<Path, std::string>> logs{
             {"not_included_1", file_content}, {"test", file_content}, {"test 2", file_content}};
         append_logs(logs, 500, out);
-        CHECK(out == prefix + file_content + postfix + "\n\n" + expected_body + "\n\n");
+        CHECK(out == block_prefix + file_content + block_postfix + "\n\n" + expected_body + "\n\n");
     }
 }
