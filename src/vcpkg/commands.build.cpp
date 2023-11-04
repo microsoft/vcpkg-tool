@@ -1557,7 +1557,8 @@ namespace vcpkg
     std::string create_github_issue(const VcpkgCmdArguments& args,
                                     const ExtendedBuildResult& build_result,
                                     const VcpkgPaths& paths,
-                                    const InstallPlanAction& action)
+                                    const InstallPlanAction& action,
+                                    bool include_manifest)
     {
         constexpr int MAX_ISSUE_SIZE = 65536;
         const auto& fs = paths.get_filesystem();
@@ -1594,7 +1595,7 @@ namespace vcpkg
         const auto maybe_manifest = paths.get_manifest();
         if (auto manifest = maybe_manifest.get())
         {
-            if (args.get_command() != "x-set-installed" || manifest->manifest.contains("builtin-baseline"))
+            if (include_manifest || manifest->manifest.contains("builtin-baseline"))
             {
                 fmt::format_to(
                     std::back_inserter(postfix),

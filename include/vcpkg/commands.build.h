@@ -194,7 +194,8 @@ namespace vcpkg
     std::string create_github_issue(const VcpkgCmdArguments& args,
                                     const ExtendedBuildResult& build_result,
                                     const VcpkgPaths& paths,
-                                    const InstallPlanAction& action);
+                                    const InstallPlanAction& action,
+                                    bool include_manifest);
 
     ExtendedBuildResult build_package(const VcpkgCmdArguments& args,
                                       const VcpkgPaths& paths,
