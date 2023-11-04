@@ -1379,8 +1379,6 @@
   "_PortSupportsField.comment": "An example of {supports_expression} is windows & !static.",
   "PortVersionConflict": "The following packages differ from their port versions:",
   "PortVersionMultipleSpecification": "\"port_version\" cannot be combined with an embedded '#' in the version",
-  "PortVersionNonnegativeInteger": "port-version (after the '#') must be a non-negative integer, but was {value}",
-  "_PortVersionNonnegativeInteger.comment": "{value} is what the user entered",
   "PortsAdded": "The following {count} ports were added:",
   "_PortsAdded.comment": "An example of {count} is 42.",
   "PortsDiffHelp": "The argument should be a branch/tag/hash to checkout.",

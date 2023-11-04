@@ -136,9 +136,7 @@ namespace vcpkg
                 if (skip_version_check) continue;
 
                 const auto& control_file = maybe_control_file.value_or_exit(VCPKG_LINE_INFO);
-                const auto& control_paragraph = *control_file.source_control_file->core_paragraph;
-                const auto& installed_paragraph = (*installed_status)->package;
-                if (control_paragraph.version == installed_paragraph.version)
+                if (control_file.to_version() == (*installed_status)->package.version)
                 {
                     up_to_date.push_back(spec);
                 }

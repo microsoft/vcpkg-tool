@@ -7,6 +7,7 @@
 #include <vcpkg/fwd/versions.h>
 
 #include <vcpkg/base/expected.h>
+#include <vcpkg/base/optional.h>
 
 namespace vcpkg
 {
@@ -22,8 +23,10 @@ namespace vcpkg
 
         std::string to_string() const;
         void to_string(std::string& out) const;
-        static ExpectedL<Version> parse(StringView content);
-        static ExpectedL<Version> parse(StringView version_text, const Optional<StringView>& maybe_port_version_text);
+
+        // Attempts to parse `content` as a version or empty [^#]+#\d+
+        // If the port-version can't be parsed as a nonnegative integer, returns nullopt.
+        static Optional<Version> parse(StringView content);
 
         friend bool operator==(const Version& left, const Version& right);
         friend bool operator!=(const Version& left, const Version& right);

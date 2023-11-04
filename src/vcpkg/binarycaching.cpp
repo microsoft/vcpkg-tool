@@ -2286,8 +2286,7 @@ namespace vcpkg
     BinaryPackageReadInfo::BinaryPackageReadInfo(const InstallPlanAction& action)
         : package_abi(action.package_abi().value_or_exit(VCPKG_LINE_INFO))
         , spec(action.spec)
-        , version(
-              action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_control_file->to_version())
+        , version(action.version())
         , package_dir(action.package_dir.value_or_exit(VCPKG_LINE_INFO))
     {
     }
@@ -2570,9 +2569,6 @@ std::string vcpkg::generate_nuget_packages_config(const ActionPlan& plan, String
 
 NugetReference vcpkg::make_nugetref(const InstallPlanAction& action, StringView prefix)
 {
-    return ::make_nugetref(action.spec,
-                           action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO)
-                               .source_control_file->core_paragraph->version,
-                           action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi,
-                           prefix);
+    return ::make_nugetref(
+        action.spec, action.version(), action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi, prefix);
 }

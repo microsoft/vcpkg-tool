@@ -34,25 +34,15 @@ namespace vcpkg
         }
     }
 
-    ExpectedL<Version> Version::parse(StringView content)
+    Optional<Version> Version::parse(StringView content)
     {
         const auto hash = std::find(content.begin(), content.end(), '#');
         auto port_version_text_start = hash;
-        Optional<StringView> maybe_port_version_text;
+        int port_version = 0;
         if (port_version_text_start != content.end())
         {
-            maybe_port_version_text.emplace(++port_version_text_start, content.end());
-        }
-
-        return parse(StringView{content.begin(), hash}, maybe_port_version_text);
-    }
-
-    ExpectedL<Version> Version::parse(StringView version_text, const Optional<StringView>& maybe_port_version_text)
-    {
-        int port_version = 0;
-        if (auto port_version_text = maybe_port_version_text.get())
-        {
-            auto maybe_parsed = Strings::strto<int>(*port_version_text);
+            ++port_version_text_start;
+            auto maybe_parsed = Strings::strto<int>(StringView(port_version_text_start, content.end()));
             auto parsed = maybe_parsed.get();
             if (parsed && *parsed >= 0)
             {
@@ -60,11 +50,11 @@ namespace vcpkg
             }
             else
             {
-                return msg::format_error(msgPortVersionNonnegativeInteger, msg::value = *port_version_text);
+                return nullopt;
             }
         }
 
-        return Version{version_text, port_version};
+        return Version{StringView{content.begin(), hash}, port_version};
     }
 
     bool operator==(const Version& left, const Version& right)

@@ -52,12 +52,6 @@ namespace
     };
 
     static const NullBuildLogsRecorder null_build_logs_recorder_instance;
-
-    namespace Fields
-    {
-        static constexpr StringLiteral VERSION = "Version";
-        static constexpr StringLiteral PORT_VERSION = "Port-Version";
-    }
 }
 
 namespace vcpkg
