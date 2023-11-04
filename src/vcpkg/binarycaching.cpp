@@ -564,13 +564,13 @@ namespace
                                 continue;
                             }
                             auto time = settings.last_time(m_fs, path, IgnoreErrors{});
-                            const auto size = std::invoke([&]() {
+                            const auto size = ([&]() {
                                 if (auto iter = file_sizes.find(path.native()); iter != file_sizes.end())
                                 {
                                     return iter->second;
                                 }
                                 return m_fs.file_size(path, IgnoreErrors{});
-                            });
+                            })();
                             cache.file_data.push(FileData{path, size, time});
                             cache.current_size += size;
                             fmt::print("Check {}\n", path);
