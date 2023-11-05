@@ -482,6 +482,10 @@ DECLARE_MESSAGE(CISwitchOptSkipFailures,
                 "Skips ports marked `=fail` in ci.baseline.txt")
 DECLARE_MESSAGE(CISwitchOptXUnitAll, (), "", "Reports unchanged ports in the XUnit output")
 DECLARE_MESSAGE(ClearingContents, (msg::path), "", "Clearing contents of {path}")
+DECLARE_MESSAGE(CMakePkgConfigTargetsUsage,
+                (msg::package_name),
+                "",
+                "{package_name} can be imported via CMake FindPkgConfig module:")
 DECLARE_MESSAGE(CmakeTargetsExcluded, (msg::count), "", "{count} additional targets are not displayed.")
 DECLARE_MESSAGE(CMakeTargetsUsage,
                 (msg::package_name),
