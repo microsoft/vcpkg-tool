@@ -53,6 +53,7 @@ namespace vcpkg
 
     enum class ConfigurationType
     {
+        BOTH,
         DEBUG,
         RELEASE,
     };

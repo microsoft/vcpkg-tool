@@ -31,7 +31,10 @@ namespace vcpkg::CMakeVars
     {
         struct TripletCMakeVarProvider : CMakeVarProvider
         {
-            explicit TripletCMakeVarProvider(const vcpkg::VcpkgPaths& paths) : paths(paths) { }
+            explicit TripletCMakeVarProvider(const vcpkg::VcpkgPaths& paths, ConfigurationType default_build_type)
+                : paths(paths), default_build_type(default_build_type)
+            {
+            }
             TripletCMakeVarProvider(const TripletCMakeVarProvider&) = delete;
             TripletCMakeVarProvider& operator=(const TripletCMakeVarProvider&) = delete;
 
@@ -60,26 +63,32 @@ namespace vcpkg::CMakeVars
                                   std::vector<std::vector<std::pair<std::string, std::string>>>& vars) const;
 
             const VcpkgPaths& paths;
+            const ConfigurationType default_build_type;
             mutable std::unordered_map<PackageSpec, std::unordered_map<std::string, std::string>> dep_resolution_vars;
             mutable std::unordered_map<PackageSpec, std::unordered_map<std::string, std::string>> tag_vars;
             mutable std::unordered_map<Triplet, std::unordered_map<std::string, std::string>> generic_triplet_vars;
         };
     }
 
-    std::unique_ptr<CMakeVarProvider> make_triplet_cmake_var_provider(const vcpkg::VcpkgPaths& paths)
+    std::unique_ptr<CMakeVarProvider> make_triplet_cmake_var_provider(const vcpkg::VcpkgPaths& paths,
+                                                                      ConfigurationType default_build_type)
     {
-        return std::make_unique<TripletCMakeVarProvider>(paths);
+        return std::make_unique<TripletCMakeVarProvider>(paths, default_build_type);
     }
 
     static std::string create_extraction_file_prelude(const VcpkgPaths& paths,
-                                                      const std::map<Triplet, int>& emitted_triplets)
+                                                      const std::map<Triplet, int>& emitted_triplets,
+                                                      ConfigurationType default_build_type)
     {
         const auto& fs = paths.get_filesystem();
         std::string extraction_file;
 
-        extraction_file.append("cmake_minimum_required(VERSION 3.5)\n"
-                               "macro(vcpkg_triplet_file VCPKG_TRIPLET_ID)\n"
-                               "set(_vcpkg_triplet_file_BACKUP_CURRENT_LIST_FILE \"${CMAKE_CURRENT_LIST_FILE}\")\n");
+        fmt::format_to(std::back_inserter(extraction_file),
+                       "cmake_minimum_required(VERSION 3.5)\n"
+                       "macro(vcpkg_triplet_file VCPKG_TRIPLET_ID)\n"
+                       "set(VCPKG_BUILD_TYPE \"{}\")\n"
+                       "set(_vcpkg_triplet_file_BACKUP_CURRENT_LIST_FILE \"${{CMAKE_CURRENT_LIST_FILE}}\")\n",
+                       to_string(default_build_type));
 
         for (auto&& p : emitted_triplets)
         {
@@ -116,7 +125,7 @@ endmacro()
         {
             emitted_triplets[spec_abi_setting.first.package_spec.triplet()] = emitted_triplet_id++;
         }
-        std::string extraction_file = create_extraction_file_prelude(paths, emitted_triplets);
+        std::string extraction_file = create_extraction_file_prelude(paths, emitted_triplets, default_build_type);
 
         // The variables collected here are those necessary to perform builds.
         extraction_file.append(R"(
@@ -196,7 +205,7 @@ endfunction()
             emitted_triplets[spec.triplet()] = emitted_triplet_id++;
         }
 
-        std::string extraction_file = create_extraction_file_prelude(paths, emitted_triplets);
+        std::string extraction_file = create_extraction_file_prelude(paths, emitted_triplets, default_build_type);
 
         // The variables collected here are those necessary to perform dependency resolution.
         // If a value affects platform expressions, it must be here.

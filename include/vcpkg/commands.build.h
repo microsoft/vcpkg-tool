@@ -60,6 +60,9 @@ namespace vcpkg
     StringLiteral to_string_view(DownloadTool tool);
     std::string to_string(DownloadTool tool);
 
+    StringLiteral to_string_view(ConfigurationType config_type);
+    std::string to_string(ConfigurationType config_type);
+
     struct BuildPackageOptions
     {
         BuildMissing build_missing;
@@ -74,6 +77,7 @@ namespace vcpkg
         Editable editable;
         BackcompatFeatures backcompat_features;
         PrintUsage print_usage;
+        ConfigurationType build_type;
     };
 
     static constexpr BuildPackageOptions default_build_package_options{
@@ -89,6 +93,7 @@ namespace vcpkg
         Editable::NO,
         BackcompatFeatures::ALLOW,
         PrintUsage::YES,
+        ConfigurationType::BOTH,
     };
 
     static constexpr BuildPackageOptions backcompat_prohibiting_package_options{
@@ -104,6 +109,7 @@ namespace vcpkg
         Editable::NO,
         BackcompatFeatures::PROHIBIT,
         PrintUsage::YES,
+        ConfigurationType::BOTH,
     };
 
     struct BuildResultCounts
@@ -157,7 +163,7 @@ namespace vcpkg
         Optional<std::string> platform_toolset_version;
         Optional<Path> visual_studio_path;
         Optional<std::string> external_toolchain_file;
-        Optional<ConfigurationType> build_type;
+        ConfigurationType build_type;
         Optional<std::string> public_abi_override;
         std::vector<std::string> passthrough_env_vars;
         std::vector<std::string> passthrough_env_vars_tracked;

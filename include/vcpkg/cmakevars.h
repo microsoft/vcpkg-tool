@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vcpkg/fwd/build.h>
 #include <vcpkg/fwd/dependencies.h>
 #include <vcpkg/fwd/portfileprovider.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
@@ -35,5 +36,6 @@ namespace vcpkg::CMakeVars
         virtual void load_tag_vars(const ActionPlan& action_plan, Triplet host_triplet) const = 0;
     };
 
-    std::unique_ptr<CMakeVarProvider> make_triplet_cmake_var_provider(const VcpkgPaths& paths);
+    std::unique_ptr<CMakeVarProvider> make_triplet_cmake_var_provider(
+        const VcpkgPaths& paths, ConfigurationType default_build_type = ConfigurationType::BOTH);
 }

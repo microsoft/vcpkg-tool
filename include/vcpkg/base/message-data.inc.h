@@ -1646,6 +1646,7 @@ DECLARE_MESSAGE(HelpTxtOptManifestFeature,
                 (),
                 "",
                 "Additional features from the top-level manifest to install (manifest mode)")
+DECLARE_MESSAGE(HelpTxtBuildType, (), "", "Build type (debug, release or both if not specified) (manifest mode)")
 DECLARE_MESSAGE(HelpTxtOptManifestNoDefault,
                 (),
                 "",
