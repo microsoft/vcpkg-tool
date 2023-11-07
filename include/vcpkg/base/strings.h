@@ -14,7 +14,7 @@
 #include <algorithm>
 #include <vector>
 
-#ifdef __APPLE__
+#ifndef __cpp_lib_boyer_moore_searcher
 #include <experimental/functional>
 #endif
 
@@ -47,10 +47,10 @@ namespace vcpkg::Strings::details
 
 namespace vcpkg::Strings
 {
-#ifdef __APPLE__
-    using boyer_moore_horspool_searcher = std::experimental::boyer_moore_horspool_searcher<std::string::const_iterator>;
-#else
+#ifdef __cpp_lib_boyer_moore_searcher
     using boyer_moore_horspool_searcher = std::boyer_moore_horspool_searcher<std::string::const_iterator>;
+#else
+    using boyer_moore_horspool_searcher = std::experimental::boyer_moore_horspool_searcher<std::string::const_iterator>;
 #endif
 
     template<class... Args>
