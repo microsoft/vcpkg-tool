@@ -941,6 +941,7 @@ namespace vcpkg
                     {
                         msg.append_indent()
                             .append_raw("# ")
+                            .append_raw(NotePrefix)
                             .append(msgCmakeTargetsExcluded, msg::count = omitted)
                             .append_raw('\n');
                     }
@@ -1114,7 +1115,7 @@ namespace vcpkg
                              std::move(maybe_manifest_scf)
                                  .error()
                                  .append_raw('\n')
-                                 .append(msgNoteMessage)
+                                 .append_raw(NotePrefix)
                                  .append(msgExtendedDocumentationAtUrl, msg::url = docs::manifests_url)
                                  .append_raw('\n'));
                 Checks::exit_fail(VCPKG_LINE_INFO);

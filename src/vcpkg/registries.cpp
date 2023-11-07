@@ -488,16 +488,16 @@ namespace
         DelayedInit<Baseline> m_baseline;
 
     private:
-        const ExpectedL<SourceControlFileAndLocation>& get_scf(StringView port_name, const Path& path) const
+        const ExpectedL<SourceControlFileAndLocation>& get_scfl(StringView port_name, const Path& path) const
         {
-            return m_scfs.get_lazy(path, [&, this]() {
+            return m_scfls.get_lazy(path, [&, this]() {
                 return Paragraphs::try_load_port(m_fs, port_name, PortLocation{path}).maybe_scfl;
             });
         }
 
         const ReadOnlyFilesystem& m_fs;
         const Path m_builtin_ports_directory;
-        Cache<Path, ExpectedL<SourceControlFileAndLocation>> m_scfs;
+        Cache<Path, ExpectedL<SourceControlFileAndLocation>> m_scfls;
     };
     constexpr StringLiteral BuiltinFilesRegistry::s_kind;
 
@@ -663,30 +663,30 @@ namespace
                 fs.create_directories(destination_parent, ec);
                 if (ec)
                 {
-                    return {msg::format(msgErrorMessage)
+                    return {error_prefix()
                                 .append(format_filesystem_call_error(ec, "create_directories", {destination_parent}))
                                 .append_raw('\n')
-                                .append(msgNoteMessage)
+                                .append_raw(NotePrefix)
                                 .append(msgWhileCheckingOutBaseline, msg::commit_sha = commit_sha),
                             expected_right_tag};
                 }
                 fs.write_contents(destination_tmp, *contents, ec);
                 if (ec)
                 {
-                    return {msg::format(msgErrorMessage)
+                    return {error_prefix()
                                 .append(format_filesystem_call_error(ec, "write_contents", {destination_tmp}))
                                 .append_raw('\n')
-                                .append(msgNoteMessage)
+                                .append_raw(NotePrefix)
                                 .append(msgWhileCheckingOutBaseline, msg::commit_sha = commit_sha),
                             expected_right_tag};
                 }
                 fs.rename(destination_tmp, destination, ec);
                 if (ec)
                 {
-                    return {msg::format(msgErrorMessage)
+                    return {error_prefix()
                                 .append(format_filesystem_call_error(ec, "rename", {destination_tmp, destination}))
                                 .append_raw('\n')
-                                .append(msgNoteMessage)
+                                .append_raw(NotePrefix)
                                 .append(msgWhileCheckingOutBaseline, msg::commit_sha = commit_sha),
                             expected_right_tag};
                 }
@@ -709,7 +709,7 @@ namespace
     ExpectedL<std::unique_ptr<RegistryEntry>> BuiltinFilesRegistry::get_port_entry(StringView port_name) const
     {
         auto port_directory = m_builtin_ports_directory / port_name;
-        return get_scf(port_name, port_directory)
+        return get_scfl(port_name, port_directory)
             .then([&](const SourceControlFileAndLocation& scfl) -> ExpectedL<std::unique_ptr<RegistryEntry>> {
                 auto scf = scfl.source_control_file.get();
                 if (!scf)
@@ -733,7 +733,7 @@ namespace
     ExpectedL<Optional<Version>> BuiltinFilesRegistry::get_baseline_version(StringView port_name) const
     {
         // if a baseline is not specified, use the ports directory version
-        return get_scf(port_name, m_builtin_ports_directory / port_name)
+        return get_scfl(port_name, m_builtin_ports_directory / port_name)
             .then([&](const SourceControlFileAndLocation& scfl) -> ExpectedL<Optional<Version>> {
                 auto scf = scfl.source_control_file.get();
                 if (!scf)
@@ -1082,7 +1082,7 @@ namespace
         {
             return format_version_git_entry_missing(port_name, version, port_versions)
                 .append_raw('\n')
-                .append(msgNoteMessage)
+                .append_raw(NotePrefix)
                 .append(msgChecksUpdateVcpkg);
         }
 
@@ -1246,7 +1246,7 @@ namespace
         {
             return LocalizedString::from_raw(origin)
                 .append_raw(": ")
-                .append(msgErrorMessage)
+                .append_raw(ErrorPrefix)
                 .append(msgMissingRequiredField,
                         msg::json_field = baseline,
                         msg::json_type = msg::format(msgABaselineObject));
@@ -1401,7 +1401,7 @@ namespace vcpkg
     ExpectedL<Optional<Version>> RegistrySet::baseline_for_port(StringView port_name) const
     {
         auto impl = registry_for_port(port_name);
-        if (!impl) return msg::format(msgErrorMessage).append(msgNoRegistryForPort, msg::package_name = port_name);
+        if (!impl) return msg::format_error(msgNoRegistryForPort, msg::package_name = port_name);
         return impl->get_baseline_version(port_name);
     }
 
@@ -1593,7 +1593,7 @@ namespace vcpkg
         {
             result.error()
                 .append_raw('\n')
-                .append(msgNoteMessage)
+                .append_raw(NotePrefix)
                 .append(msgWhileParsingVersionsForPort, msg::package_name = port_name, msg::path = versions_file_path);
         }
 
@@ -1663,7 +1663,7 @@ namespace vcpkg
                 {
                     maybe_port_versions.error()
                         .append_raw('\n')
-                        .append(msgNoteMessage)
+                        .append_raw(NotePrefix)
                         .append(
                             msgWhileParsingVersionsForPort, msg::package_name = port_name, msg::path = versions_file);
                 }
@@ -1684,7 +1684,7 @@ namespace vcpkg
         {
             result.error()
                 .append_raw('\n')
-                .append(msgNoteMessage)
+                .append_raw(NotePrefix)
                 .append(msgWhileParsingVersionsForPort, msg::package_name = port_name, msg::path = versions_file_path);
         }
 

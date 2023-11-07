@@ -39,8 +39,8 @@ namespace
 
     void insert_version_to_json_object(Json::Object& obj, const Version& version, StringLiteral version_field)
     {
-        obj.insert(version_field, Json::Value::string(version.text()));
-        obj.insert("port-version", Json::Value::integer(version.port_version()));
+        obj.insert(version_field, Json::Value::string(version.text));
+        obj.insert("port-version", Json::Value::integer(version.port_version));
     }
 
     void insert_schemed_version_to_json_object(Json::Object& obj, const SchemedVersion& version)
@@ -71,7 +71,7 @@ namespace
     {
         if (version.scheme == VersionScheme::String)
         {
-            if (DateVersion::try_parse(version.version.text()))
+            if (DateVersion::try_parse(version.version.text))
             {
                 Checks::msg_exit_with_message(VCPKG_LINE_INFO,
                                               msgAddVersionSuggestNewVersionScheme,
@@ -80,7 +80,7 @@ namespace
                                               msg::package_name = port_name,
                                               msg::option = OPTION_SKIP_VERSION_FORMAT_CHECK);
             }
-            if (DotVersion::try_parse_relaxed(version.version.text()))
+            if (DotVersion::try_parse_relaxed(version.version.text))
             {
                 Checks::msg_exit_with_message(VCPKG_LINE_INFO,
                                               msgAddVersionSuggestNewVersionScheme,
@@ -380,7 +380,7 @@ namespace vcpkg
         auto maybe_git_tree_map = paths.git_get_local_port_treeish_map();
         auto& git_tree_map = maybe_git_tree_map.value_or_exit(VCPKG_LINE_INFO);
 
-        // Find ports with uncommited changes
+        // Find ports with uncommitted changes
         std::set<std::string> changed_ports;
         auto git_config = paths.git_builtin_config();
         auto maybe_changes = git_ports_with_uncommitted_changes(git_config);
@@ -412,14 +412,14 @@ namespace vcpkg
             {
                 // check if manifest file is property formatted
 
-                if (scf->control_location.filename() == "vcpkg.json")
+                if (scf->control_path.filename() == "vcpkg.json")
                 {
-                    const auto current_file_content = fs.read_contents(scf->control_location, VCPKG_LINE_INFO);
+                    const auto current_file_content = fs.read_contents(scf->control_path, VCPKG_LINE_INFO);
                     const auto json = serialize_manifest(*scf->source_control_file);
                     const auto formatted_content = Json::stringify(json);
                     if (current_file_content != formatted_content)
                     {
-                        auto command_line = fmt::format("vcpkg format-manifest {}", scf->control_location);
+                        auto command_line = fmt::format("vcpkg format-manifest {}", scf->control_path);
                         msg::println_error(
                             msg::format(msgAddVersionPortHasImproperFormat, msg::package_name = port_name)
                                 .append_raw('\n')

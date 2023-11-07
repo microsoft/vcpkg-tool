@@ -29,55 +29,55 @@ namespace vcpkg
         }
     }
 
-    template<class RanIt, class F>
-    void parallel_for_each_n(RanIt begin, size_t work_count, F cb) noexcept
+    template<class Container, class F>
+    void parallel_for_each(Container&& c, F cb) noexcept
     {
-        if (work_count == 0)
+        if (c.size() == 0)
         {
             return;
         }
-        if (work_count == 1)
+        if (c.size() == 1)
         {
-            cb(*begin);
+            cb(c[0]);
             return;
         }
 
         std::atomic_size_t next{0};
 
-        execute_in_parallel(work_count, [&]() {
+        execute_in_parallel(c.size(), [&]() {
             size_t i = 0;
-            while (i < work_count)
+            while (i < c.size())
             {
                 if (next.compare_exchange_weak(i, i + 1, std::memory_order_relaxed))
                 {
-                    cb(*(begin + i));
+                    cb(c[i]);
                 }
             }
         });
     }
 
-    template<class RanItSource, class RanItTarget, class F>
-    void parallel_transform(RanItSource begin, size_t work_count, RanItTarget out_begin, F&& cb) noexcept
+    template<class Container, class RanItTarget, class F>
+    void parallel_transform(const Container& c, RanItTarget out_begin, F&& cb) noexcept
     {
-        if (work_count == 0)
+        if (c.size() == 0)
         {
             return;
         }
-        if (work_count == 1)
+        if (c.size() == 1)
         {
-            *out_begin = cb(*begin);
+            *out_begin = cb(c[0]);
             return;
         }
 
         std::atomic_size_t next{0};
 
-        execute_in_parallel(work_count, [&]() {
+        execute_in_parallel(c.size(), [&]() {
             size_t i = 0;
-            while (i < work_count)
+            while (i < c.size())
             {
                 if (next.compare_exchange_weak(i, i + 1, std::memory_order_relaxed))
                 {
-                    *(out_begin + i) = cb(*(begin + i));
+                    *(out_begin + i) = cb(c[i]);
                 }
             }
         });

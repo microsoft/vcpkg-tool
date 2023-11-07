@@ -1,12 +1,10 @@
-#include <catch2/catch.hpp>
+#include <vcpkg-test/util.h>
 
 #include <vcpkg/base/sortedvector.h>
 
 #include <vcpkg/commands.update.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/statusparagraphs.h>
-
-#include <vcpkg-test/util.h>
 
 using namespace vcpkg;
 using namespace vcpkg::Test;
@@ -17,7 +15,7 @@ TEST_CASE ("find outdated packages basic", "[update]")
 {
     std::vector<std::unique_ptr<StatusParagraph>> status_paragraphs;
     status_paragraphs.push_back(make_status_pgh("a"));
-    status_paragraphs.back()->package.version = "2";
+    status_paragraphs.back()->package.version = Version{"2", 0};
 
     StatusParagraphs status_db(std::move(status_paragraphs));
 
@@ -38,10 +36,10 @@ TEST_CASE ("find outdated packages features", "[update]")
 {
     std::vector<std::unique_ptr<StatusParagraph>> status_paragraphs;
     status_paragraphs.push_back(make_status_pgh("a"));
-    status_paragraphs.back()->package.version = "2";
+    status_paragraphs.back()->package.version = Version{"2", 0};
 
     status_paragraphs.push_back(make_status_feature_pgh("a", "b"));
-    status_paragraphs.back()->package.version = "2";
+    status_paragraphs.back()->package.version = Version{"2", 0};
 
     StatusParagraphs status_db(std::move(status_paragraphs));
 
@@ -62,10 +60,10 @@ TEST_CASE ("find outdated packages features 2", "[update]")
 {
     std::vector<std::unique_ptr<StatusParagraph>> status_paragraphs;
     status_paragraphs.push_back(make_status_pgh("a"));
-    status_paragraphs.back()->package.version = "2";
+    status_paragraphs.back()->package.version = Version{"2", 0};
 
     status_paragraphs.push_back(make_status_feature_pgh("a", "b"));
-    status_paragraphs.back()->package.version = "0";
+    status_paragraphs.back()->package.version = Version{"0", 0};
     status_paragraphs.back()->state = InstallState::NOT_INSTALLED;
     status_paragraphs.back()->want = Want::PURGE;
 
@@ -88,7 +86,7 @@ TEST_CASE ("find outdated packages none", "[update]")
 {
     std::vector<std::unique_ptr<StatusParagraph>> status_paragraphs;
     status_paragraphs.push_back(make_status_pgh("a"));
-    status_paragraphs.back()->package.version = "2";
+    status_paragraphs.back()->package.version = Version{"2", 0};
 
     StatusParagraphs status_db(std::move(status_paragraphs));
 

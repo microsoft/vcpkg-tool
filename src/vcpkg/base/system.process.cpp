@@ -676,7 +676,7 @@ namespace vcpkg
     {
         std::vector<ExpectedL<ExitCodeAndOutput>> res(cmd_lines.size(), LocalizedString{});
 
-        parallel_transform(cmd_lines.begin(), cmd_lines.size(), res.begin(), [&](const Command& cmd_line) {
+        parallel_transform(cmd_lines, res.begin(), [&](const Command& cmd_line) {
             return cmd_execute_and_capture_output(cmd_line, wd, env);
         });
 
@@ -961,6 +961,7 @@ namespace
         RedirectedProcessInfo& operator=(const RedirectedProcessInfo&) = delete;
         ~RedirectedProcessInfo() = default;
 
+        VCPKG_MSVC_WARNING(suppress : 6262) // function uses 32k of stack
         int wait_and_stream_output(int32_t debug_id,
                                    const char* input,
                                    DWORD input_size,

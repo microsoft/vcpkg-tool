@@ -166,7 +166,7 @@ namespace vcpkg
         msg::print(msgElapsedForPackage, msg::spec = spec, msg::elapsed = build_timer);
         if (result.code == BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES)
         {
-            LocalizedString errorMsg = msg::format(msgErrorMessage).append(msgBuildDependenciesMissing);
+            LocalizedString errorMsg = msg::format_error(msgBuildDependenciesMissing);
             for (const auto& p : result.unmet_dependencies)
             {
                 errorMsg.append_raw('\n').append_indent().append_raw(p.to_string());
@@ -617,7 +617,7 @@ namespace vcpkg
                              action.spec.triplet(),
                              action.public_abi(),
                              fspecs_to_pspecs(find_itr->second));
-        if (const auto p_ver = build_info.version.get())
+        if (const auto p_ver = build_info.detected_head_version.get())
         {
             bpgh.version = *p_ver;
         }
@@ -654,19 +654,15 @@ namespace vcpkg
                                              const Toolset& toolset,
                                              std::vector<CMakeVariable>& out_vars)
     {
-        Util::Vectors::append(&out_vars,
-                              std::initializer_list<CMakeVariable>{
-                                  {"CMD", "BUILD"},
-                                  {"DOWNLOADS", paths.downloads},
-                                  {"TARGET_TRIPLET", triplet.canonical_name()},
-                                  {"TARGET_TRIPLET_FILE", paths.get_triplet_db().get_triplet_file_path(triplet)},
-                                  {"VCPKG_BASE_VERSION", VCPKG_BASE_VERSION_AS_STRING},
-                                  {"VCPKG_CONCURRENCY", std::to_string(get_concurrency())},
-                                  {"VCPKG_PLATFORM_TOOLSET", toolset.version.c_str()},
-                              });
+        out_vars.emplace_back("CMD", "BUILD");
+        out_vars.emplace_back("DOWNLOADS", paths.downloads);
+        out_vars.emplace_back("TARGET_TRIPLET", triplet.canonical_name());
+        out_vars.emplace_back("TARGET_TRIPLET_FILE", paths.get_triplet_db().get_triplet_file_path(triplet));
+        out_vars.emplace_back("VCPKG_BASE_VERSION", VCPKG_BASE_VERSION_AS_STRING);
+        out_vars.emplace_back("VCPKG_CONCURRENCY", std::to_string(get_concurrency()));
+        out_vars.emplace_back("VCPKG_PLATFORM_TOOLSET", toolset.version);
         // Make sure GIT could be found
-        const Path& git_exe_path = paths.get_tool_exe(Tools::GIT, stdout_sink);
-        out_vars.emplace_back("GIT", git_exe_path);
+        out_vars.emplace_back("GIT", paths.get_tool_exe(Tools::GIT, stdout_sink));
     }
 
     static CompilerInfo load_compiler_info(const VcpkgPaths& paths,
@@ -764,7 +760,7 @@ namespace vcpkg
             {"_HOST_TRIPLET", action.host_triplet.canonical_name()},
             {"FEATURES", Strings::join(";", action.feature_list)},
             {"PORT", scf.core_paragraph->name},
-            {"VERSION", scf.core_paragraph->raw_version},
+            {"VERSION", scf.core_paragraph->version.text},
             {"VCPKG_USE_HEAD_VERSION", Util::Enum::to_bool(action.build_options.use_head_version) ? "1" : "0"},
             {"_VCPKG_DOWNLOAD_TOOL", to_string_view(action.build_options.download_tool)},
             {"_VCPKG_EDITABLE", Util::Enum::to_bool(action.build_options.editable) ? "1" : "0"},
@@ -951,9 +947,9 @@ namespace vcpkg
             msg::println(msgLoadingOverlayTriplet, msg::path = triplet_file_path);
         }
 
-        if (!Strings::starts_with(scfl.control_location, paths.builtin_ports_directory()))
+        if (!Strings::starts_with(scfl.control_path, paths.builtin_ports_directory()))
         {
-            msg::println(msgInstallingFromLocation, msg::path = scfl.control_location);
+            msg::println(msgInstallingFromLocation, msg::path = scfl.control_path);
         }
 
         const ElapsedTimer timer;
@@ -1280,7 +1276,7 @@ namespace vcpkg
         abi_info.relative_port_files = std::move(files);
         abi_info.relative_port_hashes = std::move(hashes);
         abi_info.heuristic_resources.push_back(
-            run_resource_heuristics(portfile_cmake_contents, scf->core_paragraph->raw_version));
+            run_resource_heuristics(portfile_cmake_contents, scf->core_paragraph->version.text));
     }
 
     void compute_all_abis(const VcpkgPaths& paths,
@@ -1665,7 +1661,11 @@ namespace vcpkg
         }
 
         std::string version = parser.optional_field("Version");
-        if (!version.empty()) build_info.version = std::move(version);
+        if (!version.empty())
+        {
+            sanitize_version_string(version);
+            build_info.detected_head_version = Version::parse(std::move(version)).value_or_exit(VCPKG_LINE_INFO);
+        }
 
         std::unordered_map<BuildPolicy, bool> policies;
         for (const auto& policy : ALL_POLICIES)

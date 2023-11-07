@@ -1,6 +1,6 @@
 #include <vcpkg/base/system-headers.h>
 
-#include <catch2/catch.hpp>
+#include <vcpkg-test/util.h>
 
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/strings.h>
@@ -8,8 +8,6 @@
 #include <iostream>
 #include <random>
 #include <vector>
-
-#include <vcpkg-test/util.h>
 
 #if !defined(_WIN32)
 #include <sys/stat.h>

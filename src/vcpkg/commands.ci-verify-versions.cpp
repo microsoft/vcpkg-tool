@@ -48,7 +48,7 @@ namespace
                                   .append_raw(": ")
                                   .append(maybe_extracted_tree.error())
                                   .append_raw('\n')
-                                  .append(msgNoteMessage)
+                                  .append_raw(NotePrefix)
                                   .append(msgWhileValidatingVersion, msg::version = version_entry.version.version)
                                   .append_raw('\n'));
             return success;
@@ -75,7 +75,7 @@ namespace
                                   .append_raw(": ")
                                   .append(load_result.maybe_scfl.error())
                                   .append_raw('\n')
-                                  .append(msgNoteMessage)
+                                  .append_raw(NotePrefix)
                                   .append(msgWhileValidatingVersion, msg::version = version_entry.version.version)
                                   .append_raw('\n'));
             return success;
@@ -90,7 +90,7 @@ namespace
             errors_sink.print(Color::error,
                               LocalizedString::from_raw(versions_file_path)
                                   .append_raw(": ")
-                                  .append(msgErrorMessage)
+                                  .append_raw(ErrorPrefix)
                                   .append(msgVersionInDeclarationDoesNotMatch,
                                           msg::git_tree_sha = version_entry.git_tree,
                                           msg::expected = version_entry_spec,
@@ -104,7 +104,7 @@ namespace
             errors_sink.print(Color::error,
                               LocalizedString::from_raw(versions_file_path)
                                   .append_raw(": ")
-                                  .append(msgErrorMessage)
+                                  .append_raw(ErrorPrefix)
                                   .append(msgVersionSchemeMismatch1Old,
                                           msg::version = version_entry.version.version,
                                           msg::expected = get_scheme_name(version_entry.version.scheme),
@@ -112,12 +112,12 @@ namespace
                                           msg::package_name = port_name,
                                           msg::git_tree_sha = version_entry.git_tree)
                                   .append_raw('\n')
-                                  .append_raw(scfl->control_location)
+                                  .append_raw(scfl->control_path)
                                   .append_raw(": ")
-                                  .append(msgNoteMessage)
+                                  .append_raw(NotePrefix)
                                   .append(msgPortDeclaredHere, msg::package_name = port_name)
                                   .append_raw('\n')
-                                  .append(msgNoteMessage)
+                                  .append_raw(NotePrefix)
                                   .append(msgVersionSchemeMismatch2)
                                   .append_raw('\n'));
         }
@@ -126,7 +126,7 @@ namespace
         {
             success_sink.print(LocalizedString::from_raw(versions_file_path)
                                    .append_raw(": ")
-                                   .append(msgVersionVerifiedOK2,
+                                   .append(msgVersionVerifiedOK,
                                            msg::version_spec = VersionSpec{port_name, version_entry.version.version},
                                            msg::git_tree_sha = version_entry.git_tree)
                                    .append_raw('\n'));
@@ -156,17 +156,17 @@ namespace
         {
             success = false;
             errors_sink.print(Color::error,
-                              LocalizedString::from_raw(scfl.control_location)
+                              LocalizedString::from_raw(scfl.control_path)
                                   .append_raw(": ")
-                                  .append(msgErrorMessage)
+                                  .append_raw(ErrorPrefix)
                                   .append(msgVersionDatabaseFileMissing)
                                   .append_raw('\n')
                                   .append_raw(versions_database_entry.versions_file_path)
                                   .append_raw(": ")
-                                  .append(msgNoteMessage)
+                                  .append_raw(NotePrefix)
                                   .append(msgVersionDatabaseFileMissing2)
                                   .append_raw('\n')
-                                  .append(msgNoteMessage)
+                                  .append_raw(NotePrefix)
                                   .append(msgVersionDatabaseFileMissing3,
                                           msg::command_line = fmt::format("vcpkg x-add-version {}", port_name))
                                   .append_raw('\n'));
@@ -185,18 +185,18 @@ namespace
         {
             success = false;
             errors_sink.print(Color::error,
-                              LocalizedString::from_raw(scfl.control_location)
+                              LocalizedString::from_raw(scfl.control_path)
                                   .append_raw(": ")
-                                  .append(msgErrorMessage)
+                                  .append_raw(ErrorPrefix)
                                   .append(msgVersionNotFoundInVersionsFile2,
                                           msg::version_spec = VersionSpec{port_name, local_port_version.version})
                                   .append_raw('\n')
                                   .append_raw(versions_database_entry.versions_file_path)
                                   .append_raw(": ")
-                                  .append(msgNoteMessage)
+                                  .append_raw(NotePrefix)
                                   .append(msgVersionNotFoundInVersionsFile3)
                                   .append_raw('\n')
-                                  .append(msgNoteMessage)
+                                  .append_raw(NotePrefix)
                                   .append(msgVersionNotFoundInVersionsFile4,
                                           msg::command_line = fmt::format("vcpkg x-add-version {}", port_name))
                                   .append_raw('\n'));
@@ -212,22 +212,22 @@ namespace
                 Color::error,
                 LocalizedString::from_raw(versions_database_entry.versions_file_path)
                     .append_raw(": ")
-                    .append(msgErrorMessage)
+                    .append_raw(ErrorPrefix)
                     .append(msgVersionSchemeMismatch1,
                             msg::version = version_entry.version.version,
                             msg::expected = get_scheme_name(version_entry.version.scheme),
                             msg::actual = get_scheme_name(local_port_version.scheme),
                             msg::package_name = port_name)
                     .append_raw('\n')
-                    .append_raw(scfl.control_location)
+                    .append_raw(scfl.control_path)
                     .append_raw(": ")
-                    .append(msgNoteMessage)
+                    .append_raw(NotePrefix)
                     .append(msgPortDeclaredHere, msg::package_name = port_name)
                     .append_raw('\n')
-                    .append(msgNoteMessage)
+                    .append_raw(NotePrefix)
                     .append(msgVersionSchemeMismatch2)
                     .append_raw('\n')
-                    .append(msgNoteMessage)
+                    .append_raw(NotePrefix)
                     .append(msgVersionOverwriteVersion, msg::version_spec = local_version_spec)
                     .append_raw(fmt::format("\nvcpkg x-add-version {} --overwrite-version\n", port_name)));
         }
@@ -238,19 +238,19 @@ namespace
             errors_sink.print(Color::error,
                               LocalizedString::from_raw(versions_database_entry.versions_file_path)
                                   .append_raw(": ")
-                                  .append(msgErrorMessage)
+                                  .append_raw(ErrorPrefix)
                                   .append(msgVersionShaMismatch1,
                                           msg::version_spec = local_version_spec,
                                           msg::git_tree_sha = version_entry.git_tree)
                                   .append_raw('\n')
                                   .append_raw(scfl.port_directory())
                                   .append_raw(": ")
-                                  .append(msgNoteMessage)
+                                  .append_raw(NotePrefix)
                                   .append(msgVersionShaMismatch2, msg::git_tree_sha = local_git_tree)
                                   .append_raw('\n')
-                                  .append_raw(scfl.control_location)
+                                  .append_raw(scfl.control_path)
                                   .append_raw(": ")
-                                  .append(msgNoteMessage)
+                                  .append_raw(NotePrefix)
                                   .append(msgVersionShaMismatch3, msg::version_spec = local_version_spec)
                                   .append_raw('\n')
                                   .append_indent()
@@ -260,7 +260,7 @@ namespace
                                   .append_indent()
                                   .append(msgGitCommitUpdateVersionDatabase)
                                   .append_raw('\n')
-                                  .append(msgNoteMessage)
+                                  .append_raw(NotePrefix)
                                   .append(msgVersionShaMismatch4, msg::version_spec = local_version_spec)
                                   .append_raw('\n')
                                   .append_indent()
@@ -276,7 +276,7 @@ namespace
         {
             success_sink.print(LocalizedString::from_raw(scfl.port_directory())
                                    .append_raw(": ")
-                                   .append(msgVersionVerifiedOK2,
+                                   .append(msgVersionVerifiedOK,
                                            msg::version_spec = local_version_spec,
                                            msg::git_tree_sha = version_entry.git_tree)
                                    .append_raw('\n'));
@@ -299,15 +299,15 @@ namespace
             errors_sink.print(Color::error,
                               LocalizedString::from_raw(baseline_path)
                                   .append_raw(": ")
-                                  .append(msgErrorMessage)
+                                  .append_raw(ErrorPrefix)
                                   .append(msgBaselineMissing, msg::package_name = port_name)
                                   .append_raw('\n')
-                                  .append_raw(scfl.control_location)
+                                  .append_raw(scfl.control_path)
                                   .append_raw(": ")
-                                  .append(msgNoteMessage)
+                                  .append_raw(NotePrefix)
                                   .append(msgPortDeclaredHere, msg::package_name = port_name)
                                   .append_raw('\n')
-                                  .append(msgNoteMessage)
+                                  .append_raw(NotePrefix)
                                   .append(msgAddVersionInstructions, msg::package_name = port_name)
                                   .append_raw('\n')
                                   .append_indent()
@@ -325,6 +325,7 @@ namespace
         {
             success_sink.print(LocalizedString::from_raw(baseline_path)
                                    .append_raw(": ")
+                                   .append_raw(MessagePrefix)
                                    .append(msgVersionBaselineMatch,
                                            msg::version_spec = VersionSpec{port_name, local_port_version.version})
                                    .append_raw('\n'));
@@ -335,18 +336,18 @@ namespace
         errors_sink.print(Color::error,
                           LocalizedString::from_raw(baseline_path)
                               .append_raw(": ")
-                              .append(msgErrorMessage)
+                              .append_raw(ErrorPrefix)
                               .append(msgVersionBaselineMismatch,
                                       msg::expected = local_port_version.version,
                                       msg::actual = baseline_version,
                                       msg::package_name = port_name)
                               .append_raw('\n')
-                              .append_raw(scfl.control_location)
+                              .append_raw(scfl.control_path)
                               .append_raw(": ")
-                              .append(msgNoteMessage)
+                              .append_raw(NotePrefix)
                               .append(msgPortDeclaredHere, msg::package_name = port_name)
                               .append_raw('\n')
-                              .append(msgNoteMessage)
+                              .append_raw(NotePrefix)
                               .append(msgAddVersionInstructions, msg::package_name = port_name)
                               .append_raw('\n')
                               .append_indent()
@@ -376,14 +377,14 @@ namespace
         auto dependent_entries = maybe_dependent_entries->get();
         if (!dependent_entries)
         {
-            auto this_error = LocalizedString::from_raw(scfl.control_location)
+            auto this_error = LocalizedString::from_raw(scfl.control_path)
                                   .append_raw(": ")
-                                  .append(msgErrorMessage)
+                                  .append_raw(ErrorPrefix)
                                   .append(msgDependencyNotInVersionDatabase, msg::package_name = dependency.name)
                                   .append_raw('\n');
             if (feature_name)
             {
-                this_error.append(msgNoteMessage)
+                this_error.append_raw(NotePrefix)
                     .append(msgDependencyInFeature, msg::feature = *feature_name)
                     .append_raw('\n');
             }
@@ -398,21 +399,21 @@ namespace
                 return entry.version.version == *minimum_version;
             }))
         {
-            auto this_error = LocalizedString::from_raw(scfl.control_location)
+            auto this_error = LocalizedString::from_raw(scfl.control_path)
                                   .append_raw(": ")
-                                  .append(msgErrorMessage)
+                                  .append_raw(ErrorPrefix)
                                   .append(msgVersionConstraintNotInDatabase1,
                                           msg::package_name = dependency.name,
                                           msg::version = *minimum_version)
                                   .append_raw('\n')
                                   .append_raw(dependent_versions_db_entry.versions_file_path)
                                   .append_raw(": ")
-                                  .append(msgNoteMessage)
+                                  .append_raw(NotePrefix)
                                   .append(msgVersionConstraintNotInDatabase2)
                                   .append_raw('\n');
             if (feature_name)
             {
-                this_error.append(msgNoteMessage)
+                this_error.append_raw(NotePrefix)
                     .append(msgDependencyInFeature, msg::feature = *feature_name)
                     .append_raw('\n');
             }
@@ -462,9 +463,9 @@ namespace
                 success = false;
                 errors_sink.print(
                     Color::error,
-                    LocalizedString::from_raw(scfl.control_location)
+                    LocalizedString::from_raw(scfl.control_path)
                         .append_raw(": ")
-                        .append(msgErrorMessage)
+                        .append_raw(ErrorPrefix)
                         .append(msgVersionOverrideNotInVersionDatabase, msg::package_name = override_.name)
                         .append_raw('\n'));
                 continue;
@@ -476,16 +477,16 @@ namespace
             {
                 success = false;
                 errors_sink.print(Color::error,
-                                  LocalizedString::from_raw(scfl.control_location)
+                                  LocalizedString::from_raw(scfl.control_path)
                                       .append_raw(": ")
-                                      .append(msgErrorMessage)
+                                      .append_raw(ErrorPrefix)
                                       .append(msgVersionOverrideVersionNotInVersionDatabase1,
                                               msg::package_name = override_.name,
                                               msg::version = override_.version)
                                       .append_raw('\n')
                                       .append_raw(override_versions_db_entry.versions_file_path)
                                       .append_raw(": ")
-                                      .append(msgNoteMessage)
+                                      .append_raw(NotePrefix)
                                       .append(msgVersionOverrideVersionNotInVersionDatabase2)
                                       .append_raw('\n'));
             }
@@ -493,9 +494,9 @@ namespace
 
         if (success)
         {
-            success_sink.print(LocalizedString::from_raw(scfl.control_location)
+            success_sink.print(LocalizedString::from_raw(scfl.control_path)
                                    .append_raw(": ")
-                                   .append(msgMessageMessage)
+                                   .append_raw(MessagePrefix)
                                    .append(msgVersionConstraintOk)
                                    .append_raw('\n'));
         }
@@ -570,12 +571,12 @@ namespace vcpkg
             {
                 errors_sink.print(
                     Color::error,
-                    LocalizedString::from_raw(scfl.control_location)
+                    LocalizedString::from_raw(scfl.control_path)
                         .append_raw(": ")
-                        .append(msgErrorMessage)
+                        .append_raw(ErrorPrefix)
                         .append(msgVersionShaMissing1)
                         .append_raw('\n')
-                        .append(msgNoteMessage)
+                        .append_raw(NotePrefix)
                         .append(msgVersionShaMissing2)
                         .append_raw('\n')
                         .append_indent()

@@ -40,17 +40,13 @@ namespace vcpkg::Paragraphs
     PortLoadResult try_load_port_required(const ReadOnlyFilesystem& fs,
                                           StringView port_name,
                                           const PortLocation& port_location);
-    ExpectedL<SourceControlFileAndLocation> try_load_project_manifest_text(StringView text,
-                                                                           StringView origin,
-                                                                           StringView spdx_location,
-                                                                           MessageSink& warning_sink);
-    ExpectedL<SourceControlFileAndLocation> try_load_port_manifest_text(StringView text,
-                                                                        StringView origin,
-                                                                        StringView spdx_location,
-                                                                        MessageSink& warning_sink);
-    ExpectedL<SourceControlFileAndLocation> try_load_control_file_text(StringView text,
-                                                                       StringView origin,
-                                                                       StringView spdx_location);
+    ExpectedL<std::unique_ptr<SourceControlFile>> try_load_project_manifest_text(StringView text,
+                                                                                 StringView control_path,
+                                                                                 MessageSink& warning_sink);
+    ExpectedL<std::unique_ptr<SourceControlFile>> try_load_port_manifest_text(StringView text,
+                                                                              StringView control_path,
+                                                                              MessageSink& warning_sink);
+    ExpectedL<std::unique_ptr<SourceControlFile>> try_load_control_file_text(StringView text, StringView control_path);
 
     ExpectedL<BinaryControlFile> try_load_cached_package(const ReadOnlyFilesystem& fs,
                                                          const Path& package_dir,

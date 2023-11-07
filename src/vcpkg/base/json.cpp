@@ -309,8 +309,8 @@ namespace vcpkg::Json
             case ValueKind::Integer: return lhs.underlying_->integer == rhs.underlying_->integer;
             case ValueKind::Number: return lhs.underlying_->number == rhs.underlying_->number;
             case ValueKind::String: return lhs.underlying_->string == rhs.underlying_->string;
-            case ValueKind::Array: return lhs.underlying_->string == rhs.underlying_->string;
-            case ValueKind::Object: return lhs.underlying_->string == rhs.underlying_->string;
+            case ValueKind::Array: return lhs.underlying_->array == rhs.underlying_->array;
+            case ValueKind::Object: return lhs.underlying_->object == rhs.underlying_->object;
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
@@ -1459,7 +1459,7 @@ namespace vcpkg::Json
             MessageKind::Error,
             LocalizedString::from_raw(m_origin)
                 .append_raw(": ")
-                .append(msgErrorMessage)
+                .append_raw(ErrorPrefix)
                 .append(msgMismatchedType, msg::json_field = path(), msg::json_type = expected_type));
     }
     void Reader::add_extra_field_error(const LocalizedString& type, StringView field, StringView suggestion)
@@ -1480,7 +1480,7 @@ namespace vcpkg::Json
         m_messages.emplace_back(MessageKind::Error,
                                 LocalizedString::from_raw(m_origin)
                                     .append_raw(": ")
-                                    .append(msgErrorMessage)
+                                    .append_raw(ErrorPrefix)
                                     .append_raw(path())
                                     .append_raw(" (")
                                     .append(type)
@@ -1520,7 +1520,7 @@ namespace vcpkg::Json
         m_messages.emplace_back(MessageKind::Warning,
                                 LocalizedString::from_raw(m_origin)
                                     .append_raw(": ")
-                                    .append(msgWarningMessage)
+                                    .append_raw(WarningPrefix)
                                     .append_raw(path())
                                     .append_raw(" (")
                                     .append(type)

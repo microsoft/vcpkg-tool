@@ -19,9 +19,17 @@ namespace vcpkg::Util
     namespace Vectors
     {
         template<class Container, class T>
-        void append(std::vector<T>* augend, const Container& addend)
+        void append(std::vector<T>* augend, Container&& addend)
         {
-            augend->insert(augend->end(), addend.begin(), addend.end());
+            if constexpr (std::is_lvalue_reference_v<Container> || std::is_const_v<Container>)
+            {
+                augend->insert(augend->end(), addend.begin(), addend.end());
+            }
+            else
+            {
+                augend->insert(
+                    augend->end(), std::make_move_iterator(addend.begin()), std::make_move_iterator(addend.end()));
+            }
         }
         template<class Vec, class Key, class KeyEqual>
         bool contains(const Vec& container, const Key& item, KeyEqual key_equal)

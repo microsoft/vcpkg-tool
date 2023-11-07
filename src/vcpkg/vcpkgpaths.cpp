@@ -944,7 +944,7 @@ namespace vcpkg
 
         return std::move(maybe_tree)
             .error()
-            .append(msgNoteMessage)
+            .append_raw(NotePrefix)
             .append(msgWhileCheckingOutPortTreeIsh, msg::package_name = port_name, msg::git_tree_sha = git_tree);
     }
 
@@ -1005,7 +1005,7 @@ namespace vcpkg
             .append_raw('\n')
             .append(std::move(maybe_output).error())
             .append_raw('\n')
-            .append(msgNoteMessage)
+            .append_raw(NotePrefix)
             .append(msgWhileGettingLocalTreeIshObjectsForPorts);
     }
 
@@ -1190,8 +1190,8 @@ namespace vcpkg
         fs.rename_with_retry(git_tree_temp, destination, ec);
         if (ec)
         {
-            return msg::format(msgErrorMessage)
-                .append(format_filesystem_call_error(ec, "rename_with_retry", {git_tree_temp, destination}));
+            return error_prefix().append(
+                format_filesystem_call_error(ec, "rename_with_retry", {git_tree_temp, destination}));
         }
 
         fs.remove(git_tree_index, IgnoreErrors{});
