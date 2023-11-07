@@ -398,7 +398,7 @@ namespace vcpkg::Prefab
             const auto per_package_dir_path = paths.prefab / name;
 
             const auto& binary_paragraph = action.core_paragraph().value_or_exit(VCPKG_LINE_INFO);
-            const std::string norm_version = binary_paragraph.version;
+            const std::string norm_version = binary_paragraph.version.to_string();
 
             version_map[name] = norm_version;
 

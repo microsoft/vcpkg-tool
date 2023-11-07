@@ -23,8 +23,7 @@ namespace vcpkg
     bool operator==(const DependencyConstraint& lhs, const DependencyConstraint& rhs)
     {
         if (lhs.type != rhs.type) return false;
-        if (lhs.value != rhs.value) return false;
-        return lhs.port_version == rhs.port_version;
+        return lhs.version == rhs.version;
     }
 
     Optional<Version> DependencyConstraint::try_get_minimum_version() const
@@ -34,10 +33,7 @@ namespace vcpkg
             return nullopt;
         }
 
-        return Version{
-            value,
-            port_version,
-        };
+        return version;
     }
 
     bool Dependency::has_platform_expressions() const
@@ -109,9 +105,8 @@ namespace vcpkg
     bool operator==(const SourceParagraph& lhs, const SourceParagraph& rhs)
     {
         if (lhs.name != rhs.name) return false;
-        if (lhs.raw_version != rhs.raw_version) return false;
         if (lhs.version_scheme != rhs.version_scheme) return false;
-        if (lhs.port_version != rhs.port_version) return false;
+        if (lhs.version != rhs.version) return false;
         if (!paragraph_equal(lhs.description, rhs.description)) return false;
         if (!paragraph_equal(lhs.maintainers, rhs.maintainers)) return false;
         if (lhs.homepage != rhs.homepage) return false;
@@ -325,7 +320,7 @@ namespace vcpkg
         auto spgh = std::make_unique<SourceParagraph>();
 
         parser.required_field(SourceParagraphFields::NAME, spgh->name);
-        parser.required_field(SourceParagraphFields::VERSION, spgh->raw_version);
+        parser.required_field(SourceParagraphFields::VERSION, spgh->version.text);
 
         auto pv_str = parser.optional_field(SourceParagraphFields::PORT_VERSION);
         if (!pv_str.empty())
@@ -333,7 +328,7 @@ namespace vcpkg
             auto pv_opt = Strings::strto<int>(pv_str);
             if (auto pv = pv_opt.get())
             {
-                spgh->port_version = *pv;
+                spgh->version.port_version = *pv;
             }
             else
             {
@@ -692,27 +687,21 @@ namespace vcpkg
             r.optional_object_field(obj, DEFAULT_FEATURES, dep.default_features, Json::BooleanDeserializer::instance);
             r.optional_object_field(obj, HOST, dep.host, Json::BooleanDeserializer::instance);
             r.optional_object_field(obj, PLATFORM, dep.platform, PlatformExprDeserializer::instance);
+
+            std::string raw_version_ge_text;
             auto has_ge_constraint = r.optional_object_field(
-                obj, VERSION_GE, dep.constraint.value, VersionConstraintStringDeserializer::instance);
+                obj, VERSION_GE, raw_version_ge_text, VersionConstraintStringDeserializer::instance);
             if (has_ge_constraint)
             {
                 dep.constraint.type = VersionConstraintKind::Minimum;
-                const auto& constraint_value = dep.constraint.value;
-                auto h = constraint_value.find('#');
-                if (h != std::string::npos)
+                auto maybe_version = Version::parse(raw_version_ge_text);
+                if (auto version = maybe_version.get())
                 {
-                    auto opt = Strings::strto<int>(ZStringView{constraint_value}.substr(h + 1));
-                    auto v = opt.get();
-                    if (v && *v >= 0)
-                    {
-                        dep.constraint.port_version = *v;
-                    }
-                    else
-                    {
-                        r.add_generic_error(type_name(),
-                                            msg::format(msgVersionConstraintPortVersionMustBePositiveInteger));
-                    }
-                    dep.constraint.value.erase(h);
+                    dep.constraint.version = std::move(*version);
+                }
+                else
+                {
+                    r.add_generic_error(type_name(), msg::format(msgVersionConstraintPortVersionMustBePositiveInteger));
                 }
             }
 
@@ -1319,9 +1308,8 @@ namespace vcpkg
             auto maybe_schemed_version = visit_optional_schemed_deserializer(type_name(), r, obj, false);
             if (auto p = maybe_schemed_version.get())
             {
-                spgh.raw_version = p->version.text();
                 spgh.version_scheme = p->scheme;
-                spgh.port_version = p->version.port_version();
+                spgh.version = p->version;
             }
             else
             {
@@ -1348,9 +1336,8 @@ namespace vcpkg
 
             r.required_object_field(type_name(), obj, NAME, spgh.name, Json::PackageNameDeserializer::instance);
             auto schemed_version = visit_required_schemed_deserializer(type_name(), r, obj, false);
-            spgh.raw_version = schemed_version.version.text();
             spgh.version_scheme = schemed_version.scheme;
-            spgh.port_version = schemed_version.version.port_version();
+            spgh.version = schemed_version.version;
 
             return visit_object_common(obj, spgh, r, control_file);
         }
@@ -1790,12 +1777,7 @@ namespace vcpkg
                 serialize_optional_string(dep_obj, DependencyDeserializer::PLATFORM, to_string(dep.platform));
                 if (dep.constraint.type == VersionConstraintKind::Minimum)
                 {
-                    auto s = dep.constraint.value;
-                    if (dep.constraint.port_version != 0)
-                    {
-                        fmt::format_to(std::back_inserter(s), "#{}", dep.constraint.port_version);
-                    }
-                    dep_obj.insert(DependencyDeserializer::VERSION_GE, std::move(s));
+                    dep_obj.insert(DependencyDeserializer::VERSION_GE, dep.constraint.version.to_string());
                 }
             }
         };
@@ -1808,8 +1790,7 @@ namespace vcpkg
             }
 
             dep_obj.insert(DependencyOverrideDeserializer::NAME, Json::Value::string(dep.name));
-
-            serialize_schemed_version(dep_obj, dep.scheme, dep.version.text(), dep.version.port_version());
+            serialize_schemed_version(dep_obj, dep.scheme, dep.version);
         };
 
         auto serialize_license =
@@ -1846,10 +1827,7 @@ namespace vcpkg
 
         if (scf.core_paragraph->version_scheme != VersionScheme::Missing)
         {
-            serialize_schemed_version(obj,
-                                      scf.core_paragraph->version_scheme,
-                                      scf.core_paragraph->raw_version,
-                                      scf.core_paragraph->port_version);
+            serialize_schemed_version(obj, scf.core_paragraph->version_scheme, scf.core_paragraph->version);
         }
 
         serialize_paragraph(obj, ManifestDeserializer::MAINTAINERS, scf.core_paragraph->maintainers);

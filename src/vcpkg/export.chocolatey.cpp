@@ -178,7 +178,7 @@ if (Test-Path $installedDir)
             }
 
             const BinaryParagraph& binary_paragraph = action.core_paragraph().value_or_exit(VCPKG_LINE_INFO);
-            auto norm_version = binary_paragraph.version;
+            auto norm_version = binary_paragraph.version.to_string();
 
             // normalize the version string to be separated by dots to be compliant with Nuspec.
             Strings::inplace_replace_all(norm_version, '-', '.');

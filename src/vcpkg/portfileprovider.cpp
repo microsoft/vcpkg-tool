@@ -243,9 +243,8 @@ namespace vcpkg
                 for (auto&& scfl : all_ports)
                 {
                     auto port_name = scfl.source_control_file->core_paragraph->name;
-                    auto version = scfl.source_control_file->core_paragraph->to_version();
-                    auto it = m_control_cache.emplace(VersionSpec{port_name, version}, std::move(scfl)).first;
-                    out.emplace(it->first.port_name, &it->second.value_or_exit(VCPKG_LINE_INFO));
+                    auto it = m_control_cache.emplace(VersionSpec{port_name, scfl.to_version()}, std::move(scfl)).first;
+                    out.emplace(std::move(port_name), &it->second.value_or_exit(VCPKG_LINE_INFO));
                 }
             }
 
