@@ -126,6 +126,7 @@ namespace
         {
             success_sink.print(LocalizedString::from_raw(versions_file_path)
                                    .append_raw(": ")
+                                   .append_raw(MessagePrefix)
                                    .append(msgVersionVerifiedOK,
                                            msg::version_spec = VersionSpec{port_name, version_entry.version.version},
                                            msg::git_tree_sha = version_entry.git_tree)
@@ -276,6 +277,7 @@ namespace
         {
             success_sink.print(LocalizedString::from_raw(scfl.port_directory())
                                    .append_raw(": ")
+                                   .append_raw(MessagePrefix)
                                    .append(msgVersionVerifiedOK,
                                            msg::version_spec = local_version_spec,
                                            msg::git_tree_sha = version_entry.git_tree)

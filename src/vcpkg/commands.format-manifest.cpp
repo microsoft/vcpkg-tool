@@ -18,13 +18,14 @@ namespace
     struct ToWrite
     {
         std::string original_source;
-        SourceControlFileAndLocation scf;
+        std::unique_ptr<SourceControlFile> scf;
+        Path control_path;
         Path file_to_write;
     };
 
     void open_for_write(const Filesystem& fs, const ToWrite& data)
     {
-        const auto& original_path_string = data.scf.control_path.native();
+        const auto& original_path_string = data.control_path.native();
         const auto& file_to_write_string = data.file_to_write.native();
         bool in_place = data.file_to_write == original_path_string;
         if (in_place)
@@ -36,7 +37,7 @@ namespace
             Debug::println("Converting ", file_to_write_string, " -> ", original_path_string);
         }
 
-        auto res = serialize_manifest(*data.scf.source_control_file);
+        auto res = serialize_manifest(*data.scf);
 
         // reparse res to ensure no semantic changes were made
         auto maybe_reparsed =
@@ -44,7 +45,7 @@ namespace
         bool reparse_matches;
         if (auto reparsed = maybe_reparsed.get())
         {
-            reparse_matches = **reparsed == *data.scf.source_control_file;
+            reparse_matches = **reparsed == *data.scf;
         }
         else
         {
@@ -135,8 +136,10 @@ namespace vcpkg
                 auto maybe_control = Paragraphs::try_load_control_file_text(contents->content, contents->origin);
                 if (auto control = maybe_control.get())
                 {
-                    to_write.push_back(
-                        ToWrite{contents->content, std::move(*control), Path(path.parent_path()) / "vcpkg.json"});
+                    to_write.push_back(ToWrite{contents->content,
+                                               std::move(*control),
+                                               std::move(path),
+                                               Path(path.parent_path()) / "vcpkg.json"});
                 }
                 else
                 {
@@ -150,7 +153,7 @@ namespace vcpkg
                     Paragraphs::try_load_project_manifest_text(contents->content, contents->origin, stdout_sink);
                 if (auto manifest = maybe_manifest.get())
                 {
-                    to_write.push_back(ToWrite{contents->content, std::move(*manifest), path});
+                    to_write.push_back(ToWrite{contents->content, std::move(*manifest), path, path});
                 }
                 else
                 {
@@ -168,8 +171,23 @@ namespace vcpkg
                 if (auto manifest = maybe_manifest.maybe_scfl.get())
                 {
                     auto original = manifest->control_path;
-                    to_write.push_back(
-                        ToWrite{maybe_manifest.on_disk_contents, std::move(*manifest), std::move(original)});
+                    if (original.filename() == "CONTROL")
+                    {
+                        if (convert_control)
+                        {
+                            to_write.push_back(ToWrite{maybe_manifest.on_disk_contents,
+                                                       std::move(manifest->source_control_file),
+                                                       original,
+                                                       Path(original.parent_path()) / "vcpkg.json"});
+                        }
+                    }
+                    else
+                    {
+                        to_write.push_back(ToWrite{maybe_manifest.on_disk_contents,
+                                                   std::move(manifest->source_control_file),
+                                                   original,
+                                                   original});
+                    }
                 }
                 else
                 {
