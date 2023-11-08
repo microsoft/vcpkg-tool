@@ -2,7 +2,7 @@
 
 #include <vcpkg/base/fwd/expected.h>
 #include <vcpkg/base/fwd/file-contents.h>
-#include <vcpkg/base/fwd/format.h>
+#include <vcpkg/base/fwd/fmt.h>
 #include <vcpkg/base/fwd/optional.h>
 #include <vcpkg/base/fwd/stringview.h>
 

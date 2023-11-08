@@ -1,13 +1,10 @@
-#include <vcpkg/base/cache.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/graphs.h>
 #include <vcpkg/base/sortedvector.h>
 #include <vcpkg/base/span.h>
+#include <vcpkg/base/strings.h>
 #include <vcpkg/base/stringview.h>
-#include <vcpkg/base/system.debug.h>
-#include <vcpkg/base/system.h>
 #include <vcpkg/base/util.h>
-#include <vcpkg/base/xmlserializer.h>
 
 #include <vcpkg/binarycaching.h>
 #include <vcpkg/ci-baseline.h>
@@ -17,8 +14,6 @@
 #include <vcpkg/commands.install.h>
 #include <vcpkg/commands.set-installed.h>
 #include <vcpkg/dependencies.h>
-#include <vcpkg/globalstate.h>
-#include <vcpkg/input.h>
 #include <vcpkg/packagespec.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/platform-expression.h>

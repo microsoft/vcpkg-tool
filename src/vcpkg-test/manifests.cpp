@@ -3,15 +3,11 @@
 #include <vcpkg/base/fwd/message_sinks.h>
 
 #include <vcpkg/base/json.h>
-#include <vcpkg/base/util.h>
 
-#include <vcpkg/paragraphs.h>
 #include <vcpkg/sourceparagraph.h>
 #include <vcpkg/vcpkgcmdarguments.h>
-#include <vcpkg/vcpkgpaths.h>
 
 using namespace vcpkg;
-using namespace vcpkg::Paragraphs;
 using namespace vcpkg::Test;
 
 static Json::Object parse_json_object(StringView sv)

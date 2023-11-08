@@ -8,7 +8,6 @@
 
 #include <vcpkg/commands.format-manifest.h>
 #include <vcpkg/paragraphs.h>
-#include <vcpkg/portfileprovider.h>
 #include <vcpkg/sourceparagraph.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>

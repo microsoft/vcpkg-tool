@@ -1,19 +1,18 @@
+#include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/span.h>
 #include <vcpkg/base/strings.h>
+#include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.find.h>
 #include <vcpkg/configure-environment.h>
-#include <vcpkg/dependencies.h>
-#include <vcpkg/globalstate.h>
 #include <vcpkg/metrics.h>
-#include <vcpkg/paragraphs.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/registries.h>
 #include <vcpkg/sourceparagraph.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkglib.h>
-#include <vcpkg/versions.h>
+#include <vcpkg/vcpkgpaths.h>
 
 using namespace vcpkg;
 

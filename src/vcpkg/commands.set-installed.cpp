@@ -1,14 +1,11 @@
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/system.debug.h>
-#include <vcpkg/base/system.h>
 
 #include <vcpkg/binarycaching.h>
 #include <vcpkg/cmakevars.h>
 #include <vcpkg/commands.install.h>
-#include <vcpkg/commands.remove.h>
 #include <vcpkg/commands.set-installed.h>
-#include <vcpkg/globalstate.h>
 #include <vcpkg/input.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/portfileprovider.h>

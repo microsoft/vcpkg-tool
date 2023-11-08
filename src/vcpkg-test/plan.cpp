@@ -8,7 +8,6 @@
 #include <vcpkg/triplet.h>
 
 #include <memory>
-#include <unordered_map>
 #include <vector>
 
 #include <vcpkg-test/mockcmakevarprovider.h>

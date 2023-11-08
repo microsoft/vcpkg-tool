@@ -1,13 +1,11 @@
 #include <vcpkg/base/fwd/message_sinks.h>
 
 #include <vcpkg/base/stringview.h>
-#include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 #include <vcpkg/base/xmlserializer.h>
 
 #include <vcpkg/commands.export.h>
-#include <vcpkg/commands.h>
 #include <vcpkg/commands.install.h>
 #include <vcpkg/dependencies.h>
 #include <vcpkg/export.chocolatey.h>
@@ -15,7 +13,6 @@
 #include <vcpkg/export.prefab.h>
 #include <vcpkg/input.h>
 #include <vcpkg/installedpaths.h>
-#include <vcpkg/paragraphs.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/registries.h>
 #include <vcpkg/tools.h>

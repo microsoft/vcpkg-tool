@@ -1,11 +1,10 @@
-#include <vcpkg/binarycaching.h>
-#include <vcpkg/cmakevars.h>
 #include <vcpkg/commands.build-external.h>
 #include <vcpkg/commands.build.h>
 #include <vcpkg/input.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/registries.h>
 #include <vcpkg/vcpkgcmdarguments.h>
+#include <vcpkg/vcpkgpaths.h>
 
 namespace vcpkg
 {

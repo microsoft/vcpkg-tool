@@ -4,15 +4,11 @@
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/util.h>
 
-#include <vcpkg/configuration.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/registries.h>
 #include <vcpkg/sourceparagraph.h>
-#include <vcpkg/vcpkgcmdarguments.h>
-#include <vcpkg/vcpkgpaths.h>
-#include <vcpkg/versiondeserializers.h>
 
 using namespace vcpkg;
 

@@ -7,7 +7,6 @@
 #include <vcpkg/commands.update.h>
 #include <vcpkg/commands.upgrade.h>
 #include <vcpkg/dependencies.h>
-#include <vcpkg/globalstate.h>
 #include <vcpkg/input.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/registries.h>
