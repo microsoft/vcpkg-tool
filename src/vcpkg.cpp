@@ -16,7 +16,6 @@
 #include <vcpkg/cgroup-parser.h>
 #include <vcpkg/commands.contact.h>
 #include <vcpkg/commands.h>
-#include <vcpkg/commands.help.h>
 #include <vcpkg/commands.version.h>
 #include <vcpkg/globalstate.h>
 #include <vcpkg/input.h>

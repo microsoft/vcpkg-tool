@@ -1,5 +1,5 @@
-#include <vcpkg/commands.help.h>
 #include <vcpkg/commands.owns.h>
+#include <vcpkg/statusparagraphs.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>

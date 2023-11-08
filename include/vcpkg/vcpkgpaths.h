@@ -3,6 +3,7 @@
 #include <vcpkg/base/fwd/downloads.h>
 #include <vcpkg/base/fwd/files.h>
 #include <vcpkg/base/fwd/git.h>
+#include <vcpkg/base/fwd/system.h>
 #include <vcpkg/base/fwd/system.process.h>
 
 #include <vcpkg/fwd/build.h>
@@ -19,8 +20,6 @@
 
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/path.h>
-
-#include <vcpkg/triplet.h>
 
 #include <map>
 #include <string>

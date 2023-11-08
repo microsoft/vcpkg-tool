@@ -3,7 +3,6 @@
 
 #include <vcpkg/binarycaching.h>
 #include <vcpkg/cmakevars.h>
-#include <vcpkg/commands.help.h>
 #include <vcpkg/commands.install.h>
 #include <vcpkg/commands.update.h>
 #include <vcpkg/commands.upgrade.h>

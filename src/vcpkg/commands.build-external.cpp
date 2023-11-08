@@ -2,7 +2,6 @@
 #include <vcpkg/cmakevars.h>
 #include <vcpkg/commands.build-external.h>
 #include <vcpkg/commands.build.h>
-#include <vcpkg/commands.help.h>
 #include <vcpkg/input.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/registries.h>

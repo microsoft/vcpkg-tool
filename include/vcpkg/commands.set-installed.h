@@ -3,15 +3,16 @@
 #include <vcpkg/base/fwd/json.h>
 #include <vcpkg/base/fwd/optional.h>
 
-#include <vcpkg/fwd/binarycaching.h>
 #include <vcpkg/fwd/build.h>
 #include <vcpkg/fwd/cmakevars.h>
 #include <vcpkg/fwd/commands.install.h>
 #include <vcpkg/fwd/dependencies.h>
-#include <vcpkg/fwd/portfileprovider.h>
+#include <vcpkg/fwd/statusparagraphs.h>
 #include <vcpkg/fwd/triplet.h>
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
+
+#include <set>
 
 namespace vcpkg
 {

@@ -4,7 +4,6 @@
 
 #include <vcpkg/buildenvironment.h>
 #include <vcpkg/commands.create.h>
-#include <vcpkg/commands.help.h>
 #include <vcpkg/commands.version.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>

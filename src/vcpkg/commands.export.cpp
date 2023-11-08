@@ -8,7 +8,6 @@
 
 #include <vcpkg/commands.export.h>
 #include <vcpkg/commands.h>
-#include <vcpkg/commands.help.h>
 #include <vcpkg/commands.install.h>
 #include <vcpkg/dependencies.h>
 #include <vcpkg/export.chocolatey.h>

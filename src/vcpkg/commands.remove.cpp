@@ -2,7 +2,6 @@
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.h>
-#include <vcpkg/commands.help.h>
 #include <vcpkg/commands.remove.h>
 #include <vcpkg/commands.update.h>
 #include <vcpkg/dependencies.h>

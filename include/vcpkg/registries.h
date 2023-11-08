@@ -1,14 +1,14 @@
 #pragma once
 
+#include <vcpkg/base/fwd/expected.h>
 #include <vcpkg/base/fwd/files.h>
 #include <vcpkg/base/fwd/json.h>
+#include <vcpkg/base/fwd/optional.h>
 
 #include <vcpkg/fwd/configuration.h>
 #include <vcpkg/fwd/registries.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
-#include <vcpkg/base/expected.h>
-#include <vcpkg/base/optional.h>
 #include <vcpkg/base/path.h>
 #include <vcpkg/base/span.h>
 #include <vcpkg/base/stringview.h>
@@ -18,7 +18,6 @@
 #include <map>
 #include <memory>
 #include <string>
-#include <system_error>
 #include <vector>
 
 namespace vcpkg

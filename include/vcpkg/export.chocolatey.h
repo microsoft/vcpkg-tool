@@ -1,9 +1,11 @@
 #pragma once
 
+#include <vcpkg/fwd/dependencies.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
-#include <vcpkg/dependencies.h>
+#include <vcpkg/base/optional.h>
 
+#include <string>
 #include <vector>
 
 namespace vcpkg::Chocolatey

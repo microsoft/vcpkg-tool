@@ -3,7 +3,6 @@
 #include <vcpkg/base/strings.h>
 
 #include <vcpkg/commands.find.h>
-#include <vcpkg/commands.help.h>
 #include <vcpkg/configure-environment.h>
 #include <vcpkg/dependencies.h>
 #include <vcpkg/globalstate.h>
