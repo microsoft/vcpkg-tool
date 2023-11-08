@@ -24,6 +24,8 @@
 #include <locale.h>
 
 #if defined(_WIN32)
+#include <atomic>
+
 #pragma comment(lib, "ole32")
 #pragma comment(lib, "shell32")
 #endif
@@ -32,9 +34,11 @@ using namespace vcpkg;
 
 namespace
 {
+#if defined(_WIN32)
     std::atomic<int> g_init_console_cp(0);
     std::atomic<int> g_init_console_output_cp(0);
     std::atomic<bool> g_init_console_initialized(false);
+#endif // ^^^ _WIN32
 
     void invalid_command(const VcpkgCmdArguments& args)
     {
