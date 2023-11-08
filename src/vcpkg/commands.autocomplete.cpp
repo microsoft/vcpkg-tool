@@ -5,8 +5,8 @@
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/util.h>
 
-#include <vcpkg/commands.h>
 #include <vcpkg/commands.autocomplete.h>
+#include <vcpkg/commands.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/vcpkgcmdarguments.h>
