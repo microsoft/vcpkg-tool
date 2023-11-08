@@ -970,6 +970,14 @@ DECLARE_MESSAGE(DefaultBinaryCacheRequiresDirectory,
                 (msg::path),
                 "",
                 "Environment variable VCPKG_DEFAULT_BINARY_CACHE must be a directory (was: {path})")
+DECLARE_MESSAGE(DefaultAssetSourceRequiresAbsolutePath,
+                (msg::path),
+                "",
+                "Environment variable VCPKG_DEFAULT_ASSET_SOURCE must be absolute (was: {path})")
+DECLARE_MESSAGE(DefaultAssetSourceRequiresDirectory,
+                (msg::path),
+                "",
+                "Environment variable VCPKG_DEFAULT_ASSET_SOURCE must be a directory (was: {path})")
 DECLARE_MESSAGE(DefaultFeatureCore,
                 (),
                 "The word \"core\" is an on-disk name that must not be localized.",

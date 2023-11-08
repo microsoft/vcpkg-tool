@@ -1619,6 +1619,36 @@ namespace
         }
     };
 
+    ExpectedL<Path> default_asset_path_impl()
+    {
+        auto maybe_cachepath = get_environment_variable("VCPKG_DEFAULT_ASSET_SOURCE");
+        if (auto p_str = maybe_cachepath.get())
+        {
+            get_global_metrics_collector().track_define(DefineMetric::VcpkgDefaultBinaryCache);
+            Path path = std::move(*p_str);
+            path.make_preferred();
+            if (!real_filesystem.is_directory(path))
+            {
+                return msg::format(msgDefaultAssetSourceRequiresDirectory, msg::path = path);
+            }
+
+            if (!path.is_absolute())
+            {
+                return msg::format(msgDefaultAssetSourceRequiresAbsolutePath, msg::path = path);
+            }
+
+            return std::move(path);
+        }
+
+        return Path();
+    }
+
+    const ExpectedL<Path>& default_asset_path()
+    {
+        static auto cachepath = default_asset_path_impl();
+        return cachepath;
+    }
+
     struct AssetSourcesState
     {
         bool cleared = false;
@@ -1729,6 +1759,20 @@ namespace
                     return add_error(msg::format(msgScriptAssetCacheRequiresScript), segments[0].first);
                 }
                 state->script = segments[1].second;
+            }
+            else if (segments[0].second == "default")
+            {
+                const auto& maybe_home = default_asset_path();
+                if (!maybe_home)
+                {
+                    return add_error(LocalizedString{maybe_home.error()}, segments[0].first);
+                }
+                if (!maybe_home.get()->empty())
+                {
+                    std::string p = maybe_home.get()->c_str();
+                    handle_readwrite(
+                        state->url_templates_to_get, state->azblob_templates_to_put, std::move(p), segments, 1);
+                }
             }
             else
             {
@@ -2299,6 +2343,13 @@ ExpectedL<DownloadManagerConfig> vcpkg::parse_download_configuration(const Optio
     get_global_metrics_collector().track_define(DefineMetric::AssetSource);
 
     AssetSourcesState s;
+    AssetSourcesParser default_parser("default,readwrite", "<defaults>", &s);
+    default_parser.parse();
+    if (auto err = default_parser.get_error())
+    {
+        return LocalizedString::from_raw(err->message);
+    }
+
     const auto source = Strings::concat("$", VcpkgCmdArguments::ASSET_SOURCES_ENV);
     AssetSourcesParser parser(*arg.get(), source, &s);
     parser.parse();
