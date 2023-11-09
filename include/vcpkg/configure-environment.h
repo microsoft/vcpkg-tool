@@ -1,18 +1,17 @@
 #pragma once
 
 #include <vcpkg/base/fwd/downloads.h>
+#include <vcpkg/base/fwd/expected.h>
 #include <vcpkg/base/fwd/files.h>
 
 #include <vcpkg/fwd/vcpkgpaths.h>
 
-#include <vcpkg/base/expected.h>
-#include <vcpkg/base/span.h>
 #include <vcpkg/base/stringview.h>
-#include <vcpkg/base/util.h>
 
 #include <vcpkg/vcpkgcmdarguments.h>
 
 #include <string>
+#include <vector>
 
 namespace vcpkg
 {

@@ -1,4 +1,3 @@
-#include <vcpkg/base/hash.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/span.h>
 #include <vcpkg/base/strings.h>
@@ -9,7 +8,6 @@
 #include <vcpkg/buildenvironment.h>
 #include <vcpkg/cmakevars.h>
 #include <vcpkg/dependencies.h>
-#include <vcpkg/portfileprovider.h>
 #include <vcpkg/vcpkgpaths.h>
 
 using namespace vcpkg;

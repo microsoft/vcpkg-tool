@@ -1,4 +1,3 @@
-#include <vcpkg/base/files.h>
 #include <vcpkg/base/graphs.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/strings.h>
@@ -7,13 +6,10 @@
 #include <vcpkg/cmakevars.h>
 #include <vcpkg/dependencies.h>
 #include <vcpkg/documentation.h>
-#include <vcpkg/metrics.h>
 #include <vcpkg/packagespec.h>
-#include <vcpkg/paragraphs.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/statusparagraphs.h>
 #include <vcpkg/vcpkglib.h>
-#include <vcpkg/vcpkgpaths.h>
 
 #include <unordered_map>
 #include <unordered_set>

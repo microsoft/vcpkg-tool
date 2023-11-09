@@ -7,8 +7,6 @@
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/util.h>
 
-#include <stdio.h>
-
 namespace
 {
     using namespace vcpkg;

@@ -1,8 +1,6 @@
 #define CATCH_CONFIG_RUNNER
 #include <vcpkg-test/util.h>
 
-#include <vcpkg/base/checks.h>
-#include <vcpkg/base/messages.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
 

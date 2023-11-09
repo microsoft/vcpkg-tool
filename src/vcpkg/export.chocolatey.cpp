@@ -3,8 +3,6 @@
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.process.h>
 
-#include <vcpkg/commands.export.h>
-#include <vcpkg/commands.h>
 #include <vcpkg/commands.install.h>
 #include <vcpkg/export.chocolatey.h>
 #include <vcpkg/installedpaths.h>

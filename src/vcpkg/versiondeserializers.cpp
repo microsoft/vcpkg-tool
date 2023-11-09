@@ -1,7 +1,7 @@
 #include <vcpkg/base/strings.h>
-#include <vcpkg/base/util.h>
 
 #include <vcpkg/versiondeserializers.h>
+#include <vcpkg/versions.h>
 
 using namespace vcpkg;
 

@@ -1,11 +1,9 @@
 #include <vcpkg/base/files.h>
 
-#include <vcpkg/commands.h>
-#include <vcpkg/commands.help.h>
 #include <vcpkg/commands.update.h>
-#include <vcpkg/paragraphs.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/registries.h>
+#include <vcpkg/statusparagraphs.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>

@@ -8,7 +8,6 @@
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/binaryparagraph.h>
-#include <vcpkg/configuration.h>
 #include <vcpkg/paragraphparser.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/registries.h>
