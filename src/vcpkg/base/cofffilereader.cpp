@@ -24,11 +24,28 @@ namespace
     static_assert(sizeof(SectionTableHeader) == 40,
                   "The SectionTableHeader struct must match its on-disk representation.");
 
-    ExpectedL<Unit> read_pe_signature_and_get_coff_header_offset(ReadFilePointer& f)
+    // reads f as a portable executable and checks for magic number signatures.
+    // if an I/O error occurs, returns the error; otherwise,
+    // returns iff signatures match
+    ExpectedL<bool> read_pe_signature_and_get_coff_header_offset(ReadFilePointer& f)
     {
+        static constexpr StringLiteral EXPECTED_MZ_HEADER = "MZ";
+        {
+            char mz_signature[EXPECTED_MZ_HEADER.size()];
+            auto maybe_read_mz = f.try_read_all_from(0, mz_signature, sizeof(mz_signature));
+            if (!maybe_read_mz)
+            {
+                return std::move(maybe_read_mz).error();
+            }
+
+            if (EXPECTED_MZ_HEADER != StringView{mz_signature, sizeof(mz_signature)})
+            {
+                return false;
+            }
+        }
+
         static constexpr long OFFSET_TO_PE_SIGNATURE_OFFSET = 0x3c;
-        static constexpr StringLiteral PE_SIGNATURE = "PE\0\0";
-        static constexpr auto PE_SIGNATURE_SIZE = static_cast<uint32_t>(PE_SIGNATURE.size());
+        static constexpr StringLiteral EXPECTED_PE_SIGNATURE = "PE\0\0";
         uint32_t offset;
         {
             auto read_offset = f.try_read_all_from(OFFSET_TO_PE_SIGNATURE_OFFSET, &offset, sizeof(offset));
@@ -38,21 +55,16 @@ namespace
             }
         }
 
-        char signature[PE_SIGNATURE_SIZE];
+        char pe_signature[EXPECTED_PE_SIGNATURE.size()];
         {
-            auto read_signature = f.try_read_all_from(offset, signature, PE_SIGNATURE_SIZE);
+            auto read_signature = f.try_read_all_from(offset, pe_signature, sizeof(pe_signature));
             if (!read_signature.has_value())
             {
                 return std::move(read_signature).error();
             }
         }
 
-        if (PE_SIGNATURE != StringView{signature, PE_SIGNATURE_SIZE})
-        {
-            return msg::format(msgPESignatureMismatch, msg::path = f.path());
-        }
-
-        return Unit{};
+        return EXPECTED_PE_SIGNATURE == StringView{pe_signature, sizeof(pe_signature)};
     }
 
     ExpectedL<Unit> try_read_optional_header(DllMetadata& metadata, ReadFilePointer& f)
@@ -641,20 +653,28 @@ namespace vcpkg
         return result;
     }
 
-    ExpectedL<DllMetadata> try_read_dll_metadata(ReadFilePointer& f)
+    ExpectedL<Optional<DllMetadata>> try_read_dll_metadata(ReadFilePointer& f)
     {
+        Optional<DllMetadata> result;
         {
-            auto signature = read_pe_signature_and_get_coff_header_offset(f);
-            if (!signature.has_value())
+            auto maybe_signature_ok = read_pe_signature_and_get_coff_header_offset(f);
+            if (auto signature_ok = maybe_signature_ok.get())
             {
-                return std::move(signature).error();
+                if (!*signature_ok)
+                {
+                    return nullopt;
+                }
+            }
+            else
+            {
+                return std::move(maybe_signature_ok).error();
             }
         }
 
-        DllMetadata result{};
+        DllMetadata& target = result.emplace();
 
         {
-            auto read_coff = f.try_read_all(&result.coff_header, sizeof(result.coff_header));
+            auto read_coff = f.try_read_all(&target.coff_header, sizeof(target.coff_header));
             if (!read_coff.has_value())
             {
                 return std::move(read_coff).error();
@@ -662,7 +682,7 @@ namespace vcpkg
         }
 
         {
-            auto read_optional_header = try_read_optional_header(result, f);
+            auto read_optional_header = try_read_optional_header(target, f);
             if (!read_optional_header.has_value())
             {
                 return std::move(read_optional_header).error();
@@ -670,7 +690,7 @@ namespace vcpkg
         }
 
         {
-            auto read_section_headers = try_read_section_headers(result, f);
+            auto read_section_headers = try_read_section_headers(target, f);
             if (!read_section_headers)
             {
                 return std::move(read_section_headers).error();
@@ -678,7 +698,7 @@ namespace vcpkg
         }
 
         {
-            auto read_load_config_directory = try_read_image_config_directory(result, f);
+            auto read_load_config_directory = try_read_image_config_directory(target, f);
             if (!read_load_config_directory)
             {
                 return std::move(read_load_config_directory).error();
@@ -686,6 +706,21 @@ namespace vcpkg
         }
 
         return result;
+    }
+
+    ExpectedL<DllMetadata> try_read_dll_metadata_required(ReadFilePointer& f)
+    {
+        return try_read_dll_metadata(f).then([&](Optional<DllMetadata>&& maybe_metadata) -> ExpectedL<DllMetadata> {
+            if (auto metadata = maybe_metadata.get())
+            {
+                return std::move(*metadata);
+            }
+
+            return LocalizedString::from_raw(f.path())
+                .append_raw(": ")
+                .append_raw(ErrorPrefix)
+                .append(msgFileIsNotExecutable);
+        });
     }
 
     ExpectedL<bool> try_read_if_dll_has_exports(const DllMetadata& dll, ReadFilePointer& f)

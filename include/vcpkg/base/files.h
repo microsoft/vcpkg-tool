@@ -81,6 +81,8 @@ namespace vcpkg
         ExpectedL<Unit> try_seek_to(long long offset);
         ExpectedL<Unit> try_seek_to(long long offset, int origin);
 
+        void close() noexcept;
+
         ~FilePointer();
     };
 
