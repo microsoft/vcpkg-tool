@@ -311,7 +311,7 @@ namespace vcpkg
 
         // make sbom file
         std::vector<Json::Value> heuristic_resources{
-            run_resource_heuristics(cmake_contents, scfl.source_control_file->core_paragraph->raw_version)};
+            run_resource_heuristics(cmake_contents, scfl.source_control_file->core_paragraph->version.text)};
 
         return PrivateAbi{
             std::move(abi_entries), std::move(heuristic_resources), std::move(port_files_abi), generate_random_UUID()};
