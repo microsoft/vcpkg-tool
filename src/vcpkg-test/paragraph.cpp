@@ -4,8 +4,7 @@
 
 #include <vcpkg/paragraphs.h>
 
-namespace Strings = vcpkg::Strings;
-using vcpkg::Paragraph;
+using namespace vcpkg;
 
 namespace
 {
@@ -43,7 +42,7 @@ TEST_CASE ("SourceParagraph construct minimum", "[paragraph]")
     auto& pgh = **m_pgh.get();
 
     REQUIRE(pgh.core_paragraph->name == "zlib");
-    REQUIRE(pgh.core_paragraph->raw_version == "1.2.8");
+    REQUIRE(pgh.core_paragraph->version == Version{"1.2.8", 0});
     REQUIRE(pgh.core_paragraph->maintainers.empty());
     REQUIRE(pgh.core_paragraph->description.empty());
     REQUIRE(pgh.core_paragraph->dependencies.size() == 0);
@@ -107,7 +106,7 @@ TEST_CASE ("SourceParagraph construct maximum", "[paragraph]")
     auto& pgh = **m_pgh.get();
 
     REQUIRE(pgh.core_paragraph->name == "s");
-    REQUIRE(pgh.core_paragraph->raw_version == "v");
+    REQUIRE(pgh.core_paragraph->version == Version{"v", 0});
     REQUIRE(pgh.core_paragraph->maintainers.size() == 1);
     REQUIRE(pgh.core_paragraph->maintainers[0] == "m");
     REQUIRE(pgh.core_paragraph->description.size() == 1);
@@ -181,7 +180,7 @@ TEST_CASE ("SourceParagraph construct qualified dependencies", "[paragraph]")
     auto& pgh = **m_pgh.get();
 
     REQUIRE(pgh.core_paragraph->name == "zlib");
-    REQUIRE(pgh.core_paragraph->raw_version == "1.2.8");
+    REQUIRE(pgh.core_paragraph->version == Version{"1.2.8", 0});
     REQUIRE(pgh.core_paragraph->maintainers.empty());
     REQUIRE(pgh.core_paragraph->description.empty());
     REQUIRE(pgh.core_paragraph->dependencies.size() == 2);
@@ -216,7 +215,25 @@ TEST_CASE ("BinaryParagraph construct minimum", "[paragraph]")
     });
 
     REQUIRE(pgh.spec.name() == "zlib");
-    REQUIRE(pgh.version == "1.2.8");
+    REQUIRE(pgh.version == Version{"1.2.8", 0});
+    REQUIRE(pgh.maintainers.empty());
+    REQUIRE(pgh.description.empty());
+    REQUIRE(pgh.spec.triplet().canonical_name() == "x86-windows");
+    REQUIRE(pgh.dependencies.size() == 0);
+}
+
+TEST_CASE ("BinaryParagraph construct minimum with port-version", "[paragraph]")
+{
+    auto pgh = test_make_binary_paragraph({
+        {"Package", "zlib"},
+        {"Version", "1.2.8"},
+        {"Port-Version", "2"},
+        {"Architecture", "x86-windows"},
+        {"Multi-Arch", "same"},
+    });
+
+    REQUIRE(pgh.spec.name() == "zlib");
+    REQUIRE(pgh.version == Version{"1.2.8", 2});
     REQUIRE(pgh.maintainers.empty());
     REQUIRE(pgh.description.empty());
     REQUIRE(pgh.spec.triplet().canonical_name() == "x86-windows");
@@ -236,7 +253,7 @@ TEST_CASE ("BinaryParagraph construct maximum", "[paragraph]")
     });
 
     REQUIRE(pgh.spec.name() == "s");
-    REQUIRE(pgh.version == "v");
+    REQUIRE(pgh.version == Version{"v", 0});
     REQUIRE(pgh.maintainers.size() == 1);
     REQUIRE(pgh.maintainers[0] == "m");
     REQUIRE(pgh.description.size() == 1);

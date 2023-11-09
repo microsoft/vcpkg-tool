@@ -98,8 +98,8 @@ TEST_CASE ("manifest construct minimum", "[manifests]")
     auto& pgh = **m_pgh.get();
 
     REQUIRE(pgh.core_paragraph->name == "zlib");
-    REQUIRE(pgh.core_paragraph->raw_version == "1.2.8");
     REQUIRE(pgh.core_paragraph->version_scheme == VersionScheme::String);
+    REQUIRE(pgh.core_paragraph->version == Version{"1.2.8", 0});
     REQUIRE(pgh.core_paragraph->maintainers.empty());
     REQUIRE(pgh.core_paragraph->contacts.is_empty());
     REQUIRE(pgh.core_paragraph->summary.empty());
@@ -131,8 +131,8 @@ TEST_CASE ("project manifest construct minimum", "[manifests]")
     auto& pgh = **m_pgh.get();
 
     REQUIRE(pgh.core_paragraph->name.empty());
-    REQUIRE(pgh.core_paragraph->raw_version == "");
     REQUIRE(pgh.core_paragraph->version_scheme == VersionScheme::Missing);
+    REQUIRE(pgh.core_paragraph->version == Version{});
     REQUIRE(pgh.core_paragraph->maintainers.empty());
     REQUIRE(pgh.core_paragraph->contacts.is_empty());
     REQUIRE(pgh.core_paragraph->summary.empty());
@@ -201,8 +201,7 @@ TEST_CASE ("manifest versioning", "[manifests]")
             auto& pgh = **m_pgh.get();
             CHECK(Json::stringify(serialize_manifest(pgh)) == Json::stringify(projectManifest));
             CHECK(pgh.core_paragraph->version_scheme == std::get<1>(v));
-            CHECK(pgh.core_paragraph->raw_version == std::get<2>(v));
-            CHECK(pgh.core_paragraph->port_version == 0);
+            CHECK(pgh.core_paragraph->version == Version{std::get<2>(v), 0});
         }
 
         { // port manifest
@@ -211,8 +210,7 @@ TEST_CASE ("manifest versioning", "[manifests]")
             auto& pgh = **m_pgh.get();
             CHECK(Json::stringify(serialize_manifest(pgh)) == Json::stringify(portManifest));
             CHECK(pgh.core_paragraph->version_scheme == std::get<1>(v));
-            CHECK(pgh.core_paragraph->raw_version == std::get<2>(v));
-            CHECK(pgh.core_paragraph->port_version == 0);
+            CHECK(pgh.core_paragraph->version == Version{std::get<2>(v), 0});
         }
     }
 
@@ -286,8 +284,7 @@ TEST_CASE ("manifest constraints hash", "[manifests]")
         })json");
         REQUIRE(m_pgh.has_value());
         const auto& p = *m_pgh.get();
-        REQUIRE(p->core_paragraph->dependencies.at(0).constraint.value == "2018-09-01");
-        REQUIRE(p->core_paragraph->dependencies.at(0).constraint.port_version == 1);
+        REQUIRE(p->core_paragraph->dependencies.at(0).constraint.version == Version{"2018-09-01", 1});
     }
 
     {
@@ -303,8 +300,7 @@ TEST_CASE ("manifest constraints hash", "[manifests]")
         })json");
         REQUIRE(m_pgh.has_value());
         const auto& p = *m_pgh.get();
-        REQUIRE(p->core_paragraph->dependencies.at(0).constraint.value == "2018-09-01");
-        REQUIRE(p->core_paragraph->dependencies.at(0).constraint.port_version == 0);
+        REQUIRE(p->core_paragraph->dependencies.at(0).constraint.version == Version{"2018-09-01", 0});
     }
 
     REQUIRE_FALSE(port_manifest_is_parsable(R"json({
@@ -475,12 +471,12 @@ TEST_CASE ("manifest constraints", "[manifests]")
     REQUIRE(Json::stringify(serialize_manifest(pgh), Json::JsonStyle::with_spaces(4)) == raw);
     REQUIRE(pgh.core_paragraph->dependencies.size() == 3);
     REQUIRE(pgh.core_paragraph->dependencies[0].name == "a");
-    REQUIRE(pgh.core_paragraph->dependencies[0].constraint == DependencyConstraint{VersionConstraintKind::None, "", 0});
+    REQUIRE(pgh.core_paragraph->dependencies[0].constraint == DependencyConstraint{});
     REQUIRE(pgh.core_paragraph->dependencies[1].name == "c");
-    REQUIRE(pgh.core_paragraph->dependencies[1].constraint == DependencyConstraint{VersionConstraintKind::None, "", 0});
+    REQUIRE(pgh.core_paragraph->dependencies[1].constraint == DependencyConstraint{});
     REQUIRE(pgh.core_paragraph->dependencies[2].name == "d");
     REQUIRE(pgh.core_paragraph->dependencies[2].constraint ==
-            DependencyConstraint{VersionConstraintKind::Minimum, "2018-09-01", 0});
+            DependencyConstraint{VersionConstraintKind::Minimum, Version{"2018-09-01", 0}});
     REQUIRE(pgh.core_paragraph->builtin_baseline == "089fa4de7dca22c67dcab631f618d5cd0697c8d4");
 
     REQUIRE_FALSE(port_manifest_is_parsable(R"json({
@@ -576,9 +572,8 @@ TEST_CASE ("manifest builtin-baseline", "[manifests]")
         REQUIRE(m_pgh.has_value());
         auto& pgh = **m_pgh.get();
         REQUIRE(pgh.core_paragraph->dependencies.size() == 1);
-        REQUIRE(pgh.core_paragraph->dependencies[0].constraint.value == "abcd");
-        REQUIRE(pgh.core_paragraph->dependencies[0].constraint.port_version == 1);
         REQUIRE(pgh.core_paragraph->dependencies[0].constraint.type == VersionConstraintKind::Minimum);
+        REQUIRE(pgh.core_paragraph->dependencies[0].constraint.version == Version{"abcd", 1});
         REQUIRE(pgh.core_paragraph->overrides.size() == 1);
         const auto& first_override = pgh.core_paragraph->overrides[0];
         REQUIRE(first_override.version == Version{"abcd", 0});
@@ -613,13 +608,12 @@ TEST_CASE ("manifest builtin-baseline", "[manifests]")
         REQUIRE(m_pgh.has_value());
         auto& pgh = **m_pgh.get();
         REQUIRE(pgh.core_paragraph->dependencies.size() == 1);
-        REQUIRE(pgh.core_paragraph->dependencies[0].constraint.value == "abcd");
-        REQUIRE(pgh.core_paragraph->dependencies[0].constraint.port_version == 1);
         REQUIRE(pgh.core_paragraph->dependencies[0].constraint.type == VersionConstraintKind::Minimum);
+        REQUIRE(pgh.core_paragraph->dependencies[0].constraint.version == Version{"abcd", 1});
         REQUIRE(pgh.core_paragraph->overrides.size() == 1);
         const auto& first_override = pgh.core_paragraph->overrides[0];
-        REQUIRE(first_override.version == Version{"abcd", 0});
         REQUIRE(first_override.scheme == VersionScheme::String);
+        REQUIRE(first_override.version == Version{"abcd", 0});
         REQUIRE(!pgh.core_paragraph->builtin_baseline.has_value());
         REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_without_versioning));
         REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_with_versioning));
@@ -695,8 +689,8 @@ TEST_CASE ("manifest overrides", "[manifests]")
         REQUIRE(Json::stringify(serialize_manifest(pgh), Json::JsonStyle::with_spaces(4)) == std::get<0>(v));
         REQUIRE(pgh.core_paragraph->overrides.size() == 1);
         const auto& first_override = pgh.core_paragraph->overrides[0];
-        REQUIRE(first_override.version == Version{std::get<2>(v).to_string(), 0});
         REQUIRE(first_override.scheme == std::get<1>(v));
+        REQUIRE(first_override.version == Version{std::get<2>(v).to_string(), 0});
         REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_without_versioning));
         REQUIRE(pgh.check_against_feature_flags({}, feature_flags_with_versioning));
     }
@@ -752,11 +746,11 @@ TEST_CASE ("manifest overrides", "[manifests]")
         const auto& first_override = pgh.core_paragraph->overrides[0];
         const auto& second_override = pgh.core_paragraph->overrides[1];
         REQUIRE(first_override.name == "abc");
-        REQUIRE(first_override.version == Version{"hello", 5});
         REQUIRE(first_override.scheme == VersionScheme::String);
+        REQUIRE(first_override.version == Version{"hello", 5});
         REQUIRE(second_override.name == "abcd");
-        REQUIRE(second_override.version == Version{"hello", 7});
         REQUIRE(second_override.scheme == VersionScheme::String);
+        REQUIRE(second_override.version == Version{"hello", 7});
     }
 
     REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_without_versioning));
@@ -834,12 +828,12 @@ TEST_CASE ("manifest embed configuration", "[manifests]")
     REQUIRE(pgh.core_paragraph->builtin_baseline == "089fa4de7dca22c67dcab631f618d5cd0697c8d4");
     REQUIRE(pgh.core_paragraph->dependencies.size() == 3);
     REQUIRE(pgh.core_paragraph->dependencies[0].name == "a");
-    REQUIRE(pgh.core_paragraph->dependencies[0].constraint == DependencyConstraint{VersionConstraintKind::None, "", 0});
+    REQUIRE(pgh.core_paragraph->dependencies[0].constraint == DependencyConstraint{});
     REQUIRE(pgh.core_paragraph->dependencies[1].name == "b");
-    REQUIRE(pgh.core_paragraph->dependencies[1].constraint == DependencyConstraint{VersionConstraintKind::None, "", 0});
+    REQUIRE(pgh.core_paragraph->dependencies[1].constraint == DependencyConstraint{});
     REQUIRE(pgh.core_paragraph->dependencies[2].name == "c");
     REQUIRE(pgh.core_paragraph->dependencies[2].constraint ==
-            DependencyConstraint{VersionConstraintKind::Minimum, "2018-09-01", 0});
+            DependencyConstraint{VersionConstraintKind::Minimum, Version{"2018-09-01", 0}});
 
     auto config = Json::parse(raw_config, "<test config>").value(VCPKG_LINE_INFO).value;
     REQUIRE(config.is_object());
@@ -915,7 +909,8 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
     auto& pgh = **res.get();
 
     REQUIRE(pgh.core_paragraph->name == "s");
-    REQUIRE(pgh.core_paragraph->raw_version == "v");
+    REQUIRE(pgh.core_paragraph->version_scheme == VersionScheme::String);
+    REQUIRE(pgh.core_paragraph->version == Version{"v", 0});
     REQUIRE(pgh.core_paragraph->maintainers.size() == 1);
     REQUIRE(pgh.core_paragraph->maintainers[0] == "m");
     REQUIRE(pgh.core_paragraph->contacts.size() == 1);
@@ -1038,7 +1033,8 @@ TEST_CASE ("SourceParagraph manifest construct qualified dependencies", "[manife
     auto& pgh = **m_pgh.get();
 
     REQUIRE(pgh.core_paragraph->name == "zlib");
-    REQUIRE(pgh.core_paragraph->raw_version == "1.2.8");
+    REQUIRE(pgh.core_paragraph->version_scheme == VersionScheme::String);
+    REQUIRE(pgh.core_paragraph->version == Version{"1.2.8", 0});
     REQUIRE(pgh.core_paragraph->maintainers.empty());
     REQUIRE(pgh.core_paragraph->description.empty());
     REQUIRE(pgh.core_paragraph->dependencies.size() == 2);
@@ -1067,7 +1063,8 @@ TEST_CASE ("SourceParagraph manifest construct host dependencies", "[manifests]"
     auto& pgh = **m_pgh.get();
 
     REQUIRE(pgh.core_paragraph->name == "zlib");
-    REQUIRE(pgh.core_paragraph->raw_version == "1.2.8");
+    REQUIRE(pgh.core_paragraph->version_scheme == VersionScheme::String);
+    REQUIRE(pgh.core_paragraph->version == Version{"1.2.8", 0});
     REQUIRE(pgh.core_paragraph->maintainers.empty());
     REQUIRE(pgh.core_paragraph->description.empty());
     REQUIRE(pgh.core_paragraph->dependencies.size() == 2);

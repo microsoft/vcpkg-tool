@@ -128,7 +128,7 @@ jobs:
         mkdir "$(Build.BinariesDirectory)\scripts"
         xcopy /F /E "$(Build.SourcesDirectory)\scripts" "$(Build.BinariesDirectory)\scripts"
       displayName: Collect PowerShell Scripts for Signing
-    - task: MicroBuildSigningPlugin@3
+    - task: MicroBuildSigningPlugin@4
       displayName: Install MicroBuild Signing
       inputs:
         signType: $(SignType)
@@ -297,7 +297,7 @@ jobs:
           ninja.exe -C "$(Build.BinariesDirectory)\arm64"
     - task: CodeQL3000Finalize@0
       displayName: 'CodeQL Finalize'
-    - task: MicroBuildSigningPlugin@3
+    - task: MicroBuildSigningPlugin@4
       displayName: Install MicroBuild Signing
       inputs:
         signType: $(SignType)

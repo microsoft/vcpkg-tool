@@ -315,7 +315,7 @@ namespace vcpkg
             {
                 if (auto p_installed = m_installed.get())
                 {
-                    return p_installed->ipv.core->package.get_version();
+                    return p_installed->ipv.core->package.version;
                 }
                 else if (auto p_scfl = m_scfl.get())
                 {

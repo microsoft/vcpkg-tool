@@ -186,12 +186,16 @@ namespace vcpkg
         std::vector<std::string> error_logs;
     };
 
+    void append_log(const Path& path, const std::string& log, size_t max_size, std::string& out);
+    void append_logs(std::vector<std::pair<Path, std::string>>&& logs, size_t max_size, std::string& out);
+
     LocalizedString create_error_message(const ExtendedBuildResult& build_result, const PackageSpec& spec);
 
     std::string create_github_issue(const VcpkgCmdArguments& args,
                                     const ExtendedBuildResult& build_result,
                                     const VcpkgPaths& paths,
-                                    const InstallPlanAction& action);
+                                    const InstallPlanAction& action,
+                                    bool include_manifest);
 
     ExtendedBuildResult build_package(const VcpkgCmdArguments& args,
                                       const VcpkgPaths& paths,
@@ -230,7 +234,7 @@ namespace vcpkg
         LinkageType crt_linkage = LinkageType::DYNAMIC;
         LinkageType library_linkage = LinkageType::DYNAMIC;
 
-        Optional<std::string> detected_head_version;
+        Optional<Version> detected_head_version;
 
         BuildPolicies policies;
     };
