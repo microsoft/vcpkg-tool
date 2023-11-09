@@ -628,7 +628,8 @@ namespace vcpkg
                                         const VcpkgPaths& paths,
                                         StatusParagraphs& status_db,
                                         BinaryCache& binary_cache,
-                                        const IBuildLogsRecorder& build_logs_recorder)
+                                        const IBuildLogsRecorder& build_logs_recorder,
+                                        bool include_manifest_in_github_issue)
     {
         const ElapsedTimer timer;
         std::vector<SpecSummary> results;
@@ -660,7 +661,9 @@ namespace vcpkg
                 print_user_troubleshooting_message(action, paths, result.stdoutlog.then([&](auto&) -> Optional<Path> {
                     auto issue_body_path = paths.installed().root() / "vcpkg" / "issue_body.md";
                     paths.get_filesystem().write_contents(
-                        issue_body_path, create_github_issue(args, result, paths, action), VCPKG_LINE_INFO);
+                        issue_body_path,
+                        create_github_issue(args, result, paths, action, include_manifest_in_github_issue),
+                        VCPKG_LINE_INFO);
                     return issue_body_path;
                 }));
                 Checks::exit_fail(VCPKG_LINE_INFO);
@@ -1312,7 +1315,8 @@ namespace vcpkg
                                               host_triplet,
                                               keep_going,
                                               only_downloads,
-                                              print_cmake_usage);
+                                              print_cmake_usage,
+                                              true);
         }
 
         auto registry_set = paths.make_registry_set();

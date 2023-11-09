@@ -39,8 +39,8 @@ namespace
 
     void insert_version_to_json_object(Json::Object& obj, const Version& version, StringLiteral version_field)
     {
-        obj.insert(version_field, Json::Value::string(version.text()));
-        obj.insert("port-version", Json::Value::integer(version.port_version()));
+        obj.insert(version_field, Json::Value::string(version.text));
+        obj.insert("port-version", Json::Value::integer(version.port_version));
     }
 
     void insert_schemed_version_to_json_object(Json::Object& obj, const SchemedVersion& version)
@@ -71,7 +71,7 @@ namespace
     {
         if (version.scheme == VersionScheme::String)
         {
-            if (DateVersion::try_parse(version.version.text()))
+            if (DateVersion::try_parse(version.version.text))
             {
                 Checks::msg_exit_with_message(VCPKG_LINE_INFO,
                                               msgAddVersionSuggestNewVersionScheme,
@@ -80,7 +80,7 @@ namespace
                                               msg::package_name = port_name,
                                               msg::option = OPTION_SKIP_VERSION_FORMAT_CHECK);
             }
-            if (DotVersion::try_parse_relaxed(version.version.text()))
+            if (DotVersion::try_parse_relaxed(version.version.text))
             {
                 Checks::msg_exit_with_message(VCPKG_LINE_INFO,
                                               msgAddVersionSuggestNewVersionScheme,
