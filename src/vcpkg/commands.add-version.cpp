@@ -418,7 +418,8 @@ namespace vcpkg
                     const auto formatted_content = Json::stringify(json);
                     if (current_file_content != formatted_content)
                     {
-                        auto command_line = fmt::format("vcpkg format-manifest {}", scfl->control_path);
+                        std::string command_line = "vcpkg format-manifest ";
+                        append_shell_escaped(command_line, scfl->control_path);
                         msg::println_error(
                             msg::format(msgAddVersionPortHasImproperFormat, msg::package_name = port_name)
                                 .append_raw('\n')
