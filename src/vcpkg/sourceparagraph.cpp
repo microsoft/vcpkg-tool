@@ -302,10 +302,9 @@ namespace vcpkg
                 if (adjacent_equal != scf.feature_paragraphs.end())
                 {
                     auto error_info = std::make_unique<ParseControlErrorInfo>();
-                    error_info->name = scf.core_paragraph->name;
-                    error_info->error = msg::format_error(msgMultipleFeatures,
-                                                          msg::package_name = scf.core_paragraph->name,
-                                                          msg::feature = (*adjacent_equal)->name);
+                    error_info->name = scf.to_name();
+                    error_info->error = msg::format_error(
+                        msgMultipleFeatures, msg::package_name = scf.to_name(), msg::feature = (*adjacent_equal)->name);
                     return error_info;
                 }
                 return nullptr;
@@ -1823,11 +1822,12 @@ namespace vcpkg
                        maybe_configuration.value_or_exit(VCPKG_LINE_INFO).serialize());
         }
 
-        serialize_optional_string(obj, ManifestDeserializer::NAME, scf.core_paragraph->name);
+        serialize_optional_string(obj, ManifestDeserializer::NAME, scf.to_name());
 
-        if (scf.core_paragraph->version_scheme != VersionScheme::Missing)
+        auto version_scheme = scf.to_version_scheme();
+        if (version_scheme != VersionScheme::Missing)
         {
-            serialize_schemed_version(obj, scf.core_paragraph->version_scheme, scf.core_paragraph->version);
+            serialize_schemed_version(obj, version_scheme, scf.to_version());
         }
 
         serialize_paragraph(obj, ManifestDeserializer::MAINTAINERS, scf.core_paragraph->maintainers);

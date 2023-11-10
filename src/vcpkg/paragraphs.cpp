@@ -406,8 +406,8 @@ namespace vcpkg::Paragraphs
     {
         StatsTimer timer(g_load_ports_stats);
 
-        const auto manifest_path = port_location.port_directory / "vcpkg.json";
-        const auto control_path = port_location.port_directory / "CONTROL";
+        auto manifest_path = port_location.port_directory / "vcpkg.json";
+        auto control_path = port_location.port_directory / "CONTROL";
         std::error_code ec;
         auto manifest_contents = fs.read_contents(manifest_path, ec);
         if (!ec)
@@ -419,7 +419,8 @@ namespace vcpkg::Paragraphs
 
             return try_load_port_manifest_text(manifest_contents, manifest_path, stdout_sink)
                 .map([&](std::unique_ptr<SourceControlFile>&& scf) {
-                    return SourceControlFileAndLocation{std::move(scf), manifest_path, port_location.spdx_location};
+                    return SourceControlFileAndLocation{
+                        std::move(scf), std::move(manifest_path), port_location.spdx_location};
                 });
         }
 
@@ -436,7 +437,8 @@ namespace vcpkg::Paragraphs
         {
             return try_load_control_file_text(control_contents, control_path)
                 .map([&](std::unique_ptr<SourceControlFile>&& scf) {
-                    return SourceControlFileAndLocation{std::move(scf), control_path, port_location.spdx_location};
+                    return SourceControlFileAndLocation{
+                        std::move(scf), std::move(control_path), port_location.spdx_location};
                 });
         }
 

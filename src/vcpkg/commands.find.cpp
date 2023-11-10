@@ -194,7 +194,7 @@ namespace vcpkg
                     do_print(*source_control_file->core_paragraph, full_description);
                     for (auto&& feature_paragraph : source_control_file->feature_paragraphs)
                     {
-                        do_print(source_control_file->core_paragraph->name, *feature_paragraph, full_description);
+                        do_print(source_control_file->to_name(), *feature_paragraph, full_description);
                     }
                 }
             }

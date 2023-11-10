@@ -440,10 +440,11 @@ namespace vcpkg
         }
         if (auto scfl = action.source_control_file_and_location.get())
         {
+            auto port_directory = scfl->port_directory();
             if (!builtin_ports_dir.empty() &&
-                !Strings::case_insensitive_ascii_starts_with(scfl->control_path, builtin_ports_dir))
+                !Strings::case_insensitive_ascii_starts_with(port_directory, builtin_ports_dir))
             {
-                out.append_raw(" -- ").append_raw(scfl->control_path);
+                out.append_raw(" -- ").append_raw(port_directory);
             }
         }
     }

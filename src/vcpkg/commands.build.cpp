@@ -143,7 +143,7 @@ namespace vcpkg
         ASSUME(action != nullptr);
         auto& scf = *action->source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_control_file;
         const auto& spec_name = spec.name();
-        const auto& core_paragraph_name = scf.core_paragraph->name;
+        const auto& core_paragraph_name = scf.to_name();
         if (spec_name != core_paragraph_name)
         {
             Checks::msg_exit_with_error(VCPKG_LINE_INFO,
@@ -744,6 +744,7 @@ namespace vcpkg
     {
         auto& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
         auto& scf = *scfl.source_control_file;
+        auto& port_name = scf.to_name();
 
         std::string all_features;
         for (auto& feature : scf.feature_paragraphs)
@@ -756,8 +757,8 @@ namespace vcpkg
             {"CURRENT_PORT_DIR", scfl.port_directory()},
             {"_HOST_TRIPLET", action.host_triplet.canonical_name()},
             {"FEATURES", Strings::join(";", action.feature_list)},
-            {"PORT", scf.core_paragraph->name},
-            {"VERSION", scf.core_paragraph->version.text},
+            {"PORT", port_name},
+            {"VERSION", scf.to_version().text},
             {"VCPKG_USE_HEAD_VERSION", Util::Enum::to_bool(action.build_options.use_head_version) ? "1" : "0"},
             {"_VCPKG_DOWNLOAD_TOOL", to_string_view(action.build_options.download_tool)},
             {"_VCPKG_EDITABLE", Util::Enum::to_bool(action.build_options.editable) ? "1" : "0"},
@@ -772,7 +773,7 @@ namespace vcpkg
 
         if (auto cmake_debug = args.cmake_debug.get())
         {
-            if (cmake_debug->is_port_affected(scf.core_paragraph->name))
+            if (cmake_debug->is_port_affected(port_name))
             {
                 variables.emplace_back("--debugger");
                 variables.emplace_back(fmt::format("--debugger-pipe={}", cmake_debug->value));
@@ -781,7 +782,7 @@ namespace vcpkg
 
         if (auto cmake_configure_debug = args.cmake_configure_debug.get())
         {
-            if (cmake_configure_debug->is_port_affected(scf.core_paragraph->name))
+            if (cmake_configure_debug->is_port_affected(port_name))
             {
                 variables.emplace_back(fmt::format("-DVCPKG_CMAKE_CONFIGURE_OPTIONS=--debugger;--debugger-pipe={}",
                                                    cmake_configure_debug->value));
@@ -900,7 +901,7 @@ namespace vcpkg
         const auto& scf = *scfl.source_control_file;
 
         auto doc_ns = Strings::concat("https://spdx.org/spdxdocs/",
-                                      scf.core_paragraph->name,
+                                      scf.to_name(),
                                       '-',
                                       action.spec.triplet(),
                                       '-',
@@ -946,7 +947,7 @@ namespace vcpkg
 
         if (!Strings::starts_with(scfl.control_path, paths.builtin_ports_directory()))
         {
-            msg::println(msgInstallingFromLocation, msg::path = scfl.control_path);
+            msg::println(msgInstallingFromLocation, msg::path = scfl.port_directory());
         }
 
         const ElapsedTimer timer;
@@ -1335,8 +1336,7 @@ namespace vcpkg
     {
         auto& filesystem = paths.get_filesystem();
         auto& spec = action.spec;
-        const std::string& name = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO)
-                                      .source_control_file->core_paragraph->name;
+        const std::string& name = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).to_name();
 
         std::vector<FeatureSpec> missing_fspecs;
         for (const auto& kv : action.feature_dependencies)

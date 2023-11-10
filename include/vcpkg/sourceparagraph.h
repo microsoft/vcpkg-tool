@@ -177,7 +177,9 @@ namespace vcpkg
                                                     const FeatureFlagSettings& flags,
                                                     bool is_default_builtin_registry = true) const;
 
-        const Version& to_version() const { return core_paragraph->version; }
+        const std::string& to_name() const noexcept { return core_paragraph->name; }
+        VersionScheme to_version_scheme() const noexcept { return core_paragraph->version_scheme; }
+        const Version& to_version() const noexcept { return core_paragraph->version; }
         SchemedVersion to_schemed_version() const
         {
             return SchemedVersion{core_paragraph->version_scheme, core_paragraph->version};
@@ -199,9 +201,11 @@ namespace vcpkg
     /// </summary>
     struct SourceControlFileAndLocation
     {
+        const std::string& to_name() const noexcept { return source_control_file->to_name(); }
         const Version& to_version() const { return source_control_file->to_version(); }
         VersionScheme scheme() const { return source_control_file->core_paragraph->version_scheme; }
         SchemedVersion schemed_version() const { return {scheme(), to_version()}; }
+        VersionSpec to_version_spec() const { return source_control_file->to_version_spec(); }
         Path port_directory() const { return control_path.parent_path(); }
 
         std::unique_ptr<SourceControlFile> source_control_file;
