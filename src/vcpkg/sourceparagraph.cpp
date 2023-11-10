@@ -302,10 +302,9 @@ namespace vcpkg
                 if (adjacent_equal != scf.feature_paragraphs.end())
                 {
                     auto error_info = std::make_unique<ParseControlErrorInfo>();
-                    error_info->name = scf.core_paragraph->name;
-                    error_info->error = msg::format_error(msgMultipleFeatures,
-                                                          msg::package_name = scf.core_paragraph->name,
-                                                          msg::feature = (*adjacent_equal)->name);
+                    error_info->name = scf.to_name();
+                    error_info->error = msg::format_error(
+                        msgMultipleFeatures, msg::package_name = scf.to_name(), msg::feature = (*adjacent_equal)->name);
                     return error_info;
                 }
                 return nullptr;
@@ -1426,7 +1425,7 @@ namespace vcpkg
     }
 
     template<class ManifestDeserializerType>
-    static ExpectedL<std::unique_ptr<SourceControlFile>> parse_manifest_object_impl(StringView origin,
+    static ExpectedL<std::unique_ptr<SourceControlFile>> parse_manifest_object_impl(StringView control_path,
                                                                                     const Json::Object& manifest,
                                                                                     MessageSink& warnings_sink)
     {
@@ -1436,13 +1435,14 @@ namespace vcpkg
 
         for (auto&& w : reader.warnings())
         {
-            warnings_sink.print(Color::warning, LocalizedString::from_raw(Strings::concat(origin, ": ", w, '\n')));
+            warnings_sink.print(Color::warning,
+                                LocalizedString::from_raw(Strings::concat(control_path, ": ", w, '\n')));
         }
 
         if (!reader.errors().empty())
         {
             ParseControlErrorInfo err;
-            err.name = origin.to_string();
+            err.name = control_path.to_string();
             err.other_errors = std::move(reader.errors());
             return LocalizedString::from_raw(err.to_string());
         }
@@ -1457,15 +1457,15 @@ namespace vcpkg
     }
 
     ExpectedL<std::unique_ptr<SourceControlFile>> SourceControlFile::parse_project_manifest_object(
-        StringView origin, const Json::Object& manifest, MessageSink& warnings_sink)
+        StringView control_path, const Json::Object& manifest, MessageSink& warnings_sink)
     {
-        return parse_manifest_object_impl<ProjectManifestDeserializer>(origin, manifest, warnings_sink);
+        return parse_manifest_object_impl<ProjectManifestDeserializer>(control_path, manifest, warnings_sink);
     }
 
     ExpectedL<std::unique_ptr<SourceControlFile>> SourceControlFile::parse_port_manifest_object(
-        StringView origin, const Json::Object& manifest, MessageSink& warnings_sink)
+        StringView control_path, const Json::Object& manifest, MessageSink& warnings_sink)
     {
-        return parse_manifest_object_impl<PortManifestDeserializer>(origin, manifest, warnings_sink);
+        return parse_manifest_object_impl<PortManifestDeserializer>(control_path, manifest, warnings_sink);
     }
 
     ExpectedL<Unit> SourceControlFile::check_against_feature_flags(const Path& origin,
@@ -1822,11 +1822,12 @@ namespace vcpkg
                        maybe_configuration.value_or_exit(VCPKG_LINE_INFO).serialize());
         }
 
-        serialize_optional_string(obj, ManifestDeserializer::NAME, scf.core_paragraph->name);
+        serialize_optional_string(obj, ManifestDeserializer::NAME, scf.to_name());
 
-        if (scf.core_paragraph->version_scheme != VersionScheme::Missing)
+        auto version_scheme = scf.to_version_scheme();
+        if (version_scheme != VersionScheme::Missing)
         {
-            serialize_schemed_version(obj, scf.core_paragraph->version_scheme, scf.core_paragraph->version);
+            serialize_schemed_version(obj, version_scheme, scf.to_version());
         }
 
         serialize_paragraph(obj, ManifestDeserializer::MAINTAINERS, scf.core_paragraph->maintainers);

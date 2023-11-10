@@ -86,7 +86,7 @@ namespace
                                 expected_right_tag};
                     }
 
-                    auto&& git_tree_version = (*scf)->to_schemed_version();
+                    auto&& git_tree_version = (**scf).to_schemed_version();
                     if (version_entry.version.version != git_tree_version.version)
                     {
                         return {
@@ -121,17 +121,18 @@ namespace
             }
         }
 
-        auto maybe_scf = Paragraphs::try_load_port_required(paths.get_filesystem(), port_name, port_path);
-        auto scf = maybe_scf.get();
-        if (!scf)
+        auto maybe_scfl =
+            Paragraphs::try_load_port_required(paths.get_filesystem(), port_name, PortLocation{port_path});
+        auto scfl = maybe_scfl.get();
+        if (!scfl)
         {
             return {msg::format_error(msgWhileLoadingLocalPort, msg::package_name = port_name)
                         .append_raw('\n')
-                        .append(maybe_scf.error()),
+                        .append(maybe_scfl.error()),
                     expected_right_tag};
         }
 
-        const auto local_port_version = (*scf)->to_schemed_version();
+        const auto local_port_version = scfl->source_control_file->to_schemed_version();
 
         auto versions_end = versions->end();
         auto it = std::find_if(versions->begin(), versions_end, [&](const GitVersionDbEntry& entry) {

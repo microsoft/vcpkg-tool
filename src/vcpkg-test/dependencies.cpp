@@ -67,7 +67,10 @@ struct MockVersionedPortfileProvider : IVersionedPortfileProvider
             core->version_scheme = scheme;
             core->version = version;
             scf->core_paragraph = std::move(core);
-            it2 = version_map.emplace(std::move(version), SourceControlFileAndLocation{std::move(scf), name}).first;
+            it2 = version_map
+                      .emplace(std::move(version),
+                               SourceControlFileAndLocation{std::move(scf), Path(std::move(name)) / "vcpkg.json"})
+                      .first;
         }
 
         return it2->second;

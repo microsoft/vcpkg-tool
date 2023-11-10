@@ -4,6 +4,7 @@
 #include <vcpkg/base/git.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/strings.h>
+#include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.add-version.h>
@@ -386,7 +387,7 @@ namespace vcpkg
         auto maybe_git_tree_map = paths.git_get_local_port_treeish_map();
         auto& git_tree_map = maybe_git_tree_map.value_or_exit(VCPKG_LINE_INFO);
 
-        // Find ports with uncommited changes
+        // Find ports with uncommitted changes
         std::set<std::string> changed_ports;
         auto git_config = paths.git_builtin_config();
         auto maybe_changes = git_ports_with_uncommitted_changes(git_config);
@@ -403,20 +404,13 @@ namespace vcpkg
         {
             auto port_dir = paths.builtin_ports_directory() / port_name;
 
-            if (!fs.exists(port_dir, IgnoreErrors{}))
-            {
-                msg::println_error(msgPortDoesNotExist, msg::package_name = port_name);
-                Checks::check_exit(VCPKG_LINE_INFO, !add_all);
-                continue;
-            }
-
-            auto maybe_scf =
-                Paragraphs::try_load_port_required(fs, port_name, paths.builtin_ports_directory() / port_name);
-            auto scf = maybe_scf.get();
-            if (!scf)
+            auto maybe_scfl = Paragraphs::try_load_port_required(
+                fs, port_name, PortLocation{paths.builtin_ports_directory() / port_name});
+            auto scfl = maybe_scfl.get();
+            if (!scfl)
             {
                 msg::println_error(msgAddVersionLoadPortFailed, msg::package_name = port_name);
-                msg::println(Color::error, maybe_scf.error());
+                msg::println(Color::error, maybe_scfl.error());
                 Checks::check_exit(VCPKG_LINE_INFO, !add_all);
                 continue;
             }
@@ -424,15 +418,16 @@ namespace vcpkg
             if (!skip_formatting_check)
             {
                 // check if manifest file is property formatted
-                const auto path_to_manifest = paths.builtin_ports_directory() / port_name / "vcpkg.json";
-                if (fs.exists(path_to_manifest, IgnoreErrors{}))
+
+                if (scfl->control_path.filename() == "vcpkg.json")
                 {
-                    const auto current_file_content = fs.read_contents(path_to_manifest, VCPKG_LINE_INFO);
-                    const auto json = serialize_manifest(**scf);
+                    const auto current_file_content = fs.read_contents(scfl->control_path, VCPKG_LINE_INFO);
+                    const auto json = serialize_manifest(*scfl->source_control_file);
                     const auto formatted_content = Json::stringify(json);
                     if (current_file_content != formatted_content)
                     {
-                        auto command_line = fmt::format("vcpkg format-manifest ports/{}/vcpkg.json", port_name);
+                        std::string command_line = "vcpkg format-manifest ";
+                        append_shell_escaped(command_line, scfl->control_path);
                         msg::println_error(
                             msg::format(msgAddVersionPortHasImproperFormat, msg::package_name = port_name)
                                 .append_raw('\n')
@@ -452,8 +447,7 @@ namespace vcpkg
                 msg::println_warning(msgAddVersionUncommittedChanges, msg::package_name = port_name);
             }
 
-            const auto& schemed_version = (*scf)->to_schemed_version();
-
+            auto schemed_version = scfl->source_control_file->to_schemed_version();
             auto git_tree_it = git_tree_map.find(port_name);
             if (git_tree_it == git_tree_map.end())
             {
