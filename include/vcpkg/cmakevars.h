@@ -1,14 +1,15 @@
 #pragma once
 
+#include <vcpkg/base/fwd/optional.h>
+#include <vcpkg/base/fwd/span.h>
+
 #include <vcpkg/fwd/dependencies.h>
+#include <vcpkg/fwd/packagespec.h>
 #include <vcpkg/fwd/portfileprovider.h>
+#include <vcpkg/fwd/triplet.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
-#include <vcpkg/base/optional.h>
-#include <vcpkg/base/span.h>
-
-#include <vcpkg/packagespec.h>
-
+#include <memory>
 #include <string>
 #include <unordered_map>
 

@@ -1,15 +1,15 @@
 #pragma once
 
+#include <vcpkg/base/fwd/expected.h>
+#include <vcpkg/base/fwd/span.h>
+
 #include <vcpkg/fwd/configuration.h>
 #include <vcpkg/fwd/packagespec.h>
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 
-#include <vcpkg/base/expected.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/path.h>
-#include <vcpkg/base/span.h>
 
-#include <vcpkg/packagespec.h>
 #include <vcpkg/paragraphparser.h>
 #include <vcpkg/platform-expression.h>
 #include <vcpkg/versions.h>
