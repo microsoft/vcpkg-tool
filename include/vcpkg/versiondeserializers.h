@@ -1,12 +1,11 @@
 #pragma once
 
+#include <vcpkg/base/fwd/messages.h>
 #include <vcpkg/base/fwd/stringview.h>
 
 #include <vcpkg/fwd/versions.h>
 
 #include <vcpkg/base/jsonreader.h>
-
-#include <vcpkg/versions.h>
 
 namespace vcpkg
 {

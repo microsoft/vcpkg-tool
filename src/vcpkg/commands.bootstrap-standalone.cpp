@@ -1,10 +1,8 @@
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/files.h>
-#include <vcpkg/base/optional.h>
 
 #include <vcpkg/archives.h>
 #include <vcpkg/commands.bootstrap-standalone.h>
-#include <vcpkg/commands.version.h>
 #include <vcpkg/configure-environment.h>
 #include <vcpkg/tools.h>
 #include <vcpkg/vcpkgcmdarguments.h>

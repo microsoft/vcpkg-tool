@@ -1,5 +1,4 @@
 #include <vcpkg/base/api-stable-format.h>
-#include <vcpkg/base/cache.h>
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
@@ -11,10 +10,8 @@
 #include <vcpkg/base/system.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/system.proxy.h>
-#include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.version.h>
-#include <vcpkg/metrics.h>
 
 namespace vcpkg
 {

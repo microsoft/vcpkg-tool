@@ -8,7 +8,6 @@
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/binaryparagraph.h>
-#include <vcpkg/configuration.h>
 #include <vcpkg/paragraphparser.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/registries.h>
@@ -441,8 +440,8 @@ namespace vcpkg::Paragraphs
     {
         StatsTimer timer(g_load_ports_stats);
 
-        const auto manifest_path = port_location.port_directory / "vcpkg.json";
-        const auto control_path = port_location.port_directory / "CONTROL";
+        auto manifest_path = port_location.port_directory / "vcpkg.json";
+        auto control_path = port_location.port_directory / "CONTROL";
         std::error_code ec;
         auto manifest_contents = fs.read_contents(manifest_path, ec);
         if (!ec)
@@ -456,12 +455,12 @@ namespace vcpkg::Paragraphs
                                       std::string{}};
             }
 
-            return PortLoadResult{
-                try_load_port_manifest_text(manifest_contents, manifest_path, stdout_sink)
-                    .map([&](std::unique_ptr<SourceControlFile>&& scf) {
-                        return SourceControlFileAndLocation{std::move(scf), manifest_path, port_location.spdx_location};
-                    }),
-                manifest_contents};
+            return PortLoadResult{try_load_port_manifest_text(manifest_contents, manifest_path, stdout_sink)
+                                      .map([&](std::unique_ptr<SourceControlFile>&& scf) {
+                                          return SourceControlFileAndLocation{
+                                              std::move(scf), std::move(manifest_path), port_location.spdx_location};
+                                      }),
+                                  manifest_contents};
         }
 
         auto manifest_exists = ec != std::errc::no_such_file_or_directory;
@@ -476,12 +475,12 @@ namespace vcpkg::Paragraphs
         auto control_contents = fs.read_contents(control_path, ec);
         if (!ec)
         {
-            return PortLoadResult{
-                try_load_control_file_text(control_contents, control_path)
-                    .map([&](std::unique_ptr<SourceControlFile>&& scf) {
-                        return SourceControlFileAndLocation{std::move(scf), control_path, port_location.spdx_location};
-                    }),
-                control_contents};
+            return PortLoadResult{try_load_control_file_text(control_contents, control_path)
+                                      .map([&](std::unique_ptr<SourceControlFile>&& scf) {
+                                          return SourceControlFileAndLocation{
+                                              std::move(scf), std::move(control_path), port_location.spdx_location};
+                                      }),
+                                  control_contents};
         }
 
         if (ec != std::errc::no_such_file_or_directory)

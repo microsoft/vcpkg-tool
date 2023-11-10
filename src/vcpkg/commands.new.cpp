@@ -6,7 +6,6 @@
 #include <vcpkg/commands.new.h>
 #include <vcpkg/configuration.h>
 #include <vcpkg/registries.h>
-#include <vcpkg/tools.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 #include <vcpkg/versions.h>

@@ -8,9 +8,8 @@
 
 #include <vcpkg/documentation.h>
 
-#include <inttypes.h>
-
-#include <memory>
+#include <atomic>
+#include <type_traits>
 
 namespace vcpkg::Json
 {

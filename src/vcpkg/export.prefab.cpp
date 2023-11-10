@@ -9,9 +9,7 @@
 #include <vcpkg/archives.h>
 #include <vcpkg/cmakevars.h>
 #include <vcpkg/commands.build.h>
-#include <vcpkg/commands.export.h>
-#include <vcpkg/commands.h>
-#include <vcpkg/commands.install.h>
+#include <vcpkg/dependencies.h>
 #include <vcpkg/export.prefab.h>
 #include <vcpkg/installedpaths.h>
 #include <vcpkg/tools.h>

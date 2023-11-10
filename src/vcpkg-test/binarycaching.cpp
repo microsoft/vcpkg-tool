@@ -1,6 +1,5 @@
 #include <vcpkg-test/util.h>
 
-#include <vcpkg/base/files.h>
 #include <vcpkg/base/xmlserializer.h>
 
 #include <vcpkg/binarycaching.h>
@@ -8,8 +7,6 @@
 #include <vcpkg/dependencies.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/sourceparagraph.h>
-#include <vcpkg/tools.h>
-#include <vcpkg/vcpkgcmdarguments.h>
 
 #include <string>
 

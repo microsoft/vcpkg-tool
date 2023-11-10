@@ -3,7 +3,6 @@
 #include <vcpkg/commands.install.h>
 #include <vcpkg/installedpaths.h>
 #include <vcpkg/statusparagraphs.h>
-#include <vcpkg/vcpkgpaths.h>
 
 namespace vcpkg
 {

@@ -1,6 +1,9 @@
 #pragma once
 
+#include <vcpkg/base/fwd/json.h>
+
 #include <vcpkg/fwd/installedpaths.h>
+#include <vcpkg/fwd/statusparagraph.h>
 
 #include <vcpkg/binaryparagraph.h>
 
@@ -10,24 +13,6 @@
 
 namespace vcpkg
 {
-    enum class InstallState
-    {
-        ERROR_STATE,
-        NOT_INSTALLED,
-        HALF_INSTALLED,
-        INSTALLED,
-    };
-
-    enum class Want
-    {
-        ERROR_STATE,
-        UNKNOWN,
-        INSTALL,
-        HOLD,
-        DEINSTALL,
-        PURGE
-    };
-
     /// <summary>
     /// Installed package metadata
     /// </summary>

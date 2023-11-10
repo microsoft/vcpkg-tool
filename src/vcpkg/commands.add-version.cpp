@@ -1,15 +1,14 @@
 
 #include <vcpkg/base/checks.h>
-#include <vcpkg/base/expected.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/git.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/strings.h>
+#include <vcpkg/base/system.process.h>
+#include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.add-version.h>
-#include <vcpkg/configuration.h>
 #include <vcpkg/paragraphs.h>
-#include <vcpkg/portfileprovider.h>
 #include <vcpkg/registries.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
@@ -397,13 +396,13 @@ namespace vcpkg
         {
             auto port_dir = paths.builtin_ports_directory() / port_name;
 
-            auto maybe_scf = Paragraphs::try_load_port_required(
-                                 fs, port_name, PortLocation{paths.builtin_ports_directory() / port_name})
-                                 .maybe_scfl;
-            auto scf = maybe_scf.get();
-            if (!scf)
+            auto maybe_scfl = Paragraphs::try_load_port_required(
+                                  fs, port_name, PortLocation{paths.builtin_ports_directory() / port_name})
+                                  .maybe_scfl;
+            auto scfl = maybe_scfl.get();
+            if (!scfl)
             {
-                msg::println(Color::error, maybe_scf.error());
+                msg::println(Color::error, maybe_scfl.error());
                 Checks::check_exit(VCPKG_LINE_INFO, !add_all);
                 continue;
             }
@@ -412,14 +411,14 @@ namespace vcpkg
             {
                 // check if manifest file is property formatted
 
-                if (scf->control_path.filename() == "vcpkg.json")
+                if (scfl->control_path.filename() == "vcpkg.json")
                 {
-                    const auto current_file_content = fs.read_contents(scf->control_path, VCPKG_LINE_INFO);
-                    const auto json = serialize_manifest(*scf->source_control_file);
+                    const auto current_file_content = fs.read_contents(scfl->control_path, VCPKG_LINE_INFO);
+                    const auto json = serialize_manifest(*scfl->source_control_file);
                     const auto formatted_content = Json::stringify(json);
                     if (current_file_content != formatted_content)
                     {
-                        auto command_line = fmt::format("vcpkg format-manifest {}", scf->control_path);
+                        auto command_line = fmt::format("vcpkg format-manifest {}", scfl->control_path);
                         msg::println_error(
                             msg::format(msgAddVersionPortHasImproperFormat, msg::package_name = port_name)
                                 .append_raw('\n')
@@ -439,7 +438,7 @@ namespace vcpkg
                 msg::println_warning(msgAddVersionUncommittedChanges, msg::package_name = port_name);
             }
 
-            auto schemed_version = scf->source_control_file->to_schemed_version();
+            auto schemed_version = scfl->source_control_file->to_schemed_version();
             auto git_tree_it = git_tree_map.find(port_name);
             if (git_tree_it == git_tree_map.end())
             {

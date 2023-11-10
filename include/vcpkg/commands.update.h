@@ -1,12 +1,14 @@
 #pragma once
 
-#include <vcpkg/fwd/dependencies.h>
 #include <vcpkg/fwd/portfileprovider.h>
+#include <vcpkg/fwd/statusparagraphs.h>
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
 #include <vcpkg/packagespec.h>
 #include <vcpkg/versions.h>
+
+#include <vector>
 
 namespace vcpkg
 {

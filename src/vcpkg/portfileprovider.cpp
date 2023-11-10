@@ -2,16 +2,13 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/system.debug.h>
+#include <vcpkg/base/util.h>
 
-#include <vcpkg/configuration.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/registries.h>
 #include <vcpkg/sourceparagraph.h>
-#include <vcpkg/vcpkgcmdarguments.h>
-#include <vcpkg/vcpkgpaths.h>
-#include <vcpkg/versiondeserializers.h>
 
 using namespace vcpkg;
 
@@ -183,14 +180,14 @@ namespace vcpkg
                     auto maybe_path = ent->get()->get_version(version_spec.version);
                     if (auto path = maybe_path.get())
                     {
-                        auto maybe_control_file =
+                        auto maybe_scfl =
                             Paragraphs::try_load_port_required(m_fs, version_spec.port_name, *path).maybe_scfl;
-                        if (auto scf = maybe_control_file.get())
+                        if (auto scfl = maybe_scfl.get())
                         {
-                            auto scf_vspec = scf->source_control_file.get()->to_version_spec();
+                            auto scf_vspec = scfl->to_version_spec();
                             if (scf_vspec == version_spec)
                             {
-                                return std::move(*scf);
+                                return std::move(*scfl);
                             }
                             else
                             {
@@ -204,7 +201,7 @@ namespace vcpkg
                         {
                             // This should change to a soft error when ParseExpected is eliminated.
                             print_error_message(
-                                maybe_control_file.error()
+                                maybe_scfl.error()
                                     .append_raw('\n')
                                     .append_raw(NotePrefix)
                                     .append(msgWhileLoadingPortVersion, msg::version_spec = version_spec)
@@ -241,9 +238,8 @@ namespace vcpkg
                 auto all_ports = Paragraphs::load_all_registry_ports(m_fs, m_registry_set);
                 for (auto&& scfl : all_ports)
                 {
-                    auto port_name = scfl.source_control_file->core_paragraph->name;
-                    auto it = m_control_cache.emplace(VersionSpec{port_name, scfl.to_version()}, std::move(scfl)).first;
-                    out.emplace(std::move(port_name), &it->second.value_or_exit(VCPKG_LINE_INFO));
+                    auto it = m_control_cache.emplace(scfl.to_version_spec(), std::move(scfl)).first;
+                    out.emplace(it->first.port_name, &it->second.value_or_exit(VCPKG_LINE_INFO));
                 }
             }
 
@@ -289,7 +285,7 @@ namespace vcpkg
                             Paragraphs::try_load_port_required(m_fs, port_name, PortLocation{ports_dir}).maybe_scfl;
                         if (auto scfl = maybe_scfl.get())
                         {
-                            if (scfl->source_control_file->core_paragraph->name == port_name)
+                            if (scfl->to_name() == port_name)
                             {
                                 return std::move(*scfl);
                             }
@@ -311,19 +307,19 @@ namespace vcpkg
                             Paragraphs::try_load_port_required(m_fs, port_name, PortLocation{ports_spec}).maybe_scfl;
                         if (auto scfl = found_scfl.get())
                         {
-                            if (scfl->source_control_file->core_paragraph->name == port_name)
+                            auto& scfl_name = scfl->to_name();
+                            if (scfl_name == port_name)
                             {
                                 return std::move(*scfl);
                             }
 
-                            Checks::msg_exit_maybe_upgrade(
-                                VCPKG_LINE_INFO,
-                                LocalizedString::from_raw(ports_spec)
-                                    .append_raw(": ")
-                                    .append_raw(ErrorPrefix)
-                                    .append(msgMismatchedNames,
-                                            msg::package_name = port_name,
-                                            msg::actual = scfl->source_control_file->core_paragraph->name));
+                            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
+                                                           LocalizedString::from_raw(ports_spec)
+                                                               .append_raw(": ")
+                                                               .append_raw(ErrorPrefix)
+                                                               .append(msgMismatchedNames,
+                                                                       msg::package_name = port_name,
+                                                                       msg::actual = scfl_name));
                         }
                         else
                         {
@@ -363,7 +359,7 @@ namespace vcpkg
                         if (auto scfl = maybe_scfl.get())
                         {
                             // copy name before moving *scfl
-                            auto name = scfl->source_control_file->core_paragraph->name;
+                            auto name = scfl->to_name();
                             auto it = m_overlay_cache.emplace(std::move(name), std::move(*scfl)).first;
                             Checks::check_exit(VCPKG_LINE_INFO, it->second.get());
                             out.emplace(it->first, it->second.get());
@@ -382,7 +378,7 @@ namespace vcpkg
                     auto found_scfls = Paragraphs::load_overlay_ports(m_fs, ports_dir);
                     for (auto&& scfl : found_scfls)
                     {
-                        auto name = scfl.source_control_file->core_paragraph->name;
+                        auto name = scfl.to_name();
                         auto it = m_overlay_cache.emplace(std::move(name), std::move(scfl)).first;
                         Checks::check_exit(VCPKG_LINE_INFO, it->second.get());
                         out.emplace(it->first, it->second.get());
@@ -410,7 +406,7 @@ namespace vcpkg
 
             virtual Optional<const SourceControlFileAndLocation&> get_control_file(StringView port_name) const override
             {
-                if (port_name == m_manifest_scf_and_location.source_control_file->core_paragraph->name)
+                if (port_name == m_manifest_scf_and_location.to_name())
                 {
                     return m_manifest_scf_and_location;
                 }
@@ -422,10 +418,9 @@ namespace vcpkg
                 std::map<std::string, const SourceControlFileAndLocation*>& out) const override
             {
                 m_overlay_ports.load_all_control_files(out);
-                out.emplace(
-                    std::piecewise_construct,
-                    std::forward_as_tuple(m_manifest_scf_and_location.source_control_file->core_paragraph->name),
-                    std::forward_as_tuple(&m_manifest_scf_and_location));
+                out.emplace(std::piecewise_construct,
+                            std::forward_as_tuple(m_manifest_scf_and_location.to_name()),
+                            std::forward_as_tuple(&m_manifest_scf_and_location));
             }
 
             OverlayProviderImpl m_overlay_ports;

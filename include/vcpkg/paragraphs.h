@@ -1,11 +1,11 @@
 #pragma once
 
+#include <vcpkg/base/fwd/expected.h>
+#include <vcpkg/base/fwd/stringview.h>
+
 #include <vcpkg/fwd/binaryparagraph.h>
 #include <vcpkg/fwd/paragraphparser.h>
 #include <vcpkg/fwd/registries.h>
-
-#include <vcpkg/base/expected.h>
-#include <vcpkg/base/stringview.h>
 
 #include <vcpkg/sourceparagraph.h>
 

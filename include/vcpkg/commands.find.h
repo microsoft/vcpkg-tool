@@ -1,10 +1,10 @@
 #pragma once
 
+#include <vcpkg/base/fwd/optional.h>
+#include <vcpkg/base/fwd/stringview.h>
+
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
-
-#include <vcpkg/base/optional.h>
-#include <vcpkg/base/stringview.h>
 
 #include <string>
 
