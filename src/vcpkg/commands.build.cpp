@@ -1663,16 +1663,14 @@ namespace vcpkg
         return result;
     }
 
-    static BuildInfo inner_create_buildinfo(Paragraph pgh)
+    static BuildInfo inner_create_buildinfo(StringView origin, Paragraph&& pgh)
     {
-        ParagraphParser parser(std::move(pgh));
+        ParagraphParser parser(origin, std::move(pgh));
 
         BuildInfo build_info;
 
         {
-            std::string crt_linkage_as_string;
-            parser.required_field(BuildInfoRequiredField::CRT_LINKAGE, crt_linkage_as_string);
-
+            std::string crt_linkage_as_string = parser.required_field(BuildInfoRequiredField::CRT_LINKAGE);
             auto crtlinkage = to_linkage_type(crt_linkage_as_string);
             if (const auto p = crtlinkage.get())
             {
@@ -1686,8 +1684,7 @@ namespace vcpkg
         }
 
         {
-            std::string library_linkage_as_string;
-            parser.required_field(BuildInfoRequiredField::LIBRARY_LINKAGE, library_linkage_as_string);
+            std::string library_linkage_as_string = parser.required_field(BuildInfoRequiredField::LIBRARY_LINKAGE);
             auto liblinkage = to_linkage_type(library_linkage_as_string);
             if (const auto p = liblinkage.get())
             {
@@ -1738,13 +1735,13 @@ namespace vcpkg
 
     BuildInfo read_build_info(const ReadOnlyFilesystem& fs, const Path& filepath)
     {
-        auto pghs = Paragraphs::get_single_paragraph(fs, filepath);
-        if (!pghs)
+        auto maybe_paragraph = Paragraphs::get_single_paragraph(fs, filepath);
+        if (auto paragraph = maybe_paragraph.get())
         {
-            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, msgInvalidBuildInfo, msg::error_msg = pghs.error());
+            return inner_create_buildinfo(filepath, std::move(*paragraph));
         }
 
-        return inner_create_buildinfo(*pghs.get());
+        Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, msgInvalidBuildInfo, msg::error_msg = maybe_paragraph.error());
     }
 
     static ExpectedL<bool> from_cmake_bool(StringView value, StringView name)

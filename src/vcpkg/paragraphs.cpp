@@ -60,19 +60,6 @@ namespace vcpkg
                               .append_raw(Strings::join(", ", missing_fields))
                               .extract_data());
         }
-
-        if (!expected_types.empty())
-        {
-            auto expected_types_component = msg::format_error(msgParseControlErrorInfoWrongTypeFields);
-            for (auto&& pr : expected_types)
-            {
-                expected_types_component.append_raw('\n').append_indent().append(
-                    msgParseControlErrorInfoTypesEntry, msg::value = pr.first, msg::expected = pr.second);
-            }
-
-            target.push_back('\n');
-            target.append(expected_types_component.extract_data());
-        }
     }
 
     std::string ParseControlErrorInfo::to_string() const
@@ -108,37 +95,41 @@ namespace vcpkg
         return value;
     }
 
-    void ParagraphParser::required_field(StringLiteral fieldname, std::pair<std::string&, TextRowCol&> out)
+    std::string ParagraphParser::optional_field(StringLiteral fieldname, TextRowCol& position)
+    {
+        auto maybe_field = remove_field(&fields, fieldname);
+        if (auto field = maybe_field.get())
+        {
+            position = field->second;
+            return std::move(field->first);
+        }
+
+        return std::string();
+    }
+
+    std::string ParagraphParser::optional_field(StringLiteral fieldname)
+    {
+        TextRowCol ignore;
+        return optional_field(fieldname, ignore);
+    }
+
+    std::string ParagraphParser::required_field(StringLiteral fieldname)
     {
         auto maybe_field = remove_field(&fields, fieldname);
         if (const auto field = maybe_field.get())
-            out = std::move(*field);
-        else
-            missing_fields.emplace_back(fieldname.data());
+        {
+            return std::move(field->first);
+        }
+
+        missing_fields.emplace_back(fieldname.data());
+        return std::string();
     }
-    void ParagraphParser::optional_field(StringLiteral fieldname, std::pair<std::string&, TextRowCol&> out)
-    {
-        auto maybe_field = remove_field(&fields, fieldname);
-        if (auto field = maybe_field.get()) out = std::move(*field);
-    }
-    void ParagraphParser::required_field(StringLiteral fieldname, std::string& out)
-    {
-        TextRowCol ignore;
-        required_field(fieldname, {out, ignore});
-    }
-    std::string ParagraphParser::optional_field(StringLiteral fieldname)
-    {
-        std::string out;
-        TextRowCol ignore;
-        optional_field(fieldname, {out, ignore});
-        return out;
-    }
-    std::string ParagraphParser::required_field(StringLiteral fieldname)
-    {
-        std::string out;
-        TextRowCol ignore;
-        required_field(fieldname, {out, ignore});
-        return out;
+
+    void ParagraphParser::add_error(TextRowCol position, msg::MessageT<> error_content) {
+        other_errors.emplace_back(LocalizedString::from_raw(origin)
+                                      .append_raw(fmt::format("{}:{}: ", position.row, position.column))
+                                      .append_raw(ErrorPrefix)
+                                      .append(error_content));
     }
 
     std::unique_ptr<ParseControlErrorInfo> ParagraphParser::error_info(StringView name) const
@@ -149,7 +140,7 @@ namespace vcpkg
             err->name = name.to_string();
             err->extra_fields = Util::extract_keys(fields);
             err->missing_fields = missing_fields;
-            err->expected_types = expected_types;
+            err->other_errors = other_errors;
             return err;
         }
         return nullptr;
@@ -487,12 +478,13 @@ namespace vcpkg::Paragraphs
     {
         StatsTimer timer(g_load_ports_stats);
 
-        ExpectedL<std::vector<Paragraph>> maybe_paragraphs = get_paragraphs(fs, package_dir / "CONTROL");
+        auto control_path = package_dir / "CONTROL";
+        ExpectedL<std::vector<Paragraph>> maybe_paragraphs = get_paragraphs(fs, control_path);
         if (auto pparagraphs = maybe_paragraphs.get())
         {
             auto& paragraphs = *pparagraphs;
             BinaryControlFile bcf;
-            bcf.core_paragraph = BinaryParagraph(std::move(paragraphs[0]));
+            bcf.core_paragraph = BinaryParagraph(control_path, std::move(paragraphs[0]));
             if (bcf.core_paragraph.spec != spec)
             {
                 return msg::format(msgMismatchedSpec,
@@ -504,7 +496,7 @@ namespace vcpkg::Paragraphs
             bcf.features.reserve(paragraphs.size() - 1);
             for (std::size_t idx = 1; idx < paragraphs.size(); ++idx)
             {
-                bcf.features.emplace_back(BinaryParagraph{std::move(paragraphs[idx])});
+                bcf.features.emplace_back(BinaryParagraph{control_path, std::move(paragraphs[idx])});
             }
 
             return bcf;

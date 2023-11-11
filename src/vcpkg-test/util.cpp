@@ -74,7 +74,8 @@ namespace vcpkg::Test
                                                             const char* default_features,
                                                             const char* triplet)
     {
-        return std::make_unique<StatusParagraph>(Paragraph{{"Package", {name, {}}},
+        return std::make_unique<StatusParagraph>(StringLiteral{"test"},
+                                                 Paragraph{{"Package", {name, {}}},
                                                            {"Version", {"1", {}}},
                                                            {"Architecture", {triplet, {}}},
                                                            {"Multi-Arch", {"same", {}}},
@@ -88,7 +89,8 @@ namespace vcpkg::Test
                                                              const char* depends,
                                                              const char* triplet)
     {
-        return std::make_unique<StatusParagraph>(Paragraph{{"Package", {name, {}}},
+        return std::make_unique<StatusParagraph>(StringLiteral{"test"},
+                                                 Paragraph{{"Package", {name, {}}},
                                                            {"Feature", {feature, {}}},
                                                            {"Architecture", {triplet, {}}},
                                                            {"Multi-Arch", {"same", {}}},

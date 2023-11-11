@@ -29,21 +29,16 @@ namespace vcpkg
 
     BinaryParagraph::BinaryParagraph() = default;
 
-    BinaryParagraph::BinaryParagraph(Paragraph&& fields)
+    BinaryParagraph::BinaryParagraph(StringView origin, Paragraph&& fields)
     {
-        ParagraphParser parser(std::move(fields));
-
-        {
-            std::string name;
-            parser.required_field(Fields::PACKAGE, name);
-            std::string architecture;
-            parser.required_field(Fields::ARCHITECTURE, architecture);
-            this->spec = PackageSpec(std::move(name), Triplet::from_canonical_name(std::move(architecture)));
-        }
+        ParagraphParser parser(origin, std::move(fields));
+        this->spec = PackageSpec(parser.required_field(Fields::PACKAGE),
+                                 Triplet::from_canonical_name(parser.required_field(Fields::ARCHITECTURE)));
 
         // one or the other
         this->version.text = parser.optional_field(Fields::VERSION);
-        auto pv_str = parser.optional_field(Fields::PORT_VERSION);
+        TextRowCol pv_position;
+        auto pv_str = parser.optional_field(Fields::PORT_VERSION, pv_position);
         this->version.port_version = 0;
         if (!pv_str.empty())
         {
@@ -54,7 +49,7 @@ namespace vcpkg
             }
             else
             {
-                parser.add_type_error(Fields::PORT_VERSION, msg::format(msgANonNegativeInteger));
+                parser.add_error(pv_position, msgPortVersionControlMustBeANonNegativeInteger);
             }
         }
 
@@ -64,8 +59,7 @@ namespace vcpkg
 
         this->abi = parser.optional_field(Fields::ABI);
 
-        std::string multi_arch;
-        parser.required_field(Fields::MULTI_ARCH, multi_arch);
+        std::string multi_arch = parser.required_field(Fields::MULTI_ARCH);
 
         Triplet my_triplet = this->spec.triplet();
         this->dependencies = Util::fmap(
@@ -268,8 +262,9 @@ namespace vcpkg
 
         // sanity check the serialized data
         auto my_paragraph = StringView{out_str}.substr(initial_end);
-        auto parsed_paragraph = Paragraphs::parse_single_paragraph(
-            StringView{out_str}.substr(initial_end), "vcpkg::serialize(const BinaryParagraph&, std::string&)");
+        static constexpr StringLiteral sanity_parse_origin = "vcpkg::serialize(const BinaryParagraph&, std::string&)";
+        auto parsed_paragraph =
+            Paragraphs::parse_single_paragraph(StringView{out_str}.substr(initial_end), sanity_parse_origin);
         if (!parsed_paragraph)
         {
             Checks::msg_exit_maybe_upgrade(
@@ -279,7 +274,7 @@ namespace vcpkg
                     .append_raw(my_paragraph));
         }
 
-        auto binary_paragraph = BinaryParagraph(std::move(*parsed_paragraph.get()));
+        auto binary_paragraph = BinaryParagraph(sanity_parse_origin, std::move(*parsed_paragraph.get()));
         if (binary_paragraph != pgh)
         {
             Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,

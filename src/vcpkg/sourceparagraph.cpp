@@ -314,14 +314,15 @@ namespace vcpkg
 
     static ParseExpected<SourceParagraph> parse_source_paragraph(StringView origin, Paragraph&& fields)
     {
-        ParagraphParser parser(std::move(fields));
+        ParagraphParser parser(origin, std::move(fields));
 
         auto spgh = std::make_unique<SourceParagraph>();
 
-        parser.required_field(SourceParagraphFields::NAME, spgh->name);
-        parser.required_field(SourceParagraphFields::VERSION, spgh->version.text);
+        spgh->name = parser.required_field(SourceParagraphFields::NAME);
+        spgh->version.text = parser.required_field(SourceParagraphFields::VERSION);
 
-        auto pv_str = parser.optional_field(SourceParagraphFields::PORT_VERSION);
+        TextRowCol pv_position;
+        auto pv_str = parser.optional_field(SourceParagraphFields::PORT_VERSION, pv_position);
         if (!pv_str.empty())
         {
             auto pv_opt = Strings::strto<int>(pv_str);
@@ -331,7 +332,7 @@ namespace vcpkg
             }
             else
             {
-                parser.add_type_error(SourceParagraphFields::PORT_VERSION, msg::format(msgANonNegativeInteger));
+                parser.add_error(pv_position, msgPortVersionControlMustBeANonNegativeInteger);
             }
         }
 
@@ -343,8 +344,7 @@ namespace vcpkg
 
         spgh->homepage = parser.optional_field(SourceParagraphFields::HOMEPAGE);
         TextRowCol textrowcol;
-        std::string buf;
-        parser.optional_field(SourceParagraphFields::BUILD_DEPENDS, {buf, textrowcol});
+        std::string buf = parser.optional_field(SourceParagraphFields::BUILD_DEPENDS, textrowcol);
 
         auto maybe_dependencies = parse_dependencies_list(buf, origin, textrowcol);
         if (const auto dependencies = maybe_dependencies.get())
@@ -356,8 +356,7 @@ namespace vcpkg
             return ParseControlErrorInfo::from_error(origin, std::move(maybe_dependencies).error());
         }
 
-        buf.clear();
-        parser.optional_field(SourceParagraphFields::DEFAULT_FEATURES, {buf, textrowcol});
+        buf = parser.optional_field(SourceParagraphFields::DEFAULT_FEATURES, textrowcol);
 
         auto maybe_default_features = parse_default_features_list(buf, origin, textrowcol);
         if (const auto default_features = maybe_default_features.get())
@@ -393,18 +392,19 @@ namespace vcpkg
             return ParseControlErrorInfo::from_error(origin, std::move(maybe_default_features).error());
         }
 
-        auto supports_expr = parser.optional_field(SourceParagraphFields::SUPPORTS);
-        if (!supports_expr.empty())
+        TextRowCol supports_position;
+        auto supports_text = parser.optional_field(SourceParagraphFields::SUPPORTS, supports_position);
+        if (!supports_text.empty())
         {
             auto maybe_expr = PlatformExpression::parse_platform_expression(
-                supports_expr, PlatformExpression::MultipleBinaryOperators::Allow);
+                supports_text, PlatformExpression::MultipleBinaryOperators::Allow);
             if (auto expr = maybe_expr.get())
             {
                 spgh->supports_expression = std::move(*expr);
             }
             else
             {
-                parser.add_type_error(SourceParagraphFields::SUPPORTS, msg::format(msgAPlatformExpression));
+                parser.add_error(supports_position, msgControlSupportsMustBeAPlatformExpression);
             }
         }
 
@@ -419,11 +419,11 @@ namespace vcpkg
 
     static ParseExpected<FeatureParagraph> parse_feature_paragraph(StringView origin, Paragraph&& fields)
     {
-        ParagraphParser parser(std::move(fields));
+        ParagraphParser parser(origin, std::move(fields));
 
         auto fpgh = std::make_unique<FeatureParagraph>();
 
-        parser.required_field(SourceParagraphFields::FEATURE, fpgh->name);
+        fpgh->name = parser.required_field(SourceParagraphFields::FEATURE);
         fpgh->description = Strings::split(parser.required_field(SourceParagraphFields::DESCRIPTION), '\n');
         trim_all(fpgh->description);
 

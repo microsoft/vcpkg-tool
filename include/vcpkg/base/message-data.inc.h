@@ -898,6 +898,7 @@ DECLARE_MESSAGE(ControlAndManifestFilesPresent,
                 "",
                 "Both a manifest file and a CONTROL file exist in port directory: {path}")
 DECLARE_MESSAGE(ControlCharacterInString, (), "", "Control character in string")
+DECLARE_MESSAGE(ControlSupportsMustBeAPlatformExpression, (), "", "\"Supports\" must be a platform expression")
 DECLARE_MESSAGE(CopyrightIsDir, (msg::path), "", "`{path}` being a directory is deprecated.")
 DECLARE_MESSAGE(CorruptedDatabase, (), "", "Database corrupted.")
 DECLARE_MESSAGE(CorruptedInstallTree, (), "", "Your vcpkg 'installed' tree is corrupted.")
@@ -2233,16 +2234,10 @@ DECLARE_MESSAGE(ParagraphExpectedFieldName, (), "", "expected field name")
 DECLARE_MESSAGE(ParagraphUnexpectedEndOfLine, (), "", "unexpected end of line, to span a blank line use \"  .\"")
 DECLARE_MESSAGE(ParseControlErrorInfoInvalidFields, (), "", "The following fields were not expected:")
 DECLARE_MESSAGE(ParseControlErrorInfoMissingFields, (), "", "The following fields were missing:")
-DECLARE_MESSAGE(ParseControlErrorInfoTypesEntry,
-                (msg::value, msg::expected),
-                "{value} is the name of a field in an on-disk file, {expected} is a short description "
-                "of what it should be like 'a non-negative integer' (which isn't localized yet)",
-                "{value} was expected to be {expected}")
 DECLARE_MESSAGE(ParseControlErrorInfoWhileLoading,
                 (msg::path),
                 "Error messages are is printed after this.",
                 "while loading {path}:")
-DECLARE_MESSAGE(ParseControlErrorInfoWrongTypeFields, (), "", "The following fields had the wrong types:")
 DECLARE_MESSAGE(
     ParseFeatureNameError,
     (msg::package_name, msg::url),
@@ -2478,6 +2473,7 @@ DECLARE_MESSAGE(PortVersionMultipleSpecification,
                 (),
                 "",
                 "\"port_version\" cannot be combined with an embedded '#' in the version")
+DECLARE_MESSAGE(PortVersionControlMustBeANonNegativeInteger, (), "", "\"Port-Version\" must be a non-negative integer")
 DECLARE_MESSAGE(PrebuiltPackages, (), "", "There are packages that have not been built. To build them run:")
 DECLARE_MESSAGE(PreviousIntegrationFileRemains, (), "", "Previous integration file was not removed.")
 DECLARE_MESSAGE(ProgramReturnedNonzeroExitCode,
