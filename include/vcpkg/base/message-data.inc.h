@@ -2096,6 +2096,10 @@ DECLARE_MESSAGE(MissingRequiredField,
                 "Example completely formatted message:\nerror: missing required field 'dependencies' (an array of "
                 "dependencies)",
                 "missing required field '{json_field}' ({json_type})")
+DECLARE_MESSAGE(MissingRequiredField2,
+                (msg::json_field),
+                "",
+                "missing required field '{json_field}'")
 DECLARE_MESSAGE(MixingBooleanOperationsNotAllowed,
                 (),
                 "",
@@ -2233,7 +2237,6 @@ DECLARE_MESSAGE(ParagraphExpectedColonAfterField, (), "", "expected ':' after fi
 DECLARE_MESSAGE(ParagraphExpectedFieldName, (), "", "expected field name")
 DECLARE_MESSAGE(ParagraphUnexpectedEndOfLine, (), "", "unexpected end of line, to span a blank line use \"  .\"")
 DECLARE_MESSAGE(ParseControlErrorInfoInvalidFields, (), "", "The following fields were not expected:")
-DECLARE_MESSAGE(ParseControlErrorInfoMissingFields, (), "", "The following fields were missing:")
 DECLARE_MESSAGE(ParseControlErrorInfoWhileLoading,
                 (msg::path),
                 "Error messages are is printed after this.",

@@ -80,7 +80,7 @@ namespace vcpkg
 
         // This is leftover from a previous attempt to add "alias ports", not currently used.
         (void)parser.optional_field("Type");
-        if (const auto err = parser.error_info(this->spec.to_string()))
+        if (const auto err = parser.error_info())
         {
             msg::println_error(msgErrorParsingBinaryParagraph, msg::spec = this->spec);
             print_error_message(err);

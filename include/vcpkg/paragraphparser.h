@@ -19,14 +19,13 @@ namespace vcpkg
     struct ParseControlErrorInfo
     {
         std::string name;
-        std::vector<std::string> missing_fields;
         std::vector<std::string> extra_fields;
         std::vector<LocalizedString> other_errors;
         LocalizedString error;
 
         bool has_error() const
         {
-            return !missing_fields.empty() || !extra_fields.empty() ||
+            return !extra_fields.empty() ||
                    !other_errors.empty() || !error.empty();
         }
 
@@ -64,13 +63,12 @@ namespace vcpkg
 
         void add_error(TextRowCol position, msg::MessageT<> error_content);
 
-        std::unique_ptr<ParseControlErrorInfo> error_info(StringView name) const;
+        std::unique_ptr<ParseControlErrorInfo> error_info() const;
 
     private:
         std::string origin;
         Paragraph&& fields;
         std::vector<LocalizedString> other_errors;
-        std::vector<std::string> missing_fields;
     };
 
     ExpectedL<std::vector<std::string>> parse_default_features_list(const std::string& str,

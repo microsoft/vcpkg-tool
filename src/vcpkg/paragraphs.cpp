@@ -51,15 +51,6 @@ namespace vcpkg
                               .append_raw(Strings::join(", ", extra_fields))
                               .extract_data());
         }
-
-        if (!missing_fields.empty())
-        {
-            target.push_back('\n');
-            target.append(msg::format(msgParseControlErrorInfoMissingFields)
-                              .append_raw(' ')
-                              .append_raw(Strings::join(", ", missing_fields))
-                              .extract_data());
-        }
     }
 
     std::string ParseControlErrorInfo::to_string() const
@@ -121,7 +112,10 @@ namespace vcpkg
             return std::move(field->first);
         }
 
-        missing_fields.emplace_back(fieldname.data());
+        other_errors.emplace_back(LocalizedString::from_raw(origin)
+                                      .append_raw(": ")
+                                      .append_raw(ErrorPrefix)
+                                      .append(msgMissingRequiredField2, msg::json_field = fieldname));
         return std::string();
     }
 
@@ -132,14 +126,13 @@ namespace vcpkg
                                       .append(error_content));
     }
 
-    std::unique_ptr<ParseControlErrorInfo> ParagraphParser::error_info(StringView name) const
+    std::unique_ptr<ParseControlErrorInfo> ParagraphParser::error_info() const
     {
-        if (!fields.empty() || !missing_fields.empty())
+        if (!fields.empty() || !other_errors.empty())
         {
             auto err = std::make_unique<ParseControlErrorInfo>();
-            err->name = name.to_string();
+            err->name = origin;
             err->extra_fields = Util::extract_keys(fields);
-            err->missing_fields = missing_fields;
             err->other_errors = other_errors;
             return err;
         }

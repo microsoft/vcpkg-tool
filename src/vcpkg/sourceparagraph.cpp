@@ -410,7 +410,7 @@ namespace vcpkg
 
         // This is leftover from a previous attempt to add "alias ports", not currently used.
         (void)parser.optional_field(SourceParagraphFields::TYPE);
-        auto err = parser.error_info(spgh->name.empty() ? origin : spgh->name);
+        auto err = parser.error_info();
         if (err)
             return err;
         else
@@ -438,7 +438,7 @@ namespace vcpkg
             return ParseControlErrorInfo::from_error(origin, std::move(maybe_dependencies).error());
         }
 
-        auto err = parser.error_info(fpgh->name.empty() ? origin : fpgh->name);
+        auto err = parser.error_info();
         if (err)
             return err;
         else

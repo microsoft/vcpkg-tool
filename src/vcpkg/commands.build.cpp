@@ -1722,7 +1722,7 @@ namespace vcpkg
                                                msg::value = to_string_view(policy));
         }
 
-        if (const auto err = parser.error_info("PostBuildInformation"))
+        if (const auto err = parser.error_info())
         {
             print_error_message(err);
             Checks::exit_fail(VCPKG_LINE_INFO);
