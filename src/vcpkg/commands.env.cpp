@@ -5,7 +5,6 @@
 #include <vcpkg/cmakevars.h>
 #include <vcpkg/commands.build.h>
 #include <vcpkg/commands.env.h>
-#include <vcpkg/commands.help.h>
 #include <vcpkg/installedpaths.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/registries.h>

@@ -3,6 +3,7 @@
 #include <vcpkg/base/fwd/downloads.h>
 #include <vcpkg/base/fwd/files.h>
 #include <vcpkg/base/fwd/git.h>
+#include <vcpkg/base/fwd/system.h>
 #include <vcpkg/base/fwd/system.process.h>
 
 #include <vcpkg/fwd/build.h>
@@ -19,8 +20,6 @@
 
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/path.h>
-
-#include <vcpkg/triplet.h>
 
 #include <map>
 #include <string>
@@ -89,6 +88,7 @@ namespace vcpkg
         const Path& downloads;
         const Path& tools;
         const Path builtin_registry_versions;
+        ExpectedL<Path> versions_dot_git_dir() const;
         const Path prefab;
         const Path buildsystems;
         const Path buildsystems_msbuild_targets;

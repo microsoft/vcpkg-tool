@@ -3,15 +3,16 @@
 #include <vcpkg/base/fwd/json.h>
 #include <vcpkg/base/fwd/optional.h>
 
-#include <vcpkg/fwd/binarycaching.h>
 #include <vcpkg/fwd/build.h>
 #include <vcpkg/fwd/cmakevars.h>
 #include <vcpkg/fwd/commands.install.h>
 #include <vcpkg/fwd/dependencies.h>
-#include <vcpkg/fwd/portfileprovider.h>
+#include <vcpkg/fwd/statusparagraphs.h>
 #include <vcpkg/fwd/triplet.h>
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
+
+#include <set>
 
 namespace vcpkg
 {
@@ -41,7 +42,8 @@ namespace vcpkg
                                            Triplet host_triplet,
                                            const KeepGoing keep_going,
                                            const bool only_downloads,
-                                           const PrintUsage print_cmake_usage);
+                                           const PrintUsage print_cmake_usage,
+                                           bool include_manifest_in_github_issue);
     void command_set_installed_and_exit(const VcpkgCmdArguments& args,
                                         const VcpkgPaths& paths,
                                         Triplet default_triplet,

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vcpkg/base/fwd/files.h>
-#include <vcpkg/base/fwd/format.h>
+#include <vcpkg/base/fwd/fmt.h>
 #include <vcpkg/base/fwd/message_sinks.h>
 #include <vcpkg/base/fwd/span.h>
 
@@ -137,6 +137,7 @@ namespace vcpkg
                                               const Path& filename,
                                               std::error_code& ec) const = 0;
         Path find_file_recursively_up(const Path& starting_dir, const Path& filename, LineInfo li) const;
+        ExpectedL<Path> try_find_file_recursively_up(const Path& starting_dir, const Path& filename) const;
 
         virtual std::vector<Path> get_files_recursive(const Path& dir, std::error_code& ec) const = 0;
         std::vector<Path> get_files_recursive(const Path& dir, LineInfo li) const;

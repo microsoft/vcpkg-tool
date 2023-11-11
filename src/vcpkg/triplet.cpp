@@ -3,7 +3,6 @@
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/input.h>
-#include <vcpkg/packagespec.h>
 #include <vcpkg/triplet.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 
@@ -91,6 +90,10 @@ namespace vcpkg
         if (Strings::starts_with(this->canonical_name(), "loongarch64-"))
         {
             return CPUArchitecture::LOONGARCH64;
+        }
+        if (Strings::starts_with(this->canonical_name(), "mips64-"))
+        {
+            return CPUArchitecture::MIPS64;
         }
 
         return nullopt;

@@ -2,7 +2,7 @@
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/util.h>
 
-#include <algorithm>
+#include <memory>
 #include <utility>
 
 namespace vcpkg
@@ -35,17 +35,12 @@ namespace vcpkg
     {
         LocalizedString res;
         if (!origin.empty())
-            res = LocalizedString::from_raw(fmt::format("{}:{}:{}: ", origin, location.row, location.column));
-        if (kind == MessageKind::Warning)
         {
-            res.append(msg::msgWarningMessage);
+            res.append_raw(fmt::format("{}:{}:{}: ", origin, location.row, location.column));
         }
-        else
-        {
-            res.append(msg::msgErrorMessage);
-        }
-        res.append(message);
 
+        res.append_raw(kind == MessageKind::Warning ? WarningPrefix : ErrorPrefix);
+        res.append(message);
         res.append_raw('\n');
 
         auto line_end = Util::find_if(location.it, ParserBase::is_lineend);

@@ -1,4 +1,4 @@
-#include <catch2/catch.hpp>
+#include <vcpkg-test/util.h>
 
 #include <vcpkg/dependencies.h>
 #include <vcpkg/paragraphparser.h>
@@ -6,13 +6,12 @@
 #include <vcpkg/sourceparagraph.h>
 
 #include <vcpkg-test/mockcmakevarprovider.h>
-#include <vcpkg-test/util.h>
 
 using namespace vcpkg;
 
 TEST_CASE ("parse depends", "[dependencies]")
 {
-    auto w = parse_dependencies_list("liba (windows)");
+    auto w = parse_dependencies_list("liba (windows)", "<test>");
     REQUIRE(w);
     auto& v = *w.get();
     REQUIRE(v.size() == 1);
@@ -31,7 +30,7 @@ TEST_CASE ("filter depends", "[dependencies]")
 
     const std::unordered_map<std::string, std::string> arm_uwp_cmake_vars{{"VCPKG_TARGET_ARCHITECTURE", "arm"},
                                                                           {"VCPKG_CMAKE_SYSTEM_NAME", "WindowsStore"}};
-    auto deps_ = parse_dependencies_list("liba (!uwp), libb, libc (uwp)");
+    auto deps_ = parse_dependencies_list("liba (!uwp), libb, libc (uwp)", "<test>");
     REQUIRE(deps_);
     auto& deps = *deps_.get();
     SECTION ("x64-windows")
@@ -58,7 +57,8 @@ TEST_CASE ("filter depends", "[dependencies]")
 TEST_CASE ("parse feature depends", "[dependencies]")
 {
     auto u_ = parse_dependencies_list("libwebp[anim, gif2webp, img2webp, info, mux, nearlossless, "
-                                      "simd, cwebp, dwebp], libwebp[vwebp-sdl, extras] (!osx)");
+                                      "simd, cwebp, dwebp], libwebp[vwebp-sdl, extras] (!osx)",
+                                      "<test>");
     REQUIRE(u_);
     auto& v = *u_.get();
     REQUIRE(v.size() == 2);
