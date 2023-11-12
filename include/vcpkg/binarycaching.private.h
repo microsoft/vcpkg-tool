@@ -19,7 +19,7 @@ namespace vcpkg
     // - v?<X>.<Y><whatever> -> <X>.<Y>.0-vcpkg<abitag>
     // - v?<X>.<Y>.<Z><whatever> -> <X>.<Y>.<Z>-vcpkg<abitag>
     // - anything else -> 0.0.0-vcpkg<abitag>
-    std::string format_version_for_nugetref(StringView version, StringView abi_tag);
+    std::string format_version_for_nugetref(StringView version_text, StringView abi_tag);
 
     struct NugetReference
     {

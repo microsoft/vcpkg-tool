@@ -1,10 +1,12 @@
 #pragma once
 
-#include <vcpkg/base/fwd/files.h>
 #include <vcpkg/base/fwd/messages.h>
 
 #include <vcpkg/fwd/vcpkgpaths.h>
 
+#include <vcpkg/base/files.h>
+
+#include <string>
 #include <vector>
 
 namespace vcpkg

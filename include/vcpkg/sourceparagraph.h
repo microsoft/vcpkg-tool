@@ -1,15 +1,15 @@
 #pragma once
 
+#include <vcpkg/base/fwd/expected.h>
+#include <vcpkg/base/fwd/span.h>
+
 #include <vcpkg/fwd/configuration.h>
 #include <vcpkg/fwd/packagespec.h>
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 
-#include <vcpkg/base/expected.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/path.h>
-#include <vcpkg/base/span.h>
 
-#include <vcpkg/packagespec.h>
 #include <vcpkg/paragraphparser.h>
 #include <vcpkg/platform-expression.h>
 #include <vcpkg/versions.h>
@@ -25,8 +25,7 @@ namespace vcpkg
     struct DependencyConstraint
     {
         VersionConstraintKind type = VersionConstraintKind::None;
-        std::string value;
-        int port_version = 0;
+        Version version;
 
         friend bool operator==(const DependencyConstraint& lhs, const DependencyConstraint& rhs);
         friend bool operator!=(const DependencyConstraint& lhs, const DependencyConstraint& rhs)
@@ -70,9 +69,8 @@ namespace vcpkg
     struct DependencyOverride
     {
         std::string name;
-        std::string version;
-        int port_version = 0;
-        VersionScheme version_scheme = VersionScheme::String;
+        Version version;
+        VersionScheme scheme;
 
         Json::Object extra_info;
 
@@ -112,8 +110,7 @@ namespace vcpkg
     {
         std::string name;
         VersionScheme version_scheme = VersionScheme::String;
-        std::string raw_version;
-        int port_version = 0;
+        Version version;
         bool depend_defaults = true;
         std::vector<std::string> description;
         std::vector<std::string> summary;
@@ -138,10 +135,17 @@ namespace vcpkg
 
         Json::Object extra_info;
 
-        Version to_version() const { return Version{raw_version, port_version}; }
-
         friend bool operator==(const SourceParagraph& lhs, const SourceParagraph& rhs);
         friend bool operator!=(const SourceParagraph& lhs, const SourceParagraph& rhs) { return !(lhs == rhs); }
+    };
+
+    struct PortLocation
+    {
+        Path port_directory;
+
+        /// Should model SPDX PackageDownloadLocation. Empty implies NOASSERTION.
+        /// See https://spdx.github.io/spdx-spec/package-information/#77-package-download-location-field
+        std::string spdx_location;
     };
 
     /// <summary>
@@ -150,13 +154,13 @@ namespace vcpkg
     struct SourceControlFile
     {
         SourceControlFile clone() const;
-        static ParseExpected<SourceControlFile> parse_project_manifest_object(StringView origin,
-                                                                              const Json::Object& object,
-                                                                              MessageSink& warnings_sink);
+        static ExpectedL<std::unique_ptr<SourceControlFile>> parse_project_manifest_object(StringView origin,
+                                                                                           const Json::Object& object,
+                                                                                           MessageSink& warnings_sink);
 
-        static ParseExpected<SourceControlFile> parse_port_manifest_object(StringView origin,
-                                                                           const Json::Object& object,
-                                                                           MessageSink& warnings_sink);
+        static ExpectedL<std::unique_ptr<SourceControlFile>> parse_port_manifest_object(StringView origin,
+                                                                                        const Json::Object& object,
+                                                                                        MessageSink& warnings_sink);
 
         static ParseExpected<SourceControlFile> parse_control_file(StringView origin,
                                                                    std::vector<Paragraph>&& control_paragraphs);
@@ -174,12 +178,14 @@ namespace vcpkg
                                                     const FeatureFlagSettings& flags,
                                                     bool is_default_builtin_registry = true) const;
 
-        Version to_version() const { return core_paragraph->to_version(); }
+        const std::string& to_name() const noexcept { return core_paragraph->name; }
+        VersionScheme to_version_scheme() const noexcept { return core_paragraph->version_scheme; }
+        const Version& to_version() const noexcept { return core_paragraph->version; }
         SchemedVersion to_schemed_version() const
         {
-            return SchemedVersion{core_paragraph->version_scheme, core_paragraph->to_version()};
+            return SchemedVersion{core_paragraph->version_scheme, core_paragraph->version};
         }
-        VersionSpec to_version_spec() const { return {core_paragraph->name, core_paragraph->to_version()}; }
+        VersionSpec to_version_spec() const { return {core_paragraph->name, core_paragraph->version}; }
 
         friend bool operator==(const SourceControlFile& lhs, const SourceControlFile& rhs);
         friend bool operator!=(const SourceControlFile& lhs, const SourceControlFile& rhs) { return !(lhs == rhs); }
@@ -196,15 +202,19 @@ namespace vcpkg
     /// </summary>
     struct SourceControlFileAndLocation
     {
-        Version to_version() const { return source_control_file->to_version(); }
+        const std::string& to_name() const noexcept { return source_control_file->to_name(); }
+        const Version& to_version() const { return source_control_file->to_version(); }
         VersionScheme scheme() const { return source_control_file->core_paragraph->version_scheme; }
         SchemedVersion schemed_version() const { return {scheme(), to_version()}; }
+        VersionSpec to_version_spec() const { return source_control_file->to_version_spec(); }
+        Path port_directory() const { return control_path.parent_path(); }
 
         std::unique_ptr<SourceControlFile> source_control_file;
-        Path source_location;
+        Path control_path;
+
         /// Should model SPDX PackageDownloadLocation. Empty implies NOASSERTION.
         /// See https://spdx.github.io/spdx-spec/package-information/#77-package-download-location-field
-        std::string registry_location;
+        std::string spdx_location;
     };
 
     void print_error_message(const LocalizedString& message);
@@ -214,6 +224,6 @@ namespace vcpkg
 
     // Exposed for testing
     ExpectedL<std::vector<Dependency>> parse_dependencies_list(const std::string& str,
-                                                               StringView origin = "<unknown>",
+                                                               StringView origin,
                                                                TextRowCol textrowcol = {});
 }

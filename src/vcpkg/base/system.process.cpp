@@ -11,8 +11,7 @@
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
-#include <ctime>
-#include <future>
+#include <map>
 #include <set>
 
 #if defined(__APPLE__)
@@ -676,7 +675,7 @@ namespace vcpkg
     {
         std::vector<ExpectedL<ExitCodeAndOutput>> res(cmd_lines.size(), LocalizedString{});
 
-        parallel_transform(cmd_lines.begin(), cmd_lines.size(), res.begin(), [&](const Command& cmd_line) {
+        parallel_transform(cmd_lines, res.begin(), [&](const Command& cmd_line) {
             return cmd_execute_and_capture_output(cmd_line, wd, env);
         });
 
@@ -961,6 +960,7 @@ namespace
         RedirectedProcessInfo& operator=(const RedirectedProcessInfo&) = delete;
         ~RedirectedProcessInfo() = default;
 
+        VCPKG_MSVC_WARNING(suppress : 6262) // function uses 32k of stack
         int wait_and_stream_output(int32_t debug_id,
                                    const char* input,
                                    DWORD input_size,
@@ -1380,10 +1380,15 @@ namespace vcpkg
             return std::move(proc_attribute_list_create).error();
         }
 
-        HANDLE handles_to_inherit[] = {
+        constexpr size_t number_of_candidate_handles = 3;
+        HANDLE handles_to_inherit[number_of_candidate_handles] = {
             GetStdHandle(STD_INPUT_HANDLE), GetStdHandle(STD_OUTPUT_HANDLE), GetStdHandle(STD_ERROR_HANDLE)};
+        Util::sort(handles_to_inherit);
+        size_t number_of_handles =
+            std::unique(handles_to_inherit, handles_to_inherit + number_of_candidate_handles) - handles_to_inherit;
+
         auto maybe_error = proc_attribute_list.update_attribute(
-            PROC_THREAD_ATTRIBUTE_HANDLE_LIST, handles_to_inherit, 3 * sizeof(HANDLE));
+            PROC_THREAD_ATTRIBUTE_HANDLE_LIST, handles_to_inherit, number_of_handles * sizeof(HANDLE));
         if (!maybe_error.has_value())
         {
             return maybe_error.error();

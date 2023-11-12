@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vcpkg/base/fwd/graphs.h>
+
 #include <vcpkg/fwd/cmakevars.h>
 #include <vcpkg/fwd/portfileprovider.h>
 
@@ -9,36 +11,13 @@
 #include <vcpkg/packagespec.h>
 #include <vcpkg/statusparagraph.h>
 
-#include <functional>
 #include <map>
+#include <string>
 #include <vector>
 
 namespace vcpkg
 {
-    struct GraphRandomizer;
-
-    enum class UnsupportedPortAction : bool
-    {
-        Warn,
-        Error,
-    };
-
-    enum class RequestType
-    {
-        UNKNOWN,
-        USER_REQUESTED,
-        AUTO_SELECTED
-    };
-
     [[nodiscard]] StringLiteral request_type_indent(RequestType request_type);
-
-    enum class InstallPlanType
-    {
-        UNKNOWN,
-        BUILD_AND_INSTALL,
-        ALREADY_INSTALLED,
-        EXCLUDED
-    };
 
     struct BasicAction
     {
@@ -118,13 +97,6 @@ namespace vcpkg
         std::vector<InstallPlanAction> already_installed;
         std::vector<InstallPlanAction> install_actions;
         std::map<FeatureSpec, PlatformExpression::Expr> unsupported_features;
-    };
-
-    enum class ExportPlanType
-    {
-        UNKNOWN,
-        NOT_BUILT,
-        ALREADY_BUILT
     };
 
     struct ExportPlanAction : BasicAction

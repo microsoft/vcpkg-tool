@@ -1543,15 +1543,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";BaselineFileNoDefaultFieldPath" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[baseline file at {path} was invalid (no "default" field)]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[El archivo de línea base en {path} fue no válido (no hay ningún campo "default")]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";BaselineGitShowFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[while checking out baseline from commit '{commit_sha}', failed to `git show` versions/baseline.json. This may be fixed by fetching commits with `git fetch`.]]></Val>
@@ -1566,15 +1557,6 @@
           <Val><![CDATA[Baseline version not found. Run:]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit -m "Update version database"]A;to set {version} as the baseline version.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[No se encontró la versión de línea base. Ejecute:]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit -m "Update version database"]A;para establecer {version} como la versión de línea base.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";BaselineMissingDefault" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The baseline.json from commit `"{commit_sha}"` in the repo {url} was invalid (did not contain a "default" field).]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[El valor baseline.json del comando `"{commit_sha}"` en el repositorio {url} no era válido (no contenía un campo "predeterminado").]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2241,12 +2223,12 @@
       </Item>
       <Item ItemId=";CmakeTargetsExcluded" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[note: {count} additional targets are not displayed.]]></Val>
+          <Val><![CDATA[{count} additional targets are not displayed.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[nota: {count} destinos adicionales no se muestran.]]></Val>
+            <Val><![CDATA[{count} destinos adicionales no se muestran.]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[    # note: {count} targets were omitted.]]></Val>
+            <Val><![CDATA[note: {count} additional targets are not displayed.]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -4084,15 +4066,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CouldNotFindBaseline" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Could not find explicitly specified baseline `"{commit_sha}"` in baseline file {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[No se pudo encontrar la línea de base especificada explícitamente `"{commit_sha}"` en el archivo de línea de base {path}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";CouldNotFindBaselineInCommit" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Couldn't find baseline in {url} at {commit_sha} for {package_name}.]]></Val>
@@ -4873,24 +4846,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";ErrorMessage" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[error: ]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[error: ]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ErrorMessageMustUsePrintError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The message named {value} starts with error:, it must be changed to prepend ErrorMessage in code instead.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[El mensaje denominado {value} empieza por error:, debe cambiarse para anteponer ErrorMessage en el código en su lugar.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";ErrorMissingVcpkgRoot" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Could not detect vcpkg-root. If you are trying to use a copy of vcpkg that you've built, you must define the VCPKG_ROOT environment variable to point to a cloned copy of https://github.com/Microsoft/vcpkg.]]></Val>
@@ -5551,15 +5506,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";FailedToFindBaseline" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Failed to find baseline.json]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[No se ha podido encontrar baseline.json]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";FailedToFindPortFeature" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[{package_name} has no feature named {feature}.]]></Val>
@@ -6106,51 +6052,6 @@
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[El origen binario GHA requiere que se establezcan las variables de entorno ACTIONS_RUNTIME_TOKEN y ACTIONS_CACHE_URL. Consulte {url} para obtener más detalles.]]></Val>
           </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";GenerateMsgErrorParsingFormatArgs" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[parsing format string for {value}:]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[analizando cadena de formato para {value}:]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[error: parsing format string for {value}:]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";GenerateMsgIncorrectComment" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[message {value} has an incorrect comment:]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[el mensaje {value} tiene un comentario incorrecto:]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";GenerateMsgNoArgumentValue" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[{{{value}}} was specified in a comment, but was not used in the message.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{{{value}}} se especificó en un comentario, pero no se usó en el mensaje.]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[    {{{value}}} was specified in a comment, but was not used in the message.]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";GenerateMsgNoCommentValue" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[{{{value}}} was used in the message, but not commented.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Se ha usado {{{value}}} en el mensaje, pero no se ha comentado.]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[    {{{value}}} was used in the message, but not commented.]]></Val>
-          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -7537,15 +7438,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";InternalErrorMessage" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[internal error: ]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Error interno:]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";InternalErrorMessageContact" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Please open an issue at https://github.com/microsoft/vcpkg/issues/new?template=other-type-of-bug-report.md&labels=category:vcpkg-bug with detailed steps to reproduce the problem.]]></Val>
@@ -8389,24 +8281,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";LocalizedMessageMustNotContainIndents" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The message named {value} contains what appears to be indenting which must be changed to use LocalizedString::append_indent instead.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[El mensaje denominado {value} contiene lo que parece ser una sangría. Se debe cambiar para usar LocalizedString::append_indent en su lugar.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";LocalizedMessageMustNotEndWithNewline" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The message named {value} ends with a newline which should be added by formatting rather than by localization.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[El mensaje denominado {value} termina con un salto de línea que debe agregarse con formato en lugar de mediante localización.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";ManifestConflict" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Found both a manifest and CONTROL files in port "{path}"; please rename one or the other]]></Val>
@@ -8880,15 +8754,6 @@
           <Val><![CDATA[the command '{command_name}' does not accept any additional arguments]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[el comando '{command_name}' no acepta ningún argumento adicional]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";NoteMessage" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[note: ]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Nota:]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -9820,11 +9685,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";PortMissingManifest" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";PortMissingManifest2" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[{package_name} has no vcpkg.json or CONTROL file in {path}]]></Val>
+          <Val><![CDATA[{package_name} port manifest missing (no vcpkg.json or CONTROL file)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{package_name} no tiene ningún archivo vcpkg.json o archivo CONTROL en {path}]]></Val>
+            <Val><![CDATA[{package_name} falta el manifiesto del puerto (no hay archivo vcpkg.json o CONTROL)]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -12066,12 +11931,12 @@
       </Item>
       <Item ItemId=";VersionVerifiedOK" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[OK: {version_spec} -> {commit_sha}]]></Val>
+          <Val><![CDATA[{version_spec} is correctly in the version database ({git_tree_sha})]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[De acuerdo: {version_spec} -> {commit_sha}]]></Val>
+            <Val><![CDATA[{version_spec} está correctamente en la base de datos de la versión ({git_tree_sha})]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[OK: {package_name}@{version} -> {commit_sha}]]></Val>
+            <Val><![CDATA[OK: {version_spec} -> {commit_sha}]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -12103,24 +11968,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";WarningMessage" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[warning: ]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[advertencia: ]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";WarningMessageMustUsePrintWarning" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The message named {value} starts with warning:, it must be changed to prepend WarningMessage in code instead.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[El mensaje denominado {value} empieza por warning:, debe cambiarse para anteponer WarningMessage en el código en su lugar.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";WarningsTreatedAsErrors" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[previous warnings being interpreted as errors]]></Val>
@@ -12141,10 +11988,13 @@
       </Item>
       <Item ItemId=";WhileCheckingOutPortTreeIsh" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[while checking out port {package_name} with git tree {commit_sha}]]></Val>
+          <Val><![CDATA[while checking out port {package_name} with git tree {git_tree_sha}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[al restaurar el puerto {package_name} con el árbol Git {commit_sha}]]></Val>
+            <Val><![CDATA[al restaurar el puerto {package_name} con el árbol Git {git_tree_sha}]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[while checking out port {package_name} with git tree {commit_sha}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>

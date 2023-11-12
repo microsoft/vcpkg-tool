@@ -1,9 +1,8 @@
 #include <vcpkg/base/system-headers.h>
 
-#include <catch2/catch.hpp>
+#include <vcpkg-test/util.h>
 
 #include <vcpkg/base/optional.h>
-#include <vcpkg/base/strings.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.h>
 #include <vcpkg/base/system.process.h>

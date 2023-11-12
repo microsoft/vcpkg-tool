@@ -1,13 +1,10 @@
-#include <catch2/catch.hpp>
+#include <vcpkg-test/util.h>
 
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/jsonreader.h>
 #include <vcpkg/base/stringview.h>
 
 #include <vcpkg/configuration.h>
-#include <vcpkg/registries.h>
-
-#include <vcpkg-test/util.h>
 
 using namespace vcpkg;
 

@@ -1,11 +1,11 @@
 #pragma once
 
+#include <vcpkg/base/fwd/expected.h>
+#include <vcpkg/base/fwd/stringview.h>
+
 #include <vcpkg/fwd/binaryparagraph.h>
 #include <vcpkg/fwd/paragraphparser.h>
 #include <vcpkg/fwd/registries.h>
-
-#include <vcpkg/base/expected.h>
-#include <vcpkg/base/stringview.h>
 
 #include <vcpkg/sourceparagraph.h>
 
@@ -27,19 +27,19 @@ namespace vcpkg::Paragraphs
     bool is_port_directory(const ReadOnlyFilesystem& fs, const Path& maybe_directory);
 
     // If an error occurs, the Expected will be in the error state.
-    // Otherwise, if the port is known, the unique_ptr contains the loaded port information.
-    // Otherwise, the unique_ptr is nullptr.
-    ExpectedL<std::unique_ptr<SourceControlFile>> try_load_port(const ReadOnlyFilesystem& fs,
-                                                                StringView port_name,
-                                                                const Path& port_directory);
+    // Otherwise, if the port is known, result->source_control_file contains the loaded port information.
+    // Otherwise, result->source_control_file is nullptr.
+    ExpectedL<SourceControlFileAndLocation> try_load_port(const ReadOnlyFilesystem& fs,
+                                                          StringView port_name,
+                                                          const PortLocation& port_location);
     // Identical to try_load_port, but the port unknown condition is mapped to an error.
-    ExpectedL<std::unique_ptr<SourceControlFile>> try_load_port_required(const ReadOnlyFilesystem& fs,
-                                                                         StringView port_name,
-                                                                         const Path& port_directory);
-    ExpectedL<std::unique_ptr<SourceControlFile>> try_load_port_text(const std::string& text,
-                                                                     StringView origin,
-                                                                     bool is_manifest,
-                                                                     MessageSink& warning_sink);
+    ExpectedL<SourceControlFileAndLocation> try_load_port_required(const ReadOnlyFilesystem& fs,
+                                                                   StringView port_name,
+                                                                   const PortLocation& port_location);
+    ExpectedL<std::unique_ptr<SourceControlFile>> try_load_port_manifest_text(StringView text,
+                                                                              StringView control_path,
+                                                                              MessageSink& warning_sink);
+    ExpectedL<std::unique_ptr<SourceControlFile>> try_load_control_file_text(StringView text, StringView control_path);
 
     ExpectedL<BinaryControlFile> try_load_cached_package(const ReadOnlyFilesystem& fs,
                                                          const Path& package_dir,

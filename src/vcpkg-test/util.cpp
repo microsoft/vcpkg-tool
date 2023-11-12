@@ -1,4 +1,4 @@
-#include <catch2/catch.hpp>
+#include <vcpkg-test/util.h>
 
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/system.h>
@@ -14,8 +14,6 @@
 #include <numeric>
 #include <set>
 #include <vector>
-
-#include <vcpkg-test/util.h>
 
 namespace vcpkg::Test
 {
@@ -109,7 +107,8 @@ namespace vcpkg::Test
 
     PackageSpec PackageSpecMap::emplace(vcpkg::SourceControlFileAndLocation&& scfl)
     {
-        const auto& name = scfl.source_control_file->core_paragraph->name;
+        // copy name before moving scfl
+        auto name = scfl.to_name();
         REQUIRE(!Util::Maps::contains(map, name));
         map.emplace(name, std::move(scfl));
         return {name, triplet};

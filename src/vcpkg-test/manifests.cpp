@@ -1,19 +1,13 @@
-#include <catch2/catch.hpp>
+#include <vcpkg-test/util.h>
 
 #include <vcpkg/base/fwd/message_sinks.h>
 
 #include <vcpkg/base/json.h>
-#include <vcpkg/base/util.h>
 
-#include <vcpkg/paragraphs.h>
 #include <vcpkg/sourceparagraph.h>
 #include <vcpkg/vcpkgcmdarguments.h>
-#include <vcpkg/vcpkgpaths.h>
-
-#include <vcpkg-test/util.h>
 
 using namespace vcpkg;
-using namespace vcpkg::Paragraphs;
 using namespace vcpkg::Test;
 
 static Json::Object parse_json_object(StringView sv)
@@ -39,34 +33,35 @@ enum class PrintErrors : bool
     Yes,
 };
 
-static ParseExpected<SourceControlFile> test_parse_project_manifest(const Json::Object& obj,
-                                                                    PrintErrors print = PrintErrors::Yes)
+static ExpectedL<std::unique_ptr<SourceControlFile>> test_parse_project_manifest(const Json::Object& obj,
+                                                                                 PrintErrors print = PrintErrors::Yes)
 {
     auto res = SourceControlFile::parse_project_manifest_object("<test manifest>", obj, null_sink);
     if (!res.has_value() && print == PrintErrors::Yes)
     {
-        print_error_message(res.error());
+        msg::println(Color::error, res.error());
     }
     return res;
 }
 
-static ParseExpected<SourceControlFile> test_parse_port_manifest(const Json::Object& obj,
-                                                                 PrintErrors print = PrintErrors::Yes)
+static ExpectedL<std::unique_ptr<SourceControlFile>> test_parse_port_manifest(const Json::Object& obj,
+                                                                              PrintErrors print = PrintErrors::Yes)
 {
     auto res = SourceControlFile::parse_port_manifest_object("<test manifest>", obj, null_sink);
     if (!res.has_value() && print == PrintErrors::Yes)
     {
-        print_error_message(res.error());
+        msg::println(Color::error, res.error());
     }
     return res;
 }
 
-static ParseExpected<SourceControlFile> test_parse_project_manifest(StringView obj,
-                                                                    PrintErrors print = PrintErrors::Yes)
+static ExpectedL<std::unique_ptr<SourceControlFile>> test_parse_project_manifest(StringView obj,
+                                                                                 PrintErrors print = PrintErrors::Yes)
 {
     return test_parse_project_manifest(parse_json_object(obj), print);
 }
-static ParseExpected<SourceControlFile> test_parse_port_manifest(StringView obj, PrintErrors print = PrintErrors::Yes)
+static ExpectedL<std::unique_ptr<SourceControlFile>> test_parse_port_manifest(StringView obj,
+                                                                              PrintErrors print = PrintErrors::Yes)
 {
     return test_parse_port_manifest(parse_json_object(obj), print);
 }
@@ -98,10 +93,10 @@ TEST_CASE ("manifest construct minimum", "[manifests]")
     REQUIRE(m_pgh.has_value());
     auto& pgh = **m_pgh.get();
 
-    REQUIRE(pgh.core_paragraph->name == "zlib");
-    REQUIRE(pgh.core_paragraph->raw_version == "1.2.8");
+    REQUIRE(pgh.to_name() == "zlib");
+    REQUIRE(pgh.to_version_scheme() == VersionScheme::String);
+    REQUIRE(pgh.to_version() == Version{"1.2.8", 0});
     REQUIRE(pgh.core_paragraph->depend_defaults == true);
-    REQUIRE(pgh.core_paragraph->version_scheme == VersionScheme::String);
     REQUIRE(pgh.core_paragraph->maintainers.empty());
     REQUIRE(pgh.core_paragraph->contacts.is_empty());
     REQUIRE(pgh.core_paragraph->summary.empty());
@@ -132,9 +127,9 @@ TEST_CASE ("project manifest construct minimum", "[manifests]")
     REQUIRE(m_pgh.has_value());
     auto& pgh = **m_pgh.get();
 
-    REQUIRE(pgh.core_paragraph->name.empty());
-    REQUIRE(pgh.core_paragraph->raw_version == "");
-    REQUIRE(pgh.core_paragraph->version_scheme == VersionScheme::Missing);
+    REQUIRE(pgh.to_name().empty());
+    REQUIRE(pgh.to_version_scheme() == VersionScheme::Missing);
+    REQUIRE(pgh.to_version() == Version{});
     REQUIRE(pgh.core_paragraph->maintainers.empty());
     REQUIRE(pgh.core_paragraph->contacts.is_empty());
     REQUIRE(pgh.core_paragraph->summary.empty());
@@ -203,8 +198,7 @@ TEST_CASE ("manifest versioning", "[manifests]")
             auto& pgh = **m_pgh.get();
             CHECK(Json::stringify(serialize_manifest(pgh)) == Json::stringify(projectManifest));
             CHECK(pgh.core_paragraph->version_scheme == std::get<1>(v));
-            CHECK(pgh.core_paragraph->raw_version == std::get<2>(v));
-            CHECK(pgh.core_paragraph->port_version == 0);
+            CHECK(pgh.core_paragraph->version == Version{std::get<2>(v), 0});
         }
 
         { // port manifest
@@ -213,8 +207,7 @@ TEST_CASE ("manifest versioning", "[manifests]")
             auto& pgh = **m_pgh.get();
             CHECK(Json::stringify(serialize_manifest(pgh)) == Json::stringify(portManifest));
             CHECK(pgh.core_paragraph->version_scheme == std::get<1>(v));
-            CHECK(pgh.core_paragraph->raw_version == std::get<2>(v));
-            CHECK(pgh.core_paragraph->port_version == 0);
+            CHECK(pgh.core_paragraph->version == Version{std::get<2>(v), 0});
         }
     }
 
@@ -288,8 +281,7 @@ TEST_CASE ("manifest constraints hash", "[manifests]")
         })json");
         REQUIRE(m_pgh.has_value());
         const auto& p = *m_pgh.get();
-        REQUIRE(p->core_paragraph->dependencies.at(0).constraint.value == "2018-09-01");
-        REQUIRE(p->core_paragraph->dependencies.at(0).constraint.port_version == 1);
+        REQUIRE(p->core_paragraph->dependencies.at(0).constraint.version == Version{"2018-09-01", 1});
     }
 
     {
@@ -305,8 +297,7 @@ TEST_CASE ("manifest constraints hash", "[manifests]")
         })json");
         REQUIRE(m_pgh.has_value());
         const auto& p = *m_pgh.get();
-        REQUIRE(p->core_paragraph->dependencies.at(0).constraint.value == "2018-09-01");
-        REQUIRE(p->core_paragraph->dependencies.at(0).constraint.port_version == 0);
+        REQUIRE(p->core_paragraph->dependencies.at(0).constraint.version == Version{"2018-09-01", 0});
     }
 
     REQUIRE_FALSE(port_manifest_is_parsable(R"json({
@@ -391,7 +382,11 @@ TEST_CASE ("manifest overrides embedded port version", "[manifests]")
     ]
 })json");
     REQUIRE(parsed.has_value());
-    CHECK((*parsed.get())->core_paragraph->overrides.at(0).port_version == 1);
+    {
+        const auto& first_override = (*parsed.get())->core_paragraph->overrides.at(0);
+        CHECK(first_override.version == Version{"abcd", 1});
+        CHECK(first_override.scheme == VersionScheme::String);
+    }
 
     parsed = test_parse_port_manifest(R"json({
     "name": "zlib",
@@ -404,7 +399,11 @@ TEST_CASE ("manifest overrides embedded port version", "[manifests]")
     ]
 })json");
     REQUIRE(parsed.has_value());
-    CHECK((*parsed.get())->core_paragraph->overrides.at(0).port_version == 1);
+    {
+        const auto& first_override = (*parsed.get())->core_paragraph->overrides.at(0);
+        CHECK(first_override.version == Version{"2018-01-01", 1});
+        CHECK(first_override.scheme == VersionScheme::Date);
+    }
 
     parsed = test_parse_port_manifest(R"json({
     "name": "zlib",
@@ -417,7 +416,11 @@ TEST_CASE ("manifest overrides embedded port version", "[manifests]")
     ]
 })json");
     REQUIRE(parsed.has_value());
-    CHECK((*parsed.get())->core_paragraph->overrides.at(0).port_version == 1);
+    {
+        const auto& first_override = (*parsed.get())->core_paragraph->overrides.at(0);
+        CHECK(first_override.version == Version{"1.2", 1});
+        CHECK(first_override.scheme == VersionScheme::Relaxed);
+    }
 
     parsed = test_parse_port_manifest(R"json({
     "name": "zlib",
@@ -430,7 +433,11 @@ TEST_CASE ("manifest overrides embedded port version", "[manifests]")
     ]
 })json");
     REQUIRE(parsed.has_value());
-    CHECK((*parsed.get())->core_paragraph->overrides.at(0).port_version == 1);
+    {
+        const auto& first_override = (*parsed.get())->core_paragraph->overrides.at(0);
+        CHECK(first_override.version == Version{"1.2.0", 1});
+        CHECK(first_override.scheme == VersionScheme::Semver);
+    }
 }
 
 TEST_CASE ("manifest constraints", "[manifests]")
@@ -461,12 +468,12 @@ TEST_CASE ("manifest constraints", "[manifests]")
     REQUIRE(Json::stringify(serialize_manifest(pgh), Json::JsonStyle::with_spaces(4)) == raw);
     REQUIRE(pgh.core_paragraph->dependencies.size() == 3);
     REQUIRE(pgh.core_paragraph->dependencies[0].name == "a");
-    REQUIRE(pgh.core_paragraph->dependencies[0].constraint == DependencyConstraint{VersionConstraintKind::None, "", 0});
+    REQUIRE(pgh.core_paragraph->dependencies[0].constraint == DependencyConstraint{});
     REQUIRE(pgh.core_paragraph->dependencies[1].name == "c");
-    REQUIRE(pgh.core_paragraph->dependencies[1].constraint == DependencyConstraint{VersionConstraintKind::None, "", 0});
+    REQUIRE(pgh.core_paragraph->dependencies[1].constraint == DependencyConstraint{});
     REQUIRE(pgh.core_paragraph->dependencies[2].name == "d");
     REQUIRE(pgh.core_paragraph->dependencies[2].constraint ==
-            DependencyConstraint{VersionConstraintKind::Minimum, "2018-09-01", 0});
+            DependencyConstraint{VersionConstraintKind::Minimum, Version{"2018-09-01", 0}});
     REQUIRE(pgh.core_paragraph->builtin_baseline == "089fa4de7dca22c67dcab631f618d5cd0697c8d4");
 
     REQUIRE_FALSE(port_manifest_is_parsable(R"json({
@@ -562,13 +569,12 @@ TEST_CASE ("manifest builtin-baseline", "[manifests]")
         REQUIRE(m_pgh.has_value());
         auto& pgh = **m_pgh.get();
         REQUIRE(pgh.core_paragraph->dependencies.size() == 1);
-        REQUIRE(pgh.core_paragraph->dependencies[0].constraint.value == "abcd");
-        REQUIRE(pgh.core_paragraph->dependencies[0].constraint.port_version == 1);
         REQUIRE(pgh.core_paragraph->dependencies[0].constraint.type == VersionConstraintKind::Minimum);
+        REQUIRE(pgh.core_paragraph->dependencies[0].constraint.version == Version{"abcd", 1});
         REQUIRE(pgh.core_paragraph->overrides.size() == 1);
-        REQUIRE(pgh.core_paragraph->overrides[0].version_scheme == VersionScheme::String);
-        REQUIRE(pgh.core_paragraph->overrides[0].version == "abcd");
-        REQUIRE(pgh.core_paragraph->overrides[0].port_version == 0);
+        const auto& first_override = pgh.core_paragraph->overrides[0];
+        REQUIRE(first_override.version == Version{"abcd", 0});
+        REQUIRE(first_override.scheme == VersionScheme::String);
         REQUIRE(pgh.core_paragraph->builtin_baseline.value_or("does not have a value") ==
                 "089fa4de7dca22c67dcab631f618d5cd0697c8d4");
         REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_without_versioning));
@@ -599,13 +605,12 @@ TEST_CASE ("manifest builtin-baseline", "[manifests]")
         REQUIRE(m_pgh.has_value());
         auto& pgh = **m_pgh.get();
         REQUIRE(pgh.core_paragraph->dependencies.size() == 1);
-        REQUIRE(pgh.core_paragraph->dependencies[0].constraint.value == "abcd");
-        REQUIRE(pgh.core_paragraph->dependencies[0].constraint.port_version == 1);
         REQUIRE(pgh.core_paragraph->dependencies[0].constraint.type == VersionConstraintKind::Minimum);
+        REQUIRE(pgh.core_paragraph->dependencies[0].constraint.version == Version{"abcd", 1});
         REQUIRE(pgh.core_paragraph->overrides.size() == 1);
-        REQUIRE(pgh.core_paragraph->overrides[0].version_scheme == VersionScheme::String);
-        REQUIRE(pgh.core_paragraph->overrides[0].version == "abcd");
-        REQUIRE(pgh.core_paragraph->overrides[0].port_version == 0);
+        const auto& first_override = pgh.core_paragraph->overrides[0];
+        REQUIRE(first_override.scheme == VersionScheme::String);
+        REQUIRE(first_override.version == Version{"abcd", 0});
         REQUIRE(!pgh.core_paragraph->builtin_baseline.has_value());
         REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_without_versioning));
         REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_with_versioning));
@@ -680,8 +685,9 @@ TEST_CASE ("manifest overrides", "[manifests]")
         auto& pgh = **m_pgh.get();
         REQUIRE(Json::stringify(serialize_manifest(pgh), Json::JsonStyle::with_spaces(4)) == std::get<0>(v));
         REQUIRE(pgh.core_paragraph->overrides.size() == 1);
-        REQUIRE(pgh.core_paragraph->overrides[0].version_scheme == std::get<1>(v));
-        REQUIRE(pgh.core_paragraph->overrides[0].version == std::get<2>(v));
+        const auto& first_override = pgh.core_paragraph->overrides[0];
+        REQUIRE(first_override.scheme == std::get<1>(v));
+        REQUIRE(first_override.version == Version{std::get<2>(v).to_string(), 0});
         REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_without_versioning));
         REQUIRE(pgh.check_against_feature_flags({}, feature_flags_with_versioning));
     }
@@ -733,10 +739,16 @@ TEST_CASE ("manifest overrides", "[manifests]")
     auto& pgh = **m_pgh.get();
     REQUIRE(Json::stringify(serialize_manifest(pgh), Json::JsonStyle::with_spaces(4)) == raw);
     REQUIRE(pgh.core_paragraph->overrides.size() == 2);
-    REQUIRE(pgh.core_paragraph->overrides[0].name == "abc");
-    REQUIRE(pgh.core_paragraph->overrides[0].port_version == 5);
-    REQUIRE(pgh.core_paragraph->overrides[1].name == "abcd");
-    REQUIRE(pgh.core_paragraph->overrides[1].port_version == 7);
+    {
+        const auto& first_override = pgh.core_paragraph->overrides[0];
+        const auto& second_override = pgh.core_paragraph->overrides[1];
+        REQUIRE(first_override.name == "abc");
+        REQUIRE(first_override.scheme == VersionScheme::String);
+        REQUIRE(first_override.version == Version{"hello", 5});
+        REQUIRE(second_override.name == "abcd");
+        REQUIRE(second_override.scheme == VersionScheme::String);
+        REQUIRE(second_override.version == Version{"hello", 7});
+    }
 
     REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_without_versioning));
     REQUIRE(pgh.check_against_feature_flags({}, feature_flags_with_versioning));
@@ -813,12 +825,12 @@ TEST_CASE ("manifest embed configuration", "[manifests]")
     REQUIRE(pgh.core_paragraph->builtin_baseline == "089fa4de7dca22c67dcab631f618d5cd0697c8d4");
     REQUIRE(pgh.core_paragraph->dependencies.size() == 3);
     REQUIRE(pgh.core_paragraph->dependencies[0].name == "a");
-    REQUIRE(pgh.core_paragraph->dependencies[0].constraint == DependencyConstraint{VersionConstraintKind::None, "", 0});
+    REQUIRE(pgh.core_paragraph->dependencies[0].constraint == DependencyConstraint{});
     REQUIRE(pgh.core_paragraph->dependencies[1].name == "b");
-    REQUIRE(pgh.core_paragraph->dependencies[1].constraint == DependencyConstraint{VersionConstraintKind::None, "", 0});
+    REQUIRE(pgh.core_paragraph->dependencies[1].constraint == DependencyConstraint{});
     REQUIRE(pgh.core_paragraph->dependencies[2].name == "c");
     REQUIRE(pgh.core_paragraph->dependencies[2].constraint ==
-            DependencyConstraint{VersionConstraintKind::Minimum, "2018-09-01", 0});
+            DependencyConstraint{VersionConstraintKind::Minimum, Version{"2018-09-01", 0}});
 
     auto config = Json::parse(raw_config, "<test config>").value(VCPKG_LINE_INFO).value;
     REQUIRE(config.is_object());
@@ -887,14 +899,15 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
     auto res = SourceControlFile::parse_port_manifest_object("<test manifest>", object, null_sink);
     if (!res.has_value())
     {
-        print_error_message(res.error());
+        msg::println(Color::error, res.error());
     }
     REQUIRE(res.has_value());
     REQUIRE(*res.get() != nullptr);
     auto& pgh = **res.get();
 
-    REQUIRE(pgh.core_paragraph->name == "s");
-    REQUIRE(pgh.core_paragraph->raw_version == "v");
+    REQUIRE(pgh.to_name() == "s");
+    REQUIRE(pgh.to_version_scheme() == VersionScheme::String);
+    REQUIRE(pgh.to_version() == Version{"v", 0});
     REQUIRE(pgh.core_paragraph->maintainers.size() == 1);
     REQUIRE(pgh.core_paragraph->maintainers[0] == "m");
     REQUIRE(pgh.core_paragraph->contacts.size() == 1);
@@ -1078,8 +1091,9 @@ TEST_CASE ("SourceParagraph manifest construct qualified dependencies", "[manife
     REQUIRE(m_pgh.has_value());
     auto& pgh = **m_pgh.get();
 
-    REQUIRE(pgh.core_paragraph->name == "zlib");
-    REQUIRE(pgh.core_paragraph->raw_version == "1.2.8");
+    REQUIRE(pgh.to_name() == "zlib");
+    REQUIRE(pgh.to_version_scheme() == VersionScheme::String);
+    REQUIRE(pgh.to_version() == Version{"1.2.8", 0});
     REQUIRE(pgh.core_paragraph->maintainers.empty());
     REQUIRE(pgh.core_paragraph->description.empty());
     REQUIRE(pgh.core_paragraph->dependencies.size() == 2);
@@ -1107,8 +1121,9 @@ TEST_CASE ("SourceParagraph manifest construct host dependencies", "[manifests]"
     REQUIRE(m_pgh.has_value());
     auto& pgh = **m_pgh.get();
 
-    REQUIRE(pgh.core_paragraph->name == "zlib");
-    REQUIRE(pgh.core_paragraph->raw_version == "1.2.8");
+    REQUIRE(pgh.to_name() == "zlib");
+    REQUIRE(pgh.to_version_scheme() == VersionScheme::String);
+    REQUIRE(pgh.to_version() == Version{"1.2.8", 0});
     REQUIRE(pgh.core_paragraph->maintainers.empty());
     REQUIRE(pgh.core_paragraph->description.empty());
     REQUIRE(pgh.core_paragraph->dependencies.size() == 2);
@@ -1334,9 +1349,9 @@ TEST_CASE ("default-feature-core errors", "[manifests]")
     })json",
                                              PrintErrors::No);
     REQUIRE(!m_pgh.has_value());
-    REQUIRE(m_pgh.error()->to_string() == "error: while loading <test manifest>:\n"
-                                          "$.default-features[0] (a default feature): the feature \"core\" turns off "
-                                          "default features and thus can't be in the default features list");
+    REQUIRE(m_pgh.error().data() == "error: while loading <test manifest>:\n"
+                                    "$.default-features[0] (a default feature): the feature \"core\" turns off "
+                                    "default features and thus can't be in the default features list");
 }
 
 TEST_CASE ("default-feature-core-object errors", "[manifests]")
@@ -1346,9 +1361,9 @@ TEST_CASE ("default-feature-core-object errors", "[manifests]")
     })json",
                                              PrintErrors::No);
     REQUIRE(!m_pgh.has_value());
-    REQUIRE(m_pgh.error()->to_string() == "error: while loading <test manifest>:\n"
-                                          "$.default-features[0].name (a default feature): the feature \"core\" turns "
-                                          "off default features and thus can't be in the default features list");
+    REQUIRE(m_pgh.error().data() == "error: while loading <test manifest>:\n"
+                                    "$.default-features[0].name (a default feature): the feature \"core\" turns "
+                                    "off default features and thus can't be in the default features list");
 }
 
 TEST_CASE ("default-feature-default errors", "[manifests]")
@@ -1358,10 +1373,9 @@ TEST_CASE ("default-feature-default errors", "[manifests]")
     })json",
                                              PrintErrors::No);
     REQUIRE(!m_pgh.has_value());
-    REQUIRE(m_pgh.error()->to_string() ==
-            "error: while loading <test manifest>:\n"
-            "$.default-features[0] (a default feature): the feature \"default\" refers to "
-            "the set of default features and thus can't be in the default features list");
+    REQUIRE(m_pgh.error().data() == "error: while loading <test manifest>:\n"
+                                    "$.default-features[0] (a default feature): the feature \"default\" refers to "
+                                    "the set of default features and thus can't be in the default features list");
 }
 
 TEST_CASE ("default-feature-default-object errors", "[manifests]")
@@ -1371,7 +1385,7 @@ TEST_CASE ("default-feature-default-object errors", "[manifests]")
     })json",
                                              PrintErrors::No);
     REQUIRE(!m_pgh.has_value());
-    REQUIRE(m_pgh.error()->to_string() ==
+    REQUIRE(m_pgh.error().data() ==
             "error: while loading <test manifest>:\n"
             "$.default-features[0].name (a default feature): the feature \"default\" refers to the set of default "
             "features and thus can't be in the default features list");
@@ -1384,10 +1398,10 @@ TEST_CASE ("default-feature-empty errors", "[manifests]")
     })json",
                                              PrintErrors::No);
     REQUIRE(!m_pgh.has_value());
-    REQUIRE(m_pgh.error()->to_string() == "error: while loading <test manifest>:\n"
-                                          "$.default-features[0] (a feature name): \"\" is not a valid feature name. "
-                                          "Feature names must be lowercase alphanumeric+hypens and not reserved (see "
-                                          "https://learn.microsoft.com/vcpkg/users/manifests for more information).");
+    REQUIRE(m_pgh.error().data() == "error: while loading <test manifest>:\n"
+                                    "$.default-features[0] (a feature name): \"\" is not a valid feature name. "
+                                    "Feature names must be lowercase alphanumeric+hypens and not reserved (see "
+                                    "https://learn.microsoft.com/vcpkg/users/manifests for more information).");
 }
 
 TEST_CASE ("default-feature-empty-object errors", "[manifests]")
@@ -1397,11 +1411,10 @@ TEST_CASE ("default-feature-empty-object errors", "[manifests]")
     })json",
                                              PrintErrors::No);
     REQUIRE(!m_pgh.has_value());
-    REQUIRE(m_pgh.error()->to_string() ==
-            "error: while loading <test manifest>:\n"
-            "$.default-features[0].name (a feature name): \"\" is not a valid feature name. "
-            "Feature names must be lowercase alphanumeric+hypens and not reserved (see "
-            "https://learn.microsoft.com/vcpkg/users/manifests for more information).");
+    REQUIRE(m_pgh.error().data() == "error: while loading <test manifest>:\n"
+                                    "$.default-features[0].name (a feature name): \"\" is not a valid feature name. "
+                                    "Feature names must be lowercase alphanumeric+hypens and not reserved (see "
+                                    "https://learn.microsoft.com/vcpkg/users/manifests for more information).");
 }
 
 TEST_CASE ("dependency-name-empty errors", "[manifests]")
@@ -1411,10 +1424,10 @@ TEST_CASE ("dependency-name-empty errors", "[manifests]")
     })json",
                                              PrintErrors::No);
     REQUIRE(!m_pgh.has_value());
-    REQUIRE(m_pgh.error()->to_string() == "error: while loading <test manifest>:\n"
-                                          "$.dependencies[0] (a package name): \"\" is not a valid package name. "
-                                          "Package names must be lowercase alphanumeric+hypens and not reserved (see "
-                                          "https://learn.microsoft.com/vcpkg/users/manifests for more information).");
+    REQUIRE(m_pgh.error().data() == "error: while loading <test manifest>:\n"
+                                    "$.dependencies[0] (a package name): \"\" is not a valid package name. "
+                                    "Package names must be lowercase alphanumeric+hypens and not reserved (see "
+                                    "https://learn.microsoft.com/vcpkg/users/manifests for more information).");
 }
 
 TEST_CASE ("dependency-name-empty-object errors", "[manifests]")
@@ -1424,10 +1437,10 @@ TEST_CASE ("dependency-name-empty-object errors", "[manifests]")
     })json",
                                              PrintErrors::No);
     REQUIRE(!m_pgh.has_value());
-    REQUIRE(m_pgh.error()->to_string() == "error: while loading <test manifest>:\n"
-                                          "$.dependencies[0].name (a package name): \"\" is not a valid package name. "
-                                          "Package names must be lowercase alphanumeric+hypens and not reserved (see "
-                                          "https://learn.microsoft.com/vcpkg/users/manifests for more information).");
+    REQUIRE(m_pgh.error().data() == "error: while loading <test manifest>:\n"
+                                    "$.dependencies[0].name (a package name): \"\" is not a valid package name. "
+                                    "Package names must be lowercase alphanumeric+hypens and not reserved (see "
+                                    "https://learn.microsoft.com/vcpkg/users/manifests for more information).");
 }
 
 TEST_CASE ("dependency-feature-name-core errors", "[manifests]")
@@ -1442,7 +1455,7 @@ TEST_CASE ("dependency-feature-name-core errors", "[manifests]")
     })json",
                                              PrintErrors::No);
     REQUIRE(!m_pgh.has_value());
-    REQUIRE(m_pgh.error()->to_string() ==
+    REQUIRE(m_pgh.error().data() ==
             "error: while loading <test manifest>:\n"
             "$.dependencies[0].features[0] (a feature name): the feature \"core\" cannot be in a dependency's feature "
             "list. To turn off default features, add \"default-features\": false instead.");
@@ -1461,7 +1474,7 @@ TEST_CASE ("dependency-feature-name-core-object errors", "[manifests]")
                                              PrintErrors::No);
     REQUIRE(!m_pgh.has_value());
     REQUIRE(
-        m_pgh.error()->to_string() ==
+        m_pgh.error().data() ==
         "error: while loading <test manifest>:\n"
         "$.dependencies[0].features[0].name (a feature name): the feature \"core\" cannot be in a dependency's feature "
         "list. To turn off default features, add \"default-features\": false instead.");
@@ -1479,7 +1492,7 @@ TEST_CASE ("dependency-feature-name-default errors", "[manifests]")
     })json",
                                              PrintErrors::No);
     REQUIRE(!m_pgh.has_value());
-    REQUIRE(m_pgh.error()->to_string() ==
+    REQUIRE(m_pgh.error().data() ==
             "error: while loading <test manifest>:\n"
             "$.dependencies[0].features[0] (a feature name): the feature \"default\" cannot be in a dependency's "
             "feature list. To turn on default features, add \"default-features\": true instead.");
@@ -1497,7 +1510,7 @@ TEST_CASE ("dependency-feature-name-default-object errors", "[manifests]")
     })json",
                                              PrintErrors::No);
     REQUIRE(!m_pgh.has_value());
-    REQUIRE(m_pgh.error()->to_string() ==
+    REQUIRE(m_pgh.error().data() ==
             "error: while loading <test manifest>:\n"
             "$.dependencies[0].features[0].name (a feature name): the feature \"default\" cannot be in a dependency's "
             "feature list. To turn on default features, add \"default-features\": true instead.");
@@ -1514,7 +1527,7 @@ TEST_CASE ("dependency-feature-name-empty errors", "[manifests]")
     })json",
                                              PrintErrors::No);
     REQUIRE(!m_pgh.has_value());
-    REQUIRE(m_pgh.error()->to_string() ==
+    REQUIRE(m_pgh.error().data() ==
             "error: while loading <test manifest>:\n"
             "$.dependencies[0].features[0] (a feature name): \"\" is not a valid feature name. Feature names must be "
             "lowercase alphanumeric+hypens and not reserved (see https://learn.microsoft.com/vcpkg/users/manifests for "
@@ -1533,7 +1546,7 @@ TEST_CASE ("dependency-feature-name-empty-object errors", "[manifests]")
     })json",
                                              PrintErrors::No);
     REQUIRE(!m_pgh.has_value());
-    REQUIRE(m_pgh.error()->to_string() ==
+    REQUIRE(m_pgh.error().data() ==
             "error: while loading <test manifest>:\n"
             "$.dependencies[0].features[0].name (a feature name): \"\" is not a valid feature name. Feature names must "
             "be lowercase alphanumeric+hypens and not reserved (see https://learn.microsoft.com/vcpkg/users/manifests "
