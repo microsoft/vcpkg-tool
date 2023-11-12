@@ -1,9 +1,10 @@
 #pragma once
 
+#include <vcpkg/base/fwd/expected.h>
+
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
-#include <vcpkg/base/expected.h>
 #include <vcpkg/base/path.h>
 
 #include <stddef.h>

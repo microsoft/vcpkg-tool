@@ -2,7 +2,7 @@
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/util.h>
 
-#include <algorithm>
+#include <memory>
 #include <utility>
 
 namespace vcpkg

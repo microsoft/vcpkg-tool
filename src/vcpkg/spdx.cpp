@@ -167,7 +167,7 @@ std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
         obj.insert("name", action.spec.name());
         obj.insert("SPDXID", "SPDXRef-port");
         obj.insert("versionInfo", cpgh.version.to_string());
-        obj.insert("downloadLocation", scfl.registry_location.empty() ? noassert : scfl.registry_location);
+        obj.insert("downloadLocation", scfl.spdx_location.empty() ? noassert : scfl.spdx_location);
         if (!cpgh.homepage.empty())
         {
             obj.insert("homepage", cpgh.homepage);

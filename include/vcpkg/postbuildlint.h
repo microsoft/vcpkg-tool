@@ -7,6 +7,8 @@
 #include <vcpkg/fwd/packagespec.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
+#include <stddef.h>
+
 namespace vcpkg
 {
     size_t perform_post_build_lint_checks(const PackageSpec& spec,

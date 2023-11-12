@@ -1,19 +1,11 @@
 #include <vcpkg-test/util.h>
 
-#include <vcpkg/fwd/packagespec.h>
-
-#include <vcpkg/base/files.h>
-#include <vcpkg/base/graphs.h>
-
 #include <vcpkg/commands.set-installed.h>
 #include <vcpkg/dependencies.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/sourceparagraph.h>
-#include <vcpkg/triplet.h>
 
 #include <memory>
-#include <numeric>
-#include <unordered_map>
 #include <vector>
 
 #include <vcpkg-test/mockcmakevarprovider.h>
@@ -75,7 +67,10 @@ struct MockVersionedPortfileProvider : IVersionedPortfileProvider
             core->version_scheme = scheme;
             core->version = version;
             scf->core_paragraph = std::move(core);
-            it2 = version_map.emplace(std::move(version), SourceControlFileAndLocation{std::move(scf), name}).first;
+            it2 = version_map
+                      .emplace(std::move(version),
+                               SourceControlFileAndLocation{std::move(scf), Path(std::move(name)) / "vcpkg.json"})
+                      .first;
         }
 
         return it2->second;

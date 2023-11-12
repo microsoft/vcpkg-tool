@@ -3,15 +3,11 @@
 #include <vcpkg/base/fwd/message_sinks.h>
 
 #include <vcpkg/base/json.h>
-#include <vcpkg/base/util.h>
 
-#include <vcpkg/paragraphs.h>
 #include <vcpkg/sourceparagraph.h>
 #include <vcpkg/vcpkgcmdarguments.h>
-#include <vcpkg/vcpkgpaths.h>
 
 using namespace vcpkg;
-using namespace vcpkg::Paragraphs;
 using namespace vcpkg::Test;
 
 static Json::Object parse_json_object(StringView sv)
@@ -97,9 +93,9 @@ TEST_CASE ("manifest construct minimum", "[manifests]")
     REQUIRE(m_pgh.has_value());
     auto& pgh = **m_pgh.get();
 
-    REQUIRE(pgh.core_paragraph->name == "zlib");
-    REQUIRE(pgh.core_paragraph->version_scheme == VersionScheme::String);
-    REQUIRE(pgh.core_paragraph->version == Version{"1.2.8", 0});
+    REQUIRE(pgh.to_name() == "zlib");
+    REQUIRE(pgh.to_version_scheme() == VersionScheme::String);
+    REQUIRE(pgh.to_version() == Version{"1.2.8", 0});
     REQUIRE(pgh.core_paragraph->maintainers.empty());
     REQUIRE(pgh.core_paragraph->contacts.is_empty());
     REQUIRE(pgh.core_paragraph->summary.empty());
@@ -130,9 +126,9 @@ TEST_CASE ("project manifest construct minimum", "[manifests]")
     REQUIRE(m_pgh.has_value());
     auto& pgh = **m_pgh.get();
 
-    REQUIRE(pgh.core_paragraph->name.empty());
-    REQUIRE(pgh.core_paragraph->version_scheme == VersionScheme::Missing);
-    REQUIRE(pgh.core_paragraph->version == Version{});
+    REQUIRE(pgh.to_name().empty());
+    REQUIRE(pgh.to_version_scheme() == VersionScheme::Missing);
+    REQUIRE(pgh.to_version() == Version{});
     REQUIRE(pgh.core_paragraph->maintainers.empty());
     REQUIRE(pgh.core_paragraph->contacts.is_empty());
     REQUIRE(pgh.core_paragraph->summary.empty());
@@ -908,9 +904,9 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
     REQUIRE(*res.get() != nullptr);
     auto& pgh = **res.get();
 
-    REQUIRE(pgh.core_paragraph->name == "s");
-    REQUIRE(pgh.core_paragraph->version_scheme == VersionScheme::String);
-    REQUIRE(pgh.core_paragraph->version == Version{"v", 0});
+    REQUIRE(pgh.to_name() == "s");
+    REQUIRE(pgh.to_version_scheme() == VersionScheme::String);
+    REQUIRE(pgh.to_version() == Version{"v", 0});
     REQUIRE(pgh.core_paragraph->maintainers.size() == 1);
     REQUIRE(pgh.core_paragraph->maintainers[0] == "m");
     REQUIRE(pgh.core_paragraph->contacts.size() == 1);
@@ -1032,9 +1028,9 @@ TEST_CASE ("SourceParagraph manifest construct qualified dependencies", "[manife
     REQUIRE(m_pgh.has_value());
     auto& pgh = **m_pgh.get();
 
-    REQUIRE(pgh.core_paragraph->name == "zlib");
-    REQUIRE(pgh.core_paragraph->version_scheme == VersionScheme::String);
-    REQUIRE(pgh.core_paragraph->version == Version{"1.2.8", 0});
+    REQUIRE(pgh.to_name() == "zlib");
+    REQUIRE(pgh.to_version_scheme() == VersionScheme::String);
+    REQUIRE(pgh.to_version() == Version{"1.2.8", 0});
     REQUIRE(pgh.core_paragraph->maintainers.empty());
     REQUIRE(pgh.core_paragraph->description.empty());
     REQUIRE(pgh.core_paragraph->dependencies.size() == 2);
@@ -1062,9 +1058,9 @@ TEST_CASE ("SourceParagraph manifest construct host dependencies", "[manifests]"
     REQUIRE(m_pgh.has_value());
     auto& pgh = **m_pgh.get();
 
-    REQUIRE(pgh.core_paragraph->name == "zlib");
-    REQUIRE(pgh.core_paragraph->version_scheme == VersionScheme::String);
-    REQUIRE(pgh.core_paragraph->version == Version{"1.2.8", 0});
+    REQUIRE(pgh.to_name() == "zlib");
+    REQUIRE(pgh.to_version_scheme() == VersionScheme::String);
+    REQUIRE(pgh.to_version() == Version{"1.2.8", 0});
     REQUIRE(pgh.core_paragraph->maintainers.empty());
     REQUIRE(pgh.core_paragraph->description.empty());
     REQUIRE(pgh.core_paragraph->dependencies.size() == 2);

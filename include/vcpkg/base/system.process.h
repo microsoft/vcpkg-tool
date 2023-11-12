@@ -9,7 +9,6 @@
 #include <vcpkg/base/span.h>
 #include <vcpkg/base/stringview.h>
 
-#include <functional>
 #include <string>
 #include <unordered_map>
 #include <vector>
