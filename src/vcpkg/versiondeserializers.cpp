@@ -1,7 +1,7 @@
 #include <vcpkg/base/strings.h>
-#include <vcpkg/base/util.h>
 
 #include <vcpkg/versiondeserializers.h>
+#include <vcpkg/versions.h>
 
 using namespace vcpkg;
 
@@ -193,7 +193,7 @@ namespace vcpkg
         return t;
     }
 
-    void serialize_schemed_version(Json::Object& out_obj, VersionScheme scheme, StringView version, int port_version)
+    void serialize_schemed_version(Json::Object& out_obj, VersionScheme scheme, const Version& version)
     {
         auto version_field = [](VersionScheme version_scheme) {
             switch (version_scheme)
@@ -206,11 +206,11 @@ namespace vcpkg
             }
         };
 
-        out_obj.insert(version_field(scheme), Json::Value::string(version));
+        out_obj.insert(version_field(scheme), Json::Value::string(version.text));
 
-        if (port_version != 0)
+        if (version.port_version != 0)
         {
-            out_obj.insert(PORT_VERSION, Json::Value::integer(port_version));
+            out_obj.insert(PORT_VERSION, Json::Value::integer(version.port_version));
         }
     }
 

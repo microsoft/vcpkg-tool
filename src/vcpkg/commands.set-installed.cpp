@@ -1,15 +1,11 @@
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/system.debug.h>
-#include <vcpkg/base/system.h>
 
 #include <vcpkg/binarycaching.h>
 #include <vcpkg/cmakevars.h>
-#include <vcpkg/commands.help.h>
 #include <vcpkg/commands.install.h>
-#include <vcpkg/commands.remove.h>
 #include <vcpkg/commands.set-installed.h>
-#include <vcpkg/globalstate.h>
 #include <vcpkg/input.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/portfileprovider.h>
@@ -179,7 +175,8 @@ namespace vcpkg
                                            Triplet host_triplet,
                                            const KeepGoing keep_going,
                                            const bool only_downloads,
-                                           const PrintUsage print_cmake_usage)
+                                           const PrintUsage print_cmake_usage,
+                                           bool include_manifest_in_github_issue)
     {
         auto& fs = paths.get_filesystem();
 
@@ -243,8 +240,14 @@ namespace vcpkg
         auto binary_cache = only_downloads ? BinaryCache(paths.get_filesystem())
                                            : BinaryCache::make(args, paths, stdout_sink).value_or_exit(VCPKG_LINE_INFO);
         binary_cache.fetch(action_plan.install_actions);
-        const auto summary = install_execute_plan(
-            args, action_plan, keep_going, paths, status_db, binary_cache, null_build_logs_recorder());
+        const auto summary = install_execute_plan(args,
+                                                  action_plan,
+                                                  keep_going,
+                                                  paths,
+                                                  status_db,
+                                                  binary_cache,
+                                                  null_build_logs_recorder(),
+                                                  include_manifest_in_github_issue);
 
         if (keep_going == KeepGoing::YES && summary.failed())
         {
@@ -341,6 +344,7 @@ namespace vcpkg
                                           host_triplet,
                                           keep_going,
                                           only_downloads,
-                                          print_cmake_usage);
+                                          print_cmake_usage,
+                                          false);
     }
 } // namespace vcpkg

@@ -1,8 +1,5 @@
-#include <vcpkg/commands.help.h>
 #include <vcpkg/commands.version.h>
-#include <vcpkg/metrics.h>
 #include <vcpkg/vcpkgcmdarguments.h>
-#include <vcpkg/vcpkgpaths.h>
 
 using namespace vcpkg;
 

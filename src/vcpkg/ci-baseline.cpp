@@ -1,5 +1,4 @@
 #include <vcpkg/base/parse.h>
-#include <vcpkg/base/util.h>
 
 #include <vcpkg/ci-baseline.h>
 #include <vcpkg/commands.build.h>

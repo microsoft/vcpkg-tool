@@ -1,7 +1,5 @@
 #include <vcpkg-test/util.h>
 
-#include <vcpkg/base/expected.h>
-
 #include <vcpkg/tools.h>
 #include <vcpkg/tools.test.h>
 

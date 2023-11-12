@@ -11,8 +11,7 @@
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
-#include <ctime>
-#include <future>
+#include <map>
 #include <set>
 
 #if defined(__APPLE__)

@@ -1,12 +1,11 @@
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/util.h>
 
-#include <vcpkg/commands.help.h>
 #include <vcpkg/commands.list.h>
+#include <vcpkg/statusparagraphs.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
-#include <vcpkg/versions.h>
 
 using namespace vcpkg;
 
@@ -35,8 +34,9 @@ namespace
                 Json::Object& library_obj = obj.insert(current_spec.to_string(), Json::Object());
                 library_obj.insert("package_name", Json::Value::string(current_spec.name()));
                 library_obj.insert("triplet", Json::Value::string(current_spec.triplet().to_string()));
-                library_obj.insert("version", Json::Value::string(status_paragraph->package.version));
-                library_obj.insert("port_version", Json::Value::integer(status_paragraph->package.port_version));
+                library_obj.insert("version", Json::Value::string(status_paragraph->package.version.text));
+                library_obj.insert("port_version",
+                                   Json::Value::integer(status_paragraph->package.version.port_version));
                 Json::Array& features_array = library_obj.insert("features", Json::Array());
                 if (status_paragraph->package.is_feature())
                 {
@@ -55,7 +55,7 @@ namespace
 
     void do_print(const StatusParagraph& pgh, const bool full_desc)
     {
-        auto full_version = Version(pgh.package.version, pgh.package.port_version).to_string();
+        auto full_version = pgh.package.version.to_string();
         if (full_desc)
         {
             msg::write_unlocalized_text_to_stdout(Color::none,

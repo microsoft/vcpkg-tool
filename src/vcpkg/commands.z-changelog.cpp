@@ -1,5 +1,5 @@
 #include <vcpkg/base/files.h>
-#include <vcpkg/base/format.h>
+#include <vcpkg/base/fmt.h>
 
 #include <vcpkg/commands.portsdiff.h>
 #include <vcpkg/commands.z-changelog.h>
