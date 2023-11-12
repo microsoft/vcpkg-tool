@@ -2,9 +2,7 @@
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/setup-messages.h>
 #include <vcpkg/base/system.debug.h>
-#include <vcpkg/base/util.h>
 
-#include <iterator>
 #include <vector>
 
 #include <cmrc/cmrc.hpp>

@@ -5,7 +5,6 @@
 #include <vcpkg/base/stringview.h>
 
 #include <vcpkg/configuration.h>
-#include <vcpkg/registries.h>
 
 using namespace vcpkg;
 

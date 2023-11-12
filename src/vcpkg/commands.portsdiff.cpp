@@ -2,10 +2,8 @@
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
-#include <vcpkg/commands.help.h>
 #include <vcpkg/commands.portsdiff.h>
 #include <vcpkg/paragraphs.h>
-#include <vcpkg/tools.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 #include <vcpkg/versions.h>
@@ -56,12 +54,9 @@ namespace
         const auto ports_at_commit = Paragraphs::load_overlay_ports(fs, temp_checkout_path / ports_dir_name);
         fs.remove_all(temp_checkout_path, VCPKG_LINE_INFO);
 
-        std::vector<VersionSpec> results;
-        for (auto&& port : ports_at_commit)
-        {
-            const auto& core_pgh = *port.source_control_file->core_paragraph;
-            results.emplace_back(VersionSpec{core_pgh.name, Version{core_pgh.raw_version, core_pgh.port_version}});
-        }
+        auto results = Util::fmap(ports_at_commit, [](const SourceControlFileAndLocation& scfl) {
+            return scfl.source_control_file->to_version_spec();
+        });
 
         Util::sort(results,
                    [](const VersionSpec& lhs, const VersionSpec& rhs) { return lhs.port_name < rhs.port_name; });

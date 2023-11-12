@@ -1,13 +1,11 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/files.h>
-#include <vcpkg/base/format.h>
+#include <vcpkg/base/fmt.h>
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.debug.h>
-#include <vcpkg/base/system.process.h>
 #include <vcpkg/base/uint128.h>
-#include <vcpkg/base/util.h>
 
 #if defined(_WIN32)
 #include <bcrypt.h>

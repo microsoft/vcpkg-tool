@@ -1,10 +1,10 @@
 #pragma once
 
-#include <vcpkg/base/fwd/messages.h>
-
 #include <vcpkg/fwd/paragraphparser.h>
 
 #include <vcpkg/base/expected.h>
+#include <vcpkg/base/messages.h>
+#include <vcpkg/base/stringview.h>
 
 #include <vcpkg/packagespec.h>
 #include <vcpkg/textrowcol.h>
@@ -12,7 +12,6 @@
 #include <map>
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 namespace vcpkg
