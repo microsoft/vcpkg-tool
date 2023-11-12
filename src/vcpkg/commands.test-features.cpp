@@ -18,7 +18,6 @@
 #include <vcpkg/commands.set-installed.h>
 #include <vcpkg/commands.test-features.h>
 #include <vcpkg/dependencies.h>
-#include <vcpkg/globalstate.h>
 #include <vcpkg/input.h>
 #include <vcpkg/packagespec.h>
 #include <vcpkg/paragraphs.h>
@@ -299,7 +298,7 @@ namespace vcpkg
                 {
                     specs.emplace_back(actions.spec, actions.feature_list);
                     port_locations.emplace_back(
-                        actions.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_location);
+                        actions.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).port_directory());
                 }
                 actions_to_check.push_back(&install_plan.install_actions.back());
             }
@@ -453,7 +452,8 @@ namespace vcpkg
                                 create_github_issue(args,
                                                     result.build_result.value_or_exit(VCPKG_LINE_INFO),
                                                     paths,
-                                                    result.get_install_plan_action().value_or_exit(VCPKG_LINE_INFO)),
+                                                    result.get_install_plan_action().value_or_exit(VCPKG_LINE_INFO),
+                                                    false),
                                 VCPKG_LINE_INFO);
                         }
                         if (result.get_spec() != spec.package_spec)

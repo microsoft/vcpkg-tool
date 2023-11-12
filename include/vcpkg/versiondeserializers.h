@@ -1,10 +1,11 @@
 #pragma once
 
+#include <vcpkg/base/fwd/messages.h>
 #include <vcpkg/base/fwd/stringview.h>
 
-#include <vcpkg/base/jsonreader.h>
+#include <vcpkg/fwd/versions.h>
 
-#include <vcpkg/versions.h>
+#include <vcpkg/base/jsonreader.h>
 
 namespace vcpkg
 {
@@ -22,7 +23,7 @@ namespace vcpkg
                                                        bool allow_hash_portversion = false);
     View<StringView> schemed_deserializer_fields();
 
-    void serialize_schemed_version(Json::Object& out_obj, VersionScheme scheme, StringView version, int port_version);
+    void serialize_schemed_version(Json::Object& out_obj, VersionScheme scheme, const Version& version);
 
     struct VersionConstraintStringDeserializer : Json::StringDeserializer
     {

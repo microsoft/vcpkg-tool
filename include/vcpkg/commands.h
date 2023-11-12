@@ -1,13 +1,12 @@
 #pragma once
 
 #include <vcpkg/base/fwd/files.h>
+#include <vcpkg/base/fwd/span.h>
+#include <vcpkg/base/fwd/stringview.h>
 
 #include <vcpkg/fwd/triplet.h>
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
-
-#include <vcpkg/base/span.h>
-#include <vcpkg/base/stringview.h>
 
 #include <string>
 

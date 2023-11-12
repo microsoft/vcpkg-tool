@@ -4,7 +4,6 @@
 #include <vcpkg/base/sortedvector.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/stringview.h>
-#include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>

@@ -1,4 +1,3 @@
-#include <vcpkg/base/hash.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/span.h>
 #include <vcpkg/base/strings.h>
@@ -9,7 +8,6 @@
 #include <vcpkg/buildenvironment.h>
 #include <vcpkg/cmakevars.h>
 #include <vcpkg/dependencies.h>
-#include <vcpkg/portfileprovider.h>
 #include <vcpkg/vcpkgpaths.h>
 
 using namespace vcpkg;
@@ -26,7 +24,7 @@ namespace vcpkg::CMakeVars
         {
             install_package_specs.emplace_back(action.spec, action.feature_list);
             port_locations.emplace_back(
-                action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_location);
+                action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).port_directory());
         }
 
         load_tag_vars(install_package_specs, port_locations, host_triplet);

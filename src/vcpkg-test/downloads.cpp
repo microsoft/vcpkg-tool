@@ -1,4 +1,4 @@
-#include <catch2/catch.hpp>
+#include <vcpkg-test/util.h>
 
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/expected.h>
@@ -163,4 +163,18 @@ TEST_CASE ("try_parse_curl_progress_data", "[downloads]")
         REQUIRE(out.average_download_speed == 519 * 1024);
         REQUIRE(out.current_speed == 683 * 1024);
     }
+}
+
+TEST_CASE ("url_encode_spaces", "[downloads]")
+{
+    REQUIRE(url_encode_spaces("https://example.com?query=value&query2=value2") ==
+            "https://example.com?query=value&query2=value2");
+    REQUIRE(url_encode_spaces("https://example.com/a/b?query=value&query2=value2") ==
+            "https://example.com/a/b?query=value&query2=value2");
+    REQUIRE(url_encode_spaces("https://example.com/a%20space/b?query=value&query2=value2") ==
+            "https://example.com/a%20space/b?query=value&query2=value2");
+    REQUIRE(url_encode_spaces("https://example.com/a space/b?query=value&query2=value2") ==
+            "https://example.com/a%20space/b?query=value&query2=value2");
+    REQUIRE(url_encode_spaces("https://example.com/a  space/b?query=value&query2=value2") ==
+            "https://example.com/a%20%20space/b?query=value&query2=value2");
 }

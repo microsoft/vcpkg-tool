@@ -1,12 +1,8 @@
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
-#include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
-#include <vcpkg/commands.h>
-#include <vcpkg/commands.integrate.h>
-#include <vcpkg/globalstate.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 

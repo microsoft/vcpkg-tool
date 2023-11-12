@@ -1,12 +1,9 @@
-#include <vcpkg/base/checks.h>
-#include <vcpkg/base/format.h>
+#include <vcpkg/base/fmt.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/strings.h>
-#include <vcpkg/base/util.h>
 
 #include <vcpkg/packagespec.h>
-#include <vcpkg/paragraphparser.h>
 
 namespace
 {

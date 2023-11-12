@@ -3,7 +3,6 @@
 #include <vcpkg/commands.install.h>
 #include <vcpkg/installedpaths.h>
 #include <vcpkg/statusparagraphs.h>
-#include <vcpkg/vcpkgpaths.h>
 
 namespace vcpkg
 {
@@ -156,8 +155,8 @@ namespace vcpkg
                               const ReadOnlyFilesystem& fs)
     {
         Json::Object iobj;
-        iobj.insert("version-string", Json::Value::string(ipv.core->package.version));
-        iobj.insert("port-version", Json::Value::integer(ipv.core->package.port_version));
+        iobj.insert("version-string", Json::Value::string(ipv.core->package.version.text));
+        iobj.insert("port-version", Json::Value::integer(ipv.core->package.version.port_version));
         iobj.insert("triplet", Json::Value::string(ipv.spec().triplet().to_string()));
         iobj.insert("abi", Json::Value::string(ipv.core->package.abi));
         Json::Array deps;

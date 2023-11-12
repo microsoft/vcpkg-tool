@@ -1,13 +1,12 @@
 #pragma once
 
-#include <vcpkg/base/fwd/format.h>
+#include <vcpkg/base/fwd/expected.h>
+#include <vcpkg/base/fwd/file-contents.h>
+#include <vcpkg/base/fwd/fmt.h>
+#include <vcpkg/base/fwd/optional.h>
+#include <vcpkg/base/fwd/stringview.h>
 
 #include <vcpkg/fwd/bundlesettings.h>
-
-#include <vcpkg/base/expected.h>
-#include <vcpkg/base/file-contents.h>
-#include <vcpkg/base/optional.h>
-#include <vcpkg/base/stringview.h>
 
 #include <string>
 

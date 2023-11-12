@@ -13,6 +13,7 @@
 
 #include <vcpkg/archives.h>
 #include <vcpkg/packagespec.h>
+#include <vcpkg/versions.h>
 
 #include <chrono>
 #include <iterator>
@@ -53,7 +54,7 @@ namespace vcpkg
         explicit BinaryPackageReadInfo(const InstallPlanAction& action);
         std::string package_abi;
         PackageSpec spec;
-        std::string raw_version;
+        Version version;
         Path package_dir;
     };
 

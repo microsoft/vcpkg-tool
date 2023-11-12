@@ -110,7 +110,8 @@ namespace vcpkg
                                         const VcpkgPaths& paths,
                                         StatusParagraphs& status_db,
                                         BinaryCache& binary_cache,
-                                        const IBuildLogsRecorder& build_logs_recorder);
+                                        const IBuildLogsRecorder& build_logs_recorder,
+                                        bool include_manifest_in_github_issue = false);
 
     void command_install_and_exit(const VcpkgCmdArguments& args,
                                   const VcpkgPaths& paths,
