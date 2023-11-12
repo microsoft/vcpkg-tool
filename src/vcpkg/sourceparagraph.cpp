@@ -666,8 +666,11 @@ namespace vcpkg
 
         virtual Optional<Dependency> visit_string(Json::Reader& r, StringView sv) const override
         {
-            return Json::PackageNameDeserializer::instance.visit_string(r, sv).map(
-                [](std::string&& name) { return Dependency{std::move(name)}; });
+            return Json::PackageNameDeserializer::instance.visit_string(r, sv).map([this](std::string&& name) {
+                Dependency dep{std::move(name)};
+                dep.default_features = depends_defaults;
+                return dep;
+            });
         }
 
         virtual Optional<Dependency> visit_object(Json::Reader& r, const Json::Object& obj) const override

@@ -1687,7 +1687,7 @@ TEST_CASE ("version install depend-defaults", "[versionplan]")
     auto& a_scf = op.emplace("a");
     a_scf.source_control_file->core_paragraph->dependencies.push_back(CoreDependency{"b"});
     auto& b_scf = op.emplace("b");
-    b_scf.source_control_file->core_paragraph->default_features.emplace_back("0");
+    b_scf.source_control_file->core_paragraph->default_features.push_back({"0"});
     b_scf.source_control_file->feature_paragraphs.emplace_back(make_fpgh("0"));
     auto& d_scf = op.emplace("c");
     d_scf.source_control_file->core_paragraph->dependencies.push_back(Dependency{"b"});
