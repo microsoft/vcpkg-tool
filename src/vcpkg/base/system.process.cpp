@@ -11,8 +11,7 @@
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
-#include <ctime>
-#include <future>
+#include <map>
 #include <set>
 
 #if defined(__APPLE__)
@@ -676,7 +675,7 @@ namespace vcpkg
     {
         std::vector<ExpectedL<ExitCodeAndOutput>> res(cmd_lines.size(), LocalizedString{});
 
-        parallel_transform(cmd_lines.begin(), cmd_lines.size(), res.begin(), [&](const Command& cmd_line) {
+        parallel_transform(cmd_lines, res.begin(), [&](const Command& cmd_line) {
             return cmd_execute_and_capture_output(cmd_line, wd, env);
         });
 

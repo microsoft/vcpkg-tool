@@ -1,4 +1,3 @@
-#include <vcpkg/base/files.h>
 #include <vcpkg/base/graphs.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/strings.h>
@@ -7,13 +6,10 @@
 #include <vcpkg/cmakevars.h>
 #include <vcpkg/dependencies.h>
 #include <vcpkg/documentation.h>
-#include <vcpkg/metrics.h>
 #include <vcpkg/packagespec.h>
-#include <vcpkg/paragraphs.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/statusparagraphs.h>
 #include <vcpkg/vcpkglib.h>
-#include <vcpkg/vcpkgpaths.h>
 
 #include <unordered_map>
 #include <unordered_set>
@@ -314,7 +310,7 @@ namespace vcpkg
             {
                 if (auto p_installed = m_installed.get())
                 {
-                    return p_installed->ipv.core->package.get_version();
+                    return p_installed->ipv.core->package.version;
                 }
                 else if (auto p_scfl = m_scfl.get())
                 {
@@ -444,10 +440,11 @@ namespace vcpkg
         }
         if (auto scfl = action.source_control_file_and_location.get())
         {
+            auto port_directory = scfl->port_directory();
             if (!builtin_ports_dir.empty() &&
-                !Strings::case_insensitive_ascii_starts_with(scfl->source_location, builtin_ports_dir))
+                !Strings::case_insensitive_ascii_starts_with(port_directory, builtin_ports_dir))
             {
-                out.append_raw(" -- ").append_raw(scfl->source_location);
+                out.append_raw(" -- ").append_raw(port_directory);
             }
         }
     }

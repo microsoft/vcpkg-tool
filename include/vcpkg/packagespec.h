@@ -1,16 +1,19 @@
 #pragma once
 
-#include <vcpkg/base/fwd/format.h>
+#include <vcpkg/base/fwd/fmt.h>
 #include <vcpkg/base/fwd/parse.h>
+#include <vcpkg/base/fwd/span.h>
 
 #include <vcpkg/fwd/packagespec.h>
 
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/optional.h>
-#include <vcpkg/base/span.h>
 
 #include <vcpkg/platform-expression.h>
 #include <vcpkg/triplet.h>
+
+#include <string>
+#include <vector>
 
 namespace vcpkg
 {

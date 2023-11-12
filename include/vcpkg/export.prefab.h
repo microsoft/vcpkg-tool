@@ -1,11 +1,12 @@
 #pragma once
 
+#include <vcpkg/fwd/dependencies.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
+#include <vcpkg/base/optional.h>
 #include <vcpkg/base/system.h>
 
-#include <vcpkg/dependencies.h>
-
+#include <string>
 #include <vector>
 
 // glibc defines major and minor in sys/types.h, and should not

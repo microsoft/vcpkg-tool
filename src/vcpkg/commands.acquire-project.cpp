@@ -1,5 +1,4 @@
 #include <vcpkg/base/checks.h>
-#include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.acquire-project.h>
 #include <vcpkg/configure-environment.h>

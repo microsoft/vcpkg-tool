@@ -1,14 +1,15 @@
 #pragma once
 
+#include <vcpkg/base/fwd/expected.h>
 #include <vcpkg/base/fwd/files.h>
 #include <vcpkg/base/fwd/json.h>
+#include <vcpkg/base/fwd/optional.h>
 
 #include <vcpkg/fwd/configuration.h>
 #include <vcpkg/fwd/registries.h>
+#include <vcpkg/fwd/sourceparagraph.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
-#include <vcpkg/base/expected.h>
-#include <vcpkg/base/optional.h>
 #include <vcpkg/base/path.h>
 #include <vcpkg/base/span.h>
 #include <vcpkg/base/stringview.h>
@@ -18,7 +19,6 @@
 #include <map>
 #include <memory>
 #include <string>
-#include <system_error>
 #include <vector>
 
 namespace vcpkg
@@ -54,20 +54,11 @@ namespace vcpkg
         bool modified = false;
     };
 
-    struct PathAndLocation
-    {
-        Path path;
-
-        /// Should model SPDX PackageDownloadLocation. Empty implies NOASSERTION.
-        /// See https://spdx.github.io/spdx-spec/package-information/#77-package-download-location-field
-        std::string location;
-    };
-
     struct RegistryEntry
     {
         virtual ExpectedL<View<Version>> get_port_versions() const = 0;
 
-        virtual ExpectedL<PathAndLocation> get_version(const Version& version) const = 0;
+        virtual ExpectedL<PortLocation> get_version(const Version& version) const = 0;
 
         virtual ~RegistryEntry() = default;
     };

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <vcpkg/base/optional.h>
+#include <vcpkg/base/fwd/optional.h>
 
 #include <string>
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vcpkg/base/fwd/fmt.h>
+
 #include <vcpkg/base/pragmas.h>
 
 VCPKG_MSVC_WARNING(push)
