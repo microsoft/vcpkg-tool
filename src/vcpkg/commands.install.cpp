@@ -968,7 +968,6 @@ namespace vcpkg
                 auto msg = msg::format(msgCMakePkgConfigTargetsUsage, msg::package_name = bpgh.spec.name())
                                .append_raw("\n\n")
                                .extract_data();
-                Strings::append(msg, "    find_package(PkgConfig)\n");
                 for (auto&& path : pkgconfig_files)
                 {
                     const auto lines = fs.read_lines(path).value_or_exit(VCPKG_LINE_INFO);
@@ -981,8 +980,7 @@ namespace vcpkg
                         }
                     }
                     const auto name = path.stem();
-                    Strings::append(msg, "    pkg_check_modules(", name, " REQUIRED IMPORTED_TARGET ", name, ")\n");
-                    Strings::append(msg, "    target_link_libraries(main PkgConfig::", name, ")\n\n");
+                    Strings::append(msg, "    ", name, "\n\n");
                 }
                 ret.message = msg;
             }

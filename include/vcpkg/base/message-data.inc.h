@@ -485,7 +485,7 @@ DECLARE_MESSAGE(ClearingContents, (msg::path), "", "Clearing contents of {path}"
 DECLARE_MESSAGE(CMakePkgConfigTargetsUsage,
                 (msg::package_name),
                 "",
-                "{package_name} can be imported via CMake FindPkgConfig module:")
+                "{package_name} provides the following pkgconfig packages:")
 DECLARE_MESSAGE(CmakeTargetsExcluded, (msg::count), "", "{count} additional targets are not displayed.")
 DECLARE_MESSAGE(CMakeTargetsUsage,
                 (msg::package_name),

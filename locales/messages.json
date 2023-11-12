@@ -265,7 +265,7 @@
   "CISwitchOptSkipFailures": "Skips ports marked `=fail` in ci.baseline.txt",
   "_CISwitchOptSkipFailures.comment": "=fail is an on-disk format and should not be localized",
   "CISwitchOptXUnitAll": "Reports unchanged ports in the XUnit output",
-  "CMakePkgConfigTargetsUsage": "{package_name} can be imported via CMake FindPkgConfig module:",
+  "CMakePkgConfigTargetsUsage": "{package_name} provides the following pkgconfig packages:",
   "_CMakePkgConfigTargetsUsage.comment": "An example of {package_name} is zlib.",
   "CMakeTargetsUsage": "{package_name} provides CMake targets:",
   "_CMakeTargetsUsage.comment": "'targets' are a CMake and Makefile concept An example of {package_name} is zlib.",
