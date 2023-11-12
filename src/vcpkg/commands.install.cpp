@@ -963,27 +963,6 @@ namespace vcpkg
 
                 ret.message = msg.extract_data();
             }
-            else if (!pkgconfig_files.empty())
-            {
-                auto msg = msg::format(msgCMakePkgConfigTargetsUsage, msg::package_name = bpgh.spec.name())
-                               .append_raw("\n\n")
-                               .extract_data();
-                for (auto&& path : pkgconfig_files)
-                {
-                    const auto lines = fs.read_lines(path).value_or_exit(VCPKG_LINE_INFO);
-                    for (const auto& line : lines)
-                    {
-                        if (Strings::starts_with(line, "Description: "))
-                        {
-                            Strings::append(msg, "    # ", line.substr(StringLiteral("Description: ").size()), '\n');
-                            break;
-                        }
-                    }
-                    const auto name = path.stem();
-                    Strings::append(msg, "    ", name, "\n\n");
-                }
-                ret.message = msg;
-            }
             else if (ret.header_only)
             {
                 static auto cmakeify = [](StringView name) {
@@ -1003,6 +982,27 @@ namespace vcpkg
                 Strings::append(msg, "    target_include_directories(main PRIVATE ${", name, "_INCLUDE_DIRS})\n\n");
 
                 ret.message = std::move(msg);
+            }
+            if (!pkgconfig_files.empty())
+            {
+                auto msg = msg::format(msgCMakePkgConfigTargetsUsage, msg::package_name = bpgh.spec.name())
+                               .append_raw("\n\n")
+                               .extract_data();
+                for (auto&& path : pkgconfig_files)
+                {
+                    const auto lines = fs.read_lines(path).value_or_exit(VCPKG_LINE_INFO);
+                    for (const auto& line : lines)
+                    {
+                        if (Strings::starts_with(line, "Description: "))
+                        {
+                            Strings::append(msg, "    # ", line.substr(StringLiteral("Description: ").size()), '\n');
+                            break;
+                        }
+                    }
+                    const auto name = path.stem();
+                    Strings::append(msg, "    ", name, "\n\n");
+                }
+                ret.message += msg;
             }
         }
         return ret;
