@@ -303,8 +303,8 @@ namespace vcpkg
                 {
                     auto error_info = std::make_unique<ParseControlErrorInfo>();
                     error_info->name = scf.to_name();
-                    error_info->error = msg::format_error(
-                        msgMultipleFeatures, msg::package_name = scf.to_name(), msg::feature = (*adjacent_equal)->name);
+                    error_info->other_errors.emplace_back(msg::format_error(
+                        msgMultipleFeatures, msg::package_name = scf.to_name(), msg::feature = (*adjacent_equal)->name));
                     return error_info;
                 }
                 return nullptr;
@@ -1272,7 +1272,7 @@ namespace vcpkg
 
             if (auto maybe_error = canonicalize(*control_file))
             {
-                Checks::msg_exit_with_message(VCPKG_LINE_INFO, maybe_error->error);
+                Checks::exit_with_message(VCPKG_LINE_INFO, maybe_error->to_string());
             }
 
             return std::move(control_file); // gcc-7 bug workaround redundant move

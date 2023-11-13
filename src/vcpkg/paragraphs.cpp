@@ -27,20 +27,10 @@ namespace vcpkg
             return;
         }
 
-        target.append(msg::format_error(msgParseControlErrorInfoWhileLoading, msg::path = name).extract_data());
-        if (!error.empty())
+        for (auto&& msg : other_errors)
         {
             target.push_back('\n');
-            target.append(error.data());
-        }
-
-        if (!other_errors.empty())
-        {
-            for (auto&& msg : other_errors)
-            {
-                target.push_back('\n');
-                target.append(msg.data());
-            }
+            target.append(msg.data());
         }
 
         if (!extra_fields.empty())
@@ -69,7 +59,7 @@ namespace vcpkg
     {
         auto error_info = std::make_unique<ParseControlErrorInfo>();
         error_info->name.assign(name.data(), name.size());
-        error_info->error = std::move(ls);
+        error_info->other_errors.emplace_back(std::move(ls));
         return error_info;
     }
 

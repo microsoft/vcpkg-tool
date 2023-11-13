@@ -21,12 +21,11 @@ namespace vcpkg
         std::string name;
         std::vector<std::string> extra_fields;
         std::vector<LocalizedString> other_errors;
-        LocalizedString error;
 
         bool has_error() const
         {
             return !extra_fields.empty() ||
-                   !other_errors.empty() || !error.empty();
+                   !other_errors.empty();
         }
 
         static std::string format_errors(View<std::unique_ptr<ParseControlErrorInfo>> errors);

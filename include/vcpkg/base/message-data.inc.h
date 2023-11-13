@@ -2237,10 +2237,6 @@ DECLARE_MESSAGE(ParagraphExpectedColonAfterField, (), "", "expected ':' after fi
 DECLARE_MESSAGE(ParagraphExpectedFieldName, (), "", "expected field name")
 DECLARE_MESSAGE(ParagraphUnexpectedEndOfLine, (), "", "unexpected end of line, to span a blank line use \"  .\"")
 DECLARE_MESSAGE(ParseControlErrorInfoInvalidFields, (), "", "The following fields were not expected:")
-DECLARE_MESSAGE(ParseControlErrorInfoWhileLoading,
-                (msg::path),
-                "Error messages are is printed after this.",
-                "while loading {path}:")
 DECLARE_MESSAGE(
     ParseFeatureNameError,
     (msg::package_name, msg::url),
