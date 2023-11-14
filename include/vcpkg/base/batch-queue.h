@@ -51,7 +51,11 @@ struct BGThreadBatchQueue
         m_cv.notify_all();
     }
 
-    bool stopped() const { return !m_running; }
+    bool stopped()
+    {
+        std::lock_guard<std::mutex> lock(m_mtx);
+        return !m_running;
+    }
 
 private:
     std::mutex m_mtx;

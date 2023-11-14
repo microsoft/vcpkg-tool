@@ -194,9 +194,13 @@ namespace vcpkg
         std::vector<CacheAvailability> precheck(View<InstallPlanAction> actions);
 
     protected:
-        BinaryProviders m_config;
+        struct ReadOnlyBinaryCacheData
+        {
+            BinaryProviders m_config;
 
-        std::unordered_map<std::string, CacheStatus> m_status;
+            std::unordered_map<std::string, CacheStatus> m_status;
+        };
+        std::unique_ptr<ReadOnlyBinaryCacheData> data;
     };
 
     struct BinaryCache : ReadOnlyBinaryCache
@@ -216,24 +220,28 @@ namespace vcpkg
 
     private:
         BinaryCache(BinaryProviders&& providers, const Filesystem& fs);
-
-        const Filesystem& m_fs;
-        Optional<ZipTool> m_zip_tool;
-        bool m_needs_nuspec_data = false;
-        bool m_needs_zip_file = false;
-
         struct ActionToPush
         {
             BinaryPackageWriteInfo request;
             CleanPackages clean_after_push;
         };
+        struct BinaryCacheData
+        {
+            BinaryCacheData(const Filesystem& fs, ReadOnlyBinaryCacheData* data);
+            const Filesystem& m_fs;
+            Optional<ZipTool> m_zip_tool;
+            bool m_needs_nuspec_data = false;
+            bool m_needs_zip_file = false;
 
-        void push_thread_main();
+            BGMessageSink m_bg_msg_sink;
+            BGThreadBatchQueue<ActionToPush> m_actions_to_push;
+            std::atomic_int m_remaining_packages_to_push = 0;
+            std::thread m_push_thread;
 
-        std::unique_ptr<BGMessageSink> m_bg_msg_sink;
-        std::unique_ptr<BGThreadBatchQueue<ActionToPush>> m_actions_to_push;
-        std::unique_ptr<std::atomic_int> m_remaining_packages_to_push = 0;
-        std::thread m_push_thread;
+            void push_thread_main(ReadOnlyBinaryCacheData* ro_data);
+            void wait_for_async_complete_and_join();
+        };
+        std::unique_ptr<BinaryCacheData> bc_data;
     };
 
     ExpectedL<DownloadManagerConfig> parse_download_configuration(const Optional<std::string>& arg);
