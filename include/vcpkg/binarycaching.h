@@ -200,9 +200,18 @@ namespace vcpkg
 
             std::unordered_map<std::string, CacheStatus> m_status;
         };
-        std::unique_ptr<ReadOnlyBinaryCacheData> data;
+        std::unique_ptr<ReadOnlyBinaryCacheData> data = std::make_unique<ReadOnlyBinaryCacheData>();
     };
 
+    // compression and upload of binary cache entries happens on a single 'background' thread, `m_push_thread`
+    // Thread safety is achieved within the binary cache providers by:
+    //   1. Only using one thread in the background for this work.
+    //   2. Forming a queue of work for that thread to consume in `m_actions_to_push`, which maintains its own thread
+    //   safety
+    //   3. Sending any replies from the background thread through `m_bg_msg_sink`
+    //   4. Ensuring any supporting data, such as tool exes, is provided before the background thread is started.
+    //   5. Ensuring that work is not submitted to the background thread until the corresponding `packages` directory to
+    //   upload is no longer being actively touched by the foreground thread.
     struct BinaryCache : ReadOnlyBinaryCache
     {
         static ExpectedL<BinaryCache> make(const VcpkgCmdArguments& args, const VcpkgPaths& paths, MessageSink& sink);
