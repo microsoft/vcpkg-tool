@@ -1,10 +1,8 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
-#include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.hash.h>
 #include <vcpkg/vcpkgcmdarguments.h>
-#include <vcpkg/vcpkgpaths.h>
 
 namespace vcpkg
 {

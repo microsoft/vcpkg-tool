@@ -4,7 +4,6 @@
 
 #include <vcpkg/base/system.process.h>
 
-#include <string>
 #include <vector>
 
 namespace vcpkg

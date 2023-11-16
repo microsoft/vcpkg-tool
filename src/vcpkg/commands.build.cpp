@@ -19,12 +19,9 @@
 #include <vcpkg/buildenvironment.h>
 #include <vcpkg/cmakevars.h>
 #include <vcpkg/commands.build.h>
-#include <vcpkg/commands.h>
-#include <vcpkg/commands.help.h>
 #include <vcpkg/commands.version.h>
 #include <vcpkg/dependencies.h>
 #include <vcpkg/documentation.h>
-#include <vcpkg/globalstate.h>
 #include <vcpkg/input.h>
 #include <vcpkg/installedpaths.h>
 #include <vcpkg/metrics.h>
@@ -147,7 +144,7 @@ namespace vcpkg
         ASSUME(action != nullptr);
         auto& scf = *action->source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_control_file;
         const auto& spec_name = spec.name();
-        const auto& core_paragraph_name = scf.core_paragraph->name;
+        const auto& core_paragraph_name = scf.to_name();
         if (spec_name != core_paragraph_name)
         {
             Checks::msg_exit_with_error(VCPKG_LINE_INFO,
@@ -748,6 +745,7 @@ namespace vcpkg
     {
         auto& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
         auto& scf = *scfl.source_control_file;
+        auto& port_name = scf.to_name();
 
         std::string all_features;
         for (auto& feature : scf.feature_paragraphs)
@@ -757,11 +755,11 @@ namespace vcpkg
 
         std::vector<CMakeVariable> variables{
             {"ALL_FEATURES", all_features},
-            {"CURRENT_PORT_DIR", scfl.source_location},
+            {"CURRENT_PORT_DIR", scfl.port_directory()},
             {"_HOST_TRIPLET", action.host_triplet.canonical_name()},
             {"FEATURES", Strings::join(";", action.feature_list)},
-            {"PORT", scf.core_paragraph->name},
-            {"VERSION", scf.core_paragraph->version.text},
+            {"PORT", port_name},
+            {"VERSION", scf.to_version().text},
             {"VCPKG_USE_HEAD_VERSION", Util::Enum::to_bool(action.build_options.use_head_version) ? "1" : "0"},
             {"_VCPKG_DOWNLOAD_TOOL", to_string_view(action.build_options.download_tool)},
             {"_VCPKG_EDITABLE", Util::Enum::to_bool(action.build_options.editable) ? "1" : "0"},
@@ -776,7 +774,7 @@ namespace vcpkg
 
         if (auto cmake_debug = args.cmake_debug.get())
         {
-            if (cmake_debug->is_port_affected(scf.core_paragraph->name))
+            if (cmake_debug->is_port_affected(port_name))
             {
                 variables.emplace_back("--debugger");
                 variables.emplace_back(fmt::format("--debugger-pipe={}", cmake_debug->value));
@@ -785,7 +783,7 @@ namespace vcpkg
 
         if (auto cmake_configure_debug = args.cmake_configure_debug.get())
         {
-            if (cmake_configure_debug->is_port_affected(scf.core_paragraph->name))
+            if (cmake_configure_debug->is_port_affected(port_name))
             {
                 variables.emplace_back(fmt::format("-DVCPKG_CMAKE_CONFIGURE_OPTIONS=--debugger;--debugger-pipe={}",
                                                    cmake_configure_debug->value));
@@ -919,9 +917,9 @@ namespace vcpkg
             msg::println(msgLoadingOverlayTriplet, msg::path = triplet_file_path);
         }
 
-        if (!Strings::starts_with(scfl.source_location, paths.builtin_ports_directory()))
+        if (!Strings::starts_with(scfl.control_path, paths.builtin_ports_directory()))
         {
-            msg::println(msgInstallingFromLocation, msg::path = scfl.source_location);
+            msg::println(msgInstallingFromLocation, msg::path = scfl.port_directory());
         }
 
         const ElapsedTimer timer;
@@ -998,7 +996,7 @@ namespace vcpkg
             FileSink file_sink{fs, stdoutlog, Append::YES};
             CombiningSink combo_sink{stdout_sink, file_sink};
             error_count = perform_post_build_lint_checks(
-                action.spec, paths, pre_build_info, build_info, scfl.source_location, combo_sink);
+                action.spec, paths, pre_build_info, build_info, scfl.port_directory(), combo_sink);
         };
         if (error_count != 0 && action.build_options.backcompat_features == BackcompatFeatures::PROHIBIT)
         {
@@ -1040,8 +1038,7 @@ namespace vcpkg
     {
         auto& filesystem = paths.get_filesystem();
         auto& spec = action.spec;
-        const std::string& name = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO)
-                                      .source_control_file->core_paragraph->name;
+        const std::string& name = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).to_name();
 
         std::vector<FeatureSpec> missing_fspecs;
         for (const auto& kv : action.feature_dependencies)
@@ -1235,6 +1232,10 @@ namespace vcpkg
 
     void append_logs(std::vector<std::pair<Path, std::string>>&& logs, size_t max_size, std::string& out)
     {
+        if (logs.empty())
+        {
+            return;
+        }
         Util::sort(logs, [](const auto& left, const auto& right) { return left.second.size() < right.second.size(); });
         auto size_per_log = max_size / logs.size();
         size_t maximum = out.size();

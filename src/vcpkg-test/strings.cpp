@@ -1,8 +1,6 @@
 #include <vcpkg-test/util.h>
 
 #include <vcpkg/base/api-stable-format.h>
-#include <vcpkg/base/expected.h>
-#include <vcpkg/base/span.h>
 #include <vcpkg/base/strings.h>
 
 #include <stdint.h>

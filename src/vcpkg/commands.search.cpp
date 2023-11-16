@@ -1,7 +1,6 @@
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.find.h>
-#include <vcpkg/commands.help.h>
 #include <vcpkg/commands.search.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>

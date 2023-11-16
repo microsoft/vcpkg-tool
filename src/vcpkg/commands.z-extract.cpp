@@ -4,7 +4,6 @@
 #include <vcpkg/base/strings.h>
 
 #include <vcpkg/archives.h>
-#include <vcpkg/commands.h>
 #include <vcpkg/commands.z-extract.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
