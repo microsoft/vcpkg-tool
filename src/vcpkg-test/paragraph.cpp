@@ -26,7 +26,7 @@ namespace
         for (auto&& kv : v)
             pgh.emplace(kv.first, std::make_pair(kv.second, vcpkg::TextRowCol{}));
 
-        return vcpkg::BinaryParagraph(StringLiteral{"test"}, std::move(pgh));
+        return vcpkg::BinaryParagraph("test", std::move(pgh));
     }
 
 }

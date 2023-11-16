@@ -1247,9 +1247,6 @@ DECLARE_MESSAGE(
     "The control or manifest file for {package_name} could not be loaded due to the following error. Please "
     "remove {package_name} and try again.")
 DECLARE_MESSAGE(FailedToLoadManifest, (msg::path), "", "Failed to load manifest from directory {path}")
-DECLARE_MESSAGE(FailedToLoadPort, (msg::package_name, msg::path), "", "Failed to load port {package_name} from {path}")
-DECLARE_MESSAGE(FailedToLoadPortFrom, (msg::path), "", "Failed to load port from {path}")
-DECLARE_MESSAGE(FailedToLoadUnnamedPortFromPath, (msg::path), "", "Failed to load port from {path}")
 DECLARE_MESSAGE(FailedToLocateSpec, (msg::spec), "", "Failed to locate spec in graph: {spec}")
 DECLARE_MESSAGE(FailedToObtainDependencyVersion, (), "", "Cannot find desired dependency version.")
 DECLARE_MESSAGE(FailedToObtainLocalPortGitSha, (), "", "Failed to obtain git SHAs for local ports.")
@@ -3090,6 +3087,7 @@ DECLARE_MESSAGE(WhileGettingLocalTreeIshObjectsForPorts, (), "", "while getting 
 DECLARE_MESSAGE(WhileLoadingLocalPort, (msg::package_name), "", "while attempting to load local port {package_name}")
 DECLARE_MESSAGE(WhileLoadingPortFromGitTree, (msg::commit_sha), "", "while trying to load port from: {commit_sha}")
 DECLARE_MESSAGE(WhileLookingForSpec, (msg::spec), "", "while looking for {spec}:")
+DECLARE_MESSAGE(WhileLoadingPortVersion, (msg::version_spec), "", "while loading {version_spec}")
 DECLARE_MESSAGE(WhileParsingVersionsForPort,
                 (msg::package_name, msg::path),
                 "",

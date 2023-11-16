@@ -1355,7 +1355,7 @@ namespace vcpkg
                                                                   StringView origin,
                                                                   MessageSink& warningsSink)
     {
-        Json::Reader reader;
+        Json::Reader reader(origin);
         auto res = reader.visit(manifest, ManifestConfigurationDeserializer::instance);
 
         if (!reader.warnings().empty())
@@ -1404,14 +1404,13 @@ namespace vcpkg
                                                                                     const Json::Object& manifest,
                                                                                     MessageSink& warnings_sink)
     {
-        Json::Reader reader;
+        Json::Reader reader(control_path);
 
         auto res = reader.visit(manifest, ManifestDeserializerType::instance);
 
         for (auto&& w : reader.warnings())
         {
-            warnings_sink.print(Color::warning,
-                                LocalizedString::from_raw(Strings::concat(control_path, ": ", w, '\n')));
+            warnings_sink.println(Color::warning, w);
         }
 
         switch (reader.errors().size())
