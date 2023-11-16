@@ -2,13 +2,11 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/strings.h>
-#include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.help.h>
 #include <vcpkg/input.h>
 #include <vcpkg/packagespec.h>
 
-#include <string>
 #include <utility>
 
 namespace vcpkg

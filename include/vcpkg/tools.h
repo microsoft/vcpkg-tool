@@ -1,15 +1,14 @@
 #pragma once
 
 #include <vcpkg/base/fwd/downloads.h>
+#include <vcpkg/base/fwd/expected.h>
 #include <vcpkg/base/fwd/files.h>
 
 #include <vcpkg/fwd/tools.h>
 
-#include <vcpkg/base/expected.h>
 #include <vcpkg/base/stringview.h>
 
 #include <string>
-#include <utility>
 
 namespace vcpkg
 {

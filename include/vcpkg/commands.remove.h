@@ -2,9 +2,9 @@
 
 #include <vcpkg/base/fwd/files.h>
 
-#include <vcpkg/fwd/dependencies.h>
 #include <vcpkg/fwd/installedpaths.h>
 #include <vcpkg/fwd/packagespec.h>
+#include <vcpkg/fwd/statusparagraphs.h>
 #include <vcpkg/fwd/triplet.h>
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 #include <vcpkg/fwd/vcpkgpaths.h>

@@ -1,13 +1,13 @@
 #pragma once
 
+#include <vcpkg/base/fwd/expected.h>
+#include <vcpkg/base/fwd/span.h>
+
 #include <vcpkg/fwd/portfileprovider.h>
 #include <vcpkg/fwd/registries.h>
-
-#include <vcpkg/base/expected.h>
-#include <vcpkg/base/util.h>
+#include <vcpkg/fwd/versions.h>
 
 #include <vcpkg/sourceparagraph.h>
-#include <vcpkg/versions.h>
 
 namespace vcpkg
 {

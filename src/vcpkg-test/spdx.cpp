@@ -10,7 +10,7 @@ TEST_CASE ("spdx maximum serialization", "[spdx]")
 {
     PackageSpec spec{"zlib", Test::ARM_UWP};
     SourceControlFileAndLocation scfl;
-    scfl.registry_location = "git://some-vcs-url";
+    scfl.spdx_location = "git://some-vcs-url";
     auto& scf = *(scfl.source_control_file = std::make_unique<SourceControlFile>());
     auto& cpgh = *(scf.core_paragraph = std::make_unique<SourceParagraph>());
     cpgh.name = "zlib";

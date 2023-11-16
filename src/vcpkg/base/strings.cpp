@@ -8,7 +8,6 @@
 #include <vcpkg/base/util.h>
 
 #include <ctype.h>
-#include <stdarg.h>
 
 #include <algorithm>
 #include <iterator>
