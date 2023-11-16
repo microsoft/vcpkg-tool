@@ -17,6 +17,7 @@
 #include <vcpkg/versions.h>
 
 #include <regex>
+#include "vcpkg/base/fwd/system.h"
 
 namespace vcpkg
 {
@@ -63,21 +64,21 @@ namespace vcpkg
     static Optional<ToolData> parse_tool_data_from_xml(StringView XML, StringView XML_PATH, StringView tool)
     {
 #if defined(_WIN32)
-        return parse_tool_data_from_xml(XML, XML_PATH, tool, "windows");
+        return parse_tool_data_from_xml(XML, XML_PATH, tool, "windows", to_zstring_view(get_host_processor()));
 #elif defined(__APPLE__)
-        return parse_tool_data_from_xml(XML, XML_PATH, tool, "osx");
+        return parse_tool_data_from_xml(XML, XML_PATH, tool, "osx", to_zstring_view(get_host_processor()));
 #elif defined(__linux__)
-        return parse_tool_data_from_xml(XML, XML_PATH, tool, "linux");
+        return parse_tool_data_from_xml(XML, XML_PATH, tool, "linux", to_zstring_view(get_host_processor()));
 #elif defined(__FreeBSD__)
-        return parse_tool_data_from_xml(XML, XML_PATH, tool, "freebsd");
+        return parse_tool_data_from_xml(XML, XML_PATH, tool, "freebsd", to_zstring_view(get_host_processor()));
 #elif defined(__OpenBSD__)
-        return parse_tool_data_from_xml(XML, XML_PATH, tool, "openbsd");
+        return parse_tool_data_from_xml(XML, XML_PATH, tool, "openbsd", to_zstring_view(get_host_processor()));
 #else
         return nullopt;
 #endif
     }
 
-    Optional<ToolData> parse_tool_data_from_xml(StringView XML, StringView XML_PATH, StringView tool, StringView os)
+    Optional<ToolData> parse_tool_data_from_xml(StringView XML, StringView XML_PATH, StringView tool, StringView os, StringView host_processor)
     {
         static const char* XML_VERSION = "2";
         static const std::regex XML_VERSION_REGEX{R"###(<tools[\s]+version="([^"]+)">)###"};
@@ -95,7 +96,7 @@ namespace vcpkg
                                msg::expected_version = XML_VERSION,
                                msg::actual_version = match_xml_version[1].str());
 
-        const std::regex tool_regex{fmt::format(R"###(<tool[\s]+name="{}"[\s]+os="{}">)###", tool, os)};
+        const std::regex tool_regex{fmt::format(R"###(<tool[\s]+name="{}"[\s]+os="{}" arch="{}>)###", tool, os, host_processor)};
         std::cmatch match_tool_entry;
         const bool has_tool_entry = std::regex_search(XML.begin(), XML.end(), match_tool_entry, tool_regex);
         if (!has_tool_entry) return nullopt;
