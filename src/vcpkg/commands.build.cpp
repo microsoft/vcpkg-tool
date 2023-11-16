@@ -1722,10 +1722,10 @@ namespace vcpkg
                                                msg::value = to_string_view(policy));
         }
 
-        if (const auto err = parser.error_info())
+        auto maybe_error = parser.error();
+        if (const auto err = maybe_error.get())
         {
-            print_error_message(err);
-            Checks::exit_fail(VCPKG_LINE_INFO);
+            Checks::msg_exit_with_message(VCPKG_LINE_INFO, *err);
         }
 
         build_info.policies = BuildPolicies(std::move(policies));

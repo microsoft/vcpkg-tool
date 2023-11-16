@@ -20,39 +20,6 @@ static std::atomic<uint64_t> g_load_ports_stats(0);
 
 namespace vcpkg
 {
-    void ParseControlErrorInfo::to_string(std::string& target) const
-    {
-        if (!has_error())
-        {
-            return;
-        }
-
-        for (auto&& msg : other_errors)
-        {
-            target.push_back('\n');
-            target.append(msg.data());
-        }
-    }
-
-    std::string ParseControlErrorInfo::to_string() const
-    {
-        std::string result;
-        to_string(result);
-        return result;
-    }
-
-    LocalizedString ToLocalizedString_t::operator()(std::unique_ptr<ParseControlErrorInfo> p) const
-    {
-        return LocalizedString::from_raw(p->to_string());
-    }
-
-    std::unique_ptr<ParseControlErrorInfo> ParseControlErrorInfo::from_error(LocalizedString&& ls)
-    {
-        auto error_info = std::make_unique<ParseControlErrorInfo>();
-        error_info->other_errors.emplace_back(std::move(ls));
-        return error_info;
-    }
-
     static Optional<std::pair<std::string, TextRowCol>> remove_field(Paragraph* fields, StringView fieldname)
     {
         auto it = fields->find(fieldname.to_string());
@@ -92,40 +59,74 @@ namespace vcpkg
             return std::move(field->first);
         }
 
-        other_errors.emplace_back(LocalizedString::from_raw(origin)
-                                      .append_raw(": ")
-                                      .append_raw(ErrorPrefix)
-                                      .append(msgMissingRequiredField2, msg::json_field = fieldname));
+        errors.emplace_back(LocalizedString::from_raw(origin)
+                                .append_raw(": ")
+                                .append_raw(ErrorPrefix)
+                                .append(msgMissingRequiredField2, msg::json_field = fieldname));
         return std::string();
     }
 
     void ParagraphParser::add_error(TextRowCol position, msg::MessageT<> error_content)
     {
-        other_errors.emplace_back(LocalizedString::from_raw(origin)
-                                      .append_raw(fmt::format("{}:{}: ", position.row, position.column))
-                                      .append_raw(ErrorPrefix)
-                                      .append(error_content));
+        errors.emplace_back(LocalizedString::from_raw(origin)
+                                .append_raw(fmt::format("{}:{}: ", position.row, position.column))
+                                .append_raw(ErrorPrefix)
+                                .append(error_content));
     }
 
-    std::unique_ptr<ParseControlErrorInfo> ParagraphParser::error_info() const
+    Optional<LocalizedString> ParagraphParser::error() const
     {
-        if (!fields.empty() || !other_errors.empty())
+        LocalizedString result;
+        if (errors.empty())
         {
-            auto err = std::make_unique<ParseControlErrorInfo>();
-            err->other_errors = other_errors;
-            for (auto&& extra_field_entry : fields)
+            if (fields.empty())
             {
-                err->other_errors.emplace_back(
-                    LocalizedString::from_raw(origin)
-                        .append_raw(fmt::format(
-                            "{}:{}: ", extra_field_entry.second.second.row, extra_field_entry.second.second.column))
-                        .append_raw(ErrorPrefix)
-                        .append(msgUnexpectedField, msg::json_field = extra_field_entry.first));
+                return nullopt;
+            }
+        }
+        else
+        {
+            auto error = errors.begin();
+            const auto last = errors.end();
+            for (;;)
+            {
+                result.append(*error);
+                if (++error == last)
+                {
+                    break;
+                }
+
+                result.append_raw('\n');
+            }
+        }
+
+        if (!fields.empty())
+        {
+            if (!errors.empty())
+            {
+                result.append_raw('\n');
             }
 
-            return err;
+            auto extra_field_entry = fields.begin();
+            const auto last = fields.end();
+            for (;;)
+            {
+                result.append_raw(origin)
+                    .append_raw(fmt::format(
+                        "{}:{}: ", extra_field_entry->second.second.row, extra_field_entry->second.second.column))
+                    .append_raw(ErrorPrefix)
+                    .append(msgUnexpectedField, msg::json_field = extra_field_entry->first);
+
+                if (++extra_field_entry == last)
+                {
+                    break;
+                }
+
+                result.append_raw('\n');
+            }
         }
-        return nullptr;
+
+        return result;
     }
 
     template<class T, class Message, class F>
@@ -368,8 +369,7 @@ namespace vcpkg::Paragraphs
     {
         StatsTimer timer(g_load_ports_stats);
         return parse_paragraphs(text, control_path).then([&](std::vector<Paragraph>&& vector_pghs) {
-            return SourceControlFile::parse_control_file(control_path, std::move(vector_pghs))
-                .map_error(ToLocalizedString);
+            return SourceControlFile::parse_control_file(control_path, std::move(vector_pghs));
         });
     }
 

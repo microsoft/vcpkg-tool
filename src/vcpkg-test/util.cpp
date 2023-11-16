@@ -54,7 +54,7 @@ namespace vcpkg::Test
         return std::move(*m_pgh.get());
     }
 
-    ParseExpected<SourceControlFile> test_parse_control_file(
+    ExpectedL<std::unique_ptr<SourceControlFile>> test_parse_control_file(
         const std::vector<std::unordered_map<std::string, std::string>>& v)
     {
         std::vector<vcpkg::Paragraph> pghs;

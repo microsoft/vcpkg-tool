@@ -16,40 +16,14 @@
 
 namespace vcpkg
 {
-    struct ParseControlErrorInfo
-    {
-        std::vector<LocalizedString> other_errors;
-
-        bool has_error() const
-        {
-            return !other_errors.empty();
-        }
-
-        void to_string(std::string& target) const;
-        std::string to_string() const;
-
-        static std::unique_ptr<ParseControlErrorInfo> from_error(LocalizedString&& ls);
-    };
-} // namespace vcpkg
-
-VCPKG_FORMAT_WITH_TO_STRING(vcpkg::ParseControlErrorInfo);
-
-namespace vcpkg
-{
-    inline std::string to_string(const std::unique_ptr<ParseControlErrorInfo>& up) { return up->to_string(); }
-    template<class P>
-    using ParseExpected = vcpkg::ExpectedT<std::unique_ptr<P>, std::unique_ptr<ParseControlErrorInfo>>;
-
-    static constexpr struct ToLocalizedString_t
-    {
-        LocalizedString operator()(std::unique_ptr<ParseControlErrorInfo> p) const;
-    } ToLocalizedString;
-
     using Paragraph = std::map<std::string, std::pair<std::string, TextRowCol>, std::less<>>;
 
     struct ParagraphParser
     {
-        ParagraphParser(StringView origin, Paragraph&& fields) : origin(origin.data(), origin.size()), fields(std::move(fields)) { }
+        ParagraphParser(StringView origin, Paragraph&& fields)
+            : origin(origin.data(), origin.size()), fields(std::move(fields))
+        {
+        }
 
         std::string required_field(StringLiteral fieldname);
 
@@ -58,12 +32,12 @@ namespace vcpkg
 
         void add_error(TextRowCol position, msg::MessageT<> error_content);
 
-        std::unique_ptr<ParseControlErrorInfo> error_info() const;
+        Optional<LocalizedString> error() const;
 
     private:
         std::string origin;
         Paragraph&& fields;
-        std::vector<LocalizedString> other_errors;
+        std::vector<LocalizedString> errors;
     };
 
     ExpectedL<std::vector<std::string>> parse_default_features_list(const std::string& str,

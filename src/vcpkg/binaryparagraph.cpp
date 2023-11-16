@@ -80,10 +80,11 @@ namespace vcpkg
 
         // This is leftover from a previous attempt to add "alias ports", not currently used.
         (void)parser.optional_field("Type");
-        if (const auto err = parser.error_info())
+        const auto maybe_error = parser.error();
+        if (auto error = maybe_error.get())
         {
             msg::println_error(msgErrorParsingBinaryParagraph, msg::spec = this->spec);
-            print_error_message(err);
+            print_error_message(*error);
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 

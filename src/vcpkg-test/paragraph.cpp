@@ -58,7 +58,7 @@ TEST_CASE ("SourceParagraph construct invalid", "[paragraph]")
     }});
 
     REQUIRE(!m_pgh.has_value());
-    REQUIRE(m_pgh.error()->has_error());
+    REQUIRE(m_pgh.error() != LocalizedString());
 
     m_pgh = test_parse_control_file({{
         {"Source", "zlib"},
@@ -67,7 +67,7 @@ TEST_CASE ("SourceParagraph construct invalid", "[paragraph]")
     }});
 
     REQUIRE(!m_pgh.has_value());
-    REQUIRE(m_pgh.error()->has_error());
+    REQUIRE(m_pgh.error() != LocalizedString());
 
     m_pgh = test_parse_control_file({
         {
@@ -81,7 +81,7 @@ TEST_CASE ("SourceParagraph construct invalid", "[paragraph]")
     });
 
     REQUIRE(!m_pgh.has_value());
-    REQUIRE(m_pgh.error()->has_error());
+    REQUIRE(m_pgh.error() != LocalizedString());
 
     // invalid field`s name
     m_pgh = test_parse_control_file({{
@@ -90,7 +90,7 @@ TEST_CASE ("SourceParagraph construct invalid", "[paragraph]")
     }});
 
     REQUIRE(!m_pgh.has_value());
-    REQUIRE(m_pgh.error()->has_error());
+    REQUIRE(m_pgh.error() != LocalizedString());
 }
 
 TEST_CASE ("SourceParagraph construct maximum", "[paragraph]")

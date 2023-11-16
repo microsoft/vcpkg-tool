@@ -21,7 +21,8 @@ namespace vcpkg
             .push_back('\n');
     }
 
-    StatusParagraph::StatusParagraph(StringView origin, Paragraph&& fields) : want(Want::ERROR_STATE), state(InstallState::ERROR_STATE)
+    StatusParagraph::StatusParagraph(StringView origin, Paragraph&& fields)
+        : want(Want::ERROR_STATE), state(InstallState::ERROR_STATE)
     {
         auto status_it = fields.find(BinaryParagraphRequiredField::STATUS);
         Checks::msg_check_maybe_upgrade(VCPKG_LINE_INFO, status_it != fields.end(), msgExpectedStatusField);

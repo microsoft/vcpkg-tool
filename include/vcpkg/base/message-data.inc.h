@@ -2092,10 +2092,7 @@ DECLARE_MESSAGE(MissingRequiredField,
                 "Example completely formatted message:\nerror: missing required field 'dependencies' (an array of "
                 "dependencies)",
                 "missing required field '{json_field}' ({json_type})")
-DECLARE_MESSAGE(MissingRequiredField2,
-                (msg::json_field),
-                "",
-                "missing required field '{json_field}'")
+DECLARE_MESSAGE(MissingRequiredField2, (msg::json_field), "", "missing required field '{json_field}'")
 DECLARE_MESSAGE(MixingBooleanOperationsNotAllowed,
                 (),
                 "",
