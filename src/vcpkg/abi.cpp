@@ -174,8 +174,8 @@ namespace vcpkg
     {
         // Check that no "default" feature is present. Default features must be resolved before attempting to calculate
         // a package ABI, so the "default" should not have made it here.
-        const bool has_pseudo_features = std::binary_search(
-            sorted_feature_list.begin(), sorted_feature_list.end(), StringLiteral{"default"});
+        const bool has_pseudo_features =
+            std::binary_search(sorted_feature_list.begin(), sorted_feature_list.end(), StringLiteral{"default"});
         Checks::check_exit(VCPKG_LINE_INFO, !has_pseudo_features);
         Util::sort_unique_erase(sorted_feature_list);
 

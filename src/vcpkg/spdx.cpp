@@ -261,14 +261,8 @@ std::string vcpkg::write_sbom(const InstallPlanAction& action,
     const auto& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
     const auto& scf = *scfl.source_control_file;
 
-    auto doc_ns = Strings::concat("https://spdx.org/spdxdocs/",
-                                  scf.to_name(),
-                                  '-',
-                                  action.spec.triplet(),
-                                  '-',
-                                  scf.to_version(),
-                                  '-',
-                                  uuid);
+    auto doc_ns = Strings::concat(
+        "https://spdx.org/spdxdocs/", scf.to_name(), '-', action.spec.triplet(), '-', scf.to_version(), '-', uuid);
 
     const auto now = CTime::now_string();
     return create_spdx_sbom(action, port_files_abi, now, doc_ns, std::move(heuristic_resources));
