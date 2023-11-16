@@ -4,6 +4,7 @@
 #include <vcpkg/tools.test.h>
 
 #include <array>
+
 #include "vcpkg/base/system.h"
 
 using namespace vcpkg;
@@ -72,15 +73,18 @@ TEST_CASE ("parse_tool_data_from_xml", "[tools]")
 )";
 
     {
-        auto data = parse_tool_data_from_xml(tool_doc, "vcpkgTools.xml", "tool1", "windows", to_zstring_view(get_host_processor()));
+        auto data = parse_tool_data_from_xml(
+            tool_doc, "vcpkgTools.xml", "tool1", "windows", to_zstring_view(get_host_processor()));
         REQUIRE(!data.has_value());
     }
     {
-        auto data = parse_tool_data_from_xml(tool_doc, "vcpkgTools.xml", "node", "unknown", to_zstring_view(get_host_processor()));
+        auto data = parse_tool_data_from_xml(
+            tool_doc, "vcpkgTools.xml", "node", "unknown", to_zstring_view(get_host_processor()));
         REQUIRE(!data.has_value());
     }
     {
-        auto data = parse_tool_data_from_xml(tool_doc, "vcpkgTools.xml", "node", "windows", to_zstring_view(get_host_processor()));
+        auto data = parse_tool_data_from_xml(
+            tool_doc, "vcpkgTools.xml", "node", "windows", to_zstring_view(get_host_processor()));
         REQUIRE(data.has_value());
         auto& p = *data.get();
         CHECK(p.is_archive);
@@ -93,7 +97,8 @@ TEST_CASE ("parse_tool_data_from_xml", "[tools]")
         CHECK(p.url == "https://nodejs.org/dist/v16.12.0/node-v16.12.0-win-x64.7z");
     }
     {
-        auto data = parse_tool_data_from_xml(tool_doc, "vcpkgTools.xml", "nuget", "osx", to_zstring_view(get_host_processor()));
+        auto data =
+            parse_tool_data_from_xml(tool_doc, "vcpkgTools.xml", "nuget", "osx", to_zstring_view(get_host_processor()));
         REQUIRE(data.has_value());
         auto& p = *data.get();
         CHECK_FALSE(p.is_archive);
@@ -106,7 +111,8 @@ TEST_CASE ("parse_tool_data_from_xml", "[tools]")
         CHECK(p.url == "https://dist.nuget.org/win-x86-commandline/v5.11.0/nuget.exe");
     }
     {
-        auto data = parse_tool_data_from_xml(tool_doc, "vcpkgTools.xml", "git", "linux", to_zstring_view(get_host_processor()));
+        auto data =
+            parse_tool_data_from_xml(tool_doc, "vcpkgTools.xml", "git", "linux", to_zstring_view(get_host_processor()));
         REQUIRE(data.has_value());
         auto& p = *data.get();
         CHECK_FALSE(p.is_archive);
