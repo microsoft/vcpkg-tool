@@ -101,7 +101,7 @@ namespace vcpkg
         const bool has_tool_entry_with_arch = std::regex_search(XML.begin(), XML.end(), match_tool_entry, tool_regex_with_arch);
         if (!has_tool_entry_with_arch) {
             const std::regex tool_regex_without_arch{fmt::format(R"###(<tool[\s]+name="{}"[\s]+os="{}">)###", tool, os)};
-            const bool has_tool_entry_without_arch = std::regex_search(XML.begin(), XML.end(), match_tool_entry, tool_regex_with_arch);
+            const bool has_tool_entry_without_arch = std::regex_search(XML.begin(), XML.end(), match_tool_entry, tool_regex_without_arch);
             if (!has_tool_entry_without_arch) return nullopt;
         }
 
