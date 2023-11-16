@@ -225,7 +225,6 @@ namespace vcpkg
                                     std::unique_ptr<PreBuildInfo>&& proto_pre_build_info)
     {
         const auto& pre_build_info = *proto_pre_build_info;
-        // get toolset (not in parallel)
         const auto& toolset = paths.get_toolset(pre_build_info);
         auto& abi_info = proto_abi_info.emplace();
         abi_info.pre_build_info = std::move(proto_pre_build_info);
@@ -243,9 +242,7 @@ namespace vcpkg
             return;
         }
 
-        // get compiler info (not in parallel)
         abi_info.compiler_info = paths.get_compiler_info(pre_build_info, toolset);
-        // get triplet info (not in parallel)
         abi_info.triplet_abi.emplace(paths.get_triplet_info(pre_build_info, toolset));
     }
 
@@ -289,7 +286,7 @@ namespace vcpkg
         auto&& [port_files_abi, cmake_contents] = get_port_files(fs, scfl);
         Util::Vectors::append(&abi_entries, port_files_abi);
 
-        // cmake helpers (access to cmake helper hashes in cache not in parallel)
+        // cmake helpers
         for (auto&& helper : cmake_script_hashes)
         {
             if (Strings::case_insensitive_ascii_contains(cmake_contents, helper.key))
@@ -298,10 +295,6 @@ namespace vcpkg
             }
         }
 
-        // cmake/ PS version (precompute, same for all)
-        // ports.cmake version (precompute, same for all)
-        // ports.cmake (precompute, same for all)
-        // post build lint (not updated in 3 years! still needed?)
         abi_entries.insert(abi_entries.end(), common_abi.begin(), common_abi.end());
 
         // port features
@@ -328,7 +321,7 @@ namespace vcpkg
         return out;
     }
 
-    // PRE: initialize_abi_tag() was called and returned true
+    // PRE: action.abi_info.has_value()
     static void make_abi_tag(const VcpkgPaths& paths,
                              InstallPlanAction& action,
                              AbiEntries&& dependency_abis,
@@ -341,10 +334,8 @@ namespace vcpkg
 
         abi_tag_entries.emplace_back("triplet_abi", *abi_info.triplet_abi.get());
 
-        // abi tags from prebuildinfo
         abi_entries_from_pre_build_info(fs, *abi_info.pre_build_info, abi_tag_entries);
 
-        // sort
         Util::sort(abi_tag_entries);
 
         if (Debug::g_debugging)
@@ -418,8 +409,6 @@ namespace vcpkg
                           const StatusParagraphs& status_db)
     {
         auto& fs = paths.get_filesystem();
-
-        // 1. system abi (ports.cmake/ PS version/ CMake version)
         static AbiEntries common_abi = get_common_abi(paths);
 
         auto private_abi_future = std::async(std::launch::async | std::launch::deferred, [&]() {
@@ -437,7 +426,7 @@ namespace vcpkg
         {
             Checks::check_exit(VCPKG_LINE_INFO, !action.abi_info.has_value());
 
-            // get prebuildinfo (not in parallel)
+            // get prebuildinfo
             auto pre_build_info = std::make_unique<PreBuildInfo>(
                 paths, action.spec.triplet(), var_provider.get_tag_vars(action.spec).value_or_exit(VCPKG_LINE_INFO));
 
