@@ -32,15 +32,6 @@ namespace vcpkg
             target.push_back('\n');
             target.append(msg.data());
         }
-
-        if (!extra_fields.empty())
-        {
-            target.push_back('\n');
-            target.append(msg::format(msgParseControlErrorInfoInvalidFields)
-                              .append_raw(' ')
-                              .append_raw(Strings::join(", ", extra_fields))
-                              .extract_data());
-        }
     }
 
     std::string ParseControlErrorInfo::to_string() const
@@ -109,7 +100,8 @@ namespace vcpkg
         return std::string();
     }
 
-    void ParagraphParser::add_error(TextRowCol position, msg::MessageT<> error_content) {
+    void ParagraphParser::add_error(TextRowCol position, msg::MessageT<> error_content)
+    {
         other_errors.emplace_back(LocalizedString::from_raw(origin)
                                       .append_raw(fmt::format("{}:{}: ", position.row, position.column))
                                       .append_raw(ErrorPrefix)
@@ -122,8 +114,17 @@ namespace vcpkg
         {
             auto err = std::make_unique<ParseControlErrorInfo>();
             err->name = origin;
-            err->extra_fields = Util::extract_keys(fields);
             err->other_errors = other_errors;
+            for (auto&& extra_field_entry : fields)
+            {
+                err->other_errors.emplace_back(
+                    LocalizedString::from_raw(origin)
+                        .append_raw(fmt::format(
+                            "{}:{}: ", extra_field_entry.second.second.row, extra_field_entry.second.second.column))
+                        .append_raw(ErrorPrefix)
+                        .append(msgUnexpectedField, msg::json_field = extra_field_entry.first));
+            }
+
             return err;
         }
         return nullptr;

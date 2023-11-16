@@ -158,24 +158,6 @@ namespace vcpkg
         static constexpr StringLiteral SUPPORTS = "Supports";
     }
 
-    static Span<const StringView> get_list_of_valid_fields()
-    {
-        static const StringView valid_fields[] = {
-            SourceParagraphFields::NAME,
-            SourceParagraphFields::VERSION,
-            SourceParagraphFields::PORT_VERSION,
-            SourceParagraphFields::DESCRIPTION,
-            SourceParagraphFields::MAINTAINERS,
-            SourceParagraphFields::BUILD_DEPENDS,
-            SourceParagraphFields::HOMEPAGE,
-            SourceParagraphFields::TYPE,
-            SourceParagraphFields::SUPPORTS,
-            SourceParagraphFields::DEFAULT_FEATURES,
-        };
-
-        return valid_fields;
-    }
-
     static void trim_all(std::vector<std::string>& arr)
     {
         for (auto& el : arr)
@@ -1559,23 +1541,6 @@ namespace vcpkg
             {
                 message.push_back('\n');
                 error_info_list[1]->to_string(message);
-            }
-
-            if (std::any_of(
-                    error_info_list.begin(),
-                    error_info_list.end(),
-                    [](const std::unique_ptr<ParseControlErrorInfo>& ppcei) { return !ppcei->extra_fields.empty(); }))
-            {
-                Strings::append(message,
-                                msg::format(msgListOfValidFieldsForControlFiles).extract_data(),
-                                Strings::join("\n    ", get_list_of_valid_fields()),
-                                "\n\n");
-#if defined(_WIN32)
-                auto bootstrap = ".\\bootstrap-vcpkg.bat";
-#else
-                auto bootstrap = "./bootstrap-vcpkg.sh";
-#endif
-                Strings::append(message, msg::format(msgSuggestUpdateVcpkg, msg::command_line = bootstrap).data());
             }
         }
 

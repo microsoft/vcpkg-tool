@@ -2021,10 +2021,6 @@ DECLARE_MESSAGE(LinkageDynamicRelease, (), "", "Dynamic Release (/MD)")
 DECLARE_MESSAGE(LinkageStaticDebug, (), "", "Static Debug (/MTd)")
 DECLARE_MESSAGE(LinkageStaticRelease, (), "", "Static Release (/MT)")
 DECLARE_MESSAGE(ListHelp, (), "", "Lists installed libraries")
-DECLARE_MESSAGE(ListOfValidFieldsForControlFiles,
-                (),
-                "",
-                "This is the list of valid fields for CONTROL files (case-sensitive):")
 DECLARE_MESSAGE(LoadingCommunityTriplet,
                 (msg::path),
                 "'-- [COMMUNITY]' at the beginning must be preserved",
@@ -2236,7 +2232,6 @@ DECLARE_MESSAGE(ParagraphExactlyOne, (), "", "There should be exactly one paragr
 DECLARE_MESSAGE(ParagraphExpectedColonAfterField, (), "", "expected ':' after field name")
 DECLARE_MESSAGE(ParagraphExpectedFieldName, (), "", "expected field name")
 DECLARE_MESSAGE(ParagraphUnexpectedEndOfLine, (), "", "unexpected end of line, to span a blank line use \"  .\"")
-DECLARE_MESSAGE(ParseControlErrorInfoInvalidFields, (), "", "The following fields were not expected:")
 DECLARE_MESSAGE(
     ParseFeatureNameError,
     (msg::package_name, msg::url),
@@ -2606,10 +2601,6 @@ DECLARE_MESSAGE(SuggestStartingBashShell,
                 (),
                 "",
                 "Please make sure you have started a new bash shell for the change to take effect.")
-DECLARE_MESSAGE(SuggestUpdateVcpkg,
-                (msg::command_line),
-                "",
-                "You may need to update the vcpkg binary; try running {command_line} to update.")
 DECLARE_MESSAGE(SupportedPort, (msg::package_name), "", "Port {package_name} is supported.")
 DECLARE_MESSAGE(SwitchUsedMultipleTimes, (msg::option), "", "the switch '{option}' was specified multiple times")
 DECLARE_MESSAGE(SynopsisHeader, (), "Printed before a description of what a command does", "Synopsis:")

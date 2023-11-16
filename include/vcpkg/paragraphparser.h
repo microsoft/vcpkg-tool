@@ -19,13 +19,11 @@ namespace vcpkg
     struct ParseControlErrorInfo
     {
         std::string name;
-        std::vector<std::string> extra_fields;
         std::vector<LocalizedString> other_errors;
 
         bool has_error() const
         {
-            return !extra_fields.empty() ||
-                   !other_errors.empty();
+            return !other_errors.empty();
         }
 
         static std::string format_errors(View<std::unique_ptr<ParseControlErrorInfo>> errors);
