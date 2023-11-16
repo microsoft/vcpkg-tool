@@ -8,7 +8,6 @@
 #include <vcpkg/fwd/dependencies.h>
 
 #include <vcpkg/base/span.h>
-#include <vcpkg/base/stringview.h>
 
 #include <string>
 #include <vector>
