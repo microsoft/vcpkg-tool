@@ -1,17 +1,15 @@
 #pragma once
 
 #include <vcpkg/fwd/abi.h>
+#include <vcpkg/fwd/cmakevars.h>
 #include <vcpkg/fwd/dependencies.h>
+#include <vcpkg/fwd/vcpkgpaths.h>
 
-#include <vcpkg/base/json.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/path.h>
-#include <vcpkg/base/stringview.h>
 
-#include <vcpkg/cmakevars.h>
 #include <vcpkg/commands.build.h>
 #include <vcpkg/statusparagraphs.h>
-#include <vcpkg/vcpkgpaths.h>
 
 #include <memory>
 #include <string>

@@ -13,12 +13,13 @@
 #include <vcpkg/base/uuid.h>
 
 #include <vcpkg/abi.h>
+#include <vcpkg/cmakevars.h>
 #include <vcpkg/dependencies.h>
 #include <vcpkg/sourceparagraph.h>
 #include <vcpkg/spdx.h>
 #include <vcpkg/tools.h>
+#include <vcpkg/vcpkgpaths.h>
 
-#include <array>
 #include <mutex>
 #include <utility>
 #include <vector>
