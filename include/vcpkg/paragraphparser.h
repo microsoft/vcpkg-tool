@@ -26,7 +26,6 @@ namespace vcpkg
             return !other_errors.empty();
         }
 
-        static std::string format_errors(View<std::unique_ptr<ParseControlErrorInfo>> errors);
         void to_string(std::string& target) const;
         std::string to_string() const;
 

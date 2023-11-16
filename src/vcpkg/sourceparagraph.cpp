@@ -1530,23 +1530,6 @@ namespace vcpkg
         return Unit{};
     }
 
-    std::string ParseControlErrorInfo::format_errors(View<std::unique_ptr<ParseControlErrorInfo>> error_info_list)
-    {
-        std::string message;
-
-        if (!error_info_list.empty())
-        {
-            error_info_list[0]->to_string(message);
-            for (std::size_t idx = 1; idx < error_info_list.size(); ++idx)
-            {
-                message.push_back('\n');
-                error_info_list[1]->to_string(message);
-            }
-        }
-
-        return message;
-    }
-
     static const char* after_nl(const char* first, const char* last)
     {
         const auto it = std::find(first, last, '\n');
@@ -1596,8 +1579,7 @@ namespace vcpkg
 
     void print_error_message(const std::unique_ptr<ParseControlErrorInfo>& error_info_list)
     {
-        print_error_message(LocalizedString::from_raw(
-            ParseControlErrorInfo::format_errors(View<std::unique_ptr<ParseControlErrorInfo>>{&error_info_list, 1})));
+        print_error_message(LocalizedString::from_raw(error_info_list->to_string()));
     }
 
     Optional<const FeatureParagraph&> SourceControlFile::find_feature(StringView featurename) const
