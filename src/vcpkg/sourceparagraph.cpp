@@ -284,7 +284,6 @@ namespace vcpkg
                 if (adjacent_equal != scf.feature_paragraphs.end())
                 {
                     auto error_info = std::make_unique<ParseControlErrorInfo>();
-                    error_info->name = scf.to_name();
                     error_info->other_errors.emplace_back(msg::format_error(
                         msgMultipleFeatures, msg::package_name = scf.to_name(), msg::feature = (*adjacent_equal)->name));
                     return error_info;
@@ -335,7 +334,7 @@ namespace vcpkg
         }
         else
         {
-            return ParseControlErrorInfo::from_error(origin, std::move(maybe_dependencies).error());
+            return ParseControlErrorInfo::from_error(std::move(maybe_dependencies).error());
         }
 
         buf = parser.optional_field(SourceParagraphFields::DEFAULT_FEATURES, textrowcol);
@@ -347,18 +346,17 @@ namespace vcpkg
             {
                 if (default_feature == "core")
                 {
-                    return ParseControlErrorInfo::from_error(origin, msg::format_error(msgDefaultFeatureCore));
+                    return ParseControlErrorInfo::from_error(msg::format_error(msgDefaultFeatureCore));
                 }
 
                 if (default_feature == "default")
                 {
-                    return ParseControlErrorInfo::from_error(origin, msg::format_error(msgDefaultFeatureDefault));
+                    return ParseControlErrorInfo::from_error(msg::format_error(msgDefaultFeatureDefault));
                 }
 
                 if (!Json::IdentifierDeserializer::is_ident(default_feature))
                 {
-                    return ParseControlErrorInfo::from_error(origin,
-                                                             msg::format_error(msgDefaultFeatureIdentifier)
+                    return ParseControlErrorInfo::from_error(msg::format_error(msgDefaultFeatureIdentifier)
                                                                  .append_raw('\n')
                                                                  .append_raw(NotePrefix)
                                                                  .append(msgParseIdentifierError,
@@ -371,7 +369,7 @@ namespace vcpkg
         }
         else
         {
-            return ParseControlErrorInfo::from_error(origin, std::move(maybe_default_features).error());
+            return ParseControlErrorInfo::from_error(std::move(maybe_default_features).error());
         }
 
         TextRowCol supports_position;
@@ -417,7 +415,7 @@ namespace vcpkg
         }
         else
         {
-            return ParseControlErrorInfo::from_error(origin, std::move(maybe_dependencies).error());
+            return ParseControlErrorInfo::from_error(std::move(maybe_dependencies).error());
         }
 
         auto err = parser.error_info();
@@ -430,13 +428,6 @@ namespace vcpkg
     ParseExpected<SourceControlFile> SourceControlFile::parse_control_file(StringView origin,
                                                                            std::vector<Paragraph>&& control_paragraphs)
     {
-        if (control_paragraphs.size() == 0)
-        {
-            auto ret = std::make_unique<ParseControlErrorInfo>();
-            ret->name = origin.to_string();
-            return ret;
-        }
-
         auto control_file = std::make_unique<SourceControlFile>();
 
         auto maybe_source = parse_source_paragraph(origin, std::move(control_paragraphs.front()));
@@ -1424,7 +1415,6 @@ namespace vcpkg
         if (!reader.errors().empty())
         {
             ParseControlErrorInfo err;
-            err.name = control_path.to_string();
             err.other_errors = std::move(reader.errors());
             return LocalizedString::from_raw(err.to_string());
         }

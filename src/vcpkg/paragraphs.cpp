@@ -46,10 +46,9 @@ namespace vcpkg
         return LocalizedString::from_raw(p->to_string());
     }
 
-    std::unique_ptr<ParseControlErrorInfo> ParseControlErrorInfo::from_error(StringView name, LocalizedString&& ls)
+    std::unique_ptr<ParseControlErrorInfo> ParseControlErrorInfo::from_error(LocalizedString&& ls)
     {
         auto error_info = std::make_unique<ParseControlErrorInfo>();
-        error_info->name.assign(name.data(), name.size());
         error_info->other_errors.emplace_back(std::move(ls));
         return error_info;
     }
@@ -113,7 +112,6 @@ namespace vcpkg
         if (!fields.empty() || !other_errors.empty())
         {
             auto err = std::make_unique<ParseControlErrorInfo>();
-            err->name = origin;
             err->other_errors = other_errors;
             for (auto&& extra_field_entry : fields)
             {

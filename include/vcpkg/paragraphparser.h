@@ -18,7 +18,6 @@ namespace vcpkg
 {
     struct ParseControlErrorInfo
     {
-        std::string name;
         std::vector<LocalizedString> other_errors;
 
         bool has_error() const
@@ -29,7 +28,7 @@ namespace vcpkg
         void to_string(std::string& target) const;
         std::string to_string() const;
 
-        static std::unique_ptr<ParseControlErrorInfo> from_error(StringView port_name, LocalizedString&& ls);
+        static std::unique_ptr<ParseControlErrorInfo> from_error(LocalizedString&& ls);
     };
 } // namespace vcpkg
 
