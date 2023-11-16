@@ -96,10 +96,14 @@ namespace vcpkg
                                msg::expected_version = XML_VERSION,
                                msg::actual_version = match_xml_version[1].str());
 
-        const std::regex tool_regex{fmt::format(R"###(<tool[\s]+name="{}"[\s]+os="{}" arch="{}>)###", tool, os, host_processor)};
+        const std::regex tool_regex_with_arch{fmt::format(R"###(<tool[\s]+name="{}"[\s]+os="{}" arch="{}>)###", tool, os, host_processor)};
         std::cmatch match_tool_entry;
-        const bool has_tool_entry = std::regex_search(XML.begin(), XML.end(), match_tool_entry, tool_regex);
-        if (!has_tool_entry) return nullopt;
+        const bool has_tool_entry_with_arch = std::regex_search(XML.begin(), XML.end(), match_tool_entry, tool_regex_with_arch);
+        if (!has_tool_entry_with_arch) {
+            const std::regex tool_regex_without_arch{fmt::format(R"###(<tool[\s]+name="{}"[\s]+os="{}">)###", tool, os)};
+            const bool has_tool_entry_without_arch = std::regex_search(XML.begin(), XML.end(), match_tool_entry, tool_regex_with_arch);
+            if (!has_tool_entry_without_arch) return nullopt;
+        }
 
         const std::string tool_data =
             Strings::find_exactly_one_enclosed(XML, match_tool_entry[0].str(), "</tool>").to_string();
