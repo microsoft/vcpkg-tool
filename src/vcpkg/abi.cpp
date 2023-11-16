@@ -2,7 +2,6 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
-#include <vcpkg/base/lazy.h>
 #include <vcpkg/base/lineinfo.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/parallel-algorithms.h>
