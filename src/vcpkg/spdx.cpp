@@ -262,7 +262,7 @@ std::string vcpkg::write_sbom(const InstallPlanAction& action,
     const auto& scf = *scfl.source_control_file;
 
     auto doc_ns = Strings::concat("https://spdx.org/spdxdocs/",
-                                  scf.core_paragraph->name,
+                                  scf.to_name(),
                                   '-',
                                   action.spec.triplet(),
                                   '-',

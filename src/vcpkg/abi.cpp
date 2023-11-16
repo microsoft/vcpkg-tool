@@ -143,7 +143,7 @@ namespace vcpkg
     static std::pair<AbiEntries, std::string> get_port_files(const Filesystem& fs,
                                                              const SourceControlFileAndLocation& scfl)
     {
-        auto files_and_content = get_ports_files_and_contents(fs, scfl.source_location);
+        auto files_and_content = get_ports_files_and_contents(fs, scfl.port_directory());
 
         // If there is an unusually large number of files in the port then
         // something suspicious is going on.
@@ -151,9 +151,8 @@ namespace vcpkg
 
         if (files_and_content.size() > max_port_file_count)
         {
-            auto& paragraph = scfl.source_control_file->core_paragraph;
             msg::println_warning(
-                msgHashPortManyFiles, msg::package_name = paragraph->name, msg::count = files_and_content.size());
+                msgHashPortManyFiles, msg::package_name = scfl.to_name(), msg::count = files_and_content.size());
         }
 
         AbiEntries abi_entries;
@@ -175,10 +174,9 @@ namespace vcpkg
     {
         // Check that no "default" feature is present. Default features must be resolved before attempting to calculate
         // a package ABI, so the "default" should not have made it here.
-        static constexpr StringLiteral default_literal{"default"};
-        const bool has_no_pseudo_features = std::none_of(
-            sorted_feature_list.begin(), sorted_feature_list.end(), [](StringView s) { return s == default_literal; });
-        Checks::check_exit(VCPKG_LINE_INFO, has_no_pseudo_features);
+        const bool has_pseudo_features = std::binary_search(
+            sorted_feature_list.begin(), sorted_feature_list.end(), StringLiteral{"default"});
+        Checks::check_exit(VCPKG_LINE_INFO, !has_pseudo_features);
         Util::sort_unique_erase(sorted_feature_list);
 
         // Check that the "core" feature is present. After resolution into InternalFeatureSet "core" meaning "not
@@ -289,7 +287,7 @@ namespace vcpkg
 
         // portfile hashes/contents
         auto&& [port_files_abi, cmake_contents] = get_port_files(fs, scfl);
-        std::copy(port_files_abi.begin(), port_files_abi.end(), std::back_inserter(abi_entries));
+        Util::Vectors::append(&abi_entries, port_files_abi);
 
         // cmake helpers (access to cmake helper hashes in cache not in parallel)
         for (auto&& helper : cmake_script_hashes)
@@ -339,7 +337,7 @@ namespace vcpkg
         auto& fs = paths.get_filesystem();
         auto& abi_info = *action.abi_info.get();
         auto abi_tag_entries = std::move(private_abi.abi_entries);
-        std::move(dependency_abis.begin(), dependency_abis.end(), std::back_inserter(abi_tag_entries));
+        Util::Vectors::append(&abi_tag_entries, dependency_abis);
 
         abi_tag_entries.emplace_back("triplet_abi", *abi_info.triplet_abi.get());
 
