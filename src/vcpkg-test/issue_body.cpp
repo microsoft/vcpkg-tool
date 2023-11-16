@@ -54,6 +54,11 @@ TEST_CASE ("Testing append_log extra_size", "[github-issue-body]")
     using namespace vcpkg;
     {
         std::string out;
+        append_logs({}, 500, out);
+        CHECK(out == "");
+    }
+    {
+        std::string out;
         std::vector<std::pair<Path, std::string>> logs{
             {"not_included_1", file_content}, {"test", file_content}, {"test 2", file_content}};
         append_logs(std::move(logs), 500, out);
