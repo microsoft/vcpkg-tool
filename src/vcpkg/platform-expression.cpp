@@ -412,9 +412,9 @@ namespace vcpkg::PlatformExpression
 
     using namespace detail;
 
-    Expr::Expr() = default;
-    Expr::Expr(Expr&& other) = default;
-    Expr& Expr::operator=(Expr&& other) = default;
+    Expr::Expr() noexcept = default;
+    Expr::Expr(Expr&& other) noexcept = default;
+    Expr& Expr::operator=(Expr&& other) noexcept = default;
 
     Expr::Expr(const Expr& other)
     {
@@ -438,7 +438,7 @@ namespace vcpkg::PlatformExpression
     }
 
     Expr::Expr(std::unique_ptr<ExprImpl>&& e) : underlying_(std::move(e)) { }
-    Expr::~Expr() = default;
+    Expr::~Expr() noexcept = default;
 
     Expr Expr::Identifier(StringView id)
     {

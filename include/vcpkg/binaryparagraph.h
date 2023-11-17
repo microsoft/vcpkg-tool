@@ -11,7 +11,7 @@ namespace vcpkg
     /// </summary>
     struct BinaryParagraph
     {
-        BinaryParagraph();
+        BinaryParagraph() = default;
         explicit BinaryParagraph(Paragraph&& fields);
         BinaryParagraph(const SourceParagraph& spgh,
                         const std::vector<std::string>& default_features,

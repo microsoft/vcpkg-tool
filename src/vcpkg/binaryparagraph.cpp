@@ -27,8 +27,6 @@ namespace vcpkg
         static constexpr StringLiteral DEFAULT_FEATURES = "Default-Features";
     }
 
-    BinaryParagraph::BinaryParagraph() = default;
-
     BinaryParagraph::BinaryParagraph(Paragraph&& fields)
     {
         ParagraphParser parser(std::move(fields));
