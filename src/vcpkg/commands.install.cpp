@@ -90,7 +90,7 @@ namespace vcpkg
             if (is_regular_file(status) && (filename == ".DS_Store" || filename == "CONTROL" ||
                                             filename == "vcpkg.json" || filename == "BUILD_INFO"))
             {
-                // Do not copy the control file or manifest file
+                // Don't copy control or manifest files
                 return invalid;
             }
 
@@ -121,8 +121,8 @@ namespace vcpkg
         install_dest_subdir.push_back('/');
         std::vector<std::string> output(files.size() + 1, install_dest_subdir);
 
-        // Note that output and files are of by one because
-        // because the first element of output is the install_dest_dir itself.
+        // Note that output and files are off by one because
+        // the first element of output is the install_dest_dir itself.
         for (size_t i = 0; i < files.size(); ++i)
         {
             const auto suffix = files[i].path.generic_u8string().substr(prefix_length + 1);
@@ -131,7 +131,7 @@ namespace vcpkg
 
             if (is_directory(files[i].type))
             {
-                // Trailing backslash for directories
+                // Trailing slash for directories
                 this_output.push_back('/');
             }
         }
