@@ -1,6 +1,7 @@
+#include <vcpkg/base/fwd/messages.h>
+
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/lineinfo.h>
-#include <vcpkg/base/messages.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/util.h>
 
@@ -105,7 +106,7 @@ namespace vcpkg
                 StringView triplet_prefix{colon + 1, last_arg.end()};
                 // TODO: Support autocomplete for ports in --overlay-ports
                 auto maybe_port = Paragraphs::try_load_port_required(
-                    paths.get_filesystem(), port_name, paths.builtin_ports_directory() / port_name);
+                    paths.get_filesystem(), port_name, PortLocation{paths.builtin_ports_directory() / port_name});
                 if (!maybe_port)
                 {
                     Checks::exit_success(VCPKG_LINE_INFO);

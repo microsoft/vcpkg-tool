@@ -1,6 +1,5 @@
 #include <vcpkg-test/util.h>
 
-#include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.process.h>
 
 using namespace vcpkg;

@@ -9,7 +9,7 @@ TEST_CASE ("spdx maximum serialization", "[spdx]")
 {
     PackageSpec spec{"zlib", Test::ARM_UWP};
     SourceControlFileAndLocation scfl;
-    scfl.registry_location = "git://some-vcs-url";
+    scfl.spdx_location = "git://some-vcs-url";
     auto& scf = *(scfl.source_control_file = std::make_unique<SourceControlFile>());
     auto& cpgh = *(scf.core_paragraph = std::make_unique<SourceParagraph>());
     cpgh.name = "zlib";
@@ -17,9 +17,8 @@ TEST_CASE ("spdx maximum serialization", "[spdx]")
     cpgh.description = {"description"};
     cpgh.homepage = "homepage";
     cpgh.license = "MIT";
-    cpgh.port_version = 5;
-    cpgh.raw_version = "1.0";
     cpgh.version_scheme = VersionScheme::Relaxed;
+    cpgh.version = Version{"1.0", 5};
 
     InstallPlanAction ipa(spec, scfl, "test_packages_root", RequestType::USER_REQUESTED, Test::X86_WINDOWS, {}, {}, {});
     auto& abi = *(ipa.abi_info = AbiInfo{}).get();
@@ -171,9 +170,8 @@ TEST_CASE ("spdx minimum serialization", "[spdx]")
     auto& scf = *(scfl.source_control_file = std::make_unique<SourceControlFile>());
     auto& cpgh = *(scf.core_paragraph = std::make_unique<SourceParagraph>());
     cpgh.name = "zlib";
-    cpgh.port_version = 0;
-    cpgh.raw_version = "1.0";
     cpgh.version_scheme = VersionScheme::String;
+    cpgh.version = Version{"1.0", 0};
 
     InstallPlanAction ipa(spec, scfl, "test_packages_root", RequestType::USER_REQUESTED, Test::X86_WINDOWS, {}, {}, {});
     auto& abi = *(ipa.abi_info = AbiInfo{}).get();
@@ -299,9 +297,8 @@ TEST_CASE ("spdx concat resources", "[spdx]")
     auto& scf = *(scfl.source_control_file = std::make_unique<SourceControlFile>());
     auto& cpgh = *(scf.core_paragraph = std::make_unique<SourceParagraph>());
     cpgh.name = "zlib";
-    cpgh.port_version = 0;
-    cpgh.raw_version = "1.0";
     cpgh.version_scheme = VersionScheme::String;
+    cpgh.version = Version{"1.0", 0};
 
     InstallPlanAction ipa(spec, scfl, "test_packages_root", RequestType::USER_REQUESTED, Test::X86_WINDOWS, {}, {}, {});
     auto& abi = *(ipa.abi_info = AbiInfo{}).get();

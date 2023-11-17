@@ -1,12 +1,10 @@
 #pragma once
 
+#include <vcpkg/base/fwd/expected.h>
 #include <vcpkg/base/fwd/files.h>
+#include <vcpkg/base/fwd/optional.h>
+#include <vcpkg/base/fwd/stringview.h>
 #include <vcpkg/base/fwd/system.h>
-
-#include <vcpkg/base/expected.h>
-#include <vcpkg/base/messages.h>
-#include <vcpkg/base/optional.h>
-#include <vcpkg/base/stringview.h>
 
 #include <string>
 #include <vector>

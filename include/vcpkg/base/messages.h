@@ -3,7 +3,6 @@
 #include <vcpkg/base/fwd/messages.h>
 
 #include <vcpkg/base/fmt.h>
-#include <vcpkg/base/format.h>
 #include <vcpkg/base/span.h>
 #include <vcpkg/base/stringview.h>
 

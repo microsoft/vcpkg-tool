@@ -1,3 +1,4 @@
+#include <vcpkg/base/optional.h>
 #include <vcpkg/base/system.proxy.h>
 
 vcpkg::Optional<vcpkg::IEProxySetting> vcpkg::get_windows_ie_proxy_server()

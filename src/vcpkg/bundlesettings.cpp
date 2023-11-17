@@ -1,4 +1,5 @@
-#include <vcpkg/base/format.h>
+#include <vcpkg/base/file-contents.h>
+#include <vcpkg/base/fmt.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/messages.h>
 

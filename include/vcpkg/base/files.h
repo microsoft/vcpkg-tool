@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vcpkg/base/fwd/files.h>
-#include <vcpkg/base/fwd/format.h>
+#include <vcpkg/base/fwd/fmt.h>
 #include <vcpkg/base/fwd/message_sinks.h>
 #include <vcpkg/base/fwd/span.h>
 

@@ -30,11 +30,8 @@ namespace vcpkg
 
         bool is_feature() const { return !feature.empty(); }
 
-        Version get_version() const { return {version, port_version}; }
-
         PackageSpec spec;
-        std::string version;
-        int port_version = 0;
+        Version version;
         std::vector<std::string> description;
         std::vector<std::string> maintainers;
         std::string feature;

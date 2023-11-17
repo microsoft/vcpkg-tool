@@ -1,4 +1,6 @@
 #pragma once
+#include <vcpkg/fwd/statusparagraphs.h>
+
 #include <vcpkg/statusparagraph.h>
 
 #include <iterator>

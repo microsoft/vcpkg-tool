@@ -1,6 +1,6 @@
-#include <vcpkg/base/checks.h>
 #include <vcpkg/base/chrono.h>
-#include <vcpkg/base/format.h>
+#include <vcpkg/base/fmt.h>
+#include <vcpkg/base/optional.h>
 
 namespace vcpkg
 {
