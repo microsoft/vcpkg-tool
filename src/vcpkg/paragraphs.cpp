@@ -93,7 +93,7 @@ namespace
         }
     }
 
-    void append_field_errors(LocalizedString& result, const std::string& origin, const Paragraph& fields)
+    void append_field_errors(LocalizedString& result, StringView origin, const Paragraph& fields)
     {
         auto extra_field_entry = fields.begin();
         const auto last = fields.end();
