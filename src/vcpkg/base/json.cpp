@@ -1384,7 +1384,7 @@ namespace vcpkg::Json
 
     static std::atomic<uint64_t> g_json_reader_stats(0);
 
-    Reader::Reader(StringView origin) : m_stat_timer(g_json_reader_stats), m_origin(origin.data(), origin.size()) { }
+    Reader::Reader(StringView origin) : m_origin(origin.data(), origin.size()), m_stat_timer(g_json_reader_stats) { }
 
     uint64_t Reader::get_reader_stats() { return g_json_reader_stats.load(); }
 
