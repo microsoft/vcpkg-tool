@@ -1533,6 +1533,10 @@ namespace vcpkg
 
     void append_logs(std::vector<std::pair<Path, std::string>>&& logs, size_t max_size, std::string& out)
     {
+        if (logs.empty())
+        {
+            return;
+        }
         Util::sort(logs, [](const auto& left, const auto& right) { return left.second.size() < right.second.size(); });
         auto size_per_log = max_size / logs.size();
         size_t maximum = out.size();

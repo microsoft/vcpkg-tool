@@ -11,6 +11,7 @@
 #include <vcpkg/base/uuid.h>
 
 #include <vcpkg/archives.h>
+#include <vcpkg/commands.version.h>
 #include <vcpkg/configure-environment.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/tools.h>
