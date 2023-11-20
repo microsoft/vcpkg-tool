@@ -48,6 +48,7 @@ namespace
 
         // Jenkins
         // https://wiki.jenkins.io/display/JENKINS/Building+a+software+project#Buildingasoftwareproject-belowJenkinsSetEnvironmentVariables
+        {"JENKINS_HOME", "Jenkins_CI"},
         {"JENKINS_URL", "Jenkins_CI"},
 
         // TeamCity
