@@ -73,7 +73,50 @@ namespace vcpkg
                                 .append_raw(ErrorPrefix)
                                 .append(error_content));
     }
+} // namespace vcpkg
 
+namespace
+{
+    void append_errors(LocalizedString& result, const std::vector<LocalizedString>& errors)
+    {
+        auto error = errors.begin();
+        const auto last = errors.end();
+        for (;;)
+        {
+            result.append(*error);
+            if (++error == last)
+            {
+                return;
+            }
+
+            result.append_raw('\n');
+        }
+    }
+
+    void append_field_errors(LocalizedString& result, const std::string& origin, const Paragraph& fields)
+    {
+        auto extra_field_entry = fields.begin();
+        const auto last = fields.end();
+        for (;;)
+        {
+            result.append_raw(origin)
+                .append_raw(fmt::format(
+                    "{}:{}: ", extra_field_entry->second.second.row, extra_field_entry->second.second.column))
+                .append_raw(ErrorPrefix)
+                .append(msgUnexpectedField, msg::json_field = extra_field_entry->first);
+
+            if (++extra_field_entry == last)
+            {
+                return;
+            }
+
+            result.append_raw('\n');
+        }
+    }
+} // unnamed namespace
+
+namespace vcpkg
+{
     Optional<LocalizedString> ParagraphParser::error() const
     {
         LocalizedString result;
@@ -83,46 +126,16 @@ namespace vcpkg
             {
                 return nullopt;
             }
+
+            append_field_errors(result, origin, fields);
         }
         else
         {
-            auto error = errors.begin();
-            const auto last = errors.end();
-            for (;;)
-            {
-                result.append(*error);
-                if (++error == last)
-                {
-                    break;
-                }
-
-                result.append_raw('\n');
-            }
-        }
-
-        if (!fields.empty())
-        {
-            if (!errors.empty())
+            append_errors(result, errors);
+            if (!fields.empty())
             {
                 result.append_raw('\n');
-            }
-
-            auto extra_field_entry = fields.begin();
-            const auto last = fields.end();
-            for (;;)
-            {
-                result.append_raw(origin)
-                    .append_raw(fmt::format(
-                        "{}:{}: ", extra_field_entry->second.second.row, extra_field_entry->second.second.column))
-                    .append_raw(ErrorPrefix)
-                    .append(msgUnexpectedField, msg::json_field = extra_field_entry->first);
-
-                if (++extra_field_entry == last)
-                {
-                    break;
-                }
-
-                result.append_raw('\n');
+                append_field_errors(result, origin, fields);
             }
         }
 
