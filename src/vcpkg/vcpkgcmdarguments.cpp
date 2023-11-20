@@ -64,10 +64,13 @@ namespace
         {"BUILD_NUMBER", "Generic"},
     };
 
-    constexpr std::array<StringLiteral, 2> KNOWN_CI_REPOSITORY_IDENTIFIERS{
+    constexpr std::array<StringLiteral, 3> KNOWN_CI_REPOSITORY_IDENTIFIERS{
         // Azure Pipelines
         // https://learn.microsoft.com/azure/devops/pipelines/build/variables?view=azure-devops&tabs=yaml#build-variables-devops-services
         "BUILD_REPOSITORY_ID",
+        // GitLab CI
+        // https://docs.gitlab.com/ee/ci/variables/predefined_variables.html
+        "CI_PROJECT_ID",
         // GitHub Actions
         // https://docs.github.com/actions/learn-github-actions/variables#default-environment-variables
         "GITHUB_REPOSITORY_ID",
