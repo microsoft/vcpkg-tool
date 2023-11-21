@@ -158,7 +158,7 @@ DECLARE_MESSAGE(APackagePattern, (), "", "a package pattern")
 DECLARE_MESSAGE(APackagePatternArray, (), "", "a package pattern array")
 DECLARE_MESSAGE(APath, (), "", "a path")
 DECLARE_MESSAGE(AppliedUserIntegration, (), "", "Applied user-wide integration for this vcpkg root.")
-DECLARE_MESSAGE(ApplocalProcessing, (msg::path), "", "vcpkg applocal processing: {path}")
+DECLARE_MESSAGE(ApplocalProcessing, (), "", "deploying dependencies")
 DECLARE_MESSAGE(ARegistry, (), "", "a registry")
 DECLARE_MESSAGE(ARegistryImplementationKind, (), "", "a registry implementation kind")
 DECLARE_MESSAGE(ARegistryPath, (), "", "a registry path")
@@ -1295,6 +1295,7 @@ DECLARE_MESSAGE(FailedVendorAuthentication,
                 "",
                 "One or more {vendor} credential providers failed to authenticate. See '{url}' for more details "
                 "on how to provide credentials.")
+DECLARE_MESSAGE(FileIsNotExecutable, (), "", "this file does not appear to be executable")
 DECLARE_MESSAGE(FilesContainAbsolutePath1,
                 (),
                 "This message is printed before a list of found absolute paths, followed by FilesContainAbsolutePath2, "
@@ -2291,10 +2292,6 @@ DECLARE_MESSAGE(PERvaNotFound,
                 "{value:#X} is the Relative Virtual Address sought. Portable executable is a term-of-art, see "
                 "https://learn.microsoft.com/windows/win32/debug/pe-format",
                 "While parsing Portable Executable {path}, could not find RVA {value:#X}.")
-DECLARE_MESSAGE(PESignatureMismatch,
-                (msg::path),
-                "Portable Executable is a term-of-art, see https://learn.microsoft.com/windows/win32/debug/pe-format",
-                "While parsing Portable Executable {path}, signature mismatch.")
 DECLARE_MESSAGE(PerformingPostBuildValidation, (), "", "-- Performing post-build validation")
 DECLARE_MESSAGE(PortBugAllowRestrictedHeaders,
                 (msg::env_var),
