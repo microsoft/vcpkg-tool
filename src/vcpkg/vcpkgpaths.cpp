@@ -683,7 +683,7 @@ namespace vcpkg
         m_pimpl->triplets_dirs.emplace_back(community_triplets);
     }
 
-    VcpkgPaths::~VcpkgPaths() noexcept = default;
+    VcpkgPaths::~VcpkgPaths() = default;
 
     Path VcpkgPaths::package_dir(const PackageSpec& spec) const { return this->packages() / spec.dir(); }
     Path VcpkgPaths::build_dir(const PackageSpec& spec) const { return this->buildtrees() / spec.name(); }

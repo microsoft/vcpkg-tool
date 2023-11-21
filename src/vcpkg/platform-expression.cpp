@@ -438,7 +438,7 @@ namespace vcpkg::PlatformExpression
     }
 
     Expr::Expr(std::unique_ptr<ExprImpl>&& e) : underlying_(std::move(e)) { }
-    Expr::~Expr() noexcept = default;
+    Expr::~Expr() = default;
 
     Expr Expr::Identifier(StringView id)
     {

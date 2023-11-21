@@ -21,7 +21,7 @@ namespace vcpkg
     public:
         // Out of line con/destructor avoids exposing XunitTest
         XunitWriter();
-        ~XunitWriter() noexcept;
+        ~XunitWriter();
         void add_test_results(const PackageSpec& spec,
                               BuildResult build_result,
                               const ElapsedTime& elapsed_time,

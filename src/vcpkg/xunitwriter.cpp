@@ -90,7 +90,7 @@ namespace
 }
 
 XunitWriter::XunitWriter() = default;
-XunitWriter::~XunitWriter() noexcept = default;
+XunitWriter::~XunitWriter() = default;
 
 void XunitWriter::add_test_results(const PackageSpec& spec,
                                    BuildResult build_result,

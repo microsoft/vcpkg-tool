@@ -197,10 +197,6 @@ namespace vcpkg
         std::string value;
 
         PortApplicableSetting(StringView setting);
-        PortApplicableSetting(const PortApplicableSetting&) = default;
-        PortApplicableSetting(PortApplicableSetting&&) = default;
-        PortApplicableSetting& operator=(const PortApplicableSetting&) = default;
-        PortApplicableSetting& operator=(PortApplicableSetting&&) = default;
         bool is_port_affected(StringView port_name) const noexcept;
 
     private:

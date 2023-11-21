@@ -32,7 +32,7 @@ namespace vcpkg::PlatformExpression
         Expr& operator=(Expr&&) noexcept;
 
         explicit Expr(std::unique_ptr<detail::ExprImpl>&& e);
-        ~Expr() noexcept;
+        ~Expr();
 
         bool evaluate(const Context& context) const;
         bool is_empty() const { return !static_cast<bool>(underlying_); }
