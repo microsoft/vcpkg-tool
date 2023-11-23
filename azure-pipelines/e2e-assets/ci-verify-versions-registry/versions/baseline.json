@@ -1,0 +1,76 @@
+{
+  "default": {
+    "bad-git-tree": {
+      "baseline": "1.1",
+      "port-version": 0
+    },
+    "bad-history-name": {
+      "baseline": "1.1",
+      "port-version": 0
+    },
+    "baseline-version-mismatch": {
+      "baseline": "1.0",
+      "port-version": 0
+    },
+    "dependency-not-in-versions-database": {
+      "baseline": "1.0",
+      "port-version": 0
+    },
+    "dependency-not-in-versions-database-feature": {
+      "baseline": "1.0",
+      "port-version": 0
+    },
+    "dependency-version-not-in-versions-database": {
+      "baseline": "1.0",
+      "port-version": 0
+    },
+    "dependency-version-not-in-versions-database-feature": {
+      "baseline": "1.0",
+      "port-version": 0
+    },
+    "empty-versions": {
+      "baseline": "1.0",
+      "port-version": 0
+    },
+    "good": {
+      "baseline": "1.0",
+      "port-version": 0
+    },
+    "has-local-edits": {
+      "baseline": "1.0.0",
+      "port-version": 0
+    },
+    "malformed": {
+      "baseline": "1.0",
+      "port-version": 0
+    },
+    "mismatch-git-tree": {
+      "baseline": "1.0",
+      "port-version": 0
+    },
+    "no-versions": {
+      "baseline": "1.0",
+      "port-version": 0
+    },
+    "override-not-in-versions-database": {
+      "baseline": "1.0",
+      "port-version": 0
+    },
+    "override-version-not-in-versions-database": {
+      "baseline": "1.0",
+      "port-version": 0
+    },
+    "version-mismatch": {
+      "baseline": "1.1",
+      "port-version": 0
+    },
+    "version-missing": {
+      "baseline": "1.1",
+      "port-version": 0
+    },
+    "version-scheme-mismatch": {
+      "baseline": "1.1",
+      "port-version": 0
+    }
+  }
+}

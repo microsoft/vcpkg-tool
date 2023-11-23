@@ -228,6 +228,12 @@ namespace vcpkg
             return std::move(*m_t.get());
         }
 
+        Error& error() & noexcept
+        {
+            unreachable_if_not_error(VCPKG_LINE_INFO);
+            return m_error;
+        }
+
         const Error& error() const& noexcept
         {
             unreachable_if_not_error(VCPKG_LINE_INFO);
@@ -235,6 +241,12 @@ namespace vcpkg
         }
 
         Error&& error() && noexcept
+        {
+            unreachable_if_not_error(VCPKG_LINE_INFO);
+            return std::move(m_error);
+        }
+
+        const Error&& error() const&& noexcept
         {
             unreachable_if_not_error(VCPKG_LINE_INFO);
             return std::move(m_error);

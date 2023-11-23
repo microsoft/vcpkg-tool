@@ -957,7 +957,6 @@ namespace vcpkg
 
     ExpectedL<std::map<std::string, std::string, std::less<>>> VcpkgPaths::git_get_local_port_treeish_map() const
     {
-        const auto local_repo = this->root / ".git";
         const auto git_cmd = git_cmd_builder({}, {})
                                  .string_arg("-C")
                                  .string_arg(this->builtin_ports_directory())

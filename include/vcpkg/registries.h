@@ -166,8 +166,48 @@ namespace vcpkg
         std::string git_tree;
     };
 
-    ExpectedL<Optional<std::vector<GitVersionDbEntry>>> get_builtin_versions(const VcpkgPaths& paths,
-                                                                             StringView port_name);
+    struct GitVersionsLoadResult
+    {
+        // If the versions database file does not exist, a disengaged Optional
+        // Otherwise, if a file I/O error occurred or the file is malformed, that error
+        // Otherwise, the loaded version database records
+        ExpectedL<Optional<std::vector<GitVersionDbEntry>>> entries;
+        Path versions_file_path;
+    };
+
+    GitVersionsLoadResult load_git_versions_file(const ReadOnlyFilesystem& fs,
+                                                 const Path& registry_versions,
+                                                 StringView port_name);
+
+    struct FullGitVersionsDatabase
+    {
+        explicit FullGitVersionsDatabase(const ReadOnlyFilesystem& fs,
+                                         const Path& registry_versions,
+                                         std::map<std::string, GitVersionsLoadResult, std::less<>>&& initial);
+        FullGitVersionsDatabase(FullGitVersionsDatabase&&);
+        FullGitVersionsDatabase& operator=(FullGitVersionsDatabase&&);
+
+        const GitVersionsLoadResult& lookup(StringView port_name);
+        const std::map<std::string, GitVersionsLoadResult, std::less<>>& cache() const;
+
+    private:
+        const ReadOnlyFilesystem* m_fs;
+        Path m_registry_versions;
+        std::map<std::string, GitVersionsLoadResult, std::less<>> m_cache;
+    };
+
+    // The outer expected only contains directory enumeration errors; individual parse errors are within
+    ExpectedL<FullGitVersionsDatabase> load_all_git_versions_files(const ReadOnlyFilesystem& fs,
+                                                                   const Path& registry_versions);
+
+    struct FilesystemVersionDbEntry
+    {
+        SchemedVersion version;
+        Path p;
+    };
+
+    ExpectedL<Optional<std::vector<FilesystemVersionDbEntry>>> load_filesystem_versions_file(
+        const ReadOnlyFilesystem& fs, const Path& registry_versions, StringView port_name, const Path& registry_root);
 
     ExpectedL<std::map<std::string, Version, std::less<>>> get_builtin_baseline(const VcpkgPaths& paths);
 
@@ -177,12 +217,6 @@ namespace vcpkg
     // No match is 0, exact match is SIZE_MAX, wildcard match is the length of the pattern.
     // Note that the * is included in the match size to distinguish from 0 == no match.
     size_t package_pattern_match(StringView name, StringView pattern);
-
-    struct FilesystemVersionDbEntry
-    {
-        SchemedVersion version;
-        Path p;
-    };
 
     std::unique_ptr<Json::IDeserializer<std::vector<GitVersionDbEntry>>> make_git_version_db_deserializer();
     std::unique_ptr<Json::IDeserializer<std::vector<FilesystemVersionDbEntry>>> make_filesystem_version_db_deserializer(

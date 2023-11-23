@@ -1286,9 +1286,9 @@ TEST_CASE ("default-feature-core errors", "[manifests]")
     })json",
                                              PrintErrors::No);
     REQUIRE(!m_pgh.has_value());
-    REQUIRE(m_pgh.error().data() == "error: while loading <test manifest>:\n"
-                                    "$.default-features[0] (a default feature): the feature \"core\" turns off "
-                                    "default features and thus can't be in the default features list");
+    REQUIRE(m_pgh.error().data() ==
+            "<test manifest>: error: $.default-features[0] (a default feature): the feature \"core\" turns off default "
+            "features and thus can't be in the default features list");
 }
 
 TEST_CASE ("default-feature-core-object errors", "[manifests]")
@@ -1298,9 +1298,9 @@ TEST_CASE ("default-feature-core-object errors", "[manifests]")
     })json",
                                              PrintErrors::No);
     REQUIRE(!m_pgh.has_value());
-    REQUIRE(m_pgh.error().data() == "error: while loading <test manifest>:\n"
-                                    "$.default-features[0].name (a default feature): the feature \"core\" turns "
-                                    "off default features and thus can't be in the default features list");
+    REQUIRE(m_pgh.error().data() ==
+            "<test manifest>: error: $.default-features[0].name (a default feature): the feature \"core\" turns off "
+            "default features and thus can't be in the default features list");
 }
 
 TEST_CASE ("default-feature-default errors", "[manifests]")
@@ -1310,9 +1310,9 @@ TEST_CASE ("default-feature-default errors", "[manifests]")
     })json",
                                              PrintErrors::No);
     REQUIRE(!m_pgh.has_value());
-    REQUIRE(m_pgh.error().data() == "error: while loading <test manifest>:\n"
-                                    "$.default-features[0] (a default feature): the feature \"default\" refers to "
-                                    "the set of default features and thus can't be in the default features list");
+    REQUIRE(m_pgh.error().data() ==
+            "<test manifest>: error: $.default-features[0] (a default feature): the feature \"default\" refers to the "
+            "set of default features and thus can't be in the default features list");
 }
 
 TEST_CASE ("default-feature-default-object errors", "[manifests]")
@@ -1323,9 +1323,8 @@ TEST_CASE ("default-feature-default-object errors", "[manifests]")
                                              PrintErrors::No);
     REQUIRE(!m_pgh.has_value());
     REQUIRE(m_pgh.error().data() ==
-            "error: while loading <test manifest>:\n"
-            "$.default-features[0].name (a default feature): the feature \"default\" refers to the set of default "
-            "features and thus can't be in the default features list");
+            "<test manifest>: error: $.default-features[0].name (a default feature): the feature \"default\" refers to "
+            "the set of default features and thus can't be in the default features list");
 }
 
 TEST_CASE ("default-feature-empty errors", "[manifests]")
@@ -1335,10 +1334,10 @@ TEST_CASE ("default-feature-empty errors", "[manifests]")
     })json",
                                              PrintErrors::No);
     REQUIRE(!m_pgh.has_value());
-    REQUIRE(m_pgh.error().data() == "error: while loading <test manifest>:\n"
-                                    "$.default-features[0] (a feature name): \"\" is not a valid feature name. "
-                                    "Feature names must be lowercase alphanumeric+hypens and not reserved (see "
-                                    "https://learn.microsoft.com/vcpkg/users/manifests for more information).");
+    REQUIRE(m_pgh.error().data() ==
+            "<test manifest>: error: $.default-features[0] (a feature name): \"\" is not a valid feature name. Feature "
+            "names must be lowercase alphanumeric+hypens and not reserved (see "
+            "https://learn.microsoft.com/vcpkg/users/manifests for more information).");
 }
 
 TEST_CASE ("default-feature-empty-object errors", "[manifests]")
@@ -1348,10 +1347,10 @@ TEST_CASE ("default-feature-empty-object errors", "[manifests]")
     })json",
                                              PrintErrors::No);
     REQUIRE(!m_pgh.has_value());
-    REQUIRE(m_pgh.error().data() == "error: while loading <test manifest>:\n"
-                                    "$.default-features[0].name (a feature name): \"\" is not a valid feature name. "
-                                    "Feature names must be lowercase alphanumeric+hypens and not reserved (see "
-                                    "https://learn.microsoft.com/vcpkg/users/manifests for more information).");
+    REQUIRE(m_pgh.error().data() ==
+            "<test manifest>: error: $.default-features[0].name (a feature name): \"\" is not a valid feature name. "
+            "Feature names must be lowercase alphanumeric+hypens and not reserved (see "
+            "https://learn.microsoft.com/vcpkg/users/manifests for more information).");
 }
 
 TEST_CASE ("dependency-name-empty errors", "[manifests]")
@@ -1361,10 +1360,10 @@ TEST_CASE ("dependency-name-empty errors", "[manifests]")
     })json",
                                              PrintErrors::No);
     REQUIRE(!m_pgh.has_value());
-    REQUIRE(m_pgh.error().data() == "error: while loading <test manifest>:\n"
-                                    "$.dependencies[0] (a package name): \"\" is not a valid package name. "
-                                    "Package names must be lowercase alphanumeric+hypens and not reserved (see "
-                                    "https://learn.microsoft.com/vcpkg/users/manifests for more information).");
+    REQUIRE(m_pgh.error().data() ==
+            "<test manifest>: error: $.dependencies[0] (a package name): \"\" is not a valid package name. Package "
+            "names must be lowercase alphanumeric+hypens and not reserved (see "
+            "https://learn.microsoft.com/vcpkg/users/manifests for more information).");
 }
 
 TEST_CASE ("dependency-name-empty-object errors", "[manifests]")
@@ -1374,10 +1373,10 @@ TEST_CASE ("dependency-name-empty-object errors", "[manifests]")
     })json",
                                              PrintErrors::No);
     REQUIRE(!m_pgh.has_value());
-    REQUIRE(m_pgh.error().data() == "error: while loading <test manifest>:\n"
-                                    "$.dependencies[0].name (a package name): \"\" is not a valid package name. "
-                                    "Package names must be lowercase alphanumeric+hypens and not reserved (see "
-                                    "https://learn.microsoft.com/vcpkg/users/manifests for more information).");
+    REQUIRE(m_pgh.error().data() ==
+            "<test manifest>: error: $.dependencies[0].name (a package name): \"\" is not a valid package name. "
+            "Package names must be lowercase alphanumeric+hypens and not reserved (see "
+            "https://learn.microsoft.com/vcpkg/users/manifests for more information).");
 }
 
 TEST_CASE ("dependency-feature-name-core errors", "[manifests]")
@@ -1393,9 +1392,8 @@ TEST_CASE ("dependency-feature-name-core errors", "[manifests]")
                                              PrintErrors::No);
     REQUIRE(!m_pgh.has_value());
     REQUIRE(m_pgh.error().data() ==
-            "error: while loading <test manifest>:\n"
-            "$.dependencies[0].features[0] (a feature name): the feature \"core\" cannot be in a dependency's feature "
-            "list. To turn off default features, add \"default-features\": false instead.");
+            "<test manifest>: error: $.dependencies[0].features[0] (a feature name): the feature \"core\" cannot be in "
+            "a dependency's feature list. To turn off default features, add \"default-features\": false instead.");
 }
 
 TEST_CASE ("dependency-feature-name-core-object errors", "[manifests]")
@@ -1412,9 +1410,8 @@ TEST_CASE ("dependency-feature-name-core-object errors", "[manifests]")
     REQUIRE(!m_pgh.has_value());
     REQUIRE(
         m_pgh.error().data() ==
-        "error: while loading <test manifest>:\n"
-        "$.dependencies[0].features[0].name (a feature name): the feature \"core\" cannot be in a dependency's feature "
-        "list. To turn off default features, add \"default-features\": false instead.");
+        "<test manifest>: error: $.dependencies[0].features[0].name (a feature name): the feature \"core\" cannot be "
+        "in a dependency's feature list. To turn off default features, add \"default-features\": false instead.");
 }
 
 TEST_CASE ("dependency-feature-name-default errors", "[manifests]")
@@ -1430,9 +1427,8 @@ TEST_CASE ("dependency-feature-name-default errors", "[manifests]")
                                              PrintErrors::No);
     REQUIRE(!m_pgh.has_value());
     REQUIRE(m_pgh.error().data() ==
-            "error: while loading <test manifest>:\n"
-            "$.dependencies[0].features[0] (a feature name): the feature \"default\" cannot be in a dependency's "
-            "feature list. To turn on default features, add \"default-features\": true instead.");
+            "<test manifest>: error: $.dependencies[0].features[0] (a feature name): the feature \"default\" cannot be "
+            "in a dependency's feature list. To turn on default features, add \"default-features\": true instead.");
 }
 
 TEST_CASE ("dependency-feature-name-default-object errors", "[manifests]")
@@ -1447,10 +1443,10 @@ TEST_CASE ("dependency-feature-name-default-object errors", "[manifests]")
     })json",
                                              PrintErrors::No);
     REQUIRE(!m_pgh.has_value());
-    REQUIRE(m_pgh.error().data() ==
-            "error: while loading <test manifest>:\n"
-            "$.dependencies[0].features[0].name (a feature name): the feature \"default\" cannot be in a dependency's "
-            "feature list. To turn on default features, add \"default-features\": true instead.");
+    REQUIRE(
+        m_pgh.error().data() ==
+        "<test manifest>: error: $.dependencies[0].features[0].name (a feature name): the feature \"default\" cannot "
+        "be in a dependency's feature list. To turn on default features, add \"default-features\": true instead.");
 }
 TEST_CASE ("dependency-feature-name-empty errors", "[manifests]")
 {
@@ -1465,10 +1461,9 @@ TEST_CASE ("dependency-feature-name-empty errors", "[manifests]")
                                              PrintErrors::No);
     REQUIRE(!m_pgh.has_value());
     REQUIRE(m_pgh.error().data() ==
-            "error: while loading <test manifest>:\n"
-            "$.dependencies[0].features[0] (a feature name): \"\" is not a valid feature name. Feature names must be "
-            "lowercase alphanumeric+hypens and not reserved (see https://learn.microsoft.com/vcpkg/users/manifests for "
-            "more information).");
+            "<test manifest>: error: $.dependencies[0].features[0] (a feature name): \"\" is not a valid feature name. "
+            "Feature names must be lowercase alphanumeric+hypens and not reserved (see "
+            "https://learn.microsoft.com/vcpkg/users/manifests for more information).");
 }
 
 TEST_CASE ("dependency-feature-name-empty-object errors", "[manifests]")
@@ -1484,8 +1479,7 @@ TEST_CASE ("dependency-feature-name-empty-object errors", "[manifests]")
                                              PrintErrors::No);
     REQUIRE(!m_pgh.has_value());
     REQUIRE(m_pgh.error().data() ==
-            "error: while loading <test manifest>:\n"
-            "$.dependencies[0].features[0].name (a feature name): \"\" is not a valid feature name. Feature names must "
-            "be lowercase alphanumeric+hypens and not reserved (see https://learn.microsoft.com/vcpkg/users/manifests "
-            "for more information).");
+            "<test manifest>: error: $.dependencies[0].features[0].name (a feature name): \"\" is not a valid feature "
+            "name. Feature names must be lowercase alphanumeric+hypens and not reserved (see "
+            "https://learn.microsoft.com/vcpkg/users/manifests for more information).");
 }

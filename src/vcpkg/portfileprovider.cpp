@@ -107,20 +107,16 @@ namespace vcpkg
             virtual ExpectedL<Version> get_baseline_version(StringView port_name) const override
             {
                 return m_baseline_cache.get_lazy(port_name, [this, port_name]() -> ExpectedL<Version> {
-                    auto maybe_maybe_version = registry_set.baseline_for_port(port_name);
-                    auto maybe_version = maybe_maybe_version.get();
-                    if (!maybe_version)
-                    {
-                        return std::move(maybe_maybe_version).error();
-                    }
+                    return registry_set.baseline_for_port(port_name).then(
+                        [&](Optional<Version>&& maybe_version) -> ExpectedL<Version> {
+                            auto version = maybe_version.get();
+                            if (!version)
+                            {
+                                return msg::format_error(msgPortNotInBaseline, msg::package_name = port_name);
+                            }
 
-                    auto version = maybe_version->get();
-                    if (!version)
-                    {
-                        return msg::format_error(msgPortNotInBaseline, msg::package_name = port_name);
-                    }
-
-                    return std::move(*version);
+                            return std::move(*version);
+                        });
                 });
             }
 
@@ -184,10 +180,11 @@ namespace vcpkg
                     auto maybe_path = ent->get()->get_version(version_spec.version);
                     if (auto path = maybe_path.get())
                     {
-                        auto maybe_scfl = Paragraphs::try_load_port_required(m_fs, version_spec.port_name, *path);
+                        auto maybe_scfl =
+                            Paragraphs::try_load_port_required(m_fs, version_spec.port_name, *path).maybe_scfl;
                         if (auto scfl = maybe_scfl.get())
                         {
-                            auto scf_vspec = scfl->source_control_file->to_version_spec();
+                            auto scf_vspec = scfl->to_version_spec();
                             if (scf_vspec == version_spec)
                             {
                                 return std::move(*scfl);
@@ -203,11 +200,13 @@ namespace vcpkg
                         else
                         {
                             // This should change to a soft error when ParseExpected is eliminated.
-                            print_error_message(maybe_scfl.error());
-                            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                                           msgFailedToLoadPort,
-                                                           msg::package_name = version_spec.port_name,
-                                                           msg::path = path->port_directory);
+                            print_error_message(
+                                maybe_scfl.error()
+                                    .append_raw('\n')
+                                    .append_raw(NotePrefix)
+                                    .append(msgWhileLoadingPortVersion, msg::version_spec = version_spec)
+                                    .append_raw('\n'));
+                            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
                         }
                     }
                     else
@@ -282,7 +281,8 @@ namespace vcpkg
                     // Try loading individual port
                     if (Paragraphs::is_port_directory(m_fs, ports_dir))
                     {
-                        auto maybe_scfl = Paragraphs::try_load_port_required(m_fs, port_name, PortLocation{ports_dir});
+                        auto maybe_scfl =
+                            Paragraphs::try_load_port_required(m_fs, port_name, PortLocation{ports_dir}).maybe_scfl;
                         if (auto scfl = maybe_scfl.get())
                         {
                             if (scfl->to_name() == port_name)
@@ -293,10 +293,8 @@ namespace vcpkg
                         else
                         {
                             print_error_message(maybe_scfl.error());
-                            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                                           msgFailedToLoadPort,
-                                                           msg::package_name = port_name,
-                                                           msg::path = ports_dir);
+                            msg::println();
+                            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
                         }
 
                         continue;
@@ -305,7 +303,8 @@ namespace vcpkg
                     auto ports_spec = ports_dir / port_name;
                     if (Paragraphs::is_port_directory(m_fs, ports_spec))
                     {
-                        auto found_scfl = Paragraphs::try_load_port_required(m_fs, port_name, PortLocation{ports_spec});
+                        auto found_scfl =
+                            Paragraphs::try_load_port_required(m_fs, port_name, PortLocation{ports_spec}).maybe_scfl;
                         if (auto scfl = found_scfl.get())
                         {
                             auto& scfl_name = scfl->to_name();
@@ -314,20 +313,19 @@ namespace vcpkg
                                 return std::move(*scfl);
                             }
 
-                            Checks::msg_exit_maybe_upgrade(
-                                VCPKG_LINE_INFO,
-                                msg::format(msgFailedToLoadPort, msg::package_name = port_name, msg::path = ports_spec)
-                                    .append_raw('\n')
-                                    .append(
-                                        msgMismatchedNames, msg::package_name = port_name, msg::actual = scfl_name));
+                            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
+                                                           LocalizedString::from_raw(ports_spec)
+                                                               .append_raw(": ")
+                                                               .append_raw(ErrorPrefix)
+                                                               .append(msgMismatchedNames,
+                                                                       msg::package_name = port_name,
+                                                                       msg::actual = scfl_name));
                         }
                         else
                         {
                             print_error_message(found_scfl.error());
-                            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                                           msgFailedToLoadPort,
-                                                           msg::package_name = port_name,
-                                                           msg::path = ports_dir);
+                            msg::println();
+                            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
                         }
                     }
                 }
@@ -356,7 +354,8 @@ namespace vcpkg
                     if (Paragraphs::is_port_directory(m_fs, ports_dir))
                     {
                         auto maybe_scfl =
-                            Paragraphs::try_load_port_required(m_fs, ports_dir.filename(), PortLocation{ports_dir});
+                            Paragraphs::try_load_port_required(m_fs, ports_dir.filename(), PortLocation{ports_dir})
+                                .maybe_scfl;
                         if (auto scfl = maybe_scfl.get())
                         {
                             // copy name before moving *scfl
@@ -368,8 +367,8 @@ namespace vcpkg
                         else
                         {
                             print_error_message(maybe_scfl.error());
-                            Checks::msg_exit_maybe_upgrade(
-                                VCPKG_LINE_INFO, msgFailedToLoadUnnamedPortFromPath, msg::path = ports_dir);
+                            msg::println();
+                            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
                         }
 
                         continue;
