@@ -13,6 +13,8 @@ tracking, and edits to which libraries are available.
 
 # Vcpkg-tool: Overview
 
+[中文总览](README_zh_CN.md)
+
 This repository contains the contents formerly at https://github.com/microsoft/vcpkg in the
 "toolsrc" tree, and build support.
 
@@ -103,7 +105,7 @@ Any use of third-party trademarks or logos are subject to those third-party's po
 
 # Telemetry
 
-vcpkg collects usage data in order to help us improve your experience.
+Vcpkg collects usage data in order to help us improve your experience.
 The data collected by Microsoft is anonymous.
 You can opt-out of telemetry by re-running the bootstrap-vcpkg script with -disableMetrics,
 passing --disable-metrics to vcpkg on the command line,
