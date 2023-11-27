@@ -158,24 +158,6 @@ namespace vcpkg
         static constexpr StringLiteral SUPPORTS = "Supports";
     }
 
-    static Span<const StringView> get_list_of_valid_fields()
-    {
-        static const StringView valid_fields[] = {
-            SourceParagraphFields::NAME,
-            SourceParagraphFields::VERSION,
-            SourceParagraphFields::PORT_VERSION,
-            SourceParagraphFields::DESCRIPTION,
-            SourceParagraphFields::MAINTAINERS,
-            SourceParagraphFields::BUILD_DEPENDS,
-            SourceParagraphFields::HOMEPAGE,
-            SourceParagraphFields::TYPE,
-            SourceParagraphFields::SUPPORTS,
-            SourceParagraphFields::DEFAULT_FEATURES,
-        };
-
-        return valid_fields;
-    }
-
     static void trim_all(std::vector<std::string>& arr)
     {
         for (auto& el : arr)
@@ -291,7 +273,7 @@ namespace vcpkg
 
                 fpgh.extra_info.sort_keys();
             }
-            [[nodiscard]] std::unique_ptr<ParseControlErrorInfo> operator()(SourceControlFile& scf) const
+            [[nodiscard]] Optional<LocalizedString> operator()(SourceControlFile& scf) const
             {
                 (*this)(*scf.core_paragraph);
                 std::for_each(scf.feature_paragraphs.begin(), scf.feature_paragraphs.end(), *this);
@@ -301,27 +283,25 @@ namespace vcpkg
                     std::adjacent_find(scf.feature_paragraphs.begin(), scf.feature_paragraphs.end(), FeatureEqual{});
                 if (adjacent_equal != scf.feature_paragraphs.end())
                 {
-                    auto error_info = std::make_unique<ParseControlErrorInfo>();
-                    error_info->name = scf.to_name();
-                    error_info->error = msg::format_error(
+                    return msg::format_error(
                         msgMultipleFeatures, msg::package_name = scf.to_name(), msg::feature = (*adjacent_equal)->name);
-                    return error_info;
                 }
-                return nullptr;
+                return nullopt;
             }
         } canonicalize{};
     }
 
-    static ParseExpected<SourceParagraph> parse_source_paragraph(StringView origin, Paragraph&& fields)
+    static ExpectedL<std::unique_ptr<SourceParagraph>> parse_source_paragraph(StringView origin, Paragraph&& fields)
     {
-        ParagraphParser parser(std::move(fields));
+        ParagraphParser parser(origin, std::move(fields));
 
         auto spgh = std::make_unique<SourceParagraph>();
 
-        parser.required_field(SourceParagraphFields::NAME, spgh->name);
-        parser.required_field(SourceParagraphFields::VERSION, spgh->version.text);
+        spgh->name = parser.required_field(SourceParagraphFields::NAME);
+        spgh->version.text = parser.required_field(SourceParagraphFields::VERSION);
 
-        auto pv_str = parser.optional_field(SourceParagraphFields::PORT_VERSION);
+        TextRowCol pv_position;
+        auto pv_str = parser.optional_field(SourceParagraphFields::PORT_VERSION, pv_position);
         if (!pv_str.empty())
         {
             auto pv_opt = Strings::strto<int>(pv_str);
@@ -331,7 +311,7 @@ namespace vcpkg
             }
             else
             {
-                parser.add_type_error(SourceParagraphFields::PORT_VERSION, msg::format(msgANonNegativeInteger));
+                parser.add_error(pv_position, msgPortVersionControlMustBeANonNegativeInteger);
             }
         }
 
@@ -343,8 +323,7 @@ namespace vcpkg
 
         spgh->homepage = parser.optional_field(SourceParagraphFields::HOMEPAGE);
         TextRowCol textrowcol;
-        std::string buf;
-        parser.optional_field(SourceParagraphFields::BUILD_DEPENDS, {buf, textrowcol});
+        std::string buf = parser.optional_field(SourceParagraphFields::BUILD_DEPENDS, textrowcol);
 
         auto maybe_dependencies = parse_dependencies_list(buf, origin, textrowcol);
         if (const auto dependencies = maybe_dependencies.get())
@@ -353,11 +332,10 @@ namespace vcpkg
         }
         else
         {
-            return ParseControlErrorInfo::from_error(origin, std::move(maybe_dependencies).error());
+            return std::move(maybe_dependencies).error();
         }
 
-        buf.clear();
-        parser.optional_field(SourceParagraphFields::DEFAULT_FEATURES, {buf, textrowcol});
+        buf = parser.optional_field(SourceParagraphFields::DEFAULT_FEATURES, textrowcol);
 
         auto maybe_default_features = parse_default_features_list(buf, origin, textrowcol);
         if (const auto default_features = maybe_default_features.get())
@@ -366,23 +344,20 @@ namespace vcpkg
             {
                 if (default_feature == "core")
                 {
-                    return ParseControlErrorInfo::from_error(origin, msg::format_error(msgDefaultFeatureCore));
+                    return msg::format_error(msgDefaultFeatureCore);
                 }
 
                 if (default_feature == "default")
                 {
-                    return ParseControlErrorInfo::from_error(origin, msg::format_error(msgDefaultFeatureDefault));
+                    return msg::format_error(msgDefaultFeatureDefault);
                 }
 
                 if (!Json::IdentifierDeserializer::is_ident(default_feature))
                 {
-                    return ParseControlErrorInfo::from_error(origin,
-                                                             msg::format_error(msgDefaultFeatureIdentifier)
-                                                                 .append_raw('\n')
-                                                                 .append_raw(NotePrefix)
-                                                                 .append(msgParseIdentifierError,
-                                                                         msg::value = default_feature,
-                                                                         msg::url = docs::manifests_url));
+                    return msg::format_error(msgDefaultFeatureIdentifier)
+                        .append_raw('\n')
+                        .append_raw(NotePrefix)
+                        .append(msgParseIdentifierError, msg::value = default_feature, msg::url = docs::manifests_url);
                 }
 
                 spgh->default_features.push_back({std::move(default_feature)});
@@ -390,40 +365,43 @@ namespace vcpkg
         }
         else
         {
-            return ParseControlErrorInfo::from_error(origin, std::move(maybe_default_features).error());
+            return std::move(maybe_default_features).error();
         }
 
-        auto supports_expr = parser.optional_field(SourceParagraphFields::SUPPORTS);
-        if (!supports_expr.empty())
+        TextRowCol supports_position;
+        auto supports_text = parser.optional_field(SourceParagraphFields::SUPPORTS, supports_position);
+        if (!supports_text.empty())
         {
             auto maybe_expr = PlatformExpression::parse_platform_expression(
-                supports_expr, PlatformExpression::MultipleBinaryOperators::Allow);
+                supports_text, PlatformExpression::MultipleBinaryOperators::Allow);
             if (auto expr = maybe_expr.get())
             {
                 spgh->supports_expression = std::move(*expr);
             }
             else
             {
-                parser.add_type_error(SourceParagraphFields::SUPPORTS, msg::format(msgAPlatformExpression));
+                parser.add_error(supports_position, msgControlSupportsMustBeAPlatformExpression);
             }
         }
 
         // This is leftover from a previous attempt to add "alias ports", not currently used.
         (void)parser.optional_field(SourceParagraphFields::TYPE);
-        auto err = parser.error_info(spgh->name.empty() ? origin : spgh->name);
-        if (err)
-            return err;
-        else
-            return spgh;
+        auto maybe_error = parser.error();
+        if (auto error = maybe_error.get())
+        {
+            return std::move(*error);
+        }
+
+        return spgh;
     }
 
-    static ParseExpected<FeatureParagraph> parse_feature_paragraph(StringView origin, Paragraph&& fields)
+    static ExpectedL<std::unique_ptr<FeatureParagraph>> parse_feature_paragraph(StringView origin, Paragraph&& fields)
     {
-        ParagraphParser parser(std::move(fields));
+        ParagraphParser parser(origin, std::move(fields));
 
         auto fpgh = std::make_unique<FeatureParagraph>();
 
-        parser.required_field(SourceParagraphFields::FEATURE, fpgh->name);
+        fpgh->name = parser.required_field(SourceParagraphFields::FEATURE);
         fpgh->description = Strings::split(parser.required_field(SourceParagraphFields::DESCRIPTION), '\n');
         trim_all(fpgh->description);
 
@@ -435,26 +413,21 @@ namespace vcpkg
         }
         else
         {
-            return ParseControlErrorInfo::from_error(origin, std::move(maybe_dependencies).error());
+            return std::move(maybe_dependencies).error();
         }
 
-        auto err = parser.error_info(fpgh->name.empty() ? origin : fpgh->name);
-        if (err)
-            return err;
-        else
-            return fpgh;
+        auto maybe_error = parser.error();
+        if (auto error = maybe_error.get())
+        {
+            return std::move(*error);
+        }
+
+        return fpgh;
     }
 
-    ParseExpected<SourceControlFile> SourceControlFile::parse_control_file(StringView origin,
-                                                                           std::vector<Paragraph>&& control_paragraphs)
+    ExpectedL<std::unique_ptr<SourceControlFile>> SourceControlFile::parse_control_file(
+        StringView origin, std::vector<Paragraph>&& control_paragraphs)
     {
-        if (control_paragraphs.size() == 0)
-        {
-            auto ret = std::make_unique<ParseControlErrorInfo>();
-            ret->name = origin.to_string();
-            return ret;
-        }
-
         auto control_file = std::make_unique<SourceControlFile>();
 
         auto maybe_source = parse_source_paragraph(origin, std::move(control_paragraphs.front()));
@@ -474,9 +447,10 @@ namespace vcpkg
                 return std::move(maybe_feature).error();
         }
 
-        if (auto maybe_error = canonicalize(*control_file))
+        auto maybe_error = canonicalize(*control_file);
+        if (auto error = maybe_error.get())
         {
-            return maybe_error;
+            return std::move(*error);
         }
 
         return control_file;
@@ -1270,9 +1244,10 @@ namespace vcpkg
                 }
             }
 
-            if (auto maybe_error = canonicalize(*control_file))
+            auto maybe_error = canonicalize(*control_file);
+            if (auto error = maybe_error.get())
             {
-                Checks::msg_exit_with_message(VCPKG_LINE_INFO, maybe_error->error);
+                Checks::msg_exit_with_message(VCPKG_LINE_INFO, *error);
             }
 
             return std::move(control_file); // gcc-7 bug workaround redundant move
@@ -1380,7 +1355,7 @@ namespace vcpkg
                                                                   StringView origin,
                                                                   MessageSink& warningsSink)
     {
-        Json::Reader reader;
+        Json::Reader reader(origin);
         auto res = reader.visit(manifest, ManifestConfigurationDeserializer::instance);
 
         if (!reader.warnings().empty())
@@ -1429,30 +1404,43 @@ namespace vcpkg
                                                                                     const Json::Object& manifest,
                                                                                     MessageSink& warnings_sink)
     {
-        Json::Reader reader;
+        Json::Reader reader(control_path);
 
         auto res = reader.visit(manifest, ManifestDeserializerType::instance);
 
         for (auto&& w : reader.warnings())
         {
-            warnings_sink.print(Color::warning,
-                                LocalizedString::from_raw(Strings::concat(control_path, ": ", w, '\n')));
+            warnings_sink.println(Color::warning, w);
         }
 
-        if (!reader.errors().empty())
+        switch (reader.errors().size())
         {
-            ParseControlErrorInfo err;
-            err.name = control_path.to_string();
-            err.other_errors = std::move(reader.errors());
-            return LocalizedString::from_raw(err.to_string());
-        }
-        else if (auto p = res.get())
-        {
-            return std::move(*p);
-        }
-        else
-        {
-            Checks::unreachable(VCPKG_LINE_INFO);
+            case 0:
+                if (auto p = res.get())
+                {
+                    return std::move(*p);
+                }
+                else
+                {
+                    Checks::unreachable(VCPKG_LINE_INFO);
+                }
+            case 1: return reader.errors()[0];
+            default:
+            {
+                LocalizedString result;
+                auto first = reader.errors().begin();
+                const auto last = reader.errors().end();
+                for (;;)
+                {
+                    result.append(*first);
+                    if (++first == last)
+                    {
+                        return result;
+                    }
+
+                    result.append_raw('\n');
+                }
+            }
         }
     }
 
@@ -1548,40 +1536,6 @@ namespace vcpkg
         return Unit{};
     }
 
-    std::string ParseControlErrorInfo::format_errors(View<std::unique_ptr<ParseControlErrorInfo>> error_info_list)
-    {
-        std::string message;
-
-        if (!error_info_list.empty())
-        {
-            error_info_list[0]->to_string(message);
-            for (std::size_t idx = 1; idx < error_info_list.size(); ++idx)
-            {
-                message.push_back('\n');
-                error_info_list[1]->to_string(message);
-            }
-
-            if (std::any_of(
-                    error_info_list.begin(),
-                    error_info_list.end(),
-                    [](const std::unique_ptr<ParseControlErrorInfo>& ppcei) { return !ppcei->extra_fields.empty(); }))
-            {
-                Strings::append(message,
-                                msg::format(msgListOfValidFieldsForControlFiles).extract_data(),
-                                Strings::join("\n    ", get_list_of_valid_fields()),
-                                "\n\n");
-#if defined(_WIN32)
-                auto bootstrap = ".\\bootstrap-vcpkg.bat";
-#else
-                auto bootstrap = "./bootstrap-vcpkg.sh";
-#endif
-                Strings::append(message, msg::format(msgSuggestUpdateVcpkg, msg::command_line = bootstrap).data());
-            }
-        }
-
-        return message;
-    }
-
     static const char* after_nl(const char* first, const char* last)
     {
         const auto it = std::find(first, last, '\n');
@@ -1627,12 +1581,6 @@ namespace vcpkg
         }
 
         msg::println();
-    }
-
-    void print_error_message(const std::unique_ptr<ParseControlErrorInfo>& error_info_list)
-    {
-        print_error_message(LocalizedString::from_raw(
-            ParseControlErrorInfo::format_errors(View<std::unique_ptr<ParseControlErrorInfo>>{&error_info_list, 1})));
     }
 
     Optional<const FeatureParagraph&> SourceControlFile::find_feature(StringView featurename) const

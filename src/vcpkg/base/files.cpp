@@ -1381,13 +1381,16 @@ namespace vcpkg
         return Unit{};
     }
 
-    FilePointer::~FilePointer()
+    void FilePointer::close() noexcept
     {
         if (m_fs)
         {
             Checks::check_exit(VCPKG_LINE_INFO, ::fclose(m_fs) == 0);
+            m_fs = 0;
         }
     }
+
+    FilePointer::~FilePointer() { close(); }
 
     ReadFilePointer::ReadFilePointer() noexcept = default;
 

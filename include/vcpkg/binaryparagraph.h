@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vcpkg/base/fwd/stringview.h>
+
 #include <vcpkg/packagespec.h>
 #include <vcpkg/paragraphparser.h>
 #include <vcpkg/sourceparagraph.h>
@@ -12,7 +14,7 @@ namespace vcpkg
     struct BinaryParagraph
     {
         BinaryParagraph();
-        explicit BinaryParagraph(Paragraph&& fields);
+        BinaryParagraph(StringView origin, Paragraph&& fields);
         BinaryParagraph(const SourceParagraph& spgh,
                         const std::vector<std::string>& default_features,
                         Triplet triplet,

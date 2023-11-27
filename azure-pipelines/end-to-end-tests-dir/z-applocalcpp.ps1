@@ -76,4 +76,40 @@ if ($IsWindows) {
 
     Require-FileExists "$pluginsDir/k4a.dll"
     Require-FileExists "$pluginsDir/depthengine_2_0.dll"
+
+    # Tests that nonexistent files are merely warnings
+    $nonexistentDll = Join-Path $basicDir 'nonexisting.dll'
+    Require-FileNotExists $nonexistentDll
+    $nonexistentOutput = Run-VcpkgAndCaptureOutput z-applocal `
+        --target-binary=$nonexistentDll `
+        --installed-bin-dir=$basicDir/installed/bin
+    Throw-IfNotFailed
+    if ($nonexistentOutput -match 'error:')
+    {
+        throw "Nonexistent emitted an error"
+    }
+
+    if ($nonexistentOutput -notmatch 'warning: no such file or directory')
+    {
+        throw "Nonexistent didn't emit expected warning"
+    }
+
+    # Tests that static libs emit a 'does not appear to be executable' warning
+    $staticLibDir = "$TestingRoot/applocal/static-lib"
+    Run-Vcpkg env "$staticLibDir/build.bat"
+    $staticLibFile = "$staticLibDir/static-lib.lib"
+    Require-FileExists $staticLibFile
+    $staticLibOutput = Run-VcpkgAndCaptureOutput z-applocal `
+        --target-binary=$staticLibFile `
+        --installed-bin-dir=$basicDir/installed/bin
+    Throw-IfNotFailed
+    if ($staticLibOutput -match 'error:')
+    {
+        throw "Static library emitted an error"
+    }
+
+    if ($staticLibOutput -notmatch 'warning: this file does not appear to be executable')
+    {
+        throw "Static library didn't emit expected warning"
+    }
 }

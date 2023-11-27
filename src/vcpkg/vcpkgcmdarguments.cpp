@@ -48,6 +48,7 @@ namespace
 
         // Jenkins
         // https://wiki.jenkins.io/display/JENKINS/Building+a+software+project#Buildingasoftwareproject-belowJenkinsSetEnvironmentVariables
+        {"JENKINS_HOME", "Jenkins_CI"},
         {"JENKINS_URL", "Jenkins_CI"},
 
         // TeamCity
@@ -62,6 +63,18 @@ namespace
         {"CI", "Generic"},
         {"BUILD_ID", "Generic"},
         {"BUILD_NUMBER", "Generic"},
+    };
+
+    constexpr std::array<StringLiteral, 3> KNOWN_CI_REPOSITORY_IDENTIFIERS{
+        // Azure Pipelines
+        // https://learn.microsoft.com/azure/devops/pipelines/build/variables?view=azure-devops&tabs=yaml#build-variables-devops-services
+        "BUILD_REPOSITORY_ID",
+        // GitLab CI
+        // https://docs.gitlab.com/ee/ci/variables/predefined_variables.html
+        "CI_PROJECT_ID",
+        // GitHub Actions
+        // https://docs.github.com/actions/learn-github-actions/variables#default-environment-variables
+        "GITHUB_REPOSITORY_ID",
     };
 
     void maybe_parse_cmd_arguments(CmdParser& cmd_parser,
@@ -561,8 +574,7 @@ namespace vcpkg
         from_env(get_env, GITHUB_REF_ENV, github_ref);
         from_env(get_env, GITHUB_SHA_ENV, github_sha);
         from_env(get_env, GITHUB_JOB_ENV, github_job);
-        from_env(get_env, GITHUB_REPOSITORY_ID, github_repository_id);
-        from_env(get_env, GITHUB_REPOSITORY_OWNER_ID, github_repository_owner_id);
+        from_env(get_env, GITHUB_REPOSITORY_OWNER_ID, ci_repository_owner_id);
         from_env(get_env, GITHUB_RUN_ID_ENV, github_run_id);
         from_env(get_env, GITHUB_TOKEN_ENV, github_token);
         from_env(get_env, GITHUB_WORKFLOW_ENV, github_workflow);
@@ -573,6 +585,17 @@ namespace vcpkg
             if (get_env(ci_env_var.first).has_value())
             {
                 m_detected_ci_environment = ci_env_var.second;
+                break;
+            }
+        }
+
+        // detect unique repository identifier in CI environments
+        for (auto&& ci_id_var : KNOWN_CI_REPOSITORY_IDENTIFIERS)
+        {
+            auto maybe_ci_id = get_env(ci_id_var);
+            if (auto ci_id = maybe_ci_id.get())
+            {
+                ci_repository_id = std::move(*ci_id);
                 break;
             }
         }
@@ -622,7 +645,7 @@ namespace vcpkg
         auto maybe_vcpkg_recursive_data = get_environment_variable(RECURSIVE_DATA_ENV);
         if (auto vcpkg_recursive_data = maybe_vcpkg_recursive_data.get())
         {
-            auto rec_doc = Json::parse(*vcpkg_recursive_data)
+            auto rec_doc = Json::parse(*vcpkg_recursive_data, RECURSIVE_DATA_ENV)
                                .map_error(parse_error_formatter)
                                .value_or_exit(VCPKG_LINE_INFO)
                                .value;
@@ -766,12 +789,12 @@ namespace vcpkg
             submission.track_string(StringMetric::DetectedCiEnvironment, *ci_env);
         }
 
-        if (auto repo_id = github_repository_id.get())
+        if (auto repo_id = ci_repository_id.get())
         {
             submission.track_string(StringMetric::CiProjectId, *repo_id);
         }
 
-        if (auto owner_id = github_repository_owner_id.get())
+        if (auto owner_id = ci_repository_owner_id.get())
         {
             submission.track_string(StringMetric::CiOwnerId, *owner_id);
         }
@@ -842,7 +865,6 @@ namespace vcpkg
     constexpr StringLiteral VcpkgCmdArguments::GITHUB_REPOSITORY_ENV;
     constexpr StringLiteral VcpkgCmdArguments::GITHUB_REF_ENV;
     constexpr StringLiteral VcpkgCmdArguments::GITHUB_SHA_ENV;
-    constexpr StringLiteral VcpkgCmdArguments::GITHUB_REPOSITORY_ID;
     constexpr StringLiteral VcpkgCmdArguments::GITHUB_REPOSITORY_OWNER_ID;
     constexpr StringLiteral VcpkgCmdArguments::GITHUB_TOKEN_ENV;
     constexpr StringLiteral VcpkgCmdArguments::GITHUB_WORKFLOW_ENV;
