@@ -30,27 +30,27 @@ TEST_CASE ("JSON stringify weird strings", "[json]")
 
 TEST_CASE ("JSON parse keywords", "[json]")
 {
-    auto res = Json::parse("true");
+    auto res = Json::parse("true", "test");
     REQUIRE(res);
     REQUIRE(res.get()->value.is_boolean());
     REQUIRE(res.get()->value.boolean(VCPKG_LINE_INFO));
-    res = Json::parse(" false ");
+    res = Json::parse(" false ", "test");
     REQUIRE(res);
     REQUIRE(res.get()->value.is_boolean());
     REQUIRE(!res.get()->value.boolean(VCPKG_LINE_INFO));
-    res = Json::parse(" null\t ");
+    res = Json::parse(" null\t ", "test");
     REQUIRE(res);
     REQUIRE(res.get()->value.is_null());
 }
 
 TEST_CASE ("JSON parse strings", "[json]")
 {
-    auto res = Json::parse(R"("")");
+    auto res = Json::parse(R"("")", "test");
     REQUIRE(res);
     REQUIRE(res.get()->value.is_string());
     REQUIRE(res.get()->value.string(VCPKG_LINE_INFO).size() == 0);
 
-    res = Json::parse(R"("\ud800")"); // unpaired surrogate
+    res = Json::parse(R"("\ud800")", "test"); // unpaired surrogate
     REQUIRE(res);
     REQUIRE(res.get()->value.is_string());
     REQUIRE(res.get()->value.string(VCPKG_LINE_INFO) == "\xED\xA0\x80");
@@ -59,17 +59,17 @@ TEST_CASE ("JSON parse strings", "[json]")
     const vcpkg::StringView radical = U8_STR("⎷");
     const vcpkg::StringView grin = U8_STR("😁");
 
-    res = Json::parse(R"("\uD83D\uDE01")"); // paired surrogates for grin
+    res = Json::parse(R"("\uD83D\uDE01")", "test"); // paired surrogates for grin
     REQUIRE(res);
     REQUIRE(res.get()->value.is_string());
     REQUIRE(res.get()->value.string(VCPKG_LINE_INFO) == grin.to_string());
 
-    res = Json::parse(make_json_string(radical)); // character in BMP
+    res = Json::parse(make_json_string(radical), "test"); // character in BMP
     REQUIRE(res);
     REQUIRE(res.get()->value.is_string());
     REQUIRE(res.get()->value.string(VCPKG_LINE_INFO) == radical);
 
-    res = Json::parse(make_json_string(grin)); // character above BMP
+    res = Json::parse(make_json_string(grin), "test"); // character above BMP
     REQUIRE(res);
     REQUIRE(res.get()->value.is_string());
     REQUIRE(res.get()->value.string(VCPKG_LINE_INFO) == grin);
@@ -77,42 +77,42 @@ TEST_CASE ("JSON parse strings", "[json]")
 
 TEST_CASE ("JSON parse strings with escapes", "[json]")
 {
-    auto res = Json::parse(R"("\t")");
+    auto res = Json::parse(R"("\t")", "test");
     REQUIRE(res);
     REQUIRE(res.get()->value.is_string());
     REQUIRE(res.get()->value.string(VCPKG_LINE_INFO) == "\t");
 
-    res = Json::parse(R"("\\")");
+    res = Json::parse(R"("\\")", "test");
     REQUIRE(res);
     REQUIRE(res.get()->value.is_string());
     REQUIRE(res.get()->value.string(VCPKG_LINE_INFO) == "\\");
 
-    res = Json::parse(R"("\/")");
+    res = Json::parse(R"("\/")", "test");
     REQUIRE(res);
     REQUIRE(res.get()->value.is_string());
     REQUIRE(res.get()->value.string(VCPKG_LINE_INFO) == "/");
 
-    res = Json::parse(R"("\b")");
+    res = Json::parse(R"("\b")", "test");
     REQUIRE(res);
     REQUIRE(res.get()->value.is_string());
     REQUIRE(res.get()->value.string(VCPKG_LINE_INFO) == "\b");
 
-    res = Json::parse(R"("\f")");
+    res = Json::parse(R"("\f")", "test");
     REQUIRE(res);
     REQUIRE(res.get()->value.is_string());
     REQUIRE(res.get()->value.string(VCPKG_LINE_INFO) == "\f");
 
-    res = Json::parse(R"("\n")");
+    res = Json::parse(R"("\n")", "test");
     REQUIRE(res);
     REQUIRE(res.get()->value.is_string());
     REQUIRE(res.get()->value.string(VCPKG_LINE_INFO) == "\n");
 
-    res = Json::parse(R"("\r")");
+    res = Json::parse(R"("\r")", "test");
     REQUIRE(res);
     REQUIRE(res.get()->value.is_string());
     REQUIRE(res.get()->value.string(VCPKG_LINE_INFO) == "\r");
 
-    res = Json::parse(R"("This is a \"test\", hopefully it worked")");
+    res = Json::parse(R"("This is a \"test\", hopefully it worked")", "test");
     REQUIRE(res);
     REQUIRE(res.get()->value.is_string());
     REQUIRE(res.get()->value.string(VCPKG_LINE_INFO) == R"(This is a "test", hopefully it worked)");
@@ -120,23 +120,23 @@ TEST_CASE ("JSON parse strings with escapes", "[json]")
 
 TEST_CASE ("JSON parse integers", "[json]")
 {
-    auto res = Json::parse("0");
+    auto res = Json::parse("0", "test");
     REQUIRE(res);
     REQUIRE(res.get()->value.is_integer());
     REQUIRE(res.get()->value.integer(VCPKG_LINE_INFO) == 0);
-    res = Json::parse("12345");
+    res = Json::parse("12345", "test");
     REQUIRE(res);
     REQUIRE(res.get()->value.is_integer());
     REQUIRE(res.get()->value.integer(VCPKG_LINE_INFO) == 12345);
-    res = Json::parse("-12345");
+    res = Json::parse("-12345", "test");
     REQUIRE(res);
     REQUIRE(res.get()->value.is_integer());
     REQUIRE(res.get()->value.integer(VCPKG_LINE_INFO) == -12345);
-    res = Json::parse("9223372036854775807"); // INT64_MAX
+    res = Json::parse("9223372036854775807", "test"); // INT64_MAX
     REQUIRE(res);
     REQUIRE(res.get()->value.is_integer());
     REQUIRE(res.get()->value.integer(VCPKG_LINE_INFO) == 9223372036854775807);
-    res = Json::parse("-9223372036854775808");
+    res = Json::parse("-9223372036854775808", "test");
     REQUIRE(res);
     REQUIRE(res.get()->value.is_integer());
     REQUIRE(res.get()->value.integer(VCPKG_LINE_INFO) == (-9223372036854775807 - 1)); // INT64_MIN (C++'s parser is fun)
@@ -144,22 +144,22 @@ TEST_CASE ("JSON parse integers", "[json]")
 
 TEST_CASE ("JSON parse floats", "[json]")
 {
-    auto res = Json::parse("0.0");
+    auto res = Json::parse("0.0", "test");
     REQUIRE(res);
     REQUIRE(res.get()->value.is_number());
     REQUIRE(!res.get()->value.is_integer());
     REQUIRE(res.get()->value.number(VCPKG_LINE_INFO) == 0.0);
     REQUIRE(!signbit(res.get()->value.number(VCPKG_LINE_INFO)));
-    res = Json::parse("-0.0");
+    res = Json::parse("-0.0", "test");
     REQUIRE(res);
     REQUIRE(res.get()->value.is_number());
     REQUIRE(res.get()->value.number(VCPKG_LINE_INFO) == 0.0);
     REQUIRE(signbit(res.get()->value.number(VCPKG_LINE_INFO)));
-    res = Json::parse("12345.6789");
+    res = Json::parse("12345.6789", "test");
     REQUIRE(res);
     REQUIRE(res.get()->value.is_number());
     REQUIRE_THAT(res.get()->value.number(VCPKG_LINE_INFO), Catch::WithinULP(12345.6789, 3));
-    res = Json::parse("-12345.6789");
+    res = Json::parse("-12345.6789", "test");
     REQUIRE(res);
     REQUIRE(res.get()->value.is_number());
     REQUIRE_THAT(res.get()->value.number(VCPKG_LINE_INFO), Catch::WithinULP(-12345.6789, 3));
@@ -167,13 +167,13 @@ TEST_CASE ("JSON parse floats", "[json]")
 
 TEST_CASE ("JSON parse arrays", "[json]")
 {
-    auto res = Json::parse("[]");
+    auto res = Json::parse("[]", "test");
     REQUIRE(res);
     auto val = std::move(res.get()->value);
     REQUIRE(val.is_array());
     REQUIRE(val.array(VCPKG_LINE_INFO).size() == 0);
 
-    res = Json::parse("[123]");
+    res = Json::parse("[123]", "test");
     REQUIRE(res);
     val = std::move(res.get()->value);
     REQUIRE(val.is_array());
@@ -181,7 +181,7 @@ TEST_CASE ("JSON parse arrays", "[json]")
     REQUIRE(val.array(VCPKG_LINE_INFO)[0].is_integer());
     REQUIRE(val.array(VCPKG_LINE_INFO)[0].integer(VCPKG_LINE_INFO) == 123);
 
-    res = Json::parse("[123, 456]");
+    res = Json::parse("[123, 456]", "test");
     REQUIRE(res);
     val = std::move(res.get()->value);
     REQUIRE(val.is_array());
@@ -191,7 +191,7 @@ TEST_CASE ("JSON parse arrays", "[json]")
     REQUIRE(val.array(VCPKG_LINE_INFO)[1].is_integer());
     REQUIRE(val.array(VCPKG_LINE_INFO)[1].integer(VCPKG_LINE_INFO) == 456);
 
-    res = Json::parse("[123, 456, [null]]");
+    res = Json::parse("[123, 456, [null]]", "test");
     REQUIRE(res);
     val = std::move(res.get()->value);
     REQUIRE(val.is_array());
@@ -203,7 +203,7 @@ TEST_CASE ("JSON parse arrays", "[json]")
 
 TEST_CASE ("JSON parse objects", "[json]")
 {
-    auto res = Json::parse("{}");
+    auto res = Json::parse("{}", "test");
     REQUIRE(res);
     auto val = std::move(res.get()->value);
     REQUIRE(val.is_object());
@@ -216,7 +216,7 @@ TEST_CASE ("JSON parse full file", "[json]")
 #include "large-json-document.json.inc"
         ;
 
-    auto res = Json::parse(json);
+    auto res = Json::parse(json, "test");
     if (!res)
     {
         std::cerr << res.error()->to_string() << '\n';

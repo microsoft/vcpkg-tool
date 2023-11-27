@@ -54,7 +54,7 @@ namespace vcpkg::Test
         return std::move(*m_pgh.get());
     }
 
-    ParseExpected<SourceControlFile> test_parse_control_file(
+    ExpectedL<std::unique_ptr<SourceControlFile>> test_parse_control_file(
         const std::vector<std::unordered_map<std::string, std::string>>& v)
     {
         std::vector<vcpkg::Paragraph> pghs;
@@ -74,7 +74,8 @@ namespace vcpkg::Test
                                                             const char* default_features,
                                                             const char* triplet)
     {
-        return std::make_unique<StatusParagraph>(Paragraph{{"Package", {name, {}}},
+        return std::make_unique<StatusParagraph>(StringLiteral{"test"},
+                                                 Paragraph{{"Package", {name, {}}},
                                                            {"Version", {"1", {}}},
                                                            {"Architecture", {triplet, {}}},
                                                            {"Multi-Arch", {"same", {}}},
@@ -88,7 +89,8 @@ namespace vcpkg::Test
                                                              const char* depends,
                                                              const char* triplet)
     {
-        return std::make_unique<StatusParagraph>(Paragraph{{"Package", {name, {}}},
+        return std::make_unique<StatusParagraph>(StringLiteral{"test"},
+                                                 Paragraph{{"Package", {name, {}}},
                                                            {"Feature", {feature, {}}},
                                                            {"Architecture", {triplet, {}}},
                                                            {"Multi-Arch", {"same", {}}},

@@ -898,6 +898,7 @@ DECLARE_MESSAGE(ControlAndManifestFilesPresent,
                 "",
                 "Both a manifest file and a CONTROL file exist in port directory: {path}")
 DECLARE_MESSAGE(ControlCharacterInString, (), "", "Control character in string")
+DECLARE_MESSAGE(ControlSupportsMustBeAPlatformExpression, (), "", "\"Supports\" must be a platform expression")
 DECLARE_MESSAGE(CopyrightIsDir, (msg::path), "", "`{path}` being a directory is deprecated.")
 DECLARE_MESSAGE(CorruptedDatabase, (), "", "Database corrupted.")
 DECLARE_MESSAGE(CorruptedInstallTree, (), "", "Your vcpkg 'installed' tree is corrupted.")
@@ -1246,9 +1247,6 @@ DECLARE_MESSAGE(
     "The control or manifest file for {package_name} could not be loaded due to the following error. Please "
     "remove {package_name} and try again.")
 DECLARE_MESSAGE(FailedToLoadManifest, (msg::path), "", "Failed to load manifest from directory {path}")
-DECLARE_MESSAGE(FailedToLoadPort, (msg::package_name, msg::path), "", "Failed to load port {package_name} from {path}")
-DECLARE_MESSAGE(FailedToLoadPortFrom, (msg::path), "", "Failed to load port from {path}")
-DECLARE_MESSAGE(FailedToLoadUnnamedPortFromPath, (msg::path), "", "Failed to load port from {path}")
 DECLARE_MESSAGE(FailedToLocateSpec, (msg::spec), "", "Failed to locate spec in graph: {spec}")
 DECLARE_MESSAGE(FailedToObtainDependencyVersion, (), "", "Cannot find desired dependency version.")
 DECLARE_MESSAGE(FailedToObtainLocalPortGitSha, (), "", "Failed to obtain git SHAs for local ports.")
@@ -2021,10 +2019,6 @@ DECLARE_MESSAGE(LinkageDynamicRelease, (), "", "Dynamic Release (/MD)")
 DECLARE_MESSAGE(LinkageStaticDebug, (), "", "Static Debug (/MTd)")
 DECLARE_MESSAGE(LinkageStaticRelease, (), "", "Static Release (/MT)")
 DECLARE_MESSAGE(ListHelp, (), "", "Lists installed libraries")
-DECLARE_MESSAGE(ListOfValidFieldsForControlFiles,
-                (),
-                "",
-                "This is the list of valid fields for CONTROL files (case-sensitive):")
 DECLARE_MESSAGE(LoadingCommunityTriplet,
                 (msg::path),
                 "'-- [COMMUNITY]' at the beginning must be preserved",
@@ -2096,6 +2090,7 @@ DECLARE_MESSAGE(MissingRequiredField,
                 "Example completely formatted message:\nerror: missing required field 'dependencies' (an array of "
                 "dependencies)",
                 "missing required field '{json_field}' ({json_type})")
+DECLARE_MESSAGE(MissingRequiredField2, (msg::json_field), "", "missing required field '{json_field}'")
 DECLARE_MESSAGE(MixingBooleanOperationsNotAllowed,
                 (),
                 "",
@@ -2232,18 +2227,6 @@ DECLARE_MESSAGE(ParagraphExactlyOne, (), "", "There should be exactly one paragr
 DECLARE_MESSAGE(ParagraphExpectedColonAfterField, (), "", "expected ':' after field name")
 DECLARE_MESSAGE(ParagraphExpectedFieldName, (), "", "expected field name")
 DECLARE_MESSAGE(ParagraphUnexpectedEndOfLine, (), "", "unexpected end of line, to span a blank line use \"  .\"")
-DECLARE_MESSAGE(ParseControlErrorInfoInvalidFields, (), "", "The following fields were not expected:")
-DECLARE_MESSAGE(ParseControlErrorInfoMissingFields, (), "", "The following fields were missing:")
-DECLARE_MESSAGE(ParseControlErrorInfoTypesEntry,
-                (msg::value, msg::expected),
-                "{value} is the name of a field in an on-disk file, {expected} is a short description "
-                "of what it should be like 'a non-negative integer' (which isn't localized yet)",
-                "{value} was expected to be {expected}")
-DECLARE_MESSAGE(ParseControlErrorInfoWhileLoading,
-                (msg::path),
-                "Error messages are is printed after this.",
-                "while loading {path}:")
-DECLARE_MESSAGE(ParseControlErrorInfoWrongTypeFields, (), "", "The following fields had the wrong types:")
 DECLARE_MESSAGE(
     ParseFeatureNameError,
     (msg::package_name, msg::url),
@@ -2475,6 +2458,7 @@ DECLARE_MESSAGE(PortVersionMultipleSpecification,
                 (),
                 "",
                 "\"port_version\" cannot be combined with an embedded '#' in the version")
+DECLARE_MESSAGE(PortVersionControlMustBeANonNegativeInteger, (), "", "\"Port-Version\" must be a non-negative integer")
 DECLARE_MESSAGE(PrebuiltPackages, (), "", "There are packages that have not been built. To build them run:")
 DECLARE_MESSAGE(PreviousIntegrationFileRemains, (), "", "Previous integration file was not removed.")
 DECLARE_MESSAGE(ProgramReturnedNonzeroExitCode,
@@ -2608,10 +2592,6 @@ DECLARE_MESSAGE(SuggestStartingBashShell,
                 (),
                 "",
                 "Please make sure you have started a new bash shell for the change to take effect.")
-DECLARE_MESSAGE(SuggestUpdateVcpkg,
-                (msg::command_line),
-                "",
-                "You may need to update the vcpkg binary; try running {command_line} to update.")
 DECLARE_MESSAGE(SupportedPort, (msg::package_name), "", "Port {package_name} is supported.")
 DECLARE_MESSAGE(SwitchUsedMultipleTimes, (msg::option), "", "the switch '{option}' was specified multiple times")
 DECLARE_MESSAGE(SynopsisHeader, (), "Printed before a description of what a command does", "Synopsis:")
@@ -3104,6 +3084,7 @@ DECLARE_MESSAGE(WhileGettingLocalTreeIshObjectsForPorts, (), "", "while getting 
 DECLARE_MESSAGE(WhileLoadingLocalPort, (msg::package_name), "", "while attempting to load local port {package_name}")
 DECLARE_MESSAGE(WhileLoadingPortFromGitTree, (msg::commit_sha), "", "while trying to load port from: {commit_sha}")
 DECLARE_MESSAGE(WhileLookingForSpec, (msg::spec), "", "while looking for {spec}:")
+DECLARE_MESSAGE(WhileLoadingPortVersion, (msg::version_spec), "", "while loading {version_spec}")
 DECLARE_MESSAGE(WhileParsingVersionsForPort,
                 (msg::package_name, msg::path),
                 "",

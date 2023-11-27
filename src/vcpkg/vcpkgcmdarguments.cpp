@@ -645,7 +645,7 @@ namespace vcpkg
         auto maybe_vcpkg_recursive_data = get_environment_variable(RECURSIVE_DATA_ENV);
         if (auto vcpkg_recursive_data = maybe_vcpkg_recursive_data.get())
         {
-            auto rec_doc = Json::parse(*vcpkg_recursive_data)
+            auto rec_doc = Json::parse(*vcpkg_recursive_data, RECURSIVE_DATA_ENV)
                                .map_error(parse_error_formatter)
                                .value_or_exit(VCPKG_LINE_INFO)
                                .value;

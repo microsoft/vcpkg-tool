@@ -73,7 +73,7 @@ namespace
     }
 
     // test functions which parse string literals, so no concerns about failure
-    Json::Value parse_json(StringView sv) { return Json::parse(sv).value(VCPKG_LINE_INFO).value; }
+    Json::Value parse_json(StringView sv) { return Json::parse(sv, "test").value(VCPKG_LINE_INFO).value; }
 }
 
 TEST_CASE ("registry_set_selects_registry", "[registries]")
@@ -269,7 +269,7 @@ static vcpkg::Optional<Configuration> visit_default_registry(Json::Reader& r, Js
 TEST_CASE ("registry_parsing", "[registries]")
 {
     {
-        Json::Reader r;
+        Json::Reader r{"test"};
         auto test_json = parse_json(R"json(
 {
     "kind": "builtin"
@@ -279,7 +279,7 @@ TEST_CASE ("registry_parsing", "[registries]")
         CHECK(!r.errors().empty());
     }
     {
-        Json::Reader r;
+        Json::Reader r{"test"};
         auto test_json = parse_json(R"json(
 {
     "kind": "builtin",
@@ -291,7 +291,7 @@ TEST_CASE ("registry_parsing", "[registries]")
         CHECK(r.errors().empty());
     }
     {
-        Json::Reader r;
+        Json::Reader r{"test"};
         auto test_json = parse_json(R"json(
 {
     "kind": "builtin",
@@ -303,7 +303,7 @@ TEST_CASE ("registry_parsing", "[registries]")
         CHECK(r.errors().empty());
     }
     {
-        Json::Reader r;
+        Json::Reader r{"test"};
         auto test_json = parse_json(R"json(
 {
     "kind": "builtin",
@@ -315,7 +315,7 @@ TEST_CASE ("registry_parsing", "[registries]")
         CHECK(!r.errors().empty());
     }
     {
-        Json::Reader r;
+        Json::Reader r{"test"};
         auto test_json = parse_json(R"json(
 {
     "kind": "filesystem",
@@ -343,7 +343,7 @@ TEST_CASE ("registry_parsing", "[registries]")
 }
     )json");
     {
-        Json::Reader r;
+        Json::Reader r{"test"};
         visit_default_registry(r, std::move(test_json));
         CHECK(!r.errors().empty());
     }
@@ -354,7 +354,7 @@ TEST_CASE ("registry_parsing", "[registries]")
 }
     )json");
     {
-        Json::Reader r;
+        Json::Reader r{"test"};
         visit_default_registry(r, std::move(test_json));
         CHECK(!r.errors().empty());
     }
@@ -366,7 +366,7 @@ TEST_CASE ("registry_parsing", "[registries]")
 }
     )json");
     {
-        Json::Reader r;
+        Json::Reader r{"test"};
         visit_default_registry(r, std::move(test_json));
         CHECK(!r.errors().empty());
     }
@@ -380,7 +380,7 @@ TEST_CASE ("registry_parsing", "[registries]")
 }
     )json");
     {
-        Json::Reader r;
+        Json::Reader r{"test"};
         auto registry_impl = visit_default_registry(r, std::move(test_json));
         REQUIRE(registry_impl);
         INFO(Strings::join("\n", r.errors()));
@@ -394,7 +394,7 @@ TEST_CASE ("registry_parsing", "[registries]")
     "baseline": "123"
 }
     )json");
-    Json::Reader r;
+    Json::Reader r{"test"};
     auto registry_impl = visit_default_registry(r, std::move(test_json));
     REQUIRE(registry_impl);
     INFO(Strings::join("\n", r.errors()));
@@ -414,23 +414,23 @@ TEST_CASE ("registries report pattern errors", "[registries]")
     ]
 })json");
 
-    Json::Reader r;
+    Json::Reader r{"test"};
     auto maybe_conf = r.visit(test_json, get_configuration_deserializer());
     const auto& errors = r.errors();
     CHECK(!errors.empty());
     REQUIRE(errors.size() == 3);
-    CHECK(errors[0] ==
-          "$.registries[0].packages[1] (a package pattern): \"\" is not a valid package pattern. Package patterns must "
-          "use only one wildcard character (*) and it must be the last character in the pattern (see "
-          "https://learn.microsoft.com/vcpkg/users/registries for more information).");
-    CHECK(errors[1] ==
-          "$.registries[0].packages[2] (a package pattern): \"a*a\" is not a valid package pattern. Package patterns "
-          "must use only one wildcard character (*) and it must be the last character in the pattern (see "
-          "https://learn.microsoft.com/vcpkg/users/registries for more information).");
-    CHECK(errors[2] ==
-          "$.registries[0].packages[3] (a package pattern): \"*a\" is not a valid package pattern. Package patterns "
-          "must use only one wildcard character (*) and it must be the last character in the pattern (see "
-          "https://learn.microsoft.com/vcpkg/users/registries for more information).");
+    CHECK(errors[0] == "test: error: $.registries[0].packages[1] (a package pattern): \"\" is not a valid package "
+                       "pattern. Package patterns must "
+                       "use only one wildcard character (*) and it must be the last character in the pattern (see "
+                       "https://learn.microsoft.com/vcpkg/users/registries for more information).");
+    CHECK(errors[1] == "test: error: $.registries[0].packages[2] (a package pattern): \"a*a\" is not a valid package "
+                       "pattern. Package patterns "
+                       "must use only one wildcard character (*) and it must be the last character in the pattern (see "
+                       "https://learn.microsoft.com/vcpkg/users/registries for more information).");
+    CHECK(errors[2] == "test: error: $.registries[0].packages[3] (a package pattern): \"*a\" is not a valid package "
+                       "pattern. Package patterns "
+                       "must use only one wildcard character (*) and it must be the last character in the pattern (see "
+                       "https://learn.microsoft.com/vcpkg/users/registries for more information).");
 }
 
 TEST_CASE ("registries ignored patterns warning", "[registries]")
@@ -458,7 +458,7 @@ TEST_CASE ("registries ignored patterns warning", "[registries]")
     ]
 })json");
 
-    Json::Reader r;
+    Json::Reader r{"test"};
     auto maybe_conf = r.visit(test_json, get_configuration_deserializer());
 
     auto conf = maybe_conf.get();
@@ -501,7 +501,7 @@ TEST_CASE ("registries ignored patterns warning", "[registries]")
 
     const auto& warnings = r.warnings();
     REQUIRE(warnings.size() == 3);
-    CHECK(warnings[0] == R"($ (a configuration object): warning: Package "*" is duplicated.
+    CHECK(warnings[0] == R"(test: warning: $ (a configuration object): Package "*" is duplicated.
   First declared in:
     location: $.registries[0].packages[0]
     registry: https://github.com/Microsoft/vcpkg
@@ -510,7 +510,7 @@ TEST_CASE ("registries ignored patterns warning", "[registries]")
     location: $.registries[2].packages[0]
     registry: https://github.com/another-remote/another-vcpkg-registry
 )");
-    CHECK(warnings[1] == R"($ (a configuration object): warning: Package "bei*" is duplicated.
+    CHECK(warnings[1] == R"(test: warning: $ (a configuration object): Package "bei*" is duplicated.
   First declared in:
     location: $.registries[1].packages[0]
     registry: https://github.com/northwindtraders/vcpkg-registry
@@ -519,7 +519,7 @@ TEST_CASE ("registries ignored patterns warning", "[registries]")
     location: $.registries[2].packages[1]
     registry: https://github.com/another-remote/another-vcpkg-registry
 )");
-    CHECK(warnings[2] == R"($ (a configuration object): warning: Package "zlib" is duplicated.
+    CHECK(warnings[2] == R"(test: warning: $ (a configuration object): Package "zlib" is duplicated.
   First declared in:
     location: $.registries[0].packages[2]
     registry: https://github.com/Microsoft/vcpkg
@@ -536,7 +536,7 @@ TEST_CASE ("registries ignored patterns warning", "[registries]")
 TEST_CASE ("git_version_db_parsing", "[registries]")
 {
     auto filesystem_version_db = make_git_version_db_deserializer();
-    Json::Reader r;
+    Json::Reader r{"test"};
     auto test_json = parse_json(R"json(
 [
     {
@@ -573,7 +573,7 @@ TEST_CASE ("filesystem_version_db_parsing", "[registries]")
     auto filesystem_version_db = make_filesystem_version_db_deserializer("a/b");
 
     {
-        Json::Reader r;
+        Json::Reader r{"test"};
         auto test_json = parse_json(R"json(
 [
     {
@@ -605,7 +605,7 @@ TEST_CASE ("filesystem_version_db_parsing", "[registries]")
     }
 
     { // missing $/
-        Json::Reader r;
+        Json::Reader r{"test"};
         auto test_json = parse_json(R"json(
 [
     {
@@ -620,7 +620,7 @@ TEST_CASE ("filesystem_version_db_parsing", "[registries]")
     }
 
     { // uses backslash
-        Json::Reader r;
+        Json::Reader r{"test"};
         auto test_json = parse_json(R"json(
 [
     {
@@ -635,7 +635,7 @@ TEST_CASE ("filesystem_version_db_parsing", "[registries]")
     }
 
     { // doubled slash
-        Json::Reader r;
+        Json::Reader r{"test"};
         auto test_json = parse_json(R"json(
 [
     {
@@ -650,7 +650,7 @@ TEST_CASE ("filesystem_version_db_parsing", "[registries]")
     }
 
     { // dot path (first)
-        Json::Reader r;
+        Json::Reader r{"test"};
         auto test_json = parse_json(R"json(
 [
     {
@@ -665,7 +665,7 @@ TEST_CASE ("filesystem_version_db_parsing", "[registries]")
     }
 
     { // dot path (mid)
-        Json::Reader r;
+        Json::Reader r{"test"};
         auto test_json = parse_json(R"json(
 [
     {
@@ -680,7 +680,7 @@ TEST_CASE ("filesystem_version_db_parsing", "[registries]")
     }
 
     { // dot path (last)
-        Json::Reader r;
+        Json::Reader r{"test"};
         auto test_json = parse_json(R"json(
 [
     {
@@ -695,7 +695,7 @@ TEST_CASE ("filesystem_version_db_parsing", "[registries]")
     }
 
     { // dot dot path (first)
-        Json::Reader r;
+        Json::Reader r{"test"};
         auto test_json = parse_json(R"json(
 [
     {
@@ -710,7 +710,7 @@ TEST_CASE ("filesystem_version_db_parsing", "[registries]")
     }
 
     { // dot dot path (mid)
-        Json::Reader r;
+        Json::Reader r{"test"};
         auto test_json = parse_json(R"json(
 [
     {
@@ -725,7 +725,7 @@ TEST_CASE ("filesystem_version_db_parsing", "[registries]")
     }
 
     { // dot dot path (last)
-        Json::Reader r;
+        Json::Reader r{"test"};
         auto test_json = parse_json(R"json(
 [
     {
