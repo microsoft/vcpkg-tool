@@ -10,6 +10,12 @@ vcpkg-cmake-config-many-targets provides CMake targets:
   target_link_libraries(main PRIVATE cmake-config-many-targets::vcpkg-cmake-config-many-targets-1 cmake-config-many-targets::vcpkg-cmake-config-many-targets-2 cmake-config-many-targets::vcpkg-cmake-config-many-targets-3 cmake-config-many-targets::vcpkg-cmake-config-many-targets-4)
 "@,
 @"
+This is some usage text explicitly set by the port.
+
+This output should end up on the console.
+
+"@,
+@"
 vcpkg-hello-world-1 provides CMake targets:
 
   # this is heuristically generated, and may not be correct
@@ -32,6 +38,7 @@ vcpkg-hello-world-2 provides CMake targets:
 [string]$usage = Run-VcpkgAndCaptureOutput ($commonArgs + @('install',
     'vcpkg-cmake-config-many-targets',
     'vcpkg-empty-port',
+    'vcpkg-explicit-usage',
     'vcpkg-hello-world-1',
     'vcpkg-hello-world-2'
 ))
