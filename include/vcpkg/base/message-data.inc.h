@@ -1,4 +1,4 @@
-﻿DECLARE_MESSAGE(ABaseline, (), "", "a baseline")
+DECLARE_MESSAGE(ABaseline, (), "", "a baseline")
 DECLARE_MESSAGE(ABaselineObject, (), "", "a baseline object")
 DECLARE_MESSAGE(ADefaultFeature, (), "", "a default feature")
 DECLARE_MESSAGE(ABoolean, (), "", "a boolean")

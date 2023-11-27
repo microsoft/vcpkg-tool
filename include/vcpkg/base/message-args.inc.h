@@ -1,4 +1,4 @@
-﻿// This data file defines all available message arguments.
+// This data file defines all available message arguments.
 // It should only contain calls to DECLARE_MSG_ARG(name, description)
 
 DECLARE_MSG_ARG(error, "")
