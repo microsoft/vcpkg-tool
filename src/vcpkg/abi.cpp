@@ -96,7 +96,7 @@ namespace vcpkg
         abi_entries.emplace_back("cmake", paths.get_tool_version(Tools::CMAKE, stdout_sink));
         abi_entries.emplace_back("ports.cmake",
                                  Hash::get_file_hash(fs, paths.ports_cmake, Hash::Algorithm::Sha256).value_or(""));
-        abi_entries.emplace_back("post_build_checks", "2");
+        abi_entries.emplace_back("post_build_checks", '2');
 
         // This #ifdef is mirrored in tools.cpp's PowershellProvider
 #if defined(_WIN32)
@@ -133,8 +133,7 @@ namespace vcpkg
             {
                 continue;
             }
-            std::string contents = fs.read_contents(port_root_dir / file, VCPKG_LINE_INFO);
-            files_and_content.emplace_back(std::move(file), std::move(contents));
+            files_and_content.emplace_back(std::move(file), fs.read_contents(port_root_dir / file, VCPKG_LINE_INFO));
         }
         return files_and_content;
     }
@@ -291,7 +290,7 @@ namespace vcpkg
         {
             if (Strings::case_insensitive_ascii_contains(cmake_contents, helper.key))
             {
-                abi_entries.emplace_back(helper.key, helper.value);
+                abi_entries.push_back(helper);
             }
         }
 
@@ -351,10 +350,8 @@ namespace vcpkg
         std::string full_abi_info = abi_entries_to_string(abi_tag_entries);
         abi_info.package_abi = Hash::get_string_sha256(full_abi_info);
 
-        std::string sbom_str = write_sbom(
-            action, std::move(private_abi.heuristic_resources), private_abi.port_files_abi, private_abi.sbom_uuid);
-
-        abi_info.abi_file_contents(std::move(full_abi_info), std::move(sbom_str));
+        abi_info.abi_file_contents(std::move(full_abi_info), write_sbom(
+            action, std::move(private_abi.heuristic_resources), private_abi.port_files_abi, private_abi.sbom_uuid));
     }
 
     static AbiEntries get_dependency_abis(std::vector<InstallPlanAction>::const_iterator action_plan_begin,
