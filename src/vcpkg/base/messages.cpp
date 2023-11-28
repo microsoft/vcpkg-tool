@@ -418,8 +418,6 @@ namespace vcpkg::msg
 
     OutputStream default_output_stream = OutputStream::StdOut;
 
-    void set_default_output_stream(OutputStream output_stream) { default_output_stream = output_stream; }
-
     void write_unlocalized_text(Color c, StringView sv)
     {
         if (default_output_stream == OutputStream::StdOut)

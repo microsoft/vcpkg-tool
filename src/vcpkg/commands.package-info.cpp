@@ -43,6 +43,7 @@ namespace vcpkg
 
     void command_package_info_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
+        msg::default_output_stream = OutputStream::StdErr;
         const ParsedArguments options = args.parse_arguments(CommandPackageInfoMetadata);
         if (!Util::Vectors::contains(options.switches, OPTION_JSON))
         {
@@ -117,7 +118,7 @@ namespace vcpkg
                 }
             }
             response.insert("results", std::move(results));
-            msg::write_unlocalized_text(Color::none, Json::stringify(response));
+            msg::write_unlocalized_text_to_stdout(Color::none, Json::stringify(response));
         }
         else
         {
@@ -153,7 +154,7 @@ namespace vcpkg
                 }
             }
             response.insert("results", std::move(results));
-            msg::write_unlocalized_text(Color::none, Json::stringify(response));
+            msg::write_unlocalized_text_to_stdout(Color::none, Json::stringify(response));
         }
     }
 } // namespace vcpkg

@@ -25,6 +25,8 @@ $gitConfigOptions = @(
   '-c', 'core.autocrlf=false'
 )
 
+$stderrFile = Join-Path $WorkingRoot 'last-stderr.txt'
+
 $Script:CurrentTest = 'unassigned'
 
 function Refresh-TestRoot {
@@ -119,6 +121,25 @@ function Run-VcpkgAndCaptureOutput {
     $result = (& "$thisVcpkg" @testArgs) | Out-String
     Write-Host -ForegroundColor Gray $result
     $result
+}
+
+function Run-VcpkgAndCaptureStdErr {
+    Param(
+        [Parameter(Mandatory = $false)]
+        [Switch]$ForceExe,
+
+        [Parameter(ValueFromRemainingArguments)]
+        [string[]]$TestArgs
+    )
+    $thisVcpkg = $VcpkgPs1;
+    if ($ForceExe) {
+        $thisVcpkg = $VcpkgExe;
+    }
+
+    $Script:CurrentTest = "$thisVcpkg $($testArgs -join ' ')"
+    Write-Host -ForegroundColor red $Script:CurrentTest
+    & "$thisVcpkg" @testArgs 2> $stderrFile
+    Get-Content -LiteralPath $stderrFile -Encoding 'utf8' -Raw
 }
 
 function Run-Vcpkg {

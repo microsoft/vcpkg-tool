@@ -392,6 +392,7 @@ namespace vcpkg
                                       Triplet default_triplet,
                                       Triplet host_triplet)
     {
+        msg::default_output_stream = OutputStream::StdErr;
         const ParsedArguments options = args.parse_arguments(CommandDependInfoMetadata);
         const auto strategy = determine_depend_info_mode(options).value_or_exit(VCPKG_LINE_INFO);
 

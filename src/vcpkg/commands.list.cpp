@@ -50,7 +50,7 @@ namespace
             }
         }
 
-        msg::write_unlocalized_text(Color::none, Json::stringify(obj));
+        msg::write_unlocalized_text_to_stdout(Color::none, Json::stringify(obj));
     }
 
     void do_print(const StatusParagraph& pgh, const bool full_desc)
@@ -58,11 +58,11 @@ namespace
         auto full_version = pgh.package.version.to_string();
         if (full_desc)
         {
-            msg::write_unlocalized_text(Color::none,
-                                        fmt::format("{:<50}{:<20}{:<}\n",
-                                                    pgh.package.displayname(),
-                                                    full_version,
-                                                    fmt::join(pgh.package.description, "\n\n")));
+            msg::write_unlocalized_text_to_stdout(Color::none,
+                                                  fmt::format("{:<50}{:<20}{:<}\n",
+                                                              pgh.package.displayname(),
+                                                              full_version,
+                                                              fmt::join(pgh.package.description, "\n\n")));
         }
         else
         {
@@ -71,11 +71,11 @@ namespace
             {
                 description = pgh.package.description[0];
             }
-            msg::write_unlocalized_text(Color::none,
-                                        fmt::format("{:<50}{:<20}{:<}\n",
-                                                    vcpkg::shorten_text(pgh.package.displayname(), 50),
-                                                    vcpkg::shorten_text(full_version, 16),
-                                                    vcpkg::shorten_text(description, 51)));
+            msg::write_unlocalized_text_to_stdout(Color::none,
+                                                  fmt::format("{:<50}{:<20}{:<}\n",
+                                                              vcpkg::shorten_text(pgh.package.displayname(), 50),
+                                                              vcpkg::shorten_text(full_version, 16),
+                                                              vcpkg::shorten_text(description, 51)));
         }
     }
 
@@ -101,6 +101,7 @@ namespace vcpkg
 
     void command_list_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
+        msg::default_output_stream = OutputStream::StdErr;
         const ParsedArguments options = args.parse_arguments(CommandListMetadata);
 
         const StatusParagraphs status_paragraphs = database_load_check(paths.get_filesystem(), paths.installed());
@@ -110,7 +111,7 @@ namespace vcpkg
         if (installed_ipv.empty())
         {
             if (output_json)
-                msg::write_unlocalized_text(Color::none, Json::stringify(Json::Object()));
+                msg::write_unlocalized_text_to_stdout(Color::none, Json::stringify(Json::Object()));
             else
                 msg::println(msgNoInstalledPackages);
             Checks::exit_success(VCPKG_LINE_INFO);
