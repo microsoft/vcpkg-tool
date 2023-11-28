@@ -350,8 +350,10 @@ namespace vcpkg
         std::string full_abi_info = abi_entries_to_string(abi_tag_entries);
         abi_info.package_abi = Hash::get_string_sha256(full_abi_info);
 
-        abi_info.abi_file_contents(std::move(full_abi_info), write_sbom(
-            action, std::move(private_abi.heuristic_resources), private_abi.port_files_abi, private_abi.sbom_uuid));
+        abi_info.abi_file_contents(
+            std::move(full_abi_info),
+            write_sbom(
+                action, std::move(private_abi.heuristic_resources), private_abi.port_files_abi, private_abi.sbom_uuid));
     }
 
     static AbiEntries get_dependency_abis(std::vector<InstallPlanAction>::const_iterator action_plan_begin,
