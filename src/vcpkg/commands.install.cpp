@@ -83,8 +83,8 @@ namespace vcpkg
             if (is_regular_file(status))
             {
                 const auto filename = file.filename();
-                if (filename == ".DS_Store" || filename == "CONTROL" ||
-                    filename == "vcpkg.json" || filename == "BUILD_INFO")
+                if (filename == ".DS_Store" || filename == "CONTROL" || filename == "vcpkg.json" ||
+                    filename == "BUILD_INFO")
                 {
                     // Don't copy control or manifest files
                     return invalid;
