@@ -68,30 +68,34 @@ namespace vcpkg
     {
         std::vector<PathAndType> output(files.size());
         static const PathAndType invalid{"", FileType::none};
+        std::mutex mtx;
 
         parallel_transform(files, output.begin(), [&](auto&& file) -> PathAndType {
             std::error_code ec;
             auto status = fs.symlink_status(file, ec);
             if (ec)
             {
+                std::lock_guard lck(mtx);
                 msg::println_warning(format_filesystem_call_error(ec, "symlink_status", {file}));
                 return invalid;
             }
 
-            if (!is_regular_file(status) && !is_symlink(status) && !is_directory(status))
+            if (is_regular_file(status))
             {
+                const auto filename = file.filename();
+                if (filename == ".DS_Store" || filename == "CONTROL" ||
+                    filename == "vcpkg.json" || filename == "BUILD_INFO")
+                {
+                    // Don't copy control or manifest files
+                    return invalid;
+                }
+            }
+            else if (!is_symlink(status) && !is_directory(status))
+            {
+                std::lock_guard lck(mtx);
                 msg::println_error(msgInvalidFileType, msg::path = file);
                 return invalid;
             }
-
-            const auto filename = file.filename();
-            if (is_regular_file(status) && (filename == ".DS_Store" || filename == "CONTROL" ||
-                                            filename == "vcpkg.json" || filename == "BUILD_INFO"))
-            {
-                // Don't copy control or manifest files
-                return invalid;
-            }
-
             return PathAndType{std::move(file), status};
         });
 #ifdef _WIN32
@@ -171,7 +175,6 @@ namespace vcpkg
 
             const Path target = destination / file.path.generic_u8string().substr(prefix_length + 1);
             std::error_code ec;
-
             fs.create_directory(target, ec);
             if (ec)
             {
@@ -179,6 +182,7 @@ namespace vcpkg
             }
         }
 
+        std::mutex mtx;
         // Copy files/symlinks
         parallel_for_each(filtered_files, [&](const auto& file_and_status) {
             auto& file = file_and_status.path;
@@ -196,7 +200,10 @@ namespace vcpkg
 
             if (fs.exists(target, IgnoreErrors{}))
             {
-                msg::println_warning(msgOverwritingFile, msg::path = target);
+                {
+                    std::lock_guard lck(mtx);
+                    msg::println_warning(msgOverwritingFile, msg::path = target);
+                }
                 if (is_regular_file(status))
                 {
                     fs.remove(target, IgnoreErrors{});
@@ -204,15 +211,16 @@ namespace vcpkg
             }
 
             bool use_hard_link = true;
-            std::error_code ec;
 
             if (is_regular_file(status))
             {
                 if (use_hard_link)
                 {
+                    std::error_code ec;
                     fs.create_hard_link(file, target, ec);
                     if (ec)
                     {
+                        std::lock_guard lck(mtx);
                         Debug::println("Install from packages to installed: Fallback to copy "
                                        "instead creating hard links because of: ",
                                        ec.message());
@@ -221,20 +229,23 @@ namespace vcpkg
                 }
                 if (!use_hard_link)
                 {
+                    std::error_code ec;
                     fs.copy_file(file, target, CopyOptions::overwrite_existing, ec);
-                }
-
-                if (ec)
-                {
-                    msg::println_error(msgInstallFailed, msg::path = target, msg::error_msg = ec.message());
+                    if (ec)
+                    {
+                        std::lock_guard lck(mtx);
+                        msg::println_error(msgInstallFailed, msg::path = target, msg::error_msg = ec.message());
+                    }
                 }
             }
             else
             {
                 // file is symlink
+                std::error_code ec;
                 fs.copy_symlink(file, target, ec);
                 if (ec)
                 {
+                    std::lock_guard lck(mtx);
                     msg::println_error(msgInstallFailed, msg::path = target, msg::error_msg = ec.message());
                 }
             }
