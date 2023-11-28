@@ -96,7 +96,7 @@ namespace vcpkg
         abi_entries.emplace_back("cmake", paths.get_tool_version(Tools::CMAKE, stdout_sink));
         abi_entries.emplace_back("ports.cmake",
                                  Hash::get_file_hash(fs, paths.ports_cmake, Hash::Algorithm::Sha256).value_or(""));
-        abi_entries.emplace_back("post_build_checks", '2');
+        abi_entries.emplace_back("post_build_checks", "2");
 
         // This #ifdef is mirrored in tools.cpp's PowershellProvider
 #if defined(_WIN32)
