@@ -330,9 +330,9 @@ namespace vcpkg::Json
     ExpectedT<ParsedJson, std::unique_ptr<ParseError>> parse_file(const ReadOnlyFilesystem&,
                                                                   const Path&,
                                                                   std::error_code& ec);
-    ExpectedT<ParsedJson, std::unique_ptr<ParseError>> parse(StringView text, StringView origin = {});
+    ExpectedT<ParsedJson, std::unique_ptr<ParseError>> parse(StringView text, StringView origin);
     ParsedJson parse_file(LineInfo li, const ReadOnlyFilesystem&, const Path&);
-    ExpectedL<Json::Object> parse_object(StringView text, StringView origin = {});
+    ExpectedL<Json::Object> parse_object(StringView text, StringView origin);
 
     std::string stringify(const Value&);
     std::string stringify(const Value&, JsonStyle style);

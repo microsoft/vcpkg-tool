@@ -6,8 +6,8 @@
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/setup-messages.h>
 #include <vcpkg/base/system.debug.h>
-#include <vcpkg/base/system.h>
 #include <vcpkg/base/system.process.h>
+#include <vcpkg/base/util.h>
 #include <vcpkg/base/uuid.h>
 
 #include <vcpkg/archives.h>

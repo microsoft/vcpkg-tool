@@ -9,9 +9,7 @@
 #include <vcpkg/archives.h>
 #include <vcpkg/cmakevars.h>
 #include <vcpkg/commands.build.h>
-#include <vcpkg/commands.export.h>
-#include <vcpkg/commands.h>
-#include <vcpkg/commands.install.h>
+#include <vcpkg/dependencies.h>
 #include <vcpkg/export.prefab.h>
 #include <vcpkg/installedpaths.h>
 #include <vcpkg/tools.h>
@@ -398,7 +396,7 @@ namespace vcpkg::Prefab
             const auto per_package_dir_path = paths.prefab / name;
 
             const auto& binary_paragraph = action.core_paragraph().value_or_exit(VCPKG_LINE_INFO);
-            const std::string norm_version = binary_paragraph.version;
+            const std::string norm_version = binary_paragraph.version.to_string();
 
             version_map[name] = norm_version;
 

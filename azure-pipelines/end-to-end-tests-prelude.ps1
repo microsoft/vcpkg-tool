@@ -19,6 +19,12 @@ $commonArgs = @(
     $Triplet
 ) + $directoryArgs
 
+$gitConfigOptions = @(
+  '-c', 'user.name=Nobody',
+  '-c', 'user.email=nobody@example.com',
+  '-c', 'core.autocrlf=false'
+)
+
 $Script:CurrentTest = 'unassigned'
 
 function Refresh-TestRoot {

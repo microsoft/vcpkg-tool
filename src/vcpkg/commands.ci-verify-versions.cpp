@@ -2,17 +2,14 @@
 
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/files.h>
-#include <vcpkg/base/json.h>
-#include <vcpkg/base/system.debug.h>
+#include <vcpkg/base/strings.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.ci-verify-versions.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/registries.h>
-#include <vcpkg/sourceparagraph.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
-#include <vcpkg/versiondeserializers.h>
 
 using namespace vcpkg;
 
@@ -66,12 +63,14 @@ namespace
                 for (StringView control_file : {"CONTROL", "vcpkg.json"})
                 {
                     auto treeish = Strings::concat(version_entry.git_tree, ':', control_file);
-                    auto maybe_file = paths.git_show(Strings::concat(treeish), paths.root / ".git");
+                    auto maybe_file = paths.git_show(Strings::concat(treeish),
+                                                     paths.versions_dot_git_dir().value_or_exit(VCPKG_LINE_INFO));
                     if (!maybe_file) continue;
 
                     const auto& file = maybe_file.value_or_exit(VCPKG_LINE_INFO);
-                    auto maybe_scf =
-                        Paragraphs::try_load_port_text(file, treeish, control_file == "vcpkg.json", out_sink);
+                    auto maybe_scf = control_file == "vcpkg.json"
+                                         ? Paragraphs::try_load_port_manifest_text(file, treeish, out_sink)
+                                         : Paragraphs::try_load_control_file_text(file, treeish);
                     auto scf = maybe_scf.get();
                     if (!scf)
                     {
@@ -87,7 +86,7 @@ namespace
                                 expected_right_tag};
                     }
 
-                    auto&& git_tree_version = (*scf)->to_schemed_version();
+                    auto&& git_tree_version = (**scf).to_schemed_version();
                     if (version_entry.version.version != git_tree_version.version)
                     {
                         return {
@@ -122,17 +121,18 @@ namespace
             }
         }
 
-        auto maybe_scf = Paragraphs::try_load_port_required(paths.get_filesystem(), port_name, port_path);
-        auto scf = maybe_scf.get();
-        if (!scf)
+        auto maybe_scfl =
+            Paragraphs::try_load_port_required(paths.get_filesystem(), port_name, PortLocation{port_path});
+        auto scfl = maybe_scfl.get();
+        if (!scfl)
         {
             return {msg::format_error(msgWhileLoadingLocalPort, msg::package_name = port_name)
                         .append_raw('\n')
-                        .append(maybe_scf.error()),
+                        .append(maybe_scfl.error()),
                     expected_right_tag};
         }
 
-        const auto local_port_version = (*scf)->to_schemed_version();
+        const auto local_port_version = scfl->source_control_file->to_schemed_version();
 
         auto versions_end = versions->end();
         auto it = std::find_if(versions->begin(), versions_end, [&](const GitVersionDbEntry& entry) {
@@ -203,9 +203,9 @@ namespace
         }
 
         return {
-            msg::format(msgVersionVerifiedOK,
-                        msg::version_spec = Strings::concat(port_name, '@', entry.version.version),
-                        msg::commit_sha = entry.git_tree),
+            message_prefix().append(msgVersionVerifiedOK,
+                                    msg::version_spec = Strings::concat(port_name, '@', entry.version.version),
+                                    msg::git_tree_sha = entry.git_tree),
             expected_left_tag,
         };
     }
@@ -306,8 +306,10 @@ namespace vcpkg
             if (!manifest_exists && !control_exists)
             {
                 msg::write_unlocalized_text(Color::error, fmt::format("FAIL: {}\n", port_name));
-                errors.emplace(
-                    msg::format(msgPortMissingManifest, msg::package_name = port_name, msg::path = port_path));
+                errors.emplace(LocalizedString::from_raw(port_path)
+                                   .append_raw(": ")
+                                   .append_raw(ErrorPrefix)
+                                   .append(msgPortMissingManifest2, msg::package_name = port_name));
                 continue;
             }
 

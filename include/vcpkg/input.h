@@ -1,8 +1,11 @@
 #pragma once
 
-#include <vcpkg/fwd/vcpkgpaths.h>
+#include <vcpkg/base/fwd/messages.h>
+#include <vcpkg/base/fwd/stringview.h>
 
-#include <vcpkg/packagespec.h>
+#include <vcpkg/fwd/packagespec.h>
+#include <vcpkg/fwd/triplet.h>
+#include <vcpkg/fwd/vcpkgpaths.h>
 
 namespace vcpkg
 {

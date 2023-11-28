@@ -1,6 +1,18 @@
 . $PSScriptRoot/../end-to-end-tests-prelude.ps1
 
-$versionFilesPath = "$PSScriptRoot/../e2e-ports/version-files"
+$versionFilesPathSources = "$PSScriptRoot/../e2e-ports/version-files"
+$versionFilesPath = "$TestingRoot/version-files"
+
+function Refresh-VersionFiles() {
+    Refresh-TestRoot
+    Copy-Item -Recurse $versionFilesPathSources $versionFilesPath
+    git -C $versionFilesPath @gitConfigOptions init
+    git -C $versionFilesPath @gitConfigOptions add -A
+    git -C $versionFilesPath @gitConfigOptions commit -m testing
+    git -C $versionFilesPath fetch https://github.com/vicroms/test-registries
+}
+
+Refresh-VersionFiles
 
 # Ensure transitive packages can be used even if they add version constraints
 $CurrentTest = "transitive constraints without baseline"
@@ -8,7 +20,6 @@ Run-Vcpkg install @commonArgs --dry-run `
     "--x-builtin-ports-root=$versionFilesPath/transitive-constraints/ports" `
     "--x-manifest-root=$versionFilesPath/transitive-constraints"
 Throw-IfFailed
-Refresh-TestRoot
 
 # Test verify versions
 mkdir $VersionFilesRoot | Out-Null
@@ -86,11 +97,10 @@ if (($out -notmatch ".*error: Failed to load port because versions are inconsist
     throw "Expected to fail due to mismatched versions between portfile and the version database"
 }
 
-git -C "$env:VCPKG_ROOT" fetch https://github.com/vicroms/test-registries
 foreach ($opt_registries in @("",",registries"))
 {
     Write-Trace "testing baselines: $opt_registries"
-    Refresh-TestRoot
+    Refresh-VersionFiles
     $CurrentTest = "without default baseline 2 -- enabling versions should not change behavior"
     Remove-Item -Recurse $buildtreesRoot/versioning_ -ErrorAction SilentlyContinue
     Run-Vcpkg @commonArgs "--feature-flags=versions$opt_registries" install `

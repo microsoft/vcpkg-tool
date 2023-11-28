@@ -14,26 +14,18 @@
 
 #include <vcpkg/bundlesettings.h>
 #include <vcpkg/cgroup-parser.h>
-#include <vcpkg/commands.contact.h>
 #include <vcpkg/commands.h>
-#include <vcpkg/commands.help.h>
 #include <vcpkg/commands.version.h>
-#include <vcpkg/globalstate.h>
-#include <vcpkg/input.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/vcpkgcmdarguments.h>
-#include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
 
 #include <locale.h>
 
-#include <cassert>
-#include <clocale>
-#include <memory>
-#include <random>
-
 #if defined(_WIN32)
+#include <atomic>
+
 #pragma comment(lib, "ole32")
 #pragma comment(lib, "shell32")
 #endif
@@ -42,6 +34,12 @@ using namespace vcpkg;
 
 namespace
 {
+#if defined(_WIN32)
+    std::atomic<int> g_init_console_cp(0);
+    std::atomic<int> g_init_console_output_cp(0);
+    std::atomic<bool> g_init_console_initialized(false);
+#endif // ^^^ _WIN32
+
     void invalid_command(const VcpkgCmdArguments& args)
     {
         msg::println_error(msgVcpkgInvalidCommand, msg::command_name = args.get_command());

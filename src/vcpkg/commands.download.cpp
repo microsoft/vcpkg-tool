@@ -4,7 +4,7 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/parse.h>
-#include <vcpkg/base/system.debug.h>
+#include <vcpkg/base/strings.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/binarycaching.h>

@@ -1,4 +1,4 @@
-﻿// This data file defines all available message arguments.
+// This data file defines all available message arguments.
 // It should only contain calls to DECLARE_MSG_ARG(name, description)
 
 DECLARE_MSG_ARG(error, "")
@@ -29,6 +29,7 @@ DECLARE_MSG_ARG(exit_code, "127")
 DECLARE_MSG_ARG(expected_version, "1.3.8")
 DECLARE_MSG_ARG(extension, ".exe")
 DECLARE_MSG_ARG(feature, "avisynthplus")
+DECLARE_MSG_ARG(git_tree_sha, "7cfad47ae9f68b183983090afd6337cd60fd4949")
 DECLARE_MSG_ARG(json_field, "identifer")
 DECLARE_MSG_ARG(json_type, "an array of identifiers")
 DECLARE_MSG_ARG(lower, "42")

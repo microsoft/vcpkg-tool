@@ -2,9 +2,7 @@
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/setup-messages.h>
 #include <vcpkg/base/system.debug.h>
-#include <vcpkg/base/util.h>
 
-#include <iterator>
 #include <vector>
 
 #include <cmrc/cmrc.hpp>
@@ -121,6 +119,12 @@ namespace vcpkg
         return LocalizedString::from_raw(fmt::format("${}", variable_name));
 #endif // ^^^ !_WIN32
     }
+
+    LocalizedString error_prefix() { return LocalizedString::from_raw(ErrorPrefix); }
+    LocalizedString internal_error_prefix() { return LocalizedString::from_raw(InternalErrorPrefix); }
+    LocalizedString message_prefix() { return LocalizedString::from_raw(MessagePrefix); }
+    LocalizedString note_prefix() { return LocalizedString::from_raw(NotePrefix); }
+    LocalizedString warning_prefix() { return LocalizedString::from_raw(WarningPrefix); }
 }
 
 namespace vcpkg::msg
@@ -508,11 +512,8 @@ namespace vcpkg::msg
         return nullopt;
     }
 
-    LocalizedString format_error() { return format(msgErrorMessage); }
-    LocalizedString format_error(const LocalizedString& s) { return format(msgErrorMessage).append(s); }
+    LocalizedString format_error(const LocalizedString& s) { return error_prefix().append(s); }
     void println_error(const LocalizedString& s) { println(Color::error, format_error(s)); }
-
-    LocalizedString format_warning() { return format(msgWarningMessage); }
-    LocalizedString format_warning(const LocalizedString& s) { return format(msgWarningMessage).append(s); }
+    LocalizedString format_warning(const LocalizedString& s) { return warning_prefix().append(s); }
     void println_warning(const LocalizedString& s) { println(Color::warning, format_warning(s)); }
 }

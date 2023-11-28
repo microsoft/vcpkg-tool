@@ -5,7 +5,6 @@
 #include <vcpkg/base/system.process.h>
 
 #include <vcpkg/commands.export.h>
-#include <vcpkg/commands.h>
 #include <vcpkg/commands.install.h>
 #include <vcpkg/export.ifw.h>
 #include <vcpkg/installedpaths.h>

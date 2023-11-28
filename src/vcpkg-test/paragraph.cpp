@@ -1,13 +1,10 @@
-#include <catch2/catch.hpp>
+#include <vcpkg-test/util.h>
 
 #include <vcpkg/base/strings.h>
 
 #include <vcpkg/paragraphs.h>
 
-#include <vcpkg-test/util.h>
-
-namespace Strings = vcpkg::Strings;
-using vcpkg::Paragraph;
+using namespace vcpkg;
 
 namespace
 {
@@ -29,7 +26,7 @@ namespace
         for (auto&& kv : v)
             pgh.emplace(kv.first, std::make_pair(kv.second, vcpkg::TextRowCol{}));
 
-        return vcpkg::BinaryParagraph(std::move(pgh));
+        return vcpkg::BinaryParagraph("test", std::move(pgh));
     }
 
 }
@@ -44,8 +41,9 @@ TEST_CASE ("SourceParagraph construct minimum", "[paragraph]")
     REQUIRE(m_pgh.has_value());
     auto& pgh = **m_pgh.get();
 
-    REQUIRE(pgh.core_paragraph->name == "zlib");
-    REQUIRE(pgh.core_paragraph->raw_version == "1.2.8");
+    REQUIRE(pgh.to_name() == "zlib");
+    REQUIRE(pgh.to_version_scheme() == VersionScheme::String);
+    REQUIRE(pgh.to_version() == Version{"1.2.8", 0});
     REQUIRE(pgh.core_paragraph->maintainers.empty());
     REQUIRE(pgh.core_paragraph->description.empty());
     REQUIRE(pgh.core_paragraph->dependencies.size() == 0);
@@ -60,7 +58,7 @@ TEST_CASE ("SourceParagraph construct invalid", "[paragraph]")
     }});
 
     REQUIRE(!m_pgh.has_value());
-    REQUIRE(m_pgh.error()->has_error());
+    REQUIRE(m_pgh.error() != LocalizedString());
 
     m_pgh = test_parse_control_file({{
         {"Source", "zlib"},
@@ -69,7 +67,7 @@ TEST_CASE ("SourceParagraph construct invalid", "[paragraph]")
     }});
 
     REQUIRE(!m_pgh.has_value());
-    REQUIRE(m_pgh.error()->has_error());
+    REQUIRE(m_pgh.error() != LocalizedString());
 
     m_pgh = test_parse_control_file({
         {
@@ -83,7 +81,7 @@ TEST_CASE ("SourceParagraph construct invalid", "[paragraph]")
     });
 
     REQUIRE(!m_pgh.has_value());
-    REQUIRE(m_pgh.error()->has_error());
+    REQUIRE(m_pgh.error() != LocalizedString());
 
     // invalid field`s name
     m_pgh = test_parse_control_file({{
@@ -92,7 +90,7 @@ TEST_CASE ("SourceParagraph construct invalid", "[paragraph]")
     }});
 
     REQUIRE(!m_pgh.has_value());
-    REQUIRE(m_pgh.error()->has_error());
+    REQUIRE(m_pgh.error() != LocalizedString());
 }
 
 TEST_CASE ("SourceParagraph construct maximum", "[paragraph]")
@@ -108,8 +106,9 @@ TEST_CASE ("SourceParagraph construct maximum", "[paragraph]")
     REQUIRE(m_pgh.has_value());
     auto& pgh = **m_pgh.get();
 
-    REQUIRE(pgh.core_paragraph->name == "s");
-    REQUIRE(pgh.core_paragraph->raw_version == "v");
+    REQUIRE(pgh.to_name() == "s");
+    REQUIRE(pgh.to_version_scheme() == VersionScheme::String);
+    REQUIRE(pgh.to_version() == Version{"v", 0});
     REQUIRE(pgh.core_paragraph->maintainers.size() == 1);
     REQUIRE(pgh.core_paragraph->maintainers[0] == "m");
     REQUIRE(pgh.core_paragraph->description.size() == 1);
@@ -182,8 +181,9 @@ TEST_CASE ("SourceParagraph construct qualified dependencies", "[paragraph]")
     REQUIRE(m_pgh.has_value());
     auto& pgh = **m_pgh.get();
 
-    REQUIRE(pgh.core_paragraph->name == "zlib");
-    REQUIRE(pgh.core_paragraph->raw_version == "1.2.8");
+    REQUIRE(pgh.to_name() == "zlib");
+    REQUIRE(pgh.to_version_scheme() == VersionScheme::String);
+    REQUIRE(pgh.to_version() == Version{"1.2.8", 0});
     REQUIRE(pgh.core_paragraph->maintainers.empty());
     REQUIRE(pgh.core_paragraph->description.empty());
     REQUIRE(pgh.core_paragraph->dependencies.size() == 2);
@@ -218,7 +218,25 @@ TEST_CASE ("BinaryParagraph construct minimum", "[paragraph]")
     });
 
     REQUIRE(pgh.spec.name() == "zlib");
-    REQUIRE(pgh.version == "1.2.8");
+    REQUIRE(pgh.version == Version{"1.2.8", 0});
+    REQUIRE(pgh.maintainers.empty());
+    REQUIRE(pgh.description.empty());
+    REQUIRE(pgh.spec.triplet().canonical_name() == "x86-windows");
+    REQUIRE(pgh.dependencies.size() == 0);
+}
+
+TEST_CASE ("BinaryParagraph construct minimum with port-version", "[paragraph]")
+{
+    auto pgh = test_make_binary_paragraph({
+        {"Package", "zlib"},
+        {"Version", "1.2.8"},
+        {"Port-Version", "2"},
+        {"Architecture", "x86-windows"},
+        {"Multi-Arch", "same"},
+    });
+
+    REQUIRE(pgh.spec.name() == "zlib");
+    REQUIRE(pgh.version == Version{"1.2.8", 2});
     REQUIRE(pgh.maintainers.empty());
     REQUIRE(pgh.description.empty());
     REQUIRE(pgh.spec.triplet().canonical_name() == "x86-windows");
@@ -238,7 +256,7 @@ TEST_CASE ("BinaryParagraph construct maximum", "[paragraph]")
     });
 
     REQUIRE(pgh.spec.name() == "s");
-    REQUIRE(pgh.version == "v");
+    REQUIRE(pgh.version == Version{"v", 0});
     REQUIRE(pgh.maintainers.size() == 1);
     REQUIRE(pgh.maintainers[0] == "m");
     REQUIRE(pgh.description.size() == 1);

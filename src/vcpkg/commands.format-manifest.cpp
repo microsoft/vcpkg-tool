@@ -4,10 +4,10 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/system.debug.h>
+#include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.format-manifest.h>
 #include <vcpkg/paragraphs.h>
-#include <vcpkg/portfileprovider.h>
 #include <vcpkg/sourceparagraph.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>

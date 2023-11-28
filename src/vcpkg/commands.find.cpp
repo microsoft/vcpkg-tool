@@ -1,20 +1,18 @@
+#include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/span.h>
 #include <vcpkg/base/strings.h>
+#include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.find.h>
-#include <vcpkg/commands.help.h>
 #include <vcpkg/configure-environment.h>
-#include <vcpkg/dependencies.h>
-#include <vcpkg/globalstate.h>
 #include <vcpkg/metrics.h>
-#include <vcpkg/paragraphs.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/registries.h>
 #include <vcpkg/sourceparagraph.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkglib.h>
-#include <vcpkg/versions.h>
+#include <vcpkg/vcpkgpaths.h>
 
 using namespace vcpkg;
 
@@ -28,8 +26,8 @@ namespace
             auto& source_paragraph = scf->core_paragraph;
             Json::Object& library_obj = obj.insert(source_paragraph->name, Json::Object());
             library_obj.insert("package_name", Json::Value::string(source_paragraph->name));
-            library_obj.insert("version", Json::Value::string(source_paragraph->raw_version));
-            library_obj.insert("port_version", Json::Value::integer(source_paragraph->port_version));
+            library_obj.insert("version", Json::Value::string(source_paragraph->version.text));
+            library_obj.insert("port_version", Json::Value::integer(source_paragraph->version.port_version));
             Json::Array& desc = library_obj.insert("description", Json::Array());
             for (const auto& line : source_paragraph->description)
             {
@@ -41,7 +39,7 @@ namespace
     constexpr const int s_name_and_ver_columns = 41;
     void do_print(const SourceParagraph& source_paragraph, bool full_desc)
     {
-        auto full_version = Version(source_paragraph.raw_version, source_paragraph.port_version).to_string();
+        auto full_version = source_paragraph.version.to_string();
         if (full_desc)
         {
             msg::write_unlocalized_text(Color::none,
@@ -196,7 +194,7 @@ namespace vcpkg
                     do_print(*source_control_file->core_paragraph, full_description);
                     for (auto&& feature_paragraph : source_control_file->feature_paragraphs)
                     {
-                        do_print(source_control_file->core_paragraph->name, *feature_paragraph, full_description);
+                        do_print(source_control_file->to_name(), *feature_paragraph, full_description);
                     }
                 }
             }

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vcpkg/base/fwd/files.h>
-#include <vcpkg/base/fwd/format.h>
+#include <vcpkg/base/fwd/fmt.h>
 #include <vcpkg/base/fwd/message_sinks.h>
 #include <vcpkg/base/fwd/span.h>
 
@@ -80,6 +80,8 @@ namespace vcpkg
         const Path& path() const;
         ExpectedL<Unit> try_seek_to(long long offset);
         ExpectedL<Unit> try_seek_to(long long offset, int origin);
+
+        void close() noexcept;
 
         ~FilePointer();
     };

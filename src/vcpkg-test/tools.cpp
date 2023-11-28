@@ -1,13 +1,9 @@
-#include <catch2/catch.hpp>
-
-#include <vcpkg/base/expected.h>
+#include <vcpkg-test/util.h>
 
 #include <vcpkg/tools.h>
 #include <vcpkg/tools.test.h>
 
 #include <array>
-
-#include <vcpkg-test/util.h>
 
 using namespace vcpkg;
 

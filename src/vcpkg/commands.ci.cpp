@@ -1,25 +1,19 @@
-#include <vcpkg/base/cache.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/graphs.h>
 #include <vcpkg/base/sortedvector.h>
 #include <vcpkg/base/span.h>
+#include <vcpkg/base/strings.h>
 #include <vcpkg/base/stringview.h>
-#include <vcpkg/base/system.debug.h>
-#include <vcpkg/base/system.h>
 #include <vcpkg/base/util.h>
-#include <vcpkg/base/xmlserializer.h>
 
 #include <vcpkg/binarycaching.h>
 #include <vcpkg/ci-baseline.h>
 #include <vcpkg/cmakevars.h>
 #include <vcpkg/commands.build.h>
 #include <vcpkg/commands.ci.h>
-#include <vcpkg/commands.help.h>
 #include <vcpkg/commands.install.h>
 #include <vcpkg/commands.set-installed.h>
 #include <vcpkg/dependencies.h>
-#include <vcpkg/globalstate.h>
-#include <vcpkg/input.h>
 #include <vcpkg/packagespec.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/platform-expression.h>
@@ -274,7 +268,7 @@ namespace
                            const LocalizedString& not_supported_regressions,
                            bool allow_unexpected_passing)
     {
-        bool has_error = false;
+        bool has_error = !not_supported_regressions.empty();
         LocalizedString output = msg::format(msgCiBaselineRegressionHeader);
         output.append_raw('\n');
         output.append(not_supported_regressions);
@@ -395,9 +389,8 @@ namespace vcpkg
         std::vector<FullPackageSpec> all_default_full_specs;
         for (auto scfl : provider.load_all_control_files())
         {
-            all_default_full_specs.emplace_back(
-                PackageSpec{scfl->source_control_file->core_paragraph->name, target_triplet},
-                InternalFeatureSet{"core", "default"});
+            all_default_full_specs.emplace_back(PackageSpec{scfl->to_name(), target_triplet},
+                                                InternalFeatureSet{"core", "default"});
         }
 
         CreateInstallPlanOptions serialize_options(host_triplet, paths.packages(), UnsupportedPortAction::Warn);
