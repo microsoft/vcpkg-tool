@@ -307,9 +307,12 @@ namespace vcpkg::msg
     {
         if (sv.empty()) return;
 
+        static std::mutex mtx;
+
         if (is_console)
         {
             WORD original_color = 0;
+            std::lock_guard lck(mtx);
             if (c != Color::none)
             {
                 CONSOLE_SCREEN_BUFFER_INFO console_screen_buffer_info{};
@@ -340,6 +343,7 @@ namespace vcpkg::msg
         {
             const char* pointer = sv.data();
             ::size_t size = sv.size();
+            std::lock_guard lck(mtx);
 
             while (size != 0)
             {
@@ -365,7 +369,7 @@ namespace vcpkg::msg
         return write_unlocalized_text_impl(c, sv, stderr_handle, stderr_is_console);
     }
 #else
-    static void write_all(const char* ptr, size_t to_write, int fd)
+    static void write_all(const char* ptr, size_t to_write, int fd, std::unique_lock<std::mutex>& lck)
     {
         while (to_write != 0)
         {
@@ -373,6 +377,7 @@ namespace vcpkg::msg
             if (written == -1)
             {
                 ::fprintf(stderr, "[DEBUG] Failed to print to stdout: %d\n", errno);
+                lck.unlock();
                 std::abort();
             }
             ptr += written;
@@ -383,23 +388,25 @@ namespace vcpkg::msg
     static void write_unlocalized_text_impl(Color c, StringView sv, int fd, bool is_a_tty)
     {
         static constexpr char reset_color_sequence[] = {'\033', '[', '0', 'm'};
+        static std::mutex mtx;
 
         if (sv.empty()) return;
 
+        std::unique_lock<std::mutex> lck(mtx);
         bool reset_color = false;
         if (is_a_tty && c != Color::none)
         {
             reset_color = true;
 
             const char set_color_sequence[] = {'\033', '[', '9', static_cast<char>(c), 'm'};
-            write_all(set_color_sequence, sizeof(set_color_sequence), fd);
+            write_all(set_color_sequence, sizeof(set_color_sequence), fd, lck);
         }
 
-        write_all(sv.data(), sv.size(), fd);
+        write_all(sv.data(), sv.size(), fd, lck);
 
         if (reset_color)
         {
-            write_all(reset_color_sequence, sizeof(reset_color_sequence), fd);
+            write_all(reset_color_sequence, sizeof(reset_color_sequence), fd, lck);
         }
     }
 
