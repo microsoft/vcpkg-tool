@@ -25,6 +25,7 @@ $gitConfigOptions = @(
   '-c', 'core.autocrlf=false'
 )
 
+$unusedStdoutFile = Join-Path $WorkingRoot 'unused-stdout.txt'
 $stderrFile = Join-Path $WorkingRoot 'last-stderr.txt'
 
 $Script:CurrentTest = 'unassigned'
@@ -138,8 +139,12 @@ function Run-VcpkgAndCaptureStdErr {
 
     $Script:CurrentTest = "$thisVcpkg $($testArgs -join ' ')"
     Write-Host -ForegroundColor red $Script:CurrentTest
-    & "$thisVcpkg" @testArgs 2> $stderrFile
-    Get-Content -LiteralPath $stderrFile -Encoding 'utf8' -Raw
+    & "$thisVcpkg" @testArgs 1> $unusedStdoutFile 2> $stderrFile
+    $result = Get-Content -LiteralPath $stderrFile -Encoding 'utf8' -Raw
+    if ($null -eq $result) {
+        $result = [string]::Empty
+    }
+    return $result
 }
 
 function Run-Vcpkg {

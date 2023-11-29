@@ -42,7 +42,11 @@ namespace
 
     void invalid_command(const VcpkgCmdArguments& args)
     {
-        msg::println_error(msgVcpkgInvalidCommand, msg::command_name = args.get_command());
+        msg::write_unlocalized_text_to_stderr(
+            Color::error,
+            LocalizedString::from_raw(ErrorPrefix)
+                .append(msgVcpkgInvalidCommand, msg::command_name = args.get_command())
+                .append_raw('\n'));
         print_zero_args_usage();
         Checks::exit_fail(VCPKG_LINE_INFO);
     }
@@ -379,7 +383,9 @@ int main(const int argc, const char* const* const argv)
 
     if (args.send_metrics.value_or(false) && !to_enable_metrics)
     {
-        msg::println_warning(msgVcpkgSendMetricsButDisabled);
+        msg::write_unlocalized_text_to_stderr(
+            Color::warning,
+            LocalizedString::from_raw(WarningPrefix).append(msgVcpkgSendMetricsButDisabled).append_raw('\n'));
     }
 
     args.debug_print_feature_flags();
@@ -408,15 +414,14 @@ int main(const int argc, const char* const* const argv)
     }
 
     fflush(stdout);
-    msg::println(msgVcpkgHasCrashed);
-    fflush(stdout);
-    msg::println();
-    LocalizedString data_blob;
-    data_blob.append_raw("Version=")
-        .append_raw(vcpkg_executable_version)
-        .append_raw("\nEXCEPTION=")
-        .append_raw(exc_msg)
-        .append_raw("\nCMD=\n");
+    auto data_blob = LocalizedString::from_raw(ErrorPrefix)
+                         .append(msgVcpkgHasCrashed)
+                         .append_raw("\nVersion=")
+                         .append_raw(vcpkg_executable_version)
+                         .append_raw("\nEXCEPTION=")
+                         .append_raw(exc_msg)
+                         .append_raw("\nCMD=\n");
+
     for (int x = 0; x < argc; ++x)
     {
 #if defined(_WIN32)
@@ -426,8 +431,7 @@ int main(const int argc, const char* const* const argv)
 #endif
     }
 
-    msg::print(data_blob);
-    fflush(stdout);
+    msg::write_unlocalized_text_to_stderr(Color::none, data_blob);
 
     // It is expected that one of the sub-commands will exit cleanly before we get here.
     Checks::exit_fail(VCPKG_LINE_INFO);

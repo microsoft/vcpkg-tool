@@ -121,7 +121,10 @@ namespace
         {
             if (auto config = manifest->config.get())
             {
-                msg::println_warning(msgEmbeddingVcpkgConfigInManifest);
+                msg::write_unlocalized_text_to_stderr(Color::warning,
+                                                      LocalizedString::from_raw(WarningPrefix)
+                                                          .append(msgEmbeddingVcpkgConfigInManifest)
+                                                          .append_raw('\n'));
 
                 if (manifest->builtin_baseline && config->default_reg)
                 {
@@ -132,11 +135,14 @@ namespace
 
                 if (config_data.has_value())
                 {
-                    msg::println_error(
-                        msg::format(msgAmbiguousConfigDeleteConfigFile,
+                    msg::write_unlocalized_text_to_stderr(
+                        Color::error,
+                        LocalizedString::from_raw(ErrorPrefix)
+                            .append(msgAmbiguousConfigDeleteConfigFile,
                                     msg::path = config_dir / "vcpkg-configuration.json")
                             .append_raw('\n')
-                            .append(msgDeleteVcpkgConfigFromManifest, msg::path = manifest_dir / "vcpkg.json"));
+                            .append(msgDeleteVcpkgConfigFromManifest, msg::path = manifest_dir / "vcpkg.json")
+                            .append_raw('\n'));
 
                     Checks::exit_fail(VCPKG_LINE_INFO);
                 }
@@ -167,7 +173,10 @@ namespace
 
                 if (ret.config.default_reg)
                 {
-                    msg::println_warning(msgAttemptingToSetBuiltInBaseline);
+                    msg::write_unlocalized_text_to_stderr(Color::warning,
+                                                          LocalizedString::from_raw(WarningPrefix)
+                                                              .append(msgAttemptingToSetBuiltInBaseline)
+                                                              .append_raw('\n'));
                 }
                 else
                 {
@@ -191,9 +200,10 @@ namespace
                 auto origin =
                     ret.directory /
                     ((ret.source == ConfigurationSource::ManifestFile) ? "vcpkg.json" : "vcpkg-configuration.json");
-                msg::println_error(msgConfigurationErrorRegistriesWithoutBaseline,
-                                   msg::path = origin,
-                                   msg::url = vcpkg::docs::registries_url);
+                msg::write_unlocalized_text_to_stderr(Color::error,
+                                                      msg::format(msgConfigurationErrorRegistriesWithoutBaseline,
+                                                                  msg::path = origin,
+                                                                  msg::url = vcpkg::docs::registries_url));
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
         }
@@ -389,10 +399,13 @@ namespace
                 }
                 else if (ret != canonical_root_dir_env)
                 {
-                    msg::println_warning(msgIgnoringVcpkgRootEnvironment,
-                                         msg::path = *vcpkg_root_dir_env,
-                                         msg::actual = ret,
-                                         msg::value = canonical_current_exe);
+                    msg::write_unlocalized_text_to_stderr(Color::warning,
+                                                          LocalizedString::from_raw(WarningPrefix)
+                                                              .append(msgIgnoringVcpkgRootEnvironment,
+                                                                      msg::path = *vcpkg_root_dir_env,
+                                                                      msg::actual = ret,
+                                                                      msg::value = canonical_current_exe)
+                                                              .append_raw('\n'));
                 }
             }
         }
@@ -585,8 +598,13 @@ namespace vcpkg
                         bool allow_errors = args.ignore_lock_failures.value_or(false);
                         if (is_already_locked || !allow_errors)
                         {
-                            msg::println_error(msgFailedToTakeFileSystemLock, msg::path = vcpkg_root_file);
-                            msg::write_unlocalized_text(Color::error, fmt::format("    {}\n", ec.message()));
+                            msg::write_unlocalized_text_to_stderr(
+                                Color::error,
+                                LocalizedString::from_raw(vcpkg_root_file)
+                                    .append_raw(": ")
+                                    .append_raw(ErrorPrefix)
+                                    .append(msgFailedToTakeFileSystemLock)
+                                    .append_raw(fmt::format("\n    {}\n", ec.message())));
                             Checks::exit_fail(VCPKG_LINE_INFO);
                         }
                     }
@@ -783,8 +801,8 @@ namespace vcpkg
         {
             return *i;
         }
-        msg::println(Color::error, msgVcpkgDisallowedClassicMode);
-        Checks::exit_fail(VCPKG_LINE_INFO);
+
+        Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgVcpkgDisallowedClassicMode);
     }
 
     const Path& VcpkgPaths::packages() const
@@ -793,8 +811,8 @@ namespace vcpkg
         {
             return *i;
         }
-        msg::println(Color::error, msgVcpkgDisallowedClassicMode);
-        Checks::exit_fail(VCPKG_LINE_INFO);
+
+        Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgVcpkgDisallowedClassicMode);
     }
 
     Path VcpkgPaths::baselines_output() const { return buildtrees() / "versioning_" / "baselines"; }

@@ -43,25 +43,25 @@ if ($IsWindows) {
     }
 
     # set-installed
-    $output = Run-VcpkgAndCaptureStdErr -TestArgs ($directoryArgs + @('x-set-installed'))
+    $output = Run-VcpkgAndCaptureOutput -TestArgs ($directoryArgs + @('x-set-installed'))
     Throw-IfFailed
     if ($output.Contains($warningText)) {
         throw 'x-set-installed with no parameters should not emit the triplet warning'
     }
     
-    $output = Run-VcpkgAndCaptureStdErr -TestArgs ($directoryArgs + @('x-set-installed', 'vcpkg-hello-world-1'))
+    $output = Run-VcpkgAndCaptureOutput -TestArgs ($directoryArgs + @('x-set-installed', 'vcpkg-hello-world-1'))
     Throw-IfFailed
     if (-Not $output.Contains($warningText)) {
         throw 'x-set-installed with unqualified spec should emit the triplet warning'
     }
     
-    $output = Run-VcpkgAndCaptureStdErr -TestArgs ($directoryArgs + @('x-set-installed', 'vcpkg-hello-world-1:x64-windows'))
+    $output = Run-VcpkgAndCaptureOutput -TestArgs ($directoryArgs + @('x-set-installed', 'vcpkg-hello-world-1:x64-windows'))
     Throw-IfFailed
     if ($output.Contains($warningText)) {
         throw 'x-set-installed with qualified parameters should not emit the triplet warning'
     }
 
-    $output = Run-VcpkgAndCaptureStdErr -TestArgs ($directoryArgs + @('x-set-installed', 'vcpkg-hello-world-1', '--triplet', 'x86-windows'))
+    $output = Run-VcpkgAndCaptureOutput -TestArgs ($directoryArgs + @('x-set-installed', 'vcpkg-hello-world-1', '--triplet', 'x86-windows'))
     Throw-IfFailed
     if ($output.Contains($warningText)) {
         throw 'x-set-installed with arg should not emit the triplet warning'
@@ -76,7 +76,7 @@ if ($IsWindows) {
         Run-Vcpkg -TestArgs ($directoryArgs + @('new', '--application'))
         Throw-IfFailed
 
-        $output = Run-VcpkgAndCaptureStdErr -TestArgs ($directoryArgs + @('install'))
+        $output = Run-VcpkgAndCaptureOutput -TestArgs ($directoryArgs + @('install'))
         Throw-IfFailed
         if (-Not $output.Contains($warningText)) {
             throw 'manifest install should emit the triplet warning'
@@ -86,63 +86,63 @@ if ($IsWindows) {
     }
 
     Refresh-TestRoot
-    $output = Run-VcpkgAndCaptureStdErr -TestArgs ($directoryArgs + @('install', 'vcpkg-hello-world-1'))
+    $output =Run-VcpkgAndCaptureOutput -TestArgs ($directoryArgs + @('install', 'vcpkg-hello-world-1'))
     Throw-IfFailed
     if (-Not $output.Contains($warningText)) {
         throw 'install with unqualified spec should emit the triplet warning'
     }
     
-    $output = Run-VcpkgAndCaptureStdErr -TestArgs ($directoryArgs + @('install', 'vcpkg-hello-world-1:x64-windows'))
+    $output = Run-VcpkgAndCaptureOutput -TestArgs ($directoryArgs + @('install', 'vcpkg-hello-world-1:x64-windows'))
     Throw-IfFailed
     if ($output.Contains($warningText)) {
         throw 'install with qualified parameters should not emit the triplet warning'
     }
 
-    $output = Run-VcpkgAndCaptureStdErr -TestArgs ($directoryArgs + @('install', 'vcpkg-hello-world-1', '--triplet', 'x86-windows'))
+    $output = Run-VcpkgAndCaptureOutput -TestArgs ($directoryArgs + @('install', 'vcpkg-hello-world-1', '--triplet', 'x86-windows'))
     Throw-IfFailed
     if ($output.Contains($warningText)) {
         throw 'install with arg should not emit the triplet warning'
     }
 
     # upgrade
-    $output = Run-VcpkgAndCaptureStdErr -TestArgs ($directoryArgs + @('upgrade'))
+    $output = Run-VcpkgAndCaptureOutput -TestArgs ($directoryArgs + @('upgrade'))
     Throw-IfFailed
     if ($output.Contains($warningText)) {
         throw 'upgrade with no parameters should not emit the triplet warning'
     }
     
-    $output = Run-VcpkgAndCaptureStdErr -TestArgs ($directoryArgs + @('upgrade', 'vcpkg-hello-world-1'))
+    $output = Run-VcpkgAndCaptureOutput -TestArgs ($directoryArgs + @('upgrade', 'vcpkg-hello-world-1'))
     Throw-IfFailed
     if (-Not $output.Contains($warningText)) {
         throw 'upgrade with unqualified spec should emit the triplet warning'
     }
     
-    $output = Run-VcpkgAndCaptureStdErr -TestArgs ($directoryArgs + @('upgrade', 'vcpkg-hello-world-1:x64-windows'))
+    $output = Run-VcpkgAndCaptureOutput -TestArgs ($directoryArgs + @('upgrade', 'vcpkg-hello-world-1:x64-windows'))
     Throw-IfFailed
     if ($output.Contains($warningText)) {
         throw 'upgrade with qualified parameters should not emit the triplet warning'
     }
 
-    $output = Run-VcpkgAndCaptureStdErr -TestArgs ($directoryArgs + @('upgrade', 'vcpkg-hello-world-1', '--triplet', 'x86-windows'))
+    $output = Run-VcpkgAndCaptureOutput -TestArgs ($directoryArgs + @('upgrade', 'vcpkg-hello-world-1', '--triplet', 'x86-windows'))
     Throw-IfFailed
     if ($output.Contains($warningText)) {
         throw 'upgrade with arg should not emit the triplet warning'
     }
 
     # remove
-    $output = Run-VcpkgAndCaptureStdErr -TestArgs ($directoryArgs + @('remove', 'vcpkg-hello-world-1'))
+    $output = Run-VcpkgAndCaptureOutput -TestArgs ($directoryArgs + @('remove', 'vcpkg-hello-world-1'))
     Throw-IfFailed
     if (-Not $output.Contains($warningText)) {
         throw 'remove with unqualified spec should emit the triplet warning'
     }
     
-    $output = Run-VcpkgAndCaptureStdErr -TestArgs ($directoryArgs + @('remove', 'vcpkg-hello-world-1:x64-windows'))
+    $output = Run-VcpkgAndCaptureOutput -TestArgs ($directoryArgs + @('remove', 'vcpkg-hello-world-1:x64-windows'))
     Throw-IfFailed
     if ($output.Contains($warningText)) {
         throw 'remove with qualified parameters should not emit the triplet warning'
     }
 
-    $output = Run-VcpkgAndCaptureStdErr -TestArgs ($directoryArgs + @('remove', 'vcpkg-hello-world-1', '--triplet', 'x86-windows'))
+    $output = Run-VcpkgAndCaptureOutput -TestArgs ($directoryArgs + @('remove', 'vcpkg-hello-world-1', '--triplet', 'x86-windows'))
     Throw-IfFailed
     if ($output.Contains($warningText)) {
         throw 'remove with arg should not emit the triplet warning'
@@ -150,7 +150,7 @@ if ($IsWindows) {
 
     $env:VCPKG_DEFAULT_TRIPLET = 'x86-windows'
     Refresh-TestRoot
-    $output = Run-VcpkgAndCaptureStdErr -TestArgs ($directoryArgs + @('install', 'vcpkg-hello-world-1'))
+    $output = Run-VcpkgAndCaptureOutput -TestArgs ($directoryArgs + @('install', 'vcpkg-hello-world-1'))
     Throw-IfFailed
     if ($output.Contains($warningText)) {
         throw 'install with environment variable set should not emit the triplet warning'
