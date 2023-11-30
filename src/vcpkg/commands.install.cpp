@@ -524,7 +524,20 @@ namespace vcpkg
                 msgElapsedForPackage, msg::spec = current_summary.get_spec(), msg::elapsed = current_summary.timing);
         }
 
-        ~TrackedPackageInstallGuard() { print_elapsed_time(); }
+        void print_abi_hash() const
+        {
+            auto bpgh = current_summary.get_binary_paragraph();
+            if (bpgh)
+            {
+                msg::println(msgPackageAbi, msg::spec = bpgh->displayname(), msg::package_abi = bpgh->abi);
+            }
+        }
+
+        ~TrackedPackageInstallGuard()
+        {
+            print_elapsed_time();
+            print_abi_hash();
+        }
 
         TrackedPackageInstallGuard(const TrackedPackageInstallGuard&) = delete;
         TrackedPackageInstallGuard& operator=(const TrackedPackageInstallGuard&) = delete;
