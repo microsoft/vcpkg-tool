@@ -230,7 +230,7 @@ namespace vcpkg
         candidate_paths.emplace_back("/usr/share/code/bin/code");
         candidate_paths.emplace_back("/usr/bin/code");
 
-        if (succeeded(cmd_execute(Command("command").string_arg("-v").string_arg("xdg-mime"))))
+        if (succeeded(cmd_execute({Command("command").string_arg("-v").string_arg("xdg-mime")})))
         {
             RedirectedProcessLaunchSettings mime_qry{
                 Command("xdg-mime").string_arg("query").string_arg("default").string_arg("text/plain")};

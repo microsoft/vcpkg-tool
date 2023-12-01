@@ -19,5 +19,4 @@ namespace vcpkg
     struct CommandLess;
     struct ExitCodeAndOutput;
     struct Environment;
-    struct WorkingDirectory;
 }

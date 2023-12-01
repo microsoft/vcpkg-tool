@@ -196,9 +196,9 @@ namespace vcpkg
 
         if (ext_type == ExtractionType::Zip)
         {
-            const auto code =
-                cmd_execute(Command{"unzip"}.string_arg("-qqo").string_arg(archive), WorkingDirectory{to_path})
-                    .value_or_exit(VCPKG_LINE_INFO);
+            ProcessLaunchSettings settings{Command{"unzip"}.string_arg("-qqo").string_arg(archive)};
+            settings.working_directory = to_path;
+            const auto code = cmd_execute(settings).value_or_exit(VCPKG_LINE_INFO);
             Checks::msg_check_exit(VCPKG_LINE_INFO,
                                    code == 0,
                                    msgPackageFailedtWhileExtracting,

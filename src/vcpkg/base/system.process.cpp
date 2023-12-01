@@ -1406,21 +1406,20 @@ namespace vcpkg
         if (long_exit_code > INT_MAX) long_exit_code = INT_MAX;
         return static_cast<int>(long_exit_code);
 #else
-        (void)env;
         Command real_command_line_builder;
-        if (!wd.working_directory.empty())
+        if (const auto wd = settings.working_directory.get())
         {
             real_command_line_builder.string_arg("cd");
-            real_command_line_builder.string_arg(wd.working_directory);
+            real_command_line_builder.string_arg(*wd);
             real_command_line_builder.raw_arg("&&");
         }
 
-        if (!env.get().empty())
+        if (const auto env = settings.environment.get())
         {
-            real_command_line_builder.raw_arg(env.get());
+            real_command_line_builder.raw_arg(env->get());
         }
 
-        real_command_line_builder.raw_arg(cmd_line.command_line());
+        real_command_line_builder.raw_arg(settings.command_line());
 
         std::string real_command_line = std::move(real_command_line_builder).extract();
         Debug::print(fmt::format("{}: system({})\n", debug_id, real_command_line));
@@ -1571,7 +1570,7 @@ namespace
             actual_cmd_line.push_back(' ');
         }
 
-        const auto unwrapped_to_execute = cmd_line.command_line();
+        const auto unwrapped_to_execute = settings.command_line();
         actual_cmd_line.append(unwrapped_to_execute.data(), unwrapped_to_execute.size());
 
         Debug::print(fmt::format("{}: execute_process({})\n", debug_id, actual_cmd_line));
@@ -1628,7 +1627,7 @@ namespace
 
         char buf[1024];
         ChildStdinTracker stdin_tracker{settings.stdin_content, 0};
-        if (stdin_content.empty())
+        if (settings.stdin_content.empty())
         {
             close_mark_invalid(child_input.pipefd[1]);
         }

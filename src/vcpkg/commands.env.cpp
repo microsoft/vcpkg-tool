@@ -134,6 +134,7 @@ namespace vcpkg
 #if defined(_WIN32)
             env = cmd_execute_and_capture_environment(build_env_cmd, env);
 #else  // ^^^ _WIN32 / !_WIN32 vvv
+            (void)env;
             Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgEnvPlatformNotSupported);
 #endif // ^^^ !_WIN32
         }
