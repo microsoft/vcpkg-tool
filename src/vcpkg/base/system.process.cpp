@@ -1063,65 +1063,6 @@ namespace
             return child_exit_code;
         }
     };
-
-    ExpectedL<Unit> windows_create_process_redirect(std::int32_t debug_id,
-                                                    RedirectedProcessInfo& ret,
-                                                    StringView cmd_line,
-                                                    const Optional<Path>& working_directory,
-                                                    const Optional<Environment>& environment,
-                                                    DWORD dwCreationFlags) noexcept
-    {
-        STARTUPINFOEXW startup_info_ex{};
-        startup_info_ex.StartupInfo.cb = sizeof(STARTUPINFOEXW);
-        startup_info_ex.StartupInfo.dwFlags |= STARTF_USESTDHANDLES;
-
-        // Create a pipe for the child process's STDIN.
-        auto stdin_create = ret.stdin_pipe.create(debug_id);
-        if (!stdin_create)
-        {
-            return std::move(stdin_create).error();
-        }
-
-        startup_info_ex.StartupInfo.hStdInput = ret.stdin_pipe.read_pipe;
-
-        // Create a pipe for the child process's STDOUT/STDERR.
-        auto stdout_create = ret.stdout_pipe.create();
-        if (!stdout_create)
-        {
-            return std::move(stdout_create).error();
-        }
-
-        startup_info_ex.StartupInfo.hStdOutput = ret.stdout_pipe.write_pipe;
-        startup_info_ex.StartupInfo.hStdError = ret.stdout_pipe.write_pipe;
-
-        ProcAttributeList proc_attribute_list;
-        auto proc_attribute_list_create = proc_attribute_list.create(1);
-        if (!proc_attribute_list_create)
-        {
-            return std::move(proc_attribute_list_create).error();
-        }
-
-        HANDLE handles_to_inherit[2] = {startup_info_ex.StartupInfo.hStdOutput, startup_info_ex.StartupInfo.hStdInput};
-        auto maybe_error = proc_attribute_list.update_attribute(
-            PROC_THREAD_ATTRIBUTE_HANDLE_LIST, handles_to_inherit, 2 * sizeof(HANDLE));
-        if (!maybe_error.has_value())
-        {
-            return maybe_error.error();
-        }
-        startup_info_ex.lpAttributeList = proc_attribute_list.get();
-
-        auto process_create = windows_create_process(
-            debug_id, ret.proc_info, cmd_line, working_directory, environment, TRUE, dwCreationFlags, startup_info_ex);
-
-        if (!process_create)
-        {
-            return std::move(process_create).error();
-        }
-
-        close_handle_mark_invalid(ret.stdin_pipe.read_pipe);
-        close_handle_mark_invalid(ret.stdout_pipe.write_pipe);
-        return Unit{};
-    }
 #else // ^^^ _WIN32 // !_WIN32 vvv
     struct AnonymousPipe
     {
@@ -1243,13 +1184,12 @@ namespace vcpkg
     {
         static StringLiteral magic_string = "cdARN4xjKueKScMy9C6H";
 
-        auto actual_cmd_line = cmd_line;
-        actual_cmd_line.raw_arg(Strings::concat(" & echo ", magic_string, " & set"));
+        RedirectedProcessLaunchSettings settings{cmd_line};
+        settings.raw_arg(Strings::concat(" & echo ", magic_string, " & set"));
 
-        Debug::print("command line: ", actual_cmd_line.command_line(), "\n");
-        RedirectedProcessLaunchSettings settings;
-        settings.cmd = cmd_line;
+        Debug::print("command line: ", settings.command_line(), "\n");
         settings.environment = env;
+        settings.create_new_console = CreateNewConsole::Yes;
         auto maybe_rc_output = cmd_execute_and_capture_output(settings);
         if (!maybe_rc_output)
         {
@@ -1322,7 +1262,7 @@ namespace vcpkg
                                                      nullopt,
                                                      nullopt,
                                                      FALSE,
-                                                     CREATE_NEW_CONSOLE | CREATE_NO_WINDOW | CREATE_BREAKAWAY_FROM_JOB,
+                                                     CREATE_NEW_CONSOLE | CREATE_BREAKAWAY_FROM_JOB,
                                                      startup_info_ex);
         if (!process_create)
         {
@@ -1516,12 +1456,72 @@ namespace
 
         SpawnProcessGuard spawn_process_guard;
         RedirectedProcessInfo process_info;
-        auto process_create = windows_create_process_redirect(
-            debug_id, process_info, settings.command_line(), settings.working_directory, settings.environment, 0);
+        DWORD dwCreationFlags = 0;
+        STARTUPINFOEXW startup_info_ex{};
+        startup_info_ex.StartupInfo.cb = sizeof(STARTUPINFOEXW);
+        startup_info_ex.StartupInfo.dwFlags = STARTF_USESTDHANDLES;
+        switch (settings.create_new_console)
+        {
+            case CreateNewConsole::No: break;
+            case CreateNewConsole::Yes:
+                dwCreationFlags |= CREATE_NEW_CONSOLE;
+                startup_info_ex.StartupInfo.dwFlags |= STARTF_USESHOWWINDOW;
+                startup_info_ex.StartupInfo.wShowWindow = SW_HIDE;
+                break;
+            default: Checks::unreachable(VCPKG_LINE_INFO);
+        }
+
+        // Create a pipe for the child process's STDIN.
+        auto stdin_create = process_info.stdin_pipe.create(debug_id);
+        if (!stdin_create)
+        {
+            return std::move(stdin_create).error();
+        }
+
+        startup_info_ex.StartupInfo.hStdInput = process_info.stdin_pipe.read_pipe;
+
+        // Create a pipe for the child process's STDOUT/STDERR.
+        auto stdout_create = process_info.stdout_pipe.create();
+        if (!stdout_create)
+        {
+            return std::move(stdout_create).error();
+        }
+
+        startup_info_ex.StartupInfo.hStdOutput = process_info.stdout_pipe.write_pipe;
+        startup_info_ex.StartupInfo.hStdError = process_info.stdout_pipe.write_pipe;
+
+        ProcAttributeList proc_attribute_list;
+        auto proc_attribute_list_create = proc_attribute_list.create(1);
+        if (!proc_attribute_list_create)
+        {
+            return std::move(proc_attribute_list_create).error();
+        }
+
+        HANDLE handles_to_inherit[2] = {startup_info_ex.StartupInfo.hStdOutput, startup_info_ex.StartupInfo.hStdInput};
+        auto maybe_error = proc_attribute_list.update_attribute(
+            PROC_THREAD_ATTRIBUTE_HANDLE_LIST, handles_to_inherit, 2 * sizeof(HANDLE));
+        if (!maybe_error.has_value())
+        {
+            return maybe_error.error();
+        }
+        startup_info_ex.lpAttributeList = proc_attribute_list.get();
+
+        auto process_create = windows_create_process(debug_id,
+                                                     process_info.proc_info,
+                                                     settings.command_line(),
+                                                     settings.working_directory,
+                                                     settings.environment,
+                                                     TRUE,
+                                                     dwCreationFlags,
+                                                     startup_info_ex);
+
         if (!process_create)
         {
             return std::move(process_create).error();
         }
+
+        close_handle_mark_invalid(process_info.stdin_pipe.read_pipe);
+        close_handle_mark_invalid(process_info.stdout_pipe.write_pipe);
 
         std::function<void(char*, size_t)> raw_cb;
         switch (settings.encoding)

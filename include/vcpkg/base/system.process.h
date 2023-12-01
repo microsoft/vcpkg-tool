@@ -145,6 +145,7 @@ namespace vcpkg
 #if defined(_WIN32)
         // the encoding to use for standard streams of the child
         Encoding encoding = Encoding::Utf8;
+        CreateNewConsole create_new_console = CreateNewConsole::No;
 #endif // ^^^ _WIN32
        // whether to echo all read content to the enclosing terminal;
        // only affects cmd_execute-family commands that redirect the output
