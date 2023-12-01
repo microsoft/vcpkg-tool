@@ -257,22 +257,19 @@ endfunction()
         static constexpr StringLiteral BLOCK_START_GUID = "c35112b6-d1ba-415b-aa5d-81de856ef8eb";
         static constexpr StringLiteral BLOCK_END_GUID = "e1e74b5c-18cb-4474-a6bd-5c1c8bc81f3f";
 
-        const auto cmd_launch_cmake = vcpkg::make_cmake_cmd(paths, script_path, {});
+        RedirectedProcessLaunchSettings settings{vcpkg::make_cmake_cmd(paths, script_path, {})};
 
         std::vector<std::string> lines;
-        auto const exit_code = cmd_execute_and_stream_lines(
-                                   cmd_launch_cmake,
-                                   [&](StringView sv) { lines.emplace_back(sv.begin(), sv.end()); },
-                                   default_working_directory)
-                                   .value_or_exit(VCPKG_LINE_INFO);
+        auto const exit_code = cmd_execute_and_stream_lines(settings, [&](StringView sv) {
+                                   lines.emplace_back(sv.begin(), sv.end());
+                               }).value_or_exit(VCPKG_LINE_INFO);
 
         if (exit_code != 0)
         {
-            Checks::msg_exit_with_message(
-                VCPKG_LINE_INFO,
-                msg::format(msgCommandFailed, msg::command_line = cmd_launch_cmake.command_line())
-                    .append_raw('\n')
-                    .append_raw(Strings::join(", ", lines)));
+            Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                          msg::format(msgCommandFailed, msg::command_line = settings.command_line())
+                                              .append_raw('\n')
+                                              .append_raw(Strings::join(", ", lines)));
         }
 
         const auto end = lines.cend();

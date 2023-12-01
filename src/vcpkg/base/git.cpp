@@ -149,26 +149,27 @@ namespace vcpkg
 
     ExpectedL<std::vector<GitStatusLine>> git_status(const GitConfig& config, StringView path)
     {
-        auto cmd = git_cmd_builder(config).string_arg("status").string_arg("--porcelain=v1");
+        RedirectedProcessLaunchSettings settings;
+        settings.cmd = git_cmd_builder(config).string_arg("status").string_arg("--porcelain=v1");
         if (!path.empty())
         {
-            cmd.string_arg("--").string_arg(path);
+            settings.string_arg("--").string_arg(path);
         }
 
-        auto maybe_output = cmd_execute_and_capture_output(cmd);
+        auto maybe_output = cmd_execute_and_capture_output(settings);
         if (auto output = maybe_output.get())
         {
             if (output->exit_code != 0)
             {
-                return msg::format(msgGitCommandFailed, msg::command_line = cmd.command_line())
+                return msg::format(msgGitCommandFailed, msg::command_line = settings.command_line())
                     .append_raw('\n')
                     .append_raw(output->output);
             }
 
-            return parse_git_status_output(output->output, cmd.command_line());
+            return parse_git_status_output(output->output, settings.command_line());
         }
 
-        return msg::format(msgGitCommandFailed, msg::command_line = cmd.command_line())
+        return msg::format(msgGitCommandFailed, msg::command_line = settings.command_line())
             .append_raw('\n')
             .append_raw(maybe_output.error().to_string());
     }
@@ -194,8 +195,9 @@ namespace vcpkg
 
     ExpectedL<bool> is_shallow_clone(const GitConfig& config)
     {
-        auto cmd = git_cmd_builder(config).string_arg("rev-parse").string_arg("--is-shallow-repository");
-        return flatten_out(cmd_execute_and_capture_output(cmd), Tools::GIT).map([](std::string&& output) {
+        RedirectedProcessLaunchSettings settings;
+        settings.cmd = git_cmd_builder(config).string_arg("rev-parse").string_arg("--is-shallow-repository");
+        return flatten_out(cmd_execute_and_capture_output(settings), Tools::GIT).map([](std::string&& output) {
             return "true" == Strings::trim(std::move(output));
         });
     }

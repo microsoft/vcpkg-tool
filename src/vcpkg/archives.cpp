@@ -32,8 +32,8 @@ namespace
         StringView nugetid{stem.begin(), dot_after_name};
         StringView version{dot_after_name + 1, stem.end()};
 
-        Command nuget_command{nuget_exe};
-        nuget_command.string_arg("install")
+        RedirectedProcessLaunchSettings settings{Command{nuget_exe}};
+        settings.string_arg("install")
             .string_arg(nugetid)
             .string_arg("-Version")
             .string_arg(version)
@@ -48,7 +48,7 @@ namespace
             .string_arg("-PackageSaveMode")
             .string_arg("nuspec");
 
-        const auto result = flatten(cmd_execute_and_capture_output(nuget_command), Tools::NUGET);
+        const auto result = flatten(cmd_execute_and_capture_output(settings), Tools::NUGET);
         if (!result)
         {
             Checks::msg_exit_with_message(
@@ -65,7 +65,7 @@ namespace
         {
             // msiexec is a WIN32/GUI application, not a console application and so needs special attention to wait
             // until it finishes (wrap in cmd /c).
-            const auto maybe_code_and_output = cmd_execute_and_capture_output(
+            RedirectedProcessLaunchSettings settings{
                 Command{"cmd"}
                     .string_arg("/c")
                     .string_arg("msiexec")
@@ -75,11 +75,9 @@ namespace
                     .string_arg("/qn")
                     // msiexec requires quotes to be after "TARGETDIR=":
                     //      TARGETDIR="C:\full\path\to\dest"
-                    .raw_arg(Strings::concat("TARGETDIR=", Command{to_path}.extract())),
-                default_working_directory,
-                default_environment,
-                Encoding::Utf16);
-
+                    .raw_arg(Strings::concat("TARGETDIR=", Command{to_path}.extract()))};
+            settings.encoding = Encoding::Utf16;
+            const auto maybe_code_and_output = cmd_execute_and_capture_output(settings);
             if (auto code_and_output = maybe_code_and_output.get())
             {
                 if (code_and_output->exit_code == 0)
@@ -106,13 +104,13 @@ namespace
         static bool recursion_limiter_sevenzip = false;
         Checks::check_exit(VCPKG_LINE_INFO, !recursion_limiter_sevenzip);
         recursion_limiter_sevenzip = true;
-        const auto maybe_output = flatten(cmd_execute_and_capture_output(Command{seven_zip}
-                                                                             .string_arg("x")
-                                                                             .string_arg(archive)
-                                                                             .string_arg(fmt::format("-o{}", to_path))
-                                                                             .string_arg("-y")),
-                                          Tools::SEVEN_ZIP);
+        RedirectedProcessLaunchSettings settings{Command{seven_zip}
+                                                     .string_arg("x")
+                                                     .string_arg(archive)
+                                                     .string_arg(fmt::format("-o{}", to_path))
+                                                     .string_arg("-y")};
 
+        const auto maybe_output = flatten(cmd_execute_and_capture_output(settings), Tools::SEVEN_ZIP);
         if (!maybe_output)
         {
             Checks::msg_exit_with_message(
@@ -304,8 +302,9 @@ namespace vcpkg
 
     void extract_tar(const Path& tar_tool, const Path& archive, const Path& to_path)
     {
-        const auto code =
-            cmd_execute(Command{tar_tool}.string_arg("xzf").string_arg(archive), WorkingDirectory{to_path});
+        ProcessLaunchSettings settings{Command{tar_tool}.string_arg("xzf").string_arg(archive)};
+        settings.working_directory = to_path;
+        const auto code = cmd_execute(settings);
         Checks::msg_check_exit(VCPKG_LINE_INFO,
                                succeeded(code),
                                msgPackageFailedtWhileExtracting,
@@ -316,9 +315,10 @@ namespace vcpkg
     void extract_tar_cmake(const Path& cmake_tool, const Path& archive, const Path& to_path)
     {
         // Note that CMake's built in tar can extract more archive types than many system tars; e.g. 7z
-        const auto code =
-            cmd_execute(Command{cmake_tool}.string_arg("-E").string_arg("tar").string_arg("xzf").string_arg(archive),
-                        WorkingDirectory{to_path});
+        ProcessLaunchSettings settings{
+            Command{cmake_tool}.string_arg("-E").string_arg("tar").string_arg("xzf").string_arg(archive)};
+        settings.working_directory = to_path;
+        const auto code = cmd_execute(settings);
         Checks::msg_check_exit(VCPKG_LINE_INFO,
                                succeeded(code),
                                msgPackageFailedtWhileExtracting,
@@ -344,22 +344,21 @@ namespace vcpkg
     {
         fs.remove(destination, VCPKG_LINE_INFO);
 #if defined(_WIN32)
-        return flatten(cmd_execute_and_capture_output(
-                           Command{seven_zip}.string_arg("a").string_arg(destination).string_arg(source / "*"),
-                           default_working_directory,
-                           get_clean_environment()),
-                       Tools::SEVEN_ZIP);
+        RedirectedProcessLaunchSettings settings{
+            Command{seven_zip}.string_arg("a").string_arg(destination).string_arg(source / "*")};
+        settings.environment = get_clean_environment();
+        return flatten(cmd_execute_and_capture_output(settings), Tools::SEVEN_ZIP);
 #else
-        return flatten(cmd_execute_and_capture_output(Command{"zip"}
-                                                          .string_arg("--quiet")
-                                                          .string_arg("-y")
-                                                          .string_arg("-r")
-                                                          .string_arg(destination)
-                                                          .string_arg("*")
-                                                          .string_arg("--exclude")
-                                                          .string_arg(".DS_Store"),
-                                                      WorkingDirectory{source}),
-                       "zip");
+        RedirectedProcessLaunchSettings settings{Command{"zip"}
+                                                     .string_arg("--quiet")
+                                                     .string_arg("-y")
+                                                     .string_arg("-r")
+                                                     .string_arg(destination)
+                                                     .string_arg("*")
+                                                     .string_arg("--exclude")
+                                                     .string_arg(".DS_Store")};
+        settings.working_directory = source;
+        return flatten(cmd_execute_and_capture_output(settings), "zip");
 #endif
     }
 
@@ -396,9 +395,15 @@ namespace vcpkg
 
     std::vector<ExpectedL<Unit>> decompress_in_parallel(View<Command> jobs)
     {
-        auto results =
-            cmd_execute_and_capture_output_parallel(jobs, default_working_directory, get_clean_environment());
+        auto clean_env = get_clean_environment();
+        auto settings = Util::fmap(jobs, [&](const Command& cmd) {
+            RedirectedProcessLaunchSettings setting;
+            setting.cmd = cmd;
+            setting.environment = clean_env;
+            return setting;
+        });
 
+        auto results = cmd_execute_and_capture_output_parallel(settings);
         std::vector<ExpectedL<Unit>> filtered_results;
         filtered_results.reserve(jobs.size());
         for (std::size_t idx = 0; idx < jobs.size(); ++idx)

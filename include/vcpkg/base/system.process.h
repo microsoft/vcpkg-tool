@@ -109,51 +109,92 @@ namespace vcpkg
     Environment get_modified_clean_environment(const std::unordered_map<std::string, std::string>& extra_env,
                                                StringView prepend_to_path = {});
 
-    struct WorkingDirectory
+    struct ProcessLaunchSettings
     {
-        Path working_directory;
+        Command cmd; // must be the first member for several callers who use aggregate initialization
+        Optional<Path> working_directory;
+        Optional<Environment> environment;
+
+        ProcessLaunchSettings& string_arg(StringView s) &
+        {
+            cmd.string_arg(s);
+            return *this;
+        }
+
+        ProcessLaunchSettings& raw_arg(StringView s) &
+        {
+            cmd.raw_arg(s);
+            return *this;
+        }
+
+        ProcessLaunchSettings& forwarded_args(View<std::string> args) &
+        {
+            cmd.forwarded_args(args);
+            return *this;
+        }
+
+        ProcessLaunchSettings&& string_arg(StringView s) && { return std::move(string_arg(s)); };
+        ProcessLaunchSettings&& raw_arg(StringView s) && { return std::move(raw_arg(s)); }
+        ProcessLaunchSettings&& forwarded_args(View<std::string> args) && { return std::move(forwarded_args(args)); }
+
+        StringView command_line() const { return cmd.command_line(); }
     };
 
-    extern const WorkingDirectory default_working_directory;
-    extern const Environment default_environment;
+    struct RedirectedProcessLaunchSettings : ProcessLaunchSettings
+    {
+#if defined(_WIN32)
+        // the encoding to use for standard streams of the child
+        Encoding encoding = Encoding::Utf8;
+#endif // ^^^ _WIN32
+       // whether to echo all read content to the enclosing terminal;
+       // only affects cmd_execute-family commands that redirect the output
+        EchoInDebug echo_in_debug = EchoInDebug::Hide;
+        std::string stdin_content;
 
-    ExpectedL<int> cmd_execute(const Command& cmd_line,
-                               const WorkingDirectory& wd = default_working_directory,
-                               const Environment& env = default_environment);
-    ExpectedL<int> cmd_execute_clean(const Command& cmd_line, const WorkingDirectory& wd = default_working_directory);
+        RedirectedProcessLaunchSettings& string_arg(StringView s) &
+        {
+            cmd.string_arg(s);
+            return *this;
+        }
+
+        RedirectedProcessLaunchSettings& raw_arg(StringView s) &
+        {
+            cmd.raw_arg(s);
+            return *this;
+        }
+
+        RedirectedProcessLaunchSettings& forwarded_args(View<std::string> args) &
+        {
+            cmd.forwarded_args(args);
+            return *this;
+        }
+
+        RedirectedProcessLaunchSettings&& string_arg(StringView s) && { return std::move(string_arg(s)); };
+        RedirectedProcessLaunchSettings&& raw_arg(StringView s) && { return std::move(raw_arg(s)); }
+        RedirectedProcessLaunchSettings&& forwarded_args(View<std::string> args) &&
+        {
+            return std::move(forwarded_args(args));
+        }
+    };
+
+    ExpectedL<int> cmd_execute(const ProcessLaunchSettings& settings);
 
 #if defined(_WIN32)
-    Environment cmd_execute_and_capture_environment(const Command& cmd_line,
-                                                    const Environment& env = default_environment);
+    Environment cmd_execute_and_capture_environment(const Command& cmd_line, const Environment& env);
 #endif
 
     void cmd_execute_background(const Command& cmd_line);
 
-    ExpectedL<ExitCodeAndOutput> cmd_execute_and_capture_output(const Command& cmd_line,
-                                                                const WorkingDirectory& wd = default_working_directory,
-                                                                const Environment& env = default_environment,
-                                                                Encoding encoding = Encoding::Utf8,
-                                                                EchoInDebug echo_in_debug = EchoInDebug::Hide,
-                                                                StringView stdin_content = {});
+    ExpectedL<ExitCodeAndOutput> cmd_execute_and_capture_output(const RedirectedProcessLaunchSettings& settings);
 
     std::vector<ExpectedL<ExitCodeAndOutput>> cmd_execute_and_capture_output_parallel(
-        View<Command> cmd_lines,
-        const WorkingDirectory& wd = default_working_directory,
-        const Environment& env = default_environment);
+        View<RedirectedProcessLaunchSettings> settings);
 
-    ExpectedL<int> cmd_execute_and_stream_lines(const Command& cmd_line,
-                                                const std::function<void(StringView)>& per_line_cb,
-                                                const WorkingDirectory& wd = default_working_directory,
-                                                const Environment& env = default_environment,
-                                                Encoding encoding = Encoding::Utf8,
-                                                StringView stdin_content = {});
+    ExpectedL<int> cmd_execute_and_stream_lines(const RedirectedProcessLaunchSettings& settings,
+                                                const std::function<void(StringView)>& per_line_cb);
 
-    ExpectedL<int> cmd_execute_and_stream_data(const Command& cmd_line,
-                                               const std::function<void(StringView)>& data_cb,
-                                               const WorkingDirectory& wd = default_working_directory,
-                                               const Environment& env = default_environment,
-                                               Encoding encoding = Encoding::Utf8,
-                                               StringView stdin_content = {});
+    ExpectedL<int> cmd_execute_and_stream_data(const RedirectedProcessLaunchSettings& settings,
+                                               const std::function<void(StringView)>& data_cb);
 
     uint64_t get_subproccess_stats();
 

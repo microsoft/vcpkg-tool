@@ -39,18 +39,18 @@ namespace
         const auto checkout_this_dir =
             fmt::format("./{}", ports_dir_name); // Must be relative to the root of the repository
 
-        auto cmd = paths.git_cmd_builder(dot_git_dir, temp_checkout_path)
-                       .string_arg("checkout")
-                       .string_arg(git_commit_id)
-                       .string_arg("-f")
-                       .string_arg("-q")
-                       .string_arg("--")
-                       .string_arg(checkout_this_dir)
-                       .string_arg(".vcpkg-root");
-        cmd_execute_and_capture_output(cmd, default_working_directory, get_clean_environment());
-        cmd_execute_and_capture_output(paths.git_cmd_builder(dot_git_dir, temp_checkout_path).string_arg("reset"),
-                                       default_working_directory,
-                                       get_clean_environment());
+        RedirectedProcessLaunchSettings settings{paths.git_cmd_builder(dot_git_dir, temp_checkout_path)
+                                                     .string_arg("checkout")
+                                                     .string_arg(git_commit_id)
+                                                     .string_arg("-f")
+                                                     .string_arg("-q")
+                                                     .string_arg("--")
+                                                     .string_arg(checkout_this_dir)
+                                                     .string_arg(".vcpkg-root")};
+        settings.environment = get_clean_environment();
+        cmd_execute_and_capture_output(settings);
+        settings.cmd = paths.git_cmd_builder(dot_git_dir, temp_checkout_path).string_arg("reset");
+        cmd_execute_and_capture_output(settings);
         const auto ports_at_commit = Paragraphs::load_overlay_ports(fs, temp_checkout_path / ports_dir_name);
         fs.remove_all(temp_checkout_path, VCPKG_LINE_INFO);
 
@@ -66,12 +66,12 @@ namespace
     void check_commit_exists(const VcpkgPaths& paths, StringView git_commit_id)
     {
         static constexpr StringLiteral VALID_COMMIT_OUTPUT = "commit\n";
-        auto cmd = paths.git_cmd_builder(paths.root / ".git", paths.root)
-                       .string_arg("cat-file")
-                       .string_arg("-t")
-                       .string_arg(git_commit_id);
+        RedirectedProcessLaunchSettings settings{paths.git_cmd_builder(paths.root / ".git", paths.root)
+                                                     .string_arg("cat-file")
+                                                     .string_arg("-t")
+                                                     .string_arg(git_commit_id)};
         Checks::msg_check_exit(VCPKG_LINE_INFO,
-                               cmd_execute_and_capture_output(cmd).value_or_exit(VCPKG_LINE_INFO).output ==
+                               cmd_execute_and_capture_output(settings).value_or_exit(VCPKG_LINE_INFO).output ==
                                    VALID_COMMIT_OUTPUT,
                                msgInvalidCommitId,
                                msg::commit_sha = git_commit_id);

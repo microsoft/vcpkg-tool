@@ -127,7 +127,8 @@ namespace vcpkg
             }
         }
 
-        auto env = get_modified_clean_environment(extra_env);
+        ProcessLaunchSettings settings;
+        auto& env = settings.environment.emplace(get_modified_clean_environment(extra_env));
         if (!build_env_cmd.empty())
         {
 #if defined(_WIN32)
@@ -138,20 +139,18 @@ namespace vcpkg
         }
 
 #if defined(_WIN32)
-        Command cmd("cmd");
-        cmd.string_arg("/d");
+        settings.string_arg("cmd").string_arg("/d");
 #else  // ^^^ _WIN32 / !_WIN32 vvv
-        Command cmd("");
         Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgEnvPlatformNotSupported);
 #endif // ^^^ !_WIN32
         if (!options.command_arguments.empty())
         {
-            cmd.string_arg("/c").raw_arg(options.command_arguments[0]);
+            settings.string_arg("/c").raw_arg(options.command_arguments[0]);
         }
 #ifdef _WIN32
         enter_interactive_subprocess();
 #endif
-        auto rc = cmd_execute(cmd, default_working_directory, env);
+        auto rc = cmd_execute(settings);
 #ifdef _WIN32
         exit_interactive_subprocess();
 #endif

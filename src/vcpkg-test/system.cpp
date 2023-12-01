@@ -9,15 +9,7 @@
 
 #include <string>
 
-using vcpkg::CPUArchitecture;
-using vcpkg::get_environment_variable;
-using vcpkg::guess_visual_studio_prompt_target_architecture;
-using vcpkg::nullopt;
-using vcpkg::Optional;
-using vcpkg::set_environment_variable;
-using vcpkg::StringView;
-using vcpkg::to_cpu_architecture;
-using vcpkg::ZStringView;
+using namespace vcpkg;
 
 namespace
 {
@@ -123,8 +115,6 @@ TEST_CASE ("guess_visual_studio_prompt", "[system]")
 
 TEST_CASE ("cmdlinebuilder", "[system]")
 {
-    using vcpkg::Command;
-
     Command cmd;
     cmd.string_arg("relative/path.exe");
     cmd.string_arg("abc");
@@ -146,23 +136,17 @@ TEST_CASE ("cmdlinebuilder", "[system]")
 
 TEST_CASE ("cmd_execute_and_capture_output_parallel", "[system]")
 {
-    std::vector<vcpkg::Command> vec;
+    std::vector<RedirectedProcessLaunchSettings> vec;
     for (size_t i = 0; i < 50; ++i)
     {
 #if defined(_WIN32)
-        vcpkg::Command cmd("cmd.exe");
-        cmd.string_arg("/d");
-        cmd.string_arg("/c");
-        cmd.string_arg(fmt::format("echo {}", i));
+        vec.push_back({Command("cmd.exe").string_arg("/d").string_arg("/c").string_arg(fmt::format("echo {}", i))});
 #else
-        vcpkg::Command cmd("echo");
-        const auto cmd_str = std::string(i, 'a');
-        cmd.string_arg(cmd_str);
+        vec.push_back({Command("echo").string_arg(std::string(i, 'a'))});
 #endif
-        vec.emplace_back(std::move(cmd));
     }
 
-    auto res = vcpkg::cmd_execute_and_capture_output_parallel(vcpkg::View<vcpkg::Command>(vec));
+    auto res = cmd_execute_and_capture_output_parallel(vec);
 
     for (size_t i = 0; i != res.size(); ++i)
     {
@@ -180,8 +164,6 @@ TEST_CASE ("cmd_execute_and_capture_output_parallel", "[system]")
 
 TEST_CASE ("append_shell_escaped", "[system]")
 {
-    using vcpkg::Command;
-
     Command cmd;
 
     cmd.clear();

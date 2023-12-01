@@ -216,15 +216,17 @@ namespace vcpkg::Prefab
             msg::println(Color::warning, msgDeprecatedPrefabDebugOption);
         }
         Debug::print("Installing POM and AAR file to ~/.m2");
-        auto cmd_line = Command(Tools::MAVEN);
+        ProcessLaunchSettings settings{Command(Tools::MAVEN)};
         if (!prefab_options.enable_debug)
         {
-            cmd_line.string_arg("-q");
+            settings.string_arg("-q");
         }
-        cmd_line.string_arg("install:install-file")
+
+        settings.string_arg("install:install-file")
             .string_arg(Strings::concat("-Dfile=", aar))
             .string_arg(Strings::concat("-DpomFile=", pom));
-        const int exit_code = cmd_execute_clean(cmd_line).value_or_exit(VCPKG_LINE_INFO);
+        settings.environment = get_clean_environment();
+        const int exit_code = cmd_execute(settings).value_or_exit(VCPKG_LINE_INFO);
 
         if (!(exit_code == 0))
         {

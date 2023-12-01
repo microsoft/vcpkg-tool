@@ -830,14 +830,14 @@ namespace vcpkg
         else
         {
             const auto dot_git_dir = root / ".git";
-            Command showcmd = git_cmd_builder(dot_git_dir, dot_git_dir)
-                                  .string_arg("show")
-                                  .string_arg("--pretty=format:%h %cd (%cr)")
-                                  .string_arg("-s")
-                                  .string_arg("--date=short")
-                                  .string_arg("HEAD");
+            RedirectedProcessLaunchSettings settings{git_cmd_builder(dot_git_dir, dot_git_dir)
+                                                         .string_arg("show")
+                                                         .string_arg("--pretty=format:%h %cd (%cr)")
+                                                         .string_arg("-s")
+                                                         .string_arg("--date=short")
+                                                         .string_arg("HEAD")};
 
-            const auto maybe_output = flatten_out(cmd_execute_and_capture_output(showcmd), Tools::GIT);
+            const auto maybe_output = flatten_out(cmd_execute_and_capture_output(settings), Tools::GIT);
             if (const auto output = maybe_output.get())
             {
                 Strings::append(ret, "    vcpkg-scripts version: ", *output, "\n");
@@ -892,9 +892,9 @@ namespace vcpkg
         {
             return {*sha, expected_left_tag};
         }
-        auto cmd = git_cmd_builder(this->root / ".git", this->root);
-        cmd.string_arg("rev-parse").string_arg("HEAD");
-        return flatten_out(cmd_execute_and_capture_output(cmd), Tools::GIT).map([](std::string&& output) {
+        RedirectedProcessLaunchSettings settings{git_cmd_builder(this->root / ".git", this->root)};
+        settings.string_arg("rev-parse").string_arg("HEAD");
+        return flatten_out(cmd_execute_and_capture_output(settings), Tools::GIT).map([](std::string&& output) {
             Strings::inplace_trim(output);
             return std::move(output);
         });
@@ -951,22 +951,23 @@ namespace vcpkg
     {
         // All git commands are run with: --git-dir={dot_git_dir} --work-tree={work_tree_temp}
         // git clone --no-checkout --local {vcpkg_root} {dot_git_dir}
-        Command showcmd = git_cmd_builder(dot_git_dir, dot_git_dir).string_arg("show").string_arg(treeish);
-        return flatten_out(cmd_execute_and_capture_output(showcmd), Tools::GIT);
+        RedirectedProcessLaunchSettings settings{
+            git_cmd_builder(dot_git_dir, dot_git_dir).string_arg("show").string_arg(treeish)};
+        return flatten_out(cmd_execute_and_capture_output(settings), Tools::GIT);
     }
 
     ExpectedL<std::map<std::string, std::string, std::less<>>> VcpkgPaths::git_get_local_port_treeish_map() const
     {
         const auto local_repo = this->root / ".git";
-        const auto git_cmd = git_cmd_builder({}, {})
-                                 .string_arg("-C")
-                                 .string_arg(this->builtin_ports_directory())
-                                 .string_arg("ls-tree")
-                                 .string_arg("-d")
-                                 .string_arg("HEAD")
-                                 .string_arg("--");
+        RedirectedProcessLaunchSettings settings{git_cmd_builder({}, {})
+                                                     .string_arg("-C")
+                                                     .string_arg(this->builtin_ports_directory())
+                                                     .string_arg("ls-tree")
+                                                     .string_arg("-d")
+                                                     .string_arg("HEAD")
+                                                     .string_arg("--")};
 
-        auto maybe_output = flatten_out(cmd_execute_and_capture_output(git_cmd), Tools::GIT);
+        auto maybe_output = flatten_out(cmd_execute_and_capture_output(settings), Tools::GIT);
         if (const auto output = maybe_output.get())
         {
             std::map<std::string, std::string, std::less<>> ret;
@@ -981,7 +982,7 @@ namespace vcpkg
                 {
                     Debug::println("couldn't split by tabs");
                     return msg::format_error(msgGitUnexpectedCommandOutputCmd,
-                                             msg::command_line = git_cmd.command_line())
+                                             msg::command_line = settings.command_line())
                         .append_raw('\n')
                         .append_raw(line);
                 }
@@ -991,7 +992,7 @@ namespace vcpkg
                 {
                     Debug::println("couldn't split by spaces");
                     return msg::format_error(msgGitUnexpectedCommandOutputCmd,
-                                             msg::command_line = git_cmd.command_line())
+                                             msg::command_line = settings.command_line())
                         .append_raw('\n')
                         .append_raw(line);
                 }
@@ -1001,7 +1002,7 @@ namespace vcpkg
             return ret;
         }
 
-        return msg::format(msgGitCommandFailed, msg::command_line = git_cmd.command_line())
+        return msg::format(msgGitCommandFailed, msg::command_line = settings.command_line())
             .append_raw('\n')
             .append(std::move(maybe_output).error())
             .append_raw('\n')
@@ -1017,7 +1018,8 @@ namespace vcpkg
         fs.create_directories(work_tree, VCPKG_LINE_INFO);
         const auto& dot_git_dir = m_pimpl->m_registries_dot_git_dir;
 
-        Command init_registries_git_dir = git_cmd_builder(dot_git_dir, work_tree).string_arg("init");
+        RedirectedProcessLaunchSettings init_registries_git_dir{
+            git_cmd_builder(dot_git_dir, work_tree).string_arg("init")};
         auto maybe_init_output = flatten(cmd_execute_and_capture_output(init_registries_git_dir), Tools::GIT);
         if (!maybe_init_output)
         {
@@ -1029,12 +1031,12 @@ namespace vcpkg
         auto lock_file = work_tree / ".vcpkg-lock";
 
         auto guard = fs.take_exclusive_file_lock(lock_file, IgnoreErrors{});
-        Command fetch_git_ref = git_cmd_builder(dot_git_dir, work_tree)
-                                    .string_arg("fetch")
-                                    .string_arg("--update-shallow")
-                                    .string_arg("--")
-                                    .string_arg(repo)
-                                    .string_arg(treeish);
+        RedirectedProcessLaunchSettings fetch_git_ref{git_cmd_builder(dot_git_dir, work_tree)
+                                                          .string_arg("fetch")
+                                                          .string_arg("--update-shallow")
+                                                          .string_arg("--")
+                                                          .string_arg(repo)
+                                                          .string_arg(treeish)};
 
         auto maybe_fetch_output = flatten(cmd_execute_and_capture_output(fetch_git_ref), Tools::GIT);
         if (!maybe_fetch_output)
@@ -1046,8 +1048,8 @@ namespace vcpkg
                 .append(std::move(maybe_fetch_output).error());
         }
 
-        Command get_fetch_head =
-            git_cmd_builder(dot_git_dir, work_tree).string_arg("rev-parse").string_arg("FETCH_HEAD");
+        RedirectedProcessLaunchSettings get_fetch_head{
+            git_cmd_builder(dot_git_dir, work_tree).string_arg("rev-parse").string_arg("FETCH_HEAD")};
         return flatten_out(cmd_execute_and_capture_output(get_fetch_head), Tools::GIT)
             .map([](std::string&& output) { return Strings::trim(output).to_string(); })
             .map_error([&](LocalizedString&& err) {
@@ -1070,7 +1072,8 @@ namespace vcpkg
 
         const auto& dot_git_dir = m_pimpl->m_registries_dot_git_dir;
 
-        Command init_registries_git_dir = git_cmd_builder(dot_git_dir, work_tree).string_arg("init");
+        RedirectedProcessLaunchSettings init_registries_git_dir{
+            git_cmd_builder(dot_git_dir, work_tree).string_arg("init")};
         auto maybe_init_output = flatten(cmd_execute_and_capture_output(init_registries_git_dir), Tools::GIT);
         if (!maybe_init_output)
         {
@@ -1081,12 +1084,12 @@ namespace vcpkg
                 .append(std::move(maybe_init_output).error());
         }
 
-        Command fetch_git_ref = git_cmd_builder(dot_git_dir, work_tree)
-                                    .string_arg("fetch")
-                                    .string_arg("--update-shallow")
-                                    .string_arg("--")
-                                    .string_arg(repo)
-                                    .string_arg(treeish);
+        RedirectedProcessLaunchSettings fetch_git_ref{git_cmd_builder(dot_git_dir, work_tree)
+                                                          .string_arg("fetch")
+                                                          .string_arg("--update-shallow")
+                                                          .string_arg("--")
+                                                          .string_arg(repo)
+                                                          .string_arg(treeish)};
 
         auto maybe_fetch_output = flatten(cmd_execute_and_capture_output(fetch_git_ref), Tools::GIT);
         if (!maybe_fetch_output)
@@ -1106,9 +1109,10 @@ namespace vcpkg
     ExpectedL<std::string> VcpkgPaths::git_show_from_remote_registry(StringView hash, const Path& relative_path) const
     {
         auto revision = fmt::format("{}:{}", hash, relative_path.generic_u8string());
-        Command git_show = git_cmd_builder(m_pimpl->m_registries_dot_git_dir, m_pimpl->m_registries_work_tree_dir)
-                               .string_arg("show")
-                               .string_arg(revision);
+        RedirectedProcessLaunchSettings git_show{
+            git_cmd_builder(m_pimpl->m_registries_dot_git_dir, m_pimpl->m_registries_work_tree_dir)
+                .string_arg("show")
+                .string_arg(revision)};
 
         return flatten_out(cmd_execute_and_capture_output(git_show), Tools::GIT);
     }
@@ -1116,9 +1120,10 @@ namespace vcpkg
                                                                                    const Path& relative_path) const
     {
         auto revision = fmt::format("{}:{}", hash, relative_path.generic_u8string());
-        Command git_rev_parse = git_cmd_builder(m_pimpl->m_registries_dot_git_dir, m_pimpl->m_registries_work_tree_dir)
-                                    .string_arg("rev-parse")
-                                    .string_arg(revision);
+        RedirectedProcessLaunchSettings git_rev_parse{
+            git_cmd_builder(m_pimpl->m_registries_dot_git_dir, m_pimpl->m_registries_work_tree_dir)
+                .string_arg("rev-parse")
+                .string_arg(revision)};
 
         return flatten_out(cmd_execute_and_capture_output(git_rev_parse), Tools::GIT).map([](std::string&& output) {
             Strings::inplace_trim(output);
@@ -1161,17 +1166,16 @@ namespace vcpkg
             return format_filesystem_call_error(ec, "remove_all", {destination});
         }
 
-        Command git_archive = git_cmd_builder(dot_git_dir, git_tree_temp)
-                                  .string_arg("read-tree")
-                                  .string_arg("-m")
-                                  .string_arg("-u")
-                                  .string_arg(tree);
+        RedirectedProcessLaunchSettings git_archive{git_cmd_builder(dot_git_dir, git_tree_temp)
+                                                        .string_arg("read-tree")
+                                                        .string_arg("-m")
+                                                        .string_arg("-u")
+                                                        .string_arg(tree)};
 
-        auto env = default_environment;
+        auto& env = git_archive.environment.emplace();
         env.add_entry("GIT_INDEX_FILE", git_tree_index.native());
 
-        auto maybe_git_read_tree_output =
-            flatten(cmd_execute_and_capture_output(git_archive, default_working_directory, env), Tools::GIT);
+        auto maybe_git_read_tree_output = flatten(cmd_execute_and_capture_output(git_archive), Tools::GIT);
         if (!maybe_git_read_tree_output)
         {
             auto error = msg::format_error(msgGitCommandFailed, msg::command_line = git_archive.command_line());

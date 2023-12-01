@@ -517,17 +517,19 @@ namespace
         }
 
     private:
-        Command subcommand(StringLiteral sub) const
+        RedirectedProcessLaunchSettings subcommand(StringLiteral sub) const
         {
-            Command cmd = m_cmd;
+            RedirectedProcessLaunchSettings cmd{m_cmd};
             cmd.string_arg(sub).string_arg("-ForceEnglishOutput").string_arg("-Verbosity").string_arg("detailed");
             if (!m_interactive) cmd.string_arg("-NonInteractive");
             return cmd;
         }
 
-        Command install_cmd(StringView packages_config, const Path& out_dir, const NuGetSource& src) const
+        RedirectedProcessLaunchSettings install_cmd(StringView packages_config,
+                                                    const Path& out_dir,
+                                                    const NuGetSource& src) const
         {
-            Command cmd = subcommand("install");
+            auto cmd = subcommand("install");
             cmd.string_arg(packages_config)
                 .string_arg("-OutputDirectory")
                 .string_arg(out_dir)
@@ -540,7 +542,7 @@ namespace
             return cmd;
         }
 
-        Command pack_cmd(const Path& nuspec_path, const Path& out_dir) const
+        RedirectedProcessLaunchSettings pack_cmd(const Path& nuspec_path, const Path& out_dir) const
         {
             return subcommand("pack")
                 .string_arg(nuspec_path)
@@ -549,7 +551,7 @@ namespace
                 .string_arg("-NoDefaultExcludes");
         }
 
-        Command push_cmd(const Path& nupkg_path, const NuGetSource& src) const
+        RedirectedProcessLaunchSettings push_cmd(const Path& nupkg_path, const NuGetSource& src) const
         {
             return subcommand("push")
                 .string_arg(nupkg_path)
@@ -559,11 +561,12 @@ namespace
                 .string_arg(src.value);
         }
 
-        ExpectedL<Unit> run_nuget_commandline(const Command& cmdline, MessageSink& msg_sink) const
+        ExpectedL<Unit> run_nuget_commandline(const RedirectedProcessLaunchSettings& settings,
+                                              MessageSink& msg_sink) const
         {
             if (m_interactive)
             {
-                return cmd_execute(cmdline).then([](int exit_code) -> ExpectedL<Unit> {
+                return cmd_execute(settings).then([](int exit_code) -> ExpectedL<Unit> {
                     if (exit_code == 0)
                     {
                         return {Unit{}};
@@ -573,7 +576,7 @@ namespace
                 });
             }
 
-            return cmd_execute_and_capture_output(cmdline).then([&](ExitCodeAndOutput&& res) -> ExpectedL<Unit> {
+            return cmd_execute_and_capture_output(settings).then([&](ExitCodeAndOutput&& res) -> ExpectedL<Unit> {
                 if (Debug::g_debugging)
                 {
                     msg_sink.print(Color::error, res.output);
@@ -599,9 +602,9 @@ namespace
                 }
                 else if (res.output.find("for example \"-ApiKey AzureDevOps\"") != std::string::npos)
                 {
-                    auto real_cmdline = cmdline;
-                    real_cmdline.string_arg("-ApiKey").string_arg("AzureDevOps");
-                    return cmd_execute_and_capture_output(real_cmdline)
+                    auto real_settings = settings;
+                    real_settings.string_arg("-ApiKey").string_arg("AzureDevOps");
+                    return cmd_execute_and_capture_output(real_settings)
                         .then([&](ExitCodeAndOutput&& res) -> ExpectedL<Unit> {
                             if (Debug::g_debugging)
                             {
@@ -1078,7 +1081,7 @@ namespace
             return msg::format(msgRestoredPackagesFromGCS, msg::count = count, msg::elapsed = ElapsedTime(elapsed));
         }
 
-        Command command() const { return m_tool; }
+        RedirectedProcessLaunchSettings command() const { return RedirectedProcessLaunchSettings{Command{m_tool}}; }
 
         ExpectedL<Unit> stat(StringView url) const override
         {
@@ -1114,7 +1117,7 @@ namespace
             return msg::format(msgRestoredPackagesFromAWS, msg::count = count, msg::elapsed = ElapsedTime(elapsed));
         }
 
-        Command command() const { return m_tool; }
+        RedirectedProcessLaunchSettings command() const { return RedirectedProcessLaunchSettings{Command{m_tool}}; }
 
         ExpectedL<Unit> stat(StringView url) const override
         {
@@ -1165,7 +1168,7 @@ namespace
             return msg::format(msgRestoredPackagesFromCOS, msg::count = count, msg::elapsed = ElapsedTime(elapsed));
         }
 
-        Command command() const { return m_tool; }
+        RedirectedProcessLaunchSettings command() const { return RedirectedProcessLaunchSettings{Command{m_tool}}; }
 
         ExpectedL<Unit> stat(StringView url) const override
         {

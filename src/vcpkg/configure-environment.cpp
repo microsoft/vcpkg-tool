@@ -185,12 +185,12 @@ namespace vcpkg
 
         auto temp_directory = fs.create_or_get_temp_directory(VCPKG_LINE_INFO);
 
-        Command cmd_run(paths.get_tool_exe(Tools::NODE, stdout_sink));
-        cmd_run.string_arg(vcpkg_artifacts_main_path);
-        cmd_run.forwarded_args(args);
+        ProcessLaunchSettings settings{Command(paths.get_tool_exe(Tools::NODE, stdout_sink))};
+        settings.string_arg(vcpkg_artifacts_main_path);
+        settings.cmd.forwarded_args(args);
         if (Debug::g_debugging)
         {
-            cmd_run.string_arg("--debug");
+            settings.string_arg("--debug");
         }
 
         Optional<Path> maybe_telemetry_file_path;
@@ -198,28 +198,29 @@ namespace vcpkg
         {
             auto& p = maybe_telemetry_file_path.emplace(temp_directory /
                                                         (generate_random_UUID() + "_artifacts_telemetry.txt"));
-            cmd_run.string_arg("--z-telemetry-file").string_arg(p);
+            settings.string_arg("--z-telemetry-file").string_arg(p);
         }
 
-        cmd_run.string_arg("--vcpkg-root").string_arg(paths.root);
-        cmd_run.string_arg("--z-vcpkg-command").string_arg(get_exe_path_of_current_process());
+        settings.string_arg("--vcpkg-root").string_arg(paths.root);
+        settings.string_arg("--z-vcpkg-command").string_arg(get_exe_path_of_current_process());
 
-        cmd_run.string_arg("--z-vcpkg-artifacts-root").string_arg(paths.artifacts());
-        cmd_run.string_arg("--z-vcpkg-downloads").string_arg(paths.downloads);
-        cmd_run.string_arg("--z-vcpkg-registries-cache").string_arg(paths.registries_cache());
-        cmd_run.string_arg("--z-next-previous-environment")
+        settings.string_arg("--z-vcpkg-artifacts-root").string_arg(paths.artifacts());
+        settings.string_arg("--z-vcpkg-downloads").string_arg(paths.downloads);
+        settings.string_arg("--z-vcpkg-registries-cache").string_arg(paths.registries_cache());
+        settings.string_arg("--z-next-previous-environment")
             .string_arg(temp_directory / (generate_random_UUID() + "_previous_environment.txt"));
-        cmd_run.string_arg("--z-global-config").string_arg(paths.global_config());
+        settings.string_arg("--z-global-config").string_arg(paths.global_config());
 
         auto maybe_file = msg::get_loaded_file();
         if (!maybe_file.empty())
         {
             auto temp_file = temp_directory / "messages.json";
             fs.write_contents(temp_file, maybe_file, VCPKG_LINE_INFO);
-            cmd_run.string_arg("--language").string_arg(temp_file);
+            settings.string_arg("--language").string_arg(temp_file);
         }
 
-        auto result = cmd_execute(cmd_run, WorkingDirectory{paths.original_cwd}).value_or_exit(VCPKG_LINE_INFO);
+        settings.working_directory = paths.original_cwd;
+        auto result = cmd_execute(settings).value_or_exit(VCPKG_LINE_INFO);
         if (auto telemetry_file_path = maybe_telemetry_file_path.get())
         {
             track_telemetry(fs, *telemetry_file_path);
