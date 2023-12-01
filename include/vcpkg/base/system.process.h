@@ -111,9 +111,13 @@ namespace vcpkg
 
     struct ProcessLaunchSettings
     {
-        Command cmd; // must be the first member for several callers who use aggregate initialization
+        Command cmd;
         Optional<Path> working_directory;
         Optional<Environment> environment;
+
+        ProcessLaunchSettings() = default;
+        ProcessLaunchSettings(const Command& cmd) : cmd(cmd) { }
+        ProcessLaunchSettings(Command&& cmd) : cmd(cmd) { }
 
         ProcessLaunchSettings& string_arg(StringView s) &
         {
@@ -148,9 +152,10 @@ namespace vcpkg
         CreateNewConsole create_new_console = CreateNewConsole::No;
 #endif // ^^^ _WIN32
        // whether to echo all read content to the enclosing terminal;
-       // only affects cmd_execute-family commands that redirect the output
         EchoInDebug echo_in_debug = EchoInDebug::Hide;
         std::string stdin_content;
+
+        using ProcessLaunchSettings::ProcessLaunchSettings;
 
         RedirectedProcessLaunchSettings& string_arg(StringView s) &
         {
