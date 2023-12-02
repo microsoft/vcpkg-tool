@@ -881,9 +881,12 @@ namespace vcpkg
                 {
                     has_binaries = true;
                 }
-                else if (Strings::ends_with(suffix, ".pc") && Strings::contains(suffix, "pkgconfig"))
+                else if (Strings::ends_with(suffix, ".pc"))
                 {
-                    pkgconfig_files.push_back(installed.root() / triplet_and_suffix);
+                    if (Strings::contains(suffix, "pkgconfig"))
+                    {
+                        pkgconfig_files.push_back(installed.root() / triplet_and_suffix);
+                    }
                 }
                 else if (Strings::starts_with(suffix, "lib/"))
                 {
