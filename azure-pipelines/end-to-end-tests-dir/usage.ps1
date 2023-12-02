@@ -28,6 +28,12 @@ vcpkg-hello-world-2 provides CMake targets:
   # this is heuristically generated, and may not be correct
   find_package(hello-world-2 CONFIG REQUIRED)
   target_link_libraries(main PRIVATE hello-world-2::hello-world-2)
+"@,
+@"
+wrong-pkgconfig provides pkg-config modules:
+
+    # Test lib
+    wrong-pkgconfig
 "@
 )
 
@@ -40,7 +46,8 @@ vcpkg-hello-world-2 provides CMake targets:
     'vcpkg-empty-port',
     'vcpkg-explicit-usage',
     'vcpkg-hello-world-1',
-    'vcpkg-hello-world-2'
+    'vcpkg-hello-world-2',
+    'wrong-pkgconfig[header-only-good]'
 ))
 
 $usage = $usage.Replace("`r`n", "`n")
