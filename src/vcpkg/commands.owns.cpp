@@ -23,7 +23,7 @@ namespace
                 if (file.find(file_substr) != std::string::npos)
                 {
                     msg::write_unlocalized_text_to_stdout(Color::none,
-                                                          fmt::format("{}: {}\n", pgh.package.displayname(), file));
+                                                          fmt::format("{}: {}\n", pgh.package.display_name(), file));
                 }
             }
         }

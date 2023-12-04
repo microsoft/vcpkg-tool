@@ -430,10 +430,7 @@ namespace vcpkg
 
     static void format_plan_row(LocalizedString& out, const InstallPlanAction& action, const Path& builtin_ports_dir)
     {
-        out.append_raw(request_type_indent(action.request_type))
-            .append_raw(action.displayname())
-            .append_raw(" -> ")
-            .append_raw(action.version());
+        out.append_raw(request_type_indent(action.request_type)).append_raw(action.display_name());
         if (action.build_options.use_head_version == UseHeadVersion::YES)
         {
             out.append_raw(" (+HEAD)");
@@ -462,17 +459,6 @@ namespace vcpkg
     bool BasicAction::compare_by_name(const BasicAction* left, const BasicAction* right)
     {
         return left->spec.name() < right->spec.name();
-    }
-
-    std::string PackageAction::displayname() const
-    {
-        if (this->feature_list.empty_or_only_core())
-        {
-            return this->spec.to_string();
-        }
-
-        const std::string features = Strings::join(",", feature_list);
-        return fmt::format("{}[{}]:{}", this->spec.name(), features, this->spec.triplet());
     }
 
     static std::vector<PackageSpec> fdeps_to_pdeps(const PackageSpec& self,
@@ -577,6 +563,18 @@ namespace vcpkg
         {
             Checks::unreachable(VCPKG_LINE_INFO);
         }
+    }
+
+    std::string InstallPlanAction::display_name() const
+    {
+        auto version = this->version();
+        if (this->feature_list.empty_or_only_core())
+        {
+            return fmt::format("{}@{}", this->spec.to_string(), version);
+        }
+
+        const std::string features = Strings::join(",", feature_list);
+        return fmt::format("{}[{}]:{}@{}", this->spec.name(), features, this->spec.triplet(), version);
     }
 
     NotInstalledAction::NotInstalledAction(const PackageSpec& spec) : BasicAction{spec} { }
