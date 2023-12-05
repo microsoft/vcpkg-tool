@@ -195,6 +195,7 @@
   "CISwitchOptRandomize": "Genera in modo casuale l'ordine di installazione",
   "CISwitchOptSkipFailures": "Ignora le porte contrassegnate come '=fail' in ci.baseline.txt",
   "CISwitchOptXUnitAll": "Segnala le porte non modificate nell'output XUnit",
+  "CMakePkgConfigTargetsUsage": "{package_name} provides pkg-config modules:",
   "CMakeTargetsUsage": "{package_name} fornisce destinazioni CMake:",
   "CMakeTargetsUsageHeuristicMessage": "# generato in modo euristico e potrebbe non essere corretto",
   "CMakeToolChainFile": "I progetti CMake devono usare: \"-DCMAKE_TOOLCHAIN_FILE={path}>",

@@ -195,6 +195,7 @@
   "CISwitchOptRandomize": "Применяет произвольный порядок установки",
   "CISwitchOptSkipFailures": "Пропускает порты, помеченные как \"=fail\" в ci.baseline.txt",
   "CISwitchOptXUnitAll": "Сообщает о неизмененных портах в выходных данных XUnit",
+  "CMakePkgConfigTargetsUsage": "{package_name} provides pkg-config modules:",
   "CMakeTargetsUsage": "{package_name} предоставляет целевые объекты CMake:",
   "CMakeTargetsUsageHeuristicMessage": "# этот элемент создан эвристически и может быть неверным",
   "CMakeToolChainFile": "В проектах CMake следует использовать: \"-DCMAKE_TOOLCHAIN_FILE={path}\"",

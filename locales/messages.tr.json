@@ -195,6 +195,7 @@
   "CISwitchOptRandomize": "Yükleme sırasını rastgele belirler",
   "CISwitchOptSkipFailures": "ci.baseline.txt üzerinde `=fail` olarak işaretlenen bağlantı noktalarını atlar",
   "CISwitchOptXUnitAll": "XUnit çıkışındaki değiştirilmemiş bağlantı noktalarını raporlar",
+  "CMakePkgConfigTargetsUsage": "{package_name} provides pkg-config modules:",
   "CMakeTargetsUsage": "{package_name} CMake hedefleri sağlar:",
   "CMakeTargetsUsageHeuristicMessage": "# bu buluşsal olarak oluşturuldu ve doğru olmayabilir",
   "CMakeToolChainFile": "CMake projeleri \"-DCMAKE_TOOLCHAIN_FILE={path}\" kullanmalıdır",

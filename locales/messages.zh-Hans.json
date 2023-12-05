@@ -195,6 +195,7 @@
   "CISwitchOptRandomize": "实现安装顺序的随机化",
   "CISwitchOptSkipFailures": "跳过 ci.baseline.txt 中标记为“=fail”的端口",
   "CISwitchOptXUnitAll": "报告 XUnit 输出中未更改的端口",
+  "CMakePkgConfigTargetsUsage": "{package_name} provides pkg-config modules:",
   "CMakeTargetsUsage": "{package_name} 提供 CMake 目标:",
   "CMakeTargetsUsageHeuristicMessage": "# 这是启发式生成的，并且可能不正确",
   "CMakeToolChainFile": "CMake 项目应使用:“-DCMAKE_TOOLCHAIN_FILE={path}”",
