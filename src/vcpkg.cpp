@@ -233,6 +233,8 @@ int main(const int argc, const char* const* const argv)
     SetConsoleOutputCP(CP_UTF8);
 
     initialize_global_job_object();
+
+    reset_processor_architecture_environment_variable();
 #else
     static const char* const utf8_locales[] = {
         "C.UTF-8",

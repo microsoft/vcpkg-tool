@@ -2705,6 +2705,10 @@ DECLARE_MESSAGE(UnexpectedToolOutput,
                 (msg::tool_name, msg::path),
                 "The actual command line output will be appended after this message.",
                 "{tool_name} ({path}) produced unexpected output when attempting to determine the version:")
+DECLARE_MESSAGE(UnexpectedWindowsArchitecture,
+                (msg::actual),
+                "{actual} is the CPU kind we observed like ARM or MIPS",
+                "unexpected Windows host architecture: {actual}")
 DECLARE_MESSAGE(UnknownBaselineFileContent,
                 (),
                 "",
