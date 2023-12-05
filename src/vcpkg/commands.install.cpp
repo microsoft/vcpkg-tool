@@ -830,6 +830,7 @@ namespace vcpkg
         if (auto files = maybe_files.get())
         {
             std::vector<ConfigPackage> config_packages;
+            std::vector<Path> pkgconfig_files;
             std::map<std::string, std::vector<std::string>> library_targets;
             std::string header_path;
             bool has_binaries = false;
@@ -891,9 +892,16 @@ namespace vcpkg
                 {
                     has_binaries = true;
                 }
-                else if (!has_binaries && Strings::starts_with(suffix, "lib/"))
+                else if (Strings::ends_with(suffix, ".pc"))
                 {
-                    has_binaries = !Strings::ends_with(suffix, ".pc");
+                    if (Strings::contains(suffix, "pkgconfig"))
+                    {
+                        pkgconfig_files.push_back(installed.root() / triplet_and_suffix);
+                    }
+                }
+                else if (Strings::starts_with(suffix, "lib/"))
+                {
+                    has_binaries = true;
                 }
                 else if (header_path.empty() && Strings::starts_with(suffix, INCLUDE_PREFIX))
                 {
@@ -985,6 +993,27 @@ namespace vcpkg
                 Strings::append(msg, "    target_include_directories(main PRIVATE ${", name, "_INCLUDE_DIRS})\n\n");
 
                 ret.message = std::move(msg);
+            }
+            if (!pkgconfig_files.empty())
+            {
+                auto msg = msg::format(msgCMakePkgConfigTargetsUsage, msg::package_name = bpgh.spec.name())
+                               .append_raw("\n\n")
+                               .extract_data();
+                for (auto&& path : pkgconfig_files)
+                {
+                    const auto lines = fs.read_lines(path).value_or_exit(VCPKG_LINE_INFO);
+                    for (const auto& line : lines)
+                    {
+                        if (Strings::starts_with(line, "Description: "))
+                        {
+                            Strings::append(msg, "    # ", line.substr(StringLiteral("Description: ").size()), '\n');
+                            break;
+                        }
+                    }
+                    const auto name = path.stem();
+                    Strings::append(msg, "    ", name, "\n\n");
+                }
+                ret.message += msg;
             }
         }
         return ret;
