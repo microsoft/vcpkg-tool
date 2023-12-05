@@ -585,11 +585,11 @@ namespace vcpkg
                     const auto vcpkg_root_file = root / ".vcpkg-root";
                     if (args.wait_for_lock.value_or(false))
                     {
-                        file_lock_handle = fs.take_exclusive_file_lock(vcpkg_root_file, ec);
+                        file_lock_handle = fs.take_exclusive_file_lock(vcpkg_root_file, stderr_sink, ec);
                     }
                     else
                     {
-                        file_lock_handle = fs.try_take_exclusive_file_lock(vcpkg_root_file, ec);
+                        file_lock_handle = fs.try_take_exclusive_file_lock(vcpkg_root_file, stderr_sink, ec);
                     }
 
                     if (ec)
@@ -1045,7 +1045,7 @@ namespace vcpkg
 
         auto lock_file = work_tree / ".vcpkg-lock";
 
-        auto guard = fs.take_exclusive_file_lock(lock_file, IgnoreErrors{});
+        auto guard = fs.take_exclusive_file_lock(lock_file, stderr_sink, IgnoreErrors{});
         Command fetch_git_ref = git_cmd_builder(dot_git_dir, work_tree)
                                     .string_arg("fetch")
                                     .string_arg("--update-shallow")
@@ -1083,7 +1083,7 @@ namespace vcpkg
 
         auto lock_file = work_tree / ".vcpkg-lock";
 
-        auto guard = fs.take_exclusive_file_lock(lock_file, IgnoreErrors{});
+        auto guard = fs.take_exclusive_file_lock(lock_file, stderr_sink, IgnoreErrors{});
 
         const auto& dot_git_dir = m_pimpl->m_registries_dot_git_dir;
 
