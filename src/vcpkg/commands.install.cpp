@@ -527,7 +527,7 @@ namespace vcpkg
             auto bpgh = current_summary.get_binary_paragraph();
             if (bpgh)
             {
-                msg::println(msgPackageAbi, msg::spec = bpgh->displayname(), msg::package_abi = bpgh->abi);
+                msg::println(msgPackageAbi, msg::spec = bpgh->display_name(), msg::package_abi = bpgh->abi);
             }
         }
 
