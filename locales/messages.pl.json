@@ -858,6 +858,7 @@
   "PEImportCrossesSectionBoundary": "Podczas analizowania przenośnego pliku wykonywalnego {path} tabela importu przekracza granicę sekcji.",
   "PEPlusTagInvalid": "Podczas analizowania przenośnego pliku wykonywalnego {path} opcjonalny nagłówek nie miał wartości PE32 ani PE32+.",
   "PERvaNotFound": "Podczas analizowania {path} przenośnego pliku wykonywalnego, nie można było znaleźć elementu RVA {value:#X}.",
+  "PackageAbi": "{spec} package ABI: {package_abi}",
   "PackageAlreadyRemoved": "nie można usunąć elementu {spec}: już usunięto",
   "PackageDiscoveryHeader": "Odnajdywanie pakietów",
   "PackageFailedtWhileExtracting": "Element \"{value}\" nie działa podczas wyodrębniania ścieżki {path}.",

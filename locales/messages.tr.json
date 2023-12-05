@@ -858,6 +858,7 @@
   "PEImportCrossesSectionBoundary": "Taşınabilir Yürütülebilir {path} ayrıştırılırken, içeri aktarma tablosu bir bölüm sınırını geçiyor.",
   "PEPlusTagInvalid": "Taşınabilir Yürütülebilir dosyası {path} ayrıştırılırken, isteğe bağlı üst bilgi PE32 ya da PE32+ değildi.",
   "PERvaNotFound": "Taşınabilir Yürütülebilir {path} ayrıştırılırken, RVA {değer:#X} bulunamadı.",
+  "PackageAbi": "{spec} package ABI: {package_abi}",
   "PackageAlreadyRemoved": "{spec} kaldırılamıyor: zaten kaldırıldı",
   "PackageDiscoveryHeader": "Paket Bulma",
   "PackageFailedtWhileExtracting": "{path} ayıklanırken '{value}' başarısız oldu.",

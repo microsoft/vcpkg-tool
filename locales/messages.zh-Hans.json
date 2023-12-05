@@ -858,6 +858,7 @@
   "PEImportCrossesSectionBoundary": "分析可移植可执行文件 {path} 时，导入表跨越了分区边界。",
   "PEPlusTagInvalid": "分析可移植可执行文件 {path} 时，可选标头既不是 PE32 也不是 PE32+。",
   "PERvaNotFound": "分析可移植可执行文件 {path} 时，找不到 RVA {value:#X}。",
+  "PackageAbi": "{spec} package ABI: {package_abi}",
   "PackageAlreadyRemoved": "无法删除 {spec}: 已删除",
   "PackageDiscoveryHeader": "包发现",
   "PackageFailedtWhileExtracting": "提取 {path} 时“{value}”失败。",

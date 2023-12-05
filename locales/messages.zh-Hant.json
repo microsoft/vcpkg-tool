@@ -858,6 +858,7 @@
   "PEImportCrossesSectionBoundary": "剖析可攜式可執行檔 {path} 時，匯入資料表會跨越節邊界。",
   "PEPlusTagInvalid": "剖析可攜式可執行檔 {path} 時，選擇性標頭不是 PE32 也不是 PE32+。",
   "PERvaNotFound": "剖析可攜式可執行檔 {path} 時，找不到 RVA {value:#X}。",
+  "PackageAbi": "{spec} package ABI: {package_abi}",
   "PackageAlreadyRemoved": "無法移除 {spec}: 已移除",
   "PackageDiscoveryHeader": "套件探索",
   "PackageFailedtWhileExtracting": "擷取 {path} 時 '{value}' 失敗。",

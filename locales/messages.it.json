@@ -858,6 +858,7 @@
   "PEImportCrossesSectionBoundary": "Durante l'analisi del file eseguibile di tipo PE {path}, la tabella di importazione interseca un limite di sezione.",
   "PEPlusTagInvalid": "Durante l'analisi del file eseguibile di tipo PE {path}, l'intestazione facoltativa non era né PE32 né PE32+.",
   "PERvaNotFound": "Durante l'analisi del file eseguibile di tipo PE {path}, non è stato possibile trovare l'indirizzo RVA {value:#X}.",
+  "PackageAbi": "{spec} package ABI: {package_abi}",
   "PackageAlreadyRemoved": "non è possibile rimuovere {spec}: già rimosso",
   "PackageDiscoveryHeader": "Individuazione pacchetti",
   "PackageFailedtWhileExtracting": "'{value}' non è riuscito durante l'estrazione di {path}.",

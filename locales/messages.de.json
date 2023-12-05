@@ -858,6 +858,7 @@
   "PEImportCrossesSectionBoundary": "Beim Analysieren der portablen ausführbaren Datei \"{path}\" überschreitet die Importtabelle eine Abschnittsgrenze.",
   "PEPlusTagInvalid": "Beim Analysieren der portierbaren ausführbaren Datei \"{path}\" war der optionale Header weder PE32 noch PE32+.",
   "PERvaNotFound": "Beim Analysieren der portablen ausführbaren Datei \"{path}\" wurde das RVA {value:#X} nicht gefunden.",
+  "PackageAbi": "{spec} package ABI: {package_abi}",
   "PackageAlreadyRemoved": "{spec} kann nicht entfernt werden: bereits entfernt",
   "PackageDiscoveryHeader": "Paketermittlung",
   "PackageFailedtWhileExtracting": "Fehler bei „{value}“ beim Extrahieren von „{path}“.",
