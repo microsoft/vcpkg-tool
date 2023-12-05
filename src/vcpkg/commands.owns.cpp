@@ -22,7 +22,7 @@ namespace
             {
                 if (file.find(file_substr) != std::string::npos)
                 {
-                    msg::write_unlocalized_text(Color::none, fmt::format("{}: {}\n", pgh.package.displayname(), file));
+                    msg::write_unlocalized_text(Color::none, fmt::format("{}: {}\n", pgh.package.display_name(), file));
                 }
             }
         }

@@ -2197,6 +2197,7 @@ DECLARE_MESSAGE(OverlayPortsDirectoriesHelp, (msg::env_var), "", "Directories of
 DECLARE_MESSAGE(OverlayTripletDirectoriesHelp, (msg::env_var), "", "Directories of overlay triplets (also: {env_var})")
 DECLARE_MESSAGE(OverlayTriplets, (msg::path), "", "Overlay Triplets from \"{path}\":")
 DECLARE_MESSAGE(OverwritingFile, (msg::path), "", "File {path} was already present and will be overwritten")
+DECLARE_MESSAGE(PackageAbi, (msg::spec, msg::package_abi), "", "{spec} package ABI: {package_abi}")
 DECLARE_MESSAGE(PackageAlreadyRemoved, (msg::spec), "", "unable to remove {spec}: already removed")
 DECLARE_MESSAGE(PackageDiscoveryHeader, (), "", "Package Discovery")
 DECLARE_MESSAGE(PackageManipulationHeader, (), "", "Package Manipulation")

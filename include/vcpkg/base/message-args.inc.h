@@ -56,6 +56,7 @@ DECLARE_MSG_ARG(version, "1.3.8")
 
 // Choose carefully between the following when describing packages
 DECLARE_MSG_ARG(package_name, "zlib")
+DECLARE_MSG_ARG(package_abi, "bb1c96759ac96102b4b18215db138daedd3eb16c2cd3302ae7bffab2b643eb87")
 DECLARE_MSG_ARG(spec, "zlib:x64-windows")
 DECLARE_MSG_ARG(feature_spec, "zlib[featurea,featureb]")
 DECLARE_MSG_ARG(version_spec, "zlib:x64-windows@1.0.0")

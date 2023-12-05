@@ -24,7 +24,7 @@ namespace vcpkg
 
         void canonicalize();
 
-        std::string displayname() const;
+        std::string display_name() const;
 
         std::string fullstem() const;
 

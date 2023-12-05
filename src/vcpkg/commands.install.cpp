@@ -179,7 +179,7 @@ namespace vcpkg
                 continue;
             }
 
-            const std::string name = t.pgh.package.displayname();
+            const std::string name = t.pgh.package.display_name();
 
             for (const std::string& file : t.files)
             {
@@ -352,16 +352,14 @@ namespace vcpkg
             }
             else
             {
-                if (use_head_version)
-                    msg::println(msgBuildingFromHead, msg::spec = action.displayname());
-                else
-                    msg::println(msgBuildingPackage, msg::spec = action.displayname());
+                msg::println(use_head_version ? msgBuildingFromHead : msgBuildingPackage,
+                             msg::spec = action.display_name());
 
                 auto result = build_package(args, paths, action, build_logs_recorder, status_db);
 
                 if (BuildResult::DOWNLOADED == result.code)
                 {
-                    msg::println(Color::success, msgDownloadedSources, msg::spec = action.displayname());
+                    msg::println(Color::success, msgDownloadedSources, msg::spec = action.display_name());
                     return result;
                 }
 
@@ -502,7 +500,7 @@ namespace vcpkg
             msg::println(msgInstallingPackage,
                          msg::action_index = action_index,
                          msg::count = action_count,
-                         msg::spec = action.spec);
+                         msg::spec = action.display_name());
         }
 
         TrackedPackageInstallGuard(const size_t action_index,
@@ -524,7 +522,20 @@ namespace vcpkg
                 msgElapsedForPackage, msg::spec = current_summary.get_spec(), msg::elapsed = current_summary.timing);
         }
 
-        ~TrackedPackageInstallGuard() { print_elapsed_time(); }
+        void print_abi_hash() const
+        {
+            auto bpgh = current_summary.get_binary_paragraph();
+            if (bpgh)
+            {
+                msg::println(msgPackageAbi, msg::spec = bpgh->display_name(), msg::package_abi = bpgh->abi);
+            }
+        }
+
+        ~TrackedPackageInstallGuard()
+        {
+            print_elapsed_time();
+            print_abi_hash();
+        }
 
         TrackedPackageInstallGuard(const TrackedPackageInstallGuard&) = delete;
         TrackedPackageInstallGuard& operator=(const TrackedPackageInstallGuard&) = delete;

@@ -1560,9 +1560,8 @@ namespace vcpkg
         // The logs excerpts are as large as possible. So the issue body will often reach MAX_ISSUE_SIZE.
         issue_body.reserve(MAX_ISSUE_SIZE);
         fmt::format_to(std::back_inserter(issue_body),
-                       "Package: {} -> {}\n\n**Host Environment**\n\n- Host: {}-{}\n",
-                       action.displayname(),
-                       action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).to_version(),
+                       "Package: {}\n\n**Host Environment**\n\n- Host: {}-{}\n",
+                       action.display_name(),
                        to_zstring_view(get_host_processor()),
                        get_host_os_name());
 
