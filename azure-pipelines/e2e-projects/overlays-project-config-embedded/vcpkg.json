@@ -1,0 +1,11 @@
+{
+	"dependencies": [
+		"vcpkg-empty-port",
+		"another-vcpkg-empty-port",
+		"beicode"
+	],
+	"vcpkg-configuration": {
+		"overlay-ports": [ "./config-overlays" ],
+		"overlay-triplets": [ "./my-triplets" ]
+	}
+}

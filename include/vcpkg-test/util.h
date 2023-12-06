@@ -9,7 +9,7 @@
 #include <vcpkg/fwd/tools.h>
 
 #include <vcpkg/base/files.h>
-#include <vcpkg/base/format.h>
+#include <vcpkg/base/fmt.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/pragmas.h>
 #include <vcpkg/base/strings.h>
@@ -75,6 +75,21 @@ namespace Catch
     {
         static const std::string convert(const vcpkg::Path& value) { return "\"" + value.native() + "\""; }
     };
+
+    template<>
+    struct StringMaker<std::pair<vcpkg::Path, vcpkg::Path>>
+    {
+        static const std::string convert(const std::pair<vcpkg::Path, vcpkg::Path>& value)
+        {
+            return "{\"" + value.first.native() + "\", \"" + value.second.native() + "\"}";
+        }
+    };
+
+    template<>
+    struct StringMaker<vcpkg::Version>
+    {
+        static const std::string convert(const vcpkg::Version& value) { return value.to_string(); }
+    };
 }
 
 namespace vcpkg
@@ -110,7 +125,7 @@ namespace vcpkg::Test
         const std::vector<std::pair<const char*, const char*>>& features = {},
         const std::vector<const char*>& default_features = {});
 
-    ParseExpected<SourceControlFile> test_parse_control_file(
+    ExpectedL<std::unique_ptr<SourceControlFile>> test_parse_control_file(
         const std::vector<std::unordered_map<std::string, std::string>>& v);
 
     std::unique_ptr<vcpkg::StatusParagraph> make_status_pgh(const char* name,

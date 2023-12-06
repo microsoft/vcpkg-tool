@@ -1,6 +1,6 @@
 #include <vcpkg/base/parse.h>
+#include <vcpkg/base/strings.h>
 #include <vcpkg/base/stringview.h>
-#include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/cgroup-parser.h>
@@ -28,7 +28,7 @@ namespace vcpkg
         using P = ParserBase;
         constexpr auto is_separator_or_lineend = [](auto ch) { return ch == ':' || P::is_lineend(ch); };
 
-        auto parser = ParserBase(text, origin);
+        ParserBase parser{text, origin};
         parser.skip_whitespace();
 
         std::vector<ControlGroup> ret;

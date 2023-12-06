@@ -1,14 +1,15 @@
 #pragma once
 
+#include <vcpkg/base/fwd/expected.h>
+#include <vcpkg/base/fwd/span.h>
+
 #include <vcpkg/fwd/configuration.h>
+#include <vcpkg/fwd/packagespec.h>
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 
-#include <vcpkg/base/expected.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/path.h>
-#include <vcpkg/base/span.h>
 
-#include <vcpkg/packagespec.h>
 #include <vcpkg/paragraphparser.h>
 #include <vcpkg/platform-expression.h>
 #include <vcpkg/versions.h>
@@ -24,8 +25,7 @@ namespace vcpkg
     struct DependencyConstraint
     {
         VersionConstraintKind type = VersionConstraintKind::None;
-        std::string value;
-        int port_version = 0;
+        Version version;
 
         friend bool operator==(const DependencyConstraint& lhs, const DependencyConstraint& rhs);
         friend bool operator!=(const DependencyConstraint& lhs, const DependencyConstraint& rhs)
@@ -36,18 +36,31 @@ namespace vcpkg
         Optional<Version> try_get_minimum_version() const;
     };
 
+    struct DependencyRequestedFeature
+    {
+        std::string name;
+        PlatformExpression::Expr platform;
+
+        friend bool operator==(const DependencyRequestedFeature& lhs, const DependencyRequestedFeature& rhs);
+        friend bool operator!=(const DependencyRequestedFeature& lhs, const DependencyRequestedFeature& rhs);
+    };
+
     struct Dependency
     {
         std::string name;
-        std::vector<std::string> features;
+        // a list of "real" features without "core" or "default". Use member default_features instead.
+        std::vector<DependencyRequestedFeature> features;
         PlatformExpression::Expr platform;
         DependencyConstraint constraint;
         bool host = false;
 
+        bool default_features = true;
+        bool has_platform_expressions() const;
+
         Json::Object extra_info;
 
-        /// @param id adds "default" if "core" not present.
-        FullPackageSpec to_full_spec(Triplet target, Triplet host, ImplicitDefault id) const;
+        /// @param id adds "default" if `default_features` is false.
+        FullPackageSpec to_full_spec(View<std::string> features, Triplet target, Triplet host) const;
 
         friend bool operator==(const Dependency& lhs, const Dependency& rhs);
         friend bool operator!=(const Dependency& lhs, const Dependency& rhs) { return !(lhs == rhs); }
@@ -56,9 +69,8 @@ namespace vcpkg
     struct DependencyOverride
     {
         std::string name;
-        std::string version;
-        int port_version = 0;
-        VersionScheme version_scheme = VersionScheme::String;
+        Version version;
+        VersionScheme scheme;
 
         Json::Object extra_info;
 
@@ -69,8 +81,7 @@ namespace vcpkg
     std::vector<FullPackageSpec> filter_dependencies(const std::vector<Dependency>& deps,
                                                      Triplet t,
                                                      Triplet host,
-                                                     const std::unordered_map<std::string, std::string>& cmake_vars,
-                                                     ImplicitDefault id);
+                                                     const std::unordered_map<std::string, std::string>& cmake_vars);
 
     /// <summary>
     /// Port metadata of additional feature in a package (part of CONTROL file)
@@ -81,6 +92,10 @@ namespace vcpkg
         std::vector<std::string> description;
         std::vector<Dependency> dependencies;
         PlatformExpression::Expr supports_expression;
+        // there are two distinct "empty" states here
+        // "user did not provide a license" -> nullopt
+        // "user provided license = null" -> {""}
+        Optional<std::string> license; // SPDX license expression
 
         Json::Object extra_info;
 
@@ -95,8 +110,7 @@ namespace vcpkg
     {
         std::string name;
         VersionScheme version_scheme = VersionScheme::String;
-        std::string raw_version;
-        int port_version = 0;
+        Version version;
         std::vector<std::string> description;
         std::vector<std::string> summary;
         std::vector<std::string> maintainers;
@@ -104,7 +118,7 @@ namespace vcpkg
         std::string documentation;
         std::vector<Dependency> dependencies;
         std::vector<DependencyOverride> overrides;
-        std::vector<std::string> default_features;
+        std::vector<DependencyRequestedFeature> default_features;
 
         // there are two distinct "empty" states here
         // "user did not provide a license" -> nullopt
@@ -120,10 +134,17 @@ namespace vcpkg
 
         Json::Object extra_info;
 
-        Version to_version() const { return Version{raw_version, port_version}; }
-
         friend bool operator==(const SourceParagraph& lhs, const SourceParagraph& rhs);
         friend bool operator!=(const SourceParagraph& lhs, const SourceParagraph& rhs) { return !(lhs == rhs); }
+    };
+
+    struct PortLocation
+    {
+        Path port_directory;
+
+        /// Should model SPDX PackageDownloadLocation. Empty implies NOASSERTION.
+        /// See https://spdx.github.io/spdx-spec/package-information/#77-package-download-location-field
+        std::string spdx_location;
     };
 
     /// <summary>
@@ -132,16 +153,16 @@ namespace vcpkg
     struct SourceControlFile
     {
         SourceControlFile clone() const;
-        static ParseExpected<SourceControlFile> parse_project_manifest_object(StringView origin,
-                                                                              const Json::Object& object,
-                                                                              MessageSink& warnings_sink);
+        static ExpectedL<std::unique_ptr<SourceControlFile>> parse_project_manifest_object(StringView origin,
+                                                                                           const Json::Object& object,
+                                                                                           MessageSink& warnings_sink);
 
-        static ParseExpected<SourceControlFile> parse_port_manifest_object(StringView origin,
-                                                                           const Json::Object& object,
-                                                                           MessageSink& warnings_sink);
+        static ExpectedL<std::unique_ptr<SourceControlFile>> parse_port_manifest_object(StringView origin,
+                                                                                        const Json::Object& object,
+                                                                                        MessageSink& warnings_sink);
 
-        static ParseExpected<SourceControlFile> parse_control_file(StringView origin,
-                                                                   std::vector<Paragraph>&& control_paragraphs);
+        static ExpectedL<std::unique_ptr<SourceControlFile>> parse_control_file(
+            StringView origin, std::vector<Paragraph>&& control_paragraphs);
 
         // Always non-null in non-error cases
         std::unique_ptr<SourceParagraph> core_paragraph;
@@ -156,12 +177,14 @@ namespace vcpkg
                                                     const FeatureFlagSettings& flags,
                                                     bool is_default_builtin_registry = true) const;
 
-        Version to_version() const { return core_paragraph->to_version(); }
+        const std::string& to_name() const noexcept { return core_paragraph->name; }
+        VersionScheme to_version_scheme() const noexcept { return core_paragraph->version_scheme; }
+        const Version& to_version() const noexcept { return core_paragraph->version; }
         SchemedVersion to_schemed_version() const
         {
-            return SchemedVersion{core_paragraph->version_scheme, core_paragraph->to_version()};
+            return SchemedVersion{core_paragraph->version_scheme, core_paragraph->version};
         }
-        VersionSpec to_version_spec() const { return {core_paragraph->name, core_paragraph->to_version()}; }
+        VersionSpec to_version_spec() const { return {core_paragraph->name, core_paragraph->version}; }
 
         friend bool operator==(const SourceControlFile& lhs, const SourceControlFile& rhs);
         friend bool operator!=(const SourceControlFile& lhs, const SourceControlFile& rhs) { return !(lhs == rhs); }
@@ -178,27 +201,27 @@ namespace vcpkg
     /// </summary>
     struct SourceControlFileAndLocation
     {
-        Version to_version() const { return source_control_file->to_version(); }
+        const std::string& to_name() const noexcept { return source_control_file->to_name(); }
+        const Version& to_version() const { return source_control_file->to_version(); }
         VersionScheme scheme() const { return source_control_file->core_paragraph->version_scheme; }
         SchemedVersion schemed_version() const { return {scheme(), to_version()}; }
+        VersionSpec to_version_spec() const { return source_control_file->to_version_spec(); }
+        Path port_directory() const { return control_path.parent_path(); }
 
         std::unique_ptr<SourceControlFile> source_control_file;
-        Path source_location;
+        Path control_path;
+
         /// Should model SPDX PackageDownloadLocation. Empty implies NOASSERTION.
         /// See https://spdx.github.io/spdx-spec/package-information/#77-package-download-location-field
-        std::string registry_location;
+        std::string spdx_location;
     };
 
-    void print_error_message(Span<const std::unique_ptr<ParseControlErrorInfo>> error_info_list);
-    inline void print_error_message(const std::unique_ptr<ParseControlErrorInfo>& error_info_list)
-    {
-        return print_error_message({&error_info_list, 1});
-    }
+    void print_error_message(const LocalizedString& message);
 
     std::string parse_spdx_license_expression(StringView sv, ParseMessages& messages);
 
     // Exposed for testing
     ExpectedL<std::vector<Dependency>> parse_dependencies_list(const std::string& str,
-                                                               StringView origin = "<unknown>",
+                                                               StringView origin,
                                                                TextRowCol textrowcol = {});
 }

@@ -1,9 +1,8 @@
-﻿#pragma once
+#pragma once
 
 #include <vcpkg/base/fwd/messages.h>
 
 #include <vcpkg/base/fmt.h>
-#include <vcpkg/base/format.h>
 #include <vcpkg/base/span.h>
 #include <vcpkg/base/stringview.h>
 
@@ -84,27 +83,42 @@ namespace vcpkg
         static LocalizedString from_raw(std::basic_string<T>&& s) noexcept;
         static LocalizedString from_raw(StringView s);
 
-        LocalizedString& append_raw(char c);
-        LocalizedString& append_raw(StringView s);
+        LocalizedString& append_raw(char c) &;
+        LocalizedString&& append_raw(char c) &&;
+        LocalizedString& append_raw(StringView s) &;
+        LocalizedString&& append_raw(StringView s) &&;
         template<class T, class = decltype(std::declval<const T&>().to_string(std::declval<std::string&>()))>
-        LocalizedString& append_raw(const T& s)
+        LocalizedString& append_raw(const T& s) &
         {
             s.to_string(m_data);
             return *this;
         }
-        LocalizedString& append(const LocalizedString& s);
+        template<class T, class = decltype(std::declval<const T&>().to_string(std::declval<std::string&>()))>
+        LocalizedString&& append_raw(const T& s) &&
+        {
+            return std::move(append_raw(s));
+        }
+        LocalizedString& append(const LocalizedString& s) &;
+        LocalizedString&& append(const LocalizedString& s) &&;
         template<VCPKG_DECL_MSG_TEMPLATE>
-        LocalizedString& append(VCPKG_DECL_MSG_ARGS)
+        LocalizedString& append(VCPKG_DECL_MSG_ARGS) &
         {
             msg::format_to(*this, VCPKG_EXPAND_MSG_ARGS);
             return *this;
         }
-        LocalizedString& append_indent(size_t indent = 1);
+        template<VCPKG_DECL_MSG_TEMPLATE>
+        LocalizedString&& append(VCPKG_DECL_MSG_ARGS) &&
+        {
+            return std::move(append(VCPKG_EXPAND_MSG_ARGS));
+        }
+        LocalizedString& append_indent(size_t indent = 1) &;
+        LocalizedString&& append_indent(size_t indent = 1) &&;
 
         // 0 items - Does nothing
         // 1 item - .append_raw(' ').append(item)
         // 2+ items - foreach: .append_raw('\n').append_indent(indent).append(item)
-        LocalizedString& append_floating_list(int indent, View<LocalizedString> items);
+        LocalizedString& append_floating_list(int indent, View<LocalizedString> items) &;
+        LocalizedString&& append_floating_list(int indent, View<LocalizedString> items) &&;
         friend bool operator==(const LocalizedString& lhs, const LocalizedString& rhs) noexcept;
         friend bool operator!=(const LocalizedString& lhs, const LocalizedString& rhs) noexcept;
         friend bool operator<(const LocalizedString& lhs, const LocalizedString& rhs) noexcept;
@@ -122,21 +136,53 @@ namespace vcpkg
         explicit LocalizedString(StringView data);
         explicit LocalizedString(std::string&& data) noexcept;
     };
+
+    LocalizedString format_environment_variable(StringView variable_name);
+
+    // constants for the
+    // <file>:line:col: <prefix>: <content>
+    // error message format
+    inline constexpr StringLiteral ErrorPrefix = "error: ";
+    LocalizedString error_prefix();
+    inline constexpr StringLiteral InternalErrorPrefix = "internal error: ";
+    LocalizedString internal_error_prefix();
+    inline constexpr StringLiteral MessagePrefix = "message: ";
+    LocalizedString message_prefix();
+    inline constexpr StringLiteral NotePrefix = "note: ";
+    LocalizedString note_prefix();
+    inline constexpr StringLiteral WarningPrefix = "warning: ";
+    LocalizedString warning_prefix();
 }
 
 VCPKG_FORMAT_AS(vcpkg::LocalizedString, vcpkg::StringView);
 
 namespace vcpkg::msg
 {
+    namespace detail
+    {
+        template<class... FmtArgs>
+        LocalizedString format_impl(std::size_t index, FmtArgs&&... args)
+        {
+            // no forward to intentionally make an lvalue here
+            return detail::format_message_by_index(index, fmt::make_format_args(args...));
+        }
+        template<class... FmtArgs>
+        void format_to_impl(LocalizedString& s, std::size_t index, FmtArgs&&... args)
+        {
+            // no forward to intentionally make an lvalue here
+            return detail::format_message_by_index_to(s, index, fmt::make_format_args(args...));
+        }
+    }
+
     template<class... Tags, class... Types>
     LocalizedString format(MessageT<Tags...> m, TagArg<identity_t<Tags>, Types>... args)
     {
-        return detail::format_message_by_index(m.index, fmt::make_format_args(args.arg()...));
+        return detail::format_impl(m.index, args.arg()...);
     }
     template<class... Tags, class... Types>
     void format_to(LocalizedString& s, MessageT<Tags...> m, TagArg<identity_t<Tags>, Types>... args)
     {
-        return detail::format_message_by_index_to(s, m.index, fmt::make_format_args(args.arg()...));
+        return detail::format_to_impl(s, m.index, args.arg()...);
     }
 
     inline void println() { msg::write_unlocalized_text_to_stdout(Color::none, "\n"); }
@@ -154,12 +200,11 @@ namespace vcpkg::msg
         msg::write_unlocalized_text_to_stdout(Color::none, "\n");
     }
 
-    [[nodiscard]] LocalizedString format_error();
     [[nodiscard]] LocalizedString format_error(const LocalizedString& s);
     template<VCPKG_DECL_MSG_TEMPLATE>
     [[nodiscard]] LocalizedString format_error(VCPKG_DECL_MSG_ARGS)
     {
-        auto s = format_error();
+        auto s = error_prefix();
         msg::format_to(s, VCPKG_EXPAND_MSG_ARGS);
         return s;
     }
@@ -167,17 +212,16 @@ namespace vcpkg::msg
     template<VCPKG_DECL_MSG_TEMPLATE>
     void println_error(VCPKG_DECL_MSG_ARGS)
     {
-        auto s = format_error();
+        auto s = error_prefix();
         msg::format_to(s, VCPKG_EXPAND_MSG_ARGS);
         println(Color::error, s);
     }
 
-    [[nodiscard]] LocalizedString format_warning();
     [[nodiscard]] LocalizedString format_warning(const LocalizedString& s);
     template<VCPKG_DECL_MSG_TEMPLATE>
     [[nodiscard]] LocalizedString format_warning(VCPKG_DECL_MSG_ARGS)
     {
-        auto s = format_warning();
+        auto s = warning_prefix();
         msg::format_to(s, VCPKG_EXPAND_MSG_ARGS);
         return s;
     }
@@ -185,7 +229,7 @@ namespace vcpkg::msg
     template<VCPKG_DECL_MSG_TEMPLATE>
     void println_warning(VCPKG_DECL_MSG_ARGS)
     {
-        auto s = format_warning();
+        auto s = LocalizedString::from_raw(WarningPrefix);
         msg::format_to(s, VCPKG_EXPAND_MSG_ARGS);
         println(Color::warning, s);
     }
@@ -234,14 +278,4 @@ namespace vcpkg
 
 #include <vcpkg/base/message-data.inc.h>
 #undef DECLARE_MESSAGE
-
-    namespace msg
-    {
-        extern const decltype(vcpkg::msgErrorMessage) msgErrorMessage;
-        extern const decltype(vcpkg::msgWarningMessage) msgWarningMessage;
-        extern const decltype(vcpkg::msgNoteMessage) msgNoteMessage;
-        extern const decltype(vcpkg::msgSeeURL) msgSeeURL;
-        extern const decltype(vcpkg::msgInternalErrorMessage) msgInternalErrorMessage;
-        extern const decltype(vcpkg::msgInternalErrorMessageContact) msgInternalErrorMessageContact;
-    }
 }

@@ -1,14 +1,14 @@
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
-#include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
-#include <vcpkg/commands.h>
-#include <vcpkg/commands.integrate.h>
-#include <vcpkg/globalstate.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/vcpkgcmdarguments.h>
+
+#include <algorithm>
+#include <string>
+#include <utility>
 
 namespace
 {
@@ -48,6 +48,7 @@ namespace
 
         // Jenkins
         // https://wiki.jenkins.io/display/JENKINS/Building+a+software+project#Buildingasoftwareproject-belowJenkinsSetEnvironmentVariables
+        {"JENKINS_HOME", "Jenkins_CI"},
         {"JENKINS_URL", "Jenkins_CI"},
 
         // TeamCity
@@ -64,11 +65,23 @@ namespace
         {"BUILD_NUMBER", "Generic"},
     };
 
+    constexpr std::array<StringLiteral, 3> KNOWN_CI_REPOSITORY_IDENTIFIERS{
+        // Azure Pipelines
+        // https://learn.microsoft.com/azure/devops/pipelines/build/variables?view=azure-devops&tabs=yaml#build-variables-devops-services
+        "BUILD_REPOSITORY_ID",
+        // GitLab CI
+        // https://docs.gitlab.com/ee/ci/variables/predefined_variables.html
+        "CI_PROJECT_ID",
+        // GitHub Actions
+        // https://docs.github.com/actions/learn-github-actions/variables#default-environment-variables
+        "GITHUB_REPOSITORY_ID",
+    };
+
     void maybe_parse_cmd_arguments(CmdParser& cmd_parser,
                                    ParsedArguments& output,
-                                   const CommandStructure& command_structure)
+                                   const CommandMetadata& command_metadata)
     {
-        for (const auto& switch_ : command_structure.options.switches)
+        for (const auto& switch_ : command_metadata.options.switches)
         {
             bool parse_result;
             auto name = switch_.name.to_string();
@@ -86,7 +99,7 @@ namespace
 
             if (switch_.helpmsg)
             {
-                if (cmd_parser.parse_switch(name, tag, parse_result, switch_.helpmsg()) && parse_result)
+                if (cmd_parser.parse_switch(name, tag, parse_result, switch_.helpmsg.to_string()) && parse_result)
                 {
                     output.switches.emplace(switch_.name.to_string());
                 }
@@ -102,7 +115,7 @@ namespace
 
         {
             std::string maybe_parse_result;
-            for (const auto& option : command_structure.options.settings)
+            for (const auto& option : command_metadata.options.settings)
             {
                 auto name = option.name.to_string();
                 StabilityTag tag = StabilityTag::Standard;
@@ -119,7 +132,7 @@ namespace
 
                 if (option.helpmsg)
                 {
-                    if (cmd_parser.parse_option(name, tag, maybe_parse_result, option.helpmsg()))
+                    if (cmd_parser.parse_option(name, tag, maybe_parse_result, option.helpmsg.to_string()))
                     {
                         output.settings.emplace(option.name.to_string(), std::move(maybe_parse_result));
                     }
@@ -134,7 +147,7 @@ namespace
             }
         }
 
-        for (const auto& option : command_structure.options.multisettings)
+        for (const auto& option : command_metadata.options.multisettings)
         {
             auto name = option.name.to_string();
             StabilityTag tag = StabilityTag::Standard;
@@ -152,7 +165,7 @@ namespace
             std::vector<std::string> maybe_parse_result;
             if (option.helpmsg)
             {
-                if (cmd_parser.parse_multi_option(name, tag, maybe_parse_result, option.helpmsg()))
+                if (cmd_parser.parse_multi_option(name, tag, maybe_parse_result, option.helpmsg.to_string()))
                 {
                     output.multisettings.emplace(option.name.to_string(), std::move(maybe_parse_result));
                 }
@@ -180,6 +193,38 @@ namespace vcpkg
 
         return &loc->second;
     }
+
+    LocalizedString MetadataMessage::to_string() const
+    {
+        switch (kind)
+        {
+            case MetadataMessageKind::Message: return msg::format(*message);
+            case MetadataMessageKind::Literal: return LocalizedString::from_raw(literal);
+            case MetadataMessageKind::Callback: return callback();
+            case MetadataMessageKind::Unused:
+            default: Checks::unreachable(VCPKG_LINE_INFO);
+        }
+    }
+
+    void MetadataMessage::to_string(LocalizedString& target) const
+    {
+        switch (kind)
+        {
+            case MetadataMessageKind::Message: msg::format_to(target, *message); return;
+            case MetadataMessageKind::Literal: target.append_raw(literal); return;
+            case MetadataMessageKind::Callback: target.append(callback()); return;
+            case MetadataMessageKind::Unused:
+            default: Checks::unreachable(VCPKG_LINE_INFO);
+        }
+    }
+
+    MetadataMessage::operator bool() const noexcept { return kind != MetadataMessageKind::Unused; }
+
+    LocalizedString LearnWebsiteLinkLiteral::to_string() const { return LocalizedString::from_raw(literal); }
+
+    void LearnWebsiteLinkLiteral::to_string(LocalizedString& target) const { target.append_raw(literal); }
+
+    LearnWebsiteLinkLiteral::operator bool() const noexcept { return literal != nullptr; }
 
     static void set_from_feature_flag(const std::vector<std::string>& flags, StringView flag, Optional<bool>& place)
     {
@@ -222,12 +267,35 @@ namespace vcpkg
             {VcpkgCmdArguments::COMPILER_TRACKING_FEATURE, args.compiler_tracking},
             {VcpkgCmdArguments::REGISTRIES_FEATURE, args.registries_feature},
             {VcpkgCmdArguments::VERSIONS_FEATURE, args.versions_feature},
+            {VcpkgCmdArguments::DEPENDENCY_GRAPH_FEATURE, args.dependency_graph_feature},
         };
 
         for (const auto& desc : flag_descriptions)
         {
             set_from_feature_flag(flags, desc.flag_name, desc.local_option);
         }
+    }
+
+    PortApplicableSetting::PortApplicableSetting(StringView setting)
+    {
+        auto split = Strings::split(setting, ';');
+        if (!split.empty())
+        {
+            value = std::move(split[0]);
+            split.erase(split.begin());
+            Util::sort(split);
+            affected_ports = std::move(split);
+        }
+    }
+
+    PortApplicableSetting::PortApplicableSetting(const PortApplicableSetting&) = default;
+    PortApplicableSetting::PortApplicableSetting(PortApplicableSetting&&) = default;
+    PortApplicableSetting& PortApplicableSetting::operator=(const PortApplicableSetting&) = default;
+    PortApplicableSetting& PortApplicableSetting::operator=(PortApplicableSetting&&) = default;
+
+    bool PortApplicableSetting::is_port_affected(StringView port_name) const noexcept
+    {
+        return affected_ports.empty() || std::binary_search(affected_ports.begin(), affected_ports.end(), port_name);
     }
 
     VcpkgCmdArguments VcpkgCmdArguments::create_from_command_line(const ILineReader& fs,
@@ -255,27 +323,31 @@ namespace vcpkg
         args.parser.parse_switch(
             EXACT_ABI_TOOLS_VERSIONS_SWITCH, StabilityTag::Experimental, args.exact_abi_tools_versions);
 
-        args.parser.parse_option(VCPKG_ROOT_DIR_ARG,
-                                 StabilityTag::Standard,
-                                 args.vcpkg_root_dir_arg,
-                                 msg::format(msgVcpkgRootsDir, msg::env_var = "VCPKG_ROOT"));
-        args.parser.parse_option(TRIPLET_ARG,
-                                 StabilityTag::Standard,
-                                 args.triplet,
-                                 msg::format(msgSpecifyTargetArch, msg::env_var = "VCPKG_DEFAULT_TRIPLET"));
-        args.parser.parse_option(HOST_TRIPLET_ARG,
-                                 StabilityTag::Standard,
-                                 args.host_triplet,
-                                 msg::format(msgSpecifyHostArch, msg::env_var = "VCPKG_DEFAULT_HOST_TRIPLET"));
+        args.parser.parse_option(
+            VCPKG_ROOT_DIR_ARG,
+            StabilityTag::Standard,
+            args.vcpkg_root_dir_arg,
+            msg::format(msgVcpkgRootsDir, msg::env_var = format_environment_variable("VCPKG_ROOT")));
+        args.parser.parse_option(
+            TRIPLET_ARG,
+            StabilityTag::Standard,
+            args.triplet,
+            msg::format(msgSpecifyTargetArch, msg::env_var = format_environment_variable("VCPKG_DEFAULT_TRIPLET")));
+        args.parser.parse_option(
+            HOST_TRIPLET_ARG,
+            StabilityTag::Standard,
+            args.host_triplet,
+            msg::format(msgSpecifyHostArch, msg::env_var = format_environment_variable("VCPKG_DEFAULT_HOST_TRIPLET")));
         args.parser.parse_option(MANIFEST_ROOT_DIR_ARG, StabilityTag::Experimental, args.manifest_root_dir);
         args.parser.parse_option(BUILDTREES_ROOT_DIR_ARG,
                                  StabilityTag::Experimental,
                                  args.buildtrees_root_dir,
                                  msg::format(msgBuildTreesRootDir));
-        args.parser.parse_option(DOWNLOADS_ROOT_DIR_ARG,
-                                 StabilityTag::Standard,
-                                 args.downloads_root_dir,
-                                 msg::format(msgDownloadRootsDir, msg::env_var = "VCPKG_DOWNLOADS"));
+        args.parser.parse_option(
+            DOWNLOADS_ROOT_DIR_ARG,
+            StabilityTag::Standard,
+            args.downloads_root_dir,
+            msg::format(msgDownloadRootsDir, msg::env_var = format_environment_variable("VCPKG_DOWNLOADS")));
         args.parser.parse_option(
             INSTALL_ROOT_DIR_ARG, StabilityTag::Experimental, args.install_root_dir, msg::format(msgInstallRootDir));
         args.parser.parse_option(
@@ -289,17 +361,29 @@ namespace vcpkg
                                  StabilityTag::Experimental,
                                  args.asset_sources_template_arg,
                                  msg::format(msgAssetSourcesArg));
+        {
+            std::string raw_cmake_debug;
+            if (args.parser.parse_option(CMAKE_DEBUGGING_ARG, StabilityTag::Experimental, raw_cmake_debug))
+            {
+                args.cmake_debug.emplace(raw_cmake_debug);
+            }
+
+            if (args.parser.parse_option(CMAKE_CONFIGURE_DEBUGGING_ARG, StabilityTag::Experimental, raw_cmake_debug))
+            {
+                args.cmake_configure_debug.emplace(raw_cmake_debug);
+            }
+        }
 
         args.parser.parse_multi_option(
             OVERLAY_PORTS_ARG,
             StabilityTag::Standard,
             args.cli_overlay_ports,
-            msg::format(msgSpecifyDirectoriesWhenSearching, msg::env_var = OVERLAY_PORTS_ENV));
-        args.parser.parse_multi_option(
-            OVERLAY_TRIPLETS_ARG,
-            StabilityTag::Standard,
-            args.cli_overlay_triplets,
-            msg::format(msgSpecifyDirectoriesContaining, msg::env_var = OVERLAY_TRIPLETS_ENV));
+            msg::format(msgOverlayPortsDirectoriesHelp, msg::env_var = format_environment_variable(OVERLAY_PORTS_ENV)));
+        args.parser.parse_multi_option(OVERLAY_TRIPLETS_ARG,
+                                       StabilityTag::Standard,
+                                       args.cli_overlay_triplets,
+                                       msg::format(msgOverlayTripletDirectoriesHelp,
+                                                   msg::env_var = format_environment_variable(OVERLAY_TRIPLETS_ENV)));
         args.parser.parse_multi_option(
             BINARY_SOURCES_ARG, StabilityTag::Standard, args.cli_binary_sources, msg::format(msgBinarySourcesArg));
         args.parser.parse_multi_option(CMAKE_SCRIPT_ARG, StabilityTag::Standard, args.cmake_args);
@@ -329,16 +413,16 @@ namespace vcpkg
         return args;
     }
 
-    ParsedArguments VcpkgCmdArguments::parse_arguments(const CommandStructure& command_structure) const
+    ParsedArguments VcpkgCmdArguments::parse_arguments(const CommandMetadata& command_metadata) const
     {
         ParsedArguments output;
         auto cmd_parser = this->parser;
-        maybe_parse_cmd_arguments(cmd_parser, output, command_structure);
-        if (command_structure.maximum_arity == 0)
+        maybe_parse_cmd_arguments(cmd_parser, output, command_metadata);
+        if (command_metadata.maximum_arity == 0)
         {
             cmd_parser.enforce_no_remaining_args(command);
         }
-        else if (command_structure.minimum_arity == 0 && command_structure.maximum_arity == 1)
+        else if (command_metadata.minimum_arity == 0 && command_metadata.maximum_arity == 1)
         {
             auto maybe_arg = cmd_parser.consume_only_remaining_arg_optional(command);
             if (auto arg = maybe_arg.get())
@@ -346,28 +430,21 @@ namespace vcpkg
                 output.command_arguments.push_back(std::move(*arg));
             }
         }
-        else if (command_structure.minimum_arity == 1 && command_structure.maximum_arity == 1)
+        else if (command_metadata.minimum_arity == 1 && command_metadata.maximum_arity == 1)
         {
             output.command_arguments.push_back(cmd_parser.consume_only_remaining_arg(command));
         }
-        else if (command_structure.minimum_arity == command_structure.maximum_arity)
+        else if (command_metadata.minimum_arity == command_metadata.maximum_arity)
         {
-            output.command_arguments = cmd_parser.consume_remaining_args(command, command_structure.minimum_arity);
+            output.command_arguments = cmd_parser.consume_remaining_args(command, command_metadata.minimum_arity);
         }
         else
         {
             output.command_arguments = cmd_parser.consume_remaining_args(
-                command, command_structure.minimum_arity, command_structure.maximum_arity);
+                command, command_metadata.minimum_arity, command_metadata.maximum_arity);
         }
 
-        LocalizedString example_text;
-        const auto get_example_text = command_structure.get_example_text;
-        if (get_example_text)
-        {
-            example_text = get_example_text();
-        }
-
-        cmd_parser.exit_with_errors(example_text);
+        cmd_parser.exit_with_errors(command_metadata.get_example_text());
         return output;
     }
 
@@ -384,55 +461,58 @@ namespace vcpkg
 
     VcpkgCmdArguments::VcpkgCmdArguments(CmdParser&& parser_) : parser(std::move(parser_)) { }
 
-    void print_command_list_usage()
+    LocalizedString CommandMetadata::get_example_text() const
     {
-        HelpTableFormatter table;
-        table.header("Commands");
-        table.format("vcpkg search [pat]", msg::format(msgHelpSearchCommand));
-        table.format("vcpkg install <pkg>...", msg::format(msgHelpInstallCommand));
-        table.format("vcpkg remove <pkg>...", msg::format(msgHelpRemoveCommand));
-        table.format("vcpkg update", msg::format(msgHelpUpdateCommand));
-        table.format("vcpkg remove --outdated", msg::format(msgHelpRemoveOutdatedCommand));
-        table.format("vcpkg upgrade", msg::format(msgHelpUpgradeCommand));
-        table.format("vcpkg hash <file> [alg]", msg::format(msgHelpHashCommand));
-        table.format("vcpkg help topics", msg::format(msgHelpTopicsCommand));
-        table.format("vcpkg help <topic>", msg::format(msgHelpTopicCommand));
-        table.format("vcpkg list", msg::format(msgHelpListCommand));
-        table.blank();
-        Commands::Integrate::append_helpstring(table);
-        table.blank();
-        table.format("vcpkg export <pkg>... [opt]...", msg::format(msgHelpExportCommand));
-        table.format("vcpkg edit <pkg>", msg::format(msgHelpEditCommand, msg::env_var = "EDITOR"));
-        table.format("vcpkg create <pkg> <url> [archivename]", msg::format(msgHelpCreateCommand));
-        table.format("vcpkg x-init-registry <path>", msg::format(msgHelpInitializeRegistryCommand));
-        table.format("vcpkg format-manifest --all", msg::format(msgHelpFormatManifestCommand));
-        table.format("vcpkg owns <pat>", msg::format(msgHelpOwnsCommand));
-        table.format("vcpkg depend-info <pkg>...", msg::format(msgHelpDependInfoCommand));
-        table.format("vcpkg env", msg::format(msgHelpEnvCommand));
-        table.format("vcpkg version", msg::format(msgHelpVersionCommand));
-        table.format("vcpkg contact", msg::format(msgHelpContactCommand));
-        table.blank();
-        table.format(msg::format(msgResponseFileCode), msg::format(msgHelpResponseFileCommand));
-        table.blank();
-        table.example(msg::format(msgHelpExampleCommand));
+        LocalizedString result;
+        if (examples[0])
+        {
+            examples[0].to_string(result);
+            for (std::size_t idx = 1; idx < example_max_size; ++idx)
+            {
+                if (examples[idx])
+                {
+                    result.append_raw('\n');
+                    examples[idx].to_string(result);
+                }
+            }
+        }
 
-        msg::println(LocalizedString::from_raw(table.m_str));
+        return result;
     }
 
-    void print_usage(const CommandStructure& command_structure)
+    void print_usage(const CommandMetadata& command_metadata)
     {
         auto with_common_options = VcpkgCmdArguments::create_from_arg_sequence(nullptr, nullptr);
         ParsedArguments throwaway;
-        maybe_parse_cmd_arguments(with_common_options.parser, throwaway, command_structure);
+        maybe_parse_cmd_arguments(with_common_options.parser, throwaway, command_metadata);
         LocalizedString result;
-        const auto get_example_text = command_structure.get_example_text;
-        if (get_example_text)
+        if (command_metadata.synopsis)
         {
-            auto example_text = get_example_text();
-            if (!example_text.empty())
+            result.append(msgSynopsisHeader);
+            result.append_raw(' ');
+            command_metadata.synopsis.to_string(result);
+            result.append_raw('\n');
+        }
+
+        std::vector<LocalizedString> examples;
+        for (auto&& maybe_example : command_metadata.examples)
+        {
+            if (maybe_example)
             {
-                result.append(example_text).append_raw('\n');
+                examples.push_back(maybe_example.to_string());
             }
+        }
+
+        if (!examples.empty())
+        {
+            result.append(msgExamplesHeader);
+            result.append_floating_list(1, examples);
+            result.append_raw('\n');
+        }
+
+        if (command_metadata.website_link)
+        {
+            result.append(msgSeeURL, msg::url = command_metadata.website_link.to_string()).append_raw('\n');
         }
 
         with_common_options.parser.append_options_table(result);
@@ -493,6 +573,11 @@ namespace vcpkg
         from_env(get_env, GITHUB_SERVER_URL_ENV, github_server_url);
         from_env(get_env, GITHUB_REF_ENV, github_ref);
         from_env(get_env, GITHUB_SHA_ENV, github_sha);
+        from_env(get_env, GITHUB_JOB_ENV, github_job);
+        from_env(get_env, GITHUB_REPOSITORY_OWNER_ID, ci_repository_owner_id);
+        from_env(get_env, GITHUB_RUN_ID_ENV, github_run_id);
+        from_env(get_env, GITHUB_TOKEN_ENV, github_token);
+        from_env(get_env, GITHUB_WORKFLOW_ENV, github_workflow);
 
         // detect whether we are running in a CI environment
         for (auto&& ci_env_var : KNOWN_CI_VARIABLES)
@@ -500,6 +585,17 @@ namespace vcpkg
             if (get_env(ci_env_var.first).has_value())
             {
                 m_detected_ci_environment = ci_env_var.second;
+                break;
+            }
+        }
+
+        // detect unique repository identifier in CI environments
+        for (auto&& ci_id_var : KNOWN_CI_REPOSITORY_IDENTIFIERS)
+        {
+            auto maybe_ci_id = get_env(ci_id_var);
+            if (auto ci_id = maybe_ci_id.get())
+            {
+                ci_repository_id = std::move(*ci_id);
                 break;
             }
         }
@@ -549,7 +645,7 @@ namespace vcpkg
         auto maybe_vcpkg_recursive_data = get_environment_variable(RECURSIVE_DATA_ENV);
         if (auto vcpkg_recursive_data = maybe_vcpkg_recursive_data.get())
         {
-            auto rec_doc = Json::parse(*vcpkg_recursive_data)
+            auto rec_doc = Json::parse(*vcpkg_recursive_data, RECURSIVE_DATA_ENV)
                                .map_error(parse_error_formatter)
                                .value_or_exit(VCPKG_LINE_INFO)
                                .value;
@@ -657,6 +753,7 @@ namespace vcpkg
             {COMPILER_TRACKING_FEATURE, compiler_tracking},
             {REGISTRIES_FEATURE, registries_feature},
             {VERSIONS_FEATURE, versions_feature},
+            {DEPENDENCY_GRAPH_FEATURE, dependency_graph_feature},
         };
 
         for (const auto& flag : flags)
@@ -677,6 +774,7 @@ namespace vcpkg
         MetricsSubmission submission;
         submission.track_bool(BoolMetric::FeatureFlagBinaryCaching, binary_caching_enabled());
         submission.track_bool(BoolMetric::FeatureFlagCompilerTracking, compiler_tracking_enabled());
+        submission.track_bool(BoolMetric::FeatureFlagDependencyGraph, dependency_graph_enabled());
         submission.track_bool(BoolMetric::FeatureFlagRegistries, registries_enabled());
         submission.track_bool(BoolMetric::FeatureFlagVersions, versions_enabled());
         get_global_metrics_collector().track_submission(std::move(submission));
@@ -684,11 +782,24 @@ namespace vcpkg
 
     void VcpkgCmdArguments::track_environment_metrics() const
     {
+        MetricsSubmission submission;
         if (auto ci_env = m_detected_ci_environment.get())
         {
             Debug::println("Detected CI environment: ", *ci_env);
-            get_global_metrics_collector().track_string(StringMetric::DetectedCiEnvironment, *ci_env);
+            submission.track_string(StringMetric::DetectedCiEnvironment, *ci_env);
         }
+
+        if (auto repo_id = ci_repository_id.get())
+        {
+            submission.track_string(StringMetric::CiProjectId, *repo_id);
+        }
+
+        if (auto owner_id = ci_repository_owner_id.get())
+        {
+            submission.track_string(StringMetric::CiOwnerId, *owner_id);
+        }
+
+        get_global_metrics_collector().track_submission(std::move(submission));
     }
 
     Optional<std::string> VcpkgCmdArguments::asset_sources_template() const
@@ -701,15 +812,6 @@ namespace vcpkg
         }
         if (asset_sources_template.empty()) return nullopt;
         return Optional<std::string>(std::move(asset_sources_template));
-    }
-
-    LocalizedString create_example_string(StringView command_and_arguments)
-    {
-        return msg::format(msgExample)
-            .append_raw('\n')
-            .append_indent()
-            .append_raw("vcpkg ")
-            .append_raw(command_and_arguments);
     }
 
     // out-of-line definitions since C++14 doesn't allow inline constexpr static variables
@@ -758,10 +860,20 @@ namespace vcpkg
     constexpr StringLiteral VcpkgCmdArguments::ASSET_SOURCES_ENV;
     constexpr StringLiteral VcpkgCmdArguments::ASSET_SOURCES_ARG;
 
+    constexpr StringLiteral VcpkgCmdArguments::GITHUB_JOB_ENV;
+    constexpr StringLiteral VcpkgCmdArguments::GITHUB_RUN_ID_ENV;
+    constexpr StringLiteral VcpkgCmdArguments::GITHUB_REPOSITORY_ENV;
+    constexpr StringLiteral VcpkgCmdArguments::GITHUB_REF_ENV;
+    constexpr StringLiteral VcpkgCmdArguments::GITHUB_SHA_ENV;
+    constexpr StringLiteral VcpkgCmdArguments::GITHUB_REPOSITORY_OWNER_ID;
+    constexpr StringLiteral VcpkgCmdArguments::GITHUB_TOKEN_ENV;
+    constexpr StringLiteral VcpkgCmdArguments::GITHUB_WORKFLOW_ENV;
+
     constexpr StringLiteral VcpkgCmdArguments::FEATURE_FLAGS_ENV;
     constexpr StringLiteral VcpkgCmdArguments::FEATURE_FLAGS_ARG;
 
     constexpr StringLiteral VcpkgCmdArguments::FEATURE_PACKAGES_SWITCH;
+    constexpr StringLiteral VcpkgCmdArguments::DEPENDENCY_GRAPH_FEATURE;
     constexpr StringLiteral VcpkgCmdArguments::BINARY_CACHING_FEATURE;
     constexpr StringLiteral VcpkgCmdArguments::BINARY_CACHING_SWITCH;
     constexpr StringLiteral VcpkgCmdArguments::COMPILER_TRACKING_FEATURE;
@@ -771,5 +883,7 @@ namespace vcpkg
     constexpr StringLiteral VcpkgCmdArguments::VERSIONS_FEATURE;
 
     constexpr StringLiteral VcpkgCmdArguments::CMAKE_SCRIPT_ARG;
+    constexpr StringLiteral VcpkgCmdArguments::CMAKE_DEBUGGING_ARG;
+    constexpr StringLiteral VcpkgCmdArguments::CMAKE_CONFIGURE_DEBUGGING_ARG;
     constexpr StringLiteral VcpkgCmdArguments::EXACT_ABI_TOOLS_VERSIONS_SWITCH;
 }

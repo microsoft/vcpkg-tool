@@ -1,9 +1,8 @@
-#include <catch2/catch.hpp>
+#include <vcpkg-test/util.h>
 
 #include <vcpkg/commands.install.h>
 
 using namespace vcpkg;
-namespace Integrate = vcpkg::Commands::Integrate;
 
 TEST_CASE ("find_targets_file_version", "[integrate]")
 {
@@ -18,44 +17,44 @@ TEST_CASE ("find_targets_file_version", "[integrate]")
 </Project>
 )xml";
 
-    auto res = Integrate::find_targets_file_version(DEFAULT_TARGETS_FILE);
+    auto res = find_targets_file_version(DEFAULT_TARGETS_FILE);
     REQUIRE(res.has_value());
     CHECK(*res.get() == 1);
 
-    res = Integrate::find_targets_file_version("<!-- version 12345 -->");
+    res = find_targets_file_version("<!-- version 12345 -->");
     REQUIRE(res.has_value());
     CHECK(*res.get() == 12345);
 
-    res = Integrate::find_targets_file_version("<!-- version <!-- version 1 -->");
+    res = find_targets_file_version("<!-- version <!-- version 1 -->");
     REQUIRE(res.has_value());
     CHECK(*res.get() == 1);
 
-    res = Integrate::find_targets_file_version("<!-- version 32 <!-- version 1 -->");
+    res = find_targets_file_version("<!-- version 32 <!-- version 1 -->");
     REQUIRE(res.has_value());
     CHECK(*res.get() == 1);
 
-    res = Integrate::find_targets_file_version("<!-- version 32 --> <!-- version 1 -->");
+    res = find_targets_file_version("<!-- version 32 --> <!-- version 1 -->");
     REQUIRE(res.has_value());
     CHECK(*res.get() == 32);
 
-    res = Integrate::find_targets_file_version("<!-- version 12345  -->");
+    res = find_targets_file_version("<!-- version 12345  -->");
     CHECK_FALSE(res.has_value());
 
-    res = Integrate::find_targets_file_version("<!--  version 12345 -->");
+    res = find_targets_file_version("<!--  version 12345 -->");
     CHECK_FALSE(res.has_value());
 
-    res = Integrate::find_targets_file_version("<!-- version -12345 -->");
+    res = find_targets_file_version("<!-- version -12345 -->");
     CHECK_FALSE(res.has_value());
 
-    res = Integrate::find_targets_file_version("<!-- version -12345 --> <!-- version 1 -->");
+    res = find_targets_file_version("<!-- version -12345 --> <!-- version 1 -->");
     REQUIRE(res.has_value());
     CHECK(*res.get() == 1);
 
-    res = Integrate::find_targets_file_version("<!-- version unexpected --> <!-- version 1 -->");
+    res = find_targets_file_version("<!-- version unexpected --> <!-- version 1 -->");
     REQUIRE(res.has_value());
     CHECK(*res.get() == 1);
 
-    res = Integrate::find_targets_file_version("<!-- ver 1 -->");
+    res = find_targets_file_version("<!-- ver 1 -->");
     CHECK_FALSE(res.has_value());
 }
 
@@ -88,7 +87,7 @@ if [ -f "$HOME/.profile" ]; then
 fi
 )sh";
 
-    CHECK(Integrate::get_bash_source_completion_lines(default_bashrc) == std::vector<std::string>{});
+    CHECK(get_bash_source_completion_lines(default_bashrc) == std::vector<std::string>{});
 
     const std::string source_line_1 = "source /blah/bloop/scripts/vcpkg_completion.bash";
     const std::string source_line_2 = "source /floop/scripts/vcpkg_completion.bash";
@@ -97,29 +96,26 @@ fi
     with_bash_completion.append(source_line_1.begin(), source_line_1.end());
     with_bash_completion.push_back('\n');
 
-    CHECK(Integrate::get_bash_source_completion_lines(with_bash_completion) == std::vector<std::string>{source_line_1});
+    CHECK(get_bash_source_completion_lines(with_bash_completion) == std::vector<std::string>{source_line_1});
 
     with_bash_completion.append(source_line_2.begin(), source_line_2.end());
     with_bash_completion.push_back('\n');
 
-    CHECK(Integrate::get_bash_source_completion_lines(with_bash_completion) ==
+    CHECK(get_bash_source_completion_lines(with_bash_completion) ==
           std::vector<std::string>{source_line_1, source_line_2});
 
     with_bash_completion.append("unrelated line\n");
 
-    CHECK(Integrate::get_bash_source_completion_lines(with_bash_completion) ==
+    CHECK(get_bash_source_completion_lines(with_bash_completion) ==
           std::vector<std::string>{source_line_1, source_line_2});
 
-    CHECK(Integrate::get_bash_source_completion_lines("source nonrelated/vcpkg_completion.bash") ==
-          std::vector<std::string>{});
-    CHECK(Integrate::get_bash_source_completion_lines("  source /scripts/vcpkg_completion.bash") ==
+    CHECK(get_bash_source_completion_lines("source nonrelated/vcpkg_completion.bash") == std::vector<std::string>{});
+    CHECK(get_bash_source_completion_lines("  source /scripts/vcpkg_completion.bash") ==
           std::vector<std::string>{"source /scripts/vcpkg_completion.bash"});
 
-    CHECK(Integrate::get_bash_source_completion_lines("#source /scripts/vcpkg_completion.bash") ==
-          std::vector<std::string>{});
+    CHECK(get_bash_source_completion_lines("#source /scripts/vcpkg_completion.bash") == std::vector<std::string>{});
 
-    CHECK(Integrate::get_bash_source_completion_lines("mysource /scripts/vcpkg_completion.bash") ==
-          std::vector<std::string>{});
+    CHECK(get_bash_source_completion_lines("mysource /scripts/vcpkg_completion.bash") == std::vector<std::string>{});
 }
 
 TEST_CASE ("get_zsh_autocomplete_data", "[integrate]")
@@ -136,7 +132,7 @@ alias -g kill-gpg='gpgconf --kill gpg-agent'
 . "$HOME/.cargo/env"
 )sh";
 
-    auto res = Integrate::get_zsh_autocomplete_data(zshrc);
+    auto res = get_zsh_autocomplete_data(zshrc);
     CHECK(res.source_completion_lines == std::vector<std::string>{});
     CHECK(!res.has_bashcompinit);
     CHECK(!res.has_autoload_bashcompinit);
@@ -148,73 +144,73 @@ alias -g kill-gpg='gpgconf --kill gpg-agent'
     std::string my_zshrc = zshrc;
     my_zshrc.append(source_line_1.begin(), source_line_1.end());
     my_zshrc.push_back('\n');
-    res = Integrate::get_zsh_autocomplete_data(my_zshrc);
+    res = get_zsh_autocomplete_data(my_zshrc);
     CHECK(res.source_completion_lines == std::vector<std::string>{source_line_1});
     CHECK(!res.has_bashcompinit);
     CHECK(!res.has_autoload_bashcompinit);
 
     my_zshrc.append(source_line_2.begin(), source_line_2.end());
     my_zshrc.push_back('\n');
-    res = Integrate::get_zsh_autocomplete_data(my_zshrc);
+    res = get_zsh_autocomplete_data(my_zshrc);
     CHECK(res.source_completion_lines == std::vector<std::string>{source_line_1, source_line_2});
     CHECK(!res.has_bashcompinit);
     CHECK(!res.has_autoload_bashcompinit);
 
     my_zshrc.append(bash_source_line.begin(), bash_source_line.end());
     my_zshrc.push_back('\n');
-    res = Integrate::get_zsh_autocomplete_data(my_zshrc);
+    res = get_zsh_autocomplete_data(my_zshrc);
     CHECK(res.source_completion_lines == std::vector<std::string>{source_line_1, source_line_2});
     CHECK(!res.has_bashcompinit);
     CHECK(!res.has_autoload_bashcompinit);
 
     my_zshrc.append("bashcompinit\n");
-    res = Integrate::get_zsh_autocomplete_data(my_zshrc);
+    res = get_zsh_autocomplete_data(my_zshrc);
     CHECK(res.source_completion_lines == std::vector<std::string>{source_line_1, source_line_2});
     CHECK(res.has_bashcompinit);
     CHECK(!res.has_autoload_bashcompinit);
 
     my_zshrc.append("autoload bashcompinit\n");
-    res = Integrate::get_zsh_autocomplete_data(my_zshrc);
+    res = get_zsh_autocomplete_data(my_zshrc);
     CHECK(res.source_completion_lines == std::vector<std::string>{source_line_1, source_line_2});
     CHECK(res.has_bashcompinit);
     CHECK(res.has_autoload_bashcompinit);
 
-    res = Integrate::get_zsh_autocomplete_data("autoload bashcompinit");
+    res = get_zsh_autocomplete_data("autoload bashcompinit");
     CHECK(res.source_completion_lines == std::vector<std::string>{});
     CHECK(!res.has_bashcompinit);
     CHECK(res.has_autoload_bashcompinit);
 
-    res = Integrate::get_zsh_autocomplete_data("autoloadoasdoif--ha------oshgfiaqwenrlan hasdoifhaodfbashcompinit");
+    res = get_zsh_autocomplete_data("autoloadoasdoif--ha------oshgfiaqwenrlan hasdoifhaodfbashcompinit");
     CHECK(res.source_completion_lines == std::vector<std::string>{});
     CHECK(!res.has_bashcompinit);
     CHECK(res.has_autoload_bashcompinit);
 
-    res = Integrate::get_zsh_autocomplete_data("autoloadoasdoi hasdoifhaodfbashcompinitasdfjadofin");
+    res = get_zsh_autocomplete_data("autoloadoasdoi hasdoifhaodfbashcompinitasdfjadofin");
     CHECK(res.source_completion_lines == std::vector<std::string>{});
     CHECK(!res.has_bashcompinit);
     CHECK(res.has_autoload_bashcompinit);
 
-    res = Integrate::get_zsh_autocomplete_data("myautoload bashcompinit");
+    res = get_zsh_autocomplete_data("myautoload bashcompinit");
     CHECK(res.source_completion_lines == std::vector<std::string>{});
     CHECK(!res.has_bashcompinit);
     CHECK(!res.has_autoload_bashcompinit);
 
-    res = Integrate::get_zsh_autocomplete_data("bashcompinit");
+    res = get_zsh_autocomplete_data("bashcompinit");
     CHECK(res.source_completion_lines == std::vector<std::string>{});
     CHECK(res.has_bashcompinit);
     CHECK(!res.has_autoload_bashcompinit);
 
-    res = Integrate::get_zsh_autocomplete_data("asdf && blah && bashcompinit");
+    res = get_zsh_autocomplete_data("asdf && blah && bashcompinit");
     CHECK(res.source_completion_lines == std::vector<std::string>{});
     CHECK(res.has_bashcompinit);
     CHECK(!res.has_autoload_bashcompinit);
 
-    res = Integrate::get_zsh_autocomplete_data("daslknfd bashcompinit");
+    res = get_zsh_autocomplete_data("daslknfd bashcompinit");
     CHECK(res.source_completion_lines == std::vector<std::string>{});
     CHECK(!res.has_bashcompinit);
     CHECK(!res.has_autoload_bashcompinit);
 
-    res = Integrate::get_zsh_autocomplete_data("# && bashcompinit");
+    res = get_zsh_autocomplete_data("# && bashcompinit");
     CHECK(res.source_completion_lines == std::vector<std::string>{});
     CHECK(!res.has_bashcompinit);
     CHECK(!res.has_autoload_bashcompinit);

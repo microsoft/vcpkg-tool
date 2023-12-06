@@ -10,14 +10,20 @@ $directoryArgs = @(
     "--x-buildtrees-root=$buildtreesRoot",
     "--x-install-root=$installRoot",
     "--x-packages-root=$packagesRoot",
-    "--overlay-ports=$PSScriptRoot/e2e_ports/overlays",
-    "--overlay-triplets=$PSScriptRoot/e2e_ports/triplets"
+    "--overlay-ports=$PSScriptRoot/e2e-ports/overlays",
+    "--overlay-triplets=$PSScriptRoot/e2e-ports/triplets"
 )
 
 $commonArgs = @(
     "--triplet",
     $Triplet
 ) + $directoryArgs
+
+$gitConfigOptions = @(
+  '-c', 'user.name=Nobody',
+  '-c', 'user.email=nobody@example.com',
+  '-c', 'core.autocrlf=false'
+)
 
 $Script:CurrentTest = 'unassigned'
 
@@ -98,9 +104,6 @@ function Write-Trace ([string]$text) {
 function Run-VcpkgAndCaptureOutput {
     Param(
         [Parameter(Mandatory = $false)]
-        [Switch]$EndToEndTestSilent,
-
-        [Parameter(Mandatory = $false)]
         [Switch]$ForceExe,
 
         [Parameter(ValueFromRemainingArguments)]
@@ -112,24 +115,21 @@ function Run-VcpkgAndCaptureOutput {
     }
 
     $Script:CurrentTest = "$thisVcpkg $($testArgs -join ' ')"
-    if (!$EndToEndTestSilent) { Write-Host -ForegroundColor red $Script:CurrentTest }
+    Write-Host -ForegroundColor red $Script:CurrentTest
     $result = (& "$thisVcpkg" @testArgs) | Out-String
-    if (!$EndToEndTestSilent) { Write-Host -ForegroundColor Gray $result }
+    Write-Host -ForegroundColor Gray $result
     $result
 }
 
 function Run-Vcpkg {
     Param(
         [Parameter(Mandatory = $false)]
-        [Switch]$EndToEndTestSilent,
-
-        [Parameter(Mandatory = $false)]
         [Switch]$ForceExe,
 
         [Parameter(ValueFromRemainingArguments)]
         [string[]]$TestArgs
     )
-    Run-VcpkgAndCaptureOutput -EndToEndTestSilent:$EndToEndTestSilent -ForceExe:$ForceExe @TestArgs | Out-Null
+    Run-VcpkgAndCaptureOutput -ForceExe:$ForceExe @TestArgs | Out-Null
 }
 
 Refresh-TestRoot

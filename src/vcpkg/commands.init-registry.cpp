@@ -3,19 +3,23 @@
 #include <vcpkg/commands.init-registry.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 
-namespace vcpkg::Commands::InitRegistry
+namespace vcpkg
 {
-    static const CommandStructure COMMAND_STRUCTURE = {
-        [] { return create_example_string(R"(x-init-registry .)"); },
+    constexpr CommandMetadata CommandInitRegistryMetadata{
+        "x-init-registry",
+        msgCmdInitRegistrySynopsis,
+        {msgCmdInitRegistryExample1, "vcpkg x-init-registry ."},
+        Undocumented,
+        AutocompletePriority::Public,
         1,
         1,
-        {{}, {}, {}},
+        {},
         nullptr,
     };
 
-    void perform_and_exit(const VcpkgCmdArguments& args, Filesystem& fs)
+    void command_init_registry_and_exit(const VcpkgCmdArguments& args, const Filesystem& fs)
     {
-        auto parsed_args = args.parse_arguments(COMMAND_STRUCTURE);
+        auto parsed_args = args.parse_arguments(CommandInitRegistryMetadata);
 
         const Path string_argument = parsed_args.command_arguments.front();
         const auto path = fs.current_path(VCPKG_LINE_INFO) / string_argument;

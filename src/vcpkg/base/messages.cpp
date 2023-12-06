@@ -2,9 +2,7 @@
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/setup-messages.h>
 #include <vcpkg/base/system.debug.h>
-#include <vcpkg/base/util.h>
 
-#include <iterator>
 #include <vector>
 
 #include <cmrc/cmrc.hpp>
@@ -28,31 +26,39 @@ namespace vcpkg
     template LocalizedString LocalizedString::from_raw<char>(std::basic_string<char>&& s) noexcept;
     LocalizedString LocalizedString::from_raw(StringView s) { return LocalizedString(s); }
 
-    LocalizedString& LocalizedString::append_raw(char c)
+    LocalizedString& LocalizedString::append_raw(char c) &
     {
         m_data.push_back(c);
         return *this;
     }
 
-    LocalizedString& LocalizedString::append_raw(StringView s)
+    LocalizedString&& LocalizedString::append_raw(char c) && { return std::move(append_raw(c)); }
+
+    LocalizedString& LocalizedString::append_raw(StringView s) &
     {
         m_data.append(s.begin(), s.size());
         return *this;
     }
 
-    LocalizedString& LocalizedString::append(const LocalizedString& s)
+    LocalizedString&& LocalizedString::append_raw(StringView s) && { return std::move(append_raw(s)); }
+
+    LocalizedString& LocalizedString::append(const LocalizedString& s) &
     {
         m_data.append(s.m_data);
         return *this;
     }
 
-    LocalizedString& LocalizedString::append_indent(size_t indent)
+    LocalizedString&& LocalizedString::append(const LocalizedString& s) && { return std::move(append(s)); }
+
+    LocalizedString& LocalizedString::append_indent(size_t indent) &
     {
-        m_data.append(indent * 4, ' ');
+        m_data.append(indent * 2, ' ');
         return *this;
     }
 
-    LocalizedString& LocalizedString::append_floating_list(int indent, View<LocalizedString> items)
+    LocalizedString&& LocalizedString::append_indent(size_t indent) && { return std::move(append_indent(indent)); }
+
+    LocalizedString& LocalizedString::append_floating_list(int indent, View<LocalizedString> items) &
     {
         switch (items.size())
         {
@@ -68,6 +74,11 @@ namespace vcpkg
         }
 
         return *this;
+    }
+
+    LocalizedString&& LocalizedString::append_floating_list(int indent, View<LocalizedString> items) &&
+    {
+        return std::move(append_floating_list(indent, items));
     }
 
     bool operator==(const LocalizedString& lhs, const LocalizedString& rhs) noexcept
@@ -100,6 +111,20 @@ namespace vcpkg
     LocalizedString::LocalizedString(StringView data) : m_data(data.data(), data.size()) { }
     LocalizedString::LocalizedString(std::string&& data) noexcept : m_data(std::move(data)) { }
 
+    LocalizedString format_environment_variable(StringView variable_name)
+    {
+#if defined(_WIN32)
+        return LocalizedString::from_raw(fmt::format("%{}%", variable_name));
+#else  // ^^^ _WIN32 / !_WIN32 vvv
+        return LocalizedString::from_raw(fmt::format("${}", variable_name));
+#endif // ^^^ !_WIN32
+    }
+
+    LocalizedString error_prefix() { return LocalizedString::from_raw(ErrorPrefix); }
+    LocalizedString internal_error_prefix() { return LocalizedString::from_raw(InternalErrorPrefix); }
+    LocalizedString message_prefix() { return LocalizedString::from_raw(MessagePrefix); }
+    LocalizedString note_prefix() { return LocalizedString::from_raw(NotePrefix); }
+    LocalizedString warning_prefix() { return LocalizedString::from_raw(WarningPrefix); }
 }
 
 namespace vcpkg::msg
@@ -255,17 +280,6 @@ namespace vcpkg
 
 #include <vcpkg/base/message-data.inc.h>
 #undef DECLARE_MESSAGE
-
-    namespace msg
-    {
-        const decltype(vcpkg::msgErrorMessage) msgErrorMessage = vcpkg::msgErrorMessage;
-        const decltype(vcpkg::msgWarningMessage) msgWarningMessage = vcpkg::msgWarningMessage;
-        const decltype(vcpkg::msgNoteMessage) msgNoteMessage = vcpkg::msgNoteMessage;
-        const decltype(vcpkg::msgSeeURL) msgSeeURL = vcpkg::msgSeeURL;
-        const decltype(vcpkg::msgInternalErrorMessage) msgInternalErrorMessage = vcpkg::msgInternalErrorMessage;
-        const decltype(vcpkg::msgInternalErrorMessageContact) msgInternalErrorMessageContact =
-            vcpkg::msgInternalErrorMessageContact;
-    }
 }
 namespace vcpkg::msg
 {
@@ -451,7 +465,7 @@ namespace vcpkg::msg
     }
 
     // LCIDs supported by VS:
-    // https://learn.microsoft.com/en-us/visualstudio/ide/reference/lcid-devenv-exe?view=vs-2022
+    // https://learn.microsoft.com/visualstudio/ide/reference/lcid-devenv-exe?view=vs-2022
     Optional<StringLiteral> get_language_tag(int LCID)
     {
         static constexpr std::pair<int, StringLiteral> languages[] = {
@@ -482,11 +496,8 @@ namespace vcpkg::msg
         return nullopt;
     }
 
-    LocalizedString format_error() { return format(msgErrorMessage); }
-    LocalizedString format_error(const LocalizedString& s) { return format(msgErrorMessage).append(s); }
+    LocalizedString format_error(const LocalizedString& s) { return error_prefix().append(s); }
     void println_error(const LocalizedString& s) { println(Color::error, format_error(s)); }
-
-    LocalizedString format_warning() { return format(msgWarningMessage); }
-    LocalizedString format_warning(const LocalizedString& s) { return format(msgWarningMessage).append(s); }
+    LocalizedString format_warning(const LocalizedString& s) { return warning_prefix().append(s); }
     void println_warning(const LocalizedString& s) { println(Color::warning, format_warning(s)); }
 }

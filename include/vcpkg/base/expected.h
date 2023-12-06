@@ -53,7 +53,7 @@ namespace vcpkg
     struct ExpectedHolder<T&>
     {
         ExpectedHolder() = delete;
-        ExpectedHolder(T& t) : t(&t) { }
+        ExpectedHolder(T& t) noexcept : t(&t) { }
         ExpectedHolder(const ExpectedHolder&) = default;
         ExpectedHolder& operator=(const ExpectedHolder&) = default;
         using pointer = T*;
@@ -74,7 +74,8 @@ namespace vcpkg
                  std::enable_if_t<std::is_convertible_v<ConvToT, T> &&
                                       !std::is_same_v<std::remove_reference_t<ConvToT>, Error>,
                                   int> = 0>
-        ExpectedT(ConvToT&& t) : m_t(std::forward<ConvToT>(t)), value_is_error(false)
+        ExpectedT(ConvToT&& t) noexcept(std::is_nothrow_constructible_v<T, ConvToT>)
+            : m_t(std::forward<ConvToT>(t)), value_is_error(false)
         {
         }
 
@@ -83,22 +84,27 @@ namespace vcpkg
                                       !std::is_same_v<std::remove_reference_t<ConvToError>, T>,
                                   int> = 0,
                  int = 1>
-        ExpectedT(ConvToError&& e) : m_error(std::forward<ConvToError>(e)), value_is_error(true)
+        ExpectedT(ConvToError&& e) noexcept(std::is_nothrow_constructible_v<Error, ConvToError>)
+            : m_error(std::forward<ConvToError>(e)), value_is_error(true)
         {
         }
 
         // Constructors that explicitly specify left or right exist if the parameter is convertible to T or Error
         template<class ConvToT, std::enable_if_t<std::is_convertible_v<ConvToT, T>, int> = 0>
-        ExpectedT(ConvToT&& t, ExpectedLeftTag) : m_t(std::forward<ConvToT>(t)), value_is_error(false)
+        ExpectedT(ConvToT&& t, ExpectedLeftTag) noexcept(std::is_nothrow_constructible_v<T, ConvToT>)
+            : m_t(std::forward<ConvToT>(t)), value_is_error(false)
         {
         }
 
         template<class ConvToError, std::enable_if_t<std::is_convertible_v<ConvToError, Error>, int> = 0>
-        ExpectedT(ConvToError&& e, ExpectedRightTag) : m_error(std::forward<ConvToError>(e)), value_is_error(true)
+        ExpectedT(ConvToError&& e, ExpectedRightTag) noexcept(std::is_nothrow_constructible_v<Error, ConvToError>)
+            : m_error(std::forward<ConvToError>(e)), value_is_error(true)
         {
         }
 
-        ExpectedT(const ExpectedT& other) : value_is_error(other.value_is_error)
+        ExpectedT(const ExpectedT& other) noexcept(
+            std::is_nothrow_copy_constructible_v<Error>&& std::is_nothrow_copy_constructible_v<ExpectedHolder<T>>)
+            : value_is_error(other.value_is_error)
         {
             if (value_is_error)
             {
@@ -110,7 +116,9 @@ namespace vcpkg
             }
         }
 
-        ExpectedT(ExpectedT&& other) : value_is_error(other.value_is_error)
+        ExpectedT(ExpectedT&& other) noexcept(
+            std::is_nothrow_move_constructible_v<Error>&& std::is_nothrow_move_constructible_v<ExpectedHolder<T>>)
+            : value_is_error(other.value_is_error)
         {
             if (value_is_error)
             {
@@ -208,25 +216,25 @@ namespace vcpkg
             return *m_t.get();
         }
 
-        const T& value(const LineInfo& line_info) const&
+        const T& value(const LineInfo& line_info) const& noexcept
         {
             unreachable_if_error(line_info);
             return *m_t.get();
         }
 
-        T&& value(const LineInfo& line_info) &&
+        T&& value(const LineInfo& line_info) && noexcept
         {
             unreachable_if_error(line_info);
             return std::move(*m_t.get());
         }
 
-        const Error& error() const&
+        const Error& error() const& noexcept
         {
             unreachable_if_not_error(VCPKG_LINE_INFO);
             return m_error;
         }
 
-        Error&& error() &&
+        Error&& error() && noexcept
         {
             unreachable_if_not_error(VCPKG_LINE_INFO);
             return std::move(m_error);
@@ -358,7 +366,7 @@ namespace vcpkg
         }
 
     private:
-        void exit_if_error(const LineInfo& line_info) const
+        void exit_if_error(const LineInfo& line_info) const noexcept
         {
             if (value_is_error)
             {
@@ -366,7 +374,7 @@ namespace vcpkg
             }
         }
 
-        void unreachable_if_error(const LineInfo& line_info) const
+        void unreachable_if_error(const LineInfo& line_info) const noexcept
         {
             if (value_is_error)
             {

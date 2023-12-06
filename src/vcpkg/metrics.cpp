@@ -2,7 +2,6 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/json.h>
-#include <vcpkg/base/span.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
@@ -10,7 +9,6 @@
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/uuid.h>
 
-#include <vcpkg/commands.h>
 #include <vcpkg/commands.version.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/paragraphs.h>
@@ -133,6 +131,8 @@ namespace vcpkg
         {StringMetric::CommandName, "command_name", "z-preregister-telemetry"},
         {StringMetric::DeploymentKind, "deployment_kind", "Git"},
         {StringMetric::DetectedCiEnvironment, "detected_ci_environment", "Generic"},
+        {StringMetric::CiProjectId, "ci_project_id", "0"},
+        {StringMetric::CiOwnerId, "ci_owner_id", "0"},
         // spec:triplet:version,...
         {StringMetric::InstallPlan_1, "installplan_1", plan_example},
         {StringMetric::ListFile, "listfile", "update to new format"},
@@ -148,8 +148,10 @@ namespace vcpkg
 
     const constexpr std::array<BoolMetricEntry, static_cast<size_t>(BoolMetric::COUNT)> all_bool_metrics{{
         {BoolMetric::DetectedContainer, "detected_container"},
+        {BoolMetric::DependencyGraphSuccess, "dependency-graph-success"},
         {BoolMetric::FeatureFlagBinaryCaching, "feature-flag-binarycaching"},
         {BoolMetric::FeatureFlagCompilerTracking, "feature-flag-compilertracking"},
+        {BoolMetric::FeatureFlagDependencyGraph, "feature-flag-dependency-graph"},
         {BoolMetric::FeatureFlagManifests, "feature-flag-manifests"},
         {BoolMetric::FeatureFlagRegistries, "feature-flag-registries"},
         {BoolMetric::FeatureFlagVersions, "feature-flag-versions"},
@@ -284,7 +286,7 @@ namespace vcpkg
         return ret;
     }
 
-    void MetricsUserConfig::try_write(Filesystem& fs) const
+    void MetricsUserConfig::try_write(const Filesystem& fs) const
     {
         const auto& maybe_user_dir = get_user_configuration_home();
         if (auto p_user_dir = maybe_user_dir.get())
@@ -330,7 +332,7 @@ namespace vcpkg
         return ret;
     }
 
-    MetricsUserConfig try_read_metrics_user(const Filesystem& fs)
+    MetricsUserConfig try_read_metrics_user(const ReadOnlyFilesystem& fs)
     {
         const auto& maybe_user_dir = get_user_configuration_home();
         if (auto p_user_dir = maybe_user_dir.get())
@@ -373,8 +375,8 @@ namespace vcpkg
 
         std::vector<std::string> process_list;
         get_parent_process_list(process_list);
-        result.parent_process_list =
-            Strings::join(";", process_list, [](auto&& s) { return Hash::get_string_sha256(s); });
+        result.parent_process_list = Strings::join(
+            ";", process_list, [](auto&& s) { return Hash::get_string_sha256(Strings::ascii_to_lowercase(s)); });
 
         return result;
     }
@@ -560,7 +562,7 @@ namespace vcpkg
     }
 #endif // ^^^ _WIN32
 
-    void flush_global_metrics(Filesystem& fs)
+    void flush_global_metrics(const Filesystem& fs)
     {
         if (!g_metrics_enabled.load())
         {
@@ -600,7 +602,7 @@ namespace vcpkg
         if (ec) return;
         Command builder;
         builder.string_arg(temp_folder_path_exe);
-        builder.string_arg("x-upload-metrics");
+        builder.string_arg("z-upload-metrics");
         builder.string_arg(vcpkg_metrics_txt_path);
         cmd_execute_background(builder);
 #else

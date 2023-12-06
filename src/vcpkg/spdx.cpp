@@ -8,6 +8,11 @@
 
 using namespace vcpkg;
 
+static std::string fix_ref_version(StringView ref, StringView version)
+{
+    return Strings::replace_all(ref, "${VERSION}", version);
+}
+
 static std::string conclude_license(const std::string& license)
 {
     if (license.empty()) return "NOASSERTION";
@@ -71,12 +76,12 @@ static Json::Object make_resource(
         auto& chk = obj.insert("checksums", Json::Array());
         auto& chk512 = chk.push_back(Json::Object());
         chk512.insert("algorithm", "SHA512");
-        chk512.insert("checksumValue", Strings::ascii_to_lowercase(sha512.to_string()));
+        chk512.insert("checksumValue", Strings::ascii_to_lowercase(sha512));
     }
     return obj;
 }
 
-Json::Value vcpkg::run_resource_heuristics(StringView contents)
+Json::Value vcpkg::run_resource_heuristics(StringView contents, StringView version_text)
 {
     // These are a sequence of heuristics to enable proof-of-concept extraction of remote resources for SPDX SBOM
     // inclusion
@@ -87,8 +92,9 @@ Json::Value vcpkg::run_resource_heuristics(StringView contents)
     if (!github.empty())
     {
         auto repo = extract_cmake_invocation_argument(github, "REPO");
-        auto ref = extract_cmake_invocation_argument(github, "REF");
+        auto ref = fix_ref_version(extract_cmake_invocation_argument(github, "REF"), version_text);
         auto sha = extract_cmake_invocation_argument(github, "SHA512");
+
         packages.push_back(make_resource(fmt::format("SPDXRef-resource-{}", ++n),
                                          repo.to_string(),
                                          fmt::format("git+https://github.com/{}@{}", repo, ref),
@@ -99,7 +105,7 @@ Json::Value vcpkg::run_resource_heuristics(StringView contents)
     if (!git.empty())
     {
         auto url = extract_cmake_invocation_argument(github, "URL");
-        auto ref = extract_cmake_invocation_argument(github, "REF");
+        auto ref = fix_ref_version(extract_cmake_invocation_argument(github, "REF"), version_text);
         packages.push_back(make_resource(
             fmt::format("SPDXRef-resource-{}", ++n), url.to_string(), fmt::format("git+{}@{}", url, ref), {}, {}));
     }
@@ -116,7 +122,7 @@ Json::Value vcpkg::run_resource_heuristics(StringView contents)
     if (!sfg.empty())
     {
         auto repo = extract_cmake_invocation_argument(sfg, "REPO");
-        auto ref = extract_cmake_invocation_argument(sfg, "REF");
+        auto ref = fix_ref_version(extract_cmake_invocation_argument(sfg, "REF"), version_text);
         auto filename = extract_cmake_invocation_argument(sfg, "FILENAME");
         auto sha = extract_cmake_invocation_argument(sfg, "SHA512");
         auto url = Strings::concat("https://sourceforge.net/projects/", repo, "/files/", ref, '/', filename);
@@ -146,7 +152,7 @@ std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
     doc.insert("dataLicense", "CC0-1.0");
     doc.insert("SPDXID", "SPDXRef-DOCUMENT");
     doc.insert("documentNamespace", std::move(document_namespace));
-    doc.insert("name", Strings::concat(action.spec.to_string(), '@', cpgh.to_version().to_string(), ' ', abi));
+    doc.insert("name", Strings::concat(action.spec.to_string(), '@', cpgh.version.to_string(), ' ', abi));
     {
         auto& cinfo = doc.insert("creationInfo", Json::Object());
         auto& creators = cinfo.insert("creators", Json::Array());
@@ -160,8 +166,8 @@ std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
         auto& obj = packages.push_back(Json::Object());
         obj.insert("name", action.spec.name());
         obj.insert("SPDXID", "SPDXRef-port");
-        obj.insert("versionInfo", cpgh.to_version().to_string());
-        obj.insert("downloadLocation", scfl.registry_location.empty() ? noassert : scfl.registry_location);
+        obj.insert("versionInfo", cpgh.version.to_string());
+        obj.insert("downloadLocation", scfl.spdx_location.empty() ? noassert : scfl.spdx_location);
         if (!cpgh.homepage.empty())
         {
             obj.insert("homepage", cpgh.homepage);

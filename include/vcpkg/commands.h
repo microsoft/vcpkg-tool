@@ -1,19 +1,18 @@
 #pragma once
 
 #include <vcpkg/base/fwd/files.h>
+#include <vcpkg/base/fwd/span.h>
+#include <vcpkg/base/fwd/stringview.h>
 
 #include <vcpkg/fwd/triplet.h>
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
-#include <vcpkg/base/span.h>
-#include <vcpkg/base/stringview.h>
-
 #include <string>
 
-namespace vcpkg::Commands
+namespace vcpkg
 {
-    using BasicCommandFn = void (*)(const VcpkgCmdArguments& args, Filesystem& fs);
+    using BasicCommandFn = void (*)(const VcpkgCmdArguments& args, const Filesystem& fs);
     using PathsCommandFn = void (*)(const VcpkgCmdArguments& args, const VcpkgPaths& paths);
     using TripletCommandFn = void (*)(const VcpkgCmdArguments& args,
                                       const VcpkgPaths& paths,
@@ -21,13 +20,18 @@ namespace vcpkg::Commands
                                       Triplet host_triplet);
 
     template<class T>
-    struct PackageNameAndFunction
+    struct CommandRegistration
     {
-        StringLiteral name;
+        const CommandMetadata& metadata;
         T function;
     };
 
-    extern const View<PackageNameAndFunction<BasicCommandFn>> basic_commands;
-    extern const View<PackageNameAndFunction<PathsCommandFn>> paths_commands;
-    extern const View<PackageNameAndFunction<TripletCommandFn>> triplet_commands;
+    extern const View<CommandRegistration<BasicCommandFn>> basic_commands;
+    extern const View<CommandRegistration<PathsCommandFn>> paths_commands;
+    extern const View<CommandRegistration<TripletCommandFn>> triplet_commands;
+
+    std::vector<const CommandMetadata*> get_all_commands_metadata();
+
+    void print_zero_args_usage();
+    void print_full_command_list();
 }

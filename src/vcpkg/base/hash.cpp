@@ -1,13 +1,11 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/files.h>
-#include <vcpkg/base/format.h>
+#include <vcpkg/base/fmt.h>
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.debug.h>
-#include <vcpkg/base/system.process.h>
 #include <vcpkg/base/uint128.h>
-#include <vcpkg/base/util.h>
 
 #if defined(_WIN32)
 #include <bcrypt.h>
@@ -558,16 +556,14 @@ namespace vcpkg::Hash
 
     std::string get_string_sha256(StringView s) { return get_string_hash(s, Hash::Algorithm::Sha256); }
 
-    ExpectedL<std::string> get_file_hash(const Filesystem& fs, const Path& path, Algorithm algo)
+    ExpectedL<std::string> get_file_hash(const ReadOnlyFilesystem& fs, const Path& path, Algorithm algo)
     {
         Debug::println("Trying to hash ", path);
         std::error_code ec;
         auto file = fs.open_for_read(path, ec);
         if (ec)
         {
-            return msg::format(msg::msgErrorMessage)
-                .append(msgHashFileFailureToRead, msg::path = path)
-                .append_raw(ec.message());
+            return error_prefix().append(msgHashFileFailureToRead, msg::path = path).append_raw(ec.message());
         }
 
         return do_hash<ExpectedL<std::string>>(algo, [&](Hasher& hasher) -> ExpectedL<std::string> {
@@ -582,9 +578,7 @@ namespace vcpkg::Hash
                 }
                 else if ((ec = file.error()))
                 {
-                    return msg::format(msg::msgErrorMessage)
-                        .append(msgHashFileFailureToRead, msg::path = path)
-                        .append_raw(ec.message());
+                    return error_prefix().append(msgHashFileFailureToRead, msg::path = path).append_raw(ec.message());
                 }
             } while (!file.eof());
 

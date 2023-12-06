@@ -29,15 +29,25 @@ namespace
             metrics.track_string(metric.metric, metric.preregister_value);
         }
     }
-}
+} // unnamed namespace
 
-namespace vcpkg::Commands
+namespace vcpkg
 {
-    void command_z_preregister_telemetry_and_exit(const VcpkgCmdArguments& args, Filesystem& fs)
-    {
-        (void)args;
-        (void)fs;
+    constexpr CommandMetadata CommandZPreregisterTelemetryMetadata{
+        "z-preregister-telemetry",
+        {/*intentionally undocumented*/},
+        {},
+        Undocumented,
+        AutocompletePriority::Never,
+        0,
+        0,
+        {},
+        nullptr,
+    };
 
+    void command_z_preregister_telemetry_and_exit(const VcpkgCmdArguments& args, const Filesystem&)
+    {
+        (void)args.parse_arguments(CommandZPreregisterTelemetryMetadata);
         auto metrics_enabled = g_metrics_enabled.load();
         if (metrics_enabled)
         {
@@ -57,4 +67,4 @@ namespace vcpkg::Commands
 
         Checks::exit_success(VCPKG_LINE_INFO);
     }
-}
+} // namespace vcpkg

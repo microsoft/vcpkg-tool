@@ -1,6 +1,5 @@
-#include <catch2/catch.hpp>
+#include <vcpkg-test/util.h>
 
-#include <vcpkg/base/files.h>
 #include <vcpkg/base/xmlserializer.h>
 
 #include <vcpkg/binarycaching.h>
@@ -8,12 +7,8 @@
 #include <vcpkg/dependencies.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/sourceparagraph.h>
-#include <vcpkg/tools.h>
-#include <vcpkg/vcpkgcmdarguments.h>
 
 #include <string>
-
-#include <vcpkg-test/util.h>
 
 using namespace vcpkg;
 
@@ -223,9 +218,11 @@ Build-Depends: bzip
 
     InstallPlanAction ipa(PackageSpec{"zlib2", Test::X64_WINDOWS},
                           scfl,
+                          "test_packages_root",
                           RequestType::USER_REQUESTED,
                           Test::ARM_UWP,
                           {{"a", {}}, {"b", {}}},
+                          {},
                           {});
 
     ipa.abi_info = AbiInfo{};
@@ -347,10 +344,12 @@ Description:
     std::vector<InstallPlanAction> install_plan;
     install_plan.emplace_back(PackageSpec{"someheadpackage", Test::X64_WINDOWS},
                               scfl,
+                              "test_packages_root",
                               RequestType::USER_REQUESTED,
                               Test::ARM_UWP,
                               std::map<std::string, std::vector<FeatureSpec>>{},
-                              std::vector<LocalizedString>{});
+                              std::vector<LocalizedString>{},
+                              std::vector<std::string>{});
     InstallPlanAction& ipa_without_abi = install_plan.back();
     ipa_without_abi.package_dir = "pkgs/someheadpackage";
 
@@ -422,10 +421,12 @@ Description: a spiffy compression library wrapper
     SourceControlFileAndLocation scfl{std::move(*maybe_scf.get()), Path()};
     plan.install_actions.emplace_back(PackageSpec("zlib", Test::X64_ANDROID),
                                       scfl,
+                                      "test_packages_root",
                                       RequestType::USER_REQUESTED,
                                       Test::ARM64_WINDOWS,
                                       std::map<std::string, std::vector<FeatureSpec>>{},
-                                      std::vector<LocalizedString>{});
+                                      std::vector<LocalizedString>{},
+                                      std::vector<std::string>{});
     plan.install_actions[0].abi_info = AbiInfo{};
     plan.install_actions[0].abi_info.get()->package_abi = "packageabi";
 
@@ -448,10 +449,12 @@ Description: a spiffy compression library wrapper
     SourceControlFileAndLocation scfl2{std::move(*maybe_scf2.get()), Path()};
     plan.install_actions.emplace_back(PackageSpec("zlib2", Test::X64_ANDROID),
                                       scfl2,
+                                      "test_packages_root",
                                       RequestType::USER_REQUESTED,
                                       Test::ARM64_WINDOWS,
                                       std::map<std::string, std::vector<FeatureSpec>>{},
-                                      std::vector<LocalizedString>{});
+                                      std::vector<LocalizedString>{},
+                                      std::vector<std::string>{});
     plan.install_actions[1].abi_info = AbiInfo{};
     plan.install_actions[1].abi_info.get()->package_abi = "packageabi2";
 

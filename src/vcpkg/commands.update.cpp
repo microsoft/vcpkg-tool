@@ -1,14 +1,14 @@
-#include <vcpkg/commands.h>
-#include <vcpkg/commands.help.h>
+#include <vcpkg/base/files.h>
+
 #include <vcpkg/commands.update.h>
-#include <vcpkg/paragraphs.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/registries.h>
+#include <vcpkg/statusparagraphs.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
 
-namespace vcpkg::Update
+namespace vcpkg
 {
     bool OutdatedPackage::compare_by_name(const OutdatedPackage& left, const OutdatedPackage& right)
     {
@@ -27,13 +27,10 @@ namespace vcpkg::Update
             auto maybe_scfl = provider.get_control_file(pgh->package.spec.name());
             if (auto p_scfl = maybe_scfl.get())
             {
-                const auto& latest_pgh = *p_scfl->source_control_file->core_paragraph;
-                auto latest_version = Version(latest_pgh.raw_version, latest_pgh.port_version);
-                auto installed_version = Version(pgh->package.version, pgh->package.port_version);
-                if (latest_version != installed_version)
+                const auto& latest_version = p_scfl->to_version();
+                if (latest_version != pgh->package.version)
                 {
-                    output.push_back(
-                        {pgh->package.spec, VersionDiff(std::move(installed_version), std::move(latest_version))});
+                    output.push_back({pgh->package.spec, VersionDiff(pgh->package.version, latest_version)});
                 }
             }
             else
@@ -45,22 +42,26 @@ namespace vcpkg::Update
         return output;
     }
 
-    const CommandStructure COMMAND_STRUCTURE = {
-        [] { return create_example_string("update"); },
+    constexpr CommandMetadata CommandUpdateMetadata{
+        "update",
+        msgHelpUpdateCommand,
+        {"vcpkg update"},
+        "https://learn.microsoft.com/vcpkg/commands/update",
+        AutocompletePriority::Public,
         0,
         0,
         {},
         nullptr,
     };
 
-    void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
+    void command_update_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
         if (paths.manifest_mode_enabled())
         {
             Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, msgUnsupportedUpdateCMD);
         }
 
-        (void)args.parse_arguments(COMMAND_STRUCTURE);
+        (void)args.parse_arguments(CommandUpdateMetadata);
         msg::println(msgLocalPortfileVersion);
 
         auto& fs = paths.get_filesystem();

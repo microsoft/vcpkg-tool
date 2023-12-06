@@ -5,12 +5,12 @@
 #include <vcpkg/installedpaths.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/paragraphs.h>
+#include <vcpkg/statusparagraphs.h>
 #include <vcpkg/vcpkglib.h>
-#include <vcpkg/vcpkgpaths.h>
 
 namespace vcpkg
 {
-    static StatusParagraphs load_current_database(Filesystem& fs,
+    static StatusParagraphs load_current_database(const Filesystem& fs,
                                                   const Path& vcpkg_dir_status_file,
                                                   const Path& vcpkg_dir_status_file_old)
     {
@@ -31,13 +31,13 @@ namespace vcpkg
         status_pghs.reserve(pghs.size());
         for (auto&& p : pghs)
         {
-            status_pghs.push_back(std::make_unique<StatusParagraph>(std::move(p)));
+            status_pghs.push_back(std::make_unique<StatusParagraph>(vcpkg_dir_status_file, std::move(p)));
         }
 
         return StatusParagraphs(std::move(status_pghs));
     }
 
-    StatusParagraphs database_load_check(Filesystem& fs, const InstalledPaths& installed)
+    StatusParagraphs database_load_check(const Filesystem& fs, const InstalledPaths& installed)
     {
         const auto updates_dir = installed.vcpkg_dir_updates();
 
@@ -67,7 +67,7 @@ namespace vcpkg
             auto pghs = Paragraphs::get_paragraphs(fs, file).value_or_exit(VCPKG_LINE_INFO);
             for (auto&& p : pghs)
             {
-                current_status_db.insert(std::make_unique<StatusParagraph>(std::move(p)));
+                current_status_db.insert(std::make_unique<StatusParagraph>(file, std::move(p)));
             }
         }
 
@@ -83,7 +83,7 @@ namespace vcpkg
         return current_status_db;
     }
 
-    void write_update(Filesystem& fs, const InstalledPaths& installed, const StatusParagraph& p)
+    void write_update(const Filesystem& fs, const InstalledPaths& installed, const StatusParagraph& p)
     {
         static std::atomic<int> update_id = 0;
 
@@ -93,7 +93,7 @@ namespace vcpkg
         fs.write_rename_contents(update_path, "incomplete", Strings::serialize(p), VCPKG_LINE_INFO);
     }
 
-    static void upgrade_to_slash_terminated_sorted_format(Filesystem& fs,
+    static void upgrade_to_slash_terminated_sorted_format(const Filesystem& fs,
                                                           std::vector<std::string>* lines,
                                                           const Path& listfile_path)
     {
@@ -189,7 +189,7 @@ namespace vcpkg
         return Util::fmap(ipv_map, [](auto&& p) -> InstalledPackageView { return std::move(p.second); });
     }
 
-    std::vector<StatusParagraphAndAssociatedFiles> get_installed_files(Filesystem& fs,
+    std::vector<StatusParagraphAndAssociatedFiles> get_installed_files(const Filesystem& fs,
                                                                        const InstalledPaths& installed,
                                                                        const StatusParagraphs& status_db)
     {

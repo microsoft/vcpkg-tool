@@ -15,22 +15,9 @@ import { Version } from '../switches/version';
 
 export class UseCommand extends Command {
   readonly command = 'use';
-  readonly aliases = [];
-  seeAlso = [];
-  argumentsHelp = [];
   version = new Version(this);
   project = new Project(this);
   msbuildProps = new MSBuildProps(this);
-
-  get summary() {
-    return i`Instantly activates an artifact outside of the project`;
-  }
-
-  get description() {
-    return [
-      i`This will instantly activate an artifact .`,
-    ];
-  }
 
   override async run() : Promise<boolean> {
     if (this.inputs.length === 0) {
@@ -42,7 +29,7 @@ export class UseCommand extends Command {
       await buildRegistryResolver(session, (await this.project.manifest)?.metadata.registries));
     const versions = this.version.values;
     if (versions.length && this.inputs.length !== versions.length) {
-      error(i`Multiple packages specified, but not an equal number of ${cmdSwitch('version')} switches`);
+      error(`Multiple packages specified, but not an equal number of ${cmdSwitch('version')} switches`);
       return false;
     }
 

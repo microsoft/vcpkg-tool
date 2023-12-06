@@ -1,6 +1,6 @@
 #include <vcpkg/base/system-headers.h>
 
-#include <catch2/catch.hpp>
+#include <vcpkg-test/util.h>
 
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/strings.h>
@@ -8,8 +8,6 @@
 #include <iostream>
 #include <random>
 #include <vector>
-
-#include <vcpkg-test/util.h>
 
 #if !defined(_WIN32)
 #include <sys/stat.h>
@@ -47,7 +45,7 @@ namespace
 #endif // ^^^ !_WIN32
     }
 
-    void create_directory_tree(urbg_t& urbg, Filesystem& fs, const Path& base, std::uint32_t remaining_depth = 5)
+    void create_directory_tree(urbg_t& urbg, const Filesystem& fs, const Path& base, std::uint32_t remaining_depth = 5)
     {
         using uid_t = std::uniform_int_distribution<std::uint32_t>;
         // we want ~70% of our "files" to be directories, and then a third
@@ -162,15 +160,13 @@ namespace
         CHECK_EC_ON_FILE(base, ec);
     }
 
-    Filesystem& setup()
+    const Filesystem& setup()
     {
-        auto& fs = get_real_filesystem();
-
         std::error_code ec;
-        fs.create_directory(base_temporary_directory(), ec);
+        real_filesystem.create_directory(base_temporary_directory(), ec);
         CHECK_EC_ON_FILE(base_temporary_directory(), ec);
 
-        return fs;
+        return real_filesystem;
     }
 
     template<class Enumerator, class ExpectedGenerator>
@@ -738,7 +734,7 @@ TEST_CASE ("remove all symlinks", "[files]")
 TEST_CASE ("get_files_recursive_symlinks", "[files]")
 {
     do_filesystem_enumeration_test(
-        [](Filesystem& fs, const Path& root) { return fs.get_files_recursive(root, VCPKG_LINE_INFO); },
+        [](const Filesystem& fs, const Path& root) { return fs.get_files_recursive(root, VCPKG_LINE_INFO); },
         [](const Path& root) {
             return std::vector<Path>{
                 root / "file.txt",
@@ -756,7 +752,7 @@ TEST_CASE ("get_files_recursive_symlinks", "[files]")
 TEST_CASE ("get_regular_files_recursive_proximate_symlinks", "[files]")
 {
     do_filesystem_enumeration_test(
-        [](Filesystem& fs, const Path& root) {
+        [](const Filesystem& fs, const Path& root) {
             return fs.get_regular_files_recursive_lexically_proximate(root, VCPKG_LINE_INFO);
         },
         [](const Path&) {
@@ -773,7 +769,7 @@ TEST_CASE ("get_regular_files_recursive_proximate_symlinks", "[files]")
 TEST_CASE ("get_files_non_recursive_symlinks", "[files]")
 {
     do_filesystem_enumeration_test(
-        [](Filesystem& fs, const Path& root) { return fs.get_files_non_recursive(root, VCPKG_LINE_INFO); },
+        [](const Filesystem& fs, const Path& root) { return fs.get_files_non_recursive(root, VCPKG_LINE_INFO); },
         [](const Path& root) {
             return std::vector<Path>{
                 root / "file.txt",
@@ -787,7 +783,7 @@ TEST_CASE ("get_files_non_recursive_symlinks", "[files]")
 TEST_CASE ("get_directories_recursive_symlinks", "[files]")
 {
     do_filesystem_enumeration_test(
-        [](Filesystem& fs, const Path& root) { return fs.get_directories_recursive(root, VCPKG_LINE_INFO); },
+        [](const Filesystem& fs, const Path& root) { return fs.get_directories_recursive(root, VCPKG_LINE_INFO); },
         [](const Path& root) {
             return std::vector<Path>{
                 root / "some-directory",
@@ -801,7 +797,7 @@ TEST_CASE ("get_directories_recursive_symlinks", "[files]")
 TEST_CASE ("get_directories_non_recursive_symlinks", "[files]")
 {
     do_filesystem_enumeration_test(
-        [](Filesystem& fs, const Path& root) { return fs.get_directories_non_recursive(root, VCPKG_LINE_INFO); },
+        [](const Filesystem& fs, const Path& root) { return fs.get_directories_non_recursive(root, VCPKG_LINE_INFO); },
         [](const Path& root) {
             return std::vector<Path>{
                 root / "some-directory",
@@ -813,7 +809,7 @@ TEST_CASE ("get_directories_non_recursive_symlinks", "[files]")
 TEST_CASE ("get_regular_files_recursive_symlinks", "[files]")
 {
     do_filesystem_enumeration_test(
-        [](Filesystem& fs, const Path& root) { return fs.get_regular_files_recursive(root, VCPKG_LINE_INFO); },
+        [](const Filesystem& fs, const Path& root) { return fs.get_regular_files_recursive(root, VCPKG_LINE_INFO); },
         [](const Path& root) {
             return std::vector<Path>{
                 root / "file.txt",
@@ -827,7 +823,9 @@ TEST_CASE ("get_regular_files_recursive_symlinks", "[files]")
 TEST_CASE ("get_regular_files_non_recursive_symlinks", "[files]")
 {
     do_filesystem_enumeration_test(
-        [](Filesystem& fs, const Path& root) { return fs.get_regular_files_non_recursive(root, VCPKG_LINE_INFO); },
+        [](const Filesystem& fs, const Path& root) {
+            return fs.get_regular_files_non_recursive(root, VCPKG_LINE_INFO);
+        },
         [](const Path& root) {
             return std::vector<Path>{
                 root / "file.txt",
@@ -954,10 +952,10 @@ TEST_CASE ("LinesCollector", "[files]")
 {
     using Strings::LinesCollector;
     LinesCollector lc;
-    CHECK(lc.extract() == std::vector<std::string>{""});
+    CHECK(lc.extract() == std::vector<std::string>{});
     lc.on_data({"a\nb\r\nc\rd\r\r\n\ne\n\rx", 16});
     CHECK(lc.extract() == std::vector<std::string>{"a", "b", "c", "d", "", "", "e", "", "x"});
-    CHECK(lc.extract() == std::vector<std::string>{""});
+    CHECK(lc.extract() == std::vector<std::string>{});
     lc.on_data({"hello ", 6});
     lc.on_data({"there ", 6});
     lc.on_data({"world", 5});
@@ -966,7 +964,7 @@ TEST_CASE ("LinesCollector", "[files]")
     lc.on_data({"\r\nworld", 7});
     CHECK(lc.extract() == std::vector<std::string>{"", "hello ", "", "world"});
     lc.on_data({"\r\n\r\n\r\n", 6});
-    CHECK(lc.extract() == std::vector<std::string>{"", "", "", ""});
+    CHECK(lc.extract() == std::vector<std::string>{"", "", ""});
     lc.on_data({"a", 1});
     lc.on_data({"b\nc", 3});
     lc.on_data({"d", 1});
@@ -975,11 +973,11 @@ TEST_CASE ("LinesCollector", "[files]")
     lc.on_data({"\nb", 2});
     CHECK(lc.extract() == std::vector<std::string>{"a", "b"});
     lc.on_data({"a\r", 2});
-    CHECK(lc.extract() == std::vector<std::string>{"a", ""});
+    CHECK(lc.extract() == std::vector<std::string>{"a"});
     lc.on_data({"\n", 1});
-    CHECK(lc.extract() == std::vector<std::string>{"", ""});
+    CHECK(lc.extract() == std::vector<std::string>{""});
     lc.on_data({"\rabc\n", 5});
-    CHECK(lc.extract() == std::vector<std::string>{"", "abc", ""});
+    CHECK(lc.extract() == std::vector<std::string>{"", "abc"});
 }
 
 TEST_CASE ("find_file_recursively_up", "[files]")
@@ -1029,18 +1027,17 @@ TEST_CASE ("win32_fix_path_case", "[files]")
     CHECK(win32_fix_path_case("C://///////WiNdOws") == "C:\\Windows");
     CHECK(win32_fix_path_case("c:\\/\\/WiNdOws\\/") == "C:\\Windows\\");
 
-    auto& fs = get_real_filesystem();
-    auto original_cwd = fs.current_path(VCPKG_LINE_INFO);
-    fs.current_path("C:\\", VCPKG_LINE_INFO);
+    auto original_cwd = real_filesystem.current_path(VCPKG_LINE_INFO);
+    real_filesystem.current_path("C:\\", VCPKG_LINE_INFO);
     CHECK(win32_fix_path_case("\\") == "\\");
     CHECK(win32_fix_path_case("\\/\\WiNdOws") == "\\Windows");
     CHECK(win32_fix_path_case("\\WiNdOws") == "\\Windows");
     CHECK(win32_fix_path_case("\\WiNdOws") == "\\Windows");
     CHECK(win32_fix_path_case("c:WiNdOws") == "C:Windows");
     CHECK(win32_fix_path_case("c:WiNdOws/system32") == "C:Windows\\System32");
-    fs.current_path(original_cwd, VCPKG_LINE_INFO);
+    real_filesystem.current_path(original_cwd, VCPKG_LINE_INFO);
 
-    fs.create_directories("SuB/Dir/Ectory", VCPKG_LINE_INFO);
+    real_filesystem.create_directories("SuB/Dir/Ectory", VCPKG_LINE_INFO);
     CHECK(win32_fix_path_case("sub") == "SuB");
     CHECK(win32_fix_path_case("SUB") == "SuB");
     CHECK(win32_fix_path_case("sub/") == "SuB\\");
@@ -1048,7 +1045,7 @@ TEST_CASE ("win32_fix_path_case", "[files]")
     CHECK(win32_fix_path_case("sub/dir/") == "SuB\\Dir\\");
     CHECK(win32_fix_path_case("sub/dir/ectory") == "SuB\\Dir\\Ectory");
     CHECK(win32_fix_path_case("sub/dir/ectory/") == "SuB\\Dir\\Ectory\\");
-    fs.remove_all("SuB", VCPKG_LINE_INFO);
+    real_filesystem.remove_all("SuB", VCPKG_LINE_INFO);
 
     CHECK(win32_fix_path_case("//nonexistent_server\\nonexistent_share\\") ==
           "\\\\nonexistent_server\\nonexistent_share\\");
@@ -1075,7 +1072,7 @@ TEST_CASE ("remove all -- benchmarks", "[files][!benchmark]")
     struct
     {
         urbg_t& urbg;
-        Filesystem& fs;
+        const Filesystem& fs;
 
         void operator()(Catch::Benchmark::Chronometer& meter, std::uint32_t max_depth) const
         {

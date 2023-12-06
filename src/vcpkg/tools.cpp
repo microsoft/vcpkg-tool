@@ -10,7 +10,6 @@
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.h>
 #include <vcpkg/base/system.process.h>
-#include <vcpkg/base/util.h>
 
 #include <vcpkg/archives.h>
 #include <vcpkg/tools.h>
@@ -192,7 +191,7 @@ namespace vcpkg
         // considered.
         virtual bool ignore_version() const { return false; }
 
-        virtual void add_system_paths(Filesystem& fs, std::vector<Path>& out_candidate_paths) const
+        virtual void add_system_paths(const ReadOnlyFilesystem& fs, std::vector<Path>& out_candidate_paths) const
         {
             (void)fs;
             (void)out_candidate_paths;
@@ -240,7 +239,7 @@ namespace vcpkg
         virtual std::array<int, 3> default_min_version() const override { return {3, 17, 1}; }
 
 #if defined(_WIN32)
-        virtual void add_system_paths(Filesystem&, std::vector<Path>& out_candidate_paths) const override
+        virtual void add_system_paths(const ReadOnlyFilesystem&, std::vector<Path>& out_candidate_paths) const override
         {
             const auto& program_files = get_program_files_platform_bitness();
             if (const auto pf = program_files.get())
@@ -346,7 +345,7 @@ namespace vcpkg
         virtual std::array<int, 3> default_min_version() const override { return {16, 12, 0}; }
 
 #if defined(_WIN32)
-        virtual void add_system_paths(Filesystem&, std::vector<Path>& out_candidate_paths) const override
+        virtual void add_system_paths(const ReadOnlyFilesystem&, std::vector<Path>& out_candidate_paths) const override
         {
             const auto& program_files = get_program_files_platform_bitness();
             if (const auto pf = program_files.get()) out_candidate_paths.push_back(*pf / "nodejs" / "node.exe");
@@ -373,7 +372,7 @@ namespace vcpkg
         virtual std::array<int, 3> default_min_version() const override { return {2, 7, 4}; }
 
 #if defined(_WIN32)
-        virtual void add_system_paths(Filesystem&, std::vector<Path>& out_candidate_paths) const override
+        virtual void add_system_paths(const ReadOnlyFilesystem&, std::vector<Path>& out_candidate_paths) const override
         {
             const auto& program_files = get_program_files_platform_bitness();
             if (const auto pf = program_files.get()) out_candidate_paths.push_back(*pf / "git" / "cmd" / "git.exe");
@@ -527,7 +526,7 @@ namespace vcpkg
         virtual std::array<int, 3> default_min_version() const override { return {3, 5, 0}; } // 3.5 added -m venv
 
 #if defined(_WIN32)
-        void add_system_paths_impl(Filesystem& fs,
+        void add_system_paths_impl(const ReadOnlyFilesystem& fs,
                                    std::vector<Path>& out_candidate_paths,
                                    const Path& program_files_root) const
         {
@@ -542,7 +541,8 @@ namespace vcpkg
             }
         }
 
-        virtual void add_system_paths(Filesystem& fs, std::vector<Path>& out_candidate_paths) const override
+        virtual void add_system_paths(const ReadOnlyFilesystem& fs,
+                                      std::vector<Path>& out_candidate_paths) const override
         {
             const auto& program_files = get_program_files_platform_bitness();
             if (const auto pf = program_files.get())
@@ -602,7 +602,7 @@ namespace vcpkg
 
     struct ToolCacheImpl final : ToolCache
     {
-        Filesystem& fs;
+        const Filesystem& fs;
         const std::shared_ptr<const DownloadManager> downloader;
         const Path downloads;
         const Path xml_config;
@@ -612,7 +612,7 @@ namespace vcpkg
         vcpkg::Lazy<std::string> xml_config_contents;
         vcpkg::Cache<std::string, PathAndVersion> path_version_cache;
 
-        ToolCacheImpl(Filesystem& fs,
+        ToolCacheImpl(const Filesystem& fs,
                       const std::shared_ptr<const DownloadManager>& downloader,
                       Path downloads,
                       Path xml_config,
@@ -627,16 +627,23 @@ namespace vcpkg
         {
         }
 
-        template<typename Func>
+        /**
+         * @param accept_version Callback that accepts a std::array<int,3> and returns true if the version is accepted
+         * @param log_candidate Callback that accepts Path, ExpectedL<std::string> maybe_version. Gets called on every
+         * existing candidate.
+         */
+        template<typename Func, typename Func2>
         Optional<PathAndVersion> find_first_with_sufficient_version(MessageSink& status_sink,
                                                                     const ToolProvider& tool_provider,
                                                                     const std::vector<Path>& candidates,
-                                                                    Func&& accept_version) const
+                                                                    Func&& accept_version,
+                                                                    const Func2& log_candidate) const
         {
             for (auto&& candidate : candidates)
             {
                 if (!fs.exists(candidate, IgnoreErrors{})) continue;
                 auto maybe_version = tool_provider.get_version(*this, status_sink, candidate);
+                log_candidate(candidate, maybe_version);
                 const auto version = maybe_version.get();
                 if (!version) continue;
                 const auto parsed_version = parse_tool_version_string(*version);
@@ -697,7 +704,7 @@ namespace vcpkg
                 else
 #endif // ^^^ _WIN32
                 {
-                    extract_archive(fs, *this, status_sink, download_path, tool_dir_path);
+                    set_directory_to_archive_contents(fs, *this, status_sink, download_path, tool_dir_path);
                 }
             }
             else
@@ -772,6 +779,7 @@ namespace vcpkg
                 tool.add_system_paths(fs, candidate_paths);
             }
 
+            std::string considered_versions;
             if (ignore_version)
             {
                 // If we are forcing the system copy (and therefore ignoring versions), take the first entry that
@@ -804,6 +812,12 @@ namespace vcpkg
                                (actual_version[0] == min_version[0] && actual_version[1] > min_version[1]) ||
                                (actual_version[0] == min_version[0] && actual_version[1] == min_version[1] &&
                                 actual_version[2] >= min_version[2]);
+                    },
+                    [&](const auto& path, const ExpectedL<std::string>& maybe_version) {
+                        considered_versions += fmt::format("{}: {}\n",
+                                                           path,
+                                                           maybe_version.has_value() ? *maybe_version.get()
+                                                                                     : maybe_version.error().data());
                     });
                 if (const auto p = maybe_path.get())
                 {
@@ -824,11 +838,11 @@ namespace vcpkg
             }
 
             // If no acceptable tool was found and downloading was unavailable, emit an error message
-            LocalizedString s = msg::format(msg::msgErrorMessage);
-            s.append(msgToolFetchFailed, msg::tool_name = tool.tool_data_name());
+            LocalizedString s = msg::format_error(msgToolFetchFailed, msg::tool_name = tool.tool_data_name());
             if (env_force_system_binaries && download_available)
             {
-                s.append_raw(' ').append(msgDownloadAvailable, msg::env_var = s_env_vcpkg_force_system_binaries);
+                s.append_raw(' ').append(msgDownloadAvailable,
+                                         msg::env_var = format_environment_variable(s_env_vcpkg_force_system_binaries));
             }
             if (consider_system)
             {
@@ -837,6 +851,13 @@ namespace vcpkg
             else if (!download_available)
             {
                 s.append_raw(' ').append(msgUnknownTool);
+            }
+            if (!considered_versions.empty())
+            {
+                s.append_raw('\n')
+                    .append(msgConsideredVersions, msg::version = fmt::join(min_version, "."))
+                    .append_raw('\n')
+                    .append_raw(considered_versions);
             }
             Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, s);
         }
@@ -880,13 +901,28 @@ namespace vcpkg
         }
     };
 
-    ExpectedL<Path> find_system_tar(const Filesystem& fs)
+    ExpectedL<Path> find_system_tar(const ReadOnlyFilesystem& fs)
     {
+#if defined(_WIN32)
+        const auto& maybe_system32 = get_system32();
+        if (auto system32 = maybe_system32.get())
+        {
+            auto shipped_with_windows = *system32 / "tar.exe";
+            if (fs.is_regular_file(shipped_with_windows))
+            {
+                return shipped_with_windows;
+            }
+        }
+        else
+        {
+            return maybe_system32.error();
+        }
+#endif // ^^^ _WIN32
+
         const auto tools = fs.find_from_PATH(Tools::TAR);
         if (tools.empty())
         {
-            return msg::format(msg::msgErrorMessage)
-                .append(msgToolFetchFailed, msg::tool_name = Tools::TAR)
+            return msg::format_error(msgToolFetchFailed, msg::tool_name = Tools::TAR)
 #if defined(_WIN32)
                 .append(msgToolInWin10)
 #else
@@ -900,7 +936,7 @@ namespace vcpkg
         }
     }
 
-    ExpectedL<Path> find_system_cmake(const Filesystem& fs)
+    ExpectedL<Path> find_system_cmake(const ReadOnlyFilesystem& fs)
     {
         auto tools = fs.find_from_PATH(Tools::CMAKE);
         if (!tools.empty())
@@ -925,15 +961,14 @@ namespace vcpkg
         }
 #endif
 
-        return msg::format(msg::msgErrorMessage)
-            .append(msgToolFetchFailed, msg::tool_name = Tools::CMAKE)
+        return msg::format_error(msgToolFetchFailed, msg::tool_name = Tools::CMAKE)
 #if !defined(_WIN32)
             .append(msgInstallWithSystemManager)
 #endif
             ;
     }
 
-    std::unique_ptr<ToolCache> get_tool_cache(Filesystem& fs,
+    std::unique_ptr<ToolCache> get_tool_cache(const Filesystem& fs,
                                               std::shared_ptr<const DownloadManager> downloader,
                                               Path downloads,
                                               Path xml_config,

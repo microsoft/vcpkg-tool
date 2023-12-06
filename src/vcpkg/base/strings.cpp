@@ -8,7 +8,6 @@
 #include <vcpkg/base/util.h>
 
 #include <ctype.h>
-#include <stdarg.h>
 
 #include <algorithm>
 #include <iterator>
@@ -183,16 +182,18 @@ void Strings::inplace_ascii_to_lowercase(std::string& s)
     Strings::inplace_ascii_to_lowercase(s.data(), s.data() + s.size());
 }
 
-std::string Strings::ascii_to_lowercase(std::string s)
+std::string Strings::ascii_to_lowercase(StringView s)
 {
-    Strings::inplace_ascii_to_lowercase(s);
-    return std::move(s);
+    std::string result;
+    std::transform(s.begin(), s.end(), std::back_inserter(result), tolower_char);
+    return result;
 }
 
-std::string Strings::ascii_to_uppercase(std::string s)
+std::string Strings::ascii_to_uppercase(StringView s)
 {
-    std::transform(s.begin(), s.end(), s.begin(), to_upper_char);
-    return std::move(s);
+    std::string result;
+    std::transform(s.begin(), s.end(), std::back_inserter(result), to_upper_char);
+    return result;
 }
 
 bool Strings::case_insensitive_ascii_starts_with(StringView s, StringView pattern)
@@ -378,7 +379,8 @@ Optional<StringView> Strings::find_at_most_one_enclosed(StringView input, String
     return result.front();
 }
 
-bool vcpkg::Strings::contains_any_ignoring_c_comments(const std::string& source, View<StringView> to_find)
+bool vcpkg::Strings::contains_any_ignoring_c_comments(const std::string& source,
+                                                      View<boyer_moore_horspool_searcher> to_find)
 {
     std::string::size_type offset = 0;
     std::string::size_type no_comment_offset = 0;
@@ -388,14 +390,14 @@ bool vcpkg::Strings::contains_any_ignoring_c_comments(const std::string& source,
         auto start = source.find_first_of("/\"", no_comment_offset);
         if (start == std::string::npos || start + 1 == source.size() || no_comment_offset == std::string::npos)
         {
-            return Strings::contains_any(StringView(source).substr(offset), to_find);
+            return Strings::long_string_contains_any(StringView(source).substr(offset), to_find);
         }
 
         if (source[start] == '/')
         {
             if (source[start + 1] == '/' || source[start + 1] == '*')
             {
-                if (Strings::contains_any(StringView(source).substr(offset, start - offset), to_find))
+                if (Strings::long_string_contains_any(StringView(source).substr(offset, start - offset), to_find))
                 {
                     return true;
                 }
@@ -442,7 +444,7 @@ bool vcpkg::Strings::contains_any_ignoring_c_comments(const std::string& source,
     return false;
 }
 
-bool Strings::contains_any_ignoring_hash_comments(StringView source, View<StringView> to_find)
+bool Strings::contains_any_ignoring_hash_comments(StringView source, View<boyer_moore_horspool_searcher> to_find)
 {
     auto first = source.data();
     auto block_start = first;
@@ -451,7 +453,7 @@ bool Strings::contains_any_ignoring_hash_comments(StringView source, View<String
     {
         if (*first == '#')
         {
-            if (Strings::contains_any(StringView{block_start, first}, to_find))
+            if (Strings::long_string_contains_any(StringView{block_start, first}, to_find))
             {
                 return true;
             }
@@ -466,12 +468,20 @@ bool Strings::contains_any_ignoring_hash_comments(StringView source, View<String
         }
     }
 
-    return Strings::contains_any(StringView{block_start, last}, to_find);
+    return Strings::long_string_contains_any(StringView{block_start, last}, to_find);
 }
 
-bool Strings::contains_any(StringView source, View<StringView> to_find)
+bool Strings::long_string_contains_any(StringView source, View<boyer_moore_horspool_searcher> to_find)
 {
-    return Util::any_of(to_find, [=](StringView s) { return Strings::contains(source, s); });
+    for (const auto& subject : to_find)
+    {
+        auto found = std::search(source.begin(), source.end(), subject);
+        if (found != source.end())
+        {
+            return true;
+        }
+    }
+    return false;
 }
 
 bool Strings::equals(StringView a, StringView b)

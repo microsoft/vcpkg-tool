@@ -1,9 +1,8 @@
 #include <vcpkg/base/system-headers.h>
 
-#include <catch2/catch.hpp>
+#include <vcpkg-test/util.h>
 
 #include <vcpkg/base/optional.h>
-#include <vcpkg/base/strings.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.h>
 #include <vcpkg/base/system.process.h>
@@ -56,6 +55,7 @@ TEST_CASE ("[to_cpu_architecture]", "system")
         {CPUArchitecture::X64, "AmD64"},
         {CPUArchitecture::ARM, "ARM"},
         {CPUArchitecture::ARM64, "ARM64"},
+        {CPUArchitecture::MIPS64, "MIPS64"},
         {nullopt, "ARM6"},
         {nullopt, "AR"},
         {nullopt, "Intel"},
@@ -81,6 +81,7 @@ TEST_CASE ("from_cpu_architecture", "[system]")
         {CPUArchitecture::X64, "x64"},
         {CPUArchitecture::ARM, "arm"},
         {CPUArchitecture::ARM64, "arm64"},
+        {CPUArchitecture::MIPS64, "mips64"},
     };
 
     for (auto&& instance : test_cases)
@@ -150,6 +151,7 @@ TEST_CASE ("cmd_execute_and_capture_output_parallel", "[system]")
     {
 #if defined(_WIN32)
         vcpkg::Command cmd("cmd.exe");
+        cmd.string_arg("/d");
         cmd.string_arg("/c");
         cmd.string_arg(fmt::format("echo {}", i));
 #else

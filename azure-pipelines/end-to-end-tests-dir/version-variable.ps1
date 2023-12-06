@@ -1,6 +1,6 @@
 . $PSScriptRoot/../end-to-end-tests-prelude.ps1
 
-$portsPath = "$PSScriptRoot/../e2e_ports/version-variable"
+$portsPath = "$PSScriptRoot/../e2e-ports/version-variable"
 
 $CurrentTest = "version variable in portfile.cmake"
 Run-Vcpkg install @commonArgs `

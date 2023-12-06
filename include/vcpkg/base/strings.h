@@ -14,6 +14,10 @@
 #include <algorithm>
 #include <vector>
 
+#ifndef __cpp_lib_boyer_moore_searcher
+#include <experimental/functional>
+#endif
+
 namespace vcpkg::Strings::details
 {
     void append_internal(std::string& into, char c);
@@ -43,6 +47,12 @@ namespace vcpkg::Strings::details
 
 namespace vcpkg::Strings
 {
+#ifdef __cpp_lib_boyer_moore_searcher
+    using boyer_moore_horspool_searcher = std::boyer_moore_horspool_searcher<std::string::const_iterator>;
+#else
+    using boyer_moore_horspool_searcher = std::experimental::boyer_moore_horspool_searcher<std::string::const_iterator>;
+#endif
+
     template<class... Args>
     std::string& append(std::string& into, const Args&... args)
     {
@@ -92,8 +102,8 @@ namespace vcpkg::Strings
 
     void inplace_ascii_to_lowercase(char* first, char* last);
     void inplace_ascii_to_lowercase(std::string& s);
-    [[nodiscard]] std::string ascii_to_lowercase(std::string s);
-    [[nodiscard]] std::string ascii_to_uppercase(std::string s);
+    [[nodiscard]] std::string ascii_to_lowercase(StringView s);
+    [[nodiscard]] std::string ascii_to_uppercase(StringView s);
 
     bool case_insensitive_ascii_starts_with(StringView s, StringView pattern);
     bool case_insensitive_ascii_ends_with(StringView s, StringView pattern);
@@ -107,17 +117,21 @@ namespace vcpkg::Strings
                                    Transformer transformer)
     {
         std::string output;
-        if (first != last)
+        if (first == last)
         {
-            Strings::append(output, transformer(*first));
-            for (++first; first != last; ++first)
-            {
-                output.append(delimiter.data(), delimiter.size());
-                Strings::append(output, transformer(*first));
-            }
+            return output;
         }
 
-        return output;
+        for (;;)
+        {
+            Strings::append(output, transformer(*first));
+            if (++first == last)
+            {
+                return output;
+            }
+
+            output.append(delimiter.data(), delimiter.size());
+        }
     }
 
     template<class Container, class Transformer>
@@ -169,11 +183,11 @@ namespace vcpkg::Strings
                                                                  StringView left_tag,
                                                                  StringView right_tag);
 
-    bool contains_any_ignoring_c_comments(const std::string& source, View<StringView> to_find);
+    bool contains_any_ignoring_c_comments(const std::string& source, View<boyer_moore_horspool_searcher> to_find);
 
-    bool contains_any_ignoring_hash_comments(StringView source, View<StringView> to_find);
+    bool contains_any_ignoring_hash_comments(StringView source, View<boyer_moore_horspool_searcher> to_find);
 
-    bool contains_any(StringView source, View<StringView> to_find);
+    bool long_string_contains_any(StringView source, View<boyer_moore_horspool_searcher> to_find);
 
     [[nodiscard]] bool equals(StringView a, StringView b);
 
@@ -256,8 +270,11 @@ namespace vcpkg::Strings
         template<class Fn>
         void on_end(Fn cb)
         {
-            cb(StringView{previous_partial_line});
-            previous_partial_line.clear();
+            if (!previous_partial_line.empty())
+            {
+                cb(StringView{previous_partial_line});
+                previous_partial_line.clear();
+            }
             last_was_cr = false;
         }
 

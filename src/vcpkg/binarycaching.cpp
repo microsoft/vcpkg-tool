@@ -4,7 +4,6 @@
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/json.h>
-#include <vcpkg/base/lazy.h>
 #include <vcpkg/base/message_sinks.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/parse.h>
@@ -18,15 +17,14 @@
 #include <vcpkg/archives.h>
 #include <vcpkg/binarycaching.h>
 #include <vcpkg/binarycaching.private.h>
-#include <vcpkg/commands.build.h>
 #include <vcpkg/dependencies.h>
 #include <vcpkg/documentation.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/tools.h>
 #include <vcpkg/vcpkgpaths.h>
 
-#include <iterator>
-#include <numeric>
+#include <memory>
+#include <utility>
 
 using namespace vcpkg;
 
@@ -186,16 +184,16 @@ namespace
         return ret;
     }
 
-    NugetReference make_nugetref(const PackageSpec& spec, StringView raw_version, StringView abi_tag, StringView prefix)
+    NugetReference make_nugetref(const PackageSpec& spec, const Version& version, StringView abi_tag, StringView prefix)
     {
-        return {Strings::concat(prefix, spec.dir()), format_version_for_nugetref(raw_version, abi_tag)};
+        return {Strings::concat(prefix, spec.dir()), format_version_for_nugetref(version.text, abi_tag)};
     }
     NugetReference make_nugetref(const BinaryPackageReadInfo& info, StringView prefix)
     {
-        return make_nugetref(info.spec, info.raw_version, info.package_abi, prefix);
+        return make_nugetref(info.spec, info.version, info.package_abi, prefix);
     }
 
-    void clean_prepare_dir(Filesystem& fs, const Path& dir)
+    void clean_prepare_dir(const Filesystem& fs, const Path& dir)
     {
         fs.remove_all(dir, VCPKG_LINE_INFO);
         if (!fs.create_directories(dir, VCPKG_LINE_INFO))
@@ -213,7 +211,7 @@ namespace
 
     struct FilesWriteBinaryProvider : IWriteBinaryProvider
     {
-        FilesWriteBinaryProvider(Filesystem& fs, std::vector<Path>&& dirs) : m_fs(fs), m_dirs(std::move(dirs)) { }
+        FilesWriteBinaryProvider(const Filesystem& fs, std::vector<Path>&& dirs) : m_fs(fs), m_dirs(std::move(dirs)) { }
 
         size_t push_success(const BinaryPackageWriteInfo& request, MessageSink& msg_sink) override
         {
@@ -246,7 +244,7 @@ namespace
         bool needs_zip_file() const override { return true; }
 
     private:
-        Filesystem& m_fs;
+        const Filesystem& m_fs;
         std::vector<Path> m_dirs;
     };
 
@@ -271,7 +269,7 @@ namespace
     // - IReadBinaryProvider::precheck()
     struct ZipReadBinaryProvider : IReadBinaryProvider
     {
-        ZipReadBinaryProvider(ZipTool zip, Filesystem& fs) : m_zip(std::move(zip)), m_fs(fs) { }
+        ZipReadBinaryProvider(ZipTool zip, const Filesystem& fs) : m_zip(std::move(zip)), m_fs(fs) { }
 
         void fetch(View<const InstallPlanAction*> actions, Span<RestoreResult> out_status) const override
         {
@@ -327,12 +325,12 @@ namespace
 
     protected:
         ZipTool m_zip;
-        Filesystem& m_fs;
+        const Filesystem& m_fs;
     };
 
     struct FilesReadBinaryProvider : ZipReadBinaryProvider
     {
-        FilesReadBinaryProvider(ZipTool zip, Filesystem& fs, Path&& dir)
+        FilesReadBinaryProvider(ZipTool zip, const Filesystem& fs, Path&& dir)
             : ZipReadBinaryProvider(std::move(zip), fs), m_dir(std::move(dir))
         {
         }
@@ -421,7 +419,7 @@ namespace
     struct HttpGetBinaryProvider : ZipReadBinaryProvider
     {
         HttpGetBinaryProvider(ZipTool zip,
-                              Filesystem& fs,
+                              const Filesystem& fs,
                               const Path& buildtrees,
                               UrlTemplate&& url_template,
                               const std::vector<std::string>& secrets)
@@ -631,7 +629,7 @@ namespace
 
     struct NugetBaseBinaryProvider
     {
-        NugetBaseBinaryProvider(Filesystem& fs,
+        NugetBaseBinaryProvider(const Filesystem& fs,
                                 const NuGetTool& tool,
                                 const Path& packages,
                                 const Path& buildtrees,
@@ -644,7 +642,7 @@ namespace
         {
         }
 
-        Filesystem& m_fs;
+        const Filesystem& m_fs;
         NuGetTool m_cmd;
         Path m_packages;
         Path m_buildtrees;
@@ -793,7 +791,7 @@ namespace
     struct GHABinaryProvider : ZipReadBinaryProvider
     {
         GHABinaryProvider(
-            ZipTool zip, Filesystem& fs, const Path& buildtrees, const std::string& url, const std::string& token)
+            ZipTool zip, const Filesystem& fs, const Path& buildtrees, const std::string& url, const std::string& token)
             : ZipReadBinaryProvider(std::move(zip), fs)
             , m_buildtrees(buildtrees)
             , m_url(url + "_apis/artifactcache/cache")
@@ -801,36 +799,27 @@ namespace
         {
         }
 
-        Command command() const
+        std::string lookup_cache_entry(StringView name, const std::string& abi) const
         {
-            Command cmd;
-            cmd.string_arg("curl")
-                .string_arg("-s")
-                .string_arg("-H")
-                .string_arg("Content-Type: application/json")
-                .string_arg("-H")
-                .string_arg(m_token_header)
-                .string_arg("-H")
-                .string_arg(m_accept_header);
-            return cmd;
-        }
-
-        std::string lookup_cache_entry(const std::string& abi) const
-        {
-            auto cmd = command()
-                           .string_arg(m_url)
-                           .string_arg("-G")
-                           .string_arg("-d")
-                           .string_arg("keys=vcpkg")
-                           .string_arg("-d")
-                           .string_arg("version=" + abi);
-
-            std::vector<std::string> lines;
-            auto res = cmd_execute_and_capture_output(cmd);
-            if (!res.has_value() || res.get()->exit_code) return {};
-            auto json = Json::parse_object(res.get()->output);
-            if (!json.has_value() || !json.get()->contains("archiveLocation")) return {};
-            return json.get()->get("archiveLocation")->string(VCPKG_LINE_INFO).to_string();
+            auto url = format_url_query(m_url, std::vector<std::string>{"keys=" + name + "-" + abi, "version=" + abi});
+            auto res =
+                invoke_http_request("GET",
+                                    std::vector<std::string>{
+                                        m_content_type_header.to_string(), m_token_header, m_accept_header.to_string()},
+                                    url);
+            if (auto p = res.get())
+            {
+                auto maybe_json = Json::parse_object(*p, m_url);
+                if (auto json = maybe_json.get())
+                {
+                    auto archive_location = json->get("archiveLocation");
+                    if (archive_location && archive_location->is_string())
+                    {
+                        return archive_location->string(VCPKG_LINE_INFO).to_string();
+                    }
+                }
+            }
+            return {};
         }
 
         void acquire_zips(View<const InstallPlanAction*> actions,
@@ -841,7 +830,8 @@ namespace
             for (size_t idx = 0; idx < actions.size(); ++idx)
             {
                 auto&& action = *actions[idx];
-                auto url = lookup_cache_entry(action.package_abi().value_or_exit(VCPKG_LINE_INFO));
+                const auto& package_name = action.spec.name();
+                auto url = lookup_cache_entry(package_name, action.package_abi().value_or_exit(VCPKG_LINE_INFO));
                 if (url.empty()) continue;
 
                 url_paths.emplace_back(std::move(url), make_temp_archive_path(m_buildtrees, action.spec));
@@ -867,11 +857,11 @@ namespace
             return msg::format(msgRestoredPackagesFromGHA, msg::count = count, msg::elapsed = ElapsedTime(elapsed));
         }
 
-        static constexpr StringLiteral m_accept_header = "Accept: application/json;api-version=6.0-preview.1";
-
         Path m_buildtrees;
         std::string m_url;
         std::string m_token_header;
+        static constexpr StringLiteral m_accept_header = "Accept: application/json;api-version=6.0-preview.1";
+        static constexpr StringLiteral m_content_type_header = "Content-Type: application/json";
     };
 
     struct GHABinaryPushProvider : IWriteBinaryProvider
@@ -881,69 +871,71 @@ namespace
         {
         }
 
-        Command command() const
-        {
-            Command cmd;
-            cmd.string_arg("curl")
-                .string_arg("-s")
-                .string_arg("-H")
-                .string_arg("Content-Type: application/json")
-                .string_arg("-H")
-                .string_arg(m_token_header)
-                .string_arg("-H")
-                .string_arg(m_accept_header);
-            return cmd;
-        }
-
-        Optional<int64_t> reserve_cache_entry(const std::string& abi, int64_t cacheSize) const
+        Optional<int64_t> reserve_cache_entry(const std::string& name, const std::string& abi, int64_t cacheSize) const
         {
             Json::Object payload;
-            payload.insert("key", "vcpkg");
+            payload.insert("key", name + "-" + abi);
             payload.insert("version", abi);
             payload.insert("cacheSize", Json::Value::integer(cacheSize));
-            auto cmd = command().string_arg(m_url).string_arg("-d").string_arg(stringify(payload));
 
-            auto res = cmd_execute_and_capture_output(cmd);
-            if (!res.has_value() || res.get()->exit_code) return {};
-            auto json = Json::parse_object(res.get()->output);
-            if (!json.has_value() || !json.get()->contains("cacheId")) return {};
-            return json.get()->get("cacheId")->integer(VCPKG_LINE_INFO);
+            std::vector<std::string> headers;
+            headers.emplace_back(m_accept_header.data(), m_accept_header.size());
+            headers.emplace_back(m_content_type_header.data(), m_content_type_header.size());
+            headers.emplace_back(m_token_header);
+
+            auto res = invoke_http_request("POST", headers, m_url, stringify(payload));
+            if (auto p = res.get())
+            {
+                auto maybe_json = Json::parse_object(*p, m_url);
+                if (auto json = maybe_json.get())
+                {
+                    auto cache_id = json->get("cacheId");
+                    if (cache_id && cache_id->is_integer())
+                    {
+                        return cache_id->integer(VCPKG_LINE_INFO);
+                    }
+                }
+            }
+            return {};
         }
 
         size_t push_success(const BinaryPackageWriteInfo& request, MessageSink&) override
         {
             if (!request.zip_path) return 0;
+
             const auto& zip_path = *request.zip_path.get();
             const ElapsedTimer timer;
             const auto& abi = request.package_abi;
 
-            int64_t cache_size;
-            {
-                auto archive = m_fs.open_for_read(zip_path, VCPKG_LINE_INFO);
-                archive.try_seek_to(0, SEEK_END);
-                cache_size = archive.tell();
-            }
-
             size_t upload_count = 0;
-            if (auto cacheId = reserve_cache_entry(abi, cache_size))
+            auto cache_size = m_fs.file_size(zip_path, VCPKG_LINE_INFO);
+
+            if (auto cacheId = reserve_cache_entry(request.spec.name(), abi, cache_size))
             {
-                std::vector<std::string> headers{
+                std::vector<std::string> custom_headers{
                     m_token_header,
                     m_accept_header.to_string(),
                     "Content-Type: application/octet-stream",
                     "Content-Range: bytes 0-" + std::to_string(cache_size) + "/*",
                 };
                 auto url = m_url + "/" + std::to_string(*cacheId.get());
-                if (put_file(m_fs, url, {}, headers, zip_path, "PATCH"))
+
+                if (put_file(m_fs, url, {}, custom_headers, zip_path, "PATCH"))
                 {
                     Json::Object commit;
                     commit.insert("size", std::to_string(cache_size));
-                    auto cmd = command().string_arg(url).string_arg("-d").string_arg(stringify(commit));
-
-                    auto res = cmd_execute_and_capture_output(cmd);
-                    if (res.has_value() && !res.get()->exit_code)
+                    std::vector<std::string> headers;
+                    headers.emplace_back(m_accept_header.data(), m_accept_header.size());
+                    headers.emplace_back(m_content_type_header.data(), m_content_type_header.size());
+                    headers.emplace_back(m_token_header);
+                    auto res = invoke_http_request("POST", headers, url, stringify(commit));
+                    if (res)
                     {
                         ++upload_count;
+                    }
+                    else
+                    {
+                        msg::println(res.error());
                     }
                 }
             }
@@ -953,11 +945,11 @@ namespace
         bool needs_nuspec_data() const override { return false; }
         bool needs_zip_file() const override { return true; }
 
-        static constexpr StringLiteral m_accept_header = "Accept: application/json;api-version=6.0-preview.1";
-
         const Filesystem& m_fs;
         std::string m_url;
         std::string m_token_header;
+        static constexpr StringLiteral m_content_type_header = "Content-Type: application/json";
+        static constexpr StringLiteral m_accept_header = "Accept: application/json;api-version=6.0-preview.1";
     };
 
     struct IObjectStorageTool
@@ -974,7 +966,7 @@ namespace
     struct ObjectStorageProvider : ZipReadBinaryProvider
     {
         ObjectStorageProvider(ZipTool zip,
-                              Filesystem& fs,
+                              const Filesystem& fs,
                               const Path& buildtrees,
                               std::string&& prefix,
                               const std::shared_ptr<const IObjectStorageTool>& tool)
@@ -1204,7 +1196,7 @@ namespace
             get_global_metrics_collector().track_define(DefineMetric::VcpkgDefaultBinaryCache);
             Path path = std::move(*p_str);
             path.make_preferred();
-            if (!get_real_filesystem().is_directory(path))
+            if (!real_filesystem.is_directory(path))
             {
                 return msg::format(msgDefaultBinaryCacheRequiresDirectory, msg::path = path);
             }
@@ -1519,7 +1511,7 @@ namespace
                                                  msg::binary_source = "x-aws-config"));
                 }
 
-                auto no_sign_request = false;
+                bool no_sign_request = false;
                 if (segments[1].second == "no-sign-request")
                 {
                     no_sign_request = true;
@@ -1776,7 +1768,7 @@ namespace vcpkg
                                  [&](std::string& out, StringView key) {
                                      if (key == "version")
                                      {
-                                         out += info.raw_version;
+                                         out += info.version.text;
                                      }
                                      else if (key == "name")
                                      {
@@ -1805,7 +1797,7 @@ namespace vcpkg
         if (auto p = args.vcpkg_nuget_repository.get())
         {
             get_global_metrics_collector().track_define(DefineMetric::VcpkgNugetRepository);
-            return {std::move(*p)};
+            return {*p};
         }
 
         auto gh_repo = get_environment_variable("GITHUB_REPOSITORY").value_or("");
@@ -1916,8 +1908,7 @@ namespace vcpkg
             {
                 if (!args.actions_cache_url.has_value() || !args.actions_runtime_token.has_value())
                     return msg::format_error(msgGHAParametersMissing,
-                                             msg::url =
-                                                 "https://learn.microsoft.com/en-us/vcpkg/users/binarycaching#gha");
+                                             msg::url = "https://learn.microsoft.com/vcpkg/users/binarycaching#gha");
             }
 
             if (!s.archives_to_read.empty() || !s.url_templates_to_get.empty() || !s.gcs_read_prefixes.empty() ||
@@ -2122,7 +2113,7 @@ namespace vcpkg
         });
     }
 
-    BinaryCache::BinaryCache(Filesystem& fs) : m_fs(fs) { }
+    BinaryCache::BinaryCache(const Filesystem& fs) : m_fs(fs) { }
 
     ExpectedL<BinaryCache> BinaryCache::make(const VcpkgCmdArguments& args, const VcpkgPaths& paths, MessageSink& sink)
     {
@@ -2146,7 +2137,7 @@ namespace vcpkg
         });
     }
 
-    BinaryCache::BinaryCache(BinaryProviders&& providers, Filesystem& fs)
+    BinaryCache::BinaryCache(BinaryProviders&& providers, const Filesystem& fs)
         : ReadOnlyBinaryCache(std::move(providers)), m_fs(fs)
     {
     }
@@ -2293,8 +2284,7 @@ namespace vcpkg
     BinaryPackageReadInfo::BinaryPackageReadInfo(const InstallPlanAction& action)
         : package_abi(action.package_abi().value_or_exit(VCPKG_LINE_INFO))
         , spec(action.spec)
-        , raw_version(action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO)
-                          .source_control_file->core_paragraph->raw_version)
+        , version(action.version())
         , package_dir(action.package_dir.value_or_exit(VCPKG_LINE_INFO))
     {
     }
@@ -2314,23 +2304,23 @@ ExpectedL<DownloadManagerConfig> vcpkg::parse_download_configuration(const Optio
     {
         return LocalizedString::from_raw(err->to_string()) // note that this already contains error:
             .append_raw('\n')
-            .append(msg::msgNoteMessage)
-            .append(msg::msgSeeURL, msg::url = docs::assetcaching_url);
+            .append_raw(NotePrefix)
+            .append(msgSeeURL, msg::url = docs::assetcaching_url);
     }
 
     if (s.azblob_templates_to_put.size() > 1)
     {
         return msg::format_error(msgAMaximumOfOneAssetWriteUrlCanBeSpecified)
             .append_raw('\n')
-            .append(msg::msgNoteMessage)
-            .append(msg::msgSeeURL, msg::url = docs::assetcaching_url);
+            .append_raw(NotePrefix)
+            .append(msgSeeURL, msg::url = docs::assetcaching_url);
     }
     if (s.url_templates_to_get.size() > 1)
     {
         return msg::format_error(msgAMaximumOfOneAssetReadUrlCanBeSpecified)
             .append_raw('\n')
-            .append(msg::msgNoteMessage)
-            .append(msg::msgSeeURL, msg::url = docs::assetcaching_url);
+            .append_raw(NotePrefix)
+            .append(msgSeeURL, msg::url = docs::assetcaching_url);
     }
 
     Optional<std::string> get_url;
@@ -2388,25 +2378,25 @@ ExpectedL<BinaryConfigParserState> vcpkg::parse_binary_provider_configs(const st
     return s;
 }
 
-std::string vcpkg::format_version_for_nugetref(StringView version, StringView abi_tag)
+std::string vcpkg::format_version_for_nugetref(StringView version_text, StringView abi_tag)
 {
     // this cannot use DotVersion::try_parse or DateVersion::try_parse,
     // since this is a subtly different algorithm
     // and ignores random extra stuff from the end
 
     ParsedExternalVersion parsed_version;
-    if (try_extract_external_date_version(parsed_version, version))
+    if (try_extract_external_date_version(parsed_version, version_text))
     {
         parsed_version.normalize();
         return fmt::format(
             "{}.{}.{}-vcpkg{}", parsed_version.major, parsed_version.minor, parsed_version.patch, abi_tag);
     }
 
-    if (!version.empty() && version[0] == 'v')
+    if (!version_text.empty() && version_text[0] == 'v')
     {
-        version = version.substr(1);
+        version_text = version_text.substr(1);
     }
-    if (try_extract_external_dot_version(parsed_version, version))
+    if (try_extract_external_dot_version(parsed_version, version_text))
     {
         parsed_version.normalize();
         return fmt::format(
@@ -2423,7 +2413,7 @@ std::string vcpkg::generate_nuspec(const Path& package_dir,
 {
     auto& spec = action.spec;
     auto& scf = *action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_control_file;
-    auto& version = scf.core_paragraph->raw_version;
+    auto& version = scf.core_paragraph->version;
     const auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
     const auto& compiler_info = abi_info.compiler_info.value_or_exit(VCPKG_LINE_INFO);
     auto ref = make_nugetref(action, id_prefix);
@@ -2577,9 +2567,6 @@ std::string vcpkg::generate_nuget_packages_config(const ActionPlan& plan, String
 
 NugetReference vcpkg::make_nugetref(const InstallPlanAction& action, StringView prefix)
 {
-    return ::make_nugetref(action.spec,
-                           action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO)
-                               .source_control_file->core_paragraph->raw_version,
-                           action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi,
-                           prefix);
+    return ::make_nugetref(
+        action.spec, action.version(), action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi, prefix);
 }

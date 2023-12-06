@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vcpkg/base/fwd/graphs.h>
+
 #include <vcpkg/fwd/cmakevars.h>
 #include <vcpkg/fwd/portfileprovider.h>
 
@@ -9,36 +11,13 @@
 #include <vcpkg/packagespec.h>
 #include <vcpkg/statusparagraph.h>
 
-#include <functional>
 #include <map>
+#include <string>
 #include <vector>
 
 namespace vcpkg
 {
-    struct GraphRandomizer;
-
-    enum class UnsupportedPortAction : bool
-    {
-        Warn,
-        Error,
-    };
-
-    enum class RequestType
-    {
-        UNKNOWN,
-        USER_REQUESTED,
-        AUTO_SELECTED
-    };
-
     [[nodiscard]] StringLiteral request_type_indent(RequestType request_type);
-
-    enum class InstallPlanType
-    {
-        UNKNOWN,
-        BUILD_AND_INSTALL,
-        ALREADY_INSTALLED,
-        EXCLUDED
-    };
 
     struct BasicAction
     {
@@ -49,8 +28,6 @@ namespace vcpkg
 
     struct PackageAction : BasicAction
     {
-        std::string displayname() const;
-
         std::vector<PackageSpec> package_dependencies;
         InternalFeatureSet feature_list;
     };
@@ -66,19 +43,23 @@ namespace vcpkg
 
         InstallPlanAction(const PackageSpec& spec,
                           const SourceControlFileAndLocation& scfl,
+                          const Path& packages_dir,
                           const RequestType& request_type,
                           Triplet host_triplet,
                           std::map<std::string, std::vector<FeatureSpec>>&& dependencies,
-                          std::vector<LocalizedString>&& build_failure_messages);
+                          std::vector<LocalizedString>&& build_failure_messages,
+                          std::vector<std::string> default_features);
 
         const std::string& public_abi() const;
         bool has_package_abi() const;
         Optional<const std::string&> package_abi() const;
         const PreBuildInfo& pre_build_info(LineInfo li) const;
         Version version() const;
+        std::string display_name() const;
 
         Optional<const SourceControlFileAndLocation&> source_control_file_and_location;
         Optional<InstalledPackageView> installed_package;
+        Optional<std::vector<std::string>> default_features;
 
         InstallPlanType plan_type;
         RequestType request_type;
@@ -115,13 +96,6 @@ namespace vcpkg
         std::vector<InstallPlanAction> already_installed;
         std::vector<InstallPlanAction> install_actions;
         std::map<FeatureSpec, PlatformExpression::Expr> unsupported_features;
-    };
-
-    enum class ExportPlanType
-    {
-        UNKNOWN,
-        NOT_BUILT,
-        ALREADY_BUILT
     };
 
     struct ExportPlanAction : BasicAction

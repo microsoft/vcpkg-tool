@@ -1,12 +1,10 @@
-#include <catch2/catch.hpp>
+#include <vcpkg-test/util.h>
 
-#include <vcpkg/base/json.h>
 #include <vcpkg/base/setup-messages.h>
 
-#include <vcpkg/commands.generate-message-map.h>
+#include <vcpkg/commands.z-generate-message-map.h>
 
 using namespace vcpkg;
-using namespace vcpkg::Commands;
 
 TEST_CASE ("append floating list", "[LocalizedString]")
 {
@@ -15,8 +13,8 @@ TEST_CASE ("append floating list", "[LocalizedString]")
     CHECK(LocalizedString().append_floating_list(2, std::vector<LocalizedString>{}) == LocalizedString());
     CHECK(LocalizedString().append_floating_list(2, std::vector<LocalizedString>{a}) ==
           LocalizedString::from_raw(" a"));
-    const auto expected = LocalizedString::from_raw("    heading\n        a\n        b");
-    CHECK(LocalizedString::from_raw("    heading").append_floating_list(2, std::vector<LocalizedString>{a, b}) ==
+    const auto expected = LocalizedString::from_raw("  heading\n    a\n    b");
+    CHECK(LocalizedString::from_raw("  heading").append_floating_list(2, std::vector<LocalizedString>{a, b}) ==
           expected);
 }
 

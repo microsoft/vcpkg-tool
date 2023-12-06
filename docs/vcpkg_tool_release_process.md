@@ -11,8 +11,6 @@ such as https://github.com/microsoft/vcpkg/pull/23757
 1. Check that the changes there are in fact the changes that we want in that release. (Be aware,
   you are responsible for what is about to be signed with a Microsoft code signing certificate by
   proceeding)
-1. Build the changes locally with `-DVCPKG_ARTIFACTS_DEVELOPMENT=ON`, and run the end to end tests
-  with -RunArtifactsTests
 1. Submit a signed build from "vcpkg Signed Binaries (from GitHub)" (
   https://devdiv.visualstudio.com/DevDiv/_build?definitionId=17772&_a=summary as of this writing)
 1. The signed build will automatically create a draft GitHub release at
@@ -31,22 +29,34 @@ such as https://github.com/microsoft/vcpkg/pull/23757
     * Bash:
         `. <(curl https://github.com/microsoft/vcpkg-tool/releases/download/2023-03-29/vcpkg-init -L)`
   (and test that `vcpkg use cmake` works from each of these)
-1. In the vcpkg repo, draft a PR which updates `bootstrap-vcpkg.sh` and `boostrap-vcpkg.ps1`
-  with the new release date, and update SHAs as appropriate in the .sh script. (For example, see
-  https://github.com/microsoft/vcpkg/pull/23757)
+1. Create a new task in the DevDiv VS instance for this release. (PRs into VS Code and VS require an associated work
+   item in order to be merged.)
+1. In the vcpkg repo, run `\scripts\update-vcpkg-tool-metadata.ps1 -Date 2023-03-29`
+  with the new release date, which updates SHAs as appropriate. It will also emit a code block for
+  the next vscode-embedded-tools repo step. Commit these changes and submit as a PR.
+1. In the DevDiv vscode-embedded-tools repo, follow the
+  [update instructions](https://devdiv.visualstudio.com/DefaultCollection/DevDiv/_git/vscode-embedded-tools?path=/docs/updating-vcpkg.md&_a=preview)
+  to make a VS Code update PR. Don't forget to attach the work item created in the previous step.
+  Example: https://devdiv.visualstudio.com/DefaultCollection/DevDiv/_git/vscode-embedded-tools/pullrequest/498107
 1. If changes in this release that might affect ports, submit a new full tree rebuild by
   microsoft.vcpkg.ci (https://dev.azure.com/vcpkg/public/_build?definitionId=29 as of this writing)
   targeting `refs/pull/NUMBER/head`
 1. (Probably the next day) Check over the failures and ensure any differences with the most recent
   full rebuild using the previous tool version are understood.
-1. In the DevDiv VS repo, update `default.config`, run the VcpkgInsertionUtility, and submit a PR
-  with those changes.
-1. Smoke test the copy of vcpkg inserted into VS. See smoke test steps below.
-1. In the DevDiv vscode-embedded-tools repo, follow the
-  [update instructions](https://devdiv.visualstudio.com/DefaultCollection/DevDiv/_git/vscode-embedded-tools?path=/docs/updating-vcpkg.md&_a=preview)
-  to make a VS Code update PR.
+1. In the DevDiv VS repo ( https://devdiv.visualstudio.com/DefaultCollection/DevDiv/_git/VS ),
+   update `.corext\Configs\default.config`, and `src\ConfigData\Packages\Redist\Setup.props`
+1. The first time you try to do a VS update on a machine, open a developer command prompt, go to
+   `src\vc\projbld\Vcpkg\VcpkgInsertionUtility`, and run `csc Program.cs` which will write the
+   VcpkgInsertionUtility as `Program.exe` in this directory.
+1. Go to the root of the VS repo and run `init.cmd -CoreXTProfileName VSPartners`
+1. Submit this as a change to the VS repo. Example: https://devdiv.visualstudio.com/DefaultCollection/DevDiv/_git/VS/pullrequest/498110
+   Don't forget to attach the work item number from the previous step.
+1. Smoke test the copy of vcpkg inserted into VS. See smoke test steps below. The prototype copy is
+  at "CloudBuild - PR -> Extensions\VS Enterprise\Release Channel" as of 2023-10-19 but this UI
+  changes frequently.
 1. (After all tests have passed, at the same time) Merge all 3 PRs, and change the github release
   in vcpkg-tool from "prerelease" to "release". (This automatically updates the aka.ms links)
+1. Mark any `requires:vcpkg-tool-release` issues as fixed by the tool release.
 
 # Release Data Flow
 
@@ -60,8 +70,8 @@ flowchart TD
     vs_corext_feed[(devdiv/VS-CoreXtFeeds NuGet Feed)]
     subgraph vcpkg_update_pr [vcpkg Update PR]
         direction LR
-        bootstrap_ps1[bootstrap.ps1]
-        bootstrap_sh[bootstrap.sh]
+        update_vcpkg_tool_metadata_ps1[update-vcpkg-tool-metadata.ps1]
+        vcpkg_tool_metadata_txt[vcpkg-tool-metadata.txt]
         vcpkg_repo_target[(GitHub vcpkg Repo)]
     end
     create_vcpkg_pr{Create GitHub vcpkg PR}
@@ -96,10 +106,9 @@ flowchart TD
     vcpkg_signed_binaries --> symweb
     
     %% vcpkg Update
-    release_version --> bootstrap_ps1
-    release_version --> bootstrap_sh
-    bootstrap_ps1 --> vcpkg_repo_target
-    bootstrap_sh --> vcpkg_repo_target
+    release_version --> update_vcpkg_tool_metadata_ps1
+    update_vcpkg_tool_metadata_ps1 --> vcpkg_tool_metadata_txt
+    vcpkg_tool_metadata_txt --> vcpkg_repo_target
     vcpkg_update_pr ----> create_vcpkg_pr
     create_vcpkg_pr --> run_full_tree_rebuild
     
@@ -113,7 +122,7 @@ flowchart TD
     vs_update_pr --> create_vs_pr
     
     %% VS Code Update
-    release_version --> package_json
+    update_vcpkg_tool_metadata_ps1 --> package_json
     release_version --> changelog_md
     package_json --> vs_embedded_tools_repo
     changelog_md --> vs_embedded_tools_repo
@@ -146,9 +155,7 @@ flowchart TD
 
 # Smoke Testing VS
 
-1. Update the copy of vcpkg in default.config in the VS repo.
-1. Submit a PR which will give you a prototype of VS with that vcpkg inside.
-1. Install the prototype version of VS with the vcpkg inserted. Ensure the native desktop workload is selected, and that vcpkg and cmake bits are installed. Don't forget about preinstall.
+1. Install the prototype version of VS with the vcpkg inserted. Ensure the native desktop workload is selected, and that vcpkg and cmake bits are installed. Don't forget about preinstall. ( `\\vspreinstall\preinstall\preinstall.cmd` ? )
 1. Open a developer command prompt and run `vcpkg integrate install` (this step hopefully removed soon)
     * This also verifies that vcpkg installed into the developer command prompt correctly.
 1. Create a new C++ console project.
@@ -206,8 +213,15 @@ flowchart TD
     and check that a reasonable zlib version is printed.
 1. Back in the developer command prompt, verify that the copy of CMake can be customized by running:
     ```
+    vcpkg use cmake
     cmake -G Ninja -DCMAKE_TOOLCHAIN_FILE="%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake" -S . -B build_artifact
     ninja -C build_artifact
     build_artifact\program.exe
     ```
     and check that the cmake version acquired by artifacts is printed during the cmake configure, and that a reasonable zlib version is printed.
+1. Close Visual Studio.
+1. Back in the developer command prompt, run:
+    ```
+    vcpkg add artifact cmake
+    ```
+1. Open Visual Studio and use "Open Folder" on the directory containing the vcxproj. Verify that vcpkg activation happens in the terminal.

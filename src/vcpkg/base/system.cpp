@@ -1,12 +1,9 @@
 #include <vcpkg/base/checks.h>
-#include <vcpkg/base/chrono.h>
+#include <vcpkg/base/expected.h>
 #include <vcpkg/base/messages.h>
+#include <vcpkg/base/path.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
-#include <vcpkg/base/system.process.h>
-#include <vcpkg/base/util.h>
-
-#include <ctime>
 
 #if defined(__APPLE__)
 #include <sys/sysctl.h>
@@ -155,6 +152,9 @@ namespace vcpkg
         if (Strings::case_insensitive_ascii_equals(arch, "ppc64le")) return CPUArchitecture::PPC64LE;
         if (Strings::case_insensitive_ascii_equals(arch, "riscv32")) return CPUArchitecture::RISCV32;
         if (Strings::case_insensitive_ascii_equals(arch, "riscv64")) return CPUArchitecture::RISCV64;
+        if (Strings::case_insensitive_ascii_equals(arch, "loongarch32")) return CPUArchitecture::LOONGARCH32;
+        if (Strings::case_insensitive_ascii_equals(arch, "loongarch64")) return CPUArchitecture::LOONGARCH64;
+        if (Strings::case_insensitive_ascii_equals(arch, "mips64")) return CPUArchitecture::MIPS64;
 
         return nullopt;
     }
@@ -172,6 +172,9 @@ namespace vcpkg
             case CPUArchitecture::PPC64LE: return "ppc64le";
             case CPUArchitecture::RISCV32: return "riscv32";
             case CPUArchitecture::RISCV64: return "riscv64";
+            case CPUArchitecture::LOONGARCH32: return "loongarch32";
+            case CPUArchitecture::LOONGARCH64: return "loongarch64";
+            case CPUArchitecture::MIPS64: return "mips64";
             default: Checks::exit_with_message(VCPKG_LINE_INFO, "unexpected vcpkg::CPUArchitecture");
         }
     }
@@ -183,7 +186,7 @@ namespace vcpkg
         if (hKernel32)
         {
             BOOL(__stdcall* const isWow64Process2)
-            (HANDLE /* hProcess */, USHORT* /* pProcessMachine */, USHORT * /*pNativeMachine*/) =
+            (HANDLE /* hProcess */, USHORT* /* pProcessMachine */, USHORT* /*pNativeMachine*/) =
                 reinterpret_cast<decltype(isWow64Process2)>(::GetProcAddress(hKernel32, "IsWow64Process2"));
             if (isWow64Process2)
             {
@@ -233,6 +236,8 @@ namespace vcpkg
         return CPUArchitecture::ARM64;
 #elif defined(_M_X64)
         return CPUArchitecture::X64;
+#elif defined(__mips64)
+        return CPUArchitecture::MIPS64;
 #else
 #error "Unknown host architecture"
 #endif // architecture
@@ -269,6 +274,12 @@ namespace vcpkg
         return CPUArchitecture::RISCV32;
 #elif defined(__riscv) && defined(__riscv_xlen) && (__riscv_xlen == 64)
         return CPUArchitecture::RISCV64;
+#elif defined(__loongarch32) || defined(__loongarch__) && (__loongarch_grlen == 32)
+        return CPUArchitecture::LOONGARCH32;
+#elif defined(__loongarch64) || defined(__loongarch__) && (__loongarch_grlen == 64)
+        return CPUArchitecture::LOONGARCH64;
+#elif defined(__mips64)
+        return CPUArchitecture::MIPS64;
 #else // choose architecture
 #error "Unknown host architecture"
 #endif // choose architecture
@@ -381,23 +392,23 @@ namespace vcpkg
     {
         static ExpectedL<Path> s_home = []() -> ExpectedL<Path> {
 #ifdef _WIN32
-            static constexpr StringLiteral HOMEVAR = "%USERPROFILE%";
-            static constexpr StringLiteral HOMEVARNAME = "USERPROFILE";
+            static constexpr StringLiteral HOMEVAR = "USERPROFILE";
 #else  // ^^^ _WIN32 // !_WIN32 vvv
-            static constexpr StringLiteral HOMEVAR = "$HOME";
-            static constexpr StringLiteral HOMEVARNAME = "HOME";
+            static constexpr StringLiteral HOMEVAR = "HOME";
 #endif // ^^^ !_WIN32
 
-            auto maybe_home = get_environment_variable(HOMEVARNAME);
+            auto maybe_home = get_environment_variable(HOMEVAR);
             if (!maybe_home.has_value() || maybe_home.get()->empty())
             {
-                return msg::format(msgUnableToReadEnvironmentVariable, msg::env_var = HOMEVAR);
+                return msg::format(msgUnableToReadEnvironmentVariable,
+                                   msg::env_var = format_environment_variable(HOMEVAR));
             }
 
             Path p = std::move(*maybe_home.get());
             if (!p.is_absolute())
             {
-                return msg::format(msgEnvVarMustBeAbsolutePath, msg::path = p, msg::env_var = HOMEVAR);
+                return msg::format(
+                    msgEnvVarMustBeAbsolutePath, msg::path = p, msg::env_var = format_environment_variable(HOMEVAR));
             }
 
             return p;
@@ -696,6 +707,8 @@ namespace vcpkg
         return "freebsd";
 #elif defined(__OpenBSD__)
         return "openbsd";
+#elif defined(__ANDROID__)
+        return "android";
 #elif defined(__linux__)
         return "linux";
 #else

@@ -10,7 +10,7 @@ using namespace vcpkg;
 
 namespace
 {
-    void clear_directory(Filesystem& fs, const Path& target)
+    void clear_directory(const Filesystem& fs, const Path& target)
     {
         if (fs.is_directory(target))
         {
@@ -24,10 +24,23 @@ namespace
     }
 }
 
-namespace vcpkg::Commands::CIClean
+namespace vcpkg
 {
-    void perform_and_exit(const VcpkgCmdArguments&, const VcpkgPaths& paths)
+    constexpr CommandMetadata CommandCiCleanMetadata{
+        "x-ci-clean",
+        msgCmdCiCleanSynopsis,
+        {"vcpkg x-ci-clean"},
+        Undocumented,
+        AutocompletePriority::Internal,
+        0,
+        0,
+        {},
+        nullptr,
+    };
+
+    void command_ci_clean_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
+        (void)args.parse_arguments(CommandCiCleanMetadata);
         auto& fs = paths.get_filesystem();
         clear_directory(fs, paths.buildtrees());
         clear_directory(fs, paths.installed().root());

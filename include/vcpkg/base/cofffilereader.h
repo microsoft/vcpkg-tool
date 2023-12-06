@@ -1,9 +1,9 @@
 #pragma once
 
 #include <vcpkg/base/fwd/cofffilereader.h>
+#include <vcpkg/base/fwd/expected.h>
 #include <vcpkg/base/fwd/files.h>
-
-#include <vcpkg/base/expected.h>
+#include <vcpkg/base/fwd/optional.h>
 
 #include <stdint.h>
 
@@ -324,6 +324,8 @@ namespace vcpkg
         THUMB = 0x1c2,         // Thumb
         WCEMIPSV2 = 0x169,     // MIPS little-endian WCE v2
         LLVM_BITCODE = 0x4342, // LLVM bitcode https://www.llvm.org/docs/BitCodeFormat.html#llvm-ir-magic-number
+        LOONGARCH32 = 0x6232,  // LoongArch 32-bit processor family
+        LOONGARCH64 = 0x6264,  // LoongArch 64-bit processor family
     };
 
     enum class PEType
@@ -417,7 +419,8 @@ namespace vcpkg
     };
 
     std::vector<std::string> tokenize_command_line(StringView cmd_line);
-    ExpectedL<DllMetadata> try_read_dll_metadata(ReadFilePointer& f);
+    ExpectedL<Optional<DllMetadata>> try_read_dll_metadata(ReadFilePointer& f);
+    ExpectedL<DllMetadata> try_read_dll_metadata_required(ReadFilePointer& f);
     ExpectedL<bool> try_read_if_dll_has_exports(const DllMetadata& dll, ReadFilePointer& f);
     ExpectedL<std::vector<std::string>> try_read_dll_imported_dll_names(const DllMetadata& dll, ReadFilePointer& f);
     ExpectedL<LibInformation> read_lib_information(ReadFilePointer& f);

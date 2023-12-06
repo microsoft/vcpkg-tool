@@ -1,53 +1,28 @@
+#include <vcpkg/base/cmd-parser.h>
+#include <vcpkg/base/strings.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/binarycaching.h>
-#include <vcpkg/commands.create.h>
-#include <vcpkg/commands.dependinfo.h>
-#include <vcpkg/commands.edit.h>
-#include <vcpkg/commands.env.h>
-#include <vcpkg/commands.export.h>
+#include <vcpkg/commands.h>
 #include <vcpkg/commands.help.h>
-#include <vcpkg/commands.install.h>
-#include <vcpkg/commands.integrate.h>
-#include <vcpkg/commands.list.h>
-#include <vcpkg/commands.owns.h>
-#include <vcpkg/commands.remove.h>
-#include <vcpkg/commands.search.h>
 #include <vcpkg/documentation.h>
 #include <vcpkg/metrics.h>
+#include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
-namespace vcpkg::Help
+using namespace vcpkg;
+
+namespace
 {
     struct Topic
     {
-        using topic_function = void (*)(const VcpkgPaths& paths);
-
-        constexpr Topic(StringLiteral n, topic_function fn) : name(n), print(fn) { }
-
         StringLiteral name;
-        topic_function print;
+        void (*print)(const VcpkgPaths&);
     };
 
-    template<const CommandStructure& S>
-    static void command_topic_fn(const VcpkgPaths&)
-    {
-        print_usage(S);
-    }
+    void help_topics(const VcpkgPaths&);
 
-    static void integrate_topic_fn(const VcpkgPaths&) { msg::println(Commands::Integrate::get_helpstring()); }
-
-    static void help_topics(const VcpkgPaths&);
-
-    const CommandStructure COMMAND_STRUCTURE = {
-        [] { return create_example_string("help"); },
-        0,
-        1,
-        {},
-        nullptr,
-    };
-
-    static void help_topic_versioning(const VcpkgPaths&)
+    void help_topic_versioning(const VcpkgPaths&)
     {
         HelpTableFormatter tbl;
         tbl.text(msg::format(msgHelpVersioning));
@@ -78,8 +53,6 @@ namespace vcpkg::Help
         tbl.text(msg::format(msgHelpExampleManifest));
         tbl.blank();
         tbl.text(R"({
-    "name": "example",
-    "version": "1.0",
     "builtin-baseline": "a14a6bcb27287e3ec138dba1b948a0cdbc337a3a",
     "dependencies": [
         { "name": "zlib", "version>=": "1.2.11#8" },
@@ -89,95 +62,129 @@ namespace vcpkg::Help
         { "name": "rapidjson", "version": "2020-09-14" }
     ]
 })");
-        msg::write_unlocalized_text_to_stdout(Color::none, tbl.m_str);
+        msg::println(LocalizedString::from_raw(std::move(tbl).m_str));
         msg::println(msgExtendedDocumentationAtUrl, msg::url = docs::versioning_url);
     }
 
-    static constexpr std::array<Topic, 17> topics = {{
+    constexpr Topic topics[] = {
         {"assetcaching", [](const VcpkgPaths&) { msg::println(format_help_topic_asset_caching()); }},
         {"binarycaching", [](const VcpkgPaths&) { msg::println(format_help_topic_binary_caching()); }},
-        {"create", command_topic_fn<Commands::Create::COMMAND_STRUCTURE>},
-        {"depend-info", command_topic_fn<Commands::DependInfo::COMMAND_STRUCTURE>},
-        {"edit", command_topic_fn<Commands::Edit::COMMAND_STRUCTURE>},
-        {"env", command_topic_fn<Commands::Env::COMMAND_STRUCTURE>},
-        {"export", command_topic_fn<Export::COMMAND_STRUCTURE>},
-        {"help", command_topic_fn<Help::COMMAND_STRUCTURE>},
-        {"install", command_topic_fn<Install::COMMAND_STRUCTURE>},
-        {"integrate", integrate_topic_fn},
-        {"list", command_topic_fn<Commands::List::COMMAND_STRUCTURE>},
-        {"owns", command_topic_fn<Commands::Owns::COMMAND_STRUCTURE>},
-        {"remove", command_topic_fn<Remove::COMMAND_STRUCTURE>},
-        {"search", command_topic_fn<Commands::SearchCommandStructure>},
+        {"commands", [](const VcpkgPaths&) { print_full_command_list(); }},
         {"topics", help_topics},
-        {"triplet", help_topic_valid_triplet},
+        {"triplet", [](const VcpkgPaths& paths) { help_topic_valid_triplet(paths.get_triplet_db()); }},
         {"versioning", help_topic_versioning},
-    }};
+    };
 
-    static void help_topics(const VcpkgPaths&)
+    void help_topics(const VcpkgPaths&)
     {
-        auto msg = msg::format(msgAvailableHelpTopics);
-        for (auto topic : topics)
+        std::vector<LocalizedString> all_topic_names;
+        for (auto&& topic : topics)
         {
-            msg.append_raw(fmt::format("\n  {}", topic.name));
+            all_topic_names.push_back(LocalizedString::from_raw(topic.name));
         }
-        msg::println(msg);
+
+        for (auto&& command_metadata : get_all_commands_metadata())
+        {
+            all_topic_names.push_back(LocalizedString::from_raw(command_metadata->name));
+        }
+
+        Util::sort(all_topic_names);
+
+        LocalizedString result;
+        result.append(msgAvailableHelpTopics);
+        result.append_floating_list(1, all_topic_names);
+        result.append_raw('\n');
+        msg::print(result);
     }
 
-    void help_topic_valid_triplet(const VcpkgPaths& paths)
+} // unnamed namespace
+
+namespace vcpkg
+{
+    constexpr CommandMetadata CommandHelpMetadata{
+        "help",
+        msgHelpTopicCommand,
+        {"vcpkg help topics", "vcpkg help commands", "vcpkg help install"},
+        Undocumented,
+        AutocompletePriority::Public,
+        0,
+        1,
+        {},
+        nullptr,
+    };
+
+    void help_topic_valid_triplet(const TripletDatabase& database)
     {
         std::map<StringView, std::vector<const TripletFile*>> triplets_per_location;
-        vcpkg::Util::group_by(paths.get_available_triplets(),
+        vcpkg::Util::group_by(database.available_triplets,
                               &triplets_per_location,
                               [](const TripletFile& triplet_file) -> StringView { return triplet_file.location; });
 
-        msg::println(msgAvailableArchitectureTriplets);
-        msg::println(msgBuiltInTriplets);
-        for (auto* triplet : triplets_per_location[paths.triplets])
+        LocalizedString result;
+        result.append(msgBuiltInTriplets).append_raw('\n');
+        for (auto* triplet : triplets_per_location[database.default_triplet_directory])
         {
-            msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("  {}\n", triplet->name));
+            result.append_indent().append_raw(triplet->name).append_raw('\n');
         }
 
-        triplets_per_location.erase(paths.triplets);
-        msg::println(msgCommunityTriplets);
-        for (auto* triplet : triplets_per_location[paths.community_triplets])
+        triplets_per_location.erase(database.default_triplet_directory);
+        result.append(msgCommunityTriplets).append_raw('\n');
+        for (auto* triplet : triplets_per_location[database.community_triplet_directory])
         {
-            msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("  {}\n", triplet->name));
+            result.append_indent().append_raw(triplet->name).append_raw('\n');
         }
 
-        triplets_per_location.erase(paths.community_triplets);
+        triplets_per_location.erase(database.community_triplet_directory);
         for (auto&& kv_pair : triplets_per_location)
         {
-            msg::println(msgOverlayTriplets, msg::path = kv_pair.first);
+            result.append(msgOverlayTriplets, msg::path = kv_pair.first).append_raw('\n');
             for (auto* triplet : kv_pair.second)
             {
-                msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("  {}\n", triplet->name));
+                result.append_indent().append_raw(triplet->name).append_raw('\n');
             }
         }
+
+        result.append(msgSeeURL, msg::url = "https://learn.microsoft.com/vcpkg/users/triplets");
+        result.append_raw('\n');
+        msg::print(result);
     }
 
-    void perform_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
+    void command_help_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
-        const auto parsed = args.parse_arguments(COMMAND_STRUCTURE);
+        const auto parsed = args.parse_arguments(CommandHelpMetadata);
 
         if (parsed.command_arguments.empty())
         {
-            print_command_list_usage();
+            print_zero_args_usage();
             Checks::exit_success(VCPKG_LINE_INFO);
         }
         const auto& topic = parsed.command_arguments[0];
-        if (topic == "triplets" || topic == "triple")
+        if (Strings::case_insensitive_ascii_equals(topic, "triplets") ||
+            Strings::case_insensitive_ascii_equals(topic, "triple"))
         {
-            help_topic_valid_triplet(paths);
-            get_global_metrics_collector().track_string(StringMetric::CommandContext, topic);
+            help_topic_valid_triplet(paths.get_triplet_db());
+            get_global_metrics_collector().track_string(StringMetric::CommandContext, "triplet");
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 
-        auto it_topic = Util::find_if(topics, [&](const Topic& t) { return t.name == topic; });
-        if (it_topic != topics.end())
+        for (auto&& candidate : topics)
         {
-            it_topic->print(paths);
-            get_global_metrics_collector().track_string(StringMetric::CommandContext, it_topic->name);
-            Checks::exit_success(VCPKG_LINE_INFO);
+            if (Strings::case_insensitive_ascii_equals(candidate.name, topic))
+            {
+                candidate.print(paths);
+                get_global_metrics_collector().track_string(StringMetric::CommandContext, candidate.name);
+                Checks::exit_success(VCPKG_LINE_INFO);
+            }
+        }
+
+        for (auto&& command_metadata : get_all_commands_metadata())
+        {
+            if (Strings::case_insensitive_ascii_equals(command_metadata->name, topic))
+            {
+                print_usage(*command_metadata);
+                get_global_metrics_collector().track_string(StringMetric::CommandContext, command_metadata->name);
+                Checks::exit_success(VCPKG_LINE_INFO);
+            }
         }
 
         msg::println_error(msgUnknownTopic, msg::value = topic);
@@ -185,4 +192,4 @@ namespace vcpkg::Help
         get_global_metrics_collector().track_string(StringMetric::CommandContext, "unknown");
         Checks::exit_fail(VCPKG_LINE_INFO);
     }
-}
+} // namespace vcpkg

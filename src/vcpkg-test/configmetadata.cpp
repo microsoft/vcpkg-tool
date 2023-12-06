@@ -1,13 +1,10 @@
-#include <catch2/catch.hpp>
+#include <vcpkg-test/util.h>
 
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/jsonreader.h>
 #include <vcpkg/base/stringview.h>
 
 #include <vcpkg/configuration.h>
-#include <vcpkg/registries.h>
-
-#include <vcpkg-test/util.h>
 
 using namespace vcpkg;
 
@@ -39,9 +36,10 @@ static void CHECK_LINES(const std::string& a, const std::string& b)
 
 static Configuration parse_test_configuration(StringView text)
 {
-    auto object = Json::parse_object(text).value_or_exit(VCPKG_LINE_INFO);
+    static constexpr StringLiteral origin = "test";
+    auto object = Json::parse_object(text, origin).value_or_exit(VCPKG_LINE_INFO);
 
-    Json::Reader reader;
+    Json::Reader reader(origin);
     auto parsed_config_opt = reader.visit(object, get_configuration_deserializer());
     REQUIRE(reader.errors().empty());
 
@@ -58,9 +56,10 @@ static void check_string(const Json::Object& obj, StringView key, StringView exp
 
 static void check_errors(const std::string& config_text, const std::string& expected_errors)
 {
-    auto object = Json::parse_object(config_text).value_or_exit(VCPKG_LINE_INFO);
+    static constexpr StringLiteral origin = "test";
+    auto object = Json::parse_object(config_text, origin).value_or_exit(VCPKG_LINE_INFO);
 
-    Json::Reader reader;
+    Json::Reader reader(origin);
     auto parsed_config_opt = reader.visit(object, get_configuration_deserializer());
     REQUIRE(!reader.errors().empty());
 
@@ -141,7 +140,7 @@ TEST_CASE ("config registries only", "[ce-metadata]")
 
         REQUIRE(config.registries[3].packages);
 
-        auto raw_obj = Json::parse_object(raw_config).value_or_exit(VCPKG_LINE_INFO);
+        auto raw_obj = Json::parse_object(raw_config, "test").value_or_exit(VCPKG_LINE_INFO);
         auto serialized_obj = config.serialize();
         Test::check_json_eq(raw_obj, serialized_obj);
     }
@@ -154,7 +153,7 @@ TEST_CASE ("config registries only", "[ce-metadata]")
     }
 })json";
         check_errors(raw_no_baseline, R"(
-$.default-registry (a builtin registry): missing required field 'baseline' (a baseline)
+test: error: $.default-registry (a builtin registry): missing required field 'baseline' (a baseline)
 )");
 
         std::string raw_with_packages = R"json({
@@ -165,7 +164,7 @@ $.default-registry (a builtin registry): missing required field 'baseline' (a ba
     }
 })json";
         check_errors(raw_with_packages, R"(
-$.default-registry (a registry): unexpected field 'packages', did you mean 'path'?
+test: error: $.default-registry (a registry): unexpected field 'packages', did you mean 'path'?
 )");
 
         std::string raw_default_artifact = R"json({
@@ -176,7 +175,7 @@ $.default-registry (a registry): unexpected field 'packages', did you mean 'path
     }
 })json";
         check_errors(raw_default_artifact, R"(
-$ (a configuration object): The default registry cannot be an artifact registry.
+test: error: $ (a configuration object): The default registry cannot be an artifact registry.
 )");
         std::string raw_bad_kind = R"json({
     "registries": [{
@@ -184,8 +183,8 @@ $ (a configuration object): The default registry cannot be an artifact registry.
     }]
 })json";
         check_errors(raw_bad_kind, R"(
-$.registries[0] (a registry): "kind" did not have an expected value: (expected one of: builtin, filesystem, git, artifact; found custom)
-$.registries[0]: mismatched type: expected a registry
+test: error: $.registries[0] (a registry): "kind" did not have an expected value: (expected one of: builtin, filesystem, git, artifact; found custom)
+test: error: $.registries[0]: mismatched type: expected a registry
 )");
 
         std::string raw_bad_fs_registry = R"json({
@@ -197,8 +196,8 @@ $.registries[0]: mismatched type: expected a registry
     }]
 })json";
         check_errors(raw_bad_fs_registry, R"(
-$.registries[0] (a filesystem registry): unexpected field 'reference', did you mean 'baseline'?
-$.registries[0] (a registry): missing required field 'packages' (a package pattern array)
+test: error: $.registries[0] (a filesystem registry): unexpected field 'reference', did you mean 'baseline'?
+test: error: $.registries[0] (a registry): missing required field 'packages' (a package pattern array)
 )");
 
         std::string raw_bad_git_registry = R"json({
@@ -211,11 +210,11 @@ $.registries[0] (a registry): missing required field 'packages' (a package patte
     }]
 })json";
         check_errors(raw_bad_git_registry, R"(
-$.registries[0] (a registry): unexpected field 'no-repository', did you mean 'repository'?
-$.registries[0] (a git registry): missing required field 'repository' (a git repository URL)
-$.registries[0].reference: mismatched type: expected a git reference (for example, a branch)
-$.registries[0] (a git registry): unexpected field 'no-repository', did you mean 'repository'?
-$.registries[0].packages: mismatched type: expected a package pattern array
+test: error: $.registries[0] (a registry): unexpected field 'no-repository', did you mean 'repository'?
+test: error: $.registries[0] (a git registry): missing required field 'repository' (a git repository URL)
+test: error: $.registries[0].reference: mismatched type: expected a git reference (for example, a branch)
+test: error: $.registries[0] (a git registry): unexpected field 'no-repository', did you mean 'repository'?
+test: error: $.registries[0].packages: mismatched type: expected a package pattern array
 )");
 
         std::string raw_bad_artifact_registry = R"json({
@@ -227,12 +226,12 @@ $.registries[0].packages: mismatched type: expected a package pattern array
     }]
 })json";
         check_errors(raw_bad_artifact_registry, R"(
-$.registries[0] (a registry): unexpected field 'no-location', did you mean 'location'?
-$.registries[0] (an artifacts registry): missing required field 'name' (an identifier)
-$.registries[0] (an artifacts registry): missing required field 'location' (an artifacts git registry URL)
-$.registries[0] (an artifacts registry): unexpected field 'no-location', did you mean 'location'?
-$.registries[0] (an artifacts registry): unexpected field 'baseline', did you mean 'kind'?
-$.registries[0] (an artifacts registry): unexpected field 'packages', did you mean 'name'?
+test: error: $.registries[0] (a registry): unexpected field 'no-location', did you mean 'location'?
+test: error: $.registries[0] (an artifacts registry): missing required field 'name' (an identifier)
+test: error: $.registries[0] (an artifacts registry): missing required field 'location' (an artifacts git registry URL)
+test: error: $.registries[0] (an artifacts registry): unexpected field 'no-location', did you mean 'location'?
+test: error: $.registries[0] (an artifacts registry): unexpected field 'baseline', did you mean 'kind'?
+test: error: $.registries[0] (an artifacts registry): unexpected field 'packages', did you mean 'name'?
 )");
     }
 }
@@ -286,7 +285,7 @@ TEST_CASE ("config ce metadata only", "[ce-metadata]")
     REQUIRE(nested.contains("$comment"));
     REQUIRE(nested.contains("unexpected"));
 
-    auto raw_obj = Json::parse_object(raw_config).value_or_exit(VCPKG_LINE_INFO);
+    auto raw_obj = Json::parse_object(raw_config, "test").value_or_exit(VCPKG_LINE_INFO);
     auto serialized_obj = config.serialize();
     Test::check_json_eq(raw_obj, serialized_obj);
 }
@@ -307,7 +306,7 @@ TEST_CASE ("metadata strings", "[ce-metadata]")
         check_string(valid_config.ce_metadata, CE_WARNING, "this is a valid warning");
         check_string(valid_config.ce_metadata, CE_ERROR, "this is a valid error");
 
-        auto raw_obj = Json::parse_object(valid_raw).value_or_exit(VCPKG_LINE_INFO);
+        auto raw_obj = Json::parse_object(valid_raw, "test").value_or_exit(VCPKG_LINE_INFO);
         Test::check_json_eq(raw_obj, valid_config.serialize());
     }
 
@@ -320,9 +319,9 @@ TEST_CASE ("metadata strings", "[ce-metadata]")
 })json";
 
         check_errors(invalid_raw, R"(
-$.error: mismatched type: expected a string
-$.warning: mismatched type: expected a string
-$.message: mismatched type: expected a string
+test: error: $.error: mismatched type: expected a string
+test: error: $.warning: mismatched type: expected a string
+test: error: $.message: mismatched type: expected a string
 )");
     }
 }
@@ -359,7 +358,7 @@ TEST_CASE ("metadata dictionaries", "[ce-metadata]")
         check_string(settings, "SETTING_1", "value1");
         check_string(settings, "SETTING_2", "value2");
 
-        auto raw_obj = Json::parse_object(valid_raw).value_or_exit(VCPKG_LINE_INFO);
+        auto raw_obj = Json::parse_object(valid_raw, "test").value_or_exit(VCPKG_LINE_INFO);
         Test::check_json_eq(raw_obj, valid_config.serialize());
     }
 
@@ -382,12 +381,12 @@ TEST_CASE ("metadata dictionaries", "[ce-metadata]")
     }
 })json";
         check_errors(invalid_raw, R"(
-$ (settings): expected an object
-$.requires (a "string": "string" dictionary): value of ["fruits/a/apple"] must be a string
-$.requires (a "string": "string" dictionary): value of ["fruits/a/avocado"] must be a string
-$.demands (settings): expected an object
-$.demands.requires (a "string": "string" dictionary): value of ["fruits/a/apple"] must be a string
-$.demands.requires (a "string": "string" dictionary): value of ["fruits/a/avocado"] must be a string
+test: error: $ (settings): expected an object
+test: error: $.requires (a "string": "string" dictionary): value of ["fruits/a/apple"] must be a string
+test: error: $.requires (a "string": "string" dictionary): value of ["fruits/a/avocado"] must be a string
+test: error: $.demands (settings): expected an object
+test: error: $.demands.requires (a "string": "string" dictionary): value of ["fruits/a/apple"] must be a string
+test: error: $.demands.requires (a "string": "string" dictionary): value of ["fruits/a/avocado"] must be a string
 )");
     }
 }
@@ -430,7 +429,7 @@ TEST_CASE ("metadata demands", "[ce-metadata]")
         CHECK(level1.size() == 1);
         check_string(level1, CE_MESSAGE, "this is level 1");
 
-        auto raw_obj = Json::parse_object(simple_raw).value_or_exit(VCPKG_LINE_INFO);
+        auto raw_obj = Json::parse_object(simple_raw, "test").value_or_exit(VCPKG_LINE_INFO);
         Test::check_json_eq(raw_obj, config.serialize());
     }
 
@@ -455,12 +454,12 @@ TEST_CASE ("metadata demands", "[ce-metadata]")
     }
 })json";
         check_errors(invalid_raw, R"(
-$.demands (a demand object): value of ["a"] must be an object
-$.demands (a demand object): value of ["b"] must be an object
-$.demands (a demand object): value of ["c"] must be an object
-$.demands (a demand object): value of ["d"] must be an object
-$.demands (a demand object): value of ["e"] must be an object
-$.demands (a demand object): ["f"] contains a nested `demands` object (nested `demands` have no effect)
+test: error: $.demands (a demand object): value of ["a"] must be an object
+test: error: $.demands (a demand object): value of ["b"] must be an object
+test: error: $.demands (a demand object): value of ["c"] must be an object
+test: error: $.demands (a demand object): value of ["d"] must be an object
+test: error: $.demands (a demand object): value of ["e"] must be an object
+test: error: $.demands (a demand object): ["f"] contains a nested `demands` object (nested `demands` have no effect)
 )");
     }
 }
@@ -479,7 +478,7 @@ TEST_CASE ("serialize configuration", "[ce-metadata]")
 })json";
         // parsing of configuration is tested elsewhere
         auto config = parse_test_configuration(raw);
-        Test::check_json_eq(Json::parse_object(raw).value_or_exit(VCPKG_LINE_INFO), config.serialize());
+        Test::check_json_eq(Json::parse_object(raw, "test").value_or_exit(VCPKG_LINE_INFO), config.serialize());
     }
 
     SECTION ("invalid overlay ports")
@@ -492,7 +491,7 @@ TEST_CASE ("serialize configuration", "[ce-metadata]")
 	]
 })json";
         check_errors(raw, R"(
-$.overlay-ports[2]: mismatched type: expected an overlay path
+test: error: $.overlay-ports[2]: mismatched type: expected an overlay path
 )");
     }
 
@@ -505,7 +504,7 @@ $.overlay-ports[2]: mismatched type: expected an overlay path
 })json";
         // parsing of configuration is tested elsewhere
         auto config = parse_test_configuration(raw);
-        Test::check_json_eq(Json::parse_object(raw).value_or_exit(VCPKG_LINE_INFO), config.serialize());
+        Test::check_json_eq(Json::parse_object(raw, "test").value_or_exit(VCPKG_LINE_INFO), config.serialize());
     }
 
     SECTION ("invalid overlay triplets")
@@ -516,7 +515,7 @@ $.overlay-ports[2]: mismatched type: expected an overlay path
 	]
 })json";
         check_errors(raw, R"(
-$.overlay-triplets[0]: mismatched type: expected a triplet path
+test: error: $.overlay-triplets[0]: mismatched type: expected a triplet path
 )");
     }
 
@@ -534,7 +533,7 @@ $.overlay-triplets[0]: mismatched type: expected a triplet path
 })json";
         // parsing of configuration is tested elsewhere
         auto config = parse_test_configuration(raw);
-        Test::check_json_eq(Json::parse_object(raw).value_or_exit(VCPKG_LINE_INFO), config.serialize());
+        Test::check_json_eq(Json::parse_object(raw, "test").value_or_exit(VCPKG_LINE_INFO), config.serialize());
     }
 
     SECTION ("overriden default registry, registries and overlays")
@@ -563,7 +562,7 @@ $.overlay-triplets[0]: mismatched type: expected a triplet path
 })json";
         // parsing of configuration is tested elsewhere
         auto config = parse_test_configuration(raw);
-        Test::check_json_eq(Json::parse_object(raw).value_or_exit(VCPKG_LINE_INFO), config.serialize());
+        Test::check_json_eq(Json::parse_object(raw, "test").value_or_exit(VCPKG_LINE_INFO), config.serialize());
     }
 
     SECTION ("null default registry")
@@ -581,7 +580,7 @@ $.overlay-triplets[0]: mismatched type: expected a triplet path
 })json";
         // parsing of configuration is tested elsewhere
         auto config = parse_test_configuration(raw);
-        Test::check_json_eq(Json::parse_object(raw).value_or_exit(VCPKG_LINE_INFO), config.serialize());
+        Test::check_json_eq(Json::parse_object(raw, "test").value_or_exit(VCPKG_LINE_INFO), config.serialize());
     }
 
     SECTION ("overriden default registry and registries")
@@ -602,7 +601,7 @@ $.overlay-triplets[0]: mismatched type: expected a triplet path
 })json";
         // parsing of configuration is tested elsewhere
         auto config = parse_test_configuration(raw);
-        Test::check_json_eq(Json::parse_object(raw).value_or_exit(VCPKG_LINE_INFO), config.serialize());
+        Test::check_json_eq(Json::parse_object(raw, "test").value_or_exit(VCPKG_LINE_INFO), config.serialize());
     }
 
     SECTION ("only registries")
@@ -619,7 +618,7 @@ $.overlay-triplets[0]: mismatched type: expected a triplet path
 })json";
         // parsing of configuration is tested elsewhere
         auto config = parse_test_configuration(raw);
-        Test::check_json_eq(Json::parse_object(raw).value_or_exit(VCPKG_LINE_INFO), config.serialize());
+        Test::check_json_eq(Json::parse_object(raw, "test").value_or_exit(VCPKG_LINE_INFO), config.serialize());
     }
 
     SECTION ("preserve comments and unexpected fields")
@@ -644,7 +643,7 @@ $.overlay-triplets[0]: mismatched type: expected a triplet path
 })json";
 
         auto config = parse_test_configuration(raw);
-        Test::check_json_eq(Json::parse_object(raw).value_or_exit(VCPKG_LINE_INFO), config.serialize());
+        Test::check_json_eq(Json::parse_object(raw, "test").value_or_exit(VCPKG_LINE_INFO), config.serialize());
 
         auto extra_fields = find_unknown_fields(config);
         CHECK(extra_fields.size() == 4);
@@ -738,7 +737,7 @@ $.overlay-triplets[0]: mismatched type: expected a triplet path
         //   demands
         // Object values in `demands` are also sorted recursively.
         auto config = parse_test_configuration(raw);
-        Test::check_json_eq(Json::parse_object(formatted).value_or_exit(VCPKG_LINE_INFO), config.serialize());
+        Test::check_json_eq(Json::parse_object(formatted, "test").value_or_exit(VCPKG_LINE_INFO), config.serialize());
     }
 }
 
@@ -955,7 +954,7 @@ TEST_CASE ("config with ce metadata full example", "[ce-metadata]")
     check_string(demand2, "$comment", "this fields won't be reordered at all");
 
     // finally test serialization is OK
-    auto raw_obj = Json::parse_object(raw_config).value_or_exit(VCPKG_LINE_INFO);
+    auto raw_obj = Json::parse_object(raw_config, "test").value_or_exit(VCPKG_LINE_INFO);
     auto serialized_obj = config.serialize();
     Test::check_json_eq(raw_obj, serialized_obj);
 }

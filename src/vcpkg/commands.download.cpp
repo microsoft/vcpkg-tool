@@ -4,40 +4,46 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/parse.h>
-#include <vcpkg/base/system.debug.h>
+#include <vcpkg/base/strings.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/binarycaching.h>
 #include <vcpkg/commands.download.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 
-namespace vcpkg::Commands
+using namespace vcpkg;
+
+namespace
 {
-    static constexpr StringLiteral OPTION_STORE = "store";
-    static constexpr StringLiteral OPTION_SKIP_SHA512 = "skip-sha512";
-    static constexpr StringLiteral OPTION_SHA512 = "sha512";
-    static constexpr StringLiteral OPTION_URL = "url";
-    static constexpr StringLiteral OPTION_HEADER = "header";
-    static constexpr StringLiteral OPTION_MACHINE_PROGRESS = "z-machine-readable-progress";
+    constexpr StringLiteral OPTION_STORE = "store";
+    constexpr StringLiteral OPTION_SKIP_SHA512 = "skip-sha512";
+    constexpr StringLiteral OPTION_SHA512 = "sha512";
+    constexpr StringLiteral OPTION_URL = "url";
+    constexpr StringLiteral OPTION_HEADER = "header";
+    constexpr StringLiteral OPTION_MACHINE_PROGRESS = "z-machine-readable-progress";
 
-    static constexpr CommandSwitch FETCH_SWITCHES[] = {
-        {OPTION_STORE, []() { return msg::format(msgCmdXDownloadOptStore); }},
-        {OPTION_SKIP_SHA512, []() { return msg::format(msgCmdXDownloadOptSkipSha); }},
-        {OPTION_MACHINE_PROGRESS, nullptr}};
-    static constexpr CommandSetting FETCH_SETTINGS[] = {
-        {OPTION_SHA512, []() { return msg::format(msgCmdXDownloadOptSha); }},
+    constexpr CommandSwitch FETCH_SWITCHES[] = {
+        {OPTION_STORE, msgCmdXDownloadOptStore},
+        {OPTION_SKIP_SHA512, msgCmdXDownloadOptSkipSha},
+        {OPTION_MACHINE_PROGRESS, {}},
     };
-    static constexpr CommandMultiSetting FETCH_MULTISETTINGS[] = {
-        {OPTION_URL, []() { return msg::format(msgCmdXDownloadOptUrl); }},
-        {OPTION_HEADER, []() { return msg::format(msgCmdXDownloadOptHeader); }},
+    constexpr CommandSetting FETCH_SETTINGS[] = {
+        {OPTION_SHA512, msgCmdXDownloadOptSha},
     };
+    constexpr CommandMultiSetting FETCH_MULTISETTINGS[] = {
+        {OPTION_URL, msgCmdXDownloadOptUrl},
+        {OPTION_HEADER, msgCmdXDownloadOptHeader},
+    };
+} // unnamed namespace
 
-    const CommandStructure COMMAND_STRUCTURE = {
-        [] {
-            return create_example_string("x-download <filepath> [--sha512=]<sha512> [--url=https://...]...")
-                .append_raw('\n')
-                .append(create_example_string("x-download <filepath> --skip-sha512 [--url=https://...]..."));
-        },
+namespace vcpkg
+{
+    constexpr CommandMetadata CommandDownloadMetadata{
+        "x-download",
+        msgCmdDownloadSynopsis,
+        {msgCmdDownloadExample1, msgCmdDownloadExample2, msgCmdDownloadExample3},
+        Undocumented,
+        AutocompletePriority::Internal,
         1,
         2,
         {FETCH_SWITCHES, FETCH_SETTINGS, FETCH_MULTISETTINGS},
@@ -88,9 +94,9 @@ namespace vcpkg::Commands
         return sha;
     }
 
-    void command_download_and_exit(const VcpkgCmdArguments& args, Filesystem& fs)
+    void command_download_and_exit(const VcpkgCmdArguments& args, const Filesystem& fs)
     {
-        auto parsed = args.parse_arguments(COMMAND_STRUCTURE);
+        auto parsed = args.parse_arguments(CommandDownloadMetadata);
         DownloadManager download_manager{
             parse_download_configuration(args.asset_sources_template()).value_or_exit(VCPKG_LINE_INFO)};
         auto file = fs.absolute(parsed.command_arguments[0], VCPKG_LINE_INFO);
@@ -148,4 +154,4 @@ namespace vcpkg::Commands
             Checks::exit_success(VCPKG_LINE_INFO);
         }
     }
-}
+} // namespace vcpkg

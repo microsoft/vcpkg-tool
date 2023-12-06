@@ -1,20 +1,32 @@
 #pragma once
 
-#include <vcpkg/base/fwd/format.h>
+#include <vcpkg/base/fwd/fmt.h>
+#include <vcpkg/base/fwd/optional.h>
 #include <vcpkg/base/fwd/stringview.h>
 
+#include <vcpkg/fwd/versions.h>
+
 #include <vcpkg/base/expected.h>
+#include <vcpkg/base/optional.h>
 
 namespace vcpkg
 {
     struct Version
     {
         Version() noexcept;
-        Version(std::string&& value, int port_version);
-        Version(const std::string& value, int port_version);
+        Version(std::string&& value, int port_version) noexcept;
+        Version(StringView value, int port_version);
+        template<int N>
+        Version(const char (&str)[N], int port_version) : Version(StringLiteral{str}, port_version)
+        {
+        }
 
         std::string to_string() const;
         void to_string(std::string& out) const;
+
+        // Attempts to parse `content` as a version or empty [^#]+#\d+
+        // If the port-version can't be parsed as a nonnegative integer, returns nullopt.
+        static Optional<Version> parse(StringView content);
 
         friend bool operator==(const Version& left, const Version& right);
         friend bool operator!=(const Version& left, const Version& right);
@@ -23,12 +35,8 @@ namespace vcpkg
         // VersionMapLess is provided as a less than comparison for use in std::map.
         friend struct VersionMapLess;
 
-        const std::string& text() const { return m_text; }
-        int port_version() const { return m_port_version; }
-
-    private:
-        std::string m_text;
-        int m_port_version = 0;
+        std::string text;
+        int port_version = 0;
     };
 
     struct VersionDiff
@@ -47,30 +55,16 @@ namespace vcpkg
         bool operator()(const Version& left, const Version& right) const;
     };
 
-    enum class VerComp
-    {
-        unk = -2,
-        lt = -1, // these values are chosen to align with traditional -1/0/1 for less/equal/greater
-        eq = 0,
-        gt = 1,
-    };
-
     // converts a strcmp <0/0/>0 style integer into a VerComp
     VerComp int_to_vercomp(int comparison_result);
-
-    enum class VersionScheme
-    {
-        Missing,
-        Relaxed,
-        Semver,
-        Date,
-        String
-    };
 
     struct SchemedVersion
     {
         VersionScheme scheme;
         Version version;
+
+        friend bool operator==(const SchemedVersion& lhs, const SchemedVersion& rhs);
+        friend bool operator!=(const SchemedVersion& lhs, const SchemedVersion& rhs);
     };
 
     StringLiteral to_string_literal(VersionScheme scheme);
@@ -146,12 +140,6 @@ namespace vcpkg
     VerComp compare_versions(const SchemedVersion& a, const SchemedVersion& b);
     VerComp compare_versions(VersionScheme sa, const Version& a, VersionScheme sb, const Version& b);
 
-    enum class VersionConstraintKind
-    {
-        None,
-        Minimum
-    };
-
     // this is for version parsing that isn't in vcpkg ports
     // stuff like tools, nuget, etc.
     struct ParsedExternalVersion
@@ -168,8 +156,12 @@ namespace vcpkg
     bool try_extract_external_date_version(ParsedExternalVersion& out, StringView version);
     // /(\d+)(\.\d+|$)(\.\d+)?.*/
     bool try_extract_external_dot_version(ParsedExternalVersion& out, StringView version);
+
+    // remove as few characters as possible from `target` to make it a valid `version-string` [^#]+(#\d+)?, or empty
+    void sanitize_version_string(std::string& target);
 }
 
+VCPKG_FORMAT_WITH_TO_STRING(vcpkg::Version);
+VCPKG_FORMAT_WITH_TO_STRING(vcpkg::VersionDiff);
 VCPKG_FORMAT_WITH_TO_STRING_LITERAL_NONMEMBER(vcpkg::VersionScheme);
 VCPKG_FORMAT_WITH_TO_STRING(vcpkg::VersionSpec);
-VCPKG_FORMAT_WITH_TO_STRING(vcpkg::Version);

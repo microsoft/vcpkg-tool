@@ -1,7 +1,7 @@
+#include <vcpkg-test/util.h>
+
 #include <vcpkg/dependencies.h>
 #include <vcpkg/spdx.h>
-
-#include <vcpkg-test/util.h>
 
 using namespace vcpkg;
 
@@ -9,7 +9,7 @@ TEST_CASE ("spdx maximum serialization", "[spdx]")
 {
     PackageSpec spec{"zlib", Test::ARM_UWP};
     SourceControlFileAndLocation scfl;
-    scfl.registry_location = "git://some-vcs-url";
+    scfl.spdx_location = "git://some-vcs-url";
     auto& scf = *(scfl.source_control_file = std::make_unique<SourceControlFile>());
     auto& cpgh = *(scf.core_paragraph = std::make_unique<SourceParagraph>());
     cpgh.name = "zlib";
@@ -17,11 +17,10 @@ TEST_CASE ("spdx maximum serialization", "[spdx]")
     cpgh.description = {"description"};
     cpgh.homepage = "homepage";
     cpgh.license = "MIT";
-    cpgh.port_version = 5;
-    cpgh.raw_version = "1.0";
     cpgh.version_scheme = VersionScheme::Relaxed;
+    cpgh.version = Version{"1.0", 5};
 
-    InstallPlanAction ipa(spec, scfl, RequestType::USER_REQUESTED, Test::X86_WINDOWS, {}, {});
+    InstallPlanAction ipa(spec, scfl, "test_packages_root", RequestType::USER_REQUESTED, Test::X86_WINDOWS, {}, {}, {});
     auto& abi = *(ipa.abi_info = AbiInfo{}).get();
     abi.package_abi = "ABIHASH";
 
@@ -157,10 +156,11 @@ TEST_CASE ("spdx maximum serialization", "[spdx]")
       "copyrightText": "NOASSERTION"
     }
   ]
-})json")
+})json",
+                                "test")
                         .value(VCPKG_LINE_INFO);
 
-    auto doc = Json::parse(sbom).value(VCPKG_LINE_INFO);
+    auto doc = Json::parse(sbom, "test").value(VCPKG_LINE_INFO);
     Test::check_json_eq(expected.value, doc.value);
 }
 
@@ -171,11 +171,10 @@ TEST_CASE ("spdx minimum serialization", "[spdx]")
     auto& scf = *(scfl.source_control_file = std::make_unique<SourceControlFile>());
     auto& cpgh = *(scf.core_paragraph = std::make_unique<SourceParagraph>());
     cpgh.name = "zlib";
-    cpgh.port_version = 0;
-    cpgh.raw_version = "1.0";
     cpgh.version_scheme = VersionScheme::String;
+    cpgh.version = Version{"1.0", 0};
 
-    InstallPlanAction ipa(spec, scfl, RequestType::USER_REQUESTED, Test::X86_WINDOWS, {}, {});
+    InstallPlanAction ipa(spec, scfl, "test_packages_root", RequestType::USER_REQUESTED, Test::X86_WINDOWS, {}, {}, {});
     auto& abi = *(ipa.abi_info = AbiInfo{}).get();
     abi.package_abi = "deadbeef";
 
@@ -285,10 +284,11 @@ TEST_CASE ("spdx minimum serialization", "[spdx]")
       "copyrightText": "NOASSERTION"
     }
   ]
-})json")
+})json",
+                                "test")
                         .value(VCPKG_LINE_INFO);
 
-    auto doc = Json::parse(sbom).value(VCPKG_LINE_INFO);
+    auto doc = Json::parse(sbom, "test").value(VCPKG_LINE_INFO);
     Test::check_json_eq(expected.value, doc.value);
 }
 
@@ -299,11 +299,10 @@ TEST_CASE ("spdx concat resources", "[spdx]")
     auto& scf = *(scfl.source_control_file = std::make_unique<SourceControlFile>());
     auto& cpgh = *(scf.core_paragraph = std::make_unique<SourceParagraph>());
     cpgh.name = "zlib";
-    cpgh.port_version = 0;
-    cpgh.raw_version = "1.0";
     cpgh.version_scheme = VersionScheme::String;
+    cpgh.version = Version{"1.0", 0};
 
-    InstallPlanAction ipa(spec, scfl, RequestType::USER_REQUESTED, Test::X86_WINDOWS, {}, {});
+    InstallPlanAction ipa(spec, scfl, "test_packages_root", RequestType::USER_REQUESTED, Test::X86_WINDOWS, {}, {}, {});
     auto& abi = *(ipa.abi_info = AbiInfo{}).get();
     abi.package_abi = "deadbeef";
 
@@ -311,14 +310,16 @@ TEST_CASE ("spdx concat resources", "[spdx]")
 {
   "relationships": [ "r1", "r2", "r3" ],
   "files": [ "f1", "f2", "f3" ]
-})json")
+})json",
+                            "test")
                     .value(VCPKG_LINE_INFO)
                     .value;
     auto doc2 = Json::parse(R"json(
 {
   "packages": [ "p1", "p2", "p3" ],
   "files": [ "f4", "f5" ]
-})json")
+})json",
+                            "test")
                     .value(VCPKG_LINE_INFO)
                     .value;
 
@@ -385,9 +386,10 @@ TEST_CASE ("spdx concat resources", "[spdx]")
     "f4",
     "f5"
   ]
-})json")
+})json",
+                                "test")
                         .value(VCPKG_LINE_INFO);
 
-    auto doc = Json::parse(sbom).value(VCPKG_LINE_INFO);
+    auto doc = Json::parse(sbom, "test").value(VCPKG_LINE_INFO);
     Test::check_json_eq(expected.value, doc.value);
 }

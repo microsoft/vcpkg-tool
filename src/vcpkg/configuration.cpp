@@ -1,3 +1,4 @@
+#include <vcpkg/base/files.h>
 #include <vcpkg/base/jsonreader.h>
 #include <vcpkg/base/message_sinks.h>
 #include <vcpkg/base/strings.h>
@@ -5,8 +6,6 @@
 
 #include <vcpkg/configuration.h>
 #include <vcpkg/documentation.h>
-#include <vcpkg/metrics.h>
-#include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
 namespace
@@ -559,7 +558,7 @@ namespace
             {
                 auto first = locations.begin();
                 const auto last = locations.end();
-                auto warning = msg::format_warning(msgDuplicatePackagePattern, msg::package_name = pattern)
+                auto warning = msg::format(msgDuplicatePackagePattern, msg::package_name = pattern)
                                    .append_raw('\n')
                                    .append_indent()
                                    .append(msgDuplicatePackagePatternFirstOcurrence)
@@ -900,7 +899,7 @@ namespace vcpkg
 
     Optional<Configuration> parse_configuration(const Json::Object& obj, StringView origin, MessageSink& messageSink)
     {
-        Json::Reader reader;
+        Json::Reader reader(origin);
         auto maybe_configuration = reader.visit(obj, get_configuration_deserializer());
         bool has_warnings = !reader.warnings().empty();
         bool has_errors = !reader.errors().empty();

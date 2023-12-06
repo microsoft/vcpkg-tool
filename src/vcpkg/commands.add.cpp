@@ -15,31 +15,26 @@
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
-using namespace vcpkg;
+#include <limits.h>
 
-namespace
+namespace vcpkg
 {
-    const CommandStructure AddCommandStructure = {
-        [] {
-            return msg::format(msgAddHelp)
-                .append_raw('\n')
-                .append(create_example_string("add port png"))
-                .append_raw('\n')
-                .append(create_example_string("add artifact cmake"));
-        },
+    constexpr CommandMetadata CommandAddMetadata{
+        "add",
+        msgCmdAddSynopsis,
+        {msgCmdAddExample1, "vcpkg add port png", msgCmdAddExample2, "vcpkg add artifact cmake"},
+        Undocumented,
+        AutocompletePriority::Public,
         2,
         SIZE_MAX,
-        {{}, {}},
+        {{}, CommonSelectArtifactVersionSettings},
         nullptr,
     };
-}
 
-namespace vcpkg::Commands
-{
     void command_add_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
         MetricsSubmission metrics;
-        auto parsed = args.parse_arguments(AddCommandStructure);
+        auto parsed = args.parse_arguments(CommandAddMetadata);
         auto&& selector = parsed.command_arguments[0];
 
         if (selector == "artifact")
@@ -49,14 +44,23 @@ namespace vcpkg::Commands
                                    msgAddArtifactOnlyOne,
                                    msg::command_line = "vcpkg add artifact");
 
-            auto artifact_name = parsed.command_arguments[1];
+            auto& artifact_name = parsed.command_arguments[1];
             auto artifact_hash = Hash::get_string_hash(artifact_name, Hash::Algorithm::Sha256);
             metrics.track_string(StringMetric::CommandContext, "artifact");
             metrics.track_string(StringMetric::CommandArgs, artifact_hash);
             get_global_metrics_collector().track_submission(std::move(metrics));
 
-            std::string ce_args[] = {"add", artifact_name};
-            Checks::exit_with_code(VCPKG_LINE_INFO, run_configure_environment_command(paths, ce_args));
+            std::vector<std::string> ecmascript_args;
+            ecmascript_args.emplace_back("add");
+            ecmascript_args.emplace_back(artifact_name);
+            auto maybe_version = Util::lookup_value(parsed.settings, OPTION_VERSION);
+            if (auto version = maybe_version.get())
+            {
+                ecmascript_args.emplace_back("--version");
+                ecmascript_args.emplace_back(*version);
+            }
+
+            Checks::exit_with_code(VCPKG_LINE_INFO, run_configure_environment_command(paths, ecmascript_args));
         }
 
         if (selector == "port")
@@ -66,6 +70,11 @@ namespace vcpkg::Commands
             {
                 Checks::msg_exit_with_message(
                     VCPKG_LINE_INFO, msgAddPortRequiresManifest, msg::command_line = "vcpkg add port");
+            }
+
+            if (Util::Maps::contains(parsed.settings, OPTION_VERSION))
+            {
+                Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgAddVersionArtifactsOnly);
             }
 
             std::vector<ParsedQualifiedSpecifier> specs;
@@ -87,33 +96,56 @@ namespace vcpkg::Commands
 
             auto maybe_manifest_scf =
                 SourceControlFile::parse_project_manifest_object(manifest->path, manifest->manifest, stdout_sink);
-            if (!maybe_manifest_scf)
+            auto pmanifest_scf = maybe_manifest_scf.get();
+            if (!pmanifest_scf)
             {
                 print_error_message(maybe_manifest_scf.error());
-                msg::println(Color::error, msg::msgSeeURL, msg::url = docs::manifests_url);
+                msg::println(Color::error, msgSeeURL, msg::url = docs::manifests_url);
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
-            auto& manifest_scf = *maybe_manifest_scf.value(VCPKG_LINE_INFO);
+            auto& manifest_scf = **pmanifest_scf;
             for (const auto& spec : specs)
             {
                 auto dep = Util::find_if(manifest_scf.core_paragraph->dependencies, [&spec](Dependency& dep) {
                     return dep.name == spec.name && !dep.host &&
                            structurally_equal(spec.platform.value_or(PlatformExpression::Expr()), dep.platform);
                 });
+                auto feature_names = spec.features.value_or({});
+                bool is_core = false;
+                Util::erase_if(feature_names, [&](const auto& feature_name) {
+                    if (feature_name == "core")
+                    {
+                        is_core = true;
+                        return true;
+                    }
+                    return false;
+                });
+                const auto features = Util::fmap(feature_names, [](const std::string& feature) {
+                    Checks::check_exit(VCPKG_LINE_INFO, !feature.empty() && feature != "core" && feature != "default");
+                    return DependencyRequestedFeature{feature};
+                });
                 if (dep == manifest_scf.core_paragraph->dependencies.end())
                 {
-                    manifest_scf.core_paragraph->dependencies.push_back(
-                        Dependency{spec.name, spec.features.value_or({}), spec.platform.value_or({})});
+                    auto& new_dep = manifest_scf.core_paragraph->dependencies.emplace_back(
+                        Dependency{spec.name, features, spec.platform.value_or({})});
+                    if (is_core)
+                    {
+                        new_dep.default_features = false;
+                    }
                 }
-                else if (spec.features)
+                else
                 {
-                    for (const auto& feature : spec.features.value_or_exit(VCPKG_LINE_INFO))
+                    for (const auto& feature : features)
                     {
                         if (!Util::Vectors::contains(dep->features, feature))
                         {
                             dep->features.push_back(feature);
                         }
+                    }
+                    if (!is_core)
+                    {
+                        dep->default_features = true;
                     }
                 }
             }

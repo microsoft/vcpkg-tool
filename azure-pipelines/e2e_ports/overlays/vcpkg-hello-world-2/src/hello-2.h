@@ -1,1 +1,0 @@
-void hello_mars();

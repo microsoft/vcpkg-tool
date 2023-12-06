@@ -12,14 +12,15 @@
 #include <map>
 #include <set>
 #include <string>
+#include <system_error>
+
+using namespace vcpkg;
 
 namespace
 {
-    using namespace vcpkg;
-
     WriteFilePointer maybe_create_log(const std::map<std::string, std::string, std::less<>>& settings,
                                       StringLiteral setting,
-                                      Filesystem& fs)
+                                      const Filesystem& fs)
     {
         const auto entry = settings.find(setting);
         if (entry == settings.end())
@@ -58,36 +59,68 @@ namespace
         HANDLE h;
     };
 
+    struct BinaryPathDecodedInfo
+    {
+        Path installed_root;
+        bool is_debug;
+    };
+
+    BinaryPathDecodedInfo decode_from_canonical_bin_dir(const Path& canonical_bin_dir)
+    {
+        auto maybe_installed_root = canonical_bin_dir.parent_path();
+        static constexpr StringLiteral debug_suffix = "\\debug";
+        const bool is_debug = Strings::case_insensitive_ascii_ends_with(maybe_installed_root, debug_suffix);
+        if (is_debug)
+        {
+            maybe_installed_root = maybe_installed_root.substr(0, maybe_installed_root.size() - debug_suffix.size());
+        }
+
+        return BinaryPathDecodedInfo{maybe_installed_root, is_debug};
+    }
+
     struct AppLocalInvocation
     {
-        AppLocalInvocation(Filesystem& fs,
+        AppLocalInvocation(const Filesystem& fs,
                            const Path& deployment_dir,
                            const Path& installed_bin_dir,
+                           const Path& installed,
+                           bool is_debug,
                            WriteFilePointer&& tlog_file,
                            WriteFilePointer&& copied_files_log)
             : m_fs(fs)
             , m_deployment_dir(deployment_dir)
-            , m_installed_bin_dir(fs.almost_canonical(installed_bin_dir, VCPKG_LINE_INFO))
-            , m_installed_bin_parent(m_installed_bin_dir.parent_path())
+            , m_installed_bin_dir(installed_bin_dir)
+            , m_installed(installed)
+            , m_is_debug(is_debug)
             , m_tlog_file(std::move(tlog_file))
             , m_copied_files_log(std::move(copied_files_log))
-            , m_openni2_installed(
-                  m_fs.exists(m_installed_bin_parent / "bin/OpenNI2/openni2deploy.ps1", VCPKG_LINE_INFO))
+            , m_openni2_installed(m_fs.exists(m_installed / "bin/OpenNI2/openni2deploy.ps1", VCPKG_LINE_INFO))
             , m_azurekinectsdk_installed(
-                  m_fs.exists(m_installed_bin_parent / "tools/azure-kinect-sensor-sdk/k4adeploy.ps1", VCPKG_LINE_INFO))
-            , m_magnum_installed(m_fs.exists(m_installed_bin_parent / "bin/magnum/magnumdeploy.ps1", VCPKG_LINE_INFO) ||
-                                 m_fs.exists(m_installed_bin_parent / "bin/magnum-d/magnumdeploy.ps1", VCPKG_LINE_INFO))
-            , m_qt_installed(m_fs.exists(m_installed_bin_parent / "plugins/qtdeploy.ps1", VCPKG_LINE_INFO))
+                  m_fs.exists(m_installed / "tools/azure-kinect-sensor-sdk/k4adeploy.ps1", VCPKG_LINE_INFO))
+            , m_magnum_installed(m_fs.exists(m_installed / "bin/magnum/magnumdeploy.ps1", VCPKG_LINE_INFO) ||
+                                 m_fs.exists(m_installed / "bin/magnum-d/magnumdeploy.ps1", VCPKG_LINE_INFO))
+            , m_qt_installed(m_fs.exists(m_installed / "plugins/qtdeploy.ps1", VCPKG_LINE_INFO))
         {
         }
 
         void resolve(const Path& binary)
         {
-            msg::println(msgApplocalProcessing, msg::path = binary);
+            msg::print(LocalizedString::from_raw(binary)
+                           .append_raw(": ")
+                           .append_raw(MessagePrefix)
+                           .append(msgApplocalProcessing)
+                           .append_raw('\n'));
+
             auto dll_file = m_fs.open_for_read(binary, VCPKG_LINE_INFO);
-            const auto dll_metadata = vcpkg::try_read_dll_metadata(dll_file).value_or_exit(VCPKG_LINE_INFO);
+            const auto dll_metadata = vcpkg::try_read_dll_metadata_required(dll_file).value_or_exit(VCPKG_LINE_INFO);
             const auto imported_names =
                 vcpkg::try_read_dll_imported_dll_names(dll_metadata, dll_file).value_or_exit(VCPKG_LINE_INFO);
+            dll_file.close();
+            resolve_explicit(binary, imported_names);
+        }
+
+        void resolve_explicit(const Path& binary, const std::vector<std::string>& imported_names)
+        {
             Debug::print("Imported DLLs of ", binary, " were ", Strings::join("\n", imported_names), "\n");
 
             for (auto&& imported_name : imported_names)
@@ -109,37 +142,36 @@ namespace
 
                     if (m_openni2_installed)
                     {
-                        deployOpenNI2(target_binary_dir, m_installed_bin_parent, imported_name);
+                        deployOpenNI2(target_binary_dir, m_installed, imported_name);
                     }
 
                     if (m_azurekinectsdk_installed)
                     {
-                        deployAzureKinectSensorSDK(target_binary_dir, m_installed_bin_parent, imported_name);
+                        deployAzureKinectSensorSDK(target_binary_dir, m_installed, imported_name);
                     }
 
                     if (m_magnum_installed)
                     {
-                        bool g_is_debug = m_installed_bin_parent.stem() == "debug";
-                        if (g_is_debug)
+                        if (m_is_debug)
                         {
-                            deployMagnum(target_binary_dir, m_installed_bin_parent / "bin/magnum-d", imported_name);
+                            deployMagnum(target_binary_dir, m_installed / "bin/magnum-d", imported_name);
                         }
                         else
                         {
-                            deployMagnum(target_binary_dir, m_installed_bin_parent / "bin/magnum", imported_name);
+                            deployMagnum(target_binary_dir, m_installed / "bin/magnum", imported_name);
                         }
                     }
 
                     if (m_qt_installed)
                     {
-                        deployQt(m_deployment_dir, m_installed_bin_parent / "plugins", imported_name);
+                        deployQt(m_deployment_dir, m_installed / "plugins", imported_name);
                     }
 
                     resolve(m_deployment_dir / imported_name);
                 }
                 else if (m_fs.exists(target_item_file_path, VCPKG_LINE_INFO))
                 {
-                    Debug::println("  ", imported_name, " not found in ", m_installed_bin_parent, "; locally deployed");
+                    Debug::println("  ", imported_name, " not found in ", m_installed, "; locally deployed");
                     resolve(target_item_file_path);
                 }
                 else
@@ -457,8 +489,10 @@ namespace
                            const Path& installed_dir,
                            const std::string& target_binary_name)
         {
-            const auto source = installed_dir / target_binary_name;
-            const auto target = target_binary_dir / target_binary_name;
+            auto source = installed_dir / target_binary_name;
+            source.make_preferred();
+            auto target = target_binary_dir / target_binary_name;
+            target.make_preferred();
             const auto mutant_name = "vcpkg-applocal-" + Hash::get_string_sha256(target_binary_dir);
             const MutantGuard mutant(mutant_name);
 
@@ -505,10 +539,11 @@ namespace
             return did_deploy;
         }
 
-        Filesystem& m_fs;
+        const Filesystem& m_fs;
         Path m_deployment_dir;
         Path m_installed_bin_dir;
-        Path m_installed_bin_parent;
+        Path m_installed;
+        bool m_is_debug;
         WriteFilePointer m_tlog_file;
         WriteFilePointer m_copied_files_log;
         std::unordered_set<std::string> m_searched;
@@ -517,54 +552,116 @@ namespace
         bool m_magnum_installed;
         bool m_qt_installed;
     };
-}
 
-namespace vcpkg::Commands
+    constexpr StringLiteral OPTION_TARGET_BINARY = "target-binary";
+    constexpr StringLiteral OPTION_INSTALLED_DIR = "installed-bin-dir";
+    constexpr StringLiteral OPTION_TLOG_FILE = "tlog-file";
+    constexpr StringLiteral OPTION_COPIED_FILES_LOG = "copied-files-log";
+
+    constexpr CommandSetting SETTINGS[] = {
+        {OPTION_TARGET_BINARY, msgCmdSettingTargetBin},
+        {OPTION_INSTALLED_DIR, msgCmdSettingInstalledDir},
+        {OPTION_TLOG_FILE, msgCmdSettingTLogFile},
+        {OPTION_COPIED_FILES_LOG, msgCmdSettingCopiedFilesLog},
+    };
+} // unnamed namespace
+
+namespace vcpkg
 {
-    void command_z_applocal_and_exit(const VcpkgCmdArguments& args, Filesystem&)
+    constexpr CommandMetadata CommandZApplocalMetadata{
+        "z-applocal",
+        msgCmdZApplocalSynopsis,
+        {"vcpkg z-applocal --target-binary=\"Path/to/binary\" --installed-bin-dir=\"Path/to/installed/bin\" "
+         "--tlog-file=\"Path/to/tlog.tlog\" --copied-files-log=\"Path/to/copiedFilesLog.log\""},
+        Undocumented,
+        AutocompletePriority::Internal,
+        0,
+        0,
+        {{}, SETTINGS},
+        nullptr,
+    };
+
+    void command_z_applocal_and_exit(const VcpkgCmdArguments& args, const Filesystem& fs)
     {
-        static constexpr StringLiteral OPTION_TARGET_BINARY = "target-binary";
-        static constexpr StringLiteral OPTION_INSTALLED_DIR = "installed-bin-dir";
-        static constexpr StringLiteral OPTION_TLOG_FILE = "tlog-file";
-        static constexpr StringLiteral OPTION_COPIED_FILES_LOG = "copied-files-log";
-
-        static constexpr CommandSetting SETTINGS[] = {
-            {OPTION_TARGET_BINARY, []() { return msg::format(msgCmdSettingTargetBin); }},
-            {OPTION_INSTALLED_DIR, []() { return msg::format(msgCmdSettingInstalledDir); }},
-            {OPTION_TLOG_FILE, []() { return msg::format(msgCmdSettingTLogFile); }},
-            {OPTION_COPIED_FILES_LOG, []() { return msg::format(msgCmdSettingCopiedFilesLog); }},
-        };
-
-        const CommandStructure COMMAND_STRUCTURE = {
-            [] {
-                return LocalizedString::from_raw(
-                    "--target-binary=\"Path/to/binary\" --installed-bin-dir=\"Path/to/installed/bin\" --tlog-file="
-                    "\"Path/to/tlog.tlog\" --copied-files-log=\"Path/to/copiedFilesLog.log\"");
-            },
-            0,
-            0,
-            {{}, SETTINGS, {}},
-            nullptr};
-
-        auto& fs = get_real_filesystem();
-
-        auto parsed = args.parse_arguments(COMMAND_STRUCTURE);
+        auto parsed = args.parse_arguments(CommandZApplocalMetadata);
         const auto target_binary = parsed.settings.find(OPTION_TARGET_BINARY);
-        Checks::check_exit(
-            VCPKG_LINE_INFO, target_binary != parsed.settings.end(), "The --target-binary setting is required.");
-        const auto target_installed_bin_dir = parsed.settings.find(OPTION_INSTALLED_DIR);
-        Checks::check_exit(VCPKG_LINE_INFO,
-                           target_installed_bin_dir != parsed.settings.end(),
-                           "The --installed-bin-dir setting is required.");
+        if (target_binary == parsed.settings.end())
+        {
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgOptionRequiresAValue, msg::option = OPTION_TARGET_BINARY);
+        }
 
-        const auto target_binary_path = fs.almost_canonical(target_binary->second, VCPKG_LINE_INFO);
+        const auto target_installed_bin_setting = parsed.settings.find(OPTION_INSTALLED_DIR);
+        if (target_installed_bin_setting == parsed.settings.end())
+        {
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgOptionRequiresAValue, msg::option = OPTION_INSTALLED_DIR);
+        }
+
+        const auto target_installed_bin_dir =
+            fs.almost_canonical(target_installed_bin_setting->second, VCPKG_LINE_INFO);
+        const auto decoded = decode_from_canonical_bin_dir(target_installed_bin_dir);
+
+        // the first binary is special in that it might not be a DLL or might not exist
+        const Path target_binary_path = target_binary->second;
+        msg::print(LocalizedString::from_raw(target_binary_path)
+                       .append_raw(": ")
+                       .append_raw(MessagePrefix)
+                       .append(msgApplocalProcessing)
+                       .append_raw('\n'));
+
+        std::error_code ec;
+        auto dll_file = fs.open_for_read(target_binary_path, ec);
+        if (ec)
+        {
+            auto io_error = ec.message();
+            if (ec == std::errc::no_such_file_or_directory)
+            {
+                msg::print(Color::warning,
+                           LocalizedString::from_raw(target_binary_path)
+                               .append_raw(": ")
+                               .append_raw(WarningPrefix)
+                               .append_raw(io_error)
+                               .append_raw('\n'));
+            }
+            else
+            {
+                msg::print(Color::error,
+                           LocalizedString::from_raw(target_binary_path)
+                               .append_raw(": ")
+                               .append_raw(ErrorPrefix)
+                               .append_raw(io_error)
+                               .append_raw('\n'));
+            }
+
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
+
+        auto maybe_dll_metadata = vcpkg::try_read_dll_metadata(dll_file).value_or_exit(VCPKG_LINE_INFO);
+        auto dll_metadata = maybe_dll_metadata.get();
+        if (!dll_metadata)
+        {
+            msg::print(Color::warning,
+                       LocalizedString::from_raw(target_binary_path)
+                           .append_raw(": ")
+                           .append_raw(WarningPrefix)
+                           .append(msgFileIsNotExecutable)
+                           .append_raw('\n'));
+
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
+
+        const auto imported_names =
+            vcpkg::try_read_dll_imported_dll_names(*dll_metadata, dll_file).value_or_exit(VCPKG_LINE_INFO);
+        dll_file.close();
+
         AppLocalInvocation invocation(fs,
                                       target_binary_path.parent_path(),
-                                      target_installed_bin_dir->second,
+                                      target_installed_bin_dir,
+                                      decoded.installed_root,
+                                      decoded.is_debug,
                                       maybe_create_log(parsed.settings, OPTION_TLOG_FILE, fs),
                                       maybe_create_log(parsed.settings, OPTION_COPIED_FILES_LOG, fs));
-        invocation.resolve(target_binary_path);
+        invocation.resolve_explicit(target_binary_path, imported_names);
         Checks::exit_success(VCPKG_LINE_INFO);
     }
-}
-#endif
+} // namespace vcpkg
+#endif // ^^^ _WIN32

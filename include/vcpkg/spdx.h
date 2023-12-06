@@ -2,12 +2,14 @@
 
 #include <vcpkg/base/fwd/files.h>
 #include <vcpkg/base/fwd/json.h>
+#include <vcpkg/base/fwd/stringview.h>
 
 #include <vcpkg/fwd/dependencies.h>
 
 #include <vcpkg/base/span.h>
 
 #include <string>
+#include <vector>
 
 namespace vcpkg
 {
@@ -27,5 +29,5 @@ namespace vcpkg
                                  std::string document_namespace,
                                  std::vector<Json::Value>&& resource_docs);
 
-    Json::Value run_resource_heuristics(StringView contents);
+    Json::Value run_resource_heuristics(StringView contents, StringView portRawVersion);
 }

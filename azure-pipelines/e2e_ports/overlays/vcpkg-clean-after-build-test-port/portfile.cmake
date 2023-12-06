@@ -1,7 +1,0 @@
-file(WRITE "${DOWNLOADS}/clean_after_build_test.txt" "some downloaded content")
-file(MAKE_DIRECTORY "${CURRENT_BUILDTREES_DIR}/src")
-file(MAKE_DIRECTORY "${CURRENT_BUILDTREES_DIR}/src/some_sources")
-file(WRITE "${CURRENT_BUILDTREES_DIR}/src/some_sources/source.c" "some sources content")
-file(MAKE_DIRECTORY "${CURRENT_PACKAGES_DIR}/include")
-file(WRITE "${CURRENT_PACKAGES_DIR}/include/vcpkg-clean-after-build-test-port.h" "some header content")
-file(WRITE "${CURRENT_PACKAGES_DIR}/share/${PORT}/copyright" "some license content")

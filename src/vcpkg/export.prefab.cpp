@@ -9,19 +9,17 @@
 #include <vcpkg/archives.h>
 #include <vcpkg/cmakevars.h>
 #include <vcpkg/commands.build.h>
-#include <vcpkg/commands.export.h>
-#include <vcpkg/commands.h>
-#include <vcpkg/commands.install.h>
+#include <vcpkg/dependencies.h>
 #include <vcpkg/export.prefab.h>
 #include <vcpkg/installedpaths.h>
 #include <vcpkg/tools.h>
 #include <vcpkg/vcpkgpaths.h>
 
-namespace vcpkg::Export::Prefab
+namespace vcpkg::Prefab
 {
     static std::vector<Path> find_modules(const VcpkgPaths& system, const Path& root, const std::string& ext)
     {
-        Filesystem& fs = system.get_filesystem();
+        const Filesystem& fs = system.get_filesystem();
         std::error_code ec;
         auto paths = fs.get_regular_files_recursive(root, ec);
         if (ec)
@@ -261,7 +259,7 @@ namespace vcpkg::Export::Prefab
                 VCPKG_LINE_INFO, is_supported(*build_info), msgExportPrefabRequiresAndroidTriplet);
         }
 
-        std::vector<TripletFile> available_triplets = paths.get_available_triplets();
+        const auto& triplet_db = paths.get_triplet_db();
 
         std::unordered_map<CPUArchitecture, std::string> required_archs = {{CPUArchitecture::ARM, "armeabi-v7a"},
                                                                            {CPUArchitecture::ARM64, "arm64-v8a"},
@@ -277,7 +275,7 @@ namespace vcpkg::Export::Prefab
         std::unordered_map<Triplet, std::string> triplet_abi_map;
         std::unordered_map<Triplet, int> triplet_api_map;
 
-        for (auto& triplet_file : available_triplets)
+        for (auto& triplet_file : triplet_db.available_triplets)
         {
             if (triplet_file.name.size() > 0)
             {
@@ -308,23 +306,23 @@ namespace vcpkg::Export::Prefab
             Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgMissingAndroidEnv);
         }
 
-        Filesystem& utils = paths.get_filesystem();
+        const Filesystem& fs = paths.get_filesystem();
 
         const Path ndk_location = android_ndk_home.value_or_exit(VCPKG_LINE_INFO);
 
         Checks::msg_check_maybe_upgrade(VCPKG_LINE_INFO,
-                                        utils.exists(ndk_location, IgnoreErrors{}),
+                                        fs.exists(ndk_location, IgnoreErrors{}),
                                         msgMissingAndroidHomeDir,
                                         msg::path = ndk_location);
         const auto source_properties_location = ndk_location / "source.properties";
 
         Checks::msg_check_maybe_upgrade(VCPKG_LINE_INFO,
-                                        utils.exists(ndk_location, IgnoreErrors{}),
+                                        fs.exists(ndk_location, IgnoreErrors{}),
                                         msgAndroidHomeDirMissingProps,
-                                        msg::env_var = "ANDROID_NDK_HOME",
+                                        msg::env_var = format_environment_variable("ANDROID_NDK_HOME"),
                                         msg::path = source_properties_location);
 
-        std::string content = utils.read_contents(source_properties_location, VCPKG_LINE_INFO);
+        std::string content = fs.read_contents(source_properties_location, VCPKG_LINE_INFO);
 
         Optional<std::string> version_opt = find_ndk_version(content);
 
@@ -332,7 +330,7 @@ namespace vcpkg::Export::Prefab
 
         NdkVersion version = to_version(version_opt.value_or_exit(VCPKG_LINE_INFO)).value_or_exit(VCPKG_LINE_INFO);
 
-        utils.remove_all(paths.prefab, VCPKG_LINE_INFO);
+        fs.remove_all(paths.prefab, VCPKG_LINE_INFO);
 
         /*
         prefab
@@ -373,7 +371,7 @@ namespace vcpkg::Export::Prefab
             const std::string name = action.spec.name();
             auto dependencies = action.dependencies();
 
-            const auto action_build_info = read_build_info(utils, paths.build_info_file_path(action.spec));
+            const auto action_build_info = read_build_info(fs, paths.build_info_file_path(action.spec));
             const bool is_empty_package = action_build_info.policies.is_enabled(BuildPolicy::EMPTY_PACKAGE);
 
             if (is_empty_package)
@@ -398,7 +396,7 @@ namespace vcpkg::Export::Prefab
             const auto per_package_dir_path = paths.prefab / name;
 
             const auto& binary_paragraph = action.core_paragraph().value_or_exit(VCPKG_LINE_INFO);
-            const std::string norm_version = binary_paragraph.version;
+            const std::string norm_version = binary_paragraph.version.to_string();
 
             version_map[name] = norm_version;
 
@@ -408,7 +406,7 @@ namespace vcpkg::Export::Prefab
             auto prefab_directory = package_directory / "prefab";
             auto modules_directory = prefab_directory / "modules";
 
-            utils.create_directories(modules_directory, IgnoreErrors{});
+            fs.create_directories(modules_directory, IgnoreErrors{});
 
             std::string artifact_id = prefab_options.maybe_artifact_id.value_or(name);
             std::string group_id = prefab_options.maybe_group_id.value_or("com.vcpkg.ndk.support");
@@ -429,14 +427,14 @@ namespace vcpkg::Export::Prefab
 
             auto meta_dir = package_directory / "META-INF";
 
-            utils.create_directories(meta_dir, IgnoreErrors{});
+            fs.create_directories(meta_dir, IgnoreErrors{});
 
             const auto share_root = paths.packages() / fmt::format("{}_{}", name, action.spec.triplet());
 
-            utils.copy_file(share_root / "share" / name / "copyright",
-                            meta_dir / "LICENSE",
-                            CopyOptions::overwrite_existing,
-                            IgnoreErrors{});
+            fs.copy_file(share_root / "share" / name / "copyright",
+                         meta_dir / "LICENSE",
+                         CopyOptions::overwrite_existing,
+                         IgnoreErrors{});
 
             PackageMetadata pm;
             pm.name = artifact_id;
@@ -496,8 +494,8 @@ namespace vcpkg::Export::Prefab
             Debug::print(fmt::format("Writing manifest to \n\t{}", manifest_path));
             Debug::print(fmt::format("Writing prefab meta data to \n\t{}", prefab_path));
 
-            utils.write_contents(manifest_path, manifest, VCPKG_LINE_INFO);
-            utils.write_contents(prefab_path, pm.to_json(), VCPKG_LINE_INFO);
+            fs.write_contents(manifest_path, manifest, VCPKG_LINE_INFO);
+            fs.write_contents(prefab_path, pm.to_json(), VCPKG_LINE_INFO);
 
             std::vector<std::string> triplet_names;
             triplet_names.reserve(triplets.size());
@@ -514,7 +512,7 @@ namespace vcpkg::Export::Prefab
                 const auto listfile =
                     paths.installed().vcpkg_dir_info() / fmt::format("{}_{}_{}.list", name, norm_version, triplet);
                 const auto installed_dir = paths.packages() / fmt::format("{}_{}", name, triplet);
-                if (!(utils.exists(listfile, IgnoreErrors{})))
+                if (!(fs.exists(listfile, IgnoreErrors{})))
                 {
                     msg::println_error(msgCorruptedInstallTree);
                     Checks::exit_fail(VCPKG_LINE_INFO);
@@ -543,15 +541,15 @@ namespace vcpkg::Export::Prefab
                 {
                     auto module_dir = modules_directory / name;
                     auto module_libs_dir = module_dir / "libs";
-                    utils.create_directories(module_libs_dir, IgnoreErrors{});
+                    fs.create_directories(module_libs_dir, IgnoreErrors{});
                     auto installed_headers_dir = installed_dir / "include";
                     auto exported_headers_dir = module_dir / "include";
 
                     ModuleMetadata meta;
                     auto module_meta_path = module_dir / "module.json";
-                    utils.write_contents(module_meta_path, meta.to_json(), VCPKG_LINE_INFO);
+                    fs.write_contents(module_meta_path, meta.to_json(), VCPKG_LINE_INFO);
 
-                    utils.copy_regular_recursive(installed_headers_dir, exported_headers_dir, VCPKG_LINE_INFO);
+                    fs.copy_regular_recursive(installed_headers_dir, exported_headers_dir, VCPKG_LINE_INFO);
                     break;
                 }
                 else
@@ -577,20 +575,20 @@ namespace vcpkg::Export::Prefab
                         }
                         auto module_dir = modules_directory / module_name;
                         auto module_libs_dir = module_dir / "libs" / fmt::format("android.{}", ab.abi);
-                        utils.create_directories(module_libs_dir, IgnoreErrors{});
+                        fs.create_directories(module_libs_dir, IgnoreErrors{});
 
                         auto abi_path = module_libs_dir / "abi.json";
 
                         Debug::print(fmt::format("Writing abi metadata to {}", abi_path));
-                        utils.write_contents(abi_path, ab.to_string(), VCPKG_LINE_INFO);
+                        fs.write_contents(abi_path, ab.to_string(), VCPKG_LINE_INFO);
 
                         auto installed_module_path = libs / module.filename();
                         auto exported_module_path = module_libs_dir / module.filename();
 
-                        utils.copy_file(installed_module_path,
-                                        exported_module_path,
-                                        CopyOptions::overwrite_existing,
-                                        IgnoreErrors{});
+                        fs.copy_file(installed_module_path,
+                                     exported_module_path,
+                                     CopyOptions::overwrite_existing,
+                                     IgnoreErrors{});
 
                         Debug::print(
                             "Copying libraries...\nFrom {}\nTo {}", installed_module_path, exported_module_path);
@@ -598,13 +596,13 @@ namespace vcpkg::Export::Prefab
                         auto exported_headers_dir = module_libs_dir / "include";
 
                         Debug::print("Copying headers...\nFrom {}\nTo {}", installed_headers_dir, exported_headers_dir);
-                        utils.copy_regular_recursive(installed_headers_dir, exported_headers_dir, VCPKG_LINE_INFO);
+                        fs.copy_regular_recursive(installed_headers_dir, exported_headers_dir, VCPKG_LINE_INFO);
 
                         ModuleMetadata meta;
                         auto module_meta_path = module_dir / "module.json";
 
                         Debug::print(fmt::format("Writing module metadata to {}", module_meta_path));
-                        utils.write_contents(module_meta_path, meta.to_json(), VCPKG_LINE_INFO);
+                        fs.write_contents(module_meta_path, meta.to_json(), VCPKG_LINE_INFO);
                     }
                 }
             }
@@ -649,7 +647,7 @@ namespace vcpkg::Export::Prefab
             Strings::inplace_replace_all(pom, "@DEPENDENCIES@", Strings::join("\n", pom_dependencies));
             Strings::inplace_replace_all(pom, "@VERSION@", norm_version);
 
-            utils.write_contents(pom_path, pom, VCPKG_LINE_INFO);
+            fs.write_contents(pom_path, pom, VCPKG_LINE_INFO);
 
             if (prefab_options.enable_maven)
             {

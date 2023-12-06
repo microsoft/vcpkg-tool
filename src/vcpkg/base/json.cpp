@@ -7,9 +7,8 @@
 
 #include <vcpkg/documentation.h>
 
-#include <inttypes.h>
-
-#include <memory>
+#include <atomic>
+#include <type_traits>
 
 namespace vcpkg::Json
 {
@@ -308,19 +307,15 @@ namespace vcpkg::Json
             case ValueKind::Integer: return lhs.underlying_->integer == rhs.underlying_->integer;
             case ValueKind::Number: return lhs.underlying_->number == rhs.underlying_->number;
             case ValueKind::String: return lhs.underlying_->string == rhs.underlying_->string;
-            case ValueKind::Array: return lhs.underlying_->string == rhs.underlying_->string;
-            case ValueKind::Object: return lhs.underlying_->string == rhs.underlying_->string;
+            case ValueKind::Array: return lhs.underlying_->array == rhs.underlying_->array;
+            case ValueKind::Object: return lhs.underlying_->object == rhs.underlying_->object;
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
     // } struct Value
     // struct Array {
     Value& Array::push_back(std::string&& value) { return this->push_back(Json::Value::string(std::move(value))); }
-    Value& Array::push_back(Value&& value)
-    {
-        underlying_.push_back(std::move(value));
-        return underlying_.back();
-    }
+    Value& Array::push_back(Value&& value) { return underlying_.emplace_back(std::move(value)); }
     Object& Array::push_back(Object&& obj) { return push_back(Value::object(std::move(obj))).object(VCPKG_LINE_INFO); }
     Array& Array::push_back(Array&& arr) { return push_back(Value::array(std::move(arr))).array(VCPKG_LINE_INFO); }
     Value& Array::insert_before(iterator it, Value&& value)
@@ -349,8 +344,7 @@ namespace vcpkg::Json
                                 fmt::format("attempted to insert duplicate key {} into JSON object", key));
         }
 
-        underlying_.emplace_back(key.to_string(), std::move(value));
-        return underlying_.back().second;
+        return underlying_.emplace_back(key.to_string(), std::move(value)).second;
     }
     Value& Object::insert(StringView key, const Value& value)
     {
@@ -360,8 +354,7 @@ namespace vcpkg::Json
                                 fmt::format("attempted to insert duplicate key {} into JSON object", key));
         }
 
-        underlying_.emplace_back(key.to_string(), value);
-        return underlying_.back().second;
+        return underlying_.emplace_back(key.to_string(), value).second;
     }
     Array& Object::insert(StringView key, Array&& value)
     {
@@ -394,8 +387,7 @@ namespace vcpkg::Json
         }
         else
         {
-            underlying_.emplace_back(key, std::move(value));
-            return underlying_.back().second;
+            return underlying_.emplace_back(key, std::move(value)).second;
         }
     }
     Value& Object::insert_or_replace(StringView key, const Value& value)
@@ -408,8 +400,7 @@ namespace vcpkg::Json
         }
         else
         {
-            underlying_.emplace_back(key, value);
-            return underlying_.back().second;
+            return underlying_.emplace_back(key, value).second;
         }
     }
     Array& Object::insert_or_replace(StringView key, Array&& value)
@@ -1109,7 +1100,7 @@ namespace vcpkg::Json
         return true;
     }
 
-    ExpectedT<ParsedJson, std::unique_ptr<ParseError>> parse_file(const Filesystem& fs,
+    ExpectedT<ParsedJson, std::unique_ptr<ParseError>> parse_file(const ReadOnlyFilesystem& fs,
                                                                   const Path& json_file,
                                                                   std::error_code& ec)
     {
@@ -1122,7 +1113,7 @@ namespace vcpkg::Json
         return parse(res, json_file);
     }
 
-    ParsedJson parse_file(vcpkg::LineInfo li, const Filesystem& fs, const Path& json_file)
+    ParsedJson parse_file(vcpkg::LineInfo li, const ReadOnlyFilesystem& fs, const Path& json_file)
     {
         std::error_code ec;
         auto ret = parse_file(fs, json_file, ec).map_error(parse_error_formatter);
@@ -1197,7 +1188,7 @@ namespace vcpkg::Json
             void append_quoted_json_string(StringView sv)
             {
                 // Table 66: JSON Single Character Escape Sequences
-                constexpr static std::array<std::pair<char32_t, const char*>, 7> escape_sequences = {{
+                constexpr static std::pair<char32_t, const char*> escape_sequences[] = {
                     {0x0008, R"(\b)"}, // BACKSPACE
                     {0x0009, R"(\t)"}, // CHARACTER TABULATION
                     {0x000A, R"(\n)"}, // LINE FEED (LF)
@@ -1205,7 +1196,7 @@ namespace vcpkg::Json
                     {0x000D, R"(\r)"}, // CARRIAGE RETURN (CR)
                     {0x0022, R"(\")"}, // QUOTATION MARK
                     {0x005C, R"(\\)"}  // REVERSE SOLIDUS
-                }};
+                };
                 // 1. Let product be the String value consisting solely of the code unit 0x0022 (QUOTATION MARK).
                 buffer.push_back('"');
 
@@ -1393,7 +1384,7 @@ namespace vcpkg::Json
 
     static std::atomic<uint64_t> g_json_reader_stats(0);
 
-    Reader::Reader() : m_stat_timer(g_json_reader_stats) { }
+    Reader::Reader(StringView origin) : m_origin(origin.data(), origin.size()), m_stat_timer(g_json_reader_stats) { }
 
     uint64_t Reader::get_reader_stats() { return g_json_reader_stats.load(); }
 
@@ -1403,7 +1394,10 @@ namespace vcpkg::Json
     }
     void Reader::add_expected_type_error(const LocalizedString& expected_type)
     {
-        m_errors.push_back(msg::format(msgMismatchedType, msg::json_field = path(), msg::json_type = expected_type));
+        m_errors.push_back(LocalizedString::from_raw(m_origin)
+                               .append_raw(": ")
+                               .append_raw(ErrorPrefix)
+                               .append(msgMismatchedType, msg::json_field = path(), msg::json_type = expected_type));
     }
     void Reader::add_extra_field_error(const LocalizedString& type, StringView field, StringView suggestion)
     {
@@ -1417,9 +1411,16 @@ namespace vcpkg::Json
             add_generic_error(type, msg::format(msgUnexpectedField, msg::json_field = field));
         }
     }
-    void Reader::add_generic_error(const LocalizedString& type, LocalizedString&& message)
+    void Reader::add_generic_error(const LocalizedString& type, StringView message)
     {
-        m_errors.push_back(LocalizedString::from_raw(Strings::concat(path(), " (", type, "): ", message)));
+        m_errors.push_back(LocalizedString::from_raw(m_origin)
+                               .append_raw(": ")
+                               .append_raw(ErrorPrefix)
+                               .append_raw(path())
+                               .append_raw(" (")
+                               .append(type)
+                               .append_raw("): ")
+                               .append_raw(message));
     }
 
     void Reader::check_for_unexpected_fields(const Object& obj,
@@ -1451,8 +1452,14 @@ namespace vcpkg::Json
 
     void Reader::add_warning(LocalizedString type, StringView msg)
     {
-        m_warnings.push_back(std::move(
-            LocalizedString::from_raw(path()).append_raw(" (").append(type).append_raw("): ").append_raw(msg)));
+        m_warnings.push_back(LocalizedString::from_raw(m_origin)
+                                 .append_raw(": ")
+                                 .append_raw(WarningPrefix)
+                                 .append_raw(path())
+                                 .append_raw(" (")
+                                 .append(type)
+                                 .append_raw("): ")
+                                 .append_raw(msg));
     }
 
     std::string Reader::path() const noexcept
@@ -1526,4 +1533,19 @@ namespace vcpkg::Json
     }
 
     const PackageNameDeserializer PackageNameDeserializer::instance;
+
+    LocalizedString FeatureNameDeserializer::type_name() const { return msg::format(msgAFeatureName); }
+
+    Optional<std::string> FeatureNameDeserializer::visit_string(Json::Reader& r, StringView sv) const
+    {
+        if (!IdentifierDeserializer::is_ident(sv))
+        {
+            r.add_generic_error(
+                type_name(),
+                msg::format(msgParseFeatureNameError, msg::package_name = sv, msg::url = docs::manifests_url));
+        }
+        return sv.to_string();
+    }
+
+    const FeatureNameDeserializer FeatureNameDeserializer::instance;
 }

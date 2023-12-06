@@ -7,7 +7,6 @@
 #include <vcpkg/commands.bootstrap-standalone.h>
 #include <vcpkg/commands.build-external.h>
 #include <vcpkg/commands.build.h>
-#include <vcpkg/commands.cache.h>
 #include <vcpkg/commands.check-support.h>
 #include <vcpkg/commands.ci-clean.h>
 #include <vcpkg/commands.ci-verify-versions.h>
@@ -15,7 +14,7 @@
 #include <vcpkg/commands.contact.h>
 #include <vcpkg/commands.create.h>
 #include <vcpkg/commands.deactivate.h>
-#include <vcpkg/commands.dependinfo.h>
+#include <vcpkg/commands.depend-info.h>
 #include <vcpkg/commands.download.h>
 #include <vcpkg/commands.edit.h>
 #include <vcpkg/commands.env.h>
@@ -23,7 +22,6 @@
 #include <vcpkg/commands.fetch.h>
 #include <vcpkg/commands.find.h>
 #include <vcpkg/commands.format-manifest.h>
-#include <vcpkg/commands.generate-message-map.h>
 #include <vcpkg/commands.generate-msbuild-props.h>
 #include <vcpkg/commands.h>
 #include <vcpkg/commands.hash.h>
@@ -44,85 +42,189 @@
 #include <vcpkg/commands.update-registry.h>
 #include <vcpkg/commands.update.h>
 #include <vcpkg/commands.upgrade.h>
-#include <vcpkg/commands.upload-metrics.h>
 #include <vcpkg/commands.use.h>
 #include <vcpkg/commands.version.h>
 #include <vcpkg/commands.vsinstances.h>
 #include <vcpkg/commands.z-applocal.h>
 #include <vcpkg/commands.z-ce.h>
+#include <vcpkg/commands.z-changelog.h>
+#include <vcpkg/commands.z-extract.h>
+#include <vcpkg/commands.z-generate-message-map.h>
 #include <vcpkg/commands.z-preregister-telemetry.h>
 #include <vcpkg/commands.z-print-config.h>
+#include <vcpkg/commands.z-upload-metrics.h>
 
-namespace vcpkg::Commands
+namespace vcpkg
 {
-    static constexpr PackageNameAndFunction<BasicCommandFn> basic_commands_storage[] = {
-        {"bootstrap-standalone", command_bootstrap_standalone_and_exit},
-        {"contact", Contact::perform_and_exit},
-        {"x-download", command_download_and_exit},
-        {"x-generate-default-message-map", command_generate_default_message_map_and_exit},
-        {"hash", Hash::perform_and_exit},
-        {"x-init-registry", InitRegistry::perform_and_exit},
-        {"version", Version::perform_and_exit},
+    static constexpr CommandRegistration<BasicCommandFn> basic_commands_storage[] = {
+        {CommandBootstrapStandaloneMetadata, command_bootstrap_standalone_and_exit},
+        {CommandContactMetadata, command_contact_and_exit},
+        {CommandDownloadMetadata, command_download_and_exit},
+        {CommandHashMetadata, command_hash_and_exit},
+        {CommandInitRegistryMetadata, command_init_registry_and_exit},
+        {CommandVersionMetadata, command_version_and_exit},
 #if defined(_WIN32)
-        {"x-upload-metrics", UploadMetrics::perform_and_exit},
-        {"z-applocal", command_z_applocal_and_exit},
+        {CommandZUploadMetricsMetadata, command_z_upload_metrics_and_exit},
+        {CommandZApplocalMetadata, command_z_applocal_and_exit},
 #endif // defined(_WIN32)
-        {"z-preregister-telemetry", command_z_preregister_telemetry_and_exit},
+        {CommandZGenerateDefaultMessageMapMetadata, command_z_generate_default_message_map_and_exit},
+        {CommandZPreregisterTelemetryMetadata, command_z_preregister_telemetry_and_exit},
     };
 
-    constexpr View<PackageNameAndFunction<BasicCommandFn>> basic_commands = basic_commands_storage;
+    constexpr View<CommandRegistration<BasicCommandFn>> basic_commands = basic_commands_storage;
 
-    static constexpr PackageNameAndFunction<PathsCommandFn> paths_commands_storage[] = {
-        {"acquire", command_acquire_and_exit},
-        {"acquire-project", command_acquire_project_and_exit},
-        {"activate", command_activate_and_exit},
-        {"add", command_add_and_exit},
-        {"x-add-version", AddVersion::perform_and_exit},
-        {"autocomplete", Autocomplete::perform_and_exit},
-        {"cache", Cache::perform_and_exit},
-        {"x-ci-clean", CIClean::perform_and_exit},
-        {"x-ci-verify-versions", CIVerifyVersions::perform_and_exit},
-        {"create", Create::perform_and_exit},
-        {"deactivate", command_deactivate_and_exit},
-        {"edit", Edit::perform_and_exit},
-        {"fetch", Fetch::perform_and_exit},
-        {"x-generate-msbuild-props", command_generate_msbuild_props_and_exit},
-        {"find", command_find_and_exit},
-        {"format-manifest", FormatManifest::perform_and_exit},
-        {"/?", Help::perform_and_exit},
-        {"help", Help::perform_and_exit},
-        {"integrate", Integrate::perform_and_exit},
-        {"list", List::perform_and_exit},
-        {"new", command_new_and_exit},
-        {"owns", Owns::perform_and_exit},
-        {"x-package-info", PackageInfo::perform_and_exit},
-        {"portsdiff", PortsDiff::perform_and_exit},
-        {"x-regenerate", command_regenerate_and_exit},
-        {"search", command_search_and_exit},
-        {"update", Update::perform_and_exit},
-        {"x-update-baseline", command_update_baseline_and_exit},
-        {"x-update-registry", command_update_registry_and_exit},
-        {"use", command_use_and_exit},
-        {"x-vsinstances", VSInstances::perform_and_exit},
-        {"z-ce", command_z_ce_and_exit},
+    static constexpr CommandRegistration<PathsCommandFn> paths_commands_storage[] = {
+        {CommandAcquireMetadata, command_acquire_and_exit},
+        {CommandAcquireProjectMetadata, command_acquire_project_and_exit},
+        {CommandActivateMetadata, command_activate_and_exit},
+        {CommandAddMetadata, command_add_and_exit},
+        {CommandAddVersionMetadata, command_add_version_and_exit},
+        {CommandAutocompleteMetadata, command_autocomplete_and_exit},
+        {CommandCiCleanMetadata, command_ci_clean_and_exit},
+        {CommandCiVerifyVersionsMetadata, command_ci_verify_versions_and_exit},
+        {CommandCreateMetadata, command_create_and_exit},
+        {CommandDeactivateMetadata, command_deactivate_and_exit},
+        {CommandEditMetadata, command_edit_and_exit},
+        {CommandFetchMetadata, command_fetch_and_exit},
+        {CommandGenerateMsbuildPropsMetadata, command_generate_msbuild_props_and_exit},
+        {CommandFindMetadata, command_find_and_exit},
+        {CommandFormatManifestMetadata, command_format_manifest_and_exit},
+        {CommandHelpMetadata, command_help_and_exit},
+        {CommandIntegrateMetadata, command_integrate_and_exit},
+        {CommandListMetadata, command_list_and_exit},
+        {CommandNewMetadata, command_new_and_exit},
+        {CommandOwnsMetadata, command_owns_and_exit},
+        {CommandPackageInfoMetadata, command_package_info_and_exit},
+        {CommandPortsdiffMetadata, command_portsdiff_and_exit},
+        {CommandRegenerateMetadata, command_regenerate_and_exit},
+        {CommandSearchMetadata, command_search_and_exit},
+        {CommandUpdateMetadata, command_update_and_exit},
+        {CommandUpdateBaselineMetadata, command_update_baseline_and_exit},
+        {CommandUpdateRegistryMetadata, command_update_registry_and_exit},
+        {CommandUseMetadata, command_use_and_exit},
+        {CommandVsInstancesMetadata, command_vs_instances_and_exit},
+        {CommandZCEMetadata, command_z_ce_and_exit},
+        {CommandZExtractMetadata, command_z_extract_and_exit},
+        {CommandZChangelogMetadata, command_z_changelog_and_exit},
     };
 
-    constexpr View<PackageNameAndFunction<PathsCommandFn>> paths_commands = paths_commands_storage;
+    constexpr View<CommandRegistration<PathsCommandFn>> paths_commands = paths_commands_storage;
 
-    static constexpr PackageNameAndFunction<TripletCommandFn> triplet_commands_storage[] = {
-        {"build", Build::perform_and_exit},
-        {"build-external", BuildExternal::perform_and_exit},
-        {"x-check-support", CheckSupport::perform_and_exit},
-        {"ci", CI::perform_and_exit},
-        {"depend-info", DependInfo::perform_and_exit},
-        {"env", Env::perform_and_exit},
-        {"export", Export::perform_and_exit},
-        {"install", Install::perform_and_exit},
-        {"remove", Remove::perform_and_exit},
-        {"x-set-installed", SetInstalled::perform_and_exit},
-        {"upgrade", Upgrade::perform_and_exit},
-        {"z-print-config", ZPrintConfig::perform_and_exit},
+    static constexpr CommandRegistration<TripletCommandFn> triplet_commands_storage[] = {
+        {CommandBuildMetadata, command_build_and_exit},
+        {CommandBuildExternalMetadata, command_build_external_and_exit},
+        {CommandCheckSupportMetadata, command_check_support_and_exit},
+        {CommandCiMetadata, command_ci_and_exit},
+        {CommandDependInfoMetadata, command_depend_info_and_exit},
+        {CommandEnvMetadata, command_env_and_exit},
+        {CommandExportMetadata, command_export_and_exit},
+        {CommandInstallMetadata, command_install_and_exit},
+        {CommandRemoveMetadata, command_remove_and_exit},
+        {CommandSetInstalledMetadata, command_set_installed_and_exit},
+        {CommandUpgradeMetadata, command_upgrade_and_exit},
+        {CommandZPrintConfigMetadata, command_z_print_config_and_exit},
     };
 
-    constexpr View<PackageNameAndFunction<TripletCommandFn>> triplet_commands = triplet_commands_storage;
+    constexpr View<CommandRegistration<TripletCommandFn>> triplet_commands = triplet_commands_storage;
+
+    std::vector<const CommandMetadata*> get_all_commands_metadata()
+    {
+        std::vector<const CommandMetadata*> result;
+        for (auto&& basic_command : basic_commands_storage)
+        {
+            result.push_back(&basic_command.metadata);
+        }
+
+        for (auto&& paths_command : paths_commands_storage)
+        {
+            result.push_back(&paths_command.metadata);
+        }
+
+        for (auto&& triplet_command : triplet_commands_storage)
+        {
+            result.push_back(&triplet_command.metadata);
+        }
+
+        return result;
+    }
+
+    static void format_command_usage_entry(HelpTableFormatter& table, const CommandMetadata& metadata)
+    {
+        if (metadata.synopsis)
+        {
+            table.format(metadata.name, metadata.synopsis.to_string());
+        }
+    }
+
+    void print_zero_args_usage()
+    {
+        HelpTableFormatter table;
+        table.example(msg::format(msgVcpkgUsage));
+        table.format(msg::format(msgResponseFileCode), msg::format(msgHelpResponseFileCommand));
+        table.blank();
+
+        table.header(msg::format(msgPackageInstallationHeader));
+        format_command_usage_entry(table, CommandExportMetadata);
+        format_command_usage_entry(table, CommandInstallMetadata);
+        format_command_usage_entry(table, CommandRemoveMetadata);
+        format_command_usage_entry(table, CommandSetInstalledMetadata);
+        format_command_usage_entry(table, CommandUpgradeMetadata);
+        table.blank();
+
+        table.header(msg::format(msgPackageDiscoveryHeader));
+        format_command_usage_entry(table, CommandCheckSupportMetadata);
+        format_command_usage_entry(table, CommandDependInfoMetadata);
+        format_command_usage_entry(table, CommandListMetadata);
+        format_command_usage_entry(table, CommandOwnsMetadata);
+        format_command_usage_entry(table, CommandPackageInfoMetadata);
+        format_command_usage_entry(table, CommandPortsdiffMetadata);
+        format_command_usage_entry(table, CommandSearchMetadata);
+        format_command_usage_entry(table, CommandUpdateMetadata);
+        table.blank();
+
+        table.header(msg::format(msgPackageManipulationHeader));
+        format_command_usage_entry(table, CommandAddMetadata);
+        format_command_usage_entry(table, CommandAddVersionMetadata);
+        format_command_usage_entry(table, CommandCreateMetadata);
+        format_command_usage_entry(table, CommandEditMetadata);
+        format_command_usage_entry(table, CommandEnvMetadata);
+        format_command_usage_entry(table, CommandFormatManifestMetadata);
+        format_command_usage_entry(table, CommandHashMetadata);
+        format_command_usage_entry(table, CommandInitRegistryMetadata);
+        format_command_usage_entry(table, CommandNewMetadata);
+        format_command_usage_entry(table, CommandUpdateBaselineMetadata);
+        table.blank();
+
+        table.header(msg::format(msgOtherCommandsHeader));
+        format_command_usage_entry(table, CommandCiMetadata);
+        format_command_usage_entry(table, CommandCiVerifyVersionsMetadata);
+        format_command_usage_entry(table, CommandContactMetadata);
+        format_command_usage_entry(table, CommandFetchMetadata);
+        format_command_usage_entry(table, CommandIntegrateMetadata);
+        table.blank();
+
+        table.header(msg::format(msgForMoreHelp));
+        table.format("help topics", msg::format(msgHelpTopicsCommand));
+        table.format(msg::format(msgCmdHelpTopic), msg::format(msgHelpTopicCommand));
+        table.format("help commands", msg::format(msgCmdHelpCommandsSynopsis));
+        table.format(msg::format(msgCmdHelpCommands), msg::format(msgCmdHelpCommandSynopsis));
+        table.blank();
+        table.example(msg::format(msgHelpExampleCommand));
+
+        msg::println(LocalizedString::from_raw(table.m_str));
+    }
+
+    void print_full_command_list()
+    {
+        HelpTableFormatter table;
+        auto all_commands = get_all_commands_metadata();
+        Util::sort(all_commands,
+                   [](const CommandMetadata* lhs, const CommandMetadata* rhs) { return lhs->name < rhs->name; });
+        for (auto command : all_commands)
+        {
+            format_command_usage_entry(table, *command);
+        }
+
+        msg::println(LocalizedString::from_raw(table.m_str));
+    }
 }

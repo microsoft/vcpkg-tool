@@ -1,12 +1,9 @@
-#include <catch2/catch.hpp>
+#include <vcpkg-test/util.h>
 
 #include <vcpkg/export.ifw.h>
 #include <vcpkg/export.prefab.h>
 
 using namespace vcpkg;
-
-namespace IFW = Export::IFW;
-namespace Prefab = Export::Prefab;
 
 TEST_CASE ("safe_rich_from_plain_text", "[export]")
 {
