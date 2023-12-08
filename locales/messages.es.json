@@ -859,7 +859,7 @@
   "PEImportCrossesSectionBoundary": "Al analizar el ejecutable portátil {path}, la tabla de importación cruza un límite de sección.",
   "PEPlusTagInvalid": "Al analizar el ejecutable portable {path}, el encabezado opcional no era ni PE32 ni PE32+.",
   "PERvaNotFound": "Al analizar el ejecutable portable {path}, no se encontró RVA {value:#X}.",
-  "PackageAbi": "{spec} package ABI: {package_abi}",
+  "PackageAbi": "ABI del paquete {spec}: {package_abi}",
   "PackageAlreadyRemoved": "no se puede quitar {spec}: ya se ha quitado",
   "PackageDiscoveryHeader": "Detección de paquetes",
   "PackageFailedtWhileExtracting": "Error de '{value}' al extraer {path}.",

@@ -859,7 +859,7 @@
   "PEImportCrossesSectionBoundary": "Při analýze přenosného spustitelného souboru {path} protíná importní tabulka hranici oddílu.",
   "PEPlusTagInvalid": "Při analýze přenosného spustitelného souboru {path} nebylo volitelné záhlaví PE32 ani PE32+.",
   "PERvaNotFound": "Při analýze přenosného spustitelného souboru {path} se nepodařilo najít adresu RVA {value:#X}.",
-  "PackageAbi": "{spec} package ABI: {package_abi}",
+  "PackageAbi": "ABI balíčku {spec}: {package_abi}",
   "PackageAlreadyRemoved": "Nepovedlo se odebrat {spec}: už je odebrané.",
   "PackageDiscoveryHeader": "Zjišťování balíčků",
   "PackageFailedtWhileExtracting": "{value} selhalo při extrahování {path}.",
