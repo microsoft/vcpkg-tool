@@ -809,7 +809,7 @@ namespace
                                     url);
             if (auto p = res.get())
             {
-                auto maybe_json = Json::parse_object(*p);
+                auto maybe_json = Json::parse_object(*p, m_url);
                 if (auto json = maybe_json.get())
                 {
                     auto archive_location = json->get("archiveLocation");
@@ -886,7 +886,7 @@ namespace
             auto res = invoke_http_request("POST", headers, m_url, stringify(payload));
             if (auto p = res.get())
             {
-                auto maybe_json = Json::parse_object(*p);
+                auto maybe_json = Json::parse_object(*p, m_url);
                 if (auto json = maybe_json.get())
                 {
                     auto cache_id = json->get("cacheId");

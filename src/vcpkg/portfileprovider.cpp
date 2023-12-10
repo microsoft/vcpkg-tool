@@ -194,12 +194,12 @@ namespace vcpkg
                         }
                         else
                         {
-                            // This should change to a soft error when ParseExpected is eliminated.
-                            print_error_message(maybe_scfl.error());
-                            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                                           msgFailedToLoadPort,
-                                                           msg::package_name = version_spec.port_name,
-                                                           msg::path = path->port_directory);
+                            return std::move(maybe_scfl)
+                                .error()
+                                .append_raw('\n')
+                                .append_raw(NotePrefix)
+                                .append(msgWhileLoadingPortVersion, msg::version_spec = version_spec)
+                                .append_raw('\n');
                         }
                     }
                     else
@@ -285,10 +285,8 @@ namespace vcpkg
                         else
                         {
                             print_error_message(maybe_scfl.error());
-                            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                                           msgFailedToLoadPort,
-                                                           msg::package_name = port_name,
-                                                           msg::path = ports_dir);
+                            msg::println();
+                            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
                         }
 
                         continue;
@@ -306,20 +304,19 @@ namespace vcpkg
                                 return std::move(*scfl);
                             }
 
-                            Checks::msg_exit_maybe_upgrade(
-                                VCPKG_LINE_INFO,
-                                msg::format(msgFailedToLoadPort, msg::package_name = port_name, msg::path = ports_spec)
-                                    .append_raw('\n')
-                                    .append(
-                                        msgMismatchedNames, msg::package_name = port_name, msg::actual = scfl_name));
+                            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
+                                                           LocalizedString::from_raw(ports_spec)
+                                                               .append_raw(": ")
+                                                               .append_raw(ErrorPrefix)
+                                                               .append(msgMismatchedNames,
+                                                                       msg::package_name = port_name,
+                                                                       msg::actual = scfl_name));
                         }
                         else
                         {
                             print_error_message(found_scfl.error());
-                            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                                           msgFailedToLoadPort,
-                                                           msg::package_name = port_name,
-                                                           msg::path = ports_dir);
+                            msg::println();
+                            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
                         }
                     }
                 }
@@ -360,8 +357,8 @@ namespace vcpkg
                         else
                         {
                             print_error_message(maybe_scfl.error());
-                            Checks::msg_exit_maybe_upgrade(
-                                VCPKG_LINE_INFO, msgFailedToLoadUnnamedPortFromPath, msg::path = ports_dir);
+                            msg::println();
+                            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
                         }
 
                         continue;

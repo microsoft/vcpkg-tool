@@ -179,7 +179,7 @@ namespace vcpkg
                 continue;
             }
 
-            const std::string name = t.pgh.package.displayname();
+            const std::string name = t.pgh.package.display_name();
 
             for (const std::string& file : t.files)
             {
@@ -352,16 +352,14 @@ namespace vcpkg
             }
             else
             {
-                if (use_head_version)
-                    msg::println(msgBuildingFromHead, msg::spec = action.displayname());
-                else
-                    msg::println(msgBuildingPackage, msg::spec = action.displayname());
+                msg::println(use_head_version ? msgBuildingFromHead : msgBuildingPackage,
+                             msg::spec = action.display_name());
 
                 auto result = build_package(args, paths, action, build_logs_recorder, status_db);
 
                 if (BuildResult::DOWNLOADED == result.code)
                 {
-                    msg::println(Color::success, msgDownloadedSources, msg::spec = action.displayname());
+                    msg::println(Color::success, msgDownloadedSources, msg::spec = action.display_name());
                     return result;
                 }
 
@@ -502,7 +500,7 @@ namespace vcpkg
             msg::println(msgInstallingPackage,
                          msg::action_index = action_index,
                          msg::count = action_count,
-                         msg::spec = action.spec);
+                         msg::spec = action.display_name());
         }
 
         TrackedPackageInstallGuard(const size_t action_index,
@@ -524,7 +522,20 @@ namespace vcpkg
                 msgElapsedForPackage, msg::spec = current_summary.get_spec(), msg::elapsed = current_summary.timing);
         }
 
-        ~TrackedPackageInstallGuard() { print_elapsed_time(); }
+        void print_abi_hash() const
+        {
+            auto bpgh = current_summary.get_binary_paragraph();
+            if (bpgh)
+            {
+                msg::println(msgPackageAbi, msg::spec = bpgh->display_name(), msg::package_abi = bpgh->abi);
+            }
+        }
+
+        ~TrackedPackageInstallGuard()
+        {
+            print_elapsed_time();
+            print_abi_hash();
+        }
 
         TrackedPackageInstallGuard(const TrackedPackageInstallGuard&) = delete;
         TrackedPackageInstallGuard& operator=(const TrackedPackageInstallGuard&) = delete;
@@ -819,6 +830,7 @@ namespace vcpkg
         if (auto files = maybe_files.get())
         {
             std::vector<ConfigPackage> config_packages;
+            std::vector<Path> pkgconfig_files;
             std::map<std::string, std::vector<std::string>> library_targets;
             std::string header_path;
             bool has_binaries = false;
@@ -880,9 +892,16 @@ namespace vcpkg
                 {
                     has_binaries = true;
                 }
-                else if (!has_binaries && Strings::starts_with(suffix, "lib/"))
+                else if (Strings::ends_with(suffix, ".pc"))
                 {
-                    has_binaries = !Strings::ends_with(suffix, ".pc");
+                    if (Strings::contains(suffix, "pkgconfig"))
+                    {
+                        pkgconfig_files.push_back(installed.root() / triplet_and_suffix);
+                    }
+                }
+                else if (Strings::starts_with(suffix, "lib/"))
+                {
+                    has_binaries = true;
                 }
                 else if (header_path.empty() && Strings::starts_with(suffix, INCLUDE_PREFIX))
                 {
@@ -974,6 +993,27 @@ namespace vcpkg
                 Strings::append(msg, "    target_include_directories(main PRIVATE ${", name, "_INCLUDE_DIRS})\n\n");
 
                 ret.message = std::move(msg);
+            }
+            if (!pkgconfig_files.empty())
+            {
+                auto msg = msg::format(msgCMakePkgConfigTargetsUsage, msg::package_name = bpgh.spec.name())
+                               .append_raw("\n\n")
+                               .extract_data();
+                for (auto&& path : pkgconfig_files)
+                {
+                    const auto lines = fs.read_lines(path).value_or_exit(VCPKG_LINE_INFO);
+                    for (const auto& line : lines)
+                    {
+                        if (Strings::starts_with(line, "Description: "))
+                        {
+                            Strings::append(msg, "    # ", line.substr(StringLiteral("Description: ").size()), '\n');
+                            break;
+                        }
+                    }
+                    const auto name = path.stem();
+                    Strings::append(msg, "    ", name, "\n\n");
+                }
+                ret.message += msg;
             }
         }
         return ret;

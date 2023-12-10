@@ -279,10 +279,9 @@ namespace vcpkg
         Optional<std::string> github_ref;
         constexpr static StringLiteral GITHUB_SHA_ENV = "GITHUB_SHA";
         Optional<std::string> github_sha;
-        constexpr static StringLiteral GITHUB_REPOSITORY_ID = "GITHUB_REPOSITORY_ID";
-        Optional<std::string> github_repository_id;
         constexpr static StringLiteral GITHUB_REPOSITORY_OWNER_ID = "GITHUB_REPOSITORY_OWNER_ID";
-        Optional<std::string> github_repository_owner_id;
+        Optional<std::string> ci_repository_id;
+        Optional<std::string> ci_repository_owner_id;
 
         constexpr static StringLiteral CMAKE_DEBUGGING_ARG = "cmake-debug";
         Optional<PortApplicableSetting> cmake_debug;

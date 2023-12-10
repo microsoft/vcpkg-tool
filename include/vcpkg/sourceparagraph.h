@@ -161,8 +161,8 @@ namespace vcpkg
                                                                                         const Json::Object& object,
                                                                                         MessageSink& warnings_sink);
 
-        static ParseExpected<SourceControlFile> parse_control_file(StringView origin,
-                                                                   std::vector<Paragraph>&& control_paragraphs);
+        static ExpectedL<std::unique_ptr<SourceControlFile>> parse_control_file(
+            StringView origin, std::vector<Paragraph>&& control_paragraphs);
 
         // Always non-null in non-error cases
         std::unique_ptr<SourceParagraph> core_paragraph;
@@ -217,7 +217,6 @@ namespace vcpkg
     };
 
     void print_error_message(const LocalizedString& message);
-    void print_error_message(const std::unique_ptr<ParseControlErrorInfo>& error_info_list);
 
     std::string parse_spdx_license_expression(StringView sv, ParseMessages& messages);
 

@@ -19,7 +19,10 @@ function streamVcpkg(vcpkgCommand: string | undefined, args: Array<string>, list
     subproc.stderr.pipe(process.stdout);
     subproc.on('error', (err) => { reject(err); });
     subproc.on('close', (code: number, signal) => {
-      if (code === 0) { accept(); }
+      if (code === 0) {
+        accept();
+        return;
+      }
       reject(i`Running vcpkg internally returned a nonzero exit code: ${code}`);
     });
   });
