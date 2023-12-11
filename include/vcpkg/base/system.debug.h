@@ -14,11 +14,11 @@ namespace vcpkg::Debug
     template<class... Args>
     void print(const Args&... args)
     {
-        if (g_debugging) msg::write_unlocalized_text_to_stdout(Color::none, Strings::concat("[DEBUG] ", args...));
+        if (g_debugging) msg::write_unlocalized_text(Color::none, Strings::concat("[DEBUG] ", args...));
     }
     template<class... Args>
     void println(const Args&... args)
     {
-        if (g_debugging) msg::write_unlocalized_text_to_stdout(Color::none, Strings::concat("[DEBUG] ", args..., '\n'));
+        if (g_debugging) msg::write_unlocalized_text(Color::none, Strings::concat("[DEBUG] ", args..., '\n'));
     }
 }

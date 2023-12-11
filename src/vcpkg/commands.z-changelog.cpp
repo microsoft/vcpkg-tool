@@ -113,7 +113,7 @@ namespace vcpkg
 
         result.append("#### New Contributors\n");
 
-        msg::write_unlocalized_text_to_stdout(Color::none, result);
+        msg::write_unlocalized_text(Color::none, result);
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 }

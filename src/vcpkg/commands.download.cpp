@@ -149,7 +149,7 @@ namespace vcpkg
                                            headers,
                                            file,
                                            sha,
-                                           Util::Sets::contains(parsed.switches, OPTION_MACHINE_PROGRESS) ? stdout_sink
+                                           Util::Sets::contains(parsed.switches, OPTION_MACHINE_PROGRESS) ? out_sink
                                                                                                           : null_sink);
             Checks::exit_success(VCPKG_LINE_INFO);
         }
