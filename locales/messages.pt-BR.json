@@ -859,7 +859,7 @@
   "PEImportCrossesSectionBoundary": "Ao analisar o Executável Portátil {path}, a tabela de importação cruza o limite de uma seção.",
   "PEPlusTagInvalid": "Ao analisar o Executável Portátil {path}, o cabeçalho opcional não era PE32 nem PE32+.",
   "PERvaNotFound": "Ao analisar o Executável Portátil {path}, não foi possível localizar RVA {value:#X}.",
-  "PackageAbi": "{spec} package ABI: {package_abi}",
+  "PackageAbi": "ABI do pacote {spec}: {package_abi}",
   "PackageAlreadyRemoved": "não é possível remover {spec}: já removido",
   "PackageDiscoveryHeader": "Descoberta de pacotes",
   "PackageFailedtWhileExtracting": "\"{value}\" falhou ao extrair {path}.",

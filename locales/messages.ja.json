@@ -859,7 +859,7 @@
   "PEImportCrossesSectionBoundary": "ポータブル実行可能ファイル {パス} の解析中に、インポート テーブルがセッション境界を越えています。",
   "PEPlusTagInvalid": "ポータブル実行可能ファイル {path} の解析中、省略可能なヘッダーは PE32 でも PE32+ でもありません。",
   "PERvaNotFound": "ポータブル実行可能ファイル {path} の解析中に、RVA {value:#X} が見つかりませんでした。",
-  "PackageAbi": "{spec} package ABI: {package_abi}",
+  "PackageAbi": "{spec} パッケージ ABI: {package_abi}",
   "PackageAlreadyRemoved": "{spec} を削除できません: すでに削除されています",
   "PackageDiscoveryHeader": "パッケージ検出",
   "PackageFailedtWhileExtracting": "{path} の抽出中に '{value}' が失敗しました。",

@@ -195,7 +195,7 @@
   "CISwitchOptRandomize": "Náhodně vybere pořadí instalace",
   "CISwitchOptSkipFailures": "Přeskočí porty označené jako =fail v souboru ci.baseline.txt.",
   "CISwitchOptXUnitAll": "Ohlásí nezměněné porty ve výstupu XUnit",
-  "CMakePkgConfigTargetsUsage": "{package_name} provides pkg-config modules:",
+  "CMakePkgConfigTargetsUsage": "{package_name} poskytuje moduly pkg-config:",
   "CMakeTargetsUsage": "{package_name} poskytuje cíle CMake:",
   "CMakeTargetsUsageHeuristicMessage": "# toto je heuristicky generované a nemusí být správné",
   "CMakeToolChainFile": "Projekty CMake by měly používat: -DCMAKE_TOOLCHAIN_FILE={path}",
