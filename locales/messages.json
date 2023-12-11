@@ -1531,6 +1531,8 @@
   "_UnexpectedSwitch.comment": "Switch is a command line switch like --switch An example of {option} is editable.",
   "UnexpectedToolOutput": "{tool_name} ({path}) produced unexpected output when attempting to determine the version:",
   "_UnexpectedToolOutput.comment": "The actual command line output will be appended after this message. An example of {tool_name} is aria2. An example of {path} is /foo/bar.",
+  "UnexpectedWindowsArchitecture": "unexpected Windows host architecture: {actual}",
+  "_UnexpectedWindowsArchitecture.comment": "{actual} is the CPU kind we observed like ARM or MIPS",
   "UnknownBaselineFileContent": "unrecognizable baseline entry; expected 'port:triplet=(fail|skip|pass)'",
   "UnknownBinaryProviderType": "unknown binary provider type: valid providers are 'clear', 'default', 'nuget', 'nugetconfig','nugettimeout', 'interactive', 'x-azblob', 'x-gcs', 'x-aws', 'x-aws-config', 'http', and 'files'",
   "UnknownBooleanSetting": "unknown boolean setting for {option}: \"{value}\". Valid values are '', '1', '0', 'ON', 'OFF', 'TRUE', and 'FALSE'.",
