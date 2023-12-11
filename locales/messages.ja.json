@@ -195,7 +195,7 @@
   "CISwitchOptRandomize": "インストール順序をランダム化します",
   "CISwitchOptSkipFailures": "ci.baseline.txt で '=fail' とマークされたポートをスキップします",
   "CISwitchOptXUnitAll": "XUnit 出力で変更されていないポートを報告する",
-  "CMakePkgConfigTargetsUsage": "{package_name} provides pkg-config modules:",
+  "CMakePkgConfigTargetsUsage": "{package_name} は pkg-config モジュールを提供します。",
   "CMakeTargetsUsage": "{package_name} は CMake ターゲットを提供します:",
   "CMakeTargetsUsageHeuristicMessage": "# これはヒューリスティックに生成され、正しくない可能性があります",
   "CMakeToolChainFile": "CMake プロジェクトでは次を使用する必要があります: \"-DCMAKE_TOOLCHAIN_FILE={path}\"",
