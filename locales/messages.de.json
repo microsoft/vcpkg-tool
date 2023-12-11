@@ -550,7 +550,7 @@
   "FailedToRunToolToDetermineVersion": "Fehler beim Ausführen von „{path}“ zum Bestimmen der {tool_name}-Version.",
   "FailedToStoreBackToMirror": "Fehler beim Speichern in der Spiegelung:",
   "FailedToStoreBinaryCache": "Fehler beim Speichern des binären Caches {path}",
-  "FailedToTakeFileSystemLock": "Fehler beim Aktivieren der Dateisystemsperre für \"{path}\".",
+  "FailedToTakeFileSystemLock": "Failed to take the filesystem lock",
   "FailedToWriteManifest": "Fehler beim Schreiben der Manifestdatei \"{path}\".",
   "FailedVendorAuthentication": "Mindestens ein {vendor}-Anmeldeinformationsanbieter konnte nicht authentifiziert werden. Weitere Informationen zum Bereitstellen von Anmeldeinformationen finden Sie unter \"{url}\".",
   "FetchingBaselineInfo": "Baselineinformationen werden von \"{package_name}\" abgerufen...",

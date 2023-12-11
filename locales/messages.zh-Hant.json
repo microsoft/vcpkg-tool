@@ -550,7 +550,7 @@
   "FailedToRunToolToDetermineVersion": "無法執行 \"{path}\" 以判斷 {tool_name} 版本。",
   "FailedToStoreBackToMirror": "無法儲存回鏡像:",
   "FailedToStoreBinaryCache": "無法儲存二進位快取 {path}",
-  "FailedToTakeFileSystemLock": "無法對 {path} 進行檔案系統鎖定",
+  "FailedToTakeFileSystemLock": "Failed to take the filesystem lock",
   "FailedToWriteManifest": "無法寫入資訊清單檔案 {path}",
   "FailedVendorAuthentication": "無法驗證一或多個 {vendor} 認證提供者。如需如何提供認證的詳細資料，請參閱 '{url}'。",
   "FetchingBaselineInfo": "正在從 {package_name} 擷取基準資訊...",

@@ -550,7 +550,7 @@
   "FailedToRunToolToDetermineVersion": "Falha ao executar \"{path}\" para determinar a versão de {tool_name}.",
   "FailedToStoreBackToMirror": "falha ao armazenar de volta ao espelho:",
   "FailedToStoreBinaryCache": "Falha ao armazenar o cache binário {path}",
-  "FailedToTakeFileSystemLock": "Falha ao obter o bloqueio do sistema de arquivos em {path}",
+  "FailedToTakeFileSystemLock": "Failed to take the filesystem lock",
   "FailedToWriteManifest": "Falha ao gravar o arquivo de manifesto {path}",
   "FailedVendorAuthentication": "Não foi possível autenticar um ou mais provedores de credenciais do {vendor}. Consulte '{url}' para obter mais detalhes sobre como fornecer credenciais.",
   "FetchingBaselineInfo": "Buscando informações de linha de base de {package_name}...",

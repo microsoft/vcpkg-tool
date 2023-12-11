@@ -550,7 +550,7 @@
   "FailedToRunToolToDetermineVersion": "Impossible d’exécuter {path} pour déterminer la version {tool_name}.",
   "FailedToStoreBackToMirror": "échec du stockage dans le miroir :",
   "FailedToStoreBinaryCache": "Échec du stockage du cache binaire {path}",
-  "FailedToTakeFileSystemLock": "Échec du verrouillage du système de fichiers sur {path}",
+  "FailedToTakeFileSystemLock": "Failed to take the filesystem lock",
   "FailedToWriteManifest": "Échec de l’écriture du fichier manifeste {path}",
   "FailedVendorAuthentication": "Un ou plusieurs fournisseurs d’informations d’identification {vendor} n’ont pas pu s’authentifier. Consultez '{url}' pour plus d’informations sur la façon de fournir des informations d’identification.",
   "FetchingBaselineInfo": "Récupération des informations de référence à partir de {package_name}...",

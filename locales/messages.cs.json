@@ -550,7 +550,7 @@
   "FailedToRunToolToDetermineVersion": "Nepodařilo se spustit {path} s cílem zjistit verzi {tool_name}.",
   "FailedToStoreBackToMirror": "Nepovedlo se uložit zpět na zrcadlení:",
   "FailedToStoreBinaryCache": "Nepovedlo se uložit binární mezipaměť {path}.",
-  "FailedToTakeFileSystemLock": "Nepovedlo se uzamknout systém souborů na {path}.",
+  "FailedToTakeFileSystemLock": "Failed to take the filesystem lock",
   "FailedToWriteManifest": "Nepovedlo se zapsat soubor manifestu {path}",
   "FailedVendorAuthentication": "Ověření nejméně jednoho zprostředkovatele přihlašovacích údajů {vendor} se nepovedlo. Další podrobnosti o tom, jak zadat přihlašovací údaje, najdete adrese {url}.",
   "FetchingBaselineInfo": "Načítá se informace o směrném plánu z {package_name}...",

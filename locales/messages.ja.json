@@ -550,7 +550,7 @@
   "FailedToRunToolToDetermineVersion": "\"{path}\" を実行して {tool_name} バージョンを特定できませんでした。",
   "FailedToStoreBackToMirror": "ミラーに保存できませんでした:",
   "FailedToStoreBinaryCache": "バイナリ キャッシュ {path} を格納できませんでした",
-  "FailedToTakeFileSystemLock": "{path} でファイル システム ロックを取得できませんでした",
+  "FailedToTakeFileSystemLock": "Failed to take the filesystem lock",
   "FailedToWriteManifest": "マニフェスト ファイル {path} を書き込めませんでした",
   "FailedVendorAuthentication": "1 つ以上の {vendor} 資格情報プロバイダーを認証できませんでした。資格情報を提供する方法の詳細については、'{url}' を参照してください。",
   "FetchingBaselineInfo": "{package_name} からベースライン情報をフェッチしています...",

@@ -550,7 +550,7 @@
   "FailedToRunToolToDetermineVersion": "无法运行“{path}”以确定 {tool_name} 版本。",
   "FailedToStoreBackToMirror": "无法存储回镜像:",
   "FailedToStoreBinaryCache": "无法存储二进制缓存 {path}",
-  "FailedToTakeFileSystemLock": "未能在 {path} 上锁定文件系统",
+  "FailedToTakeFileSystemLock": "Failed to take the filesystem lock",
   "FailedToWriteManifest": "未能写入清单文件 {path}",
   "FailedVendorAuthentication": "一个或多个 {vendor} 凭据提供程序无法进行身份验证。有关如何提供凭据的更多详细信息，请参阅“{url}”。",
   "FetchingBaselineInfo": "正在从 {package_name} 提取基线信息...",

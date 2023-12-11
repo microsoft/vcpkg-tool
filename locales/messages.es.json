@@ -550,7 +550,7 @@
   "FailedToRunToolToDetermineVersion": "No se pudo ejecutar \"{path}\" para determinar la versión de {tool_name}.",
   "FailedToStoreBackToMirror": "no se pudo almacenar en el reflejo:",
   "FailedToStoreBinaryCache": "No se pudo almacenar la caché binaria {path}",
-  "FailedToTakeFileSystemLock": "No se pudo realizar el bloqueo del sistema de archivos en {path}",
+  "FailedToTakeFileSystemLock": "Failed to take the filesystem lock",
   "FailedToWriteManifest": "No se pudo escribir el archivo de manifiesto {path}",
   "FailedVendorAuthentication": "No se pudieron autenticar uno o varios proveedores de credenciales de {vendor}. Consulte \"{url}\" para obtener más detalles sobre cómo proporcionar credenciales.",
   "FetchingBaselineInfo": "Obteniendo información de referencia de {package_name}...",

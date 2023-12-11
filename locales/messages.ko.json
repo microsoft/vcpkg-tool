@@ -550,7 +550,7 @@
   "FailedToRunToolToDetermineVersion": "{tool_name} 버전을 확인하기 위해 “{path}:을(를) 실행하지 못했습니다.",
   "FailedToStoreBackToMirror": "미러에 다시 저장하지 못했습니다:",
   "FailedToStoreBinaryCache": "이진 캐시 {path}을(를) 저장하지 못함",
-  "FailedToTakeFileSystemLock": "{path}에서 파일 시스템 잠금을 가져오지 못했습니다.",
+  "FailedToTakeFileSystemLock": "Failed to take the filesystem lock",
   "FailedToWriteManifest": "매니페스트 파일 {path}을(를) 쓰지 못함",
   "FailedVendorAuthentication": "하나 이상의 {vendor} 자격 증명 공급자가 인증에 실패했습니다. 자격 증명을 제공하는 방법에 대한 자세한 내용은 '{url}'을(를) 참조하세요.",
   "FetchingBaselineInfo": "{package_name}에서 기준 정보를 가져오는 중...",

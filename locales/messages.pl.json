@@ -550,7 +550,7 @@
   "FailedToRunToolToDetermineVersion": "Nie można uruchomić \"{path}\" w celu określenia wersji narzędzia {tool_name}.",
   "FailedToStoreBackToMirror": "nie można przechować z powrotem do dublowania:",
   "FailedToStoreBinaryCache": "Nie można zapisać binarnej pamięci podręcznej {path}",
-  "FailedToTakeFileSystemLock": "Nie można zablokować systemu plików na ścieżce {path}",
+  "FailedToTakeFileSystemLock": "Failed to take the filesystem lock",
   "FailedToWriteManifest": "Nie można zapisać pliku manifestu {path}",
   "FailedVendorAuthentication": "Uwierzytelnienie co najmniej jednego dostawcy poświadczeń {vendor} nie powiodło się. Aby uzyskać więcej informacji na temat sposobu dostarczania poświadczeń, zobacz „{url}”.",
   "FetchingBaselineInfo": "Trwa pobieranie informacji o punkcie odniesienia z {package_name}...",

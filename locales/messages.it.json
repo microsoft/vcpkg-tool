@@ -550,7 +550,7 @@
   "FailedToRunToolToDetermineVersion": "Non è stato possibile eseguire {path} per determinare la versione {tool_name}.",
   "FailedToStoreBackToMirror": "non è stato possibile archiviare nuovamente nel mirror:",
   "FailedToStoreBinaryCache": "Non è stato possibile archiviare la cache binaria {path}",
-  "FailedToTakeFileSystemLock": "Non è stato possibile accettare il blocco del file system in {path}",
+  "FailedToTakeFileSystemLock": "Failed to take the filesystem lock",
   "FailedToWriteManifest": "Non è stato possibile scrivere il file manifesto {path}",
   "FailedVendorAuthentication": "Impossibile autenticare uno o più provider di credenziali {vendor}. Per altri dettagli su come fornire le credenziali, vedere '{url}'.",
   "FetchingBaselineInfo": "Recupero delle informazioni di base da {package_name}...",

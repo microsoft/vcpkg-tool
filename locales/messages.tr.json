@@ -550,7 +550,7 @@
   "FailedToRunToolToDetermineVersion": "{tool_name} sürümünü belirlemek için \"{path}\" çalıştırılamadı.",
   "FailedToStoreBackToMirror": "yansıtmaya geri depolanamadı:",
   "FailedToStoreBinaryCache": "{path} ikili önbelleği depolanamadı",
-  "FailedToTakeFileSystemLock": "{path} dizininde dosya sistemi kilidi alınamadı",
+  "FailedToTakeFileSystemLock": "Failed to take the filesystem lock",
   "FailedToWriteManifest": "{path} manifest dosyası yazılamadı",
   "FailedVendorAuthentication": "Bir veya daha fazla {vendor} kimlik bilgisi sağlayıcısı kimlik doğrulaması yapamadı. Kimlik bilgilerini sağlama hakkında daha fazla ayrıntı için bkz. '{url}'.",
   "FetchingBaselineInfo": "Temel bilgiler {package_name}...",
