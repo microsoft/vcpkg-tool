@@ -2020,6 +2020,9 @@
       <Item ItemId=";CMakePkgConfigTargetsUsage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[{package_name} provides pkg-config modules:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[O {package_name} fornece módulos pkg-config:]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
