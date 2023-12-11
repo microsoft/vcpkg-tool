@@ -1038,6 +1038,7 @@
   "UnexpectedPortversion": "Neočekávaná verze portu bez pole správy verzí",
   "UnexpectedSwitch": "neočekávaný příkaz switch: {option}",
   "UnexpectedToolOutput": "Nástroj {tool_name} ({path}) vygeneroval neočekávaný výstup při pokusu o určení verze:",
+  "UnexpectedWindowsArchitecture": "unexpected Windows host architecture: {actual}",
   "UnknownBaselineFileContent": "nerozpoznatelná položka směrného plánu; očekávalo se port:triplet=(fail|skip|pass)",
   "UnknownBinaryProviderType": "Neznámý typ binárního zprostředkovatele: platní zprostředkovatelé jsou clear, default, nuget, nugetconfig, nugettimeout, interactive, x-azblob, x-gcs, x-aws, x-aws-config, http a files.",
   "UnknownBooleanSetting": "neznámé nastavení logického operátoru pro možnost {option}: „{value}“. Platné hodnoty jsou 1, 0, ON, OFF, TRUE a FALSE, nebo prázdné.",

@@ -1038,6 +1038,7 @@
   "UnexpectedPortversion": "неожиданный параметр \"port-version\" без поля управления версиями",
   "UnexpectedSwitch": "непредвиденный переключатель: {option}",
   "UnexpectedToolOutput": "Средство {tool_name} ({path}) отобразило непредвиденные выходные данные при попытке определить версию:",
+  "UnexpectedWindowsArchitecture": "unexpected Windows host architecture: {actual}",
   "UnknownBaselineFileContent": "Базовая запись не распознана; ожидалось \"port:triplet=(fail|skip|pass)\".",
   "UnknownBinaryProviderType": "неизвестный тип бинарного провайдера: допустимыми провайдерами являются «clear», «default», «nuget», «nugetconfig», «nugettimeout», «interactive», «x-azblob», «x-gcs», «x-aws», «x-aws-config», «http» и «файлы»",
   "UnknownBooleanSetting": "неизвестная логическая настройка для {option}: \"{value}\". Допустимые значения: '', \"1\", \"0\", \"ВКЛ\", \"ВЫКЛ\", \"ИСТИНА\" и \"ЛОЖЬ\".",

@@ -1038,6 +1038,7 @@
   "UnexpectedPortversion": "未預期的 \"port-version\" 沒有版本設定欄位",
   "UnexpectedSwitch": "未預期的切換: {option}",
   "UnexpectedToolOutput": "{tool_name} ({path})嘗試判斷版本時產生未預期的輸出:",
+  "UnexpectedWindowsArchitecture": "unexpected Windows host architecture: {actual}",
   "UnknownBaselineFileContent": "無法辨識的基準項目; 預期為 'port:triplet=(fail|skip|pass)'",
   "UnknownBinaryProviderType": "未知的二進位提供者類型: 有效的提供者為 'clear', 'default', 'nuget', 'nugetconfig','nugettimeout', 'interactive', 'x-azblob', 'x-gcs', 'x-aws', 'x-aws-config', 'http', 和 'files'",
   "UnknownBooleanSetting": "{option} 的布林值設定未知: \"{value}\"。有效值為 ''、'1'、'0'、'ON'、'OFF'、'TRUE' 和 'FALSE'。",

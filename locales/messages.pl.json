@@ -1038,6 +1038,7 @@
   "UnexpectedPortversion": "nieoczekiwany element „port-version” bez pola przechowywania wersji",
   "UnexpectedSwitch": "nieoczekiwany przełącznik: {option}",
   "UnexpectedToolOutput": "{tool_name} ({path}) wygenerował nieoczekiwane dane wyjściowe podczas próby określenia wersji:",
+  "UnexpectedWindowsArchitecture": "unexpected Windows host architecture: {actual}",
   "UnknownBaselineFileContent": "nierozpoznawalny wpis punktu odniesienia; oczekiwano elementu „port:triplet=(fail|skip|pass)”",
   "UnknownBinaryProviderType": "nieznany typ dostawcy binarnego: prawidłowi dostawcy to „clear”, „default”, „nuget”, „nugetconfig”, „nugettimeout”, „interactive”, „x-azblob”, „x-gcs”, „x-aws”, „x-aws-config”, „http” i „files”",
   "UnknownBooleanSetting": "nieznane ustawienie wartości logicznej dla opcji {option}: „{value}”. Prawidłowe wartości to '', „1”, „0”, „ON”, „OFF”, „TRUE” i „FALSE”.",

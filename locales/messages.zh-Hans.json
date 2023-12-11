@@ -1038,6 +1038,7 @@
   "UnexpectedPortversion": "没有版本控制字段的意外 \"port-version\"",
   "UnexpectedSwitch": "意外开关: {option}",
   "UnexpectedToolOutput": "{tool_name} ({path}) 在尝试确定版本时生成了意外输出:",
+  "UnexpectedWindowsArchitecture": "unexpected Windows host architecture: {actual}",
   "UnknownBaselineFileContent": "无法识别的基线条目；应为 “port:triplet=(fail|skip|pass)”",
   "UnknownBinaryProviderType": "未知的二进制提供程序类型: 有效提供程序为 “clear”、“default”、“nuget”、“nugetconfig”“nugettimeout”、“\"interactive”、“x-azblob”、“x-gcs”、“x-aws”、“x-aws-config”、“http” 和 “files”",
   "UnknownBooleanSetting": "{option} 的布尔值设置未知: \"{value}\"。有效值为 \"\"、\"1\"、\"0\"、\"ON\"、\"OFF\"、\"TRUE\" 和 \"FALSE\"。",

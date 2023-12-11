@@ -1038,6 +1038,7 @@
   "UnexpectedPortversion": "Unerwartete \"port-version\" ohne Versionsverwaltungsfeld",
   "UnexpectedSwitch": "Unerwarteter Schalter: {option}",
   "UnexpectedToolOutput": "{tool_name} ({path}) hat beim Versuch, die Version zu bestimmen, eine unerwartete Ausgabe erzeugt:",
+  "UnexpectedWindowsArchitecture": "unexpected Windows host architecture: {actual}",
   "UnknownBaselineFileContent": "Nicht erkennbarer Baselineeintrag; erwartet \"port:triplet=(fail|skip)\".",
   "UnknownBinaryProviderType": "Unbekannter Binäranbietertyp: Gültige Anbieter sind \"clear\", \"default\", \"nuget\", \"nugetconfig\", \"nugettimeout\", \"interactive\", \"interactive\", \"x-azblob\", \"x-gcs\", \"x-aws\", \"x-aws-config\", \"http\" und \"files\"",
   "UnknownBooleanSetting": "unbekannte boolesche Einstellung für die Option {option}: „{value}“. Gültige Werte sind „,“, „1“, „0“, „ON“, „OFF“, „TRUE“ und „FALSE“.",

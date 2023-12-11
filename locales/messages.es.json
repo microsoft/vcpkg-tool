@@ -1038,6 +1038,7 @@
   "UnexpectedPortversion": "\"port-version\" inesperado sin un campo de control de versión",
   "UnexpectedSwitch": "modificador inesperado: {option}",
   "UnexpectedToolOutput": "{tool_name} ({path}) produjo una salida inesperada al intentar determinar la versión:",
+  "UnexpectedWindowsArchitecture": "unexpected Windows host architecture: {actual}",
   "UnknownBaselineFileContent": "entrada de base de referencia irreconocible; se esperaba 'port:triplet=(fail|skip|pass)'",
   "UnknownBinaryProviderType": "tipo de proveedor binario desconocido: los proveedores válidos son \"clear\", \"default\", \"nuget\", \"nugetconfig\", \"nugettimeout\", \"interactive\", \"x-azblob\", \"x-gcs\", \"x-aws\", \"x-aws-config\", \"http\" y \"files\".",
   "UnknownBooleanSetting": "valor booleano desconocido para {option}: \"{value}\". Los valores válidos son '', '1', '0', 'ON', 'OFF', 'TRUE' y 'FALSE'.",
