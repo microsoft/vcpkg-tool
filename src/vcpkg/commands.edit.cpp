@@ -256,7 +256,7 @@ namespace vcpkg
             msg::println_error(msg::format(msgErrorVsCodeNotFound, msg::env_var = format_environment_variable("EDITOR"))
                                    .append_raw('\n')
                                    .append(msgErrorVsCodeNotFoundPathExamined));
-            print_paths(stdout_sink, candidate_paths);
+            print_paths(out_sink, candidate_paths);
             msg::println(msgInfoSetEnvVar, msg::env_var = format_environment_variable("EDITOR"));
             Checks::exit_fail(VCPKG_LINE_INFO);
         }

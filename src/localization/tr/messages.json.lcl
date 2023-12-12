@@ -2017,6 +2017,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CMakePkgConfigTargetsUsage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{package_name} provides pkg-config modules:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{package_name}, pkg-config modülleri sunar:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CMakeTargetsUsage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[{package_name} provides CMake targets:]]></Val>
@@ -8958,6 +8967,15 @@
           <Val><![CDATA[While parsing Portable Executable {path}, could not find RVA {value:#X}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Taşınabilir Yürütülebilir {path} ayrıştırılırken, RVA {değer:#X} bulunamadı.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PackageAbi" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{spec} package ABI: {package_abi}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{spec} paketi ABI'si: {package_abi}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />

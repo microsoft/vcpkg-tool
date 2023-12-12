@@ -153,7 +153,7 @@ namespace vcpkg
         }
     }
 
-    std::string BinaryParagraph::displayname() const
+    std::string BinaryParagraph::display_name() const
     {
         if (!this->is_feature() || this->feature == "core")
         {

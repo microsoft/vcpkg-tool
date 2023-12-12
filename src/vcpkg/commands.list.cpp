@@ -60,7 +60,7 @@ namespace
         {
             msg::write_unlocalized_text_to_stdout(Color::none,
                                                   fmt::format("{:<50}{:<20}{:<}\n",
-                                                              pgh.package.displayname(),
+                                                              pgh.package.display_name(),
                                                               full_version,
                                                               fmt::join(pgh.package.description, "\n\n")));
         }
@@ -73,7 +73,7 @@ namespace
             }
             msg::write_unlocalized_text_to_stdout(Color::none,
                                                   fmt::format("{:<50}{:<20}{:<}\n",
-                                                              vcpkg::shorten_text(pgh.package.displayname(), 50),
+                                                              vcpkg::shorten_text(pgh.package.display_name(), 50),
                                                               vcpkg::shorten_text(full_version, 16),
                                                               vcpkg::shorten_text(description, 51)));
         }
@@ -101,6 +101,7 @@ namespace vcpkg
 
     void command_list_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
+        msg::default_output_stream = OutputStream::StdErr;
         const ParsedArguments options = args.parse_arguments(CommandListMetadata);
 
         const StatusParagraphs status_paragraphs = database_load_check(paths.get_filesystem(), paths.installed());
@@ -124,7 +125,7 @@ namespace vcpkg
         std::sort(installed_packages.begin(),
                   installed_packages.end(),
                   [](const StatusParagraph* lhs, const StatusParagraph* rhs) -> bool {
-                      return lhs->package.displayname() < rhs->package.displayname();
+                      return lhs->package.display_name() < rhs->package.display_name();
                   });
 
         const auto enable_fulldesc = Util::Sets::contains(options.switches, OPTION_FULLDESC.to_string());
@@ -133,7 +134,7 @@ namespace vcpkg
         {
             auto& query = options.command_arguments[0];
             auto pghs = Util::filter(installed_packages, [query](const StatusParagraph* status_paragraph) {
-                return Strings::case_insensitive_ascii_contains(status_paragraph->package.displayname(), query);
+                return Strings::case_insensitive_ascii_contains(status_paragraph->package.display_name(), query);
             });
             installed_packages = pghs;
         }

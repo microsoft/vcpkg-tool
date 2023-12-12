@@ -695,7 +695,7 @@ namespace
             auto refs =
                 Util::fmap(actions, [this](const InstallPlanAction* p) { return make_nugetref(*p, m_nuget_prefix); });
             m_fs.write_contents(packages_config, generate_packages_config(refs), VCPKG_LINE_INFO);
-            m_cmd.install(stdout_sink, packages_config, m_packages, m_src);
+            m_cmd.install(out_sink, packages_config, m_packages, m_src);
             for (size_t i = 0; i < actions.size(); ++i)
             {
                 // nuget.exe provides the nupkg file and the unpacked folder
@@ -1000,7 +1000,7 @@ namespace
                 }
                 else
                 {
-                    stdout_sink.println_warning(res.error());
+                    out_sink.println_warning(res.error());
                 }
             }
         }
@@ -1894,17 +1894,17 @@ namespace vcpkg
             std::shared_ptr<const GcsStorageTool> gcs_tool;
             if (!s.gcs_read_prefixes.empty() || !s.gcs_write_prefixes.empty())
             {
-                gcs_tool = std::make_shared<GcsStorageTool>(tools, stdout_sink);
+                gcs_tool = std::make_shared<GcsStorageTool>(tools, out_sink);
             }
             std::shared_ptr<const AwsStorageTool> aws_tool;
             if (!s.aws_read_prefixes.empty() || !s.aws_write_prefixes.empty())
             {
-                aws_tool = std::make_shared<AwsStorageTool>(tools, stdout_sink, s.aws_no_sign_request);
+                aws_tool = std::make_shared<AwsStorageTool>(tools, out_sink, s.aws_no_sign_request);
             }
             std::shared_ptr<const CosStorageTool> cos_tool;
             if (!s.cos_read_prefixes.empty() || !s.cos_write_prefixes.empty())
             {
-                cos_tool = std::make_shared<CosStorageTool>(tools, stdout_sink);
+                cos_tool = std::make_shared<CosStorageTool>(tools, out_sink);
             }
 
             if (s.gha_read || s.gha_write)
@@ -1917,7 +1917,7 @@ namespace vcpkg
             if (!s.archives_to_read.empty() || !s.url_templates_to_get.empty() || !s.gcs_read_prefixes.empty() ||
                 !s.aws_read_prefixes.empty() || !s.cos_read_prefixes.empty() || s.gha_read)
             {
-                auto maybe_zip_tool = ZipTool::make(tools, stdout_sink);
+                auto maybe_zip_tool = ZipTool::make(tools, out_sink);
                 if (!maybe_zip_tool.has_value())
                 {
                     return std::move(maybe_zip_tool).error();
@@ -1995,7 +1995,7 @@ namespace vcpkg
                 !s.configs_to_write.empty())
             {
                 NugetBaseBinaryProvider nuget_base(
-                    fs, NuGetTool(tools, stdout_sink, s), paths.packages(), buildtrees, s.nuget_prefix);
+                    fs, NuGetTool(tools, out_sink, s), paths.packages(), buildtrees, s.nuget_prefix);
                 if (!s.sources_to_read.empty())
                     ret.read.push_back(
                         std::make_unique<NugetReadBinaryProvider>(nuget_base, nuget_sources_arg(s.sources_to_read)));
@@ -2176,11 +2176,10 @@ namespace vcpkg
                     }
                     else
                     {
-                        stdout_sink.println(
-                            Color::warning,
-                            msg::format_warning(msgCompressFolderFailed, msg::path = request.package_dir)
-                                .append_raw(' ')
-                                .append_raw(compress_result.error()));
+                        out_sink.println(Color::warning,
+                                         msg::format_warning(msgCompressFolderFailed, msg::path = request.package_dir)
+                                             .append_raw(' ')
+                                             .append_raw(compress_result.error()));
                     }
                 }
 
@@ -2189,14 +2188,14 @@ namespace vcpkg
                 {
                     if (!provider->needs_zip_file() || request.zip_path.has_value())
                     {
-                        num_destinations += provider->push_success(request, stdout_sink);
+                        num_destinations += provider->push_success(request, out_sink);
                     }
                 }
                 if (request.zip_path)
                 {
                     m_fs.remove(*request.zip_path.get(), IgnoreErrors{});
                 }
-                stdout_sink.println(
+                out_sink.println(
                     msgStoredBinariesToDestinations, msg::count = num_destinations, msg::elapsed = timer.elapsed());
             }
         }

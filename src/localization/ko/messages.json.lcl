@@ -2017,6 +2017,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CMakePkgConfigTargetsUsage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{package_name} provides pkg-config modules:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{package_name}은(는) pkg-config 모듈을 제공합니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CMakeTargetsUsage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[{package_name} provides CMake targets:]]></Val>
@@ -8955,6 +8964,15 @@
           <Val><![CDATA[While parsing Portable Executable {path}, could not find RVA {value:#X}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[이식 가능한 실행 파일 {path}을(를) 구문 분석하는 동안 RVA {value:#X}을(를) 찾을 수 없습니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PackageAbi" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{spec} package ABI: {package_abi}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{spec} 패키지 ABI: {package_abi}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />

@@ -28,8 +28,6 @@ namespace vcpkg
 
     struct PackageAction : BasicAction
     {
-        std::string displayname() const;
-
         std::vector<PackageSpec> package_dependencies;
         InternalFeatureSet feature_list;
     };
@@ -57,6 +55,7 @@ namespace vcpkg
         Optional<const std::string&> package_abi() const;
         const PreBuildInfo& pre_build_info(LineInfo li) const;
         Version version() const;
+        std::string display_name() const;
 
         Optional<const SourceControlFileAndLocation&> source_control_file_and_location;
         Optional<InstalledPackageView> installed_package;

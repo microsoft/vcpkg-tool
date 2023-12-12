@@ -1707,7 +1707,7 @@ namespace
                         data_cb(this_read_data);
                         if (settings.echo_in_debug == EchoInDebug::Show && Debug::g_debugging)
                         {
-                            msg::write_unlocalized_text_to_stdout(Color::none, this_read_data);
+                            msg::write_unlocalized_text(Color::none, this_read_data);
                         }
                     }
                 }
@@ -1739,7 +1739,7 @@ namespace
             data_cb(this_read_data);
             if (settings.echo_in_debug == EchoInDebug::Show && Debug::g_debugging)
             {
-                msg::write_unlocalized_text_to_stdout(Color::none, this_read_data);
+                msg::write_unlocalized_text(Color::none, this_read_data);
             }
         }
 

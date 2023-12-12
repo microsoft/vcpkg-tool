@@ -14,17 +14,17 @@ namespace
 {
     void print_name_only(StringView name)
     {
-        msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("\t- {:<15}\n", name));
+        msg::write_unlocalized_text(Color::none, fmt::format("\t- {:<15}\n", name));
     }
 
     void print_name_and_version(StringView name, const Version& version)
     {
-        msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("\t- {:<15}{:<}\n", name, version));
+        msg::write_unlocalized_text(Color::none, fmt::format("\t- {:<15}{:<}\n", name, version));
     }
 
     void print_name_and_version_diff(StringView name, const VersionDiff& version_diff)
     {
-        msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("\t- {:<15}{:<}\n", name, version_diff));
+        msg::write_unlocalized_text(Color::none, fmt::format("\t- {:<15}{:<}\n", name, version_diff));
     }
 
     std::vector<VersionSpec> read_ports_from_commit(const VcpkgPaths& paths, StringView git_commit_id)

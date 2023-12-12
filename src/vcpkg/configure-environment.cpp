@@ -185,7 +185,7 @@ namespace vcpkg
 
         auto temp_directory = fs.create_or_get_temp_directory(VCPKG_LINE_INFO);
 
-        ProcessLaunchSettings settings{Command(paths.get_tool_exe(Tools::NODE, stdout_sink))};
+        ProcessLaunchSettings settings{Command(paths.get_tool_exe(Tools::NODE, out_sink))};
         settings.string_arg(vcpkg_artifacts_main_path);
         settings.cmd.forwarded_args(args);
         if (Debug::g_debugging)

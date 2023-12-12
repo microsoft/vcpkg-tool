@@ -260,7 +260,7 @@ namespace vcpkg
             catch (const fmt::format_error&)
             {
             }
-            msg::write_unlocalized_text_to_stdout(
+            msg::write_unlocalized_text(
                 Color::error,
                 fmt::format("INTERNAL ERROR: failed to format default format string for index {}\nformat string: {}\n",
                             index,
@@ -415,6 +415,20 @@ namespace vcpkg::msg
         return write_unlocalized_text_impl(c, sv, STDERR_FILENO, is_a_tty);
     }
 #endif
+
+    OutputStream default_output_stream = OutputStream::StdOut;
+
+    void write_unlocalized_text(Color c, StringView sv)
+    {
+        if (default_output_stream == OutputStream::StdOut)
+        {
+            write_unlocalized_text_to_stdout(c, sv);
+        }
+        else
+        {
+            write_unlocalized_text_to_stderr(c, sv);
+        }
+    }
 
     void load_from_message_map(const MessageMapAndFile& map_and_file)
     {
