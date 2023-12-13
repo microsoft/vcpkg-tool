@@ -1382,13 +1382,16 @@ namespace vcpkg
         return Unit{};
     }
 
-    FilePointer::~FilePointer()
+    void FilePointer::close() noexcept
     {
         if (m_fs)
         {
             Checks::check_exit(VCPKG_LINE_INFO, ::fclose(m_fs) == 0);
+            m_fs = 0;
         }
     }
+
+    FilePointer::~FilePointer() { close(); }
 
     ReadFilePointer::ReadFilePointer() noexcept = default;
 
@@ -2177,10 +2180,12 @@ namespace vcpkg
         }
     }
 
-    std::unique_ptr<IExclusiveFileLock> Filesystem::take_exclusive_file_lock(const Path& lockfile, LineInfo li) const
+    std::unique_ptr<IExclusiveFileLock> Filesystem::take_exclusive_file_lock(const Path& lockfile,
+                                                                             MessageSink& status_sink,
+                                                                             LineInfo li) const
     {
         std::error_code ec;
-        auto sh = this->take_exclusive_file_lock(lockfile, ec);
+        auto sh = this->take_exclusive_file_lock(lockfile, status_sink, ec);
         if (ec)
         {
             exit_filesystem_call_error(li, ec, __func__, {lockfile});
@@ -2190,10 +2195,11 @@ namespace vcpkg
     }
 
     std::unique_ptr<IExclusiveFileLock> Filesystem::try_take_exclusive_file_lock(const Path& lockfile,
+                                                                                 MessageSink& status_sink,
                                                                                  LineInfo li) const
     {
         std::error_code ec;
-        auto sh = this->try_take_exclusive_file_lock(lockfile, ec);
+        auto sh = this->try_take_exclusive_file_lock(lockfile, status_sink, ec);
         if (ec)
         {
             exit_filesystem_call_error(li, ec, __func__, {lockfile});
@@ -3871,12 +3877,13 @@ namespace vcpkg
         };
 
         virtual std::unique_ptr<IExclusiveFileLock> take_exclusive_file_lock(const Path& lockfile,
+                                                                             MessageSink& status_sink,
                                                                              std::error_code& ec) const override
         {
             auto result = std::make_unique<ExclusiveFileLock>(lockfile, ec);
             if (!ec && !result->lock_attempt(ec) && !ec)
             {
-                msg::println(msgWaitingToTakeFilesystemLock, msg::path = lockfile);
+                status_sink.println(msgWaitingToTakeFilesystemLock, msg::path = lockfile);
                 do
                 {
                     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
@@ -3887,12 +3894,17 @@ namespace vcpkg
         }
 
         virtual std::unique_ptr<IExclusiveFileLock> try_take_exclusive_file_lock(const Path& lockfile,
+                                                                                 MessageSink& status_sink,
                                                                                  std::error_code& ec) const override
         {
             auto result = std::make_unique<ExclusiveFileLock>(lockfile, ec);
             if (!ec && !result->lock_attempt(ec) && !ec)
             {
-                Debug::println(msg::format(msgWaitingToTakeFilesystemLock, msg::path = lockfile));
+                if (Debug::g_debugging)
+                {
+                    status_sink.println(msg::format(msgWaitingToTakeFilesystemLock, msg::path = lockfile));
+                }
+
                 // waits, at most, a second and a half.
                 for (auto wait = std::chrono::milliseconds(100);;)
                 {
