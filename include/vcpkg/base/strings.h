@@ -117,17 +117,21 @@ namespace vcpkg::Strings
                                    Transformer transformer)
     {
         std::string output;
-        if (first != last)
+        if (first == last)
         {
-            Strings::append(output, transformer(*first));
-            for (++first; first != last; ++first)
-            {
-                output.append(delimiter.data(), delimiter.size());
-                Strings::append(output, transformer(*first));
-            }
+            return output;
         }
 
-        return output;
+        for (;;)
+        {
+            Strings::append(output, transformer(*first));
+            if (++first == last)
+            {
+                return output;
+            }
+
+            output.append(delimiter.data(), delimiter.size());
+        }
     }
 
     template<class Container, class Transformer>

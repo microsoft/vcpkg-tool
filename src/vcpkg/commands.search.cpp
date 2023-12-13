@@ -34,6 +34,7 @@ namespace vcpkg
 
     void command_search_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
+        msg::default_output_stream = OutputStream::StdErr;
         const ParsedArguments options = args.parse_arguments(CommandSearchMetadata);
         const bool full_description = Util::Sets::contains(options.switches, OPTION_FULLDESC);
         Optional<StringView> filter;

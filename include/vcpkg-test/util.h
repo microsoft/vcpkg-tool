@@ -125,7 +125,7 @@ namespace vcpkg::Test
         const std::vector<std::pair<const char*, const char*>>& features = {},
         const std::vector<const char*>& default_features = {});
 
-    ParseExpected<SourceControlFile> test_parse_control_file(
+    ExpectedL<std::unique_ptr<SourceControlFile>> test_parse_control_file(
         const std::vector<std::unordered_map<std::string, std::string>>& v);
 
     std::unique_ptr<vcpkg::StatusParagraph> make_status_pgh(const char* name,
