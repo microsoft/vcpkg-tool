@@ -136,13 +136,13 @@ TEST_CASE ("cmdlinebuilder", "[system]")
 
 TEST_CASE ("cmd_execute_and_capture_output_parallel", "[system]")
 {
-    std::vector<RedirectedProcessLaunchSettings> vec;
+    std::vector<Command> vec;
     for (size_t i = 0; i < 50; ++i)
     {
 #if defined(_WIN32)
-        vec.push_back({Command("cmd.exe").string_arg("/d").string_arg("/c").string_arg(fmt::format("echo {}", i))});
+        vec.push_back(Command("cmd.exe").string_arg("/d").string_arg("/c").string_arg(fmt::format("echo {}", i)));
 #else
-        vec.push_back({Command("echo").string_arg(std::string(i, 'a'))});
+        vec.push_back(Command("echo").string_arg(std::string(i, 'a')));
 #endif
     }
 

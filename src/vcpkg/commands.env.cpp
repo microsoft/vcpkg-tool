@@ -127,34 +127,26 @@ namespace vcpkg
             }
         }
 
+#if defined(_WIN32)
         ProcessLaunchSettings settings;
         auto& env = settings.environment.emplace(get_modified_clean_environment(extra_env));
         if (!build_env_cmd.empty())
         {
-#if defined(_WIN32)
             env = cmd_execute_and_capture_environment(build_env_cmd, env);
-#else  // ^^^ _WIN32 / !_WIN32 vvv
-            (void)env;
-            Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgEnvPlatformNotSupported);
-#endif // ^^^ !_WIN32
         }
 
-#if defined(_WIN32)
-        settings.string_arg("cmd").string_arg("/d");
+        auto cmd = Command{"cmd"}.string_arg("/d");
+        if (!options.command_arguments.empty())
+        {
+            cmd.string_arg("/c").raw_arg(options.command_arguments[0]);
+        }
+
+        enter_interactive_subprocess();
+        auto rc = cmd_execute(cmd, settings);
+        exit_interactive_subprocess();
+        Checks::exit_with_code(VCPKG_LINE_INFO, rc.value_or_exit(VCPKG_LINE_INFO));
 #else  // ^^^ _WIN32 / !_WIN32 vvv
         Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgEnvPlatformNotSupported);
 #endif // ^^^ !_WIN32
-        if (!options.command_arguments.empty())
-        {
-            settings.string_arg("/c").raw_arg(options.command_arguments[0]);
-        }
-#ifdef _WIN32
-        enter_interactive_subprocess();
-#endif
-        auto rc = cmd_execute(settings);
-#ifdef _WIN32
-        exit_interactive_subprocess();
-#endif
-        Checks::exit_with_code(VCPKG_LINE_INFO, rc.value_or_exit(VCPKG_LINE_INFO));
     }
 } // namespace vcpkg

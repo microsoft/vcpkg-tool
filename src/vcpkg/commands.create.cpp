@@ -65,9 +65,10 @@ namespace vcpkg
             cmake_args.emplace_back("FILENAME", zip_file_name);
         }
 
-        ProcessLaunchSettings settings{make_cmake_cmd(paths, paths.ports_cmake, std::move(cmake_args))};
+        ProcessLaunchSettings settings;
         settings.environment = get_clean_environment();
-        return cmd_execute(settings).value_or_exit(VCPKG_LINE_INFO);
+        return cmd_execute(make_cmake_cmd(paths, paths.ports_cmake, std::move(cmake_args)), settings)
+            .value_or_exit(VCPKG_LINE_INFO);
     }
 
     void command_create_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)

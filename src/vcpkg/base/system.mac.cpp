@@ -137,9 +137,8 @@ namespace vcpkg
         // getmac /V /NH /FO CSV
         // outputs each interface on its own comma-separated line
         // "connection name","network adapter","physical address","transport name"
-        RedirectedProcessLaunchSettings settings{
-            Command("getmac").string_arg("/V").string_arg("/NH").string_arg("/FO").string_arg("CSV")};
-        auto maybe_getmac = cmd_execute_and_capture_output(settings);
+        auto maybe_getmac = cmd_execute_and_capture_output(
+            Command("getmac").string_arg("/V").string_arg("/NH").string_arg("/FO").string_arg("CSV"));
         if (auto getmac = maybe_getmac.get())
         {
             for (auto&& line : Strings::split(getmac->output, '\n'))

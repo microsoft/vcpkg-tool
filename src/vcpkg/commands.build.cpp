@@ -679,9 +679,9 @@ namespace vcpkg
         };
         get_generic_cmake_build_args(paths, triplet, toolset, cmake_args);
 
+        auto cmd = vcpkg::make_cmake_cmd(paths, paths.ports_cmake, std::move(cmake_args));
         RedirectedProcessLaunchSettings settings;
-        settings.cmd = vcpkg::make_cmake_cmd(paths, paths.ports_cmake, std::move(cmake_args));
-        settings.environment = paths.get_action_env(pre_build_info, toolset);
+        settings.environment.emplace(paths.get_action_env(pre_build_info, toolset));
         auto& fs = paths.get_filesystem();
         fs.create_directory(buildpath, VCPKG_LINE_INFO);
         auto stdoutlog = buildpath / ("stdout-" + triplet.canonical_name() + ".log");
@@ -691,7 +691,7 @@ namespace vcpkg
         ExpectedL<int> rc = LocalizedString();
         {
             const auto out_file = fs.open_for_write(stdoutlog, VCPKG_LINE_INFO);
-            rc = cmd_execute_and_stream_lines(settings, [&](StringView s) {
+            rc = cmd_execute_and_stream_lines(cmd, settings, [&](StringView s) {
                 static constexpr StringLiteral s_hash_marker = "#COMPILER_HASH#";
                 if (Strings::starts_with(s, s_hash_marker))
                 {
@@ -946,11 +946,12 @@ namespace vcpkg
             msg::println(msgInstallingFromLocation, msg::path = scfl.port_directory());
         }
 
-        const ElapsedTimer timer;
-        RedirectedProcessLaunchSettings settings;
-        settings.cmd = vcpkg::make_cmake_cmd(paths, paths.ports_cmake, get_cmake_build_args(args, paths, action));
-
         const auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
+
+        const ElapsedTimer timer;
+        auto cmd = vcpkg::make_cmake_cmd(paths, paths.ports_cmake, get_cmake_build_args(args, paths, action));
+
+        RedirectedProcessLaunchSettings settings;
         auto& env = settings.environment.emplace(
             paths.get_action_env(*abi_info.pre_build_info, abi_info.toolset.value_or_exit(VCPKG_LINE_INFO)));
 
@@ -961,8 +962,8 @@ namespace vcpkg
         ExpectedL<int> return_code = LocalizedString();
         {
             auto out_file = fs.open_for_write(stdoutlog, VCPKG_LINE_INFO);
-            return_code = cmd_execute_and_stream_data(settings, [&](StringView sv) {
-                    msg::write_unlocalized_text(Color::none, sv);
+            return_code = cmd_execute_and_stream_data(cmd, settings, [&](StringView sv) {
+                msg::write_unlocalized_text(Color::none, sv);
                 Checks::msg_check_exit(VCPKG_LINE_INFO,
                                        out_file.write(sv.data(), 1, sv.size()) == sv.size(),
                                        msgErrorWhileWriting,

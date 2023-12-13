@@ -216,17 +216,19 @@ namespace vcpkg::Prefab
             msg::println(Color::warning, msgDeprecatedPrefabDebugOption);
         }
         Debug::print("Installing POM and AAR file to ~/.m2");
-        ProcessLaunchSettings settings{Command(Tools::MAVEN)};
+        auto cmd = Command{Tools::MAVEN};
         if (!prefab_options.enable_debug)
         {
-            settings.string_arg("-q");
+            cmd.string_arg("-q");
         }
 
-        settings.string_arg("install:install-file")
+        cmd.string_arg("install:install-file")
             .string_arg(Strings::concat("-Dfile=", aar))
             .string_arg(Strings::concat("-DpomFile=", pom));
+
+        ProcessLaunchSettings settings;
         settings.environment = get_clean_environment();
-        const int exit_code = cmd_execute(settings).value_or_exit(VCPKG_LINE_INFO);
+        const int exit_code = cmd_execute(cmd, settings).value_or_exit(VCPKG_LINE_INFO);
 
         if (!(exit_code == 0))
         {
@@ -277,11 +279,11 @@ namespace vcpkg::Prefab
         std::unordered_map<Triplet, std::string> triplet_abi_map;
         std::unordered_map<Triplet, int> triplet_api_map;
 
-        for (auto& triplet_file : triplet_db.available_triplets)
+        for (const auto& triplet_file : triplet_db.available_triplets)
         {
             if (triplet_file.name.size() > 0)
             {
-                Triplet triplet = Triplet::from_canonical_name(std::move(triplet_file.name));
+                Triplet triplet = Triplet::from_canonical_name(triplet_file.name);
                 auto triplet_build_info = build_info_from_triplet(paths, provider, triplet);
                 if (is_supported(*triplet_build_info))
                 {

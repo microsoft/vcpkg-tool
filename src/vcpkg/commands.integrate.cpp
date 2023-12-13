@@ -379,19 +379,20 @@ namespace vcpkg
             nuspec_file_path, create_nuspec_file_contents(paths.root, nuget_id, nupkg_version), VCPKG_LINE_INFO);
 
         // Using all forward slashes for the command line
-        RedirectedProcessLaunchSettings settings{Command(nuget_exe)
-                                                     .string_arg("pack")
-                                                     .string_arg("-OutputDirectory")
-                                                     .string_arg(paths.original_cwd)
-                                                     .string_arg(nuspec_file_path)};
+        auto cmd = Command(nuget_exe)
+                       .string_arg("pack")
+                       .string_arg("-OutputDirectory")
+                       .string_arg(paths.original_cwd)
+                       .string_arg(nuspec_file_path);
+        RedirectedProcessLaunchSettings settings;
         settings.environment = get_clean_environment();
 
-        const auto maybe_nuget_output = flatten(cmd_execute_and_capture_output(settings), Tools::NUGET);
+        const auto maybe_nuget_output = flatten(cmd_execute_and_capture_output(cmd, settings), Tools::NUGET);
 
         if (!maybe_nuget_output)
         {
             Checks::msg_exit_with_message(VCPKG_LINE_INFO,
-                                          msg::format(msgCommandFailed, msg::command_line = settings.command_line())
+                                          msg::format(msgCommandFailed, msg::command_line = cmd.command_line())
                                               .append_raw('\n')
                                               .append(maybe_nuget_output.error()));
         }
@@ -422,13 +423,13 @@ namespace vcpkg
         const auto script_path = paths.scripts / "addPoshVcpkgToPowershellProfile.ps1";
 
         const auto& ps = paths.get_tool_exe("powershell-core", out_sink);
-        ProcessLaunchSettings settings{Command(ps)
-                                           .string_arg("-NoProfile")
-                                           .string_arg("-ExecutionPolicy")
-                                           .string_arg("Bypass")
-                                           .string_arg("-Command")
-                                           .string_arg(fmt::format("& {{& '{}' }}", script_path))};
-        const int rc = cmd_execute(settings).value_or_exit(VCPKG_LINE_INFO);
+        const int rc = cmd_execute(Command{ps}
+                                       .string_arg("-NoProfile")
+                                       .string_arg("-ExecutionPolicy")
+                                       .string_arg("Bypass")
+                                       .string_arg("-Command")
+                                       .string_arg(fmt::format("& {{& '{}' }}", script_path)))
+                           .value_or_exit(VCPKG_LINE_INFO);
         if (rc)
         {
             msg::println_error(msg::format(msgCommandFailed, msg::command_line = TITLE)

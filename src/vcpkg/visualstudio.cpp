@@ -92,16 +92,16 @@ namespace vcpkg::VisualStudio
         const Path vswhere_exe = program_files_32_bit / "Microsoft Visual Studio" / "Installer" / "vswhere.exe";
         if (fs.exists(vswhere_exe, IgnoreErrors{}))
         {
-            RedirectedProcessLaunchSettings settings{Command(vswhere_exe)
-                                                         .string_arg("-all")
-                                                         .string_arg("-prerelease")
-                                                         .string_arg("-legacy")
-                                                         .string_arg("-products")
-                                                         .string_arg("*")
-                                                         .string_arg("-format")
-                                                         .string_arg("xml")};
-            auto output =
-                flatten_out(cmd_execute_and_capture_output(settings), "vswhere").value_or_exit(VCPKG_LINE_INFO);
+            auto output = flatten_out(cmd_execute_and_capture_output(Command(vswhere_exe)
+                                                                         .string_arg("-all")
+                                                                         .string_arg("-prerelease")
+                                                                         .string_arg("-legacy")
+                                                                         .string_arg("-products")
+                                                                         .string_arg("*")
+                                                                         .string_arg("-format")
+                                                                         .string_arg("xml")),
+                                      "vswhere")
+                              .value_or_exit(VCPKG_LINE_INFO);
             const auto instance_entries = Strings::find_all_enclosed(output, "<instance>", "</instance>");
             for (const StringView& instance : instance_entries)
             {

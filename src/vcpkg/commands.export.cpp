@@ -165,19 +165,20 @@ namespace
         fs.write_contents(nuspec_file_path, nuspec_file_content, VCPKG_LINE_INFO);
 
         // -NoDefaultExcludes is needed for ".vcpkg-root"
-        RedirectedProcessLaunchSettings settings;
+        Command cmd;
 #ifndef _WIN32
-        settings.string_arg(paths.get_tool_exe(Tools::MONO, out_sink));
+        cmd.string_arg(paths.get_tool_exe(Tools::MONO, out_sink));
 #endif
-        settings.string_arg(paths.get_tool_exe(Tools::NUGET, out_sink))
+        cmd.string_arg(paths.get_tool_exe(Tools::NUGET, out_sink))
             .string_arg("pack")
             .string_arg(nuspec_file_path)
             .string_arg("-OutputDirectory")
             .string_arg(output_dir)
             .string_arg("-NoDefaultExcludes");
 
+        RedirectedProcessLaunchSettings settings;
         settings.environment = get_clean_environment();
-        return flatten(cmd_execute_and_capture_output(settings), Tools::NUGET)
+        return flatten(cmd_execute_and_capture_output(cmd, settings), Tools::NUGET)
             .map([&](Unit) { return output_dir / (nuget_id + "." + nuget_version + ".nupkg"); })
             .value_or_exit(VCPKG_LINE_INFO);
     }
@@ -224,19 +225,19 @@ namespace
         const auto exported_archive_filename = fmt::format("{}.{}", exported_dir_filename, format.extension());
         const auto exported_archive_path = output_dir / exported_archive_filename;
 
-        ProcessLaunchSettings settings;
-        settings.string_arg(cmake_exe)
-            .string_arg("-E")
-            .string_arg("tar")
-            .string_arg("cf")
-            .string_arg(exported_archive_path)
-            .string_arg(Strings::concat("--format=", format.cmake_option()))
-            .string_arg("--")
-            .string_arg(raw_exported_dir);
+        auto cmd = Command{cmake_exe}
+                       .string_arg("-E")
+                       .string_arg("tar")
+                       .string_arg("cf")
+                       .string_arg(exported_archive_path)
+                       .string_arg(Strings::concat("--format=", format.cmake_option()))
+                       .string_arg("--")
+                       .string_arg(raw_exported_dir);
 
+        ProcessLaunchSettings settings;
         settings.working_directory = raw_exported_dir.parent_path();
         settings.environment = get_clean_environment();
-        const int exit_code = cmd_execute(settings).value_or_exit(VCPKG_LINE_INFO);
+        const int exit_code = cmd_execute(cmd, settings).value_or_exit(VCPKG_LINE_INFO);
         Checks::msg_check_exit(VCPKG_LINE_INFO, exit_code == 0, msgCreationFailed, msg::path = exported_archive_path);
         return exported_archive_path;
     }
