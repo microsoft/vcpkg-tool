@@ -1,12 +1,10 @@
 #pragma once
 
+#include <vcpkg/base/fwd/expected.h>
 #include <vcpkg/base/fwd/files.h>
+#include <vcpkg/base/fwd/optional.h>
+#include <vcpkg/base/fwd/stringview.h>
 #include <vcpkg/base/fwd/system.h>
-
-#include <vcpkg/base/expected.h>
-#include <vcpkg/base/messages.h>
-#include <vcpkg/base/optional.h>
-#include <vcpkg/base/stringview.h>
 
 #include <string>
 #include <vector>
@@ -38,6 +36,8 @@ namespace vcpkg
     ExpectedL<std::string> get_registry_string(void* base_hkey, StringView subkey, StringView valuename);
 
     ExpectedL<std::uint32_t> get_registry_dword(void* base_hkey, StringView subkey, StringView valuename);
+
+    void reset_processor_architecture_environment_variable();
 #endif
 
     long get_process_id();

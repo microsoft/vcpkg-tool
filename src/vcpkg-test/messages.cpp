@@ -1,6 +1,5 @@
-#include <catch2/catch.hpp>
+#include <vcpkg-test/util.h>
 
-#include <vcpkg/base/json.h>
 #include <vcpkg/base/setup-messages.h>
 
 #include <vcpkg/commands.z-generate-message-map.h>

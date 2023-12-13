@@ -1105,12 +1105,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";ApplocalProcessing" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";ApplocalProcessing" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[vcpkg applocal processing: {path}]]></Val>
+          <Val><![CDATA[deploying dependencies]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[vcpkg applocal 処理: {path}]]></Val>
+            <Val><![CDATA[依存関係を配置しています]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[vcpkg applocal processing: {path}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -1543,15 +1546,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";BaselineFileNoDefaultFieldPath" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[baseline file at {path} was invalid (no "default" field)]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{path} のベースライン ファイルが無効でした。("default" フィールドがありません)]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";BaselineGitShowFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[while checking out baseline from commit '{commit_sha}', failed to `git show` versions/baseline.json. This may be fixed by fetching commits with `git fetch`.]]></Val>
@@ -1566,15 +1560,6 @@
           <Val><![CDATA[Baseline version not found. Run:]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit -m "Update version database"]A;to set {version} as the baseline version.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[ベースライン バージョンが見つかりません。以下を実行してください:]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit -m "Update version database"]A;{version} をベースライン バージョンとして設定します。]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";BaselineMissingDefault" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The baseline.json from commit `"{commit_sha}"` in the repo {url} was invalid (did not contain a "default" field).]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[リポジトリ {url} のコミット `"{commit_sha}"` からの baseline.json が無効でした ("default" フィールドが含まれていません)。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2032,6 +2017,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CMakePkgConfigTargetsUsage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{package_name} provides pkg-config modules:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{package_name} は pkg-config モジュールを提供します。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CMakeTargetsUsage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[{package_name} provides CMake targets:]]></Val>
@@ -2241,12 +2235,12 @@
       </Item>
       <Item ItemId=";CmakeTargetsExcluded" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[note: {count} additional targets are not displayed.]]></Val>
+          <Val><![CDATA[{count} additional targets are not displayed.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[注: 追加の {count} 件のターゲットは表示されません。]]></Val>
+            <Val><![CDATA[追加の {count} 件のターゲットは表示されません。]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[    # note: {count} targets were omitted.]]></Val>
+            <Val><![CDATA[note: {count} additional targets are not displayed.]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -4021,6 +4015,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ControlSupportsMustBeAPlatformExpression" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA["Supports" must be a platform expression]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA["Supports" はプラットフォーム式である必要があります]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CopyFailedSource$IsAFolderTarget$IsAFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Copy failed: source (${p0}) is a folder, target (${p1}) is a file]]></Val>
@@ -4080,15 +4083,6 @@
           <Val><![CDATA[Could not find a value for {${p0}} in '${p1}'. To write the literal value, use '{{${p2}}}' instead.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA['${p1}' に {${p0}} の値が見つかりませんでした。 リテラル値を書き込むには、代わりに '{{${p2}}}' を使用します。]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CouldNotFindBaseline" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Could not find explicitly specified baseline `"{commit_sha}"` in baseline file {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[ベースライン ファイル {path} に明示的に指定されたベースライン `"{commit_sha}"` が見つかりませんでした]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4873,24 +4867,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";ErrorMessage" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[error: ]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[エラー: ]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ErrorMessageMustUsePrintError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The message named {value} starts with error:, it must be changed to prepend ErrorMessage in code instead.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{value}という名前のメッセージは「error:」で始まります。代わりに、コードの先頭に「ErrorMessage」を追加するように変更する必要があります。]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";ErrorMissingVcpkgRoot" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Could not detect vcpkg-root. If you are trying to use a copy of vcpkg that you've built, you must define the VCPKG_ROOT environment variable to point to a cloned copy of https://github.com/Microsoft/vcpkg.]]></Val>
@@ -5551,15 +5527,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";FailedToFindBaseline" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Failed to find baseline.json]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[baseline.json が見つかりませんでした]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";FailedToFindPortFeature" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[{package_name} has no feature named {feature}.]]></Val>
@@ -5607,33 +5574,6 @@
           <Val><![CDATA[Failed to load manifest from directory {path}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[ディレクトリ {path} からマニフェストを読み込めませんでした]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";FailedToLoadPort" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Failed to load port {package_name} from {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{path} からポート {package_name} を読み込めませんでした]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";FailedToLoadPortFrom" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Failed to load port from {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{path} からポートを読み込めませんでした]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";FailedToLoadUnnamedPortFromPath" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Failed to load port from {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{path} からポートを読み込めませんでした]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -5932,6 +5872,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";FileIsNotExecutable" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[this file does not appear to be executable]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[このファイルは実行可能ではないようです]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";FileNotFound" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[{path}: file not found]]></Val>
@@ -6106,51 +6055,6 @@
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[GHA バイナリ ソースでは、ACTIONS_RUNTIME_TOKEN環境変数とACTIONS_CACHE_URL環境変数を設定する必要があります。詳細については、{url} を参照してください。]]></Val>
           </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";GenerateMsgErrorParsingFormatArgs" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[parsing format string for {value}:]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{value} の書式指定文字列を解析しています:]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[error: parsing format string for {value}:]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";GenerateMsgIncorrectComment" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[message {value} has an incorrect comment:]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[メッセージ {value} のコメントが正しくありません:]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";GenerateMsgNoArgumentValue" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[{{{value}}} was specified in a comment, but was not used in the message.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[コメントで指定されている{{{value}}}がメッセージ内にありません。]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[    {{{value}}} was specified in a comment, but was not used in the message.]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";GenerateMsgNoCommentValue" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[{{{value}}} was used in the message, but not commented.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{{{value}}} がメッセージ内で使用されていますが、コメントに含まれていません。]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[    {{{value}}} was used in the message, but not commented.]]></Val>
-          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -7537,15 +7441,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";InternalErrorMessage" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[internal error: ]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[内部エラー: ]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";InternalErrorMessageContact" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Please open an issue at https://github.com/microsoft/vcpkg/issues/new?template=other-type-of-bug-report.md&labels=category:vcpkg-bug with detailed steps to reproduce the problem.]]></Val>
@@ -8344,15 +8239,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";ListOfValidFieldsForControlFiles" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[This is the list of valid fields for CONTROL files (case-sensitive):]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[これは、CONTROL ファイルの有効なフィールドの一覧です (大文字と小文字が区別されます):]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";LoadingCommunityTriplet" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[-- [COMMUNITY]5D; Loading triplet configuration from: {path}]]></Val>
@@ -8385,24 +8271,6 @@
           <Val><![CDATA[Using local portfile versions. To update the local portfiles, use `git pull`.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[ローカル portfile バージョンの使用。 ローカルの portfile を更新するには、`git pull` を使用します。]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";LocalizedMessageMustNotContainIndents" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The message named {value} contains what appears to be indenting which must be changed to use LocalizedString::append_indent instead.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{value}という名前のメッセージにインデントが含まれているようです。このインデントは、LocalizedString::append_indent に変更する必要があります。]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";LocalizedMessageMustNotEndWithNewline" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The message named {value} ends with a newline which should be added by formatting rather than by localization.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{value}という名前のメッセージは改行で終わり、ローカライズではなく書式設定によって追加される必要があります。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -8595,6 +8463,15 @@
           <Val><![CDATA[missing required field '{json_field}' ({json_type})]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[必須フィールド '{json_field}' ({json_type}) がありません]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";MissingRequiredField2" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[missing required field '{json_field}']]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[必須フィールド '{json_field}' がありません]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -8887,15 +8764,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";NoteMessage" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[note: ]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[メモ: ]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";NugetOutputNotCapturedBecauseInteractiveSpecified" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[NuGet command failed and output was not captured because --interactive was specified]]></Val>
@@ -9103,11 +8971,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";PESignatureMismatch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";PackageAbi" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[While parsing Portable Executable {path}, signature mismatch.]]></Val>
+          <Val><![CDATA[{spec} package ABI: {package_abi}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[ポータブル実行可能ファイル {path} の解析中に署名が一致しません。]]></Val>
+            <Val><![CDATA[{spec} パッケージ ABI: {package_abi}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -9309,51 +9177,6 @@
           <Val><![CDATA[unexpected end of line, to span a blank line use "  ."]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[予期しない行の終わりです。空白行にまたがる場合は " ." を使用します]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ParseControlErrorInfoInvalidFields" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The following fields were not expected:]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[次のフィールドが想定外でした:]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ParseControlErrorInfoMissingFields" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The following fields were missing:]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[次のフィールドが見つかりませんでした:]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ParseControlErrorInfoTypesEntry" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[{value} was expected to be {expected}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{value}は{expected}である必要があります]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ParseControlErrorInfoWhileLoading" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[while loading {path}:]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{path}の読み込み中:]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ParseControlErrorInfoWrongTypeFields" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The following fields had the wrong types:]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[次のフィールドの型が正しくありません:]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -9823,11 +9646,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";PortMissingManifest" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";PortMissingManifest2" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[{package_name} has no vcpkg.json or CONTROL file in {path}]]></Val>
+          <Val><![CDATA[{package_name} port manifest missing (no vcpkg.json or CONTROL file)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{package_name}{path} に vcpkg.json またはコントロール ファイルがありません]]></Val>
+            <Val><![CDATA[{package_name} ポート マニフェストがありません (vcpkg.json または CONTROL ファイルがありません)]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -9858,6 +9681,15 @@
           <Val><![CDATA[The following packages differ from their port versions:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[次のパッケージは、ポート バージョンとは異なります。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PortVersionControlMustBeANonNegativeInteger" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA["Port-Version" must be a non-negative integer]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA["Port-Version" は負ではない整数である必要があります]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10383,15 +10215,6 @@
           <Val><![CDATA[Please make sure you have started a new bash shell for the change to take effect.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[変更を有効にするには、新しい bash シェルを開始したことをご確認ください。]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";SuggestUpdateVcpkg" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[You may need to update the vcpkg binary; try running {command_line} to update.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[vcpkg バイナリの更新が必要である可能性があります。{command_line} を実行して更新してみてください。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -12069,12 +11892,12 @@
       </Item>
       <Item ItemId=";VersionVerifiedOK" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[OK: {version_spec} -> {commit_sha}]]></Val>
+          <Val><![CDATA[{version_spec} is correctly in the version database ({git_tree_sha})]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[OK: {version_spec} -> {commit_sha}]]></Val>
+            <Val><![CDATA[{version_spec} がバージョン データベースに正しく存在します ({git_tree_sha})]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[OK: {package_name}@{version} -> {commit_sha}]]></Val>
+            <Val><![CDATA[OK: {version_spec} -> {commit_sha}]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -12106,24 +11929,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";WarningMessage" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[warning: ]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[警告: ]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";WarningMessageMustUsePrintWarning" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The message named {value} starts with warning:, it must be changed to prepend WarningMessage in code instead.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{value}という名前のメッセージは「warning:」で始まります。代わりに、コードの先頭に「WarningMessage」を追加するように変更する必要があります。]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";WarningsTreatedAsErrors" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[previous warnings being interpreted as errors]]></Val>
@@ -12144,10 +11949,13 @@
       </Item>
       <Item ItemId=";WhileCheckingOutPortTreeIsh" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[while checking out port {package_name} with git tree {commit_sha}]]></Val>
+          <Val><![CDATA[while checking out port {package_name} with git tree {git_tree_sha}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Git ツリー {commit_sha} でポート {package_name} のチェックアウト中]]></Val>
+            <Val><![CDATA[Git ツリー {git_tree_sha} でポート {package_name} のチェックアウト中]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[while checking out port {package_name} with git tree {commit_sha}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -12174,6 +11982,15 @@
           <Val><![CDATA[while trying to load port from: {commit_sha}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[ポートの読み込み中: {commit_sha}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";WhileLoadingPortVersion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[while loading {version_spec}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{version_spec} の読み込み中]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />

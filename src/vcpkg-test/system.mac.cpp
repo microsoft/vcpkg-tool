@@ -1,6 +1,5 @@
-#include <catch2/catch.hpp>
+#include <vcpkg-test/util.h>
 
-#include <vcpkg/base/span.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.mac.h>
 

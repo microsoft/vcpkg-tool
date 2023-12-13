@@ -31,7 +31,7 @@ if ($expected -ne $actual) {
 }
 
 Push-Location $manifestDir
-$result = Run-VcpkgAndCaptureOutput new --application
+$result = Run-VcpkgAndCaptureStdErr new --application
 Pop-Location
 Throw-IfNotFailed
 if (-not $result.Contains('A manifest is already present at')) {
@@ -40,7 +40,7 @@ if (-not $result.Contains('A manifest is already present at')) {
 
 Remove-Item $manifestPath
 Push-Location $manifestDir
-$result = Run-VcpkgAndCaptureOutput new --application
+$result = Run-VcpkgAndCaptureStdErr new --application
 Pop-Location
 Throw-IfNotFailed
 if (-not $result.Contains('Creating a manifest would overwrite a vcpkg-configuration.json')) {

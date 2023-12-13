@@ -3,8 +3,6 @@
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.process.h>
 
-#include <vcpkg/commands.export.h>
-#include <vcpkg/commands.h>
 #include <vcpkg/commands.install.h>
 #include <vcpkg/export.chocolatey.h>
 #include <vcpkg/installedpaths.h>
@@ -161,7 +159,7 @@ if (Test-Path $installedDir)
         const auto& vcpkg_root_path = paths.root;
         const auto raw_exported_dir_path = vcpkg_root_path / "chocolatey";
         const auto exported_dir_path = vcpkg_root_path / "chocolatey_exports";
-        const Path& nuget_exe = paths.get_tool_exe(Tools::NUGET, stdout_sink);
+        const Path& nuget_exe = paths.get_tool_exe(Tools::NUGET, out_sink);
 
         fs.remove_all(raw_exported_dir_path, VCPKG_LINE_INFO);
         fs.create_directory(raw_exported_dir_path, VCPKG_LINE_INFO);
@@ -178,7 +176,7 @@ if (Test-Path $installedDir)
             }
 
             const BinaryParagraph& binary_paragraph = action.core_paragraph().value_or_exit(VCPKG_LINE_INFO);
-            auto norm_version = binary_paragraph.version;
+            auto norm_version = binary_paragraph.version.to_string();
 
             // normalize the version string to be separated by dots to be compliant with Nuspec.
             Strings::inplace_replace_all(norm_version, '-', '.');

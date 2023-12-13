@@ -4,7 +4,7 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/parse.h>
-#include <vcpkg/base/system.debug.h>
+#include <vcpkg/base/strings.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/binarycaching.h>
@@ -149,7 +149,7 @@ namespace vcpkg
                                            headers,
                                            file,
                                            sha,
-                                           Util::Sets::contains(parsed.switches, OPTION_MACHINE_PROGRESS) ? stdout_sink
+                                           Util::Sets::contains(parsed.switches, OPTION_MACHINE_PROGRESS) ? out_sink
                                                                                                           : null_sink);
             Checks::exit_success(VCPKG_LINE_INFO);
         }

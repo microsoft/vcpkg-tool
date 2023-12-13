@@ -3,10 +3,13 @@
 #include <vcpkg/base/fwd/files.h>
 
 #include <vcpkg/fwd/installedpaths.h>
+#include <vcpkg/fwd/statusparagraphs.h>
 
 #include <vcpkg/base/sortedvector.h>
 
-#include <vcpkg/statusparagraphs.h>
+#include <vcpkg/statusparagraph.h>
+
+#include <string>
 
 namespace vcpkg
 {

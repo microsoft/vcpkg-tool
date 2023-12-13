@@ -5,9 +5,6 @@
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.edit.h>
-#include <vcpkg/commands.help.h>
-#include <vcpkg/paragraphs.h>
-#include <vcpkg/registries.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
@@ -258,7 +255,7 @@ namespace vcpkg
             msg::println_error(msg::format(msgErrorVsCodeNotFound, msg::env_var = format_environment_variable("EDITOR"))
                                    .append_raw('\n')
                                    .append(msgErrorVsCodeNotFoundPathExamined));
-            print_paths(stdout_sink, candidate_paths);
+            print_paths(out_sink, candidate_paths);
             msg::println(msgInfoSetEnvVar, msg::env_var = format_environment_variable("EDITOR"));
             Checks::exit_fail(VCPKG_LINE_INFO);
         }

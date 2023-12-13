@@ -1,6 +1,9 @@
 #pragma once
 
+#include <vcpkg/base/fwd/json.h>
+
 #include <vcpkg/fwd/installedpaths.h>
+#include <vcpkg/fwd/statusparagraph.h>
 
 #include <vcpkg/binaryparagraph.h>
 
@@ -10,31 +13,13 @@
 
 namespace vcpkg
 {
-    enum class InstallState
-    {
-        ERROR_STATE,
-        NOT_INSTALLED,
-        HALF_INSTALLED,
-        INSTALLED,
-    };
-
-    enum class Want
-    {
-        ERROR_STATE,
-        UNKNOWN,
-        INSTALL,
-        HOLD,
-        DEINSTALL,
-        PURGE
-    };
-
     /// <summary>
     /// Installed package metadata
     /// </summary>
     struct StatusParagraph
     {
         StatusParagraph() noexcept;
-        explicit StatusParagraph(Paragraph&& fields);
+        StatusParagraph(StringView origin, Paragraph&& fields);
 
         bool is_installed() const { return want == Want::INSTALL && state == InstallState::INSTALLED; }
 
@@ -62,7 +47,7 @@ namespace vcpkg
         std::vector<PackageSpec> dependencies() const;
         std::map<std::string, std::vector<FeatureSpec>> feature_dependencies() const;
         InternalFeatureSet feature_list() const;
-        Version version() const;
+        const Version& version() const;
 
         std::vector<StatusParagraph> all_status_paragraphs() const;
 

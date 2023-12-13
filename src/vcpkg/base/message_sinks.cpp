@@ -11,6 +11,13 @@ namespace
 
     NullMessageSink null_sink_instance;
 
+    struct OutMessageSink : MessageSink
+    {
+        virtual void print(Color c, StringView sv) override { msg::write_unlocalized_text(c, sv); }
+    };
+
+    OutMessageSink out_sink_instance;
+
     struct StdOutMessageSink : MessageSink
     {
         virtual void print(Color c, StringView sv) override { msg::write_unlocalized_text_to_stdout(c, sv); }
@@ -29,18 +36,11 @@ namespace
 
 namespace vcpkg
 {
-
-    void MessageSink::println_warning(const LocalizedString& s)
-    {
-        println(Color::warning, format(msgWarningMessage).append(s));
-    }
-
-    void MessageSink::println_error(const LocalizedString& s)
-    {
-        println(Color::error, format(msgErrorMessage).append(s));
-    }
+    void MessageSink::println_warning(const LocalizedString& s) { println(Color::warning, warning_prefix().append(s)); }
+    void MessageSink::println_error(const LocalizedString& s) { println(Color::error, error_prefix().append(s)); }
 
     MessageSink& null_sink = null_sink_instance;
+    MessageSink& out_sink = out_sink_instance;
     MessageSink& stderr_sink = stderr_sink_instance;
     MessageSink& stdout_sink = stdout_sink_instance;
 

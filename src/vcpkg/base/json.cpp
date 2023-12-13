@@ -7,9 +7,8 @@
 
 #include <vcpkg/documentation.h>
 
-#include <inttypes.h>
-
-#include <memory>
+#include <atomic>
+#include <type_traits>
 
 namespace vcpkg::Json
 {
@@ -308,8 +307,8 @@ namespace vcpkg::Json
             case ValueKind::Integer: return lhs.underlying_->integer == rhs.underlying_->integer;
             case ValueKind::Number: return lhs.underlying_->number == rhs.underlying_->number;
             case ValueKind::String: return lhs.underlying_->string == rhs.underlying_->string;
-            case ValueKind::Array: return lhs.underlying_->string == rhs.underlying_->string;
-            case ValueKind::Object: return lhs.underlying_->string == rhs.underlying_->string;
+            case ValueKind::Array: return lhs.underlying_->array == rhs.underlying_->array;
+            case ValueKind::Object: return lhs.underlying_->object == rhs.underlying_->object;
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
@@ -1389,7 +1388,7 @@ namespace vcpkg::Json
 
     static std::atomic<uint64_t> g_json_reader_stats(0);
 
-    Reader::Reader() : m_stat_timer(g_json_reader_stats) { }
+    Reader::Reader(StringView origin) : m_origin(origin.data(), origin.size()), m_stat_timer(g_json_reader_stats) { }
 
     uint64_t Reader::get_reader_stats() { return g_json_reader_stats.load(); }
 
@@ -1399,7 +1398,10 @@ namespace vcpkg::Json
     }
     void Reader::add_expected_type_error(const LocalizedString& expected_type)
     {
-        m_errors.push_back(msg::format(msgMismatchedType, msg::json_field = path(), msg::json_type = expected_type));
+        m_errors.push_back(LocalizedString::from_raw(m_origin)
+                               .append_raw(": ")
+                               .append_raw(ErrorPrefix)
+                               .append(msgMismatchedType, msg::json_field = path(), msg::json_type = expected_type));
     }
     void Reader::add_extra_field_error(const LocalizedString& type, StringView field, StringView suggestion)
     {
@@ -1413,9 +1415,16 @@ namespace vcpkg::Json
             add_generic_error(type, msg::format(msgUnexpectedField, msg::json_field = field));
         }
     }
-    void Reader::add_generic_error(const LocalizedString& type, LocalizedString&& message)
+    void Reader::add_generic_error(const LocalizedString& type, StringView message)
     {
-        m_errors.push_back(LocalizedString::from_raw(Strings::concat(path(), " (", type, "): ", message)));
+        m_errors.push_back(LocalizedString::from_raw(m_origin)
+                               .append_raw(": ")
+                               .append_raw(ErrorPrefix)
+                               .append_raw(path())
+                               .append_raw(" (")
+                               .append(type)
+                               .append_raw("): ")
+                               .append_raw(message));
     }
 
     void Reader::check_for_unexpected_fields(const Object& obj,
@@ -1447,8 +1456,14 @@ namespace vcpkg::Json
 
     void Reader::add_warning(LocalizedString type, StringView msg)
     {
-        m_warnings.push_back(std::move(
-            LocalizedString::from_raw(path()).append_raw(" (").append(type).append_raw("): ").append_raw(msg)));
+        m_warnings.push_back(LocalizedString::from_raw(m_origin)
+                                 .append_raw(": ")
+                                 .append_raw(WarningPrefix)
+                                 .append_raw(path())
+                                 .append_raw(" (")
+                                 .append(type)
+                                 .append_raw("): ")
+                                 .append_raw(msg));
     }
 
     std::string Reader::path() const noexcept

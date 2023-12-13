@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vcpkg/base/fwd/files.h>
-#include <vcpkg/base/fwd/format.h>
+#include <vcpkg/base/fwd/fmt.h>
 #include <vcpkg/base/fwd/message_sinks.h>
 #include <vcpkg/base/fwd/span.h>
 
@@ -80,6 +80,8 @@ namespace vcpkg
         const Path& path() const;
         ExpectedL<Unit> try_seek_to(long long offset);
         ExpectedL<Unit> try_seek_to(long long offset, int origin);
+
+        void close() noexcept;
 
         ~FilePointer();
     };
@@ -298,13 +300,19 @@ namespace vcpkg
 
         // waits forever for the file lock
         virtual std::unique_ptr<IExclusiveFileLock> take_exclusive_file_lock(const Path& lockfile,
+                                                                             MessageSink& status_sink,
                                                                              std::error_code&) const = 0;
-        std::unique_ptr<IExclusiveFileLock> take_exclusive_file_lock(const Path& lockfile, LineInfo li) const;
+        std::unique_ptr<IExclusiveFileLock> take_exclusive_file_lock(const Path& lockfile,
+                                                                     MessageSink& status_sink,
+                                                                     LineInfo li) const;
 
         // waits, at most, 1.5 seconds, for the file lock
         virtual std::unique_ptr<IExclusiveFileLock> try_take_exclusive_file_lock(const Path& lockfile,
+                                                                                 MessageSink& status_sink,
                                                                                  std::error_code&) const = 0;
-        std::unique_ptr<IExclusiveFileLock> try_take_exclusive_file_lock(const Path& lockfile, LineInfo li) const;
+        std::unique_ptr<IExclusiveFileLock> try_take_exclusive_file_lock(const Path& lockfile,
+                                                                         MessageSink& status_sink,
+                                                                         LineInfo li) const;
 
         virtual WriteFilePointer open_for_write(const Path& file_path, Append append, std::error_code& ec) const = 0;
         WriteFilePointer open_for_write(const Path& file_path, Append append, LineInfo li) const;

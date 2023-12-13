@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vcpkg/base/fwd/stringview.h>
+
 #include <vcpkg/packagespec.h>
 #include <vcpkg/paragraphparser.h>
 #include <vcpkg/sourceparagraph.h>
@@ -12,7 +14,7 @@ namespace vcpkg
     struct BinaryParagraph
     {
         BinaryParagraph();
-        explicit BinaryParagraph(Paragraph&& fields);
+        BinaryParagraph(StringView origin, Paragraph&& fields);
         BinaryParagraph(const SourceParagraph& spgh,
                         const std::vector<std::string>& default_features,
                         Triplet triplet,
@@ -22,7 +24,7 @@ namespace vcpkg
 
         void canonicalize();
 
-        std::string displayname() const;
+        std::string display_name() const;
 
         std::string fullstem() const;
 
@@ -30,11 +32,8 @@ namespace vcpkg
 
         bool is_feature() const { return !feature.empty(); }
 
-        Version get_version() const { return {version, port_version}; }
-
         PackageSpec spec;
-        std::string version;
-        int port_version = 0;
+        Version version;
         std::vector<std::string> description;
         std::vector<std::string> maintainers;
         std::string feature;

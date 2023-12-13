@@ -11,6 +11,10 @@
 
 #include <vcpkg/registries.h>
 
+#include <memory>
+#include <string>
+#include <vector>
+
 namespace vcpkg
 {
     /// <summary>

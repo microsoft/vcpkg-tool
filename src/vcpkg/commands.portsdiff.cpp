@@ -2,10 +2,8 @@
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
-#include <vcpkg/commands.help.h>
 #include <vcpkg/commands.portsdiff.h>
 #include <vcpkg/paragraphs.h>
-#include <vcpkg/tools.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 #include <vcpkg/versions.h>
@@ -16,25 +14,27 @@ namespace
 {
     void print_name_only(StringView name)
     {
-        msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("\t- {:<15}\n", name));
+        msg::write_unlocalized_text(Color::none, fmt::format("\t- {:<15}\n", name));
     }
 
     void print_name_and_version(StringView name, const Version& version)
     {
-        msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("\t- {:<15}{:<}\n", name, version));
+        msg::write_unlocalized_text(Color::none, fmt::format("\t- {:<15}{:<}\n", name, version));
     }
 
     void print_name_and_version_diff(StringView name, const VersionDiff& version_diff)
     {
-        msg::write_unlocalized_text_to_stdout(Color::none, fmt::format("\t- {:<15}{:<}\n", name, version_diff));
+        msg::write_unlocalized_text(Color::none, fmt::format("\t- {:<15}{:<}\n", name, version_diff));
     }
 
     std::vector<VersionSpec> read_ports_from_commit(const VcpkgPaths& paths, StringView git_commit_id)
     {
         auto& fs = paths.get_filesystem();
-        const auto dot_git_dir = paths.root / ".git";
+        const auto dot_git_dir = fs.try_find_file_recursively_up(paths.builtin_ports_directory().parent_path(), ".git")
+                                     .map([](Path&& dot_git_parent) { return std::move(dot_git_parent) / ".git"; })
+                                     .value_or_exit(VCPKG_LINE_INFO);
         const auto ports_dir_name = paths.builtin_ports_directory().filename();
-        const auto temp_checkout_path = paths.root / fmt::format("{}-{}", ports_dir_name, git_commit_id);
+        const auto temp_checkout_path = paths.buildtrees() / fmt::format("{}-{}", ports_dir_name, git_commit_id);
         fs.create_directory(temp_checkout_path, IgnoreErrors{});
         const auto checkout_this_dir =
             fmt::format("./{}", ports_dir_name); // Must be relative to the root of the repository
@@ -54,12 +54,9 @@ namespace
         const auto ports_at_commit = Paragraphs::load_overlay_ports(fs, temp_checkout_path / ports_dir_name);
         fs.remove_all(temp_checkout_path, VCPKG_LINE_INFO);
 
-        std::vector<VersionSpec> results;
-        for (auto&& port : ports_at_commit)
-        {
-            const auto& core_pgh = *port.source_control_file->core_paragraph;
-            results.emplace_back(VersionSpec{core_pgh.name, Version{core_pgh.raw_version, core_pgh.port_version}});
-        }
+        auto results = Util::fmap(ports_at_commit, [](const SourceControlFileAndLocation& scfl) {
+            return scfl.source_control_file->to_version_spec();
+        });
 
         Util::sort(results,
                    [](const VersionSpec& lhs, const VersionSpec& rhs) { return lhs.port_name < rhs.port_name; });

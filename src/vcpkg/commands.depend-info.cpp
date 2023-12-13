@@ -1,22 +1,19 @@
+#include <vcpkg/base/expected.h>
 #include <vcpkg/base/strings.h>
-#include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/util.h>
 #include <vcpkg/base/xmlserializer.h>
 
 #include <vcpkg/cmakevars.h>
 #include <vcpkg/commands.depend-info.h>
-#include <vcpkg/commands.help.h>
-#include <vcpkg/commands.install.h>
 #include <vcpkg/dependencies.h>
 #include <vcpkg/input.h>
 #include <vcpkg/packagespec.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/registries.h>
+#include <vcpkg/triplet.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 
 #include <limits.h>
-
-#include <vector>
 
 using namespace vcpkg;
 
@@ -46,7 +43,7 @@ namespace
         {
             // If we've already printed the set of dependencies, print an elipsis instead
             Strings::append(prefix_buf, "+- ...\n");
-            msg::write_unlocalized_text_to_stdout(Color::none, prefix_buf);
+            msg::write_unlocalized_text(Color::none, prefix_buf);
             prefix_buf.resize(original_size);
         }
         else
@@ -57,7 +54,7 @@ namespace
             {
                 // Print the current level
                 Strings::append(prefix_buf, "+-- ", *i, "\n");
-                msg::write_unlocalized_text_to_stdout(Color::none, prefix_buf);
+                msg::write_unlocalized_text(Color::none, prefix_buf);
                 prefix_buf.resize(original_size);
 
                 // Recurse
@@ -68,7 +65,7 @@ namespace
 
             // Print the last of the current level
             Strings::append(prefix_buf, "+-- ", currPos->dependencies.back(), "\n");
-            msg::write_unlocalized_text_to_stdout(Color::none, prefix_buf);
+            msg::write_unlocalized_text(Color::none, prefix_buf);
             prefix_buf.resize(original_size);
 
             // Recurse
@@ -395,6 +392,7 @@ namespace vcpkg
                                       Triplet default_triplet,
                                       Triplet host_triplet)
     {
+        msg::default_output_stream = OutputStream::StdErr;
         const ParsedArguments options = args.parse_arguments(CommandDependInfoMetadata);
         const auto strategy = determine_depend_info_mode(options).value_or_exit(VCPKG_LINE_INFO);
 
@@ -479,16 +477,16 @@ namespace vcpkg
 
             if (strategy.show_depth)
             {
-                msg::write_unlocalized_text_to_stdout(Color::error, fmt::format("({})", first->depth));
+                msg::write_unlocalized_text(Color::error, fmt::format("({})", first->depth));
             }
 
-            msg::write_unlocalized_text_to_stdout(Color::success, first->package);
+            msg::write_unlocalized_text(Color::success, first->package);
             if (!features.empty())
             {
-                msg::write_unlocalized_text_to_stdout(Color::warning, "[" + features + "]");
+                msg::write_unlocalized_text(Color::warning, "[" + features + "]");
             }
 
-            msg::write_unlocalized_text_to_stdout(Color::none, "\n");
+            msg::write_unlocalized_text(Color::none, "\n");
             std::set<std::string> printed;
             std::string prefix_buf;
             print_dep_tree(prefix_buf, first->package, depend_info, printed);
@@ -517,16 +515,16 @@ namespace vcpkg
 
             if (strategy.show_depth)
             {
-                msg::write_unlocalized_text_to_stdout(Color::error, fmt::format("({})", info.depth));
+                msg::write_unlocalized_text(Color::error, fmt::format("({})", info.depth));
             }
 
-            msg::write_unlocalized_text_to_stdout(Color::success, info.package);
+            msg::write_unlocalized_text(Color::success, info.package);
             if (!info.features.empty())
             {
-                msg::write_unlocalized_text_to_stdout(Color::warning, "[" + Strings::join(", ", info.features) + "]");
+                msg::write_unlocalized_text(Color::warning, "[" + Strings::join(", ", info.features) + "]");
             }
 
-            msg::write_unlocalized_text_to_stdout(Color::none, ": " + Strings::join(", ", info.dependencies) + "\n");
+            msg::write_unlocalized_text(Color::none, ": " + Strings::join(", ", info.dependencies) + "\n");
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);

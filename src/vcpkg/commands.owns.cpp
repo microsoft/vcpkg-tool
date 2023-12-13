@@ -1,5 +1,5 @@
-#include <vcpkg/commands.help.h>
 #include <vcpkg/commands.owns.h>
+#include <vcpkg/statusparagraphs.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
@@ -22,8 +22,7 @@ namespace
             {
                 if (file.find(file_substr) != std::string::npos)
                 {
-                    msg::write_unlocalized_text_to_stdout(Color::none,
-                                                          fmt::format("{}: {}\n", pgh.package.displayname(), file));
+                    msg::write_unlocalized_text(Color::none, fmt::format("{}: {}\n", pgh.package.display_name(), file));
                 }
             }
         }
@@ -47,7 +46,6 @@ namespace vcpkg
     void command_owns_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
         const auto parsed = args.parse_arguments(CommandOwnsMetadata);
-
         const StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
         search_file(paths.get_filesystem(), paths.installed(), parsed.command_arguments[0], status_db);
         Checks::exit_success(VCPKG_LINE_INFO);

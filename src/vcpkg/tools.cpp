@@ -10,7 +10,6 @@
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.h>
 #include <vcpkg/base/system.process.h>
-#include <vcpkg/base/util.h>
 
 #include <vcpkg/archives.h>
 #include <vcpkg/tools.h>
@@ -839,8 +838,7 @@ namespace vcpkg
             }
 
             // If no acceptable tool was found and downloading was unavailable, emit an error message
-            LocalizedString s = msg::format(msgErrorMessage);
-            s.append(msgToolFetchFailed, msg::tool_name = tool.tool_data_name());
+            LocalizedString s = msg::format_error(msgToolFetchFailed, msg::tool_name = tool.tool_data_name());
             if (env_force_system_binaries && download_available)
             {
                 s.append_raw(' ').append(msgDownloadAvailable,
@@ -905,11 +903,26 @@ namespace vcpkg
 
     ExpectedL<Path> find_system_tar(const ReadOnlyFilesystem& fs)
     {
+#if defined(_WIN32)
+        const auto& maybe_system32 = get_system32();
+        if (auto system32 = maybe_system32.get())
+        {
+            auto shipped_with_windows = *system32 / "tar.exe";
+            if (fs.is_regular_file(shipped_with_windows))
+            {
+                return shipped_with_windows;
+            }
+        }
+        else
+        {
+            return maybe_system32.error();
+        }
+#endif // ^^^ _WIN32
+
         const auto tools = fs.find_from_PATH(Tools::TAR);
         if (tools.empty())
         {
-            return msg::format(msgErrorMessage)
-                .append(msgToolFetchFailed, msg::tool_name = Tools::TAR)
+            return msg::format_error(msgToolFetchFailed, msg::tool_name = Tools::TAR)
 #if defined(_WIN32)
                 .append(msgToolInWin10)
 #else
@@ -948,8 +961,7 @@ namespace vcpkg
         }
 #endif
 
-        return msg::format(msgErrorMessage)
-            .append(msgToolFetchFailed, msg::tool_name = Tools::CMAKE)
+        return msg::format_error(msgToolFetchFailed, msg::tool_name = Tools::CMAKE)
 #if !defined(_WIN32)
             .append(msgInstallWithSystemManager)
 #endif

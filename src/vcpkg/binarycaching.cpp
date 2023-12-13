@@ -4,7 +4,6 @@
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/json.h>
-#include <vcpkg/base/lazy.h>
 #include <vcpkg/base/message_sinks.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/parse.h>
@@ -18,15 +17,14 @@
 #include <vcpkg/archives.h>
 #include <vcpkg/binarycaching.h>
 #include <vcpkg/binarycaching.private.h>
-#include <vcpkg/commands.build.h>
 #include <vcpkg/dependencies.h>
 #include <vcpkg/documentation.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/tools.h>
 #include <vcpkg/vcpkgpaths.h>
 
-#include <iterator>
-#include <numeric>
+#include <memory>
+#include <utility>
 
 using namespace vcpkg;
 
@@ -186,13 +184,13 @@ namespace
         return ret;
     }
 
-    NugetReference make_nugetref(const PackageSpec& spec, StringView raw_version, StringView abi_tag, StringView prefix)
+    NugetReference make_nugetref(const PackageSpec& spec, const Version& version, StringView abi_tag, StringView prefix)
     {
-        return {Strings::concat(prefix, spec.dir()), format_version_for_nugetref(raw_version, abi_tag)};
+        return {Strings::concat(prefix, spec.dir()), format_version_for_nugetref(version.text, abi_tag)};
     }
     NugetReference make_nugetref(const BinaryPackageReadInfo& info, StringView prefix)
     {
-        return make_nugetref(info.spec, info.raw_version, info.package_abi, prefix);
+        return make_nugetref(info.spec, info.version, info.package_abi, prefix);
     }
 
     void clean_prepare_dir(const Filesystem& fs, const Path& dir)
@@ -694,7 +692,7 @@ namespace
             auto refs =
                 Util::fmap(actions, [this](const InstallPlanAction* p) { return make_nugetref(*p, m_nuget_prefix); });
             m_fs.write_contents(packages_config, generate_packages_config(refs), VCPKG_LINE_INFO);
-            m_cmd.install(stdout_sink, packages_config, m_packages, m_src);
+            m_cmd.install(out_sink, packages_config, m_packages, m_src);
             for (size_t i = 0; i < actions.size(); ++i)
             {
                 // nuget.exe provides the nupkg file and the unpacked folder
@@ -811,7 +809,7 @@ namespace
                                     url);
             if (auto p = res.get())
             {
-                auto maybe_json = Json::parse_object(*p);
+                auto maybe_json = Json::parse_object(*p, m_url);
                 if (auto json = maybe_json.get())
                 {
                     auto archive_location = json->get("archiveLocation");
@@ -888,7 +886,7 @@ namespace
             auto res = invoke_http_request("POST", headers, m_url, stringify(payload));
             if (auto p = res.get())
             {
-                auto maybe_json = Json::parse_object(*p);
+                auto maybe_json = Json::parse_object(*p, m_url);
                 if (auto json = maybe_json.get())
                 {
                     auto cache_id = json->get("cacheId");
@@ -999,7 +997,7 @@ namespace
                 }
                 else
                 {
-                    stdout_sink.println_warning(res.error());
+                    out_sink.println_warning(res.error());
                 }
             }
         }
@@ -1770,7 +1768,7 @@ namespace vcpkg
                                  [&](std::string& out, StringView key) {
                                      if (key == "version")
                                      {
-                                         out += info.raw_version;
+                                         out += info.version.text;
                                      }
                                      else if (key == "name")
                                      {
@@ -1893,17 +1891,17 @@ namespace vcpkg
             std::shared_ptr<const GcsStorageTool> gcs_tool;
             if (!s.gcs_read_prefixes.empty() || !s.gcs_write_prefixes.empty())
             {
-                gcs_tool = std::make_shared<GcsStorageTool>(tools, stdout_sink);
+                gcs_tool = std::make_shared<GcsStorageTool>(tools, out_sink);
             }
             std::shared_ptr<const AwsStorageTool> aws_tool;
             if (!s.aws_read_prefixes.empty() || !s.aws_write_prefixes.empty())
             {
-                aws_tool = std::make_shared<AwsStorageTool>(tools, stdout_sink, s.aws_no_sign_request);
+                aws_tool = std::make_shared<AwsStorageTool>(tools, out_sink, s.aws_no_sign_request);
             }
             std::shared_ptr<const CosStorageTool> cos_tool;
             if (!s.cos_read_prefixes.empty() || !s.cos_write_prefixes.empty())
             {
-                cos_tool = std::make_shared<CosStorageTool>(tools, stdout_sink);
+                cos_tool = std::make_shared<CosStorageTool>(tools, out_sink);
             }
 
             if (s.gha_read || s.gha_write)
@@ -1916,7 +1914,7 @@ namespace vcpkg
             if (!s.archives_to_read.empty() || !s.url_templates_to_get.empty() || !s.gcs_read_prefixes.empty() ||
                 !s.aws_read_prefixes.empty() || !s.cos_read_prefixes.empty() || s.gha_read)
             {
-                auto maybe_zip_tool = ZipTool::make(tools, stdout_sink);
+                auto maybe_zip_tool = ZipTool::make(tools, out_sink);
                 if (!maybe_zip_tool.has_value())
                 {
                     return std::move(maybe_zip_tool).error();
@@ -1994,7 +1992,7 @@ namespace vcpkg
                 !s.configs_to_write.empty())
             {
                 NugetBaseBinaryProvider nuget_base(
-                    fs, NuGetTool(tools, stdout_sink, s), paths.packages(), buildtrees, s.nuget_prefix);
+                    fs, NuGetTool(tools, out_sink, s), paths.packages(), buildtrees, s.nuget_prefix);
                 if (!s.sources_to_read.empty())
                     ret.read.push_back(
                         std::make_unique<NugetReadBinaryProvider>(nuget_base, nuget_sources_arg(s.sources_to_read)));
@@ -2175,11 +2173,10 @@ namespace vcpkg
                     }
                     else
                     {
-                        stdout_sink.println(
-                            Color::warning,
-                            msg::format_warning(msgCompressFolderFailed, msg::path = request.package_dir)
-                                .append_raw(' ')
-                                .append_raw(compress_result.error()));
+                        out_sink.println(Color::warning,
+                                         msg::format_warning(msgCompressFolderFailed, msg::path = request.package_dir)
+                                             .append_raw(' ')
+                                             .append_raw(compress_result.error()));
                     }
                 }
 
@@ -2188,14 +2185,14 @@ namespace vcpkg
                 {
                     if (!provider->needs_zip_file() || request.zip_path.has_value())
                     {
-                        num_destinations += provider->push_success(request, stdout_sink);
+                        num_destinations += provider->push_success(request, out_sink);
                     }
                 }
                 if (request.zip_path)
                 {
                     m_fs.remove(*request.zip_path.get(), IgnoreErrors{});
                 }
-                stdout_sink.println(
+                out_sink.println(
                     msgStoredBinariesToDestinations, msg::count = num_destinations, msg::elapsed = timer.elapsed());
             }
         }
@@ -2286,8 +2283,7 @@ namespace vcpkg
     BinaryPackageReadInfo::BinaryPackageReadInfo(const InstallPlanAction& action)
         : package_abi(action.package_abi().value_or_exit(VCPKG_LINE_INFO))
         , spec(action.spec)
-        , raw_version(action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO)
-                          .source_control_file->core_paragraph->raw_version)
+        , version(action.version())
         , package_dir(action.package_dir.value_or_exit(VCPKG_LINE_INFO))
     {
     }
@@ -2307,7 +2303,7 @@ ExpectedL<DownloadManagerConfig> vcpkg::parse_download_configuration(const Optio
     {
         return LocalizedString::from_raw(err->to_string()) // note that this already contains error:
             .append_raw('\n')
-            .append(msgNoteMessage)
+            .append_raw(NotePrefix)
             .append(msgSeeURL, msg::url = docs::assetcaching_url);
     }
 
@@ -2315,14 +2311,14 @@ ExpectedL<DownloadManagerConfig> vcpkg::parse_download_configuration(const Optio
     {
         return msg::format_error(msgAMaximumOfOneAssetWriteUrlCanBeSpecified)
             .append_raw('\n')
-            .append(msgNoteMessage)
+            .append_raw(NotePrefix)
             .append(msgSeeURL, msg::url = docs::assetcaching_url);
     }
     if (s.url_templates_to_get.size() > 1)
     {
         return msg::format_error(msgAMaximumOfOneAssetReadUrlCanBeSpecified)
             .append_raw('\n')
-            .append(msgNoteMessage)
+            .append_raw(NotePrefix)
             .append(msgSeeURL, msg::url = docs::assetcaching_url);
     }
 
@@ -2381,25 +2377,25 @@ ExpectedL<BinaryConfigParserState> vcpkg::parse_binary_provider_configs(const st
     return s;
 }
 
-std::string vcpkg::format_version_for_nugetref(StringView version, StringView abi_tag)
+std::string vcpkg::format_version_for_nugetref(StringView version_text, StringView abi_tag)
 {
     // this cannot use DotVersion::try_parse or DateVersion::try_parse,
     // since this is a subtly different algorithm
     // and ignores random extra stuff from the end
 
     ParsedExternalVersion parsed_version;
-    if (try_extract_external_date_version(parsed_version, version))
+    if (try_extract_external_date_version(parsed_version, version_text))
     {
         parsed_version.normalize();
         return fmt::format(
             "{}.{}.{}-vcpkg{}", parsed_version.major, parsed_version.minor, parsed_version.patch, abi_tag);
     }
 
-    if (!version.empty() && version[0] == 'v')
+    if (!version_text.empty() && version_text[0] == 'v')
     {
-        version = version.substr(1);
+        version_text = version_text.substr(1);
     }
-    if (try_extract_external_dot_version(parsed_version, version))
+    if (try_extract_external_dot_version(parsed_version, version_text))
     {
         parsed_version.normalize();
         return fmt::format(
@@ -2416,7 +2412,7 @@ std::string vcpkg::generate_nuspec(const Path& package_dir,
 {
     auto& spec = action.spec;
     auto& scf = *action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_control_file;
-    auto& version = scf.core_paragraph->raw_version;
+    auto& version = scf.core_paragraph->version;
     const auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
     const auto& compiler_info = abi_info.compiler_info.value_or_exit(VCPKG_LINE_INFO);
     auto ref = make_nugetref(action, id_prefix);
@@ -2570,9 +2566,6 @@ std::string vcpkg::generate_nuget_packages_config(const ActionPlan& plan, String
 
 NugetReference vcpkg::make_nugetref(const InstallPlanAction& action, StringView prefix)
 {
-    return ::make_nugetref(action.spec,
-                           action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO)
-                               .source_control_file->core_paragraph->raw_version,
-                           action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi,
-                           prefix);
+    return ::make_nugetref(
+        action.spec, action.version(), action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi, prefix);
 }

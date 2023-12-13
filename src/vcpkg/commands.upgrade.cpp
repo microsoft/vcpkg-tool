@@ -3,12 +3,10 @@
 
 #include <vcpkg/binarycaching.h>
 #include <vcpkg/cmakevars.h>
-#include <vcpkg/commands.help.h>
 #include <vcpkg/commands.install.h>
 #include <vcpkg/commands.update.h>
 #include <vcpkg/commands.upgrade.h>
 #include <vcpkg/dependencies.h>
-#include <vcpkg/globalstate.h>
 #include <vcpkg/input.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/registries.h>
@@ -136,11 +134,7 @@ namespace vcpkg
                 if (skip_version_check) continue;
 
                 const auto& control_file = maybe_control_file.value_or_exit(VCPKG_LINE_INFO);
-                const auto& control_paragraph = *control_file.source_control_file->core_paragraph;
-                auto control_version = Version(control_paragraph.raw_version, control_paragraph.port_version);
-                const auto& installed_paragraph = (*installed_status)->package;
-                auto installed_version = Version(installed_paragraph.version, installed_paragraph.port_version);
-                if (control_version == installed_version)
+                if (control_file.to_version() == (*installed_status)->package.version)
                 {
                     up_to_date.push_back(spec);
                 }
@@ -211,7 +205,7 @@ namespace vcpkg
 
         var_provider.load_tag_vars(action_plan, host_triplet);
 
-        auto binary_cache = BinaryCache::make(args, paths, stdout_sink).value_or_exit(VCPKG_LINE_INFO);
+        auto binary_cache = BinaryCache::make(args, paths, out_sink).value_or_exit(VCPKG_LINE_INFO);
         compute_all_abis(paths, action_plan, var_provider, status_db);
         binary_cache.fetch(action_plan.install_actions);
         const InstallSummary summary = install_execute_plan(

@@ -1,10 +1,9 @@
 #include <vcpkg/base/fwd/message_sinks.h>
 
 #include <vcpkg/base/checks.h>
-#include <vcpkg/base/expected.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/parse.h>
-#include <vcpkg/base/system.debug.h>
+#include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
@@ -364,7 +363,7 @@ namespace vcpkg
 #if defined(WIN32)
         auto& fs = paths.get_filesystem();
 
-        const Path& nuget_exe = paths.get_tool_exe(Tools::NUGET, stdout_sink);
+        const Path& nuget_exe = paths.get_tool_exe(Tools::NUGET, out_sink);
 
         const auto tmp_dir = fs.create_or_get_temp_directory(VCPKG_LINE_INFO);
         const auto targets_file_path = tmp_dir / "vcpkg.nuget.targets";
@@ -422,7 +421,7 @@ namespace vcpkg
         static constexpr StringLiteral TITLE = "PowerShell Tab-Completion";
         const auto script_path = paths.scripts / "addPoshVcpkgToPowershellProfile.ps1";
 
-        const auto& ps = paths.get_tool_exe("powershell-core", stdout_sink);
+        const auto& ps = paths.get_tool_exe("powershell-core", out_sink);
         auto cmd = Command(ps)
                        .string_arg("-NoProfile")
                        .string_arg("-ExecutionPolicy")

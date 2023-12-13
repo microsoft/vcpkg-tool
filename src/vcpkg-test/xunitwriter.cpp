@@ -1,10 +1,6 @@
-#include <catch2/catch.hpp>
+#include <vcpkg-test/util.h>
 
-#include <vcpkg/commands.build.h>
 #include <vcpkg/xunitwriter.h>
-
-#include <ostream>
-#include <utility>
 
 using namespace vcpkg;
 

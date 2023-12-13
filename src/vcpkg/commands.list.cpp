@@ -1,12 +1,11 @@
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/util.h>
 
-#include <vcpkg/commands.help.h>
 #include <vcpkg/commands.list.h>
+#include <vcpkg/statusparagraphs.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
-#include <vcpkg/versions.h>
 
 using namespace vcpkg;
 
@@ -35,8 +34,9 @@ namespace
                 Json::Object& library_obj = obj.insert(current_spec.to_string(), Json::Object());
                 library_obj.insert("package_name", Json::Value::string(current_spec.name()));
                 library_obj.insert("triplet", Json::Value::string(current_spec.triplet().to_string()));
-                library_obj.insert("version", Json::Value::string(status_paragraph->package.version));
-                library_obj.insert("port_version", Json::Value::integer(status_paragraph->package.port_version));
+                library_obj.insert("version", Json::Value::string(status_paragraph->package.version.text));
+                library_obj.insert("port_version",
+                                   Json::Value::integer(status_paragraph->package.version.port_version));
                 Json::Array& features_array = library_obj.insert("features", Json::Array());
                 if (status_paragraph->package.is_feature())
                 {
@@ -55,12 +55,12 @@ namespace
 
     void do_print(const StatusParagraph& pgh, const bool full_desc)
     {
-        auto full_version = Version(pgh.package.version, pgh.package.port_version).to_string();
+        auto full_version = pgh.package.version.to_string();
         if (full_desc)
         {
             msg::write_unlocalized_text_to_stdout(Color::none,
                                                   fmt::format("{:<50}{:<20}{:<}\n",
-                                                              pgh.package.displayname(),
+                                                              pgh.package.display_name(),
                                                               full_version,
                                                               fmt::join(pgh.package.description, "\n\n")));
         }
@@ -73,7 +73,7 @@ namespace
             }
             msg::write_unlocalized_text_to_stdout(Color::none,
                                                   fmt::format("{:<50}{:<20}{:<}\n",
-                                                              vcpkg::shorten_text(pgh.package.displayname(), 50),
+                                                              vcpkg::shorten_text(pgh.package.display_name(), 50),
                                                               vcpkg::shorten_text(full_version, 16),
                                                               vcpkg::shorten_text(description, 51)));
         }
@@ -101,6 +101,7 @@ namespace vcpkg
 
     void command_list_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
+        msg::default_output_stream = OutputStream::StdErr;
         const ParsedArguments options = args.parse_arguments(CommandListMetadata);
 
         const StatusParagraphs status_paragraphs = database_load_check(paths.get_filesystem(), paths.installed());
@@ -124,7 +125,7 @@ namespace vcpkg
         std::sort(installed_packages.begin(),
                   installed_packages.end(),
                   [](const StatusParagraph* lhs, const StatusParagraph* rhs) -> bool {
-                      return lhs->package.displayname() < rhs->package.displayname();
+                      return lhs->package.display_name() < rhs->package.display_name();
                   });
 
         const auto enable_fulldesc = Util::Sets::contains(options.switches, OPTION_FULLDESC.to_string());
@@ -133,7 +134,7 @@ namespace vcpkg
         {
             auto& query = options.command_arguments[0];
             auto pghs = Util::filter(installed_packages, [query](const StatusParagraph* status_paragraph) {
-                return Strings::case_insensitive_ascii_contains(status_paragraph->package.displayname(), query);
+                return Strings::case_insensitive_ascii_contains(status_paragraph->package.display_name(), query);
             });
             installed_packages = pghs;
         }

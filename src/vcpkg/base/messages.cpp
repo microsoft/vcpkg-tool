@@ -2,9 +2,7 @@
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/setup-messages.h>
 #include <vcpkg/base/system.debug.h>
-#include <vcpkg/base/util.h>
 
-#include <iterator>
 #include <vector>
 
 #include <cmrc/cmrc.hpp>
@@ -121,6 +119,12 @@ namespace vcpkg
         return LocalizedString::from_raw(fmt::format("${}", variable_name));
 #endif // ^^^ !_WIN32
     }
+
+    LocalizedString error_prefix() { return LocalizedString::from_raw(ErrorPrefix); }
+    LocalizedString internal_error_prefix() { return LocalizedString::from_raw(InternalErrorPrefix); }
+    LocalizedString message_prefix() { return LocalizedString::from_raw(MessagePrefix); }
+    LocalizedString note_prefix() { return LocalizedString::from_raw(NotePrefix); }
+    LocalizedString warning_prefix() { return LocalizedString::from_raw(WarningPrefix); }
 }
 
 namespace vcpkg::msg
@@ -256,7 +260,7 @@ namespace vcpkg
             catch (const fmt::format_error&)
             {
             }
-            msg::write_unlocalized_text_to_stdout(
+            msg::write_unlocalized_text(
                 Color::error,
                 fmt::format("INTERNAL ERROR: failed to format default format string for index {}\nformat string: {}\n",
                             index,
@@ -412,6 +416,20 @@ namespace vcpkg::msg
     }
 #endif
 
+    OutputStream default_output_stream = OutputStream::StdOut;
+
+    void write_unlocalized_text(Color c, StringView sv)
+    {
+        if (default_output_stream == OutputStream::StdOut)
+        {
+            write_unlocalized_text_to_stdout(c, sv);
+        }
+        else
+        {
+            write_unlocalized_text_to_stderr(c, sv);
+        }
+    }
+
     void load_from_message_map(const MessageMapAndFile& map_and_file)
     {
         auto&& message_map = map_and_file.map;
@@ -492,11 +510,8 @@ namespace vcpkg::msg
         return nullopt;
     }
 
-    LocalizedString format_error() { return format(msgErrorMessage); }
-    LocalizedString format_error(const LocalizedString& s) { return format(msgErrorMessage).append(s); }
+    LocalizedString format_error(const LocalizedString& s) { return error_prefix().append(s); }
     void println_error(const LocalizedString& s) { println(Color::error, format_error(s)); }
-
-    LocalizedString format_warning() { return format(msgWarningMessage); }
-    LocalizedString format_warning(const LocalizedString& s) { return format(msgWarningMessage).append(s); }
+    LocalizedString format_warning(const LocalizedString& s) { return warning_prefix().append(s); }
     void println_warning(const LocalizedString& s) { println(Color::warning, format_warning(s)); }
 }

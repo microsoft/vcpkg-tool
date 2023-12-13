@@ -83,12 +83,15 @@ namespace vcpkg::Checks
 
     [[noreturn]] inline void msg_exit_with_error(const LineInfo& line_info, const LocalizedString& message)
     {
-        msg_exit_with_message(line_info, msg::format(msgErrorMessage).append(message));
+        msg::write_unlocalized_text_to_stderr(Color::error, error_prefix().append_raw(message).append_raw('\n'));
+        Checks::exit_fail(line_info);
     }
     template<VCPKG_DECL_MSG_TEMPLATE>
     [[noreturn]] void msg_exit_with_error(const LineInfo& line_info, VCPKG_DECL_MSG_ARGS)
     {
-        msg_exit_with_message(line_info, msg::format(msgErrorMessage).append(VCPKG_EXPAND_MSG_ARGS));
+        msg::write_unlocalized_text_to_stderr(Color::error,
+                                              error_prefix().append(VCPKG_EXPAND_MSG_ARGS).append_raw('\n'));
+        Checks::exit_fail(line_info);
     }
 
 }

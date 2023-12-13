@@ -6,7 +6,6 @@
 #include <vcpkg/configure-environment.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 
-#include <array>
 #include <string>
 #include <vector>
 

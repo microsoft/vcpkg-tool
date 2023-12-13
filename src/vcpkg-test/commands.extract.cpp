@@ -1,14 +1,6 @@
-#include <catch2/catch.hpp>
-
-#include <vcpkg/base/files.h>
+#include <vcpkg-test/util.h>
 
 #include <vcpkg/commands.z-extract.h>
-#include <vcpkg/vcpkgcmdarguments.h>
-#include <vcpkg/vcpkgpaths.h>
-
-#include <limits.h>
-
-#include <vcpkg-test/util.h>
 
 using namespace vcpkg;
 

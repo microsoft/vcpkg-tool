@@ -1,16 +1,16 @@
+#include <vcpkg/base/files.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/stringview.h>
+#include <vcpkg/base/util.h>
 
-#include <vcpkg/commands.install.h>
 #include <vcpkg/commands.package-info.h>
-#include <vcpkg/input.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/registries.h>
 #include <vcpkg/statusparagraphs.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkglib.h>
-#include <vcpkg/versions.h>
+#include <vcpkg/vcpkgpaths.h>
 
 using namespace vcpkg;
 
@@ -43,6 +43,7 @@ namespace vcpkg
 
     void command_package_info_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
+        msg::default_output_stream = OutputStream::StdErr;
         const ParsedArguments options = args.parse_arguments(CommandPackageInfoMetadata);
         if (!Util::Vectors::contains(options.switches, OPTION_JSON))
         {

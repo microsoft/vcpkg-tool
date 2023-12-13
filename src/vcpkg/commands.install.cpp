@@ -10,14 +10,12 @@
 #include <vcpkg/binarycaching.h>
 #include <vcpkg/cmakevars.h>
 #include <vcpkg/commands.build.h>
-#include <vcpkg/commands.help.h>
 #include <vcpkg/commands.install.h>
 #include <vcpkg/commands.remove.h>
 #include <vcpkg/commands.set-installed.h>
 #include <vcpkg/configuration.h>
 #include <vcpkg/dependencies.h>
 #include <vcpkg/documentation.h>
-#include <vcpkg/globalstate.h>
 #include <vcpkg/input.h>
 #include <vcpkg/installedpaths.h>
 #include <vcpkg/metrics.h>
@@ -181,7 +179,7 @@ namespace vcpkg
                 continue;
             }
 
-            const std::string name = t.pgh.package.displayname();
+            const std::string name = t.pgh.package.display_name();
 
             for (const std::string& file : t.files)
             {
@@ -268,9 +266,9 @@ namespace vcpkg
                 auto next =
                     std::find_if(i, intersection.end(), [i](const auto& val) { return i->second != val.second; });
 
-                msg::write_unlocalized_text_to_stdout(
+                msg::write_unlocalized_text(
                     Color::none, Strings::join("\n    ", i, next, [](const file_pack& file) { return file.first; }));
-                msg::write_unlocalized_text_to_stdout(Color::none, "\n\n");
+                msg::write_unlocalized_text(Color::none, "\n\n");
 
                 i = next;
             }
@@ -354,16 +352,14 @@ namespace vcpkg
             }
             else
             {
-                if (use_head_version)
-                    msg::println(msgBuildingFromHead, msg::spec = action.displayname());
-                else
-                    msg::println(msgBuildingPackage, msg::spec = action.displayname());
+                msg::println(use_head_version ? msgBuildingFromHead : msgBuildingPackage,
+                             msg::spec = action.display_name());
 
                 auto result = build_package(args, paths, action, build_logs_recorder, status_db);
 
                 if (BuildResult::DOWNLOADED == result.code)
                 {
-                    msg::println(Color::success, msgDownloadedSources, msg::spec = action.displayname());
+                    msg::println(Color::success, msgDownloadedSources, msg::spec = action.display_name());
                     return result;
                 }
 
@@ -504,7 +500,7 @@ namespace vcpkg
             msg::println(msgInstallingPackage,
                          msg::action_index = action_index,
                          msg::count = action_count,
-                         msg::spec = action.spec);
+                         msg::spec = action.display_name());
         }
 
         TrackedPackageInstallGuard(const size_t action_index,
@@ -526,7 +522,20 @@ namespace vcpkg
                 msgElapsedForPackage, msg::spec = current_summary.get_spec(), msg::elapsed = current_summary.timing);
         }
 
-        ~TrackedPackageInstallGuard() { print_elapsed_time(); }
+        void print_abi_hash() const
+        {
+            auto bpgh = current_summary.get_binary_paragraph();
+            if (bpgh)
+            {
+                msg::println(msgPackageAbi, msg::spec = bpgh->display_name(), msg::package_abi = bpgh->abi);
+            }
+        }
+
+        ~TrackedPackageInstallGuard()
+        {
+            print_elapsed_time();
+            print_abi_hash();
+        }
 
         TrackedPackageInstallGuard(const TrackedPackageInstallGuard&) = delete;
         TrackedPackageInstallGuard& operator=(const TrackedPackageInstallGuard&) = delete;
@@ -552,7 +561,8 @@ namespace vcpkg
                                         const VcpkgPaths& paths,
                                         StatusParagraphs& status_db,
                                         BinaryCache& binary_cache,
-                                        const IBuildLogsRecorder& build_logs_recorder)
+                                        const IBuildLogsRecorder& build_logs_recorder,
+                                        bool include_manifest_in_github_issue)
     {
         const ElapsedTimer timer;
         std::vector<SpecSummary> results;
@@ -584,7 +594,9 @@ namespace vcpkg
                 print_user_troubleshooting_message(action, paths, result.stdoutlog.then([&](auto&) -> Optional<Path> {
                     auto issue_body_path = paths.installed().root() / "vcpkg" / "issue_body.md";
                     paths.get_filesystem().write_contents(
-                        issue_body_path, create_github_issue(args, result, paths, action), VCPKG_LINE_INFO);
+                        issue_body_path,
+                        create_github_issue(args, result, paths, action, include_manifest_in_github_issue),
+                        VCPKG_LINE_INFO);
                     return issue_body_path;
                 }));
                 Checks::exit_fail(VCPKG_LINE_INFO);
@@ -708,7 +720,7 @@ namespace vcpkg
             auto existing = printed_usages.lower_bound(message);
             if (existing == printed_usages.end() || *existing != message)
             {
-                msg::write_unlocalized_text_to_stdout(Color::none, message);
+                msg::write_unlocalized_text(Color::none, message);
                 printed_usages.insert(existing, std::move(message));
             }
         }
@@ -818,6 +830,7 @@ namespace vcpkg
         if (auto files = maybe_files.get())
         {
             std::vector<ConfigPackage> config_packages;
+            std::vector<Path> pkgconfig_files;
             std::map<std::string, std::vector<std::string>> library_targets;
             std::string header_path;
             bool has_binaries = false;
@@ -879,9 +892,16 @@ namespace vcpkg
                 {
                     has_binaries = true;
                 }
-                else if (!has_binaries && Strings::starts_with(suffix, "lib/"))
+                else if (Strings::ends_with(suffix, ".pc"))
                 {
-                    has_binaries = !Strings::ends_with(suffix, ".pc");
+                    if (Strings::contains(suffix, "pkgconfig"))
+                    {
+                        pkgconfig_files.push_back(installed.root() / triplet_and_suffix);
+                    }
+                }
+                else if (Strings::starts_with(suffix, "lib/"))
+                {
+                    has_binaries = true;
                 }
                 else if (header_path.empty() && Strings::starts_with(suffix, INCLUDE_PREFIX))
                 {
@@ -941,6 +961,7 @@ namespace vcpkg
                     {
                         msg.append_indent()
                             .append_raw("# ")
+                            .append_raw(NotePrefix)
                             .append(msgCmakeTargetsExcluded, msg::count = omitted)
                             .append_raw('\n');
                     }
@@ -972,6 +993,27 @@ namespace vcpkg
                 Strings::append(msg, "    target_include_directories(main PRIVATE ${", name, "_INCLUDE_DIRS})\n\n");
 
                 ret.message = std::move(msg);
+            }
+            if (!pkgconfig_files.empty())
+            {
+                auto msg = msg::format(msgCMakePkgConfigTargetsUsage, msg::package_name = bpgh.spec.name())
+                               .append_raw("\n\n")
+                               .extract_data();
+                for (auto&& path : pkgconfig_files)
+                {
+                    const auto lines = fs.read_lines(path).value_or_exit(VCPKG_LINE_INFO);
+                    for (const auto& line : lines)
+                    {
+                        if (Strings::starts_with(line, "Description: "))
+                        {
+                            Strings::append(msg, "    # ", line.substr(StringLiteral("Description: ").size()), '\n');
+                            break;
+                        }
+                    }
+                    const auto name = path.stem();
+                    Strings::append(msg, "    ", name, "\n\n");
+                }
+                ret.message += msg;
             }
         }
         return ret;
@@ -1107,7 +1149,7 @@ namespace vcpkg
                 pkgsconfig = Path(it_pkgsconfig->second);
             }
             auto maybe_manifest_scf =
-                SourceControlFile::parse_project_manifest_object(manifest->path, manifest->manifest, stdout_sink);
+                SourceControlFile::parse_project_manifest_object(manifest->path, manifest->manifest, out_sink);
             if (!maybe_manifest_scf)
             {
                 print_error_message(maybe_manifest_scf.error());
@@ -1235,7 +1277,8 @@ namespace vcpkg
                                               host_triplet,
                                               keep_going,
                                               only_downloads,
-                                              print_cmake_usage);
+                                              print_cmake_usage,
+                                              true);
         }
 
         auto registry_set = paths.make_registry_set();
@@ -1337,7 +1380,7 @@ namespace vcpkg
         install_preclear_packages(paths, action_plan);
 
         auto binary_cache = only_downloads ? BinaryCache(paths.get_filesystem())
-                                           : BinaryCache::make(args, paths, stdout_sink).value_or_exit(VCPKG_LINE_INFO);
+                                           : BinaryCache::make(args, paths, out_sink).value_or_exit(VCPKG_LINE_INFO);
         binary_cache.fetch(action_plan.install_actions);
         const InstallSummary summary = install_execute_plan(
             args, action_plan, keep_going, paths, status_db, binary_cache, null_build_logs_recorder());
