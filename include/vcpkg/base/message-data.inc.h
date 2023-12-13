@@ -2836,11 +2836,6 @@ DECLARE_MESSAGE(
     (),
     "",
     "If you are sure you want to rebuild the above packages, run this command with the --no-dry-run option.")
-DECLARE_MESSAGE(UploadedBinaries, (msg::count, msg::vendor), "", "Uploaded binaries to {count} {vendor}.")
-DECLARE_MESSAGE(UploadedPackagesToVendor,
-                (msg::count, msg::elapsed, msg::vendor),
-                "",
-                "Uploaded {count} package(s) to {vendor} in {elapsed}")
 DECLARE_MESSAGE(UploadingBinariesToVendor,
                 (msg::spec, msg::vendor, msg::path),
                 "",
@@ -3079,6 +3074,7 @@ DECLARE_MESSAGE(VSExaminedPaths, (), "", "The following paths were examined for 
 DECLARE_MESSAGE(VSNoInstances, (), "", "Could not locate a complete Visual Studio instance")
 DECLARE_MESSAGE(WaitingForChildrenToExit, (), "", "Waiting for child processes to exit...")
 DECLARE_MESSAGE(WaitingToTakeFilesystemLock, (msg::path), "", "waiting to take filesystem lock on {path}...")
+DECLARE_MESSAGE(WaitUntilPackagesUploaded, (msg::count), "", "Wait until the remaining packages ({count}) are uploaded")
 DECLARE_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors")
 DECLARE_MESSAGE(WarnOnParseConfig, (msg::path), "", "Found the following warnings in configuration {path}:")
 DECLARE_MESSAGE(WhileCheckingOutBaseline, (msg::commit_sha), "", "while checking out baseline {commit_sha}")

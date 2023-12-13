@@ -254,6 +254,7 @@ namespace vcpkg
             summary.print_failed();
             if (!only_downloads)
             {
+                binary_cache.wait_for_async_complete_and_join();
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
         }
@@ -270,7 +271,7 @@ namespace vcpkg
                 }
             }
         }
-
+        binary_cache.wait_for_async_complete_and_join();
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 

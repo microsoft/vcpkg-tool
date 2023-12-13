@@ -3,12 +3,15 @@
 #include <vcpkg/base/fwd/message_sinks.h>
 
 #include <vcpkg/fwd/binarycaching.h>
+#include <vcpkg/fwd/build.h>
 #include <vcpkg/fwd/dependencies.h>
 #include <vcpkg/fwd/tools.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
+#include <vcpkg/base/batch-queue.h>
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/expected.h>
+#include <vcpkg/base/message_sinks.h>
 #include <vcpkg/base/path.h>
 
 #include <vcpkg/archives.h>
@@ -19,6 +22,7 @@
 #include <iterator>
 #include <set>
 #include <string>
+#include <thread>
 #include <unordered_map>
 #include <vector>
 
@@ -190,11 +194,24 @@ namespace vcpkg
         std::vector<CacheAvailability> precheck(View<InstallPlanAction> actions);
 
     protected:
-        BinaryProviders m_config;
+        struct ReadOnlyBinaryCacheData
+        {
+            BinaryProviders m_config;
 
-        std::unordered_map<std::string, CacheStatus> m_status;
+            std::unordered_map<std::string, CacheStatus> m_status;
+        };
+        std::unique_ptr<ReadOnlyBinaryCacheData> data = std::make_unique<ReadOnlyBinaryCacheData>();
     };
 
+    // compression and upload of binary cache entries happens on a single 'background' thread, `m_push_thread`
+    // Thread safety is achieved within the binary cache providers by:
+    //   1. Only using one thread in the background for this work.
+    //   2. Forming a queue of work for that thread to consume in `m_actions_to_push`, which maintains its own thread
+    //   safety
+    //   3. Sending any replies from the background thread through `m_bg_msg_sink`
+    //   4. Ensuring any supporting data, such as tool exes, is provided before the background thread is started.
+    //   5. Ensuring that work is not submitted to the background thread until the corresponding `packages` directory to
+    //   upload is no longer being actively touched by the foreground thread.
     struct BinaryCache : ReadOnlyBinaryCache
     {
         static ExpectedL<BinaryCache> make(const VcpkgCmdArguments& args, const VcpkgPaths& paths, MessageSink& sink);
@@ -207,13 +224,33 @@ namespace vcpkg
         /// Called upon a successful build of `action` to store those contents in the binary cache.
         void push_success(const InstallPlanAction& action);
 
+        void print_push_success_messages();
+        void wait_for_async_complete_and_join();
+
     private:
         BinaryCache(BinaryProviders&& providers, const Filesystem& fs);
+        struct ActionToPush
+        {
+            BinaryPackageWriteInfo request;
+            CleanPackages clean_after_push;
+        };
+        struct BinaryCacheData
+        {
+            BinaryCacheData(const Filesystem& fs, ReadOnlyBinaryCacheData* data);
+            const Filesystem& m_fs;
+            Optional<ZipTool> m_zip_tool;
+            bool m_needs_nuspec_data = false;
+            bool m_needs_zip_file = false;
 
-        const Filesystem& m_fs;
-        Optional<ZipTool> m_zip_tool;
-        bool m_needs_nuspec_data = false;
-        bool m_needs_zip_file = false;
+            BGMessageSink m_bg_msg_sink;
+            BGThreadBatchQueue<ActionToPush> m_actions_to_push;
+            std::atomic_int m_remaining_packages_to_push = 0;
+            std::thread m_push_thread;
+
+            void push_thread_main(ReadOnlyBinaryCacheData* ro_data);
+            void wait_for_async_complete_and_join();
+        };
+        std::unique_ptr<BinaryCacheData> bc_data;
     };
 
     ExpectedL<DownloadManagerConfig> parse_download_configuration(const Optional<std::string>& arg);

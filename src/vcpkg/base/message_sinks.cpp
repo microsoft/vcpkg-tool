@@ -1,5 +1,6 @@
 #include <vcpkg/base/file_sink.h>
 #include <vcpkg/base/message_sinks.h>
+#include <vcpkg/base/strings.h>
 
 namespace
 {
@@ -58,4 +59,74 @@ namespace vcpkg
         m_second.print(c, sv);
     }
 
+    void BGMessageSink::print(Color c, StringView sv)
+    {
+        std::lock_guard<std::mutex> print_lk(m_print_directly_lock);
+        if (m_print_directly_to_out_sink)
+        {
+            out_sink.print(c, sv);
+            return;
+        }
+
+        auto pos = Strings::find_last(sv, '\n');
+        if (pos != std::string::npos)
+        {
+            {
+                std::lock_guard<std::mutex> lk(m_published_lock);
+                m_published.insert(m_published.end(),
+                                   std::make_move_iterator(m_unpublished.begin()),
+                                   std::make_move_iterator(m_unpublished.end()));
+                m_published.emplace_back(c, sv.substr(0, pos + 1));
+            }
+            m_unpublished.clear();
+            if (sv.size() > pos + 1)
+            {
+                m_unpublished.emplace_back(c, sv.substr(pos + 1));
+            }
+        }
+        else
+        {
+            m_unpublished.emplace_back(c, sv);
+        }
+    }
+
+    void BGMessageSink::print_published()
+    {
+        std::vector<std::pair<Color, std::string>> tmp;
+        for (;;)
+        {
+            {
+                std::lock_guard<std::mutex> lk(m_published_lock);
+                swap(tmp, m_published);
+            }
+
+            if (tmp.empty())
+            {
+                return;
+            }
+
+            for (auto&& msg : tmp)
+            {
+                out_sink.print(msg.first, msg.second);
+            }
+
+            tmp.clear();
+        }
+    }
+
+    void BGMessageSink::publish_directly_to_out_sink()
+    {
+        std::lock_guard<std::mutex> print_lk(m_print_directly_lock);
+        std::lock_guard<std::mutex> lk(m_published_lock);
+
+        m_print_directly_to_out_sink = true;
+        for (auto& messages : {&m_published, &m_unpublished})
+        {
+            for (auto&& msg : *messages)
+            {
+                out_sink.print(msg.first, msg.second);
+            }
+            messages->clear();
+        }
+    }
 }
