@@ -20,81 +20,6 @@ static std::atomic<uint64_t> g_load_ports_stats(0);
 
 namespace vcpkg
 {
-    void ParseControlErrorInfo::to_string(std::string& target) const
-    {
-        if (!has_error())
-        {
-            return;
-        }
-
-        target.append(msg::format_error(msgParseControlErrorInfoWhileLoading, msg::path = name).extract_data());
-        if (!error.empty())
-        {
-            target.push_back('\n');
-            target.append(error.data());
-        }
-
-        if (!other_errors.empty())
-        {
-            for (auto&& msg : other_errors)
-            {
-                target.push_back('\n');
-                target.append(msg.data());
-            }
-        }
-
-        if (!extra_fields.empty())
-        {
-            target.push_back('\n');
-            target.append(msg::format(msgParseControlErrorInfoInvalidFields)
-                              .append_raw(' ')
-                              .append_raw(Strings::join(", ", extra_fields))
-                              .extract_data());
-        }
-
-        if (!missing_fields.empty())
-        {
-            target.push_back('\n');
-            target.append(msg::format(msgParseControlErrorInfoMissingFields)
-                              .append_raw(' ')
-                              .append_raw(Strings::join(", ", missing_fields))
-                              .extract_data());
-        }
-
-        if (!expected_types.empty())
-        {
-            auto expected_types_component = msg::format_error(msgParseControlErrorInfoWrongTypeFields);
-            for (auto&& pr : expected_types)
-            {
-                expected_types_component.append_raw('\n').append_indent().append(
-                    msgParseControlErrorInfoTypesEntry, msg::value = pr.first, msg::expected = pr.second);
-            }
-
-            target.push_back('\n');
-            target.append(expected_types_component.extract_data());
-        }
-    }
-
-    std::string ParseControlErrorInfo::to_string() const
-    {
-        std::string result;
-        to_string(result);
-        return result;
-    }
-
-    LocalizedString ToLocalizedString_t::operator()(std::unique_ptr<ParseControlErrorInfo> p) const
-    {
-        return LocalizedString::from_raw(p->to_string());
-    }
-
-    std::unique_ptr<ParseControlErrorInfo> ParseControlErrorInfo::from_error(StringView name, LocalizedString&& ls)
-    {
-        auto error_info = std::make_unique<ParseControlErrorInfo>();
-        error_info->name.assign(name.data(), name.size());
-        error_info->error = std::move(ls);
-        return error_info;
-    }
-
     static Optional<std::pair<std::string, TextRowCol>> remove_field(Paragraph* fields, StringView fieldname)
     {
         auto it = fields->find(fieldname.to_string());
@@ -108,51 +33,113 @@ namespace vcpkg
         return value;
     }
 
-    void ParagraphParser::required_field(StringLiteral fieldname, std::pair<std::string&, TextRowCol&> out)
+    std::string ParagraphParser::optional_field(StringLiteral fieldname, TextRowCol& position)
+    {
+        auto maybe_field = remove_field(&fields, fieldname);
+        if (auto field = maybe_field.get())
+        {
+            position = field->second;
+            return std::move(field->first);
+        }
+
+        return std::string();
+    }
+
+    std::string ParagraphParser::optional_field(StringLiteral fieldname)
+    {
+        TextRowCol ignore;
+        return optional_field(fieldname, ignore);
+    }
+
+    std::string ParagraphParser::required_field(StringLiteral fieldname)
     {
         auto maybe_field = remove_field(&fields, fieldname);
         if (const auto field = maybe_field.get())
-            out = std::move(*field);
-        else
-            missing_fields.emplace_back(fieldname.data());
-    }
-    void ParagraphParser::optional_field(StringLiteral fieldname, std::pair<std::string&, TextRowCol&> out)
-    {
-        auto maybe_field = remove_field(&fields, fieldname);
-        if (auto field = maybe_field.get()) out = std::move(*field);
-    }
-    void ParagraphParser::required_field(StringLiteral fieldname, std::string& out)
-    {
-        TextRowCol ignore;
-        required_field(fieldname, {out, ignore});
-    }
-    std::string ParagraphParser::optional_field(StringLiteral fieldname)
-    {
-        std::string out;
-        TextRowCol ignore;
-        optional_field(fieldname, {out, ignore});
-        return out;
-    }
-    std::string ParagraphParser::required_field(StringLiteral fieldname)
-    {
-        std::string out;
-        TextRowCol ignore;
-        required_field(fieldname, {out, ignore});
-        return out;
+        {
+            return std::move(field->first);
+        }
+
+        errors.emplace_back(LocalizedString::from_raw(origin)
+                                .append_raw(": ")
+                                .append_raw(ErrorPrefix)
+                                .append(msgMissingRequiredField2, msg::json_field = fieldname));
+        return std::string();
     }
 
-    std::unique_ptr<ParseControlErrorInfo> ParagraphParser::error_info(StringView name) const
+    void ParagraphParser::add_error(TextRowCol position, msg::MessageT<> error_content)
     {
-        if (!fields.empty() || !missing_fields.empty())
+        errors.emplace_back(LocalizedString::from_raw(origin)
+                                .append_raw(fmt::format("{}:{}: ", position.row, position.column))
+                                .append_raw(ErrorPrefix)
+                                .append(error_content));
+    }
+} // namespace vcpkg
+
+namespace
+{
+    void append_errors(LocalizedString& result, const std::vector<LocalizedString>& errors)
+    {
+        auto error = errors.begin();
+        const auto last = errors.end();
+        for (;;)
         {
-            auto err = std::make_unique<ParseControlErrorInfo>();
-            err->name = name.to_string();
-            err->extra_fields = Util::extract_keys(fields);
-            err->missing_fields = missing_fields;
-            err->expected_types = expected_types;
-            return err;
+            result.append(*error);
+            if (++error == last)
+            {
+                return;
+            }
+
+            result.append_raw('\n');
         }
-        return nullptr;
+    }
+
+    void append_field_errors(LocalizedString& result, StringView origin, const Paragraph& fields)
+    {
+        auto extra_field_entry = fields.begin();
+        const auto last = fields.end();
+        for (;;)
+        {
+            result.append_raw(origin)
+                .append_raw(fmt::format(
+                    "{}:{}: ", extra_field_entry->second.second.row, extra_field_entry->second.second.column))
+                .append_raw(ErrorPrefix)
+                .append(msgUnexpectedField, msg::json_field = extra_field_entry->first);
+
+            if (++extra_field_entry == last)
+            {
+                return;
+            }
+
+            result.append_raw('\n');
+        }
+    }
+} // unnamed namespace
+
+namespace vcpkg
+{
+    Optional<LocalizedString> ParagraphParser::error() const
+    {
+        LocalizedString result;
+        if (errors.empty())
+        {
+            if (fields.empty())
+            {
+                return nullopt;
+            }
+
+            append_field_errors(result, origin, fields);
+        }
+        else
+        {
+            append_errors(result, errors);
+            if (!fields.empty())
+            {
+                result.append_raw('\n');
+                append_field_errors(result, origin, fields);
+            }
+        }
+
+        return result;
     }
 
     template<class T, class Message, class F>
@@ -395,8 +382,7 @@ namespace vcpkg::Paragraphs
     {
         StatsTimer timer(g_load_ports_stats);
         return parse_paragraphs(text, control_path).then([&](std::vector<Paragraph>&& vector_pghs) {
-            return SourceControlFile::parse_control_file(control_path, std::move(vector_pghs))
-                .map_error(ToLocalizedString);
+            return SourceControlFile::parse_control_file(control_path, std::move(vector_pghs));
         });
     }
 
@@ -417,7 +403,7 @@ namespace vcpkg::Paragraphs
                 return msg::format_error(msgManifestConflict, msg::path = port_location.port_directory);
             }
 
-            return try_load_port_manifest_text(manifest_contents, manifest_path, stdout_sink)
+            return try_load_port_manifest_text(manifest_contents, manifest_path, out_sink)
                 .map([&](std::unique_ptr<SourceControlFile>&& scf) {
                     return SourceControlFileAndLocation{
                         std::move(scf), std::move(manifest_path), port_location.spdx_location};
@@ -487,12 +473,13 @@ namespace vcpkg::Paragraphs
     {
         StatsTimer timer(g_load_ports_stats);
 
-        ExpectedL<std::vector<Paragraph>> maybe_paragraphs = get_paragraphs(fs, package_dir / "CONTROL");
+        auto control_path = package_dir / "CONTROL";
+        ExpectedL<std::vector<Paragraph>> maybe_paragraphs = get_paragraphs(fs, control_path);
         if (auto pparagraphs = maybe_paragraphs.get())
         {
             auto& paragraphs = *pparagraphs;
             BinaryControlFile bcf;
-            bcf.core_paragraph = BinaryParagraph(std::move(paragraphs[0]));
+            bcf.core_paragraph = BinaryParagraph(control_path, std::move(paragraphs[0]));
             if (bcf.core_paragraph.spec != spec)
             {
                 return msg::format(msgMismatchedSpec,
@@ -504,7 +491,7 @@ namespace vcpkg::Paragraphs
             bcf.features.reserve(paragraphs.size() - 1);
             for (std::size_t idx = 1; idx < paragraphs.size(); ++idx)
             {
-                bcf.features.emplace_back(BinaryParagraph{std::move(paragraphs[idx])});
+                bcf.features.emplace_back(BinaryParagraph{control_path, std::move(paragraphs[idx])});
             }
 
             return bcf;

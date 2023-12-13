@@ -1,9 +1,9 @@
 #pragma once
 
 #include <vcpkg/base/fwd/cofffilereader.h>
+#include <vcpkg/base/fwd/expected.h>
 #include <vcpkg/base/fwd/files.h>
-
-#include <vcpkg/base/expected.h>
+#include <vcpkg/base/fwd/optional.h>
 
 #include <stdint.h>
 
@@ -419,7 +419,8 @@ namespace vcpkg
     };
 
     std::vector<std::string> tokenize_command_line(StringView cmd_line);
-    ExpectedL<DllMetadata> try_read_dll_metadata(ReadFilePointer& f);
+    ExpectedL<Optional<DllMetadata>> try_read_dll_metadata(ReadFilePointer& f);
+    ExpectedL<DllMetadata> try_read_dll_metadata_required(ReadFilePointer& f);
     ExpectedL<bool> try_read_if_dll_has_exports(const DllMetadata& dll, ReadFilePointer& f);
     ExpectedL<std::vector<std::string>> try_read_dll_imported_dll_names(const DllMetadata& dll, ReadFilePointer& f);
     ExpectedL<LibInformation> read_lib_information(ReadFilePointer& f);

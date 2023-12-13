@@ -2457,6 +2457,7 @@ TEST_CASE ("formatting plan 1", "[dependencies]")
     const Path pr = "packages_root";
     InstallPlanAction install_a(
         {"a", Test::X64_OSX}, scfl_a, pr, RequestType::AUTO_SELECTED, Test::X64_ANDROID, {}, {}, {});
+    REQUIRE(install_a.display_name() == "a:x64-osx@1");
     InstallPlanAction install_b(
         {"b", Test::X64_OSX}, scfl_b, pr, RequestType::AUTO_SELECTED, Test::X64_ANDROID, {{"1", {}}}, {}, {});
     InstallPlanAction install_c(
@@ -2468,6 +2469,7 @@ TEST_CASE ("formatting plan 1", "[dependencies]")
     InstallPlanAction already_installed_d(
         status_db.get_installed_package_view({"d", Test::X86_WINDOWS}).value_or_exit(VCPKG_LINE_INFO),
         RequestType::AUTO_SELECTED);
+    REQUIRE(already_installed_d.display_name() == "d:x86-windows@1");
     InstallPlanAction already_installed_e(
         status_db.get_installed_package_view({"e", Test::X86_WINDOWS}).value_or_exit(VCPKG_LINE_INFO),
         RequestType::USER_REQUESTED);
@@ -2499,7 +2501,7 @@ TEST_CASE ("formatting plan 1", "[dependencies]")
                   "    a:x64-osx\n"
                   "    b:x64-osx\n"
                   "The following packages will be built and installed:\n"
-                  "    c:x64-osx -> 1 -- c\n");
+                  "    c:x64-osx@1 -- c\n");
 
     plan.remove_actions.push_back(remove_c);
     REQUIRE_LINES(format_plan(plan, "c").text,
@@ -2507,15 +2509,15 @@ TEST_CASE ("formatting plan 1", "[dependencies]")
                   "    a:x64-osx\n"
                   "    b:x64-osx\n"
                   "The following packages will be rebuilt:\n"
-                  "    c:x64-osx -> 1\n");
+                  "    c:x64-osx@1\n");
 
     plan.install_actions.push_back(std::move(install_b));
     REQUIRE_LINES(format_plan(plan, "c").text,
                   "The following packages will be removed:\n"
                   "    a:x64-osx\n"
                   "The following packages will be rebuilt:\n"
-                  "  * b[1]:x64-osx -> 1 -- b\n"
-                  "    c:x64-osx -> 1\n"
+                  "  * b[1]:x64-osx@1 -- b\n"
+                  "    c:x64-osx@1\n"
                   "Additional packages (*) will be modified to complete this operation.\n");
 
     plan.install_actions.push_back(std::move(install_a));
@@ -2526,26 +2528,26 @@ TEST_CASE ("formatting plan 1", "[dependencies]")
         CHECK(formatted.has_removals);
         REQUIRE_LINES(formatted.text,
                       "The following packages are already installed:\n"
-                      "  * d:x86-windows -> 1\n"
-                      "    e:x86-windows -> 1\n"
+                      "  * d:x86-windows@1\n"
+                      "    e:x86-windows@1\n"
                       "The following packages will be rebuilt:\n"
-                      "  * a:x64-osx -> 1 -- a\n"
-                      "  * b[1]:x64-osx -> 1\n"
-                      "    c:x64-osx -> 1 -- c\n"
+                      "  * a:x64-osx@1 -- a\n"
+                      "  * b[1]:x64-osx@1\n"
+                      "    c:x64-osx@1 -- c\n"
                       "Additional packages (*) will be modified to complete this operation.\n");
     }
 
     plan.install_actions.push_back(std::move(install_f));
     REQUIRE_LINES(format_plan(plan, "b").text,
                   "The following packages are excluded:\n"
-                  "    f:x64-osx -> 1 -- f\n"
+                  "    f:x64-osx@1 -- f\n"
                   "The following packages are already installed:\n"
-                  "  * d:x86-windows -> 1\n"
-                  "    e:x86-windows -> 1\n"
+                  "  * d:x86-windows@1\n"
+                  "    e:x86-windows@1\n"
                   "The following packages will be rebuilt:\n"
-                  "  * a:x64-osx -> 1 -- a\n"
-                  "  * b[1]:x64-osx -> 1\n"
-                  "    c:x64-osx -> 1 -- c\n"
+                  "  * a:x64-osx@1 -- a\n"
+                  "  * b[1]:x64-osx@1\n"
+                  "    c:x64-osx@1 -- c\n"
                   "Additional packages (*) will be modified to complete this operation.\n");
 }
 
