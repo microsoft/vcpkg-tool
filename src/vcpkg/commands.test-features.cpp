@@ -379,7 +379,7 @@ namespace vcpkg
                                       .extract_data());
                 }
                 msg::print(msg::format(msgSkipTestingOfPort,
-                                       msg::feature_spec = install_plan.install_actions.back().displayname(),
+                                       msg::feature_spec = install_plan.install_actions.back().display_name(),
                                        msg::triplet = target_triplet)
                                .append_raw('\n')
                                .append_raw(Strings::join("\n", out))
@@ -396,8 +396,8 @@ namespace vcpkg
                                           });
                 iter != install_plan.install_actions.end())
             {
-                msg::println(msgDependencyWillFail, msg::feature_spec = iter->displayname());
-                handle_result(std::move(spec), CiFeatureBaselineState::Cascade, baseline, iter->displayname());
+                msg::println(msgDependencyWillFail, msg::feature_spec = iter->display_name());
+                handle_result(std::move(spec), CiFeatureBaselineState::Cascade, baseline, iter->display_name());
                 continue;
             }
 

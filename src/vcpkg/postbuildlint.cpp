@@ -445,7 +445,7 @@ namespace vcpkg
             return std::move(maybe_file).error();
         }
 
-        auto maybe_metadata = try_read_dll_metadata(*file);
+        auto maybe_metadata = try_read_dll_metadata_required(*file);
         auto metadata = maybe_metadata.get();
         if (!metadata)
         {

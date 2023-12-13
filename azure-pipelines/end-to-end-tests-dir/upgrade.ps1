@@ -7,7 +7,7 @@ try
     git -C "$TestingRoot/temp-repo" switch -d e1934f4a2a0c58bb75099d89ed980832379907fa # vcpkg-cmake @ 2022-12-22
     $output = Run-VcpkgAndCaptureOutput install vcpkg-cmake
     Throw-IfFailed
-    if (-Not ($output -match 'vcpkg-cmake:[^ ]+ -> 2022-12-22'))
+    if (-Not ($output -match 'vcpkg-cmake:[^ ]+@2022-12-22'))
     {
         throw 'Unexpected vcpkg-cmake install'
     }
@@ -20,14 +20,14 @@ try
         throw "Upgrade didn't handle dry-run correctly"
     }
 
-    if (-Not ($output -match '\* vcpkg-cmake:[^ ]+ -> 2023-05-04'))
+    if (-Not ($output -match '\* vcpkg-cmake:[^ ]+@2023-05-04'))
     {
         throw "Upgrade didn't choose expected version"
     }
 
     $output = Run-VcpkgAndCaptureOutput upgrade --no-dry-run
     Throw-IfFailed
-    if (-Not ($output -match '\* vcpkg-cmake:[^ ]+ -> 2023-05-04'))
+    if (-Not ($output -match '\* vcpkg-cmake:[^ ]+@2023-05-04'))
     {
         throw "Upgrade didn't choose expected version"
     }

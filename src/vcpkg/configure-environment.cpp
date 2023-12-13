@@ -11,6 +11,7 @@
 #include <vcpkg/base/uuid.h>
 
 #include <vcpkg/archives.h>
+#include <vcpkg/commands.version.h>
 #include <vcpkg/configure-environment.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/tools.h>
@@ -184,7 +185,7 @@ namespace vcpkg
 
         auto temp_directory = fs.create_or_get_temp_directory(VCPKG_LINE_INFO);
 
-        Command cmd_run(paths.get_tool_exe(Tools::NODE, stdout_sink));
+        Command cmd_run(paths.get_tool_exe(Tools::NODE, out_sink));
         cmd_run.string_arg(vcpkg_artifacts_main_path);
         cmd_run.forwarded_args(args);
         if (Debug::g_debugging)

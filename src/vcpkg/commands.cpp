@@ -215,7 +215,8 @@ namespace vcpkg
         table.blank();
         table.example(msg::format(msgHelpExampleCommand));
 
-        msg::println(LocalizedString::from_raw(table.m_str));
+        table.m_str.push_back('\n');
+        msg::write_unlocalized_text_to_stderr(Color::none, table.m_str);
     }
 
     void print_full_command_list()
@@ -229,6 +230,7 @@ namespace vcpkg
             format_command_usage_entry(table, *command);
         }
 
-        msg::println(LocalizedString::from_raw(table.m_str));
+        table.m_str.push_back('\n');
+        msg::write_unlocalized_text_to_stderr(Color::none, table.m_str);
     }
 }

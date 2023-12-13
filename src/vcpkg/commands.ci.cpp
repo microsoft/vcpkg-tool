@@ -469,7 +469,7 @@ namespace vcpkg
                                    action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi);
             }
 
-            msg::write_unlocalized_text_to_stdout(Color::none, msg);
+            msg::write_unlocalized_text(Color::none, msg);
             auto it_output_hashes = settings.find(OPTION_OUTPUT_HASHES);
             if (it_output_hashes != settings.end())
             {

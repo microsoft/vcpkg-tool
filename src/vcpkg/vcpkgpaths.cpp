@@ -91,7 +91,7 @@ namespace
     {
         if (auto manifest = manifest_doc.get())
         {
-            return parse_manifest_configuration(manifest->manifest, manifest->path, stdout_sink)
+            return parse_manifest_configuration(manifest->manifest, manifest->path, out_sink)
                 .value_or_exit(VCPKG_LINE_INFO);
         }
         return nullopt;
@@ -121,7 +121,10 @@ namespace
         {
             if (auto config = manifest->config.get())
             {
-                msg::println_warning(msgEmbeddingVcpkgConfigInManifest);
+                msg::write_unlocalized_text_to_stderr(Color::warning,
+                                                      LocalizedString::from_raw(WarningPrefix)
+                                                          .append(msgEmbeddingVcpkgConfigInManifest)
+                                                          .append_raw('\n'));
 
                 if (manifest->builtin_baseline && config->default_reg)
                 {
@@ -132,11 +135,14 @@ namespace
 
                 if (config_data.has_value())
                 {
-                    msg::println_error(
-                        msg::format(msgAmbiguousConfigDeleteConfigFile,
+                    msg::write_unlocalized_text_to_stderr(
+                        Color::error,
+                        LocalizedString::from_raw(ErrorPrefix)
+                            .append(msgAmbiguousConfigDeleteConfigFile,
                                     msg::path = config_dir / "vcpkg-configuration.json")
                             .append_raw('\n')
-                            .append(msgDeleteVcpkgConfigFromManifest, msg::path = manifest_dir / "vcpkg.json"));
+                            .append(msgDeleteVcpkgConfigFromManifest, msg::path = manifest_dir / "vcpkg.json")
+                            .append_raw('\n'));
 
                     Checks::exit_fail(VCPKG_LINE_INFO);
                 }
@@ -167,7 +173,10 @@ namespace
 
                 if (ret.config.default_reg)
                 {
-                    msg::println_warning(msgAttemptingToSetBuiltInBaseline);
+                    msg::write_unlocalized_text_to_stderr(Color::warning,
+                                                          LocalizedString::from_raw(WarningPrefix)
+                                                              .append(msgAttemptingToSetBuiltInBaseline)
+                                                              .append_raw('\n'));
                 }
                 else
                 {
@@ -191,9 +200,10 @@ namespace
                 auto origin =
                     ret.directory /
                     ((ret.source == ConfigurationSource::ManifestFile) ? "vcpkg.json" : "vcpkg-configuration.json");
-                msg::println_error(msgConfigurationErrorRegistriesWithoutBaseline,
-                                   msg::path = origin,
-                                   msg::url = vcpkg::docs::registries_url);
+                msg::write_unlocalized_text_to_stderr(Color::error,
+                                                      msg::format(msgConfigurationErrorRegistriesWithoutBaseline,
+                                                                  msg::path = origin,
+                                                                  msg::url = vcpkg::docs::registries_url));
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
         }
@@ -389,10 +399,13 @@ namespace
                 }
                 else if (ret != canonical_root_dir_env)
                 {
-                    msg::println_warning(msgIgnoringVcpkgRootEnvironment,
-                                         msg::path = *vcpkg_root_dir_env,
-                                         msg::actual = ret,
-                                         msg::value = canonical_current_exe);
+                    msg::write_unlocalized_text_to_stderr(Color::warning,
+                                                          LocalizedString::from_raw(WarningPrefix)
+                                                              .append(msgIgnoringVcpkgRootEnvironment,
+                                                                      msg::path = *vcpkg_root_dir_env,
+                                                                      msg::actual = ret,
+                                                                      msg::value = canonical_current_exe)
+                                                              .append_raw('\n'));
                 }
             }
         }
@@ -572,11 +585,11 @@ namespace vcpkg
                     const auto vcpkg_root_file = root / ".vcpkg-root";
                     if (args.wait_for_lock.value_or(false))
                     {
-                        file_lock_handle = fs.take_exclusive_file_lock(vcpkg_root_file, ec);
+                        file_lock_handle = fs.take_exclusive_file_lock(vcpkg_root_file, stderr_sink, ec);
                     }
                     else
                     {
-                        file_lock_handle = fs.try_take_exclusive_file_lock(vcpkg_root_file, ec);
+                        file_lock_handle = fs.try_take_exclusive_file_lock(vcpkg_root_file, stderr_sink, ec);
                     }
 
                     if (ec)
@@ -585,8 +598,13 @@ namespace vcpkg
                         bool allow_errors = args.ignore_lock_failures.value_or(false);
                         if (is_already_locked || !allow_errors)
                         {
-                            msg::println_error(msgFailedToTakeFileSystemLock, msg::path = vcpkg_root_file);
-                            msg::write_unlocalized_text_to_stdout(Color::error, fmt::format("    {}\n", ec.message()));
+                            msg::write_unlocalized_text_to_stderr(
+                                Color::error,
+                                LocalizedString::from_raw(vcpkg_root_file)
+                                    .append_raw(": ")
+                                    .append_raw(ErrorPrefix)
+                                    .append(msgFailedToTakeFileSystemLock)
+                                    .append_raw(fmt::format("\n    {}\n", ec.message())));
                             Checks::exit_fail(VCPKG_LINE_INFO);
                         }
                     }
@@ -644,11 +662,10 @@ namespace vcpkg
         {
             const auto config_path = m_pimpl->m_config_dir / "vcpkg-configuration.json";
             auto maybe_manifest_config = config_from_manifest(m_pimpl->m_manifest_doc);
-            auto maybe_json_config = !filesystem.exists(config_path, IgnoreErrors{})
-                                         ? nullopt
-                                         : parse_configuration(filesystem.read_contents(config_path, IgnoreErrors{}),
-                                                               config_path,
-                                                               stdout_sink);
+            auto maybe_json_config =
+                !filesystem.exists(config_path, IgnoreErrors{})
+                    ? nullopt
+                    : parse_configuration(filesystem.read_contents(config_path, IgnoreErrors{}), config_path, out_sink);
 
             m_pimpl->m_config = merge_validate_configs(std::move(maybe_manifest_config),
                                                        m_pimpl->m_manifest_dir,
@@ -784,8 +801,8 @@ namespace vcpkg
         {
             return *i;
         }
-        msg::println(Color::error, msgVcpkgDisallowedClassicMode);
-        Checks::exit_fail(VCPKG_LINE_INFO);
+
+        Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgVcpkgDisallowedClassicMode);
     }
 
     const Path& VcpkgPaths::packages() const
@@ -794,8 +811,8 @@ namespace vcpkg
         {
             return *i;
         }
-        msg::println(Color::error, msgVcpkgDisallowedClassicMode);
-        Checks::exit_fail(VCPKG_LINE_INFO);
+
+        Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgVcpkgDisallowedClassicMode);
     }
 
     Path VcpkgPaths::baselines_output() const { return buildtrees() / "versioning_" / "baselines"; }
@@ -865,7 +882,7 @@ namespace vcpkg
     GitConfig VcpkgPaths::git_builtin_config() const
     {
         GitConfig conf;
-        conf.git_exe = get_tool_exe(Tools::GIT, stdout_sink);
+        conf.git_exe = get_tool_exe(Tools::GIT, out_sink);
         conf.git_dir = this->root / ".git";
         conf.git_work_tree = this->root;
         return conf;
@@ -873,7 +890,7 @@ namespace vcpkg
 
     Command VcpkgPaths::git_cmd_builder(const Path& dot_git_dir, const Path& work_tree) const
     {
-        Command ret(get_tool_exe(Tools::GIT, stdout_sink));
+        Command ret(get_tool_exe(Tools::GIT, out_sink));
         if (!dot_git_dir.empty())
         {
             ret.string_arg(Strings::concat("--git-dir=", dot_git_dir));
@@ -1028,7 +1045,7 @@ namespace vcpkg
 
         auto lock_file = work_tree / ".vcpkg-lock";
 
-        auto guard = fs.take_exclusive_file_lock(lock_file, IgnoreErrors{});
+        auto guard = fs.take_exclusive_file_lock(lock_file, stderr_sink, IgnoreErrors{});
         Command fetch_git_ref = git_cmd_builder(dot_git_dir, work_tree)
                                     .string_arg("fetch")
                                     .string_arg("--update-shallow")
@@ -1066,7 +1083,7 @@ namespace vcpkg
 
         auto lock_file = work_tree / ".vcpkg-lock";
 
-        auto guard = fs.take_exclusive_file_lock(lock_file, IgnoreErrors{});
+        auto guard = fs.take_exclusive_file_lock(lock_file, stderr_sink, IgnoreErrors{});
 
         const auto& dot_git_dir = m_pimpl->m_registries_dot_git_dir;
 
@@ -1176,7 +1193,7 @@ namespace vcpkg
         {
             auto error = msg::format_error(msgGitCommandFailed, msg::command_line = git_archive.command_line());
             const auto& git_config = git_builtin_config();
-            if (is_shallow_clone(GitConfig{get_tool_exe(Tools::GIT, stdout_sink), dot_git_dir, git_tree_temp})
+            if (is_shallow_clone(GitConfig{get_tool_exe(Tools::GIT, out_sink), dot_git_dir, git_tree_temp})
                     .value_or(false))
             {
                 error = std::move(error).append_raw('\n').append(msgShallowRepositoryDetected,

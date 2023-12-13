@@ -1308,7 +1308,7 @@ namespace
 
         std::vector<GitVersionDbEntry> db_entries;
         GitVersionDbEntryArrayDeserializer deserializer{};
-        Json::Reader r;
+        Json::Reader r(versions_file_path);
         r.visit_in_key(*maybe_versions_array, "versions", db_entries, deserializer);
         if (!r.errors().empty())
         {
@@ -1355,7 +1355,7 @@ namespace
 
         std::vector<FilesystemVersionDbEntry> db_entries;
         FilesystemVersionDbEntryArrayDeserializer deserializer{registry_root};
-        Json::Reader r;
+        Json::Reader r(versions_file_path);
         r.visit_in_key(*maybe_versions_array, "versions", db_entries, deserializer);
         if (!r.errors().empty())
         {
@@ -1393,7 +1393,7 @@ namespace
                         msg::json_type = msg::format(msgABaselineObject));
         }
 
-        Json::Reader r;
+        Json::Reader r(origin);
         Baseline result;
         r.visit_in_key(*baseline_value, real_baseline, result, BaselineDeserializer::instance);
         if (r.errors().empty())

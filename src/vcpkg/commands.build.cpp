@@ -157,7 +157,7 @@ namespace vcpkg
         action->build_options.clean_buildtrees = CleanBuildtrees::NO;
         action->build_options.clean_packages = CleanPackages::NO;
 
-        auto binary_cache = BinaryCache::make(args, paths, stdout_sink).value_or_exit(VCPKG_LINE_INFO);
+        auto binary_cache = BinaryCache::make(args, paths, out_sink).value_or_exit(VCPKG_LINE_INFO);
         const ElapsedTimer build_timer;
         const auto result = build_package(args, paths, *action, build_logs_recorder, status_db);
         msg::print(msgElapsedForPackage, msg::spec = spec, msg::elapsed = build_timer);
@@ -470,7 +470,7 @@ namespace vcpkg
         });
 
         return base_env.cmd_cache.get_lazy(build_env_cmd, [&]() {
-            const Path& powershell_exe_path = paths.get_tool_exe("powershell-core", stdout_sink);
+            const Path& powershell_exe_path = paths.get_tool_exe("powershell-core", out_sink);
             auto clean_env = get_modified_clean_environment(base_env.env_map, powershell_exe_path.parent_path());
             if (build_env_cmd.empty())
                 return clean_env;
@@ -659,7 +659,7 @@ namespace vcpkg
         out_vars.emplace_back("VCPKG_CONCURRENCY", std::to_string(get_concurrency()));
         out_vars.emplace_back("VCPKG_PLATFORM_TOOLSET", toolset.version);
         // Make sure GIT could be found
-        out_vars.emplace_back("GIT", paths.get_tool_exe(Tools::GIT, stdout_sink));
+        out_vars.emplace_back("GIT", paths.get_tool_exe(Tools::GIT, out_sink));
     }
 
     static CompilerInfo load_compiler_info(const VcpkgPaths& paths,
@@ -730,7 +730,7 @@ namespace vcpkg
                            VcpkgCmdArguments::COMPILER_TRACKING_FEATURE);
 
             msg::println_error(msgErrorDetectingCompilerInfo, msg::path = stdoutlog);
-            msg::write_unlocalized_text_to_stdout(Color::none, buf);
+            msg::write_unlocalized_text(Color::none, buf);
             Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgErrorUnableToDetectCompilerInfo);
         }
 
@@ -768,7 +768,7 @@ namespace vcpkg
 
         if (action.build_options.download_tool == DownloadTool::ARIA2)
         {
-            variables.emplace_back("ARIA2", paths.get_tool_exe(Tools::ARIA2, stdout_sink));
+            variables.emplace_back("ARIA2", paths.get_tool_exe(Tools::ARIA2, out_sink));
         }
 
         if (auto cmake_debug = args.cmake_debug.get())
@@ -966,7 +966,7 @@ namespace vcpkg
             return_code = cmd_execute_and_stream_data(
                 command,
                 [&](StringView sv) {
-                    msg::write_unlocalized_text_to_stdout(Color::none, sv);
+                    msg::write_unlocalized_text(Color::none, sv);
                     Checks::msg_check_exit(VCPKG_LINE_INFO,
                                            out_file.write(sv.data(), 1, sv.size()) == sv.size(),
                                            msgErrorWhileWriting,
@@ -1022,7 +1022,7 @@ namespace vcpkg
         size_t error_count = 0;
         {
             FileSink file_sink{fs, stdoutlog, Append::YES};
-            CombiningSink combo_sink{stdout_sink, file_sink};
+            CombiningSink combo_sink{out_sink, file_sink};
             error_count = perform_post_build_lint_checks(
                 action.spec, paths, pre_build_info, build_info, scfl.port_directory(), combo_sink);
         };
@@ -1220,11 +1220,11 @@ namespace vcpkg
 
         Util::Vectors::append(&abi_tag_entries, cache_entry.abi_entries);
 
-        abi_tag_entries.emplace_back("cmake", paths.get_tool_version(Tools::CMAKE, stdout_sink));
+        abi_tag_entries.emplace_back("cmake", paths.get_tool_version(Tools::CMAKE, out_sink));
 
         // This #ifdef is mirrored in tools.cpp's PowershellProvider
 #if defined(_WIN32)
-        abi_tag_entries.emplace_back("powershell", paths.get_tool_version("powershell-core", stdout_sink));
+        abi_tag_entries.emplace_back("powershell", paths.get_tool_version("powershell-core", out_sink));
 #endif
 
         abi_tag_entries.emplace_back("ports.cmake", paths.get_ports_cmake_hash().to_string());
@@ -1259,7 +1259,7 @@ namespace vcpkg
                 Strings::append(message, "[DEBUG]   ", entry.key, "|", entry.value, "\n");
             }
             Strings::append(message, "[DEBUG] </abientries>\n");
-            msg::write_unlocalized_text_to_stdout(Color::none, message);
+            msg::write_unlocalized_text(Color::none, message);
         }
 
         auto abi_tag_entries_missing = Util::filter(abi_tag_entries, [](const AbiEntry& p) { return p.value.empty(); });
@@ -1543,6 +1543,10 @@ namespace vcpkg
 
     void append_logs(std::vector<std::pair<Path, std::string>>&& logs, size_t max_size, std::string& out)
     {
+        if (logs.empty())
+        {
+            return;
+        }
         Util::sort(logs, [](const auto& left, const auto& right) { return left.second.size() < right.second.size(); });
         auto size_per_log = max_size / logs.size();
         size_t maximum = out.size();
@@ -1566,9 +1570,8 @@ namespace vcpkg
         // The logs excerpts are as large as possible. So the issue body will often reach MAX_ISSUE_SIZE.
         issue_body.reserve(MAX_ISSUE_SIZE);
         fmt::format_to(std::back_inserter(issue_body),
-                       "Package: {} -> {}\n\n**Host Environment**\n\n- Host: {}-{}\n",
-                       action.displayname(),
-                       action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).to_version(),
+                       "Package: {}\n\n**Host Environment**\n\n- Host: {}-{}\n",
+                       action.display_name(),
                        to_zstring_view(get_host_processor()),
                        get_host_os_name());
 
@@ -1673,16 +1676,14 @@ namespace vcpkg
         return result;
     }
 
-    static BuildInfo inner_create_buildinfo(Paragraph pgh)
+    static BuildInfo inner_create_buildinfo(StringView origin, Paragraph&& pgh)
     {
-        ParagraphParser parser(std::move(pgh));
+        ParagraphParser parser(origin, std::move(pgh));
 
         BuildInfo build_info;
 
         {
-            std::string crt_linkage_as_string;
-            parser.required_field(BuildInfoRequiredField::CRT_LINKAGE, crt_linkage_as_string);
-
+            std::string crt_linkage_as_string = parser.required_field(BuildInfoRequiredField::CRT_LINKAGE);
             auto crtlinkage = to_linkage_type(crt_linkage_as_string);
             if (const auto p = crtlinkage.get())
             {
@@ -1696,8 +1697,7 @@ namespace vcpkg
         }
 
         {
-            std::string library_linkage_as_string;
-            parser.required_field(BuildInfoRequiredField::LIBRARY_LINKAGE, library_linkage_as_string);
+            std::string library_linkage_as_string = parser.required_field(BuildInfoRequiredField::LIBRARY_LINKAGE);
             auto liblinkage = to_linkage_type(library_linkage_as_string);
             if (const auto p = liblinkage.get())
             {
@@ -1735,10 +1735,10 @@ namespace vcpkg
                                                msg::value = to_string_view(policy));
         }
 
-        if (const auto err = parser.error_info("PostBuildInformation"))
+        auto maybe_error = parser.error();
+        if (const auto err = maybe_error.get())
         {
-            print_error_message(err);
-            Checks::exit_fail(VCPKG_LINE_INFO);
+            Checks::msg_exit_with_message(VCPKG_LINE_INFO, *err);
         }
 
         build_info.policies = BuildPolicies(std::move(policies));
@@ -1748,13 +1748,13 @@ namespace vcpkg
 
     BuildInfo read_build_info(const ReadOnlyFilesystem& fs, const Path& filepath)
     {
-        auto pghs = Paragraphs::get_single_paragraph(fs, filepath);
-        if (!pghs)
+        auto maybe_paragraph = Paragraphs::get_single_paragraph(fs, filepath);
+        if (auto paragraph = maybe_paragraph.get())
         {
-            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, msgInvalidBuildInfo, msg::error_msg = pghs.error());
+            return inner_create_buildinfo(filepath, std::move(*paragraph));
         }
 
-        return inner_create_buildinfo(*pghs.get());
+        Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, msgInvalidBuildInfo, msg::error_msg = maybe_paragraph.error());
     }
 
     static ExpectedL<bool> from_cmake_bool(StringView value, StringView name)
