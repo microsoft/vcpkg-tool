@@ -181,7 +181,7 @@ namespace vcpkg
         {
             if (Strings::case_insensitive_ascii_equals(command_metadata->name, topic))
             {
-                print_usage(*command_metadata);
+                msg::print(usage_for_command(*command_metadata));
                 get_global_metrics_collector().track_string(StringMetric::CommandContext, command_metadata->name);
                 Checks::exit_success(VCPKG_LINE_INFO);
             }

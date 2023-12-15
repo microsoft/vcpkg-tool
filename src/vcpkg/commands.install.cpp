@@ -1084,7 +1084,7 @@ namespace vcpkg
             if (failure)
             {
                 msg::println(msgUsingManifestAt, msg::path = p->path);
-                print_usage(CommandInstallMetadataManifest);
+                msg::print(print_usage(CommandInstallMetadataManifest));
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
@@ -1110,7 +1110,7 @@ namespace vcpkg
             }
             if (failure)
             {
-                print_usage(CommandInstallMetadataClassic);
+                msg::write_unlocalized_text_to_stderr(usage_for_command(CommandInstallMetadataClassic));
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
         }
