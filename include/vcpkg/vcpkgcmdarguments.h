@@ -378,7 +378,7 @@ namespace vcpkg
         ParsedArguments parse_arguments(const CommandMetadata& command_metadata) const;
 
         void imbue_from_environment();
-        void imbue_from_fake_environment(const std::map<std::string, std::string, std::less<>>& env);
+        void imbue_from_fake_environment(const std::map<StringLiteral, std::string, std::less<>>& env);
 
         // Applies recursive settings from the environment or sets a global environment variable
         // to be consumed by subprocesses; may only be called once per process.

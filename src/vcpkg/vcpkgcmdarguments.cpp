@@ -530,7 +530,7 @@ namespace vcpkg
     }
 
     void VcpkgCmdArguments::imbue_from_environment() { imbue_from_environment_impl(&vcpkg::get_environment_variable); }
-    void VcpkgCmdArguments::imbue_from_fake_environment(const std::map<std::string, std::string, std::less<>>& env)
+    void VcpkgCmdArguments::imbue_from_fake_environment(const std::map<StringLiteral, std::string, std::less<>>& env)
     {
         imbue_from_environment_impl([&env](ZStringView var) -> Optional<std::string> {
             auto it = env.find(var);
