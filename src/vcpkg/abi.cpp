@@ -93,14 +93,14 @@ namespace vcpkg
         AbiEntries abi_entries;
         auto& fs = paths.get_filesystem();
 
-        abi_entries.emplace_back("cmake", paths.get_tool_version(Tools::CMAKE, stdout_sink));
+        abi_entries.emplace_back("cmake", paths.get_tool_version(Tools::CMAKE, out_sink));
         abi_entries.emplace_back("ports.cmake",
                                  Hash::get_file_hash(fs, paths.ports_cmake, Hash::Algorithm::Sha256).value_or(""));
         abi_entries.emplace_back("post_build_checks", "2");
 
         // This #ifdef is mirrored in tools.cpp's PowershellProvider
 #if defined(_WIN32)
-        abi_entries.emplace_back("powershell", paths.get_tool_version("powershell-core", stdout_sink));
+        abi_entries.emplace_back("powershell", paths.get_tool_version("powershell-core", out_sink));
 #endif
         return abi_entries;
     }
@@ -196,7 +196,7 @@ namespace vcpkg
             Strings::append(message, "[DEBUG]   ", entry.key, "|", entry.value, "\n");
         }
         Strings::append(message, "[DEBUG] </abientries>\n");
-        msg::write_unlocalized_text_to_stdout(Color::none, message);
+        msg::write_unlocalized_text(Color::none, message);
     }
 
     static void print_missing_abi_tags(View<AbiEntry> abi_entries)
