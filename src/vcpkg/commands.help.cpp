@@ -116,7 +116,7 @@ namespace vcpkg
     void help_topic_valid_triplet(const TripletDatabase& database)
     {
         std::map<StringView, std::vector<const TripletFile*>> triplets_per_location;
-        vcpkg::Util::group_by(database.available_triplets,
+        Util::group_by(database.available_triplets,
                               &triplets_per_location,
                               [](const TripletFile& triplet_file) -> StringView { return triplet_file.location; });
 

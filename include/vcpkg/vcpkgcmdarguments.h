@@ -22,9 +22,9 @@ namespace vcpkg
 {
     struct ParsedArguments
     {
-        std::set<std::string, std::less<>> switches;
-        std::map<std::string, std::string, std::less<>> settings;
-        std::map<std::string, std::vector<std::string>, std::less<>> multisettings;
+        std::set<StringLiteral, std::less<>> switches;
+        std::map<StringLiteral, std::string, std::less<>> settings;
+        std::map<StringLiteral, std::vector<std::string>, std::less<>> multisettings;
 
         const std::string* read_setting(StringLiteral setting) const noexcept;
 

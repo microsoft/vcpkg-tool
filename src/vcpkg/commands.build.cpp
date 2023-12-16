@@ -31,6 +31,7 @@
 #include <vcpkg/spdx.h>
 #include <vcpkg/statusparagraphs.h>
 #include <vcpkg/tools.h>
+#include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
 

@@ -79,7 +79,7 @@ namespace
     constexpr const StringLiteral* ArtifactTargetPlatformSwitchNamesStorage[] = {
         &SWITCH_TARGET_X86, &SWITCH_TARGET_X64, &SWITCH_TARGET_ARM, &SWITCH_TARGET_ARM64};
 
-    bool more_than_one_mapped(View<const StringLiteral*> candidates, const std::set<std::string, std::less<>>& switches)
+    bool more_than_one_mapped(View<const StringLiteral*> candidates, const std::set<StringLiteral, std::less<>>& switches)
     {
         bool seen = false;
         for (auto&& candidate : candidates)

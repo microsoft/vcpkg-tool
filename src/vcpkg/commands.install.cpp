@@ -22,6 +22,7 @@
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/tools.h>
+#include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
 #include <vcpkg/xunitwriter.h>

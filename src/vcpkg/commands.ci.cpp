@@ -249,7 +249,7 @@ namespace
         });
     }
 
-    void parse_exclusions(const std::map<std::string, std::string, std::less<>>& settings,
+    void parse_exclusions(const std::map<StringLiteral, std::string, std::less<>>& settings,
                           StringLiteral opt,
                           Triplet triplet,
                           ExclusionsMap& exclusions_map)
