@@ -22,6 +22,12 @@ namespace vcpkg
     };
 #endif
 
+    enum class OutputStream
+    {
+        StdOut,
+        StdErr,
+    };
+
     struct LocalizedString;
     struct MessageSink;
 
@@ -37,6 +43,8 @@ namespace vcpkg
 
 namespace vcpkg::msg
 {
+    extern OutputStream default_output_stream;
+    void write_unlocalized_text(Color c, vcpkg::StringView sv);
     void write_unlocalized_text_to_stdout(Color c, vcpkg::StringView sv);
     void write_unlocalized_text_to_stderr(Color c, vcpkg::StringView sv);
 }

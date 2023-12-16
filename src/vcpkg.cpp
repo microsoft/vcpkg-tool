@@ -42,7 +42,11 @@ namespace
 
     void invalid_command(const VcpkgCmdArguments& args)
     {
-        msg::println_error(msgVcpkgInvalidCommand, msg::command_name = args.get_command());
+        msg::write_unlocalized_text_to_stderr(
+            Color::error,
+            LocalizedString::from_raw(ErrorPrefix)
+                .append(msgVcpkgInvalidCommand, msg::command_name = args.get_command())
+                .append_raw('\n'));
         print_zero_args_usage();
         Checks::exit_fail(VCPKG_LINE_INFO);
     }
@@ -183,7 +187,7 @@ namespace vcpkg::Checks
                                               Paragraphs::get_load_ports_stats(),
                                               g_total_time.to_string(),
                                               static_cast<int64_t>(elapsed_us_inner));
-            msg::write_unlocalized_text_to_stdout(Color::none, exit_debug_msg);
+            msg::write_unlocalized_text(Color::none, exit_debug_msg);
         }
     }
 }
@@ -233,6 +237,8 @@ int main(const int argc, const char* const* const argv)
     SetConsoleOutputCP(CP_UTF8);
 
     initialize_global_job_object();
+
+    reset_processor_architecture_environment_variable();
 #else
     static const char* const utf8_locales[] = {
         "C.UTF-8",
@@ -280,9 +286,9 @@ int main(const int argc, const char* const* const argv)
     VcpkgCmdArguments::imbue_or_apply_process_recursion(args);
     if (const auto p = args.debug_env.get(); p && *p)
     {
-        msg::write_unlocalized_text_to_stdout(Color::none,
-                                              "[DEBUG] The following environment variables are currently set:\n" +
-                                                  get_environment_variables() + '\n');
+        msg::write_unlocalized_text(Color::none,
+                                    "[DEBUG] The following environment variables are currently set:\n" +
+                                        get_environment_variables() + '\n');
     }
     else if (Debug::g_debugging)
     {
@@ -379,7 +385,9 @@ int main(const int argc, const char* const* const argv)
 
     if (args.send_metrics.value_or(false) && !to_enable_metrics)
     {
-        msg::println_warning(msgVcpkgSendMetricsButDisabled);
+        msg::write_unlocalized_text_to_stderr(
+            Color::warning,
+            LocalizedString::from_raw(WarningPrefix).append(msgVcpkgSendMetricsButDisabled).append_raw('\n'));
     }
 
     args.debug_print_feature_flags();
@@ -408,15 +416,14 @@ int main(const int argc, const char* const* const argv)
     }
 
     fflush(stdout);
-    msg::println(msgVcpkgHasCrashed);
-    fflush(stdout);
-    msg::println();
-    LocalizedString data_blob;
-    data_blob.append_raw("Version=")
-        .append_raw(vcpkg_executable_version)
-        .append_raw("\nEXCEPTION=")
-        .append_raw(exc_msg)
-        .append_raw("\nCMD=\n");
+    auto data_blob = LocalizedString::from_raw(ErrorPrefix)
+                         .append(msgVcpkgHasCrashed)
+                         .append_raw("\nVersion=")
+                         .append_raw(vcpkg_executable_version)
+                         .append_raw("\nEXCEPTION=")
+                         .append_raw(exc_msg)
+                         .append_raw("\nCMD=\n");
+
     for (int x = 0; x < argc; ++x)
     {
 #if defined(_WIN32)
@@ -426,8 +433,7 @@ int main(const int argc, const char* const* const argv)
 #endif
     }
 
-    msg::print(data_blob);
-    fflush(stdout);
+    msg::write_unlocalized_text_to_stderr(Color::none, data_blob);
 
     // It is expected that one of the sub-commands will exit cleanly before we get here.
     Checks::exit_fail(VCPKG_LINE_INFO);

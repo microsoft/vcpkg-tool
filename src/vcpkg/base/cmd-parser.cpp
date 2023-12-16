@@ -1012,7 +1012,7 @@ namespace vcpkg
 
         for (auto&& error : errors)
         {
-            msg::write_unlocalized_text_to_stdout(Color::error, error.append_raw("\n"));
+            msg::write_unlocalized_text(Color::error, error.append_raw("\n"));
         }
 
         example.append_raw('\n');
