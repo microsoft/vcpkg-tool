@@ -5791,12 +5791,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";FailedToTakeFileSystemLock" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";FailedToTakeFileSystemLock" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Failed to take the filesystem lock on {path}]]></Val>
+          <Val><![CDATA[Failed to take the filesystem lock]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Non è stato possibile accettare il blocco del file system in {path}]]></Val>
+            <Val><![CDATA[Non è stato possibile accettare il blocco del file system]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Failed to take the filesystem lock on {path}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -10893,6 +10896,15 @@
           <Val><![CDATA[{tool_name} ({path}) produced unexpected output when attempting to determine the version:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{tool_name} ({path}) ha prodotto un output imprevisto mentre tentava di determinare la versione:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedWindowsArchitecture" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[unexpected Windows host architecture: {actual}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[architettura host Windows imprevista: {actual}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
