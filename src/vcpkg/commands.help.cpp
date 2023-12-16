@@ -117,8 +117,8 @@ namespace vcpkg
     {
         std::map<StringView, std::vector<const TripletFile*>> triplets_per_location;
         Util::group_by(database.available_triplets,
-                              &triplets_per_location,
-                              [](const TripletFile& triplet_file) -> StringView { return triplet_file.location; });
+                       &triplets_per_location,
+                       [](const TripletFile& triplet_file) -> StringView { return triplet_file.location; });
 
         LocalizedString result;
         result.append(msgBuiltInTriplets).append_raw('\n');
