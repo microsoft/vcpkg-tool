@@ -2466,14 +2466,14 @@ TEST_CASE ("dependency graph API snapshot: host and target")
     ActionPlan plan;
     plan.install_actions.push_back(std::move(install_a));
     plan.install_actions.push_back(std::move(install_a_host));
-    std::map<std::string, std::string, std::less<>> envmap = {
-        {VcpkgCmdArguments::GITHUB_JOB_ENV.to_string(), "123"},
-        {VcpkgCmdArguments::GITHUB_RUN_ID_ENV.to_string(), "123"},
-        {VcpkgCmdArguments::GITHUB_REF_ENV.to_string(), "refs/heads/main"},
-        {VcpkgCmdArguments::GITHUB_REPOSITORY_ENV.to_string(), "owner/repo"},
-        {VcpkgCmdArguments::GITHUB_SHA_ENV.to_string(), "abc123"},
-        {VcpkgCmdArguments::GITHUB_TOKEN_ENV.to_string(), "abc"},
-        {VcpkgCmdArguments::GITHUB_WORKFLOW_ENV.to_string(), "test"},
+    std::map<StringLiteral, std::string, std::less<>> envmap = {
+        {VcpkgCmdArguments::GITHUB_JOB_ENV, "123"},
+        {VcpkgCmdArguments::GITHUB_RUN_ID_ENV, "123"},
+        {VcpkgCmdArguments::GITHUB_REF_ENV, "refs/heads/main"},
+        {VcpkgCmdArguments::GITHUB_REPOSITORY_ENV, "owner/repo"},
+        {VcpkgCmdArguments::GITHUB_SHA_ENV, "abc123"},
+        {VcpkgCmdArguments::GITHUB_TOKEN_ENV, "abc"},
+        {VcpkgCmdArguments::GITHUB_WORKFLOW_ENV, "test"},
     };
     auto v = VcpkgCmdArguments::create_from_arg_sequence(nullptr, nullptr);
     v.imbue_from_fake_environment(envmap);

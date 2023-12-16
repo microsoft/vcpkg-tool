@@ -129,7 +129,7 @@ TEST_CASE ("Testing strip auto's get_common_prefix_count", "z-extract")
 
 TEST_CASE ("Testing get_strip_setting", "z-extract")
 {
-    std::map<std::string, std::string, std::less<>> settings;
+    std::map<StringLiteral, std::string, std::less<>> settings;
 
     SECTION ("Test no strip")
     {
