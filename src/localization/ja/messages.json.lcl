@@ -2017,6 +2017,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CMakePkgConfigTargetsUsage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{package_name} provides pkg-config modules:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{package_name} は pkg-config モジュールを提供します。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CMakeTargetsUsage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[{package_name} provides CMake targets:]]></Val>
@@ -4006,6 +4015,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ControlSupportsMustBeAPlatformExpression" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA["Supports" must be a platform expression]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA["Supports" はプラットフォーム式である必要があります]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CopyFailedSource$IsAFolderTarget$IsAFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Copy failed: source (${p0}) is a folder, target (${p1}) is a file]]></Val>
@@ -5556,33 +5574,6 @@
           <Val><![CDATA[Failed to load manifest from directory {path}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[ディレクトリ {path} からマニフェストを読み込めませんでした]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";FailedToLoadPort" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Failed to load port {package_name} from {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{path} からポート {package_name} を読み込めませんでした]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";FailedToLoadPortFrom" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Failed to load port from {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{path} からポートを読み込めませんでした]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";FailedToLoadUnnamedPortFromPath" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Failed to load port from {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{path} からポートを読み込めませんでした]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -8248,15 +8239,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";ListOfValidFieldsForControlFiles" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[This is the list of valid fields for CONTROL files (case-sensitive):]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[これは、CONTROL ファイルの有効なフィールドの一覧です (大文字と小文字が区別されます):]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";LoadingCommunityTriplet" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[-- [COMMUNITY]5D; Loading triplet configuration from: {path}]]></Val>
@@ -8481,6 +8463,15 @@
           <Val><![CDATA[missing required field '{json_field}' ({json_type})]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[必須フィールド '{json_field}' ({json_type}) がありません]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";MissingRequiredField2" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[missing required field '{json_field}']]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[必須フィールド '{json_field}' がありません]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -8980,6 +8971,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";PackageAbi" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{spec} package ABI: {package_abi}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{spec} パッケージ ABI: {package_abi}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";PackageAlreadyRemoved" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[unable to remove {spec}: already removed]]></Val>
@@ -9177,51 +9177,6 @@
           <Val><![CDATA[unexpected end of line, to span a blank line use "  ."]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[予期しない行の終わりです。空白行にまたがる場合は " ." を使用します]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ParseControlErrorInfoInvalidFields" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The following fields were not expected:]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[次のフィールドが想定外でした:]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ParseControlErrorInfoMissingFields" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The following fields were missing:]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[次のフィールドが見つかりませんでした:]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ParseControlErrorInfoTypesEntry" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[{value} was expected to be {expected}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{value}は{expected}である必要があります]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ParseControlErrorInfoWhileLoading" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[while loading {path}:]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{path}の読み込み中:]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ParseControlErrorInfoWrongTypeFields" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The following fields had the wrong types:]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[次のフィールドの型が正しくありません:]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -9726,6 +9681,15 @@
           <Val><![CDATA[The following packages differ from their port versions:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[次のパッケージは、ポート バージョンとは異なります。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PortVersionControlMustBeANonNegativeInteger" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA["Port-Version" must be a non-negative integer]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA["Port-Version" は負ではない整数である必要があります]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10251,15 +10215,6 @@
           <Val><![CDATA[Please make sure you have started a new bash shell for the change to take effect.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[変更を有効にするには、新しい bash シェルを開始したことをご確認ください。]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";SuggestUpdateVcpkg" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[You may need to update the vcpkg binary; try running {command_line} to update.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[vcpkg バイナリの更新が必要である可能性があります。{command_line} を実行して更新してみてください。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -12027,6 +11982,15 @@
           <Val><![CDATA[while trying to load port from: {commit_sha}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[ポートの読み込み中: {commit_sha}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";WhileLoadingPortVersion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[while loading {version_spec}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{version_spec} の読み込み中]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />

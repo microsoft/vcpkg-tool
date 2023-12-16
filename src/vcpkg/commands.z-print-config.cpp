@@ -63,7 +63,7 @@ namespace vcpkg
             obj.insert("manifest_mode_enabled", Json::Value::boolean(paths.manifest_mode_enabled()));
         }
         obj.sort_keys();
-        msg::write_unlocalized_text_to_stdout(Color::none, Json::stringify(obj) + "\n");
+        msg::write_unlocalized_text(Color::none, Json::stringify(obj) + "\n");
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 } // namespace vcpkg

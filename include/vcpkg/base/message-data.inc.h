@@ -482,6 +482,7 @@ DECLARE_MESSAGE(CISwitchOptSkipFailures,
                 "Skips ports marked `=fail` in ci.baseline.txt")
 DECLARE_MESSAGE(CISwitchOptXUnitAll, (), "", "Reports unchanged ports in the XUnit output")
 DECLARE_MESSAGE(ClearingContents, (msg::path), "", "Clearing contents of {path}")
+DECLARE_MESSAGE(CMakePkgConfigTargetsUsage, (msg::package_name), "", "{package_name} provides pkg-config modules:")
 DECLARE_MESSAGE(CmakeTargetsExcluded, (msg::count), "", "{count} additional targets are not displayed.")
 DECLARE_MESSAGE(CMakeTargetsUsage,
                 (msg::package_name),
@@ -1286,7 +1287,7 @@ DECLARE_MESSAGE(FailedToRunToolToDetermineVersion,
                 "Failed to run \"{path}\" to determine the {tool_name} version.")
 DECLARE_MESSAGE(FailedToStoreBackToMirror, (), "", "failed to store back to mirror:")
 DECLARE_MESSAGE(FailedToStoreBinaryCache, (msg::path), "", "Failed to store binary cache {path}")
-DECLARE_MESSAGE(FailedToTakeFileSystemLock, (msg::path), "", "Failed to take the filesystem lock on {path}")
+DECLARE_MESSAGE(FailedToTakeFileSystemLock, (), "", "Failed to take the filesystem lock")
 DECLARE_MESSAGE(FailedToWriteManifest, (msg::path), "", "Failed to write manifest file {path}")
 DECLARE_MESSAGE(FailedVendorAuthentication,
                 (msg::vendor, msg::url),
@@ -2197,6 +2198,7 @@ DECLARE_MESSAGE(OverlayPortsDirectoriesHelp, (msg::env_var), "", "Directories of
 DECLARE_MESSAGE(OverlayTripletDirectoriesHelp, (msg::env_var), "", "Directories of overlay triplets (also: {env_var})")
 DECLARE_MESSAGE(OverlayTriplets, (msg::path), "", "Overlay Triplets from \"{path}\":")
 DECLARE_MESSAGE(OverwritingFile, (msg::path), "", "File {path} was already present and will be overwritten")
+DECLARE_MESSAGE(PackageAbi, (msg::spec, msg::package_abi), "", "{spec} package ABI: {package_abi}")
 DECLARE_MESSAGE(PackageAlreadyRemoved, (msg::spec), "", "unable to remove {spec}: already removed")
 DECLARE_MESSAGE(PackageDiscoveryHeader, (), "", "Package Discovery")
 DECLARE_MESSAGE(PackageManipulationHeader, (), "", "Package Manipulation")
@@ -2704,6 +2706,10 @@ DECLARE_MESSAGE(UnexpectedToolOutput,
                 (msg::tool_name, msg::path),
                 "The actual command line output will be appended after this message.",
                 "{tool_name} ({path}) produced unexpected output when attempting to determine the version:")
+DECLARE_MESSAGE(UnexpectedWindowsArchitecture,
+                (msg::actual),
+                "{actual} is the CPU kind we observed like ARM or MIPS",
+                "unexpected Windows host architecture: {actual}")
 DECLARE_MESSAGE(UnknownBaselineFileContent,
                 (),
                 "",
