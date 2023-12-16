@@ -369,47 +369,7 @@ namespace vcpkg::msg
         return write_unlocalized_text_impl(c, sv, stderr_handle, stderr_is_console);
     }
 #else
-    static void write_all(const char* ptr, size_t to_write, int fd, std::unique_lock<std::mutex>& lck)
-    {
-        while (to_write != 0)
-        {
-            auto written = ::write(fd, ptr, to_write);
-            if (written == -1)
-            {
-                ::fprintf(stderr, "[DEBUG] Failed to print to stdout: %d\n", errno);
-                lck.unlock();
-                std::abort();
-            }
-            ptr += written;
-            to_write -= written;
-        }
-    }
-
-    static void write_unlocalized_text_impl(Color c, StringView sv, int fd, bool is_a_tty)
-    {
-        static constexpr char reset_color_sequence[] = {'\033', '[', '0', 'm'};
-        static std::mutex mtx;
-
-        if (sv.empty()) return;
-
-        std::unique_lock<std::mutex> lck(mtx);
-        bool reset_color = false;
-        if (is_a_tty && c != Color::none)
-        {
-            reset_color = true;
-
-            const char set_color_sequence[] = {'\033', '[', '9', static_cast<char>(c), 'm'};
-            write_all(set_color_sequence, sizeof(set_color_sequence), fd, lck);
-        }
-
-        write_all(sv.data(), sv.size(), fd, lck);
-
-        if (reset_color)
-        {
-            write_all(reset_color_sequence, sizeof(reset_color_sequence), fd, lck);
-        }
-    }
-
+    
     void write_unlocalized_text_to_stdout(Color c, StringView sv)
     {
         static bool is_a_tty = ::isatty(STDOUT_FILENO);
@@ -502,9 +462,4 @@ namespace vcpkg::msg
 
         return nullopt;
     }
-
-    LocalizedString format_error(const LocalizedString& s) { return error_prefix().append(s); }
-    void println_error(const LocalizedString& s) { println(Color::error, format_error(s)); }
-    LocalizedString format_warning(const LocalizedString& s) { return warning_prefix().append(s); }
-    void println_warning(const LocalizedString& s) { println(Color::warning, format_warning(s)); }
 }

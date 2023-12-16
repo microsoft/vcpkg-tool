@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vcpkg/base/fwd/messages.h>
+#include <vcpkg/base/fwd/system.console.h>
 
 #include <vcpkg/base/fmt.h>
 #include <vcpkg/base/span.h>
@@ -185,22 +186,17 @@ namespace vcpkg::msg
         return detail::format_to_impl(s, m.index, args.arg()...);
     }
 
-    inline void println() { msg::write_unlocalized_text_to_stdout(Color::none, "\n"); }
-
-    inline void print(Color c, const LocalizedString& s) { msg::write_unlocalized_text_to_stdout(c, s); }
-    inline void print(const LocalizedString& s) { msg::write_unlocalized_text_to_stdout(Color::none, s); }
-    inline void println(Color c, const LocalizedString& s)
+    inline void print(Color c, const LocalizedString& s) { std_out.print(c, s); }
+    inline void print(const LocalizedString& s) { std_out.print(Color::none, s); }
+    inline void println(Color c, LocalizedString&& s)
     {
-        msg::write_unlocalized_text_to_stdout(c, s);
-        msg::write_unlocalized_text_to_stdout(Color::none, "\n");
+        std_out.print(c, s.append_raw('\n'));
     }
-    inline void println(const LocalizedString& s)
+    inline void println(LocalizedString&& s)
     {
-        msg::write_unlocalized_text_to_stdout(Color::none, s);
-        msg::write_unlocalized_text_to_stdout(Color::none, "\n");
+        std_out.print(Color::none, s.append_raw('\n'));
     }
-
-    [[nodiscard]] LocalizedString format_error(const LocalizedString& s);
+    inline [[nodiscard]] LocalizedString format_error(const LocalizedString& s) { return error_prefix().append(s); }
     template<VCPKG_DECL_MSG_TEMPLATE>
     [[nodiscard]] LocalizedString format_error(VCPKG_DECL_MSG_ARGS)
     {
@@ -208,7 +204,7 @@ namespace vcpkg::msg
         msg::format_to(s, VCPKG_EXPAND_MSG_ARGS);
         return s;
     }
-    void println_error(const LocalizedString& s);
+    inline void println_error(const LocalizedString& s) { println(Color::error, format_error(s)); }
     template<VCPKG_DECL_MSG_TEMPLATE>
     void println_error(VCPKG_DECL_MSG_ARGS)
     {
@@ -217,7 +213,7 @@ namespace vcpkg::msg
         println(Color::error, s);
     }
 
-    [[nodiscard]] LocalizedString format_warning(const LocalizedString& s);
+    inline [[nodiscard]] LocalizedString format_warning(const LocalizedString& s) { return warning_prefix().append(s); }
     template<VCPKG_DECL_MSG_TEMPLATE>
     [[nodiscard]] LocalizedString format_warning(VCPKG_DECL_MSG_ARGS)
     {
@@ -225,7 +221,7 @@ namespace vcpkg::msg
         msg::format_to(s, VCPKG_EXPAND_MSG_ARGS);
         return s;
     }
-    void println_warning(const LocalizedString& s);
+    inline void println_warning(const LocalizedString& s) { println(Color::warning, format_warning(s)); }
     template<VCPKG_DECL_MSG_TEMPLATE>
     void println_warning(VCPKG_DECL_MSG_ARGS)
     {
