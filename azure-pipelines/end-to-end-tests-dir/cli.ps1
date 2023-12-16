@@ -18,25 +18,25 @@ if ($IsWindows) {
     # export not tested
 
     # depend-info
-    [string]$output = Run-VcpkgAndCaptureOutput -TestArgs ($directoryArgs + @('depend-info', 'vcpkg-hello-world-1'))
+    [string]$output = Run-VcpkgAndCaptureStdErr -TestArgs ($directoryArgs + @('depend-info', 'vcpkg-hello-world-1'))
     Throw-IfFailed
     if (-Not $output.Contains($warningText)) {
         throw 'depend-info with unqualified spec should emit the triplet warning'
     }
     
-    $output = Run-VcpkgAndCaptureOutput -TestArgs ($directoryArgs + @('depend-info', 'vcpkg-hello-world-1:x64-windows'))
+    $output = Run-VcpkgAndCaptureStdErr -TestArgs ($directoryArgs + @('depend-info', 'vcpkg-hello-world-1:x64-windows'))
     Throw-IfFailed
     if ($output.Contains($warningText)) {
         throw 'depend-info with qualified parameters should not emit the triplet warning'
     }
 
-    $output = Run-VcpkgAndCaptureOutput -TestArgs ($directoryArgs + @('depend-info', 'vcpkg-hello-world-1', '--triplet', 'x86-windows'))
+    $output = Run-VcpkgAndCaptureStdErr -TestArgs ($directoryArgs + @('depend-info', 'vcpkg-hello-world-1', '--triplet', 'x86-windows'))
     Throw-IfFailed
     if ($output.Contains($warningText)) {
         throw 'depend-info with arg should not emit the triplet warning'
     }
 
-    $output = Run-VcpkgAndCaptureOutput -TestArgs ($directoryArgs + @('depend-info', 'vcpkg-hello-world-1', '--triplet', 'x64-windows'))
+    $output = Run-VcpkgAndCaptureStdErr -TestArgs ($directoryArgs + @('depend-info', 'vcpkg-hello-world-1', '--triplet', 'x64-windows'))
     Throw-IfFailed
     if ($output.Contains($warningText)) {
         throw 'depend-info with new default arg should not emit the triplet warning'
@@ -86,7 +86,7 @@ if ($IsWindows) {
     }
 
     Refresh-TestRoot
-    $output = Run-VcpkgAndCaptureOutput -TestArgs ($directoryArgs + @('install', 'vcpkg-hello-world-1'))
+    $output =Run-VcpkgAndCaptureOutput -TestArgs ($directoryArgs + @('install', 'vcpkg-hello-world-1'))
     Throw-IfFailed
     if (-Not $output.Contains($warningText)) {
         throw 'install with unqualified spec should emit the triplet warning'

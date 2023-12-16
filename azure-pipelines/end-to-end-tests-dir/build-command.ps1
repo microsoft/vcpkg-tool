@@ -21,7 +21,7 @@ Throw-IfFailed
 # Regression test https://github.com/microsoft/vcpkg/issues/13933
 Run-Vcpkg -TestArgs ($commonArgs + @("install","vcpkg-hello-world-1","--host-triplet",$Triplet))
 Throw-IfFailed
-$out = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("build","vcpkg-hello-world-1","--host-triplet",$Triplet))
+$out = Run-VcpkgAndCaptureStdErr -TestArgs ($commonArgs + @("build","vcpkg-hello-world-1","--host-triplet",$Triplet))
 Throw-IfNotFailed
 if ($out -notmatch "is already installed; please remove")
 {

@@ -593,6 +593,28 @@ namespace vcpkg
 
         return std::move(maybe_k).error();
     }
+
+    void reset_processor_architecture_environment_variable()
+    {
+        // sometimes we get launched with incorrectly set %PROCESSOR_ARCHITECTURE%; this
+        // corrects that as we launch a lot of bits like CMake that expect it to be correctly set:
+        // https://cmake.org/cmake/help/latest/variable/CMAKE_HOST_SYSTEM_PROCESSOR.html#windows-platforms
+        const wchar_t* value;
+        const auto proc = get_host_processor();
+        switch (proc)
+        {
+            case CPUArchitecture::X86: value = L"X86"; break;
+            case CPUArchitecture::X64: value = L"AMD64"; break;
+            case CPUArchitecture::ARM: value = L"ARM"; break;
+            case CPUArchitecture::ARM64: value = L"ARM64"; break;
+            default:
+                Checks::msg_exit_with_error(
+                    VCPKG_LINE_INFO, msgUnexpectedWindowsArchitecture, msg::actual = to_zstring_view(proc));
+                break;
+        }
+
+        Checks::check_exit(VCPKG_LINE_INFO, SetEnvironmentVariableW(L"PROCESSOR_ARCHITECTURE", value) != 0);
+    }
 #endif
 
     static const Optional<Path>& get_program_files()

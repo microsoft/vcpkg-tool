@@ -613,7 +613,7 @@ namespace vcpkg::Prefab
             Debug::print(
                 fmt::format("Exporting AAR and POM\n\tAAR path {}\n\tPOM path {}", exported_archive_path, pom_path));
 
-            auto zip = ZipTool::make(paths.get_tool_cache(), stdout_sink).value_or_exit(VCPKG_LINE_INFO);
+            auto zip = ZipTool::make(paths.get_tool_cache(), out_sink).value_or_exit(VCPKG_LINE_INFO);
 
             auto compress_result =
                 zip.compress_directory_to_zip(paths.get_filesystem(), package_directory, exported_archive_path);
@@ -658,7 +658,7 @@ namespace vcpkg::Prefab
                                 group_id,
                                 artifact_id,
                                 norm_version));
-                msg::write_unlocalized_text_to_stdout(Color::none, R"(And cmake flags
+                msg::write_unlocalized_text(Color::none, R"(And cmake flags
 
     externalNativeBuild {
                 cmake {
@@ -669,7 +669,7 @@ namespace vcpkg::Prefab
 
 )");
 
-                msg::write_unlocalized_text_to_stdout(Color::none, R"(In gradle.properties
+                msg::write_unlocalized_text(Color::none, R"(In gradle.properties
 
     android.enablePrefab=true
     android.enableParallelJsonGen=false

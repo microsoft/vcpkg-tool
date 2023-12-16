@@ -69,7 +69,7 @@ namespace
 
                     const auto& file = maybe_file.value_or_exit(VCPKG_LINE_INFO);
                     auto maybe_scf = control_file == "vcpkg.json"
-                                         ? Paragraphs::try_load_port_manifest_text(file, treeish, stdout_sink)
+                                         ? Paragraphs::try_load_port_manifest_text(file, treeish, out_sink)
                                          : Paragraphs::try_load_control_file_text(file, treeish);
                     auto scf = maybe_scf.get();
                     if (!scf)
@@ -276,7 +276,7 @@ namespace vcpkg
             {
                 if (verbose)
                 {
-                    msg::write_unlocalized_text_to_stdout(Color::error, fmt::format("SKIP: {}\n", port_name));
+                    msg::write_unlocalized_text(Color::error, fmt::format("SKIP: {}\n", port_name));
                 }
 
                 continue;
@@ -284,7 +284,7 @@ namespace vcpkg
             auto git_tree_it = port_git_tree_map.find(port_name);
             if (git_tree_it == port_git_tree_map.end())
             {
-                msg::write_unlocalized_text_to_stdout(Color::error, fmt::format("FAIL: {}\n", port_name));
+                msg::write_unlocalized_text(Color::error, fmt::format("FAIL: {}\n", port_name));
                 errors.emplace(
                     msg::format_error(msgVersionShaMissing, msg::package_name = port_name, msg::path = port_path));
                 continue;
@@ -298,14 +298,14 @@ namespace vcpkg
 
             if (manifest_exists && control_exists)
             {
-                msg::write_unlocalized_text_to_stdout(Color::error, fmt::format("FAIL: {}\n", port_name));
+                msg::write_unlocalized_text(Color::error, fmt::format("FAIL: {}\n", port_name));
                 errors.emplace(msg::format_error(msgControlAndManifestFilesPresent, msg::path = port_path));
                 continue;
             }
 
             if (!manifest_exists && !control_exists)
             {
-                msg::write_unlocalized_text_to_stdout(Color::error, fmt::format("FAIL: {}\n", port_name));
+                msg::write_unlocalized_text(Color::error, fmt::format("FAIL: {}\n", port_name));
                 errors.emplace(LocalizedString::from_raw(port_path)
                                    .append_raw(": ")
                                    .append_raw(ErrorPrefix)
@@ -317,7 +317,7 @@ namespace vcpkg
             auto versions_file_path = paths.builtin_registry_versions / prefix / Strings::concat(port_name, ".json");
             if (!fs.exists(versions_file_path, IgnoreErrors{}))
             {
-                msg::write_unlocalized_text_to_stdout(Color::error, fmt::format("FAIL: {}\n", port_name));
+                msg::write_unlocalized_text(Color::error, fmt::format("FAIL: {}\n", port_name));
                 errors.emplace(msg::format_error(
                     msgVersionDatabaseFileMissing, msg::package_name = port_name, msg::path = versions_file_path));
                 continue;
@@ -334,7 +334,7 @@ namespace vcpkg
             }
             else
             {
-                msg::write_unlocalized_text_to_stdout(Color::error, fmt::format("FAIL: {}\n", port_name));
+                msg::write_unlocalized_text(Color::error, fmt::format("FAIL: {}\n", port_name));
                 errors.emplace(std::move(maybe_ok).error());
             }
         }

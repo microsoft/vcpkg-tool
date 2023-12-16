@@ -1105,12 +1105,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";ApplocalProcessing" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";ApplocalProcessing" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[vcpkg applocal processing: {path}]]></Val>
+          <Val><![CDATA[deploying dependencies]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Processamento applocal vcpkg: {path}]]></Val>
+            <Val><![CDATA[implantando dependências]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[vcpkg applocal processing: {path}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -2011,6 +2014,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[Report also unchanged ports to the XUnit output (internal)]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CMakePkgConfigTargetsUsage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{package_name} provides pkg-config modules:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[O {package_name} fornece módulos pkg-config:]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -4003,6 +4015,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ControlSupportsMustBeAPlatformExpression" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA["Supports" must be a platform expression]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA["Supports" deve ser uma expressão de plataforma]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CopyFailedSource$IsAFolderTarget$IsAFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Copy failed: source (${p0}) is a folder, target (${p1}) is a file]]></Val>
@@ -5557,33 +5578,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";FailedToLoadPort" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Failed to load port {package_name} from {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Falha ao carregar a porta {package_name} de {path}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";FailedToLoadPortFrom" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Failed to load port from {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Falha ao carregar a porta de {path}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";FailedToLoadUnnamedPortFromPath" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Failed to load port from {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Falha ao carregar a porta de {path}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";FailedToLocateSpec" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Failed to locate spec in graph: {spec}]]></Val>
@@ -5874,6 +5868,15 @@
           <Val><![CDATA["kind" did not have an expected value: (expected one of: {expected}; found {actual})]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA["kind" não tinha um valor esperado: (esperado um de: {expected}; encontrado {actual})]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FileIsNotExecutable" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[this file does not appear to be executable]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[este arquivo não parece ser executável]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -8236,15 +8239,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";ListOfValidFieldsForControlFiles" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[This is the list of valid fields for CONTROL files (case-sensitive):]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Esta é a lista de campos válidos para arquivos CONTROL (diferencia maiúsculas de minúsculas):]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";LoadingCommunityTriplet" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[-- [COMMUNITY]5D; Loading triplet configuration from: {path}]]></Val>
@@ -8466,6 +8460,15 @@
           <Val><![CDATA[missing required field '{json_field}' ({json_type})]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[campo obrigatório ausente '{json_field}' ({json_type})]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";MissingRequiredField2" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[missing required field '{json_field}']]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[campo obrigatório ausente "{json_field}"]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -8965,11 +8968,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";PESignatureMismatch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";PackageAbi" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[While parsing Portable Executable {path}, signature mismatch.]]></Val>
+          <Val><![CDATA[{spec} package ABI: {package_abi}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Ao analisar o Executável Portátil {path}, a assinatura não é compatível.]]></Val>
+            <Val><![CDATA[ABI do pacote {spec}: {package_abi}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -9171,51 +9174,6 @@
           <Val><![CDATA[unexpected end of line, to span a blank line use "  ."]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[fim de linha inesperado, para abranger uma linha em branco, use "."]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ParseControlErrorInfoInvalidFields" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The following fields were not expected:]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Os seguintes campos não eram esperados:]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ParseControlErrorInfoMissingFields" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The following fields were missing:]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Os seguintes campos estavam ausentes:]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ParseControlErrorInfoTypesEntry" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[{value} was expected to be {expected}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Esperava-se que {value} fosse {expected}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ParseControlErrorInfoWhileLoading" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[while loading {path}:]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[ao carregar {path}:]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ParseControlErrorInfoWrongTypeFields" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The following fields had the wrong types:]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Os campos a seguir tinham os tipos errados:]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -9720,6 +9678,15 @@
           <Val><![CDATA[The following packages differ from their port versions:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Os seguintes pacotes diferem de suas versões de porta:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PortVersionControlMustBeANonNegativeInteger" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA["Port-Version" must be a non-negative integer]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA["Port-Version" deve ser um inteiro não negativo]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10245,15 +10212,6 @@
           <Val><![CDATA[Please make sure you have started a new bash shell for the change to take effect.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Verifique se você iniciou um novo shell de bash para que a alteração entre em vigor.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";SuggestUpdateVcpkg" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[You may need to update the vcpkg binary; try running {command_line} to update.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Talvez seja necessário atualizar o binário vcpkg; tente executar {command_line} para atualizar.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -12021,6 +11979,15 @@
           <Val><![CDATA[while trying to load port from: {commit_sha}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[ao tentar carregar a porta de: {commit_sha}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";WhileLoadingPortVersion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[while loading {version_spec}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[ao carregar {version_spec}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />

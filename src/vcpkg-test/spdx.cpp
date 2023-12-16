@@ -155,10 +155,11 @@ TEST_CASE ("spdx maximum serialization", "[spdx]")
       "copyrightText": "NOASSERTION"
     }
   ]
-})json")
+})json",
+                                "test")
                         .value(VCPKG_LINE_INFO);
 
-    auto doc = Json::parse(sbom).value(VCPKG_LINE_INFO);
+    auto doc = Json::parse(sbom, "test").value(VCPKG_LINE_INFO);
     Test::check_json_eq(expected.value, doc.value);
 }
 
@@ -278,10 +279,11 @@ TEST_CASE ("spdx minimum serialization", "[spdx]")
       "copyrightText": "NOASSERTION"
     }
   ]
-})json")
+})json",
+                                "test")
                         .value(VCPKG_LINE_INFO);
 
-    auto doc = Json::parse(sbom).value(VCPKG_LINE_INFO);
+    auto doc = Json::parse(sbom, "test").value(VCPKG_LINE_INFO);
     Test::check_json_eq(expected.value, doc.value);
 }
 
@@ -303,14 +305,16 @@ TEST_CASE ("spdx concat resources", "[spdx]")
 {
   "relationships": [ "r1", "r2", "r3" ],
   "files": [ "f1", "f2", "f3" ]
-})json")
+})json",
+                            "test")
                     .value(VCPKG_LINE_INFO)
                     .value;
     auto doc2 = Json::parse(R"json(
 {
   "packages": [ "p1", "p2", "p3" ],
   "files": [ "f4", "f5" ]
-})json")
+})json",
+                            "test")
                     .value(VCPKG_LINE_INFO)
                     .value;
 
@@ -377,9 +381,10 @@ TEST_CASE ("spdx concat resources", "[spdx]")
     "f4",
     "f5"
   ]
-})json")
+})json",
+                                "test")
                         .value(VCPKG_LINE_INFO);
 
-    auto doc = Json::parse(sbom).value(VCPKG_LINE_INFO);
+    auto doc = Json::parse(sbom, "test").value(VCPKG_LINE_INFO);
     Test::check_json_eq(expected.value, doc.value);
 }

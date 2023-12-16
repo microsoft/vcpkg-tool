@@ -414,7 +414,7 @@ namespace vcpkg
         }
 
         auto action_plan = compute_full_plan(paths, provider, var_provider, all_default_full_specs, serialize_options);
-        auto binary_cache = BinaryCache::make(args, paths, stdout_sink).value_or_exit(VCPKG_LINE_INFO);
+        auto binary_cache = BinaryCache::make(args, paths, out_sink).value_or_exit(VCPKG_LINE_INFO);
         const auto precheck_results = binary_cache.precheck(action_plan.install_actions);
         auto split_specs = compute_action_statuses(ExclusionPredicate{&exclusions_map}, precheck_results, action_plan);
         LocalizedString regressions;
@@ -449,7 +449,7 @@ namespace vcpkg
                                    action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi);
             }
 
-            msg::write_unlocalized_text_to_stdout(Color::none, msg);
+            msg::write_unlocalized_text(Color::none, msg);
             auto it_output_hashes = settings.find(OPTION_OUTPUT_HASHES);
             if (it_output_hashes != settings.end())
             {
