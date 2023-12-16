@@ -401,7 +401,7 @@ namespace vcpkg
         auto&& initial_parser_errors = args.parser.get_errors();
         if (!initial_parser_errors.empty())
         {
-            msg::write_unlocalized_text_to_stdout(Color::error, Strings::join("\n", initial_parser_errors) + "\n");
+            msg::write_unlocalized_text_to_stderr(Color::error, Strings::join("\n", initial_parser_errors) + "\n");
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
@@ -505,7 +505,8 @@ namespace vcpkg
         }
 
         with_common_options.parser.append_options_table(result);
-        msg::println(result);
+        result.append_raw('\n');
+        msg::write_unlocalized_text_to_stderr(Color::error, result);
     }
 
     static void from_env(const std::function<Optional<std::string>(ZStringView)>& f,
@@ -722,9 +723,15 @@ namespace vcpkg
         {
             if (el.is_inconsistent)
             {
-                msg::println_warning(
-                    msgSpecifiedFeatureTurnedOff, msg::command_name = el.flag, msg::option = el.option);
-                msg::println_warning(msgDefaultFlag, msg::option = el.flag);
+                msg::write_unlocalized_text_to_stderr(Color::warning,
+                                                      msg::format_warning(msgSpecifiedFeatureTurnedOff,
+                                                                          msg::command_name = el.flag,
+                                                                          msg::option = el.option)
+                                                          .append_raw('\n')
+                                                          .append_raw(WarningPrefix)
+                                                          .append(msgDefaultFlag, msg::option = el.flag)
+                                                          .append_raw('\n'));
+
                 get_global_metrics_collector().track_string(StringMetric::Warning,
                                                             fmt::format("warning {} alongside {}", el.flag, el.option));
             }

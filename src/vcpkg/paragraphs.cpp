@@ -403,7 +403,7 @@ namespace vcpkg::Paragraphs
                 return msg::format_error(msgManifestConflict, msg::path = port_location.port_directory);
             }
 
-            return try_load_port_manifest_text(manifest_contents, manifest_path, stdout_sink)
+            return try_load_port_manifest_text(manifest_contents, manifest_path, out_sink)
                 .map([&](std::unique_ptr<SourceControlFile>&& scf) {
                     return SourceControlFileAndLocation{
                         std::move(scf), std::move(manifest_path), port_location.spdx_location};

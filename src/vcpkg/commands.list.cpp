@@ -101,6 +101,7 @@ namespace vcpkg
 
     void command_list_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
+        msg::default_output_stream = OutputStream::StdErr;
         const ParsedArguments options = args.parse_arguments(CommandListMetadata);
 
         const StatusParagraphs status_paragraphs = database_load_check(paths.get_filesystem(), paths.installed());

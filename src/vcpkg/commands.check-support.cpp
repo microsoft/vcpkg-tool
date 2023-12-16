@@ -115,8 +115,10 @@ namespace vcpkg
                                         Triplet default_triplet,
                                         Triplet host_triplet)
     {
+        msg::default_output_stream = OutputStream::StdErr;
         const ParsedArguments options = args.parse_arguments(CommandCheckSupportMetadata);
         const bool use_json = Util::Sets::contains(options.switches, OPTION_JSON);
+
         Json::Array json_to_print; // only used when `use_json`
 
         bool default_triplet_used = false;
@@ -209,7 +211,7 @@ namespace vcpkg
 
         if (use_json)
         {
-            msg::write_unlocalized_text_to_stdout(Color::none, Json::stringify(json_to_print));
+            msg::write_unlocalized_text(Color::none, Json::stringify(json_to_print));
         }
     }
 } // namespace vcpkg
