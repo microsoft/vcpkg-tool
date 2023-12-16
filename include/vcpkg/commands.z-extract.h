@@ -39,7 +39,7 @@ namespace vcpkg
         }
     };
 
-    ExpectedL<StripSetting> get_strip_setting(std::map<StringLiteral, std::string, std::less<>> settings);
+    ExpectedL<StripSetting> get_strip_setting(const std::map<StringLiteral, std::string, std::less<>>& settings);
 
     struct ExtractedArchive
     {
