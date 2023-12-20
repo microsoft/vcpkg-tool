@@ -84,16 +84,16 @@ namespace
         for (const auto& switch_ : command_metadata.options.switches)
         {
             bool parse_result;
-            auto name = switch_.name.to_string();
+            ZStringView name = switch_.name;
             StabilityTag tag = StabilityTag::Standard;
             if (Strings::starts_with(name, "x-"))
             {
-                name.erase(0, 2);
+                name = name.substr(2);
                 tag = StabilityTag::Experimental;
             }
             else if (Strings::starts_with(name, "z-"))
             {
-                name.erase(0, 2);
+                name = name.substr(2);
                 tag = StabilityTag::ImplementationDetail;
             }
 
@@ -101,14 +101,14 @@ namespace
             {
                 if (cmd_parser.parse_switch(name, tag, parse_result, switch_.helpmsg.to_string()) && parse_result)
                 {
-                    output.switches.emplace(switch_.name.to_string());
+                    output.switches.emplace(switch_.name);
                 }
             }
             else
             {
                 if (cmd_parser.parse_switch(name, tag, parse_result) && parse_result)
                 {
-                    output.switches.emplace(switch_.name.to_string());
+                    output.switches.emplace(switch_.name);
                 }
             }
         }
@@ -117,16 +117,16 @@ namespace
             std::string maybe_parse_result;
             for (const auto& option : command_metadata.options.settings)
             {
-                auto name = option.name.to_string();
+                ZStringView name = option.name;
                 StabilityTag tag = StabilityTag::Standard;
                 if (Strings::starts_with(name, "x-"))
                 {
-                    name.erase(0, 2);
+                    name = name.substr(2);
                     tag = StabilityTag::Experimental;
                 }
                 else if (Strings::starts_with(name, "z-"))
                 {
-                    name.erase(0, 2);
+                    name = name.substr(2);
                     tag = StabilityTag::ImplementationDetail;
                 }
 
@@ -134,14 +134,14 @@ namespace
                 {
                     if (cmd_parser.parse_option(name, tag, maybe_parse_result, option.helpmsg.to_string()))
                     {
-                        output.settings.emplace(option.name.to_string(), std::move(maybe_parse_result));
+                        output.settings.emplace(option.name, std::move(maybe_parse_result));
                     }
                 }
                 else
                 {
                     if (cmd_parser.parse_option(name, tag, maybe_parse_result))
                     {
-                        output.settings.emplace(option.name.to_string(), std::move(maybe_parse_result));
+                        output.settings.emplace(option.name, std::move(maybe_parse_result));
                     }
                 }
             }
@@ -149,16 +149,16 @@ namespace
 
         for (const auto& option : command_metadata.options.multisettings)
         {
-            auto name = option.name.to_string();
+            ZStringView name = option.name;
             StabilityTag tag = StabilityTag::Standard;
             if (Strings::starts_with(name, "x-"))
             {
-                name.erase(0, 2);
+                name = name.substr(2);
                 tag = StabilityTag::Experimental;
             }
             else if (Strings::starts_with(name, "z-"))
             {
-                name.erase(0, 2);
+                name = name.substr(2);
                 tag = StabilityTag::ImplementationDetail;
             }
 
@@ -167,14 +167,14 @@ namespace
             {
                 if (cmd_parser.parse_multi_option(name, tag, maybe_parse_result, option.helpmsg.to_string()))
                 {
-                    output.multisettings.emplace(option.name.to_string(), std::move(maybe_parse_result));
+                    output.multisettings.emplace(option.name, std::move(maybe_parse_result));
                 }
             }
             else
             {
                 if (cmd_parser.parse_multi_option(name, tag, maybe_parse_result))
                 {
-                    output.multisettings.emplace(option.name.to_string(), std::move(maybe_parse_result));
+                    output.multisettings.emplace(option.name, std::move(maybe_parse_result));
                 }
             }
         }
@@ -519,7 +519,7 @@ namespace vcpkg
     }
 
     void VcpkgCmdArguments::imbue_from_environment() { imbue_from_environment_impl(&vcpkg::get_environment_variable); }
-    void VcpkgCmdArguments::imbue_from_fake_environment(const std::map<std::string, std::string, std::less<>>& env)
+    void VcpkgCmdArguments::imbue_from_fake_environment(const std::map<StringLiteral, std::string, std::less<>>& env)
     {
         imbue_from_environment_impl([&env](ZStringView var) -> Optional<std::string> {
             auto it = env.find(var);
