@@ -288,11 +288,6 @@ namespace vcpkg
         }
     }
 
-    PortApplicableSetting::PortApplicableSetting(const PortApplicableSetting&) = default;
-    PortApplicableSetting::PortApplicableSetting(PortApplicableSetting&&) = default;
-    PortApplicableSetting& PortApplicableSetting::operator=(const PortApplicableSetting&) = default;
-    PortApplicableSetting& PortApplicableSetting::operator=(PortApplicableSetting&&) = default;
-
     bool PortApplicableSetting::is_port_affected(StringView port_name) const noexcept
     {
         return affected_ports.empty() || std::binary_search(affected_ports.begin(), affected_ports.end(), port_name);
@@ -452,12 +447,6 @@ namespace vcpkg
     {
         return forwardable_arguments;
     }
-
-    VcpkgCmdArguments::VcpkgCmdArguments(const VcpkgCmdArguments&) = default;
-    VcpkgCmdArguments::VcpkgCmdArguments(VcpkgCmdArguments&&) = default;
-    VcpkgCmdArguments& VcpkgCmdArguments::operator=(const VcpkgCmdArguments&) = default;
-    VcpkgCmdArguments& VcpkgCmdArguments::operator=(VcpkgCmdArguments&&) = default;
-    VcpkgCmdArguments::~VcpkgCmdArguments() = default;
 
     VcpkgCmdArguments::VcpkgCmdArguments(CmdParser&& parser_) : parser(std::move(parser_)) { }
 

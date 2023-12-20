@@ -2141,7 +2141,6 @@ namespace vcpkg
         : ReadOnlyBinaryCache(std::move(providers)), m_fs(fs)
     {
     }
-    BinaryCache::~BinaryCache() { }
 
     void BinaryCache::push_success(const InstallPlanAction& action)
     {

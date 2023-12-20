@@ -952,12 +952,6 @@ namespace vcpkg
 
     IgnoreErrors::operator std::error_code&() { return ec; }
 
-    Path::Path() = default;
-    Path::Path(const Path&) = default;
-    Path::Path(Path&&) = default;
-    Path& Path::operator=(const Path&) = default;
-    Path& Path::operator=(Path&&) = default;
-
     Path::Path(const StringView sv) : m_str(sv.to_string()) { }
     Path::Path(const std::string& s) : m_str(s) { }
     Path::Path(std::string&& s) : m_str(std::move(s)) { }
@@ -3737,8 +3731,6 @@ namespace vcpkg
         ls.append_raw('\n');
         msg_sink.print(ls);
     }
-
-    IExclusiveFileLock::~IExclusiveFileLock() = default;
 
     uint64_t get_filesystem_stats() { return g_us_filesystem_stats.load(); }
 

@@ -197,10 +197,6 @@ namespace vcpkg
         std::string value;
 
         PortApplicableSetting(StringView setting);
-        PortApplicableSetting(const PortApplicableSetting&);
-        PortApplicableSetting(PortApplicableSetting&&);
-        PortApplicableSetting& operator=(const PortApplicableSetting&);
-        PortApplicableSetting& operator=(PortApplicableSetting&&);
         bool is_port_affected(StringView port_name) const noexcept;
 
     private:
@@ -393,12 +389,6 @@ namespace vcpkg
         Optional<std::string> asset_sources_template() const;
 
         const std::vector<std::string>& get_forwardable_arguments() const noexcept;
-
-        VcpkgCmdArguments(const VcpkgCmdArguments&);
-        VcpkgCmdArguments(VcpkgCmdArguments&&);
-        VcpkgCmdArguments& operator=(const VcpkgCmdArguments&);
-        VcpkgCmdArguments& operator=(VcpkgCmdArguments&&);
-        ~VcpkgCmdArguments();
 
     private:
         VcpkgCmdArguments(CmdParser&& parser);
