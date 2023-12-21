@@ -300,7 +300,7 @@ namespace vcpkg
         spgh->name = parser.required_field(SourceParagraphFields::NAME);
         spgh->version.text = parser.required_field(SourceParagraphFields::VERSION);
 
-        TextRowCol pv_position;
+        TextPosition pv_position;
         auto pv_str = parser.optional_field(SourceParagraphFields::PORT_VERSION, pv_position);
         if (!pv_str.empty())
         {
@@ -322,10 +322,10 @@ namespace vcpkg
         trim_all(spgh->maintainers);
 
         spgh->homepage = parser.optional_field(SourceParagraphFields::HOMEPAGE);
-        TextRowCol textrowcol;
-        std::string buf = parser.optional_field(SourceParagraphFields::BUILD_DEPENDS, textrowcol);
+        TextPosition build_depends_position;
+        std::string buf = parser.optional_field(SourceParagraphFields::BUILD_DEPENDS, build_depends_position);
 
-        auto maybe_dependencies = parse_dependencies_list(buf, origin, textrowcol);
+        auto maybe_dependencies = parse_dependencies_list(buf, origin, build_depends_position);
         if (const auto dependencies = maybe_dependencies.get())
         {
             spgh->dependencies = *dependencies;
@@ -335,9 +335,10 @@ namespace vcpkg
             return std::move(maybe_dependencies).error();
         }
 
-        buf = parser.optional_field(SourceParagraphFields::DEFAULT_FEATURES, textrowcol);
+        TextPosition default_features_position;
+        buf = parser.optional_field(SourceParagraphFields::DEFAULT_FEATURES, default_features_position);
 
-        auto maybe_default_features = parse_default_features_list(buf, origin, textrowcol);
+        auto maybe_default_features = parse_default_features_list(buf, origin, default_features_position);
         if (const auto default_features = maybe_default_features.get())
         {
             for (auto&& default_feature : *default_features)
@@ -368,7 +369,7 @@ namespace vcpkg
             return std::move(maybe_default_features).error();
         }
 
-        TextRowCol supports_position;
+        TextPosition supports_position;
         auto supports_text = parser.optional_field(SourceParagraphFields::SUPPORTS, supports_position);
         if (!supports_text.empty())
         {

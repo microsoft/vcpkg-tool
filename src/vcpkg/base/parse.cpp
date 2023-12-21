@@ -90,11 +90,11 @@ namespace vcpkg
         }
     }
 
-    ParserBase::ParserBase(StringView text, StringView origin, TextRowCol init_rowcol)
+    ParserBase::ParserBase(StringView text, StringView origin, TextPosition init_rowcol)
         : m_it(text.begin(), text.end())
         , m_start_of_line(m_it)
-        , m_row(init_rowcol.row_or(1))
-        , m_column(init_rowcol.column_or(1))
+        , m_row(init_rowcol.row)
+        , m_column(init_rowcol.column)
         , m_text(text)
         , m_origin(origin)
     {

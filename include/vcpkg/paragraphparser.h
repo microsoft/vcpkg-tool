@@ -2,12 +2,12 @@
 
 #include <vcpkg/fwd/paragraphparser.h>
 
+#include <vcpkg/base/diagnostics.h>
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/stringview.h>
 
 #include <vcpkg/packagespec.h>
-#include <vcpkg/textrowcol.h>
 
 #include <map>
 #include <memory>
@@ -16,7 +16,7 @@
 
 namespace vcpkg
 {
-    using Paragraph = std::map<std::string, std::pair<std::string, TextRowCol>, std::less<>>;
+    using Paragraph = std::map<std::string, std::pair<std::string, TextPosition>, std::less<>>;
 
     struct ParagraphParser
     {
@@ -28,9 +28,9 @@ namespace vcpkg
         std::string required_field(StringLiteral fieldname);
 
         std::string optional_field(StringLiteral fieldname);
-        std::string optional_field(StringLiteral fieldname, TextRowCol& position);
+        std::string optional_field(StringLiteral fieldname, TextPosition& position);
 
-        void add_error(TextRowCol position, msg::MessageT<> error_content);
+        void add_error(TextPosition position, msg::MessageT<> error_content);
 
         Optional<LocalizedString> error() const;
 
@@ -42,8 +42,8 @@ namespace vcpkg
 
     ExpectedL<std::vector<std::string>> parse_default_features_list(const std::string& str,
                                                                     StringView origin = "<unknown>",
-                                                                    TextRowCol textrowcol = {});
+                                                                    TextPosition position = {1, 1});
     ExpectedL<std::vector<ParsedQualifiedSpecifier>> parse_qualified_specifier_list(const std::string& str,
                                                                                     StringView origin = "<unknown>",
-                                                                                    TextRowCol textrowcol = {});
+                                                                                    TextPosition position = {1, 1});
 }

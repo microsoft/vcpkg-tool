@@ -20,7 +20,7 @@ static std::atomic<uint64_t> g_load_ports_stats(0);
 
 namespace vcpkg
 {
-    static Optional<std::pair<std::string, TextRowCol>> remove_field(Paragraph* fields, StringView fieldname)
+    static Optional<std::pair<std::string, TextPosition>> remove_field(Paragraph* fields, StringView fieldname)
     {
         auto it = fields->find(fieldname.to_string());
         if (it == fields->end())
@@ -33,7 +33,7 @@ namespace vcpkg
         return value;
     }
 
-    std::string ParagraphParser::optional_field(StringLiteral fieldname, TextRowCol& position)
+    std::string ParagraphParser::optional_field(StringLiteral fieldname, TextPosition& position)
     {
         auto maybe_field = remove_field(&fields, fieldname);
         if (auto field = maybe_field.get())
@@ -47,7 +47,7 @@ namespace vcpkg
 
     std::string ParagraphParser::optional_field(StringLiteral fieldname)
     {
-        TextRowCol ignore;
+        TextPosition ignore;
         return optional_field(fieldname, ignore);
     }
 
@@ -66,7 +66,7 @@ namespace vcpkg
         return std::string();
     }
 
-    void ParagraphParser::add_error(TextRowCol position, msg::MessageT<> error_content)
+    void ParagraphParser::add_error(TextPosition position, msg::MessageT<> error_content)
     {
         errors.emplace_back(LocalizedString::from_raw(origin)
                                 .append_raw(fmt::format("{}:{}: ", position.row, position.column))
@@ -167,18 +167,18 @@ namespace vcpkg
 
     ExpectedL<std::vector<std::string>> parse_default_features_list(const std::string& str,
                                                                     StringView origin,
-                                                                    TextRowCol textrowcol)
+                                                                    TextPosition position)
     {
-        auto parser = ParserBase(str, origin, textrowcol);
+        auto parser = ParserBase(str, origin, position);
         auto opt = parse_list_until_eof<std::string>(msgExpectedDefaultFeaturesList, parser, &parse_feature_name);
         if (!opt) return {LocalizedString::from_raw(parser.get_error()->to_string()), expected_right_tag};
         return {std::move(opt).value_or_exit(VCPKG_LINE_INFO), expected_left_tag};
     }
     ExpectedL<std::vector<ParsedQualifiedSpecifier>> parse_qualified_specifier_list(const std::string& str,
                                                                                     StringView origin,
-                                                                                    TextRowCol textrowcol)
+                                                                                    TextPosition position)
     {
-        auto parser = ParserBase(str, origin, textrowcol);
+        auto parser = ParserBase(str, origin, position);
         auto opt = parse_list_until_eof<ParsedQualifiedSpecifier>(
             msgExpectedDependenciesList, parser, [](ParserBase& parser) { return parse_qualified_specifier(parser); });
         if (!opt) return {LocalizedString::from_raw(parser.get_error()->to_string()), expected_right_tag};
@@ -187,9 +187,9 @@ namespace vcpkg
     }
     ExpectedL<std::vector<Dependency>> parse_dependencies_list(const std::string& str,
                                                                StringView origin,
-                                                               TextRowCol textrowcol)
+                                                               TextPosition position)
     {
-        auto parser = ParserBase(str, origin, textrowcol);
+        auto parser = ParserBase(str, origin, position);
         auto opt = parse_list_until_eof<Dependency>(msgExpectedDependenciesList, parser, [](ParserBase& parser) {
             auto loc = parser.cur_loc();
             return parse_qualified_specifier(parser).then([&](ParsedQualifiedSpecifier&& pqs) -> Optional<Dependency> {

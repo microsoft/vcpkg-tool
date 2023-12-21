@@ -223,5 +223,5 @@ namespace vcpkg
     // Exposed for testing
     ExpectedL<std::vector<Dependency>> parse_dependencies_list(const std::string& str,
                                                                StringView origin,
-                                                               TextRowCol textrowcol = {});
+                                                               TextPosition position = {1, 1});
 }
