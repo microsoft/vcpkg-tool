@@ -47,7 +47,7 @@ namespace
             LocalizedString::from_raw(ErrorPrefix)
                 .append(msgVcpkgInvalidCommand, msg::command_name = args.get_command())
                 .append_raw('\n'));
-        print_zero_args_usage();
+        msg::write_unlocalized_text_to_stderr(Color::none, get_zero_args_usage());
         Checks::exit_fail(VCPKG_LINE_INFO);
     }
 
@@ -99,7 +99,7 @@ namespace
 
         if (args.get_command().empty())
         {
-            print_zero_args_usage();
+            msg::write_unlocalized_text_to_stderr(Color::none, get_zero_args_usage());
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 

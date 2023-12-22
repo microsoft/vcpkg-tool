@@ -156,7 +156,7 @@ namespace vcpkg
         }
     }
 
-    void print_zero_args_usage()
+    std::string get_zero_args_usage()
     {
         HelpTableFormatter table;
         table.example(msg::format(msgVcpkgUsage));
@@ -212,7 +212,7 @@ namespace vcpkg
         table.example(msg::format(msgHelpExampleCommand));
 
         table.m_str.push_back('\n');
-        msg::write_unlocalized_text_to_stderr(Color::none, table.m_str);
+        return table.m_str;
     }
 
     void print_full_command_list()
