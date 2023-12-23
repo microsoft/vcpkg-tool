@@ -1484,9 +1484,9 @@ namespace vcpkg
 
     void append_log(const Path& path, const std::string& log, size_t max_log_length, std::string& out)
     {
-        StringLiteral details_start = "<details><summary>{}</summary>\n\n```\n";
-        StringLiteral skipped_msg = "\n...\nSkipped {} lines\n...";
-        StringLiteral details_end = "\n```\n</details>\n\n";
+        static constexpr StringLiteral details_start = "<details><summary>{}</summary>\n\n```\n";
+        static constexpr StringLiteral skipped_msg = "\n...\nSkipped {} lines\n...";
+        static constexpr StringLiteral details_end = "\n```\n</details>\n\n";
         const size_t context_size = path.native().size() + details_start.size() + details_end.size() +
                                     skipped_msg.size() + 6 /* digits for skipped count */;
         const size_t minimum_log_size = std::min(size_t{100}, log.size());
