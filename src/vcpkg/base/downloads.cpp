@@ -13,6 +13,8 @@
 
 #include <vcpkg/commands.version.h>
 
+#include <sstream>
+
 namespace vcpkg
 {
     static std::string replace_secrets(std::string input, View<std::string> secrets)
@@ -443,7 +445,7 @@ namespace vcpkg
     static void download_files_inner(const Filesystem&,
                                      View<std::pair<std::string, Path>> url_pairs,
                                      View<std::string> headers,
-                                     std::vector<int>* out)
+                                     std::vector<ExpectedL<int>>* out)
     {
         for (auto i : {100, 1000, 10000, 0})
         {
@@ -454,8 +456,12 @@ namespace vcpkg
             cmd.string_arg("curl")
                 .string_arg("--create-dirs")
                 .string_arg("--location")
+                .string_arg("--retry")
+                .string_arg("3")
+                .string_arg("--retry-max-time")
+                .string_arg("1")
                 .string_arg("-w")
-                .string_arg(guid_marker.to_string() + " %{http_code}\\n");
+                .string_arg(guid_marker.to_string() + " %{http_code} %{exitcode}\\n");
             for (StringView header : headers)
             {
                 cmd.string_arg("-H").string_arg(header);
@@ -464,17 +470,36 @@ namespace vcpkg
             {
                 cmd.string_arg(url_encode_spaces(url.first)).string_arg("-o").string_arg(url.second);
             }
-            auto res =
-                cmd_execute_and_stream_lines(cmd, [out](StringView line) {
-                    if (Strings::starts_with(line, guid_marker))
-                    {
-                        out->push_back(static_cast<int>(std::strtol(line.data() + guid_marker.size(), nullptr, 10)));
-                    }
-                }).value_or_exit(VCPKG_LINE_INFO);
 
-            if (res != 0)
+            auto const cb = [out](StringView line) {
+                if (Strings::starts_with(line, guid_marker))
+                {
+                    std::stringstream ss(std::string(line.substr(guid_marker.size())));
+
+                    int http_code = 0;
+                    int exit_code = 0;
+                    ss >> http_code >> exit_code;
+
+                    if (http_code != 0)
+                    {
+                        out->push_back(http_code);
+                    }
+                    else
+                    {
+                        // If curl version < 7.75.0, `exit_code` is 0. In this case, only the exit code for the last
+                        // request is returned.
+                        out->push_back(msg::format(msgCurlFailedToExecute, msg::exit_code = exit_code));
+                    }
+                }
+            };
+
+            auto const ret = cmd_execute_and_stream_lines(cmd, cb).value_or_exit(VCPKG_LINE_INFO);
+            auto req_err = std::find_if(
+                out->rbegin(), out->rend(), [](ExpectedL<int> const& v) -> bool { return !v.has_value(); });
+            if (req_err != out->rend())
             {
-                Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgCurlFailedToExecute, msg::exit_code = res);
+                *req_err = ExpectedL<int>(msg::format(msgCurlFailedToExecute, msg::exit_code = ret));
+                break;
             }
 
             if (start_size + url_pairs.size() > out->size())
@@ -491,13 +516,14 @@ namespace vcpkg
             }
         }
     }
-    std::vector<int> download_files(const Filesystem& fs,
-                                    View<std::pair<std::string, Path>> url_pairs,
-                                    View<std::string> headers)
+
+    std::vector<ExpectedL<int>> download_files(const Filesystem& fs,
+                                               View<std::pair<std::string, Path>> url_pairs,
+                                               View<std::string> headers)
     {
         static constexpr size_t batch_size = 50;
 
-        std::vector<int> ret;
+        std::vector<ExpectedL<int>> ret;
 
         size_t i = 0;
         for (; i + batch_size <= url_pairs.size(); i += batch_size)
