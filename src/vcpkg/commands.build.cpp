@@ -487,7 +487,8 @@ namespace vcpkg
 
     static CompilerInfo load_compiler_info(const VcpkgPaths& paths,
                                            const PreBuildInfo& pre_build_info,
-                                           const Toolset& toolset);
+                                           const Toolset& toolset,
+                                           const std::set<std::string>& languages);
 
     static const std::string& get_toolchain_cache(Cache<Path, std::string>& cache,
                                                   const Path& tcfile,
@@ -507,7 +508,8 @@ namespace vcpkg
 
     const CompilerInfo& EnvCache::get_compiler_info(const VcpkgPaths& paths,
                                                     const PreBuildInfo& pre_build_info,
-                                                    const Toolset& toolset)
+                                                    const Toolset& toolset,
+                                                    const std::set<std::string>& languages)
     {
         if (!m_compiler_tracking || pre_build_info.disable_compiler_tracking)
         {
@@ -526,7 +528,7 @@ namespace vcpkg
         return triplet_entry.compiler_info.get_lazy(toolchain_hash, [&]() -> CompilerInfo {
             if (m_compiler_tracking)
             {
-                return load_compiler_info(paths, pre_build_info, toolset);
+                return load_compiler_info(paths, pre_build_info, toolset, languages);
             }
             else
             {
@@ -537,7 +539,8 @@ namespace vcpkg
 
     const std::string& EnvCache::get_triplet_info(const VcpkgPaths& paths,
                                                   const PreBuildInfo& pre_build_info,
-                                                  const Toolset& toolset)
+                                                  const Toolset& toolset,
+                                                  const std::set<std::string>& languages)
     {
         const auto& fs = paths.get_filesystem();
         const auto& triplet_file_path = paths.get_triplet_db().get_triplet_file_path(pre_build_info.triplet);
@@ -549,7 +552,7 @@ namespace vcpkg
         if (m_compiler_tracking && !pre_build_info.disable_compiler_tracking)
         {
             return triplet_entry.triplet_infos.get_lazy(toolchain_hash, [&]() -> std::string {
-                auto& compiler_info = get_compiler_info(paths, pre_build_info, toolset);
+                auto& compiler_info = get_compiler_info(paths, pre_build_info, toolset, languages);
                 return Strings::concat(triplet_entry.hash, '-', toolchain_hash, '-', compiler_info.hash);
             });
         }
@@ -664,11 +667,20 @@ namespace vcpkg
 
     static CompilerInfo load_compiler_info(const VcpkgPaths& paths,
                                            const PreBuildInfo& pre_build_info,
-                                           const Toolset& toolset)
+                                           const Toolset& toolset,
+                                           const std::set<std::string>& languages)
     {
         auto& triplet = pre_build_info.triplet;
         msg::println(msgDetectCompilerHash, msg::triplet = triplet);
         auto buildpath = paths.buildtrees() / "detect_compiler";
+
+        std::string languages_list {""};
+        for(const auto& language: languages) {
+            if(!languages_list.empty()) {
+                languages_list.append(";");
+            }
+            languages_list.append(language);
+        }
 
         std::vector<CMakeVariable> cmake_args{
             {"CURRENT_PORT_DIR", paths.scripts / "detect_compiler"},
@@ -676,6 +688,7 @@ namespace vcpkg
             {"CURRENT_PACKAGES_DIR", paths.packages() / ("detect_compiler_" + triplet.canonical_name())},
             // The detect_compiler "port" doesn't depend on the host triplet, so always natively compile
             {"_HOST_TRIPLET", triplet.canonical_name()},
+            {"USED_LANGUAGES", languages_list},
         };
         get_generic_cmake_build_args(paths, triplet, toolset, cmake_args);
 
@@ -1118,6 +1131,7 @@ namespace vcpkg
     static void populate_abi_tag(const VcpkgPaths& paths,
                                  InstallPlanAction& action,
                                  std::unique_ptr<PreBuildInfo>&& proto_pre_build_info,
+                                 const std::set<std::string>& langs,
                                  Span<const AbiEntry> dependency_abis,
                                  Cache<Path, Optional<std::string>>& grdk_cache)
     {
@@ -1139,7 +1153,7 @@ namespace vcpkg
             return;
         }
 
-        abi_info.compiler_info = paths.get_compiler_info(*abi_info.pre_build_info, toolset);
+        abi_info.compiler_info = paths.get_compiler_info(*abi_info.pre_build_info, toolset, langs);
         for (auto&& dep_abi : dependency_abis)
         {
             if (dep_abi.value.empty())
@@ -1155,7 +1169,7 @@ namespace vcpkg
 
         std::vector<AbiEntry> abi_tag_entries(dependency_abis.begin(), dependency_abis.end());
 
-        const auto& triplet_abi = paths.get_triplet_info(pre_build_info, toolset);
+        const auto& triplet_abi = paths.get_triplet_info(pre_build_info, toolset, langs);
         abi_info.triplet_abi.emplace(triplet_abi);
         const auto& triplet_canonical_name = action.spec.triplet().canonical_name();
         abi_tag_entries.emplace_back("triplet", triplet_canonical_name);
@@ -1283,6 +1297,24 @@ namespace vcpkg
                           const StatusParagraphs& status_db)
     {
         Cache<Path, Optional<std::string>> grdk_cache;
+
+        std::set<std::string> languages;
+        for(const auto& action: action_plan.install_actions)
+        {
+            const auto& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
+            const auto& scf = scfl.source_control_file;
+            const auto langs = scf->core_paragraph->languages;
+            if(!langs.empty())
+            {
+                languages.insert(langs.begin(),langs.end());
+            }
+        }
+        if(languages.empty())
+        {
+            languages.emplace("C");
+            languages.emplace("CXX");
+        }
+
         for (auto it = action_plan.install_actions.begin(); it != action_plan.install_actions.end(); ++it)
         {
             auto& action = *it;
@@ -1323,6 +1355,7 @@ namespace vcpkg
                 std::make_unique<PreBuildInfo>(paths,
                                                action.spec.triplet(),
                                                var_provider.get_tag_vars(action.spec).value_or_exit(VCPKG_LINE_INFO)),
+                languages,
                 dependency_abis,
                 grdk_cache);
         }

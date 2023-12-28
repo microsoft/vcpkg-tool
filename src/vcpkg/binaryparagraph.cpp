@@ -13,6 +13,7 @@ namespace vcpkg
         static constexpr StringLiteral PACKAGE = "Package";
         static constexpr StringLiteral VERSION = "Version";
         static constexpr StringLiteral PORT_VERSION = "Port-Version";
+        static constexpr StringLiteral LANGUAGES = "Languages";
         static constexpr StringLiteral ARCHITECTURE = "Architecture";
         static constexpr StringLiteral MULTI_ARCH = "Multi-Arch";
     }
@@ -52,6 +53,7 @@ namespace vcpkg
                 parser.add_error(pv_position, msgPortVersionControlMustBeANonNegativeInteger);
             }
         }
+        this->languages = Strings::split(parser.optional_field(Fields::LANGUAGES), '\n');
 
         this->feature = parser.optional_field(Fields::FEATURE);
         this->description = Strings::split(parser.optional_field(Fields::DESCRIPTION), '\n');
@@ -103,6 +105,7 @@ namespace vcpkg
         , version(spgh.version)
         , description(spgh.description)
         , maintainers(spgh.maintainers)
+        , languages(spgh.languages)
         , feature()
         , default_features(default_features)
         , dependencies(std::move(deps))
@@ -118,6 +121,7 @@ namespace vcpkg
         , version()
         , description(fpgh.description)
         , maintainers()
+        , languages(fpgh.languages)
         , feature(fpgh.name)
         , default_features()
         , dependencies(std::move(deps))
@@ -133,6 +137,7 @@ namespace vcpkg
         };
 
         Util::sort_unique_erase(this->dependencies);
+        Util::sort_unique_erase(this->languages);
 
         for (auto& maintainer : this->maintainers)
         {
@@ -141,6 +146,11 @@ namespace vcpkg
         if (all_empty(this->maintainers))
         {
             this->maintainers.clear();
+        }
+
+        if (all_empty(this->languages))
+        {
+            this->languages.clear();
         }
 
         for (auto& desc : this->description)
@@ -176,6 +186,7 @@ namespace vcpkg
         if (lhs.version != rhs.version) return false;
         if (lhs.description != rhs.description) return false;
         if (lhs.maintainers != rhs.maintainers) return false;
+        if (lhs.languages != rhs.languages) return false;
         if (lhs.feature != rhs.feature) return false;
         if (lhs.default_features != rhs.default_features) return false;
         if (lhs.dependencies != rhs.dependencies) return false;
@@ -240,6 +251,11 @@ namespace vcpkg
             fmt::format_to(std::back_inserter(out_str), "{}: {}\n", Fields::PORT_VERSION, pgh.version.port_version);
         }
 
+        if (!pgh.languages.empty())
+        {        
+            serialize_array(Fields::LANGUAGES, pgh.languages, out_str);
+        }
+
         if (pgh.is_feature())
         {
             serialize_string(Fields::FEATURE, pgh.feature, out_str);
@@ -291,11 +307,12 @@ namespace vcpkg
     {
         static constexpr StringLiteral join_str = R"(", ")";
         return fmt::format(
-            "\nspec: \"{}\"\nversion: \"{}\"\nport_version: {}\ndescription: [\"{}\"]\nmaintainers: [\"{}\"]\nfeature: "
+            "\nspec: \"{}\"\nversion: \"{}\"\nport_version: {}\nlanguages: [\"{}\"]\ndescription: [\"{}\"]\nmaintainers: [\"{}\"]\nfeature: "
             "\"{}\"\ndefault_features: [\"{}\"]\ndependencies: [\"{}\"]\nabi: \"{}\"",
             paragraph.spec.to_string(),
             paragraph.version.text,
             paragraph.version.port_version,
+            Strings::join(join_str, paragraph.languages),
             Strings::join(join_str, paragraph.description),
             Strings::join(join_str, paragraph.maintainers),
             paragraph.feature,

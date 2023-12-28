@@ -90,6 +90,7 @@ namespace vcpkg
     {
         std::string name;
         std::vector<std::string> description;
+        std::vector<std::string> languages;
         std::vector<Dependency> dependencies;
         PlatformExpression::Expr supports_expression;
         // there are two distinct "empty" states here
@@ -114,6 +115,7 @@ namespace vcpkg
         std::vector<std::string> description;
         std::vector<std::string> summary;
         std::vector<std::string> maintainers;
+        std::vector<std::string> languages;
         std::string homepage;
         std::string documentation;
         std::vector<Dependency> dependencies;

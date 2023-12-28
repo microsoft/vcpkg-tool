@@ -3094,3 +3094,5 @@ DECLARE_MESSAGE(WhileParsingVersionsForPort,
 DECLARE_MESSAGE(WhileValidatingVersion, (msg::version), "", "while validating version: {version}")
 DECLARE_MESSAGE(WindowsOnlyCommand, (), "", "This command only supports Windows.")
 DECLARE_MESSAGE(WroteNuGetPkgConfInfo, (msg::path), "", "Wrote NuGet package config information to {path}")
+DECLARE_MESSAGE(AProgrammingLanguage, (), "", "a string representing a programming languages") 
+DECLARE_MESSAGE(AnArrayOfProgrammingLanguages, (), "", "an array of strings containing programming languages") 

@@ -1339,14 +1339,14 @@ namespace vcpkg
         return m_pimpl->m_env_cache.get_action_env(*this, pre_build_info, toolset);
     }
 
-    const std::string& VcpkgPaths::get_triplet_info(const PreBuildInfo& pre_build_info, const Toolset& toolset) const
+    const std::string& VcpkgPaths::get_triplet_info(const PreBuildInfo& pre_build_info, const Toolset& toolset, const std::set<std::string>& languages) const
     {
-        return m_pimpl->m_env_cache.get_triplet_info(*this, pre_build_info, toolset);
+        return m_pimpl->m_env_cache.get_triplet_info(*this, pre_build_info, toolset, languages);
     }
 
-    const CompilerInfo& VcpkgPaths::get_compiler_info(const PreBuildInfo& pre_build_info, const Toolset& toolset) const
+    const CompilerInfo& VcpkgPaths::get_compiler_info(const PreBuildInfo& pre_build_info, const Toolset& toolset, const std::set<std::string>& languages) const
     {
-        return m_pimpl->m_env_cache.get_compiler_info(*this, pre_build_info, toolset);
+        return m_pimpl->m_env_cache.get_compiler_info(*this, pre_build_info, toolset, languages);
     }
 
     const FeatureFlagSettings& VcpkgPaths::get_feature_flags() const { return m_pimpl->m_ff_settings; }
