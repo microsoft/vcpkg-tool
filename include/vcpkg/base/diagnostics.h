@@ -94,6 +94,8 @@ namespace vcpkg
         std::mutex m_mtx;
     };
 
+    extern DiagnosticContext& console_diagnostic_context;
+
     // If T Ty is an rvalue Optional<U>, typename UnwrapOptional<Ty>::type is the type necessary to forward U
     // Otherwise, there is no member UnwrapOptional<Ty>::type
     template<class Ty>
