@@ -1252,8 +1252,11 @@ namespace vcpkg
         static StringLiteral magic_string = "cdARN4xjKueKScMy9C6H";
 
         auto actual_cmd_line = cmd_line;
+#ifdef _WIN32
         actual_cmd_line.raw_arg(Strings::concat(" & echo ", magic_string, " & set"));
-
+#else
+        actual_cmd_line.raw_arg(Strings::concat(" && echo ", magic_string, " && printenv"));
+#endif
         Debug::print("command line: ", actual_cmd_line.command_line(), "\n");
         auto maybe_rc_output = cmd_execute_and_capture_output(actual_cmd_line, default_working_directory, env);
         if (!maybe_rc_output)

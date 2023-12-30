@@ -607,7 +607,7 @@ namespace vcpkg
 
         if(script.is_relative() || !fs.is_regular_file(script)) {
             // Throw error
-            //Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgInvalidEnvSetupScripts, msg::path = env_setup_script_file);
+            Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgInvalidEnvSetupScripts, msg::path = script);
         }
 
         if(script.extension() == ".cmake") 
@@ -620,7 +620,7 @@ namespace vcpkg
             env_setup_cmd = vcpkg::Command{"cmd"}.string_arg("/d").string_arg("/c");
             env_setup_cmd.raw_arg(fmt::format(R"("{}" 2>&1 <NUL)",script));
 #else
-            env_setup_cmd = vcpkg::Command{script}.raw_arg(fmt::format(R"2>&1 <NUL"));
+            env_setup_cmd = vcpkg::Command{script}.raw_arg(fmt::format(R"(2>&1 <NUL)"));
 #endif
 
         }  

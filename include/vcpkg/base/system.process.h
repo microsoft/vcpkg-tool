@@ -122,10 +122,8 @@ namespace vcpkg
                                const Environment& env = default_environment);
     ExpectedL<int> cmd_execute_clean(const Command& cmd_line, const WorkingDirectory& wd = default_working_directory);
 
-#if defined(_WIN32)
     Environment cmd_execute_and_capture_environment(const Command& cmd_line,
                                                     const Environment& env = default_environment);
-#endif
 
     void cmd_execute_background(const Command& cmd_line);
 
