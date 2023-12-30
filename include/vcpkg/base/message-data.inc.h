@@ -1893,6 +1893,10 @@ DECLARE_MESSAGE(InvalidCommentStyle,
                 "comments.")
 DECLARE_MESSAGE(InvalidCommitId, (msg::commit_sha), "", "Invalid commit id: {commit_sha}")
 DECLARE_MESSAGE(InvalidDefaultFeatureName, (), "", "'default' is a reserved feature name")
+DECLARE_MESSAGE(InvalidEnvSetupScripts, (msg::path), 
+                "", 
+                "Variable VCPKG_ENVIRONMENT_SETUP_SCRIPTS contains invalid file path: '{path}'. The value must be "
+                "an absolute path to an existent file.")
 DECLARE_MESSAGE(InvalidFeature,
                 (),
                 "",
