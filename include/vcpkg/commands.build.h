@@ -161,6 +161,7 @@ namespace vcpkg
         Optional<std::string> public_abi_override;
         std::vector<std::string> passthrough_env_vars;
         std::vector<std::string> passthrough_env_vars_tracked;
+        std::vector<std::string> environment_setup_scripts;
         Optional<Path> gamedk_latest_path;
 
         Path toolchain_file() const;
@@ -171,6 +172,7 @@ namespace vcpkg
     };
 
     vcpkg::Command make_build_env_cmd(const PreBuildInfo& pre_build_info, const Toolset& toolset);
+    vcpkg::Command make_setup_env_cmd(const VcpkgPaths& paths, const Path& script);
 
     struct ExtendedBuildResult
     {

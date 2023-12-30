@@ -472,16 +472,25 @@ namespace vcpkg
         return base_env.cmd_cache.get_lazy(build_env_cmd, [&]() {
             const Path& powershell_exe_path = paths.get_tool_exe("powershell-core", stdout_sink);
             auto clean_env = get_modified_clean_environment(base_env.env_map, powershell_exe_path.parent_path());
-            if (build_env_cmd.empty())
-                return clean_env;
-            else
-                return cmd_execute_and_capture_environment(build_env_cmd, clean_env);
+            auto action_env = build_env_cmd.empty() ? clean_env : cmd_execute_and_capture_environment(build_env_cmd, clean_env);
+            for(const auto& env_setup_script : pre_build_info.environment_setup_scripts)
+            {
+                const auto env_setup_cmd = make_setup_env_cmd(paths, env_setup_script);                     
+                action_env = cmd_execute_and_capture_environment(env_setup_cmd, action_env);
+            }
+            return action_env;
         });
     }
 #else
     const Environment& EnvCache::get_action_env(const VcpkgPaths&, const PreBuildInfo&, const Toolset&)
     {
-        return get_clean_environment();
+        auto action_env =  get_clean_environment();
+        for(const auto& env_setup_script : pre_build_info.environment_setup_scripts)
+        {
+            const auto env_setup_cmd = make_setup_env_cmd(pre_build_info, env_setup_script);                     
+            action_env = cmd_execute_and_capture_environment(env_setup_cmd, action_env);
+        }
+        return action_env;
     }
 #endif
 
@@ -589,6 +598,33 @@ namespace vcpkg
                         target,
                         tonull));
 #endif
+    }
+
+    vcpkg::Command make_setup_env_cmd(const VcpkgPaths& paths, const Path& script) 
+    {
+        vcpkg::Command env_setup_cmd;
+        const auto& fs = paths.get_filesystem(); 
+
+        if(script.is_relative() || !fs.is_regular_file(script)) {
+            // Throw error
+            //Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgInvalidEnvSetupScripts, msg::path = env_setup_script_file);
+        }
+
+        if(script.extension() == ".cmake") 
+        {
+            env_setup_cmd = vcpkg::make_cmake_cmd(paths, script, {});
+        }
+        else
+        {
+#ifdef _WIN32
+            env_setup_cmd = vcpkg::Command{"cmd"}.string_arg("/d").string_arg("/c");
+            env_setup_cmd.raw_arg(fmt::format(R"("{}" 2>&1 <NUL)",script));
+#else
+            env_setup_cmd = vcpkg::Command{script}.raw_arg(fmt::format(R"2>&1 <NUL"));
+#endif
+
+        }  
+        return env_setup_cmd;
     }
 
     static std::vector<PackageSpec> fspecs_to_pspecs(View<FeatureSpec> fspecs)
@@ -833,7 +869,7 @@ namespace vcpkg
 
     bool PreBuildInfo::using_vcvars() const
     {
-        return (!external_toolchain_file.has_value() || load_vcvars_env) &&
+        return (!external_toolchain_file.has_value() || !environment_setup_scripts.empty() || load_vcvars_env) &&
                (cmake_system_name.empty() || cmake_system_name == "WindowsStore");
     }
 
@@ -1789,6 +1825,7 @@ namespace vcpkg
             PUBLIC_ABI_OVERRIDE,
             LOAD_VCVARS_ENV,
             DISABLE_COMPILER_TRACKING,
+            ENVIRONMENT_SETUP_SCRIPTS,
             XBOX_CONSOLE_TARGET,
             Z_VCPKG_GameDKLatest
         };
@@ -1808,6 +1845,7 @@ namespace vcpkg
             // Note: this value must come after VCPKG_CHAINLOAD_TOOLCHAIN_FILE because its default depends upon it.
             {"VCPKG_LOAD_VCVARS_ENV", VcpkgTripletVar::LOAD_VCVARS_ENV},
             {"VCPKG_DISABLE_COMPILER_TRACKING", VcpkgTripletVar::DISABLE_COMPILER_TRACKING},
+            {"VCPKG_ENVIRONMENT_SETUP_SCRIPTS", VcpkgTripletVar::ENVIRONMENT_SETUP_SCRIPTS},
             {"VCPKG_XBOX_CONSOLE_TARGET", VcpkgTripletVar::XBOX_CONSOLE_TARGET},
             {"Z_VCPKG_GameDKLatest", VcpkgTripletVar::Z_VCPKG_GameDKLatest},
         };
@@ -1874,6 +1912,9 @@ namespace vcpkg
                         disable_compiler_tracking =
                             from_cmake_bool(variable_value, kv.first).value_or_exit(VCPKG_LINE_INFO);
                     }
+                    break;
+                case VcpkgTripletVar::ENVIRONMENT_SETUP_SCRIPTS:
+                    environment_setup_scripts = Strings::split(variable_value, ';');
                     break;
                 case VcpkgTripletVar::XBOX_CONSOLE_TARGET:
                     if (!variable_value.empty())
