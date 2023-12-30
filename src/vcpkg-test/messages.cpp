@@ -103,6 +103,185 @@ TEST_CASE ("generate message get_format_arg_mismatches", "[messages]")
 
 namespace
 {
+    template<class Void, class Test, class... Args>
+    constexpr bool adapt_context_to_expected_invocable_with_impl = false;
+
+    template<class Test, class... Args>
+    constexpr bool adapt_context_to_expected_invocable_with_impl<
+        std::void_t<decltype(adapt_context_to_expected(std::declval<Test>(), std::declval<Args>()...))>,
+        Test,
+        Args...> = true;
+
+    template<class Test, class... Args>
+    constexpr bool adapt_context_to_expected_invocable_with =
+        adapt_context_to_expected_invocable_with_impl<void, Test, Args...>;
+
+    int returns_int(DiagnosticContext&) { return 42; }
+    static_assert(!adapt_context_to_expected_invocable_with<decltype(returns_int)>,
+                  "Callable needs to return optional or unique_ptr");
+
+    // The following tests are the cross product of:
+    // {prvalue, lvalue, xvalue} X {non-const, const} X {non-ref, ref}
+
+    Optional<int> returns_optional_prvalue(DiagnosticContext&, int val) { return val; }
+    static_assert(adapt_context_to_expected_invocable_with<decltype(returns_optional_prvalue), int>, "boom");
+    static_assert(std::is_same_v<ExpectedL<int>, decltype(adapt_context_to_expected(returns_optional_prvalue, 42))>,
+                  "boom");
+
+    const Optional<int> returns_optional_const_prvalue(DiagnosticContext&, int val) { return val; }
+    static_assert(adapt_context_to_expected_invocable_with<decltype(returns_optional_const_prvalue), int>, "boom");
+    static_assert(
+        std::is_same_v<ExpectedL<int>, decltype(adapt_context_to_expected(returns_optional_const_prvalue, 42))>,
+        "boom");
+
+    Optional<int>& returns_optional_lvalue(DiagnosticContext&, Optional<int>& val) { return val; }
+    static_assert(adapt_context_to_expected_invocable_with<decltype(returns_optional_lvalue), Optional<int>&>, "boom");
+    static_assert(
+        std::is_same_v<ExpectedL<int&>,
+                       decltype(adapt_context_to_expected(returns_optional_lvalue, std::declval<Optional<int>&>()))>,
+        "boom");
+
+    const Optional<int>& returns_optional_const_lvalue(DiagnosticContext&, const Optional<int>& val) { return val; }
+    static_assert(
+        adapt_context_to_expected_invocable_with<decltype(returns_optional_const_lvalue), const Optional<int>&>,
+        "boom");
+    static_assert(std::is_same_v<ExpectedL<const int&>,
+                                 decltype(adapt_context_to_expected(returns_optional_const_lvalue,
+                                                                    std::declval<const Optional<int>&>()))>,
+                  "boom");
+
+    Optional<int>&& returns_optional_xvalue(DiagnosticContext&, Optional<int>&& val) { return std::move(val); }
+    static_assert(adapt_context_to_expected_invocable_with<decltype(returns_optional_xvalue), Optional<int>>, "boom");
+    static_assert(
+        std::is_same_v<ExpectedL<int&&>,
+                       decltype(adapt_context_to_expected(returns_optional_xvalue, std::declval<Optional<int>>()))>,
+        "boom");
+
+    const Optional<int>&& returns_optional_const_xvalue(DiagnosticContext&, Optional<int>&& val)
+    {
+        return std::move(val);
+    }
+    static_assert(adapt_context_to_expected_invocable_with<decltype(returns_optional_const_xvalue), Optional<int>>,
+                  "boom");
+    static_assert(std::is_same_v<ExpectedL<const int&&>,
+                                 decltype(adapt_context_to_expected(returns_optional_const_xvalue,
+                                                                    std::declval<Optional<int>>()))>,
+                  "boom");
+
+    Optional<int&> returns_optional_ref_prvalue(DiagnosticContext&, int val) { return val; }
+    static_assert(adapt_context_to_expected_invocable_with<decltype(returns_optional_ref_prvalue), int>, "boom");
+    static_assert(
+        std::is_same_v<ExpectedL<int&>, decltype(adapt_context_to_expected(returns_optional_ref_prvalue, 42))>, "boom");
+
+    const Optional<int&> returns_optional_ref_const_prvalue(DiagnosticContext&, int val) { return val; }
+    static_assert(adapt_context_to_expected_invocable_with<decltype(returns_optional_ref_const_prvalue), int>, "boom");
+    static_assert(
+        std::is_same_v<ExpectedL<int&>, decltype(adapt_context_to_expected(returns_optional_ref_const_prvalue, 42))>,
+        "boom");
+
+    Optional<int&>& returns_optional_ref_lvalue(DiagnosticContext&, Optional<int&>& val) { return val; }
+    static_assert(adapt_context_to_expected_invocable_with<decltype(returns_optional_ref_lvalue), Optional<int&>&>,
+                  "boom");
+    static_assert(std::is_same_v<ExpectedL<int&>,
+                                 decltype(adapt_context_to_expected(returns_optional_ref_lvalue,
+                                                                    std::declval<Optional<int&>&>()))>,
+                  "boom");
+
+    const Optional<int&>& returns_optional_ref_const_lvalue(DiagnosticContext&, const Optional<int&>& val)
+    {
+        return val;
+    }
+    static_assert(
+        adapt_context_to_expected_invocable_with<decltype(returns_optional_ref_const_lvalue), const Optional<int&>&>,
+        "boom");
+    static_assert(std::is_same_v<ExpectedL<int&>,
+                                 decltype(adapt_context_to_expected(returns_optional_ref_const_lvalue,
+                                                                    std::declval<const Optional<int&>&>()))>,
+                  "boom");
+
+    Optional<int&>&& returns_optional_ref_xvalue(DiagnosticContext&, Optional<int&>&& val) { return std::move(val); }
+    static_assert(adapt_context_to_expected_invocable_with<decltype(returns_optional_ref_xvalue), Optional<int&>>,
+                  "boom");
+    static_assert(std::is_same_v<ExpectedL<int&>,
+                                 decltype(adapt_context_to_expected(returns_optional_ref_xvalue,
+                                                                    std::declval<Optional<int&>>()))>,
+                  "boom");
+
+    const Optional<int&>&& returns_optional_ref_const_xvalue(DiagnosticContext&, Optional<int&>&& val)
+    {
+        return std::move(val);
+    }
+    static_assert(adapt_context_to_expected_invocable_with<decltype(returns_optional_ref_const_xvalue), Optional<int&>>,
+                  "boom");
+    static_assert(std::is_same_v<ExpectedL<int&>,
+                                 decltype(adapt_context_to_expected(returns_optional_ref_const_xvalue,
+                                                                    std::declval<Optional<int&>>()))>,
+                  "boom");
+
+    Optional<int> returns_optional_fail(DiagnosticContext& context)
+    {
+        context.report(DiagnosticLine{DiagKind::Error, LocalizedString::from_raw("something bad happened")});
+        return nullopt;
+    }
+
+    // The following tests are the cross product of:
+    // {prvalue, lvalue, xvalue} X {non-const, const}
+    std::unique_ptr<int> returns_unique_ptr_prvalue(DiagnosticContext&, int val)
+    {
+        return std::unique_ptr<int>{new int{val}};
+    }
+    static_assert(adapt_context_to_expected_invocable_with<decltype(returns_unique_ptr_prvalue), int>, "boom");
+    static_assert(std::is_same_v<ExpectedL<std::unique_ptr<int>>,
+                                 decltype(adapt_context_to_expected(returns_unique_ptr_prvalue, 42))>,
+                  "boom");
+
+    const std::unique_ptr<int> returns_unique_ptr_const_prvalue(DiagnosticContext&, int val); // not defined
+    static_assert(!adapt_context_to_expected_invocable_with<decltype(returns_unique_ptr_const_prvalue), int>, "boom");
+
+    std::unique_ptr<int>& returns_unique_ptr_lvalue(DiagnosticContext&, std::unique_ptr<int>& ret) { return ret; }
+    static_assert(adapt_context_to_expected_invocable_with<decltype(returns_unique_ptr_lvalue), std::unique_ptr<int>&>,
+                  "boom");
+    static_assert(std::is_same_v<ExpectedL<std::unique_ptr<int>&>,
+                                 decltype(adapt_context_to_expected(returns_unique_ptr_lvalue,
+                                                                    std::declval<std::unique_ptr<int>&>()))>,
+                  "boom");
+
+    const std::unique_ptr<int>& returns_unique_ptr_const_lvalue(DiagnosticContext&, const std::unique_ptr<int>& ret)
+    {
+        return ret;
+    }
+    static_assert(adapt_context_to_expected_invocable_with<decltype(returns_unique_ptr_const_lvalue),
+                                                           const std::unique_ptr<int>&>,
+                  "boom");
+    static_assert(std::is_same_v<ExpectedL<const std::unique_ptr<int>&>,
+                                 decltype(adapt_context_to_expected(returns_unique_ptr_const_lvalue,
+                                                                    std::declval<const std::unique_ptr<int>&>()))>,
+                  "boom");
+
+    std::unique_ptr<int>&& returns_unique_ptr_xvalue(DiagnosticContext&, std::unique_ptr<int>&& val)
+    {
+        return std::move(val);
+    }
+    static_assert(adapt_context_to_expected_invocable_with<decltype(returns_unique_ptr_xvalue), std::unique_ptr<int>&&>,
+                  "boom");
+    static_assert(std::is_same_v<ExpectedL<std::unique_ptr<int>&&>,
+                                 decltype(adapt_context_to_expected(returns_unique_ptr_xvalue,
+                                                                    std::declval<std::unique_ptr<int>>()))>,
+                  "boom");
+
+    const std::unique_ptr<int>&& returns_unique_ptr_const_xvalue(DiagnosticContext&,
+                                                                 const std::unique_ptr<int>&& val); // not defined
+
+    static_assert(!adapt_context_to_expected_invocable_with<decltype(returns_unique_ptr_const_xvalue),
+                                                            const std::unique_ptr<int>&&>,
+                  "boom");
+
+    std::unique_ptr<int> returns_unique_ptr_fail(DiagnosticContext& context)
+    {
+        context.report(DiagnosticLine{DiagKind::Error, LocalizedString::from_raw("something bad happened")});
+        return nullptr;
+    }
+
     struct OnlyMoveOnce
     {
         bool& m_moved;
@@ -118,87 +297,57 @@ namespace
         OnlyMoveOnce& operator=(const OnlyMoveOnce&) = delete;
         OnlyMoveOnce& operator=(OnlyMoveOnce&&) = delete;
     };
-
-    int returns_int(DiagnosticContext&) { return 42; }
-    std::unique_ptr<int> returns_unique_ptr(DiagnosticContext&) { return std::unique_ptr<int>{new int{42}}; }
-    Optional<int> returns_optional_prvalue(DiagnosticContext&, int val) { return val; }
-    const Optional<int> returns_optional_const_prvalue(DiagnosticContext&, int val) { return val; }
-    Optional<int>&& returns_optional_xvalue(DiagnosticContext&, Optional<int>&& val) { return std::move(val); }
-    const Optional<int>&& returns_optional_const_xvalue(DiagnosticContext&, Optional<int>&& val)
-    {
-        return std::move(val);
-    }
-    Optional<int> returns_optional_prvalue_fail(DiagnosticContext& context)
-    {
-        context.report(DiagnosticLine{DiagKind::Error, LocalizedString::from_raw("something bad happened")});
-        return nullopt;
-    }
-    const Optional<int> returns_optional_const_prvalue_fail(DiagnosticContext& context)
-    {
-        context.report(DiagnosticLine{DiagKind::Error, LocalizedString::from_raw("something bad happened")});
-        return nullopt;
-    }
-    Optional<int>&& returns_optional_xvalue_fail(DiagnosticContext& context, Optional<int>&& val)
-    {
-        val.clear();
-        context.report(DiagnosticLine{DiagKind::Error, LocalizedString::from_raw("something bad happened")});
-        return std::move(val);
-    }
-
-    const Optional<int>&& returns_optional_const_xvalue_fail(DiagnosticContext& context, Optional<int>&& val)
-    {
-        val.clear();
-        context.report(DiagnosticLine{DiagKind::Error, LocalizedString::from_raw("something bad happened")});
-        return std::move(val);
-    }
-
-    template<class Void, class Test, class... Args>
-    constexpr bool adapt_context_to_expected_invocable_with_impl = false;
-
-    template<class Test, class... Args>
-    constexpr bool adapt_context_to_expected_invocable_with_impl<
-        std::void_t<decltype(adapt_context_to_expected(std::declval<Test>(), std::declval<Args>()...))>,
-        Test,
-        Args...> = true;
-
-    template<class Test, class... Args>
-    constexpr bool adapt_context_to_expected_invocable_with =
-        adapt_context_to_expected_invocable_with_impl<void, Test, Args...>;
 } // unnamed namespace
 
 TEST_CASE ("adapt DiagnosticContext to ExpectedL", "[diagnostics]")
 {
-    // adapt_context_to_expected(returns_int); // should not compile
-    static_assert(!adapt_context_to_expected_invocable_with<decltype(returns_int)>,
-                  "Callable needs to return optional");
-    // adapt_context_to_expected(returns_unique_ptr); // should not compile
-    static_assert(!adapt_context_to_expected_invocable_with<decltype(returns_unique_ptr)>,
-                  "Callable needs to return optional");
-
-    static_assert(adapt_context_to_expected_invocable_with<decltype(returns_optional_prvalue), int>,
-                  "adapt_context_to_expected_invocable_with needs to succeed with a value that should "
-                  "work");
-
-    // test that the type of ExpectedL is determined correctly
-    static_assert(std::is_same_v<ExpectedL<int>, decltype(adapt_context_to_expected(returns_optional_prvalue, 42))>,
-                  "boom");
-    static_assert(
-        std::is_same_v<ExpectedL<int>, decltype(adapt_context_to_expected(returns_optional_const_prvalue, 42))>,
-        "boom");
-    static_assert(
-        std::is_same_v<ExpectedL<int&&>,
-                       decltype(adapt_context_to_expected(returns_optional_xvalue, std::declval<Optional<int>>()))>,
-        "boom");
-    static_assert(std::is_same_v<ExpectedL<const int&&>,
-                                 decltype(adapt_context_to_expected(returns_optional_const_xvalue,
-                                                                    std::declval<Optional<int>>()))>,
-                  "boom");
+    // returns_optional_prvalue
     {
         auto adapted = adapt_context_to_expected(returns_optional_prvalue, 42);
         REQUIRE(adapted.value_or_exit(VCPKG_LINE_INFO) == 42);
     }
+    // returns_optional_const_prvalue
     {
-        auto adapted = adapt_context_to_expected(returns_optional_prvalue_fail);
+        auto adapted = adapt_context_to_expected(returns_optional_const_prvalue, 42);
+        REQUIRE(adapted.value_or_exit(VCPKG_LINE_INFO) == 42);
+    }
+    // returns_optional_lvalue
+    {
+        int the_lvalue = 42;
+        auto adapted = adapt_context_to_expected(returns_optional_prvalue, the_lvalue);
+        REQUIRE(&adapted.value_or_exit(VCPKG_LINE_INFO) == &the_lvalue);
+    }
+    // returns_optional_const_lvalue
+    {
+        int the_lvalue = 42;
+        auto adapted = adapt_context_to_expected(returns_optional_const_prvalue, the_lvalue);
+        REQUIRE(&adapted.value_or_exit(VCPKG_LINE_INFO) == &the_lvalue);
+    }
+    // returns_optional_xvalue
+    {
+        Optional<int> an_lvalue = 42;
+        REQUIRE(&(adapt_context_to_expected(returns_optional_xvalue, std::move(an_lvalue))) == &an_lvalue);
+    }
+    // returns_optional_const_xvalue
+    //
+    // returns_optional_ref_prvalue
+    // returns_optional_ref_const_prvalue
+    // returns_optional_ref_lvalue
+    // returns_optional_ref_const_lvalue
+    // returns_optional_ref_xvalue
+    // returns_optional_ref_const_xvalue
+    //
+    // returns_optional_prvalue_fail
+    //
+    // returns_unique_ptr_prvalue
+    // returns_unique_ptr_lvalue
+    // returns_unique_ptr_const_lvalue
+    // returns_unique_ptr_xvalue
+    // returns_unique_ptr_const_xvalue
+    //
+    // returns_unique_ptr_fail
+    {
+        auto adapted = adapt_context_to_expected(returns_optional_fail);
         REQUIRE(!adapted.has_value());
         REQUIRE(adapted.error() == LocalizedString::from_raw("error: something bad happened"));
     }

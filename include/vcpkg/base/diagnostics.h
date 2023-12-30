@@ -96,19 +96,18 @@ namespace vcpkg
 
     extern DiagnosticContext& console_diagnostic_context;
 
-    // If T Ty is an rvalue Optional<U>, typename UnwrapOptional<Ty>::type is the type necessary to forward U
-    // Otherwise, there is no member UnwrapOptional<Ty>::type
+    // If Ty is an Optional<U>, typename AdaptContextUnwrapOptional<Ty>::type is the type necessary to return U, and fwd
+    // is the type necessary to forward U. Otherwise, there are no members ::type or ::fwd
     template<class Ty>
-    struct UnwrapOptional
+    struct AdaptContextUnwrapOptional
     {
         // no member ::type, SFINAEs out when the input type is:
         // * not Optional
-        // * not an rvalue
         // * volatile
     };
 
     template<class Wrapped>
-    struct UnwrapOptional<Optional<Wrapped>>
+    struct AdaptContextUnwrapOptional<Optional<Wrapped>>
     {
         // prvalue
         using type = Wrapped;
@@ -116,7 +115,7 @@ namespace vcpkg
     };
 
     template<class Wrapped>
-    struct UnwrapOptional<const Optional<Wrapped>>
+    struct AdaptContextUnwrapOptional<const Optional<Wrapped>>
     {
         // const prvalue
         using type = Wrapped;
@@ -124,7 +123,23 @@ namespace vcpkg
     };
 
     template<class Wrapped>
-    struct UnwrapOptional<Optional<Wrapped>&&>
+    struct AdaptContextUnwrapOptional<Optional<Wrapped>&>
+    {
+        // lvalue
+        using type = Wrapped&;
+        using fwd = Wrapped&;
+    };
+
+    template<class Wrapped>
+    struct AdaptContextUnwrapOptional<const Optional<Wrapped>&>
+    {
+        // const lvalue
+        using type = const Wrapped&;
+        using fwd = const Wrapped&;
+    };
+
+    template<class Wrapped>
+    struct AdaptContextUnwrapOptional<Optional<Wrapped>&&>
     {
         // xvalue
         using type = Wrapped&&;
@@ -132,7 +147,7 @@ namespace vcpkg
     };
 
     template<class Wrapped>
-    struct UnwrapOptional<const Optional<Wrapped>&&>
+    struct AdaptContextUnwrapOptional<const Optional<Wrapped>&&>
     {
         // const xvalue
         using type = const Wrapped&&;
@@ -140,19 +155,95 @@ namespace vcpkg
     };
 
     template<class Fn, class... Args>
-    auto adapt_context_to_expected(Fn functor, Args&&... args)
-        -> ExpectedL<typename UnwrapOptional<std::invoke_result_t<Fn, BufferedDiagnosticContext&, Args...>>::type>
+    auto adapt_context_to_expected(Fn functor, Args&&... args) -> ExpectedL<
+        typename AdaptContextUnwrapOptional<std::invoke_result_t<Fn, BufferedDiagnosticContext&, Args...>>::type>
     {
-        using Contained = typename UnwrapOptional<std::invoke_result_t<Fn, BufferedDiagnosticContext&, Args...>>::type;
+        using Contained =
+            typename AdaptContextUnwrapOptional<std::invoke_result_t<Fn, BufferedDiagnosticContext&, Args...>>::type;
         BufferedDiagnosticContext bdc;
         auto maybe_result = functor(bdc, std::forward<Args>(args)...);
         if (auto result = maybe_result.get())
         {
             // N.B.: This may be a move
             return ExpectedL<Contained>{
-                static_cast<
-                    typename UnwrapOptional<std::invoke_result_t<Fn, BufferedDiagnosticContext&, Args...>>::fwd>(
-                    *result),
+                static_cast<typename AdaptContextUnwrapOptional<
+                    std::invoke_result_t<Fn, BufferedDiagnosticContext&, Args...>>::fwd>(*result),
+                expected_left_tag};
+        }
+
+        return ExpectedL<Contained>{LocalizedString::from_raw(bdc.to_string()), expected_right_tag};
+    }
+
+    // If Ty is a std::unique_ptr<U>, typename AdaptContextDetectUniquePtr<Ty>::type is the type necessary to return
+    // and fwd is the type necessary to move if necessary. Otherwise, there are no members ::type or ::fwd
+    template<class Ty>
+    struct AdaptContextDetectUniquePtr
+    {
+        // no member ::type, SFINAEs out when the input type is:
+        // * not unique_ptr
+        // * volatile
+    };
+
+    template<class Wrapped, class Deleter>
+    struct AdaptContextDetectUniquePtr<std::unique_ptr<Wrapped, Deleter>>
+    {
+        // prvalue
+        using type = std::unique_ptr<Wrapped, Deleter>;
+        using fwd = type&&;
+    };
+
+    template<class Wrapped, class Deleter>
+    struct AdaptContextDetectUniquePtr<const std::unique_ptr<Wrapped, Deleter>>
+    {
+        // const prvalue (not valid, can't be moved from)
+        // no members
+    };
+
+    template<class Wrapped, class Deleter>
+    struct AdaptContextDetectUniquePtr<std::unique_ptr<Wrapped, Deleter>&>
+    {
+        // lvalue
+        using type = std::unique_ptr<Wrapped, Deleter>&;
+        using fwd = type&;
+    };
+
+    template<class Wrapped, class Deleter>
+    struct AdaptContextDetectUniquePtr<const std::unique_ptr<Wrapped, Deleter>&>
+    {
+        // const lvalue
+        using type = const std::unique_ptr<Wrapped, Deleter>&;
+        using fwd = type;
+    };
+
+    template<class Wrapped, class Deleter>
+    struct AdaptContextDetectUniquePtr<std::unique_ptr<Wrapped, Deleter>&&>
+    {
+        // xvalue
+        using type = std::unique_ptr<Wrapped, Deleter>&&;
+        using fwd = type;
+    };
+
+    template<class Wrapped, class Deleter>
+    struct AdaptContextDetectUniquePtr<const std::unique_ptr<Wrapped, Deleter>&&>
+    {
+        // const xvalue (not valid, can't be moved from)
+        // no members
+    };
+
+    template<class Fn, class... Args>
+    auto adapt_context_to_expected(Fn functor, Args&&... args) -> ExpectedL<
+        typename AdaptContextDetectUniquePtr<std::invoke_result_t<Fn, BufferedDiagnosticContext&, Args...>>::type>
+    {
+        using Contained =
+            typename AdaptContextDetectUniquePtr<std::invoke_result_t<Fn, BufferedDiagnosticContext&, Args...>>::type;
+        BufferedDiagnosticContext bdc;
+        auto maybe_result = functor(bdc, std::forward<Args>(args)...);
+        if (maybe_result)
+        {
+            // N.B.: This may be a move
+            return ExpectedL<Contained>{
+                static_cast<typename AdaptContextDetectUniquePtr<
+                    std::invoke_result_t<Fn, BufferedDiagnosticContext&, Args...>>::fwd>(maybe_result),
                 expected_left_tag};
         }
 
