@@ -220,7 +220,7 @@ namespace
 
     Optional<int> returns_optional_fail(DiagnosticContext& context)
     {
-        context.report(DiagnosticLine{DiagKind::Error, LocalizedString::from_raw("something bad happened")});
+        context.report({DiagKind::Error, LocalizedString::from_raw("something bad happened")});
         return nullopt;
     }
 
@@ -278,7 +278,7 @@ namespace
 
     std::unique_ptr<int> returns_unique_ptr_fail(DiagnosticContext& context)
     {
-        context.report(DiagnosticLine{DiagKind::Error, LocalizedString::from_raw("something bad happened")});
+        context.report({DiagKind::Error, LocalizedString::from_raw("something bad happened")});
         return nullptr;
     }
 

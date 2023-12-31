@@ -30,18 +30,24 @@ namespace vcpkg
 
     struct DiagnosticLine
     {
-        DiagnosticLine(DiagKind kind, LocalizedString&& message)
-            : m_kind(kind), m_origin(), m_position(), m_message(std::move(message))
+        template<class MessageLike, std::enable_if_t<std::is_convertible_v<MessageLike, LocalizedString>, int> = 0>
+        DiagnosticLine(DiagKind kind, MessageLike&& message)
+            : m_kind(kind), m_origin(), m_position(), m_message(std::forward<MessageLike>(message))
         {
         }
 
-        DiagnosticLine(DiagKind kind, StringView origin, LocalizedString&& message)
-            : m_kind(kind), m_origin(origin.to_string()), m_position(), m_message(std::move(message))
+        template<class MessageLike, std::enable_if_t<std::is_convertible_v<MessageLike, LocalizedString>, int> = 0>
+        DiagnosticLine(DiagKind kind, StringView origin, MessageLike&& message)
+            : m_kind(kind), m_origin(origin.to_string()), m_position(), m_message(std::forward<MessageLike>(message))
         {
         }
 
-        DiagnosticLine(DiagKind kind, StringView origin, TextPosition position, LocalizedString&& message)
-            : m_kind(kind), m_origin(origin.to_string()), m_position(position), m_message(std::move(message))
+        template<class MessageLike, std::enable_if_t<std::is_convertible_v<MessageLike, LocalizedString>, int> = 0>
+        DiagnosticLine(DiagKind kind, StringView origin, TextPosition position, MessageLike&& message)
+            : m_kind(kind)
+            , m_origin(origin.to_string())
+            , m_position(position)
+            , m_message(std::forward<MessageLike>(message))
         {
         }
 
@@ -69,6 +75,16 @@ namespace vcpkg
         // This serves to make multithreaded code that reports only via this mechanism safe.
         virtual void report(const DiagnosticLine& line) = 0;
         virtual void report(DiagnosticLine&& line) { report(line); }
+
+        void report_error(const LocalizedString& message) { report(DiagnosticLine{DiagKind::Error, message}); }
+        void report_error(LocalizedString&& message) { report(DiagnosticLine{DiagKind::Error, std::move(message)}); }
+        template<VCPKG_DECL_MSG_TEMPLATE>
+        void report_error(VCPKG_DECL_MSG_ARGS)
+        {
+            LocalizedString message;
+            msg::format_to(message, VCPKG_EXPAND_MSG_ARGS);
+            this->report_error(std::move(message));
+        }
 
     protected:
         ~DiagnosticContext() = default;
