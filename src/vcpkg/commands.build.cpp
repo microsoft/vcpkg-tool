@@ -492,20 +492,27 @@ namespace vcpkg
 #else
     const Environment& EnvCache::get_action_env(const VcpkgPaths& paths, const PreBuildInfo& pre_build_info, const Toolset&)
     {
-        static auto action_env = get_clean_environment();
-        for(const auto& env_setup_script : pre_build_info.environment_setup_scripts)
-        {
-                const auto env_setup_cmd = make_setup_env_cmd(paths, env_setup_script);
-                if(vcpkg::Strings::ends_with(env_setup_script,".cmake")) 
-                {
-                    cmd_execute(env_setup_cmd, default_working_directory, action_env);
-                }
-                else 
-                {
-                    action_env = cmd_execute_and_capture_environment(env_setup_cmd, action_env);
-                }
-        }
-        return action_env;
+        auto action_env = get_clean_environment();
+        const auto& base_env = envs.get_lazy(pre_build_info.environment_setup_scripts,[] () {return EnvMapEntry{};});
+
+        // I think this should be done differently but I don't exactly know how to build the commands beforehand.
+        // Can I stack base_env.cmd_cache.get_lazy in a loop?
+
+        return base_env.cmd_cache.get_lazy(vcpkg::Command{}, [&]() {
+            for(const auto& env_setup_script : pre_build_info.environment_setup_scripts)
+            {
+                    const auto env_setup_cmd = make_setup_env_cmd(paths, env_setup_script);
+                    if(vcpkg::Strings::ends_with(env_setup_script,".cmake")) 
+                    {
+                        cmd_execute(env_setup_cmd, default_working_directory, action_env);
+                    }
+                    else 
+                    {
+                        action_env = cmd_execute_and_capture_environment(env_setup_cmd, action_env);
+                    }
+            }
+            return action_env;
+        });
     }
 #endif
 
