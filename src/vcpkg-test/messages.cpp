@@ -329,6 +329,18 @@ TEST_CASE ("adapt DiagnosticContext to ExpectedL", "[diagnostics]")
         auto adapted = adapt_context_to_expected(returns_optional_prvalue, 42);
         REQUIRE(adapted.value_or_exit(VCPKG_LINE_INFO) == 42);
     }
+    {
+        int move_limit = 1;
+        auto adapted = adapt_context_to_expected(
+            [](DiagnosticContext&, int& move_limit) {
+                Optional<MoveCounter> ret;
+                ret.emplace(move_limit);
+                return ret;
+            },
+            move_limit);
+
+        REQUIRE(move_limit == 0);
+    }
     // returns_optional_const_prvalue
     {
         auto adapted = adapt_context_to_expected(returns_optional_const_prvalue, 42);
