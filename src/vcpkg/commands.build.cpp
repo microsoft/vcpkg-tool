@@ -475,20 +475,35 @@ namespace vcpkg
             auto action_env = build_env_cmd.empty() ? clean_env : cmd_execute_and_capture_environment(build_env_cmd, clean_env);
             for(const auto& env_setup_script : pre_build_info.environment_setup_scripts)
             {
-                const auto env_setup_cmd = make_setup_env_cmd(paths, env_setup_script);                     
-                action_env = cmd_execute_and_capture_environment(env_setup_cmd, action_env);
+                const auto env_setup_cmd = make_setup_env_cmd(paths, env_setup_script);
+                if(vcpkg::Strings::ends_with(env_setup_script,".cmake")) 
+                {
+                    cmd_execute(env_setup_cmd, default_working_directory, action_env);
+                }
+                else 
+                {
+                    action_env = cmd_execute_and_capture_environment(env_setup_cmd, action_env);
+                }                     
+
             }
             return action_env;
         });
     }
 #else
-    const Environment& EnvCache::get_action_env(const VcpkgPaths&, const PreBuildInfo&, const Toolset&)
+    const Environment& EnvCache::get_action_env(const VcpkgPaths& paths, const PreBuildInfo& pre_build_info, const Toolset&)
     {
-        auto action_env =  get_clean_environment();
+        static auto action_env = get_clean_environment();
         for(const auto& env_setup_script : pre_build_info.environment_setup_scripts)
         {
-            const auto env_setup_cmd = make_setup_env_cmd(pre_build_info, env_setup_script);                     
-            action_env = cmd_execute_and_capture_environment(env_setup_cmd, action_env);
+                const auto env_setup_cmd = make_setup_env_cmd(paths, env_setup_script);
+                if(vcpkg::Strings::ends_with(env_setup_script,".cmake")) 
+                {
+                    cmd_execute(env_setup_cmd, default_working_directory, action_env);
+                }
+                else 
+                {
+                    action_env = cmd_execute_and_capture_environment(env_setup_cmd, action_env);
+                }
         }
         return action_env;
     }
@@ -604,7 +619,7 @@ namespace vcpkg
     {
         vcpkg::Command env_setup_cmd;
         const auto& fs = paths.get_filesystem(); 
-
+        
         if(script.is_relative() || !fs.is_regular_file(script)) {
             // Throw error
             Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgInvalidEnvSetupScripts, msg::path = script);
@@ -620,7 +635,7 @@ namespace vcpkg
             env_setup_cmd = vcpkg::Command{"cmd"}.string_arg("/d").string_arg("/c");
             env_setup_cmd.raw_arg(fmt::format(R"("{}" 2>&1 <NUL)",script));
 #else
-            env_setup_cmd = vcpkg::Command{script}.raw_arg(fmt::format(R"(2>&1 <NUL)"));
+            env_setup_cmd = vcpkg::Command{"."}.raw_arg(fmt::format(R"({} 2>&1 </dev/null)",script));
 #endif
 
         }  
