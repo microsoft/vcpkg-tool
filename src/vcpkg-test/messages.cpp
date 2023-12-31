@@ -153,7 +153,7 @@ namespace
     Optional<int>&& returns_optional_xvalue(DiagnosticContext&, Optional<int>&& val) { return std::move(val); }
     static_assert(adapt_context_to_expected_invocable_with<decltype(returns_optional_xvalue), Optional<int>>, "boom");
     static_assert(
-        std::is_same_v<ExpectedL<int&&>,
+        std::is_same_v<ExpectedL<int>,
                        decltype(adapt_context_to_expected(returns_optional_xvalue, std::declval<Optional<int>>()))>,
         "boom");
 
@@ -163,20 +163,23 @@ namespace
     }
     static_assert(adapt_context_to_expected_invocable_with<decltype(returns_optional_const_xvalue), Optional<int>>,
                   "boom");
-    static_assert(std::is_same_v<ExpectedL<const int&&>,
+    static_assert(std::is_same_v<ExpectedL<int>,
                                  decltype(adapt_context_to_expected(returns_optional_const_xvalue,
                                                                     std::declval<Optional<int>>()))>,
                   "boom");
 
-    Optional<int&> returns_optional_ref_prvalue(DiagnosticContext&, int val) { return val; }
-    static_assert(adapt_context_to_expected_invocable_with<decltype(returns_optional_ref_prvalue), int>, "boom");
+    Optional<int&> returns_optional_ref_prvalue(DiagnosticContext&, int& val) { return val; }
+    static_assert(adapt_context_to_expected_invocable_with<decltype(returns_optional_ref_prvalue), int&>, "boom");
     static_assert(
-        std::is_same_v<ExpectedL<int&>, decltype(adapt_context_to_expected(returns_optional_ref_prvalue, 42))>, "boom");
+        std::is_same_v<ExpectedL<int&>,
+                       decltype(adapt_context_to_expected(returns_optional_ref_prvalue, std::declval<int&>()))>,
+        "boom");
 
-    const Optional<int&> returns_optional_ref_const_prvalue(DiagnosticContext&, int val) { return val; }
-    static_assert(adapt_context_to_expected_invocable_with<decltype(returns_optional_ref_const_prvalue), int>, "boom");
+    const Optional<int&> returns_optional_ref_const_prvalue(DiagnosticContext&, int& val) { return val; }
+    static_assert(adapt_context_to_expected_invocable_with<decltype(returns_optional_ref_const_prvalue), int&>, "boom");
     static_assert(
-        std::is_same_v<ExpectedL<int&>, decltype(adapt_context_to_expected(returns_optional_ref_const_prvalue, 42))>,
+        std::is_same_v<ExpectedL<int&>,
+                       decltype(adapt_context_to_expected(returns_optional_ref_const_prvalue, std::declval<int&>()))>,
         "boom");
 
     Optional<int&>& returns_optional_ref_lvalue(DiagnosticContext&, Optional<int&>& val) { return val; }
@@ -282,22 +285,42 @@ namespace
         return nullptr;
     }
 
-    struct OnlyMoveOnce
+    struct CopyOnce
     {
-        bool& m_moved;
+        bool& m_copied;
 
-        explicit OnlyMoveOnce(bool& moved) : m_moved(moved) { }
-        OnlyMoveOnce(const OnlyMoveOnce&) = delete;
-        OnlyMoveOnce(OnlyMoveOnce&& other) : m_moved(other.m_moved)
+        explicit CopyOnce(bool& copied) : m_copied(copied) { }
+        CopyOnce(const CopyOnce& other) : m_copied(other.m_copied)
         {
-            REQUIRE(!m_moved);
-            m_moved = true;
+            REQUIRE(!m_copied);
+            m_copied = true;
         }
 
-        OnlyMoveOnce& operator=(const OnlyMoveOnce&) = delete;
-        OnlyMoveOnce& operator=(OnlyMoveOnce&&) = delete;
+        CopyOnce& operator=(const CopyOnce&) = delete;
+    };
+
+    struct MoveCounter
+    {
+        int& m_move_limit;
+
+        explicit MoveCounter(int& move_limit) : m_move_limit(move_limit) { }
+        MoveCounter(const MoveCounter&) = delete;
+        MoveCounter(MoveCounter&& other) : m_move_limit(other.m_move_limit)
+        {
+            REQUIRE(m_move_limit > 0);
+            --m_move_limit;
+        }
+
+        MoveCounter& operator=(const MoveCounter&) = delete;
+        MoveCounter& operator=(MoveCounter&&) = delete;
     };
 } // unnamed namespace
+
+template<class T, class U>
+bool same_object(T& lhs, U& rhs)
+{
+    return &lhs == &rhs;
+}
 
 TEST_CASE ("adapt DiagnosticContext to ExpectedL", "[diagnostics]")
 {
@@ -313,27 +336,77 @@ TEST_CASE ("adapt DiagnosticContext to ExpectedL", "[diagnostics]")
     }
     // returns_optional_lvalue
     {
-        int the_lvalue = 42;
-        auto adapted = adapt_context_to_expected(returns_optional_prvalue, the_lvalue);
-        REQUIRE(&adapted.value_or_exit(VCPKG_LINE_INFO) == &the_lvalue);
+        Optional<int> the_lvalue = 42;
+        auto adapted = adapt_context_to_expected(returns_optional_lvalue, the_lvalue);
+        REQUIRE(same_object(adapted.value_or_exit(VCPKG_LINE_INFO), the_lvalue.value_or_exit(VCPKG_LINE_INFO)));
     }
     // returns_optional_const_lvalue
     {
-        int the_lvalue = 42;
-        auto adapted = adapt_context_to_expected(returns_optional_const_prvalue, the_lvalue);
-        REQUIRE(&adapted.value_or_exit(VCPKG_LINE_INFO) == &the_lvalue);
+        Optional<int> the_lvalue = 42;
+        auto adapted = adapt_context_to_expected(returns_optional_const_lvalue, the_lvalue);
+        REQUIRE(same_object(adapted.value_or_exit(VCPKG_LINE_INFO), the_lvalue.value_or_exit(VCPKG_LINE_INFO)));
     }
     // returns_optional_xvalue
     {
         Optional<int> an_lvalue = 42;
-        REQUIRE(&(adapt_context_to_expected(returns_optional_xvalue, std::move(an_lvalue))) == &an_lvalue);
+        REQUIRE(
+            adapt_context_to_expected(returns_optional_xvalue, std::move(an_lvalue)).value_or_exit(VCPKG_LINE_INFO) ==
+            42);
+    }
+    {
+        int move_limit = 1;
+        Optional<MoveCounter> an_lvalue;
+        an_lvalue.emplace(move_limit);
+        auto adapted = adapt_context_to_expected(
+            [](DiagnosticContext&, Optional<MoveCounter>&& ret) -> Optional<MoveCounter>&& { return std::move(ret); },
+            std::move(an_lvalue));
+
+        REQUIRE(move_limit == 0);
     }
     // returns_optional_const_xvalue
-    //
+    {
+        Optional<int> an_lvalue = 42;
+        REQUIRE(adapt_context_to_expected(returns_optional_const_xvalue, std::move(an_lvalue))
+                    .value_or_exit(VCPKG_LINE_INFO) == 42);
+    }
+    {
+        bool copied = false;
+        Optional<CopyOnce> an_lvalue;
+        an_lvalue.emplace(copied);
+        auto adapted = adapt_context_to_expected(
+            [](DiagnosticContext&, const Optional<CopyOnce>&& ret) -> const Optional<CopyOnce>&& {
+                return std::move(ret);
+            },
+            std::move(an_lvalue));
+
+        REQUIRE(copied);
+    }
     // returns_optional_ref_prvalue
+    {
+        int the_lvalue = 42;
+        auto adapted = adapt_context_to_expected(returns_optional_ref_prvalue, the_lvalue);
+        REQUIRE(adapted.get() == &the_lvalue);
+    }
     // returns_optional_ref_const_prvalue
+    {
+        int the_lvalue = 42;
+        auto adapted = adapt_context_to_expected(returns_optional_ref_const_prvalue, the_lvalue);
+        REQUIRE(adapted.get() == &the_lvalue);
+    }
     // returns_optional_ref_lvalue
+    {
+        int the_inside_lvalue = 42;
+        Optional<int&> the_lvalue{the_inside_lvalue};
+        auto adapted = adapt_context_to_expected(returns_optional_ref_lvalue, the_lvalue);
+        REQUIRE(adapted.get() == &the_inside_lvalue);
+    }
     // returns_optional_ref_const_lvalue
+    {
+        int the_inside_lvalue = 42;
+        Optional<int&> the_lvalue{the_inside_lvalue};
+        auto adapted = adapt_context_to_expected(returns_optional_ref_const_lvalue, the_lvalue);
+        REQUIRE(adapted.get() == &the_inside_lvalue);
+    }
     // returns_optional_ref_xvalue
     // returns_optional_ref_const_xvalue
     //

@@ -158,7 +158,7 @@ namespace vcpkg
     struct AdaptContextUnwrapOptional<Optional<Wrapped>&&>
     {
         // xvalue
-        using type = Wrapped&&;
+        using type = Wrapped;
         using fwd = Wrapped&&;
     };
 
@@ -166,8 +166,8 @@ namespace vcpkg
     struct AdaptContextUnwrapOptional<const Optional<Wrapped>&&>
     {
         // const xvalue
-        using type = const Wrapped&&;
-        using fwd = Wrapped&&;
+        using type = Wrapped;
+        using fwd = const Wrapped&&;
     };
 
     template<class Fn, class... Args>
@@ -177,7 +177,7 @@ namespace vcpkg
         using Contained =
             typename AdaptContextUnwrapOptional<std::invoke_result_t<Fn, BufferedDiagnosticContext&, Args...>>::type;
         BufferedDiagnosticContext bdc;
-        auto maybe_result = functor(bdc, std::forward<Args>(args)...);
+        decltype(auto) maybe_result = functor(bdc, std::forward<Args>(args)...);
         if (auto result = maybe_result.get())
         {
             // N.B.: This may be a move
