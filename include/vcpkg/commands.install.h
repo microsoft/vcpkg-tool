@@ -111,4 +111,6 @@ namespace vcpkg
                                   Triplet host_triplet);
 
     void track_install_plan(const ActionPlan& plan);
+
+    void check_visual_studio_prompt_toolset_version(const ActionPlan& plan);
 }

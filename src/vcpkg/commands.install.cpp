@@ -1376,6 +1376,7 @@ namespace vcpkg
 
         paths.flush_lockfile();
 
+        check_visual_studio_prompt_toolset_version(action_plan);
         track_install_plan(action_plan);
         install_preclear_packages(paths, action_plan);
 
@@ -1504,5 +1505,31 @@ namespace vcpkg
         }
 
         get_global_metrics_collector().track_string(StringMetric::InstallPlan_1, specs_string);
+    }
+
+    void check_visual_studio_prompt_toolset_version(const ActionPlan& action_plan) {
+#if defined(_WIN32)
+        const auto vscmd_vctools_version_env = get_environment_variable("VCToolsVersion");
+        if (vscmd_vctools_version_env)
+        {
+            for (auto&& action : action_plan.install_actions)
+            {
+                if (action.abi_info)
+                {
+                    const auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
+                    if (abi_info.toolset)
+                    {
+                        auto toolset = abi_info.toolset.value_or_exit(VCPKG_LINE_INFO);
+                        auto v = vscmd_vctools_version_env.value_or_exit(VCPKG_LINE_INFO);
+                        if (toolset.full_version != v)
+                        {
+                            msg::println_warning(msgVcpkgInVsPromptToolset, msg::expected = toolset.full_version, msg::actual = v);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+#endif // defined(_WIN32)
     }
 }

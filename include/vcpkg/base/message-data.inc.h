@@ -2892,6 +2892,12 @@ DECLARE_MESSAGE(VcpkgInVsPrompt,
                 "'{value}' is a VS prompt",
                 "vcpkg appears to be in a Visual Studio prompt targeting {value} but installing for {triplet}. "
                 "Consider using --triplet {value}-windows or --triplet {value}-uwp.")
+DECLARE_MESSAGE(VcpkgInVsPromptToolset,
+                (msg::expected, msg::actual),
+                "{expected} and {actual} are toolset versions",
+                "vcpkg appears to be in a Visual Studio prompt with toolset {expected} but"
+                " vcpkg installs with toolset {actual}. Consider running vcpkg in a different developer"
+                " prompt or setting VCPKG_VISUAL_STUDIO_PATH in your triplet. ")
 DECLARE_MESSAGE(VcpkgRegistriesCacheIsNotDirectory,
                 (msg::path),
                 "",

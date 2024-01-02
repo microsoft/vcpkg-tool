@@ -193,6 +193,8 @@ namespace vcpkg
             }
         }
 
+        check_visual_studio_prompt_toolset_version(action_plan);
+
         if (paths.manifest_mode_enabled() && paths.get_feature_flags().dependency_graph)
         {
             msg::println(msgDependencyGraphCalculation);
