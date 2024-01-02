@@ -267,7 +267,7 @@ namespace
     }
     static_assert(adapt_context_to_expected_invocable_with<decltype(returns_unique_ptr_xvalue), std::unique_ptr<int>&&>,
                   "boom");
-    static_assert(std::is_same_v<ExpectedL<std::unique_ptr<int>&&>,
+    static_assert(std::is_same_v<ExpectedL<std::unique_ptr<int>>,
                                  decltype(adapt_context_to_expected(returns_unique_ptr_xvalue,
                                                                     std::declval<std::unique_ptr<int>>()))>,
                   "boom");
@@ -412,6 +412,17 @@ TEST_CASE ("adapt DiagnosticContext to ExpectedL", "[diagnostics]")
         auto adapted = adapt_context_to_expected(returns_optional_ref_lvalue, the_lvalue);
         REQUIRE(adapted.get() == &the_inside_lvalue);
     }
+    {
+        int move_limit = 0;
+        MoveCounter the_inside_lvalue{move_limit};
+        Optional<MoveCounter&> an_lvalue;
+        an_lvalue.emplace(the_inside_lvalue);
+        auto adapted = adapt_context_to_expected(
+            [](DiagnosticContext&, Optional<MoveCounter&>&& ret) -> Optional<MoveCounter&> { return std::move(ret); },
+            std::move(an_lvalue));
+        REQUIRE(adapted.get() == &the_inside_lvalue);
+        REQUIRE(move_limit == 0);
+    }
     // returns_optional_ref_const_lvalue
     {
         int the_inside_lvalue = 42;
@@ -420,19 +431,56 @@ TEST_CASE ("adapt DiagnosticContext to ExpectedL", "[diagnostics]")
         REQUIRE(adapted.get() == &the_inside_lvalue);
     }
     // returns_optional_ref_xvalue
+    {
+        int the_inside_lvalue = 42;
+        Optional<int&> the_lvalue{the_inside_lvalue};
+        auto adapted = adapt_context_to_expected(returns_optional_ref_xvalue, std::move(the_lvalue));
+        REQUIRE(adapted.get() == &the_inside_lvalue);
+    }
     // returns_optional_ref_const_xvalue
-    //
+    {
+        int the_inside_lvalue = 42;
+        Optional<int&> the_lvalue{the_inside_lvalue};
+        auto adapted = adapt_context_to_expected(returns_optional_ref_const_xvalue, std::move(the_lvalue));
+        REQUIRE(adapted.get() == &the_inside_lvalue);
+    }
+
     // returns_optional_prvalue_fail
-    //
-    // returns_unique_ptr_prvalue
-    // returns_unique_ptr_lvalue
-    // returns_unique_ptr_const_lvalue
-    // returns_unique_ptr_xvalue
-    // returns_unique_ptr_const_xvalue
-    //
-    // returns_unique_ptr_fail
     {
         auto adapted = adapt_context_to_expected(returns_optional_fail);
+        REQUIRE(!adapted.has_value());
+        REQUIRE(adapted.error() == LocalizedString::from_raw("error: something bad happened"));
+    }
+
+    // returns_unique_ptr_prvalue
+    {
+        auto adapted = adapt_context_to_expected(returns_unique_ptr_prvalue, 42);
+        REQUIRE(*(adapted.value_or_exit(VCPKG_LINE_INFO)) == 42);
+    }
+    // returns_unique_ptr_lvalue
+    {
+        auto an_lvalue = std::make_unique<int>(42);
+        auto adapted = adapt_context_to_expected(returns_unique_ptr_lvalue, an_lvalue);
+        REQUIRE(same_object(adapted.value_or_exit(VCPKG_LINE_INFO), an_lvalue));
+    }
+    // returns_unique_ptr_const_lvalue
+    {
+        auto an_lvalue = std::make_unique<int>(42);
+        auto adapted = adapt_context_to_expected(returns_unique_ptr_const_lvalue, an_lvalue);
+        REQUIRE(same_object(adapted.value_or_exit(VCPKG_LINE_INFO), an_lvalue));
+    }
+    // returns_unique_ptr_xvalue
+    {
+        auto an_lvalue = std::make_unique<int>(42);
+        auto the_pointer = an_lvalue.get();
+        auto adapted = adapt_context_to_expected(returns_unique_ptr_xvalue, std::move(an_lvalue));
+        REQUIRE(!an_lvalue); // was moved into the adapted
+        REQUIRE(adapted.value_or_exit(VCPKG_LINE_INFO).get() == the_pointer);
+    }
+
+    // returns_unique_ptr_fail
+    {
+        auto adapted = adapt_context_to_expected(returns_unique_ptr_fail);
         REQUIRE(!adapted.has_value());
         REQUIRE(adapted.error() == LocalizedString::from_raw("error: something bad happened"));
     }

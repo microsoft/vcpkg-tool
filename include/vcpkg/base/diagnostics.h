@@ -125,7 +125,7 @@ namespace vcpkg
     template<class Wrapped>
     struct AdaptContextUnwrapOptional<Optional<Wrapped>>
     {
-        // prvalue
+        // prvalue, move from the optional into the expected
         using type = Wrapped;
         using fwd = Wrapped&&;
     };
@@ -141,7 +141,7 @@ namespace vcpkg
     template<class Wrapped>
     struct AdaptContextUnwrapOptional<Optional<Wrapped>&>
     {
-        // lvalue
+        // lvalue, return an expected referencing the Wrapped inside the optional
         using type = Wrapped&;
         using fwd = Wrapped&;
     };
@@ -157,7 +157,7 @@ namespace vcpkg
     template<class Wrapped>
     struct AdaptContextUnwrapOptional<Optional<Wrapped>&&>
     {
-        // xvalue
+        // xvalue, move from the optional into the expected
         using type = Wrapped;
         using fwd = Wrapped&&;
     };
@@ -174,20 +174,17 @@ namespace vcpkg
     auto adapt_context_to_expected(Fn functor, Args&&... args) -> ExpectedL<
         typename AdaptContextUnwrapOptional<std::invoke_result_t<Fn, BufferedDiagnosticContext&, Args...>>::type>
     {
-        using Contained =
-            typename AdaptContextUnwrapOptional<std::invoke_result_t<Fn, BufferedDiagnosticContext&, Args...>>::type;
+        using Unwrapper = AdaptContextUnwrapOptional<std::invoke_result_t<Fn, BufferedDiagnosticContext&, Args...>>;
+        using ReturnType = ExpectedL<typename Unwrapper::type>;
         BufferedDiagnosticContext bdc;
         decltype(auto) maybe_result = functor(bdc, std::forward<Args>(args)...);
         if (auto result = maybe_result.get())
         {
             // N.B.: This may be a move
-            return ExpectedL<Contained>{
-                static_cast<typename AdaptContextUnwrapOptional<
-                    std::invoke_result_t<Fn, BufferedDiagnosticContext&, Args...>>::fwd>(*result),
-                expected_left_tag};
+            return ReturnType{static_cast<typename Unwrapper::fwd>(*result), expected_left_tag};
         }
 
-        return ExpectedL<Contained>{LocalizedString::from_raw(bdc.to_string()), expected_right_tag};
+        return ReturnType{LocalizedString::from_raw(bdc.to_string()), expected_right_tag};
     }
 
     // If Ty is a std::unique_ptr<U>, typename AdaptContextDetectUniquePtr<Ty>::type is the type necessary to return
@@ -203,9 +200,8 @@ namespace vcpkg
     template<class Wrapped, class Deleter>
     struct AdaptContextDetectUniquePtr<std::unique_ptr<Wrapped, Deleter>>
     {
-        // prvalue
+        // prvalue, move into the Expected
         using type = std::unique_ptr<Wrapped, Deleter>;
-        using fwd = type&&;
     };
 
     template<class Wrapped, class Deleter>
@@ -218,9 +214,8 @@ namespace vcpkg
     template<class Wrapped, class Deleter>
     struct AdaptContextDetectUniquePtr<std::unique_ptr<Wrapped, Deleter>&>
     {
-        // lvalue
+        // lvalue, reference the unique_ptr itself
         using type = std::unique_ptr<Wrapped, Deleter>&;
-        using fwd = type&;
     };
 
     template<class Wrapped, class Deleter>
@@ -228,15 +223,13 @@ namespace vcpkg
     {
         // const lvalue
         using type = const std::unique_ptr<Wrapped, Deleter>&;
-        using fwd = type;
     };
 
     template<class Wrapped, class Deleter>
     struct AdaptContextDetectUniquePtr<std::unique_ptr<Wrapped, Deleter>&&>
     {
-        // xvalue
-        using type = std::unique_ptr<Wrapped, Deleter>&&;
-        using fwd = type;
+        // xvalue, move into the Expected
+        using type = std::unique_ptr<Wrapped, Deleter>;
     };
 
     template<class Wrapped, class Deleter>
@@ -250,19 +243,15 @@ namespace vcpkg
     auto adapt_context_to_expected(Fn functor, Args&&... args) -> ExpectedL<
         typename AdaptContextDetectUniquePtr<std::invoke_result_t<Fn, BufferedDiagnosticContext&, Args...>>::type>
     {
-        using Contained =
-            typename AdaptContextDetectUniquePtr<std::invoke_result_t<Fn, BufferedDiagnosticContext&, Args...>>::type;
+        using ReturnType = ExpectedL<
+            typename AdaptContextDetectUniquePtr<std::invoke_result_t<Fn, BufferedDiagnosticContext&, Args...>>::type>;
         BufferedDiagnosticContext bdc;
-        auto maybe_result = functor(bdc, std::forward<Args>(args)...);
+        decltype(auto) maybe_result = functor(bdc, std::forward<Args>(args)...);
         if (maybe_result)
         {
-            // N.B.: This may be a move
-            return ExpectedL<Contained>{
-                static_cast<typename AdaptContextDetectUniquePtr<
-                    std::invoke_result_t<Fn, BufferedDiagnosticContext&, Args...>>::fwd>(maybe_result),
-                expected_left_tag};
+            return ReturnType{static_cast<decltype(maybe_result)&&>(maybe_result), expected_left_tag};
         }
 
-        return ExpectedL<Contained>{LocalizedString::from_raw(bdc.to_string()), expected_right_tag};
+        return ReturnType{LocalizedString::from_raw(bdc.to_string()), expected_right_tag};
     }
 }
