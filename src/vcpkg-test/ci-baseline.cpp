@@ -258,7 +258,7 @@ TEST_CASE ("Parse Errors", "[ci-baseline]")
 {
     check_error("hello", R"(test:1:6: error: expected ':' here
   on expression: hello
-                     ^)");
+                      ^)");
 
     check_error("hello\n:", R"(test:1:6: error: expected ':' here
   on expression: hello
@@ -271,7 +271,7 @@ TEST_CASE ("Parse Errors", "[ci-baseline]")
 
     check_error("x64-windows:", R"(test:1:13: error: expected a triplet name here (must be lowercase, digits, '-')
   on expression: x64-windows:
-                            ^)");
+                             ^)");
 
     check_error("x64-windows:\nport:x64-windows=skip",
                 R"(test:1:13: error: expected a triplet name here (must be lowercase, digits, '-')
@@ -285,7 +285,7 @@ TEST_CASE ("Parse Errors", "[ci-baseline]")
     // clang-format off
     check_error("   \tx64-windows:", R"(test:1:21: error: expected a triplet name here (must be lowercase, digits, '-')
   on expression:    )" "\t" R"(x64-windows:
-                    )" "\t" R"(           ^)");
+                    )" "\t" R"(            ^)");
     // clang-format on
 
     check_error("port:x64-windows\n=fail", R"(test:1:17: error: expected '=' here

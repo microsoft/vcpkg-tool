@@ -1267,7 +1267,7 @@ TEST_CASE ("license error messages", "[manifests][license]")
     CHECK(messages.error->to_string() ==
           R"(<license string>:1:8: error: Expected a license name, found the end of the string.
   on expression: MIT AND
-                       ^)");
+                        ^)");
 
     parse_spdx_license_expression("MIT AND unknownlicense", messages);
     CHECK(!messages.error);

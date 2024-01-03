@@ -31,6 +31,8 @@ namespace vcpkg::Unicode
         }
     }
 
+    static constexpr int utf8_code_unit_count(Utf8CodeUnitKind kind) noexcept { return static_cast<int>(kind); }
+
     int utf8_code_unit_count(char code_unit) noexcept
     {
         return utf8_code_unit_count(utf8_code_unit_kind(static_cast<unsigned char>(code_unit)));
@@ -216,7 +218,8 @@ namespace vcpkg::Unicode
     {
         if (is_eof())
         {
-            vcpkg::Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgIncrementedUtf8Decoder);
+            // incremented Utf8Decoder at the end of the string
+            Checks::unreachable(VCPKG_LINE_INFO);
         }
 
         if (next_ == last_)
@@ -261,15 +264,5 @@ namespace vcpkg::Unicode
         next_ = last_;
         current_ = end_of_file;
         return *this;
-    }
-
-    bool operator==(const Utf8Decoder& lhs, const Utf8Decoder& rhs) noexcept
-    {
-        if (lhs.last_ != rhs.last_)
-        {
-            Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgComparingUtf8Decoders);
-        }
-
-        return lhs.next_ == rhs.next_;
     }
 }
