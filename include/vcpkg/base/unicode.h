@@ -6,16 +6,6 @@
 
 namespace vcpkg::Unicode
 {
-    enum class Utf8CodeUnitKind
-    {
-        Invalid = -1,
-        Continue = 0,
-        StartOne = 1,
-        StartTwo = 2,
-        StartThree = 3,
-        StartFour = 4,
-    };
-
     constexpr static char32_t end_of_file = 0xFFFF'FFFF;
 
     enum class utf8_errc
@@ -29,18 +19,12 @@ namespace vcpkg::Unicode
         UnexpectedEof = 6,
     };
 
-    Utf8CodeUnitKind utf8_code_unit_kind(unsigned char code_unit) noexcept;
-
-    int utf8_code_unit_count(char code_unit) noexcept;
-
     int utf8_encode_code_point(char (&array)[4], char32_t code_point) noexcept;
 
     // returns {after-current-code-point, error},
     // and if error = NoError, then out = parsed code point.
     // else, out = end_of_file.
-    std::pair<const char*, utf8_errc> utf8_decode_code_point(const char* first,
-                                                             const char* last,
-                                                             char32_t& out) noexcept;
+    utf8_errc utf8_decode_code_point(const char*& first, const char* last, char32_t& out) noexcept;
 
     // uses the C++20 definition
     /*
@@ -117,9 +101,13 @@ namespace vcpkg::Unicode
     */
     struct Utf8Decoder
     {
-        constexpr Utf8Decoder() noexcept : current_(end_of_file), next_(nullptr), last_(nullptr) { }
+        constexpr Utf8Decoder() noexcept
+            : current_(end_of_file), pointer_to_current_(nullptr), next_(nullptr), last_(nullptr)
+        {
+        }
         explicit constexpr Utf8Decoder(StringView sv) : Utf8Decoder(sv.begin(), sv.end()) { }
-        constexpr Utf8Decoder(const char* first, const char* last) noexcept : current_(0), next_(first), last_(last)
+        constexpr Utf8Decoder(const char* first, const char* last) noexcept
+            : current_(0), pointer_to_current_(first), next_(first), last_(last)
         {
             if (next_ != last_)
             {
@@ -135,7 +123,7 @@ namespace vcpkg::Unicode
         {
         }
         constexpr Utf8Decoder(const char* first, const char* last, utf8_errc& first_decode_error) noexcept
-            : current_(0), next_(first), last_(last)
+            : current_(0), pointer_to_current_(first), next_(first), last_(last)
         {
             if (next_ != last_)
             {
@@ -158,7 +146,7 @@ namespace vcpkg::Unicode
 
         Utf8Decoder& operator=(sentinel) noexcept;
 
-        char const* pointer_to_current() const noexcept;
+        char const* pointer_to_current() const noexcept { return pointer_to_current_; }
 
         char32_t operator*() const noexcept
         {
@@ -186,7 +174,7 @@ namespace vcpkg::Unicode
                 Checks::unreachable(VCPKG_LINE_INFO);
             }
 
-            return lhs.next_ == rhs.next_ && lhs.current_ == rhs.current_;
+            return lhs.pointer_to_current_ == rhs.pointer_to_current_;
         }
         friend constexpr bool operator!=(const Utf8Decoder& lhs, const Utf8Decoder& rhs) noexcept
         {
@@ -205,6 +193,7 @@ namespace vcpkg::Unicode
 
     private:
         char32_t current_;
+        const char* pointer_to_current_;
         const char* next_;
         const char* last_;
     };

@@ -56,11 +56,12 @@ TEST_CASE ("Utf8Decoder valid", "[unicode]")
         REQUIRE(!decode.is_eof());
         char32_t decoded;
         auto pointer_to_current = decode.pointer_to_current();
-        REQUIRE(utf8_decode_code_point(pointer_to_current, input_end, decoded).second == utf8_errc::NoError);
+        const auto original_pointer_to_current = pointer_to_current;
+        REQUIRE(utf8_decode_code_point(pointer_to_current, input_end, decoded) == utf8_errc::NoError);
         REQUIRE(decoded == expected[idx]);
         char encoded[4];
         auto encoded_size = utf8_encode_code_point(encoded, decoded);
-        REQUIRE(std::equal(encoded, encoded + encoded_size, pointer_to_current));
+        REQUIRE(std::equal(encoded, encoded + encoded_size, original_pointer_to_current));
         ++decode;
     }
 
@@ -103,4 +104,44 @@ TEST_CASE ("Utf8Decoder invalid", "[unicode]")
     }
 
     REQUIRE(uut.is_eof());
+}
+
+TEST_CASE ("Utf8Decoder empty current", "[unicode]")
+{
+    char storage[] = "";
+    Utf8Decoder uut(storage);
+    REQUIRE(uut.pointer_to_current() == storage);
+    REQUIRE(uut.is_eof());
+}
+
+TEST_CASE ("utf8_is_valid_string fails", "[unicode]")
+{
+    const char* test = GENERATE("hello \xFF too big",
+                                "hello \xC3\xBF\xBF\xBF also too big",
+                                "hello \x9C continuation",
+                                "hello \xE0\x28 overlong",
+                                "hello \xED\xA0\xBC\xED\xBF\x88 paired WTF-8",
+                                "missing two: \xC3",
+                                "missing three one: \xE6\x9C",
+                                "missing three two: \xE6",
+                                "missing four one: \xF0\x9F\x8F",
+                                "missing four two: \xF0\x9F",
+                                "missing four three: \xF0");
+    REQUIRE(!utf8_is_valid_string(test, test + strlen(test)));
+}
+
+TEST_CASE ("utf8_is_valid_string fails at end", "[unicode]")
+{
+    const char* test = GENERATE("\xFF",
+                                "\xC3\xBF\xBF\xBF",
+                                "\x9C",
+                                "\xE0\x28",
+                                "\xED\xA0\xBC\xED\xBF\x88",
+                                "\xC3",
+                                "\xE6\x9C",
+                                "\xE6",
+                                "\xF0\x9F\x8F",
+                                "\xF0\x9F",
+                                "\xF0");
+    REQUIRE(!utf8_is_valid_string(test, test + strlen(test)));
 }
