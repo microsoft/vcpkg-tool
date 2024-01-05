@@ -162,6 +162,7 @@ namespace vcpkg
         Optional<std::string> public_abi_override;
         std::vector<std::string> passthrough_env_vars;
         std::vector<std::string> passthrough_env_vars_tracked;
+        std::vector<std::string> environment_setup_scripts;
         Optional<Path> gamedk_latest_path;
 
         Path toolchain_file() const;
@@ -172,6 +173,7 @@ namespace vcpkg
     };
 
     vcpkg::Command make_build_env_cmd(const PreBuildInfo& pre_build_info, const Toolset& toolset);
+    vcpkg::Command make_setup_env_cmd(const VcpkgPaths& paths, const Path& script);
 
     struct ExtendedBuildResult
     {
@@ -310,7 +312,6 @@ namespace vcpkg
 
         const TripletMapEntry& get_triplet_cache(const ReadOnlyFilesystem& fs, const Path& p) const;
 
-#if defined(_WIN32)
         struct EnvMapEntry
         {
             std::unordered_map<std::string, std::string> env_map;
@@ -318,7 +319,6 @@ namespace vcpkg
         };
 
         Cache<std::vector<std::string>, EnvMapEntry> envs;
-#endif
 
         bool m_compiler_tracking;
     };

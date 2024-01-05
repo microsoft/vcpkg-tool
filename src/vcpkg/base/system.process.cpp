@@ -1246,20 +1246,22 @@ namespace
 
 namespace vcpkg
 {
-#if defined(_WIN32)
     Environment cmd_execute_and_capture_environment(const Command& cmd_line, const Environment& env)
     {
         static StringLiteral magic_string = "cdARN4xjKueKScMy9C6H";
 
         auto actual_cmd_line = cmd_line;
+#ifdef _WIN32
         actual_cmd_line.raw_arg(Strings::concat(" & echo ", magic_string, " & set"));
-
+#else
+        actual_cmd_line.raw_arg(Strings::concat(" && echo ", magic_string, " && printenv"));
+#endif
         Debug::print("command line: ", actual_cmd_line.command_line(), "\n");
         auto maybe_rc_output = cmd_execute_and_capture_output(actual_cmd_line, default_working_directory, env);
         if (!maybe_rc_output)
         {
             Checks::msg_exit_with_error(
-                VCPKG_LINE_INFO, msg::format(msgVcvarsRunFailed).append_raw("\n").append(maybe_rc_output.error()));
+                VCPKG_LINE_INFO, msg::format(msgVcvarsRunFailed).append_raw("\n").append(maybe_rc_output.error())); // This msg is incorrect
         }
 
         auto& rc_output = maybe_rc_output.value_or_exit(VCPKG_LINE_INFO);
@@ -1267,13 +1269,13 @@ namespace vcpkg
         if (rc_output.exit_code != 0)
         {
             Checks::msg_exit_with_error(
-                VCPKG_LINE_INFO, msgVcvarsRunFailedExitCode, msg::exit_code = rc_output.exit_code);
+                VCPKG_LINE_INFO, msgVcvarsRunFailedExitCode, msg::exit_code = rc_output.exit_code); // This msg is incorrect
         }
 
         auto it = Strings::search(rc_output.output, magic_string);
         const char* const last = rc_output.output.data() + rc_output.output.size();
 
-        Checks::check_exit(VCPKG_LINE_INFO, it != last);
+        Checks::check_exit(VCPKG_LINE_INFO, it != last); // magic string not found !
         // find the first non-whitespace character after the magic string
         it = std::find_if_not(it + magic_string.size(), last, ::isspace);
         Checks::check_exit(VCPKG_LINE_INFO, it != last);
@@ -1285,7 +1287,11 @@ namespace vcpkg
             auto equal_it = std::find(it, last, '=');
             if (equal_it == last) break;
             StringView variable_name(it, equal_it);
+#ifdef _WIN32
             auto newline_it = std::find(equal_it + 1, last, '\r');
+#else
+            auto newline_it = std::find(equal_it + 1, last, '\n');
+#endif
             if (newline_it == last) break;
             StringView value(equal_it + 1, newline_it);
 
@@ -1297,7 +1303,6 @@ namespace vcpkg
 
         return new_env;
     }
-#endif
 } // namespace vcpkg
 
 namespace
