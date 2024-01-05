@@ -75,7 +75,7 @@ namespace vcpkg::Unicode
         return -1;
     }
 
-    static bool bad_trailing(unsigned char code_unit, utf8_errc& err)
+    static bool bad_trailing(unsigned char code_unit, utf8_errc& err) noexcept
     {
         if ((code_unit & 0b1100'0000u) != 0b1000'0000u)
         {
@@ -92,9 +92,7 @@ namespace vcpkg::Unicode
         return false;
     }
 
-    utf8_errc utf8_decode_code_point(const char*& first,
-                                                             const char* last,
-                                                             char32_t& out) noexcept
+    utf8_errc utf8_decode_code_point(const char*& first, const char* last, char32_t& out) noexcept
     {
         if (first == last)
         {
@@ -220,7 +218,7 @@ namespace vcpkg::Unicode
         return err == utf8_errc::NoError;
     }
 
-    char32_t utf16_surrogates_to_code_point(char32_t leading, char32_t trailing)
+    char32_t utf16_surrogates_to_code_point(char32_t leading, char32_t trailing) noexcept
     {
         vcpkg::Checks::check_exit(VCPKG_LINE_INFO, utf16_is_leading_surrogate_code_point(leading));
         vcpkg::Checks::check_exit(VCPKG_LINE_INFO, utf16_is_trailing_surrogate_code_point(trailing));
@@ -247,7 +245,7 @@ namespace vcpkg::Unicode
         }
     }
 
-    utf8_errc Utf8Decoder::next()
+    utf8_errc Utf8Decoder::next() noexcept
     {
         if (is_eof())
         {
