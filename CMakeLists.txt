@@ -104,6 +104,12 @@ if(MSVC)
         string(APPEND CMAKE_EXE_LINKER_FLAGS_RELEASE " /CETCOMPAT")
     endif()
 
+    # Avoid CMake's default taking of the pretty names
+    string(REPLACE "/DAMD64" "" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
+    string(REPLACE "/DAMD64" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+    string(REPLACE "/DARM64EC" "" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
+    string(REPLACE "/DARM64EC" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+
     if(VCPKG_DEVELOPMENT_WARNINGS)
         string(APPEND CMAKE_C_FLAGS " /W4 /sdl")
         string(APPEND CMAKE_CXX_FLAGS " /W4 /sdl")
