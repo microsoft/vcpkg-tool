@@ -176,7 +176,7 @@ namespace vcpkg::Unicode
         return err == utf8_errc::NoError;
     }
 
-    char32_t utf16_surrogates_to_code_point(char32_t leading, char32_t trailing)
+    char32_t utf16_surrogates_to_code_point(char32_t leading, char32_t trailing) noexcept
     {
         vcpkg::Checks::check_exit(VCPKG_LINE_INFO, utf16_is_leading_surrogate_code_point(leading));
         vcpkg::Checks::check_exit(VCPKG_LINE_INFO, utf16_is_trailing_surrogate_code_point(trailing));
@@ -214,7 +214,7 @@ namespace vcpkg::Unicode
         return next_ - count;
     }
 
-    utf8_errc Utf8Decoder::next()
+    utf8_errc Utf8Decoder::next() noexcept
     {
         if (is_eof())
         {

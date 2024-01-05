@@ -86,20 +86,20 @@ namespace vcpkg::Unicode
 
     bool utf8_is_valid_string(const char* first, const char* last) noexcept;
 
-    constexpr bool utf16_is_leading_surrogate_code_point(char32_t code_point)
+    constexpr bool utf16_is_leading_surrogate_code_point(char32_t code_point) noexcept
     {
         return code_point >= 0xD800 && code_point < 0xDC00;
     }
-    constexpr bool utf16_is_trailing_surrogate_code_point(char32_t code_point)
+    constexpr bool utf16_is_trailing_surrogate_code_point(char32_t code_point) noexcept
     {
         return code_point >= 0xDC00 && code_point < 0xE000;
     }
-    constexpr bool utf16_is_surrogate_code_point(char32_t code_point)
+    constexpr bool utf16_is_surrogate_code_point(char32_t code_point) noexcept
     {
         return code_point >= 0xD800 && code_point < 0xE000;
     }
 
-    char32_t utf16_surrogates_to_code_point(char32_t leading, char32_t trailing);
+    char32_t utf16_surrogates_to_code_point(char32_t leading, char32_t trailing) noexcept;
 
     /*
         There are two ways to parse utf-8: we could allow unpaired surrogates (as in [wtf-8]) -- this is important
@@ -118,7 +118,7 @@ namespace vcpkg::Unicode
     struct Utf8Decoder
     {
         constexpr Utf8Decoder() noexcept : current_(end_of_file), next_(nullptr), last_(nullptr) { }
-        explicit constexpr Utf8Decoder(StringView sv) : Utf8Decoder(sv.begin(), sv.end()) { }
+        explicit constexpr Utf8Decoder(StringView sv) noexcept : Utf8Decoder(sv.begin(), sv.end()) { }
         constexpr Utf8Decoder(const char* first, const char* last) noexcept : current_(0), next_(first), last_(last)
         {
             if (next_ != last_)
@@ -130,7 +130,7 @@ namespace vcpkg::Unicode
                 current_ = end_of_file;
             }
         }
-        constexpr Utf8Decoder(StringView sv, utf8_errc& first_decode_error)
+        constexpr Utf8Decoder(StringView sv, utf8_errc& first_decode_error) noexcept
             : Utf8Decoder(sv.begin(), sv.end(), first_decode_error)
         {
         }
@@ -154,7 +154,7 @@ namespace vcpkg::Unicode
 
         constexpr inline bool is_eof() const noexcept { return current_ == end_of_file; }
 
-        [[nodiscard]] utf8_errc next();
+        [[nodiscard]] utf8_errc next() noexcept;
 
         Utf8Decoder& operator=(sentinel) noexcept;
 
@@ -192,10 +192,10 @@ namespace vcpkg::Unicode
         {
             return !(lhs == rhs);
         }
-        friend constexpr bool operator==(const Utf8Decoder& d, Utf8Decoder::sentinel) { return d.is_eof(); }
-        friend constexpr bool operator==(Utf8Decoder::sentinel s, const Utf8Decoder& d) { return d == s; }
-        friend constexpr bool operator!=(const Utf8Decoder& d, Utf8Decoder::sentinel) { return !d.is_eof(); }
-        friend constexpr bool operator!=(Utf8Decoder::sentinel s, const Utf8Decoder& d) { return d != s; }
+        friend constexpr bool operator==(const Utf8Decoder& d, Utf8Decoder::sentinel) noexcept { return d.is_eof(); }
+        friend constexpr bool operator==(Utf8Decoder::sentinel s, const Utf8Decoder& d) noexcept { return d == s; }
+        friend constexpr bool operator!=(const Utf8Decoder& d, Utf8Decoder::sentinel) noexcept { return !d.is_eof(); }
+        friend constexpr bool operator!=(Utf8Decoder::sentinel s, const Utf8Decoder& d) noexcept { return d != s; }
 
         using difference_type = std::ptrdiff_t;
         using value_type = char32_t;
