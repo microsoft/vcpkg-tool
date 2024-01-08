@@ -44,37 +44,6 @@ namespace vcpkg::Unicode
             msg::format(msgInvalidCodePoint).append_raw(fmt::format("({:x})", static_cast<uint32_t>(code_point))));
     }
 
-    int utf8_code_unit_count(char raw_code_unit) noexcept
-    {
-        const auto code_unit = static_cast<unsigned char>(raw_code_unit);
-        if (code_unit < 0b1000'0000)
-        {
-            return 1;
-        }
-
-        if (code_unit < 0b1100'0000)
-        {
-            return 0;
-        }
-
-        if (code_unit < 0b1110'0000)
-        {
-            return 2;
-        }
-
-        if (code_unit < 0b1111'0000)
-        {
-            return 3;
-        }
-
-        if (code_unit < 0b1111'1000)
-        {
-            return 4;
-        }
-
-        return -1;
-    }
-
     static bool bad_trailing(unsigned char code_unit, utf8_errc& err) noexcept
     {
         if ((code_unit & 0b1100'0000u) != 0b1000'0000u)
