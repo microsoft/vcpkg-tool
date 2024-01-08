@@ -1,3 +1,4 @@
+#include <vcpkg/base/files.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/setup-messages.h>
@@ -5,6 +6,7 @@
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.z-generate-message-map.h>
+#include <vcpkg/vcpkgcmdarguments.h>
 
 using namespace vcpkg;
 

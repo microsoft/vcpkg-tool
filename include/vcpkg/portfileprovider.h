@@ -13,7 +13,7 @@ namespace vcpkg
 {
     struct PortFileProvider
     {
-        virtual ~PortFileProvider();
+        virtual ~PortFileProvider() = default;
         virtual ExpectedL<const SourceControlFileAndLocation&> get_control_file(const std::string& src_name) const = 0;
         virtual std::vector<const SourceControlFileAndLocation*> load_all_control_files() const = 0;
     };
@@ -33,7 +33,7 @@ namespace vcpkg
     struct IVersionedPortfileProvider
     {
         virtual View<Version> get_port_versions(StringView port_name) const = 0;
-        virtual ~IVersionedPortfileProvider();
+        virtual ~IVersionedPortfileProvider() = default;
 
         virtual ExpectedL<const SourceControlFileAndLocation&> get_control_file(
             const VersionSpec& version_spec) const = 0;
@@ -47,12 +47,12 @@ namespace vcpkg
     struct IBaselineProvider
     {
         virtual ExpectedL<Version> get_baseline_version(StringView port_name) const = 0;
-        virtual ~IBaselineProvider();
+        virtual ~IBaselineProvider() = default;
     };
 
     struct IOverlayProvider
     {
-        virtual ~IOverlayProvider();
+        virtual ~IOverlayProvider() = default;
         virtual Optional<const SourceControlFileAndLocation&> get_control_file(StringView port_name) const = 0;
     };
 

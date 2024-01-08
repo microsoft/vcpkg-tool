@@ -866,10 +866,6 @@ DECLARE_MESSAGE(CommandFailed,
                 "{command_line}\n"
                 "failed with the following results:")
 DECLARE_MESSAGE(CommunityTriplets, (), "", "Community Triplets:")
-DECLARE_MESSAGE(ComparingUtf8Decoders,
-                (),
-                "",
-                "Comparing Utf8Decoders with different provenance; this is always an error")
 DECLARE_MESSAGE(CompressFolderFailed, (msg::path), "", "Failed to compress folder \"{path}\":")
 DECLARE_MESSAGE(ComputingInstallPlan, (), "", "Computing installation plan...")
 DECLARE_MESSAGE(ConfigurationErrorRegistriesWithoutBaseline,
@@ -1287,7 +1283,7 @@ DECLARE_MESSAGE(FailedToRunToolToDetermineVersion,
                 "Failed to run \"{path}\" to determine the {tool_name} version.")
 DECLARE_MESSAGE(FailedToStoreBackToMirror, (), "", "failed to store back to mirror:")
 DECLARE_MESSAGE(FailedToStoreBinaryCache, (msg::path), "", "Failed to store binary cache {path}")
-DECLARE_MESSAGE(FailedToTakeFileSystemLock, (msg::path), "", "Failed to take the filesystem lock on {path}")
+DECLARE_MESSAGE(FailedToTakeFileSystemLock, (), "", "Failed to take the filesystem lock")
 DECLARE_MESSAGE(FailedToWriteManifest, (msg::path), "", "Failed to write manifest file {path}")
 DECLARE_MESSAGE(FailedVendorAuthentication,
                 (msg::vendor, msg::url),
@@ -1702,7 +1698,6 @@ DECLARE_MESSAGE(IllegalPlatformSpec, (), "", "Platform qualifier is not allowed 
 DECLARE_MESSAGE(ImproperShaLength, (msg::value), "{value} is a sha.", "SHA512's must be 128 hex characters: {value}")
 DECLARE_MESSAGE(IncorrectArchiveFileSignature, (), "", "Incorrect archive file signature")
 DECLARE_MESSAGE(IncorrectPESignature, (), "", "Incorrect PE signature")
-DECLARE_MESSAGE(IncrementedUtf8Decoder, (), "", "Incremented Utf8Decoder at the end of the string")
 DECLARE_MESSAGE(InfoSetEnvVar,
                 (msg::env_var),
                 "In this context 'editor' means IDE",
@@ -2706,6 +2701,10 @@ DECLARE_MESSAGE(UnexpectedToolOutput,
                 (msg::tool_name, msg::path),
                 "The actual command line output will be appended after this message.",
                 "{tool_name} ({path}) produced unexpected output when attempting to determine the version:")
+DECLARE_MESSAGE(UnexpectedWindowsArchitecture,
+                (msg::actual),
+                "{actual} is the CPU kind we observed like ARM or MIPS",
+                "unexpected Windows host architecture: {actual}")
 DECLARE_MESSAGE(UnknownBaselineFileContent,
                 (),
                 "",

@@ -84,16 +84,16 @@ namespace
         for (const auto& switch_ : command_metadata.options.switches)
         {
             bool parse_result;
-            auto name = switch_.name.to_string();
+            ZStringView name = switch_.name;
             StabilityTag tag = StabilityTag::Standard;
             if (Strings::starts_with(name, "x-"))
             {
-                name.erase(0, 2);
+                name = name.substr(2);
                 tag = StabilityTag::Experimental;
             }
             else if (Strings::starts_with(name, "z-"))
             {
-                name.erase(0, 2);
+                name = name.substr(2);
                 tag = StabilityTag::ImplementationDetail;
             }
 
@@ -101,14 +101,14 @@ namespace
             {
                 if (cmd_parser.parse_switch(name, tag, parse_result, switch_.helpmsg.to_string()) && parse_result)
                 {
-                    output.switches.emplace(switch_.name.to_string());
+                    output.switches.emplace(switch_.name);
                 }
             }
             else
             {
                 if (cmd_parser.parse_switch(name, tag, parse_result) && parse_result)
                 {
-                    output.switches.emplace(switch_.name.to_string());
+                    output.switches.emplace(switch_.name);
                 }
             }
         }
@@ -117,16 +117,16 @@ namespace
             std::string maybe_parse_result;
             for (const auto& option : command_metadata.options.settings)
             {
-                auto name = option.name.to_string();
+                ZStringView name = option.name;
                 StabilityTag tag = StabilityTag::Standard;
                 if (Strings::starts_with(name, "x-"))
                 {
-                    name.erase(0, 2);
+                    name = name.substr(2);
                     tag = StabilityTag::Experimental;
                 }
                 else if (Strings::starts_with(name, "z-"))
                 {
-                    name.erase(0, 2);
+                    name = name.substr(2);
                     tag = StabilityTag::ImplementationDetail;
                 }
 
@@ -134,14 +134,14 @@ namespace
                 {
                     if (cmd_parser.parse_option(name, tag, maybe_parse_result, option.helpmsg.to_string()))
                     {
-                        output.settings.emplace(option.name.to_string(), std::move(maybe_parse_result));
+                        output.settings.emplace(option.name, std::move(maybe_parse_result));
                     }
                 }
                 else
                 {
                     if (cmd_parser.parse_option(name, tag, maybe_parse_result))
                     {
-                        output.settings.emplace(option.name.to_string(), std::move(maybe_parse_result));
+                        output.settings.emplace(option.name, std::move(maybe_parse_result));
                     }
                 }
             }
@@ -149,16 +149,16 @@ namespace
 
         for (const auto& option : command_metadata.options.multisettings)
         {
-            auto name = option.name.to_string();
+            ZStringView name = option.name;
             StabilityTag tag = StabilityTag::Standard;
             if (Strings::starts_with(name, "x-"))
             {
-                name.erase(0, 2);
+                name = name.substr(2);
                 tag = StabilityTag::Experimental;
             }
             else if (Strings::starts_with(name, "z-"))
             {
-                name.erase(0, 2);
+                name = name.substr(2);
                 tag = StabilityTag::ImplementationDetail;
             }
 
@@ -167,14 +167,14 @@ namespace
             {
                 if (cmd_parser.parse_multi_option(name, tag, maybe_parse_result, option.helpmsg.to_string()))
                 {
-                    output.multisettings.emplace(option.name.to_string(), std::move(maybe_parse_result));
+                    output.multisettings.emplace(option.name, std::move(maybe_parse_result));
                 }
             }
             else
             {
                 if (cmd_parser.parse_multi_option(name, tag, maybe_parse_result))
                 {
-                    output.multisettings.emplace(option.name.to_string(), std::move(maybe_parse_result));
+                    output.multisettings.emplace(option.name, std::move(maybe_parse_result));
                 }
             }
         }
@@ -287,11 +287,6 @@ namespace vcpkg
             affected_ports = std::move(split);
         }
     }
-
-    PortApplicableSetting::PortApplicableSetting(const PortApplicableSetting&) = default;
-    PortApplicableSetting::PortApplicableSetting(PortApplicableSetting&&) = default;
-    PortApplicableSetting& PortApplicableSetting::operator=(const PortApplicableSetting&) = default;
-    PortApplicableSetting& PortApplicableSetting::operator=(PortApplicableSetting&&) = default;
 
     bool PortApplicableSetting::is_port_affected(StringView port_name) const noexcept
     {
@@ -406,7 +401,7 @@ namespace vcpkg
         auto&& initial_parser_errors = args.parser.get_errors();
         if (!initial_parser_errors.empty())
         {
-            msg::write_unlocalized_text_to_stdout(Color::error, Strings::join("\n", initial_parser_errors) + "\n");
+            msg::write_unlocalized_text_to_stderr(Color::error, Strings::join("\n", initial_parser_errors) + "\n");
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
@@ -452,12 +447,6 @@ namespace vcpkg
     {
         return forwardable_arguments;
     }
-
-    VcpkgCmdArguments::VcpkgCmdArguments(const VcpkgCmdArguments&) = default;
-    VcpkgCmdArguments::VcpkgCmdArguments(VcpkgCmdArguments&&) = default;
-    VcpkgCmdArguments& VcpkgCmdArguments::operator=(const VcpkgCmdArguments&) = default;
-    VcpkgCmdArguments& VcpkgCmdArguments::operator=(VcpkgCmdArguments&&) = default;
-    VcpkgCmdArguments::~VcpkgCmdArguments() = default;
 
     VcpkgCmdArguments::VcpkgCmdArguments(CmdParser&& parser_) : parser(std::move(parser_)) { }
 
@@ -516,7 +505,8 @@ namespace vcpkg
         }
 
         with_common_options.parser.append_options_table(result);
-        msg::println(result);
+        result.append_raw('\n');
+        msg::write_unlocalized_text_to_stderr(Color::error, result);
     }
 
     static void from_env(const std::function<Optional<std::string>(ZStringView)>& f,
@@ -529,7 +519,7 @@ namespace vcpkg
     }
 
     void VcpkgCmdArguments::imbue_from_environment() { imbue_from_environment_impl(&vcpkg::get_environment_variable); }
-    void VcpkgCmdArguments::imbue_from_fake_environment(const std::map<std::string, std::string, std::less<>>& env)
+    void VcpkgCmdArguments::imbue_from_fake_environment(const std::map<StringLiteral, std::string, std::less<>>& env)
     {
         imbue_from_environment_impl([&env](ZStringView var) -> Optional<std::string> {
             auto it = env.find(var);
@@ -733,9 +723,15 @@ namespace vcpkg
         {
             if (el.is_inconsistent)
             {
-                msg::println_warning(
-                    msgSpecifiedFeatureTurnedOff, msg::command_name = el.flag, msg::option = el.option);
-                msg::println_warning(msgDefaultFlag, msg::option = el.flag);
+                msg::write_unlocalized_text_to_stderr(Color::warning,
+                                                      msg::format_warning(msgSpecifiedFeatureTurnedOff,
+                                                                          msg::command_name = el.flag,
+                                                                          msg::option = el.option)
+                                                          .append_raw('\n')
+                                                          .append_raw(WarningPrefix)
+                                                          .append(msgDefaultFlag, msg::option = el.flag)
+                                                          .append_raw('\n'));
+
                 get_global_metrics_collector().track_string(StringMetric::Warning,
                                                             fmt::format("warning {} alongside {}", el.flag, el.option));
             }

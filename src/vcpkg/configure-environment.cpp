@@ -79,7 +79,8 @@ namespace
     constexpr const StringLiteral* ArtifactTargetPlatformSwitchNamesStorage[] = {
         &SWITCH_TARGET_X86, &SWITCH_TARGET_X64, &SWITCH_TARGET_ARM, &SWITCH_TARGET_ARM64};
 
-    bool more_than_one_mapped(View<const StringLiteral*> candidates, const std::set<std::string, std::less<>>& switches)
+    bool more_than_one_mapped(View<const StringLiteral*> candidates,
+                              const std::set<StringLiteral, std::less<>>& switches)
     {
         bool seen = false;
         for (auto&& candidate : candidates)
@@ -185,7 +186,7 @@ namespace vcpkg
 
         auto temp_directory = fs.create_or_get_temp_directory(VCPKG_LINE_INFO);
 
-        Command cmd_run(paths.get_tool_exe(Tools::NODE, stdout_sink));
+        Command cmd_run(paths.get_tool_exe(Tools::NODE, out_sink));
         cmd_run.string_arg(vcpkg_artifacts_main_path);
         cmd_run.forwarded_args(args);
         if (Debug::g_debugging)

@@ -31,6 +31,7 @@
 #include <vcpkg/spdx.h>
 #include <vcpkg/statusparagraphs.h>
 #include <vcpkg/tools.h>
+#include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
 
@@ -157,7 +158,7 @@ namespace vcpkg
         action->build_options.clean_buildtrees = CleanBuildtrees::NO;
         action->build_options.clean_packages = CleanPackages::NO;
 
-        auto binary_cache = BinaryCache::make(args, paths, stdout_sink).value_or_exit(VCPKG_LINE_INFO);
+        auto binary_cache = BinaryCache::make(args, paths, out_sink).value_or_exit(VCPKG_LINE_INFO);
         const ElapsedTimer build_timer;
         const auto result = build_package(args, paths, *action, build_logs_recorder, status_db);
         msg::print(msgElapsedForPackage, msg::spec = spec, msg::elapsed = build_timer);
@@ -470,7 +471,7 @@ namespace vcpkg
         });
 
         return base_env.cmd_cache.get_lazy(build_env_cmd, [&]() {
-            const Path& powershell_exe_path = paths.get_tool_exe("powershell-core", stdout_sink);
+            const Path& powershell_exe_path = paths.get_tool_exe("powershell-core", out_sink);
             auto clean_env = get_modified_clean_environment(base_env.env_map, powershell_exe_path.parent_path());
             if (build_env_cmd.empty())
                 return clean_env;
@@ -659,7 +660,7 @@ namespace vcpkg
         out_vars.emplace_back("VCPKG_CONCURRENCY", std::to_string(get_concurrency()));
         out_vars.emplace_back("VCPKG_PLATFORM_TOOLSET", toolset.version);
         // Make sure GIT could be found
-        out_vars.emplace_back("GIT", paths.get_tool_exe(Tools::GIT, stdout_sink));
+        out_vars.emplace_back("GIT", paths.get_tool_exe(Tools::GIT, out_sink));
     }
 
     static CompilerInfo load_compiler_info(const VcpkgPaths& paths,
@@ -730,7 +731,7 @@ namespace vcpkg
                            VcpkgCmdArguments::COMPILER_TRACKING_FEATURE);
 
             msg::println_error(msgErrorDetectingCompilerInfo, msg::path = stdoutlog);
-            msg::write_unlocalized_text_to_stdout(Color::none, buf);
+            msg::write_unlocalized_text(Color::none, buf);
             Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgErrorUnableToDetectCompilerInfo);
         }
 
@@ -768,7 +769,7 @@ namespace vcpkg
 
         if (action.build_options.download_tool == DownloadTool::ARIA2)
         {
-            variables.emplace_back("ARIA2", paths.get_tool_exe(Tools::ARIA2, stdout_sink));
+            variables.emplace_back("ARIA2", paths.get_tool_exe(Tools::ARIA2, out_sink));
         }
 
         if (auto cmake_debug = args.cmake_debug.get())
@@ -966,7 +967,7 @@ namespace vcpkg
             return_code = cmd_execute_and_stream_data(
                 command,
                 [&](StringView sv) {
-                    msg::write_unlocalized_text_to_stdout(Color::none, sv);
+                    msg::write_unlocalized_text(Color::none, sv);
                     Checks::msg_check_exit(VCPKG_LINE_INFO,
                                            out_file.write(sv.data(), 1, sv.size()) == sv.size(),
                                            msgErrorWhileWriting,
@@ -1022,7 +1023,7 @@ namespace vcpkg
         size_t error_count = 0;
         {
             FileSink file_sink{fs, stdoutlog, Append::YES};
-            CombiningSink combo_sink{stdout_sink, file_sink};
+            CombiningSink combo_sink{out_sink, file_sink};
             error_count = perform_post_build_lint_checks(
                 action.spec, paths, pre_build_info, build_info, scfl.port_directory(), combo_sink);
         };
@@ -1202,11 +1203,11 @@ namespace vcpkg
             abi_tag_entries.emplace_back(port_file, hashes.back());
         }
 
-        abi_tag_entries.emplace_back("cmake", paths.get_tool_version(Tools::CMAKE, stdout_sink));
+        abi_tag_entries.emplace_back("cmake", paths.get_tool_version(Tools::CMAKE, out_sink));
 
         // This #ifdef is mirrored in tools.cpp's PowershellProvider
 #if defined(_WIN32)
-        abi_tag_entries.emplace_back("powershell", paths.get_tool_version("powershell-core", stdout_sink));
+        abi_tag_entries.emplace_back("powershell", paths.get_tool_version("powershell-core", out_sink));
 #endif
 
         auto& helpers = paths.get_cmake_script_hashes();
@@ -1250,7 +1251,7 @@ namespace vcpkg
                 Strings::append(message, "[DEBUG]   ", entry.key, "|", entry.value, "\n");
             }
             Strings::append(message, "[DEBUG] </abientries>\n");
-            msg::write_unlocalized_text_to_stdout(Color::none, message);
+            msg::write_unlocalized_text(Color::none, message);
         }
 
         auto abi_tag_entries_missing = Util::filter(abi_tag_entries, [](const AbiEntry& p) { return p.value.empty(); });
@@ -1483,9 +1484,9 @@ namespace vcpkg
 
     void append_log(const Path& path, const std::string& log, size_t max_log_length, std::string& out)
     {
-        StringLiteral details_start = "<details><summary>{}</summary>\n\n```\n";
-        StringLiteral skipped_msg = "\n...\nSkipped {} lines\n...";
-        StringLiteral details_end = "\n```\n</details>\n\n";
+        static constexpr StringLiteral details_start = "<details><summary>{}</summary>\n\n```\n";
+        static constexpr StringLiteral skipped_msg = "\n...\nSkipped {} lines\n...";
+        static constexpr StringLiteral details_end = "\n```\n</details>\n\n";
         const size_t context_size = path.native().size() + details_start.size() + details_end.size() +
                                     skipped_msg.size() + 6 /* digits for skipped count */;
         const size_t minimum_log_size = std::min(size_t{100}, log.size());

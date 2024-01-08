@@ -95,7 +95,7 @@ namespace vcpkg
             }
 
             auto maybe_manifest_scf =
-                SourceControlFile::parse_project_manifest_object(manifest->path, manifest->manifest, stdout_sink);
+                SourceControlFile::parse_project_manifest_object(manifest->path, manifest->manifest, out_sink);
             auto pmanifest_scf = maybe_manifest_scf.get();
             if (!pmanifest_scf)
             {

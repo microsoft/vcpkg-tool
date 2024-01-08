@@ -392,8 +392,6 @@ namespace vcpkg
 
     bool OptionTableKey::operator<(const OptionTableKey& rhs) const { return switch_name < rhs.switch_name; }
 
-    CmdParser::CmdParser() = default;
-
     CmdParser::CmdParser(View<std::string> inputs)
         : argument_strings(inputs.begin(), inputs.end())
         , argument_strings_lowercase()
@@ -413,11 +411,6 @@ namespace vcpkg
     {
         insert_lowercase_strings(argument_strings_lowercase, argument_strings);
     }
-
-    CmdParser::CmdParser(const CmdParser&) = default;
-    CmdParser::CmdParser(CmdParser&&) = default;
-    CmdParser& CmdParser::operator=(const CmdParser&) = default;
-    CmdParser& CmdParser::operator=(CmdParser&&) = default;
 
     bool CmdParser::parse_switch(StringView switch_name, StabilityTag stability, bool& value)
     {
@@ -1012,7 +1005,7 @@ namespace vcpkg
 
         for (auto&& error : errors)
         {
-            msg::write_unlocalized_text_to_stdout(Color::error, error.append_raw("\n"));
+            msg::write_unlocalized_text(Color::error, error.append_raw("\n"));
         }
 
         example.append_raw('\n');

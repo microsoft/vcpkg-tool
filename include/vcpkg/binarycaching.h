@@ -202,7 +202,6 @@ namespace vcpkg
         BinaryCache(const Filesystem& fs);
         BinaryCache(const BinaryCache&) = delete;
         BinaryCache(BinaryCache&&) = default;
-        ~BinaryCache();
 
         /// Called upon a successful build of `action` to store those contents in the binary cache.
         void push_success(const InstallPlanAction& action);
