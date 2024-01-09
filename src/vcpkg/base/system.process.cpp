@@ -326,8 +326,8 @@ namespace
         }
         explicit operator bool() const noexcept { return snapshot != INVALID_HANDLE_VALUE; }
 
-        BOOL Process32First(PPROCESSENTRY32W entry) const noexcept { return Process32FirstW(snapshot, entry); }
-        BOOL Process32Next(PPROCESSENTRY32W entry) const noexcept { return Process32NextW(snapshot, entry); }
+        BOOL Process32First(PPROCESSENTRY32W entry) const noexcept { return ::Process32FirstW(snapshot, entry); }
+        BOOL Process32Next(PPROCESSENTRY32W entry) const noexcept { return ::Process32NextW(snapshot, entry); }
 
     private:
         HANDLE snapshot;
