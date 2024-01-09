@@ -645,7 +645,7 @@ namespace vcpkg::PlatformExpression
         ExpressionParser parser(expression, multiple_binary_operators);
         auto res = parser.parse();
 
-        if (auto p = parser.extract_error())
+        if (auto p = parser.get_error())
         {
             return LocalizedString::from_raw(p->to_string());
         }

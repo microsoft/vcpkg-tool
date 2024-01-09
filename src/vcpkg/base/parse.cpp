@@ -22,13 +22,39 @@ namespace vcpkg
         }
     }
 
-    std::string ParseError::to_string() const
+    static void append_caret_line(LocalizedString& res, const SourceLoc& loc)
     {
-        auto decoder = Unicode::Utf8Decoder(line.data(), line.data() + line.size());
-        ParseMessage as_message;
-        as_message.location = SourceLoc{std::next(decoder, caret_col), decoder, row, column};
-        as_message.message = message;
-        return as_message.format(origin, MessageKind::Error).extract_data();
+        auto line_end = Util::find_if(loc.it, ParserBase::is_lineend);
+        StringView line = StringView{
+            loc.start_of_line.pointer_to_current(),
+            line_end.pointer_to_current(),
+        };
+
+        LocalizedString line_prefix = msg::format(msgFormattedParseMessageExpressionPrefix);
+        size_t line_prefix_space = 1; // for the space after the prefix
+        for (char32_t ch : Unicode::Utf8Decoder(line_prefix))
+        {
+            line_prefix_space += 1 + Unicode::is_double_width_code_point(ch);
+        }
+
+        res.append_indent().append(line_prefix).append_raw(' ').append_raw(line).append_raw('\n');
+
+        std::string caret_string;
+        caret_string.append(line_prefix_space, ' ');
+        // note *it is excluded because it is where the ^ goes
+        for (auto it = loc.start_of_line; it != loc.it; ++it)
+        {
+            if (*it == '\t')
+                caret_string.push_back('\t');
+            else if (Unicode::is_double_width_code_point(*it))
+                caret_string.append(2, ' ');
+            else
+                caret_string.push_back(' ');
+        }
+
+        caret_string.push_back('^');
+
+        res.append_indent().append_raw(caret_string);
     }
 
     LocalizedString ParseMessage::format(StringView origin, MessageKind kind) const
@@ -42,33 +68,7 @@ namespace vcpkg
         res.append_raw(kind == MessageKind::Warning ? WarningPrefix : ErrorPrefix);
         res.append(message);
         res.append_raw('\n');
-
-        auto line_end = Util::find_if(location.it, ParserBase::is_lineend);
-        StringView line = StringView{
-            location.start_of_line.pointer_to_current(),
-            line_end.pointer_to_current(),
-        };
-        res.append_indent().append(msgFormattedParseMessageExpression, msg::value = line);
-        res.append_raw('\n');
-
-        auto caret_point = StringView{location.start_of_line.pointer_to_current(), location.it.pointer_to_current()};
-        auto formatted_caret_point = msg::format(msgFormattedParseMessageExpression, msg::value = caret_point);
-
-        std::string caret_string;
-        caret_string.reserve(formatted_caret_point.data().size());
-        for (char32_t ch : Unicode::Utf8Decoder(formatted_caret_point))
-        {
-            if (ch == '\t')
-                caret_string.push_back('\t');
-            else if (Unicode::is_double_width_code_point(ch))
-                caret_string.append("  ");
-            else
-                caret_string.push_back(' ');
-        }
-        caret_string.push_back('^');
-
-        res.append_indent().append_raw(caret_string);
-
+        append_caret_line(res, location);
         return res;
     }
 
@@ -79,9 +79,9 @@ namespace vcpkg
             msg::println(warning.format(origin, MessageKind::Warning));
         }
 
-        if (error)
+        if (auto e = error.get())
         {
-            Checks::msg_exit_with_message(VCPKG_LINE_INFO, LocalizedString::from_raw(error->to_string()));
+            Checks::msg_exit_with_message(VCPKG_LINE_INFO, *e);
         }
 
         if (!warnings.empty())
@@ -186,19 +186,16 @@ namespace vcpkg
         // avoid cascading errors by only saving the first
         if (!m_messages.error)
         {
-            // find end of line
-            auto line_end = loc.it;
-            while (line_end != line_end.end() && *line_end != '\n' && *line_end != '\r')
+            auto& res = m_messages.error.emplace();
+            if (!m_origin.empty())
             {
-                ++line_end;
+                res.append_raw(fmt::format("{}:{}:{}: ", m_origin, loc.row, loc.column));
             }
-            m_messages.error = std::make_unique<ParseError>(
-                m_origin.to_string(),
-                loc.row,
-                loc.column,
-                static_cast<int>(std::distance(loc.start_of_line, loc.it)),
-                std::string(loc.start_of_line.pointer_to_current(), line_end.pointer_to_current()),
-                std::move(message));
+
+            res.append_raw(ErrorPrefix);
+            res.append(message);
+            res.append_raw('\n');
+            append_caret_line(res, loc);
         }
 
         // Avoid error loops by skipping to the end

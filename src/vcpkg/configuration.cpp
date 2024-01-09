@@ -883,7 +883,7 @@ namespace vcpkg
         auto conf = Json::parse(contents, origin);
         if (!conf)
         {
-            messageSink.println(Color::error, LocalizedString::from_raw(conf.error()->to_string()));
+            messageSink.println(Color::error, conf.error());
             return nullopt;
         }
 
