@@ -3,6 +3,7 @@
 #include <vcpkg/base/chrono.h>
 #include <vcpkg/base/file_sink.h>
 #include <vcpkg/base/hash.h>
+#include <vcpkg/base/jsonreader.h>
 #include <vcpkg/base/message_sinks.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/optional.h>
@@ -506,6 +507,95 @@ namespace vcpkg
         });
     }
 
+    struct CompilerInfoCache
+    {
+        CompilerInfo compiler_info;
+        int64_t c_compiler_last_write_time;
+        int64_t cxx_compiler_last_write_time;
+    };
+
+    struct CompilerInfoCacheDeserializer : Json::IDeserializer<CompilerInfoCache>
+    {
+        LocalizedString type_name() const override { return LocalizedString::from_raw("CompilerInfoCache"); }
+
+        constexpr static StringLiteral ID = "id";
+        constexpr static StringLiteral VERSION = "version";
+        constexpr static StringLiteral HASH = "hash";
+        constexpr static StringLiteral C_COMPILER_PATH = "c_compiler_path";
+        constexpr static StringLiteral CXX_COMPILER_PATH = "cxx_compiler_path";
+        constexpr static StringLiteral C_COMPILER_PATH_LAST_WRITE_TIME = "c_compiler_path_last_write_time";
+        constexpr static StringLiteral CXX_COMPILER_PATH_LAST_WRITE_TIME = "cxx_compiler_path_last_write_time";
+
+        virtual Span<const StringView> valid_fields() const override
+        {
+            static const StringView t[] = {ID,
+                                           VERSION,
+                                           HASH,
+                                           C_COMPILER_PATH,
+                                           CXX_COMPILER_PATH,
+                                           C_COMPILER_PATH_LAST_WRITE_TIME,
+                                           CXX_COMPILER_PATH_LAST_WRITE_TIME};
+            return t;
+        }
+
+        Optional<CompilerInfoCache> visit_object(Json::Reader& r, const Json::Object& obj) const override
+        {
+            CompilerInfoCache cache;
+            // This is an internal structure never written by a user by hand, so we don't need localization.
+            r.required_object_field(LocalizedString::from_raw(ID),
+                                    obj,
+                                    ID,
+                                    cache.compiler_info.id,
+                                    Json::UntypedStringDeserializer::instance);
+            r.required_object_field(LocalizedString::from_raw(VERSION),
+                                    obj,
+                                    VERSION,
+                                    cache.compiler_info.version,
+                                    Json::UntypedStringDeserializer::instance);
+            r.required_object_field(LocalizedString::from_raw(HASH),
+                                    obj,
+                                    HASH,
+                                    cache.compiler_info.hash,
+                                    Json::UntypedStringDeserializer::instance);
+            r.required_object_field(LocalizedString::from_raw(C_COMPILER_PATH),
+                                    obj,
+                                    C_COMPILER_PATH,
+                                    cache.compiler_info.c_compiler_path,
+                                    Json::PathDeserializer::instance);
+            r.required_object_field(LocalizedString::from_raw(CXX_COMPILER_PATH),
+                                    obj,
+                                    CXX_COMPILER_PATH,
+                                    cache.compiler_info.cxx_compiler_path,
+                                    Json::PathDeserializer::instance);
+            r.required_object_field(LocalizedString::from_raw(C_COMPILER_PATH_LAST_WRITE_TIME),
+                                    obj,
+                                    C_COMPILER_PATH_LAST_WRITE_TIME,
+                                    cache.c_compiler_last_write_time,
+                                    Json::Int64Deserializer::instance);
+            r.required_object_field(LocalizedString::from_raw(CXX_COMPILER_PATH_LAST_WRITE_TIME),
+                                    obj,
+                                    CXX_COMPILER_PATH_LAST_WRITE_TIME,
+                                    cache.cxx_compiler_last_write_time,
+                                    Json::Int64Deserializer::instance);
+            return cache;
+        }
+        static CompilerInfoCacheDeserializer instance;
+
+        static Json::Object serialize(const CompilerInfoCache& cache)
+        {
+            Json::Object obj;
+            obj.insert(ID, cache.compiler_info.id);
+            obj.insert(VERSION, cache.compiler_info.version);
+            obj.insert(HASH, cache.compiler_info.hash);
+            obj.insert(C_COMPILER_PATH, cache.compiler_info.c_compiler_path);
+            obj.insert(CXX_COMPILER_PATH, cache.compiler_info.cxx_compiler_path);
+            obj.insert(C_COMPILER_PATH_LAST_WRITE_TIME, Json::Value::integer(cache.c_compiler_last_write_time));
+            obj.insert(CXX_COMPILER_PATH_LAST_WRITE_TIME, Json::Value::integer(cache.cxx_compiler_last_write_time));
+            return obj;
+        }
+    };
+    CompilerInfoCacheDeserializer CompilerInfoCacheDeserializer::instance;
+
     const CompilerInfo& EnvCache::get_compiler_info(const VcpkgPaths& paths,
                                                     const PreBuildInfo& pre_build_info,
                                                     const Toolset& toolset)
@@ -527,7 +617,34 @@ namespace vcpkg
         return triplet_entry.compiler_info.get_lazy(toolchain_hash, [&]() -> CompilerInfo {
             if (m_compiler_tracking)
             {
-                return load_compiler_info(paths, pre_build_info, toolset);
+                auto cache_file = paths.installed().compiler_info_cache_file(pre_build_info.triplet);
+                auto& fs = paths.get_filesystem();
+                if (fs.exists(cache_file, VCPKG_LINE_INFO))
+                {
+                    auto json_object = Json::parse_object(fs.read_contents(cache_file, VCPKG_LINE_INFO), cache_file)
+                                           .value_or_exit(VCPKG_LINE_INFO);
+                    Json::Reader reader(cache_file);
+                    CompilerInfoCache cache = reader.visit(json_object, CompilerInfoCacheDeserializer::instance)
+                                                  .value_or_exit(VCPKG_LINE_INFO);
+                    auto needs_update = [&](const Path& path, int64_t last_write_time) {
+                        return !fs.exists(path, VCPKG_LINE_INFO) ||
+                               fs.last_write_time(path, VCPKG_LINE_INFO) != last_write_time;
+                    };
+                    if (!needs_update(cache.compiler_info.c_compiler_path, cache.c_compiler_last_write_time) &&
+                        !needs_update(cache.compiler_info.cxx_compiler_path, cache.cxx_compiler_last_write_time))
+                    {
+                        return cache.compiler_info;
+                    }
+                }
+                auto compiler_info = load_compiler_info(paths, pre_build_info, toolset);
+                CompilerInfoCache cache;
+                cache.compiler_info = compiler_info;
+                cache.c_compiler_last_write_time = fs.last_write_time(compiler_info.c_compiler_path, VCPKG_LINE_INFO);
+                cache.cxx_compiler_last_write_time =
+                    fs.last_write_time(compiler_info.cxx_compiler_path, VCPKG_LINE_INFO);
+                fs.write_contents_and_dirs(
+                    cache_file, Json::stringify(CompilerInfoCacheDeserializer::serialize(cache)), VCPKG_LINE_INFO);
+                return compiler_info;
             }
             else
             {
@@ -667,14 +784,60 @@ namespace vcpkg
                                            const PreBuildInfo& pre_build_info,
                                            const Toolset& toolset)
     {
+        static constexpr auto vcpkg_json = R"--(
+{
+  "name": "detect-compiler",
+  "version": "0",
+  "description": "None"
+}
+)--";
+        static constexpr auto portfile_cmake = R"--(
+set(VCPKG_BUILD_TYPE release)
+vcpkg_configure_cmake(
+    SOURCE_PATH "${CMAKE_CURRENT_LIST_DIR}"
+    PREFER_NINJA
+    OPTIONS 
+        "-DPACKAGES_DIR=${CURRENT_PACKAGES_DIR}"
+)
+)--";
+        static constexpr auto cmakelists_txt = R"--(
+cmake_minimum_required(VERSION 3.20)
+project(detect_compiler NONE)
+
+if(CMAKE_GENERATOR STREQUAL "Ninja" AND CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    set(CMAKE_C_COMPILER_WORKS 1)
+    set(CMAKE_C_COMPILER_FORCED 1)
+    set(CMAKE_CXX_COMPILER_WORKS 1)
+    set(CMAKE_CXX_COMPILER_FORCED 1)
+endif()
+
+enable_language(C)
+enable_language(CXX)
+
+file(SHA1 "${CMAKE_CXX_COMPILER}" CXX_HASH)
+file(SHA1 "${CMAKE_C_COMPILER}" C_HASH)
+string(SHA1 COMPILER_HASH "${C_HASH}${CXX_HASH}")
+
+file(WRITE "${PACKAGES_DIR}/abi_info" "${COMPILER_HASH}
+${CMAKE_CXX_COMPILER_VERSION}
+${CMAKE_CXX_COMPILER_ID}
+${CMAKE_C_COMPILER}
+${CMAKE_CXX_COMPILER}")
+)--";
         auto& triplet = pre_build_info.triplet;
         msg::println(msgDetectCompilerHash, msg::triplet = triplet);
         auto buildpath = paths.buildtrees() / "detect_compiler";
+        auto portpath = paths.buildtrees() / "detect_compiler-port";
+        auto packagespath = paths.packages() / ("detect_compiler_" + triplet.canonical_name());
+        auto& fs = paths.get_filesystem();
+        fs.write_contents_and_dirs(portpath / "vcpkg.json", vcpkg_json, VCPKG_LINE_INFO);
+        fs.write_contents_and_dirs(portpath / "portfile.cmake", portfile_cmake, VCPKG_LINE_INFO);
+        fs.write_contents_and_dirs(portpath / "CMakeLists.txt", cmakelists_txt, VCPKG_LINE_INFO);
 
         std::vector<CMakeVariable> cmake_args{
-            {"CURRENT_PORT_DIR", paths.scripts / "detect_compiler"},
+            {"CURRENT_PORT_DIR", portpath},
             {"CURRENT_BUILDTREES_DIR", buildpath},
-            {"CURRENT_PACKAGES_DIR", paths.packages() / ("detect_compiler_" + triplet.canonical_name())},
+            {"CURRENT_PACKAGES_DIR", packagespath},
             // The detect_compiler "port" doesn't depend on the host triplet, so always natively compile
             {"_HOST_TRIPLET", triplet.canonical_name()},
         };
@@ -683,47 +846,26 @@ namespace vcpkg
         auto command = vcpkg::make_cmake_cmd(paths, paths.ports_cmake, std::move(cmake_args));
 
         const auto& env = paths.get_action_env(pre_build_info, toolset);
-        auto& fs = paths.get_filesystem();
         fs.create_directory(buildpath, VCPKG_LINE_INFO);
         auto stdoutlog = buildpath / ("stdout-" + triplet.canonical_name() + ".log");
+
+        auto result = flatten_out(cmd_execute_and_capture_output(command, default_working_directory, env),
+                                  command.command_line());
         CompilerInfo compiler_info;
-        std::string buf;
-
-        ExpectedL<int> rc = LocalizedString();
+        if (result.has_value())
         {
-            const auto out_file = fs.open_for_write(stdoutlog, VCPKG_LINE_INFO);
-            rc = cmd_execute_and_stream_lines(
-                command,
-                [&](StringView s) {
-                    static constexpr StringLiteral s_hash_marker = "#COMPILER_HASH#";
-                    if (Strings::starts_with(s, s_hash_marker))
-                    {
-                        compiler_info.hash = s.substr(s_hash_marker.size()).to_string();
-                    }
-                    static constexpr StringLiteral s_version_marker = "#COMPILER_CXX_VERSION#";
-                    if (Strings::starts_with(s, s_version_marker))
-                    {
-                        compiler_info.version = s.substr(s_version_marker.size()).to_string();
-                    }
-                    static constexpr StringLiteral s_id_marker = "#COMPILER_CXX_ID#";
-                    if (Strings::starts_with(s, s_id_marker))
-                    {
-                        compiler_info.id = s.substr(s_id_marker.size()).to_string();
-                    }
-                    Debug::println(s);
-                    const auto old_buf_size = buf.size();
-                    Strings::append(buf, s, '\n');
-                    const auto write_size = buf.size() - old_buf_size;
-                    Checks::msg_check_exit(VCPKG_LINE_INFO,
-                                           out_file.write(buf.c_str() + old_buf_size, 1, write_size) == write_size,
-                                           msgErrorWhileWriting,
-                                           msg::path = stdoutlog);
-                },
-                default_working_directory,
-                env);
-        } // close out_file
+            auto lines = fs.read_lines(packagespath / "abi_info").value_or_exit(VCPKG_LINE_INFO);
+            if (lines.size() == 5)
+            {
+                compiler_info.hash = lines[0];
+                compiler_info.version = lines[1];
+                compiler_info.id = lines[2];
+                compiler_info.c_compiler_path = lines[3];
+                compiler_info.cxx_compiler_path = lines[4];
+            }
+        }
 
-        if (compiler_info.hash.empty() || !succeeded(rc))
+        if (compiler_info.hash.empty() || !result.has_value())
         {
             Debug::println("Compiler information tracking can be disabled by passing --",
                            VcpkgCmdArguments::FEATURE_FLAGS_ARG,
@@ -731,7 +873,15 @@ namespace vcpkg
                            VcpkgCmdArguments::COMPILER_TRACKING_FEATURE);
 
             msg::println_error(msgErrorDetectingCompilerInfo, msg::path = stdoutlog);
-            msg::write_unlocalized_text(Color::none, buf);
+            if (result.has_value())
+            {
+                msg::write_unlocalized_text(Color::none, *result.get());
+                msg::write_unlocalized_text(Color::none, fs.read_contents(packagespath / "abi_info", VCPKG_LINE_INFO));
+            }
+            else
+            {
+                msg::println(result.error());
+            }
             Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgErrorUnableToDetectCompilerInfo);
         }
 
