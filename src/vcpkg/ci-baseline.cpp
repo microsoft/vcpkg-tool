@@ -60,7 +60,8 @@ namespace vcpkg
                                                             StringView text,
                                                             StringView origin)
     {
-        std::vector<CiBaselineLine> result;
+        Optional<std::vector<CiBaselineLine>> result_storage;
+        auto& result = result_storage.emplace();
         ParserBase parser(context, text, origin);
         for (;;)
         {
@@ -68,7 +69,7 @@ namespace vcpkg
             if (parser.at_eof())
             {
                 // success
-                return result;
+                return result_storage;
             }
 
             if (parser.cur() == '#')
@@ -148,7 +149,8 @@ namespace vcpkg
         }
 
         // failure
-        return nullopt;
+        result_storage.clear();
+        return result_storage;
     }
 
     CiBaselineData parse_and_apply_ci_baseline(View<CiBaselineLine> lines,

@@ -132,7 +132,11 @@ TEST_CASE ("parse proc/pid/stat file", "[cgroup-parser]")
         std::string contents =
             R"(4281 (0123456789abcdefg) S 4099 1676 1676 0 -1 1077936384 51165 303 472 0 81 25 0 0 20 0 10 0 829158 4924583936 39830 18446744073709551615 4194304 14147733 140725993620736 0 0 0 0 16781312 16386 0 0 0 17 1 0 0 5 0 0 16247120 16519160 29999104 140725993622792 140725993622920 140725993622920 140725993627556 0)";
 
-        auto maybe_stat = try_parse_process_stat_file(console_diagnostic_context, {contents, "test"});
+        BufferedDiagnosticContext bdc;
+        auto maybe_stat = try_parse_process_stat_file(bdc, {contents, "test"});
         REQUIRE(!maybe_stat.has_value());
+        REQUIRE(bdc.to_string() == R"(test:1:7: error: expected ')' here
+  on expression: 4281 (0123456789abcdefg) S 4099 1676 1676 0 -1 1077936384 51165 303 472 0 81 25 0 0 20 0 10 0 829158 4924583936 39830 18446744073709551615 4194304 14147733 140725993620736 0 0 0 0 16781312 16386 0 0 0 17 1 0 0 5 0 0 16247120 16519160 29999104 140725993622792 140725993622920 140725993622920 140725993627556 0
+                       ^)");
     }
 }

@@ -185,19 +185,25 @@ namespace vcpkg
 
     void ParserBase::add_error(LocalizedString&& message, const SourceLoc& loc)
     {
-        message.append_raw('\n');
-        append_caret_line(message, loc);
-        m_context.report(
-            DiagnosticLine{DiagKind::Error, m_origin, TextPosition{loc.row, loc.column}, std::move(message)});
-        m_any_errors = true;
-        // Avoid error loops by skipping to the end
-        skip_to_eof();
+        // avoid cascading errors by only saving the first
+        if (!m_any_errors)
+        {
+            message.append_raw('\n');
+            append_caret_line(message, loc);
+            m_context.report(
+                DiagnosticLine{DiagKind::Error, m_origin, TextPosition{loc.row, loc.column}, std::move(message)});
+            m_any_errors = true;
+            // Avoid error loops by skipping to the end
+            skip_to_eof();
+        }
     }
 
     void ParserBase::add_warning(LocalizedString&& message) { add_warning(std::move(message), cur_loc()); }
 
     void ParserBase::add_warning(LocalizedString&& message, const SourceLoc& loc)
     {
+        message.append_raw('\n');
+        append_caret_line(message, loc);
         m_context.report(
             DiagnosticLine{DiagKind::Warning, m_origin, TextPosition{loc.row, loc.column}, std::move(message)});
     }

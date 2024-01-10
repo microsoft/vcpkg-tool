@@ -115,6 +115,7 @@ namespace vcpkg
     };
 
     extern DiagnosticContext& console_diagnostic_context;
+    extern DiagnosticContext& null_diagnostic_context;
 
     // If Ty is an Optional<U>, typename AdaptContextUnwrapOptional<Ty>::type is the type necessary to return U, and fwd
     // is the type necessary to forward U. Otherwise, there are no members ::type or ::fwd

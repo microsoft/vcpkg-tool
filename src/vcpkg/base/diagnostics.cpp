@@ -179,3 +179,21 @@ namespace vcpkg
 {
     DiagnosticContext& console_diagnostic_context = console_diagnostic_context_instance;
 }
+
+namespace
+{
+    struct NullDiagnosticContext : DiagnosticContext
+    {
+        virtual void report(const DiagnosticLine&) override
+        {
+            // intentionally empty
+        }
+    };
+
+    NullDiagnosticContext null_diagnostic_context_instance;
+}
+
+namespace vcpkg
+{
+    DiagnosticContext& null_diagnostic_context = null_diagnostic_context_instance;
+}

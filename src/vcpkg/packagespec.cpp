@@ -130,7 +130,16 @@ namespace vcpkg
     {
         auto parser = ParserBase(context, input, "<unknown>");
         auto maybe_pqs = parse_qualified_specifier(parser);
-        if (!parser.at_eof()) parser.add_error(msg::format(msgExpectedEof));
+        if (!parser.at_eof())
+        {
+            parser.add_error(msg::format(msgExpectedEof));
+        }
+
+        if (parser.any_errors())
+        {
+            maybe_pqs.clear();
+        }
+
         return maybe_pqs;
     }
 

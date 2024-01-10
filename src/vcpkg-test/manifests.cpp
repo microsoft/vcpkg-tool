@@ -1285,7 +1285,7 @@ TEST_CASE ("license error messages", "[manifests][license]")
     }
     {
         BufferedDiagnosticContext bdc;
-        CHECK(!parse_spdx_license_expression(bdc, "MIT AND unknownlicense").has_value());
+        CHECK(parse_spdx_license_expression(bdc, "MIT AND unknownlicense").has_value());
         CHECK(
             bdc.to_string() ==
             R"(<license string>:1:9: warning: Unknown license identifier 'unknownlicense'. Known values are listed at https://spdx.org/licenses/

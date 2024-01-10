@@ -145,24 +145,28 @@ namespace vcpkg
     template<class T, class Message, class F>
     static Optional<std::vector<T>> parse_list_until_eof(Message bad_comma_message, ParserBase& parser, F f)
     {
-        std::vector<T> ret;
+        Optional<std::vector<T>> ret;
+        auto& vec = ret.emplace();
         parser.skip_whitespace();
         if (parser.at_eof()) return std::vector<T>{};
-        do
+        for (;;)
         {
             auto item = f(parser);
-            if (!item) return nullopt;
-            ret.push_back(std::move(item).value_or_exit(VCPKG_LINE_INFO));
+            if (!item) break;
+            vec.push_back(std::move(item).value_or_exit(VCPKG_LINE_INFO));
             parser.skip_whitespace();
-            if (parser.at_eof()) return {std::move(ret)};
+            if (parser.at_eof()) return ret;
             if (parser.cur() != ',')
             {
                 parser.add_error(msg::format(bad_comma_message));
-                return nullopt;
+                break;
             }
             parser.next();
             parser.skip_whitespace();
-        } while (true);
+        }
+
+        ret.clear();
+        return ret;
     }
 
     Optional<std::vector<std::string>> parse_default_features_list_context(DiagnosticContext& context,

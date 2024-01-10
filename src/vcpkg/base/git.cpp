@@ -147,6 +147,7 @@ namespace vcpkg
         {
             context.report(DiagnosticLine{DiagKind::Note,
                                           msg::format(msgGitUnexpectedCommandOutputCmd, msg::command_line = cmd_line)});
+            results_storage.clear();
         }
 
         return results_storage;
