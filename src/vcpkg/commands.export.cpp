@@ -177,8 +177,9 @@ namespace
             .string_arg(output_dir)
             .string_arg("-NoDefaultExcludes");
 
-        return flatten(cmd_execute_and_capture_output(cmd, default_working_directory, get_clean_environment()),
-                       Tools::NUGET)
+        RedirectedProcessLaunchSettings settings;
+        settings.environment = get_clean_environment();
+        return flatten(cmd_execute_and_capture_output(cmd, settings), Tools::NUGET)
             .map([&](Unit) { return output_dir / (nuget_id + "." + nuget_version + ".nupkg"); })
             .value_or_exit(VCPKG_LINE_INFO);
     }
@@ -225,18 +226,19 @@ namespace
         const auto exported_archive_filename = fmt::format("{}.{}", exported_dir_filename, format.extension());
         const auto exported_archive_path = output_dir / exported_archive_filename;
 
-        Command cmd;
-        cmd.string_arg(cmake_exe)
-            .string_arg("-E")
-            .string_arg("tar")
-            .string_arg("cf")
-            .string_arg(exported_archive_path)
-            .string_arg(Strings::concat("--format=", format.cmake_option()))
-            .string_arg("--")
-            .string_arg(raw_exported_dir);
+        auto cmd = Command{cmake_exe}
+                       .string_arg("-E")
+                       .string_arg("tar")
+                       .string_arg("cf")
+                       .string_arg(exported_archive_path)
+                       .string_arg(Strings::concat("--format=", format.cmake_option()))
+                       .string_arg("--")
+                       .string_arg(raw_exported_dir);
 
-        const int exit_code =
-            cmd_execute_clean(cmd, WorkingDirectory{raw_exported_dir.parent_path()}).value_or_exit(VCPKG_LINE_INFO);
+        ProcessLaunchSettings settings;
+        settings.working_directory = raw_exported_dir.parent_path();
+        settings.environment = get_clean_environment();
+        const int exit_code = cmd_execute(cmd, settings).value_or_exit(VCPKG_LINE_INFO);
         Checks::msg_check_exit(VCPKG_LINE_INFO, exit_code == 0, msgCreationFailed, msg::path = exported_archive_path);
         return exported_archive_path;
     }

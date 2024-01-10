@@ -680,9 +680,9 @@ namespace vcpkg
         };
         get_generic_cmake_build_args(paths, triplet, toolset, cmake_args);
 
-        auto command = vcpkg::make_cmake_cmd(paths, paths.ports_cmake, std::move(cmake_args));
-
-        const auto& env = paths.get_action_env(pre_build_info, toolset);
+        auto cmd = vcpkg::make_cmake_cmd(paths, paths.ports_cmake, std::move(cmake_args));
+        RedirectedProcessLaunchSettings settings;
+        settings.environment.emplace(paths.get_action_env(pre_build_info, toolset));
         auto& fs = paths.get_filesystem();
         fs.create_directory(buildpath, VCPKG_LINE_INFO);
         auto stdoutlog = buildpath / ("stdout-" + triplet.canonical_name() + ".log");
@@ -692,35 +692,31 @@ namespace vcpkg
         ExpectedL<int> rc = LocalizedString();
         {
             const auto out_file = fs.open_for_write(stdoutlog, VCPKG_LINE_INFO);
-            rc = cmd_execute_and_stream_lines(
-                command,
-                [&](StringView s) {
-                    static constexpr StringLiteral s_hash_marker = "#COMPILER_HASH#";
-                    if (Strings::starts_with(s, s_hash_marker))
-                    {
-                        compiler_info.hash = s.substr(s_hash_marker.size()).to_string();
-                    }
-                    static constexpr StringLiteral s_version_marker = "#COMPILER_CXX_VERSION#";
-                    if (Strings::starts_with(s, s_version_marker))
-                    {
-                        compiler_info.version = s.substr(s_version_marker.size()).to_string();
-                    }
-                    static constexpr StringLiteral s_id_marker = "#COMPILER_CXX_ID#";
-                    if (Strings::starts_with(s, s_id_marker))
-                    {
-                        compiler_info.id = s.substr(s_id_marker.size()).to_string();
-                    }
-                    Debug::println(s);
-                    const auto old_buf_size = buf.size();
-                    Strings::append(buf, s, '\n');
-                    const auto write_size = buf.size() - old_buf_size;
-                    Checks::msg_check_exit(VCPKG_LINE_INFO,
-                                           out_file.write(buf.c_str() + old_buf_size, 1, write_size) == write_size,
-                                           msgErrorWhileWriting,
-                                           msg::path = stdoutlog);
-                },
-                default_working_directory,
-                env);
+            rc = cmd_execute_and_stream_lines(cmd, settings, [&](StringView s) {
+                static constexpr StringLiteral s_hash_marker = "#COMPILER_HASH#";
+                if (Strings::starts_with(s, s_hash_marker))
+                {
+                    compiler_info.hash = s.substr(s_hash_marker.size()).to_string();
+                }
+                static constexpr StringLiteral s_version_marker = "#COMPILER_CXX_VERSION#";
+                if (Strings::starts_with(s, s_version_marker))
+                {
+                    compiler_info.version = s.substr(s_version_marker.size()).to_string();
+                }
+                static constexpr StringLiteral s_id_marker = "#COMPILER_CXX_ID#";
+                if (Strings::starts_with(s, s_id_marker))
+                {
+                    compiler_info.id = s.substr(s_id_marker.size()).to_string();
+                }
+                Debug::println(s);
+                const auto old_buf_size = buf.size();
+                Strings::append(buf, s, '\n');
+                const auto write_size = buf.size() - old_buf_size;
+                Checks::msg_check_exit(VCPKG_LINE_INFO,
+                                       out_file.write(buf.c_str() + old_buf_size, 1, write_size) == write_size,
+                                       msgErrorWhileWriting,
+                                       msg::path = stdoutlog);
+            });
         } // close out_file
 
         if (compiler_info.hash.empty() || !succeeded(rc))
@@ -951,11 +947,14 @@ namespace vcpkg
             msg::println(msgInstallingFromLocation, msg::path = scfl.port_directory());
         }
 
-        const ElapsedTimer timer;
-        auto command = vcpkg::make_cmake_cmd(paths, paths.ports_cmake, get_cmake_build_args(args, paths, action));
-
         const auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
-        auto env = paths.get_action_env(*abi_info.pre_build_info, abi_info.toolset.value_or_exit(VCPKG_LINE_INFO));
+
+        const ElapsedTimer timer;
+        auto cmd = vcpkg::make_cmake_cmd(paths, paths.ports_cmake, get_cmake_build_args(args, paths, action));
+
+        RedirectedProcessLaunchSettings settings;
+        auto& env = settings.environment.emplace(
+            paths.get_action_env(*abi_info.pre_build_info, abi_info.toolset.value_or_exit(VCPKG_LINE_INFO)));
 
         auto buildpath = paths.build_dir(action.spec);
         fs.create_directory(buildpath, VCPKG_LINE_INFO);
@@ -964,17 +963,13 @@ namespace vcpkg
         ExpectedL<int> return_code = LocalizedString();
         {
             auto out_file = fs.open_for_write(stdoutlog, VCPKG_LINE_INFO);
-            return_code = cmd_execute_and_stream_data(
-                command,
-                [&](StringView sv) {
-                    msg::write_unlocalized_text(Color::none, sv);
-                    Checks::msg_check_exit(VCPKG_LINE_INFO,
-                                           out_file.write(sv.data(), 1, sv.size()) == sv.size(),
-                                           msgErrorWhileWriting,
-                                           msg::path = stdoutlog);
-                },
-                default_working_directory,
-                env);
+            return_code = cmd_execute_and_stream_data(cmd, settings, [&](StringView sv) {
+                msg::write_unlocalized_text(Color::none, sv);
+                Checks::msg_check_exit(VCPKG_LINE_INFO,
+                                       out_file.write(sv.data(), 1, sv.size()) == sv.size(),
+                                       msgErrorWhileWriting,
+                                       msg::path = stdoutlog);
+            });
         } // close out_file
 
         const auto buildtimeus = timer.microseconds();

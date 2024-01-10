@@ -520,7 +520,7 @@ namespace
     private:
         Command subcommand(StringLiteral sub) const
         {
-            Command cmd = m_cmd;
+            auto cmd = m_cmd;
             cmd.string_arg(sub).string_arg("-ForceEnglishOutput").string_arg("-Verbosity").string_arg("detailed");
             if (!m_interactive) cmd.string_arg("-NonInteractive");
             return cmd;
@@ -528,7 +528,7 @@ namespace
 
         Command install_cmd(StringView packages_config, const Path& out_dir, const NuGetSource& src) const
         {
-            Command cmd = subcommand("install");
+            auto cmd = subcommand("install");
             cmd.string_arg(packages_config)
                 .string_arg("-OutputDirectory")
                 .string_arg(out_dir)
@@ -560,11 +560,11 @@ namespace
                 .string_arg(src.value);
         }
 
-        ExpectedL<Unit> run_nuget_commandline(const Command& cmdline, MessageSink& msg_sink) const
+        ExpectedL<Unit> run_nuget_commandline(const Command& cmd, MessageSink& msg_sink) const
         {
             if (m_interactive)
             {
-                return cmd_execute(cmdline).then([](int exit_code) -> ExpectedL<Unit> {
+                return cmd_execute(cmd).then([](int exit_code) -> ExpectedL<Unit> {
                     if (exit_code == 0)
                     {
                         return {Unit{}};
@@ -574,52 +574,46 @@ namespace
                 });
             }
 
-            return cmd_execute_and_capture_output(cmdline).then([&](ExitCodeAndOutput&& res) -> ExpectedL<Unit> {
-                if (Debug::g_debugging)
-                {
-                    msg_sink.print(Color::error, res.output);
-                }
+            RedirectedProcessLaunchSettings show_in_debug_settings;
+            show_in_debug_settings.echo_in_debug = EchoInDebug::Show;
+            return cmd_execute_and_capture_output(cmd, show_in_debug_settings)
+                .then([&](ExitCodeAndOutput&& res) -> ExpectedL<Unit> {
+                    if (res.output.find("Authentication may require manual action.") != std::string::npos)
+                    {
+                        msg_sink.println(
+                            Color::warning, msgAuthenticationMayRequireManualAction, msg::vendor = "Nuget");
+                    }
 
-                if (res.output.find("Authentication may require manual action.") != std::string::npos)
-                {
-                    msg_sink.println(Color::warning, msgAuthenticationMayRequireManualAction, msg::vendor = "Nuget");
-                }
+                    if (res.exit_code == 0)
+                    {
+                        return {Unit{}};
+                    }
 
-                if (res.exit_code == 0)
-                {
-                    return {Unit{}};
-                }
+                    if (res.output.find("Response status code does not indicate success: 401 (Unauthorized)") !=
+                        std::string::npos)
+                    {
+                        msg_sink.println(Color::warning,
+                                         msgFailedVendorAuthentication,
+                                         msg::vendor = "NuGet",
+                                         msg::url = docs::binarycaching_url);
+                    }
+                    else if (res.output.find("for example \"-ApiKey AzureDevOps\"") != std::string::npos)
+                    {
+                        auto real_cmd = cmd;
+                        real_cmd.string_arg("-ApiKey").string_arg("AzureDevOps");
+                        return cmd_execute_and_capture_output(real_cmd, show_in_debug_settings)
+                            .then([&](ExitCodeAndOutput&& res) -> ExpectedL<Unit> {
+                                if (res.exit_code == 0)
+                                {
+                                    return {Unit{}};
+                                }
 
-                if (res.output.find("Response status code does not indicate success: 401 (Unauthorized)") !=
-                    std::string::npos)
-                {
-                    msg_sink.println(Color::warning,
-                                     msgFailedVendorAuthentication,
-                                     msg::vendor = "NuGet",
-                                     msg::url = docs::binarycaching_url);
-                }
-                else if (res.output.find("for example \"-ApiKey AzureDevOps\"") != std::string::npos)
-                {
-                    auto real_cmdline = cmdline;
-                    real_cmdline.string_arg("-ApiKey").string_arg("AzureDevOps");
-                    return cmd_execute_and_capture_output(real_cmdline)
-                        .then([&](ExitCodeAndOutput&& res) -> ExpectedL<Unit> {
-                            if (Debug::g_debugging)
-                            {
-                                msg_sink.print(Color::error, res.output);
-                            }
+                                return LocalizedString::from_raw(std::move(res).output);
+                            });
+                    }
 
-                            if (res.exit_code == 0)
-                            {
-                                return {Unit{}};
-                            }
-
-                            return LocalizedString::from_raw(std::move(res).output);
-                        });
-                }
-
-                return LocalizedString::from_raw(std::move(res).output);
-            });
+                    return LocalizedString::from_raw(std::move(res).output);
+                });
         }
 
         Command m_cmd;
@@ -1079,27 +1073,30 @@ namespace
             return msg::format(msgRestoredPackagesFromGCS, msg::count = count, msg::elapsed = ElapsedTime(elapsed));
         }
 
-        Command command() const { return m_tool; }
-
         ExpectedL<Unit> stat(StringView url) const override
         {
-            auto cmd = command().string_arg("-q").string_arg("stat").string_arg(url);
-            return flatten(cmd_execute_and_capture_output(cmd), Tools::GSUTIL);
+            return flatten(
+                cmd_execute_and_capture_output(Command{m_tool}.string_arg("-q").string_arg("stat").string_arg(url)),
+                Tools::GSUTIL);
         }
 
         ExpectedL<Unit> download_file(StringView object, const Path& archive) const override
         {
-            auto cmd = command().string_arg("-q").string_arg("cp").string_arg(object).string_arg(archive);
-            return flatten(cmd_execute_and_capture_output(cmd), Tools::GSUTIL);
+            return flatten(
+                cmd_execute_and_capture_output(
+                    Command{m_tool}.string_arg("-q").string_arg("cp").string_arg(object).string_arg(archive)),
+                Tools::GSUTIL);
         }
 
         ExpectedL<Unit> upload_file(StringView object, const Path& archive) const override
         {
-            auto cmd = command().string_arg("-q").string_arg("cp").string_arg(archive).string_arg(object);
-            return flatten(cmd_execute_and_capture_output(cmd), Tools::GSUTIL);
+            return flatten(
+                cmd_execute_and_capture_output(
+                    Command{m_tool}.string_arg("-q").string_arg("cp").string_arg(archive).string_arg(object)),
+                Tools::GSUTIL);
         }
 
-        Command m_tool;
+        Path m_tool;
     };
 
     struct AwsStorageTool : IObjectStorageTool
@@ -1115,11 +1112,9 @@ namespace
             return msg::format(msgRestoredPackagesFromAWS, msg::count = count, msg::elapsed = ElapsedTime(elapsed));
         }
 
-        Command command() const { return m_tool; }
-
         ExpectedL<Unit> stat(StringView url) const override
         {
-            auto cmd = command().string_arg("s3").string_arg("ls").string_arg(url);
+            auto cmd = Command{m_tool}.string_arg("s3").string_arg("ls").string_arg(url);
             if (m_no_sign_request)
             {
                 cmd.string_arg("--no-sign-request");
@@ -1133,7 +1128,7 @@ namespace
             auto r = stat(object);
             if (!r) return r;
 
-            auto cmd = command().string_arg("s3").string_arg("cp").string_arg(object).string_arg(archive);
+            auto cmd = Command{m_tool}.string_arg("s3").string_arg("cp").string_arg(object).string_arg(archive);
             if (m_no_sign_request)
             {
                 cmd.string_arg("--no-sign-request");
@@ -1144,7 +1139,7 @@ namespace
 
         ExpectedL<Unit> upload_file(StringView object, const Path& archive) const override
         {
-            auto cmd = command().string_arg("s3").string_arg("cp").string_arg(archive).string_arg(object);
+            auto cmd = Command{m_tool}.string_arg("s3").string_arg("cp").string_arg(archive).string_arg(object);
             if (m_no_sign_request)
             {
                 cmd.string_arg("--no-sign-request");
@@ -1152,7 +1147,7 @@ namespace
             return flatten(cmd_execute_and_capture_output(cmd), Tools::AWSCLI);
         }
 
-        Command m_tool;
+        Path m_tool;
         bool m_no_sign_request;
     };
 
@@ -1166,27 +1161,27 @@ namespace
             return msg::format(msgRestoredPackagesFromCOS, msg::count = count, msg::elapsed = ElapsedTime(elapsed));
         }
 
-        Command command() const { return m_tool; }
-
         ExpectedL<Unit> stat(StringView url) const override
         {
-            auto cmd = command().string_arg("ls").string_arg(url);
-            return flatten(cmd_execute_and_capture_output(cmd), Tools::COSCLI);
+            return flatten(cmd_execute_and_capture_output(Command{m_tool}.string_arg("ls").string_arg(url)),
+                           Tools::COSCLI);
         }
 
         ExpectedL<Unit> download_file(StringView object, const Path& archive) const override
         {
-            auto cmd = command().string_arg("cp").string_arg(object).string_arg(archive);
-            return flatten(cmd_execute_and_capture_output(cmd), Tools::COSCLI);
+            return flatten(
+                cmd_execute_and_capture_output(Command{m_tool}.string_arg("cp").string_arg(object).string_arg(archive)),
+                Tools::COSCLI);
         }
 
         ExpectedL<Unit> upload_file(StringView object, const Path& archive) const override
         {
-            auto cmd = command().string_arg("cp").string_arg(archive).string_arg(object);
-            return flatten(cmd_execute_and_capture_output(cmd), Tools::COSCLI);
+            return flatten(
+                cmd_execute_and_capture_output(Command{m_tool}.string_arg("cp").string_arg(archive).string_arg(object)),
+                Tools::COSCLI);
         }
 
-        Command m_tool;
+        Path m_tool;
     };
 
     ExpectedL<Path> default_cache_path_impl()
