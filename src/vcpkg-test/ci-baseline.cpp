@@ -29,10 +29,17 @@ namespace vcpkg
 
 TEST_CASE ("Parse Empty", "[ci-baseline]")
 {
-    ParseMessages m;
-    auto actual = parse_ci_baseline("", "test", m);
-    CHECK(m.good());
-    CHECK(actual.empty());
+    BufferedDiagnosticContext context;
+    auto maybe_actual = parse_ci_baseline(context, "", "test");
+    if (auto actual = maybe_actual.get())
+    {
+        CHECK(actual->empty());
+        CHECK(context.lines.empty());
+    }
+    else
+    {
+        FAIL(context.to_string());
+    }
 }
 
 TEST_CASE ("With Sample", "[ci-baseline]")
@@ -182,25 +189,38 @@ bill-made-up-another-skip:x64-linux=skip)"; // note no trailing newline
 
     SECTION ("Parse Real Prefix")
     {
-        ParseMessages m;
-        auto actual = parse_ci_baseline(example_input, "test", m);
-        CHECK(m.good());
-        CHECK(expected_from_example_input.size() == actual.size());
-        size_t n = std::min(expected_from_example_input.size(), actual.size());
-        for (size_t i = 0; i < n; ++i)
+        BufferedDiagnosticContext context;
+        auto maybe_actual = parse_ci_baseline(context, example_input, "test");
+        if (auto actual = maybe_actual.get())
         {
-            CHECK(expected_from_example_input[i] == actual[i]);
+            CHECK(context.lines.empty());
+            CHECK(expected_from_example_input.size() == actual->size());
+            size_t n = std::min(expected_from_example_input.size(), actual->size());
+            for (size_t i = 0; i < n; ++i)
+            {
+                CHECK(expected_from_example_input[i] == (*actual)[i]);
+            }
+        }
+        else
+        {
+            FAIL();
         }
     }
 
     SECTION ("Parse Real Prefix With Trailing Newline")
     {
-        ParseMessages m;
         std::string newlined_input(example_input.data(), example_input.size());
         newlined_input.push_back('\n');
-        auto actual = parse_ci_baseline(newlined_input, "test", m);
-        CHECK(m.good());
-        CHECK(expected_from_example_input == actual);
+        BufferedDiagnosticContext context;
+        auto maybe_actual = parse_ci_baseline(context, newlined_input, "test");
+        if (auto actual = maybe_actual.get())
+        {
+            CHECK(expected_from_example_input == *actual);
+        }
+        else
+        {
+            FAIL();
+        }
     }
 
     SECTION ("Applies Skips and Fails")
@@ -246,11 +266,14 @@ bill-made-up-another-skip:x64-linux=skip)"; // note no trailing newline
 
 static void check_error(const std::string& input, const std::string& expected_error)
 {
-    ParseMessages m;
-    auto actual = parse_ci_baseline(input, "test", m);
-    CHECK(actual.empty());
-    CHECK(m.warnings.empty());
-    CHECK(m.error.value_or_exit(VCPKG_LINE_INFO) == LocalizedString::from_raw(expected_error));
+    BufferedDiagnosticContext context;
+    auto maybe_actual = parse_ci_baseline(context, input, "test");
+    CHECK(!maybe_actual);
+    CHECK(context.lines.size() == 1);
+    if (context.lines.size() >= 1)
+    {
+        CHECK(context.lines[0].to_string() == expected_error);
+    }
 }
 
 TEST_CASE ("Parse Errors", "[ci-baseline]")

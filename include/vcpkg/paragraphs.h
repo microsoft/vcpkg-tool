@@ -7,6 +7,8 @@
 #include <vcpkg/fwd/paragraphparser.h>
 #include <vcpkg/fwd/registries.h>
 
+#include <vcpkg/base/diagnostics.h>
+
 #include <vcpkg/sourceparagraph.h>
 
 #include <utility>
@@ -16,12 +18,17 @@ namespace vcpkg::Paragraphs
 {
     uint64_t get_load_ports_stats();
 
-    ExpectedL<Paragraph> parse_single_merged_paragraph(StringView str, StringView origin);
-    ExpectedL<Paragraph> parse_single_paragraph(StringView str, StringView origin);
-    ExpectedL<Paragraph> get_single_paragraph(const ReadOnlyFilesystem& fs, const Path& control_path);
+    Optional<Paragraph> parse_single_merged_paragraph(DiagnosticContext& context, StringView str, StringView origin);
+    Optional<Paragraph> parse_single_paragraph(DiagnosticContext& context, StringView str, StringView origin);
+    Optional<Paragraph> get_single_paragraph(DiagnosticContext& context,
+                                             const ReadOnlyFilesystem& fs,
+                                             const Path& control_path);
 
     ExpectedL<std::vector<Paragraph>> get_paragraphs(const ReadOnlyFilesystem& fs, const Path& control_path);
 
+    Optional<std::vector<Paragraph>> parse_paragraphs_context(DiagnosticContext& context,
+                                                              StringView str,
+                                                              StringView origin);
     ExpectedL<std::vector<Paragraph>> parse_paragraphs(StringView str, StringView origin);
 
     bool is_port_directory(const ReadOnlyFilesystem& fs, const Path& maybe_directory);

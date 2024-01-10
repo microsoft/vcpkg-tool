@@ -128,7 +128,7 @@ namespace vcpkg::Test
     std::vector<FullPackageSpec> parse_test_fspecs(StringView sv)
     {
         std::vector<FullPackageSpec> ret;
-        ParserBase parser(sv, "test");
+        ParserBase parser(console_diagnostic_context, sv, "test");
         while (!parser.at_eof())
         {
             auto opt = parse_qualified_specifier(parser);

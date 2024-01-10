@@ -166,9 +166,10 @@ namespace
             std::vector<std::pair<SourceLoc, std::string>> segments;
             parse_segments(segments);
 
-            if (get_error())
+            if (any_errors())
             {
-                return {};
+                ret.clear();
+                return ret;
             }
 
             // Skip empty sources like ';;'
@@ -1225,8 +1226,11 @@ namespace
 
     struct BinaryConfigParser : ConfigSegmentsParser
     {
-        BinaryConfigParser(StringView text, StringView origin, BinaryConfigParserState* state)
-            : ConfigSegmentsParser(text, origin), state(state)
+        BinaryConfigParser(DiagnosticContext& context,
+                           StringView text,
+                           StringView origin,
+                           BinaryConfigParserState* state)
+            : ConfigSegmentsParser(context, text, origin), state(state)
         {
         }
 
@@ -1237,7 +1241,7 @@ namespace
             auto all_segments = parse_all_segments();
             for (auto&& x : all_segments)
             {
-                if (get_error()) return;
+                if (any_errors()) return;
                 handle_segments(std::move(x));
             }
         }
@@ -1635,8 +1639,8 @@ namespace
 
     struct AssetSourcesParser : ConfigSegmentsParser
     {
-        AssetSourcesParser(StringView text, StringView origin, AssetSourcesState* state)
-            : ConfigSegmentsParser(text, origin), state(state)
+        AssetSourcesParser(DiagnosticContext& context, StringView text, StringView origin, AssetSourcesState* state)
+            : ConfigSegmentsParser(context, text, origin), state(state)
         {
         }
 
@@ -1647,7 +1651,7 @@ namespace
             auto all_segments = parse_all_segments();
             for (auto&& x : all_segments)
             {
-                if (get_error()) return;
+                if (any_errors()) return;
                 handle_segments(std::move(x));
             }
         }
@@ -2284,7 +2288,8 @@ namespace vcpkg
     }
 }
 
-ExpectedL<DownloadManagerConfig> vcpkg::parse_download_configuration(const Optional<std::string>& arg)
+Optional<DownloadManagerConfig> vcpkg::parse_download_configuration_context(DiagnosticContext& context,
+                                                                            const Optional<std::string>& arg)
 {
     if (!arg || arg.get()->empty()) return DownloadManagerConfig{};
 
@@ -2292,29 +2297,25 @@ ExpectedL<DownloadManagerConfig> vcpkg::parse_download_configuration(const Optio
 
     AssetSourcesState s;
     const auto source = Strings::concat("$", VcpkgCmdArguments::ASSET_SOURCES_ENV);
-    AssetSourcesParser parser(*arg.get(), source, &s);
+    AssetSourcesParser parser(context, *arg.get(), source, &s);
     parser.parse();
-    if (auto err = parser.get_error())
+    if (parser.any_errors())
     {
-        return LocalizedString::from_raw(err->to_string()) // note that this already contains error:
-            .append_raw('\n')
-            .append_raw(NotePrefix)
-            .append(msgSeeURL, msg::url = docs::assetcaching_url);
+        context.report(DiagnosticLine{DiagKind::Note, msg::format(msgSeeURL, msg::url = docs::assetcaching_url)});
+        return nullopt;
     }
 
     if (s.azblob_templates_to_put.size() > 1)
     {
-        return msg::format_error(msgAMaximumOfOneAssetWriteUrlCanBeSpecified)
-            .append_raw('\n')
-            .append_raw(NotePrefix)
-            .append(msgSeeURL, msg::url = docs::assetcaching_url);
+        context.report_error(msgAMaximumOfOneAssetWriteUrlCanBeSpecified);
+        context.report(DiagnosticLine{DiagKind::Note, msg::format(msgSeeURL, msg::url = docs::assetcaching_url)});
+        return nullopt;
     }
     if (s.url_templates_to_get.size() > 1)
     {
-        return msg::format_error(msgAMaximumOfOneAssetReadUrlCanBeSpecified)
-            .append_raw('\n')
-            .append_raw(NotePrefix)
-            .append(msgSeeURL, msg::url = docs::assetcaching_url);
+        context.report_error(msgAMaximumOfOneAssetReadUrlCanBeSpecified);
+        context.report(DiagnosticLine{DiagKind::Note, msg::format(msgSeeURL, msg::url = docs::assetcaching_url)});
+        return nullopt;
     }
 
     Optional<std::string> get_url;
@@ -2340,36 +2341,52 @@ ExpectedL<DownloadManagerConfig> vcpkg::parse_download_configuration(const Optio
                                  s.script};
 }
 
-ExpectedL<BinaryConfigParserState> vcpkg::parse_binary_provider_configs(const std::string& env_string,
-                                                                        View<std::string> args)
+ExpectedL<DownloadManagerConfig> vcpkg::parse_download_configuration(const Optional<std::string>& arg)
 {
-    BinaryConfigParserState s;
+    return adapt_context_to_expected(parse_download_configuration_context, arg);
+}
 
-    BinaryConfigParser default_parser("default,readwrite", "<defaults>", &s);
+Optional<BinaryConfigParserState> vcpkg::parse_binary_provider_configs_context(DiagnosticContext& context,
+                                                                               const std::string& env_string,
+                                                                               View<std::string> args)
+{
+    Optional<BinaryConfigParserState> result;
+    auto& s = result.emplace();
+
+    BinaryConfigParser default_parser(context, "default,readwrite", "<defaults>", &s);
     default_parser.parse();
-    if (auto err = default_parser.get_error())
+    if (default_parser.any_errors())
     {
-        return *err;
+        result.clear();
+        return result;
     }
 
-    BinaryConfigParser env_parser(env_string, "VCPKG_BINARY_SOURCES", &s);
+    BinaryConfigParser env_parser(context, env_string, "VCPKG_BINARY_SOURCES", &s);
     env_parser.parse();
-    if (auto err = env_parser.get_error())
+    if (env_parser.any_errors())
     {
-        return *err;
+        result.clear();
+        return result;
     }
 
     for (auto&& arg : args)
     {
-        BinaryConfigParser arg_parser(arg, "<command>", &s);
+        BinaryConfigParser arg_parser(context, arg, "<command>", &s);
         arg_parser.parse();
-        if (auto err = arg_parser.get_error())
+        if (arg_parser.any_errors())
         {
-            return *err;
+            result.clear();
+            return result;
         }
     }
 
-    return s;
+    return result;
+}
+
+ExpectedL<BinaryConfigParserState> vcpkg::parse_binary_provider_configs(const std::string& env_string,
+                                                                        View<std::string> args)
+{
+    return adapt_context_to_expected(parse_binary_provider_configs_context, env_string, args);
 }
 
 std::string vcpkg::format_version_for_nugetref(StringView version_text, StringView abi_tag)

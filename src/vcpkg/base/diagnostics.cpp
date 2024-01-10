@@ -33,6 +33,22 @@ namespace
             target.append(ColonSpace.data(), ColonSpace.size());
         }
     }
+
+    void append_kind_prefix(std::string& target, DiagKind kind)
+    {
+        static constexpr StringLiteral Empty{""};
+        static constexpr const StringLiteral* prefixes[] = {
+            &Empty, &MessagePrefix, &ErrorPrefix, &WarningPrefix, &NotePrefix};
+
+        const auto diag_index = static_cast<unsigned int>(kind);
+        if (diag_index >= static_cast<unsigned int>(DiagKind::COUNT))
+        {
+            Checks::unreachable(VCPKG_LINE_INFO);
+        }
+
+        const auto prefix = prefixes[diag_index];
+        target.append(prefix->data(), prefix->size());
+    }
 }
 
 namespace vcpkg
@@ -78,19 +94,21 @@ namespace vcpkg
     void DiagnosticLine::to_string(std::string& target) const
     {
         append_file_prefix(target, m_origin, m_position);
-        static constexpr StringLiteral Empty{""};
-        static constexpr const StringLiteral* prefixes[] = {
-            &Empty, &MessagePrefix, &ErrorPrefix, &WarningPrefix, &NotePrefix};
-
-        const auto diag_index = static_cast<unsigned int>(m_kind);
-        if (diag_index >= static_cast<unsigned int>(DiagKind::COUNT))
-        {
-            Checks::unreachable(VCPKG_LINE_INFO);
-        }
-
-        const auto prefix = prefixes[diag_index];
-        target.append(prefix->data(), prefix->size());
+        append_kind_prefix(target, m_kind);
         target.append(m_message.data());
+    }
+
+    LocalizedString DiagnosticLine::to_json_reader_string(const std::string& path, const LocalizedString& type) const
+    {
+        std::string result;
+        append_file_prefix(result, m_origin, m_position);
+        append_kind_prefix(result, m_kind);
+        result.append(path);
+        result.append(" (");
+        result.append(type.data());
+        result.append(") ");
+        result.append(m_message.data());
+        return LocalizedString::from_raw(result);
     }
 
     void BufferedDiagnosticContext::report(const DiagnosticLine& line)

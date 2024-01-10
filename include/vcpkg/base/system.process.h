@@ -3,6 +3,7 @@
 #include <vcpkg/base/fwd/files.h>
 #include <vcpkg/base/fwd/system.process.h>
 
+#include <vcpkg/base/diagnostics.h>
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/path.h>
@@ -172,7 +173,7 @@ namespace vcpkg
         std::string executable_name;
     };
 
-    Optional<ProcessStat> try_parse_process_stat_file(const FileContents& contents);
+    Optional<ProcessStat> try_parse_process_stat_file(DiagnosticContext& context, const FileContents& contents);
     void get_parent_process_list(std::vector<std::string>& ret);
 
     bool succeeded(const ExpectedL<int>& maybe_exit) noexcept;

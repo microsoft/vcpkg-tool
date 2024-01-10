@@ -1734,13 +1734,13 @@ namespace vcpkg
 
     BuildInfo read_build_info(const ReadOnlyFilesystem& fs, const Path& filepath)
     {
-        auto maybe_paragraph = Paragraphs::get_single_paragraph(fs, filepath);
+        auto maybe_paragraph = Paragraphs::get_single_paragraph(console_diagnostic_context, fs, filepath);
         if (auto paragraph = maybe_paragraph.get())
         {
             return inner_create_buildinfo(filepath, std::move(*paragraph));
         }
 
-        Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, msgInvalidBuildInfo, msg::error_msg = maybe_paragraph.error());
+        Checks::exit_fail(VCPKG_LINE_INFO);
     }
 
     static ExpectedL<bool> from_cmake_bool(StringView value, StringView name)

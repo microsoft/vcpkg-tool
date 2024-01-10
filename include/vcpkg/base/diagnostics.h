@@ -59,6 +59,10 @@ namespace vcpkg
         std::string to_string() const;
         void to_string(std::string& target) const;
 
+        LocalizedString to_json_reader_string(const std::string& path, const LocalizedString& type) const;
+
+        DiagKind kind() const noexcept { return m_kind; }
+
     private:
         DiagKind m_kind;
         Optional<std::string> m_origin;

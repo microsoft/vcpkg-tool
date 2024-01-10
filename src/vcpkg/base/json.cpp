@@ -481,7 +481,10 @@ namespace vcpkg::Json
     {
         struct Parser : private ParserBase
         {
-            Parser(StringView text, StringView origin) : ParserBase(text, origin), style_() { }
+            Parser(DiagnosticContext& context, StringView text, StringView origin)
+                : ParserBase(context, text, origin), style_()
+            {
+            }
 
             char32_t next() noexcept
             {
@@ -996,7 +999,8 @@ namespace vcpkg::Json
             {
                 StatsTimer t(g_json_parsing_stats);
 
-                auto parser = Parser(json, origin);
+                BufferedDiagnosticContext context;
+                auto parser = Parser(context, json, origin);
 
                 auto val = parser.parse_value();
 
@@ -1006,9 +1010,9 @@ namespace vcpkg::Json
                     parser.add_error(msg::format(msgUnexpectedEOFExpectedChar));
                 }
 
-                if (const auto maybe_error = std::move(parser).get_error())
+                if (parser.any_errors())
                 {
-                    return std::move(*maybe_error);
+                    return LocalizedString::from_raw(context.to_string());
                 }
 
                 return ParsedJson{std::move(val), parser.style()};
@@ -1411,6 +1415,10 @@ namespace vcpkg::Json
                                .append_raw("): ")
                                .append_raw(message));
     }
+    void Reader::add_diagnostic_error(const LocalizedString& type, const DiagnosticLine& line)
+    {
+        m_errors.push_back(line.to_json_reader_string(path(), type));
+    }
 
     void Reader::check_for_unexpected_fields(const Object& obj,
                                              View<StringView> valid_fields,
@@ -1439,7 +1447,7 @@ namespace vcpkg::Json
         }
     }
 
-    void Reader::add_warning(LocalizedString type, StringView msg)
+    void Reader::add_warning(const LocalizedString& type, StringView msg)
     {
         m_warnings.push_back(LocalizedString::from_raw(m_origin)
                                  .append_raw(": ")
@@ -1449,6 +1457,11 @@ namespace vcpkg::Json
                                  .append(type)
                                  .append_raw("): ")
                                  .append_raw(msg));
+    }
+
+    void Reader::add_diagnostic_warning(const LocalizedString& type, const DiagnosticLine& warning)
+    {
+        m_warnings.push_back(warning.to_json_reader_string(path(), type));
     }
 
     std::string Reader::path() const noexcept

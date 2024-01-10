@@ -262,15 +262,14 @@ namespace vcpkg
         // sanity check the serialized data
         auto my_paragraph = StringView{out_str}.substr(initial_end);
         static constexpr StringLiteral sanity_parse_origin = "vcpkg::serialize(const BinaryParagraph&, std::string&)";
-        auto parsed_paragraph =
-            Paragraphs::parse_single_paragraph(StringView{out_str}.substr(initial_end), sanity_parse_origin);
+        auto parsed_paragraph = Paragraphs::parse_single_paragraph(
+            console_diagnostic_context, StringView{out_str}.substr(initial_end), sanity_parse_origin);
         if (!parsed_paragraph)
         {
-            Checks::msg_exit_maybe_upgrade(
-                VCPKG_LINE_INFO,
-                msg::format(msgFailedToParseSerializedBinParagraph, msg::error_msg = parsed_paragraph.error())
-                    .append_raw('\n')
-                    .append_raw(my_paragraph));
+            console_diagnostic_context.report(DiagnosticLine{
+                DiagKind::Note,
+                msg::format(msgFailedToParseSerializedBinParagraphSuffix).append_raw('\n').append_raw(my_paragraph)});
+            Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
         auto binary_paragraph = BinaryParagraph(sanity_parse_origin, std::move(*parsed_paragraph.get()));

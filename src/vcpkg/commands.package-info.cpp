@@ -69,7 +69,7 @@ namespace vcpkg
             std::vector<PackageSpec> specs_to_write;
             for (auto&& arg : options.command_arguments)
             {
-                ParserBase parser(arg, "<command>");
+                ParserBase parser(console_diagnostic_context, arg, "<command>");
                 auto maybe_qpkg = parse_qualified_specifier(parser);
                 if (!parser.at_eof() || !maybe_qpkg)
                 {
@@ -87,14 +87,16 @@ namespace vcpkg
                 {
                     parser.add_error(msg::format(msgUnexpectedPlatformExpression));
                 }
-                if (auto err = parser.get_error())
-                {
-                    Checks::exit_with_message(VCPKG_LINE_INFO, err->to_string());
-                }
 
-                auto& qpkg = *maybe_qpkg.get();
-                // intentionally no triplet name check
-                specs_to_write.emplace_back(qpkg.name, Triplet::from_canonical_name(*qpkg.triplet.get()));
+                if (auto qpkg = maybe_qpkg.get())
+                {
+                    // intentionally no triplet name check
+                    specs_to_write.emplace_back(qpkg->name, Triplet::from_canonical_name(*qpkg->triplet.get()));
+                }
+                else
+                {
+                    Checks::exit_fail(VCPKG_LINE_INFO);
+                }
             }
 
             Json::Object response;
@@ -130,27 +132,23 @@ namespace vcpkg
 
             for (auto&& arg : options.command_arguments)
             {
-                ParserBase parser(arg, "<command>");
+                ParserBase parser(console_diagnostic_context, arg, "<command>");
                 auto maybe_pkg = parse_package_name(parser);
-                if (!parser.at_eof() || !maybe_pkg)
+                auto pkg = maybe_pkg.get();
+                if (!parser.at_eof() || !pkg)
                 {
                     parser.add_error(msg::format(msgExpectedPortName));
-                }
-                if (auto err = parser.get_error())
-                {
-                    Checks::exit_with_message(VCPKG_LINE_INFO, err->to_string());
+                    Checks::exit_fail(VCPKG_LINE_INFO);
                 }
 
-                auto& pkg = *maybe_pkg.get();
+                if (results.contains(*pkg)) continue;
 
-                if (results.contains(pkg)) continue;
-
-                auto maybe_scfl = provider.get_control_file(pkg);
+                auto maybe_scfl = provider.get_control_file(*pkg);
 
                 Json::Object obj;
                 if (auto pscfl = maybe_scfl.get())
                 {
-                    results.insert(pkg, serialize_manifest(*pscfl->source_control_file));
+                    results.insert(*pkg, serialize_manifest(*pscfl->source_control_file));
                 }
             }
             response.insert("results", std::move(results));
