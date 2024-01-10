@@ -3,9 +3,11 @@
 #include <vcpkg/base/fwd/system.process.h>
 
 #include <vcpkg/fwd/binarycaching.h>
+#include <vcpkg/fwd/build.h>
 #include <vcpkg/fwd/cmakevars.h>
 #include <vcpkg/fwd/dependencies.h>
 #include <vcpkg/fwd/portfileprovider.h>
+#include <vcpkg/fwd/vcpkgcmdarguments.h>
 
 #include <vcpkg/base/cache.h>
 #include <vcpkg/base/files.h>
@@ -19,7 +21,6 @@
 #include <vcpkg/packagespec.h>
 #include <vcpkg/statusparagraphs.h>
 #include <vcpkg/triplet.h>
-#include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
 #include <array>

@@ -681,8 +681,8 @@ namespace vcpkg
             const auto requested_arch = expected_architecture == "x64" ? "x86_64" : expected_architecture;
             for (const Path& file : files)
             {
-                auto cmd_line = Command("lipo").string_arg("-archs").string_arg(file);
-                auto maybe_output = flatten_out(cmd_execute_and_capture_output(cmd_line), "lipo");
+                auto cmd = Command{"lipo"}.string_arg("-archs").string_arg(file);
+                auto maybe_output = flatten_out(cmd_execute_and_capture_output(cmd), "lipo");
                 if (const auto output = maybe_output.get())
                 {
                     if (!Util::Vectors::contains(Strings::split(Strings::trim(*output), ' '), requested_arch))
@@ -694,7 +694,7 @@ namespace vcpkg
                 {
                     msg_sink.println_error(msg::format(msgFailedToDetermineArchitecture,
                                                        msg::path = file,
-                                                       msg::command_line = cmd_line.command_line())
+                                                       msg::command_line = cmd.command_line())
                                                .append_raw('\n')
                                                .append(maybe_output.error()));
                 }

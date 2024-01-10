@@ -18,7 +18,7 @@ using namespace vcpkg;
 
 namespace
 {
-    WriteFilePointer maybe_create_log(const std::map<std::string, std::string, std::less<>>& settings,
+    WriteFilePointer maybe_create_log(const std::map<StringLiteral, std::string, std::less<>>& settings,
                                       StringLiteral setting,
                                       const Filesystem& fs)
     {

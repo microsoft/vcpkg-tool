@@ -111,7 +111,7 @@ namespace vcpkg
 
     struct IExclusiveFileLock
     {
-        virtual ~IExclusiveFileLock();
+        virtual ~IExclusiveFileLock() = default;
     };
 
     uint64_t get_filesystem_stats();
