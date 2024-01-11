@@ -1,4 +1,5 @@
 #include <vcpkg/base/cmd-parser.h>
+#include <vcpkg/base/message_sinks.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/util.h>
 
@@ -20,7 +21,7 @@ namespace
         void (*print)(const VcpkgPaths&);
     };
 
-    void help_topics(const VcpkgPaths&);
+    LocalizedString help_topics();
 
     void help_topic_versioning(const VcpkgPaths&)
     {
@@ -70,12 +71,12 @@ namespace
         {"assetcaching", [](const VcpkgPaths&) { msg::println(format_help_topic_asset_caching()); }},
         {"binarycaching", [](const VcpkgPaths&) { msg::println(format_help_topic_binary_caching()); }},
         {"commands", [](const VcpkgPaths&) { print_full_command_list(); }},
-        {"topics", help_topics},
+        {"topics", [](const VcpkgPaths&) { msg::print(help_topics()); }},
         {"triplet", [](const VcpkgPaths& paths) { help_topic_valid_triplet(paths.get_triplet_db()); }},
         {"versioning", help_topic_versioning},
     };
 
-    void help_topics(const VcpkgPaths&)
+    LocalizedString help_topics()
     {
         std::vector<LocalizedString> all_topic_names;
         for (auto&& topic : topics)
@@ -94,7 +95,7 @@ namespace
         result.append(msgAvailableHelpTopics);
         result.append_floating_list(1, all_topic_names);
         result.append_raw('\n');
-        msg::print(result);
+        return result;
     }
 
 } // unnamed namespace
@@ -155,7 +156,7 @@ namespace vcpkg
 
         if (parsed.command_arguments.empty())
         {
-            print_zero_args_usage();
+            msg::write_unlocalized_text_to_stdout(Color::none, get_zero_args_usage());
             Checks::exit_success(VCPKG_LINE_INFO);
         }
         const auto& topic = parsed.command_arguments[0];
@@ -181,14 +182,14 @@ namespace vcpkg
         {
             if (Strings::case_insensitive_ascii_equals(command_metadata->name, topic))
             {
-                print_usage(*command_metadata);
+                msg::print(usage_for_command(*command_metadata));
                 get_global_metrics_collector().track_string(StringMetric::CommandContext, command_metadata->name);
                 Checks::exit_success(VCPKG_LINE_INFO);
             }
         }
 
-        msg::println_error(msgUnknownTopic, msg::value = topic);
-        help_topics(paths);
+        stderr_sink.println_error(msgUnknownTopic, msg::value = topic);
+        stderr_sink.print(help_topics());
         get_global_metrics_collector().track_string(StringMetric::CommandContext, "unknown");
         Checks::exit_fail(VCPKG_LINE_INFO);
     }

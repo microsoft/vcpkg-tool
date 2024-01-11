@@ -1,5 +1,6 @@
 #include <vcpkg/base/cmd-parser.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/message_sinks.h>
 #include <vcpkg/base/strings.h>
 
 #include <stdint.h>
@@ -1003,14 +1004,11 @@ namespace vcpkg
             return;
         }
 
-        for (auto&& error : errors)
-        {
-            msg::write_unlocalized_text(Color::error, error.append_raw("\n"));
-        }
+        msg::write_unlocalized_text_to_stderr(Color::error, Strings::join("\n", errors).append("\n"));
 
         example.append_raw('\n');
         append_options_table(example);
-        msg::println(Color::none, example);
+        stderr_sink.println(Color::none, example);
         Checks::exit_with_code(VCPKG_LINE_INFO, 1);
     }
 }

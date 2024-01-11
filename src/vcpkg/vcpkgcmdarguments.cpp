@@ -469,7 +469,7 @@ namespace vcpkg
         return result;
     }
 
-    void print_usage(const CommandMetadata& command_metadata)
+    LocalizedString usage_for_command(const CommandMetadata& command_metadata)
     {
         auto with_common_options = VcpkgCmdArguments::create_from_arg_sequence(nullptr, nullptr);
         ParsedArguments throwaway;
@@ -506,7 +506,7 @@ namespace vcpkg
 
         with_common_options.parser.append_options_table(result);
         result.append_raw('\n');
-        msg::write_unlocalized_text_to_stderr(Color::error, result);
+        return result;
     }
 
     static void from_env(const std::function<Optional<std::string>(ZStringView)>& f,

@@ -181,7 +181,7 @@ namespace vcpkg
         LocalizedString get_example_text() const;
     };
 
-    void print_usage(const CommandMetadata& command_metadata);
+    LocalizedString usage_for_command(const CommandMetadata& command_metadata);
 
     struct FeatureFlagSettings
     {
@@ -402,7 +402,7 @@ namespace vcpkg
 
         Optional<StringLiteral> m_detected_ci_environment;
 
-        friend void print_usage(const CommandMetadata& command_metadata);
+        friend LocalizedString usage_for_command(const CommandMetadata& command_metadata);
         CmdParser parser;
     };
 }
