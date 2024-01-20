@@ -526,7 +526,7 @@ namespace vcpkg
         void print_abi_hash() const
         {
             auto bpgh = current_summary.get_binary_paragraph();
-            if (bpgh)
+            if (bpgh && !bpgh->abi.empty())
             {
                 msg::println(msgPackageAbi, msg::spec = bpgh->display_name(), msg::package_abi = bpgh->abi);
             }
