@@ -708,6 +708,11 @@ namespace vcpkg
                 {
                     compiler_info.id = s.substr(s_id_marker.size()).to_string();
                 }
+                static constexpr StringLiteral s_path_marker = "#COMPILER_CXX_PATH#";
+                if (Strings::starts_with(s, s_path_marker))
+                {
+                    compiler_info.path = s.substr(s_path_marker.size()).to_string();
+                }
                 Debug::println(s);
                 const auto old_buf_size = buf.size();
                 Strings::append(buf, s, '\n');
@@ -732,6 +737,7 @@ namespace vcpkg
         }
 
         Debug::println("Detected compiler hash for triplet ", triplet, ": ", compiler_info.hash);
+        msg::println(msgCompilerPath, msg::path = compiler_info.path);
         return compiler_info;
     }
 
