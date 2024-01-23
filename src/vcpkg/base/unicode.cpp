@@ -21,7 +21,7 @@ namespace vcpkg::Unicode
         if (code_point < 0x10000)
         {
             // clang-format off
-            array[0] = static_cast<unsigned char>(0b1110'0000u | (code_point >> 12));
+            array[0] = static_cast<unsigned char>(0b1110'0000u | (code_point  >> 12));
             array[1] = static_cast<unsigned char>(0b1000'0000u | ((code_point >> 6) & 0b0011'1111u));
             array[2] = static_cast<unsigned char>(0b1000'0000u | (code_point        & 0b0011'1111u));
             // clang-format on
@@ -44,21 +44,19 @@ namespace vcpkg::Unicode
             msg::format(msgInvalidCodePoint).append_raw(fmt::format("({:x})", static_cast<uint32_t>(code_point))));
     }
 
-    static bool bad_trailing(unsigned char code_unit, utf8_errc& err) noexcept
+    static utf8_errc check_trailing(unsigned char code_unit) noexcept
     {
         if ((code_unit & 0b1100'0000u) != 0b1000'0000u)
         {
             if (code_unit >= 0b1111'1000u)
             {
-                err = utf8_errc::InvalidCodeUnit;
+                return utf8_errc::InvalidCodeUnit;
             }
 
-            err = utf8_errc::UnexpectedStart;
-
-            return true;
+            return utf8_errc::UnexpectedStart;
         }
 
-        return false;
+        return utf8_errc::NoError;
     }
 
     utf8_errc utf8_decode_code_point(const char*& first, const char* last, char32_t& out) noexcept
@@ -94,7 +92,7 @@ namespace vcpkg::Unicode
             }
 
             utf8_errc out_error;
-            if (bad_trailing(static_cast<unsigned char>(first[1]), out_error))
+            if ((out_error = check_trailing(static_cast<unsigned char>(first[1]))) != utf8_errc::NoError)
             {
                 out = end_of_file;
                 first = last;
@@ -116,8 +114,8 @@ namespace vcpkg::Unicode
             }
 
             utf8_errc out_error;
-            if (bad_trailing(static_cast<unsigned char>(first[1]), out_error) ||
-                bad_trailing(static_cast<unsigned char>(first[2]), out_error))
+            if ((out_error = check_trailing(static_cast<unsigned char>(first[1]))) != utf8_errc::NoError ||
+                (out_error = check_trailing(static_cast<unsigned char>(first[2]))) != utf8_errc::NoError)
             {
                 out = end_of_file;
                 first = last;
@@ -143,9 +141,9 @@ namespace vcpkg::Unicode
             }
 
             utf8_errc out_error;
-            if (bad_trailing(static_cast<unsigned char>(first[1]), out_error) ||
-                bad_trailing(static_cast<unsigned char>(first[2]), out_error) ||
-                bad_trailing(static_cast<unsigned char>(first[3]), out_error))
+            if ((out_error = check_trailing(static_cast<unsigned char>(first[1]))) != utf8_errc::NoError ||
+                (out_error = check_trailing(static_cast<unsigned char>(first[2]))) != utf8_errc::NoError ||
+                (out_error = check_trailing(static_cast<unsigned char>(first[3]))) != utf8_errc::NoError)
             {
                 out = end_of_file;
                 first = last;

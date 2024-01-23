@@ -21,9 +21,9 @@ namespace vcpkg::Unicode
 
     int utf8_encode_code_point(char (&array)[4], char32_t code_point) noexcept;
 
-    // returns {after-current-code-point, error},
-    // and if error = NoError, then out = parsed code point.
-    // else, out = end_of_file.
+    // If possible, decodes one codepoint from the beginning of [first, last). If successful advances first after the
+    // last decoded encoding unit, stores the codepoint in out, and returns utf8_errc::NoError.
+    // Otherwise, advances first to last, stores end_of_file in out, and returns one of the utf8_errc values.
     utf8_errc utf8_decode_code_point(const char*& first, const char* last, char32_t& out) noexcept;
 
     // uses the C++20 definition
