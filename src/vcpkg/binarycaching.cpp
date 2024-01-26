@@ -2349,14 +2349,14 @@ ExpectedL<BinaryConfigParserState> vcpkg::parse_binary_provider_configs(const st
     default_parser.parse();
     if (auto err = default_parser.get_error())
     {
-        return LocalizedString::from_raw(err->message);
+        return *err;
     }
 
     BinaryConfigParser env_parser(env_string, "VCPKG_BINARY_SOURCES", &s);
     env_parser.parse();
     if (auto err = env_parser.get_error())
     {
-        return LocalizedString::from_raw(err->to_string());
+        return *err;
     }
 
     for (auto&& arg : args)
@@ -2365,7 +2365,7 @@ ExpectedL<BinaryConfigParserState> vcpkg::parse_binary_provider_configs(const st
         arg_parser.parse();
         if (auto err = arg_parser.get_error())
         {
-            return LocalizedString::from_raw(err->to_string());
+            return *err;
         }
     }
 

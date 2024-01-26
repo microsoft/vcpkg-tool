@@ -32,7 +32,7 @@ namespace
         auto parsed_json_opt = Json::parse(contents, manifest_path);
         if (!parsed_json_opt)
         {
-            msg::println(Color::error, LocalizedString::from_raw(parsed_json_opt.error()->to_string()));
+            msg::println(Color::error, parsed_json_opt.error());
             return nullopt;
         }
 

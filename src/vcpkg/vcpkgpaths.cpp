@@ -509,7 +509,7 @@ namespace
         }
         else
         {
-            Debug::print("Failed to load lockfile:\n", maybe_lock_contents.error()->to_string());
+            Debug::print("Failed to load lockfile:\n", maybe_lock_contents.error());
             return ret;
         }
     }
