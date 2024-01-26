@@ -1691,7 +1691,6 @@
   "_WaitingToTakeFilesystemLock.comment": "An example of {path} is /foo/bar.",
   "WarnOnParseConfig": "Found the following warnings in configuration {path}:",
   "_WarnOnParseConfig.comment": "An example of {path} is /foo/bar.",
-  "WarningsTreatedAsErrors": "previous warnings being interpreted as errors",
   "WhileCheckingOutBaseline": "while checking out baseline {commit_sha}",
   "_WhileCheckingOutBaseline.comment": "An example of {commit_sha} is 7cfad47ae9f68b183983090afd6337cd60fd4949.",
   "WhileCheckingOutPortTreeIsh": "while checking out port {package_name} with git tree {git_tree_sha}",
