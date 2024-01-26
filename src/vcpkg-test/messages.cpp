@@ -116,8 +116,7 @@ namespace
     constexpr bool adapt_context_to_expected_invocable_with =
         adapt_context_to_expected_invocable_with_impl<void, Test, Args...>;
 
-    int returns_int(DiagnosticContext&) { return 42; }
-    static_assert(!adapt_context_to_expected_invocable_with<decltype(returns_int)>,
+    static_assert(!adapt_context_to_expected_invocable_with<int (*)(DiagnosticContext&)>,
                   "Callable needs to return optional or unique_ptr");
 
     // The following tests are the cross product of:
@@ -238,8 +237,8 @@ namespace
                                  decltype(adapt_context_to_expected(returns_unique_ptr_prvalue, 42))>,
                   "boom");
 
-    const std::unique_ptr<int> returns_unique_ptr_const_prvalue(DiagnosticContext&, int val); // not defined
-    static_assert(!adapt_context_to_expected_invocable_with<decltype(returns_unique_ptr_const_prvalue), int>, "boom");
+    using returns_unique_ptr_const_prvalue_t = const std::unique_ptr<int> (*)(DiagnosticContext&, int);
+    static_assert(!adapt_context_to_expected_invocable_with<returns_unique_ptr_const_prvalue_t, int>, "boom");
 
     std::unique_ptr<int>& returns_unique_ptr_lvalue(DiagnosticContext&, std::unique_ptr<int>& ret) { return ret; }
     static_assert(adapt_context_to_expected_invocable_with<decltype(returns_unique_ptr_lvalue), std::unique_ptr<int>&>,
@@ -272,12 +271,12 @@ namespace
                                                                     std::declval<std::unique_ptr<int>>()))>,
                   "boom");
 
-    const std::unique_ptr<int>&& returns_unique_ptr_const_xvalue(DiagnosticContext&,
-                                                                 const std::unique_ptr<int>&& val); // not defined
+    using returns_unique_ptr_const_xvalue_t = const std::unique_ptr<int> &&
+                                              (*)(DiagnosticContext&, const std::unique_ptr<int>&&);
 
-    static_assert(!adapt_context_to_expected_invocable_with<decltype(returns_unique_ptr_const_xvalue),
-                                                            const std::unique_ptr<int>&&>,
-                  "boom");
+    static_assert(
+        !adapt_context_to_expected_invocable_with<returns_unique_ptr_const_xvalue_t, const std::unique_ptr<int>&&>,
+        "boom");
 
     std::unique_ptr<int> returns_unique_ptr_fail(DiagnosticContext& context)
     {
