@@ -300,7 +300,7 @@ namespace vcpkg
         spgh->name = parser.required_field(SourceParagraphFields::NAME);
         spgh->version.text = parser.required_field(SourceParagraphFields::VERSION);
 
-        TextPosition pv_position;
+        TextRowCol pv_position;
         auto pv_str = parser.optional_field(SourceParagraphFields::PORT_VERSION, pv_position);
         if (!pv_str.empty())
         {
@@ -322,7 +322,7 @@ namespace vcpkg
         trim_all(spgh->maintainers);
 
         spgh->homepage = parser.optional_field(SourceParagraphFields::HOMEPAGE);
-        TextPosition build_depends_position;
+        TextRowCol build_depends_position;
         std::string buf = parser.optional_field(SourceParagraphFields::BUILD_DEPENDS, build_depends_position);
 
         auto maybe_dependencies = parse_dependencies_list(buf, origin, build_depends_position);
@@ -335,7 +335,7 @@ namespace vcpkg
             return std::move(maybe_dependencies).error();
         }
 
-        TextPosition default_features_position;
+        TextRowCol default_features_position;
         buf = parser.optional_field(SourceParagraphFields::DEFAULT_FEATURES, default_features_position);
 
         auto maybe_default_features = parse_default_features_list(buf, origin, default_features_position);
@@ -369,7 +369,7 @@ namespace vcpkg
             return std::move(maybe_default_features).error();
         }
 
-        TextPosition supports_position;
+        TextRowCol supports_position;
         auto supports_text = parser.optional_field(SourceParagraphFields::SUPPORTS, supports_position);
         if (!supports_text.empty())
         {

@@ -90,7 +90,7 @@ namespace vcpkg
         }
     }
 
-    ParserBase::ParserBase(DiagnosticContext& context, StringView text, StringView origin, TextPosition init_rowcol)
+    ParserBase::ParserBase(DiagnosticContext& context, StringView text, StringView origin, TextRowCol init_rowcol)
         : m_it(text.begin(), text.end())
         , m_start_of_line(m_it)
         , m_row(init_rowcol.row)
@@ -191,7 +191,7 @@ namespace vcpkg
             message.append_raw('\n');
             append_caret_line(message, loc);
             m_context.report(
-                DiagnosticLine{DiagKind::Error, m_origin, TextPosition{loc.row, loc.column}, std::move(message)});
+                DiagnosticLine{DiagKind::Error, m_origin, TextRowCol{loc.row, loc.column}, std::move(message)});
             m_any_errors = true;
             // Avoid error loops by skipping to the end
             skip_to_eof();
@@ -205,6 +205,6 @@ namespace vcpkg
         message.append_raw('\n');
         append_caret_line(message, loc);
         m_context.report(
-            DiagnosticLine{DiagKind::Warning, m_origin, TextPosition{loc.row, loc.column}, std::move(message)});
+            DiagnosticLine{DiagKind::Warning, m_origin, TextRowCol{loc.row, loc.column}, std::move(message)});
     }
 }

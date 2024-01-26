@@ -63,7 +63,7 @@ namespace vcpkg::Test
             pghs.emplace_back();
             for (auto&& kv : p)
             {
-                pghs.back().emplace(kv.first, std::make_pair(kv.second, vcpkg::TextPosition{}));
+                pghs.back().emplace(kv.first, std::make_pair(kv.second, vcpkg::TextRowCol{}));
             }
         }
         return vcpkg::SourceControlFile::parse_control_file("", std::move(pghs));

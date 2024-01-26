@@ -39,7 +39,7 @@ namespace vcpkg
 
     struct ParserBase
     {
-        ParserBase(DiagnosticContext& context, StringView text, StringView origin, TextPosition init_rowcol = {1, 1});
+        ParserBase(DiagnosticContext& context, StringView text, StringView origin, TextRowCol init_rowcol = {1, 1});
 
         static constexpr bool is_whitespace(char32_t ch) { return ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n'; }
         static constexpr bool is_lower_alpha(char32_t ch) { return ch >= 'a' && ch <= 'z'; }
@@ -95,7 +95,7 @@ namespace vcpkg
         Unicode::Utf8Decoder it() const { return m_it; }
         char32_t cur() const { return m_it == m_it.end() ? Unicode::end_of_file : *m_it; }
         SourceLoc cur_loc() const { return {m_it, m_start_of_line, m_row, m_column}; }
-        TextPosition cur_rowcol() const { return {m_row, m_column}; }
+        TextRowCol cur_rowcol() const { return {m_row, m_column}; }
         char32_t next();
         bool at_eof() const { return m_it == m_it.end(); }
 

@@ -222,8 +222,8 @@ namespace vcpkg
     Optional<std::vector<Dependency>> parse_dependencies_list_context(DiagnosticContext& context,
                                                                       const std::string& str,
                                                                       StringView origin,
-                                                                      TextPosition position = {1, 1});
+                                                                      TextRowCol position = {1, 1});
     ExpectedL<std::vector<Dependency>> parse_dependencies_list(const std::string& str,
                                                                StringView origin,
-                                                               TextPosition position = {1, 1});
+                                                               TextRowCol position = {1, 1});
 }

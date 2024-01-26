@@ -35,7 +35,7 @@ namespace vcpkg
 
         // one or the other
         this->version.text = parser.optional_field(Fields::VERSION);
-        TextPosition pv_position;
+        TextRowCol pv_position;
         auto pv_str = parser.optional_field(Fields::PORT_VERSION, pv_position);
         this->version.port_version = 0;
         if (!pv_str.empty())

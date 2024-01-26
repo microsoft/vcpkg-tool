@@ -12,7 +12,7 @@ namespace
 
     void append_file_prefix(std::string& target,
                             const Optional<std::string>& maybe_origin,
-                            const TextPosition& position)
+                            const TextRowCol& position)
     {
         // file:line:col: kind: message
         if (auto origin = maybe_origin.get())

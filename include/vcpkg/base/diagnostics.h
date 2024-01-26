@@ -21,7 +21,7 @@ namespace vcpkg
         COUNT
     };
 
-    struct TextPosition
+    struct TextRowCol
     {
         // '0' indicates uninitialized; '1' is the first row/column
         int row = 0;
@@ -43,7 +43,7 @@ namespace vcpkg
         }
 
         template<class MessageLike, std::enable_if_t<std::is_convertible_v<MessageLike, LocalizedString>, int> = 0>
-        DiagnosticLine(DiagKind kind, StringView origin, TextPosition position, MessageLike&& message)
+        DiagnosticLine(DiagKind kind, StringView origin, TextRowCol position, MessageLike&& message)
             : m_kind(kind)
             , m_origin(origin.to_string())
             , m_position(position)
@@ -66,7 +66,7 @@ namespace vcpkg
     private:
         DiagKind m_kind;
         Optional<std::string> m_origin;
-        TextPosition m_position;
+        TextRowCol m_position;
         LocalizedString m_message;
     };
 

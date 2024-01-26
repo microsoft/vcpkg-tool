@@ -20,7 +20,7 @@ static std::atomic<uint64_t> g_load_ports_stats(0);
 
 namespace vcpkg
 {
-    static Optional<std::pair<std::string, TextPosition>> remove_field(Paragraph* fields, StringView fieldname)
+    static Optional<std::pair<std::string, TextRowCol>> remove_field(Paragraph* fields, StringView fieldname)
     {
         auto it = fields->find(fieldname.to_string());
         if (it == fields->end())
@@ -33,7 +33,7 @@ namespace vcpkg
         return value;
     }
 
-    std::string ParagraphParser::optional_field(StringLiteral fieldname, TextPosition& position)
+    std::string ParagraphParser::optional_field(StringLiteral fieldname, TextRowCol& position)
     {
         auto maybe_field = remove_field(&fields, fieldname);
         if (auto field = maybe_field.get())
@@ -47,7 +47,7 @@ namespace vcpkg
 
     std::string ParagraphParser::optional_field(StringLiteral fieldname)
     {
-        TextPosition ignore;
+        TextRowCol ignore;
         return optional_field(fieldname, ignore);
     }
 
@@ -66,7 +66,7 @@ namespace vcpkg
         return std::string();
     }
 
-    void ParagraphParser::add_error(TextPosition position, msg::MessageT<> error_content)
+    void ParagraphParser::add_error(TextRowCol position, msg::MessageT<> error_content)
     {
         errors.emplace_back(LocalizedString::from_raw(origin)
                                 .append_raw(fmt::format("{}:{}: ", position.row, position.column))
@@ -172,21 +172,21 @@ namespace vcpkg
     Optional<std::vector<std::string>> parse_default_features_list_context(DiagnosticContext& context,
                                                                            const std::string& str,
                                                                            StringView origin,
-                                                                           TextPosition position)
+                                                                           TextRowCol position)
     {
         auto parser = ParserBase(context, str, origin, position);
         return parse_list_until_eof<std::string>(msgExpectedDefaultFeaturesList, parser, &parse_feature_name);
     }
     ExpectedL<std::vector<std::string>> parse_default_features_list(const std::string& str,
                                                                     StringView origin,
-                                                                    TextPosition position)
+                                                                    TextRowCol position)
     {
         return adapt_context_to_expected(parse_default_features_list_context, str, origin, position);
     }
     Optional<std::vector<ParsedQualifiedSpecifier>> parse_qualified_specifier_list_context(DiagnosticContext& context,
                                                                                            const std::string& str,
                                                                                            StringView origin,
-                                                                                           TextPosition position)
+                                                                                           TextRowCol position)
     {
         auto parser = ParserBase(context, str, origin, position);
         return parse_list_until_eof<ParsedQualifiedSpecifier>(
@@ -194,14 +194,14 @@ namespace vcpkg
     }
     ExpectedL<std::vector<ParsedQualifiedSpecifier>> parse_qualified_specifier_list(const std::string& str,
                                                                                     StringView origin,
-                                                                                    TextPosition position)
+                                                                                    TextRowCol position)
     {
         return adapt_context_to_expected(parse_qualified_specifier_list_context, str, origin, position);
     }
     Optional<std::vector<Dependency>> parse_dependencies_list_context(DiagnosticContext& context,
                                                                       const std::string& str,
                                                                       StringView origin,
-                                                                      TextPosition position)
+                                                                      TextRowCol position)
     {
         auto parser = ParserBase(context, str, origin, position);
         return parse_list_until_eof<Dependency>(msgExpectedDependenciesList, parser, [](ParserBase& parser) {
@@ -233,7 +233,7 @@ namespace vcpkg
     }
     ExpectedL<std::vector<Dependency>> parse_dependencies_list(const std::string& str,
                                                                StringView origin,
-                                                               TextPosition position)
+                                                               TextRowCol position)
     {
         return adapt_context_to_expected(parse_dependencies_list_context, str, origin, position);
     }

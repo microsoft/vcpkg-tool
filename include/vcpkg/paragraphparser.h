@@ -16,7 +16,7 @@
 
 namespace vcpkg
 {
-    using Paragraph = std::map<std::string, std::pair<std::string, TextPosition>, std::less<>>;
+    using Paragraph = std::map<std::string, std::pair<std::string, TextRowCol>, std::less<>>;
 
     struct ParagraphParser
     {
@@ -28,9 +28,9 @@ namespace vcpkg
         std::string required_field(StringLiteral fieldname);
 
         std::string optional_field(StringLiteral fieldname);
-        std::string optional_field(StringLiteral fieldname, TextPosition& position);
+        std::string optional_field(StringLiteral fieldname, TextRowCol& position);
 
-        void add_error(TextPosition position, msg::MessageT<> error_content);
+        void add_error(TextRowCol position, msg::MessageT<> error_content);
 
         Optional<LocalizedString> error() const;
 
@@ -43,15 +43,15 @@ namespace vcpkg
     Optional<std::vector<std::string>> parse_default_features_list_context(DiagnosticContext& context,
                                                                            const std::string& str,
                                                                            StringView origin = "<unknown>",
-                                                                           TextPosition position = {1, 1});
+                                                                           TextRowCol position = {1, 1});
     ExpectedL<std::vector<std::string>> parse_default_features_list(const std::string& str,
                                                                     StringView origin = "<unknown>",
-                                                                    TextPosition position = {1, 1});
+                                                                    TextRowCol position = {1, 1});
     Optional<std::vector<ParsedQualifiedSpecifier>> parse_qualified_specifier_list(DiagnosticContext& context,
                                                                                    const std::string& str,
                                                                                    StringView origin = "<unknown>",
-                                                                                   TextPosition position = {1, 1});
+                                                                                   TextRowCol position = {1, 1});
     ExpectedL<std::vector<ParsedQualifiedSpecifier>> parse_qualified_specifier_list(const std::string& str,
                                                                                     StringView origin = "<unknown>",
-                                                                                    TextPosition position = {1, 1});
+                                                                                    TextRowCol position = {1, 1});
 }
