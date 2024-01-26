@@ -72,24 +72,6 @@ namespace vcpkg
         return res;
     }
 
-    void ParseMessages::exit_if_errors_or_warnings(StringView origin) const
-    {
-        for (const auto& warning : warnings)
-        {
-            msg::println(warning.format(origin, MessageKind::Warning));
-        }
-
-        if (auto e = error.get())
-        {
-            Checks::msg_exit_with_message(VCPKG_LINE_INFO, *e);
-        }
-
-        if (!warnings.empty())
-        {
-            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgWarningsTreatedAsErrors);
-        }
-    }
-
     ParserBase::ParserBase(DiagnosticContext& context, StringView text, StringView origin, TextRowCol init_rowcol)
         : m_it(text.begin(), text.end())
         , m_start_of_line(m_it)

@@ -193,7 +193,6 @@ namespace vcpkg
     }
 
     // If Ty is a std::unique_ptr<U>, typename AdaptContextDetectUniquePtr<Ty>::type is the type necessary to return
-    // and fwd is the type necessary to move if necessary. Otherwise, there are no members ::type or ::fwd
     template<class Ty>
     struct AdaptContextDetectUniquePtr
     {

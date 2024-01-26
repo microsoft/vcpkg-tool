@@ -203,7 +203,7 @@ bill-made-up-another-skip:x64-linux=skip)"; // note no trailing newline
         }
         else
         {
-            FAIL();
+            FAIL(context.to_string());
         }
     }
 
@@ -219,7 +219,7 @@ bill-made-up-another-skip:x64-linux=skip)"; // note no trailing newline
         }
         else
         {
-            FAIL();
+            FAIL(context.to_string());
         }
     }
 

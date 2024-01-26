@@ -28,15 +28,6 @@ namespace vcpkg
         LocalizedString format(StringView origin, MessageKind kind) const;
     };
 
-    struct ParseMessages
-    {
-        Optional<LocalizedString> error;
-        std::vector<ParseMessage> warnings;
-
-        void exit_if_errors_or_warnings(StringView origin) const;
-        bool good() const { return !error && warnings.empty(); }
-    };
-
     struct ParserBase
     {
         ParserBase(DiagnosticContext& context, StringView text, StringView origin, TextRowCol init_rowcol = {1, 1});
