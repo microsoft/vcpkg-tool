@@ -572,7 +572,7 @@
   "FollowingPackagesUpgraded": "다음 패키지는 최신 상태입니다.",
   "ForMoreHelp": "추가 도움말",
   "ForceSystemBinariesOnWeirdPlatforms": "arm, s390x, ppc64le 및 riscv 플랫폼에서 환경 변수 VCPKG_FORCE_SYSTEM_BINARIES를 설정해야 합니다.",
-  "FormattedParseMessageExpression": "식: {value}",
+  "FormattedParseMessageExpressionPrefix": "on expression:",
   "GHAParametersMissing": "GHA 이진 원본을 사용하려면 ACTIONS_RUNTIME_TOKEN 및 ACTIONS_CACHE_URL 환경 변수를 설정해야 합니다. 자세한 내용은 {url}을(를) 참조하세요.",
   "GeneratedConfiguration": "생성된 구성 {path}입니다.",
   "GeneratedInstaller": "{path} 설치 프로그램이 생성되었습니다.",

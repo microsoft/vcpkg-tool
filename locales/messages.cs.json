@@ -572,7 +572,7 @@
   "FollowingPackagesUpgraded": "Následující balíčky jsou aktuální:",
   "ForMoreHelp": "Další pomoc",
   "ForceSystemBinariesOnWeirdPlatforms": "Proměnná prostředí VCPKG_FORCE_SYSTEM_BINARIES musí být nastavená na platformách arm, s390x, ppc64le a riscv.",
-  "FormattedParseMessageExpression": "výraz on: {value}",
+  "FormattedParseMessageExpressionPrefix": "on expression:",
   "GHAParametersMissing": "Binární zdroj GHA vyžaduje nastavení proměnných prostředí ACTIONS_RUNTIME_TOKEN a ACTIONS_CACHE_URL. Podrobnosti najdete na adrese {url}.",
   "GeneratedConfiguration": "Vygenerovaná konfigurace {path}.",
   "GeneratedInstaller": "Instalační program {path} se vygeneroval.",

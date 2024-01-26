@@ -572,7 +572,7 @@
   "FollowingPackagesUpgraded": "Los siguientes paquetes están actualizados:",
   "ForMoreHelp": "Para obtener más ayuda",
   "ForceSystemBinariesOnWeirdPlatforms": "La variable de entorno VCPKG_FORCE_SYSTEM_BINARIES debe establecerse en las plataformas arm, s390x, ppc64le y riscv.",
-  "FormattedParseMessageExpression": "en expresión: {value}",
+  "FormattedParseMessageExpressionPrefix": "on expression:",
   "GHAParametersMissing": "El origen binario GHA requiere que se establezcan las variables de entorno ACTIONS_RUNTIME_TOKEN y ACTIONS_CACHE_URL. Consulte {url} para obtener más detalles.",
   "GeneratedConfiguration": "{path} de configuración generada.",
   "GeneratedInstaller": "Se generó el instalador {path}.",
