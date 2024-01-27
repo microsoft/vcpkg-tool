@@ -17,9 +17,14 @@
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/versiondeserializers.h>
 
+namespace
+{
+    using namespace vcpkg;
+    constexpr static StringLiteral NAME = "name";
+}
+
 namespace vcpkg
 {
-
     bool operator==(const DependencyConstraint& lhs, const DependencyConstraint& rhs)
     {
         if (lhs.type != rhs.type) return false;
@@ -69,10 +74,20 @@ namespace vcpkg
     {
         if (lhs.name != rhs.name) return false;
         if (lhs.version != rhs.version) return false;
-        if (lhs.scheme != rhs.scheme) return false;
         return lhs.extra_info == rhs.extra_info;
     }
-    bool operator!=(const DependencyOverride& lhs, const DependencyOverride& rhs);
+
+    void serialize_dependency_override(Json::Array& arr, const DependencyOverride& dep)
+    {
+        auto& dep_obj = arr.push_back(Json::Object());
+        for (const auto& el : dep.extra_info)
+        {
+            dep_obj.insert(el.first.to_string(), el.second);
+        }
+
+        dep_obj.insert(NAME, Json::Value::string(dep.name));
+        serialize_schemed_version(dep_obj, VersionScheme::Relaxed, dep.version);
+    }
 
     bool operator==(const DependencyRequestedFeature& lhs, const DependencyRequestedFeature& rhs)
     {
@@ -150,7 +165,7 @@ namespace vcpkg
         static constexpr StringLiteral DESCRIPTION = "Description";
         static constexpr StringLiteral FEATURE = "Feature";
         static constexpr StringLiteral MAINTAINERS = "Maintainer";
-        static constexpr StringLiteral NAME = "Source";
+        static constexpr StringLiteral SOURCE = "Source";
         static constexpr StringLiteral VERSION = "Version";
         static constexpr StringLiteral PORT_VERSION = "Port-Version";
         static constexpr StringLiteral HOMEPAGE = "Homepage";
@@ -297,7 +312,7 @@ namespace vcpkg
 
         auto spgh = std::make_unique<SourceParagraph>();
 
-        spgh->name = parser.required_field(SourceParagraphFields::NAME);
+        spgh->name = parser.required_field(SourceParagraphFields::SOURCE);
         spgh->version.text = parser.required_field(SourceParagraphFields::VERSION);
 
         TextRowCol pv_position;
@@ -507,7 +522,6 @@ namespace vcpkg
     {
         LocalizedString type_name() const override { return msg::format(msgADefaultFeature); }
 
-        constexpr static StringLiteral NAME = "name";
         constexpr static StringLiteral PLATFORM = "platform";
 
         Span<const StringView> valid_fields() const override
@@ -573,7 +587,6 @@ namespace vcpkg
     {
         LocalizedString type_name() const override { return msg::format(msgADependencyFeature); }
 
-        constexpr static StringLiteral NAME = "name";
         constexpr static StringLiteral PLATFORM = "platform";
 
         Span<const StringView> valid_fields() const override
@@ -615,7 +628,6 @@ namespace vcpkg
     {
         virtual LocalizedString type_name() const override { return msg::format(msgADependency); }
 
-        constexpr static StringLiteral NAME = "name";
         constexpr static StringLiteral HOST = "host";
         constexpr static StringLiteral FEATURES = "features";
         constexpr static StringLiteral DEFAULT_FEATURES = "default-features";
@@ -699,7 +711,6 @@ namespace vcpkg
 
     const DependencyArrayDeserializer DependencyArrayDeserializer::instance;
 
-    constexpr StringLiteral DependencyDeserializer::NAME;
     constexpr StringLiteral DependencyDeserializer::HOST;
     constexpr StringLiteral DependencyDeserializer::FEATURES;
     constexpr StringLiteral DependencyDeserializer::DEFAULT_FEATURES;
@@ -709,8 +720,6 @@ namespace vcpkg
     struct DependencyOverrideDeserializer final : Json::IDeserializer<DependencyOverride>
     {
         virtual LocalizedString type_name() const override { return msg::format(msgAnOverride); }
-
-        constexpr static StringLiteral NAME = "name";
 
         virtual Span<const StringView> valid_fields() const override
         {
@@ -733,10 +742,7 @@ namespace vcpkg
 
             const auto type_name = this->type_name();
             r.required_object_field(type_name, obj, NAME, dep.name, Json::PackageNameDeserializer::instance);
-            auto schemed_version = visit_required_schemed_deserializer(type_name, r, obj, true);
-            dep.version = std::move(schemed_version.version);
-            dep.scheme = schemed_version.scheme;
-
+            dep.version = visit_version_override_version(type_name, r, obj);
             return dep;
         }
 
@@ -744,8 +750,6 @@ namespace vcpkg
     };
 
     const DependencyOverrideDeserializer DependencyOverrideDeserializer::instance;
-
-    constexpr StringLiteral DependencyOverrideDeserializer::NAME;
 
     struct DependencyOverrideArrayDeserializer : Json::ArrayDeserializer<DependencyOverrideDeserializer>
     {
@@ -1020,7 +1024,6 @@ namespace vcpkg
     {
         virtual LocalizedString type_name() const override { return msg::format(msgAFeature); }
 
-        constexpr static StringLiteral NAME = "name";
         constexpr static StringLiteral DESCRIPTION = "description";
         constexpr static StringLiteral DEPENDENCIES = "dependencies";
         constexpr static StringLiteral SUPPORTS = "supports";
@@ -1061,7 +1064,6 @@ namespace vcpkg
     };
 
     const FeatureDeserializer FeatureDeserializer::instance;
-    constexpr StringLiteral FeatureDeserializer::NAME;
     constexpr StringLiteral FeatureDeserializer::DESCRIPTION;
     constexpr StringLiteral FeatureDeserializer::DEPENDENCIES;
     constexpr StringLiteral FeatureDeserializer::SUPPORTS;
@@ -1146,7 +1148,6 @@ namespace vcpkg
     {
         virtual LocalizedString type_name() const override { return msg::format(msgAManifest); }
 
-        constexpr static StringLiteral NAME = "name";
         constexpr static StringLiteral MAINTAINERS = "maintainers";
         constexpr static StringLiteral CONTACTS = "contacts";
         constexpr static StringLiteral SUMMARY = "summary";
@@ -1158,7 +1159,6 @@ namespace vcpkg
         constexpr static StringLiteral FEATURES = "features";
         constexpr static StringLiteral DEFAULT_FEATURES = "default-features";
         constexpr static StringLiteral SUPPORTS = "supports";
-        constexpr static StringLiteral OVERRIDES = "overrides";
         constexpr static StringLiteral BUILTIN_BASELINE = "builtin-baseline";
         constexpr static StringLiteral VCPKG_CONFIGURATION = "vcpkg-configuration";
 
@@ -1254,7 +1254,6 @@ namespace vcpkg
         }
     };
 
-    constexpr StringLiteral ManifestDeserializer::NAME;
     constexpr StringLiteral ManifestDeserializer::MAINTAINERS;
     constexpr StringLiteral ManifestDeserializer::DESCRIPTION;
     constexpr StringLiteral ManifestDeserializer::HOMEPAGE;
@@ -1264,7 +1263,6 @@ namespace vcpkg
     constexpr StringLiteral ManifestDeserializer::FEATURES;
     constexpr StringLiteral ManifestDeserializer::DEFAULT_FEATURES;
     constexpr StringLiteral ManifestDeserializer::SUPPORTS;
-    constexpr StringLiteral ManifestDeserializer::OVERRIDES;
     constexpr StringLiteral ManifestDeserializer::BUILTIN_BASELINE;
     constexpr StringLiteral ManifestDeserializer::VCPKG_CONFIGURATION;
 
@@ -1279,7 +1277,7 @@ namespace vcpkg
             auto& spgh = *control_file->core_paragraph;
 
             r.optional_object_field(obj, NAME, spgh.name, Json::PackageNameDeserializer::instance);
-            auto maybe_schemed_version = visit_optional_schemed_deserializer(type_name(), r, obj, false);
+            auto maybe_schemed_version = visit_optional_schemed_version(type_name(), r, obj);
             if (auto p = maybe_schemed_version.get())
             {
                 spgh.version_scheme = p->scheme;
@@ -1309,7 +1307,7 @@ namespace vcpkg
             auto& spgh = *control_file->core_paragraph;
 
             r.required_object_field(type_name(), obj, NAME, spgh.name, Json::PackageNameDeserializer::instance);
-            auto schemed_version = visit_required_schemed_deserializer(type_name(), r, obj, false);
+            auto schemed_version = visit_required_schemed_version(type_name(), r, obj);
             spgh.version_scheme = schemed_version.scheme;
             spgh.version = schemed_version.version;
 
@@ -1496,9 +1494,8 @@ namespace vcpkg
             if (core_paragraph->overrides.size() != 0)
             {
                 get_global_metrics_collector().track_define(DefineMetric::ErrorVersioningDisabled);
-                return msg::format_error(msgVersionRejectedDueToFeatureFlagOff,
-                                         msg::path = origin,
-                                         msg::json_field = ManifestDeserializer::OVERRIDES);
+                return msg::format_error(
+                    msgVersionRejectedDueToFeatureFlagOff, msg::path = origin, msg::json_field = OVERRIDES);
             }
 
             if (core_paragraph->builtin_baseline.has_value())
@@ -1693,7 +1690,7 @@ namespace vcpkg
                     else
                     {
                         Json::Object entry;
-                        entry.insert(DependencyFeatureDeserializer::NAME, f.name);
+                        entry.insert(NAME, f.name);
                         entry.insert(DependencyFeatureDeserializer::PLATFORM, to_string(f.platform));
                         features_array.push_back(std::move(entry));
                     }
@@ -1713,7 +1710,7 @@ namespace vcpkg
                     dep_obj.insert(el.first.to_string(), el.second);
                 }
 
-                dep_obj.insert(DependencyDeserializer::NAME, dep.name);
+                dep_obj.insert(NAME, dep.name);
                 if (dep.host) dep_obj.insert(DependencyDeserializer::HOST, Json::Value::boolean(true));
 
                 if (!dep.default_features)
@@ -1727,17 +1724,6 @@ namespace vcpkg
                     dep_obj.insert(DependencyDeserializer::VERSION_GE, dep.constraint.version.to_string());
                 }
             }
-        };
-
-        auto serialize_override = [&](Json::Array& arr, const DependencyOverride& dep) {
-            auto& dep_obj = arr.push_back(Json::Object());
-            for (const auto& el : dep.extra_info)
-            {
-                dep_obj.insert(el.first.to_string(), el.second);
-            }
-
-            dep_obj.insert(DependencyOverrideDeserializer::NAME, Json::Value::string(dep.name));
-            serialize_schemed_version(dep_obj, dep.scheme, dep.version);
         };
 
         auto serialize_license =
@@ -1770,7 +1756,7 @@ namespace vcpkg
                        maybe_configuration.value_or_exit(VCPKG_LINE_INFO).serialize());
         }
 
-        serialize_optional_string(obj, ManifestDeserializer::NAME, scf.to_name());
+        serialize_optional_string(obj, NAME, scf.to_name());
 
         auto version_scheme = scf.to_version_scheme();
         if (version_scheme != VersionScheme::Missing)
@@ -1844,11 +1830,11 @@ namespace vcpkg
 
         if (!scf.core_paragraph->overrides.empty())
         {
-            auto& overrides = obj.insert(ManifestDeserializer::OVERRIDES, Json::Array());
+            auto& overrides = obj.insert(OVERRIDES, Json::Array());
 
             for (const auto& over : scf.core_paragraph->overrides)
             {
-                serialize_override(overrides, over);
+                serialize_dependency_override(overrides, over);
             }
         }
 
