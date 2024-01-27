@@ -8,10 +8,6 @@ using namespace vcpkg;
 namespace
 {
     constexpr StringLiteral BASELINE = "baseline";
-    constexpr StringLiteral VERSION_RELAXED = "version";
-    constexpr StringLiteral VERSION_SEMVER = "version-semver";
-    constexpr StringLiteral VERSION_STRING = "version-string";
-    constexpr StringLiteral VERSION_DATE = "version-date";
     constexpr StringLiteral PORT_VERSION = "port-version";
 
     template<const msg::MessageT<>& type_name_msg>
@@ -100,6 +96,11 @@ namespace
 
 namespace vcpkg
 {
+    constexpr StringLiteral VERSION_RELAXED = "version";
+    constexpr StringLiteral VERSION_SEMVER = "version-semver";
+    constexpr StringLiteral VERSION_STRING = "version-string";
+    constexpr StringLiteral VERSION_DATE = "version-date";
+
     Optional<SchemedVersion> visit_optional_schemed_version(const LocalizedString& parent_type,
                                                             Json::Reader& r,
                                                             const Json::Object& obj)

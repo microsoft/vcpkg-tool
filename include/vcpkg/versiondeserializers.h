@@ -1,14 +1,19 @@
 #pragma once
 
 #include <vcpkg/base/fwd/messages.h>
-#include <vcpkg/base/fwd/stringview.h>
 
 #include <vcpkg/fwd/versions.h>
 
 #include <vcpkg/base/jsonreader.h>
+#include <vcpkg/base/stringview.h>
 
 namespace vcpkg
 {
+    extern const StringLiteral VERSION_RELAXED;
+    extern const StringLiteral VERSION_SEMVER;
+    extern const StringLiteral VERSION_STRING;
+    extern const StringLiteral VERSION_DATE;
+
     const Json::IDeserializer<Version>& get_versiontag_deserializer_instance();
 
     Optional<SchemedVersion> visit_optional_schemed_version(const LocalizedString& parent_type,

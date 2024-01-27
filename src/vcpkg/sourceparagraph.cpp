@@ -86,7 +86,7 @@ namespace vcpkg
         }
 
         dep_obj.insert(NAME, Json::Value::string(dep.name));
-        serialize_schemed_version(dep_obj, VersionScheme::Relaxed, dep.version);
+        dep_obj.insert(VERSION_RELAXED, dep.version.to_string());
     }
 
     bool operator==(const DependencyRequestedFeature& lhs, const DependencyRequestedFeature& rhs)

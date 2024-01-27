@@ -812,13 +812,11 @@ TEST_CASE ("manifest overrides", "[manifests]")
     "overrides": [
         {
             "name": "abc",
-            "version": "hello",
-            "port-version": 5
+            "version": "hello#5"
         },
         {
             "name": "abcd",
-            "version": "hello",
-            "port-version": 7
+            "version": "hello#7"
         }
     ]
 }
