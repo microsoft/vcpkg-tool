@@ -14,6 +14,7 @@ function feature {
 }
 
 $vcpkgJson = @{
+    'name' = 'toplevel-spec';
     'default-features' = @( 'default-fail' );
     'features' = @{
         'default-fail' = feature 'vcpkg-fail-if-depended-upon';
@@ -28,6 +29,11 @@ $vcpkgJson = @{
             'name' = 'vcpkg-default-features-fail-require-other-feature';
             'default-features' = $False;
             'features' = @( 'success' )
+        };
+        'no-default-features-3' = feature @{
+            'name' = 'toplevel-spec';
+            'default-features' = $False;
+            'features' = @( 'no-default-features-1' )
         };
     }
 }
@@ -77,6 +83,12 @@ Run-Vcpkg install @noDefaultFeatureArgs --x-feature=no-default-features-1
 Throw-IfFailed
 Write-Trace "test manifest features: no-default-features, features = [no-default-features-2]"
 Run-Vcpkg install @noDefaultFeatureArgs --x-feature=no-default-features-2
+Throw-IfFailed
+Write-Trace "test manifest features: no-default-features, features = [no-default-features-1,no-default-features-3]"
+Run-Vcpkg install @noDefaultFeatureArgs --x-feature=no-default-features-1 --x-feature=no-default-features-3
+Throw-IfFailed
+Write-Trace "test manifest features: no-default-features, features = [no-default-features-3]"
+Run-Vcpkg install @noDefaultFeatureArgs --x-feature=no-default-features-3
 Throw-IfFailed
 
 $vcpkgJson = @{
