@@ -572,7 +572,7 @@
   "FollowingPackagesUpgraded": "Следующие пакеты обновлены.",
   "ForMoreHelp": "Для получения дополнительной справки",
   "ForceSystemBinariesOnWeirdPlatforms": "Переменная среды VCPKG_FORCE_SYSTEM_BINARIES должна быть задана на платформах ARM, s390x, ppc64le и RISC.",
-  "FormattedParseMessageExpressionPrefix": "on expression:",
+  "FormattedParseMessageExpressionPrefix": "в выражении:",
   "GHAParametersMissing": "Для двоичного источника GHA требуется настройка переменных среды ACTIONS_RUNTIME_TOKEN и ACTIONS_CACHE_URL. Дополнительные сведения: {url}.",
   "GeneratedConfiguration": "Созданная конфигурация {path}.",
   "GeneratedInstaller": "Установщик {path} создан.",

@@ -572,7 +572,7 @@
   "FollowingPackagesUpgraded": "I pacchetti seguenti sono aggiornati:",
   "ForMoreHelp": "Per altra guida",
   "ForceSystemBinariesOnWeirdPlatforms": "La variabile di ambiente VCPKG_FORCE_SYSTEM_BINARIES deve essere impostata su piattaforme arm, s390x, ppc64le e riscv.",
-  "FormattedParseMessageExpressionPrefix": "on expression:",
+  "FormattedParseMessageExpressionPrefix": "sull'espressione:",
   "GHAParametersMissing": "L'origine binaria BINARY DI AZURE richiede l'impostazione delle variabili di ambiente ACTIONS_RUNTIME_TOKEN e ACTIONS_CACHE_URL. Per informazioni dettagliate, vedere {url}.",
   "GeneratedConfiguration": "Configurazione {path} generata.",
   "GeneratedInstaller": "Il programma di installazione {path} è stato generato.",
