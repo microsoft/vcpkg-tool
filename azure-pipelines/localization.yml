@@ -19,6 +19,11 @@ extends:
     parameters:
       pool:
         name: 'VSEngSS-MicroBuild2022-1ES'
+      sdl:
+        sourceAnalysisPool:
+          name: VSEngSS-MicroBuild2022-1ES
+          image: server2022-microbuildVS2022-1es
+          os: windows
       stages:
         - stage: stage
           displayName: Build Localization Files Stage
