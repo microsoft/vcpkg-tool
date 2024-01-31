@@ -572,7 +572,7 @@
   "FollowingPackagesUpgraded": "以下包是最新的:",
   "ForMoreHelp": "有关更多帮助",
   "ForceSystemBinariesOnWeirdPlatforms": "必须在 arm、s390x、ppc64le、riscv 平台上设置环境变量 VCPKG_FORCE_SYSTEM_BINARIES。",
-  "FormattedParseMessageExpressionPrefix": "on expression:",
+  "FormattedParseMessageExpressionPrefix": "表达式:",
   "GHAParametersMissing": "GHA 二进制源要求设置 ACTIONS_RUNTIME_TOKEN 和 ACTIONS_CACHE_URL 环境变量。有关详细信息，请参阅 {url}。",
   "GeneratedConfiguration": "生成的配置 {path}。",
   "GeneratedInstaller": "已生成 {path} 安装程序。",
