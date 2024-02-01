@@ -1261,7 +1261,6 @@ namespace vcpkg
             {
                 action.build_options = install_plan_options;
                 action.build_options.use_head_version = UseHeadVersion::No;
-                action.build_options.editable = Editable::No;
             }
 
             // If the manifest refers to itself, it will be added to the install plan.
