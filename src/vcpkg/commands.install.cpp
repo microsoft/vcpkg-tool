@@ -327,7 +327,7 @@ namespace vcpkg
         const InstallPlanType& plan_type = action.plan_type;
 
         const bool is_user_requested = action.request_type == RequestType::USER_REQUESTED;
-        const bool use_head_version = Util::Enum::to_bool(action.build_options.use_head_version);
+        const bool use_head_version = is_user_requested && Util::Enum::to_bool(action.build_options.use_head_version);
 
         if (plan_type == InstallPlanType::ALREADY_INSTALLED)
         {
@@ -1260,7 +1260,6 @@ namespace vcpkg
             for (InstallPlanAction& action : install_plan.install_actions)
             {
                 action.build_options = install_plan_options;
-                action.build_options.use_head_version = UseHeadVersion::No;
             }
 
             // If the manifest refers to itself, it will be added to the install plan.
@@ -1309,11 +1308,6 @@ namespace vcpkg
         for (auto&& action : action_plan.install_actions)
         {
             action.build_options = install_plan_options;
-            if (action.request_type != RequestType::USER_REQUESTED)
-            {
-                action.build_options.use_head_version = UseHeadVersion::No;
-                action.build_options.editable = Editable::No;
-            }
         }
 
         var_provider.load_tag_vars(action_plan, host_triplet);

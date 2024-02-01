@@ -756,9 +756,16 @@ namespace vcpkg
             {"FEATURES", Strings::join(";", action.feature_list)},
             {"PORT", port_name},
             {"VERSION", scf.to_version().text},
-            {"VCPKG_USE_HEAD_VERSION", Util::Enum::to_bool(action.build_options.use_head_version) ? "1" : "0"},
+            {"VCPKG_USE_HEAD_VERSION",
+             action.request_type == RequestType::USER_REQUESTED &&
+                     Util::Enum::to_bool(action.build_options.use_head_version)
+                 ? "1"
+                 : "0"},
             {"_VCPKG_DOWNLOAD_TOOL", to_string_view(action.build_options.download_tool)},
-            {"_VCPKG_EDITABLE", Util::Enum::to_bool(action.build_options.editable) ? "1" : "0"},
+            {"_VCPKG_EDITABLE",
+             action.request_type == RequestType::USER_REQUESTED && Util::Enum::to_bool(action.build_options.editable)
+                 ? "1"
+                 : "0"},
             {"_VCPKG_NO_DOWNLOADS", !Util::Enum::to_bool(action.build_options.allow_downloads) ? "1" : "0"},
             {"Z_VCPKG_CHAINLOAD_TOOLCHAIN_FILE", action.pre_build_info(VCPKG_LINE_INFO).toolchain_file()},
         };
@@ -1124,15 +1131,18 @@ namespace vcpkg
         abi_info.pre_build_info = std::move(proto_pre_build_info);
         abi_info.toolset.emplace(toolset);
 
-        if (action.build_options.use_head_version == UseHeadVersion::Yes)
+        if (action.request_type == RequestType::USER_REQUESTED)
         {
-            Debug::print("Binary caching for package ", action.spec, " is disabled due to --head\n");
-            return;
-        }
-        if (action.build_options.editable == Editable::Yes)
-        {
-            Debug::print("Binary caching for package ", action.spec, " is disabled due to --editable\n");
-            return;
+            if (action.build_options.use_head_version == UseHeadVersion::Yes)
+            {
+                Debug::print("Binary caching for package ", action.spec, " is disabled due to --head\n");
+                return;
+            }
+            if (action.build_options.editable == Editable::Yes)
+            {
+                Debug::print("Binary caching for package ", action.spec, " is disabled due to --editable\n");
+                return;
+            }
         }
 
         abi_info.compiler_info = paths.get_compiler_info(*abi_info.pre_build_info, toolset);

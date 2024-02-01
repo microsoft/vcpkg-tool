@@ -431,7 +431,7 @@ namespace vcpkg
     static void format_plan_row(LocalizedString& out, const InstallPlanAction& action, const Path& builtin_ports_dir)
     {
         out.append_raw(request_type_indent(action.request_type)).append_raw(action.display_name());
-        if (action.build_options.use_head_version == UseHeadVersion::Yes)
+        if (action.request_type == RequestType::USER_REQUESTED, action.build_options.use_head_version == UseHeadVersion::Yes)
         {
             out.append_raw(" (+HEAD)");
         }
