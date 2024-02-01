@@ -572,7 +572,7 @@
   "FollowingPackagesUpgraded": "Les packages suivants sont mis à jour :",
   "ForMoreHelp": "Pour plus d’aide",
   "ForceSystemBinariesOnWeirdPlatforms": "La variable d’environnement VCPKG_FORCE_SYSTEM_BINARIES doit être définie sur les plateformes arm, s390x, ppc64le et riscv.",
-  "FormattedParseMessageExpressionPrefix": "on expression:",
+  "FormattedParseMessageExpressionPrefix": "sur l’expression :",
   "GHAParametersMissing": "La source binaire GHA nécessite la définition des variables d’environnement ACTIONS_RUNTIME_TOKEN et ACTIONS_CACHE_URL. Pour plus d’informations, consultez {url}.",
   "GeneratedConfiguration": "Configuration générée {path}.",
   "GeneratedInstaller": "Le programme d’installation de {path} a été généré.",
