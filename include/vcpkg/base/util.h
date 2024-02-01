@@ -487,13 +487,13 @@ namespace vcpkg::Util
         template<class E>
         E to_enum(bool b)
         {
-            return b ? E::YES : E::NO;
+            return b ? E::Yes : E::No;
         }
 
         template<class E>
         bool to_bool(E e)
         {
-            return e == E::YES;
+            return e == E::Yes;
         }
     }
 }
