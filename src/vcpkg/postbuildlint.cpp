@@ -974,7 +974,7 @@ namespace vcpkg
     {
         switch (linkage)
         {
-            case LinkageType::DYNAMIC:
+            case LinkageType::Dynamic:
                 if (release)
                 {
                     return msg::format(msgLinkageDynamicRelease);
@@ -984,7 +984,7 @@ namespace vcpkg
                     return msg::format(msgLinkageDynamicDebug);
                 }
                 break;
-            case LinkageType::STATIC:
+            case LinkageType::Static:
                 if (release)
                 {
                     return msg::format(msgLinkageStaticRelease);
@@ -1059,11 +1059,11 @@ namespace vcpkg
 
             switch (build_info.crt_linkage)
             {
-                case LinkageType::DYNAMIC:
+                case LinkageType::Dynamic:
                     fail |= this_lib.has_static_debug;
                     fail |= this_lib.has_static_release;
                     break;
-                case LinkageType::STATIC:
+                case LinkageType::Static:
                     fail |= this_lib.has_dynamic_debug;
                     fail |= this_lib.has_dynamic_release;
                     break;
@@ -1427,7 +1427,7 @@ namespace vcpkg
 
             switch (build_info.library_linkage)
             {
-                case LinkageType::DYNAMIC:
+                case LinkageType::Dynamic:
                 {
                     if (!pre_build_info.build_type &&
                         !build_info.policies.is_enabled(BuildPolicy::MISMATCHED_NUMBER_OF_BINARIES))
@@ -1447,7 +1447,7 @@ namespace vcpkg
                     }
                 }
                 break;
-                case LinkageType::STATIC:
+                case LinkageType::Static:
                 {
                     auto& dlls = debug_dlls;
                     dlls.insert(dlls.end(),

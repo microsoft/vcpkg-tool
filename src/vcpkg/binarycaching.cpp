@@ -345,7 +345,7 @@ namespace
                 auto archive_path = m_dir / files_archive_subpath(abi_tag);
                 if (m_fs.exists(archive_path, IgnoreErrors{}))
                 {
-                    auto to_remove = actions[i]->build_options.purge_decompress_failure == PurgeDecompressFailure::YES
+                    auto to_remove = actions[i]->build_options.purge_decompress_failure == PurgeDecompressFailure::Yes
                                          ? RemoveWhen::on_fail
                                          : RemoveWhen::nothing;
                     out_zip_paths[i].emplace(std::move(archive_path), to_remove);
@@ -2191,7 +2191,7 @@ namespace vcpkg
                     msgStoredBinariesToDestinations, msg::count = num_destinations, msg::elapsed = timer.elapsed());
             }
         }
-        if (action.build_options.clean_packages == CleanPackages::YES)
+        if (action.build_options.clean_packages == CleanPackages::Yes)
         {
             m_fs.remove_all(action.package_dir.value_or_exit(VCPKG_LINE_INFO), VCPKG_LINE_INFO);
         }

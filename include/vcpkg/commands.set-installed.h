@@ -19,7 +19,7 @@ namespace vcpkg
     enum class DryRun : bool
     {
         No,
-        Yes,
+        Yes
     };
 
     extern const CommandMetadata CommandSetInstalledMetadata;
