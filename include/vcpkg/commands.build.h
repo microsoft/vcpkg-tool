@@ -71,7 +71,6 @@ namespace vcpkg
         CleanPackages clean_packages;
         CleanDownloads clean_downloads;
         DownloadTool download_tool;
-        PurgeDecompressFailure purge_decompress_failure;
         Editable editable;
         BackcompatFeatures backcompat_features;
         PrintUsage print_usage;
@@ -86,7 +85,6 @@ namespace vcpkg
         CleanPackages::Yes,
         CleanDownloads::No,
         DownloadTool::Builtin,
-        PurgeDecompressFailure::Yes,
         Editable::No,
         BackcompatFeatures::Allow,
         PrintUsage::Yes,
@@ -101,7 +99,6 @@ namespace vcpkg
         CleanPackages::Yes,
         CleanDownloads::No,
         DownloadTool::Builtin,
-        PurgeDecompressFailure::Yes,
         Editable::No,
         BackcompatFeatures::Prohibit,
         PrintUsage::Yes,

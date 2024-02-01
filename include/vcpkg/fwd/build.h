@@ -63,12 +63,6 @@ namespace vcpkg
         Aria2,
     };
 
-    enum class PurgeDecompressFailure
-    {
-        No = 0,
-        Yes
-    };
-
     enum class Editable
     {
         No = 0,

@@ -253,7 +253,6 @@ namespace
     {
         nothing,
         always,
-        on_fail,
     };
 
     struct ZipResource
@@ -305,13 +304,13 @@ namespace
                     Debug::print("Failed to decompress archive package: ", zip_path.path, '\n');
                 }
 
-                post_decompress(zip_path, job_results[j].has_value());
+                post_decompress(zip_path);
             }
         }
 
-        void post_decompress(const ZipResource& r, bool succeeded) const
+        void post_decompress(const ZipResource& r) const
         {
-            if ((!succeeded && r.to_remove == RemoveWhen::on_fail) || r.to_remove == RemoveWhen::always)
+            if (r.to_remove == RemoveWhen::always)
             {
                 m_fs.remove(r.path, IgnoreErrors{});
             }
@@ -345,10 +344,7 @@ namespace
                 auto archive_path = m_dir / files_archive_subpath(abi_tag);
                 if (m_fs.exists(archive_path, IgnoreErrors{}))
                 {
-                    auto to_remove = actions[i]->build_options.purge_decompress_failure == PurgeDecompressFailure::Yes
-                                         ? RemoveWhen::on_fail
-                                         : RemoveWhen::nothing;
-                    out_zip_paths[i].emplace(std::move(archive_path), to_remove);
+                    out_zip_paths[i].emplace(std::move(archive_path), RemoveWhen::nothing);
                 }
             }
         }
