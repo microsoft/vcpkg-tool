@@ -346,6 +346,7 @@ namespace vcpkg
             Editable::No,
             BackcompatFeatures::Prohibit,
             PrintUsage::Yes,
+            KeepGoing::Yes,
         };
 
         ExclusionsMap exclusions_map;
@@ -532,15 +533,8 @@ namespace vcpkg
             install_preclear_packages(paths, action_plan);
             binary_cache.fetch(action_plan.install_actions);
 
-            auto summary = install_execute_plan(args,
-                                                paths,
-                                                host_triplet,
-                                                build_options,
-                                                action_plan,
-                                                KeepGoing::YES,
-                                                status_db,
-                                                binary_cache,
-                                                build_logs_recorder);
+            auto summary = install_execute_plan(
+                args, paths, host_triplet, build_options, action_plan, status_db, binary_cache, build_logs_recorder);
 
             for (auto&& result : summary.results)
             {

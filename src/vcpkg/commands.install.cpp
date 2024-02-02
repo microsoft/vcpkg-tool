@@ -564,7 +564,6 @@ namespace vcpkg
                                         Triplet host_triplet,
                                         const BuildPackageOptions& build_options,
                                         const ActionPlan& action_plan,
-                                        const KeepGoing keep_going,
                                         StatusParagraphs& status_db,
                                         BinaryCache& binary_cache,
                                         const IBuildLogsRecorder& build_logs_recorder,
@@ -594,7 +593,7 @@ namespace vcpkg
             TrackedPackageInstallGuard this_install(action_index++, action_count, results, action);
             auto result = perform_install_plan_action(
                 args, paths, host_triplet, build_options, action, status_db, binary_cache, build_logs_recorder);
-            if (result.code != BuildResult::Succeeded && keep_going == KeepGoing::NO)
+            if (result.code != BuildResult::Succeeded && build_options.keep_going == KeepGoing::No)
             {
                 this_install.print_elapsed_time();
                 print_user_troubleshooting_message(action, paths, result.stdoutlog.then([&](auto&) -> Optional<Path> {
@@ -1054,9 +1053,9 @@ namespace vcpkg
             Util::Sets::contains(options.switches, (OPTION_CLEAN_PACKAGES_AFTER_BUILD));
         const bool clean_downloads_after_build =
             Util::Sets::contains(options.switches, (OPTION_CLEAN_DOWNLOADS_AFTER_BUILD));
-        const KeepGoing keep_going = Util::Sets::contains(options.switches, OPTION_KEEP_GOING) || only_downloads
-                                         ? KeepGoing::YES
-                                         : KeepGoing::NO;
+        const auto keep_going = Util::Sets::contains(options.switches, OPTION_KEEP_GOING) || only_downloads
+                                    ? KeepGoing::Yes
+                                    : KeepGoing::No;
         const bool prohibit_backcompat_features =
             Util::Sets::contains(options.switches, (OPTION_PROHIBIT_BACKCOMPAT_FEATURES)) ||
             Util::Sets::contains(options.switches, (OPTION_ENFORCE_PORT_CHECKS));
@@ -1137,7 +1136,9 @@ namespace vcpkg
             download_tool,
             Util::Enum::to_enum<Editable>(is_editable),
             prohibit_backcompat_features ? BackcompatFeatures::Prohibit : BackcompatFeatures::Allow,
-            print_cmake_usage};
+            print_cmake_usage,
+            keep_going,
+        };
 
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
@@ -1269,15 +1270,12 @@ namespace vcpkg
 
             command_set_installed_and_exit_ex(args,
                                               paths,
+                                              host_triplet,
                                               install_plan_options,
                                               var_provider,
                                               std::move(install_plan),
                                               dry_run ? DryRun::Yes : DryRun::No,
                                               pkgsconfig,
-                                              host_triplet,
-                                              keep_going,
-                                              only_downloads,
-                                              print_cmake_usage,
                                               true);
         }
 
@@ -1377,12 +1375,11 @@ namespace vcpkg
                                                             host_triplet,
                                                             install_plan_options,
                                                             action_plan,
-                                                            keep_going,
                                                             status_db,
                                                             binary_cache,
                                                             null_build_logs_recorder());
 
-        if (keep_going == KeepGoing::YES)
+        if (keep_going == KeepGoing::Yes)
         {
             summary.print();
         }

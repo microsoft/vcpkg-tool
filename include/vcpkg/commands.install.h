@@ -101,7 +101,6 @@ namespace vcpkg
                                         Triplet host_triplet,
                                         const BuildPackageOptions& build_options,
                                         const ActionPlan& action_plan,
-                                        const KeepGoing keep_going,
                                         StatusParagraphs& status_db,
                                         BinaryCache& binary_cache,
                                         const IBuildLogsRecorder& build_logs_recorder,

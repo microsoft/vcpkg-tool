@@ -168,15 +168,12 @@ namespace vcpkg
 
     void command_set_installed_and_exit_ex(const VcpkgCmdArguments& args,
                                            const VcpkgPaths& paths,
+                                           Triplet host_triplet,
                                            const BuildPackageOptions& build_options,
                                            const CMakeVars::CMakeVarProvider& cmake_vars,
                                            ActionPlan action_plan,
                                            DryRun dry_run,
-                                           const Optional<Path>& maybe_pkgsconfig,
-                                           Triplet host_triplet,
-                                           const KeepGoing keep_going,
-                                           const bool only_downloads,
-                                           const PrintUsage print_cmake_usage,
+                                           const Optional<Path>& maybe_pkgconfig,
                                            bool include_manifest_in_github_issue)
     {
         auto& fs = paths.get_filesystem();
@@ -220,7 +217,7 @@ namespace vcpkg
 
         print_plan(build_options.use_head_version, action_plan, true, paths.builtin_ports_directory());
 
-        if (auto p_pkgsconfig = maybe_pkgsconfig.get())
+        if (auto p_pkgsconfig = maybe_pkgconfig.get())
         {
             auto pkgsconfig_path = paths.original_cwd / *p_pkgsconfig;
             auto pkgsconfig_contents = generate_nuget_packages_config(action_plan, args.nuget_id_prefix.value_or(""));
@@ -238,30 +235,30 @@ namespace vcpkg
         track_install_plan(action_plan);
         install_preclear_packages(paths, action_plan);
 
-        auto binary_cache = only_downloads ? BinaryCache(paths.get_filesystem())
-                                           : BinaryCache::make(args, paths, out_sink).value_or_exit(VCPKG_LINE_INFO);
+        auto binary_cache = build_options.only_downloads == OnlyDownloads::Yes
+                                ? BinaryCache(paths.get_filesystem())
+                                : BinaryCache::make(args, paths, out_sink).value_or_exit(VCPKG_LINE_INFO);
         binary_cache.fetch(action_plan.install_actions);
         const auto summary = install_execute_plan(args,
                                                   paths,
                                                   host_triplet,
                                                   build_options,
                                                   action_plan,
-                                                  keep_going,
                                                   status_db,
                                                   binary_cache,
                                                   null_build_logs_recorder(),
                                                   include_manifest_in_github_issue);
 
-        if (keep_going == KeepGoing::YES && summary.failed())
+        if (build_options.keep_going == KeepGoing::Yes && summary.failed())
         {
             summary.print_failed();
-            if (!only_downloads)
+            if (build_options.only_downloads == OnlyDownloads::No)
             {
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
         }
 
-        if (print_cmake_usage == PrintUsage::Yes)
+        if (build_options.print_usage == PrintUsage::Yes)
         {
             std::set<std::string> printed_usages;
             for (auto&& ur_spec : user_requested_specs)
@@ -299,11 +296,13 @@ namespace vcpkg
         }
 
         const bool dry_run = Util::Sets::contains(options.switches, OPTION_DRY_RUN);
-        const bool only_downloads = Util::Sets::contains(options.switches, OPTION_ONLY_DOWNLOADS);
-        const KeepGoing keep_going = Util::Sets::contains(options.switches, OPTION_KEEP_GOING) || only_downloads
-                                         ? KeepGoing::YES
-                                         : KeepGoing::NO;
-        const PrintUsage print_cmake_usage =
+        const auto only_downloads =
+            Util::Sets::contains(options.switches, OPTION_ONLY_DOWNLOADS) ? OnlyDownloads::Yes : OnlyDownloads::No;
+        const auto keep_going =
+            Util::Sets::contains(options.switches, OPTION_KEEP_GOING) || only_downloads == OnlyDownloads::Yes
+                ? KeepGoing::Yes
+                : KeepGoing::No;
+        const auto print_usage =
             Util::Sets::contains(options.switches, OPTION_NO_PRINT_USAGE) ? PrintUsage::No : PrintUsage::Yes;
         const auto unsupported_port_action = Util::Sets::contains(options.switches, OPTION_ALLOW_UNSUPPORTED_PORT)
                                                  ? UnsupportedPortAction::Warn
@@ -316,14 +315,15 @@ namespace vcpkg
             BuildMissing::Yes,
             UseHeadVersion::No,
             AllowDownloads::Yes,
-            OnlyDownloads::No,
+            only_downloads,
             CleanBuildtrees::Yes,
             CleanPackages::Yes,
             CleanDownloads::No,
             DownloadTool::Builtin,
             Editable::No,
             prohibit_backcompat_features,
-            PrintUsage::Yes,
+            print_usage,
+            keep_going,
         };
 
         auto& fs = paths.get_filesystem();
@@ -347,15 +347,12 @@ namespace vcpkg
             provider, *cmake_vars, specs, {}, {host_triplet, paths.packages(), unsupported_port_action});
         command_set_installed_and_exit_ex(args,
                                           paths,
+                                          host_triplet,
                                           build_options,
                                           *cmake_vars,
                                           std::move(action_plan),
                                           dry_run ? DryRun::Yes : DryRun::No,
                                           pkgsconfig,
-                                          host_triplet,
-                                          keep_going,
-                                          only_downloads,
-                                          print_cmake_usage,
                                           false);
     }
 } // namespace vcpkg

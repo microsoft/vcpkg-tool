@@ -57,13 +57,13 @@ namespace vcpkg
         const ParsedArguments options = args.parse_arguments(CommandUpgradeMetadata);
 
         const bool no_dry_run = Util::Sets::contains(options.switches, OPTION_NO_DRY_RUN);
-        const KeepGoing keep_going =
-            Util::Sets::contains(options.switches, OPTION_NO_KEEP_GOING) ? KeepGoing::NO : KeepGoing::YES;
+        const auto keep_going =
+            Util::Sets::contains(options.switches, OPTION_NO_KEEP_GOING) ? KeepGoing::No : KeepGoing::Yes;
         const auto unsupported_port_action = Util::Sets::contains(options.switches, OPTION_ALLOW_UNSUPPORTED_PORT)
                                                  ? UnsupportedPortAction::Warn
                                                  : UnsupportedPortAction::Error;
 
-        static constexpr BuildPackageOptions build_options{
+        static const BuildPackageOptions build_options{
             BuildMissing::Yes,
             UseHeadVersion::No,
             AllowDownloads::Yes,
@@ -75,6 +75,7 @@ namespace vcpkg
             Editable::No,
             BackcompatFeatures::Allow,
             PrintUsage::Yes,
+            keep_going,
         };
 
         StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
@@ -216,17 +217,10 @@ namespace vcpkg
         auto binary_cache = BinaryCache::make(args, paths, out_sink).value_or_exit(VCPKG_LINE_INFO);
         compute_all_abis(paths, build_options, action_plan, var_provider, status_db);
         binary_cache.fetch(action_plan.install_actions);
-        const InstallSummary summary = install_execute_plan(args,
-                                                            paths,
-                                                            host_triplet,
-                                                            build_options,
-                                                            action_plan,
-                                                            keep_going,
-                                                            status_db,
-                                                            binary_cache,
-                                                            null_build_logs_recorder());
+        const InstallSummary summary = install_execute_plan(
+            args, paths, host_triplet, build_options, action_plan, status_db, binary_cache, null_build_logs_recorder());
 
-        if (keep_going == KeepGoing::YES)
+        if (keep_going == KeepGoing::Yes)
         {
             summary.print();
         }

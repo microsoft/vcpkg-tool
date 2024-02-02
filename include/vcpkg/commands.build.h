@@ -76,6 +76,7 @@ namespace vcpkg
         Editable editable;
         BackcompatFeatures backcompat_features;
         PrintUsage print_usage;
+        KeepGoing keep_going;
     };
 
     struct BuildResultCounts

@@ -35,15 +35,12 @@ namespace vcpkg
 
     void command_set_installed_and_exit_ex(const VcpkgCmdArguments& args,
                                            const VcpkgPaths& paths,
+                                           Triplet host_triplet,
                                            const BuildPackageOptions& build_options,
                                            const CMakeVars::CMakeVarProvider& cmake_vars,
                                            ActionPlan action_plan,
                                            DryRun dry_run,
-                                           const Optional<Path>& pkgsconfig_path,
-                                           Triplet host_triplet,
-                                           const KeepGoing keep_going,
-                                           const bool only_downloads,
-                                           const PrintUsage print_cmake_usage,
+                                           const Optional<Path>& maybe_pkgconfig,
                                            bool include_manifest_in_github_issue);
     void command_set_installed_and_exit(const VcpkgCmdArguments& args,
                                         const VcpkgPaths& paths,

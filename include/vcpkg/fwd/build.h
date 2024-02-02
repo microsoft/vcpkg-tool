@@ -87,6 +87,12 @@ namespace vcpkg
         Yes
     };
 
+    enum class KeepGoing
+    {
+        No = 0,
+        Yes
+    };
+
     // These names are intended to match VCPKG_POLICY_Xxx constants settable in portfile.cmake
     enum class BuildPolicy
     {
