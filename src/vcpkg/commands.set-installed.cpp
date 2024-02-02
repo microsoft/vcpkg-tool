@@ -168,6 +168,7 @@ namespace vcpkg
 
     void command_set_installed_and_exit_ex(const VcpkgCmdArguments& args,
                                            const VcpkgPaths& paths,
+                                           const BuildPackageOptions& build_options,
                                            const CMakeVars::CMakeVarProvider& cmake_vars,
                                            ActionPlan action_plan,
                                            DryRun dry_run,
@@ -181,7 +182,7 @@ namespace vcpkg
         auto& fs = paths.get_filesystem();
 
         cmake_vars.load_tag_vars(action_plan, host_triplet);
-        compute_all_abis(paths, action_plan, cmake_vars, {});
+        compute_all_abis(paths, build_options, action_plan, cmake_vars, {});
 
         std::vector<PackageSpec> user_requested_specs;
         for (const auto& action : action_plan.install_actions)
@@ -217,7 +218,7 @@ namespace vcpkg
         auto status_db = database_load_check(fs, paths.installed());
         adjust_action_plan_to_status_db(action_plan, status_db);
 
-        print_plan(action_plan, true, paths.builtin_ports_directory());
+        print_plan(build_options.use_head_version, action_plan, true, paths.builtin_ports_directory());
 
         if (auto p_pkgsconfig = maybe_pkgsconfig.get())
         {
@@ -241,9 +242,11 @@ namespace vcpkg
                                            : BinaryCache::make(args, paths, out_sink).value_or_exit(VCPKG_LINE_INFO);
         binary_cache.fetch(action_plan.install_actions);
         const auto summary = install_execute_plan(args,
+                                                  paths,
+                                                  host_triplet,
+                                                  build_options,
                                                   action_plan,
                                                   keep_going,
-                                                  paths,
                                                   status_db,
                                                   binary_cache,
                                                   null_build_logs_recorder(),
@@ -305,7 +308,23 @@ namespace vcpkg
         const auto unsupported_port_action = Util::Sets::contains(options.switches, OPTION_ALLOW_UNSUPPORTED_PORT)
                                                  ? UnsupportedPortAction::Warn
                                                  : UnsupportedPortAction::Error;
-        const bool prohibit_backcompat_features = Util::Sets::contains(options.switches, (OPTION_ENFORCE_PORT_CHECKS));
+        const auto prohibit_backcompat_features = Util::Sets::contains(options.switches, OPTION_ENFORCE_PORT_CHECKS)
+                                                      ? BackcompatFeatures::Prohibit
+                                                      : BackcompatFeatures::Allow;
+
+        const BuildPackageOptions build_options{
+            BuildMissing::Yes,
+            UseHeadVersion::No,
+            AllowDownloads::Yes,
+            OnlyDownloads::No,
+            CleanBuildtrees::Yes,
+            CleanPackages::Yes,
+            CleanDownloads::No,
+            DownloadTool::Builtin,
+            Editable::No,
+            prohibit_backcompat_features,
+            PrintUsage::Yes,
+        };
 
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();
@@ -326,16 +345,9 @@ namespace vcpkg
         // Therefore, we see what we would install into an empty installed tree, so we can use the existing code.
         auto action_plan = create_feature_install_plan(
             provider, *cmake_vars, specs, {}, {host_triplet, paths.packages(), unsupported_port_action});
-
-        for (auto&& action : action_plan.install_actions)
-        {
-            action.build_options = default_build_package_options;
-            action.build_options.backcompat_features =
-                (prohibit_backcompat_features ? BackcompatFeatures::Prohibit : BackcompatFeatures::Allow);
-        }
-
         command_set_installed_and_exit_ex(args,
                                           paths,
+                                          build_options,
                                           *cmake_vars,
                                           std::move(action_plan),
                                           dry_run ? DryRun::Yes : DryRun::No,

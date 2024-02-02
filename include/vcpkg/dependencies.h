@@ -45,7 +45,6 @@ namespace vcpkg
                           const SourceControlFileAndLocation& scfl,
                           const Path& packages_dir,
                           const RequestType& request_type,
-                          Triplet host_triplet,
                           std::map<std::string, std::vector<FeatureSpec>>&& dependencies,
                           std::vector<LocalizedString>&& build_failure_messages,
                           std::vector<std::string> default_features);
@@ -63,11 +62,9 @@ namespace vcpkg
 
         InstallPlanType plan_type;
         RequestType request_type;
-        BuildPackageOptions build_options;
 
         std::map<std::string, std::vector<FeatureSpec>> feature_dependencies;
         std::vector<LocalizedString> build_failure_messages;
-        Triplet host_triplet;
 
         // only valid with source_control_file_and_location
         Optional<AbiInfo> abi_info;
@@ -177,7 +174,12 @@ namespace vcpkg
         LocalizedString text;
     };
 
-    FormattedPlan format_plan(const ActionPlan& action_plan, const Path& builtin_ports_dir);
+    FormattedPlan format_plan(UseHeadVersion use_head_version,
+                              const ActionPlan& action_plan,
+                              const Path& builtin_ports_dir);
 
-    void print_plan(const ActionPlan& action_plan, const bool is_recursive, const Path& builtin_ports_dir);
+    void print_plan(UseHeadVersion use_head_version,
+                    const ActionPlan& action_plan,
+                    const bool is_recursive,
+                    const Path& builtin_ports_dir);
 }

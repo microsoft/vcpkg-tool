@@ -2360,15 +2360,11 @@ TEST_CASE ("formatting plan 1", "[dependencies]")
     const RemovePlanAction remove_c({"c", Test::X64_OSX}, RequestType::AUTO_SELECTED);
 
     const Path pr = "packages_root";
-    InstallPlanAction install_a(
-        {"a", Test::X64_OSX}, scfl_a, pr, RequestType::AUTO_SELECTED, Test::X64_ANDROID, {}, {}, {});
+    InstallPlanAction install_a({"a", Test::X64_OSX}, scfl_a, pr, RequestType::AUTO_SELECTED, {}, {}, {});
     REQUIRE(install_a.display_name() == "a:x64-osx@1");
-    InstallPlanAction install_b(
-        {"b", Test::X64_OSX}, scfl_b, pr, RequestType::AUTO_SELECTED, Test::X64_ANDROID, {{"1", {}}}, {}, {});
-    InstallPlanAction install_c(
-        {"c", Test::X64_OSX}, scfl_c, pr, RequestType::USER_REQUESTED, Test::X64_ANDROID, {}, {}, {});
-    InstallPlanAction install_f(
-        {"f", Test::X64_OSX}, scfl_f, pr, RequestType::USER_REQUESTED, Test::X64_ANDROID, {}, {}, {});
+    InstallPlanAction install_b({"b", Test::X64_OSX}, scfl_b, pr, RequestType::AUTO_SELECTED, {{"1", {}}}, {}, {});
+    InstallPlanAction install_c({"c", Test::X64_OSX}, scfl_c, pr, RequestType::USER_REQUESTED, {}, {}, {});
+    InstallPlanAction install_f({"f", Test::X64_OSX}, scfl_f, pr, RequestType::USER_REQUESTED, {}, {}, {});
     install_f.plan_type = InstallPlanType::EXCLUDED;
 
     InstallPlanAction already_installed_d(
@@ -2381,27 +2377,27 @@ TEST_CASE ("formatting plan 1", "[dependencies]")
 
     ActionPlan plan;
     {
-        auto formatted = format_plan(plan, "/builtin");
+        auto formatted = format_plan(UseHeadVersion::No, plan, "/builtin");
         CHECK_FALSE(formatted.has_removals);
         CHECK(formatted.text == "All requested packages are currently installed.\n");
     }
 
     plan.remove_actions.push_back(remove_b);
     {
-        auto formatted = format_plan(plan, "/builtin");
+        auto formatted = format_plan(UseHeadVersion::No, plan, "/builtin");
         CHECK(formatted.has_removals);
         CHECK(formatted.text == "The following packages will be removed:\n"
                                 "    b:x64-osx\n");
     }
 
     plan.remove_actions.push_back(remove_a);
-    REQUIRE_LINES(format_plan(plan, "/builtin").text,
+    REQUIRE_LINES(format_plan(UseHeadVersion::No, plan, "/builtin").text,
                   "The following packages will be removed:\n"
                   "    a:x64-osx\n"
                   "    b:x64-osx\n");
 
     plan.install_actions.push_back(std::move(install_c));
-    REQUIRE_LINES(format_plan(plan, "/builtin").text,
+    REQUIRE_LINES(format_plan(UseHeadVersion::No, plan, "/builtin").text,
                   "The following packages will be removed:\n"
                   "    a:x64-osx\n"
                   "    b:x64-osx\n"
@@ -2409,7 +2405,7 @@ TEST_CASE ("formatting plan 1", "[dependencies]")
                   "    c:x64-osx@1 -- c\n");
 
     plan.remove_actions.push_back(remove_c);
-    REQUIRE_LINES(format_plan(plan, "c").text,
+    REQUIRE_LINES(format_plan(UseHeadVersion::No, plan, "c").text,
                   "The following packages will be removed:\n"
                   "    a:x64-osx\n"
                   "    b:x64-osx\n"
@@ -2417,7 +2413,7 @@ TEST_CASE ("formatting plan 1", "[dependencies]")
                   "    c:x64-osx@1\n");
 
     plan.install_actions.push_back(std::move(install_b));
-    REQUIRE_LINES(format_plan(plan, "c").text,
+    REQUIRE_LINES(format_plan(UseHeadVersion::No, plan, "c").text,
                   "The following packages will be removed:\n"
                   "    a:x64-osx\n"
                   "The following packages will be rebuilt:\n"
@@ -2429,7 +2425,7 @@ TEST_CASE ("formatting plan 1", "[dependencies]")
     plan.already_installed.push_back(std::move(already_installed_d));
     plan.already_installed.push_back(std::move(already_installed_e));
     {
-        auto formatted = format_plan(plan, "b");
+        auto formatted = format_plan(UseHeadVersion::No, plan, "b");
         CHECK(formatted.has_removals);
         REQUIRE_LINES(formatted.text,
                       "The following packages are already installed:\n"
@@ -2443,7 +2439,7 @@ TEST_CASE ("formatting plan 1", "[dependencies]")
     }
 
     plan.install_actions.push_back(std::move(install_f));
-    REQUIRE_LINES(format_plan(plan, "b").text,
+    REQUIRE_LINES(format_plan(UseHeadVersion::No, plan, "b").text,
                   "The following packages are excluded:\n"
                   "    f:x64-osx@1 -- f\n"
                   "The following packages are already installed:\n"
@@ -2461,9 +2457,9 @@ TEST_CASE ("dependency graph API snapshot: host and target")
     MockVersionedPortfileProvider vp;
     auto& scfl_a = vp.emplace("a", {"1", 0});
     InstallPlanAction install_a(
-        {"a", Test::X86_WINDOWS}, scfl_a, "packages_root", RequestType::AUTO_SELECTED, Test::X64_WINDOWS, {}, {}, {});
+        {"a", Test::X86_WINDOWS}, scfl_a, "packages_root", RequestType::AUTO_SELECTED, {}, {}, {});
     InstallPlanAction install_a_host(
-        {"a", Test::X64_WINDOWS}, scfl_a, "packages_root", RequestType::AUTO_SELECTED, Test::X64_WINDOWS, {}, {}, {});
+        {"a", Test::X64_WINDOWS}, scfl_a, "packages_root", RequestType::AUTO_SELECTED, {}, {}, {});
     ActionPlan plan;
     plan.install_actions.push_back(std::move(install_a));
     plan.install_actions.push_back(std::move(install_a_host));

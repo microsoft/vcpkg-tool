@@ -318,6 +318,8 @@ namespace vcpkg
 
     static ExtendedBuildResult perform_install_plan_action(const VcpkgCmdArguments& args,
                                                            const VcpkgPaths& paths,
+                                                           Triplet host_triplet,
+                                                           const BuildPackageOptions& build_options,
                                                            const InstallPlanAction& action,
                                                            StatusParagraphs& status_db,
                                                            BinaryCache& binary_cache,
@@ -327,7 +329,7 @@ namespace vcpkg
         const InstallPlanType& plan_type = action.plan_type;
 
         const bool is_user_requested = action.request_type == RequestType::USER_REQUESTED;
-        const bool use_head_version = is_user_requested && Util::Enum::to_bool(action.build_options.use_head_version);
+        const bool use_head_version = is_user_requested && Util::Enum::to_bool(build_options.use_head_version);
 
         if (plan_type == InstallPlanType::ALREADY_INSTALLED)
         {
@@ -347,7 +349,7 @@ namespace vcpkg
                     fs, action.package_dir.value_or_exit(VCPKG_LINE_INFO), action.spec);
                 bcf = std::make_unique<BinaryControlFile>(std::move(maybe_bcf).value_or_exit(VCPKG_LINE_INFO));
             }
-            else if (action.build_options.build_missing == BuildMissing::No)
+            else if (build_options.build_missing == BuildMissing::No)
             {
                 return ExtendedBuildResult{BuildResult::CacheMissing};
             }
@@ -356,7 +358,8 @@ namespace vcpkg
                 msg::println(use_head_version ? msgBuildingFromHead : msgBuildingPackage,
                              msg::spec = action.display_name());
 
-                auto result = build_package(args, paths, action, build_logs_recorder, status_db);
+                auto result =
+                    build_package(args, paths, host_triplet, build_options, action, build_logs_recorder, status_db);
 
                 if (BuildResult::Downloaded == result.code)
                 {
@@ -394,9 +397,9 @@ namespace vcpkg
                 case InstallResult::FILE_CONFLICTS: code = BuildResult::FileConflicts; break;
                 default: Checks::unreachable(VCPKG_LINE_INFO);
             }
-            binary_cache.push_success(action);
+            binary_cache.push_success(build_options.clean_packages, action);
 
-            if (action.build_options.clean_downloads == CleanDownloads::Yes)
+            if (build_options.clean_downloads == CleanDownloads::Yes)
             {
                 for (auto& p : fs.get_regular_files_non_recursive(paths.downloads, IgnoreErrors{}))
                 {
@@ -557,9 +560,11 @@ namespace vcpkg
     }
 
     InstallSummary install_execute_plan(const VcpkgCmdArguments& args,
+                                        const VcpkgPaths& paths,
+                                        Triplet host_triplet,
+                                        const BuildPackageOptions& build_options,
                                         const ActionPlan& action_plan,
                                         const KeepGoing keep_going,
-                                        const VcpkgPaths& paths,
                                         StatusParagraphs& status_db,
                                         BinaryCache& binary_cache,
                                         const IBuildLogsRecorder& build_logs_recorder,
@@ -580,15 +585,15 @@ namespace vcpkg
 
         for (auto&& action : action_plan.already_installed)
         {
-            results.emplace_back(action).build_result.emplace(
-                perform_install_plan_action(args, paths, action, status_db, binary_cache, build_logs_recorder));
+            results.emplace_back(action).build_result.emplace(perform_install_plan_action(
+                args, paths, host_triplet, build_options, action, status_db, binary_cache, build_logs_recorder));
         }
 
         for (auto&& action : action_plan.install_actions)
         {
             TrackedPackageInstallGuard this_install(action_index++, action_count, results, action);
-            auto result =
-                perform_install_plan_action(args, paths, action, status_db, binary_cache, build_logs_recorder);
+            auto result = perform_install_plan_action(
+                args, paths, host_triplet, build_options, action, status_db, binary_cache, build_logs_recorder);
             if (result.code != BuildResult::Succeeded && keep_going == KeepGoing::NO)
             {
                 this_install.print_elapsed_time();
@@ -1257,10 +1262,6 @@ namespace vcpkg
                                     .value_or_exit(VCPKG_LINE_INFO);
 
             install_plan.print_unsupported_warnings();
-            for (InstallPlanAction& action : install_plan.install_actions)
-            {
-                action.build_options = install_plan_options;
-            }
 
             // If the manifest refers to itself, it will be added to the install plan.
             Util::erase_remove_if(install_plan.install_actions,
@@ -1268,6 +1269,7 @@ namespace vcpkg
 
             command_set_installed_and_exit_ex(args,
                                               paths,
+                                              install_plan_options,
                                               var_provider,
                                               std::move(install_plan),
                                               dry_run ? DryRun::Yes : DryRun::No,
@@ -1305,11 +1307,6 @@ namespace vcpkg
         auto action_plan = create_feature_install_plan(provider, var_provider, specs, status_db, create_options);
 
         action_plan.print_unsupported_warnings();
-        for (auto&& action : action_plan.install_actions)
-        {
-            action.build_options = install_plan_options;
-        }
-
         var_provider.load_tag_vars(action_plan, host_triplet);
 
         // install plan will be empty if it is already installed - need to change this at status paragraph part
@@ -1344,13 +1341,13 @@ namespace vcpkg
         }
 #endif // defined(_WIN32)
 
-        print_plan(action_plan, is_recursive, paths.builtin_ports_directory());
+        print_plan(install_plan_options.use_head_version, action_plan, is_recursive, paths.builtin_ports_directory());
 
         auto it_pkgsconfig = options.settings.find(OPTION_WRITE_PACKAGES_CONFIG);
         if (it_pkgsconfig != options.settings.end())
         {
             get_global_metrics_collector().track_define(DefineMetric::X_WriteNugetPackagesConfig);
-            compute_all_abis(paths, action_plan, var_provider, status_db);
+            compute_all_abis(paths, install_plan_options, action_plan, var_provider, status_db);
 
             auto pkgsconfig_path = paths.original_cwd / it_pkgsconfig->second;
             auto pkgsconfig_contents = generate_nuget_packages_config(action_plan, args.nuget_id_prefix.value_or(""));
@@ -1359,7 +1356,7 @@ namespace vcpkg
         }
         else if (!dry_run)
         {
-            compute_all_abis(paths, action_plan, var_provider, status_db);
+            compute_all_abis(paths, install_plan_options, action_plan, var_provider, status_db);
         }
 
         if (dry_run)
@@ -1375,8 +1372,15 @@ namespace vcpkg
         auto binary_cache = only_downloads ? BinaryCache(paths.get_filesystem())
                                            : BinaryCache::make(args, paths, out_sink).value_or_exit(VCPKG_LINE_INFO);
         binary_cache.fetch(action_plan.install_actions);
-        const InstallSummary summary = install_execute_plan(
-            args, action_plan, keep_going, paths, status_db, binary_cache, null_build_logs_recorder());
+        const InstallSummary summary = install_execute_plan(args,
+                                                            paths,
+                                                            host_triplet,
+                                                            install_plan_options,
+                                                            action_plan,
+                                                            keep_going,
+                                                            status_db,
+                                                            binary_cache,
+                                                            null_build_logs_recorder());
 
         if (keep_going == KeepGoing::YES)
         {

@@ -63,6 +63,20 @@ namespace vcpkg
                                                  ? UnsupportedPortAction::Warn
                                                  : UnsupportedPortAction::Error;
 
+        static constexpr BuildPackageOptions build_options{
+            BuildMissing::Yes,
+            UseHeadVersion::No,
+            AllowDownloads::Yes,
+            OnlyDownloads::No,
+            CleanBuildtrees::Yes,
+            CleanPackages::Yes,
+            CleanDownloads::No,
+            DownloadTool::Builtin,
+            Editable::No,
+            BackcompatFeatures::Allow,
+            PrintUsage::Yes,
+        };
+
         StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
 
         // Load ports from ports dirs
@@ -189,13 +203,7 @@ namespace vcpkg
 
         Checks::check_exit(VCPKG_LINE_INFO, !action_plan.empty());
         action_plan.print_unsupported_warnings();
-        // Set build settings for all install actions
-        for (auto&& action : action_plan.install_actions)
-        {
-            action.build_options = default_build_package_options;
-        }
-
-        print_plan(action_plan, true, paths.builtin_ports_directory());
+        print_plan(build_options.use_head_version, action_plan, true, paths.builtin_ports_directory());
 
         if (!no_dry_run)
         {
@@ -206,10 +214,17 @@ namespace vcpkg
         var_provider.load_tag_vars(action_plan, host_triplet);
 
         auto binary_cache = BinaryCache::make(args, paths, out_sink).value_or_exit(VCPKG_LINE_INFO);
-        compute_all_abis(paths, action_plan, var_provider, status_db);
+        compute_all_abis(paths, build_options, action_plan, var_provider, status_db);
         binary_cache.fetch(action_plan.install_actions);
-        const InstallSummary summary = install_execute_plan(
-            args, action_plan, keep_going, paths, status_db, binary_cache, null_build_logs_recorder());
+        const InstallSummary summary = install_execute_plan(args,
+                                                            paths,
+                                                            host_triplet,
+                                                            build_options,
+                                                            action_plan,
+                                                            keep_going,
+                                                            status_db,
+                                                            binary_cache,
+                                                            null_build_logs_recorder());
 
         if (keep_going == KeepGoing::YES)
         {

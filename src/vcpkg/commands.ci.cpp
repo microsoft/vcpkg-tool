@@ -134,6 +134,7 @@ namespace
     }
 
     ActionPlan compute_full_plan(const VcpkgPaths& paths,
+                                 const BuildPackageOptions& build_options,
                                  const PortFileProvider& provider,
                                  const CMakeVars::CMakeVarProvider& var_provider,
                                  const std::vector<FullPackageSpec>& specs,
@@ -163,7 +164,7 @@ namespace
         Checks::check_exit(VCPKG_LINE_INFO, action_plan.already_installed.empty());
         Checks::check_exit(VCPKG_LINE_INFO, action_plan.remove_actions.empty());
 
-        compute_all_abis(paths, action_plan, var_provider, {});
+        compute_all_abis(paths, build_options, action_plan, var_provider, {});
         return action_plan;
     }
 
@@ -238,7 +239,6 @@ namespace
                 }
                 else
                 {
-                    it->build_options = backcompat_prohibiting_package_options;
                     to_keep.insert(it->package_dependencies.begin(), it->package_dependencies.end());
                 }
             }
@@ -334,6 +334,20 @@ namespace vcpkg
         const ParsedArguments options = args.parse_arguments(CommandCiMetadata);
         const auto& settings = options.settings;
 
+        static constexpr BuildPackageOptions build_options{
+            BuildMissing::Yes,
+            UseHeadVersion::No,
+            AllowDownloads::Yes,
+            OnlyDownloads::No,
+            CleanBuildtrees::Yes,
+            CleanPackages::Yes,
+            CleanDownloads::No,
+            DownloadTool::Builtin,
+            Editable::No,
+            BackcompatFeatures::Prohibit,
+            PrintUsage::Yes,
+        };
+
         ExclusionsMap exclusions_map;
         parse_exclusions(settings, OPTION_EXCLUDE, target_triplet, exclusions_map);
         parse_exclusions(settings, OPTION_HOST_EXCLUDE, host_triplet, exclusions_map);
@@ -412,7 +426,8 @@ namespace vcpkg
             serialize_options.randomizer = &randomizer_instance;
         }
 
-        auto action_plan = compute_full_plan(paths, provider, var_provider, all_default_full_specs, serialize_options);
+        auto action_plan =
+            compute_full_plan(paths, build_options, provider, var_provider, all_default_full_specs, serialize_options);
         auto binary_cache = BinaryCache::make(args, paths, out_sink).value_or_exit(VCPKG_LINE_INFO);
         const auto precheck_results = binary_cache.precheck(action_plan.install_actions);
         auto split_specs = compute_action_statuses(ExclusionPredicate{&exclusions_map}, precheck_results, action_plan);
@@ -491,7 +506,7 @@ namespace vcpkg
 
         if (is_dry_run)
         {
-            print_plan(action_plan, true, paths.builtin_ports_directory());
+            print_plan(build_options.use_head_version, action_plan, true, paths.builtin_ports_directory());
             if (!regressions.empty())
             {
                 msg::println(Color::error, msgCiBaselineRegressionHeader);
@@ -516,8 +531,16 @@ namespace vcpkg
 
             install_preclear_packages(paths, action_plan);
             binary_cache.fetch(action_plan.install_actions);
-            auto summary = install_execute_plan(
-                args, action_plan, KeepGoing::YES, paths, status_db, binary_cache, build_logs_recorder);
+
+            auto summary = install_execute_plan(args,
+                                                paths,
+                                                host_triplet,
+                                                build_options,
+                                                action_plan,
+                                                KeepGoing::YES,
+                                                status_db,
+                                                binary_cache,
+                                                build_logs_recorder);
 
             for (auto&& result : summary.results)
             {

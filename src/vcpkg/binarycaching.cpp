@@ -2134,7 +2134,7 @@ namespace vcpkg
     {
     }
 
-    void BinaryCache::push_success(const InstallPlanAction& action)
+    void BinaryCache::push_success(CleanPackages clean_packages, const InstallPlanAction& action)
     {
         if (auto abi = action.package_abi().get())
         {
@@ -2187,7 +2187,8 @@ namespace vcpkg
                     msgStoredBinariesToDestinations, msg::count = num_destinations, msg::elapsed = timer.elapsed());
             }
         }
-        if (action.build_options.clean_packages == CleanPackages::Yes)
+
+        if (clean_packages == CleanPackages::Yes)
         {
             m_fs.remove_all(action.package_dir.value_or_exit(VCPKG_LINE_INFO), VCPKG_LINE_INFO);
         }

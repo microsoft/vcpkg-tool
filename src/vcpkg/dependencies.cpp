@@ -428,10 +428,13 @@ namespace vcpkg
         };
     }
 
-    static void format_plan_row(LocalizedString& out, const InstallPlanAction& action, const Path& builtin_ports_dir)
+    static void format_plan_row(LocalizedString& out,
+                                UseHeadVersion use_head_version,
+                                const InstallPlanAction& action,
+                                const Path& builtin_ports_dir)
     {
         out.append_raw(request_type_indent(action.request_type)).append_raw(action.display_name());
-        if (action.request_type == RequestType::USER_REQUESTED, action.build_options.use_head_version == UseHeadVersion::Yes)
+        if (action.request_type == RequestType::USER_REQUESTED && use_head_version == UseHeadVersion::Yes)
         {
             out.append_raw(" (+HEAD)");
         }
@@ -490,7 +493,6 @@ namespace vcpkg
                                          const SourceControlFileAndLocation& scfl,
                                          const Path& packages_dir,
                                          const RequestType& request_type,
-                                         Triplet host_triplet,
                                          std::map<std::string, std::vector<FeatureSpec>>&& dependencies,
                                          std::vector<LocalizedString>&& build_failure_messages,
                                          std::vector<std::string> default_features)
@@ -499,10 +501,8 @@ namespace vcpkg
         , default_features(std::move(default_features))
         , plan_type(InstallPlanType::BUILD_AND_INSTALL)
         , request_type(request_type)
-        , build_options{}
         , feature_dependencies(std::move(dependencies))
         , build_failure_messages(std::move(build_failure_messages))
-        , host_triplet(host_triplet)
         , package_dir(packages_dir / spec.dir())
     {
     }
@@ -512,7 +512,6 @@ namespace vcpkg
         , installed_package(std::move(ipv))
         , plan_type(InstallPlanType::ALREADY_INSTALLED)
         , request_type(request_type)
-        , build_options{}
         , feature_dependencies(installed_package.get()->feature_dependencies())
     {
     }
@@ -1112,7 +1111,6 @@ namespace vcpkg
                                                   p_cluster->get_scfl_or_exit(),
                                                   m_packages_dir,
                                                   p_cluster->request_type,
-                                                  m_graph->m_host_triplet,
                                                   std::move(computed_edges),
                                                   std::move(constraint_violations),
                                                   info_ptr->default_features);
@@ -1174,7 +1172,9 @@ namespace vcpkg
     {
     }
 
-    FormattedPlan format_plan(const ActionPlan& action_plan, const Path& builtin_ports_dir)
+    FormattedPlan format_plan(UseHeadVersion use_head_version,
+                              const ActionPlan& action_plan,
+                              const Path& builtin_ports_dir)
     {
         FormattedPlan ret;
         if (action_plan.remove_actions.empty() && action_plan.already_installed.empty() &&
@@ -1232,7 +1232,7 @@ namespace vcpkg
                 msg.append(header).append_raw('\n');
                 for (auto action : actions)
                 {
-                    format_plan_row(msg, *action, builtin_ports_dir);
+                    format_plan_row(msg, use_head_version, *action, builtin_ports_dir);
                     msg.append_raw('\n');
                 }
             }
@@ -1245,7 +1245,8 @@ namespace vcpkg
                 }
             }
             const Path& builtin_ports_dir;
-        } format_plan{builtin_ports_dir};
+            const UseHeadVersion use_head_version;
+        } format_plan{builtin_ports_dir, use_head_version};
 
         if (!excluded.empty())
         {
@@ -1281,9 +1282,12 @@ namespace vcpkg
         return ret;
     }
 
-    void print_plan(const ActionPlan& action_plan, const bool is_recursive, const Path& builtin_ports_dir)
+    void print_plan(UseHeadVersion use_head_version,
+                    const ActionPlan& action_plan,
+                    const bool is_recursive,
+                    const Path& builtin_ports_dir)
     {
-        auto formatted = format_plan(action_plan, builtin_ports_dir);
+        auto formatted = format_plan(use_head_version, action_plan, builtin_ports_dir);
         msg::print(formatted.text);
         if (!is_recursive && formatted.has_removals)
         {
@@ -1880,7 +1884,6 @@ namespace vcpkg
                                           *node.second.scfl,
                                           m_packages_dir,
                                           request,
-                                          m_host_triplet,
                                           compute_feature_dependencies(node, deps),
                                           {},
                                           std::move(default_features));

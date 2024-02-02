@@ -41,17 +41,19 @@ namespace vcpkg
 
     extern const CommandMetadata CommandBuildMetadata;
     int command_build_ex(const VcpkgCmdArguments& args,
-                         const FullPackageSpec& full_spec,
+                         const VcpkgPaths& paths,
                          Triplet host_triplet,
+                         const BuildPackageOptions& build_options,
+                         const FullPackageSpec& full_spec,
                          const PathsPortFileProvider& provider,
-                         const IBuildLogsRecorder& build_logs_recorder,
-                         const VcpkgPaths& paths);
+                         const IBuildLogsRecorder& build_logs_recorder);
     void command_build_and_exit_ex(const VcpkgCmdArguments& args,
-                                   const FullPackageSpec& full_spec,
+                                   const VcpkgPaths& paths,
                                    Triplet host_triplet,
+                                   const BuildPackageOptions& build_options,
+                                   const FullPackageSpec& full_spec,
                                    const PathsPortFileProvider& provider,
-                                   const IBuildLogsRecorder& build_logs_recorder,
-                                   const VcpkgPaths& paths);
+                                   const IBuildLogsRecorder& build_logs_recorder);
 
     void command_build_and_exit(const VcpkgCmdArguments& args,
                                 const VcpkgPaths& paths,
@@ -74,34 +76,6 @@ namespace vcpkg
         Editable editable;
         BackcompatFeatures backcompat_features;
         PrintUsage print_usage;
-    };
-
-    static constexpr BuildPackageOptions default_build_package_options{
-        BuildMissing::Yes,
-        UseHeadVersion::No,
-        AllowDownloads::Yes,
-        OnlyDownloads::No,
-        CleanBuildtrees::Yes,
-        CleanPackages::Yes,
-        CleanDownloads::No,
-        DownloadTool::Builtin,
-        Editable::No,
-        BackcompatFeatures::Allow,
-        PrintUsage::Yes,
-    };
-
-    static constexpr BuildPackageOptions backcompat_prohibiting_package_options{
-        BuildMissing::Yes,
-        UseHeadVersion::No,
-        AllowDownloads::Yes,
-        OnlyDownloads::No,
-        CleanBuildtrees::Yes,
-        CleanPackages::Yes,
-        CleanDownloads::No,
-        DownloadTool::Builtin,
-        Editable::No,
-        BackcompatFeatures::Prohibit,
-        PrintUsage::Yes,
     };
 
     struct BuildResultCounts
@@ -197,6 +171,8 @@ namespace vcpkg
 
     ExtendedBuildResult build_package(const VcpkgCmdArguments& args,
                                       const VcpkgPaths& paths,
+                                      Triplet host_triplet,
+                                      const BuildPackageOptions& build_options,
                                       const InstallPlanAction& config,
                                       const IBuildLogsRecorder& build_logs_recorder,
                                       const StatusParagraphs& status_db);
@@ -276,6 +252,7 @@ namespace vcpkg
     };
 
     void compute_all_abis(const VcpkgPaths& paths,
+                          const BuildPackageOptions& build_options,
                           ActionPlan& action_plan,
                           const CMakeVars::CMakeVarProvider& var_provider,
                           const StatusParagraphs& status_db);

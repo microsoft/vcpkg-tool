@@ -55,14 +55,16 @@ namespace
 namespace vcpkg
 {
     void command_build_and_exit_ex(const VcpkgCmdArguments& args,
-                                   const FullPackageSpec& full_spec,
+                                   const VcpkgPaths& paths,
                                    Triplet host_triplet,
+                                   const BuildPackageOptions& build_options,
+                                   const FullPackageSpec& full_spec,
                                    const PathsPortFileProvider& provider,
-                                   const IBuildLogsRecorder& build_logs_recorder,
-                                   const VcpkgPaths& paths)
+                                   const IBuildLogsRecorder& build_logs_recorder)
     {
-        Checks::exit_with_code(VCPKG_LINE_INFO,
-                               command_build_ex(args, full_spec, host_triplet, provider, build_logs_recorder, paths));
+        Checks::exit_with_code(
+            VCPKG_LINE_INFO,
+            command_build_ex(args, paths, host_triplet, build_options, full_spec, provider, build_logs_recorder));
     }
 
     constexpr CommandMetadata CommandBuildMetadata{
@@ -84,6 +86,21 @@ namespace vcpkg
     {
         // Build only takes a single package and all dependencies must already be installed
         const ParsedArguments options = args.parse_arguments(CommandBuildMetadata);
+
+        static constexpr BuildPackageOptions build_command_build_package_options{
+            BuildMissing::Yes,
+            UseHeadVersion::No,
+            AllowDownloads::Yes,
+            OnlyDownloads::No,
+            CleanBuildtrees::No,
+            CleanPackages::No,
+            CleanDownloads::No,
+            DownloadTool::Builtin,
+            Editable::Yes,
+            BackcompatFeatures::Allow,
+            PrintUsage::Yes,
+        };
+
         bool default_triplet_used = false;
         const FullPackageSpec spec = check_and_get_full_package_spec(options.command_arguments[0],
                                                                      default_triplet,
@@ -100,15 +117,22 @@ namespace vcpkg
         PathsPortFileProvider provider(
             fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
         Checks::exit_with_code(VCPKG_LINE_INFO,
-                               command_build_ex(args, spec, host_triplet, provider, null_build_logs_recorder(), paths));
+                               command_build_ex(args,
+                                                paths,
+                                                host_triplet,
+                                                build_command_build_package_options,
+                                                spec,
+                                                provider,
+                                                null_build_logs_recorder()));
     }
 
     int command_build_ex(const VcpkgCmdArguments& args,
-                         const FullPackageSpec& full_spec,
+                         const VcpkgPaths& paths,
                          Triplet host_triplet,
+                         const BuildPackageOptions& build_options,
+                         const FullPackageSpec& full_spec,
                          const PathsPortFileProvider& provider,
-                         const IBuildLogsRecorder& build_logs_recorder,
-                         const VcpkgPaths& paths)
+                         const IBuildLogsRecorder& build_logs_recorder)
     {
         const PackageSpec& spec = full_spec.package_spec;
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
@@ -121,7 +145,7 @@ namespace vcpkg
 
         var_provider.load_tag_vars(action_plan, host_triplet);
 
-        compute_all_abis(paths, action_plan, var_provider, status_db);
+        compute_all_abis(paths, build_options, action_plan, var_provider, status_db);
 
         InstallPlanAction* action = nullptr;
         for (auto& install_action : action_plan.already_installed)
@@ -153,14 +177,10 @@ namespace vcpkg
                                         msg::path = spec_name);
         }
 
-        action->build_options = default_build_package_options;
-        action->build_options.editable = Editable::Yes;
-        action->build_options.clean_buildtrees = CleanBuildtrees::No;
-        action->build_options.clean_packages = CleanPackages::No;
-
         auto binary_cache = BinaryCache::make(args, paths, out_sink).value_or_exit(VCPKG_LINE_INFO);
         const ElapsedTimer build_timer;
-        const auto result = build_package(args, paths, *action, build_logs_recorder, status_db);
+        const auto result =
+            build_package(args, paths, host_triplet, build_options, *action, build_logs_recorder, status_db);
         msg::print(msgElapsedForPackage, msg::spec = spec, msg::elapsed = build_timer);
         if (result.code == BuildResult::CascadedDueToMissingDependencies)
         {
@@ -190,7 +210,7 @@ namespace vcpkg
             msg::print(create_user_troubleshooting_message(*action, paths, nullopt));
             return 1;
         }
-        binary_cache.push_success(*action);
+        binary_cache.push_success(build_options.clean_packages, *action);
 
         return 0;
     }
@@ -737,6 +757,8 @@ namespace vcpkg
 
     static std::vector<CMakeVariable> get_cmake_build_args(const VcpkgCmdArguments& args,
                                                            const VcpkgPaths& paths,
+                                                           Triplet host_triplet,
+                                                           const BuildPackageOptions& build_options,
                                                            const InstallPlanAction& action)
     {
         auto& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
@@ -752,25 +774,23 @@ namespace vcpkg
         std::vector<CMakeVariable> variables{
             {"ALL_FEATURES", all_features},
             {"CURRENT_PORT_DIR", scfl.port_directory()},
-            {"_HOST_TRIPLET", action.host_triplet.canonical_name()},
+            {"_HOST_TRIPLET", host_triplet.canonical_name()},
             {"FEATURES", Strings::join(";", action.feature_list)},
             {"PORT", port_name},
             {"VERSION", scf.to_version().text},
             {"VCPKG_USE_HEAD_VERSION",
-             action.request_type == RequestType::USER_REQUESTED &&
-                     Util::Enum::to_bool(action.build_options.use_head_version)
+             action.request_type == RequestType::USER_REQUESTED && Util::Enum::to_bool(build_options.use_head_version)
                  ? "1"
                  : "0"},
-            {"_VCPKG_DOWNLOAD_TOOL", to_string_view(action.build_options.download_tool)},
+            {"_VCPKG_DOWNLOAD_TOOL", to_string_view(build_options.download_tool)},
             {"_VCPKG_EDITABLE",
-             action.request_type == RequestType::USER_REQUESTED && Util::Enum::to_bool(action.build_options.editable)
-                 ? "1"
-                 : "0"},
-            {"_VCPKG_NO_DOWNLOADS", !Util::Enum::to_bool(action.build_options.allow_downloads) ? "1" : "0"},
+             action.request_type == RequestType::USER_REQUESTED && Util::Enum::to_bool(build_options.editable) ? "1"
+                                                                                                               : "0"},
+            {"_VCPKG_NO_DOWNLOADS", !Util::Enum::to_bool(build_options.allow_downloads) ? "1" : "0"},
             {"Z_VCPKG_CHAINLOAD_TOOLCHAIN_FILE", action.pre_build_info(VCPKG_LINE_INFO).toolchain_file()},
         };
 
-        if (action.build_options.download_tool == DownloadTool::Aria2)
+        if (build_options.download_tool == DownloadTool::Aria2)
         {
             variables.emplace_back("ARIA2", paths.get_tool_exe(Tools::ARIA2, out_sink));
         }
@@ -798,7 +818,7 @@ namespace vcpkg
             variables.emplace_back(cmake_arg);
         }
 
-        if (action.build_options.backcompat_features == BackcompatFeatures::Prohibit)
+        if (build_options.backcompat_features == BackcompatFeatures::Prohibit)
         {
             variables.emplace_back("_VCPKG_PROHIBIT_BACKCOMPAT_FEATURES", "1");
         }
@@ -809,7 +829,7 @@ namespace vcpkg
             action.abi_info.value_or_exit(VCPKG_LINE_INFO).toolset.value_or_exit(VCPKG_LINE_INFO),
             variables);
 
-        if (Util::Enum::to_bool(action.build_options.only_downloads))
+        if (Util::Enum::to_bool(build_options.only_downloads))
         {
             variables.emplace_back("VCPKG_DOWNLOAD_MODE", "true");
         }
@@ -927,6 +947,8 @@ namespace vcpkg
 
     static ExtendedBuildResult do_build_package(const VcpkgCmdArguments& args,
                                                 const VcpkgPaths& paths,
+                                                Triplet host_triplet,
+                                                const BuildPackageOptions& build_options,
                                                 const InstallPlanAction& action,
                                                 bool all_dependencies_satisfied)
     {
@@ -957,7 +979,8 @@ namespace vcpkg
         const auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
 
         const ElapsedTimer timer;
-        auto cmd = vcpkg::make_cmake_cmd(paths, paths.ports_cmake, get_cmake_build_args(args, paths, action));
+        auto cmd = vcpkg::make_cmake_cmd(
+            paths, paths.ports_cmake, get_cmake_build_args(args, paths, host_triplet, build_options, action));
 
         RedirectedProcessLaunchSettings settings;
         auto& env = settings.environment.emplace(
@@ -986,7 +1009,7 @@ namespace vcpkg
         if (build_failed)
         {
             // With the exception of empty or helper ports, builds in "Download Mode" result in failure.
-            if (action.build_options.only_downloads == OnlyDownloads::Yes)
+            if (build_options.only_downloads == OnlyDownloads::Yes)
             {
                 // TODO: Capture executed command output and evaluate whether the failure was intended.
                 // If an unintended error occurs then return a BuildResult::DOWNLOAD_FAILURE status.
@@ -1029,7 +1052,7 @@ namespace vcpkg
             error_count = perform_post_build_lint_checks(
                 action.spec, paths, pre_build_info, build_info, scfl.port_directory(), combo_sink);
         };
-        if (error_count != 0 && action.build_options.backcompat_features == BackcompatFeatures::Prohibit)
+        if (error_count != 0 && build_options.backcompat_features == BackcompatFeatures::Prohibit)
         {
             return ExtendedBuildResult{BuildResult::PostBuildChecksFailed};
         }
@@ -1043,12 +1066,14 @@ namespace vcpkg
 
     static ExtendedBuildResult do_build_package_and_clean_buildtrees(const VcpkgCmdArguments& args,
                                                                      const VcpkgPaths& paths,
+                                                                     Triplet host_triplet,
+                                                                     const BuildPackageOptions& build_options,
                                                                      const InstallPlanAction& action,
                                                                      bool all_dependencies_satisfied)
     {
-        auto result = do_build_package(args, paths, action, all_dependencies_satisfied);
+        auto result = do_build_package(args, paths, host_triplet, build_options, action, all_dependencies_satisfied);
 
-        if (action.build_options.clean_buildtrees == CleanBuildtrees::Yes)
+        if (build_options.clean_buildtrees == CleanBuildtrees::Yes)
         {
             auto& fs = paths.get_filesystem();
             // Will keep the logs, which are regular files
@@ -1119,6 +1144,7 @@ namespace vcpkg
     }
 
     static void populate_abi_tag(const VcpkgPaths& paths,
+                                 const BuildPackageOptions& build_options,
                                  InstallPlanAction& action,
                                  std::unique_ptr<PreBuildInfo>&& proto_pre_build_info,
                                  Span<const AbiEntry> dependency_abis,
@@ -1133,12 +1159,12 @@ namespace vcpkg
 
         if (action.request_type == RequestType::USER_REQUESTED)
         {
-            if (action.build_options.use_head_version == UseHeadVersion::Yes)
+            if (build_options.use_head_version == UseHeadVersion::Yes)
             {
                 Debug::print("Binary caching for package ", action.spec, " is disabled due to --head\n");
                 return;
             }
-            if (action.build_options.editable == Editable::Yes)
+            if (build_options.editable == Editable::Yes)
             {
                 Debug::print("Binary caching for package ", action.spec, " is disabled due to --editable\n");
                 return;
@@ -1284,6 +1310,7 @@ namespace vcpkg
     }
 
     void compute_all_abis(const VcpkgPaths& paths,
+                          const BuildPackageOptions& build_options,
                           ActionPlan& action_plan,
                           const CMakeVars::CMakeVarProvider& var_provider,
                           const StatusParagraphs& status_db)
@@ -1295,7 +1322,7 @@ namespace vcpkg
             if (action.abi_info.has_value()) continue;
 
             std::vector<AbiEntry> dependency_abis;
-            if (!Util::Enum::to_bool(action.build_options.only_downloads))
+            if (!Util::Enum::to_bool(build_options.only_downloads))
             {
                 for (auto&& pspec : action.package_dependencies)
                 {
@@ -1325,6 +1352,7 @@ namespace vcpkg
 
             populate_abi_tag(
                 paths,
+                build_options,
                 action,
                 std::make_unique<PreBuildInfo>(paths,
                                                action.spec.triplet(),
@@ -1336,6 +1364,8 @@ namespace vcpkg
 
     ExtendedBuildResult build_package(const VcpkgCmdArguments& args,
                                       const VcpkgPaths& paths,
+                                      Triplet host_triplet,
+                                      const BuildPackageOptions& build_options,
                                       const InstallPlanAction& action,
                                       const IBuildLogsRecorder& build_logs_recorder,
                                       const StatusParagraphs& status_db)
@@ -1357,12 +1387,12 @@ namespace vcpkg
         }
 
         const bool all_dependencies_satisfied = missing_fspecs.empty();
-        if (!all_dependencies_satisfied && !Util::Enum::to_bool(action.build_options.only_downloads))
+        if (!all_dependencies_satisfied && !Util::Enum::to_bool(build_options.only_downloads))
         {
             return {BuildResult::CascadedDueToMissingDependencies, std::move(missing_fspecs)};
         }
 
-        if (action.build_options.only_downloads == OnlyDownloads::No)
+        if (build_options.only_downloads == OnlyDownloads::No)
         {
             for (auto&& pspec : action.package_dependencies)
             {
@@ -1376,8 +1406,8 @@ namespace vcpkg
         }
 
         auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
-        ExtendedBuildResult result =
-            do_build_package_and_clean_buildtrees(args, paths, action, all_dependencies_satisfied);
+        ExtendedBuildResult result = do_build_package_and_clean_buildtrees(
+            args, paths, host_triplet, build_options, action, all_dependencies_satisfied);
         if (abi_info.abi_tag_file)
         {
             auto& abi_file = *abi_info.abi_tag_file.get();
