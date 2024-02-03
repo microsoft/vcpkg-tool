@@ -961,19 +961,19 @@ namespace vcpkg
                     const auto escaped_dpath = Command(download_path_part_path).extract();
                     Command cmd;
                     cmd.raw_arg(api_stable_format(*script, [&](std::string& out, StringView key) {
-                                           if (key == "url")
-                                           {
-                                               Strings::append(out, escaped_url);
-                                           }
-                                           else if (key == "sha512")
-                                           {
-                                               Strings::append(out, escaped_sha512);
-                                           }
-                                           else if (key == "dst")
-                                           {
-                                               Strings::append(out, escaped_dpath);
-                                           }
-                                       }).value_or_exit(VCPKG_LINE_INFO));
+                                    if (key == "url")
+                                    {
+                                        Strings::append(out, escaped_url);
+                                    }
+                                    else if (key == "sha512")
+                                    {
+                                        Strings::append(out, escaped_sha512);
+                                    }
+                                    else if (key == "dst")
+                                    {
+                                        Strings::append(out, escaped_dpath);
+                                    }
+                                }).value_or_exit(VCPKG_LINE_INFO));
 
                     RedirectedProcessLaunchSettings settings;
                     settings.environment = get_clean_environment();
