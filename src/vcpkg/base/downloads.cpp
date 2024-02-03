@@ -959,7 +959,8 @@ namespace vcpkg
                     const auto escaped_url = Command(urls[0]).extract();
                     const auto escaped_sha512 = Command(*hash).extract();
                     const auto escaped_dpath = Command(download_path_part_path).extract();
-                    auto cmd = Command{api_stable_format(*script, [&](std::string& out, StringView key) {
+                    Command cmd;
+                    cmd.raw_arg(api_stable_format(*script, [&](std::string& out, StringView key) {
                                            if (key == "url")
                                            {
                                                Strings::append(out, escaped_url);
@@ -972,7 +973,7 @@ namespace vcpkg
                                            {
                                                Strings::append(out, escaped_dpath);
                                            }
-                                       }).value_or_exit(VCPKG_LINE_INFO)};
+                                       }).value_or_exit(VCPKG_LINE_INFO));
 
                     RedirectedProcessLaunchSettings settings;
                     settings.environment = get_clean_environment();
