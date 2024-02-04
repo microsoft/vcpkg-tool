@@ -1328,12 +1328,14 @@ namespace vcpkg
                                   const IBaselineProvider& base_provider,
                                   const IOverlayProvider& oprovider,
                                   const CMakeVars::CMakeVarProvider& var_provider,
+                                  const PackageSpec& toplevel,
                                   Triplet host_triplet,
                                   const Path& packages_dir)
                 : m_ver_provider(ver_provider)
                 , m_base_provider(base_provider)
                 , m_o_provider(oprovider)
                 , m_var_provider(var_provider)
+                , m_toplevel(toplevel)
                 , m_host_triplet(host_triplet)
                 , m_packages_dir(packages_dir)
             {
@@ -1341,16 +1343,16 @@ namespace vcpkg
 
             void add_override(const std::string& name, const Version& v);
 
-            void solve_with_roots(View<Dependency> dep, const PackageSpec& toplevel);
+            void solve_with_roots(View<Dependency> dep);
 
-            ExpectedL<ActionPlan> finalize_extract_plan(const PackageSpec& toplevel,
-                                                        UnsupportedPortAction unsupported_port_action);
+            ExpectedL<ActionPlan> finalize_extract_plan(UnsupportedPortAction unsupported_port_action);
 
         private:
             const IVersionedPortfileProvider& m_ver_provider;
             const IBaselineProvider& m_base_provider;
             const IOverlayProvider& m_o_provider;
             const CMakeVars::CMakeVarProvider& m_var_provider;
+            const PackageSpec& m_toplevel;
             const Triplet m_host_triplet;
             const Path m_packages_dir;
 
@@ -1667,19 +1669,19 @@ namespace vcpkg
             m_overrides.emplace(name, v);
         }
 
-        void VersionedPackageGraph::solve_with_roots(View<Dependency> deps, const PackageSpec& toplevel)
+        void VersionedPackageGraph::solve_with_roots(View<Dependency> deps)
         {
-            auto dep_to_spec = [&toplevel, this](const Dependency& d) {
-                return PackageSpec{d.name, d.host ? m_host_triplet : toplevel.triplet()};
+            auto dep_to_spec = [this](const Dependency& d) {
+                return PackageSpec{d.name, d.host ? m_host_triplet : m_toplevel.triplet()};
             };
             auto specs = Util::fmap(deps, dep_to_spec);
 
-            specs.push_back(toplevel);
+            specs.push_back(m_toplevel);
             Util::sort_unique_erase(specs);
             for (auto&& dep : deps)
             {
                 if (!dep.platform.is_empty() &&
-                    !dep.platform.evaluate(m_var_provider.get_or_load_dep_info_vars(toplevel, m_host_triplet)))
+                    !dep.platform.evaluate(m_var_provider.get_or_load_dep_info_vars(m_toplevel, m_host_triplet)))
                 {
                     continue;
                 }
@@ -1689,7 +1691,7 @@ namespace vcpkg
                 m_roots.push_back(DepSpec{std::move(spec), dep.constraint, dep.features});
             }
 
-            m_resolve_stack.push_back({toplevel, deps});
+            m_resolve_stack.push_back({m_toplevel, deps});
 
             while (!m_resolve_stack.empty())
             {
@@ -1795,7 +1797,7 @@ namespace vcpkg
         // This function is called after all versioning constraints have been resolved. It is responsible for
         // serializing out the final execution graph and performing all final validations.
         ExpectedL<ActionPlan> VersionedPackageGraph::finalize_extract_plan(
-            const PackageSpec& toplevel, UnsupportedPortAction unsupported_port_action)
+            UnsupportedPortAction unsupported_port_action)
         {
             if (!m_errors.empty())
             {
@@ -1902,7 +1904,7 @@ namespace vcpkg
 
             for (auto&& root : m_roots)
             {
-                auto x = push(root, toplevel.name());
+                auto x = push(root, m_toplevel.name());
                 if (!x.has_value())
                 {
                     return std::move(x).error();
@@ -1999,13 +2001,13 @@ namespace vcpkg
                                                         const CreateInstallPlanOptions& options)
     {
         VersionedPackageGraph vpg(
-            provider, bprovider, oprovider, var_provider, options.host_triplet, options.packages_dir);
+            provider, bprovider, oprovider, var_provider, toplevel, options.host_triplet, options.packages_dir);
         for (auto&& o : overrides)
         {
             vpg.add_override(o.name, o.version);
         }
 
-        vpg.solve_with_roots(deps, toplevel);
-        return vpg.finalize_extract_plan(toplevel, options.unsupported_port_action);
+        vpg.solve_with_roots(deps);
+        return vpg.finalize_extract_plan(options.unsupported_port_action);
     }
 }
