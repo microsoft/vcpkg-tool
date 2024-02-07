@@ -11,6 +11,7 @@
 #include <vcpkg/vcpkgpaths.h>
 #include <vcpkg/visualstudio.h>
 
+#if defined(_WIN32)
 namespace
 {
     using namespace vcpkg;
@@ -21,6 +22,7 @@ namespace
     constexpr StringLiteral V_142 = "v142";
     constexpr StringLiteral V_143 = "v143";
 } // unnamed namespace
+#endif // ^^^ _WIN32
 
 namespace vcpkg::VisualStudio
 {
