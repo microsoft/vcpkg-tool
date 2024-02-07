@@ -563,9 +563,13 @@ namespace vcpkg
                                           scripts / "vcpkgTools.xml",
                                           tools,
                                           args.exact_abi_tools_versions.value_or(false) ? RequireExactVersions::YES
-                                                                                        : RequireExactVersions::NO))
+                                                                                        : RequireExactVersions::NO,
+                                          [this]() -> const std::vector<VisualStudio::VisualStudioInstance>& {
+                                              return this->get_sorted_visual_studio_instances();
+                                          }))
             , m_env_cache(m_ff_settings.compiler_tracking)
             , triplets_dirs()
+            , m_visual_studio_instances()
             , m_artifacts_dir(downloads / "artifacts")
         {
             if (auto i = m_installed.get())
@@ -628,13 +632,52 @@ namespace vcpkg
         const std::unique_ptr<ToolCache> m_tool_cache;
         EnvCache m_env_cache;
         std::vector<Path> triplets_dirs;
+        Lazy<std::vector<VisualStudio::VisualStudioInstance>> m_visual_studio_instances;
         const Path m_artifacts_dir;
 
         std::unique_ptr<IExclusiveFileLock> file_lock_handle;
 
         Optional<ManifestAndPath> m_manifest_doc;
         ConfigurationAndSource m_config;
+
+        const std::vector<VisualStudio::VisualStudioInstance>& get_sorted_visual_studio_instances() const
+        {
+            return m_visual_studio_instances.get_lazy([this]() -> std::vector<VisualStudio::VisualStudioInstance> {
+                return VisualStudio::get_sorted_visual_studio_instances(m_fs);
+            });
+        }
     };
+
+#if defined(_WIN32)
+    LocalizedString ToolsetsInformation::get_localized_debug_info() const
+    {
+        LocalizedString ret;
+
+        if (toolsets.empty())
+        {
+            ret.append(msgVSNoInstances).append_raw('\n');
+        }
+        else
+        {
+            ret.append(msgVSExaminedInstances).append_raw('\n');
+            for (const Toolset& toolset : toolsets)
+            {
+                ret.append_indent().append_raw(toolset.visual_studio_root_path).append_raw('\n');
+            }
+        }
+
+        if (!paths_examined.empty())
+        {
+            ret.append(msgVSExaminedPaths).append_raw('\n');
+            for (const Path& examinee : paths_examined)
+            {
+                ret.append_indent().append_raw(examinee).append_raw('\n');
+            }
+        }
+
+        return ret;
+    }
+#endif // ^^^ _WIN32
 
     VcpkgPaths::VcpkgPaths(const Filesystem& filesystem, const VcpkgCmdArguments& args, const BundleSettings& bundle)
         : original_cwd(preferred_current_path(filesystem))
@@ -1281,8 +1324,9 @@ namespace vcpkg
 #if defined(_WIN32)
     static const ToolsetsInformation& get_all_toolsets(VcpkgPathsImpl& impl, const ReadOnlyFilesystem& fs)
     {
-        return impl.toolsets.get_lazy(
-            [&fs]() -> ToolsetsInformation { return VisualStudio::find_toolset_instances_preferred_first(fs); });
+        return impl.toolsets.get_lazy([&]() -> ToolsetsInformation {
+            return VisualStudio::find_toolset_instances_preferred_first(fs, impl.get_sorted_visual_studio_instances());
+        });
     }
 
     static bool toolset_matches_full_version(const Toolset& t, StringView fv)
@@ -1295,7 +1339,7 @@ namespace vcpkg
         }
         return fv.size() == t.full_version.size() || t.full_version[fv.size()] == '.';
     }
-#endif
+#endif // ^^^ _WIN32
 
     const Toolset& VcpkgPaths::get_toolset(const PreBuildInfo& prebuildinfo) const
     {
@@ -1311,9 +1355,7 @@ namespace vcpkg
             return external_toolset;
         }
 
-#if !defined(WIN32)
-        Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgErrorVcvarsUnsupported, msg::triplet = prebuildinfo.triplet);
-#else
+#if defined(WIN32)
         const auto& toolsets_info = get_all_toolsets(*m_pimpl, get_filesystem());
         View<Toolset> vs_toolsets = toolsets_info.toolsets;
 
@@ -1350,7 +1392,9 @@ namespace vcpkg
             Checks::msg_exit_with_error(VCPKG_LINE_INFO, error_message);
         }
         return *candidate;
-#endif
+#else  // ^^^ _WIN32 // !_WIN32 vvv
+        Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgErrorVcvarsUnsupported, msg::triplet = prebuildinfo.triplet);
+#endif // ^^^ !_WIN32
     }
 
     const Environment& VcpkgPaths::get_action_env(const PreBuildInfo& pre_build_info, const Toolset& toolset) const
@@ -1366,6 +1410,11 @@ namespace vcpkg
     const CompilerInfo& VcpkgPaths::get_compiler_info(const PreBuildInfo& pre_build_info, const Toolset& toolset) const
     {
         return m_pimpl->m_env_cache.get_compiler_info(*this, pre_build_info, toolset);
+    }
+
+    const std::vector<VisualStudio::VisualStudioInstance>& VcpkgPaths::get_sorted_visual_studio_instances() const
+    {
+        return m_pimpl->get_sorted_visual_studio_instances();
     }
 
     const FeatureFlagSettings& VcpkgPaths::get_feature_flags() const { return m_pimpl->m_ff_settings; }

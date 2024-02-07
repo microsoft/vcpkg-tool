@@ -23,11 +23,9 @@ namespace vcpkg
     {
 #if defined(_WIN32)
         const ParsedArguments parsed_args = args.parse_arguments(CommandVsInstancesMetadata);
-
-        const auto instances = vcpkg::VisualStudio::get_visual_studio_instances(paths.get_filesystem());
-        for (const std::string& instance : instances)
+        for (const VisualStudio::VisualStudioInstance& instance : paths.get_sorted_visual_studio_instances())
         {
-            msg::write_unlocalized_text(Color::none, instance + "\n");
+            msg::write_unlocalized_text(Color::none, instance.to_string() + "\n");
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);

@@ -5,9 +5,11 @@
 #include <vcpkg/base/fwd/files.h>
 
 #include <vcpkg/fwd/tools.h>
+#include <vcpkg/fwd/visualstudio.h>
 
 #include <vcpkg/base/stringview.h>
 
+#include <functional>
 #include <string>
 
 namespace vcpkg
@@ -54,10 +56,13 @@ namespace vcpkg
     ExpectedL<Path> find_system_tar(const ReadOnlyFilesystem& fs);
     ExpectedL<Path> find_system_cmake(const ReadOnlyFilesystem& fs);
 
-    std::unique_ptr<ToolCache> get_tool_cache(const Filesystem& fs,
-                                              std::shared_ptr<const DownloadManager> downloader,
-                                              Path downloads,
-                                              Path xml_config,
-                                              Path tools,
-                                              RequireExactVersions abiToolVersionHandling);
+    std::unique_ptr<ToolCache> get_tool_cache(
+        const Filesystem& fs,
+        const std::shared_ptr<const DownloadManager>& downloader,
+        StringView downloads,
+        StringView xml_config,
+        StringView tools,
+        RequireExactVersions abiToolVersionHandling,
+        const std::function<const std::vector<VisualStudio::VisualStudioInstance>&()>&
+            get_sorted_visual_studio_instances);
 }

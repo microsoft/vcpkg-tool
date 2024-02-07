@@ -1,35 +1,34 @@
 #pragma once
 
+#include <vcpkg/base/fwd/files.h>
 #include <vcpkg/base/fwd/messages.h>
 
 #include <vcpkg/fwd/vcpkgpaths.h>
-
-#include <vcpkg/base/files.h>
+#include <vcpkg/fwd/visualstudio.h>
 
 #include <string>
 #include <vector>
 
-namespace vcpkg
-{
-    struct ToolsetsInformation
-    {
-        std::vector<Toolset> toolsets;
-
-#if defined(_WIN32)
-        std::vector<Path> paths_examined;
-        std::vector<Toolset> excluded_toolsets;
-        LocalizedString get_localized_debug_info() const;
-#endif
-    };
-}
-
-#if defined(_WIN32)
-
 namespace vcpkg::VisualStudio
 {
-    std::vector<std::string> get_visual_studio_instances(const ReadOnlyFilesystem& fs);
+    StringLiteral to_string_literal(ReleaseType release_type) noexcept;
 
-    ToolsetsInformation find_toolset_instances_preferred_first(const ReadOnlyFilesystem& fs);
+    struct VisualStudioInstance
+    {
+        Path root_path;
+        std::string version;
+        ReleaseType release_type;
+
+        VisualStudioInstance(Path&& root_path, std::string&& version, ReleaseType release_type);
+        std::string to_string() const;
+        std::string major_version() const;
+    };
+
+    std::vector<VisualStudioInstance> get_sorted_visual_studio_instances(const ReadOnlyFilesystem& fs);
+
+    ToolsetsInformation find_toolset_instances_preferred_first(
+        const ReadOnlyFilesystem& fs, const std::vector<VisualStudioInstance>& sorted_visual_studio_instances);
 }
 
-#endif
+VCPKG_FORMAT_WITH_TO_STRING(vcpkg::VisualStudio::VisualStudioInstance);
+VCPKG_FORMAT_WITH_TO_STRING_LITERAL_NONMEMBER(vcpkg::VisualStudio::ReleaseType);

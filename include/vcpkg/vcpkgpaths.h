@@ -17,6 +17,7 @@
 #include <vcpkg/fwd/triplet.h>
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
+#include <vcpkg/fwd/visualstudio.h>
 
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/path.h>
@@ -43,6 +44,17 @@ namespace vcpkg
         ZStringView version;
         std::string full_version;
         std::vector<ToolsetArchOption> supported_architectures;
+    };
+
+    struct ToolsetsInformation
+    {
+        std::vector<Toolset> toolsets;
+
+#if defined(_WIN32)
+        std::vector<Path> paths_examined;
+        std::vector<Toolset> excluded_toolsets;
+        LocalizedString get_localized_debug_info() const;
+#endif
     };
 
     struct VcpkgPaths
@@ -145,6 +157,8 @@ namespace vcpkg
         const Environment& get_action_env(const PreBuildInfo& pre_build_info, const Toolset& toolset) const;
         const std::string& get_triplet_info(const PreBuildInfo& pre_build_info, const Toolset& toolset) const;
         const CompilerInfo& get_compiler_info(const PreBuildInfo& pre_build_info, const Toolset& toolset) const;
+
+        const std::vector<VisualStudio::VisualStudioInstance>& get_sorted_visual_studio_instances() const;
 
         const FeatureFlagSettings& get_feature_flags() const;
 

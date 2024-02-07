@@ -4,6 +4,7 @@ namespace vcpkg
 {
     struct ToolsetArchOption;
     struct Toolset;
+    struct ToolsetsInformation;
     struct ManifestAndPath;
     struct VcpkgPaths;
 
