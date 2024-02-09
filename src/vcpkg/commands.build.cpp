@@ -737,7 +737,8 @@ namespace vcpkg
         }
 
         Debug::println("Detected compiler hash for triplet ", triplet, ": ", compiler_info.hash);
-        if(!compiler_info.path.empty()) {
+        if (!compiler_info.path.empty())
+        {
             msg::println(msgCompilerPath, msg::path = compiler_info.path);
         }
         return compiler_info;
