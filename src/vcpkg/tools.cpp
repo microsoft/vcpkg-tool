@@ -265,7 +265,7 @@ namespace vcpkg
             for (auto&& vs_instance : get_sorted_visual_studio_instances())
             {
                 out_candidate_paths.push_back(vs_instance.root_path / "Common7" / "IDE" / "CommonExtensions" /
-                                              "Microsoft" / "TeamFoundation" / "CMake" / "CMake" / "bin" / "cmake.exe");
+                                              "Microsoft" / "CMake" / "CMake" / "bin" / "cmake.exe");
             }
         }
 #endif
