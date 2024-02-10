@@ -409,7 +409,10 @@ namespace vcpkg::Prefab
             const auto per_package_dir_path = paths.prefab / name;
 
             const auto& binary_paragraph = action.core_paragraph().value_or_exit(VCPKG_LINE_INFO);
-            const std::string norm_version = binary_paragraph.version.to_string();
+
+            // The port version is not specified during installation (vcpkg install). Just ignore #version.
+            //jsoncpp_1.17#2_x64-android.list -> jsoncpp_1.17_x64-android.list
+            const std::string norm_version = binary_paragraph.version.text;
 
             version_map[name] = norm_version;
 
@@ -518,7 +521,7 @@ namespace vcpkg::Prefab
             }
 
             Debug::print(
-                fmt::format("Found {} triplets:\n\t{}", triplets.size(), Strings::join("\n\t", triplet_names)));
+                fmt::format("Found {} triplets:\n\t{}\n", triplets.size(), Strings::join("\n\t", triplet_names)));
 
             for (const auto& triplet : triplets)
             {
@@ -528,6 +531,8 @@ namespace vcpkg::Prefab
                 if (!(fs.exists(listfile, IgnoreErrors{})))
                 {
                     msg::println_error(msgCorruptedInstallTree);
+                    msg::println_error(msgFileNotFound, msg::path = listfile);
+
                     Checks::exit_fail(VCPKG_LINE_INFO);
                 }
 
