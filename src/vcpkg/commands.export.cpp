@@ -702,7 +702,7 @@ namespace vcpkg
 
         if (opts.prefab)
         {
-            Prefab::do_export(export_plan, paths, opts.prefab_options, default_triplet,  host_triplet);
+            Prefab::do_export(export_plan, paths, opts.prefab_options, default_triplet, host_triplet);
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);

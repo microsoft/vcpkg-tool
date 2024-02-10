@@ -254,7 +254,7 @@ namespace vcpkg::Prefab
                    const VcpkgPaths& paths,
                    const Options& prefab_options,
                    const Triplet& default_triplet,
-                   const Triplet&  host_triplet)
+                   const Triplet& host_triplet)
     {
         auto provider = CMakeVars::make_triplet_cmake_var_provider(paths);
 
@@ -379,7 +379,7 @@ namespace vcpkg::Prefab
         {
             // cross-compiling
             // Host-only ports (e.g. vcpkg_cmake) are not to be exported.
-            if(host_triplet == action.spec.triplet()) continue;
+            if (host_triplet == action.spec.triplet()) continue;
 
             const std::string name = action.spec.name();
             auto dependencies = action.dependencies();
