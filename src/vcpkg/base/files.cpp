@@ -1355,6 +1355,8 @@ namespace vcpkg
         return std::error_code(::ferror(m_fs), std::generic_category());
     }
 
+    int FilePointer::error_raw() const noexcept { return ::ferror(m_fs); }
+
     const Path& FilePointer::path() const { return m_path; }
 
     ExpectedL<Unit> FilePointer::try_seek_to(long long offset) { return try_seek_to(offset, SEEK_SET); }
@@ -1453,25 +1455,64 @@ namespace vcpkg
         std::string output;
         constexpr std::size_t buffer_size = 1024 * 32;
         char buffer[buffer_size];
-        do
+        auto this_read = this->read(buffer, 1, buffer_size);
+        if (this_read != buffer_size)
         {
-            const auto this_read = this->read(buffer, 1, buffer_size);
-            if (this_read != 0)
+            auto maybe_error = ::ferror(m_fs);
+            if (maybe_error)
             {
-                output.append(buffer, this_read);
+                ec.assign(maybe_error, std::generic_category());
+                return output;
             }
-            else if ((ec = this->error()))
-            {
-                return std::string();
-            }
-        } while (!this->eof());
 
-        if (Strings::starts_with(output, "\xEF\xBB\xBF"))
-        {
-            // remove byte-order mark from the beginning of the string
-            output.erase(output.begin(), output.begin() + 3);
+            if (!this->eof())
+            {
+                Checks::unreachable(VCPKG_LINE_INFO, "Got a partial read without an error or end");
+            }
         }
 
+        {
+            const char* to_append = buffer;
+            size_t to_append_size = this_read;
+            if (to_append_size >= 3 && ::memcmp(to_append, "\xEF\xBB\xBF", 3) == 0)
+            {
+                // remove byte-order mark from the beginning of the string
+                to_append_size -= 3;
+                to_append += 3;
+            }
+
+            output.append(to_append, to_append_size);
+        }
+
+        if (this_read == buffer_size)
+        {
+            for (;;)
+            {
+                this_read = this->read(buffer, 1, buffer_size);
+                if (this_read != buffer_size)
+                {
+                    break;
+                }
+
+                output.append(buffer, this_read);
+            }
+
+            auto maybe_error = ::ferror(m_fs);
+            if (maybe_error)
+            {
+                ec.assign(maybe_error, std::generic_category());
+                output.clear();
+                return output;
+            }
+
+            output.append(buffer, this_read);
+            if (!this->eof())
+            {
+                Checks::unreachable(VCPKG_LINE_INFO, "Got a partial read without an error or end");
+            }
+        }
+
+        ec.clear();
         return output;
     }
 
@@ -2204,6 +2245,83 @@ namespace vcpkg
 
             return file.read_to_end(ec);
         }
+
+        virtual std::string best_effort_read_contents_if_shebang(const Path& file_path) const override
+        {
+            std::error_code ec;
+            StatsTimer t(g_us_filesystem_stats);
+            ReadFilePointer file{file_path, ec};
+            std::string output;
+            if (ec)
+            {
+                Debug::print("Failed to open: ", file_path, '\n');
+                return output;
+            }
+
+            constexpr std::size_t buffer_size = 1024 * 32;
+            char buffer[buffer_size];
+            auto this_read = file.read(buffer, 1, buffer_size);
+            if (this_read != buffer_size)
+            {
+                if (file.error_raw())
+                {
+                    return output;
+                }
+
+                if (!file.eof())
+                {
+                    Checks::unreachable(VCPKG_LINE_INFO, "Got a partial read without an error or end");
+                }
+            }
+
+            {
+                const char* to_append = buffer;
+                size_t to_append_size = this_read;
+                if (to_append_size >= 3 && ::memcmp(to_append, "\xEF\xBB\xBF", 3) == 0)
+                {
+                    // remove byte-order mark from the beginning of the string
+                    to_append_size -= 3;
+                    to_append += 3;
+                }
+
+                if (to_append_size < 2 || ::memcmp(to_append, "#!", 2) != 0)
+                {
+                    // doesn't start with shebang
+                    return output;
+                }
+
+                output.append(to_append, to_append_size);
+            }
+
+            if (this_read == buffer_size)
+            {
+                for (;;)
+                {
+                    this_read = file.read(buffer, 1, buffer_size);
+                    if (this_read != buffer_size)
+                    {
+                        break;
+                    }
+
+                    output.append(buffer, this_read);
+                }
+
+                if (file.error_raw())
+                {
+                    output.clear();
+                    return output;
+                }
+
+                output.append(buffer, this_read);
+                if (!file.eof())
+                {
+                    Checks::unreachable(VCPKG_LINE_INFO, "Got a partial read without an error or end");
+                }
+            }
+
+            return output;
+        }
+
         virtual ExpectedL<std::vector<std::string>> read_lines(const Path& file_path) const override
         {
             StatsTimer t(g_us_filesystem_stats);
@@ -2225,6 +2343,7 @@ namespace vcpkg
                 {
                     output.on_data({buffer, this_read});
                 }
+
                 else if ((ec = file.error()))
                 {
                     return format_filesystem_call_error(ec, "read_lines_read", {file_path});

@@ -76,6 +76,7 @@ namespace vcpkg
         long long tell() const noexcept;
         int eof() const noexcept;
         std::error_code error() const noexcept;
+        int error_raw() const noexcept;
 
         const Path& path() const;
         ExpectedL<Unit> try_seek_to(long long offset);
@@ -134,6 +135,10 @@ namespace vcpkg
         std::string read_contents(const Path& file_path, LineInfo li) const;
 
         ExpectedL<FileContents> try_read_contents(const Path& file_path) const;
+
+        // Tries to read `file_path`, and if the file starts with a shebang sequence #!, returns the contents of the
+        // file. If an I/O error occurs or the file does not start with a shebang sequence, returns an empty string.
+        virtual std::string best_effort_read_contents_if_shebang(const Path& file_path) const = 0;
 
         virtual Path find_file_recursively_up(const Path& starting_dir,
                                               const Path& filename,
