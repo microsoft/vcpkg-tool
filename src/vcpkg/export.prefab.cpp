@@ -66,7 +66,7 @@ namespace vcpkg::Prefab
     static std::string null_if_empty(const std::string& str)
     {
         std::string copy = str;
-        if (copy.size() == 0)
+        if (copy.empty())
         {
             copy = "null";
         }
@@ -80,7 +80,7 @@ namespace vcpkg::Prefab
     static std::string null_if_empty_array(const std::string& str)
     {
         std::string copy = str;
-        if (copy.size() == 0)
+        if (copy.empty())
         {
             copy = "null";
         }
@@ -230,7 +230,7 @@ namespace vcpkg::Prefab
         settings.environment = get_clean_environment();
         const int exit_code = cmd_execute(cmd, settings).value_or_exit(VCPKG_LINE_INFO);
 
-        if (!(exit_code == 0))
+        if (exit_code != 0)
         {
             msg::println_error(msgInstallingMavenFile, msg::path = aar);
             Checks::exit_fail(VCPKG_LINE_INFO);
@@ -284,8 +284,8 @@ namespace vcpkg::Prefab
         {
             if (!triplet_file.name.empty())
             {
-                //The execution of emscripten cmake script causes the prefab export to fail.
-                //But here we don't need this execution at all so we skip it.
+                // The execution of emscripten cmake script causes the prefab export to fail.
+                // But here we don't need this execution at all, so we skip it.
                 if (triplet_file.name == "wasm32-emscripten") continue;
 
                 Triplet triplet = Triplet::from_canonical_name(triplet_file.name);
@@ -377,8 +377,8 @@ namespace vcpkg::Prefab
 
         for (const auto& action : export_plan)
         {
-            //cross-compiling
-            //Host-only ports (e.g. vcpkg_cmake) are not to be exported.
+            // cross-compiling
+            // Host-only ports (e.g. vcpkg_cmake) are not to be exported.
             if(host_triplet == action.spec.triplet()) continue;
 
             const std::string name = action.spec.name();
@@ -410,8 +410,8 @@ namespace vcpkg::Prefab
 
             const auto& binary_paragraph = action.core_paragraph().value_or_exit(VCPKG_LINE_INFO);
 
-            // The port version is not specified during installation (vcpkg install). Just ignore #version.
-            //jsoncpp_1.17#2_x64-android.list -> jsoncpp_1.17_x64-android.list
+            // The port version is not specified during installation (vcpkg install). Just ignore port version.
+            // jsoncpp_1.17#2_x64-android.list -> jsoncpp_1.17_x64-android.list
             const std::string norm_version = binary_paragraph.version.text;
 
             version_map[name] = norm_version;
@@ -476,7 +476,7 @@ namespace vcpkg::Prefab
 
             std::vector<std::string> pom_dependencies;
 
-            if (dependencies_minus_empty_packages.size() > 0)
+            if (!dependencies_minus_empty_packages.empty())
             {
                 pom_dependencies.emplace_back("\n<dependencies>");
             }
@@ -497,7 +497,7 @@ namespace vcpkg::Prefab
                 pm.dependencies.push_back(it.name());
             }
 
-            if (dependencies_minus_empty_packages.size() > 0)
+            if (!dependencies_minus_empty_packages.empty())
             {
                 pom_dependencies.emplace_back("</dependencies>\n");
             }
