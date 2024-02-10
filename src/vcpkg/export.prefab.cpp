@@ -281,8 +281,12 @@ namespace vcpkg::Prefab
 
         for (const auto& triplet_file : triplet_db.available_triplets)
         {
-            if (triplet_file.name.size() > 0)
+            if (!triplet_file.name.empty())
             {
+                //The execution of emscripten cmake script causes the prefab export to fail.
+                //But here we don't need this execution at all so we skip it.
+                if (triplet_file.name == "wasm32-emscripten") continue;
+
                 Triplet triplet = Triplet::from_canonical_name(triplet_file.name);
                 auto triplet_build_info = build_info_from_triplet(paths, provider, triplet);
                 if (is_supported(*triplet_build_info))
