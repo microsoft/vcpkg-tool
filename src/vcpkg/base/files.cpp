@@ -2298,7 +2298,6 @@ namespace vcpkg
                 output.append(to_append, to_append_size);
             }
 
-            std::error_code ec;
             file.read_to_end_suffix(output, ec, buffer, buffer_size, this_read);
             return output;
         }
