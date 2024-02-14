@@ -441,7 +441,13 @@ jobs:
         ArtifactName: 'vs-insertion'
         publishLocation: 'Container'
     # Do compliance checks.
-    
+    - task: APIScan@2
+      inputs:
+        softwareFolder: '$(Build.ArtifactStagingDirectory)\drop'
+        softwareName: 'vcpkg'
+        softwareVersionNum: '$(VCPKG_BASE_VERSION)'
+        softwareBuildNum: '$(Build.BuildId)'
+        symbolsFolder: '$(Build.ArtifactStagingDirectory)\drop'
     - task: BinSkim@4
       inputs:
         InputType: 'CommandLine'
@@ -460,6 +466,7 @@ jobs:
       displayName: Check for compliance errors
       # To avoid spurious warnings about missing logs, explicitly declare what we scanned.
       inputs:
+        APIScan: true
         BinSkim: true
         CredScan: true
         PoliCheck: true
