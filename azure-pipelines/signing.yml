@@ -441,6 +441,7 @@ jobs:
         ArtifactName: 'vs-insertion'
         publishLocation: 'Container'
     # Do compliance checks.
+    
     - task: BinSkim@4
       inputs:
         InputType: 'CommandLine'
