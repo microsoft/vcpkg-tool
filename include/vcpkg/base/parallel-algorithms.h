@@ -11,6 +11,8 @@
 #endif // ^^^ _WIN32
 #include <vcpkg/base/system.h>
 
+#include <limits.h>
+
 #include <algorithm>
 #include <atomic>
 
@@ -25,14 +27,15 @@ namespace vcpkg
 
         WorkCallbackContext(F init_f, size_t work_count) : work(init_f), work_count(work_count), next_offset(0) { }
 
+        // pre: run() is called at most SIZE_MAX - work_count times
         void run()
         {
-            auto offset = next_offset.load(std::memory_order_relaxed);
-            while (offset < work_count)
+            for (;;)
             {
-                if (!next_offset.compare_exchange_weak(offset, offset + 1, std::memory_order_relaxed))
+                auto offset = next_offset.fetch_add(1, std::memory_order_relaxed);
+                if (offset >= work_count)
                 {
-                    continue;
+                    return;
                 }
 
                 work(offset);
@@ -88,6 +91,7 @@ namespace vcpkg
         if (ptp_work)
         {
             auto max_threads = (std::min)(work_count, static_cast<size_t>(get_concurrency()));
+            max_threads = (std::min)(max_threads, SIZE_MAX - work_count); // to avoid overflow in fetch_add
             // start at 1 to account for the running thread
             for (size_t i = 1; i < max_threads; ++i)
             {
@@ -129,13 +133,14 @@ namespace vcpkg
         }
 
         WorkCallbackContext<F> context{work, work_count};
-        const size_t bg_threads = std::min(work_count, static_cast<size_t>(get_concurrency())) - 1;
-        std::vector<Optional<JThread>> workers(bg_threads);
-        for (auto&& worker : workers)
+        auto max_threads = std::min(work_count, static_cast<size_t>(get_concurrency()));
+        max_threads = std::min(max_threads, SIZE_MAX - work_count); // to avoid overflow in fetch_add
+        std::vector<Optional<JThread>> bg_threads(max_threads - 1);
+        for (auto&& bg_thread : bg_threads)
         {
             try
             {
-                worker.emplace([&]() { context.run(); });
+                bg_thread.emplace([&]() { context.run(); });
             }
             catch (const std::system_error&)
             {
