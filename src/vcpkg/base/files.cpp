@@ -1484,28 +1484,34 @@ namespace vcpkg
             output.append(to_append, to_append_size);
         }
 
-        if (this_read == buffer_size)
+        read_to_end_suffix(output, ec, buffer, buffer_size, this_read);
+        return output;
+    }
+
+    void ReadFilePointer::read_to_end_suffix(
+        std::string& output, std::error_code& ec, char* buffer, size_t buffer_size, size_t last_read)
+    {
+        if (last_read == buffer_size)
         {
             for (;;)
             {
-                this_read = this->read(buffer, 1, buffer_size);
-                if (this_read != buffer_size)
+                last_read = this->read(buffer, 1, buffer_size);
+                if (last_read != buffer_size)
                 {
                     break;
                 }
 
-                output.append(buffer, this_read);
+                output.append(buffer, last_read);
             }
 
-            auto maybe_error = ::ferror(m_fs);
-            if (maybe_error)
+            if (auto maybe_error = ::ferror(m_fs))
             {
                 ec.assign(maybe_error, std::generic_category());
                 output.clear();
-                return output;
+                return;
             }
 
-            output.append(buffer, this_read);
+            output.append(buffer, last_read);
             if (!this->eof())
             {
                 Checks::unreachable(VCPKG_LINE_INFO, "Got a partial read without an error or end");
@@ -1513,7 +1519,6 @@ namespace vcpkg
         }
 
         ec.clear();
-        return output;
     }
 
     WriteFilePointer::WriteFilePointer() noexcept = default;
@@ -2293,32 +2298,8 @@ namespace vcpkg
                 output.append(to_append, to_append_size);
             }
 
-            if (this_read == buffer_size)
-            {
-                for (;;)
-                {
-                    this_read = file.read(buffer, 1, buffer_size);
-                    if (this_read != buffer_size)
-                    {
-                        break;
-                    }
-
-                    output.append(buffer, this_read);
-                }
-
-                if (file.error_raw())
-                {
-                    output.clear();
-                    return output;
-                }
-
-                output.append(buffer, this_read);
-                if (!file.eof())
-                {
-                    Checks::unreachable(VCPKG_LINE_INFO, "Got a partial read without an error or end");
-                }
-            }
-
+            std::error_code ec;
+            file.read_to_end_suffix(output, ec, buffer, buffer_size, this_read);
             return output;
         }
 
