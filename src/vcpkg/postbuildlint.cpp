@@ -1245,19 +1245,10 @@ namespace vcpkg
 
         if (extension.empty())
         {
-            std::error_code ec;
-            ReadFilePointer read_file(file, ec);
-            if (ec) return false;
-            char buffer[5];
-            if (read_file.read(buffer, 1, sizeof(buffer)) < sizeof(buffer)) return false;
-            if (Strings::starts_with(StringView(buffer, sizeof(buffer)), "#!") ||
-                Strings::starts_with(StringView(buffer, sizeof(buffer)), "\xEF\xBB\xBF#!") /* ignore byte-order mark */)
-            {
-                const auto contents = fs.read_contents(file, IgnoreErrors{});
-                return Strings::contains_any_ignoring_hash_comments(contents, searcher_paths);
-            }
-            return false;
+            const auto contents = fs.best_effort_read_contents_if_shebang(file);
+            return Strings::contains_any_ignoring_hash_comments(contents, searcher_paths);
         }
+
         return false;
     }
 
@@ -1287,22 +1278,25 @@ namespace vcpkg
             string_paths, [](std::string& s) { return Strings::boyer_moore_horspool_searcher(s.begin(), s.end()); });
 
         std::vector<Path> failing_files;
-        std::mutex mtx;
-        auto files = fs.get_regular_files_recursive(dir, IgnoreErrors{});
+        {
+            std::mutex mtx;
+            auto files = fs.get_regular_files_recursive(dir, IgnoreErrors{});
 
-        parallel_for_each(files, [&](const Path& file) {
-            if (file_contains_absolute_paths(fs, file, searcher_paths))
-            {
-                std::lock_guard lock{mtx};
-                failing_files.push_back(file);
-            }
-        });
+            parallel_for_each(files, [&](const Path& file) {
+                if (file_contains_absolute_paths(fs, file, searcher_paths))
+                {
+                    std::lock_guard lock{mtx};
+                    failing_files.push_back(file);
+                }
+            });
+        } // destroy mtx
 
         if (failing_files.empty())
         {
             return LintStatus::SUCCESS;
         }
 
+        Util::sort(failing_files);
         auto error_message = msg::format(msgFilesContainAbsolutePath1);
         for (auto&& absolute_path : absolute_paths)
         {
