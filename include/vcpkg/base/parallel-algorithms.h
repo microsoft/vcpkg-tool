@@ -2,8 +2,6 @@
 #if defined(_WIN32)
 #include <vcpkg/base/system-headers.h>
 #else // ^^^ _WIN32 / !_WIN32 vvv
-#include <vcpkg/base/optional.h>
-
 #include <system_error>
 #include <thread>
 #include <type_traits>
@@ -113,6 +111,8 @@ namespace vcpkg
 
         JThread(const JThread&) = delete;
         JThread& operator=(const JThread&) = delete;
+        JThread(JThread&&) = default;
+        JThread& operator=(JThread&&) = default;
 
     private:
         std::thread m_thread;
@@ -135,12 +135,14 @@ namespace vcpkg
         WorkCallbackContext<F> context{work, work_count};
         auto max_threads = std::min(work_count, static_cast<size_t>(get_concurrency()));
         max_threads = std::min(max_threads, (SIZE_MAX - work_count) + 1u); // to avoid overflow in fetch_add
-        std::vector<Optional<JThread>> bg_threads(max_threads - 1);
-        for (auto&& bg_thread : bg_threads)
+        auto bg_thread_count = max_threads - 1;
+        std::vector<JThread> bg_threads;
+        bg_threads.reserve(bg_thread_count);
+        for (size_t i = 0; i < bg_thread_count; ++i)
         {
             try
             {
-                bg_thread.emplace([&]() { context.run(); });
+                bg_threads.emplace_back([&]() { context.run(); });
             }
             catch (const std::system_error&)
             {
