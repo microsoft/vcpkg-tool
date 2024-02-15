@@ -91,7 +91,7 @@ namespace vcpkg
         if (ptp_work)
         {
             auto max_threads = (std::min)(work_count, static_cast<size_t>(get_concurrency()));
-            max_threads = (std::min)(max_threads, SIZE_MAX - work_count); // to avoid overflow in fetch_add
+            max_threads = (std::min)(max_threads, (SIZE_MAX - work_count) + 1u); // to avoid overflow in fetch_add
             // start at 1 to account for the running thread
             for (size_t i = 1; i < max_threads; ++i)
             {
@@ -134,7 +134,7 @@ namespace vcpkg
 
         WorkCallbackContext<F> context{work, work_count};
         auto max_threads = std::min(work_count, static_cast<size_t>(get_concurrency()));
-        max_threads = std::min(max_threads, SIZE_MAX - work_count); // to avoid overflow in fetch_add
+        max_threads = std::min(max_threads, (SIZE_MAX - work_count) + 1u); // to avoid overflow in fetch_add
         std::vector<Optional<JThread>> bg_threads(max_threads - 1);
         for (auto&& bg_thread : bg_threads)
         {
