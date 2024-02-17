@@ -258,8 +258,8 @@ namespace vcpkg
         char *argv[argc];
         auto argv_query = sysctl(mib, 4, argv, &argc, nullptr, 0);
         Checks::check_exit(VCPKG_LINE_INFO, argv_query == 0, "Could not determine current executable path.");
-        for(int i=0; i<argc; ++i) {
-            printf("argv[%d]=%s\n", argv[i]);
+        for(size_t i=0; i<argc; ++i) {
+            printf("argv[%d]=%s\n", (int)i, argv[i]);
         }
         return Path(argv[0], strlen(argv[0]));
 #else /* LINUX */
