@@ -443,7 +443,7 @@ jobs:
     # Do compliance checks.
     - task: APIScan@2
       env:
-        AzureServicesAuthConnectionString: runAs=App;AppId=$(ApiScanClientId);TenantId=$(ApiScanTenant);AppKey=$(ApiScanSecret)
+        AzureServicesAuthConnectionString: runAs=App;AppId=$(ApiScanClientId);TenantId=$(ApiScanTenantId);AppKey=$(ApiScanSecret)
       inputs:
         softwareFolder: '$(Build.ArtifactStagingDirectory)\drop'
         softwareName: 'vcpkg'
