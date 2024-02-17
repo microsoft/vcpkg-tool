@@ -254,6 +254,9 @@ namespace vcpkg
         Checks::check_exit(VCPKG_LINE_INFO, progname != nullptr, "progname() returned NULL");
         char resolved_path[PATH_MAX];
         auto ret = realpath(progname, resolved_path);
+        if (ret == nullptr) {
+          printf("realpath failed: %s\n", strerror(errno));
+        }
         Checks::check_exit(VCPKG_LINE_INFO, ret != nullptr, "Could not determine current executable path.");
         return resolved_path;
 #else /* LINUX */
