@@ -936,7 +936,7 @@ namespace vcpkg
         {
             msg::print(LocalizedString::from_raw(triplet_file_path)
                            .append_raw(": ")
-                           .append_raw(MessagePrefix)
+                           .append_raw(InfoPrefix)
                            .append(msgLoadedCommunityTriplet)
                            .append_raw('\n'));
         }
@@ -944,7 +944,7 @@ namespace vcpkg
         {
             msg::print(LocalizedString::from_raw(triplet_file_path)
                            .append_raw(": ")
-                           .append_raw(MessagePrefix)
+                           .append_raw(InfoPrefix)
                            .append(msgLoadedOverlayTriplet)
                            .append_raw('\n'));
         }
@@ -953,7 +953,7 @@ namespace vcpkg
         {
             msg::print(LocalizedString::from_raw(scfl.port_directory())
                            .append_raw(": ")
-                           .append_raw(MessagePrefix)
+                           .append_raw(InfoPrefix)
                            .append(msgInstallingOverlayPort)
                            .append_raw('\n'));
         }
