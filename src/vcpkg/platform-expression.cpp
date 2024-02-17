@@ -477,11 +477,11 @@ namespace vcpkg::PlatformExpression
                     {
                         if (override_id[0] == '!')
                         {
-                            override_ctxt.insert({override_id.substr(1), false});
+                            override_ctxt.emplace(override_id.substr(1), false);
                         }
                         else
                         {
-                            override_ctxt.insert({override_id, true});
+                            override_ctxt.emplace(override_id, true);
                         }
                     }
                 }
