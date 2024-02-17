@@ -319,7 +319,7 @@ namespace
 
 namespace vcpkg
 {
-    static constexpr CommandMetadata CommandAddVersionMetadata{
+    constexpr CommandMetadata CommandAddVersionMetadata{
         "x-add-version",
         msgCmdAddVersionSynopsis,
         {msgCmdAddVersionExample1, "vcpkg x-add-version curl --overwrite-version"},
