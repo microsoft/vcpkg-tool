@@ -3913,15 +3913,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";ComparingUtf8Decoders" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Comparing Utf8Decoders with different provenance; this is always an error]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Porovnání kodérů Utf8Decoder s různými původy; toto je vždy chyba]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";CompressFolderFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Failed to compress folder "{path}":]]></Val>
@@ -6031,15 +6022,12 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";FormattedParseMessageExpression" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";FormattedParseMessageExpressionPrefix" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[on expression: {value}]]></Val>
+          <Val><![CDATA[on expression:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[výraz on: {value}]]></Val>
+            <Val><![CDATA[výraz on:]]></Val>
           </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[    on expression: {value}]]></Val>
-          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -7107,15 +7095,6 @@
           <Val><![CDATA[Incorrect PE signature]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Nesprávný podpis PE]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";IncrementedUtf8Decoder" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Incremented Utf8Decoder at the end of the string]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Inkrementovaný Utf8Decoder na konci řetězce]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />

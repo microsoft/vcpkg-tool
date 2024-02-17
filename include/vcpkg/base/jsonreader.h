@@ -60,6 +60,7 @@ namespace vcpkg::Json
         const std::vector<LocalizedString>& warnings() const { return m_warnings; }
 
         std::string path() const noexcept;
+        StringView origin() const noexcept;
 
     private:
         template<class Type>

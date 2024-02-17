@@ -998,7 +998,7 @@ namespace vcpkg
         virtual Optional<std::string> visit_string(Json::Reader& r, StringView sv) const override
         {
             BufferedDiagnosticContext bdc;
-            auto parser = SpdxLicenseExpressionParser(bdc, sv, "");
+            auto parser = SpdxLicenseExpressionParser(bdc, sv, r.origin());
             auto res = parser.parse();
             for (auto&& diagnostic_line : bdc.lines)
             {

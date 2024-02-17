@@ -72,7 +72,10 @@ namespace vcpkg
         return res;
     }
 
-    ParserBase::ParserBase(DiagnosticContext& context, StringView text, StringView origin, TextRowCol init_rowcol)
+    ParserBase::ParserBase(DiagnosticContext& context,
+                           StringView text,
+                           Optional<StringView> origin,
+                           TextRowCol init_rowcol)
         : m_it(text.begin(), text.end())
         , m_start_of_line(m_it)
         , m_row(init_rowcol.row)
@@ -82,6 +85,15 @@ namespace vcpkg
         , m_context(context)
         , m_any_errors(false)
     {
+#ifndef NDEBUG
+        if (auto check_origin = origin.get())
+        {
+            if (check_origin->empty())
+            {
+                Checks::unreachable(VCPKG_LINE_INFO, "origin should not be empty");
+            }
+        }
+#endif
     }
 
     StringView ParserBase::skip_whitespace() { return match_while(is_whitespace); }
@@ -172,8 +184,16 @@ namespace vcpkg
         {
             message.append_raw('\n');
             append_caret_line(message, loc);
-            m_context.report(
-                DiagnosticLine{DiagKind::Error, m_origin, TextRowCol{loc.row, loc.column}, std::move(message)});
+            if (auto origin = m_origin.get())
+            {
+                m_context.report(
+                    DiagnosticLine{DiagKind::Error, *origin, TextRowCol{loc.row, loc.column}, std::move(message)});
+            }
+            else
+            {
+                m_context.report(DiagnosticLine{DiagKind::Error, std::move(message)});
+            }
+
             m_any_errors = true;
             // Avoid error loops by skipping to the end
             skip_to_eof();
@@ -186,7 +206,14 @@ namespace vcpkg
     {
         message.append_raw('\n');
         append_caret_line(message, loc);
-        m_context.report(
-            DiagnosticLine{DiagKind::Warning, m_origin, TextRowCol{loc.row, loc.column}, std::move(message)});
+        if (auto origin = m_origin.get())
+        {
+            m_context.report(
+                DiagnosticLine{DiagKind::Warning, *origin, TextRowCol{loc.row, loc.column}, std::move(message)});
+        }
+        else
+        {
+            m_context.report(DiagnosticLine{DiagKind::Warning, std::move(message)});
+        }
     }
 }

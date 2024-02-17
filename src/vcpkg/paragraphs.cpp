@@ -171,21 +171,21 @@ namespace vcpkg
 
     Optional<std::vector<std::string>> parse_default_features_list_context(DiagnosticContext& context,
                                                                            const std::string& str,
-                                                                           StringView origin,
+                                                                           Optional<StringView> origin,
                                                                            TextRowCol position)
     {
         auto parser = ParserBase(context, str, origin, position);
         return parse_list_until_eof<std::string>(msgExpectedDefaultFeaturesList, parser, &parse_feature_name);
     }
     ExpectedL<std::vector<std::string>> parse_default_features_list(const std::string& str,
-                                                                    StringView origin,
+                                                                    Optional<StringView> origin,
                                                                     TextRowCol position)
     {
         return adapt_context_to_expected(parse_default_features_list_context, str, origin, position);
     }
     Optional<std::vector<ParsedQualifiedSpecifier>> parse_qualified_specifier_list_context(DiagnosticContext& context,
                                                                                            const std::string& str,
-                                                                                           StringView origin,
+                                                                                           Optional<StringView> origin,
                                                                                            TextRowCol position)
     {
         auto parser = ParserBase(context, str, origin, position);
@@ -193,7 +193,7 @@ namespace vcpkg
             msgExpectedDependenciesList, parser, [](ParserBase& parser) { return parse_qualified_specifier(parser); });
     }
     ExpectedL<std::vector<ParsedQualifiedSpecifier>> parse_qualified_specifier_list(const std::string& str,
-                                                                                    StringView origin,
+                                                                                    Optional<StringView> origin,
                                                                                     TextRowCol position)
     {
         return adapt_context_to_expected(parse_qualified_specifier_list_context, str, origin, position);

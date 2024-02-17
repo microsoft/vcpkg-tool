@@ -60,8 +60,10 @@ namespace vcpkg
         std::string multi_arch = parser.required_field(Fields::MULTI_ARCH);
 
         Triplet my_triplet = this->spec.triplet();
+        TextRowCol dependsRowCol;
         this->dependencies = Util::fmap(
-            parse_qualified_specifier_list(parser.optional_field(Fields::DEPENDS)).value_or_exit(VCPKG_LINE_INFO),
+            parse_qualified_specifier_list(parser.optional_field(Fields::DEPENDS, dependsRowCol), origin, dependsRowCol)
+                .value_or_exit(VCPKG_LINE_INFO),
             [my_triplet](const ParsedQualifiedSpecifier& dep) {
                 // for compatibility with previous vcpkg versions, we discard all irrelevant information
                 return PackageSpec{
@@ -72,8 +74,12 @@ namespace vcpkg
             });
         if (!this->is_feature())
         {
-            this->default_features = parse_default_features_list(parser.optional_field(Fields::DEFAULT_FEATURES))
-                                         .value_or_exit(VCPKG_LINE_INFO);
+            TextRowCol defaultFeaturesRowCol;
+            this->default_features =
+                parse_default_features_list(parser.optional_field(Fields::DEFAULT_FEATURES, defaultFeaturesRowCol),
+                                            origin,
+                                            defaultFeaturesRowCol)
+                    .value_or_exit(VCPKG_LINE_INFO);
         }
 
         // This is leftover from a previous attempt to add "alias ports", not currently used.

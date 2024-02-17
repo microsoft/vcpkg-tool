@@ -128,7 +128,8 @@ namespace vcpkg
 
     Optional<ParsedQualifiedSpecifier> parse_qualified_specifier_context(DiagnosticContext& context, StringView input)
     {
-        auto parser = ParserBase(context, input, "<unknown>");
+        // there is no origin because this function is used for user inputs
+        auto parser = ParserBase(context, input, nullopt);
         auto maybe_pqs = parse_qualified_specifier(parser);
         if (!parser.at_eof())
         {

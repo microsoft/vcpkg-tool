@@ -1482,6 +1482,8 @@ namespace vcpkg::Json
         return p;
     }
 
+    StringView Reader::origin() const noexcept { return m_origin; }
+
     LocalizedString ParagraphDeserializer::type_name() const { return msg::format(msgAStringOrArrayOfStrings); }
 
     Optional<std::vector<std::string>> ParagraphDeserializer::visit_string(Reader&, StringView sv) const
