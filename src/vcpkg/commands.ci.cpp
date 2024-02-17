@@ -84,6 +84,7 @@ namespace
     constexpr StringLiteral OPTION_RANDOMIZE = "x-randomize";
     constexpr StringLiteral OPTION_OUTPUT_HASHES = "output-hashes";
     constexpr StringLiteral OPTION_PARENT_HASHES = "parent-hashes";
+    constexpr StringLiteral OPTION_KNOWN_FAILURES = "known-failures-from";
 
     constexpr CommandSetting CI_SETTINGS[] = {
         {OPTION_EXCLUDE, msgCISettingsOptExclude},
@@ -93,6 +94,8 @@ namespace
         {OPTION_FAILURE_LOGS, msgCISettingsOptFailureLogs},
         {OPTION_OUTPUT_HASHES, msgCISettingsOptOutputHashes},
         {OPTION_PARENT_HASHES, msgCISettingsOptParentHashes},
+        {OPTION_KNOWN_FAILURES,
+         []() { return LocalizedString::from_raw("Path to the file of known package build failures"); }},
     };
 
     constexpr CommandSwitch CI_SWITCHES[] = {
@@ -170,6 +173,7 @@ namespace
     std::unique_ptr<UnknownCIPortsResults> compute_action_statuses(
         ExclusionPredicate is_excluded,
         const std::vector<CacheAvailability>& precheck_results,
+        const std::unordered_set<std::string>& known_failures,
         const ActionPlan& action_plan)
     {
         auto ret = std::make_unique<UnknownCIPortsResults>();
@@ -188,6 +192,12 @@ namespace
             {
                 ret->action_state_string.emplace_back("skip");
                 ret->known.emplace(p->spec, BuildResult::Excluded);
+                will_fail.emplace(p->spec);
+            }
+            else if (Util::Sets::contains(known_failures, p->public_abi()))
+            {
+                ret->action_state_string.emplace_back("will fail");
+                ret->known.emplace(p->spec, BuildResult::BUILD_FAILED);
                 will_fail.emplace(p->spec);
             }
             else if (Util::any_of(p->package_dependencies,
@@ -360,6 +370,15 @@ namespace vcpkg
             cidata = parse_and_apply_ci_baseline(lines, exclusions_map, skip_failures);
         }
 
+        std::unordered_set<std::string> known_failures;
+        auto it_known_failures = settings.find(OPTION_KNOWN_FAILURES);
+        if (it_known_failures != settings.end())
+        {
+            Path raw_path = it_known_failures->second;
+            auto lines = paths.get_filesystem().read_lines(raw_path).value_or_exit(VCPKG_LINE_INFO);
+            known_failures.insert(lines.begin(), lines.end());
+        }
+
         const auto is_dry_run = Util::Sets::contains(options.switches, OPTION_DRY_RUN);
 
         auto& filesystem = paths.get_filesystem();
@@ -413,9 +432,11 @@ namespace vcpkg
         }
 
         auto action_plan = compute_full_plan(paths, provider, var_provider, all_default_full_specs, serialize_options);
-        auto binary_cache = BinaryCache::make(args, paths, out_sink).value_or_exit(VCPKG_LINE_INFO);
-        const auto precheck_results = binary_cache.precheck(action_plan.install_actions);
-        auto split_specs = compute_action_statuses(ExclusionPredicate{&exclusions_map}, precheck_results, action_plan);
+        auto binary_cache = BinaryCache::make(args, paths, stdout_sink).value_or_exit(VCPKG_LINE_INFO);
+        auto install_actions = Util::fmap(action_plan.install_actions, [](const auto& action) { return &action; });
+        const auto precheck_results = binary_cache.precheck(install_actions);
+        auto split_specs =
+            compute_action_statuses(ExclusionPredicate{&exclusions_map}, precheck_results, known_failures, action_plan);
         LocalizedString regressions;
         {
             std::string msg;

@@ -1115,6 +1115,7 @@ namespace vcpkg
                                  InstallPlanAction& action,
                                  std::unique_ptr<PreBuildInfo>&& proto_pre_build_info,
                                  Span<const AbiEntry> dependency_abis,
+                                 const PortAbiCache& cache,
                                  Cache<Path, Optional<std::string>>& grdk_cache)
     {
         Checks::check_exit(VCPKG_LINE_INFO, static_cast<bool>(proto_pre_build_info));
@@ -1159,44 +1160,61 @@ namespace vcpkg
         auto& fs = paths.get_filesystem();
         abi_entries_from_pre_build_info(fs, grdk_cache, pre_build_info, abi_tag_entries);
 
-        // If there is an unusually large number of files in the port then
-        // something suspicious is going on.
-        constexpr int max_port_file_count = 100;
-
-        std::string portfile_cmake_contents;
-        auto&& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
-        auto port_dir = scfl.port_directory();
-        auto raw_files = fs.get_regular_files_recursive_lexically_proximate(port_dir, VCPKG_LINE_INFO);
-        if (raw_files.size() > max_port_file_count)
+        auto&& port_dir = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).port_directory();
+        auto& cache_entry = cache.get(port_dir);
+        if (cache_entry.files.empty())
         {
-            msg::println_warning(
-                msgHashPortManyFiles, msg::package_name = action.spec.name(), msg::count = raw_files.size());
+            // If there is an unusually large number of files in the port then
+            // something suspicious is going on.
+            constexpr int max_port_file_count = 100;
+
+            std::string portfile_cmake_contents;
+            auto raw_files = fs.get_regular_files_recursive_lexically_proximate(port_dir, VCPKG_LINE_INFO);
+            if (raw_files.size() > max_port_file_count)
+            {
+                msg::println_warning(
+                    msgHashPortManyFiles, msg::package_name = action.spec.name(), msg::count = raw_files.size());
+            }
+
+            for (auto& port_file : raw_files)
+            {
+                if (port_file.filename() == ".DS_Store")
+                {
+                    continue;
+                }
+                const auto& abs_port_file = cache_entry.files.emplace_back(port_dir / port_file);
+
+                if (port_file.extension() == ".cmake")
+                {
+                    auto contents = fs.read_contents(abs_port_file, VCPKG_LINE_INFO);
+
+                    portfile_cmake_contents += contents;
+                    cache_entry.hashes.push_back(vcpkg::Hash::get_string_sha256(contents));
+                }
+                else
+                {
+                    cache_entry.hashes.push_back(vcpkg::Hash::get_file_hash(fs, abs_port_file, Hash::Algorithm::Sha256)
+                                                     .value_or_exit(VCPKG_LINE_INFO));
+                }
+
+                cache_entry.abi_entries.emplace_back(port_file, cache_entry.hashes.back());
+            }
+
+            auto& scf = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_control_file;
+            cache_entry.heuristic_resources =
+                run_resource_heuristics(portfile_cmake_contents, scf->core_paragraph->version.text);
+
+            auto& helpers = paths.get_cmake_script_hashes();
+            for (auto&& helper : helpers)
+            {
+                if (Strings::case_insensitive_ascii_contains(portfile_cmake_contents, helper.first))
+                {
+                    cache_entry.abi_entries.emplace_back(helper.first, helper.second);
+                }
+            }
         }
 
-        std::vector<Path> files;         // will be port_files without .DS_Store entries
-        std::vector<std::string> hashes; // will be corresponding hashes
-        for (auto& port_file : raw_files)
-        {
-            if (port_file.filename() == ".DS_Store")
-            {
-                continue;
-            }
-
-            const auto& abs_port_file = files.emplace_back(port_dir / port_file);
-            if (port_file.extension() == ".cmake")
-            {
-                auto contents = fs.read_contents(abs_port_file, VCPKG_LINE_INFO);
-                portfile_cmake_contents += contents;
-                hashes.push_back(vcpkg::Hash::get_string_sha256(contents));
-            }
-            else
-            {
-                hashes.push_back(vcpkg::Hash::get_file_hash(fs, abs_port_file, Hash::Algorithm::Sha256)
-                                     .value_or_exit(VCPKG_LINE_INFO));
-            }
-
-            abi_tag_entries.emplace_back(port_file, hashes.back());
-        }
+        Util::Vectors::append(&abi_tag_entries, cache_entry.abi_entries);
 
         abi_tag_entries.emplace_back("cmake", paths.get_tool_version(Tools::CMAKE, out_sink));
 
@@ -1204,15 +1222,6 @@ namespace vcpkg
 #if defined(_WIN32)
         abi_tag_entries.emplace_back("powershell", paths.get_tool_version("powershell-core", out_sink));
 #endif
-
-        auto& helpers = paths.get_cmake_script_hashes();
-        for (auto&& helper : helpers)
-        {
-            if (Strings::case_insensitive_ascii_contains(portfile_cmake_contents, helper.first))
-            {
-                abi_tag_entries.emplace_back(helper.first, helper.second);
-            }
-        }
 
         abi_tag_entries.emplace_back("ports.cmake", paths.get_ports_cmake_hash().to_string());
         abi_tag_entries.emplace_back("post_build_checks", "2");
@@ -1263,20 +1272,20 @@ namespace vcpkg
         fs.create_directory(abi_file_path, VCPKG_LINE_INFO);
         abi_file_path /= triplet_canonical_name + ".vcpkg_abi_info.txt";
         fs.write_contents(abi_file_path, full_abi_info, VCPKG_LINE_INFO);
-
-        auto& scf = scfl.source_control_file;
         abi_info.package_abi = Hash::get_string_sha256(full_abi_info);
         abi_info.abi_tag_file.emplace(std::move(abi_file_path));
-        abi_info.relative_port_files = std::move(files);
-        abi_info.relative_port_hashes = std::move(hashes);
-        abi_info.heuristic_resources.push_back(
-            run_resource_heuristics(portfile_cmake_contents, scf->core_paragraph->version.text));
+        abi_info.relative_port_files = cache_entry.files;
+        abi_info.relative_port_hashes = cache_entry.hashes;
+        abi_info.heuristic_resources.push_back(cache_entry.heuristic_resources);
     }
+
+    PortAbiCache::AbiCacheEntry& PortAbiCache::get(const Path& port_dir) const { return items[port_dir.native()]; }
 
     void compute_all_abis(const VcpkgPaths& paths,
                           ActionPlan& action_plan,
                           const CMakeVars::CMakeVarProvider& var_provider,
-                          const StatusParagraphs& status_db)
+                          const StatusParagraphs& status_db,
+                          const PortAbiCache& cache)
     {
         Cache<Path, Optional<std::string>> grdk_cache;
         for (auto it = action_plan.install_actions.begin(); it != action_plan.install_actions.end(); ++it)
@@ -1320,6 +1329,7 @@ namespace vcpkg
                                                action.spec.triplet(),
                                                var_provider.get_tag_vars(action.spec).value_or_exit(VCPKG_LINE_INFO)),
                 dependency_abis,
+                cache,
                 grdk_cache);
         }
     }

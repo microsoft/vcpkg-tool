@@ -101,6 +101,7 @@ DECLARE_MESSAGE(AGitObjectSha, (), "", "a git object SHA")
 DECLARE_MESSAGE(AGitReference, (), "", "a git reference (for example, a branch)")
 DECLARE_MESSAGE(AGitRegistry, (), "", "a git registry")
 DECLARE_MESSAGE(AGitRepositoryUrl, (), "", "a git repository URL")
+DECLARE_MESSAGE(AllFeatureTestsPassed, (), "", "All feature tests passed.")
 DECLARE_MESSAGE(AllFormatArgsRawArgument,
                 (msg::value),
                 "example of {value} is 'foo {} bar'",
@@ -296,6 +297,15 @@ DECLARE_MESSAGE(BaselineMissing,
                 "git add versions\n"
                 "git commit -m \"Update version database\"\n"
                 "to set {version} as the baseline version.")
+DECLARE_MESSAGE(BaselineMissingDefault,
+                (msg::commit_sha, msg::url),
+                "",
+                "The baseline.json from commit `\"{commit_sha}\"` in the repo {url} was invalid (did not "
+                "contain a \"default\" field).")
+DECLARE_MESSAGE(BaselineOnlyPlatformExpressionOrTriplet,
+                (),
+                "",
+                "You can not specify a platform expression and a triplet")
 DECLARE_MESSAGE(BinaryCacheVendorHTTP, (), "", "HTTP servers")
 DECLARE_MESSAGE(BinarySourcesArg,
                 (),
@@ -686,6 +696,11 @@ DECLARE_MESSAGE(CmdFindExample2,
                 "This is a command line, only the <>s part should be localized",
                 "vcpkg find artifact <artifact name>")
 DECLARE_MESSAGE(CmdFindSynopsis, (), "", "Finds a port or artifact that may be installed or activated")
+DECLARE_MESSAGE(CmdFormatFeatureBaselineSynopsis, (), "", "Formats a feature baseline file")
+DECLARE_MESSAGE(CmdFormatFeatureBaselineExample,
+                (),
+                "This is a command line, only the <vcpkg.json path>s part should be localized",
+                "vcpkg format-feature-baseline <ci.feature.baseline.txt path>")
 DECLARE_MESSAGE(CmdFormatManifestExample1,
                 (),
                 "This is a command line, only the <vcpkg.json path>s part should be localized",
@@ -808,6 +823,7 @@ DECLARE_MESSAGE(CmdSetInstalledSynopsis,
                 (),
                 "",
                 "Installs, upgrades, or removes packages such that that installed matches exactly those supplied")
+DECLARE_MESSAGE(CmdTestFeaturesSynopsis, (), "", "Tests the features of a port")
 DECLARE_MESSAGE(CmdUpdateBaselineOptDryRun, (), "", "Prints out plan without execution")
 DECLARE_MESSAGE(CmdUpdateBaselineOptInitial,
                 (),
@@ -867,6 +883,8 @@ DECLARE_MESSAGE(CommandFailed,
                 "failed with the following results:")
 DECLARE_MESSAGE(CommunityTriplets, (), "", "Community Triplets:")
 DECLARE_MESSAGE(CompressFolderFailed, (msg::path), "", "Failed to compress folder \"{path}\":")
+DECLARE_MESSAGE(ComputeAllAbis, (), "", "Compute all abis ...")
+DECLARE_MESSAGE(ComputeInstallPlans, (msg::count), "", "Compute {count} install plans ...")
 DECLARE_MESSAGE(ComputingInstallPlan, (), "", "Computing installation plan...")
 DECLARE_MESSAGE(ConfigurationErrorRegistriesWithoutBaseline,
                 (msg::path, msg::url),
@@ -1009,6 +1027,10 @@ DECLARE_MESSAGE(
 DECLARE_MESSAGE(DependencyGraphCalculation, (), "", "Dependency graph submission enabled.")
 DECLARE_MESSAGE(DependencyGraphFailure, (), "", "Dependency graph submission failed.")
 DECLARE_MESSAGE(DependencyGraphSuccess, (), "", "Dependency graph submission successful.")
+DECLARE_MESSAGE(DependencyWillFail,
+                (msg::feature_spec),
+                "'cascade' is a keyword and should not be translated",
+                "Dependency {feature_spec} will not build => cascade")
 DECLARE_MESSAGE(DeprecatedPrefabDebugOption, (), "", "--prefab-debug is now deprecated.")
 DECLARE_MESSAGE(DetectCompilerHash, (msg::triplet), "", "Detecting compiler hash for triplet {triplet}...")
 DECLARE_MESSAGE(DocumentedFieldsSuggestUpdate,
@@ -1290,6 +1312,16 @@ DECLARE_MESSAGE(FailedVendorAuthentication,
                 "",
                 "One or more {vendor} credential providers failed to authenticate. See '{url}' for more details "
                 "on how to provide credentials.")
+DECLARE_MESSAGE(FeatureBaselineEntryAlreadySpecified,
+                (msg::feature, msg::value),
+                "{value} is a keyword",
+                "Feature '{feature}' was already declared as '{value}'.")
+DECLARE_MESSAGE(FeatureBaselineExpectedFeatures,
+                (msg::value),
+                "{value} is a keyword",
+                "When using '{value}' a list of features must be specified.")
+DECLARE_MESSAGE(FeatureBaselineFormatted, (), "", "Succeeded in formatting the feature baseline file.")
+DECLARE_MESSAGE(FeatureBaselineNoFeaturesForFail, (), "", "When using '= fail' no list of features is allowed.")
 DECLARE_MESSAGE(FileIsNotExecutable, (), "", "this file does not appear to be executable")
 DECLARE_MESSAGE(FilesContainAbsolutePath1,
                 (),
@@ -2124,6 +2156,10 @@ DECLARE_MESSAGE(NewSpecifyNameVersionOrApplication,
                 "--application to indicate that the manifest is not intended to be used as a port.")
 DECLARE_MESSAGE(NewVersionCannotBeEmpty, (), "", "--version cannot be empty.")
 DECLARE_MESSAGE(NoArgumentsForOption, (msg::option), "", "The option --{option} does not accept an argument.")
+DECLARE_MESSAGE(NoCoreFeatureAllowedInNonFailBaselineEntry,
+                (msg::value),
+                "{value} is a keyword",
+                "'core' is not allowed in the list of features if the entry is of type '{value}'")
 DECLARE_MESSAGE(NoError, (), "", "no error")
 DECLARE_MESSAGE(NoInstalledPackages,
                 (),
@@ -2167,6 +2203,10 @@ DECLARE_MESSAGE(NugetTimeoutExpectsSinglePositiveInteger,
                 (),
                 "",
                 "unexpected arguments: binary config 'nugettimeout' expects a single positive integer argument")
+DECLARE_MESSAGE(OnlySupports,
+                (msg::feature_spec, msg::supports_expression),
+                "",
+                "{feature_spec} only supports {supports_expression}")
 DECLARE_MESSAGE(OptionMustBeInteger, (msg::option), "", "Value of --{option} must be an integer.")
 DECLARE_MESSAGE(OptionRequired, (msg::option), "", "--{option} option is required.")
 DECLARE_MESSAGE(OptionRequiresAValue, (msg::option), "", "the option '{option}' requires a value")
@@ -2443,6 +2483,7 @@ DECLARE_MESSAGE(PortMissingManifest2,
                 (msg::package_name),
                 "",
                 "{package_name} port manifest missing (no vcpkg.json or CONTROL file)")
+DECLARE_MESSAGE(PortNotSupported, (msg::package_name, msg::triplet), "", "{package_name} is not supported on {triplet}")
 DECLARE_MESSAGE(PortsNoDiff, (), "", "There were no changes in the ports between the two commits.")
 DECLARE_MESSAGE(PortsRemoved, (msg::count), "", "The following {count} ports were removed:")
 DECLARE_MESSAGE(PortsUpdated, (msg::count), "", "The following {count} ports were updated:")
@@ -2454,6 +2495,7 @@ DECLARE_MESSAGE(PortVersionMultipleSpecification,
                 "\"port_version\" cannot be combined with an embedded '#' in the version")
 DECLARE_MESSAGE(PortVersionControlMustBeANonNegativeInteger, (), "", "\"Port-Version\" must be a non-negative integer")
 DECLARE_MESSAGE(PrebuiltPackages, (), "", "There are packages that have not been built. To build them run:")
+DECLARE_MESSAGE(PrecheckBinaryCache, (), "", "Check the binary cache")
 DECLARE_MESSAGE(PreviousIntegrationFileRemains, (), "", "Previous integration file was not removed.")
 DECLARE_MESSAGE(ProgramReturnedNonzeroExitCode,
                 (msg::tool_name, msg::exit_code),
@@ -2551,6 +2593,10 @@ DECLARE_MESSAGE(SkipClearingInvalidDir,
                 (msg::path),
                 "",
                 "Skipping clearing contents of {path} because it was not a directory.")
+DECLARE_MESSAGE(SkipTestingOfPort,
+                (msg::feature_spec, msg::triplet),
+                "",
+                "Skipping testing of {feature_spec} because the following dependencies are not supported on {triplet}:")
 DECLARE_MESSAGE(SourceFieldPortNameMismatch,
                 (msg::package_name, msg::path),
                 "{package_name} and \"{path}\" are both names of installable ports/packages. 'Source', "
@@ -2690,6 +2736,15 @@ DECLARE_MESSAGE(UnexpectedPortversion,
                 (),
                 "'field' means a JSON key/value pair here",
                 "unexpected \"port-version\" without a versioning field")
+DECLARE_MESSAGE(UnexpectedState,
+                (msg::feature_spec, msg::actual, msg::elapsed),
+                "{actual} is the actual state, e.g. 'pass', 'skip', ...",
+                "{feature_spec} resulted in the unexpected state {actual} after {elapsed}")
+DECLARE_MESSAGE(UnexpectedStateCascase,
+                (msg::feature_spec, msg::actual),
+                "{actual} is the actual state, e.g. 'pass', 'skip', ...",
+                "{feature_spec} resulted in the unexpected state {actual} because the following "
+                "dependencies did not build:")
 DECLARE_MESSAGE(UnexpectedSwitch,
                 (msg::option),
                 "Switch is a command line switch like --switch",
