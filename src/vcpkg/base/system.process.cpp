@@ -19,7 +19,7 @@ extern char** environ;
 #include <mach-o/dyld.h>
 #endif
 
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined(__OpenBSD__)
 extern char** environ;
 #include <sys/sysctl.h>
 #include <sys/wait.h>
