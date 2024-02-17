@@ -261,8 +261,8 @@ namespace vcpkg
         Checks::check_exit(VCPKG_LINE_INFO, argv_query == 0, "Could not determine current executable path.");
         char buf[PATH_MAX];
         char *exePath(realpath(argv[0], buf));
-        printf("exePath=%s\n", exePath);
-        return Path(exePath, strlen(argv[0]));
+        Checks::check_exit(VCPKG_LINE_INFO, exePath != nullptr, "Could not determine current executable path.");
+        return Path(exePath);
 #else /* LINUX */
         char buf[1024 * 4] = {};
         auto written = readlink("/proc/self/exe", buf, sizeof(buf));
