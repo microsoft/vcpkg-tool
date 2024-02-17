@@ -166,7 +166,7 @@ namespace vcpkg
     }
 
     ExpectedL<std::vector<std::string>> parse_default_features_list(const std::string& str,
-                                                                    StringView origin,
+                                                                    Optional<StringView> origin,
                                                                     TextRowCol textrowcol)
     {
         auto parser = ParserBase(str, origin, textrowcol);
@@ -175,7 +175,7 @@ namespace vcpkg
         return {std::move(opt).value_or_exit(VCPKG_LINE_INFO), expected_left_tag};
     }
     ExpectedL<std::vector<ParsedQualifiedSpecifier>> parse_qualified_specifier_list(const std::string& str,
-                                                                                    StringView origin,
+                                                                                    Optional<StringView> origin,
                                                                                     TextRowCol textrowcol)
     {
         auto parser = ParserBase(str, origin, textrowcol);

@@ -990,7 +990,7 @@ namespace vcpkg
         // but with whitespace normalized
         virtual Optional<std::string> visit_string(Json::Reader& r, StringView sv) const override
         {
-            auto parser = SpdxLicenseExpressionParser(sv, "");
+            auto parser = SpdxLicenseExpressionParser(sv, r.origin());
             auto res = parser.parse();
 
             for (const auto& warning : parser.messages().warnings)

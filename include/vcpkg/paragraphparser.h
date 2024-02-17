@@ -41,9 +41,9 @@ namespace vcpkg
     };
 
     ExpectedL<std::vector<std::string>> parse_default_features_list(const std::string& str,
-                                                                    StringView origin = "<unknown>",
-                                                                    TextRowCol textrowcol = {});
+                                                                    Optional<StringView> origin,
+                                                                    TextRowCol textrowcol);
     ExpectedL<std::vector<ParsedQualifiedSpecifier>> parse_qualified_specifier_list(const std::string& str,
-                                                                                    StringView origin = "<unknown>",
-                                                                                    TextRowCol textrowcol = {});
+                                                                                    Optional<StringView> origin,
+                                                                                    TextRowCol textrowcol);
 }

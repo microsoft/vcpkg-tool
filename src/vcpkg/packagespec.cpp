@@ -128,7 +128,8 @@ namespace vcpkg
 
     ExpectedL<ParsedQualifiedSpecifier> parse_qualified_specifier(StringView input)
     {
-        auto parser = ParserBase(input, "<unknown>");
+        // there is no origin because this function is used for user inputs
+        auto parser = ParserBase(input, nullopt);
         auto maybe_pqs = parse_qualified_specifier(parser);
         if (!parser.at_eof()) parser.add_error(msg::format(msgExpectedEof));
         if (auto e = parser.get_error()) return LocalizedString::from_raw(e->to_string());
