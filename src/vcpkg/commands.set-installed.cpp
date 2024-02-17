@@ -68,7 +68,8 @@ namespace vcpkg
 
                 Json::Object job;
                 job.insert("id", Json::Value::string(*args.github_run_id.get()));
-                job.insert("correlator", Json::Value::string(*args.github_workflow.get() + "-" + *args.github_job.get()));
+                job.insert("correlator",
+                           Json::Value::string(*args.github_workflow.get() + "-" + *args.github_job.get()));
 
                 snapshot.insert("job", std::move(job));
                 snapshot.insert("version", Json::Value::integer(0));

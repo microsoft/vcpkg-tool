@@ -374,7 +374,7 @@ namespace vcpkg
         auto baseline_map = [&]() -> std::map<std::string, vcpkg::Version, std::less<>> {
             if (!fs.exists(baseline_path, IgnoreErrors{}))
             {
-                return std::map<std::string, vcpkg::Version, std::less<>> {};
+                return std::map<std::string, vcpkg::Version, std::less<>>{};
             }
             auto maybe_baseline_map = vcpkg::get_builtin_baseline(paths);
             return std::move(maybe_baseline_map).value_or_exit(VCPKG_LINE_INFO);
