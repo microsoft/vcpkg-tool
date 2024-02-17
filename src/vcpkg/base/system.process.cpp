@@ -251,6 +251,7 @@ namespace vcpkg
         return Path(exePath, len - 1);
 #elif defined(__OpenBSD__)
         const char* progname = getprogname();
+        Checks::check_exit(VCPKG_LINE_INFO, progname != nullptr, "progname() returned NULL");
         char resolved_path[PATH_MAX];
         auto ret = realpath(progname, resolved_path);
         Checks::check_exit(VCPKG_LINE_INFO, ret != nullptr, "Could not determine current executable path.");
