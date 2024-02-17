@@ -241,7 +241,7 @@ namespace vcpkg
         std::unique_ptr<char> canonicalPath(realpath(buf, NULL));
         Checks::check_exit(VCPKG_LINE_INFO, result != -1, "Could not determine current executable path.");
         return canonicalPath.get();
-#elif defined(__FreeBSD__) || defined(__OpenBSD__)
+#elif defined(__FreeBSD__)
         int mib[4] = {CTL_KERN, KERN_PROC, KERN_PROC_PATHNAME, -1};
         char exePath[2048];
         size_t len = sizeof(exePath);
@@ -250,16 +250,18 @@ namespace vcpkg
         Checks::check_exit(VCPKG_LINE_INFO, len > 0, "Could not determine current executable path.");
         return Path(exePath, len - 1);
 #elif defined(__OpenBSD__)
-        const char* progname = getprogname();
-        Checks::check_exit(VCPKG_LINE_INFO, progname != nullptr, "progname() returned NULL");
-        char resolved_path[PATH_MAX];
-        auto ret = realpath(progname, resolved_path);
-        if (ret == nullptr) {
-          printf("progname=%s\n", progname);
-          printf("realpath failed: %s\n", strerror(errno));
+        int mib[4] = {CTL_KERN, KERN_PROC_ARGS, getpid(), KERN_PROC_ARGV};
+        size_t argc = 0;
+        auto argc_query = sysctl(mib, 4, nullptr, &argc, nullptr, 0);
+        Checks::check_exit(VCPKG_LINE_INFO, argc_query == 0, "Could not determine current executable path.");
+        Checks::check_exit(VCPKG_LINE_INFO, argc > 0, "Could not determine current executable path.");
+        char *argv[argc];
+        auto argv_query = sysctl(mib, 4, argv, &argc, nullptr, 0);
+        Checks::check_exit(VCPKG_LINE_INFO, argv_query == 0, "Could not determine current executable path.");
+        for(int i=0; i<argc; ++i) {
+            printf("argv[%d]=%s\n", argv[i]);
         }
-        Checks::check_exit(VCPKG_LINE_INFO, ret != nullptr, "Could not determine current executable path.");
-        return resolved_path;
+        return Path(argv[0], strlen(argv[0]));
 #else /* LINUX */
         char buf[1024 * 4] = {};
         auto written = readlink("/proc/self/exe", buf, sizeof(buf));
