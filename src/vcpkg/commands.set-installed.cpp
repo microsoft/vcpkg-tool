@@ -59,23 +59,24 @@ namespace vcpkg
         if (args.github_ref.has_value() && args.github_sha.has_value() && args.github_job.has_value() &&
             args.github_workflow.has_value() && args.github_run_id.has_value())
         {
-            Json::Object detector;
-            detector.insert("name", Json::Value::string("vcpkg"));
-            detector.insert("url", Json::Value::string("https://github.com/microsoft/vcpkg"));
-            detector.insert("version", Json::Value::string("1.0.0"));
-
-            Json::Object job;
-            job.insert("id", Json::Value::string(*args.github_run_id.get()));
-            job.insert("correlator", Json::Value::string(*args.github_workflow.get() + "-" + *args.github_job.get()));
-
             Json::Object snapshot;
-            snapshot.insert("job", job);
-            snapshot.insert("version", Json::Value::integer(0));
-            snapshot.insert("sha", Json::Value::string(*args.github_sha.get()));
-            snapshot.insert("ref", Json::Value::string(*args.github_ref.get()));
-            snapshot.insert("scanned", Json::Value::string(CTime::now_string()));
-            snapshot.insert("detector", detector);
+            {
+                Json::Object detector;
+                detector.insert("name", Json::Value::string("vcpkg"));
+                detector.insert("url", Json::Value::string("https://github.com/microsoft/vcpkg"));
+                detector.insert("version", Json::Value::string("1.0.0"));
 
+                Json::Object job;
+                job.insert("id", Json::Value::string(*args.github_run_id.get()));
+                job.insert("correlator", Json::Value::string(*args.github_workflow.get() + "-" + *args.github_job.get()));
+
+                snapshot.insert("job", std::move(job));
+                snapshot.insert("version", Json::Value::integer(0));
+                snapshot.insert("sha", Json::Value::string(*args.github_sha.get()));
+                snapshot.insert("ref", Json::Value::string(*args.github_ref.get()));
+                snapshot.insert("scanned", Json::Value::string(CTime::now_string()));
+                snapshot.insert("detector", std::move(detector));
+            }
             Json::Object manifest;
             manifest.insert("name", "vcpkg.json");
 
@@ -90,7 +91,7 @@ namespace vcpkg
                 auto version = scf.to_version().to_string();
                 auto s = action.spec.to_string();
                 auto pkg_url = Strings::concat("pkg:github/vcpkg/", s, "@", version);
-                map.insert({s, pkg_url});
+                map.emplace(std::move(s), std::move(pkg_url));
             }
 
             Json::Object resolved;
@@ -111,14 +112,14 @@ namespace vcpkg
                             deps_list.push_back(dep_pkg_url);
                         }
                     }
-                    resolved_item.insert("dependencies", deps_list);
-                    resolved.insert(pkg_url, resolved_item);
+                    resolved_item.insert("dependencies", std::move(deps_list));
+                    resolved.insert(pkg_url, std::move(resolved_item));
                 }
             }
-            manifest.insert("resolved", resolved);
+            manifest.insert("resolved", std::move(resolved));
             Json::Object manifests;
-            manifests.insert("vcpkg.json", manifest);
-            snapshot.insert("manifests", manifests);
+            manifests.insert("vcpkg.json", std::move(manifest));
+            snapshot.insert("manifests", std::move(manifests));
 
             Debug::print(Json::stringify(snapshot));
             return snapshot;

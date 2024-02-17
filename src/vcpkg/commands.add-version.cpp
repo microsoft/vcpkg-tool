@@ -94,15 +94,15 @@ namespace
     Json::Object serialize_baseline(const std::map<std::string, Version, std::less<>>& baseline)
     {
         Json::Object port_entries_obj;
-        for (auto&& kv_pair : baseline)
+        for (auto&& [key, value] : baseline)
         {
             Json::Object baseline_version_obj;
-            insert_version_to_json_object(baseline_version_obj, kv_pair.second, BASELINE);
-            port_entries_obj.insert(kv_pair.first, baseline_version_obj);
+            insert_version_to_json_object(baseline_version_obj, value, BASELINE);
+            port_entries_obj.insert(key, std::move(baseline_version_obj));
         }
 
         Json::Object baseline_obj;
-        baseline_obj.insert("default", port_entries_obj);
+        baseline_obj.insert("default", std::move(port_entries_obj));
         return baseline_obj;
     }
 
@@ -118,7 +118,7 @@ namespace
         }
 
         Json::Object output_object;
-        output_object.insert("versions", versions_array);
+        output_object.insert("versions", std::move(versions_array));
         return output_object;
     }
 
@@ -142,15 +142,13 @@ namespace
         fs.rename(new_path, output_path, VCPKG_LINE_INFO);
     }
 
-    UpdateResult update_baseline_version(const VcpkgPaths& paths,
+    UpdateResult update_baseline_version(const Filesystem& fs,
                                          const std::string& port_name,
                                          const Version& version,
                                          const Path& baseline_path,
                                          std::map<std::string, vcpkg::Version, std::less<>>& baseline_map,
                                          bool print_success)
     {
-        auto& fs = paths.get_filesystem();
-
         auto it = baseline_map.find(port_name);
         if (it != baseline_map.end())
         {
@@ -321,7 +319,7 @@ namespace
 
 namespace vcpkg
 {
-    constexpr CommandMetadata CommandAddVersionMetadata{
+    static constexpr CommandMetadata CommandAddVersionMetadata{
         "x-add-version",
         msgCmdAddVersionSynopsis,
         {msgCmdAddVersionExample1, "vcpkg x-add-version curl --overwrite-version"},
@@ -376,11 +374,10 @@ namespace vcpkg
         auto baseline_map = [&]() -> std::map<std::string, vcpkg::Version, std::less<>> {
             if (!fs.exists(baseline_path, IgnoreErrors{}))
             {
-                std::map<std::string, vcpkg::Version, std::less<>> ret;
-                return ret;
+                return std::map<std::string, vcpkg::Version, std::less<>> {};
             }
             auto maybe_baseline_map = vcpkg::get_builtin_baseline(paths);
-            return maybe_baseline_map.value_or_exit(VCPKG_LINE_INFO);
+            return std::move(maybe_baseline_map).value_or_exit(VCPKG_LINE_INFO);
         }();
 
         // Get tree-ish from local repository state.
@@ -393,7 +390,7 @@ namespace vcpkg
         auto maybe_changes = git_ports_with_uncommitted_changes(git_config);
         if (auto changes = maybe_changes.get())
         {
-            changed_ports.insert(changes->begin(), changes->end());
+            changed_ports = std::move(*changes);
         }
         else if (verbose)
         {
@@ -462,7 +459,7 @@ namespace vcpkg
             }
             const auto& git_tree = git_tree_it->second;
 
-            char prefix[] = {port_name[0], '-', '\0'};
+            const char prefix[] = {port_name[0], '-', '\0'};
             auto port_versions_path = paths.builtin_registry_versions / prefix / Strings::concat(port_name, ".json");
             auto updated_versions_file = update_version_db_file(paths,
                                                                 port_name,
@@ -474,7 +471,7 @@ namespace vcpkg
                                                                 add_all,
                                                                 skip_version_format_check);
             auto updated_baseline_file = update_baseline_version(
-                paths, port_name, schemed_version.version, baseline_path, baseline_map, verbose);
+                paths.get_filesystem(), port_name, schemed_version.version, baseline_path, baseline_map, verbose);
             if (verbose && updated_versions_file == UpdateResult::NotUpdated &&
                 updated_baseline_file == UpdateResult::NotUpdated)
             {
