@@ -259,10 +259,10 @@ namespace vcpkg
         argv.resize(argc);
         auto argv_query = sysctl(mib, 4, &argv[0], &argc, nullptr, 0);
         Checks::check_exit(VCPKG_LINE_INFO, argv_query == 0, "Could not determine current executable path.");
-        for(size_t i=0; i<argc; ++i) {
-            printf("argv[%d]=%s\n", (int)i, argv[i]);
-        }
-        return Path(argv[0], strlen(argv[0]));
+        char buf[PATH_MAX];
+        char *exePath(realpath(argv[0], buf));
+        printf("exePath=%s\n", exePath);
+        return Path(exePath, strlen(argv[0]));
 #else /* LINUX */
         char buf[1024 * 4] = {};
         auto written = readlink("/proc/self/exe", buf, sizeof(buf));
