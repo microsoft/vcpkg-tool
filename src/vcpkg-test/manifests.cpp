@@ -22,7 +22,7 @@ static Json::Object parse_json_object(StringView sv)
     {
         INFO("Error found while parsing JSON document:");
         INFO(sv.to_string());
-        FAIL(json.error()->to_string());
+        FAIL(json.error());
         return Json::Object{};
     }
 }
@@ -1179,13 +1179,13 @@ static bool license_is_parsable(StringView license)
 {
     ParseMessages messages;
     parse_spdx_license_expression(license, messages);
-    return messages.error == nullptr;
+    return !messages.error.has_value();
 }
 static bool license_is_strict(StringView license)
 {
     ParseMessages messages;
     parse_spdx_license_expression(license, messages);
-    return messages.error == nullptr && messages.warnings.empty();
+    return !messages.error.has_value() && messages.warnings.empty();
 }
 
 static std::string test_format_parse_warning(const ParseMessage& msg)
@@ -1242,32 +1242,32 @@ TEST_CASE ("license error messages", "[manifests][license]")
 {
     ParseMessages messages;
     parse_spdx_license_expression("", messages);
-    REQUIRE(messages.error);
-    CHECK(messages.error->to_string() == R"(<license string>:1:1: error: SPDX license expression was empty.
+    CHECK(messages.error.value_or_exit(VCPKG_LINE_INFO) ==
+          LocalizedString::from_raw(R"(<license string>:1:1: error: SPDX license expression was empty.
   on expression: 
-                 ^)");
+                 ^)"));
 
     parse_spdx_license_expression("MIT ()", messages);
-    REQUIRE(messages.error);
-    CHECK(messages.error->to_string() ==
-          R"(<license string>:1:5: error: Expected a compound or the end of the string, found a parenthesis.
+    CHECK(messages.error.value_or_exit(VCPKG_LINE_INFO) ==
+          LocalizedString::from_raw(
+              R"(<license string>:1:5: error: Expected a compound or the end of the string, found a parenthesis.
   on expression: MIT ()
-                     ^)");
+                     ^)"));
 
     parse_spdx_license_expression("MIT +", messages);
-    REQUIRE(messages.error);
     CHECK(
-        messages.error->to_string() ==
-        R"(<license string>:1:5: error: SPDX license expression contains an extra '+'. These are only allowed directly after a license identifier.
+        messages.error.value_or_exit(VCPKG_LINE_INFO) ==
+        LocalizedString::from_raw(
+            R"(<license string>:1:5: error: SPDX license expression contains an extra '+'. These are only allowed directly after a license identifier.
   on expression: MIT +
-                     ^)");
+                     ^)"));
 
     parse_spdx_license_expression("MIT AND", messages);
-    REQUIRE(messages.error);
-    CHECK(messages.error->to_string() ==
-          R"(<license string>:1:8: error: Expected a license name, found the end of the string.
+    CHECK(
+        messages.error.value_or_exit(VCPKG_LINE_INFO) ==
+        LocalizedString::from_raw(R"(<license string>:1:8: error: Expected a license name, found the end of the string.
   on expression: MIT AND
-                       ^)");
+                        ^)"));
 
     parse_spdx_license_expression("MIT AND unknownlicense", messages);
     CHECK(!messages.error);

@@ -9,6 +9,10 @@
 #include <sys/sysctl.h>
 #endif
 
+#if defined(__linux__)
+#include <sched.h>
+#endif
+
 #if defined(_WIN32)
 #include <lmcons.h>
 #include <winbase.h>
@@ -686,6 +690,15 @@ namespace vcpkg
             }
             else
             {
+#if defined(__linux__)
+                // Get the number of threads we are allowed to run on,
+                // this might be less than the number of hardware threads.
+                cpu_set_t set;
+                if (sched_getaffinity(getpid(), sizeof(set), &set) == 0)
+                {
+                    return static_cast<unsigned int>(CPU_COUNT(&set)) + 1;
+                }
+#endif
                 return std::thread::hardware_concurrency() + 1;
             }
         }();

@@ -268,7 +268,7 @@ namespace vcpkg::VisualStudio
                     {
                         toolset_version = V_142;
                     }
-                    else if (toolset_version_prefix[3] == '3')
+                    else if (toolset_version_prefix[3] == '3' || toolset_version_prefix[3] == '4')
                     {
                         toolset_version = V_143;
                     }

@@ -1371,7 +1371,7 @@ namespace
         auto maybe_value = Json::parse(contents, origin);
         if (!maybe_value)
         {
-            return LocalizedString::from_raw(maybe_value.error()->to_string());
+            return std::move(maybe_value).error();
         }
 
         auto& value = *maybe_value.get();

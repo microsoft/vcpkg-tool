@@ -3,9 +3,11 @@
 #include <vcpkg/base/fwd/system.process.h>
 
 #include <vcpkg/fwd/binarycaching.h>
+#include <vcpkg/fwd/build.h>
 #include <vcpkg/fwd/cmakevars.h>
 #include <vcpkg/fwd/dependencies.h>
 #include <vcpkg/fwd/portfileprovider.h>
+#include <vcpkg/fwd/vcpkgcmdarguments.h>
 
 #include <vcpkg/base/cache.h>
 #include <vcpkg/base/files.h>
@@ -19,7 +21,6 @@
 #include <vcpkg/packagespec.h>
 #include <vcpkg/statusparagraphs.h>
 #include <vcpkg/triplet.h>
-#include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
 #include <array>
@@ -77,33 +78,33 @@ namespace vcpkg
     };
 
     static constexpr BuildPackageOptions default_build_package_options{
-        BuildMissing::YES,
-        UseHeadVersion::NO,
-        AllowDownloads::YES,
-        OnlyDownloads::NO,
-        CleanBuildtrees::YES,
-        CleanPackages::YES,
-        CleanDownloads::NO,
-        DownloadTool::BUILT_IN,
-        PurgeDecompressFailure::YES,
-        Editable::NO,
-        BackcompatFeatures::ALLOW,
-        PrintUsage::YES,
+        BuildMissing::Yes,
+        UseHeadVersion::No,
+        AllowDownloads::Yes,
+        OnlyDownloads::No,
+        CleanBuildtrees::Yes,
+        CleanPackages::Yes,
+        CleanDownloads::No,
+        DownloadTool::Builtin,
+        PurgeDecompressFailure::Yes,
+        Editable::No,
+        BackcompatFeatures::Allow,
+        PrintUsage::Yes,
     };
 
     static constexpr BuildPackageOptions backcompat_prohibiting_package_options{
-        BuildMissing::YES,
-        UseHeadVersion::NO,
-        AllowDownloads::YES,
-        OnlyDownloads::NO,
-        CleanBuildtrees::YES,
-        CleanPackages::YES,
-        CleanDownloads::NO,
-        DownloadTool::BUILT_IN,
-        PurgeDecompressFailure::YES,
-        Editable::NO,
-        BackcompatFeatures::PROHIBIT,
-        PrintUsage::YES,
+        BuildMissing::Yes,
+        UseHeadVersion::No,
+        AllowDownloads::Yes,
+        OnlyDownloads::No,
+        CleanBuildtrees::Yes,
+        CleanPackages::Yes,
+        CleanDownloads::No,
+        DownloadTool::Builtin,
+        PurgeDecompressFailure::Yes,
+        Editable::No,
+        BackcompatFeatures::Prohibit,
+        PrintUsage::Yes,
     };
 
     struct BuildResultCounts
@@ -223,16 +224,16 @@ namespace vcpkg
 
     enum class LinkageType : char
     {
-        DYNAMIC,
-        STATIC,
+        Dynamic,
+        Static,
     };
 
     Optional<LinkageType> to_linkage_type(StringView str);
 
     struct BuildInfo
     {
-        LinkageType crt_linkage = LinkageType::DYNAMIC;
-        LinkageType library_linkage = LinkageType::DYNAMIC;
+        LinkageType crt_linkage = LinkageType::Dynamic;
+        LinkageType library_linkage = LinkageType::Dynamic;
 
         Optional<Version> detected_head_version;
 

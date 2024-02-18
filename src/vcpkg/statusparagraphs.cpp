@@ -6,8 +6,6 @@
 
 namespace vcpkg
 {
-    StatusParagraphs::StatusParagraphs() = default;
-
     StatusParagraphs::StatusParagraphs(std::vector<std::unique_ptr<StatusParagraph>>&& ps) : paragraphs(std::move(ps))
     {
     }

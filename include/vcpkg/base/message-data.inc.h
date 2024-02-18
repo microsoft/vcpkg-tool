@@ -866,10 +866,6 @@ DECLARE_MESSAGE(CommandFailed,
                 "{command_line}\n"
                 "failed with the following results:")
 DECLARE_MESSAGE(CommunityTriplets, (), "", "Community Triplets:")
-DECLARE_MESSAGE(ComparingUtf8Decoders,
-                (),
-                "",
-                "Comparing Utf8Decoders with different provenance; this is always an error")
 DECLARE_MESSAGE(CompressFolderFailed, (msg::path), "", "Failed to compress folder \"{path}\":")
 DECLARE_MESSAGE(ComputingInstallPlan, (), "", "Computing installation plan...")
 DECLARE_MESSAGE(ConfigurationErrorRegistriesWithoutBaseline,
@@ -1344,10 +1340,7 @@ DECLARE_MESSAGE(
     (),
     "",
     "Environment variable VCPKG_FORCE_SYSTEM_BINARIES must be set on arm, s390x, ppc64le and riscv platforms.")
-DECLARE_MESSAGE(FormattedParseMessageExpression,
-                (msg::value),
-                "Example of {value} is 'x64 & windows'",
-                "on expression: {value}")
+DECLARE_MESSAGE(FormattedParseMessageExpressionPrefix, (), "", "on expression:")
 DECLARE_MESSAGE(ForMoreHelp,
                 (),
                 "Printed before a suggestion for the user to run `vcpkg help <topic>`",
@@ -1702,7 +1695,6 @@ DECLARE_MESSAGE(IllegalPlatformSpec, (), "", "Platform qualifier is not allowed 
 DECLARE_MESSAGE(ImproperShaLength, (msg::value), "{value} is a sha.", "SHA512's must be 128 hex characters: {value}")
 DECLARE_MESSAGE(IncorrectArchiveFileSignature, (), "", "Incorrect archive file signature")
 DECLARE_MESSAGE(IncorrectPESignature, (), "", "Incorrect PE signature")
-DECLARE_MESSAGE(IncrementedUtf8Decoder, (), "", "Incremented Utf8Decoder at the end of the string")
 DECLARE_MESSAGE(InfoSetEnvVar,
                 (msg::env_var),
                 "In this context 'editor' means IDE",
