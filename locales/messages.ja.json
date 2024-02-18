@@ -572,7 +572,7 @@
   "FollowingPackagesUpgraded": "次のパッケージは最新です:",
   "ForMoreHelp": "詳細なヘルプ",
   "ForceSystemBinariesOnWeirdPlatforms": "arm、s390x、ppc64le、riscv プラットフォームでは、環境変数 VCPKG_FORCE_SYSTEM_BINARIES を設定する必要があります。",
-  "FormattedParseMessageExpression": "式: {value}",
+  "FormattedParseMessageExpressionPrefix": "式について:",
   "GHAParametersMissing": "GHA バイナリ ソースでは、ACTIONS_RUNTIME_TOKEN環境変数とACTIONS_CACHE_URL環境変数を設定する必要があります。詳細については、{url} を参照してください。",
   "GeneratedConfiguration": "構成 {path} を生成しました。",
   "GeneratedInstaller": "{path} インストーラーが生成されました。",

@@ -1341,10 +1341,7 @@ DECLARE_MESSAGE(
     (),
     "",
     "Environment variable VCPKG_FORCE_SYSTEM_BINARIES must be set on arm, s390x, ppc64le and riscv platforms.")
-DECLARE_MESSAGE(FormattedParseMessageExpression,
-                (msg::value),
-                "Example of {value} is 'x64 & windows'",
-                "on expression: {value}")
+DECLARE_MESSAGE(FormattedParseMessageExpressionPrefix, (), "", "on expression:")
 DECLARE_MESSAGE(ForMoreHelp,
                 (),
                 "Printed before a suggestion for the user to run `vcpkg help <topic>`",

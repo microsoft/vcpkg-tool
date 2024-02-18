@@ -38,7 +38,7 @@ namespace
                                          const PackageSpec& spec,
                                          BuildResult result) const override
         {
-            if (result == BuildResult::SUCCEEDED)
+            if (result == BuildResult::Succeeded)
             {
                 return;
             }
@@ -187,20 +187,20 @@ namespace
             if (is_excluded(p->spec))
             {
                 ret->action_state_string.emplace_back("skip");
-                ret->known.emplace(p->spec, BuildResult::EXCLUDED);
+                ret->known.emplace(p->spec, BuildResult::Excluded);
                 will_fail.emplace(p->spec);
             }
             else if (Util::any_of(p->package_dependencies,
                                   [&](const PackageSpec& spec) { return Util::Sets::contains(will_fail, spec); }))
             {
                 ret->action_state_string.emplace_back("cascade");
-                ret->known.emplace(p->spec, BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES);
+                ret->known.emplace(p->spec, BuildResult::CascadedDueToMissingDependencies);
                 will_fail.emplace(p->spec);
             }
             else if (precheck_results[action_idx] == CacheAvailability::available)
             {
                 ret->action_state_string.emplace_back("pass");
-                ret->known.emplace(p->spec, BuildResult::SUCCEEDED);
+                ret->known.emplace(p->spec, BuildResult::Succeeded);
             }
             else
             {
@@ -232,7 +232,7 @@ namespace
 
             if (Util::Sets::contains(to_keep, it->spec))
             {
-                if (it_known != known.end() && it_known->second == BuildResult::EXCLUDED)
+                if (it_known != known.end() && it_known->second == BuildResult::Excluded)
                 {
                     it->plan_type = InstallPlanType::EXCLUDED;
                 }
@@ -425,8 +425,8 @@ namespace vcpkg
                 {
                     bool supp = supported_for_triplet(var_provider, provider, spec.package_spec);
                     split_specs->known.emplace(spec.package_spec,
-                                               supp ? BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES
-                                                    : BuildResult::EXCLUDED);
+                                               supp ? BuildResult::CascadedDueToMissingDependencies
+                                                    : BuildResult::Excluded);
 
                     if (cidata.expected_failures.contains(spec.package_spec))
                     {

@@ -60,21 +60,21 @@ if ([string]::IsNullOrWhitespace($VcpkgRoot)) {
 
 $VcpkgRoot = (Get-Item $VcpkgRoot).FullName
 
+[string]$executableExtension = ''
+if ($IsWindows)
+{
+    $executableExtension = '.exe'
+}
+
 if ([string]::IsNullOrEmpty($VcpkgExe))
 {
-    if ($IsWindows)
-    {
-        $VcpkgExe = Get-Item './vcpkg.exe'
-    }
-    else
-    {
-        $VcpkgExe = Get-Item './vcpkg'
-    }
+    $VcpkgExe = "./vcpkg$executableExtension"
 }
 
 $VcpkgItem = Get-Item $VcpkgExe
 $VcpkgExe = $VcpkgItem.FullName
 $VcpkgPs1 = Join-Path $VcpkgItem.Directory "vcpkg.ps1"
+$TestScriptAssetCacheExe = Join-Path $VcpkgItem.Directory "test-script-asset-cache"
 
 [Array]$AllTests = Get-ChildItem $PSScriptRoot/end-to-end-tests-dir/*.ps1
 if ($Filter -ne $Null) {
@@ -84,17 +84,18 @@ $n = 1
 $m = $AllTests.Count
 
 $envvars_clear = @(
-    "VCPKG_FORCE_SYSTEM_BINARIES",
-    "VCPKG_FORCE_DOWNLOADED_BINARIES",
-    "VCPKG_DEFAULT_HOST_TRIPLET",
-    "VCPKG_DEFAULT_TRIPLET",
-    "VCPKG_BINARY_SOURCES",
-    "VCPKG_OVERLAY_PORTS",
-    "VCPKG_OVERLAY_TRIPLETS",
-    "VCPKG_KEEP_ENV_VARS",
-    "VCPKG_ROOT",
-    "VCPKG_FEATURE_FLAGS",
-    "VCPKG_DISABLE_METRICS"
+    'VCPKG_BINARY_SOURCES',
+    'VCPKG_DEFAULT_HOST_TRIPLET',
+    'VCPKG_DEFAULT_TRIPLET',
+    'VCPKG_DISABLE_METRICS',
+    'VCPKG_FEATURE_FLAGS',
+    'VCPKG_FORCE_DOWNLOADED_BINARIES',
+    'VCPKG_FORCE_SYSTEM_BINARIES',
+    'VCPKG_KEEP_ENV_VARS',
+    'VCPKG_OVERLAY_PORTS',
+    'VCPKG_OVERLAY_TRIPLETS',
+    'VCPKG_ROOT',
+    'X_VCPKG_ASSET_SOURCES'
 )
 $envvars = $envvars_clear + @("VCPKG_DOWNLOADS", "X_VCPKG_REGISTRIES_CACHE", "PATH")
 
@@ -128,7 +129,7 @@ foreach ($Test in $AllTests)
     {
         foreach ($var in $envvars)
         {
-            if ($envbackup[$var] -eq $null)
+            if ($null -eq $envbackup[$var])
             {
                 if (Test-Path "Env:\$var")
                 {
