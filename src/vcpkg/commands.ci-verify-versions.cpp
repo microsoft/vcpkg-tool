@@ -251,7 +251,8 @@ namespace vcpkg
         if (it_exclusions != settings.end())
         {
             auto exclusions = Strings::split(it_exclusions->second, ',');
-            exclusion_set.insert(std::make_move_iterator(exclusions.begin()), std::make_move_iterator(exclusions.end()));
+            exclusion_set.insert(std::make_move_iterator(exclusions.begin()),
+                                 std::make_move_iterator(exclusions.end()));
         }
 
         auto maybe_port_git_tree_map = paths.git_get_local_port_treeish_map();

@@ -1947,7 +1947,9 @@ namespace vcpkg
                 const auto& supports_expr = scfl.source_control_file->core_paragraph->supports_expression;
                 if (!supports_expr.evaluate(vars))
                 {
-                    ret.unsupported_features.emplace(std::piecewise_construct, std::forward_as_tuple(action.spec, "core"), std::forward_as_tuple(supports_expr));
+                    ret.unsupported_features.emplace(std::piecewise_construct,
+                                                     std::forward_as_tuple(action.spec, "core"),
+                                                     std::forward_as_tuple(supports_expr));
                 }
 
                 // Evaluate per-feature supports conditions
