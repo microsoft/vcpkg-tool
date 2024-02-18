@@ -46,13 +46,13 @@ namespace vcpkg
 
     struct CmdParser
     {
-        CmdParser();
+        CmdParser() = default;
         explicit CmdParser(View<std::string> inputs);
         explicit CmdParser(std::vector<std::string>&& inputs);
-        CmdParser(const CmdParser&);
-        CmdParser(CmdParser&&);
-        CmdParser& operator=(const CmdParser&);
-        CmdParser& operator=(CmdParser&&);
+        CmdParser(const CmdParser&) = default;
+        CmdParser(CmdParser&&) = default;
+        CmdParser& operator=(const CmdParser&) = default;
+        CmdParser& operator=(CmdParser&&) = default;
 
         // Parses a switch from the input named switch_name, and stores the value if
         // encountered into value. Returns true if the switch was encountered.

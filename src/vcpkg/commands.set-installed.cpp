@@ -258,7 +258,7 @@ namespace vcpkg
             }
         }
 
-        if (print_cmake_usage == PrintUsage::YES)
+        if (print_cmake_usage == PrintUsage::Yes)
         {
             std::set<std::string> printed_usages;
             for (auto&& ur_spec : user_requested_specs)
@@ -301,7 +301,7 @@ namespace vcpkg
                                          ? KeepGoing::YES
                                          : KeepGoing::NO;
         const PrintUsage print_cmake_usage =
-            Util::Sets::contains(options.switches, OPTION_NO_PRINT_USAGE) ? PrintUsage::NO : PrintUsage::YES;
+            Util::Sets::contains(options.switches, OPTION_NO_PRINT_USAGE) ? PrintUsage::No : PrintUsage::Yes;
         const auto unsupported_port_action = Util::Sets::contains(options.switches, OPTION_ALLOW_UNSUPPORTED_PORT)
                                                  ? UnsupportedPortAction::Warn
                                                  : UnsupportedPortAction::Error;
@@ -331,7 +331,7 @@ namespace vcpkg
         {
             action.build_options = default_build_package_options;
             action.build_options.backcompat_features =
-                (prohibit_backcompat_features ? BackcompatFeatures::PROHIBIT : BackcompatFeatures::ALLOW);
+                (prohibit_backcompat_features ? BackcompatFeatures::Prohibit : BackcompatFeatures::Allow);
         }
 
         command_set_installed_and_exit_ex(args,

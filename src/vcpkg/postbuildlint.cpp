@@ -681,8 +681,8 @@ namespace vcpkg
             const auto requested_arch = expected_architecture == "x64" ? "x86_64" : expected_architecture;
             for (const Path& file : files)
             {
-                auto cmd_line = Command("lipo").string_arg("-archs").string_arg(file);
-                auto maybe_output = flatten_out(cmd_execute_and_capture_output(cmd_line), "lipo");
+                auto cmd = Command{"lipo"}.string_arg("-archs").string_arg(file);
+                auto maybe_output = flatten_out(cmd_execute_and_capture_output(cmd), "lipo");
                 if (const auto output = maybe_output.get())
                 {
                     if (!Util::Vectors::contains(Strings::split(Strings::trim(*output), ' '), requested_arch))
@@ -694,7 +694,7 @@ namespace vcpkg
                 {
                     msg_sink.println_error(msg::format(msgFailedToDetermineArchitecture,
                                                        msg::path = file,
-                                                       msg::command_line = cmd_line.command_line())
+                                                       msg::command_line = cmd.command_line())
                                                .append_raw('\n')
                                                .append(maybe_output.error()));
                 }
@@ -974,7 +974,7 @@ namespace vcpkg
     {
         switch (linkage)
         {
-            case LinkageType::DYNAMIC:
+            case LinkageType::Dynamic:
                 if (release)
                 {
                     return msg::format(msgLinkageDynamicRelease);
@@ -984,7 +984,7 @@ namespace vcpkg
                     return msg::format(msgLinkageDynamicDebug);
                 }
                 break;
-            case LinkageType::STATIC:
+            case LinkageType::Static:
                 if (release)
                 {
                     return msg::format(msgLinkageStaticRelease);
@@ -1059,11 +1059,11 @@ namespace vcpkg
 
             switch (build_info.crt_linkage)
             {
-                case LinkageType::DYNAMIC:
+                case LinkageType::Dynamic:
                     fail |= this_lib.has_static_debug;
                     fail |= this_lib.has_static_release;
                     break;
-                case LinkageType::STATIC:
+                case LinkageType::Static:
                     fail |= this_lib.has_dynamic_debug;
                     fail |= this_lib.has_dynamic_release;
                     break;
@@ -1245,19 +1245,10 @@ namespace vcpkg
 
         if (extension.empty())
         {
-            std::error_code ec;
-            ReadFilePointer read_file(file, ec);
-            if (ec) return false;
-            char buffer[5];
-            if (read_file.read(buffer, 1, sizeof(buffer)) < sizeof(buffer)) return false;
-            if (Strings::starts_with(StringView(buffer, sizeof(buffer)), "#!") ||
-                Strings::starts_with(StringView(buffer, sizeof(buffer)), "\xEF\xBB\xBF#!") /* ignore byte-order mark */)
-            {
-                const auto contents = fs.read_contents(file, IgnoreErrors{});
-                return Strings::contains_any_ignoring_hash_comments(contents, searcher_paths);
-            }
-            return false;
+            const auto contents = fs.best_effort_read_contents_if_shebang(file);
+            return Strings::contains_any_ignoring_hash_comments(contents, searcher_paths);
         }
+
         return false;
     }
 
@@ -1287,22 +1278,25 @@ namespace vcpkg
             string_paths, [](std::string& s) { return Strings::boyer_moore_horspool_searcher(s.begin(), s.end()); });
 
         std::vector<Path> failing_files;
-        std::mutex mtx;
-        auto files = fs.get_regular_files_recursive(dir, IgnoreErrors{});
+        {
+            std::mutex mtx;
+            auto files = fs.get_regular_files_recursive(dir, IgnoreErrors{});
 
-        parallel_for_each(files, [&](const Path& file) {
-            if (file_contains_absolute_paths(fs, file, searcher_paths))
-            {
-                std::lock_guard lock{mtx};
-                failing_files.push_back(file);
-            }
-        });
+            parallel_for_each(files, [&](const Path& file) {
+                if (file_contains_absolute_paths(fs, file, searcher_paths))
+                {
+                    std::lock_guard lock{mtx};
+                    failing_files.push_back(file);
+                }
+            });
+        } // destroy mtx
 
         if (failing_files.empty())
         {
             return LintStatus::SUCCESS;
         }
 
+        Util::sort(failing_files);
         auto error_message = msg::format(msgFilesContainAbsolutePath1);
         for (auto&& absolute_path : absolute_paths)
         {
@@ -1427,7 +1421,7 @@ namespace vcpkg
 
             switch (build_info.library_linkage)
             {
-                case LinkageType::DYNAMIC:
+                case LinkageType::Dynamic:
                 {
                     if (!pre_build_info.build_type &&
                         !build_info.policies.is_enabled(BuildPolicy::MISMATCHED_NUMBER_OF_BINARIES))
@@ -1447,7 +1441,7 @@ namespace vcpkg
                     }
                 }
                 break;
-                case LinkageType::STATIC:
+                case LinkageType::Static:
                 {
                     auto& dlls = debug_dlls;
                     dlls.insert(dlls.end(),
