@@ -31,6 +31,7 @@
 #include <vcpkg/spdx.h>
 #include <vcpkg/statusparagraphs.h>
 #include <vcpkg/tools.h>
+#include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
 
@@ -153,15 +154,15 @@ namespace vcpkg
         }
 
         action->build_options = default_build_package_options;
-        action->build_options.editable = Editable::YES;
-        action->build_options.clean_buildtrees = CleanBuildtrees::NO;
-        action->build_options.clean_packages = CleanPackages::NO;
+        action->build_options.editable = Editable::Yes;
+        action->build_options.clean_buildtrees = CleanBuildtrees::No;
+        action->build_options.clean_packages = CleanPackages::No;
 
         auto binary_cache = BinaryCache::make(args, paths, out_sink).value_or_exit(VCPKG_LINE_INFO);
         const ElapsedTimer build_timer;
         const auto result = build_package(args, paths, *action, build_logs_recorder, status_db);
         msg::print(msgElapsedForPackage, msg::spec = spec, msg::elapsed = build_timer);
-        if (result.code == BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES)
+        if (result.code == BuildResult::CascadedDueToMissingDependencies)
         {
             LocalizedString errorMsg = msg::format_error(msgBuildDependenciesMissing);
             for (const auto& p : result.unmet_dependencies)
@@ -172,9 +173,9 @@ namespace vcpkg
             Checks::msg_exit_with_message(VCPKG_LINE_INFO, errorMsg);
         }
 
-        Checks::check_exit(VCPKG_LINE_INFO, result.code != BuildResult::EXCLUDED);
+        Checks::check_exit(VCPKG_LINE_INFO, result.code != BuildResult::Excluded);
 
-        if (result.code != BuildResult::SUCCEEDED)
+        if (result.code != BuildResult::Succeeded)
         {
             LocalizedString warnings;
             for (auto&& msg : action->build_failure_messages)
@@ -271,8 +272,8 @@ namespace vcpkg
     {
         switch (tool)
         {
-            case DownloadTool::BUILT_IN: return NAME_BUILTIN_DOWNLOAD;
-            case DownloadTool::ARIA2: return NAME_ARIA2_DOWNLOAD;
+            case DownloadTool::Builtin: return NAME_BUILTIN_DOWNLOAD;
+            case DownloadTool::Aria2: return NAME_ARIA2_DOWNLOAD;
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
@@ -281,8 +282,8 @@ namespace vcpkg
 
     Optional<LinkageType> to_linkage_type(StringView str)
     {
-        if (str == "dynamic") return LinkageType::DYNAMIC;
-        if (str == "static") return LinkageType::STATIC;
+        if (str == "dynamic") return LinkageType::Dynamic;
+        if (str == "static") return LinkageType::Static;
         return nullopt;
     }
 
@@ -679,9 +680,9 @@ namespace vcpkg
         };
         get_generic_cmake_build_args(paths, triplet, toolset, cmake_args);
 
-        auto command = vcpkg::make_cmake_cmd(paths, paths.ports_cmake, std::move(cmake_args));
-
-        const auto& env = paths.get_action_env(pre_build_info, toolset);
+        auto cmd = vcpkg::make_cmake_cmd(paths, paths.ports_cmake, std::move(cmake_args));
+        RedirectedProcessLaunchSettings settings;
+        settings.environment.emplace(paths.get_action_env(pre_build_info, toolset));
         auto& fs = paths.get_filesystem();
         fs.create_directory(buildpath, VCPKG_LINE_INFO);
         auto stdoutlog = buildpath / ("stdout-" + triplet.canonical_name() + ".log");
@@ -691,35 +692,31 @@ namespace vcpkg
         ExpectedL<int> rc = LocalizedString();
         {
             const auto out_file = fs.open_for_write(stdoutlog, VCPKG_LINE_INFO);
-            rc = cmd_execute_and_stream_lines(
-                command,
-                [&](StringView s) {
-                    static constexpr StringLiteral s_hash_marker = "#COMPILER_HASH#";
-                    if (Strings::starts_with(s, s_hash_marker))
-                    {
-                        compiler_info.hash = s.substr(s_hash_marker.size()).to_string();
-                    }
-                    static constexpr StringLiteral s_version_marker = "#COMPILER_CXX_VERSION#";
-                    if (Strings::starts_with(s, s_version_marker))
-                    {
-                        compiler_info.version = s.substr(s_version_marker.size()).to_string();
-                    }
-                    static constexpr StringLiteral s_id_marker = "#COMPILER_CXX_ID#";
-                    if (Strings::starts_with(s, s_id_marker))
-                    {
-                        compiler_info.id = s.substr(s_id_marker.size()).to_string();
-                    }
-                    Debug::println(s);
-                    const auto old_buf_size = buf.size();
-                    Strings::append(buf, s, '\n');
-                    const auto write_size = buf.size() - old_buf_size;
-                    Checks::msg_check_exit(VCPKG_LINE_INFO,
-                                           out_file.write(buf.c_str() + old_buf_size, 1, write_size) == write_size,
-                                           msgErrorWhileWriting,
-                                           msg::path = stdoutlog);
-                },
-                default_working_directory,
-                env);
+            rc = cmd_execute_and_stream_lines(cmd, settings, [&](StringView s) {
+                static constexpr StringLiteral s_hash_marker = "#COMPILER_HASH#";
+                if (Strings::starts_with(s, s_hash_marker))
+                {
+                    compiler_info.hash = s.substr(s_hash_marker.size()).to_string();
+                }
+                static constexpr StringLiteral s_version_marker = "#COMPILER_CXX_VERSION#";
+                if (Strings::starts_with(s, s_version_marker))
+                {
+                    compiler_info.version = s.substr(s_version_marker.size()).to_string();
+                }
+                static constexpr StringLiteral s_id_marker = "#COMPILER_CXX_ID#";
+                if (Strings::starts_with(s, s_id_marker))
+                {
+                    compiler_info.id = s.substr(s_id_marker.size()).to_string();
+                }
+                Debug::println(s);
+                const auto old_buf_size = buf.size();
+                Strings::append(buf, s, '\n');
+                const auto write_size = buf.size() - old_buf_size;
+                Checks::msg_check_exit(VCPKG_LINE_INFO,
+                                       out_file.write(buf.c_str() + old_buf_size, 1, write_size) == write_size,
+                                       msgErrorWhileWriting,
+                                       msg::path = stdoutlog);
+            });
         } // close out_file
 
         if (compiler_info.hash.empty() || !succeeded(rc))
@@ -766,7 +763,7 @@ namespace vcpkg
             {"Z_VCPKG_CHAINLOAD_TOOLCHAIN_FILE", action.pre_build_info(VCPKG_LINE_INFO).toolchain_file()},
         };
 
-        if (action.build_options.download_tool == DownloadTool::ARIA2)
+        if (action.build_options.download_tool == DownloadTool::Aria2)
         {
             variables.emplace_back("ARIA2", paths.get_tool_exe(Tools::ARIA2, out_sink));
         }
@@ -794,7 +791,7 @@ namespace vcpkg
             variables.emplace_back(cmake_arg);
         }
 
-        if (action.build_options.backcompat_features == BackcompatFeatures::PROHIBIT)
+        if (action.build_options.backcompat_features == BackcompatFeatures::Prohibit)
         {
             variables.emplace_back("_VCPKG_PROHIBIT_BACKCOMPAT_FEATURES", "1");
         }
@@ -950,11 +947,14 @@ namespace vcpkg
             msg::println(msgInstallingFromLocation, msg::path = scfl.port_directory());
         }
 
-        const ElapsedTimer timer;
-        auto command = vcpkg::make_cmake_cmd(paths, paths.ports_cmake, get_cmake_build_args(args, paths, action));
-
         const auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
-        auto env = paths.get_action_env(*abi_info.pre_build_info, abi_info.toolset.value_or_exit(VCPKG_LINE_INFO));
+
+        const ElapsedTimer timer;
+        auto cmd = vcpkg::make_cmake_cmd(paths, paths.ports_cmake, get_cmake_build_args(args, paths, action));
+
+        RedirectedProcessLaunchSettings settings;
+        auto& env = settings.environment.emplace(
+            paths.get_action_env(*abi_info.pre_build_info, abi_info.toolset.value_or_exit(VCPKG_LINE_INFO)));
 
         auto buildpath = paths.build_dir(action.spec);
         fs.create_directory(buildpath, VCPKG_LINE_INFO);
@@ -963,17 +963,13 @@ namespace vcpkg
         ExpectedL<int> return_code = LocalizedString();
         {
             auto out_file = fs.open_for_write(stdoutlog, VCPKG_LINE_INFO);
-            return_code = cmd_execute_and_stream_data(
-                command,
-                [&](StringView sv) {
-                    msg::write_unlocalized_text(Color::none, sv);
-                    Checks::msg_check_exit(VCPKG_LINE_INFO,
-                                           out_file.write(sv.data(), 1, sv.size()) == sv.size(),
-                                           msgErrorWhileWriting,
-                                           msg::path = stdoutlog);
-                },
-                default_working_directory,
-                env);
+            return_code = cmd_execute_and_stream_data(cmd, settings, [&](StringView sv) {
+                msg::write_unlocalized_text(Color::none, sv);
+                Checks::msg_check_exit(VCPKG_LINE_INFO,
+                                       out_file.write(sv.data(), 1, sv.size()) == sv.size(),
+                                       msgErrorWhileWriting,
+                                       msg::path = stdoutlog);
+            });
         } // close out_file
 
         const auto buildtimeus = timer.microseconds();
@@ -983,11 +979,11 @@ namespace vcpkg
         if (build_failed)
         {
             // With the exception of empty or helper ports, builds in "Download Mode" result in failure.
-            if (action.build_options.only_downloads == OnlyDownloads::YES)
+            if (action.build_options.only_downloads == OnlyDownloads::Yes)
             {
                 // TODO: Capture executed command output and evaluate whether the failure was intended.
                 // If an unintended error occurs then return a BuildResult::DOWNLOAD_FAILURE status.
-                return ExtendedBuildResult{BuildResult::DOWNLOADED};
+                return ExtendedBuildResult{BuildResult::Downloaded};
             }
         }
 
@@ -1003,7 +999,7 @@ namespace vcpkg
         get_global_metrics_collector().track_submission(std::move(metrics));
         if (!all_dependencies_satisfied)
         {
-            return ExtendedBuildResult{BuildResult::DOWNLOADED};
+            return ExtendedBuildResult{BuildResult::Downloaded};
         }
 
         if (build_failed)
@@ -1015,7 +1011,7 @@ namespace vcpkg
                 error_logs = fs.read_lines(logs).value_or_exit(VCPKG_LINE_INFO);
                 Util::erase_remove_if(error_logs, [](const auto& line) { return line.empty(); });
             }
-            return ExtendedBuildResult{BuildResult::BUILD_FAILED, stdoutlog, std::move(error_logs)};
+            return ExtendedBuildResult{BuildResult::BuildFailed, stdoutlog, std::move(error_logs)};
         }
 
         const BuildInfo build_info = read_build_info(fs, paths.build_info_file_path(action.spec));
@@ -1026,16 +1022,16 @@ namespace vcpkg
             error_count = perform_post_build_lint_checks(
                 action.spec, paths, pre_build_info, build_info, scfl.port_directory(), combo_sink);
         };
-        if (error_count != 0 && action.build_options.backcompat_features == BackcompatFeatures::PROHIBIT)
+        if (error_count != 0 && action.build_options.backcompat_features == BackcompatFeatures::Prohibit)
         {
-            return ExtendedBuildResult{BuildResult::POST_BUILD_CHECKS_FAILED};
+            return ExtendedBuildResult{BuildResult::PostBuildChecksFailed};
         }
 
         std::unique_ptr<BinaryControlFile> bcf = create_binary_control_file(action, build_info);
 
         write_sbom(paths, action, abi_info.heuristic_resources);
         write_binary_control_file(paths.get_filesystem(), action.package_dir.value_or_exit(VCPKG_LINE_INFO), *bcf);
-        return {BuildResult::SUCCEEDED, std::move(bcf)};
+        return {BuildResult::Succeeded, std::move(bcf)};
     }
 
     static ExtendedBuildResult do_build_package_and_clean_buildtrees(const VcpkgCmdArguments& args,
@@ -1045,7 +1041,7 @@ namespace vcpkg
     {
         auto result = do_build_package(args, paths, action, all_dependencies_satisfied);
 
-        if (action.build_options.clean_buildtrees == CleanBuildtrees::YES)
+        if (action.build_options.clean_buildtrees == CleanBuildtrees::Yes)
         {
             auto& fs = paths.get_filesystem();
             // Will keep the logs, which are regular files
@@ -1128,12 +1124,12 @@ namespace vcpkg
         abi_info.pre_build_info = std::move(proto_pre_build_info);
         abi_info.toolset.emplace(toolset);
 
-        if (action.build_options.use_head_version == UseHeadVersion::YES)
+        if (action.build_options.use_head_version == UseHeadVersion::Yes)
         {
             Debug::print("Binary caching for package ", action.spec, " is disabled due to --head\n");
             return;
         }
-        if (action.build_options.editable == Editable::YES)
+        if (action.build_options.editable == Editable::Yes)
         {
             Debug::print("Binary caching for package ", action.spec, " is disabled due to --editable\n");
             return;
@@ -1353,10 +1349,10 @@ namespace vcpkg
         const bool all_dependencies_satisfied = missing_fspecs.empty();
         if (!all_dependencies_satisfied && !Util::Enum::to_bool(action.build_options.only_downloads))
         {
-            return {BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES, std::move(missing_fspecs)};
+            return {BuildResult::CascadedDueToMissingDependencies, std::move(missing_fspecs)};
         }
 
-        if (action.build_options.only_downloads == OnlyDownloads::NO)
+        if (action.build_options.only_downloads == OnlyDownloads::No)
         {
             for (auto&& pspec : action.package_dependencies)
             {
@@ -1389,15 +1385,15 @@ namespace vcpkg
     {
         switch (build_result)
         {
-            case BuildResult::SUCCEEDED: ++succeeded; return;
-            case BuildResult::BUILD_FAILED: ++build_failed; return;
-            case BuildResult::POST_BUILD_CHECKS_FAILED: ++post_build_checks_failed; return;
-            case BuildResult::FILE_CONFLICTS: ++file_conflicts; return;
-            case BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES: ++cascaded_due_to_missing_dependencies; return;
-            case BuildResult::EXCLUDED: ++excluded; return;
-            case BuildResult::CACHE_MISSING: ++cache_missing; return;
-            case BuildResult::DOWNLOADED: ++downloaded; return;
-            case BuildResult::REMOVED: ++removed; return;
+            case BuildResult::Succeeded: ++succeeded; return;
+            case BuildResult::BuildFailed: ++build_failed; return;
+            case BuildResult::PostBuildChecksFailed: ++post_build_checks_failed; return;
+            case BuildResult::FileConflicts: ++file_conflicts; return;
+            case BuildResult::CascadedDueToMissingDependencies: ++cascaded_due_to_missing_dependencies; return;
+            case BuildResult::Excluded: ++excluded; return;
+            case BuildResult::CacheMissing: ++cache_missing; return;
+            case BuildResult::Downloaded: ++downloaded; return;
+            case BuildResult::Removed: ++removed; return;
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
@@ -1431,15 +1427,15 @@ namespace vcpkg
     {
         switch (build_result)
         {
-            case BuildResult::SUCCEEDED: return "SUCCEEDED";
-            case BuildResult::BUILD_FAILED: return "BUILD_FAILED";
-            case BuildResult::POST_BUILD_CHECKS_FAILED: return "POST_BUILD_CHECKS_FAILED";
-            case BuildResult::FILE_CONFLICTS: return "FILE_CONFLICTS";
-            case BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES: return "CASCADED_DUE_TO_MISSING_DEPENDENCIES";
-            case BuildResult::EXCLUDED: return "EXCLUDED";
-            case BuildResult::CACHE_MISSING: return "CACHE_MISSING";
-            case BuildResult::DOWNLOADED: return "DOWNLOADED";
-            case BuildResult::REMOVED: return "REMOVED";
+            case BuildResult::Succeeded: return "SUCCEEDED";
+            case BuildResult::BuildFailed: return "BUILD_FAILED";
+            case BuildResult::PostBuildChecksFailed: return "POST_BUILD_CHECKS_FAILED";
+            case BuildResult::FileConflicts: return "FILE_CONFLICTS";
+            case BuildResult::CascadedDueToMissingDependencies: return "CASCADED_DUE_TO_MISSING_DEPENDENCIES";
+            case BuildResult::Excluded: return "EXCLUDED";
+            case BuildResult::CacheMissing: return "CACHE_MISSING";
+            case BuildResult::Downloaded: return "DOWNLOADED";
+            case BuildResult::Removed: return "REMOVED";
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
@@ -1448,16 +1444,16 @@ namespace vcpkg
     {
         switch (build_result)
         {
-            case BuildResult::SUCCEEDED: return msg::format(msgBuildResultSucceeded);
-            case BuildResult::BUILD_FAILED: return msg::format(msgBuildResultBuildFailed);
-            case BuildResult::POST_BUILD_CHECKS_FAILED: return msg::format(msgBuildResultPostBuildChecksFailed);
-            case BuildResult::FILE_CONFLICTS: return msg::format(msgBuildResultFileConflicts);
-            case BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES:
+            case BuildResult::Succeeded: return msg::format(msgBuildResultSucceeded);
+            case BuildResult::BuildFailed: return msg::format(msgBuildResultBuildFailed);
+            case BuildResult::PostBuildChecksFailed: return msg::format(msgBuildResultPostBuildChecksFailed);
+            case BuildResult::FileConflicts: return msg::format(msgBuildResultFileConflicts);
+            case BuildResult::CascadedDueToMissingDependencies:
                 return msg::format(msgBuildResultCascadeDueToMissingDependencies);
-            case BuildResult::EXCLUDED: return msg::format(msgBuildResultExcluded);
-            case BuildResult::CACHE_MISSING: return msg::format(msgBuildResultCacheMissing);
-            case BuildResult::DOWNLOADED: return msg::format(msgBuildResultDownloaded);
-            case BuildResult::REMOVED: return msg::format(msgBuildResultRemoved);
+            case BuildResult::Excluded: return msg::format(msgBuildResultExcluded);
+            case BuildResult::CacheMissing: return msg::format(msgBuildResultCacheMissing);
+            case BuildResult::Downloaded: return msg::format(msgBuildResultDownloaded);
+            case BuildResult::Removed: return msg::format(msgBuildResultRemoved);
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
@@ -1468,7 +1464,7 @@ namespace vcpkg
                                msg::spec = spec,
                                msg::build_result = to_string_locale_invariant(build_result.code));
 
-        if (build_result.code == BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES)
+        if (build_result.code == BuildResult::CascadedDueToMissingDependencies)
         {
             res.append_raw('\n').append_indent().append(msgBuildingPackageFailedDueToMissingDeps);
 
@@ -1483,9 +1479,9 @@ namespace vcpkg
 
     void append_log(const Path& path, const std::string& log, size_t max_log_length, std::string& out)
     {
-        StringLiteral details_start = "<details><summary>{}</summary>\n\n```\n";
-        StringLiteral skipped_msg = "\n...\nSkipped {} lines\n...";
-        StringLiteral details_end = "\n```\n</details>\n\n";
+        static constexpr StringLiteral details_start = "<details><summary>{}</summary>\n\n```\n";
+        static constexpr StringLiteral skipped_msg = "\n...\nSkipped {} lines\n...";
+        static constexpr StringLiteral details_end = "\n```\n</details>\n\n";
         const size_t context_size = path.native().size() + details_start.size() + details_end.size() +
                                     skipped_msg.size() + 6 /* digits for skipped count */;
         const size_t minimum_log_size = std::min(size_t{100}, log.size());
@@ -1833,9 +1829,9 @@ namespace vcpkg
                     if (variable_value.empty())
                         build_type = nullopt;
                     else if (Strings::case_insensitive_ascii_equals(variable_value, "debug"))
-                        build_type = ConfigurationType::DEBUG;
+                        build_type = ConfigurationType::Debug;
                     else if (Strings::case_insensitive_ascii_equals(variable_value, "release"))
-                        build_type = ConfigurationType::RELEASE;
+                        build_type = ConfigurationType::Release;
                     else
                         Checks::msg_exit_with_message(
                             VCPKG_LINE_INFO, msgUnknownSettingForBuildType, msg::option = variable_value);

@@ -146,12 +146,13 @@ namespace vcpkg
 
     static ExpectedL<std::string> run_to_extract_version(StringLiteral tool_name, const Path& exe_path, Command&& cmd)
     {
-        return flatten_out(cmd_execute_and_capture_output(cmd), exe_path).map_error([&](LocalizedString&& output) {
-            return msg::format_error(
-                       msgFailedToRunToolToDetermineVersion, msg::tool_name = tool_name, msg::path = exe_path)
-                .append_raw('\n')
-                .append(output);
-        });
+        return flatten_out(cmd_execute_and_capture_output({std::move(cmd)}), exe_path)
+            .map_error([&](LocalizedString&& output) {
+                return msg::format_error(
+                           msgFailedToRunToolToDetermineVersion, msg::tool_name = tool_name, msg::path = exe_path)
+                    .append_raw('\n')
+                    .append(output);
+            });
     }
 
     ExpectedL<std::string> extract_prefixed_nonwhitespace(StringLiteral prefix,
@@ -584,7 +585,7 @@ namespace vcpkg
         virtual bool is_acceptable(const Path& exe_path) const override
         {
             return flatten(cmd_execute_and_capture_output(
-                               Command(exe_path).string_arg("-m").string_arg("venv").string_arg("-h")),
+                               {Command(exe_path).string_arg("-m").string_arg("venv").string_arg("-h")}),
                            Tools::PYTHON3)
                 .has_value();
         }

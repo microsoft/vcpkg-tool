@@ -35,8 +35,6 @@ namespace
 
 namespace vcpkg
 {
-    PortFileProvider::~PortFileProvider() = default;
-
     MapPortFileProvider::MapPortFileProvider(const std::unordered_map<std::string, SourceControlFileAndLocation>& map)
         : ports(map)
     {
@@ -53,12 +51,6 @@ namespace vcpkg
     {
         return Util::fmap(ports, [](auto&& kvpair) -> const SourceControlFileAndLocation* { return &kvpair.second; });
     }
-
-    IVersionedPortfileProvider::~IVersionedPortfileProvider() = default;
-
-    IBaselineProvider::~IBaselineProvider() = default;
-
-    IOverlayProvider::~IOverlayProvider() = default;
 
     PathsPortFileProvider::PathsPortFileProvider(const ReadOnlyFilesystem& fs,
                                                  const RegistrySet& registry_set,

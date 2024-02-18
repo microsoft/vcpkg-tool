@@ -230,15 +230,19 @@ namespace vcpkg
         candidate_paths.emplace_back("/usr/share/code/bin/code");
         candidate_paths.emplace_back("/usr/bin/code");
 
-        if (succeeded(cmd_execute(Command("command").string_arg("-v").string_arg("xdg-mime"))))
+        if (succeeded(cmd_execute({Command("command").string_arg("-v").string_arg("xdg-mime")})))
         {
-            auto mime_qry = Command("xdg-mime").string_arg("query").string_arg("default").string_arg("text/plain");
-            auto maybe_output = flatten_out(cmd_execute_and_capture_output(mime_qry), "xdg-mime");
+            auto maybe_output =
+                flatten_out(cmd_execute_and_capture_output(
+                                Command("xdg-mime").string_arg("query").string_arg("default").string_arg("text/plain")),
+                            "xdg-mime");
             const auto output = maybe_output.get();
             if (output && !output->empty())
             {
-                mime_qry = Command("command").string_arg("-v").string_arg(output->substr(0, output->find('.')));
-                auto maybe_output2 = flatten_out(cmd_execute_and_capture_output(mime_qry), "xdg-mime");
+                auto maybe_output2 =
+                    flatten_out(cmd_execute_and_capture_output(Command("command").string_arg("-v").string_arg(
+                                    output->substr(0, output->find('.')))),
+                                "xdg-mime");
                 const auto output2 = maybe_output2.get();
                 if (output2 && !output2->empty())
                 {
@@ -263,18 +267,18 @@ namespace vcpkg
         const Path& env_editor = *it;
         const std::vector<std::string> arguments = create_editor_arguments(paths, options, ports);
         const auto args_as_string = Strings::join(" ", arguments);
-        auto cmd_line = Command(env_editor).raw_arg(args_as_string).string_arg("-n");
+        auto cmd = Command(env_editor).raw_arg(args_as_string).string_arg("-n");
 #if defined(_WIN32)
         auto editor_exe = env_editor.filename();
         if (editor_exe == "Code.exe" || editor_exe == "Code - Insiders.exe")
         {
             // note that we are invoking cmd silently but Code.exe is relaunched from there
             cmd_execute_background(Command("cmd").string_arg("/d").string_arg("/c").raw_arg(
-                Strings::concat('"', cmd_line.command_line(), R"( <NUL")")));
+                Strings::concat('"', cmd.command_line(), R"( <NUL")")));
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 #endif // ^^^ _WIN32
 
-        Checks::exit_with_code(VCPKG_LINE_INFO, cmd_execute(cmd_line).value_or_exit(VCPKG_LINE_INFO));
+        Checks::exit_with_code(VCPKG_LINE_INFO, cmd_execute(cmd).value_or_exit(VCPKG_LINE_INFO));
     }
 } // namespace vcpkg

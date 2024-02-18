@@ -22,9 +22,9 @@ namespace vcpkg
 {
     struct ParsedArguments
     {
-        std::set<std::string, std::less<>> switches;
-        std::map<std::string, std::string, std::less<>> settings;
-        std::map<std::string, std::vector<std::string>, std::less<>> multisettings;
+        std::set<StringLiteral, std::less<>> switches;
+        std::map<StringLiteral, std::string, std::less<>> settings;
+        std::map<StringLiteral, std::vector<std::string>, std::less<>> multisettings;
 
         const std::string* read_setting(StringLiteral setting) const noexcept;
 
@@ -181,7 +181,7 @@ namespace vcpkg
         LocalizedString get_example_text() const;
     };
 
-    void print_usage(const CommandMetadata& command_metadata);
+    LocalizedString usage_for_command(const CommandMetadata& command_metadata);
 
     struct FeatureFlagSettings
     {
@@ -197,10 +197,6 @@ namespace vcpkg
         std::string value;
 
         PortApplicableSetting(StringView setting);
-        PortApplicableSetting(const PortApplicableSetting&);
-        PortApplicableSetting(PortApplicableSetting&&);
-        PortApplicableSetting& operator=(const PortApplicableSetting&);
-        PortApplicableSetting& operator=(PortApplicableSetting&&);
         bool is_port_affected(StringView port_name) const noexcept;
 
     private:
@@ -378,7 +374,7 @@ namespace vcpkg
         ParsedArguments parse_arguments(const CommandMetadata& command_metadata) const;
 
         void imbue_from_environment();
-        void imbue_from_fake_environment(const std::map<std::string, std::string, std::less<>>& env);
+        void imbue_from_fake_environment(const std::map<StringLiteral, std::string, std::less<>>& env);
 
         // Applies recursive settings from the environment or sets a global environment variable
         // to be consumed by subprocesses; may only be called once per process.
@@ -394,12 +390,6 @@ namespace vcpkg
 
         const std::vector<std::string>& get_forwardable_arguments() const noexcept;
 
-        VcpkgCmdArguments(const VcpkgCmdArguments&);
-        VcpkgCmdArguments(VcpkgCmdArguments&&);
-        VcpkgCmdArguments& operator=(const VcpkgCmdArguments&);
-        VcpkgCmdArguments& operator=(VcpkgCmdArguments&&);
-        ~VcpkgCmdArguments();
-
     private:
         VcpkgCmdArguments(CmdParser&& parser);
 
@@ -412,7 +402,7 @@ namespace vcpkg
 
         Optional<StringLiteral> m_detected_ci_environment;
 
-        friend void print_usage(const CommandMetadata& command_metadata);
+        friend LocalizedString usage_for_command(const CommandMetadata& command_metadata);
         CmdParser parser;
     };
 }

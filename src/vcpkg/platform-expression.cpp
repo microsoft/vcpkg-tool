@@ -414,9 +414,9 @@ namespace vcpkg::PlatformExpression
 
     using namespace detail;
 
-    Expr::Expr() = default;
-    Expr::Expr(Expr&& other) = default;
-    Expr& Expr::operator=(Expr&& other) = default;
+    Expr::Expr() noexcept = default;
+    Expr::Expr(Expr&& other) noexcept = default;
+    Expr& Expr::operator=(Expr&& other) noexcept = default;
 
     Expr::Expr(const Expr& other)
     {
@@ -645,7 +645,7 @@ namespace vcpkg::PlatformExpression
         ExpressionParser parser(expression, multiple_binary_operators);
         auto res = parser.parse();
 
-        if (auto p = parser.extract_error())
+        if (auto p = parser.get_error())
         {
             return LocalizedString::from_raw(p->to_string());
         }
