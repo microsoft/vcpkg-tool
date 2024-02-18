@@ -964,7 +964,8 @@ namespace vcpkg
         {
             auto out_file = fs.open_for_write(stdoutlog, VCPKG_LINE_INFO);
             return_code = cmd_execute_and_stream_data(cmd, settings, [&](StringView sv) {
-                msg::write_unlocalized_text(Color::none, "[Timestamp: " + timer.to_string() + "]");
+                const auto elapsed = timer.us_64();
+                msg::write_unlocalized_text(Color::none, "[Timestamp: " + std::to_string(elapsed) + "]");
                 msg::write_unlocalized_text(Color::none, sv);
                 Checks::msg_check_exit(VCPKG_LINE_INFO,
                                        out_file.write(sv.data(), 1, sv.size()) == sv.size(),

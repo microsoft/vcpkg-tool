@@ -524,6 +524,17 @@ namespace vcpkg
                 split_specs->known.erase(result.get_spec());
             }
 
+            /* Print usage information */
+            std::set<std::string> printed_usages;
+            for (auto&& result : summary.results)
+            {
+                auto bpgh = result.get_binary_paragraph();
+                // If a package failed to build, don't attempt to print usage.
+                // e.g. --keep-going
+                if (!bpgh) continue;
+                install_print_usage_information(*bpgh, printed_usages, filesystem, paths.installed());
+            }
+
             msg::print(LocalizedString::from_raw("\n")
                            .append(msgTripletLabel)
                            .append_raw(' ')
