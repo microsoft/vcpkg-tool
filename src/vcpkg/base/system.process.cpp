@@ -255,8 +255,7 @@ namespace vcpkg
         auto argc_query = sysctl(mib, 4, nullptr, &argc, nullptr, 0);
         Checks::check_exit(VCPKG_LINE_INFO, argc_query == 0, "Could not determine current executable path.");
         Checks::check_exit(VCPKG_LINE_INFO, argc > 0, "Could not determine current executable path.");
-        std::vector<char*> argv;
-        argv.resize(argc);
+        std::vector<char*> argv(argc);
         auto argv_query = sysctl(mib, 4, &argv[0], &argc, nullptr, 0);
         Checks::check_exit(VCPKG_LINE_INFO, argv_query == 0, "Could not determine current executable path.");
         char buf[PATH_MAX];
