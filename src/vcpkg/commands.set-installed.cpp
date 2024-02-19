@@ -100,7 +100,7 @@ namespace vcpkg
             {
                 Json::Object resolved_item;
                 const auto pkg_it = map.find(action.spec.to_string());
-                if (pkg_it != map.end())
+                if (pkg_it == map.end())
                 {
                     continue;
                 }
