@@ -337,6 +337,34 @@ namespace vcpkg
         return LintStatus::SUCCESS;
     }
 
+    static LintStatus check_share_folder_names(const Filesystem& fs,
+                                               const BuildPolicies& policies,
+                                               const Path& package_dir)
+    {
+        if (policies.is_enabled(BuildPolicy::SKIP_SHARE_FOLDER_CHECK)) return LintStatus::SUCCESS;
+
+        const auto cmake_folder_name = package_dir / "share";
+        std::error_code ec;
+        const auto share_folders = fs.get_directories_non_recursive(cmake_folder_name, ec);
+        for (auto&& share_folder : share_folders)
+        {
+            auto folder_name = share_folder.filename().to_string();
+            const auto orig_folder_name = folder_name;
+            Strings::inplace_ascii_to_lowercase(folder_name.data(), folder_name.data() + folder_name.size());
+
+            if (orig_folder_name != folder_name)
+            {
+                msg::println(Color::warning,
+                             msgFolderNameMismatchedCasing,
+                             msg::old_value = orig_folder_name,
+                             msg::new_value = folder_name);
+                return LintStatus::PROBLEM_DETECTED;
+            }
+        }
+
+        return LintStatus::SUCCESS;
+    }
+
     static LintStatus check_for_dlls_in_lib_dir(const ReadOnlyFilesystem& fs,
                                                 const Path& package_dir,
                                                 MessageSink& msg_sink)
@@ -1363,6 +1391,7 @@ namespace vcpkg
         error_count += check_folder_lib_cmake(fs, package_dir, spec, msg_sink);
         error_count += check_for_misplaced_cmake_files(fs, package_dir, spec, msg_sink);
         error_count += check_folder_debug_lib_cmake(fs, package_dir, spec, msg_sink);
+        error_count += check_share_folder_names(fs, build_info.policies, package_dir);
         error_count += check_for_dlls_in_lib_dir(fs, package_dir, msg_sink);
         error_count += check_for_dlls_in_lib_dir(fs, package_dir / "debug", msg_sink);
         error_count += check_for_copyright_file(fs, spec, package_dir, paths, msg_sink);
