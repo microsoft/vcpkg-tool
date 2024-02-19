@@ -104,7 +104,7 @@ namespace vcpkg
                 {
                     continue;
                 }
-                
+
                 const auto& pkg_url = pkg_it->second;
                 resolved_item.insert("package_url", pkg_url);
                 resolved_item.insert("relationship", Json::Value::string("direct"));
