@@ -99,23 +99,27 @@ namespace vcpkg
             for (auto&& action : action_plan.install_actions)
             {
                 Json::Object resolved_item;
-                if (map.find(action.spec.to_string()) != map.end())
+                const auto pkg_it = map.find(action.spec.to_string());
+                if (pkg_it != map.end())
                 {
-                    auto pkg_url = map.at(action.spec.to_string());
-                    resolved_item.insert("package_url", pkg_url);
-                    resolved_item.insert("relationship", Json::Value::string("direct"));
-                    Json::Array deps_list;
-                    for (auto&& dep : action.package_dependencies)
-                    {
-                        if (map.find(dep.to_string()) != map.end())
-                        {
-                            auto dep_pkg_url = map.at(dep.to_string());
-                            deps_list.push_back(dep_pkg_url);
-                        }
-                    }
-                    resolved_item.insert("dependencies", std::move(deps_list));
-                    resolved.insert(pkg_url, std::move(resolved_item));
+                    continue;
                 }
+                
+                const auto& pkg_url = pkg_it->second;
+                resolved_item.insert("package_url", pkg_url);
+                resolved_item.insert("relationship", Json::Value::string("direct"));
+                Json::Array deps_list;
+
+                for (auto&& dep : action.package_dependencies)
+                {
+                    const auto dep_pkg_it = map.find(dep.to_string());
+                    if (dep_pkg_it != map.end())
+                    {
+                        deps_list.push_back(dep_pkg_it->second);
+                    }
+                }
+                resolved_item.insert("dependencies", std::move(deps_list));
+                resolved.insert(pkg_url, std::move(resolved_item));
             }
             manifest.insert("resolved", std::move(resolved));
             Json::Object manifests;
