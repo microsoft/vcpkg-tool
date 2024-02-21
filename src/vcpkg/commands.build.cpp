@@ -84,16 +84,10 @@ namespace vcpkg
     {
         // Build only takes a single package and all dependencies must already be installed
         const ParsedArguments options = args.parse_arguments(CommandBuildMetadata);
-        bool default_triplet_used = false;
         const FullPackageSpec spec = check_and_get_full_package_spec(options.command_arguments[0],
                                                                      default_triplet,
-                                                                     default_triplet_used,
                                                                      CommandBuildMetadata.get_example_text(),
                                                                      paths.get_triplet_db());
-        if (default_triplet_used)
-        {
-            print_default_triplet_warning(args, paths.get_triplet_db());
-        }
 
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();

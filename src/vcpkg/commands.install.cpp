@@ -1088,8 +1088,6 @@ namespace vcpkg
                 msg::print(usage_for_command(CommandInstallMetadataManifest));
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
-
-            print_default_triplet_warning(args, paths.get_triplet_db());
         }
         else
         {
@@ -1286,19 +1284,10 @@ namespace vcpkg
         PathsPortFileProvider provider(
             fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
 
-        bool default_triplet_used = false;
         const std::vector<FullPackageSpec> specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
-            return check_and_get_full_package_spec(arg,
-                                                   default_triplet,
-                                                   default_triplet_used,
-                                                   CommandInstallMetadataClassic.get_example_text(),
-                                                   paths.get_triplet_db());
+            return check_and_get_full_package_spec(
+                arg, default_triplet, CommandInstallMetadataClassic.get_example_text(), paths.get_triplet_db());
         });
-
-        if (default_triplet_used)
-        {
-            print_default_triplet_warning(args, paths.get_triplet_db());
-        }
 
         // create the plan
         msg::println(msgComputingInstallPlan);
