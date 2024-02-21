@@ -117,6 +117,15 @@ namespace vcpkg
     extern DiagnosticContext& console_diagnostic_context;
     extern DiagnosticContext& null_diagnostic_context;
 
+    // The following overloads are implementing
+    // adapt_context_to_expected(Fn functor, Args&&... args)
+    //
+    // Given:
+    // Optional<T> functor(DiagnosticContext&, args...), adapts functor to return ExpectedL<T>
+    // Optional<T>& functor(DiagnosticContext&, args...), adapts functor to return ExpectedL<T&>
+    // Optional<T>&& functor(DiagnosticContext&, args...), adapts functor to return ExpectedL<T>
+    // std::unique_ptr<T> functor(DiagnosticContext&, args...), adapts functor to return ExpectedL<std::unique_ptr<T>>
+
     // If Ty is an Optional<U>, typename AdaptContextUnwrapOptional<Ty>::type is the type necessary to return U, and fwd
     // is the type necessary to forward U. Otherwise, there are no members ::type or ::fwd
     template<class Ty>
@@ -175,6 +184,7 @@ namespace vcpkg
         using fwd = const Wrapped&&;
     };
 
+    // The overload for functors that return Optional<T>
     template<class Fn, class... Args>
     auto adapt_context_to_expected(Fn functor, Args&&... args) -> ExpectedL<
         typename AdaptContextUnwrapOptional<std::invoke_result_t<Fn, BufferedDiagnosticContext&, Args...>>::type>
@@ -243,6 +253,7 @@ namespace vcpkg
         // no members
     };
 
+    // The overload for functors that return std::unique_ptr<T>
     template<class Fn, class... Args>
     auto adapt_context_to_expected(Fn functor, Args&&... args) -> ExpectedL<
         typename AdaptContextDetectUniquePtr<std::invoke_result_t<Fn, BufferedDiagnosticContext&, Args...>>::type>
