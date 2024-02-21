@@ -109,6 +109,7 @@ namespace vcpkg
         if (lhs.version != rhs.version) return false;
         if (!paragraph_equal(lhs.description, rhs.description)) return false;
         if (!paragraph_equal(lhs.maintainers, rhs.maintainers)) return false;
+        if (!paragraph_equal(lhs.languages, rhs.languages)) return false;
         if (lhs.homepage != rhs.homepage) return false;
         if (lhs.documentation != rhs.documentation) return false;
         if (lhs.dependencies != rhs.dependencies) return false;
@@ -150,6 +151,7 @@ namespace vcpkg
         static constexpr StringLiteral DESCRIPTION = "Description";
         static constexpr StringLiteral FEATURE = "Feature";
         static constexpr StringLiteral MAINTAINERS = "Maintainer";
+        static constexpr StringLiteral LANGUAGES = "Languages";
         static constexpr StringLiteral NAME = "Source";
         static constexpr StringLiteral VERSION = "Version";
         static constexpr StringLiteral PORT_VERSION = "Port-Version";
@@ -314,6 +316,9 @@ namespace vcpkg
                 parser.add_error(pv_position, msgPortVersionControlMustBeANonNegativeInteger);
             }
         }
+
+        spgh->languages = Strings::split(parser.optional_field(SourceParagraphFields::LANGUAGES), '\n');
+        trim_all(spgh->languages);
 
         spgh->description = Strings::split(parser.optional_field(SourceParagraphFields::DESCRIPTION), '\n');
         trim_all(spgh->description);
@@ -1025,10 +1030,11 @@ namespace vcpkg
         constexpr static StringLiteral DEPENDENCIES = "dependencies";
         constexpr static StringLiteral SUPPORTS = "supports";
         constexpr static StringLiteral LICENSE = "license";
+        constexpr static StringLiteral LANGUAGES = "languages";
 
         virtual Span<const StringView> valid_fields() const override
         {
-            static constexpr StringView t[] = {DESCRIPTION, DEPENDENCIES, SUPPORTS, LICENSE};
+            static constexpr StringView t[] = {DESCRIPTION, DEPENDENCIES, SUPPORTS, LICENSE, LANGUAGES};
             return t;
         }
 
@@ -1112,6 +1118,24 @@ namespace vcpkg
 
     const FeaturesFieldDeserializer FeaturesFieldDeserializer::instance;
 
+    struct ProgrammingLanguageStringDeserializer final : Json::StringDeserializer
+    {
+        LocalizedString type_name() const override { return msg::format(msgAProgrammingLanguage); }
+
+        static const ProgrammingLanguageStringDeserializer instance;
+    };
+
+    const ProgrammingLanguageStringDeserializer ProgrammingLanguageStringDeserializer::instance;
+
+    struct ProgrammingLanguageArrayDeserializer final : Json::ArrayDeserializer<ProgrammingLanguageStringDeserializer>
+    {
+        LocalizedString type_name() const override { return msg::format(msgAnArrayOfProgrammingLanguages); }
+
+        static const ProgrammingLanguageArrayDeserializer instance;
+    };
+
+    const ProgrammingLanguageArrayDeserializer ProgrammingLanguageArrayDeserializer::instance;
+
     struct ContactsDeserializer final : Json::IDeserializer<Json::Object>
     {
         virtual LocalizedString type_name() const override { return msg::format(msgADictionaryOfContacts); }
@@ -1161,6 +1185,7 @@ namespace vcpkg
         constexpr static StringLiteral OVERRIDES = "overrides";
         constexpr static StringLiteral BUILTIN_BASELINE = "builtin-baseline";
         constexpr static StringLiteral VCPKG_CONFIGURATION = "vcpkg-configuration";
+        constexpr static StringLiteral LANGUAGES = "languages";
 
         virtual Span<const StringView> valid_fields() const override
         {
@@ -1180,6 +1205,7 @@ namespace vcpkg
                 OVERRIDES,
                 BUILTIN_BASELINE,
                 VCPKG_CONFIGURATION,
+                LANGUAGES,
             };
             static const auto t = Util::Vectors::concat<StringView>(schemed_deserializer_fields(), u);
 
@@ -1201,6 +1227,7 @@ namespace vcpkg
             }
 
             r.optional_object_field(obj, MAINTAINERS, spgh.maintainers, Json::ParagraphDeserializer::instance);
+            r.optional_object_field(obj, LANGUAGES, spgh.languages, ProgrammingLanguageArrayDeserializer::instance);
             r.optional_object_field(obj, CONTACTS, spgh.contacts, ContactsDeserializer::instance);
             r.optional_object_field(obj, SUMMARY, spgh.summary, Json::ParagraphDeserializer::instance);
             r.optional_object_field(obj, DESCRIPTION, spgh.description, Json::ParagraphDeserializer::instance);
@@ -1211,6 +1238,12 @@ namespace vcpkg
             if (r.optional_object_field(obj, LICENSE, license, LicenseExpressionDeserializer::instance))
             {
                 spgh.license = {std::move(license)};
+            }
+
+            std::vector<std::string> languages;
+            if (r.optional_object_field(obj, LANGUAGES, languages, ProgrammingLanguageArrayDeserializer::instance))
+            {
+                spgh.languages = std::move(languages);
             }
 
             r.optional_object_field(obj, DEPENDENCIES, spgh.dependencies, DependencyArrayDeserializer::instance);
@@ -1267,6 +1300,7 @@ namespace vcpkg
     constexpr StringLiteral ManifestDeserializer::OVERRIDES;
     constexpr StringLiteral ManifestDeserializer::BUILTIN_BASELINE;
     constexpr StringLiteral ManifestDeserializer::VCPKG_CONFIGURATION;
+    constexpr StringLiteral ManifestDeserializer::LANGUAGES;
 
     struct ProjectManifestDeserializer final : ManifestDeserializer
     {
@@ -1778,6 +1812,10 @@ namespace vcpkg
             serialize_schemed_version(obj, version_scheme, scf.to_version());
         }
 
+        if(!scf.core_paragraph->languages.empty()) 
+        {
+            serialize_paragraph(obj, ManifestDeserializer::LANGUAGES, scf.core_paragraph->languages);
+        }
         serialize_paragraph(obj, ManifestDeserializer::MAINTAINERS, scf.core_paragraph->maintainers);
         if (scf.core_paragraph->contacts.size() > 0)
         {

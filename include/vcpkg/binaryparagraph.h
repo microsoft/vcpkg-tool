@@ -36,6 +36,7 @@ namespace vcpkg
         Version version;
         std::vector<std::string> description;
         std::vector<std::string> maintainers;
+        std::vector<std::string> languages;
         std::string feature;
         std::vector<std::string> default_features;
         std::vector<PackageSpec> dependencies;
