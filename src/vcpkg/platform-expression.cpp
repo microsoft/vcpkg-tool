@@ -642,9 +642,9 @@ namespace vcpkg::PlatformExpression
         return Impl{}(underlying_);
     }
 
-    Optional<Expr> parse_platform_expression_context(DiagnosticContext& context,
-                                                     StringView expression,
-                                                     MultipleBinaryOperators multiple_binary_operators)
+    Optional<Expr> parse_platform_expression(DiagnosticContext& context,
+                                             StringView expression,
+                                             MultipleBinaryOperators multiple_binary_operators)
     {
         ExpressionParser parser(context, expression, multiple_binary_operators);
         auto res = parser.parse();
@@ -658,7 +658,11 @@ namespace vcpkg::PlatformExpression
 
     ExpectedL<Expr> parse_platform_expression(StringView expression, MultipleBinaryOperators multiple_binary_operators)
     {
-        return adapt_context_to_expected(parse_platform_expression_context, expression, multiple_binary_operators);
+        return adapt_context_to_expected(
+            static_cast<Optional<Expr> (*)(DiagnosticContext&, StringView, MultipleBinaryOperators)>(
+                parse_platform_expression),
+            expression,
+            multiple_binary_operators);
     }
 
     bool structurally_equal(const Expr& lhs, const Expr& rhs)

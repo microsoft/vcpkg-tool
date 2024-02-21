@@ -78,8 +78,8 @@ namespace vcpkg::PlatformExpression
 
     // platform expression parses a platform expression; the EBNF of such is defined in
     // https://learn.microsoft.com/vcpkg/reference/vcpkg-json#platform-expression
-    Optional<Expr> parse_platform_expression_context(DiagnosticContext& context,
-                                                     StringView expression,
-                                                     MultipleBinaryOperators multiple_binary_operators);
+    Optional<Expr> parse_platform_expression(DiagnosticContext& context,
+                                             StringView expression,
+                                             MultipleBinaryOperators multiple_binary_operators);
     ExpectedL<Expr> parse_platform_expression(StringView expression, MultipleBinaryOperators multiple_binary_operators);
 }

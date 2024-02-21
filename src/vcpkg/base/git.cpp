@@ -46,9 +46,9 @@ namespace vcpkg
         return {};
     }
 
-    Optional<std::vector<GitStatusLine>> parse_git_status_output_context(DiagnosticContext& context,
-                                                                         StringView output,
-                                                                         StringView cmd_line)
+    Optional<std::vector<GitStatusLine>> parse_git_status_output(DiagnosticContext& context,
+                                                                 StringView output,
+                                                                 StringView cmd_line)
     {
         // Output of git status --porcelain=v1 is in the form:
         //
@@ -156,7 +156,11 @@ namespace vcpkg
     ExpectedL<std::vector<GitStatusLine>> parse_git_status_output(StringView git_status_output,
                                                                   StringView git_command_line)
     {
-        return adapt_context_to_expected(parse_git_status_output_context, git_status_output, git_command_line);
+        return adapt_context_to_expected(
+            static_cast<Optional<std::vector<GitStatusLine>> (*)(DiagnosticContext&, StringView, StringView)>(
+                parse_git_status_output),
+            git_status_output,
+            git_command_line);
     }
 
     ExpectedL<std::vector<GitStatusLine>> git_status(const GitConfig& config, StringView path)

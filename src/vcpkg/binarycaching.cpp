@@ -2292,8 +2292,8 @@ namespace vcpkg
     }
 }
 
-Optional<DownloadManagerConfig> vcpkg::parse_download_configuration_context(DiagnosticContext& context,
-                                                                            const Optional<std::string>& arg)
+Optional<DownloadManagerConfig> vcpkg::parse_download_configuration(DiagnosticContext& context,
+                                                                    const Optional<std::string>& arg)
 {
     if (!arg || arg.get()->empty()) return DownloadManagerConfig{};
 
@@ -2347,12 +2347,15 @@ Optional<DownloadManagerConfig> vcpkg::parse_download_configuration_context(Diag
 
 ExpectedL<DownloadManagerConfig> vcpkg::parse_download_configuration(const Optional<std::string>& arg)
 {
-    return adapt_context_to_expected(parse_download_configuration_context, arg);
+    return adapt_context_to_expected(
+        static_cast<Optional<DownloadManagerConfig> (*)(DiagnosticContext&, const Optional<std::string>&)>(
+            parse_download_configuration),
+        arg);
 }
 
-Optional<BinaryConfigParserState> vcpkg::parse_binary_provider_configs_context(DiagnosticContext& context,
-                                                                               const std::string& env_string,
-                                                                               View<std::string> args)
+Optional<BinaryConfigParserState> vcpkg::parse_binary_provider_configs(DiagnosticContext& context,
+                                                                       const std::string& env_string,
+                                                                       View<std::string> args)
 {
     Optional<BinaryConfigParserState> result;
     auto& s = result.emplace();
@@ -2390,7 +2393,11 @@ Optional<BinaryConfigParserState> vcpkg::parse_binary_provider_configs_context(D
 ExpectedL<BinaryConfigParserState> vcpkg::parse_binary_provider_configs(const std::string& env_string,
                                                                         View<std::string> args)
 {
-    return adapt_context_to_expected(parse_binary_provider_configs_context, env_string, args);
+    return adapt_context_to_expected(
+        static_cast<Optional<BinaryConfigParserState> (*)(DiagnosticContext&, const std::string&, View<std::string>)>(
+            parse_binary_provider_configs),
+        env_string,
+        args);
 }
 
 std::string vcpkg::format_version_for_nugetref(StringView version_text, StringView abi_tag)

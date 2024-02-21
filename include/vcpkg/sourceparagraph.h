@@ -219,10 +219,10 @@ namespace vcpkg
     void print_error_message(const LocalizedString& message);
 
     Optional<std::string> parse_spdx_license_expression(DiagnosticContext& context, StringView sv);
-    Optional<std::vector<Dependency>> parse_dependencies_list_context(DiagnosticContext& context,
-                                                                      const std::string& str,
-                                                                      StringView origin,
-                                                                      TextRowCol position = {1, 1});
+    Optional<std::vector<Dependency>> parse_dependencies_list(DiagnosticContext& context,
+                                                              const std::string& str,
+                                                              StringView origin,
+                                                              TextRowCol position = {1, 1});
     ExpectedL<std::vector<Dependency>> parse_dependencies_list(const std::string& str,
                                                                StringView origin,
                                                                TextRowCol position = {1, 1});

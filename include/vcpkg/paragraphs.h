@@ -26,9 +26,7 @@ namespace vcpkg::Paragraphs
 
     ExpectedL<std::vector<Paragraph>> get_paragraphs(const ReadOnlyFilesystem& fs, const Path& control_path);
 
-    Optional<std::vector<Paragraph>> parse_paragraphs_context(DiagnosticContext& context,
-                                                              StringView str,
-                                                              StringView origin);
+    Optional<std::vector<Paragraph>> parse_paragraphs(DiagnosticContext& context, StringView str, StringView origin);
     ExpectedL<std::vector<Paragraph>> parse_paragraphs(StringView str, StringView origin);
 
     bool is_port_directory(const ReadOnlyFilesystem& fs, const Path& maybe_directory);

@@ -163,9 +163,9 @@ namespace vcpkg
         void clear();
     };
 
-    Optional<BinaryConfigParserState> parse_binary_provider_configs_context(DiagnosticContext& context,
-                                                                            const std::string& env_string,
-                                                                            View<std::string> args);
+    Optional<BinaryConfigParserState> parse_binary_provider_configs(DiagnosticContext& context,
+                                                                    const std::string& env_string,
+                                                                    View<std::string> args);
     ExpectedL<BinaryConfigParserState> parse_binary_provider_configs(const std::string& env_string,
                                                                      View<std::string> args);
 
@@ -219,8 +219,8 @@ namespace vcpkg
         bool m_needs_zip_file = false;
     };
 
-    Optional<DownloadManagerConfig> parse_download_configuration_context(DiagnosticContext& context,
-                                                                         const Optional<std::string>& arg);
+    Optional<DownloadManagerConfig> parse_download_configuration(DiagnosticContext& context,
+                                                                 const Optional<std::string>& arg);
     ExpectedL<DownloadManagerConfig> parse_download_configuration(const Optional<std::string>& arg);
 
     std::string generate_nuget_packages_config(const ActionPlan& action, StringView prefix);

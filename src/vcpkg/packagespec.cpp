@@ -126,7 +126,7 @@ namespace vcpkg
         return PackageSpec{name, resolve_triplet(triplet, default_triplet, default_triplet_used)};
     }
 
-    Optional<ParsedQualifiedSpecifier> parse_qualified_specifier_context(DiagnosticContext& context, StringView input)
+    Optional<ParsedQualifiedSpecifier> parse_qualified_specifier(DiagnosticContext& context, StringView input)
     {
         // there is no origin because this function is used for user inputs
         auto parser = ParserBase(context, input, nullopt);
@@ -146,7 +146,10 @@ namespace vcpkg
 
     ExpectedL<ParsedQualifiedSpecifier> parse_qualified_specifier(StringView input)
     {
-        return adapt_context_to_expected(parse_qualified_specifier_context, input);
+        return adapt_context_to_expected(
+            static_cast<Optional<ParsedQualifiedSpecifier> (*)(DiagnosticContext&, StringView)>(
+                parse_qualified_specifier),
+            input);
     }
 
     Optional<std::string> parse_feature_name(ParserBase& parser)

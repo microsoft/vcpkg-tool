@@ -40,15 +40,17 @@ namespace vcpkg
         std::vector<LocalizedString> errors;
     };
 
-    Optional<std::vector<std::string>> parse_default_features_list_context(DiagnosticContext& context,
-                                                                           const std::string& str,
-                                                                           Optional<StringView> origin,
-                                                                           TextRowCol position = {1, 1});
+    Optional<std::vector<std::string>> parse_default_features_list(DiagnosticContext& context,
+                                                                   const std::string& str,
+                                                                   Optional<StringView> origin,
+                                                                   TextRowCol position = {1, 1});
     ExpectedL<std::vector<std::string>> parse_default_features_list(const std::string& str,
                                                                     Optional<StringView> origin,
                                                                     TextRowCol position = {1, 1});
-    Optional<std::vector<ParsedQualifiedSpecifier>> parse_qualified_specifier_list_context(
-        DiagnosticContext& context, const std::string& str, Optional<StringView> origin, TextRowCol position = {1, 1});
+    Optional<std::vector<ParsedQualifiedSpecifier>> parse_qualified_specifier_list(DiagnosticContext& context,
+                                                                                   const std::string& str,
+                                                                                   Optional<StringView> origin,
+                                                                                   TextRowCol position = {1, 1});
     ExpectedL<std::vector<ParsedQualifiedSpecifier>> parse_qualified_specifier_list(const std::string& str,
                                                                                     Optional<StringView> origin,
                                                                                     TextRowCol position = {1, 1});
