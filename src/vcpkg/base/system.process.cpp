@@ -19,7 +19,7 @@ extern char** environ;
 #include <mach-o/dyld.h>
 #endif
 
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined(__OpenBSD__)
 extern char** environ;
 #include <sys/sysctl.h>
 #include <sys/wait.h>
@@ -250,11 +250,18 @@ namespace vcpkg
         Checks::check_exit(VCPKG_LINE_INFO, len > 0, "Could not determine current executable path.");
         return Path(exePath, len - 1);
 #elif defined(__OpenBSD__)
-        const char* progname = getprogname();
-        char resolved_path[PATH_MAX];
-        auto ret = realpath(progname, resolved_path);
-        Checks::check_exit(VCPKG_LINE_INFO, ret != nullptr, "Could not determine current executable path.");
-        return resolved_path;
+        int mib[4] = {CTL_KERN, KERN_PROC_ARGS, getpid(), KERN_PROC_ARGV};
+        size_t argc = 0;
+        auto argc_query = sysctl(mib, 4, nullptr, &argc, nullptr, 0);
+        Checks::check_exit(VCPKG_LINE_INFO, argc_query == 0, "Could not determine current executable path.");
+        Checks::check_exit(VCPKG_LINE_INFO, argc > 0, "Could not determine current executable path.");
+        std::vector<char*> argv(argc);
+        auto argv_query = sysctl(mib, 4, &argv[0], &argc, nullptr, 0);
+        Checks::check_exit(VCPKG_LINE_INFO, argv_query == 0, "Could not determine current executable path.");
+        char buf[PATH_MAX];
+        char* exePath(realpath(argv[0], buf));
+        Checks::check_exit(VCPKG_LINE_INFO, exePath != nullptr, "Could not determine current executable path.");
+        return Path(exePath);
 #else /* LINUX */
         char buf[1024 * 4] = {};
         auto written = readlink("/proc/self/exe", buf, sizeof(buf));
