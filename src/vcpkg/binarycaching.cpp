@@ -798,7 +798,10 @@ namespace
         {
             const auto url = format_url_query(m_url, {{"keys=" + name + "-" + abi, "version=" + abi}});
             const std::string headers[] = {
-                m_content_type_header.to_string(), m_token_header, m_accept_header.to_string()};
+                m_content_type_header.to_string(),
+                m_token_header,
+                m_accept_header.to_string(),
+            };
             auto res = invoke_http_request("GET", headers, url);
             if (auto p = res.get())
             {
@@ -872,7 +875,10 @@ namespace
             payload.insert("cacheSize", Json::Value::integer(cacheSize));
 
             const std::string headers[] = {
-                m_accept_header.to_string(), m_content_type_header.to_string(), m_token_header};
+                m_accept_header.to_string(),
+                m_content_type_header.to_string(),
+                m_token_header,
+            };
 
             auto res = invoke_http_request("POST", headers, m_url, stringify(payload));
             if (auto p = res.get())
@@ -909,14 +915,18 @@ namespace
                     "Content-Type: application/octet-stream",
                     "Content-Range: bytes 0-" + std::to_string(cache_size) + "/*",
                 };
-                const auto url = m_url + "/" + std::to_string(*cacheId.get());
 
+                const auto url = m_url + "/" + std::to_string(*cacheId.get());
                 if (put_file(m_fs, url, {}, custom_headers, zip_path, "PATCH"))
                 {
                     Json::Object commit;
                     commit.insert("size", std::to_string(cache_size));
                     const std::string headers[] = {
-                        m_accept_header.to_string(), m_content_type_header.to_string(), m_token_header};
+                        m_accept_header.to_string(),
+                        m_content_type_header.to_string(),
+                        m_token_header,
+                    };
+
                     auto res = invoke_http_request("POST", headers, url, stringify(commit));
                     if (res)
                     {
