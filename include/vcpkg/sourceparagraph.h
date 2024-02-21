@@ -111,6 +111,7 @@ namespace vcpkg
         std::string name;
         VersionScheme version_scheme = VersionScheme::String;
         Version version;
+        bool depend_defaults = true;
         std::vector<std::string> description;
         std::vector<std::string> summary;
         std::vector<std::string> maintainers;

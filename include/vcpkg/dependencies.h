@@ -121,8 +121,11 @@ namespace vcpkg
 
     struct CreateInstallPlanOptions
     {
-        CreateInstallPlanOptions(Triplet t, const Path& p, UnsupportedPortAction action = UnsupportedPortAction::Error)
-            : host_triplet(t), packages_dir(p), unsupported_port_action(action)
+        CreateInstallPlanOptions(Triplet t,
+                                 const Path& p,
+                                 UnsupportedPortAction action = UnsupportedPortAction::Error,
+                                 ImplicitDefault implicit_default = ImplicitDefault::YES)
+            : host_triplet(t), packages_dir(p), unsupported_port_action(action), implicit_default(implicit_default)
         {
         }
 
@@ -130,6 +133,7 @@ namespace vcpkg
         Triplet host_triplet;
         Path packages_dir;
         UnsupportedPortAction unsupported_port_action;
+        ImplicitDefault implicit_default;
     };
 
     struct RemovePlan

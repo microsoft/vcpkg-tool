@@ -1329,12 +1329,14 @@ namespace vcpkg
                                   const IOverlayProvider& oprovider,
                                   const CMakeVars::CMakeVarProvider& var_provider,
                                   Triplet host_triplet,
+                                  ImplicitDefault implicit_default,
                                   const Path& packages_dir)
                 : m_ver_provider(ver_provider)
                 , m_base_provider(base_provider)
                 , m_o_provider(oprovider)
                 , m_var_provider(var_provider)
                 , m_host_triplet(host_triplet)
+                , m_implicit_default(implicit_default)
                 , m_packages_dir(packages_dir)
             {
             }
@@ -1352,6 +1354,7 @@ namespace vcpkg
             const IOverlayProvider& m_o_provider;
             const CMakeVars::CMakeVarProvider& m_var_provider;
             const Triplet m_host_triplet;
+            const ImplicitDefault m_implicit_default;
             const Path m_packages_dir;
 
             struct DepSpec
@@ -1648,8 +1651,10 @@ namespace vcpkg
             }
 
             // Implicit defaults are disabled if spec has been mentioned at top-level.
-            // Note that if top-level doesn't also mark that reference as `[core]`, defaults will be re-engaged.
-            it->second.default_features = !Util::Maps::contains(m_user_requested, spec);
+            // Note that if top-level doesn't also mark that reference as `[core]` and ImplicitDefault::YES, defaults
+            // will be re-engaged.
+            it->second.default_features =
+                (m_implicit_default == ImplicitDefault::YES) && !Util::Maps::contains(m_user_requested, spec);
             it->second.requested_features.insert("core");
 
             require_scfl(*it, it->second.scfl, origin);
@@ -2001,8 +2006,13 @@ namespace vcpkg
                                                         const PackageSpec& toplevel,
                                                         const CreateInstallPlanOptions& options)
     {
-        VersionedPackageGraph vpg(
-            provider, bprovider, oprovider, var_provider, options.host_triplet, options.packages_dir);
+        VersionedPackageGraph vpg(provider,
+                                  bprovider,
+                                  oprovider,
+                                  var_provider,
+                                  options.host_triplet,
+                                  options.implicit_default,
+                                  options.packages_dir);
         for (auto&& o : overrides)
         {
             vpg.add_override(o.name, o.version);

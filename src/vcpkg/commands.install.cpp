@@ -1138,7 +1138,7 @@ namespace vcpkg
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
 
-        const CreateInstallPlanOptions create_options{host_triplet, paths.packages(), unsupported_port_action};
+        CreateInstallPlanOptions create_options{host_triplet, paths.packages(), unsupported_port_action};
 
         if (auto manifest = paths.get_manifest().get())
         {
@@ -1244,7 +1244,8 @@ namespace vcpkg
             {
                 extended_overlay_ports.emplace_back(paths.builtin_ports_directory().native());
             }
-
+            create_options.implicit_default =
+                (manifest_scf->core_paragraph->depend_defaults ? ImplicitDefault::YES : ImplicitDefault::NO);
             auto oprovider = make_manifest_provider(
                 fs, paths.original_cwd, extended_overlay_ports, manifest->path, std::move(manifest_scf));
             auto install_plan = create_versioned_install_plan(*verprovider,
