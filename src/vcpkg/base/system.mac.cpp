@@ -9,7 +9,7 @@
 
 #if !defined(_WIN32)
 #include <net/if.h>
-#if defined(__APPLE__) || defined(__FreeBSD__)
+#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__)
 #include <ifaddrs.h>
 
 #include <net/if_dl.h>
@@ -198,7 +198,7 @@ namespace vcpkg
                 }
             }
         }
-#elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__)
+#elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__)
         // The getifaddrs(ifaddrs** ifap) function creates a linked list of structures
         // describing the network interfaces of the local system, and stores
         // the address of the first item of the list in *ifap.
@@ -239,7 +239,7 @@ namespace vcpkg
             auto address = reinterpret_cast<sockaddr_ll*>(interface->ifa_addr);
             if (address->sll_halen != MAC_BYTES_LENGTH) continue;
             auto mac_bytes = Span<char>(reinterpret_cast<char*>(address->sll_addr), MAC_BYTES_LENGTH);
-#elif defined(__APPLE__) || defined(__FreeBSD__)
+#elif defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__)
             auto address = reinterpret_cast<sockaddr_dl*>(interface->ifa_addr);
             if (address->sdl_alen != MAC_BYTES_LENGTH) continue;
             // The macro LLADDR() returns the start of the link-layer network address.
