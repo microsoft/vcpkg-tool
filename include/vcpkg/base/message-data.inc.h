@@ -2705,7 +2705,7 @@ DECLARE_MESSAGE(UnknownBinaryProviderType,
                 (),
                 "",
                 "unknown binary provider type: valid providers are 'clear', 'default', 'nuget', "
-                "'nugetconfig','nugettimeout', 'interactive', 'x-azblob', 'x-gcs', 'x-aws', "
+                "'nugetconfig', 'nugettimeout', 'interactive', 'x-azblob', 'x-gcs', 'x-aws', "
                 "'x-aws-config', 'http', and 'files'")
 DECLARE_MESSAGE(UnknownBooleanSetting,
                 (msg::option, msg::value),
