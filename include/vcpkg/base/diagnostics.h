@@ -109,6 +109,8 @@ namespace vcpkg
         // Prefer print() if possible because it applies color
         std::string to_string() const;
         void to_string(std::string& target) const;
+
+        bool any_errors() const noexcept;
     };
 
     extern DiagnosticContext& console_diagnostic_context;

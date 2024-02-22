@@ -1180,9 +1180,7 @@ static bool license_is_parsable(StringView license)
 {
     BufferedDiagnosticContext bdc;
     auto result = parse_spdx_license_expression(bdc, license).has_value();
-    auto any_errors =
-        Util::any_of(bdc.lines, [](const DiagnosticLine& line) { return line.kind() == DiagKind::Error; });
-    CHECK(result == !any_errors);
+    CHECK(result == !bdc.any_errors());
     return result;
 }
 static bool license_is_strict(StringView license)
@@ -1191,9 +1189,7 @@ static bool license_is_strict(StringView license)
     auto parsable = parse_spdx_license_expression(bdc, license).has_value();
     if (parsable)
     {
-        auto any_errors =
-            Util::any_of(bdc.lines, [](const DiagnosticLine& line) { return line.kind() == DiagKind::Error; });
-        CHECK(!any_errors);
+        CHECK(!bdc.any_errors());
         return bdc.lines.empty();
     }
 

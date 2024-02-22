@@ -37,6 +37,7 @@ namespace
         static constexpr StringLiteral Empty{""};
         static constexpr const StringLiteral* prefixes[] = {
             &Empty, &MessagePrefix, &ErrorPrefix, &WarningPrefix, &NotePrefix};
+        static_assert(std::size(prefixes) == static_cast<unsigned int>(DiagKind::COUNT));
 
         const auto diag_index = static_cast<unsigned int>(kind);
         if (diag_index >= static_cast<unsigned int>(DiagKind::COUNT))
@@ -154,6 +155,19 @@ namespace vcpkg
             target.push_back('\n');
         }
     }
+
+    bool BufferedDiagnosticContext::any_errors() const noexcept
+    {
+        for (auto&& line : lines)
+        {
+            if (line.kind() == DiagKind::Error)
+            {
+				return true;
+			}
+		}
+
+		return false;
+	}
 } // namespace vcpkg
 
 namespace
