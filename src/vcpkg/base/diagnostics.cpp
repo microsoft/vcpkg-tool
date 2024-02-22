@@ -110,15 +110,9 @@ namespace vcpkg
         return LocalizedString::from_raw(result);
     }
 
-    void BufferedDiagnosticContext::report(const DiagnosticLine& line)
-    {
-        lines.push_back(line);
-    }
+    void BufferedDiagnosticContext::report(const DiagnosticLine& line) { lines.push_back(line); }
 
-    void BufferedDiagnosticContext::report(DiagnosticLine&& line)
-    {
-        lines.push_back(std::move(line));
-    }
+    void BufferedDiagnosticContext::report(DiagnosticLine&& line) { lines.push_back(std::move(line)); }
     void BufferedDiagnosticContext::print(MessageSink& sink) const
     {
         for (auto&& line : lines)
@@ -162,22 +156,19 @@ namespace vcpkg
         {
             if (line.kind() == DiagKind::Error)
             {
-				return true;
-			}
-		}
+                return true;
+            }
+        }
 
-		return false;
-	}
+        return false;
+    }
 } // namespace vcpkg
 
 namespace
 {
     struct ConsoleDiagnosticContext : DiagnosticContext
     {
-        virtual void report(const DiagnosticLine& line) override
-        {
-            line.print(out_sink);
-        }
+        virtual void report(const DiagnosticLine& line) override { line.print(out_sink); }
     };
 
     ConsoleDiagnosticContext console_diagnostic_context_instance;
