@@ -18,6 +18,7 @@ namespace vcpkg::PlatformExpression
         arm,
         arm32,
         arm64,
+        arm64ec,
         wasm32,
         mips64,
 
@@ -48,6 +49,7 @@ namespace vcpkg::PlatformExpression
             {"arm", Identifier::arm},
             {"arm32", Identifier::arm32},
             {"arm64", Identifier::arm64},
+            {"arm64ec", Identifier::arm64ec},
             {"wasm32", Identifier::wasm32},
             {"mips64", Identifier::mips64},
             {"windows", Identifier::windows},
@@ -543,9 +545,12 @@ namespace vcpkg::PlatformExpression
                             // For backwards compatability arm is also true for arm64.
                             // This is because it previously was only checking for a substring.
                             return true_if_exists_and_equal("VCPKG_TARGET_ARCHITECTURE", "arm") ||
-                                   true_if_exists_and_equal("VCPKG_TARGET_ARCHITECTURE", "arm64");
+                                   true_if_exists_and_equal("VCPKG_TARGET_ARCHITECTURE", "arm64") ||
+                                   true_if_exists_and_equal("VCPKG_TARGET_ARCHITECTURE", "arm64ec");
                         case Identifier::arm32: return true_if_exists_and_equal("VCPKG_TARGET_ARCHITECTURE", "arm");
                         case Identifier::arm64: return true_if_exists_and_equal("VCPKG_TARGET_ARCHITECTURE", "arm64");
+                        case Identifier::arm64ec:
+                            return true_if_exists_and_equal("VCPKG_TARGET_ARCHITECTURE", "arm64ec");
                         case Identifier::windows:
                             return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "") ||
                                    true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "WindowsStore") ||
