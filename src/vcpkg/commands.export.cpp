@@ -398,8 +398,7 @@ namespace
             // input sanitization
             bool default_triplet_used = false;
             ret.specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
-                return parse_package_spec(
-                    arg, default_triplet, default_triplet_used, CommandExportMetadata.get_example_text());
+                return parse_package_spec(arg, default_triplet, default_triplet_used);
             });
 
             if (default_triplet_used)

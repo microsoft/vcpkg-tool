@@ -11,10 +11,7 @@
 
 namespace vcpkg
 {
-    PackageSpec parse_package_spec(StringView spec_string,
-                                   Triplet default_triplet,
-                                   bool& default_triplet_used,
-                                   const LocalizedString& example_text)
+    PackageSpec parse_package_spec(StringView spec_string, Triplet default_triplet, bool& default_triplet_used)
     {
         auto maybe_qualified_specifier = parse_qualified_specifier(Strings::ascii_to_lowercase(spec_string));
         if (auto qualified_specifier = maybe_qualified_specifier.get())
@@ -32,7 +29,6 @@ namespace vcpkg
             msg::println(Color::error, maybe_qualified_specifier.error());
         }
 
-        msg::println(Color::none, example_text);
         Checks::exit_fail(VCPKG_LINE_INFO);
     }
 
@@ -51,7 +47,6 @@ namespace vcpkg
     PackageSpec check_and_get_package_spec(StringView spec_string,
                                            Triplet default_triplet,
                                            bool& default_triplet_used,
-                                           const LocalizedString& example_text,
                                            const TripletDatabase& database)
     {
         auto maybe_qualified_specifier = parse_qualified_specifier(Strings::ascii_to_lowercase(spec_string));
@@ -75,14 +70,12 @@ namespace vcpkg
             msg::println(Color::error, maybe_qualified_specifier.error());
         }
 
-        msg::println(Color::none, example_text);
         Checks::exit_fail(VCPKG_LINE_INFO);
     }
 
     FullPackageSpec check_and_get_full_package_spec(StringView spec_string,
                                                     Triplet default_triplet,
                                                     bool& default_triplet_used,
-                                                    const LocalizedString& example_text,
                                                     const TripletDatabase& database)
     {
         auto maybe_qualified_specifier = parse_qualified_specifier(Strings::ascii_to_lowercase(spec_string));
@@ -107,7 +100,6 @@ namespace vcpkg
             msg::println(Color::error, maybe_qualified_specifier.error());
         }
 
-        msg::println(Color::none, example_text);
         Checks::exit_fail(VCPKG_LINE_INFO);
     }
 }
