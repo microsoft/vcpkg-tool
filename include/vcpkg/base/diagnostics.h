@@ -40,6 +40,10 @@ namespace vcpkg
         DiagnosticLine(DiagKind kind, StringView origin, MessageLike&& message)
             : m_kind(kind), m_origin(origin.to_string()), m_position(), m_message(std::forward<MessageLike>(message))
         {
+            if (origin.empty())
+            {
+                Checks::unreachable(VCPKG_LINE_INFO, "origin must not be empty");
+            }
         }
 
         template<class MessageLike, std::enable_if_t<std::is_convertible_v<MessageLike, LocalizedString>, int> = 0>
@@ -49,6 +53,10 @@ namespace vcpkg
             , m_position(position)
             , m_message(std::forward<MessageLike>(message))
         {
+            if (origin.empty())
+            {
+                Checks::unreachable(VCPKG_LINE_INFO, "origin must not be empty");
+            }
         }
 
         // Prints this diagnostic to the terminal.
