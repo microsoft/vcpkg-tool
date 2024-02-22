@@ -4,7 +4,6 @@
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/optional.h>
 
-#include <mutex>
 #include <string>
 #include <type_traits>
 #include <vector>
@@ -80,11 +79,6 @@ namespace vcpkg
 
     struct DiagnosticContext
     {
-        // Records a diagnostic. Implementations must make simultaneous calls of report() safe from multiple threads
-        // and print entire DiagnosticLines as atomic units. Implementations are not required to synchronize with
-        // other machinery like msg::print and friends.
-        //
-        // This serves to make multithreaded code that reports only via this mechanism safe.
         virtual void report(const DiagnosticLine& line) = 0;
         virtual void report(DiagnosticLine&& line) { report(line); }
 
@@ -110,16 +104,11 @@ namespace vcpkg
         std::vector<DiagnosticLine> lines;
 
         // Prints all diagnostics to the terminal.
-        // Not safe to use in the face of concurrent calls to report()
         void print(MessageSink& sink) const;
         // Converts this message into a string
         // Prefer print() if possible because it applies color
-        // Not safe to use in the face of concurrent calls to report()
         std::string to_string() const;
         void to_string(std::string& target) const;
-
-    private:
-        std::mutex m_mtx;
     };
 
     extern DiagnosticContext& console_diagnostic_context;

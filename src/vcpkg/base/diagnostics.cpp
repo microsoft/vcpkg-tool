@@ -111,13 +111,11 @@ namespace vcpkg
 
     void BufferedDiagnosticContext::report(const DiagnosticLine& line)
     {
-        std::lock_guard lck{m_mtx};
         lines.push_back(line);
     }
 
     void BufferedDiagnosticContext::report(DiagnosticLine&& line)
     {
-        std::lock_guard lck{m_mtx};
         lines.push_back(std::move(line));
     }
     void BufferedDiagnosticContext::print(MessageSink& sink) const
@@ -162,10 +160,8 @@ namespace
 {
     struct ConsoleDiagnosticContext : DiagnosticContext
     {
-        std::mutex mtx;
         virtual void report(const DiagnosticLine& line) override
         {
-            std::lock_guard<std::mutex> lck(mtx);
             line.print(out_sink);
         }
     };
