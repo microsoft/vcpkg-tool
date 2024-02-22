@@ -2,12 +2,11 @@
 
 #include <vcpkg/base/fwd/parse.h>
 
+#include <vcpkg/base/diagnostics.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/unicode.h>
-
-#include <vcpkg/textrowcol.h>
 
 #include <string>
 
@@ -29,18 +28,12 @@ namespace vcpkg
         LocalizedString format(StringView origin, MessageKind kind) const;
     };
 
-    struct ParseMessages
-    {
-        Optional<LocalizedString> error;
-        std::vector<ParseMessage> warnings;
-
-        void exit_if_errors_or_warnings(StringView origin) const;
-        bool good() const { return !error && warnings.empty(); }
-    };
-
     struct ParserBase
     {
-        ParserBase(StringView text, StringView origin, TextRowCol init_rowcol = {});
+        ParserBase(DiagnosticContext& context,
+                   StringView text,
+                   Optional<StringView> origin,
+                   TextRowCol init_rowcol = {1, 1});
 
         static constexpr bool is_whitespace(char32_t ch) { return ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n'; }
         static constexpr bool is_lower_alpha(char32_t ch) { return ch >= 'a' && ch <= 'z'; }
@@ -106,11 +99,7 @@ namespace vcpkg
         void add_warning(LocalizedString&& message);
         void add_warning(LocalizedString&& message, const SourceLoc& loc);
 
-        const LocalizedString* get_error() const& { return m_messages.error.get(); }
-        LocalizedString* get_error() && { return m_messages.error.get(); }
-
-        const ParseMessages& messages() const { return m_messages; }
-        ParseMessages&& extract_messages() { return std::move(m_messages); }
+        bool any_errors() const noexcept { return m_any_errors; }
 
     private:
         Unicode::Utf8Decoder m_it;
@@ -119,8 +108,9 @@ namespace vcpkg
         int m_column;
 
         StringView m_text;
-        StringView m_origin;
+        Optional<StringView> m_origin;
 
-        ParseMessages m_messages;
+        DiagnosticContext& m_context;
+        bool m_any_errors;
     };
 }

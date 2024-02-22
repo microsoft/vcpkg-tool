@@ -51,16 +51,19 @@ TEST_CASE ("MAC bytes to string", "[metrics.mac]")
     CHECK(long_mac_str.empty());
 }
 
-TEST_CASE ("test getmac ouptut parse", "[metrics.mac]")
+TEST_CASE ("test getmac output parse", "[metrics.mac]")
 {
     std::string mac_str;
 
     static constexpr StringLiteral good_line =
         R"csv("Wi-Fi","Wi-Fi 6, maybe","00-11-22-DD-EE-FF","\Device\Tcip_{GUID}")csv";
-    CHECK(extract_mac_from_getmac_output_line(good_line, mac_str));
-    CHECK(mac_str == "00:11:22:dd:ee:ff");
+    BufferedDiagnosticContext bdc;
+    REQUIRE(extract_mac_from_getmac_output_line(bdc, good_line).value_or_exit(VCPKG_LINE_INFO) == "00:11:22:dd:ee:ff");
+    REQUIRE(bdc.lines.empty());
 
     static constexpr StringLiteral bad_line = "00-11-22-DD-EE-FF      \\Device\\Tcip_{GUID}";
-    CHECK(!extract_mac_from_getmac_output_line(bad_line, mac_str));
-    CHECK(mac_str.empty());
+    REQUIRE(!extract_mac_from_getmac_output_line(bdc, bad_line));
+    REQUIRE(bdc.to_string() == R"(getmac output:1:1: error: expected '"' here
+  on expression: 00-11-22-DD-EE-FF      \Device\Tcip_{GUID}
+                 ^)");
 }

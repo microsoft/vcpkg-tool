@@ -126,13 +126,30 @@ namespace vcpkg
         return PackageSpec{name, resolve_triplet(triplet, default_triplet, default_triplet_used)};
     }
 
+    Optional<ParsedQualifiedSpecifier> parse_qualified_specifier(DiagnosticContext& context, StringView input)
+    {
+        // there is no origin because this function is used for user inputs
+        auto parser = ParserBase(context, input, nullopt);
+        auto maybe_pqs = parse_qualified_specifier(parser);
+        if (!parser.at_eof())
+        {
+            parser.add_error(msg::format(msgExpectedEof));
+        }
+
+        if (parser.any_errors())
+        {
+            maybe_pqs.clear();
+        }
+
+        return maybe_pqs;
+    }
+
     ExpectedL<ParsedQualifiedSpecifier> parse_qualified_specifier(StringView input)
     {
-        auto parser = ParserBase(input, "<unknown>");
-        auto maybe_pqs = parse_qualified_specifier(parser);
-        if (!parser.at_eof()) parser.add_error(msg::format(msgExpectedEof));
-        if (auto e = parser.get_error()) return LocalizedString::from_raw(e->to_string());
-        return std::move(maybe_pqs).value_or_exit(VCPKG_LINE_INFO);
+        return adapt_context_to_expected(
+            static_cast<Optional<ParsedQualifiedSpecifier> (*)(DiagnosticContext&, StringView)>(
+                parse_qualified_specifier),
+            input);
     }
 
     Optional<std::string> parse_feature_name(ParserBase& parser)

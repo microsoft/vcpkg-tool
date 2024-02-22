@@ -19,7 +19,7 @@ Multi-Arch: same
 Description:
 Status: install ok installed
 )",
-                                 "");
+                                 "test-origin");
 
     REQUIRE(pghs);
 
@@ -41,7 +41,7 @@ Multi-Arch: same
 Description:
 Status: purge ok not-installed
 )",
-                                 "");
+                                 "test-origin");
 
     REQUIRE(pghs);
 
@@ -71,7 +71,7 @@ Multi-Arch: same
 Description:
 Status: purge ok not-installed
 )",
-                                 "");
+                                 "test-origin");
 
     REQUIRE(pghs);
 
@@ -105,7 +105,7 @@ Multi-Arch: same
 Description:
 Status: install ok installed
 )",
-                                 "");
+                                 "test-origin");
     REQUIRE(pghs);
 
     StatusParagraphs status_db(Util::fmap(*pghs.get(), [](Paragraph& rpgh) {

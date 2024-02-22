@@ -123,11 +123,7 @@ namespace vcpkg
 
         bool default_triplet_used = false;
         const std::vector<FullPackageSpec> specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
-            return check_and_get_full_package_spec(arg,
-                                                   default_triplet,
-                                                   default_triplet_used,
-                                                   CommandCheckSupportMetadata.get_example_text(),
-                                                   paths.get_triplet_db());
+            return check_and_get_full_package_spec(arg, default_triplet, default_triplet_used, paths.get_triplet_db());
         });
 
         if (default_triplet_used)

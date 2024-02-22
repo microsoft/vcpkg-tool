@@ -72,32 +72,28 @@ namespace vcpkg
         return res;
     }
 
-    void ParseMessages::exit_if_errors_or_warnings(StringView origin) const
-    {
-        for (const auto& warning : warnings)
-        {
-            msg::println(warning.format(origin, MessageKind::Warning));
-        }
-
-        if (auto e = error.get())
-        {
-            Checks::msg_exit_with_message(VCPKG_LINE_INFO, *e);
-        }
-
-        if (!warnings.empty())
-        {
-            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgWarningsTreatedAsErrors);
-        }
-    }
-
-    ParserBase::ParserBase(StringView text, StringView origin, TextRowCol init_rowcol)
+    ParserBase::ParserBase(DiagnosticContext& context,
+                           StringView text,
+                           Optional<StringView> origin,
+                           TextRowCol init_rowcol)
         : m_it(text.begin(), text.end())
         , m_start_of_line(m_it)
-        , m_row(init_rowcol.row_or(1))
-        , m_column(init_rowcol.column_or(1))
+        , m_row(init_rowcol.row)
+        , m_column(init_rowcol.column)
         , m_text(text)
         , m_origin(origin)
+        , m_context(context)
+        , m_any_errors(false)
     {
+#ifndef NDEBUG
+        if (auto check_origin = origin.get())
+        {
+            if (check_origin->empty())
+            {
+                Checks::unreachable(VCPKG_LINE_INFO, "origin should not be empty");
+            }
+        }
+#endif
     }
 
     StringView ParserBase::skip_whitespace() { return match_while(is_whitespace); }
@@ -184,28 +180,40 @@ namespace vcpkg
     void ParserBase::add_error(LocalizedString&& message, const SourceLoc& loc)
     {
         // avoid cascading errors by only saving the first
-        if (!m_messages.error)
+        if (!m_any_errors)
         {
-            auto& res = m_messages.error.emplace();
-            if (!m_origin.empty())
+            message.append_raw('\n');
+            append_caret_line(message, loc);
+            if (auto origin = m_origin.get())
             {
-                res.append_raw(fmt::format("{}:{}:{}: ", m_origin, loc.row, loc.column));
+                m_context.report(
+                    DiagnosticLine{DiagKind::Error, *origin, TextRowCol{loc.row, loc.column}, std::move(message)});
+            }
+            else
+            {
+                m_context.report(DiagnosticLine{DiagKind::Error, std::move(message)});
             }
 
-            res.append_raw(ErrorPrefix);
-            res.append(message);
-            res.append_raw('\n');
-            append_caret_line(res, loc);
+            m_any_errors = true;
+            // Avoid error loops by skipping to the end
+            skip_to_eof();
         }
-
-        // Avoid error loops by skipping to the end
-        skip_to_eof();
     }
 
     void ParserBase::add_warning(LocalizedString&& message) { add_warning(std::move(message), cur_loc()); }
 
     void ParserBase::add_warning(LocalizedString&& message, const SourceLoc& loc)
     {
-        m_messages.warnings.push_back(ParseMessage{loc, std::move(message)});
+        message.append_raw('\n');
+        append_caret_line(message, loc);
+        if (auto origin = m_origin.get())
+        {
+            m_context.report(
+                DiagnosticLine{DiagKind::Warning, *origin, TextRowCol{loc.row, loc.column}, std::move(message)});
+        }
+        else
+        {
+            m_context.report(DiagnosticLine{DiagKind::Warning, std::move(message)});
+        }
     }
 }

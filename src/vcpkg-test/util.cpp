@@ -66,7 +66,7 @@ namespace vcpkg::Test
                 pghs.back().emplace(kv.first, std::make_pair(kv.second, vcpkg::TextRowCol{}));
             }
         }
-        return vcpkg::SourceControlFile::parse_control_file("", std::move(pghs));
+        return vcpkg::SourceControlFile::parse_control_file("test-origin", std::move(pghs));
     }
 
     std::unique_ptr<vcpkg::StatusParagraph> make_status_pgh(const char* name,
@@ -128,7 +128,7 @@ namespace vcpkg::Test
     std::vector<FullPackageSpec> parse_test_fspecs(StringView sv)
     {
         std::vector<FullPackageSpec> ret;
-        ParserBase parser(sv, "test");
+        ParserBase parser(console_diagnostic_context, sv, "test");
         while (!parser.at_eof())
         {
             auto opt = parse_qualified_specifier(parser);

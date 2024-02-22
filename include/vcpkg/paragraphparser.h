@@ -2,12 +2,12 @@
 
 #include <vcpkg/fwd/paragraphparser.h>
 
+#include <vcpkg/base/diagnostics.h>
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/stringview.h>
 
 #include <vcpkg/packagespec.h>
-#include <vcpkg/textrowcol.h>
 
 #include <map>
 #include <memory>
@@ -40,10 +40,18 @@ namespace vcpkg
         std::vector<LocalizedString> errors;
     };
 
+    Optional<std::vector<std::string>> parse_default_features_list(DiagnosticContext& context,
+                                                                   const std::string& str,
+                                                                   Optional<StringView> origin,
+                                                                   TextRowCol position = {1, 1});
     ExpectedL<std::vector<std::string>> parse_default_features_list(const std::string& str,
-                                                                    StringView origin = "<unknown>",
-                                                                    TextRowCol textrowcol = {});
+                                                                    Optional<StringView> origin,
+                                                                    TextRowCol position = {1, 1});
+    Optional<std::vector<ParsedQualifiedSpecifier>> parse_qualified_specifier_list(DiagnosticContext& context,
+                                                                                   const std::string& str,
+                                                                                   Optional<StringView> origin,
+                                                                                   TextRowCol position = {1, 1});
     ExpectedL<std::vector<ParsedQualifiedSpecifier>> parse_qualified_specifier_list(const std::string& str,
-                                                                                    StringView origin = "<unknown>",
-                                                                                    TextRowCol textrowcol = {});
+                                                                                    Optional<StringView> origin,
+                                                                                    TextRowCol position = {1, 1});
 }

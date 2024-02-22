@@ -56,17 +56,20 @@ namespace vcpkg
         return false;
     }
 
-    std::vector<CiBaselineLine> parse_ci_baseline(StringView text, StringView origin, ParseMessages& messages)
+    Optional<std::vector<CiBaselineLine>> parse_ci_baseline(DiagnosticContext& context,
+                                                            StringView text,
+                                                            StringView origin)
     {
-        std::vector<CiBaselineLine> result;
-        ParserBase parser(text, origin);
+        Optional<std::vector<CiBaselineLine>> result_storage;
+        auto& result = result_storage.emplace();
+        ParserBase parser(context, text, origin);
         for (;;)
         {
             parser.skip_whitespace();
             if (parser.at_eof())
             {
                 // success
-                return result;
+                return result_storage;
             }
 
             if (parser.cur() == '#')
@@ -146,9 +149,8 @@ namespace vcpkg
         }
 
         // failure
-        messages = std::move(parser).extract_messages();
-        result.clear();
-        return result;
+        result_storage.clear();
+        return result_storage;
     }
 
     CiBaselineData parse_and_apply_ci_baseline(View<CiBaselineLine> lines,

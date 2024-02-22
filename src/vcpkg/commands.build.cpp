@@ -85,11 +85,8 @@ namespace vcpkg
         // Build only takes a single package and all dependencies must already be installed
         const ParsedArguments options = args.parse_arguments(CommandBuildMetadata);
         bool default_triplet_used = false;
-        const FullPackageSpec spec = check_and_get_full_package_spec(options.command_arguments[0],
-                                                                     default_triplet,
-                                                                     default_triplet_used,
-                                                                     CommandBuildMetadata.get_example_text(),
-                                                                     paths.get_triplet_db());
+        const FullPackageSpec spec = check_and_get_full_package_spec(
+            options.command_arguments[0], default_triplet, default_triplet_used, paths.get_triplet_db());
         if (default_triplet_used)
         {
             print_default_triplet_warning(args, paths.get_triplet_db());
@@ -1745,13 +1742,13 @@ namespace vcpkg
 
     BuildInfo read_build_info(const ReadOnlyFilesystem& fs, const Path& filepath)
     {
-        auto maybe_paragraph = Paragraphs::get_single_paragraph(fs, filepath);
+        auto maybe_paragraph = Paragraphs::get_single_paragraph(console_diagnostic_context, fs, filepath);
         if (auto paragraph = maybe_paragraph.get())
         {
             return inner_create_buildinfo(filepath, std::move(*paragraph));
         }
 
-        Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, msgInvalidBuildInfo, msg::error_msg = maybe_paragraph.error());
+        Checks::exit_fail(VCPKG_LINE_INFO);
     }
 
     static ExpectedL<bool> from_cmake_bool(StringView value, StringView name)
