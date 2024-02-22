@@ -545,8 +545,7 @@ namespace vcpkg::PlatformExpression
                             // For backwards compatability arm is also true for arm64.
                             // This is because it previously was only checking for a substring.
                             return true_if_exists_and_equal("VCPKG_TARGET_ARCHITECTURE", "arm") ||
-                                   true_if_exists_and_equal("VCPKG_TARGET_ARCHITECTURE", "arm64") ||
-                                   true_if_exists_and_equal("VCPKG_TARGET_ARCHITECTURE", "arm64ec");
+                                   true_if_exists_and_equal("VCPKG_TARGET_ARCHITECTURE", "arm64");
                         case Identifier::arm32: return true_if_exists_and_equal("VCPKG_TARGET_ARCHITECTURE", "arm");
                         case Identifier::arm64: return true_if_exists_and_equal("VCPKG_TARGET_ARCHITECTURE", "arm64");
                         case Identifier::arm64ec:
