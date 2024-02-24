@@ -205,7 +205,7 @@ namespace vcpkg
                     else
                     {
                         get_global_metrics_collector().track_define(DefineMetric::VersioningErrorVersion);
-                        return maybe_path.error();
+                        return std::move(maybe_path).error();
                     }
                 }
 
