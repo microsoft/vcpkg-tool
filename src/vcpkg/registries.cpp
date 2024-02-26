@@ -308,7 +308,7 @@ namespace
                 auto maybe_up_to_date = lock_entry->ensure_up_to_date(m_paths);
                 if (!maybe_up_to_date)
                 {
-                    return maybe_up_to_date.error();
+                    return std::move(maybe_up_to_date).error();
                 }
 
                 auto maybe_tree = m_paths.git_find_object_id_for_remote_registry_path(
