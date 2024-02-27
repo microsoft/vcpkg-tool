@@ -464,6 +464,14 @@ jobs:
       displayName: Run CredScan
       inputs:
         toolMajorVersion: V2
+    - task: PublishSecurityAnalysisLogs@3
+      displayName: 'Publish Compliance Logs'
+      inputs:
+        ArtifactName: 'Compliance Logs'
+        ArtifactType: 'Container'
+        PublishProcessedResults: true
+        AllTools: true
+        ToolLogsNotFoundAction: 'None'
     - task: securedevelopmentteam.vss-secure-development-tools.build-task-postanalysis.PostAnalysis@2
       displayName: Check for compliance errors
       # To avoid spurious warnings about missing logs, explicitly declare what we scanned.
