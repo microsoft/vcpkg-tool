@@ -209,7 +209,7 @@ namespace vcpkg
 
     StringLiteral to_string_view(BuildPolicy policy);
     std::string to_string(BuildPolicy policy);
-    ZStringView to_cmake_variable(BuildPolicy policy);
+    StringLiteral to_cmake_variable(BuildPolicy policy);
 
     struct BuildPolicies
     {

@@ -1,6 +1,7 @@
 #include <vcpkg/base/api-stable-format.h>
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/chrono.h>
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/json.h>
@@ -2295,7 +2296,7 @@ ExpectedL<DownloadManagerConfig> vcpkg::parse_download_configuration(const Optio
     get_global_metrics_collector().track_define(DefineMetric::AssetSource);
 
     AssetSourcesState s;
-    const auto source = Strings::concat("$", VcpkgCmdArguments::ASSET_SOURCES_ENV);
+    const auto source = Strings::concat("$", EnvironmentVariableXVcpkgAssetSources);
     AssetSourcesParser parser(*arg.get(), source, &s);
     parser.parse();
     if (auto err = parser.get_error())

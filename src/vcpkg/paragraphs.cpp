@@ -1,6 +1,7 @@
 #include <vcpkg/base/fwd/message_sinks.h>
 
 #include <vcpkg/base/chrono.h>
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/parse.h>
@@ -204,7 +205,7 @@ namespace vcpkg
                 Dependency dependency{pqs.name, {}, pqs.platform.value_or({})};
                 for (const auto& feature : pqs.features.value_or({}))
                 {
-                    if (feature == "core")
+                    if (feature == FeatureNameCore)
                     {
                         dependency.default_features = false;
                     }

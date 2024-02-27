@@ -3,6 +3,7 @@
 #include <vcpkg/base/jsonreader.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/system.debug.h>
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/unicode.h>
 
 #include <vcpkg/documentation.h>
@@ -1077,7 +1078,7 @@ namespace vcpkg::Json
 
         if (sv.size() < 5)
         {
-            if (sv == "prn" || sv == "aux" || sv == "nul" || sv == "con" || sv == "core")
+            if (sv == "prn" || sv == "aux" || sv == "nul" || sv == "con" || sv == FeatureNameCore)
             {
                 return false; // we're a reserved identifier
             }
@@ -1089,7 +1090,7 @@ namespace vcpkg::Json
         }
         else
         {
-            if (sv == "default")
+            if (sv == FeatureNameDefault)
             {
                 return false;
             }

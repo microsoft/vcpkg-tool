@@ -1,3 +1,4 @@
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/span.h>
 #include <vcpkg/base/strings.h>
@@ -164,7 +165,7 @@ endfunction()
             std::string featurelist;
             for (auto&& f : spec.features)
             {
-                if (f == "core" || f == "default" || f == "*") continue;
+                if (f == FeatureNameCore || f == FeatureNameDefault || f == "*") continue;
                 if (!featurelist.empty()) featurelist.push_back(';');
                 featurelist.append(f);
             }

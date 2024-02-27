@@ -1,4 +1,5 @@
 #include <vcpkg/base/checks.h>
+#include <vcpkg/base/contractual-constants.h>
 
 #include <vcpkg/commands.activate.h>
 #include <vcpkg/configure-environment.h>
@@ -8,12 +9,9 @@ using namespace vcpkg;
 
 namespace
 {
-    constexpr StringLiteral OPTION_MSBUILD_PROPS = "msbuild-props";
-    constexpr StringLiteral OPTION_JSON = "json";
-
     constexpr CommandSetting ActivateOptions[] = {
-        {OPTION_MSBUILD_PROPS, msgArtifactsOptionMSBuildProps},
-        {OPTION_JSON, msgArtifactsOptionJson},
+        {SwitchMSBuildProps, msgArtifactsOptionMSBuildProps},
+        {SwitchJson, msgArtifactsOptionJson},
     };
 } // unnamed namespace
 

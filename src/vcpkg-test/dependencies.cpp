@@ -1,5 +1,7 @@
 #include <vcpkg-test/util.h>
 
+#include <vcpkg/base/contractual-constants.h>
+
 #include <vcpkg/commands.set-installed.h>
 #include <vcpkg/dependencies.h>
 #include <vcpkg/portfileprovider.h>
@@ -2468,13 +2470,13 @@ TEST_CASE ("dependency graph API snapshot: host and target")
     plan.install_actions.push_back(std::move(install_a));
     plan.install_actions.push_back(std::move(install_a_host));
     std::map<StringLiteral, std::string, std::less<>> envmap = {
-        {VcpkgCmdArguments::GITHUB_JOB_ENV, "123"},
-        {VcpkgCmdArguments::GITHUB_RUN_ID_ENV, "123"},
-        {VcpkgCmdArguments::GITHUB_REF_ENV, "refs/heads/main"},
-        {VcpkgCmdArguments::GITHUB_REPOSITORY_ENV, "owner/repo"},
-        {VcpkgCmdArguments::GITHUB_SHA_ENV, "abc123"},
-        {VcpkgCmdArguments::GITHUB_TOKEN_ENV, "abc"},
-        {VcpkgCmdArguments::GITHUB_WORKFLOW_ENV, "test"},
+        {EnvironmentVariableGitHubJob, "123"},
+        {EnvironmentVariableGitHubRunId, "123"},
+        {EnvironmentVariableGitHubRef, "refs/heads/main"},
+        {EnvironmentVariableGitHubRepository, "owner/repo"},
+        {EnvironmentVariableGitHubSha, "abc123"},
+        {EnvironmentVariableGitHubToken, "abc"},
+        {EnvironmentVariableGitHubWorkflow, "test"},
     };
     auto v = VcpkgCmdArguments::create_from_arg_sequence(nullptr, nullptr);
     v.imbue_from_fake_environment(envmap);
