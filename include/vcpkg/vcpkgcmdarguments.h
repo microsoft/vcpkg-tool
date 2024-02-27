@@ -266,7 +266,6 @@ namespace vcpkg
 
         bool do_not_take_lock = false;
 
-
         Optional<std::string> github_run_id;
         Optional<std::string> github_token;
         Optional<std::string> github_job;
@@ -281,7 +280,6 @@ namespace vcpkg
         Optional<bool> compiler_tracking = nullopt;
         Optional<bool> registries_feature = nullopt;
         Optional<bool> versions_feature = nullopt;
-
 
         bool dependency_graph_enabled() const { return dependency_graph_feature.value_or(false); }
         bool binary_caching_enabled() const { return binary_caching.value_or(true); }

@@ -364,7 +364,7 @@ namespace vcpkg
     inline constexpr StringLiteral EnvironmentVariableBuildRepositoryId = "BUILD_REPOSITORY_ID";
     inline constexpr StringLiteral EnvironmentVariableCI = "CI";
     inline constexpr StringLiteral EnvironmentVariableCIProjectId = "CI_PROJECT_ID";
-    inline constexpr StringLiteral EnvironmentVariableCircleCI  = "CIRCLECI"; 
+    inline constexpr StringLiteral EnvironmentVariableCircleCI = "CIRCLECI";
     inline constexpr StringLiteral EnvironmentVariableCodebuildBuildId = "CODEBUILD_BUILD_ID";
     inline constexpr StringLiteral EnvironmentVariableGitCeilingDirectories = "GIT_CEILING_DIRECTORIES";
     inline constexpr StringLiteral EnvironmentVariableGitHubActions = "GITHUB_ACTIONS";

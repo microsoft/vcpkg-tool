@@ -1,9 +1,9 @@
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/jsonreader.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/system.debug.h>
-#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/unicode.h>
 
 #include <vcpkg/documentation.h>

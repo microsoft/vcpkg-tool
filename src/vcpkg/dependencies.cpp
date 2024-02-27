@@ -1,3 +1,4 @@
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/graphs.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/strings.h>
@@ -13,7 +14,6 @@
 
 #include <unordered_map>
 #include <unordered_set>
-#include <vcpkg/base/contractual-constants.h>
 
 namespace vcpkg
 {
@@ -590,7 +590,8 @@ namespace vcpkg
                                                       const PlatformExpression::Expr& expr)
     {
         const auto feature_spec =
-            (spec.feature() == FeatureNameCore ? spec.port() : format_name_only_feature_spec(spec.port(), spec.feature()));
+            (spec.feature() == FeatureNameCore ? spec.port()
+                                               : format_name_only_feature_spec(spec.port(), spec.feature()));
         return msg::format(m,
                            msg::package_name = spec.port(),
                            msg::feature_spec = feature_spec,

@@ -1024,13 +1024,11 @@ namespace vcpkg
         const bool clean_after_build = Util::Sets::contains(options.switches, (SwitchCleanAfterBuild));
         const bool clean_buildtrees_after_build =
             Util::Sets::contains(options.switches, (SwitchCleanBuildtreesAfterBuild));
-        const bool clean_packages_after_build =
-            Util::Sets::contains(options.switches, (SwitchCleanPackagesAfterBuild));
+        const bool clean_packages_after_build = Util::Sets::contains(options.switches, (SwitchCleanPackagesAfterBuild));
         const bool clean_downloads_after_build =
             Util::Sets::contains(options.switches, (SwitchCleanDownloadsAfterBuild));
-        const KeepGoing keep_going = Util::Sets::contains(options.switches, SwitchKeepGoing) || only_downloads
-                                         ? KeepGoing::YES
-                                         : KeepGoing::NO;
+        const KeepGoing keep_going =
+            Util::Sets::contains(options.switches, SwitchKeepGoing) || only_downloads ? KeepGoing::YES : KeepGoing::NO;
         const bool prohibit_backcompat_features =
             Util::Sets::contains(options.switches, (SwitchXProhibitBackcompatFeatures)) ||
             Util::Sets::contains(options.switches, (SwitchEnforcePortChecks));

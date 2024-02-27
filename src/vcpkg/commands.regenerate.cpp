@@ -1,7 +1,7 @@
 #include <vcpkg/base/checks.h>
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/util.h>
-#include <vcpkg/base/contractual-constants.h>
 
 #include <vcpkg/commands.regenerate.h>
 #include <vcpkg/configure-environment.h>

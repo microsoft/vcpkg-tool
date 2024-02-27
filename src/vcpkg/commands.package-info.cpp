@@ -1,9 +1,9 @@
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/util.h>
-#include <vcpkg/base/contractual-constants.h>
 
 #include <vcpkg/commands.package-info.h>
 #include <vcpkg/portfileprovider.h>

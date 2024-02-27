@@ -61,7 +61,10 @@ namespace vcpkg
     ///
     struct FeatureSpec
     {
-        FeatureSpec(const PackageSpec& spec, StringView feature) : m_spec(spec), m_feature(feature.data(), feature.size()) { }
+        FeatureSpec(const PackageSpec& spec, StringView feature)
+            : m_spec(spec), m_feature(feature.data(), feature.size())
+        {
+        }
 
         const std::string& port() const { return m_spec.name(); }
         const std::string& feature() const { return m_feature; }

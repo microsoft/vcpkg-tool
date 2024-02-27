@@ -1,3 +1,4 @@
+#include <vcpkg/base/api-stable-format.h>
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/expected.h>
@@ -15,7 +16,6 @@
 #include <vcpkg/platform-expression.h>
 #include <vcpkg/sourceparagraph.h>
 #include <vcpkg/triplet.h>
-#include <vcpkg/base/api-stable-format.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/versiondeserializers.h>
 
@@ -392,8 +392,7 @@ namespace vcpkg
         fpgh->description = Strings::split(parser.required_field(ParagraphIdDescription), '\n');
         trim_all(fpgh->description);
 
-        auto maybe_dependencies =
-            parse_dependencies_list(parser.optional_field(ParagraphIdBuildDepends), origin);
+        auto maybe_dependencies = parse_dependencies_list(parser.optional_field(ParagraphIdBuildDepends), origin);
         if (maybe_dependencies.has_value())
         {
             fpgh->dependencies = maybe_dependencies.value_or_exit(VCPKG_LINE_INFO);

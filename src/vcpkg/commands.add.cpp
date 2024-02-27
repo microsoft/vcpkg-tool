@@ -122,7 +122,8 @@ namespace vcpkg
                     return false;
                 });
                 const auto features = Util::fmap(feature_names, [](const std::string& feature) {
-                    Checks::check_exit(VCPKG_LINE_INFO, !feature.empty() && feature != FeatureNameCore && feature != FeatureNameDefault);
+                    Checks::check_exit(VCPKG_LINE_INFO,
+                                       !feature.empty() && feature != FeatureNameCore && feature != FeatureNameDefault);
                     return DependencyRequestedFeature{feature};
                 });
                 if (dep == manifest_scf.core_paragraph->dependencies.end())

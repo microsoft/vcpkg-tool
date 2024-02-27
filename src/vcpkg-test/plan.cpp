@@ -1,7 +1,7 @@
 #include <vcpkg-test/util.h>
 
-#include <vcpkg/base/graphs.h>
 #include <vcpkg/base/contractual-constants.h>
+#include <vcpkg/base/graphs.h>
 
 #include <vcpkg/dependencies.h>
 #include <vcpkg/portfileprovider.h>

@@ -377,7 +377,8 @@ namespace vcpkg
         std::vector<FullPackageSpec> all_default_full_specs;
         for (auto scfl : provider.load_all_control_files())
         {
-            all_default_full_specs.emplace_back(PackageSpec{scfl->to_name(), target_triplet},
+            all_default_full_specs.emplace_back(
+                PackageSpec{scfl->to_name(), target_triplet},
                 InternalFeatureSet{FeatureNameCore.to_string(), FeatureNameDefault.to_string()});
         }
 
