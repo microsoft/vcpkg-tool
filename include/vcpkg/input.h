@@ -17,13 +17,11 @@ namespace vcpkg
     // triplet or similar which is no longer active.
     PackageSpec parse_package_spec(StringView spec_string,
                                    Triplet default_triplet,
-                                   bool& default_triplet_used,
                                    const LocalizedString& example_text);
 
     // Same as the above but checks the validity of the triplet.
     PackageSpec check_and_get_package_spec(StringView spec_string,
                                            Triplet default_triplet,
-                                           bool& default_triplet_used,
                                            const LocalizedString& example_text,
                                            const TripletDatabase& database);
 
@@ -33,7 +31,6 @@ namespace vcpkg
     // Asserts that the package spec has a valid triplet.
     FullPackageSpec check_and_get_full_package_spec(StringView spec_string,
                                                     Triplet default_triplet,
-                                                    bool& default_triplet_used,
                                                     const LocalizedString& example_text,
                                                     const TripletDatabase& database);
 

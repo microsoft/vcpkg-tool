@@ -123,20 +123,6 @@ namespace vcpkg
         return Triplet::from_canonical_name(host_triplet_name);
     }
 
-    void print_default_triplet_warning(const VcpkgCmdArguments& args, const TripletDatabase& database)
-    {
-        (void)args;
-        (void)database;
-#if defined(_WIN32)
-        if (!args.triplet.has_value())
-        {
-            // Remove this warning in March 2024
-            // The triplet is not set by --triplet or VCPKG_DEFAULT_TRIPLET
-            msg::println_warning(msgDefaultTripletChanged, msg::triplet = default_host_triplet(args, database));
-        }
-#endif // ^^^ _WIN32
-    }
-
     TripletFile::TripletFile(StringView name, StringView location) : name(name.data(), name.size()), location(location)
     {
     }
