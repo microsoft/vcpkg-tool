@@ -959,20 +959,21 @@ namespace vcpkg
                     const auto escaped_url = Command(urls[0]).extract();
                     const auto escaped_sha512 = Command(*hash).extract();
                     const auto escaped_dpath = Command(download_path_part_path).extract();
-                    auto cmd = Command{api_stable_format(*script, [&](std::string& out, StringView key) {
-                                           if (key == "url")
-                                           {
-                                               Strings::append(out, escaped_url);
-                                           }
-                                           else if (key == "sha512")
-                                           {
-                                               Strings::append(out, escaped_sha512);
-                                           }
-                                           else if (key == "dst")
-                                           {
-                                               Strings::append(out, escaped_dpath);
-                                           }
-                                       }).value_or_exit(VCPKG_LINE_INFO)};
+                    Command cmd;
+                    cmd.raw_arg(api_stable_format(*script, [&](std::string& out, StringView key) {
+                                    if (key == "url")
+                                    {
+                                        Strings::append(out, escaped_url);
+                                    }
+                                    else if (key == "sha512")
+                                    {
+                                        Strings::append(out, escaped_sha512);
+                                    }
+                                    else if (key == "dst")
+                                    {
+                                        Strings::append(out, escaped_dpath);
+                                    }
+                                }).value_or_exit(VCPKG_LINE_INFO));
 
                     RedirectedProcessLaunchSettings settings;
                     settings.environment = get_clean_environment();

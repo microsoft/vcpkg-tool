@@ -335,7 +335,7 @@ namespace vcpkg
                 msg::println(Color::warning, msgAlreadyInstalledNotHead, msg::spec = action.spec);
             else
                 msg::println(Color::success, msgAlreadyInstalled, msg::spec = action.spec);
-            return ExtendedBuildResult{BuildResult::SUCCEEDED};
+            return ExtendedBuildResult{BuildResult::Succeeded};
         }
 
         if (plan_type == InstallPlanType::BUILD_AND_INSTALL)
@@ -347,9 +347,9 @@ namespace vcpkg
                     fs, action.package_dir.value_or_exit(VCPKG_LINE_INFO), action.spec);
                 bcf = std::make_unique<BinaryControlFile>(std::move(maybe_bcf).value_or_exit(VCPKG_LINE_INFO));
             }
-            else if (action.build_options.build_missing == BuildMissing::NO)
+            else if (action.build_options.build_missing == BuildMissing::No)
             {
-                return ExtendedBuildResult{BuildResult::CACHE_MISSING};
+                return ExtendedBuildResult{BuildResult::CacheMissing};
             }
             else
             {
@@ -358,13 +358,13 @@ namespace vcpkg
 
                 auto result = build_package(args, paths, action, build_logs_recorder, status_db);
 
-                if (BuildResult::DOWNLOADED == result.code)
+                if (BuildResult::Downloaded == result.code)
                 {
                     msg::println(Color::success, msgDownloadedSources, msg::spec = action.display_name());
                     return result;
                 }
 
-                if (result.code != BuildResult::SUCCEEDED)
+                if (result.code != BuildResult::Succeeded)
                 {
                     LocalizedString warnings;
                     for (auto&& msg : action.build_failure_messages)
@@ -390,13 +390,13 @@ namespace vcpkg
             BuildResult code;
             switch (install_result)
             {
-                case InstallResult::SUCCESS: code = BuildResult::SUCCEEDED; break;
-                case InstallResult::FILE_CONFLICTS: code = BuildResult::FILE_CONFLICTS; break;
+                case InstallResult::SUCCESS: code = BuildResult::Succeeded; break;
+                case InstallResult::FILE_CONFLICTS: code = BuildResult::FileConflicts; break;
                 default: Checks::unreachable(VCPKG_LINE_INFO);
             }
             binary_cache.push_success(action);
 
-            if (action.build_options.clean_downloads == CleanDownloads::YES)
+            if (action.build_options.clean_downloads == CleanDownloads::Yes)
             {
                 for (auto& p : fs.get_regular_files_non_recursive(paths.downloads, IgnoreErrors{}))
                 {
@@ -410,7 +410,7 @@ namespace vcpkg
         if (plan_type == InstallPlanType::EXCLUDED)
         {
             msg::println(Color::warning, msgExcludedPackage, msg::spec = action.spec);
-            return ExtendedBuildResult{BuildResult::EXCLUDED};
+            return ExtendedBuildResult{BuildResult::Excluded};
         }
 
         Checks::unreachable(VCPKG_LINE_INFO);
@@ -457,7 +457,7 @@ namespace vcpkg
 
         for (const SpecSummary& result : this->results)
         {
-            if (result.build_result.value_or_exit(VCPKG_LINE_INFO).code != BuildResult::SUCCEEDED)
+            if (result.build_result.value_or_exit(VCPKG_LINE_INFO).code != BuildResult::Succeeded)
             {
                 msg::println(format_result_row(result));
             }
@@ -471,15 +471,15 @@ namespace vcpkg
         {
             switch (result.build_result.value_or_exit(VCPKG_LINE_INFO).code)
             {
-                case BuildResult::SUCCEEDED:
-                case BuildResult::REMOVED:
-                case BuildResult::DOWNLOADED:
-                case BuildResult::EXCLUDED: continue;
-                case BuildResult::BUILD_FAILED:
-                case BuildResult::POST_BUILD_CHECKS_FAILED:
-                case BuildResult::FILE_CONFLICTS:
-                case BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES:
-                case BuildResult::CACHE_MISSING: return true;
+                case BuildResult::Succeeded:
+                case BuildResult::Removed:
+                case BuildResult::Downloaded:
+                case BuildResult::Excluded: continue;
+                case BuildResult::BuildFailed:
+                case BuildResult::PostBuildChecksFailed:
+                case BuildResult::FileConflicts:
+                case BuildResult::CascadedDueToMissingDependencies:
+                case BuildResult::CacheMissing: return true;
                 default: Checks::unreachable(VCPKG_LINE_INFO);
             }
         }
@@ -575,7 +575,7 @@ namespace vcpkg
         {
             TrackedPackageInstallGuard this_install(action_index++, action_count, results, action);
             remove_package(fs, paths.installed(), action.spec, status_db);
-            results.back().build_result.emplace(BuildResult::REMOVED);
+            results.back().build_result.emplace(BuildResult::Removed);
         }
 
         for (auto&& action : action_plan.already_installed)
@@ -589,7 +589,7 @@ namespace vcpkg
             TrackedPackageInstallGuard this_install(action_index++, action_count, results, action);
             auto result =
                 perform_install_plan_action(args, paths, action, status_db, binary_cache, build_logs_recorder);
-            if (result.code != BuildResult::SUCCEEDED && keep_going == KeepGoing::NO)
+            if (result.code != BuildResult::Succeeded && keep_going == KeepGoing::NO)
             {
                 this_install.print_elapsed_time();
                 print_user_troubleshooting_message(action, paths, result.stdoutlog.then([&](auto&) -> Optional<Path> {
@@ -1059,7 +1059,7 @@ namespace vcpkg
                                                  ? UnsupportedPortAction::Warn
                                                  : UnsupportedPortAction::Error;
         const PrintUsage print_cmake_usage =
-            Util::Sets::contains(options.switches, OPTION_NO_PRINT_USAGE) ? PrintUsage::NO : PrintUsage::YES;
+            Util::Sets::contains(options.switches, OPTION_NO_PRINT_USAGE) ? PrintUsage::No : PrintUsage::Yes;
 
         get_global_metrics_collector().track_bool(BoolMetric::InstallManifestMode, paths.manifest_mode_enabled());
 
@@ -1088,8 +1088,6 @@ namespace vcpkg
                 msg::print(usage_for_command(CommandInstallMetadataManifest));
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
-
-            print_default_triplet_warning(args, paths.get_triplet_db());
         }
         else
         {
@@ -1118,8 +1116,8 @@ namespace vcpkg
 
         auto& fs = paths.get_filesystem();
 
-        DownloadTool download_tool = DownloadTool::BUILT_IN;
-        if (use_aria2) download_tool = DownloadTool::ARIA2;
+        DownloadTool download_tool = DownloadTool::Builtin;
+        if (use_aria2) download_tool = DownloadTool::Aria2;
 
         const BuildPackageOptions install_plan_options = {
             Util::Enum::to_enum<BuildMissing>(!no_build_missing),
@@ -1130,9 +1128,9 @@ namespace vcpkg
             Util::Enum::to_enum<CleanPackages>(clean_after_build || clean_packages_after_build),
             Util::Enum::to_enum<CleanDownloads>(clean_after_build || clean_downloads_after_build),
             download_tool,
-            PurgeDecompressFailure::NO,
+            PurgeDecompressFailure::No,
             Util::Enum::to_enum<Editable>(is_editable),
-            prohibit_backcompat_features ? BackcompatFeatures::PROHIBIT : BackcompatFeatures::ALLOW,
+            prohibit_backcompat_features ? BackcompatFeatures::Prohibit : BackcompatFeatures::Allow,
             print_cmake_usage};
 
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
@@ -1261,8 +1259,8 @@ namespace vcpkg
             for (InstallPlanAction& action : install_plan.install_actions)
             {
                 action.build_options = install_plan_options;
-                action.build_options.use_head_version = UseHeadVersion::NO;
-                action.build_options.editable = Editable::NO;
+                action.build_options.use_head_version = UseHeadVersion::No;
+                action.build_options.editable = Editable::No;
             }
 
             // If the manifest refers to itself, it will be added to the install plan.
@@ -1286,19 +1284,10 @@ namespace vcpkg
         PathsPortFileProvider provider(
             fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
 
-        bool default_triplet_used = false;
         const std::vector<FullPackageSpec> specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
-            return check_and_get_full_package_spec(arg,
-                                                   default_triplet,
-                                                   default_triplet_used,
-                                                   CommandInstallMetadataClassic.get_example_text(),
-                                                   paths.get_triplet_db());
+            return check_and_get_full_package_spec(
+                arg, default_triplet, CommandInstallMetadataClassic.get_example_text(), paths.get_triplet_db());
         });
-
-        if (default_triplet_used)
-        {
-            print_default_triplet_warning(args, paths.get_triplet_db());
-        }
 
         // create the plan
         msg::println(msgComputingInstallPlan);
@@ -1313,8 +1302,8 @@ namespace vcpkg
             action.build_options = install_plan_options;
             if (action.request_type != RequestType::USER_REQUESTED)
             {
-                action.build_options.use_head_version = UseHeadVersion::NO;
-                action.build_options.editable = Editable::NO;
+                action.build_options.use_head_version = UseHeadVersion::No;
+                action.build_options.editable = Editable::No;
             }
         }
 
@@ -1409,7 +1398,7 @@ namespace vcpkg
             fs.write_contents(it_xunit->second, xwriter.build_xml(default_triplet), VCPKG_LINE_INFO);
         }
 
-        if (install_plan_options.print_usage == PrintUsage::YES)
+        if (install_plan_options.print_usage == PrintUsage::Yes)
         {
             std::set<std::string> printed_usages;
             for (auto&& result : summary.results)

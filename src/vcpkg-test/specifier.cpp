@@ -42,26 +42,19 @@ TEST_CASE ("specifier parsing", "[specifier]")
         REQUIRE(!spec.triplet);
         REQUIRE(!spec.platform);
 
-        bool default_triplet_used = false;
-        auto full_spec_implicit = spec.to_full_spec(Test::X86_WINDOWS, default_triplet_used, ImplicitDefault::YES)
-                                      .value_or_exit(VCPKG_LINE_INFO);
-        REQUIRE(default_triplet_used);
-        default_triplet_used = false;
+        auto full_spec_implicit =
+            spec.to_full_spec(Test::X86_WINDOWS, ImplicitDefault::YES).value_or_exit(VCPKG_LINE_INFO);
         REQUIRE(full_spec_implicit.package_spec.name() == "zlib");
         REQUIRE(full_spec_implicit.package_spec.triplet() == Test::X86_WINDOWS);
         REQUIRE(full_spec_implicit.features == std::vector<std::string>{"core", "default"});
 
-        auto full_spec_explicit = spec.to_full_spec(Test::X86_WINDOWS, default_triplet_used, ImplicitDefault::NO)
-                                      .value_or_exit(VCPKG_LINE_INFO);
-        REQUIRE(default_triplet_used);
-        default_triplet_used = false;
+        auto full_spec_explicit =
+            spec.to_full_spec(Test::X86_WINDOWS, ImplicitDefault::NO).value_or_exit(VCPKG_LINE_INFO);
         REQUIRE(full_spec_explicit.package_spec.name() == "zlib");
         REQUIRE(full_spec_explicit.package_spec.triplet() == Test::X86_WINDOWS);
         REQUIRE(full_spec_explicit.features == std::vector<std::string>{"core"});
 
-        auto package_spec =
-            spec.to_package_spec(Test::X86_WINDOWS, default_triplet_used).value_or_exit(VCPKG_LINE_INFO);
-        REQUIRE(default_triplet_used);
+        auto package_spec = spec.to_package_spec(Test::X86_WINDOWS).value_or_exit(VCPKG_LINE_INFO);
         REQUIRE(package_spec.name() == "zlib");
         REQUIRE(package_spec.triplet() == Test::X86_WINDOWS);
     }
@@ -74,24 +67,19 @@ TEST_CASE ("specifier parsing", "[specifier]")
         REQUIRE(spec.triplet.value_or_exit(VCPKG_LINE_INFO) == "x64-uwp");
         REQUIRE(!spec.platform);
 
-        bool default_triplet_used = false;
-        auto full_spec_implicit = spec.to_full_spec(Test::X86_WINDOWS, default_triplet_used, ImplicitDefault::YES)
-                                      .value_or_exit(VCPKG_LINE_INFO);
-        REQUIRE(!default_triplet_used);
+        auto full_spec_implicit =
+            spec.to_full_spec(Test::X86_WINDOWS, ImplicitDefault::YES).value_or_exit(VCPKG_LINE_INFO);
         REQUIRE(full_spec_implicit.package_spec.name() == "zlib");
         REQUIRE(full_spec_implicit.package_spec.triplet() == Test::X64_UWP);
         REQUIRE(full_spec_implicit.features == std::vector<std::string>{"core", "default"});
 
-        auto full_spec_explicit = spec.to_full_spec(Test::X86_WINDOWS, default_triplet_used, ImplicitDefault::NO)
-                                      .value_or_exit(VCPKG_LINE_INFO);
-        REQUIRE(!default_triplet_used);
+        auto full_spec_explicit =
+            spec.to_full_spec(Test::X86_WINDOWS, ImplicitDefault::NO).value_or_exit(VCPKG_LINE_INFO);
         REQUIRE(full_spec_explicit.package_spec.name() == "zlib");
         REQUIRE(full_spec_explicit.package_spec.triplet() == Test::X64_UWP);
         REQUIRE(full_spec_explicit.features == std::vector<std::string>{"core"});
 
-        auto package_spec =
-            spec.to_package_spec(Test::X86_WINDOWS, default_triplet_used).value_or_exit(VCPKG_LINE_INFO);
-        REQUIRE(!default_triplet_used);
+        auto package_spec = spec.to_package_spec(Test::X86_WINDOWS).value_or_exit(VCPKG_LINE_INFO);
         REQUIRE(package_spec.name() == "zlib");
         REQUIRE(package_spec.triplet() == Test::X64_UWP);
     }
@@ -110,23 +98,19 @@ TEST_CASE ("specifier parsing", "[specifier]")
         REQUIRE(spec.triplet.value_or("") == "x64-uwp");
         REQUIRE(!spec.platform);
 
-        bool default_triplet_used = false;
-        auto full_spec_implicit = spec.to_full_spec(Test::X86_WINDOWS, default_triplet_used, ImplicitDefault::YES)
-                                      .value_or_exit(VCPKG_LINE_INFO);
-        REQUIRE(!default_triplet_used);
+        auto full_spec_implicit =
+            spec.to_full_spec(Test::X86_WINDOWS, ImplicitDefault::YES).value_or_exit(VCPKG_LINE_INFO);
         REQUIRE(full_spec_implicit.package_spec.name() == "zlib");
         REQUIRE(full_spec_implicit.package_spec.triplet() == Test::X64_UWP);
         REQUIRE(full_spec_implicit.features == std::vector<std::string>{"feature", "core", "default"});
 
-        auto full_spec_explicit = spec.to_full_spec(Test::X86_WINDOWS, default_triplet_used, ImplicitDefault::NO)
-                                      .value_or_exit(VCPKG_LINE_INFO);
-        REQUIRE(!default_triplet_used);
+        auto full_spec_explicit =
+            spec.to_full_spec(Test::X86_WINDOWS, ImplicitDefault::NO).value_or_exit(VCPKG_LINE_INFO);
         REQUIRE(full_spec_explicit.package_spec.name() == "zlib");
         REQUIRE(full_spec_explicit.package_spec.triplet() == Test::X64_UWP);
         REQUIRE(full_spec_explicit.features == std::vector<std::string>{"feature", "core"});
 
-        auto maybe_package_spec = spec.to_package_spec(Test::X86_WINDOWS, default_triplet_used);
-        REQUIRE(!default_triplet_used);
+        auto maybe_package_spec = spec.to_package_spec(Test::X86_WINDOWS);
         REQUIRE(!maybe_package_spec.has_value());
         REQUIRE(maybe_package_spec.error() ==
                 LocalizedString::from_raw("error: List of features is not allowed in this context"));
@@ -182,22 +166,17 @@ TEST_CASE ("specifier parsing", "[specifier]")
         REQUIRE(!spec.triplet);
         REQUIRE(to_string(spec.platform.value_or_exit(VCPKG_LINE_INFO)) == "windows");
 
-        bool default_triplet_used = false;
-        auto maybe_full_spec_implicit =
-            spec.to_full_spec(Test::X86_WINDOWS, default_triplet_used, ImplicitDefault::YES);
-        REQUIRE(!default_triplet_used);
+        auto maybe_full_spec_implicit = spec.to_full_spec(Test::X86_WINDOWS, ImplicitDefault::YES);
         REQUIRE(!maybe_full_spec_implicit.has_value());
         REQUIRE(maybe_full_spec_implicit.error() ==
                 LocalizedString::from_raw("error: Platform qualifier is not allowed in this context"));
 
-        auto maybe_full_spec_explicit = spec.to_full_spec(Test::X86_WINDOWS, default_triplet_used, ImplicitDefault::NO);
-        REQUIRE(!default_triplet_used);
+        auto maybe_full_spec_explicit = spec.to_full_spec(Test::X86_WINDOWS, ImplicitDefault::NO);
         REQUIRE(!maybe_full_spec_explicit.has_value());
         REQUIRE(maybe_full_spec_explicit.error() ==
                 LocalizedString::from_raw("error: Platform qualifier is not allowed in this context"));
 
-        auto maybe_package_spec = spec.to_package_spec(Test::X86_WINDOWS, default_triplet_used);
-        REQUIRE(!default_triplet_used);
+        auto maybe_package_spec = spec.to_package_spec(Test::X86_WINDOWS);
         REQUIRE(!maybe_package_spec.has_value());
         REQUIRE(maybe_package_spec.error() ==
                 LocalizedString::from_raw("error: Platform qualifier is not allowed in this context"));

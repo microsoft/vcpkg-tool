@@ -572,7 +572,7 @@
   "FollowingPackagesUpgraded": "Aşağıdaki paketler günceldir:",
   "ForMoreHelp": "Daha Fazla Yardım Alın",
   "ForceSystemBinariesOnWeirdPlatforms": "VCPKG_FORCE_SYSTEM_BINARIES ortam değişkeni arm, s390x, ppc64le ve riscv platformlarında ayarlanmalıdır.",
-  "FormattedParseMessageExpressionPrefix": "on expression:",
+  "FormattedParseMessageExpressionPrefix": "ifadesinde:",
   "GHAParametersMissing": "GHA ikili kaynağı, ACTIONS_RUNTIME_TOKEN ve ACTIONS_CACHE_URL ortam değişkenlerinin ayarlanmasını gerektiriyor. Ayrıntılar için {url} adresine gidin.",
   "GeneratedConfiguration": "Oluşturulan yapılandırma {path}.",
   "GeneratedInstaller": "{path} yükleyicisi oluşturuldu.",

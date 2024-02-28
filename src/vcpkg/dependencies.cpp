@@ -431,7 +431,7 @@ namespace vcpkg
     static void format_plan_row(LocalizedString& out, const InstallPlanAction& action, const Path& builtin_ports_dir)
     {
         out.append_raw(request_type_indent(action.request_type)).append_raw(action.display_name());
-        if (action.build_options.use_head_version == UseHeadVersion::YES)
+        if (action.build_options.use_head_version == UseHeadVersion::Yes)
         {
             out.append_raw(" (+HEAD)");
         }
@@ -1443,7 +1443,7 @@ namespace vcpkg
                 {
                     spec_set.insert(s.spec);
                     for (auto&& d : s.deps)
-                        spec_set.insert({d.name, d.host ? m_host_triplet : s.spec.triplet()});
+                        spec_set.emplace(d.name, d.host ? m_host_triplet : s.spec.triplet());
                 }
                 std::vector<PackageSpec> spec_vec(spec_set.begin(), spec_set.end());
                 m_var_provider.load_dep_info_vars(spec_vec, m_host_triplet);
@@ -1947,7 +1947,9 @@ namespace vcpkg
                 const auto& supports_expr = scfl.source_control_file->core_paragraph->supports_expression;
                 if (!supports_expr.evaluate(vars))
                 {
-                    ret.unsupported_features.insert({FeatureSpec(action.spec, "core"), supports_expr});
+                    ret.unsupported_features.emplace(std::piecewise_construct,
+                                                     std::forward_as_tuple(action.spec, "core"),
+                                                     std::forward_as_tuple(supports_expr));
                 }
 
                 // Evaluate per-feature supports conditions
@@ -1958,8 +1960,9 @@ namespace vcpkg
                     auto& fpgh = scfl.source_control_file->find_feature(fdeps.first).value_or_exit(VCPKG_LINE_INFO);
                     if (!fpgh.supports_expression.evaluate(vars))
                     {
-                        ret.unsupported_features.insert(
-                            {FeatureSpec(action.spec, fdeps.first), fpgh.supports_expression});
+                        ret.unsupported_features.emplace(std::piecewise_construct,
+                                                         std::forward_as_tuple(action.spec, fdeps.first),
+                                                         std::forward_as_tuple(fpgh.supports_expression));
                     }
                 }
             }

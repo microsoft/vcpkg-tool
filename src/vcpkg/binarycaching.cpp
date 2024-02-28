@@ -345,7 +345,7 @@ namespace
                 auto archive_path = m_dir / files_archive_subpath(abi_tag);
                 if (m_fs.exists(archive_path, IgnoreErrors{}))
                 {
-                    auto to_remove = actions[i]->build_options.purge_decompress_failure == PurgeDecompressFailure::YES
+                    auto to_remove = actions[i]->build_options.purge_decompress_failure == PurgeDecompressFailure::Yes
                                          ? RemoveWhen::on_fail
                                          : RemoveWhen::nothing;
                     out_zip_paths[i].emplace(std::move(archive_path), to_remove);
@@ -796,12 +796,13 @@ namespace
 
         std::string lookup_cache_entry(StringView name, const std::string& abi) const
         {
-            auto url = format_url_query(m_url, std::vector<std::string>{"keys=" + name + "-" + abi, "version=" + abi});
-            auto res =
-                invoke_http_request("GET",
-                                    std::vector<std::string>{
-                                        m_content_type_header.to_string(), m_token_header, m_accept_header.to_string()},
-                                    url);
+            const auto url = format_url_query(m_url, {{"keys=" + name + "-" + abi, "version=" + abi}});
+            const std::string headers[] = {
+                m_content_type_header.to_string(),
+                m_token_header,
+                m_accept_header.to_string(),
+            };
+            auto res = invoke_http_request("GET", headers, url);
             if (auto p = res.get())
             {
                 auto maybe_json = Json::parse_object(*p, m_url);
@@ -833,7 +834,7 @@ namespace
                 url_indices.push_back(idx);
             }
 
-            auto codes = download_files(m_fs, url_paths, {});
+            const auto codes = download_files(m_fs, url_paths, {});
 
             for (size_t i = 0; i < codes.size(); ++i)
             {
@@ -873,10 +874,11 @@ namespace
             payload.insert("version", abi);
             payload.insert("cacheSize", Json::Value::integer(cacheSize));
 
-            std::vector<std::string> headers;
-            headers.emplace_back(m_accept_header.data(), m_accept_header.size());
-            headers.emplace_back(m_content_type_header.data(), m_content_type_header.size());
-            headers.emplace_back(m_token_header);
+            const std::string headers[] = {
+                m_accept_header.to_string(),
+                m_content_type_header.to_string(),
+                m_token_header,
+            };
 
             auto res = invoke_http_request("POST", headers, m_url, stringify(payload));
             if (auto p = res.get())
@@ -907,22 +909,24 @@ namespace
 
             if (auto cacheId = reserve_cache_entry(request.spec.name(), abi, cache_size))
             {
-                std::vector<std::string> custom_headers{
+                const std::string custom_headers[] = {
                     m_token_header,
                     m_accept_header.to_string(),
                     "Content-Type: application/octet-stream",
                     "Content-Range: bytes 0-" + std::to_string(cache_size) + "/*",
                 };
-                auto url = m_url + "/" + std::to_string(*cacheId.get());
 
+                const auto url = m_url + "/" + std::to_string(*cacheId.get());
                 if (put_file(m_fs, url, {}, custom_headers, zip_path, "PATCH"))
                 {
                     Json::Object commit;
                     commit.insert("size", std::to_string(cache_size));
-                    std::vector<std::string> headers;
-                    headers.emplace_back(m_accept_header.data(), m_accept_header.size());
-                    headers.emplace_back(m_content_type_header.data(), m_content_type_header.size());
-                    headers.emplace_back(m_token_header);
+                    const std::string headers[] = {
+                        m_accept_header.to_string(),
+                        m_content_type_header.to_string(),
+                        m_token_header,
+                    };
+
                     auto res = invoke_http_request("POST", headers, url, stringify(commit));
                     if (res)
                     {
@@ -1747,7 +1751,7 @@ namespace vcpkg
         });
         if (!result)
         {
-            return result.error();
+            return std::move(result).error();
         }
         if (!invalid_keys.empty())
         {
@@ -2191,7 +2195,7 @@ namespace vcpkg
                     msgStoredBinariesToDestinations, msg::count = num_destinations, msg::elapsed = timer.elapsed());
             }
         }
-        if (action.build_options.clean_packages == CleanPackages::YES)
+        if (action.build_options.clean_packages == CleanPackages::Yes)
         {
             m_fs.remove_all(action.package_dir.value_or_exit(VCPKG_LINE_INFO), VCPKG_LINE_INFO);
         }
