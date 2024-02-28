@@ -42,7 +42,7 @@ TEST_CASE ("parse_package_spec explicit triplet", "[input][parse_package_spec]")
 TEST_CASE ("parse_package_spec forbid features", "[input][parse_package_spec]")
 {
     auto maybe_parsed = parse_package_spec("zlib[featurea]", X64_WINDOWS);
-    if (auto parsed = maybe_parsed.get())
+    if (maybe_parsed.has_value())
     {
         FAIL("features should not be accepted here");
     }
@@ -57,7 +57,7 @@ TEST_CASE ("parse_package_spec forbid features", "[input][parse_package_spec]")
 TEST_CASE ("parse_package_spec forbid platform expression", "[input][parse_package_spec]")
 {
     auto maybe_parsed = parse_package_spec("zlib(windows)", X64_WINDOWS);
-    if (auto parsed = maybe_parsed.get())
+    if (maybe_parsed.has_value())
     {
         FAIL("platform expressions should not be accepted here");
     }
@@ -72,7 +72,7 @@ TEST_CASE ("parse_package_spec forbid platform expression", "[input][parse_packa
 TEST_CASE ("parse_package_spec forbid illegal characters", "[input][parse_package_spec]")
 {
     auto maybe_parsed = parse_package_spec("zlib#notaport", X64_WINDOWS);
-    if (auto parsed = maybe_parsed.get())
+    if (maybe_parsed.has_value())
     {
         FAIL("# should not be accepted here");
     }
@@ -167,8 +167,6 @@ TEST_CASE ("check_and_get_package_spec forbids platform specs", "[input][check_a
                       ^)"));
 }
 
-
-
 TEST_CASE ("check_and_get_full_package_spec validates the triplet", "[input][check_and_get_full_package_spec]")
 {
     TripletDatabase db;
@@ -186,7 +184,8 @@ TEST_CASE ("check_and_get_full_package_spec validates the triplet", "[input][che
         FAIL();
     }
 
-    maybe_spec = check_and_get_full_package_spec("zlib[core]:x86-windows", Triplet::from_canonical_name("x64-windows"), db);
+    maybe_spec =
+        check_and_get_full_package_spec("zlib[core]:x86-windows", Triplet::from_canonical_name("x64-windows"), db);
     REQUIRE(!maybe_spec.has_value());
     REQUIRE(maybe_spec.error() == LocalizedString::from_raw(R"(error: Invalid triplet: x86-windows
 Built-in Triplets:

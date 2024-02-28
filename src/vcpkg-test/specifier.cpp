@@ -219,7 +219,7 @@ TEST_CASE ("specifier parsing", "[specifier]")
         }
     }
 
-        SECTION ("parsed specifier from string with unclosed feature suffix")
+    SECTION ("parsed specifier from string with unclosed feature suffix")
     {
         // even though there is a [, that doesn't parse as a valid feature list so the 'did you mean?' special case
         // should not engage
@@ -244,10 +244,8 @@ TEST_CASE ("specifier parsing", "[specifier]")
 
     SECTION ("parsed specifier from string with malformed feature suffix")
     {
-        auto s = vcpkg::parse_qualified_specifier("zlib:x64-windows[feature]suffix",
-                                                  AllowFeatures::Yes,
-                                                  ParseExplicitTriplet::Allow,
-                                                  AllowPlatformSpec::Yes);
+        auto s = vcpkg::parse_qualified_specifier(
+            "zlib:x64-windows[feature]suffix", AllowFeatures::Yes, ParseExplicitTriplet::Allow, AllowPlatformSpec::Yes);
         if (s.has_value())
         {
             FAIL();

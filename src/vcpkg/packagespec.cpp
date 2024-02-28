@@ -198,8 +198,8 @@ namespace vcpkg
                                         pqs->name,
                                         Strings::join(",", pqs->features.value_or_exit(VCPKG_LINE_INFO)),
                                         *triplet);
-                        parser.add_error(
-                            msg::format(msgParseQualifiedSpecifierNotEofSquareBracket, msg::version_spec = presumed_spec));
+                        parser.add_error(msg::format(msgParseQualifiedSpecifierNotEofSquareBracket,
+                                                     msg::version_spec = presumed_spec));
                     }
                     else
                     {

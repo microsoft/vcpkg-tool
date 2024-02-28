@@ -1291,7 +1291,7 @@
   "ParsePackagePatternError": "\"{package_name}\" is not a valid package pattern. Package patterns must use only one wildcard character (*) and it must be the last character in the pattern (see {url} for more information).",
   "_ParsePackagePatternError.comment": "An example of {package_name} is zlib. An example of {url} is https://github.com/microsoft/vcpkg.",
   "ParseQualifiedSpecifierNotEof": "expected the end of input parsing a package spec; this usually means the indicated character is not allowed to be in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hypens.",
-  "ParseQualifiedSpecifierNotEofSquareBracket": "unexpected end of input parsing a package spec; did you mean {version_spec} instead?",
+  "ParseQualifiedSpecifierNotEofSquareBracket": "expected the end of input parsing a package spec; did you mean {version_spec} instead?",
   "_ParseQualifiedSpecifierNotEofSquareBracket.comment": "An example of {version_spec} is zlib:x64-windows@1.0.0.",
   "PathMustBeAbsolute": "Value of environment variable X_VCPKG_REGISTRIES_CACHE is not absolute: {path}",
   "_PathMustBeAbsolute.comment": "An example of {path} is /foo/bar.",
