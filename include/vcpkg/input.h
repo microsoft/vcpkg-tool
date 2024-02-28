@@ -15,12 +15,11 @@ namespace vcpkg
     // Does not assert that the package spec has a valid triplet. This allows
     // such commands to refer to entities that were installed with an overlay
     // triplet or similar which is no longer active.
-    PackageSpec parse_package_spec(StringView spec_string, Triplet default_triplet, bool& default_triplet_used);
+    PackageSpec parse_package_spec(StringView spec_string, Triplet default_triplet);
 
     // Same as the above but checks the validity of the triplet.
     PackageSpec check_and_get_package_spec(StringView spec_string,
                                            Triplet default_triplet,
-                                           bool& default_triplet_used,
                                            const TripletDatabase& database);
 
     // Parse a package spec with features, typically used by commands which will
@@ -29,7 +28,6 @@ namespace vcpkg
     // Asserts that the package spec has a valid triplet.
     FullPackageSpec check_and_get_full_package_spec(StringView spec_string,
                                                     Triplet default_triplet,
-                                                    bool& default_triplet_used,
                                                     const TripletDatabase& database);
 
     void check_triplet(StringView name, const TripletDatabase& database);

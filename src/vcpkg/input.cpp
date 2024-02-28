@@ -11,12 +11,12 @@
 
 namespace vcpkg
 {
-    PackageSpec parse_package_spec(StringView spec_string, Triplet default_triplet, bool& default_triplet_used)
+    PackageSpec parse_package_spec(StringView spec_string, Triplet default_triplet)
     {
         auto maybe_qualified_specifier = parse_qualified_specifier(Strings::ascii_to_lowercase(spec_string));
         if (auto qualified_specifier = maybe_qualified_specifier.get())
         {
-            auto expected_spec = qualified_specifier->to_package_spec(default_triplet, default_triplet_used);
+            auto expected_spec = qualified_specifier->to_package_spec(default_triplet);
             if (auto spec = expected_spec.get())
             {
                 return std::move(*spec);
@@ -46,7 +46,6 @@ namespace vcpkg
 
     PackageSpec check_and_get_package_spec(StringView spec_string,
                                            Triplet default_triplet,
-                                           bool& default_triplet_used,
                                            const TripletDatabase& database)
     {
         auto maybe_qualified_specifier = parse_qualified_specifier(Strings::ascii_to_lowercase(spec_string));
@@ -57,7 +56,7 @@ namespace vcpkg
                 check_triplet(*specified_triplet, database);
             }
 
-            auto expected_spec = qualified_specifier->to_package_spec(default_triplet, default_triplet_used);
+            auto expected_spec = qualified_specifier->to_package_spec(default_triplet);
             if (auto spec = expected_spec.get())
             {
                 return std::move(*spec);
@@ -75,7 +74,6 @@ namespace vcpkg
 
     FullPackageSpec check_and_get_full_package_spec(StringView spec_string,
                                                     Triplet default_triplet,
-                                                    bool& default_triplet_used,
                                                     const TripletDatabase& database)
     {
         auto maybe_qualified_specifier = parse_qualified_specifier(Strings::ascii_to_lowercase(spec_string));
@@ -86,8 +84,7 @@ namespace vcpkg
                 check_triplet(*specified_triplet, database);
             }
 
-            auto expected_spec =
-                qualified_specifier->to_full_spec(default_triplet, default_triplet_used, ImplicitDefault::YES);
+            auto expected_spec = qualified_specifier->to_full_spec(default_triplet, ImplicitDefault::YES);
             if (auto spec = expected_spec.get())
             {
                 return std::move(*spec);

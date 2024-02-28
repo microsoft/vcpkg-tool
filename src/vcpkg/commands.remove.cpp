@@ -219,15 +219,8 @@ namespace vcpkg
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
-            bool default_triplet_used = false;
-            specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
-                return parse_package_spec(arg, default_triplet, default_triplet_used);
-            });
-
-            if (default_triplet_used)
-            {
-                print_default_triplet_warning(args, paths.get_triplet_db());
-            }
+            specs = Util::fmap(options.command_arguments,
+                               [&](auto&& arg) { return parse_package_spec(arg, default_triplet); });
         }
 
         const Purge purge = Util::Sets::contains(options.switches, OPTION_PURGE) ? Purge::YES : Purge::NO;
