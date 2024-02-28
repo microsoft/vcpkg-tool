@@ -61,17 +61,18 @@ namespace vcpkg
 
         Triplet my_triplet = this->spec.triplet();
         TextRowCol dependsRowCol;
-        this->dependencies = Util::fmap(
-            parse_qualified_specifier_list(parser.optional_field(Fields::DEPENDS, dependsRowCol), origin, dependsRowCol)
-                .value_or_exit(VCPKG_LINE_INFO),
-            [my_triplet](const ParsedQualifiedSpecifier& dep) {
-                // for compatibility with previous vcpkg versions, we discard all irrelevant information
-                return PackageSpec{
-                    dep.name,
-                    dep.triplet.map([](auto&& s) { return Triplet::from_canonical_name(std::string(s)); })
-                        .value_or(my_triplet),
-                };
-            });
+        auto depends_field = parser.optional_field(Fields::DEPENDS, dependsRowCol);
+        this->dependencies =
+            Util::fmap(parse_qualified_specifier_list(std::move(depends_field), origin, dependsRowCol)
+                           .value_or_exit(VCPKG_LINE_INFO),
+                       [my_triplet](const ParsedQualifiedSpecifier& dep) {
+                           // for compatibility with previous vcpkg versions, we discard all irrelevant information
+                           return PackageSpec{
+                               dep.name,
+                               dep.triplet.map([](auto&& s) { return Triplet::from_canonical_name(std::string(s)); })
+                                   .value_or(my_triplet),
+                           };
+                       });
         if (!this->is_feature())
         {
             TextRowCol defaultFeaturesRowCol;

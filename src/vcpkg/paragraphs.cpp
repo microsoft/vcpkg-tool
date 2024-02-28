@@ -179,8 +179,11 @@ namespace vcpkg
                                                                                     TextRowCol textrowcol)
     {
         auto parser = ParserBase(str, origin, textrowcol);
-        auto opt = parse_list_until_eof<ParsedQualifiedSpecifier>(
-            msgExpectedDependenciesList, parser, [](ParserBase& parser) { return parse_qualified_specifier(parser); });
+        auto opt =
+            parse_list_until_eof<ParsedQualifiedSpecifier>(msgExpectedDependenciesList, parser, [](ParserBase& parser) {
+                return parse_qualified_specifier(
+                    parser, AllowFeatures::Yes, ParseExplicitTriplet::Allow, AllowPlatformSpec::Yes);
+            });
         if (!opt) return {LocalizedString::from_raw(parser.get_error()->to_string()), expected_right_tag};
 
         return {std::move(opt).value_or_exit(VCPKG_LINE_INFO), expected_left_tag};
@@ -192,29 +195,23 @@ namespace vcpkg
         auto parser = ParserBase(str, origin, textrowcol);
         auto opt = parse_list_until_eof<Dependency>(msgExpectedDependenciesList, parser, [](ParserBase& parser) {
             auto loc = parser.cur_loc();
-            return parse_qualified_specifier(parser).then([&](ParsedQualifiedSpecifier&& pqs) -> Optional<Dependency> {
-                if (const auto triplet = pqs.triplet.get())
-                {
-                    parser.add_error(msg::format(msgAddTripletExpressionNotAllowed,
-                                                 msg::package_name = pqs.name,
-                                                 msg::triplet = *triplet),
-                                     loc);
-                    return nullopt;
-                }
-                Dependency dependency{pqs.name, {}, pqs.platform.value_or({})};
-                for (const auto& feature : pqs.features.value_or({}))
-                {
-                    if (feature == "core")
+            return parse_qualified_specifier(
+                       parser, AllowFeatures::Yes, ParseExplicitTriplet::Forbid, AllowPlatformSpec::Yes)
+                .then([&](ParsedQualifiedSpecifier&& pqs) -> Optional<Dependency> {
+                    Dependency dependency{pqs.name, {}, pqs.platform.value_or({})};
+                    for (const auto& feature : pqs.features.value_or({}))
                     {
-                        dependency.default_features = false;
+                        if (feature == "core")
+                        {
+                            dependency.default_features = false;
+                        }
+                        else
+                        {
+                            dependency.features.push_back({feature});
+                        }
                     }
-                    else
-                    {
-                        dependency.features.push_back({feature});
-                    }
-                }
-                return dependency;
-            });
+                    return dependency;
+                });
         });
         if (!opt) return {LocalizedString::from_raw(parser.get_error()->to_string()), expected_right_tag};
 

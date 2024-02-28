@@ -121,8 +121,9 @@ namespace vcpkg
 
         Json::Array json_to_print; // only used when `use_json`
 
-        const std::vector<FullPackageSpec> specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
-            return check_and_get_full_package_spec(arg, default_triplet, paths.get_triplet_db());
+        const std::vector<FullPackageSpec> specs = Util::fmap(options.command_arguments, [&](const std::string& arg) {
+            return check_and_get_full_package_spec(arg, default_triplet, paths.get_triplet_db())
+                .value_or_exit(VCPKG_LINE_INFO);
         });
 
         auto& fs = paths.get_filesystem();

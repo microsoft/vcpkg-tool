@@ -281,8 +281,9 @@ namespace vcpkg
     {
         // input sanitization
         const ParsedArguments options = args.parse_arguments(CommandSetInstalledMetadata);
-        const std::vector<FullPackageSpec> specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
-            return check_and_get_full_package_spec(arg, default_triplet, paths.get_triplet_db());
+        const std::vector<FullPackageSpec> specs = Util::fmap(options.command_arguments, [&](const std::string& arg) {
+            return check_and_get_full_package_spec(arg, default_triplet, paths.get_triplet_db())
+                .value_or_exit(VCPKG_LINE_INFO);
         });
 
         const bool dry_run = Util::Sets::contains(options.switches, OPTION_DRY_RUN);

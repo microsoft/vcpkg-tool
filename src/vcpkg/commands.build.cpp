@@ -85,7 +85,8 @@ namespace vcpkg
         // Build only takes a single package and all dependencies must already be installed
         const ParsedArguments options = args.parse_arguments(CommandBuildMetadata);
         const FullPackageSpec spec =
-            check_and_get_full_package_spec(options.command_arguments[0], default_triplet, paths.get_triplet_db());
+            check_and_get_full_package_spec(options.command_arguments[0], default_triplet, paths.get_triplet_db())
+                .value_or_exit(VCPKG_LINE_INFO);
 
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();

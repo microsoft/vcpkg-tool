@@ -396,8 +396,9 @@ namespace
         else
         {
             // input sanitization
-            ret.specs = Util::fmap(options.command_arguments,
-                                   [&](auto&& arg) { return parse_package_spec(arg, default_triplet); });
+            ret.specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
+                return parse_package_spec(arg, default_triplet).value_or_exit(VCPKG_LINE_INFO);
+            });
         }
 
         if (!ret.raw && !ret.nuget && !ret.ifw && !ret.zip && !ret.seven_zip && !ret.dry_run && !ret.chocolatey &&

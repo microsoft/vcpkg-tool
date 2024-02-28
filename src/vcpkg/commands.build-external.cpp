@@ -28,7 +28,8 @@ namespace vcpkg
         const ParsedArguments options = args.parse_arguments(CommandBuildExternalMetadata);
 
         const FullPackageSpec spec =
-            check_and_get_full_package_spec(options.command_arguments[0], default_triplet, paths.get_triplet_db());
+            check_and_get_full_package_spec(options.command_arguments[0], default_triplet, paths.get_triplet_db())
+                .value_or_exit(VCPKG_LINE_INFO);
 
         auto overlays = paths.overlay_ports;
         overlays.insert(overlays.begin(), options.command_arguments[1]);

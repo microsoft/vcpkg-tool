@@ -69,32 +69,12 @@ namespace vcpkg
             std::vector<PackageSpec> specs_to_write;
             for (auto&& arg : options.command_arguments)
             {
-                ParserBase parser(arg, nullopt);
-                auto maybe_qpkg = parse_qualified_specifier(parser);
-                if (!parser.at_eof() || !maybe_qpkg)
-                {
-                    parser.add_error(msg::format(msgExpectedPackageSpecifier));
-                }
-                else if (!maybe_qpkg.get()->triplet)
-                {
-                    parser.add_error(msg::format(msgExpectedExplicitTriplet));
-                }
-                else if (maybe_qpkg.get()->features)
-                {
-                    parser.add_error(msg::format(msgUnexpectedFeatureList));
-                }
-                else if (maybe_qpkg.get()->platform)
-                {
-                    parser.add_error(msg::format(msgUnexpectedPlatformExpression));
-                }
-                if (auto err = parser.get_error())
-                {
-                    Checks::exit_with_message(VCPKG_LINE_INFO, err->to_string());
-                }
-
-                auto& qpkg = *maybe_qpkg.get();
+                auto qpkg = parse_qualified_specifier(
+                                arg, AllowFeatures::No, ParseExplicitTriplet::Require, AllowPlatformSpec::No)
+                                .value_or_exit(VCPKG_LINE_INFO);
                 // intentionally no triplet name check
-                specs_to_write.emplace_back(qpkg.name, Triplet::from_canonical_name(*qpkg.triplet.get()));
+                specs_to_write.emplace_back(qpkg.name,
+                                            Triplet::from_canonical_name(qpkg.triplet.value_or_exit(VCPKG_LINE_INFO)));
             }
 
             Json::Object response;

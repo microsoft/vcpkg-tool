@@ -81,17 +81,11 @@ namespace vcpkg
             specs.reserve(parsed.command_arguments.size() - 1);
             for (std::size_t idx = 1; idx < parsed.command_arguments.size(); ++idx)
             {
-                ParsedQualifiedSpecifier value =
-                    parse_qualified_specifier(parsed.command_arguments[idx]).value_or_exit(VCPKG_LINE_INFO);
-                if (const auto t = value.triplet.get())
-                {
-                    Checks::msg_exit_with_error(VCPKG_LINE_INFO,
-                                                msgAddTripletExpressionNotAllowed,
-                                                msg::package_name = value.name,
-                                                msg::triplet = *t);
-                }
-
-                specs.push_back(std::move(value));
+                specs.push_back(parse_qualified_specifier(parsed.command_arguments[idx],
+                                                          AllowFeatures::Yes,
+                                                          ParseExplicitTriplet::Forbid,
+                                                          AllowPlatformSpec::No)
+                                    .value_or_exit(VCPKG_LINE_INFO));
             }
 
             auto maybe_manifest_scf =

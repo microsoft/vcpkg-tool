@@ -219,8 +219,9 @@ namespace vcpkg
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
-            specs = Util::fmap(options.command_arguments,
-                               [&](auto&& arg) { return parse_package_spec(arg, default_triplet); });
+            specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
+                return parse_package_spec(arg, default_triplet).value_or_exit(VCPKG_LINE_INFO);
+            });
         }
 
         const Purge purge = Util::Sets::contains(options.switches, OPTION_PURGE) ? Purge::YES : Purge::NO;
