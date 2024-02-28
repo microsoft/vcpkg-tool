@@ -101,16 +101,10 @@ namespace vcpkg
             PrintUsage::Yes,
         };
 
-        bool default_triplet_used = false;
         const FullPackageSpec spec = check_and_get_full_package_spec(options.command_arguments[0],
                                                                      default_triplet,
-                                                                     default_triplet_used,
                                                                      CommandBuildMetadata.get_example_text(),
                                                                      paths.get_triplet_db());
-        if (default_triplet_used)
-        {
-            print_default_triplet_warning(args, paths.get_triplet_db());
-        }
 
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();
@@ -963,17 +957,28 @@ namespace vcpkg
 
         if (Strings::starts_with(triplet_file_path, triplet_db.community_triplet_directory))
         {
-            msg::println_warning(msgUsingCommunityTriplet, msg::triplet = triplet.canonical_name());
-            msg::println(msgLoadingCommunityTriplet, msg::path = triplet_file_path);
+            msg::print(LocalizedString::from_raw(triplet_file_path)
+                           .append_raw(": ")
+                           .append_raw(InfoPrefix)
+                           .append(msgLoadedCommunityTriplet)
+                           .append_raw('\n'));
         }
         else if (!Strings::starts_with(triplet_file_path, triplet_db.default_triplet_directory))
         {
-            msg::println(msgLoadingOverlayTriplet, msg::path = triplet_file_path);
+            msg::print(LocalizedString::from_raw(triplet_file_path)
+                           .append_raw(": ")
+                           .append_raw(InfoPrefix)
+                           .append(msgLoadedOverlayTriplet)
+                           .append_raw('\n'));
         }
 
         if (!Strings::starts_with(scfl.control_path, paths.builtin_ports_directory()))
         {
-            msg::println(msgInstallingFromLocation, msg::path = scfl.port_directory());
+            msg::print(LocalizedString::from_raw(scfl.port_directory())
+                           .append_raw(": ")
+                           .append_raw(InfoPrefix)
+                           .append(msgInstallingOverlayPort)
+                           .append_raw('\n'));
         }
 
         const auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
