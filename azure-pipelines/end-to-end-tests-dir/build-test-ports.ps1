@@ -2,8 +2,18 @@
 
 $CurrentTest = "Build Test Ports"
 
-Run-Vcpkg @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports" install vcpkg-internal-e2e-test-port3
+$output = Run-Vcpkg @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports" install vcpkg-internal-e2e-test-port3
 Throw-IfFailed
+$res = $output -match "^Compiler found:"
+if ($res) {
+    $res.Trim() -match "^Compiler found: (.+)"
+    if (-Not (Test-Path $matches[1])) {
+        throw "Did not print a valid compiler path"
+    }
+} else {
+    throw "Did not detect a compiler"
+}
+
 
 $output = Run-VcpkgAndCaptureOutput @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports/vcpkg-internal-e2e-test-port2" install vcpkg-internal-e2e-test-port2
 Throw-IfFailed

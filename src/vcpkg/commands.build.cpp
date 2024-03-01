@@ -711,7 +711,8 @@ namespace vcpkg
                 static constexpr StringLiteral s_path_marker = "#COMPILER_CXX_PATH#";
                 if (Strings::starts_with(s, s_path_marker))
                 {
-                    compiler_info.path = s.substr(s_path_marker.size()).to_string();
+                    const auto compiler_cxx_path = s.substr(s_path_marker.size());
+                    compiler_info.path.assign(compiler_cxx_path.data(), compiler_cxx_path.size());
                 }
                 Debug::println(s);
                 const auto old_buf_size = buf.size();
