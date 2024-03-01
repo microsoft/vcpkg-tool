@@ -12,6 +12,7 @@
 #include <vcpkg/registries.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
+#include <vcpkg/versiondeserializers.h>
 #include <vcpkg/versions.h>
 
 using namespace vcpkg;
@@ -19,10 +20,6 @@ using namespace vcpkg;
 namespace
 {
     constexpr StringLiteral BASELINE = "baseline";
-    constexpr StringLiteral VERSION_RELAXED = "version";
-    constexpr StringLiteral VERSION_SEMVER = "version-semver";
-    constexpr StringLiteral VERSION_DATE = "version-date";
-    constexpr StringLiteral VERSION_STRING = "version-string";
 
     constexpr StringLiteral OPTION_ALL = "all";
     constexpr StringLiteral OPTION_OVERWRITE_VERSION = "overwrite-version";

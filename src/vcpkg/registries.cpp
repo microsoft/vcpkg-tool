@@ -64,7 +64,7 @@ namespace
                                                                             const Json::Object& obj) const
     {
         GitVersionDbEntry ret;
-        ret.version = visit_required_schemed_deserializer(type_name(), r, obj);
+        ret.version = visit_required_schemed_version(type_name(), r, obj);
         r.required_object_field(type_name(), obj, GIT_TREE, ret.git_tree, GitTreeStringDeserializer::instance);
         return ret;
     }
@@ -114,7 +114,7 @@ namespace
                                                                                           const Json::Object& obj) const
     {
         FilesystemVersionDbEntry ret;
-        ret.version = visit_required_schemed_deserializer(type_name(), r, obj);
+        ret.version = visit_required_schemed_version(type_name(), r, obj);
 
         std::string path_res;
         r.required_object_field(type_name(), obj, PATH, path_res, RegistryPathStringDeserializer::instance);
@@ -1257,7 +1257,7 @@ namespace
             {
                 const auto& version_value = pr.second;
                 Version version;
-                r.visit_in_key(version_value, pr.first, version, get_versiontag_deserializer_instance());
+                r.visit_in_key(version_value, pr.first, version, baseline_version_tag_deserializer);
 
                 result.emplace(pr.first.to_string(), std::move(version));
             }
