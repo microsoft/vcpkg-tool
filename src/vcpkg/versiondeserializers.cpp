@@ -75,7 +75,7 @@ namespace
         }
     };
 
-    struct GenericVersionDeserializer : Json::IDeserializer<Version>
+    struct BaselineVersionTagDeserializer : Json::IDeserializer<Version>
     {
         LocalizedString type_name() const override { return msg::format(msgAVersionObject); }
 
@@ -301,9 +301,6 @@ namespace vcpkg
 
     const VersionConstraintStringDeserializer VersionConstraintStringDeserializer::instance;
 
-    const Json::IDeserializer<Version>& get_versiontag_deserializer_instance()
-    {
-        static const GenericVersionDeserializer deserializer;
-        return deserializer;
-    }
+    static const BaselineVersionTagDeserializer baseline_version_tag_deserializer_instance;
+    const Json::IDeserializer<Version>& baseline_version_tag_deserializer = baseline_version_tag_deserializer_instance;
 }

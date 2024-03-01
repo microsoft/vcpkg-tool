@@ -14,7 +14,7 @@ namespace vcpkg
     extern const StringLiteral VERSION_STRING;
     extern const StringLiteral VERSION_DATE;
 
-    const Json::IDeserializer<Version>& get_versiontag_deserializer_instance();
+    extern const Json::IDeserializer<Version>& baseline_version_tag_deserializer;
 
     Optional<SchemedVersion> visit_optional_schemed_version(const LocalizedString& parent_type,
                                                             Json::Reader& r,
