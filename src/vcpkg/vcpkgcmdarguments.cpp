@@ -335,6 +335,7 @@ namespace vcpkg
             args.host_triplet,
             msg::format(msgSpecifyHostArch, msg::env_var = format_environment_variable("VCPKG_DEFAULT_HOST_TRIPLET")));
         args.parser.parse_option(JsonIdManifestRoot, StabilityTag::Experimental, args.manifest_root_dir);
+        args.parser.parse_option(SwitchManifestRoot, StabilityTag::Experimental, args.manifest_root_dir);
         args.parser.parse_option(SwitchBuildtreesRoot,
                                  StabilityTag::Experimental,
                                  args.buildtrees_root_dir,
