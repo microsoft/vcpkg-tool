@@ -71,7 +71,6 @@ namespace vcpkg
     inline constexpr StringLiteral JsonIdSupports = "supports";
     inline constexpr StringLiteral JsonIdTriplet = "triplet";
     inline constexpr StringLiteral JsonIdUrl = "url";
-    inline constexpr StringLiteral JsonIdVcpkg = "vcpkg";
     inline constexpr StringLiteral JsonIdVcpkgAssetSources = "vcpkg-asset-sources";
     inline constexpr StringLiteral JsonIdVcpkgConfiguration = "vcpkg-configuration";
     inline constexpr StringLiteral JsonIdVcpkgDisableMetrics = "vcpkg-disable-metrics";

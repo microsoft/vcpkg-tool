@@ -53,7 +53,7 @@ namespace vcpkg
             args.github_workflow.has_value() && args.github_run_id.has_value())
         {
             Json::Object detector;
-            detector.insert(JsonIdName, Json::Value::string(JsonIdVcpkg));
+            detector.insert(JsonIdName, Json::Value::string("vcpkg"));
             detector.insert(JsonIdUrl, Json::Value::string("https://github.com/microsoft/vcpkg"));
             detector.insert(JsonIdVersion, Json::Value::string("1.0.0"));
 
