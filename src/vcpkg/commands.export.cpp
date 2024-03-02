@@ -367,16 +367,9 @@ namespace
         else
         {
             // input sanitization
-            bool default_triplet_used = false;
             ret.specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
-                return parse_package_spec(
-                    arg, default_triplet, default_triplet_used, CommandExportMetadata.get_example_text());
+                return parse_package_spec(arg, default_triplet, CommandExportMetadata.get_example_text());
             });
-
-            if (default_triplet_used)
-            {
-                print_default_triplet_warning(args, paths.get_triplet_db());
-            }
         }
 
         if (!ret.raw && !ret.nuget && !ret.ifw && !ret.zip && !ret.seven_zip && !ret.dry_run && !ret.chocolatey &&

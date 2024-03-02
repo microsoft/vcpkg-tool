@@ -443,11 +443,11 @@ TEST_CASE ("version string baseline agree", "[versionplan]")
 TEST_CASE ("version install scheme baseline conflict", "[versionplan]")
 {
     MockBaselineProvider bp;
-    bp.v["a"] = {"2", 0};
+    bp.v["a"] = {"2with\"quotes", 0};
 
     MockVersionedPortfileProvider vp;
     vp.emplace("a", {"1", 0});
-    vp.emplace("a", {"2", 0});
+    vp.emplace("a", {"2with\"quotes", 0});
     vp.emplace("a", {"3", 0});
 
     MockCMakeVarProvider var_provider;
@@ -465,16 +465,17 @@ TEST_CASE ("version install scheme baseline conflict", "[versionplan]")
     REQUIRE(!install_plan.has_value());
     REQUIRE_LINES(
         install_plan.error(),
-        R"(error: version conflict on a:x86-windows: toplevel-spec required 3, which cannot be compared with the baseline version 2.
+        R"(error: version conflict on a:x86-windows: toplevel-spec required 3, which cannot be compared with the baseline version 2with"quotes.
 
 Both versions have scheme string but different primary text.
 
 This can be resolved by adding an explicit override to the preferred version. For example:
-
   "overrides": [
-    { "name": "a", "version": "2" }
+    {
+      "name": "a",
+      "version": "2with\"quotes"
+    }
   ]
-
 See `vcpkg help versioning` or https://learn.microsoft.com/vcpkg/users/versioning for more information.)");
 }
 
@@ -1108,11 +1109,12 @@ The versions have incomparable schemes:
   a@1.0.1 has scheme string
 
 This can be resolved by adding an explicit override to the preferred version. For example:
-
   "overrides": [
-    { "name": "a", "version": "1.0.0" }
+    {
+      "name": "a",
+      "version": "1.0.0"
+    }
   ]
-
 See `vcpkg help versioning` or https://learn.microsoft.com/vcpkg/users/versioning for more information.)");
     }
     SECTION ("higher baseline")
@@ -1138,11 +1140,12 @@ The versions have incomparable schemes:
   a@1.0.1 has scheme string
 
 This can be resolved by adding an explicit override to the preferred version. For example:
-
   "overrides": [
-    { "name": "a", "version": "1.0.2" }
+    {
+      "name": "a",
+      "version": "1.0.2"
+    }
   ]
-
 See `vcpkg help versioning` or https://learn.microsoft.com/vcpkg/users/versioning for more information.)");
     }
 }
@@ -1230,11 +1233,12 @@ The versions have incomparable schemes:
   b@1#1 has scheme relaxed
 
 This can be resolved by adding an explicit override to the preferred version. For example:
-
   "overrides": [
-    { "name": "b", "version": "1" }
+    {
+      "name": "b",
+      "version": "1"
+    }
   ]
-
 See `vcpkg help versioning` or https://learn.microsoft.com/vcpkg/users/versioning for more information.)");
     }
     SECTION ("lower baseline")
@@ -1555,8 +1559,8 @@ TEST_CASE ("version install overrides", "[versionplan]")
     bp.v["b"] = {"2", 0};
     bp.v["c"] = {"2", 0};
 
-    DependencyOverride bdo{"b", Version{"1", 0}, VersionScheme::String};
-    DependencyOverride cdo{"c", Version{"1", 0}, VersionScheme::String};
+    DependencyOverride bdo{"b", Version{"1", 0}};
+    DependencyOverride cdo{"c", Version{"1", 0}};
     SECTION ("string")
     {
         auto install_plan =
@@ -1595,8 +1599,8 @@ TEST_CASE ("version install transitive overrides", "[versionplan]")
     bp.v["b"] = {"2", 0};
     bp.v["c"] = {"2", 1};
 
-    DependencyOverride bdo{"b", Version{"1", 0}, VersionScheme::String};
-    DependencyOverride cdo{"c", Version{"1", 0}, VersionScheme::String};
+    DependencyOverride bdo{"b", Version{"1", 0}};
+    DependencyOverride cdo{"c", Version{"1", 0}};
     WITH_EXPECTED(install_plan,
                   create_versioned_install_plan(vp, bp, var_provider, {Dependency{"b"}}, {bdo, cdo}, toplevel_spec()));
 
@@ -2145,7 +2149,7 @@ TEST_CASE ("version overlay ports", "[versionplan]")
                                     Dependency{"a", {}, {}, {VersionConstraintKind::Minimum, Version{"1", 1}}},
                                 },
                                 {
-                                    DependencyOverride{"a", Version{"2", 0}, VersionScheme::String},
+                                    DependencyOverride{"a", Version{"2", 0}},
                                 },
                                 toplevel_spec())
                                 .value_or_exit(VCPKG_LINE_INFO);
@@ -2155,19 +2159,18 @@ TEST_CASE ("version overlay ports", "[versionplan]")
     }
     SECTION ("override")
     {
-        auto install_plan =
-            create_versioned_install_plan(vp,
-                                          bp,
-                                          oprovider,
-                                          var_provider,
-                                          {
-                                              Dependency{"a"},
-                                          },
-                                          {
-                                              DependencyOverride{"a", Version{"2", 0}, VersionScheme::String},
-                                          },
-                                          toplevel_spec())
-                .value_or_exit(VCPKG_LINE_INFO);
+        auto install_plan = create_versioned_install_plan(vp,
+                                                          bp,
+                                                          oprovider,
+                                                          var_provider,
+                                                          {
+                                                              Dependency{"a"},
+                                                          },
+                                                          {
+                                                              DependencyOverride{"a", Version{"2", 0}},
+                                                          },
+                                                          toplevel_spec())
+                                .value_or_exit(VCPKG_LINE_INFO);
 
         REQUIRE(install_plan.size() == 1);
         check_name_and_version(install_plan.install_actions[0], "a", {"overlay", 0});
@@ -2201,7 +2204,7 @@ TEST_CASE ("respect supports expression", "[versionplan]")
                                                      oprovider,
                                                      var_provider,
                                                      {Dependency{"a"}},
-                                                     {DependencyOverride{"a", Version{"1", 1}, VersionScheme::String}},
+                                                     {DependencyOverride{"a", Version{"1", 1}}},
                                                      toplevel_spec());
         CHECK(install_plan.has_value());
         // override from supported to non supported version
@@ -2211,7 +2214,7 @@ TEST_CASE ("respect supports expression", "[versionplan]")
                                                      oprovider,
                                                      var_provider,
                                                      {Dependency{"a"}},
-                                                     {DependencyOverride{"a", Version{"1", 0}, VersionScheme::String}},
+                                                     {DependencyOverride{"a", Version{"1", 0}}},
                                                      toplevel_spec());
         CHECK_FALSE(install_plan.has_value());
     }
@@ -2249,7 +2252,7 @@ TEST_CASE ("respect supports expressions of features", "[versionplan]")
                                                      oprovider,
                                                      var_provider,
                                                      {Dependency{"a", {{"x"}}}},
-                                                     {DependencyOverride{"a", Version{"1", 1}, VersionScheme::String}},
+                                                     {DependencyOverride{"a", Version{"1", 1}}},
                                                      toplevel_spec());
         CHECK(install_plan.has_value());
         // override from supported to non supported version
@@ -2259,7 +2262,7 @@ TEST_CASE ("respect supports expressions of features", "[versionplan]")
                                                      oprovider,
                                                      var_provider,
                                                      {Dependency{"a", {{"x"}}}},
-                                                     {DependencyOverride{"a", Version{"1", 0}, VersionScheme::String}},
+                                                     {DependencyOverride{"a", Version{"1", 0}}},
                                                      toplevel_spec());
         CHECK_FALSE(install_plan.has_value());
     }

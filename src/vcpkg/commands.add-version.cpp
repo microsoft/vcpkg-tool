@@ -13,6 +13,7 @@
 #include <vcpkg/registries.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
+#include <vcpkg/versiondeserializers.h>
 #include <vcpkg/versions.h>
 
 using namespace vcpkg;

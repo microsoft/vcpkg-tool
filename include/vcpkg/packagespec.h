@@ -143,11 +143,9 @@ namespace vcpkg
 
         /// @param id add "default" if "core" is not present
         /// @return nullopt on success. On failure, caller should supplement returned string with more context.
-        ExpectedL<FullPackageSpec> to_full_spec(Triplet default_triplet,
-                                                bool& default_triplet_used,
-                                                ImplicitDefault id) const;
+        ExpectedL<FullPackageSpec> to_full_spec(Triplet default_triplet, ImplicitDefault id) const;
 
-        ExpectedL<PackageSpec> to_package_spec(Triplet default_triplet, bool& default_triplet_used) const;
+        ExpectedL<PackageSpec> to_package_spec(Triplet default_triplet) const;
     };
 
     Optional<std::string> parse_feature_name(ParserBase& parser);

@@ -63,7 +63,7 @@ namespace
                                                                             const Json::Object& obj) const
     {
         GitVersionDbEntry ret;
-        ret.version = visit_required_schemed_deserializer(type_name(), r, obj);
+        ret.version = visit_required_schemed_version(type_name(), r, obj);
         r.required_object_field(type_name(), obj, JsonIdGitTree, ret.git_tree, GitTreeStringDeserializer::instance);
         return ret;
     }
@@ -111,7 +111,7 @@ namespace
                                                                                           const Json::Object& obj) const
     {
         FilesystemVersionDbEntry ret;
-        ret.version = visit_required_schemed_deserializer(type_name(), r, obj);
+        ret.version = visit_required_schemed_version(type_name(), r, obj);
 
         std::string path_res;
         r.required_object_field(type_name(), obj, JsonIdPath, path_res, RegistryPathStringDeserializer::instance);
@@ -303,7 +303,7 @@ namespace
                 auto maybe_up_to_date = lock_entry->ensure_up_to_date(m_paths);
                 if (!maybe_up_to_date)
                 {
-                    return maybe_up_to_date.error();
+                    return std::move(maybe_up_to_date).error();
                 }
 
                 auto maybe_tree = m_paths.git_find_object_id_for_remote_registry_path(lock_entry->commit_id(),
@@ -1242,7 +1242,7 @@ namespace
             {
                 const auto& version_value = pr.second;
                 Version version;
-                r.visit_in_key(version_value, pr.first, version, get_versiontag_deserializer_instance());
+                r.visit_in_key(version_value, pr.first, version, baseline_version_tag_deserializer);
 
                 result.emplace(pr.first.to_string(), std::move(version));
             }

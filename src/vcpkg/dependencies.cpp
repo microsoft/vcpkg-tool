@@ -1732,12 +1732,12 @@ namespace vcpkg
                             msg::new_scheme = target.scheme)
                     .append_raw("\n\n");
             }
-            doc.append(msgVersionIncomparable3).append_raw("\n\n");
-            doc.append_indent().append_raw("\"overrides\": [\n");
-            doc.append_indent(2)
-                .append_raw(fmt::format(R"({{ "name": "{}", "version": "{}" }})", on.name(), baseline.version))
-                .append_raw('\n');
-            doc.append_indent().append_raw("]\n\n");
+            doc.append(msgVersionIncomparable3).append_raw("\n");
+
+            Json::Array example_array;
+            serialize_dependency_override(example_array, DependencyOverride{on.name(), baseline.version});
+            doc.append_raw(Json::stringify_object_member(OVERRIDES, example_array, Json::JsonStyle::with_spaces(2), 1));
+
             doc.append(msgVersionIncomparable4, msg::url = docs::versioning_url);
             return doc;
         }

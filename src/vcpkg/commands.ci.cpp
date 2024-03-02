@@ -316,9 +316,6 @@ namespace vcpkg
                              Triplet host_triplet)
     {
         msg::println_warning(msgInternalCICommand);
-
-        print_default_triplet_warning(args, paths.get_triplet_db());
-
         const ParsedArguments options = args.parse_arguments(CommandCiMetadata);
         const auto& settings = options.settings;
 

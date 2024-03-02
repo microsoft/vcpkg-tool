@@ -21,7 +21,6 @@
 
 namespace vcpkg
 {
-
     bool operator==(const DependencyConstraint& lhs, const DependencyConstraint& rhs)
     {
         if (lhs.type != rhs.type) return false;
@@ -71,10 +70,20 @@ namespace vcpkg
     {
         if (lhs.name != rhs.name) return false;
         if (lhs.version != rhs.version) return false;
-        if (lhs.scheme != rhs.scheme) return false;
         return lhs.extra_info == rhs.extra_info;
     }
-    bool operator!=(const DependencyOverride& lhs, const DependencyOverride& rhs);
+
+    void serialize_dependency_override(Json::Array& arr, const DependencyOverride& dep)
+    {
+        auto& dep_obj = arr.push_back(Json::Object());
+        for (const auto& el : dep.extra_info)
+        {
+            dep_obj.insert(el.first.to_string(), el.second);
+        }
+
+        dep_obj.insert(JsonIdName, Json::Value::string(dep.name));
+        dep_obj.insert(JsonIdVersion, dep.version.to_string());
+    }
 
     bool operator==(const DependencyRequestedFeature& lhs, const DependencyRequestedFeature& rhs)
     {
@@ -678,7 +687,6 @@ namespace vcpkg
     struct DependencyOverrideDeserializer final : Json::IDeserializer<DependencyOverride>
     {
         virtual LocalizedString type_name() const override { return msg::format(msgAnOverride); }
-
         virtual Span<const StringView> valid_fields() const override
         {
             static constexpr StringView u[] = {JsonIdName};
@@ -700,10 +708,7 @@ namespace vcpkg
 
             const auto type_name = this->type_name();
             r.required_object_field(type_name, obj, JsonIdName, dep.name, Json::PackageNameDeserializer::instance);
-            auto schemed_version = visit_required_schemed_deserializer(type_name, r, obj, true);
-            dep.version = std::move(schemed_version.version);
-            dep.scheme = schemed_version.scheme;
-
+            dep.version = visit_version_override_version(type_name, r, obj);
             return dep;
         }
 
@@ -1207,7 +1212,7 @@ namespace vcpkg
             auto& spgh = *control_file->core_paragraph;
 
             r.optional_object_field(obj, JsonIdName, spgh.name, Json::PackageNameDeserializer::instance);
-            auto maybe_schemed_version = visit_optional_schemed_deserializer(type_name(), r, obj, false);
+            auto maybe_schemed_version = visit_optional_schemed_version(type_name(), r, obj);
             if (auto p = maybe_schemed_version.get())
             {
                 spgh.version_scheme = p->scheme;
@@ -1237,7 +1242,7 @@ namespace vcpkg
             auto& spgh = *control_file->core_paragraph;
 
             r.required_object_field(type_name(), obj, JsonIdName, spgh.name, Json::PackageNameDeserializer::instance);
-            auto schemed_version = visit_required_schemed_deserializer(type_name(), r, obj, false);
+            auto schemed_version = visit_required_schemed_version(type_name(), r, obj);
             spgh.version_scheme = schemed_version.scheme;
             spgh.version = schemed_version.version;
 
@@ -1651,17 +1656,6 @@ namespace vcpkg
             }
         };
 
-        auto serialize_override = [&](Json::Array& arr, const DependencyOverride& dep) {
-            auto& dep_obj = arr.push_back(Json::Object());
-            for (const auto& el : dep.extra_info)
-            {
-                dep_obj.insert(el.first.to_string(), el.second);
-            }
-
-            dep_obj.insert(JsonIdName, Json::Value::string(dep.name));
-            serialize_schemed_version(dep_obj, dep.scheme, dep.version);
-        };
-
         auto serialize_license =
             [&](Json::Object& obj, StringLiteral name, const Optional<std::string>& maybe_license) {
                 if (auto license = maybe_license.get())
@@ -1765,7 +1759,7 @@ namespace vcpkg
 
             for (const auto& over : scf.core_paragraph->overrides)
             {
-                serialize_override(overrides, over);
+                serialize_dependency_override(overrides, over);
             }
         }
 

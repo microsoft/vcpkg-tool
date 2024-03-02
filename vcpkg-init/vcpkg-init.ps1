@@ -109,22 +109,22 @@ IF EXIST $null DEL $null
 
 :: Figure out where VCPKG_ROOT is
 IF EXIST "%~dp0.vcpkg-root" (
-  SET VCPKG_ROOT=%~dp0
+  SET "VCPKG_ROOT=%~dp0"
 )
 
 IF "%VCPKG_ROOT:~-1%"=="\" (
-  SET VCPKG_ROOT=%VCPKG_ROOT:~0,-1%
+  SET "VCPKG_ROOT=%VCPKG_ROOT:~0,-1%"
 )
 
 IF "%VCPKG_ROOT%"=="" (
-  SET VCPKG_ROOT=%USERPROFILE%\.vcpkg
+  SET "VCPKG_ROOT=%USERPROFILE%\.vcpkg"
 )
 
 :: Call powershell which may or may not invoke bootstrap if there's a version mismatch
 SET Z_POWERSHELL_EXE=
 FOR %%i IN (pwsh.exe powershell.exe) DO (
   IF EXIST "%%~$PATH:i" (
-    SET Z_POWERSHELL_EXE=%%~$PATH:i
+    SET "Z_POWERSHELL_EXE=%%~$PATH:i"
     GOTO :gotpwsh
   )
 )

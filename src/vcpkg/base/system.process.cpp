@@ -1343,7 +1343,7 @@ namespace vcpkg
             PROC_THREAD_ATTRIBUTE_HANDLE_LIST, handles_to_inherit, number_of_handles * sizeof(HANDLE));
         if (!maybe_error.has_value())
         {
-            return maybe_error.error();
+            return std::move(maybe_error).error();
         }
         startup_info_ex.lpAttributeList = proc_attribute_list.get();
 
@@ -1537,7 +1537,7 @@ namespace
             PROC_THREAD_ATTRIBUTE_HANDLE_LIST, handles_to_inherit, 2 * sizeof(HANDLE));
         if (!maybe_error.has_value())
         {
-            return maybe_error.error();
+            return std::move(maybe_error).error();
         }
         startup_info_ex.lpAttributeList = proc_attribute_list.get();
 
