@@ -1,5 +1,6 @@
 #if defined(_WIN32)
 #include <vcpkg/base/cofffilereader.h>
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/system.debug.h>
@@ -553,16 +554,11 @@ namespace
         bool m_qt_installed;
     };
 
-    constexpr StringLiteral OPTION_TARGET_BINARY = "target-binary";
-    constexpr StringLiteral OPTION_INSTALLED_DIR = "installed-bin-dir";
-    constexpr StringLiteral OPTION_TLOG_FILE = "tlog-file";
-    constexpr StringLiteral OPTION_COPIED_FILES_LOG = "copied-files-log";
-
     constexpr CommandSetting SETTINGS[] = {
-        {OPTION_TARGET_BINARY, msgCmdSettingTargetBin},
-        {OPTION_INSTALLED_DIR, msgCmdSettingInstalledDir},
-        {OPTION_TLOG_FILE, msgCmdSettingTLogFile},
-        {OPTION_COPIED_FILES_LOG, msgCmdSettingCopiedFilesLog},
+        {SwitchTargetBinary, msgCmdSettingTargetBin},
+        {SwitchInstalledBinDir, msgCmdSettingInstalledDir},
+        {SwitchTLogFile, msgCmdSettingTLogFile},
+        {SwitchCopiedFilesLog, msgCmdSettingCopiedFilesLog},
     };
 } // unnamed namespace
 
@@ -584,16 +580,16 @@ namespace vcpkg
     void command_z_applocal_and_exit(const VcpkgCmdArguments& args, const Filesystem& fs)
     {
         auto parsed = args.parse_arguments(CommandZApplocalMetadata);
-        const auto target_binary = parsed.settings.find(OPTION_TARGET_BINARY);
+        const auto target_binary = parsed.settings.find(SwitchTargetBinary);
         if (target_binary == parsed.settings.end())
         {
-            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgOptionRequiresAValue, msg::option = OPTION_TARGET_BINARY);
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgOptionRequiresAValue, msg::option = SwitchTargetBinary);
         }
 
-        const auto target_installed_bin_setting = parsed.settings.find(OPTION_INSTALLED_DIR);
+        const auto target_installed_bin_setting = parsed.settings.find(SwitchInstalledBinDir);
         if (target_installed_bin_setting == parsed.settings.end())
         {
-            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgOptionRequiresAValue, msg::option = OPTION_INSTALLED_DIR);
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgOptionRequiresAValue, msg::option = SwitchInstalledBinDir);
         }
 
         const auto target_installed_bin_dir =
@@ -658,8 +654,8 @@ namespace vcpkg
                                       target_installed_bin_dir,
                                       decoded.installed_root,
                                       decoded.is_debug,
-                                      maybe_create_log(parsed.settings, OPTION_TLOG_FILE, fs),
-                                      maybe_create_log(parsed.settings, OPTION_COPIED_FILES_LOG, fs));
+                                      maybe_create_log(parsed.settings, SwitchTLogFile, fs),
+                                      maybe_create_log(parsed.settings, SwitchCopiedFilesLog, fs));
         invocation.resolve_explicit(target_binary_path, imported_names);
         Checks::exit_success(VCPKG_LINE_INFO);
     }

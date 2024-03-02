@@ -1,3 +1,4 @@
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/parse.h>
@@ -16,14 +17,10 @@ using namespace vcpkg;
 
 namespace
 {
-    constexpr StringLiteral OPTION_JSON = "x-json";
-    constexpr StringLiteral OPTION_TRANSITIVE = "x-transitive";
-    constexpr StringLiteral OPTION_INSTALLED = "x-installed";
-
     constexpr CommandSwitch INFO_SWITCHES[] = {
-        {OPTION_JSON, msgJsonSwitch},
-        {OPTION_INSTALLED, msgCmdInfoOptInstalled},
-        {OPTION_TRANSITIVE, msgCmdInfoOptTransitive},
+        {SwitchXJson, msgJsonSwitch},
+        {SwitchXInstalled, msgCmdInfoOptInstalled},
+        {SwitchXTransitive, msgCmdInfoOptTransitive},
     };
 } // unnamed namespace
 
@@ -45,20 +42,20 @@ namespace vcpkg
     {
         msg::default_output_stream = OutputStream::StdErr;
         const ParsedArguments options = args.parse_arguments(CommandPackageInfoMetadata);
-        if (!Util::Vectors::contains(options.switches, OPTION_JSON))
+        if (!Util::Vectors::contains(options.switches, SwitchXJson))
         {
-            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, msgMissingOption, msg::option = OPTION_JSON);
+            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, msgMissingOption, msg::option = SwitchXJson);
         }
 
-        const bool installed = Util::Sets::contains(options.switches, OPTION_INSTALLED);
-        const bool transitive = Util::Sets::contains(options.switches, OPTION_TRANSITIVE);
+        const bool installed = Util::Sets::contains(options.switches, SwitchXInstalled);
+        const bool transitive = Util::Sets::contains(options.switches, SwitchXTransitive);
 
         if (transitive && !installed)
         {
             Checks::msg_exit_with_message(VCPKG_LINE_INFO,
                                           msgOptionRequiresOption,
-                                          msg::value = OPTION_TRANSITIVE,
-                                          msg::option = OPTION_INSTALLED);
+                                          msg::value = SwitchXTransitive,
+                                          msg::option = SwitchXInstalled);
         }
 
         auto& fs = paths.get_filesystem();

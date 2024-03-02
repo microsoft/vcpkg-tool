@@ -1,5 +1,6 @@
 #include <vcpkg/base/fwd/message_sinks.h>
 
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
@@ -268,68 +269,38 @@ namespace
         std::vector<PackageSpec> specs;
     };
 
-    constexpr StringLiteral OPTION_OUTPUT = "output";
-    constexpr StringLiteral OPTION_OUTPUT_DIR = "output-dir";
-    constexpr StringLiteral OPTION_DRY_RUN = "dry-run";
-    constexpr StringLiteral OPTION_RAW = "raw";
-    constexpr StringLiteral OPTION_NUGET = "nuget";
-    constexpr StringLiteral OPTION_IFW = "ifw";
-    constexpr StringLiteral OPTION_ZIP = "zip";
-    constexpr StringLiteral OPTION_SEVEN_ZIP = "7zip";
-    constexpr StringLiteral OPTION_NUGET_ID = "nuget-id";
-    constexpr StringLiteral OPTION_NUGET_DESCRIPTION = "nuget-description";
-    constexpr StringLiteral OPTION_NUGET_VERSION = "nuget-version";
-    constexpr StringLiteral OPTION_IFW_REPOSITORY_URL = "ifw-repository-url";
-    constexpr StringLiteral OPTION_IFW_PACKAGES_DIR_PATH = "ifw-packages-directory-path";
-    constexpr StringLiteral OPTION_IFW_REPOSITORY_DIR_PATH = "ifw-repository-directory-path";
-    constexpr StringLiteral OPTION_IFW_CONFIG_FILE_PATH = "ifw-configuration-file-path";
-    constexpr StringLiteral OPTION_IFW_INSTALLER_FILE_PATH = "ifw-installer-file-path";
-    constexpr StringLiteral OPTION_CHOCOLATEY = "x-chocolatey";
-    constexpr StringLiteral OPTION_CHOCOLATEY_MAINTAINER = "x-maintainer";
-    constexpr StringLiteral OPTION_CHOCOLATEY_VERSION_SUFFIX = "x-version-suffix";
-    constexpr StringLiteral OPTION_ALL_INSTALLED = "x-all-installed";
-
-    constexpr StringLiteral OPTION_PREFAB = "prefab";
-    constexpr StringLiteral OPTION_PREFAB_GROUP_ID = "prefab-group-id";
-    constexpr StringLiteral OPTION_PREFAB_ARTIFACT_ID = "prefab-artifact-id";
-    constexpr StringLiteral OPTION_PREFAB_VERSION = "prefab-version";
-    constexpr StringLiteral OPTION_PREFAB_SDK_MIN_VERSION = "prefab-min-sdk";
-    constexpr StringLiteral OPTION_PREFAB_SDK_TARGET_VERSION = "prefab-target-sdk";
-    constexpr StringLiteral OPTION_PREFAB_ENABLE_MAVEN = "prefab-maven";
-    constexpr StringLiteral OPTION_PREFAB_ENABLE_DEBUG = "prefab-debug";
-
     constexpr CommandSwitch EXPORT_SWITCHES[] = {
-        {OPTION_DRY_RUN, msgCmdExportOptDryRun},
-        {OPTION_RAW, msgCmdExportOptRaw},
-        {OPTION_NUGET, msgCmdExportOptNuget},
-        {OPTION_IFW, msgCmdExportOptIFW},
-        {OPTION_ZIP, msgCmdExportOptZip},
-        {OPTION_SEVEN_ZIP, msgCmdExportOpt7Zip},
-        {OPTION_CHOCOLATEY, msgCmdExportOptChocolatey},
-        {OPTION_PREFAB, msgCmdExportOptPrefab},
-        {OPTION_PREFAB_ENABLE_MAVEN, msgCmdExportOptMaven},
-        {OPTION_PREFAB_ENABLE_DEBUG, msgCmdExportOptDebug},
-        {OPTION_ALL_INSTALLED, msgCmdExportOptInstalled},
+        {SwitchDryRun, msgCmdExportOptDryRun},
+        {SwitchRaw, msgCmdExportOptRaw},
+        {SwitchNuGet, msgCmdExportOptNuget},
+        {SwitchIfw, msgCmdExportOptIFW},
+        {SwitchZip, msgCmdExportOptZip},
+        {SwitchSevenZip, msgCmdExportOpt7Zip},
+        {SwitchXChocolatey, msgCmdExportOptChocolatey},
+        {SwitchPrefab, msgCmdExportOptPrefab},
+        {SwitchPrefabMaven, msgCmdExportOptMaven},
+        {SwitchPrefabDebug, msgCmdExportOptDebug},
+        {SwitchXAllInstalled, msgCmdExportOptInstalled},
     };
 
     constexpr CommandSetting EXPORT_SETTINGS[] = {
-        {OPTION_OUTPUT, msgCmdExportSettingOutput},
-        {OPTION_OUTPUT_DIR, msgCmdExportSettingOutputDir},
-        {OPTION_NUGET_ID, msgCmdExportSettingNugetID},
-        {OPTION_NUGET_DESCRIPTION, msgCmdExportSettingNugetDesc},
-        {OPTION_NUGET_VERSION, msgCmdExportSettingNugetVersion},
-        {OPTION_IFW_REPOSITORY_URL, msgCmdExportSettingRepoURL},
-        {OPTION_IFW_PACKAGES_DIR_PATH, msgCmdExportSettingPkgDir},
-        {OPTION_IFW_REPOSITORY_DIR_PATH, msgCmdExportSettingRepoDir},
-        {OPTION_IFW_CONFIG_FILE_PATH, msgCmdExportSettingConfigFile},
-        {OPTION_IFW_INSTALLER_FILE_PATH, msgCmdExportSettingInstallerPath},
-        {OPTION_CHOCOLATEY_MAINTAINER, msgCmdExportSettingChocolateyMaint},
-        {OPTION_CHOCOLATEY_VERSION_SUFFIX, msgCmdExportSettingChocolateyVersion},
-        {OPTION_PREFAB_GROUP_ID, msgCmdExportSettingPrefabGroupID},
-        {OPTION_PREFAB_ARTIFACT_ID, msgCmdExportSettingPrefabArtifactID},
-        {OPTION_PREFAB_VERSION, msgCmdExportSettingPrefabVersion},
-        {OPTION_PREFAB_SDK_MIN_VERSION, msgCmdExportSettingSDKMinVersion},
-        {OPTION_PREFAB_SDK_TARGET_VERSION, msgCmdExportSettingSDKTargetVersion},
+        {SwitchOutput, msgCmdExportSettingOutput},
+        {SwitchOutputDir, msgCmdExportSettingOutputDir},
+        {SwitchNuGetId, msgCmdExportSettingNugetID},
+        {SwitchNuGetDescription, msgCmdExportSettingNugetDesc},
+        {SwitchNuGetVersion, msgCmdExportSettingNugetVersion},
+        {SwitchIfwRepositoryUrl, msgCmdExportSettingRepoURL},
+        {SwitchIfwPackagesDirPath, msgCmdExportSettingPkgDir},
+        {SwitchIfwRepostitoryDirPath, msgCmdExportSettingRepoDir},
+        {SwitchIfwConfigFilePath, msgCmdExportSettingConfigFile},
+        {SwitchIfwInstallerFilePath, msgCmdExportSettingInstallerPath},
+        {SwitchXMaintainer, msgCmdExportSettingChocolateyMaint},
+        {SwitchXVersionSuffix, msgCmdExportSettingChocolateyVersion},
+        {SwitchPrefabGroupId, msgCmdExportSettingPrefabGroupID},
+        {SwitchPrefabArtifactId, msgCmdExportSettingPrefabArtifactID},
+        {SwitchPrefabVersion, msgCmdExportSettingPrefabVersion},
+        {SwitchPrefabMinSdk, msgCmdExportSettingSDKMinVersion},
+        {SwitchPrefabTargetSdk, msgCmdExportSettingSDKTargetVersion},
     };
 
     ExportArguments handle_export_command_arguments(const VcpkgPaths& paths,
@@ -341,22 +312,22 @@ namespace
 
         const auto options = args.parse_arguments(CommandExportMetadata);
 
-        ret.dry_run = Util::Sets::contains(options.switches, OPTION_DRY_RUN);
-        ret.raw = Util::Sets::contains(options.switches, OPTION_RAW);
-        ret.nuget = Util::Sets::contains(options.switches, OPTION_NUGET);
-        ret.ifw = Util::Sets::contains(options.switches, OPTION_IFW);
-        ret.zip = Util::Sets::contains(options.switches, OPTION_ZIP);
-        ret.seven_zip = Util::Sets::contains(options.switches, OPTION_SEVEN_ZIP);
-        ret.chocolatey = Util::Sets::contains(options.switches, OPTION_CHOCOLATEY);
-        ret.prefab = Util::Sets::contains(options.switches, OPTION_PREFAB);
-        ret.prefab_options.enable_maven = Util::Sets::contains(options.switches, OPTION_PREFAB_ENABLE_MAVEN);
-        ret.prefab_options.enable_debug = Util::Sets::contains(options.switches, OPTION_PREFAB_ENABLE_DEBUG);
-        ret.maybe_output = Util::lookup_value_copy(options.settings, OPTION_OUTPUT);
-        ret.all_installed = Util::Sets::contains(options.switches, OPTION_ALL_INSTALLED);
+        ret.dry_run = Util::Sets::contains(options.switches, SwitchDryRun);
+        ret.raw = Util::Sets::contains(options.switches, SwitchRaw);
+        ret.nuget = Util::Sets::contains(options.switches, SwitchNuGet);
+        ret.ifw = Util::Sets::contains(options.switches, SwitchIfw);
+        ret.zip = Util::Sets::contains(options.switches, SwitchZip);
+        ret.seven_zip = Util::Sets::contains(options.switches, SwitchSevenZip);
+        ret.chocolatey = Util::Sets::contains(options.switches, SwitchXChocolatey);
+        ret.prefab = Util::Sets::contains(options.switches, SwitchPrefab);
+        ret.prefab_options.enable_maven = Util::Sets::contains(options.switches, SwitchPrefabMaven);
+        ret.prefab_options.enable_debug = Util::Sets::contains(options.switches, SwitchPrefabDebug);
+        ret.maybe_output = Util::lookup_value_copy(options.settings, SwitchOutput);
+        ret.all_installed = Util::Sets::contains(options.switches, SwitchXAllInstalled);
 
         if (paths.manifest_mode_enabled())
         {
-            auto output_dir_opt = Util::lookup_value(options.settings, OPTION_OUTPUT_DIR);
+            auto output_dir_opt = Util::lookup_value(options.settings, SwitchOutputDir);
 
             // --output-dir is required in manifest mode
             if (auto d = output_dir_opt.get())
@@ -380,7 +351,7 @@ namespace
             }
         }
 
-        ret.output_dir = ret.output_dir.empty() ? Util::lookup_value(options.settings, OPTION_OUTPUT_DIR)
+        ret.output_dir = ret.output_dir.empty() ? Util::lookup_value(options.settings, SwitchOutputDir)
                                                       .map([&](const Path& p) { return paths.original_cwd / p; })
                                                       .value_or(paths.root)
                                                 : ret.output_dir;
@@ -433,39 +404,39 @@ namespace
             }
         };
 
-        options_implies(OPTION_NUGET,
+        options_implies(SwitchNuGet,
                         ret.nuget,
                         {
-                            {OPTION_NUGET_ID, ret.maybe_nuget_id},
-                            {OPTION_NUGET_VERSION, ret.maybe_nuget_version},
-                            {OPTION_NUGET_DESCRIPTION, ret.maybe_nuget_description},
+                            {SwitchNuGetId, ret.maybe_nuget_id},
+                            {SwitchNuGetVersion, ret.maybe_nuget_version},
+                            {SwitchNuGetDescription, ret.maybe_nuget_description},
                         });
 
-        options_implies(OPTION_IFW,
+        options_implies(SwitchIfw,
                         ret.ifw,
                         {
-                            {OPTION_IFW_REPOSITORY_URL, ret.ifw_options.maybe_repository_url},
-                            {OPTION_IFW_PACKAGES_DIR_PATH, ret.ifw_options.maybe_packages_dir_path},
-                            {OPTION_IFW_REPOSITORY_DIR_PATH, ret.ifw_options.maybe_repository_dir_path},
-                            {OPTION_IFW_CONFIG_FILE_PATH, ret.ifw_options.maybe_config_file_path},
-                            {OPTION_IFW_INSTALLER_FILE_PATH, ret.ifw_options.maybe_installer_file_path},
+                            {SwitchIfwRepositoryUrl, ret.ifw_options.maybe_repository_url},
+                            {SwitchIfwPackagesDirPath, ret.ifw_options.maybe_packages_dir_path},
+                            {SwitchIfwRepostitoryDirPath, ret.ifw_options.maybe_repository_dir_path},
+                            {SwitchIfwConfigFilePath, ret.ifw_options.maybe_config_file_path},
+                            {SwitchIfwInstallerFilePath, ret.ifw_options.maybe_installer_file_path},
                         });
 
-        options_implies(OPTION_PREFAB,
+        options_implies(SwitchPrefab,
                         ret.prefab,
                         {
-                            {OPTION_PREFAB_ARTIFACT_ID, ret.prefab_options.maybe_artifact_id},
-                            {OPTION_PREFAB_GROUP_ID, ret.prefab_options.maybe_group_id},
-                            {OPTION_PREFAB_SDK_MIN_VERSION, ret.prefab_options.maybe_min_sdk},
-                            {OPTION_PREFAB_SDK_TARGET_VERSION, ret.prefab_options.maybe_target_sdk},
-                            {OPTION_PREFAB_VERSION, ret.prefab_options.maybe_version},
+                            {SwitchPrefabArtifactId, ret.prefab_options.maybe_artifact_id},
+                            {SwitchPrefabGroupId, ret.prefab_options.maybe_group_id},
+                            {SwitchPrefabMinSdk, ret.prefab_options.maybe_min_sdk},
+                            {SwitchPrefabTargetSdk, ret.prefab_options.maybe_target_sdk},
+                            {SwitchPrefabVersion, ret.prefab_options.maybe_version},
                         });
 
-        options_implies(OPTION_CHOCOLATEY,
+        options_implies(SwitchXChocolatey,
                         ret.chocolatey,
                         {
-                            {OPTION_CHOCOLATEY_MAINTAINER, ret.chocolatey_options.maybe_maintainer},
-                            {OPTION_CHOCOLATEY_VERSION_SUFFIX, ret.chocolatey_options.maybe_version_suffix},
+                            {SwitchXMaintainer, ret.chocolatey_options.maybe_maintainer},
+                            {SwitchXVersionSuffix, ret.chocolatey_options.maybe_version_suffix},
                         });
 
         return ret;

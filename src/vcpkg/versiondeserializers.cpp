@@ -1,3 +1,4 @@
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/strings.h>
 
 #include <vcpkg/versiondeserializers.h>
@@ -7,9 +8,6 @@ using namespace vcpkg;
 
 namespace
 {
-    constexpr StringLiteral BASELINE = "baseline";
-    constexpr StringLiteral PORT_VERSION = "port-version";
-
     template<const msg::MessageT<>& type_name_msg>
     struct VersionStringDeserializer final : Json::IDeserializer<std::string>
     {
@@ -86,8 +84,9 @@ namespace
 
             static const VersionStringDeserializer<msgAVersionOfAnyType> version_deserializer{};
 
-            r.required_object_field(type_name(), obj, BASELINE, target.text, version_deserializer);
-            r.optional_object_field(obj, PORT_VERSION, target.port_version, Json::NaturalNumberDeserializer::instance);
+            r.required_object_field(type_name(), obj, JsonIdBaseline, target.text, version_deserializer);
+            r.optional_object_field(
+                obj, JsonIdPortVersion, target.port_version, Json::NaturalNumberDeserializer::instance);
 
             return result;
         }
@@ -96,11 +95,6 @@ namespace
 
 namespace vcpkg
 {
-    constexpr StringLiteral VERSION_RELAXED = "version";
-    constexpr StringLiteral VERSION_SEMVER = "version-semver";
-    constexpr StringLiteral VERSION_STRING = "version-string";
-    constexpr StringLiteral VERSION_DATE = "version-date";
-
     Optional<SchemedVersion> visit_optional_schemed_version(const LocalizedString& parent_type,
                                                             Json::Reader& r,
                                                             const Json::Object& obj)
@@ -113,14 +107,14 @@ namespace vcpkg
         static const VersionStringDeserializer<msgASemanticVersionString> version_semver_deserializer{};
         static const VersionStringDeserializer<msgADateVersionString> version_date_deserializer{};
 
-        bool has_exact = r.optional_object_field(obj, VERSION_STRING, version_text, version_exact_deserializer);
-        bool has_relax = r.optional_object_field(obj, VERSION_RELAXED, version_text, version_relaxed_deserializer);
-        bool has_semver = r.optional_object_field(obj, VERSION_SEMVER, version_text, version_semver_deserializer);
-        bool has_date = r.optional_object_field(obj, VERSION_DATE, version_text, version_date_deserializer);
+        bool has_exact = r.optional_object_field(obj, JsonIdVersionString, version_text, version_exact_deserializer);
+        bool has_relax = r.optional_object_field(obj, JsonIdVersion, version_text, version_relaxed_deserializer);
+        bool has_semver = r.optional_object_field(obj, JsonIdVersionSemver, version_text, version_semver_deserializer);
+        bool has_date = r.optional_object_field(obj, JsonIdVersionDate, version_text, version_date_deserializer);
         int num_versions = (int)has_exact + (int)has_relax + (int)has_semver + (int)has_date;
         int port_version = 0;
         bool has_port_version =
-            r.optional_object_field(obj, PORT_VERSION, port_version, Json::NaturalNumberDeserializer::instance);
+            r.optional_object_field(obj, JsonIdPortVersion, port_version, Json::NaturalNumberDeserializer::instance);
 
         if (num_versions == 0)
         {
@@ -211,14 +205,14 @@ namespace vcpkg
         static const VersionOverrideVersionStringDeserializer<msgASemanticVersionString> version_semver_deserializer{};
         static const VersionOverrideVersionStringDeserializer<msgADateVersionString> version_date_deserializer{};
 
-        bool has_exact = r.optional_object_field(obj, VERSION_STRING, proto_version, version_exact_deserializer);
-        bool has_relax = r.optional_object_field(obj, VERSION_RELAXED, proto_version, version_relaxed_deserializer);
-        bool has_semver = r.optional_object_field(obj, VERSION_SEMVER, proto_version, version_semver_deserializer);
-        bool has_date = r.optional_object_field(obj, VERSION_DATE, proto_version, version_date_deserializer);
+        bool has_exact = r.optional_object_field(obj, JsonIdVersionString, proto_version, version_exact_deserializer);
+        bool has_relax = r.optional_object_field(obj, JsonIdVersion, proto_version, version_relaxed_deserializer);
+        bool has_semver = r.optional_object_field(obj, JsonIdVersionSemver, proto_version, version_semver_deserializer);
+        bool has_date = r.optional_object_field(obj, JsonIdVersionDate, proto_version, version_date_deserializer);
         int num_versions = (int)has_exact + (int)has_relax + (int)has_semver + (int)has_date;
         int port_version = proto_version.second.value_or(0);
         bool has_port_version =
-            r.optional_object_field(obj, PORT_VERSION, port_version, Json::NaturalNumberDeserializer::instance);
+            r.optional_object_field(obj, JsonIdPortVersion, port_version, Json::NaturalNumberDeserializer::instance);
 
         if (has_port_version && proto_version.second)
         {
@@ -269,7 +263,8 @@ namespace vcpkg
 
     View<StringView> schemed_deserializer_fields()
     {
-        static constexpr StringView t[] = {VERSION_RELAXED, VERSION_SEMVER, VERSION_STRING, VERSION_DATE, PORT_VERSION};
+        static constexpr StringView t[] = {
+            JsonIdVersion, JsonIdVersionSemver, JsonIdVersionString, JsonIdVersionDate, JsonIdPortVersion};
         return t;
     }
 
@@ -278,10 +273,10 @@ namespace vcpkg
         auto version_field = [](VersionScheme version_scheme) {
             switch (version_scheme)
             {
-                case VersionScheme::String: return VERSION_STRING;
-                case VersionScheme::Semver: return VERSION_SEMVER;
-                case VersionScheme::Relaxed: return VERSION_RELAXED;
-                case VersionScheme::Date: return VERSION_DATE;
+                case VersionScheme::String: return JsonIdVersionString;
+                case VersionScheme::Semver: return JsonIdVersionSemver;
+                case VersionScheme::Relaxed: return JsonIdVersion;
+                case VersionScheme::Date: return JsonIdVersionDate;
                 default: Checks::unreachable(VCPKG_LINE_INFO);
             }
         };
@@ -290,7 +285,7 @@ namespace vcpkg
 
         if (version.port_version != 0)
         {
-            out_obj.insert(PORT_VERSION, Json::Value::integer(version.port_version));
+            out_obj.insert(JsonIdPortVersion, Json::Value::integer(version.port_version));
         }
     }
 

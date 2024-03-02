@@ -1,4 +1,5 @@
 #include <vcpkg/base/checks.h>
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/path.h>
@@ -396,9 +397,9 @@ namespace vcpkg
     {
         static ExpectedL<Path> s_home = []() -> ExpectedL<Path> {
 #ifdef _WIN32
-            static constexpr StringLiteral HOMEVAR = "USERPROFILE";
+            constexpr StringLiteral HOMEVAR = EnvironmentVariableUserprofile;
 #else  // ^^^ _WIN32 // !_WIN32 vvv
-            static constexpr StringLiteral HOMEVAR = "HOME";
+            constexpr StringLiteral HOMEVAR = EnvironmentVariableHome;
 #endif // ^^^ !_WIN32
 
             auto maybe_home = get_environment_variable(HOMEVAR);
