@@ -1,3 +1,4 @@
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/fmt.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/parse.h>
@@ -86,7 +87,10 @@ namespace vcpkg
         return fmt::format("{}[{}]", package_name, feature_name);
     }
 
-    bool InternalFeatureSet::empty_or_only_core() const { return empty() || (size() == 1 && *begin() == "core"); }
+    bool InternalFeatureSet::empty_or_only_core() const
+    {
+        return empty() || (size() == 1 && *begin() == FeatureNameCore);
+    }
 
     InternalFeatureSet internalize_feature_list(View<std::string> fs, ImplicitDefault id)
     {
@@ -94,7 +98,7 @@ namespace vcpkg
         bool core = false;
         for (auto&& f : fs)
         {
-            if (f == "core")
+            if (f == FeatureNameCore)
             {
                 core = true;
             }
@@ -103,10 +107,10 @@ namespace vcpkg
 
         if (!core)
         {
-            ret.emplace_back("core");
+            ret.emplace_back(FeatureNameCore);
             if (id == ImplicitDefault::Yes)
             {
-                ret.emplace_back("default");
+                ret.emplace_back(FeatureNameDefault);
             }
         }
         return ret;
@@ -234,7 +238,7 @@ namespace vcpkg
             return nullopt;
         }
 
-        if (ret == "default")
+        if (ret == FeatureNameDefault)
         {
             parser.add_error(msg::format(msgInvalidDefaultFeatureName));
             return nullopt;

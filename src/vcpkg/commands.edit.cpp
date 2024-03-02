@@ -1,3 +1,4 @@
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.h>
@@ -79,10 +80,6 @@ namespace
     }
 #endif
 
-    constexpr StringLiteral OPTION_BUILDTREES = "buildtrees";
-
-    constexpr StringLiteral OPTION_ALL = "all";
-
     std::vector<std::string> valid_arguments(const VcpkgPaths& paths)
     {
         return Util::fmap(
@@ -91,15 +88,15 @@ namespace
     }
 
     constexpr CommandSwitch EDIT_SWITCHES[] = {
-        {OPTION_BUILDTREES, msgCmdEditOptBuildTrees},
-        {OPTION_ALL, msgCmdEditOptAll},
+        {SwitchBuildtrees, msgCmdEditOptBuildTrees},
+        {SwitchAll, msgCmdEditOptAll},
     };
 
     std::vector<std::string> create_editor_arguments(const VcpkgPaths& paths,
                                                      const ParsedArguments& options,
                                                      const std::vector<std::string>& ports)
     {
-        if (Util::Sets::contains(options.switches, OPTION_ALL))
+        if (Util::Sets::contains(options.switches, SwitchAll))
         {
             const auto& fs = paths.get_filesystem();
             auto packages = fs.get_files_non_recursive(paths.packages(), VCPKG_LINE_INFO);
@@ -107,7 +104,7 @@ namespace
             // TODO: Support edit for --overlay-ports
             return Util::fmap(ports, [&](const std::string& port_name) -> std::string {
                 const auto portpath = paths.builtin_ports_directory() / port_name;
-                const auto portfile = portpath / "portfile.cmake";
+                const auto portfile = portpath / FilePortfileDotCMake;
                 const auto buildtrees_current_dir = paths.build_dir(port_name);
                 const auto pattern = port_name + "_";
 
@@ -125,7 +122,7 @@ namespace
             });
         }
 
-        if (Util::Sets::contains(options.switches, OPTION_BUILDTREES))
+        if (Util::Sets::contains(options.switches, SwitchBuildtrees))
         {
             return Util::fmap(ports, [&](const std::string& port_name) -> std::string {
                 return fmt::format(R"###("{}")###", paths.build_dir(port_name));

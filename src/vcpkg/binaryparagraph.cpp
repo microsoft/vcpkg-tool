@@ -1,4 +1,5 @@
 #include <vcpkg/base/checks.h>
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/util.h>
 
@@ -8,35 +9,16 @@
 
 namespace vcpkg
 {
-    namespace Fields
-    {
-        static constexpr StringLiteral PACKAGE = "Package";
-        static constexpr StringLiteral VERSION = "Version";
-        static constexpr StringLiteral PORT_VERSION = "Port-Version";
-        static constexpr StringLiteral ARCHITECTURE = "Architecture";
-        static constexpr StringLiteral MULTI_ARCH = "Multi-Arch";
-    }
-
-    namespace Fields
-    {
-        static constexpr StringLiteral ABI = "Abi";
-        static constexpr StringLiteral FEATURE = "Feature";
-        static constexpr StringLiteral DESCRIPTION = "Description";
-        static constexpr StringLiteral MAINTAINER = "Maintainer";
-        static constexpr StringLiteral DEPENDS = "Depends";
-        static constexpr StringLiteral DEFAULT_FEATURES = "Default-Features";
-    }
-
     BinaryParagraph::BinaryParagraph(StringView origin, Paragraph&& fields)
     {
         ParagraphParser parser(origin, std::move(fields));
-        this->spec = PackageSpec(parser.required_field(Fields::PACKAGE),
-                                 Triplet::from_canonical_name(parser.required_field(Fields::ARCHITECTURE)));
+        this->spec = PackageSpec(parser.required_field(ParagraphIdPackage),
+                                 Triplet::from_canonical_name(parser.required_field(ParagraphIdArchitecture)));
 
         // one or the other
-        this->version.text = parser.optional_field(Fields::VERSION);
+        this->version.text = parser.optional_field(ParagraphIdVersion);
         TextRowCol pv_position;
-        auto pv_str = parser.optional_field(Fields::PORT_VERSION, pv_position);
+        auto pv_str = parser.optional_field(ParagraphIdPortVersion, pv_position);
         this->version.port_version = 0;
         if (!pv_str.empty())
         {
@@ -51,17 +33,17 @@ namespace vcpkg
             }
         }
 
-        this->feature = parser.optional_field(Fields::FEATURE);
-        this->description = Strings::split(parser.optional_field(Fields::DESCRIPTION), '\n');
-        this->maintainers = Strings::split(parser.optional_field(Fields::MAINTAINER), '\n');
+        this->feature = parser.optional_field(ParagraphIdFeature);
+        this->description = Strings::split(parser.optional_field(ParagraphIdDescription), '\n');
+        this->maintainers = Strings::split(parser.optional_field(ParagraphIdMaintainer), '\n');
 
-        this->abi = parser.optional_field(Fields::ABI);
+        this->abi = parser.optional_field(ParagraphIdAbi);
 
-        std::string multi_arch = parser.required_field(Fields::MULTI_ARCH);
+        std::string multi_arch = parser.required_field(ParagraphIdMultiArch);
 
         Triplet my_triplet = this->spec.triplet();
         TextRowCol dependsRowCol;
-        auto depends_field = parser.optional_field(Fields::DEPENDS, dependsRowCol);
+        auto depends_field = parser.optional_field(ParagraphIdDepends, dependsRowCol);
         this->dependencies =
             Util::fmap(parse_qualified_specifier_list(std::move(depends_field), origin, dependsRowCol)
                            .value_or_exit(VCPKG_LINE_INFO),
@@ -77,7 +59,7 @@ namespace vcpkg
         {
             TextRowCol defaultFeaturesRowCol;
             this->default_features =
-                parse_default_features_list(parser.optional_field(Fields::DEFAULT_FEATURES, defaultFeaturesRowCol),
+                parse_default_features_list(parser.optional_field(ParagraphIdDefaultFeatures, defaultFeaturesRowCol),
                                             origin,
                                             defaultFeaturesRowCol)
                     .value_or_exit(VCPKG_LINE_INFO);
@@ -160,7 +142,7 @@ namespace vcpkg
 
     std::string BinaryParagraph::display_name() const
     {
-        if (!this->is_feature() || this->feature == "core")
+        if (!this->is_feature() || this->feature == FeatureNameCore)
         {
             return fmt::format("{}:{}", this->spec.name(), this->spec.triplet());
         }
@@ -237,34 +219,34 @@ namespace vcpkg
     {
         const size_t initial_end = out_str.size();
 
-        serialize_string(Fields::PACKAGE, pgh.spec.name(), out_str);
+        serialize_string(ParagraphIdPackage, pgh.spec.name(), out_str);
 
-        serialize_string(Fields::VERSION, pgh.version.text, out_str);
+        serialize_string(ParagraphIdVersion, pgh.version.text, out_str);
         if (pgh.version.port_version != 0)
         {
-            fmt::format_to(std::back_inserter(out_str), "{}: {}\n", Fields::PORT_VERSION, pgh.version.port_version);
+            fmt::format_to(std::back_inserter(out_str), "{}: {}\n", ParagraphIdPortVersion, pgh.version.port_version);
         }
 
         if (pgh.is_feature())
         {
-            serialize_string(Fields::FEATURE, pgh.feature, out_str);
+            serialize_string(ParagraphIdFeature, pgh.feature, out_str);
         }
 
         if (!pgh.dependencies.empty())
         {
-            serialize_string(Fields::DEPENDS, serialize_deps_list(pgh.dependencies, pgh.spec.triplet()), out_str);
+            serialize_string(ParagraphIdDepends, serialize_deps_list(pgh.dependencies, pgh.spec.triplet()), out_str);
         }
 
-        serialize_string(Fields::ARCHITECTURE, pgh.spec.triplet().to_string(), out_str);
-        serialize_string(Fields::MULTI_ARCH, "same", out_str);
+        serialize_string(ParagraphIdArchitecture, pgh.spec.triplet().to_string(), out_str);
+        serialize_string(ParagraphIdMultiArch, "same", out_str);
 
-        serialize_paragraph(Fields::MAINTAINER, pgh.maintainers, out_str);
+        serialize_paragraph(ParagraphIdMaintainer, pgh.maintainers, out_str);
 
-        serialize_string(Fields::ABI, pgh.abi, out_str);
+        serialize_string(ParagraphIdAbi, pgh.abi, out_str);
 
-        serialize_paragraph(Fields::DESCRIPTION, pgh.description, out_str);
+        serialize_paragraph(ParagraphIdDescription, pgh.description, out_str);
 
-        serialize_array(Fields::DEFAULT_FEATURES, pgh.default_features, out_str);
+        serialize_array(ParagraphIdDefaultFeatures, pgh.default_features, out_str);
 
         // sanity check the serialized data
         auto my_paragraph = StringView{out_str}.substr(initial_end);

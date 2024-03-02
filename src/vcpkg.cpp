@@ -1,6 +1,7 @@
 #include <vcpkg/base/system-headers.h>
 
 #include <vcpkg/base/chrono.h>
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/jsonreader.h>
@@ -214,7 +215,7 @@ int main(const int argc, const char* const* const argv)
     if (argc == 0) std::abort();
 
     ElapsedTimer total_timer;
-    auto maybe_vslang = get_environment_variable("VSLANG");
+    auto maybe_vslang = get_environment_variable(EnvironmentVariableVsLang);
     if (const auto vslang = maybe_vslang.get())
     {
         const auto maybe_lcid_opt = Strings::strto<int>(*vslang);
@@ -255,7 +256,7 @@ int main(const int argc, const char* const* const argv)
         }
     }
 #endif
-    set_environment_variable("VCPKG_COMMAND", get_exe_path_of_current_process().generic_u8string());
+    set_environment_variable(EnvironmentVariableVcpkgCommand, get_exe_path_of_current_process().generic_u8string());
 
     // Prevent child processes (ex. cmake) from producing "colorized"
     // output (which may include ANSI escape codes), since it would
@@ -274,7 +275,7 @@ int main(const int argc, const char* const* const argv)
       defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)) ||                                       \
      defined(_M_ARM) || defined(_M_ARM64)) &&                                                                          \
     !defined(_WIN32) && !defined(__APPLE__)
-    if (!get_environment_variable("VCPKG_FORCE_SYSTEM_BINARIES").has_value())
+    if (!get_environment_variable(EnvironmentVariableVcpkgForceSystemBinaries).has_value())
     {
         Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgForceSystemBinariesOnWeirdPlatforms);
     }
@@ -310,7 +311,7 @@ int main(const int argc, const char* const* const argv)
     }
 
     auto bundle_path = current_exe_path;
-    bundle_path.replace_filename("vcpkg-bundle.json");
+    bundle_path.replace_filename(FileVcpkgBundleDotJson);
     Debug::println("Trying to load bundleconfig from ", bundle_path);
     auto bundle =
         real_filesystem.try_read_contents(bundle_path).then(&try_parse_bundle_settings).value_or(BundleSettings{});
