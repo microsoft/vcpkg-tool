@@ -1135,8 +1135,8 @@ namespace vcpkg
         const auto& triplet_abi = paths.get_triplet_info(pre_build_info, toolset);
         abi_info.triplet_abi.emplace(triplet_abi);
         const auto& triplet_canonical_name = action.spec.triplet().canonical_name();
-        abi_tag_entries.emplace_back(AbiTagIdTriplet, triplet_canonical_name);
-        abi_tag_entries.emplace_back(AbiTagIdTripletAbi, triplet_abi);
+        abi_tag_entries.emplace_back(AbiTagTriplet, triplet_canonical_name);
+        abi_tag_entries.emplace_back(AbiTagTripletAbi, triplet_abi);
         auto& fs = paths.get_filesystem();
         abi_entries_from_pre_build_info(fs, grdk_cache, pre_build_info, abi_tag_entries);
 

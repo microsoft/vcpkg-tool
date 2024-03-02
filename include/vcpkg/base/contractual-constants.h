@@ -435,8 +435,8 @@ namespace vcpkg
     inline constexpr StringLiteral AbiTagCMake = "cmake";
     inline constexpr StringLiteral AbiTagFeatures = "features";
     inline constexpr StringLiteral AbiTagGrdkH = "grdk.h";
-    inline constexpr StringLiteral AbiTagIdTriplet = "triplet";
-    inline constexpr StringLiteral AbiTagIdTripletAbi = "triplet_abi";
+    inline constexpr StringLiteral AbiTagTriplet = "triplet";
+    inline constexpr StringLiteral AbiTagTripletAbi = "triplet_abi";
     inline constexpr StringLiteral AbiTagPortsDotCMake = "ports.cmake";
     inline constexpr StringLiteral AbiTagPostBuildChecks = "post_build_checks";
     inline constexpr StringLiteral AbiTagPowershell = "powershell";
