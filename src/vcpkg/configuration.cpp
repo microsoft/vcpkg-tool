@@ -167,7 +167,14 @@ namespace
     View<StringView> RegistryConfigDeserializer::valid_fields() const
     {
         static constexpr StringView t[] = {
-            JsonIdKind, JsonIdBaseline, JsonIdPath, JsonIdRepository, JsonIdReference, JsonIdName, JsonIdLocation};
+            JsonIdKind,
+            JsonIdBaseline,
+            JsonIdPath,
+            JsonIdRepository,
+            JsonIdReference,
+            JsonIdName,
+            JsonIdLocation,
+        };
         return t;
     }
     static constexpr StringView valid_builtin_fields[] = {
