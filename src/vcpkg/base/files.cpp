@@ -1,6 +1,7 @@
 #include <vcpkg/base/system-headers.h>
 
 #include <vcpkg/base/chrono.h>
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/message_sinks.h>
 #include <vcpkg/base/messages.h>
@@ -334,7 +335,8 @@ namespace
 
     std::vector<Path> calculate_path_bases()
     {
-        auto path_base_strings = Strings::split_paths(get_environment_variable("PATH").value_or_exit(VCPKG_LINE_INFO));
+        auto path_base_strings =
+            Strings::split_paths(get_environment_variable(EnvironmentVariablePath).value_or_exit(VCPKG_LINE_INFO));
         return std::vector<Path>{std::make_move_iterator(path_base_strings.begin()),
                                  std::make_move_iterator(path_base_strings.end())};
     }

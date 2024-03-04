@@ -2,6 +2,7 @@
 
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/chrono.h>
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/parallel-algorithms.h>
 #include <vcpkg/base/parse.h>
@@ -19,7 +20,7 @@ extern char** environ;
 #include <mach-o/dyld.h>
 #endif
 
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined(__OpenBSD__)
 extern char** environ;
 #include <sys/sysctl.h>
 #include <sys/wait.h>
@@ -250,11 +251,18 @@ namespace vcpkg
         Checks::check_exit(VCPKG_LINE_INFO, len > 0, "Could not determine current executable path.");
         return Path(exePath, len - 1);
 #elif defined(__OpenBSD__)
-        const char* progname = getprogname();
-        char resolved_path[PATH_MAX];
-        auto ret = realpath(progname, resolved_path);
-        Checks::check_exit(VCPKG_LINE_INFO, ret != nullptr, "Could not determine current executable path.");
-        return resolved_path;
+        int mib[4] = {CTL_KERN, KERN_PROC_ARGS, getpid(), KERN_PROC_ARGV};
+        size_t argc = 0;
+        auto argc_query = sysctl(mib, 4, nullptr, &argc, nullptr, 0);
+        Checks::check_exit(VCPKG_LINE_INFO, argc_query == 0, "Could not determine current executable path.");
+        Checks::check_exit(VCPKG_LINE_INFO, argc > 0, "Could not determine current executable path.");
+        std::vector<char*> argv(argc);
+        auto argv_query = sysctl(mib, 4, &argv[0], &argc, nullptr, 0);
+        Checks::check_exit(VCPKG_LINE_INFO, argv_query == 0, "Could not determine current executable path.");
+        char buf[PATH_MAX];
+        char* exePath(realpath(argv[0], buf));
+        Checks::check_exit(VCPKG_LINE_INFO, exePath != nullptr, "Could not determine current executable path.");
+        return Path(exePath);
 #else /* LINUX */
         char buf[1024 * 4] = {};
         auto written = readlink("/proc/self/exe", buf, sizeof(buf));
@@ -583,11 +591,11 @@ namespace vcpkg
 
             for (auto&& var : vars)
             {
-                if (Strings::case_insensitive_ascii_equals(var, "PATH"))
+                if (Strings::case_insensitive_ascii_equals(var, EnvironmentVariablePath))
                 {
                     new_path.assign(prepend_to_path.data(), prepend_to_path.size());
                     if (!new_path.empty()) new_path.push_back(';');
-                    new_path.append(get_environment_variable("PATH").value_or(""));
+                    new_path.append(get_environment_variable(EnvironmentVariablePath).value_or(""));
                 }
                 else
                 {
@@ -607,21 +615,22 @@ namespace vcpkg
             env.add_entry(env_string, *v);
         }
 
-        if (extra_env.find("PATH") != extra_env.end())
+        const auto path_iter = extra_env.find(EnvironmentVariablePath.to_string());
+        if (path_iter != extra_env.end())
         {
             new_path.push_back(';');
-            new_path += extra_env.find("PATH")->second;
+            new_path += path_iter->second;
         }
-        env.add_entry("PATH", new_path);
+        env.add_entry(EnvironmentVariablePath, new_path);
         // NOTE: we support VS's without the english language pack,
         // but we still want to default to english just in case your specific
         // non-standard build system doesn't support non-english
-        env.add_entry("VSLANG", "1033");
+        env.add_entry(EnvironmentVariableVsLang, "1033");
         env.add_entry("VSCMD_SKIP_SENDTELEMETRY", "1");
 
         for (const auto& item : extra_env)
         {
-            if (item.first == "PATH") continue;
+            if (item.first == EnvironmentVariablePath) continue;
             env.add_entry(item.first, item.second);
         }
 
@@ -635,8 +644,10 @@ namespace vcpkg
         if (!prepend_to_path.empty())
         {
             env.add_entry(
-                "PATH",
-                Strings::concat(prepend_to_path, ':', get_environment_variable("PATH").value_or_exit(VCPKG_LINE_INFO)));
+                EnvironmentVariablePath,
+                Strings::concat(prepend_to_path,
+                                ':',
+                                get_environment_variable(EnvironmentVariablePath).value_or_exit(VCPKG_LINE_INFO)));
         }
 
         return env;
@@ -1332,7 +1343,7 @@ namespace vcpkg
             PROC_THREAD_ATTRIBUTE_HANDLE_LIST, handles_to_inherit, number_of_handles * sizeof(HANDLE));
         if (!maybe_error.has_value())
         {
-            return maybe_error.error();
+            return std::move(maybe_error).error();
         }
         startup_info_ex.lpAttributeList = proc_attribute_list.get();
 
@@ -1526,7 +1537,7 @@ namespace
             PROC_THREAD_ATTRIBUTE_HANDLE_LIST, handles_to_inherit, 2 * sizeof(HANDLE));
         if (!maybe_error.has_value())
         {
-            return maybe_error.error();
+            return std::move(maybe_error).error();
         }
         startup_info_ex.lpAttributeList = proc_attribute_list.get();
 

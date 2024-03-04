@@ -981,14 +981,6 @@ DECLARE_MESSAGE(
 DECLARE_MESSAGE(DefaultFeatureIdentifier, (), "", "the names of default features must be identifiers")
 DECLARE_MESSAGE(DefaultFlag, (msg::option), "", "Defaulting to --{option} being on.")
 DECLARE_MESSAGE(DefaultRegistryIsArtifact, (), "", "The default registry cannot be an artifact registry.")
-DECLARE_MESSAGE(
-    DefaultTripletChanged,
-    (msg::triplet),
-    "The parts naming --triplet are command line switches that should be unlocalized. The space after the last "
-    "'triplet' and the period is intended to avoid the period looking like it's part of the command line switch",
-    "In the September 2023 release, the default triplet for vcpkg libraries changed from x86-windows to "
-    "the detected host triplet ({triplet}). For the old behavior, add --triplet x86-windows . To "
-    "suppress this message, add --triplet {triplet} .")
 DECLARE_MESSAGE(DeleteVcpkgConfigFromManifest,
                 (msg::path),
                 "",
@@ -1713,14 +1705,11 @@ DECLARE_MESSAGE(InstalledBy, (msg::path), "", "Installed by {path}")
 DECLARE_MESSAGE(InstalledPackages, (), "", "The following packages are already installed:")
 DECLARE_MESSAGE(InstalledRequestedPackages, (), "", "All requested packages are currently installed.")
 DECLARE_MESSAGE(InstallFailed, (msg::path, msg::error_msg), "", "failed: {path}: {error_msg}")
-DECLARE_MESSAGE(InstallingFromLocation,
-                (msg::path),
-                "'--' at the beginning must be preserved",
-                "-- Installing port from location: {path}")
 DECLARE_MESSAGE(InstallingMavenFile,
                 (msg::path),
                 "Printed after a filesystem operation error",
                 "{path} installing Maven file")
+DECLARE_MESSAGE(InstallingOverlayPort, (), "", "installing overlay port from here")
 DECLARE_MESSAGE(InstallingPackage,
                 (msg::action_index, msg::count, msg::spec),
                 "",
@@ -2013,18 +2002,16 @@ DECLARE_MESSAGE(LinkageDynamicRelease, (), "", "Dynamic Release (/MD)")
 DECLARE_MESSAGE(LinkageStaticDebug, (), "", "Static Debug (/MTd)")
 DECLARE_MESSAGE(LinkageStaticRelease, (), "", "Static Release (/MT)")
 DECLARE_MESSAGE(ListHelp, (), "", "Lists installed libraries")
-DECLARE_MESSAGE(LoadingCommunityTriplet,
-                (msg::path),
-                "'-- [COMMUNITY]' at the beginning must be preserved",
-                "-- [COMMUNITY] Loading triplet configuration from: {path}")
+DECLARE_MESSAGE(LoadedCommunityTriplet,
+                (),
+                "",
+                "loaded community triplet from here. Community triplets are not built in the curated registry and are "
+                "thus less likely to succeed.")
+DECLARE_MESSAGE(LoadedOverlayTriplet, (), "", "loaded overlay triplet from here")
 DECLARE_MESSAGE(LoadingDependencyInformation,
                 (msg::count),
                 "",
                 "Loading dependency information for {count} packages...")
-DECLARE_MESSAGE(LoadingOverlayTriplet,
-                (msg::path),
-                "'-- [OVERLAY]' at the beginning must be preserved",
-                "-- [OVERLAY] Loading triplet configuration from: {path}")
 DECLARE_MESSAGE(LocalPortfileVersion,
                 (),
                 "",
@@ -2849,10 +2836,6 @@ DECLARE_MESSAGE(UseEnvVar,
                 "-- Using {env_var} in environment variables.")
 DECLARE_MESSAGE(UserWideIntegrationDeleted, (), "", "User-wide integration is not installed.")
 DECLARE_MESSAGE(UserWideIntegrationRemoved, (), "", "User-wide integration was removed.")
-DECLARE_MESSAGE(UsingCommunityTriplet,
-                (msg::triplet),
-                "'--' at the beginning must be preserved",
-                "-- Using community triplet {triplet}. This triplet configuration is not guaranteed to succeed.")
 DECLARE_MESSAGE(UsingManifestAt, (msg::path), "", "Using manifest file at {path}.")
 DECLARE_MESSAGE(Utf8ConversionFailed, (), "", "Failed to convert to UTF-8")
 DECLARE_MESSAGE(VcpkgCeIsExperimental,

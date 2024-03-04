@@ -365,6 +365,22 @@ namespace vcpkg
         return ret;
     }
 
+    SchemedVersion::SchemedVersion() noexcept { }
+    SchemedVersion::SchemedVersion(VersionScheme scheme, Version&& version) noexcept
+        : scheme(scheme), version(std::move(version))
+    {
+    }
+    SchemedVersion::SchemedVersion(VersionScheme scheme, const Version& version) : scheme(scheme), version(version) { }
+    SchemedVersion::SchemedVersion(VersionScheme scheme, std::string&& value, int port_version) noexcept
+        : scheme(scheme), version(std::move(value), port_version)
+    {
+    }
+
+    SchemedVersion::SchemedVersion(VersionScheme scheme, StringView value, int port_version)
+        : scheme(scheme), version(value, port_version)
+    {
+    }
+
     bool operator==(const SchemedVersion& lhs, const SchemedVersion& rhs)
     {
         return lhs.scheme == rhs.scheme && lhs.version == rhs.version;

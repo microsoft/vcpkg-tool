@@ -27,16 +27,10 @@ namespace vcpkg
     {
         const ParsedArguments options = args.parse_arguments(CommandBuildExternalMetadata);
 
-        bool default_triplet_used = false;
         const FullPackageSpec spec = check_and_get_full_package_spec(options.command_arguments[0],
                                                                      default_triplet,
-                                                                     default_triplet_used,
                                                                      CommandBuildExternalMetadata.get_example_text(),
                                                                      paths.get_triplet_db());
-        if (default_triplet_used)
-        {
-            print_default_triplet_warning(args, paths.get_triplet_db());
-        }
 
         auto overlays = paths.overlay_ports;
         overlays.insert(overlays.begin(), options.command_arguments[1]);

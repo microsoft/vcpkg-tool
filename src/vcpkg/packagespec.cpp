@@ -1,3 +1,4 @@
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/fmt.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/parse.h>
@@ -7,16 +8,13 @@
 namespace
 {
     using namespace vcpkg;
-    Triplet resolve_triplet(const Optional<std::string>& specified_triplet,
-                            Triplet default_triplet,
-                            bool& default_triplet_used)
+    Triplet resolve_triplet(const Optional<std::string>& specified_triplet, Triplet default_triplet)
     {
         if (auto pspecified = specified_triplet.get())
         {
             return Triplet::from_canonical_name(*pspecified);
         }
 
-        default_triplet_used = true;
         return default_triplet;
     }
 } // unnamed namespace
@@ -40,7 +38,10 @@ namespace vcpkg
         return fmt::format("{}[{}]", package_name, feature_name);
     }
 
-    bool InternalFeatureSet::empty_or_only_core() const { return empty() || (size() == 1 && *begin() == "core"); }
+    bool InternalFeatureSet::empty_or_only_core() const
+    {
+        return empty() || (size() == 1 && *begin() == FeatureNameCore);
+    }
 
     InternalFeatureSet internalize_feature_list(View<std::string> fs, ImplicitDefault id)
     {
@@ -48,7 +49,7 @@ namespace vcpkg
         bool core = false;
         for (auto&& f : fs)
         {
-            if (f == "core")
+            if (f == FeatureNameCore)
             {
                 core = true;
             }
@@ -57,10 +58,10 @@ namespace vcpkg
 
         if (!core)
         {
-            ret.emplace_back("core");
+            ret.emplace_back(FeatureNameCore);
             if (id == ImplicitDefault::YES)
             {
-                ret.emplace_back("default");
+                ret.emplace_back(FeatureNameDefault);
             }
         }
         return ret;
@@ -91,9 +92,7 @@ namespace vcpkg
         return left.name() == right.name() && left.triplet() == right.triplet();
     }
 
-    ExpectedL<FullPackageSpec> ParsedQualifiedSpecifier::to_full_spec(Triplet default_triplet,
-                                                                      bool& default_triplet_used,
-                                                                      ImplicitDefault id) const
+    ExpectedL<FullPackageSpec> ParsedQualifiedSpecifier::to_full_spec(Triplet default_triplet, ImplicitDefault id) const
     {
         if (platform)
         {
@@ -106,12 +105,10 @@ namespace vcpkg
             fs = *pfeatures;
         }
 
-        return FullPackageSpec{{name, resolve_triplet(triplet, default_triplet, default_triplet_used)},
-                               internalize_feature_list(fs, id)};
+        return FullPackageSpec{{name, resolve_triplet(triplet, default_triplet)}, internalize_feature_list(fs, id)};
     }
 
-    ExpectedL<PackageSpec> ParsedQualifiedSpecifier::to_package_spec(Triplet default_triplet,
-                                                                     bool& default_triplet_used) const
+    ExpectedL<PackageSpec> ParsedQualifiedSpecifier::to_package_spec(Triplet default_triplet) const
     {
         if (platform)
         {
@@ -123,7 +120,7 @@ namespace vcpkg
             return msg::format_error(msgIllegalFeatures);
         }
 
-        return PackageSpec{name, resolve_triplet(triplet, default_triplet, default_triplet_used)};
+        return PackageSpec{name, resolve_triplet(triplet, default_triplet)};
     }
 
     ExpectedL<ParsedQualifiedSpecifier> parse_qualified_specifier(StringView input)
@@ -148,7 +145,7 @@ namespace vcpkg
             return nullopt;
         }
 
-        if (ret == "default")
+        if (ret == FeatureNameDefault)
         {
             parser.add_error(msg::format(msgInvalidDefaultFeatureName));
             return nullopt;

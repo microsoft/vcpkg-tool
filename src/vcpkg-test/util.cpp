@@ -133,9 +133,7 @@ namespace vcpkg::Test
         {
             auto opt = parse_qualified_specifier(parser);
             REQUIRE(opt.has_value());
-            bool unused = false;
-            ret.push_back(
-                opt.get()->to_full_spec(X86_WINDOWS, unused, ImplicitDefault::YES).value_or_exit(VCPKG_LINE_INFO));
+            ret.push_back(opt.get()->to_full_spec(X86_WINDOWS, ImplicitDefault::YES).value_or_exit(VCPKG_LINE_INFO));
         }
 
         return ret;
