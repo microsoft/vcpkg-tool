@@ -54,14 +54,6 @@ namespace vcpkg
 
         bool operator<(const PathAndType& other) const noexcept
         {
-            if (!path.empty() && other.path.empty())
-            {
-                return true;
-            }
-            if (path.empty() && !other.path.empty())
-            {
-                return false;
-            }
             return path < other.path;
         }
         bool operator==(const PathAndType& other) const noexcept { return path == other.path && type == other.type; }
@@ -70,10 +62,12 @@ namespace vcpkg
     static std::vector<PathAndType> filter_files_to_install(const Filesystem& fs, std::vector<Path>&& files)
     {
         std::vector<PathAndType> output(files.size());
+        auto first = output.begin();
+        auto last = output.end();
         static const PathAndType invalid{"", FileType::none};
         std::mutex mtx;
 
-        parallel_transform(files, output.begin(), [&](auto&& file) -> PathAndType {
+        parallel_transform(files, first, [&](auto&& file) -> PathAndType {
             std::error_code ec;
             auto status = fs.symlink_status(file, ec);
             if (ec)
@@ -101,16 +95,13 @@ namespace vcpkg
             }
             return PathAndType{std::move(file), status};
         });
+        auto last_non_empty = std::partition(first, last, [](const auto& pt) { return !pt.path.empty(); }); 
 #ifdef _WIN32
-        std::sort(std::execution::par_unseq, output.begin(), output.end());
+        std::sort(std::execution::par_unseq, first, last_non_empty);
 #else
-        std::sort(output.begin(), output.end());
+        std::sort(first, last_non_empty);
 #endif
-        auto begin_filter = std::find(output.begin(), output.end(), invalid);
-        if (begin_filter != output.end())
-        {
-            output.erase(begin_filter, output.end());
-        }
+        output.erase(last_non_empty, last);
         return output;
     }
 
