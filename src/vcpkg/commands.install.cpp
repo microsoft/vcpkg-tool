@@ -29,6 +29,7 @@
 #include <vcpkg/vcpkgpaths.h>
 #include <vcpkg/xunitwriter.h>
 
+#include <future>
 #include <iterator>
 #ifdef _WIN32
 #include <execution>
