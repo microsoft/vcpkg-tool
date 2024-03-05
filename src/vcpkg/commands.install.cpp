@@ -52,10 +52,7 @@ namespace vcpkg
         Path path;
         FileType type = FileType::none;
 
-        bool operator<(const PathAndType& other) const noexcept
-        {
-            return path < other.path;
-        }
+        bool operator<(const PathAndType& other) const noexcept { return path < other.path; }
     };
 
     static std::vector<PathAndType> filter_files_to_install(const Filesystem& fs, std::vector<Path>&& files)
@@ -94,7 +91,7 @@ namespace vcpkg
             }
             return PathAndType{std::move(file), status};
         });
-        auto last_non_empty = std::partition(first, last, [](const auto& pt) { return !pt.path.empty(); }); 
+        auto last_non_empty = std::partition(first, last, [](const auto& pt) { return !pt.path.empty(); });
 #ifdef _WIN32
         std::sort(std::execution::par_unseq, first, last_non_empty);
 #else
