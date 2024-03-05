@@ -1,4 +1,5 @@
 #include <vcpkg/base/checks.h>
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/path.h>
@@ -7,6 +8,10 @@
 
 #if defined(__APPLE__)
 #include <sys/sysctl.h>
+#endif
+
+#if defined(__linux__)
+#include <sched.h>
 #endif
 
 #if defined(_WIN32)
@@ -392,9 +397,9 @@ namespace vcpkg
     {
         static ExpectedL<Path> s_home = []() -> ExpectedL<Path> {
 #ifdef _WIN32
-            static constexpr StringLiteral HOMEVAR = "USERPROFILE";
+            constexpr StringLiteral HOMEVAR = EnvironmentVariableUserprofile;
 #else  // ^^^ _WIN32 // !_WIN32 vvv
-            static constexpr StringLiteral HOMEVAR = "HOME";
+            constexpr StringLiteral HOMEVAR = EnvironmentVariableHome;
 #endif // ^^^ !_WIN32
 
             auto maybe_home = get_environment_variable(HOMEVAR);
@@ -686,6 +691,15 @@ namespace vcpkg
             }
             else
             {
+#if defined(__linux__)
+                // Get the number of threads we are allowed to run on,
+                // this might be less than the number of hardware threads.
+                cpu_set_t set;
+                if (sched_getaffinity(getpid(), sizeof(set), &set) == 0)
+                {
+                    return static_cast<unsigned int>(CPU_COUNT(&set)) + 1;
+                }
+#endif
                 return std::thread::hardware_concurrency() + 1;
             }
         }();
