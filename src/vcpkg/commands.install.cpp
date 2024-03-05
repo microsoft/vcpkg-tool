@@ -56,7 +56,6 @@ namespace vcpkg
         {
             return path < other.path;
         }
-        bool operator==(const PathAndType& other) const noexcept { return path == other.path && type == other.type; }
     };
 
     static std::vector<PathAndType> filter_files_to_install(const Filesystem& fs, std::vector<Path>&& files)
