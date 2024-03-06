@@ -25,7 +25,7 @@ parameters:
   - 'GitHub and NuGet'
   - 'NuGet Only'
 variables:
-  - group: vcpkg Official Build Secrets
+  - group: vcpkg Terrapin URLs
   - name: TeamName
     value: vcpkg
   - name: Codeql.Enabled
@@ -235,24 +235,25 @@ jobs:
   - job: muslc_build
     displayName: 'muslc (Alpine) Build'
     pool:
-      name: 'vcpkg-ubuntu-20-04-docker'
+      name: 'vcpkg-mariner-docker-gen1'
     dependsOn:
       - arch_independent
     variables:
       VCPKG_STANDALONE_BUNDLE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_STANDALONE_BUNDLE_SHA'] ]
       VCPKG_BASE_VERSION: $[ dependencies.arch_independent.outputs['versions.VCPKG_BASE_VERSION'] ]
     steps:
+    - bash: |
+        az login --identity
+        az acr login --name vcpkgdockercontainers
+      displayName: 'Set up managed identity'
     - task: CmdLine@2
       displayName: "Build vcpkg in Alpine"
       inputs:
         failOnStderr: false
         script: |
-          docker login vcpkgdockercontainers.azurecr.io -u $(vcpkgdockercontainers-pull-username) -p $(vcpkgdockercontainers-pull-password) || exit 1
           docker build --build-arg "FMT_TARBALL_URL=$(fmt-tarball-url)" --build-arg "CMAKERC_TARBALL_URL=$(cmakerc-tarball-url)" --build-arg "VCPKG_STANDALONE_BUNDLE_SHA=$(VCPKG_STANDALONE_BUNDLE_SHA)" --build-arg "VCPKG_BASE_VERSION=$(VCPKG_BASE_VERSION)" -t vcpkg-muslc-image -f azure-pipelines/vcpkg-alpine/Dockerfile . || exit 1
           docker create -ti --name vcpkg-muslc-container vcpkg-muslc-image sh || exit 1
           docker cp vcpkg-muslc-container:/build/vcpkg "$(Build.ArtifactStagingDirectory)/vcpkg-muslc" || exit 1
-          docker container rm vcpkg-muslc-container || exit 1
-          docker image rm vcpkg-muslc-image || exit 1
     - task: PublishBuildArtifacts@1
       displayName: "Publish Unsigned muslc Binary"
       inputs:
