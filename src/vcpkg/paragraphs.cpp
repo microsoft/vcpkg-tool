@@ -21,40 +21,33 @@ static std::atomic<uint64_t> g_load_ports_stats(0);
 
 namespace vcpkg
 {
-    static Optional<std::pair<std::string, TextRowCol>> remove_field(Paragraph* fields, StringView fieldname)
+    Optional<FieldValue> ParagraphParser::optional_field(StringLiteral fieldname)
     {
-        auto it = fields->find(fieldname.to_string());
-        if (it == fields->end())
+        auto it = fields.find(fieldname.to_string());
+        if (it == fields.end())
         {
             return nullopt;
         }
 
         auto value = std::move(it->second);
-        fields->erase(it);
+        fields.erase(it);
         return value;
     }
 
-    std::string ParagraphParser::optional_field(StringLiteral fieldname, TextRowCol& position)
+    std::string ParagraphParser::optional_field_or_empty(StringLiteral fieldname)
     {
-        auto maybe_field = remove_field(&fields, fieldname);
+        auto maybe_field = optional_field(fieldname);
         if (auto field = maybe_field.get())
         {
-            position = field->second;
             return std::move(field->first);
         }
 
         return std::string();
     }
 
-    std::string ParagraphParser::optional_field(StringLiteral fieldname)
-    {
-        TextRowCol ignore;
-        return optional_field(fieldname, ignore);
-    }
-
     std::string ParagraphParser::required_field(StringLiteral fieldname)
     {
-        auto maybe_field = remove_field(&fields, fieldname);
+        auto maybe_field = optional_field(fieldname);
         if (const auto field = maybe_field.get())
         {
             return std::move(field->first);

@@ -1687,7 +1687,7 @@ namespace vcpkg
             }
         }
 
-        std::string version = parser.optional_field(ParagraphIdVersion);
+        std::string version = parser.optional_field_or_empty(ParagraphIdVersion);
         if (!version.empty())
         {
             sanitize_version_string(version);
@@ -1697,7 +1697,7 @@ namespace vcpkg
         std::unordered_map<BuildPolicy, bool> policies;
         for (const auto& policy : ALL_POLICIES)
         {
-            const auto setting = parser.optional_field(to_string_view(policy));
+            const auto setting = parser.optional_field_or_empty(to_string_view(policy));
             if (setting.empty()) continue;
             if (setting == "enabled")
                 policies.emplace(policy, true);
