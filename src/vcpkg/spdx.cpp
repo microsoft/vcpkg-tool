@@ -171,8 +171,7 @@ std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
         obj.insert(JsonIdName, action.spec.name());
         obj.insert(SpdxSpdxId, SpdxRefPort);
         obj.insert(SpdxVersionInfo, cpgh.version.to_string());
-        obj.insert(SpdxDownloadLocation,
-                   scfl.spdx_location.empty() ? StringView{SpdxNoAssertion} : scfl.spdx_location);
+        obj.insert(SpdxDownloadLocation, scfl.spdx_location.empty() ? StringView{SpdxNoAssertion} : scfl.spdx_location);
         if (!cpgh.homepage.empty())
         {
             obj.insert(JsonIdHomepage, cpgh.homepage);
