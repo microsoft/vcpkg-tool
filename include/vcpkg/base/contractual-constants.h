@@ -12,18 +12,8 @@ namespace vcpkg
     inline constexpr StringLiteral JsonIdAcquiredArtifacts = "acquired-artifacts";
     inline constexpr StringLiteral JsonIdActivatedArtifacts = "activated-artifacts";
     inline constexpr StringLiteral JsonIdAlgorithm = "algorithm";
-    inline constexpr StringLiteral JsonIdAllCapsCC010 = "CC0-1.0";
-    inline constexpr StringLiteral JsonIdAllCapsContainedUnderscoreBy = "CONTAINED_BY";
-    inline constexpr StringLiteral JsonIdAllCapsContains = "CONTAINS";
-    inline constexpr StringLiteral JsonIdAllCapsDependencyUnderscoreManifestUnderscoreOf = "DEPENDENCY_MANIFEST_OF";
-    inline constexpr StringLiteral JsonIdAllCapsGeneratedUnderscoreFrom = "GENERATED_FROM";
-    inline constexpr StringLiteral JsonIdAllCapsGenerates = "GENERATES";
-    inline constexpr StringLiteral JsonIdAllCapsNOASSERTION = "NOASSERTION";
-    inline constexpr StringLiteral JsonIdAllCapsNONE = "NONE";
     inline constexpr StringLiteral JsonIdAllCapsSHA256 = "SHA256";
     inline constexpr StringLiteral JsonIdAllCapsSHA512 = "SHA512";
-    inline constexpr StringLiteral JsonIdAllCapsSPDX22 = "SPDX-2.2";
-    inline constexpr StringLiteral JsonIdAllCapsSPDXID = "SPDXID";
     inline constexpr StringLiteral JsonIdApply = "apply";
     inline constexpr StringLiteral JsonIdArchiveCapitalLocation = "archiveLocation";
     inline constexpr StringLiteral JsonIdArtifact = "artifact";
@@ -36,16 +26,12 @@ namespace vcpkg
     inline constexpr StringLiteral JsonIdBuiltinGit = "builtin-git";
     inline constexpr StringLiteral JsonIdCacheCapitalId = "cacheId";
     inline constexpr StringLiteral JsonIdCacheCapitalSize = "cacheSize";
-    inline constexpr StringLiteral JsonIdChecksumCapitalValue = "checksumValue";
     inline constexpr StringLiteral JsonIdChecksums = "checksums";
     inline constexpr StringLiteral JsonIdComment = "comment";
     inline constexpr StringLiteral JsonIdContacts = "contacts";
-    inline constexpr StringLiteral JsonIdCopyrightCapitalText = "copyrightText";
     inline constexpr StringLiteral JsonIdCorrelator = "correlator";
     inline constexpr StringLiteral JsonIdCreated = "created";
-    inline constexpr StringLiteral JsonIdCreationCapitalInfo = "creationInfo";
     inline constexpr StringLiteral JsonIdCreators = "creators";
-    inline constexpr StringLiteral JsonIdDataCapitalLicense = "dataLicense";
     inline constexpr StringLiteral JsonIdDefault = "default";
     inline constexpr StringLiteral JsonIdDefaultFeatures = "default-features";
     inline constexpr StringLiteral JsonIdDefaultRegistry = "default-registry";
@@ -57,13 +43,10 @@ namespace vcpkg
     inline constexpr StringLiteral JsonIdDetector = "detector";
     inline constexpr StringLiteral JsonIdDirect = "direct";
     inline constexpr StringLiteral JsonIdDocumentation = "documentation";
-    inline constexpr StringLiteral JsonIdDocumentCapitalNamespace = "documentNamespace";
     inline constexpr StringLiteral JsonIdDollarSchema = "$schema";
-    inline constexpr StringLiteral JsonIdDownloadCapitalLocation = "downloadLocation";
     inline constexpr StringLiteral JsonIdDownloads = "downloads";
     inline constexpr StringLiteral JsonIdError = "error";
     inline constexpr StringLiteral JsonIdFeatures = "features";
-    inline constexpr StringLiteral JsonIdFileCapitalName = "fileName";
     inline constexpr StringLiteral JsonIdFiles = "files";
     inline constexpr StringLiteral JsonIdFilesystem = "filesystem";
     inline constexpr StringLiteral JsonIdGit = "git";
@@ -77,8 +60,6 @@ namespace vcpkg
     inline constexpr StringLiteral JsonIdKey = "key";
     inline constexpr StringLiteral JsonIdKind = "kind";
     inline constexpr StringLiteral JsonIdLicense = "license";
-    inline constexpr StringLiteral JsonIdLicenseCapitalConcluded = "licenseConcluded";
-    inline constexpr StringLiteral JsonIdLicenseCapitalDeclared = "licenseDeclared";
     inline constexpr StringLiteral JsonIdLocation = "location";
     inline constexpr StringLiteral JsonIdMaintainers = "maintainers";
     inline constexpr StringLiteral JsonIdManifestModeEnabled = "manifest-mode-enabled";
@@ -86,14 +67,10 @@ namespace vcpkg
     inline constexpr StringLiteral JsonIdManifests = "manifests";
     inline constexpr StringLiteral JsonIdMessage = "message";
     inline constexpr StringLiteral JsonIdMicrosoft = "microsoft";
-    inline constexpr StringLiteral JsonIdMixedCaseSPDXRefBinary = "SPDXRef-binary";
-    inline constexpr StringLiteral JsonIdMixedCaseSPDXRefDocument = "SPDXRef-DOCUMENT";
-    inline constexpr StringLiteral JsonIdMixedCaseSPDXRefPort = "SPDXRef-port";
     inline constexpr StringLiteral JsonIdName = "name";
     inline constexpr StringLiteral JsonIdOverlayPorts = "overlay-ports";
     inline constexpr StringLiteral JsonIdOverlayTriplets = "overlay-triplets";
     inline constexpr StringLiteral JsonIdOverrides = "overrides";
-    inline constexpr StringLiteral JsonIdPackageCapitalFileCapitalName = "packageFileName";
     inline constexpr StringLiteral JsonIdPackages = "packages";
     inline constexpr StringLiteral JsonIdPackageUnderscoreName = "package_name";
     inline constexpr StringLiteral JsonIdPackageUnderscoreUrl = "package_url";
@@ -104,9 +81,7 @@ namespace vcpkg
     inline constexpr StringLiteral JsonIdRef = "ref";
     inline constexpr StringLiteral JsonIdReference = "reference";
     inline constexpr StringLiteral JsonIdRegistries = "registries";
-    inline constexpr StringLiteral JsonIdRelatedCapitalSpdxCapitalElement = "relatedSpdxElement";
     inline constexpr StringLiteral JsonIdRelationship = "relationship";
-    inline constexpr StringLiteral JsonIdRelationshipCapitalType = "relationshipType";
     inline constexpr StringLiteral JsonIdRelationships = "relationships";
     inline constexpr StringLiteral JsonIdRepository = "repository";
     inline constexpr StringLiteral JsonIdRequires = "requires";
@@ -114,8 +89,6 @@ namespace vcpkg
     inline constexpr StringLiteral JsonIdScanned = "scanned";
     inline constexpr StringLiteral JsonIdSettings = "settings";
     inline constexpr StringLiteral JsonIdSha = "sha";
-    inline constexpr StringLiteral JsonIdSpdxCapitalElementCapitalId = "spdxElementId";
-    inline constexpr StringLiteral JsonIdSpdxCapitalVersion = "spdxVersion";
     inline constexpr StringLiteral JsonIdState = "state";
     inline constexpr StringLiteral JsonIdSummary = "summary";
     inline constexpr StringLiteral JsonIdSupports = "supports";
@@ -131,7 +104,6 @@ namespace vcpkg
     inline constexpr StringLiteral JsonIdVcpkgRootArg = "vcpkg-root-arg";
     inline constexpr StringLiteral JsonIdVcpkgRootEnv = "vcpkg-root-env";
     inline constexpr StringLiteral JsonIdVersion = "version";
-    inline constexpr StringLiteral JsonIdVersionCapitalInfo = "versionInfo";
     inline constexpr StringLiteral JsonIdVersionDate = "version-date";
     inline constexpr StringLiteral JsonIdVersionGreaterEqual = "version>=";
     inline constexpr StringLiteral JsonIdVersions = "versions";
@@ -139,6 +111,40 @@ namespace vcpkg
     inline constexpr StringLiteral JsonIdVersionsOutput = "versions-output";
     inline constexpr StringLiteral JsonIdVersionString = "version-string";
     inline constexpr StringLiteral JsonIdWarning = "warning";
+
+    // SPDX constants are JsonIds which follow capitalization and separation in the SPDX specification,
+    // rather than the lowercase-dash convention used above.
+    //
+    // SPDX documents also use the JsonId constants above for those values consistent with those we
+    // would use in other contexts.
+    inline constexpr StringLiteral SpdxCCZero = "CC0-1.0";
+    inline constexpr StringLiteral SpdxChecksumValue = "checksumValue";
+    inline constexpr StringLiteral SpdxContainedBy = "CONTAINED_BY";
+    inline constexpr StringLiteral SpdxContains = "CONTAINS";
+    inline constexpr StringLiteral SpdxCopyrightText = "copyrightText";
+    inline constexpr StringLiteral SpdxCreationInfo = "creationInfo";
+    inline constexpr StringLiteral SpdxDataLicense = "dataLicense";
+    inline constexpr StringLiteral SpdxDependencyManifestOf = "DEPENDENCY_MANIFEST_OF";
+    inline constexpr StringLiteral SpdxDocumentNamespace = "documentNamespace";
+    inline constexpr StringLiteral SpdxDownloadLocation = "downloadLocation";
+    inline constexpr StringLiteral SpdxElementId = "spdxElementId";
+    inline constexpr StringLiteral SpdxFileName = "fileName";
+    inline constexpr StringLiteral SpdxGeneratedFrom = "GENERATED_FROM";
+    inline constexpr StringLiteral SpdxGenerates = "GENERATES";
+    inline constexpr StringLiteral SpdxLicenseConcluded = "licenseConcluded";
+    inline constexpr StringLiteral SpdxLicenseDeclared = "licenseDeclared";
+    inline constexpr StringLiteral SpdxNoAssertion = "NOASSERTION";
+    inline constexpr StringLiteral SpdxNone = "NONE";
+    inline constexpr StringLiteral SpdxPackageFileName = "packageFileName";
+    inline constexpr StringLiteral SpdxRefBinary = "SPDXRef-binary";
+    inline constexpr StringLiteral SpdxRefDocument = "SPDXRef-DOCUMENT";
+    inline constexpr StringLiteral SpdxRefPort = "SPDXRef-port";
+    inline constexpr StringLiteral SpdxRelatedSpdxElement = "relatedSpdxElement";
+    inline constexpr StringLiteral SpdxRelationshipType = "relationshipType";
+    inline constexpr StringLiteral SpdxSpdxId = "SPDXID";
+    inline constexpr StringLiteral SpdxTwoTwo = "SPDX-2.2";
+    inline constexpr StringLiteral SpdxVersion = "spdxVersion";
+    inline constexpr StringLiteral SpdxVersionInfo = "versionInfo";
 
     // Paragraph IDs are *usually* Capitals-Separated-By-Dashes
     inline constexpr StringLiteral ParagraphIdAbi = "Abi";

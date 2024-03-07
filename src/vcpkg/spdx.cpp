@@ -16,7 +16,7 @@ static std::string fix_ref_version(StringView ref, StringView version)
 
 static std::string conclude_license(const std::string& license)
 {
-    if (license.empty()) return JsonIdAllCapsNOASSERTION.to_string();
+    if (license.empty()) return SpdxNoAssertion.to_string();
     return license;
 }
 
@@ -62,22 +62,22 @@ static Json::Object make_resource(
     std::string spdxid, std::string name, std::string downloadLocation, StringView sha512, StringView filename)
 {
     Json::Object obj;
-    obj.insert(JsonIdAllCapsSPDXID, std::move(spdxid));
+    obj.insert(SpdxSpdxId, std::move(spdxid));
     obj.insert(JsonIdName, std::move(name));
     if (!filename.empty())
     {
-        obj.insert(JsonIdPackageCapitalFileCapitalName, filename);
+        obj.insert(SpdxPackageFileName, filename);
     }
-    obj.insert(JsonIdDownloadCapitalLocation, std::move(downloadLocation));
-    obj.insert(JsonIdLicenseCapitalConcluded, JsonIdAllCapsNOASSERTION);
-    obj.insert(JsonIdLicenseCapitalDeclared, JsonIdAllCapsNOASSERTION);
-    obj.insert(JsonIdCopyrightCapitalText, JsonIdAllCapsNOASSERTION);
+    obj.insert(SpdxDownloadLocation, std::move(downloadLocation));
+    obj.insert(SpdxLicenseConcluded, SpdxNoAssertion);
+    obj.insert(SpdxLicenseDeclared, SpdxNoAssertion);
+    obj.insert(SpdxCopyrightText, SpdxNoAssertion);
     if (!sha512.empty())
     {
         auto& chk = obj.insert(JsonIdChecksums, Json::Array());
         auto& chk512 = chk.push_back(Json::Object());
         chk512.insert(JsonIdAlgorithm, JsonIdAllCapsSHA512);
-        chk512.insert(JsonIdChecksumCapitalValue, Strings::ascii_to_lowercase(sha512));
+        chk512.insert(SpdxChecksumValue, Strings::ascii_to_lowercase(sha512));
     }
     return obj;
 }
@@ -144,7 +144,7 @@ std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
 
     const auto& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
     const auto& cpgh = *scfl.source_control_file->core_paragraph;
-    StringView abi{JsonIdAllCapsNONE};
+    StringView abi{SpdxNone};
     if (auto package_abi = action.package_abi().get())
     {
         abi = *package_abi;
@@ -152,13 +152,13 @@ std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
 
     Json::Object doc;
     doc.insert(JsonIdDollarSchema, "https://raw.githubusercontent.com/spdx/spdx-spec/v2.2.1/schemas/spdx-schema.json");
-    doc.insert(JsonIdSpdxCapitalVersion, JsonIdAllCapsSPDX22);
-    doc.insert(JsonIdDataCapitalLicense, JsonIdAllCapsCC010);
-    doc.insert(JsonIdAllCapsSPDXID, JsonIdMixedCaseSPDXRefDocument);
-    doc.insert(JsonIdDocumentCapitalNamespace, std::move(document_namespace));
+    doc.insert(SpdxVersion, SpdxTwoTwo);
+    doc.insert(SpdxDataLicense, SpdxCCZero);
+    doc.insert(SpdxSpdxId, SpdxRefDocument);
+    doc.insert(SpdxDocumentNamespace, std::move(document_namespace));
     doc.insert(JsonIdName, Strings::concat(action.spec.to_string(), '@', cpgh.version.to_string(), ' ', abi));
     {
-        auto& cinfo = doc.insert(JsonIdCreationCapitalInfo, Json::Object());
+        auto& cinfo = doc.insert(SpdxCreationInfo, Json::Object());
         auto& creators = cinfo.insert(JsonIdCreators, Json::Array());
         creators.push_back(Strings::concat("Tool: vcpkg-", VCPKG_VERSION_AS_STRING));
         cinfo.insert(JsonIdCreated, std::move(created_time));
@@ -169,49 +169,49 @@ std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
     {
         auto& obj = packages.push_back(Json::Object());
         obj.insert(JsonIdName, action.spec.name());
-        obj.insert(JsonIdAllCapsSPDXID, JsonIdMixedCaseSPDXRefPort);
-        obj.insert(JsonIdVersionCapitalInfo, cpgh.version.to_string());
-        obj.insert(JsonIdDownloadCapitalLocation,
-                   scfl.spdx_location.empty() ? StringView{JsonIdAllCapsNOASSERTION} : scfl.spdx_location);
+        obj.insert(SpdxSpdxId, SpdxRefPort);
+        obj.insert(SpdxVersionInfo, cpgh.version.to_string());
+        obj.insert(SpdxDownloadLocation,
+                   scfl.spdx_location.empty() ? StringView{SpdxNoAssertion} : scfl.spdx_location);
         if (!cpgh.homepage.empty())
         {
             obj.insert(JsonIdHomepage, cpgh.homepage);
         }
-        obj.insert(JsonIdLicenseCapitalConcluded, conclude_license(cpgh.license.value_or("")));
-        obj.insert(JsonIdLicenseCapitalDeclared, JsonIdAllCapsNOASSERTION);
-        obj.insert(JsonIdCopyrightCapitalText, JsonIdAllCapsNOASSERTION);
+        obj.insert(SpdxLicenseConcluded, conclude_license(cpgh.license.value_or("")));
+        obj.insert(SpdxLicenseDeclared, SpdxNoAssertion);
+        obj.insert(SpdxCopyrightText, SpdxNoAssertion);
         if (!cpgh.summary.empty()) obj.insert(JsonIdSummary, Strings::join("\n", cpgh.summary));
         if (!cpgh.description.empty()) obj.insert(JsonIdDescription, Strings::join("\n", cpgh.description));
         obj.insert(JsonIdComment, "This is the port (recipe) consumed by vcpkg.");
         {
             auto& rel = rels.push_back(Json::Object());
-            rel.insert(JsonIdSpdxCapitalElementCapitalId, JsonIdMixedCaseSPDXRefPort);
-            rel.insert(JsonIdRelationshipCapitalType, JsonIdAllCapsGenerates);
-            rel.insert(JsonIdRelatedCapitalSpdxCapitalElement, JsonIdMixedCaseSPDXRefBinary);
+            rel.insert(SpdxElementId, SpdxRefPort);
+            rel.insert(SpdxRelationshipType, SpdxGenerates);
+            rel.insert(SpdxRelatedSpdxElement, SpdxRefBinary);
         }
         for (size_t i = 0; i < relative_paths.size(); ++i)
         {
             auto& rel = rels.push_back(Json::Object());
-            rel.insert(JsonIdSpdxCapitalElementCapitalId, JsonIdMixedCaseSPDXRefPort);
-            rel.insert(JsonIdRelationshipCapitalType, JsonIdAllCapsContains);
-            rel.insert(JsonIdRelatedCapitalSpdxCapitalElement, fmt::format("SPDXRef-file-{}", i));
+            rel.insert(SpdxElementId, SpdxRefPort);
+            rel.insert(SpdxRelationshipType, SpdxContains);
+            rel.insert(SpdxRelatedSpdxElement, fmt::format("SPDXRef-file-{}", i));
         }
     }
     {
         auto& obj = packages.push_back(Json::Object());
         obj.insert(JsonIdName, action.spec.to_string());
-        obj.insert(JsonIdAllCapsSPDXID, JsonIdMixedCaseSPDXRefBinary);
-        obj.insert(JsonIdVersionCapitalInfo, abi);
-        obj.insert(JsonIdDownloadCapitalLocation, JsonIdAllCapsNONE);
-        obj.insert(JsonIdLicenseCapitalConcluded, conclude_license(cpgh.license.value_or("")));
-        obj.insert(JsonIdLicenseCapitalDeclared, JsonIdAllCapsNOASSERTION);
-        obj.insert(JsonIdCopyrightCapitalText, JsonIdAllCapsNOASSERTION);
+        obj.insert(SpdxSpdxId, SpdxRefBinary);
+        obj.insert(SpdxVersionInfo, abi);
+        obj.insert(SpdxDownloadLocation, SpdxNone);
+        obj.insert(SpdxLicenseConcluded, conclude_license(cpgh.license.value_or("")));
+        obj.insert(SpdxLicenseDeclared, SpdxNoAssertion);
+        obj.insert(SpdxCopyrightText, SpdxNoAssertion);
         obj.insert(JsonIdComment, "This is a binary package built by vcpkg.");
         {
             auto& rel = rels.push_back(Json::Object());
-            rel.insert(JsonIdSpdxCapitalElementCapitalId, JsonIdMixedCaseSPDXRefBinary);
-            rel.insert(JsonIdRelationshipCapitalType, JsonIdAllCapsGeneratedUnderscoreFrom);
-            rel.insert(JsonIdRelatedCapitalSpdxCapitalElement, JsonIdMixedCaseSPDXRefPort);
+            rel.insert(SpdxElementId, SpdxRefBinary);
+            rel.insert(SpdxRelationshipType, SpdxGeneratedFrom);
+            rel.insert(SpdxRelatedSpdxElement, SpdxRefPort);
         }
     }
 
@@ -223,27 +223,27 @@ std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
             const auto& hash = hashes[i];
 
             auto& obj = files.push_back(Json::Object());
-            obj.insert(JsonIdFileCapitalName, "./" + path.generic_u8string());
+            obj.insert(SpdxFileName, "./" + path.generic_u8string());
             const auto ref = fmt::format("SPDXRef-file-{}", i);
-            obj.insert(JsonIdAllCapsSPDXID, ref);
+            obj.insert(SpdxSpdxId, ref);
             auto& checksum = obj.insert(JsonIdChecksums, Json::Array());
             auto& checksum1 = checksum.push_back(Json::Object());
             checksum1.insert(JsonIdAlgorithm, JsonIdAllCapsSHA256);
-            checksum1.insert(JsonIdChecksumCapitalValue, hash);
-            obj.insert(JsonIdLicenseCapitalConcluded, JsonIdAllCapsNOASSERTION);
-            obj.insert(JsonIdCopyrightCapitalText, JsonIdAllCapsNOASSERTION);
+            checksum1.insert(SpdxChecksumValue, hash);
+            obj.insert(SpdxLicenseConcluded, SpdxNoAssertion);
+            obj.insert(SpdxCopyrightText, SpdxNoAssertion);
             {
                 auto& rel = rels.push_back(Json::Object());
-                rel.insert(JsonIdSpdxCapitalElementCapitalId, ref);
-                rel.insert(JsonIdRelationshipCapitalType, JsonIdAllCapsContainedUnderscoreBy);
-                rel.insert(JsonIdRelatedCapitalSpdxCapitalElement, JsonIdMixedCaseSPDXRefPort);
+                rel.insert(SpdxElementId, ref);
+                rel.insert(SpdxRelationshipType, SpdxContainedBy);
+                rel.insert(SpdxRelatedSpdxElement, SpdxRefPort);
             }
             if (path == FileVcpkgDotJson)
             {
                 auto& rel = rels.push_back(Json::Object());
-                rel.insert(JsonIdSpdxCapitalElementCapitalId, ref);
-                rel.insert(JsonIdRelationshipCapitalType, JsonIdAllCapsDependencyUnderscoreManifestUnderscoreOf);
-                rel.insert(JsonIdRelatedCapitalSpdxCapitalElement, JsonIdMixedCaseSPDXRefPort);
+                rel.insert(SpdxElementId, ref);
+                rel.insert(SpdxRelationshipType, SpdxDependencyManifestOf);
+                rel.insert(SpdxRelatedSpdxElement, SpdxRefPort);
             }
         }
     }
