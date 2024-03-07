@@ -11,7 +11,7 @@
 
 namespace vcpkg
 {
-    ExpectedL<PackageSpec> parse_package_spec(StringView spec_string, Triplet default_triplet)
+    [[nodiscard]] ExpectedL<PackageSpec> parse_package_spec(StringView spec_string, Triplet default_triplet)
     {
         return parse_qualified_specifier(Strings::ascii_to_lowercase(spec_string),
                                          AllowFeatures::No,
@@ -22,7 +22,7 @@ namespace vcpkg
             });
     }
 
-    ExpectedL<Unit> check_triplet(StringView name, const TripletDatabase& database)
+    [[nodiscard]] ExpectedL<Unit> check_triplet(StringView name, const TripletDatabase& database)
     {
         // Intentionally show the lowercased string
         auto as_lower = Strings::ascii_to_lowercase(name);
@@ -37,9 +37,9 @@ namespace vcpkg
         return Unit{};
     }
 
-    ExpectedL<PackageSpec> check_and_get_package_spec(StringView spec_string,
-                                                      Triplet default_triplet,
-                                                      const TripletDatabase& database)
+    [[nodiscard]] ExpectedL<PackageSpec> check_and_get_package_spec(StringView spec_string,
+                                                                    Triplet default_triplet,
+                                                                    const TripletDatabase& database)
     {
         return parse_qualified_specifier(Strings::ascii_to_lowercase(spec_string),
                                          AllowFeatures::No,
@@ -59,9 +59,9 @@ namespace vcpkg
             });
     }
 
-    ExpectedL<FullPackageSpec> check_and_get_full_package_spec(StringView spec_string,
-                                                               Triplet default_triplet,
-                                                               const TripletDatabase& database)
+    [[nodiscard]] ExpectedL<FullPackageSpec> check_and_get_full_package_spec(StringView spec_string,
+                                                                             Triplet default_triplet,
+                                                                             const TripletDatabase& database)
     {
         return parse_qualified_specifier(Strings::ascii_to_lowercase(spec_string),
                                          AllowFeatures::Yes,
