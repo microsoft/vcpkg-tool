@@ -1756,121 +1756,55 @@ namespace vcpkg
                                const std::unordered_map<std::string, std::string>& cmakevars)
         : triplet(triplet), m_paths(paths)
     {
-        enum class VcpkgTripletVar
+        Util::assign_if_set_and_nonempty(target_architecture, cmakevars, CMakeVariableTargetArchitecture);
+        Util::assign_if_set_and_nonempty(cmake_system_name, cmakevars, CMakeVariableCMakeSystemName);
+        Util::assign_if_set_and_nonempty(cmake_system_version, cmakevars, CMakeVariableCMakeSystemVersion);
+        Util::assign_if_set_and_nonempty(platform_toolset, cmakevars, CMakeVariablePlatformToolset);
+        Util::assign_if_set_and_nonempty(platform_toolset_version, cmakevars, CMakeVariablePlatformToolsetVersion);
+        Util::assign_if_set_and_nonempty(visual_studio_path, cmakevars, CMakeVariableVisualStudioPath);
+        Util::assign_if_set_and_nonempty(external_toolchain_file, cmakevars, CMakeVariableChainloadToolchainFile);
+        if (auto value = Util::value_if_set_and_nonempty(cmakevars, CMakeVariableBuildType))
         {
-            TARGET_ARCHITECTURE = 0,
-            CMAKE_SYSTEM_NAME,
-            CMAKE_SYSTEM_VERSION,
-            PLATFORM_TOOLSET,
-            PLATFORM_TOOLSET_VERSION,
-            VISUAL_STUDIO_PATH,
-            CHAINLOAD_TOOLCHAIN_FILE,
-            BUILD_TYPE,
-            ENV_PASSTHROUGH,
-            ENV_PASSTHROUGH_UNTRACKED,
-            PUBLIC_ABI_OVERRIDE,
-            LOAD_VCVARS_ENV,
-            DISABLE_COMPILER_TRACKING,
-            XBOX_CONSOLE_TARGET,
-            Z_VCPKG_GameDKLatest
-        };
-
-        static constexpr std::pair<StringLiteral, VcpkgTripletVar> VCPKG_OPTIONS[] = {
-            {CMakeVariableTargetArchitecture, VcpkgTripletVar::TARGET_ARCHITECTURE},
-            {CMakeVariableCMakeSystemName, VcpkgTripletVar::CMAKE_SYSTEM_NAME},
-            {CMakeVariableCMakeSystemVersion, VcpkgTripletVar::CMAKE_SYSTEM_VERSION},
-            {CMakeVariablePlatformToolset, VcpkgTripletVar::PLATFORM_TOOLSET},
-            {CMakeVariablePlatformToolsetVersion, VcpkgTripletVar::PLATFORM_TOOLSET_VERSION},
-            {CMakeVariableVisualStudioPath, VcpkgTripletVar::VISUAL_STUDIO_PATH},
-            {CMakeVariableChainloadToolchainFile, VcpkgTripletVar::CHAINLOAD_TOOLCHAIN_FILE},
-            {CMakeVariableBuildType, VcpkgTripletVar::BUILD_TYPE},
-            {CMakeVariableEnvPassthrough, VcpkgTripletVar::ENV_PASSTHROUGH},
-            {CMakeVariableEnvPassthroughUntracked, VcpkgTripletVar::ENV_PASSTHROUGH_UNTRACKED},
-            {CMakeVariablePublicAbiOverride, VcpkgTripletVar::PUBLIC_ABI_OVERRIDE},
-            // Note: this value must come after CMakeVariableChainloadToolchainFile because its default depends upon it.
-            {CMakeVariableLoadVcvarsEnv, VcpkgTripletVar::LOAD_VCVARS_ENV},
-            {CMakeVariableDisableCompilerTracking, VcpkgTripletVar::DISABLE_COMPILER_TRACKING},
-            {CMakeVariableXBoxConsoleTarget, VcpkgTripletVar::XBOX_CONSOLE_TARGET},
-            {CMakeVariableZVcpkgGameDKLatest, VcpkgTripletVar::Z_VCPKG_GameDKLatest},
-        };
-
-        const std::string empty;
-        for (auto&& kv : VCPKG_OPTIONS)
-        {
-            const auto& variable_value = Util::value_or_default(cmakevars, kv.first.to_string(), empty);
-            switch (kv.second)
-            {
-                case VcpkgTripletVar::TARGET_ARCHITECTURE: target_architecture = variable_value; break;
-                case VcpkgTripletVar::CMAKE_SYSTEM_NAME: cmake_system_name = variable_value; break;
-                case VcpkgTripletVar::CMAKE_SYSTEM_VERSION: cmake_system_version = variable_value; break;
-                case VcpkgTripletVar::PLATFORM_TOOLSET:
-                    platform_toolset = variable_value.empty() ? nullopt : Optional<std::string>{variable_value};
-                    break;
-                case VcpkgTripletVar::PLATFORM_TOOLSET_VERSION:
-                    platform_toolset_version = variable_value.empty() ? nullopt : Optional<std::string>{variable_value};
-                    break;
-                case VcpkgTripletVar::VISUAL_STUDIO_PATH:
-                    visual_studio_path = variable_value.empty() ? nullopt : Optional<Path>{variable_value};
-                    break;
-                case VcpkgTripletVar::CHAINLOAD_TOOLCHAIN_FILE:
-                    external_toolchain_file = variable_value.empty() ? nullopt : Optional<std::string>{variable_value};
-                    break;
-                case VcpkgTripletVar::BUILD_TYPE:
-                    if (variable_value.empty())
-                        build_type = nullopt;
-                    else if (Strings::case_insensitive_ascii_equals(variable_value, "debug"))
-                        build_type = ConfigurationType::Debug;
-                    else if (Strings::case_insensitive_ascii_equals(variable_value, "release"))
-                        build_type = ConfigurationType::Release;
-                    else
-                        Checks::msg_exit_with_message(
-                            VCPKG_LINE_INFO, msgUnknownSettingForBuildType, msg::option = variable_value);
-                    break;
-                case VcpkgTripletVar::ENV_PASSTHROUGH:
-                    passthrough_env_vars_tracked = Strings::split(variable_value, ';');
-                    Util::Vectors::append(&passthrough_env_vars, passthrough_env_vars_tracked);
-                    break;
-                case VcpkgTripletVar::ENV_PASSTHROUGH_UNTRACKED:
-                    Util::Vectors::append(&passthrough_env_vars, Strings::split(variable_value, ';'));
-                    break;
-                case VcpkgTripletVar::PUBLIC_ABI_OVERRIDE:
-                    public_abi_override = variable_value.empty() ? nullopt : Optional<std::string>{variable_value};
-                    break;
-                case VcpkgTripletVar::LOAD_VCVARS_ENV:
-                    if (variable_value.empty())
-                    {
-                        load_vcvars_env = !external_toolchain_file.has_value();
-                    }
-                    else
-                    {
-                        load_vcvars_env = from_cmake_bool(variable_value, kv.first).value_or_exit(VCPKG_LINE_INFO);
-                    }
-                    break;
-                case VcpkgTripletVar::DISABLE_COMPILER_TRACKING:
-                    if (variable_value.empty())
-                    {
-                        disable_compiler_tracking = false;
-                    }
-                    else
-                    {
-                        disable_compiler_tracking =
-                            from_cmake_bool(variable_value, kv.first).value_or_exit(VCPKG_LINE_INFO);
-                    }
-                    break;
-                case VcpkgTripletVar::XBOX_CONSOLE_TARGET:
-                    if (!variable_value.empty())
-                    {
-                        target_is_xbox = true;
-                    }
-                    break;
-                case VcpkgTripletVar::Z_VCPKG_GameDKLatest:
-                    if (!variable_value.empty())
-                    {
-                        gamedk_latest_path.emplace(variable_value);
-                    }
-                    break;
-            }
+            if (Strings::case_insensitive_ascii_equals(*value, "debug"))
+                build_type = ConfigurationType::Debug;
+            else if (Strings::case_insensitive_ascii_equals(*value, "release"))
+                build_type = ConfigurationType::Release;
+            else
+                Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgUnknownSettingForBuildType, msg::option = *value);
         }
+
+        if (auto value = Util::value_if_set_and_nonempty(cmakevars, CMakeVariableEnvPassthrough))
+        {
+            passthrough_env_vars_tracked = Strings::split(*value, ';');
+            passthrough_env_vars = passthrough_env_vars_tracked;
+        }
+
+        // Note that this must come after CMakeVariableEnvPassthrough since the leading values come from there
+        if (auto value = Util::value_if_set_and_nonempty(cmakevars, CMakeVariableEnvPassthroughUntracked))
+        {
+            Util::Vectors::append(&passthrough_env_vars, Strings::split(*value, ';'));
+        }
+
+        Util::assign_if_set_and_nonempty(public_abi_override, cmakevars, CMakeVariablePublicAbiOverride);
+        // Note that this value must come after CMakeVariableChainloadToolchainFile because its default depends upon it
+        load_vcvars_env = !external_toolchain_file.has_value();
+        if (auto value = Util::value_if_set_and_nonempty(cmakevars, CMakeVariableLoadVcvarsEnv))
+        {
+            load_vcvars_env = from_cmake_bool(*value, CMakeVariableLoadVcvarsEnv).value_or_exit(VCPKG_LINE_INFO);
+        }
+
+        if (auto value = Util::value_if_set_and_nonempty(cmakevars, CMakeVariableDisableCompilerTracking))
+        {
+            disable_compiler_tracking =
+                from_cmake_bool(*value, CMakeVariableDisableCompilerTracking).value_or_exit(VCPKG_LINE_INFO);
+        }
+
+        if (Util::value_if_set_and_nonempty(cmakevars, CMakeVariableXBoxConsoleTarget) != nullptr)
+        {
+            target_is_xbox = true;
+        }
+
+        Util::assign_if_set_and_nonempty(gamedk_latest_path, cmakevars, CMakeVariableZVcpkgGameDKLatest);
     }
 
     ExtendedBuildResult::ExtendedBuildResult(BuildResult code) : code(code) { }
