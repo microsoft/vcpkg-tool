@@ -23,11 +23,11 @@ namespace
 
     LocalizedString help_topics();
 
-    LocalizedString help_topic_valid_triplet(const TripletDatabase& database)
+    void help_topic_valid_triplet(const TripletDatabase& database)
     {
         LocalizedString result;
         append_help_topic_valid_triplet(result, database);
-        return result;
+        msg::print(result);
     }
 
     void help_topic_versioning(const VcpkgPaths&)
