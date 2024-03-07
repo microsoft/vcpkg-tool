@@ -1,6 +1,7 @@
 #include <vcpkg/base/fwd/message_sinks.h>
 
 #include <vcpkg/base/chrono.h>
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/parse.h>
@@ -204,7 +205,7 @@ namespace vcpkg
                 Dependency dependency{pqs.name, {}, pqs.platform.value_or({})};
                 for (const auto& feature : pqs.features.value_or({}))
                 {
-                    if (feature == "core")
+                    if (feature == FeatureNameCore)
                     {
                         dependency.default_features = false;
                     }
@@ -403,7 +404,7 @@ namespace vcpkg::Paragraphs
                 return msg::format_error(msgManifestConflict, msg::path = port_location.port_directory);
             }
 
-            return try_load_port_manifest_text(manifest_contents, manifest_path, stdout_sink)
+            return try_load_port_manifest_text(manifest_contents, manifest_path, out_sink)
                 .map([&](std::unique_ptr<SourceControlFile>&& scf) {
                     return SourceControlFileAndLocation{
                         std::move(scf), std::move(manifest_path), port_location.spdx_location};

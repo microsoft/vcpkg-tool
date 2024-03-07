@@ -1,3 +1,4 @@
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.h>
 #include <vcpkg/base/system.process.h>
@@ -15,37 +16,36 @@ using namespace vcpkg;
 
 namespace
 {
-    constexpr StringLiteral OPTION_BIN = "bin";
-    constexpr StringLiteral OPTION_INCLUDE = "include";
-    constexpr StringLiteral OPTION_DEBUG_BIN = "debug-bin";
-    constexpr StringLiteral OPTION_TOOLS = "tools";
-    constexpr StringLiteral OPTION_PYTHON = "python";
-
     constexpr CommandSwitch SWITCHES[] = {
-        {OPTION_BIN,
+        {SwitchBin,
          [] {
-             return msg::format(
-                 msgCmdEnvOptions, msg::path = "bin/", msg::env_var = format_environment_variable("PATH"));
+             return msg::format(msgCmdEnvOptions,
+                                msg::path = "bin/",
+                                msg::env_var = format_environment_variable(EnvironmentVariablePath));
          }},
-        {OPTION_INCLUDE,
+        {SwitchInclude,
          [] {
-             return msg::format(
-                 msgCmdEnvOptions, msg::path = "include/", msg::env_var = format_environment_variable("INCLUDE"));
+             return msg::format(msgCmdEnvOptions,
+                                msg::path = "include/",
+                                msg::env_var = format_environment_variable(EnvironmentVariableInclude));
          }},
-        {OPTION_DEBUG_BIN,
+        {SwitchDebugBin,
          [] {
-             return msg::format(
-                 msgCmdEnvOptions, msg::path = "debug/bin/", msg::env_var = format_environment_variable("PATH"));
+             return msg::format(msgCmdEnvOptions,
+                                msg::path = "debug/bin/",
+                                msg::env_var = format_environment_variable(EnvironmentVariablePath));
          }},
-        {OPTION_TOOLS,
+        {SwitchTools,
          [] {
-             return msg::format(
-                 msgCmdEnvOptions, msg::path = "tools/*/", msg::env_var = format_environment_variable("PATH"));
+             return msg::format(msgCmdEnvOptions,
+                                msg::path = "tools/*/",
+                                msg::env_var = format_environment_variable(EnvironmentVariablePath));
          }},
-        {OPTION_PYTHON,
+        {SwitchPython,
          [] {
-             return msg::format(
-                 msgCmdEnvOptions, msg::path = "python/", msg::env_var = format_environment_variable("PYTHONPATH"));
+             return msg::format(msgCmdEnvOptions,
+                                msg::path = "python/",
+                                msg::env_var = format_environment_variable(EnvironmentVariablePythonPath));
          }},
     };
 
@@ -93,20 +93,20 @@ namespace vcpkg
         auto build_env_cmd = make_build_env_cmd(pre_build_info, toolset);
 
         std::unordered_map<std::string, std::string> extra_env = {};
-        const bool add_bin = Util::Sets::contains(options.switches, OPTION_BIN);
-        const bool add_include = Util::Sets::contains(options.switches, OPTION_INCLUDE);
-        const bool add_debug_bin = Util::Sets::contains(options.switches, OPTION_DEBUG_BIN);
-        const bool add_tools = Util::Sets::contains(options.switches, OPTION_TOOLS);
-        const bool add_python = Util::Sets::contains(options.switches, OPTION_PYTHON);
+        const bool add_bin = Util::Sets::contains(options.switches, SwitchBin);
+        const bool add_include = Util::Sets::contains(options.switches, SwitchInclude);
+        const bool add_debug_bin = Util::Sets::contains(options.switches, SwitchDebugBin);
+        const bool add_tools = Util::Sets::contains(options.switches, SwitchTools);
+        const bool add_python = Util::Sets::contains(options.switches, SwitchPython);
 
         std::vector<std::string> path_vars;
         const auto current_triplet_path = paths.installed().triplet_dir(triplet);
-        if (add_bin) path_vars.push_back((current_triplet_path / "bin").native());
-        if (add_debug_bin) path_vars.push_back((current_triplet_path / "debug" / "bin").native());
-        if (add_include) extra_env.emplace("INCLUDE", (current_triplet_path / "include").native());
+        if (add_bin) path_vars.push_back((current_triplet_path / FileBin).native());
+        if (add_debug_bin) path_vars.push_back((current_triplet_path / FileDebug / FileBin).native());
+        if (add_include) extra_env.emplace(EnvironmentVariableInclude, (current_triplet_path / FileInclude).native());
         if (add_tools)
         {
-            auto tools_dir = current_triplet_path / "tools";
+            auto tools_dir = current_triplet_path / FileTools;
             path_vars.push_back(tools_dir.native());
             for (auto&& tool_dir : fs.get_directories_non_recursive(tools_dir, VCPKG_LINE_INFO))
             {
@@ -115,10 +115,10 @@ namespace vcpkg
         }
         if (add_python)
         {
-            extra_env.emplace("PYTHONPATH", (current_triplet_path / "python").native());
+            extra_env.emplace(EnvironmentVariablePythonPath, (current_triplet_path / "python").native());
         }
 
-        if (path_vars.size() > 0) extra_env.emplace("PATH", Strings::join(";", path_vars));
+        if (path_vars.size() > 0) extra_env.emplace(EnvironmentVariablePath, Strings::join(";", path_vars));
         for (auto&& passthrough : pre_build_info.passthrough_env_vars)
         {
             if (auto e = get_environment_variable(passthrough))
@@ -127,34 +127,26 @@ namespace vcpkg
             }
         }
 
-        auto env = get_modified_clean_environment(extra_env);
+#if defined(_WIN32)
+        ProcessLaunchSettings settings;
+        auto& env = settings.environment.emplace(get_modified_clean_environment(extra_env));
         if (!build_env_cmd.empty())
         {
-#if defined(_WIN32)
             env = cmd_execute_and_capture_environment(build_env_cmd, env);
-#else  // ^^^ _WIN32 / !_WIN32 vvv
-            Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgEnvPlatformNotSupported);
-#endif // ^^^ !_WIN32
         }
 
-#if defined(_WIN32)
-        Command cmd("cmd");
-        cmd.string_arg("/d");
-#else  // ^^^ _WIN32 / !_WIN32 vvv
-        Command cmd("");
-        Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgEnvPlatformNotSupported);
-#endif // ^^^ !_WIN32
+        auto cmd = Command{"cmd"}.string_arg("/d");
         if (!options.command_arguments.empty())
         {
             cmd.string_arg("/c").raw_arg(options.command_arguments[0]);
         }
-#ifdef _WIN32
+
         enter_interactive_subprocess();
-#endif
-        auto rc = cmd_execute(cmd, default_working_directory, env);
-#ifdef _WIN32
+        auto rc = cmd_execute(cmd, settings);
         exit_interactive_subprocess();
-#endif
         Checks::exit_with_code(VCPKG_LINE_INFO, rc.value_or_exit(VCPKG_LINE_INFO));
+#else  // ^^^ _WIN32 / !_WIN32 vvv
+        Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgEnvPlatformNotSupported);
+#endif // ^^^ !_WIN32
     }
 } // namespace vcpkg

@@ -6,7 +6,7 @@ $commonArgs += @(
 )
 
 # Test simple installation
-Run-Vcpkg -TestArgs ($commonArgs + @("install", "vcpkg-hello-world-1", "vcpkg-cmake", "vcpkg-cmake-config", "--binarycaching", "--x-binarysource=clear;files,$ArchiveRoot,write"))
+Run-Vcpkg -TestArgs ($commonArgs + @("install", "vcpkg-hello-world-1", "vcpkg-cmake", "vcpkg-cmake-config", "--x-binarysource=clear;files,$ArchiveRoot,write"))
 Throw-IfFailed
 
 # Test simple removal
@@ -16,14 +16,14 @@ Require-FileNotExists "$installRoot/$Triplet/include"
 
 if(-Not $IsLinux -and -Not $IsMacOS) {
     # Test simple nuget installation
-    Run-Vcpkg -TestArgs ($commonArgs + @("install", "vcpkg-hello-world-1", "vcpkg-cmake", "vcpkg-cmake-config", "--binarycaching", "--x-binarysource=clear;nuget,$NuGetRoot,readwrite"))
+    Run-Vcpkg -TestArgs ($commonArgs + @("install", "vcpkg-hello-world-1", "vcpkg-cmake", "vcpkg-cmake-config", "--x-binarysource=clear;nuget,$NuGetRoot,readwrite"))
     Throw-IfFailed
 }
 
 # Test restoring from files archive
 Remove-Item -Recurse -Force $installRoot
 Remove-Item -Recurse -Force $buildtreesRoot
-Run-Vcpkg -TestArgs ($commonArgs + @("install","vcpkg-hello-world-1", "vcpkg-cmake", "vcpkg-cmake-config","--binarycaching","--x-binarysource=clear;files,$ArchiveRoot,read"))
+Run-Vcpkg -TestArgs ($commonArgs + @("install","vcpkg-hello-world-1", "vcpkg-cmake", "vcpkg-cmake-config", "--x-binarysource=clear;files,$ArchiveRoot,read"))
 Throw-IfFailed
 Require-FileExists "$installRoot/$Triplet/include/hello-1.h"
 Require-FileNotExists "$buildtreesRoot/vcpkg-hello-world-1/src"
@@ -32,7 +32,7 @@ Require-FileExists "$buildtreesRoot/detect_compiler"
 # Test --no-binarycaching
 Remove-Item -Recurse -Force $installRoot
 Remove-Item -Recurse -Force $buildtreesRoot
-Run-Vcpkg -TestArgs ($commonArgs + @("install","vcpkg-hello-world-1", "vcpkg-cmake", "vcpkg-cmake-config","--no-binarycaching","--x-binarysource=clear;files,$ArchiveRoot,read"))
+Run-Vcpkg -TestArgs ($commonArgs + @("install","vcpkg-hello-world-1", "vcpkg-cmake", "vcpkg-cmake-config", "--no-binarycaching", "--x-binarysource=clear;files,$ArchiveRoot,read"))
 Throw-IfFailed
 Require-FileExists "$installRoot/$Triplet/include/hello-1.h"
 Require-FileExists "$buildtreesRoot/vcpkg-hello-world-1/src"
@@ -41,7 +41,7 @@ Require-FileExists "$buildtreesRoot/detect_compiler"
 # Test --editable
 Remove-Item -Recurse -Force $installRoot
 Remove-Item -Recurse -Force $buildtreesRoot
-Run-Vcpkg -TestArgs ($commonArgs + @("install","vcpkg-hello-world-1", "vcpkg-cmake", "vcpkg-cmake-config","--editable","--x-binarysource=clear;files,$ArchiveRoot,read"))
+Run-Vcpkg -TestArgs ($commonArgs + @("install","vcpkg-hello-world-1", "vcpkg-cmake", "vcpkg-cmake-config", "--editable", "--x-binarysource=clear;files,$ArchiveRoot,read"))
 Throw-IfFailed
 Require-FileExists "$installRoot/$Triplet/include/hello-1.h"
 Require-FileExists "$buildtreesRoot/vcpkg-hello-world-1/src"
@@ -51,7 +51,7 @@ if(-Not $IsLinux -and -Not $IsMacOS) {
     # Test restoring from nuget
     Remove-Item -Recurse -Force $installRoot
     Remove-Item -Recurse -Force $buildtreesRoot
-    Run-Vcpkg -TestArgs ($commonArgs + @("install", "vcpkg-hello-world-1", "vcpkg-cmake", "vcpkg-cmake-config", "--binarycaching", "--x-binarysource=clear;nuget,$NuGetRoot"))
+    Run-Vcpkg -TestArgs ($commonArgs + @("install", "vcpkg-hello-world-1", "vcpkg-cmake", "vcpkg-cmake-config", "--x-binarysource=clear;nuget,$NuGetRoot"))
     Throw-IfFailed
     Require-FileExists "$installRoot/$Triplet/include/hello-1.h"
     Require-FileNotExists "$buildtreesRoot/vcpkg-hello-world-1/src"
@@ -72,7 +72,7 @@ if(-Not $IsLinux -and -Not $IsMacOS) {
     Throw-IfFailed
     Remove-Item -Recurse -Force $NuGetRoot -ErrorAction SilentlyContinue
     mkdir $NuGetRoot
-    Run-Vcpkg -TestArgs ($commonArgs + @("install", "vcpkg-hello-world-1", "vcpkg-hello-world-2", "vcpkg-cmake", "vcpkg-cmake-config", "--binarycaching", "--x-binarysource=clear;nuget,$NuGetRoot2;nuget,$NuGetRoot,write"))
+    Run-Vcpkg -TestArgs ($commonArgs + @("install", "vcpkg-hello-world-1", "vcpkg-hello-world-2", "vcpkg-cmake", "vcpkg-cmake-config", "--x-binarysource=clear;nuget,$NuGetRoot2;nuget,$NuGetRoot,write"))
     Throw-IfFailed
     Require-FileExists "$installRoot/$Triplet/include/hello-1.h"
     Require-FileExists "$installRoot/$Triplet/include/hello-2.h"

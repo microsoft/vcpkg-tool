@@ -14,10 +14,15 @@ namespace vcpkg
         Utf16
     };
 
+    enum class CreateNewConsole
+    {
+        No,
+        Yes
+    };
+
     struct CMakeVariable;
     struct Command;
     struct CommandLess;
     struct ExitCodeAndOutput;
     struct Environment;
-    struct WorkingDirectory;
 }

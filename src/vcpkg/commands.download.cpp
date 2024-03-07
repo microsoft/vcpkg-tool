@@ -1,5 +1,6 @@
 #include <vcpkg/base/fwd/message_sinks.h>
 
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
@@ -15,24 +16,17 @@ using namespace vcpkg;
 
 namespace
 {
-    constexpr StringLiteral OPTION_STORE = "store";
-    constexpr StringLiteral OPTION_SKIP_SHA512 = "skip-sha512";
-    constexpr StringLiteral OPTION_SHA512 = "sha512";
-    constexpr StringLiteral OPTION_URL = "url";
-    constexpr StringLiteral OPTION_HEADER = "header";
-    constexpr StringLiteral OPTION_MACHINE_PROGRESS = "z-machine-readable-progress";
-
     constexpr CommandSwitch FETCH_SWITCHES[] = {
-        {OPTION_STORE, msgCmdXDownloadOptStore},
-        {OPTION_SKIP_SHA512, msgCmdXDownloadOptSkipSha},
-        {OPTION_MACHINE_PROGRESS, {}},
+        {SwitchStore, msgCmdXDownloadOptStore},
+        {SwitchSkipSha512, msgCmdXDownloadOptSkipSha},
+        {SwitchZMachineReadableProgress, {}},
     };
     constexpr CommandSetting FETCH_SETTINGS[] = {
-        {OPTION_SHA512, msgCmdXDownloadOptSha},
+        {SwitchSha512, msgCmdXDownloadOptSha},
     };
     constexpr CommandMultiSetting FETCH_MULTISETTINGS[] = {
-        {OPTION_URL, msgCmdXDownloadOptUrl},
-        {OPTION_HEADER, msgCmdXDownloadOptHeader},
+        {SwitchUrl, msgCmdXDownloadOptUrl},
+        {SwitchHeader, msgCmdXDownloadOptHeader},
     };
 } // unnamed namespace
 
@@ -56,7 +50,7 @@ namespace vcpkg
     static Optional<std::string> get_sha512_check(const ParsedArguments& parsed)
     {
         Optional<std::string> sha = nullopt;
-        auto sha_it = parsed.settings.find(OPTION_SHA512);
+        auto sha_it = parsed.settings.find(SwitchSha512);
         if (parsed.command_arguments.size() > 1)
         {
             if (sha_it != parsed.settings.end())
@@ -70,7 +64,7 @@ namespace vcpkg
             sha = sha_it->second;
         }
 
-        if (Util::Sets::contains(parsed.switches, OPTION_SKIP_SHA512))
+        if (Util::Sets::contains(parsed.switches, SwitchSkipSha512))
         {
             if (sha.has_value())
             {
@@ -104,7 +98,7 @@ namespace vcpkg
         auto sha = get_sha512_check(parsed);
 
         // Is this a store command?
-        if (Util::Sets::contains(parsed.switches, OPTION_STORE))
+        if (Util::Sets::contains(parsed.switches, SwitchStore))
         {
             auto hash = sha.get();
             if (!hash)
@@ -130,27 +124,27 @@ namespace vcpkg
         else
         {
             // Try to fetch from urls
-            auto it_headers = parsed.multisettings.find(OPTION_HEADER);
+            auto it_headers = parsed.multisettings.find(SwitchHeader);
             View<std::string> headers;
             if (it_headers != parsed.multisettings.end())
             {
                 headers = it_headers->second;
             }
 
-            auto it_urls = parsed.multisettings.find(OPTION_URL);
+            auto it_urls = parsed.multisettings.find(SwitchUrl);
             View<std::string> urls{};
             if (it_urls != parsed.multisettings.end())
             {
                 urls = it_urls->second;
             }
 
-            download_manager.download_file(fs,
-                                           urls,
-                                           headers,
-                                           file,
-                                           sha,
-                                           Util::Sets::contains(parsed.switches, OPTION_MACHINE_PROGRESS) ? stdout_sink
-                                                                                                          : null_sink);
+            download_manager.download_file(
+                fs,
+                urls,
+                headers,
+                file,
+                sha,
+                Util::Sets::contains(parsed.switches, SwitchZMachineReadableProgress) ? out_sink : null_sink);
             Checks::exit_success(VCPKG_LINE_INFO);
         }
     }

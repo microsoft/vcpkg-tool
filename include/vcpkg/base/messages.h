@@ -148,6 +148,8 @@ namespace vcpkg
     LocalizedString internal_error_prefix();
     inline constexpr StringLiteral MessagePrefix = "message: ";
     LocalizedString message_prefix();
+    inline constexpr StringLiteral InfoPrefix = "info: ";
+    LocalizedString info_prefix();
     inline constexpr StringLiteral NotePrefix = "note: ";
     LocalizedString note_prefix();
     inline constexpr StringLiteral WarningPrefix = "warning: ";
@@ -185,19 +187,19 @@ namespace vcpkg::msg
         return detail::format_to_impl(s, m.index, args.arg()...);
     }
 
-    inline void println() { msg::write_unlocalized_text_to_stdout(Color::none, "\n"); }
+    inline void println() { msg::write_unlocalized_text(Color::none, "\n"); }
 
-    inline void print(Color c, const LocalizedString& s) { msg::write_unlocalized_text_to_stdout(c, s); }
-    inline void print(const LocalizedString& s) { msg::write_unlocalized_text_to_stdout(Color::none, s); }
+    inline void print(Color c, const LocalizedString& s) { msg::write_unlocalized_text(c, s); }
+    inline void print(const LocalizedString& s) { msg::write_unlocalized_text(Color::none, s); }
     inline void println(Color c, const LocalizedString& s)
     {
-        msg::write_unlocalized_text_to_stdout(c, s);
-        msg::write_unlocalized_text_to_stdout(Color::none, "\n");
+        msg::write_unlocalized_text(c, s);
+        msg::write_unlocalized_text(Color::none, "\n");
     }
     inline void println(const LocalizedString& s)
     {
-        msg::write_unlocalized_text_to_stdout(Color::none, s);
-        msg::write_unlocalized_text_to_stdout(Color::none, "\n");
+        msg::write_unlocalized_text(Color::none, s);
+        msg::write_unlocalized_text(Color::none, "\n");
     }
 
     [[nodiscard]] LocalizedString format_error(const LocalizedString& s);

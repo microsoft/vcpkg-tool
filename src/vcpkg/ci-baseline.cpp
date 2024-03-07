@@ -208,9 +208,9 @@ namespace vcpkg
     {
         switch (result)
         {
-            case BuildResult::BUILD_FAILED:
-            case BuildResult::POST_BUILD_CHECKS_FAILED:
-            case BuildResult::FILE_CONFLICTS:
+            case BuildResult::BuildFailed:
+            case BuildResult::PostBuildChecksFailed:
+            case BuildResult::FileConflicts:
                 if (!cidata.expected_failures.contains(spec))
                 {
                     if (is_independent)
@@ -228,13 +228,13 @@ namespace vcpkg
                     }
                 }
                 break;
-            case BuildResult::SUCCEEDED:
+            case BuildResult::Succeeded:
                 if (!allow_unexpected_passing && cidata.expected_failures.contains(spec))
                 {
                     return msg::format(msgCiBaselineUnexpectedPass, msg::spec = spec, msg::path = cifile);
                 }
                 break;
-            case BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES:
+            case BuildResult::CascadedDueToMissingDependencies:
                 if (cidata.required_success.contains(spec))
                 {
                     return msg::format(msgCiBaselineDisallowedCascade, msg::spec = spec, msg::path = cifile);

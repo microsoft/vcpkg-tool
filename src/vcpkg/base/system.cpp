@@ -1,4 +1,5 @@
 #include <vcpkg/base/checks.h>
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/path.h>
@@ -7,6 +8,10 @@
 
 #if defined(__APPLE__)
 #include <sys/sysctl.h>
+#endif
+
+#if defined(__linux__)
+#include <sched.h>
 #endif
 
 #if defined(_WIN32)
@@ -392,9 +397,9 @@ namespace vcpkg
     {
         static ExpectedL<Path> s_home = []() -> ExpectedL<Path> {
 #ifdef _WIN32
-            static constexpr StringLiteral HOMEVAR = "USERPROFILE";
+            constexpr StringLiteral HOMEVAR = EnvironmentVariableUserprofile;
 #else  // ^^^ _WIN32 // !_WIN32 vvv
-            static constexpr StringLiteral HOMEVAR = "HOME";
+            constexpr StringLiteral HOMEVAR = EnvironmentVariableHome;
 #endif // ^^^ !_WIN32
 
             auto maybe_home = get_environment_variable(HOMEVAR);
@@ -593,6 +598,28 @@ namespace vcpkg
 
         return std::move(maybe_k).error();
     }
+
+    void reset_processor_architecture_environment_variable()
+    {
+        // sometimes we get launched with incorrectly set %PROCESSOR_ARCHITECTURE%; this
+        // corrects that as we launch a lot of bits like CMake that expect it to be correctly set:
+        // https://cmake.org/cmake/help/latest/variable/CMAKE_HOST_SYSTEM_PROCESSOR.html#windows-platforms
+        const wchar_t* value;
+        const auto proc = get_host_processor();
+        switch (proc)
+        {
+            case CPUArchitecture::X86: value = L"X86"; break;
+            case CPUArchitecture::X64: value = L"AMD64"; break;
+            case CPUArchitecture::ARM: value = L"ARM"; break;
+            case CPUArchitecture::ARM64: value = L"ARM64"; break;
+            default:
+                Checks::msg_exit_with_error(
+                    VCPKG_LINE_INFO, msgUnexpectedWindowsArchitecture, msg::actual = to_zstring_view(proc));
+                break;
+        }
+
+        Checks::check_exit(VCPKG_LINE_INFO, SetEnvironmentVariableW(L"PROCESSOR_ARCHITECTURE", value) != 0);
+    }
 #endif
 
     static const Optional<Path>& get_program_files()
@@ -664,6 +691,15 @@ namespace vcpkg
             }
             else
             {
+#if defined(__linux__)
+                // Get the number of threads we are allowed to run on,
+                // this might be less than the number of hardware threads.
+                cpu_set_t set;
+                if (sched_getaffinity(getpid(), sizeof(set), &set) == 0)
+                {
+                    return static_cast<unsigned int>(CPU_COUNT(&set)) + 1;
+                }
+#endif
                 return std::thread::hardware_concurrency() + 1;
             }
         }();

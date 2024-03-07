@@ -1,6 +1,7 @@
 #include <vcpkg/base/fwd/message_sinks.h>
 
 #include <vcpkg/base/checks.h>
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/util.h>
@@ -15,14 +16,14 @@ using namespace vcpkg;
 
 namespace
 {
-    std::string get_scheme_name(VersionScheme scheme)
+    StringLiteral get_scheme_name(VersionScheme scheme)
     {
         switch (scheme)
         {
-            case VersionScheme::Relaxed: return "version";
-            case VersionScheme::Semver: return "version-semver";
-            case VersionScheme::String: return "version-string";
-            case VersionScheme::Date: return "version-date";
+            case VersionScheme::Relaxed: return JsonIdVersion;
+            case VersionScheme::Semver: return JsonIdVersionSemver;
+            case VersionScheme::String: return JsonIdVersionString;
+            case VersionScheme::Date: return JsonIdVersionDate;
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
@@ -69,7 +70,7 @@ namespace
 
                     const auto& file = maybe_file.value_or_exit(VCPKG_LINE_INFO);
                     auto maybe_scf = control_file == "vcpkg.json"
-                                         ? Paragraphs::try_load_port_manifest_text(file, treeish, stdout_sink)
+                                         ? Paragraphs::try_load_port_manifest_text(file, treeish, out_sink)
                                          : Paragraphs::try_load_control_file_text(file, treeish);
                     auto scf = maybe_scf.get();
                     if (!scf)
@@ -210,17 +211,13 @@ namespace
         };
     }
 
-    constexpr StringLiteral OPTION_EXCLUDE = "exclude";
-    constexpr StringLiteral OPTION_VERBOSE = "verbose";
-    constexpr StringLiteral OPTION_VERIFY_GIT_TREES = "verify-git-trees";
-
     constexpr CommandSwitch VERIFY_VERSIONS_SWITCHES[]{
-        {OPTION_VERBOSE, msgCISettingsVerifyVersion},
-        {OPTION_VERIFY_GIT_TREES, msgCISettingsVerifyGitTree},
+        {SwitchVerbose, msgCISettingsVerifyVersion},
+        {SwitchVerifyGitTrees, msgCISettingsVerifyGitTree},
     };
 
     constexpr CommandSetting VERIFY_VERSIONS_SETTINGS[] = {
-        {OPTION_EXCLUDE, msgCISettingsExclude},
+        {SwitchExclude, msgCISettingsExclude},
     };
 } // unnamed namespace
 
@@ -242,16 +239,17 @@ namespace vcpkg
     {
         auto parsed_args = args.parse_arguments(CommandCiVerifyVersionsMetadata);
 
-        bool verbose = Util::Sets::contains(parsed_args.switches, OPTION_VERBOSE);
-        bool verify_git_trees = Util::Sets::contains(parsed_args.switches, OPTION_VERIFY_GIT_TREES);
+        bool verbose = Util::Sets::contains(parsed_args.switches, SwitchVerbose);
+        bool verify_git_trees = Util::Sets::contains(parsed_args.switches, SwitchVerifyGitTrees);
 
         std::set<std::string> exclusion_set;
         auto& settings = parsed_args.settings;
-        auto it_exclusions = settings.find(OPTION_EXCLUDE);
+        auto it_exclusions = settings.find(SwitchExclude);
         if (it_exclusions != settings.end())
         {
             auto exclusions = Strings::split(it_exclusions->second, ',');
-            exclusion_set.insert(exclusions.begin(), exclusions.end());
+            exclusion_set.insert(std::make_move_iterator(exclusions.begin()),
+                                 std::make_move_iterator(exclusions.end()));
         }
 
         auto maybe_port_git_tree_map = paths.git_get_local_port_treeish_map();
@@ -276,7 +274,7 @@ namespace vcpkg
             {
                 if (verbose)
                 {
-                    msg::write_unlocalized_text_to_stdout(Color::error, fmt::format("SKIP: {}\n", port_name));
+                    msg::write_unlocalized_text(Color::error, fmt::format("SKIP: {}\n", port_name));
                 }
 
                 continue;
@@ -284,7 +282,7 @@ namespace vcpkg
             auto git_tree_it = port_git_tree_map.find(port_name);
             if (git_tree_it == port_git_tree_map.end())
             {
-                msg::write_unlocalized_text_to_stdout(Color::error, fmt::format("FAIL: {}\n", port_name));
+                msg::write_unlocalized_text(Color::error, fmt::format("FAIL: {}\n", port_name));
                 errors.emplace(
                     msg::format_error(msgVersionShaMissing, msg::package_name = port_name, msg::path = port_path));
                 continue;
@@ -298,14 +296,14 @@ namespace vcpkg
 
             if (manifest_exists && control_exists)
             {
-                msg::write_unlocalized_text_to_stdout(Color::error, fmt::format("FAIL: {}\n", port_name));
+                msg::write_unlocalized_text(Color::error, fmt::format("FAIL: {}\n", port_name));
                 errors.emplace(msg::format_error(msgControlAndManifestFilesPresent, msg::path = port_path));
                 continue;
             }
 
             if (!manifest_exists && !control_exists)
             {
-                msg::write_unlocalized_text_to_stdout(Color::error, fmt::format("FAIL: {}\n", port_name));
+                msg::write_unlocalized_text(Color::error, fmt::format("FAIL: {}\n", port_name));
                 errors.emplace(LocalizedString::from_raw(port_path)
                                    .append_raw(": ")
                                    .append_raw(ErrorPrefix)
@@ -317,7 +315,7 @@ namespace vcpkg
             auto versions_file_path = paths.builtin_registry_versions / prefix / Strings::concat(port_name, ".json");
             if (!fs.exists(versions_file_path, IgnoreErrors{}))
             {
-                msg::write_unlocalized_text_to_stdout(Color::error, fmt::format("FAIL: {}\n", port_name));
+                msg::write_unlocalized_text(Color::error, fmt::format("FAIL: {}\n", port_name));
                 errors.emplace(msg::format_error(
                     msgVersionDatabaseFileMissing, msg::package_name = port_name, msg::path = versions_file_path));
                 continue;
@@ -334,7 +332,7 @@ namespace vcpkg
             }
             else
             {
-                msg::write_unlocalized_text_to_stdout(Color::error, fmt::format("FAIL: {}\n", port_name));
+                msg::write_unlocalized_text(Color::error, fmt::format("FAIL: {}\n", port_name));
                 errors.emplace(std::move(maybe_ok).error());
             }
         }

@@ -1,4 +1,5 @@
 #include <vcpkg/base/checks.h>
+#include <vcpkg/base/contractual-constants.h>
 
 #include <vcpkg/commands.install.h>
 #include <vcpkg/installedpaths.h>
@@ -6,8 +7,6 @@
 
 namespace vcpkg
 {
-    StatusParagraphs::StatusParagraphs() = default;
-
     StatusParagraphs::StatusParagraphs(std::vector<std::unique_ptr<StatusParagraph>>&& ps) : paragraphs(std::move(ps))
     {
     }
@@ -57,7 +56,7 @@ namespace vcpkg
                                                       Triplet triplet,
                                                       const std::string& feature)
     {
-        if (feature == "core")
+        if (feature == FeatureNameCore)
         {
             // The core feature maps to .feature is empty
             return find(name, triplet, {});
@@ -72,7 +71,7 @@ namespace vcpkg
                                                             Triplet triplet,
                                                             const std::string& feature) const
     {
-        if (feature == "core")
+        if (feature == FeatureNameCore)
         {
             // The core feature maps to .feature == ""
             return find(name, triplet, "");

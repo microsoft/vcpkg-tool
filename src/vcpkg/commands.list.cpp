@@ -1,3 +1,4 @@
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/util.h>
 
@@ -11,9 +12,6 @@ using namespace vcpkg;
 
 namespace
 {
-    constexpr StringLiteral OPTION_FULLDESC = "x-full-desc";
-    constexpr StringLiteral OPTION_JSON = "x-json";
-
     void do_print_json(std::vector<const vcpkg::StatusParagraph*> installed_packages)
     {
         Json::Object obj;
@@ -25,19 +23,19 @@ namespace
                 if (status_paragraph->package.is_feature())
                 {
                     Json::Value* value_obj = obj.get(current_spec.to_string());
-                    auto& feature_list = value_obj->object(VCPKG_LINE_INFO)["features"].array(VCPKG_LINE_INFO);
+                    auto& feature_list = value_obj->object(VCPKG_LINE_INFO)[JsonIdFeatures].array(VCPKG_LINE_INFO);
                     feature_list.push_back(Json::Value::string(status_paragraph->package.feature));
                 }
             }
             else
             {
                 Json::Object& library_obj = obj.insert(current_spec.to_string(), Json::Object());
-                library_obj.insert("package_name", Json::Value::string(current_spec.name()));
-                library_obj.insert("triplet", Json::Value::string(current_spec.triplet().to_string()));
-                library_obj.insert("version", Json::Value::string(status_paragraph->package.version.text));
-                library_obj.insert("port_version",
+                library_obj.insert(JsonIdPackageUnderscoreName, Json::Value::string(current_spec.name()));
+                library_obj.insert(JsonIdTriplet, Json::Value::string(current_spec.triplet().to_string()));
+                library_obj.insert(JsonIdVersion, Json::Value::string(status_paragraph->package.version.text));
+                library_obj.insert(JsonIdPortUnderscoreVersion,
                                    Json::Value::integer(status_paragraph->package.version.port_version));
-                Json::Array& features_array = library_obj.insert("features", Json::Array());
+                Json::Array& features_array = library_obj.insert(JsonIdFeatures, Json::Array());
                 if (status_paragraph->package.is_feature())
                 {
                     features_array.push_back(Json::Value::string(status_paragraph->package.feature));
@@ -80,8 +78,8 @@ namespace
     }
 
     constexpr CommandSwitch LIST_SWITCHES[] = {
-        {OPTION_FULLDESC, msgHelpTextOptFullDesc},
-        {OPTION_JSON, msgJsonSwitch},
+        {SwitchXFullDesc, msgHelpTextOptFullDesc},
+        {SwitchXJson, msgJsonSwitch},
     };
 } // unnamed namespace
 
@@ -101,12 +99,13 @@ namespace vcpkg
 
     void command_list_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
+        msg::default_output_stream = OutputStream::StdErr;
         const ParsedArguments options = args.parse_arguments(CommandListMetadata);
 
         const StatusParagraphs status_paragraphs = database_load_check(paths.get_filesystem(), paths.installed());
         auto installed_ipv = get_installed_ports(status_paragraphs);
 
-        const auto output_json = Util::Sets::contains(options.switches, OPTION_JSON);
+        const auto output_json = Util::Sets::contains(options.switches, SwitchXJson);
         if (installed_ipv.empty())
         {
             if (output_json)
@@ -127,7 +126,7 @@ namespace vcpkg
                       return lhs->package.display_name() < rhs->package.display_name();
                   });
 
-        const auto enable_fulldesc = Util::Sets::contains(options.switches, OPTION_FULLDESC.to_string());
+        const auto enable_fulldesc = Util::Sets::contains(options.switches, SwitchXFullDesc.to_string());
 
         if (!options.command_arguments.empty())
         {
