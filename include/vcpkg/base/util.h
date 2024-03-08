@@ -311,6 +311,9 @@ namespace vcpkg::Util
     }
 
     template<class ForwardIt1, class ForwardRange2>
+    void search_and_skip(ForwardIt1 first, ForwardIt1 last, const char*) = delete;
+
+    template<class ForwardIt1, class ForwardRange2>
     ForwardIt1 search(ForwardIt1 first, ForwardIt1 last, const ForwardRange2& rng)
     {
         using std::begin;
@@ -318,6 +321,9 @@ namespace vcpkg::Util
 
         return std::search(first, last, begin(rng), end(rng));
     }
+
+    template<class ForwardIt1, class ForwardRange2>
+    void search(ForwardIt1 first, ForwardIt1 last, const char*) = delete;
 
     // 0th is the first occurence
     // so find_nth({1, 2, 1, 3, 1, 4}, 1, 2)

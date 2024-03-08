@@ -183,7 +183,7 @@ namespace vcpkg
 
     StringLiteral to_string_view(BuildPolicy policy);
     std::string to_string(BuildPolicy policy);
-    ZStringView to_cmake_variable(BuildPolicy policy);
+    StringLiteral to_cmake_variable(BuildPolicy policy);
 
     struct BuildPolicies
     {
@@ -235,6 +235,7 @@ namespace vcpkg
         std::string id;
         std::string version;
         std::string hash;
+        std::string path;
     };
 
     struct AbiInfo

@@ -73,11 +73,11 @@ namespace
     }
 
     constexpr const StringLiteral* ArtifactOperatingSystemsSwitchNamesStorage[] = {
-        &SWITCH_WINDOWS, &SWITCH_OSX, &SWITCH_LINUX, &SWITCH_FREEBSD};
+        &SwitchWindows, &SwitchOsx, &SwitchLinux, &SwitchFreeBsd};
     constexpr const StringLiteral* ArtifactHostPlatformSwitchNamesStorage[] = {
-        &SWITCH_X86, &SWITCH_X64, &SWITCH_ARM, &SWITCH_ARM64};
+        &SwitchX86, &SwitchX64, &SwitchArm, &SwitchArm64};
     constexpr const StringLiteral* ArtifactTargetPlatformSwitchNamesStorage[] = {
-        &SWITCH_TARGET_X86, &SWITCH_TARGET_X64, &SWITCH_TARGET_ARM, &SWITCH_TARGET_ARM64};
+        &SwitchTargetX86, &SwitchTargetX64, &SwitchTargetArm, &SwitchTargetArm64};
 
     bool more_than_one_mapped(View<const StringLiteral*> candidates,
                               const std::set<StringLiteral, std::less<>>& switches)
