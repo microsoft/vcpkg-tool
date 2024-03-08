@@ -321,14 +321,12 @@ namespace vcpkg
 
         static constexpr BuildPackageOptions build_options{
             BuildMissing::Yes,
-            UseHeadVersion::No,
             AllowDownloads::Yes,
             OnlyDownloads::No,
             CleanBuildtrees::Yes,
             CleanPackages::Yes,
             CleanDownloads::No,
             DownloadTool::Builtin,
-            Editable::No,
             BackcompatFeatures::Prohibit,
             PrintUsage::Yes,
             KeepGoing::Yes,
@@ -394,8 +392,6 @@ namespace vcpkg
                 InternalFeatureSet{FeatureNameCore.to_string(), FeatureNameDefault.to_string()});
         }
 
-        CreateInstallPlanOptions serialize_options(host_triplet, paths.packages(), UnsupportedPortAction::Warn);
-
         struct RandomizerInstance : GraphRandomizer
         {
             virtual int random(int i) override
@@ -407,14 +403,16 @@ namespace vcpkg
 
             std::random_device e;
         } randomizer_instance;
-
+        GraphRandomizer* randomizer = nullptr;
         if (Util::Sets::contains(options.switches, SwitchXRandomize))
         {
-            serialize_options.randomizer = &randomizer_instance;
+            randomizer = &randomizer_instance;
         }
 
-        auto action_plan =
-            compute_full_plan(paths, build_options, provider, var_provider, all_default_full_specs, serialize_options);
+        CreateInstallPlanOptions create_install_plan_options(
+            randomizer, host_triplet, paths.packages(), UnsupportedPortAction::Warn, UseHeadVersion::No, Editable::No);
+        auto action_plan = compute_full_plan(
+            paths, build_options, provider, var_provider, all_default_full_specs, create_install_plan_options);
         auto binary_cache = BinaryCache::make(args, paths, out_sink).value_or_exit(VCPKG_LINE_INFO);
         const auto precheck_results = binary_cache.precheck(action_plan.install_actions);
         auto split_specs = compute_action_statuses(ExclusionPredicate{&exclusions_map}, precheck_results, action_plan);
@@ -494,7 +492,7 @@ namespace vcpkg
 
         if (is_dry_run)
         {
-            print_plan(build_options.use_head_version, action_plan, true, paths.builtin_ports_directory());
+            print_plan(action_plan, true, paths.builtin_ports_directory());
             if (!regressions.empty())
             {
                 msg::println(Color::error, msgCiBaselineRegressionHeader);

@@ -328,13 +328,10 @@ namespace vcpkg
     {
         auto& fs = paths.get_filesystem();
         const InstallPlanType& plan_type = action.plan_type;
-
-        const bool is_user_requested = action.request_type == RequestType::USER_REQUESTED;
-        const bool use_head_version = is_user_requested && Util::Enum::to_bool(build_options.use_head_version);
-
         if (plan_type == InstallPlanType::ALREADY_INSTALLED)
         {
-            if (use_head_version && is_user_requested)
+            // FIXME check that this can still get printed
+            if (action.use_head_version == UseHeadVersion::Yes)
                 msg::println(Color::warning, msgAlreadyInstalledNotHead, msg::spec = action.spec);
             else
                 msg::println(Color::success, msgAlreadyInstalled, msg::spec = action.spec);
@@ -356,7 +353,7 @@ namespace vcpkg
             }
             else
             {
-                msg::println(use_head_version ? msgBuildingFromHead : msgBuildingPackage,
+                msg::println(action.use_head_version == UseHeadVersion::Yes ? msgBuildingFromHead : msgBuildingPackage,
                              msg::spec = action.display_name());
 
                 auto result =
@@ -1100,25 +1097,28 @@ namespace vcpkg
         DownloadTool download_tool = DownloadTool::Builtin;
         if (use_aria2) download_tool = DownloadTool::Aria2;
 
-        const BuildPackageOptions install_plan_options = {
+        const BuildPackageOptions build_package_options = {
             Util::Enum::to_enum<BuildMissing>(!no_build_missing),
-            Util::Enum::to_enum<UseHeadVersion>(use_head_version),
             Util::Enum::to_enum<AllowDownloads>(!no_downloads),
             Util::Enum::to_enum<OnlyDownloads>(only_downloads),
             Util::Enum::to_enum<CleanBuildtrees>(clean_after_build || clean_buildtrees_after_build),
             Util::Enum::to_enum<CleanPackages>(clean_after_build || clean_packages_after_build),
             Util::Enum::to_enum<CleanDownloads>(clean_after_build || clean_downloads_after_build),
             download_tool,
-            Util::Enum::to_enum<Editable>(is_editable),
             prohibit_backcompat_features ? BackcompatFeatures::Prohibit : BackcompatFeatures::Allow,
             print_cmake_usage,
             keep_going,
         };
 
+        const CreateInstallPlanOptions create_options{nullptr,
+                                                      host_triplet,
+                                                      paths.packages(),
+                                                      unsupported_port_action,
+                                                      Util::Enum::to_enum<UseHeadVersion>(use_head_version),
+                                                      Util::Enum::to_enum<Editable>(is_editable)};
+
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
-
-        const CreateInstallPlanOptions create_options{host_triplet, paths.packages(), unsupported_port_action};
 
         if (auto manifest = paths.get_manifest().get())
         {
@@ -1246,7 +1246,7 @@ namespace vcpkg
             command_set_installed_and_exit_ex(args,
                                               paths,
                                               host_triplet,
-                                              install_plan_options,
+                                              build_package_options,
                                               var_provider,
                                               std::move(install_plan),
                                               dry_run ? DryRun::Yes : DryRun::No,
@@ -1305,13 +1305,13 @@ namespace vcpkg
         }
 #endif // defined(_WIN32)
 
-        print_plan(install_plan_options.use_head_version, action_plan, is_recursive, paths.builtin_ports_directory());
+        print_plan(action_plan, is_recursive, paths.builtin_ports_directory());
 
         auto it_pkgsconfig = options.settings.find(SwitchXWriteNuGetPackagesConfig);
         if (it_pkgsconfig != options.settings.end())
         {
             get_global_metrics_collector().track_define(DefineMetric::X_WriteNugetPackagesConfig);
-            compute_all_abis(paths, install_plan_options, action_plan, var_provider, status_db);
+            compute_all_abis(paths, build_package_options, action_plan, var_provider, status_db);
 
             auto pkgsconfig_path = paths.original_cwd / it_pkgsconfig->second;
             auto pkgsconfig_contents = generate_nuget_packages_config(action_plan, args.nuget_id_prefix.value_or(""));
@@ -1320,7 +1320,7 @@ namespace vcpkg
         }
         else if (!dry_run)
         {
-            compute_all_abis(paths, install_plan_options, action_plan, var_provider, status_db);
+            compute_all_abis(paths, build_package_options, action_plan, var_provider, status_db);
         }
 
         if (dry_run)
@@ -1339,7 +1339,7 @@ namespace vcpkg
         const InstallSummary summary = install_execute_plan(args,
                                                             paths,
                                                             host_triplet,
-                                                            install_plan_options,
+                                                            build_package_options,
                                                             action_plan,
                                                             status_db,
                                                             binary_cache,
@@ -1368,7 +1368,7 @@ namespace vcpkg
             fs.write_contents(it_xunit->second, xwriter.build_xml(default_triplet), VCPKG_LINE_INFO);
         }
 
-        if (install_plan_options.print_usage == PrintUsage::Yes)
+        if (build_package_options.print_usage == PrintUsage::Yes)
         {
             std::set<std::string> printed_usages;
             for (auto&& result : summary.results)

@@ -29,14 +29,12 @@ namespace vcpkg
 
         static constexpr BuildPackageOptions build_options{
             BuildMissing::Yes,
-            UseHeadVersion::No,
             AllowDownloads::Yes,
             OnlyDownloads::No,
             CleanBuildtrees::Yes,
             CleanPackages::Yes,
             CleanDownloads::No,
             DownloadTool::Builtin,
-            Editable::No,
             BackcompatFeatures::Allow,
             PrintUsage::Yes,
         };

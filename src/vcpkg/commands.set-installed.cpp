@@ -209,7 +209,7 @@ namespace vcpkg
         auto status_db = database_load_check(fs, paths.installed());
         adjust_action_plan_to_status_db(action_plan, status_db);
 
-        print_plan(build_options.use_head_version, action_plan, true, paths.builtin_ports_directory());
+        print_plan(action_plan, true, paths.builtin_ports_directory());
 
         if (auto p_pkgsconfig = maybe_pkgconfig.get())
         {
@@ -254,6 +254,8 @@ namespace vcpkg
 
         if (build_options.print_usage == PrintUsage::Yes)
         {
+            // Note that this differs from the behavior of `vcpkg install` in that it will print usage information for
+            // packages named but not installed here
             std::set<std::string> printed_usages;
             for (auto&& ur_spec : user_requested_specs)
             {
@@ -298,14 +300,12 @@ namespace vcpkg
 
         const BuildPackageOptions build_options{
             BuildMissing::Yes,
-            UseHeadVersion::No,
             AllowDownloads::Yes,
             only_downloads,
             CleanBuildtrees::Yes,
             CleanPackages::Yes,
             CleanDownloads::No,
             DownloadTool::Builtin,
-            Editable::No,
             prohibit_backcompat_features,
             print_usage,
             keep_going,
@@ -329,7 +329,11 @@ namespace vcpkg
         // We need to know all the specs which are required to fulfill dependencies for those specs.
         // Therefore, we see what we would install into an empty installed tree, so we can use the existing code.
         auto action_plan = create_feature_install_plan(
-            provider, *cmake_vars, specs, {}, {host_triplet, paths.packages(), unsupported_port_action});
+            provider,
+            *cmake_vars,
+            specs,
+            {},
+            {nullptr, host_triplet, paths.packages(), unsupported_port_action, UseHeadVersion::No, Editable::No});
         command_set_installed_and_exit_ex(args,
                                           paths,
                                           host_triplet,

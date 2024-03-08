@@ -39,12 +39,16 @@ namespace vcpkg
         InstallPlanAction& operator=(const InstallPlanAction&) = delete;
         InstallPlanAction& operator=(InstallPlanAction&&) = default;
 
-        InstallPlanAction(InstalledPackageView&& spghs, const RequestType& request_type);
+        InstallPlanAction(InstalledPackageView&& spghs,
+                          RequestType request_type, UseHeadVersion use_head_version,
+                          Editable editable);
 
         InstallPlanAction(const PackageSpec& spec,
                           const SourceControlFileAndLocation& scfl,
                           const Path& packages_dir,
-                          const RequestType& request_type,
+                          RequestType request_type,
+                          UseHeadVersion use_head_version,
+                          Editable editable,
                           std::map<std::string, std::vector<FeatureSpec>>&& dependencies,
                           std::vector<LocalizedString>&& build_failure_messages,
                           std::vector<std::string> default_features);
@@ -62,6 +66,8 @@ namespace vcpkg
 
         InstallPlanType plan_type;
         RequestType request_type;
+        UseHeadVersion use_head_version;
+        Editable editable;
 
         std::map<std::string, std::vector<FeatureSpec>> feature_dependencies;
         std::vector<LocalizedString> build_failure_messages;
@@ -118,12 +124,43 @@ namespace vcpkg
 
     struct CreateInstallPlanOptions
     {
-        CreateInstallPlanOptions(Triplet t, const Path& p, UnsupportedPortAction action = UnsupportedPortAction::Error)
-            : host_triplet(t), packages_dir(p), unsupported_port_action(action)
+        CreateInstallPlanOptions(GraphRandomizer* randomizer,
+                                 Triplet host_triplet,
+                                 const Path& packages_dir,
+                                 UnsupportedPortAction action,
+                                 UseHeadVersion use_head_version_if_user_requested,
+                                 Editable editable_if_user_requested)
+            : randomizer(randomizer)
+            , host_triplet(host_triplet)
+            , packages_dir(packages_dir)
+            , unsupported_port_action(action)
+            , use_head_version_if_user_requested(use_head_version_if_user_requested)
+            , editable_if_user_requested(editable_if_user_requested)
         {
         }
 
-        GraphRandomizer* randomizer = nullptr;
+        GraphRandomizer* randomizer;
+        Triplet host_triplet;
+        Path packages_dir;
+        UnsupportedPortAction unsupported_port_action;
+        UseHeadVersion use_head_version_if_user_requested;
+        Editable editable_if_user_requested;
+    };
+
+    struct CreateUpgradePlanOptions
+    {
+        CreateUpgradePlanOptions(GraphRandomizer* randomizer,
+                                 Triplet host_triplet,
+                                 const Path& packages_dir,
+                                 UnsupportedPortAction action)
+            : randomizer(randomizer)
+            , host_triplet(host_triplet)
+            , packages_dir(packages_dir)
+            , unsupported_port_action(action)
+        {
+        }
+
+        GraphRandomizer* randomizer;
         Triplet host_triplet;
         Path packages_dir;
         UnsupportedPortAction unsupported_port_action;
@@ -157,7 +194,7 @@ namespace vcpkg
                                    const CMakeVars::CMakeVarProvider& var_provider,
                                    const std::vector<PackageSpec>& specs,
                                    const StatusParagraphs& status_db,
-                                   const CreateInstallPlanOptions& options);
+                                   const CreateUpgradePlanOptions& options);
 
     ExpectedL<ActionPlan> create_versioned_install_plan(const IVersionedPortfileProvider& vprovider,
                                                         const IBaselineProvider& bprovider,
@@ -174,12 +211,7 @@ namespace vcpkg
         LocalizedString text;
     };
 
-    FormattedPlan format_plan(UseHeadVersion use_head_version,
-                              const ActionPlan& action_plan,
-                              const Path& builtin_ports_dir);
+    FormattedPlan format_plan(const ActionPlan& action_plan, const Path& builtin_ports_dir);
 
-    void print_plan(UseHeadVersion use_head_version,
-                    const ActionPlan& action_plan,
-                    const bool is_recursive,
-                    const Path& builtin_ports_dir);
+    void print_plan(const ActionPlan& action_plan, const bool is_recursive, const Path& builtin_ports_dir);
 }

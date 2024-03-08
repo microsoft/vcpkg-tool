@@ -66,14 +66,12 @@ namespace vcpkg
     struct BuildPackageOptions
     {
         BuildMissing build_missing;
-        UseHeadVersion use_head_version;
         AllowDownloads allow_downloads;
         OnlyDownloads only_downloads;
         CleanBuildtrees clean_buildtrees;
         CleanPackages clean_packages;
         CleanDownloads clean_downloads;
         DownloadTool download_tool;
-        Editable editable;
         BackcompatFeatures backcompat_features;
         PrintUsage print_usage;
         KeepGoing keep_going;

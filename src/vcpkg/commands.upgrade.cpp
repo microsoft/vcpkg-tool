@@ -62,18 +62,19 @@ namespace vcpkg
 
         static const BuildPackageOptions build_options{
             BuildMissing::Yes,
-            UseHeadVersion::No,
             AllowDownloads::Yes,
             OnlyDownloads::No,
             CleanBuildtrees::Yes,
             CleanPackages::Yes,
             CleanDownloads::No,
             DownloadTool::Builtin,
-            Editable::No,
             BackcompatFeatures::Allow,
             PrintUsage::Yes,
             keep_going,
         };
+
+        const CreateUpgradePlanOptions create_upgrade_plan_options{
+            nullptr, host_triplet, paths.packages(), unsupported_port_action};
 
         StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
 
@@ -102,7 +103,7 @@ namespace vcpkg
                 var_provider,
                 Util::fmap(outdated_packages, [](const OutdatedPackage& package) { return package.spec; }),
                 status_db,
-                {host_triplet, paths.packages(), unsupported_port_action});
+                create_upgrade_plan_options);
         }
         else
         {
@@ -183,16 +184,13 @@ namespace vcpkg
 
             if (to_upgrade.empty()) Checks::exit_success(VCPKG_LINE_INFO);
 
-            action_plan = create_upgrade_plan(provider,
-                                              var_provider,
-                                              to_upgrade,
-                                              status_db,
-                                              {host_triplet, paths.packages(), unsupported_port_action});
+            action_plan =
+                create_upgrade_plan(provider, var_provider, to_upgrade, status_db, create_upgrade_plan_options);
         }
 
         Checks::check_exit(VCPKG_LINE_INFO, !action_plan.empty());
         action_plan.print_unsupported_warnings();
-        print_plan(build_options.use_head_version, action_plan, true, paths.builtin_ports_directory());
+        print_plan(action_plan, true, paths.builtin_ports_directory());
 
         if (!no_dry_run)
         {

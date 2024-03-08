@@ -219,14 +219,15 @@ static ExpectedL<ActionPlan> create_versioned_install_plan(const IVersionedPortf
                                                            const std::vector<DependencyOverride>& overrides,
                                                            const PackageSpec& toplevel)
 {
-    return create_versioned_install_plan(provider,
-                                         bprovider,
-                                         s_empty_mock_overlay,
-                                         var_provider,
-                                         deps,
-                                         overrides,
-                                         toplevel,
-                                         {Test::ARM_UWP, "pkgs", UnsupportedPortAction::Error});
+    return create_versioned_install_plan(
+        provider,
+        bprovider,
+        s_empty_mock_overlay,
+        var_provider,
+        deps,
+        overrides,
+        toplevel,
+        {nullptr, Test::ARM_UWP, "pkgs", UnsupportedPortAction::Error, UseHeadVersion::No, Editable::No});
 }
 
 static ExpectedL<ActionPlan> create_versioned_install_plan(const IVersionedPortfileProvider& provider,
@@ -237,14 +238,15 @@ static ExpectedL<ActionPlan> create_versioned_install_plan(const IVersionedPortf
                                                            const std::vector<DependencyOverride>& overrides,
                                                            const PackageSpec& toplevel)
 {
-    return create_versioned_install_plan(provider,
-                                         bprovider,
-                                         oprovider,
-                                         var_provider,
-                                         deps,
-                                         overrides,
-                                         toplevel,
-                                         {Test::ARM_UWP, "pkgs", UnsupportedPortAction::Error});
+    return create_versioned_install_plan(
+        provider,
+        bprovider,
+        oprovider,
+        var_provider,
+        deps,
+        overrides,
+        toplevel,
+        {nullptr, Test::ARM_UWP, "pkgs", UnsupportedPortAction::Error, UseHeadVersion::No, Editable::No});
 }
 
 TEST_CASE ("basic version install single", "[versionplan]")
@@ -2365,44 +2367,59 @@ TEST_CASE ("formatting plan 1", "[dependencies]")
     const RemovePlanAction remove_c({"c", Test::X64_OSX}, RequestType::AUTO_SELECTED);
 
     const Path pr = "packages_root";
-    InstallPlanAction install_a({"a", Test::X64_OSX}, scfl_a, pr, RequestType::AUTO_SELECTED, {}, {}, {});
+    InstallPlanAction install_a(
+        {"a", Test::X64_OSX}, scfl_a, pr, RequestType::AUTO_SELECTED, UseHeadVersion::No, Editable::No, {}, {}, {});
     REQUIRE(install_a.display_name() == "a:x64-osx@1");
-    InstallPlanAction install_b({"b", Test::X64_OSX}, scfl_b, pr, RequestType::AUTO_SELECTED, {{"1", {}}}, {}, {});
-    InstallPlanAction install_c({"c", Test::X64_OSX}, scfl_c, pr, RequestType::USER_REQUESTED, {}, {}, {});
-    InstallPlanAction install_f({"f", Test::X64_OSX}, scfl_f, pr, RequestType::USER_REQUESTED, {}, {}, {});
+    InstallPlanAction install_b({"b", Test::X64_OSX},
+                                scfl_b,
+                                pr,
+                                RequestType::AUTO_SELECTED,
+                                UseHeadVersion::No,
+                                Editable::No,
+                                {{"1", {}}},
+                                {},
+                                {});
+    InstallPlanAction install_c(
+        {"c", Test::X64_OSX}, scfl_c, pr, RequestType::USER_REQUESTED, UseHeadVersion::No, Editable::No, {}, {}, {});
+    InstallPlanAction install_f(
+        {"f", Test::X64_OSX}, scfl_f, pr, RequestType::USER_REQUESTED, UseHeadVersion::No, Editable::No, {}, {}, {});
     install_f.plan_type = InstallPlanType::EXCLUDED;
 
     InstallPlanAction already_installed_d(
         status_db.get_installed_package_view({"d", Test::X86_WINDOWS}).value_or_exit(VCPKG_LINE_INFO),
-        RequestType::AUTO_SELECTED);
+        RequestType::AUTO_SELECTED,
+        UseHeadVersion::No,
+        Editable::No);
     REQUIRE(already_installed_d.display_name() == "d:x86-windows@1");
     InstallPlanAction already_installed_e(
         status_db.get_installed_package_view({"e", Test::X86_WINDOWS}).value_or_exit(VCPKG_LINE_INFO),
-        RequestType::USER_REQUESTED);
+        RequestType::USER_REQUESTED,
+        UseHeadVersion::No,
+        Editable::No);
 
     ActionPlan plan;
     {
-        auto formatted = format_plan(UseHeadVersion::No, plan, "/builtin");
+        auto formatted = format_plan(plan, "/builtin");
         CHECK_FALSE(formatted.has_removals);
         CHECK(formatted.text == "All requested packages are currently installed.\n");
     }
 
     plan.remove_actions.push_back(remove_b);
     {
-        auto formatted = format_plan(UseHeadVersion::No, plan, "/builtin");
+        auto formatted = format_plan(plan, "/builtin");
         CHECK(formatted.has_removals);
         CHECK(formatted.text == "The following packages will be removed:\n"
                                 "    b:x64-osx\n");
     }
 
     plan.remove_actions.push_back(remove_a);
-    REQUIRE_LINES(format_plan(UseHeadVersion::No, plan, "/builtin").text,
+    REQUIRE_LINES(format_plan(plan, "/builtin").text,
                   "The following packages will be removed:\n"
                   "    a:x64-osx\n"
                   "    b:x64-osx\n");
 
     plan.install_actions.push_back(std::move(install_c));
-    REQUIRE_LINES(format_plan(UseHeadVersion::No, plan, "/builtin").text,
+    REQUIRE_LINES(format_plan(plan, "/builtin").text,
                   "The following packages will be removed:\n"
                   "    a:x64-osx\n"
                   "    b:x64-osx\n"
@@ -2410,7 +2427,7 @@ TEST_CASE ("formatting plan 1", "[dependencies]")
                   "    c:x64-osx@1 -- c\n");
 
     plan.remove_actions.push_back(remove_c);
-    REQUIRE_LINES(format_plan(UseHeadVersion::No, plan, "c").text,
+    REQUIRE_LINES(format_plan(plan, "c").text,
                   "The following packages will be removed:\n"
                   "    a:x64-osx\n"
                   "    b:x64-osx\n"
@@ -2418,7 +2435,7 @@ TEST_CASE ("formatting plan 1", "[dependencies]")
                   "    c:x64-osx@1\n");
 
     plan.install_actions.push_back(std::move(install_b));
-    REQUIRE_LINES(format_plan(UseHeadVersion::No, plan, "c").text,
+    REQUIRE_LINES(format_plan(plan, "c").text,
                   "The following packages will be removed:\n"
                   "    a:x64-osx\n"
                   "The following packages will be rebuilt:\n"
@@ -2430,7 +2447,7 @@ TEST_CASE ("formatting plan 1", "[dependencies]")
     plan.already_installed.push_back(std::move(already_installed_d));
     plan.already_installed.push_back(std::move(already_installed_e));
     {
-        auto formatted = format_plan(UseHeadVersion::No, plan, "b");
+        auto formatted = format_plan(plan, "b");
         CHECK(formatted.has_removals);
         REQUIRE_LINES(formatted.text,
                       "The following packages are already installed:\n"
@@ -2444,7 +2461,7 @@ TEST_CASE ("formatting plan 1", "[dependencies]")
     }
 
     plan.install_actions.push_back(std::move(install_f));
-    REQUIRE_LINES(format_plan(UseHeadVersion::No, plan, "b").text,
+    REQUIRE_LINES(format_plan(plan, "b").text,
                   "The following packages are excluded:\n"
                   "    f:x64-osx@1 -- f\n"
                   "The following packages are already installed:\n"
@@ -2461,10 +2478,24 @@ TEST_CASE ("dependency graph API snapshot: host and target")
 {
     MockVersionedPortfileProvider vp;
     auto& scfl_a = vp.emplace("a", {"1", 0});
-    InstallPlanAction install_a(
-        {"a", Test::X86_WINDOWS}, scfl_a, "packages_root", RequestType::AUTO_SELECTED, {}, {}, {});
-    InstallPlanAction install_a_host(
-        {"a", Test::X64_WINDOWS}, scfl_a, "packages_root", RequestType::AUTO_SELECTED, {}, {}, {});
+    InstallPlanAction install_a({"a", Test::X86_WINDOWS},
+                                scfl_a,
+                                "packages_root",
+                                RequestType::AUTO_SELECTED,
+                                UseHeadVersion::No,
+                                Editable::No,
+                                {},
+                                {},
+                                {});
+    InstallPlanAction install_a_host({"a", Test::X64_WINDOWS},
+                                     scfl_a,
+                                     "packages_root",
+                                     RequestType::AUTO_SELECTED,
+                                     UseHeadVersion::No,
+                                     Editable::No,
+                                     {},
+                                     {},
+                                     {});
     ActionPlan plan;
     plan.install_actions.push_back(std::move(install_a));
     plan.install_actions.push_back(std::move(install_a_host));

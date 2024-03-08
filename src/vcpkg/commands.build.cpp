@@ -90,14 +90,12 @@ namespace vcpkg
 
         static constexpr BuildPackageOptions build_command_build_package_options{
             BuildMissing::Yes,
-            UseHeadVersion::No,
             AllowDownloads::Yes,
             OnlyDownloads::No,
             CleanBuildtrees::No,
             CleanPackages::No,
             CleanDownloads::No,
             DownloadTool::Builtin,
-            Editable::Yes,
             BackcompatFeatures::Allow,
             PrintUsage::Yes,
         };
@@ -136,7 +134,11 @@ namespace vcpkg
 
         StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
         auto action_plan = create_feature_install_plan(
-            provider, var_provider, {&full_spec, 1}, status_db, {host_triplet, paths.packages()});
+            provider,
+            var_provider,
+            {&full_spec, 1},
+            status_db,
+            {nullptr, host_triplet, paths.packages(), UnsupportedPortAction::Error, UseHeadVersion::No, Editable::Yes});
 
         var_provider.load_tag_vars(action_plan, host_triplet);
 
@@ -758,14 +760,9 @@ namespace vcpkg
             {CMakeVariableFeatures, Strings::join(";", action.feature_list)},
             {CMakeVariablePort, port_name},
             {CMakeVariableVersion, scf.to_version().text},
-            {CMakeVariableUseHeadVersion,
-             action.request_type == RequestType::USER_REQUESTED && Util::Enum::to_bool(build_options.use_head_version)
-                 ? "1"
-                 : "0"},
+            {CMakeVariableUseHeadVersion, Util::Enum::to_bool(action.use_head_version) ? "1" : "0"},
             {CMakeVariableDownloadTool, to_string_view(build_options.download_tool)},
-            {CMakeVariableEditable,
-             action.request_type == RequestType::USER_REQUESTED && Util::Enum::to_bool(build_options.editable) ? "1"
-                                                                                                               : "0"},
+            {CMakeVariableEditable, Util::Enum::to_bool(action.editable) ? "1" : "0"},
             {CMakeVariableNoDownloads, !Util::Enum::to_bool(build_options.allow_downloads) ? "1" : "0"},
             {CMakeVariableZChainloadToolchainFile, action.pre_build_info(VCPKG_LINE_INFO).toolchain_file()},
         };
@@ -1135,7 +1132,6 @@ namespace vcpkg
     }
 
     static void populate_abi_tag(const VcpkgPaths& paths,
-                                 const BuildPackageOptions& build_options,
                                  InstallPlanAction& action,
                                  std::unique_ptr<PreBuildInfo>&& proto_pre_build_info,
                                  Span<const AbiEntry> dependency_abis,
@@ -1148,18 +1144,15 @@ namespace vcpkg
         abi_info.pre_build_info = std::move(proto_pre_build_info);
         abi_info.toolset.emplace(toolset);
 
-        if (action.request_type == RequestType::USER_REQUESTED)
+        if (action.use_head_version == UseHeadVersion::Yes)
         {
-            if (build_options.use_head_version == UseHeadVersion::Yes)
-            {
-                Debug::print("Binary caching for package ", action.spec, " is disabled due to --head\n");
-                return;
-            }
-            if (build_options.editable == Editable::Yes)
-            {
-                Debug::print("Binary caching for package ", action.spec, " is disabled due to --editable\n");
-                return;
-            }
+            Debug::print("Binary caching for package ", action.spec, " is disabled due to --head\n");
+            return;
+        }
+        if (action.editable == Editable::Yes)
+        {
+            Debug::print("Binary caching for package ", action.spec, " is disabled due to --editable\n");
+            return;
         }
 
         abi_info.compiler_info = paths.get_compiler_info(*abi_info.pre_build_info, toolset);
@@ -1312,6 +1305,7 @@ namespace vcpkg
             if (action.abi_info.has_value()) continue;
 
             std::vector<AbiEntry> dependency_abis;
+            // FIXME: Why should --only-downloads change the ABI?
             if (!Util::Enum::to_bool(build_options.only_downloads))
             {
                 for (auto&& pspec : action.package_dependencies)
@@ -1342,7 +1336,6 @@ namespace vcpkg
 
             populate_abi_tag(
                 paths,
-                build_options,
                 action,
                 std::make_unique<PreBuildInfo>(paths,
                                                action.spec.triplet(),
