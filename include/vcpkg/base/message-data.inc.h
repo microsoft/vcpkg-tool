@@ -898,7 +898,13 @@ DECLARE_MESSAGE(ControlAndManifestFilesPresent,
 DECLARE_MESSAGE(ControlCharacterInString, (), "", "Control character in string")
 DECLARE_MESSAGE(ControlSupportsMustBeAPlatformExpression, (), "", "\"Supports\" must be a platform expression")
 DECLARE_MESSAGE(CopyrightIsDir, (msg::path), "", "`{path}` being a directory is deprecated.")
-DECLARE_MESSAGE(CorruptedDatabase, (), "", "Database corrupted.")
+DECLARE_MESSAGE(CorruptedDatabase,
+                (),
+                "",
+                "vcpkg's installation database corrupted. This is either a bug in vcpkg or something else has modified "
+                "the contents of the 'installed' directory in an unexpected way. You may be able to fix this by "
+                "deleting the 'installed' directory and reinstalling what you want to use. If this problem happens "
+                "consistently, please file a bug at https://github.com/microsoft/vcpkg .")
 DECLARE_MESSAGE(CorruptedInstallTree, (), "", "Your vcpkg 'installed' tree is corrupted.")
 DECLARE_MESSAGE(CouldNotDeduceNugetIdAndVersion,
                 (msg::path),

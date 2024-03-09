@@ -156,37 +156,42 @@ namespace vcpkg
         const ElapsedTimer build_timer;
         const auto result = build_package(args, paths, *action, build_logs_recorder, status_db);
         msg::print(msgElapsedForPackage, msg::spec = spec, msg::elapsed = build_timer);
-        if (result.code == BuildResult::CascadedDueToMissingDependencies)
+        switch (result.code)
         {
-            LocalizedString errorMsg = msg::format_error(msgBuildDependenciesMissing);
-            for (const auto& p : result.unmet_dependencies)
+            case BuildResult::Succeeded: binary_cache.push_success(*action); return 0;
+            case BuildResult::CascadedDueToMissingDependencies:
             {
-                errorMsg.append_raw('\n').append_indent().append_raw(p.to_string());
-            }
+                LocalizedString errorMsg = msg::format_error(msgBuildDependenciesMissing);
+                for (const auto& p : result.unmet_dependencies)
+                {
+                    errorMsg.append_raw('\n').append_indent().append_raw(p.to_string());
+                }
 
-            Checks::msg_exit_with_message(VCPKG_LINE_INFO, errorMsg);
+                Checks::msg_exit_with_message(VCPKG_LINE_INFO, errorMsg);
+            }
+            case BuildResult::BuildFailed:
+            case BuildResult::PostBuildChecksFailed:
+            case BuildResult::FileConflicts:
+            case BuildResult::CacheMissing:
+            case BuildResult::Downloaded:
+            case BuildResult::Removed:
+            {
+                LocalizedString warnings;
+                for (auto&& msg : action->build_failure_messages)
+                {
+                    warnings.append(msg).append_raw('\n');
+                }
+                if (!warnings.data().empty())
+                {
+                    msg::print(Color::warning, warnings);
+                }
+                msg::println_error(create_error_message(result, spec));
+                msg::print(create_user_troubleshooting_message(*action, paths, nullopt));
+                return 1;
+            }
+            case BuildResult::Excluded:
+            default: Checks::unreachable(VCPKG_LINE_INFO);
         }
-
-        Checks::check_exit(VCPKG_LINE_INFO, result.code != BuildResult::Excluded);
-
-        if (result.code != BuildResult::Succeeded)
-        {
-            LocalizedString warnings;
-            for (auto&& msg : action->build_failure_messages)
-            {
-                warnings.append(msg).append_raw('\n');
-            }
-            if (!warnings.data().empty())
-            {
-                msg::print(Color::warning, warnings);
-            }
-            msg::println_error(create_error_message(result, spec));
-            msg::print(create_user_troubleshooting_message(*action, paths, nullopt));
-            return 1;
-        }
-        binary_cache.push_success(*action);
-
-        return 0;
     }
 
     static std::remove_const_t<decltype(ALL_POLICIES)> generate_all_policies()
@@ -1274,31 +1279,28 @@ namespace vcpkg
             if (action.abi_info.has_value()) continue;
 
             std::vector<AbiEntry> dependency_abis;
-            if (!Util::Enum::to_bool(action.build_options.only_downloads))
+            for (auto&& pspec : action.package_dependencies)
             {
-                for (auto&& pspec : action.package_dependencies)
+                if (pspec == action.spec) continue;
+
+                auto pred = [&](const InstallPlanAction& ipa) { return ipa.spec == pspec; };
+                auto it2 = std::find_if(action_plan.install_actions.begin(), it, pred);
+                if (it2 == it)
                 {
-                    if (pspec == action.spec) continue;
-
-                    auto pred = [&](const InstallPlanAction& ipa) { return ipa.spec == pspec; };
-                    auto it2 = std::find_if(action_plan.install_actions.begin(), it, pred);
-                    if (it2 == it)
+                    // Finally, look in current installed
+                    auto status_it = status_db.find(pspec);
+                    if (status_it == status_db.end())
                     {
-                        // Finally, look in current installed
-                        auto status_it = status_db.find(pspec);
-                        if (status_it == status_db.end())
-                        {
-                            Checks::unreachable(
-                                VCPKG_LINE_INFO,
-                                fmt::format("Failed to find dependency abi for {} -> {}", action.spec, pspec));
-                        }
+                        Checks::unreachable(
+                            VCPKG_LINE_INFO,
+                            fmt::format("Failed to find dependency abi for {} -> {}", action.spec, pspec));
+                    }
 
-                        dependency_abis.emplace_back(pspec.name(), status_it->get()->package.abi);
-                    }
-                    else
-                    {
-                        dependency_abis.emplace_back(pspec.name(), it2->public_abi());
-                    }
+                    dependency_abis.emplace_back(pspec.name(), status_it->get()->package.abi);
+                }
+                else
+                {
+                    dependency_abis.emplace_back(pspec.name(), it2->public_abi());
                 }
             }
 
@@ -1336,21 +1338,25 @@ namespace vcpkg
         }
 
         const bool all_dependencies_satisfied = missing_fspecs.empty();
-        if (!all_dependencies_satisfied && !Util::Enum::to_bool(action.build_options.only_downloads))
-        {
-            return {BuildResult::CascadedDueToMissingDependencies, std::move(missing_fspecs)};
-        }
-
         if (action.build_options.only_downloads == OnlyDownloads::No)
         {
+            if (!all_dependencies_satisfied)
+            {
+                return {BuildResult::CascadedDueToMissingDependencies, std::move(missing_fspecs)};
+            }
+
+            // assert that all_dependencies_satisfied is accurate above by checking that they're all installed
             for (auto&& pspec : action.package_dependencies)
             {
                 if (pspec == spec)
                 {
                     continue;
                 }
-                const auto status_it = status_db.find_installed(pspec);
-                Checks::check_exit(VCPKG_LINE_INFO, status_it != status_db.end());
+
+                if (status_db.find_installed(pspec) == status_db.end())
+                {
+                    Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgCorruptedDatabase);
+                }
             }
         }
 
