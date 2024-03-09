@@ -1,6 +1,7 @@
 #include <vcpkg/base/fwd/message_sinks.h>
 
 #include <vcpkg/base/checks.h>
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/json.h>
@@ -41,7 +42,7 @@ namespace
             return;
         }
 
-        auto acquired_artifacts = pparsed->get("acquired_artifacts");
+        auto acquired_artifacts = pparsed->get(JsonIdAcquiredArtifacts);
         if (acquired_artifacts)
         {
             if (acquired_artifacts->is_string())
@@ -56,7 +57,7 @@ namespace
             Debug::println("No artifacts acquired.");
         }
 
-        auto activated_artifacts = pparsed->get("activated_artifacts");
+        auto activated_artifacts = pparsed->get(JsonIdActivatedArtifacts);
         if (activated_artifacts)
         {
             if (activated_artifacts->is_string())

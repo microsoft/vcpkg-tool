@@ -1285,7 +1285,7 @@ namespace
             return std::move(maybe_versions_json).error();
         }
 
-        auto maybe_versions_array = versions_json->get("versions");
+        auto maybe_versions_array = versions_json->get(JsonIdVersions);
         if (!maybe_versions_array || !maybe_versions_array->is_array())
         {
             return msg::format_error(msgFailedToParseNoVersionsArray, msg::path = versions_file_path);
@@ -1294,7 +1294,7 @@ namespace
         std::vector<GitVersionDbEntry> db_entries;
         GitVersionDbEntryArrayDeserializer deserializer{};
         Json::Reader r(versions_file_path);
-        r.visit_in_key(*maybe_versions_array, "versions", db_entries, deserializer);
+        r.visit_in_key(*maybe_versions_array, JsonIdVersions, db_entries, deserializer);
         if (!r.errors().empty())
         {
             return msg::format_error(msgFailedToParseVersionsFile, msg::path = versions_file_path)
@@ -1332,7 +1332,7 @@ namespace
             return std::move(maybe_versions_json).error();
         }
 
-        auto maybe_versions_array = versions_json->get("versions");
+        auto maybe_versions_array = versions_json->get(JsonIdVersions);
         if (!maybe_versions_array || !maybe_versions_array->is_array())
         {
             return msg::format_error(msgFailedToParseNoVersionsArray, msg::path = versions_file_path);
@@ -1341,7 +1341,7 @@ namespace
         std::vector<FilesystemVersionDbEntry> db_entries;
         FilesystemVersionDbEntryArrayDeserializer deserializer{registry_root};
         Json::Reader r(versions_file_path);
-        r.visit_in_key(*maybe_versions_array, "versions", db_entries, deserializer);
+        r.visit_in_key(*maybe_versions_array, JsonIdVersions, db_entries, deserializer);
         if (!r.errors().empty())
         {
             return msg::format_error(msgFailedToParseVersionsFile, msg::path = versions_file_path)
