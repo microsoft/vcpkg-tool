@@ -1230,7 +1230,7 @@ namespace
 
     struct BinaryConfigParser : ConfigSegmentsParser
     {
-        BinaryConfigParser(StringView text, StringView origin, BinaryConfigParserState* state)
+        BinaryConfigParser(StringView text, Optional<StringView> origin, BinaryConfigParserState* state)
             : ConfigSegmentsParser(text, origin), state(state)
         {
         }
@@ -2369,7 +2369,7 @@ ExpectedL<BinaryConfigParserState> vcpkg::parse_binary_provider_configs(const st
 
     for (auto&& arg : args)
     {
-        BinaryConfigParser arg_parser(arg, "<command>", &s);
+        BinaryConfigParser arg_parser(arg, nullopt, &s);
         arg_parser.parse();
         if (auto err = arg_parser.get_error())
         {

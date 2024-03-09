@@ -142,17 +142,24 @@ namespace vcpkg
         Optional<PlatformExpression::Expr> platform;
 
         /// @param id add "default" if "core" is not present
-        /// @return nullopt on success. On failure, caller should supplement returned string with more context.
-        ExpectedL<FullPackageSpec> to_full_spec(Triplet default_triplet, ImplicitDefault id) const;
+        // Assumes AllowPlatformSpec::No
+        FullPackageSpec to_full_spec(Triplet default_triplet, ImplicitDefault id) const;
 
-        ExpectedL<PackageSpec> to_package_spec(Triplet default_triplet) const;
+        // Assumes AllowFeatures::No, AllowPlatformSpec::No
+        PackageSpec to_package_spec(Triplet default_triplet) const;
     };
 
     Optional<std::string> parse_feature_name(ParserBase& parser);
     Optional<std::string> parse_package_name(ParserBase& parser);
-    ExpectedL<ParsedQualifiedSpecifier> parse_qualified_specifier(StringView input);
-    Optional<ParsedQualifiedSpecifier> parse_qualified_specifier(ParserBase& parser);
-}
+    ExpectedL<ParsedQualifiedSpecifier> parse_qualified_specifier(StringView input,
+                                                                  AllowFeatures allow_features,
+                                                                  ParseExplicitTriplet parse_explicit_triplet,
+                                                                  AllowPlatformSpec allow_platform_spec);
+    Optional<ParsedQualifiedSpecifier> parse_qualified_specifier(ParserBase& parser,
+                                                                 AllowFeatures allow_features,
+                                                                 ParseExplicitTriplet parse_explicit_triplet,
+                                                                 AllowPlatformSpec allow_platform_spec);
+} // namespace vcpkg
 
 template<>
 struct std::hash<vcpkg::PackageSpec>

@@ -1159,14 +1159,12 @@ DECLARE_MESSAGE(ExpectedDigitsAfterDecimal, (), "", "Expected digits after the d
 DECLARE_MESSAGE(ExpectedFailOrSkip, (), "", "expected 'fail', 'skip', or 'pass' here")
 DECLARE_MESSAGE(ExpectedFeatureListTerminal, (), "", "expected ',' or ']' in feature list")
 DECLARE_MESSAGE(ExpectedFeatureName, (), "", "expected feature name (must be lowercase, digits, '-')")
-DECLARE_MESSAGE(ExpectedEof, (), "", "expected eof")
 DECLARE_MESSAGE(ExpectedExplicitTriplet, (), "", "expected an explicit triplet")
 DECLARE_MESSAGE(ExpectedOneSetOfTags,
                 (msg::count, msg::old_value, msg::new_value, msg::value),
                 "{old_value} is a left tag and {new_value} is the right tag. {value} is the input.",
                 "Found {count} sets of {old_value}.*{new_value} but expected exactly 1, in block:\n{value}")
 DECLARE_MESSAGE(ExpectedOneVersioningField, (), "", "expected only one versioning field")
-DECLARE_MESSAGE(ExpectedPackageSpecifier, (), "", "expected a package specifier")
 DECLARE_MESSAGE(ExpectedPathToExist, (msg::path), "", "Expected {path} to exist after fetching")
 DECLARE_MESSAGE(ExpectedPortName, (), "", "expected a port name here (must be lowercase, digits, '-')")
 DECLARE_MESSAGE(ExpectedReadWriteReadWrite, (), "", "unexpected argument: expected 'read', readwrite', or 'write'")
@@ -1684,6 +1682,7 @@ DECLARE_MESSAGE(
     "value {path}. To suppress this message, unset the environment variable or use the --vcpkg-root command line "
     "switch.")
 DECLARE_MESSAGE(IllegalFeatures, (), "", "List of features is not allowed in this context")
+DECLARE_MESSAGE(IllegalTriplet, (), "", "Triplet is not allowed in this context")
 DECLARE_MESSAGE(IllegalPlatformSpec, (), "", "Platform qualifier is not allowed in this context")
 DECLARE_MESSAGE(ImproperShaLength, (msg::value), "{value} is a sha.", "SHA512's must be 128 hex characters: {value}")
 DECLARE_MESSAGE(IncorrectArchiveFileSignature, (), "", "Incorrect archive file signature")
@@ -1858,10 +1857,7 @@ DECLARE_MESSAGE(InvalidCharacterInFeatureName,
                 (),
                 "",
                 "invalid character in feature name (must be lowercase, digits, '-')")
-DECLARE_MESSAGE(InvalidCharacterInPackageName,
-                (),
-                "",
-                "invalid character in package name (must be lowercase, digits, '-')")
+DECLARE_MESSAGE(InvalidCharacterInPortName, (), "", "invalid character in port name (must be lowercase, digits, '-')")
 DECLARE_MESSAGE(InvalidCodePoint, (), "", "Invalid code point passed to utf8_encoded_code_point_count")
 DECLARE_MESSAGE(InvalidCodeUnit, (), "", "invalid code unit")
 DECLARE_MESSAGE(InvalidCommandArgSort,
@@ -2221,6 +2217,13 @@ DECLARE_MESSAGE(ParseIdentifierError,
                 "\"{value}\" is not a valid identifier. "
                 "Identifiers must be lowercase alphanumeric+hypens and not reserved (see {url} for more information).")
 DECLARE_MESSAGE(
+    ParsePackageNameNotEof,
+    (msg::url),
+    "",
+    "expected the end of input parsing a package name; this usually means the indicated character is not allowed to be "
+    "in a port name. Port names are all lowercase alphanumeric+hypens and not reserved (see {url} for more "
+    "information).")
+DECLARE_MESSAGE(
     ParsePackageNameError,
     (msg::package_name, msg::url),
     "",
@@ -2232,6 +2235,16 @@ DECLARE_MESSAGE(ParsePackagePatternError,
                 "\"{package_name}\" is not a valid package pattern. "
                 "Package patterns must use only one wildcard character (*) and it must be the last character in "
                 "the pattern (see {url} for more information).")
+DECLARE_MESSAGE(
+    ParseQualifiedSpecifierNotEof,
+    (),
+    "",
+    "expected the end of input parsing a package spec; this usually means the indicated character is not allowed to be "
+    "in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hypens.")
+DECLARE_MESSAGE(ParseQualifiedSpecifierNotEofSquareBracket,
+                (msg::version_spec),
+                "",
+                "expected the end of input parsing a package spec; did you mean {version_spec} instead?")
 DECLARE_MESSAGE(PathMustBeAbsolute,
                 (msg::path),
                 "",
@@ -2655,7 +2668,6 @@ DECLARE_MESSAGE(UnexpectedEOFMidUnicodeEscape, (), "", "Unexpected end of file i
 DECLARE_MESSAGE(UnexpectedErrorDuringBulkDownload, (), "", "an unexpected error occurred during bulk download.")
 DECLARE_MESSAGE(UnexpectedEscapeSequence, (), "", "Unexpected escape sequence continuation")
 DECLARE_MESSAGE(UnexpectedExtension, (msg::extension), "", "Unexpected archive extension: '{extension}'.")
-DECLARE_MESSAGE(UnexpectedFeatureList, (), "", "unexpected list of features")
 DECLARE_MESSAGE(UnexpectedField, (msg::json_field), "", "unexpected field '{json_field}'")
 DECLARE_MESSAGE(UnexpectedFieldSuggest,
                 (msg::json_field, msg::value),
@@ -2669,7 +2681,6 @@ DECLARE_MESSAGE(UnexpectedOption,
                 (msg::option),
                 "Option is a command line option like --option=value",
                 "unexpected option: {option}")
-DECLARE_MESSAGE(UnexpectedPlatformExpression, (), "", "unexpected platform expression")
 DECLARE_MESSAGE(UnexpectedPortName,
                 (msg::expected, msg::actual, msg::path),
                 "{expected} is the expected port and {actual} is the port declared by the user.",
@@ -2698,7 +2709,7 @@ DECLARE_MESSAGE(UnknownBinaryProviderType,
                 (),
                 "",
                 "unknown binary provider type: valid providers are 'clear', 'default', 'nuget', "
-                "'nugetconfig','nugettimeout', 'interactive', 'x-azblob', 'x-gcs', 'x-aws', "
+                "'nugetconfig', 'nugettimeout', 'interactive', 'x-azblob', 'x-gcs', 'x-aws', "
                 "'x-aws-config', 'http', and 'files'")
 DECLARE_MESSAGE(UnknownBooleanSetting,
                 (msg::option, msg::value),

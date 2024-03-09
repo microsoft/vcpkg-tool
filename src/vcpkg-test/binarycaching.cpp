@@ -212,7 +212,7 @@ Build-Depends: bzip
 )",
                                              "<testdata>");
     REQUIRE(pghs.has_value());
-    auto maybe_scf = SourceControlFile::parse_control_file("", std::move(*pghs.get()));
+    auto maybe_scf = SourceControlFile::parse_control_file("test-origin", std::move(*pghs.get()));
     REQUIRE(maybe_scf.has_value());
     SourceControlFileAndLocation scfl{std::move(*maybe_scf.get()), Path()};
 
@@ -338,7 +338,7 @@ Description:
 )",
                                              "<testdata>");
     REQUIRE(pghs.has_value());
-    auto maybe_scf = SourceControlFile::parse_control_file("", std::move(*pghs.get()));
+    auto maybe_scf = SourceControlFile::parse_control_file("test-origin", std::move(*pghs.get()));
     REQUIRE(maybe_scf.has_value());
     SourceControlFileAndLocation scfl{std::move(*maybe_scf.get()), Path()};
     std::vector<InstallPlanAction> install_plan;
@@ -416,7 +416,7 @@ Description: a spiffy compression library wrapper
 )",
                                              "<testdata>");
     REQUIRE(pghs.has_value());
-    auto maybe_scf = SourceControlFile::parse_control_file("", std::move(*pghs.get()));
+    auto maybe_scf = SourceControlFile::parse_control_file("test-origin", std::move(*pghs.get()));
     REQUIRE(maybe_scf.has_value());
     SourceControlFileAndLocation scfl{std::move(*maybe_scf.get()), Path()};
     plan.install_actions.emplace_back(PackageSpec("zlib", Test::X64_ANDROID),
@@ -444,7 +444,7 @@ Description: a spiffy compression library wrapper
 )",
                                               "<testdata>");
     REQUIRE(pghs2.has_value());
-    auto maybe_scf2 = SourceControlFile::parse_control_file("", std::move(*pghs2.get()));
+    auto maybe_scf2 = SourceControlFile::parse_control_file("test-origin", std::move(*pghs2.get()));
     REQUIRE(maybe_scf2.has_value());
     SourceControlFileAndLocation scfl2{std::move(*maybe_scf2.get()), Path()};
     plan.install_actions.emplace_back(PackageSpec("zlib2", Test::X64_ANDROID),

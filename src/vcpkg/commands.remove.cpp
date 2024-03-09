@@ -216,7 +216,7 @@ namespace vcpkg
             }
 
             specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
-                return parse_package_spec(arg, default_triplet, CommandRemoveMetadata.get_example_text());
+                return parse_package_spec(arg, default_triplet).value_or_exit(VCPKG_LINE_INFO);
             });
         }
 

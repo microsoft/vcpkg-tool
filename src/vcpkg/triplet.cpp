@@ -109,7 +109,7 @@ namespace vcpkg
     {
         if (auto triplet_name = args.triplet.get())
         {
-            check_triplet(*triplet_name, database);
+            check_triplet(*triplet_name, database).value_or_exit(VCPKG_LINE_INFO);
             return Triplet::from_canonical_name(*triplet_name);
         }
 
@@ -119,7 +119,7 @@ namespace vcpkg
     Triplet default_host_triplet(const VcpkgCmdArguments& args, const TripletDatabase& database)
     {
         auto host_triplet_name = args.host_triplet.value_or(system_triplet_canonical_name());
-        check_triplet(host_triplet_name, database);
+        check_triplet(host_triplet_name, database).value_or_exit(VCPKG_LINE_INFO);
         return Triplet::from_canonical_name(host_triplet_name);
     }
 

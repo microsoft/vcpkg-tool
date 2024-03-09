@@ -36,89 +36,266 @@ TEST_CASE ("specifier parsing", "[specifier]")
 {
     SECTION ("parsed specifier from string")
     {
-        auto spec = vcpkg::parse_qualified_specifier("zlib").value_or_exit(VCPKG_LINE_INFO);
+        auto spec = vcpkg::parse_qualified_specifier(
+                        "zlib", AllowFeatures::No, ParseExplicitTriplet::Forbid, AllowPlatformSpec::No)
+                        .value_or_exit(VCPKG_LINE_INFO);
         REQUIRE(spec.name == "zlib");
         REQUIRE(!spec.features);
         REQUIRE(!spec.triplet);
         REQUIRE(!spec.platform);
 
-        auto full_spec_implicit =
-            spec.to_full_spec(Test::X86_WINDOWS, ImplicitDefault::YES).value_or_exit(VCPKG_LINE_INFO);
+        auto full_spec_implicit = spec.to_full_spec(Test::X86_WINDOWS, ImplicitDefault::Yes);
         REQUIRE(full_spec_implicit.package_spec.name() == "zlib");
         REQUIRE(full_spec_implicit.package_spec.triplet() == Test::X86_WINDOWS);
         REQUIRE(full_spec_implicit.features == std::vector<std::string>{"core", "default"});
 
-        auto full_spec_explicit =
-            spec.to_full_spec(Test::X86_WINDOWS, ImplicitDefault::NO).value_or_exit(VCPKG_LINE_INFO);
+        auto full_spec_explicit = spec.to_full_spec(Test::X86_WINDOWS, ImplicitDefault::No);
         REQUIRE(full_spec_explicit.package_spec.name() == "zlib");
         REQUIRE(full_spec_explicit.package_spec.triplet() == Test::X86_WINDOWS);
         REQUIRE(full_spec_explicit.features == std::vector<std::string>{"core"});
 
-        auto package_spec = spec.to_package_spec(Test::X86_WINDOWS).value_or_exit(VCPKG_LINE_INFO);
+        auto package_spec = spec.to_package_spec(Test::X86_WINDOWS);
         REQUIRE(package_spec.name() == "zlib");
         REQUIRE(package_spec.triplet() == Test::X86_WINDOWS);
     }
 
     SECTION ("parsed specifier from string with triplet")
     {
-        auto spec = vcpkg::parse_qualified_specifier("zlib:x64-uwp").value_or_exit(VCPKG_LINE_INFO);
+        auto spec = vcpkg::parse_qualified_specifier(
+                        "zlib:x64-uwp", AllowFeatures::No, ParseExplicitTriplet::Require, AllowPlatformSpec::No)
+                        .value_or_exit(VCPKG_LINE_INFO);
         REQUIRE(spec.name == "zlib");
         REQUIRE(!spec.features);
         REQUIRE(spec.triplet.value_or_exit(VCPKG_LINE_INFO) == "x64-uwp");
         REQUIRE(!spec.platform);
 
-        auto full_spec_implicit =
-            spec.to_full_spec(Test::X86_WINDOWS, ImplicitDefault::YES).value_or_exit(VCPKG_LINE_INFO);
+        auto full_spec_implicit = spec.to_full_spec(Test::X86_WINDOWS, ImplicitDefault::Yes);
         REQUIRE(full_spec_implicit.package_spec.name() == "zlib");
         REQUIRE(full_spec_implicit.package_spec.triplet() == Test::X64_UWP);
         REQUIRE(full_spec_implicit.features == std::vector<std::string>{"core", "default"});
 
-        auto full_spec_explicit =
-            spec.to_full_spec(Test::X86_WINDOWS, ImplicitDefault::NO).value_or_exit(VCPKG_LINE_INFO);
+        auto full_spec_explicit = spec.to_full_spec(Test::X86_WINDOWS, ImplicitDefault::No);
         REQUIRE(full_spec_explicit.package_spec.name() == "zlib");
         REQUIRE(full_spec_explicit.package_spec.triplet() == Test::X64_UWP);
         REQUIRE(full_spec_explicit.features == std::vector<std::string>{"core"});
 
-        auto package_spec = spec.to_package_spec(Test::X86_WINDOWS).value_or_exit(VCPKG_LINE_INFO);
+        auto package_spec = spec.to_package_spec(Test::X86_WINDOWS);
         REQUIRE(package_spec.name() == "zlib");
         REQUIRE(package_spec.triplet() == Test::X64_UWP);
     }
 
     SECTION ("parsed specifier from string with colons")
     {
-        auto s = vcpkg::parse_qualified_specifier("zlib:x86-uwp:");
-        REQUIRE(!s);
+        auto s = vcpkg::parse_qualified_specifier(
+            "zlib:x86-uwp:", AllowFeatures::Yes, ParseExplicitTriplet::Allow, AllowPlatformSpec::Yes);
+        if (s.has_value())
+        {
+            FAIL();
+        }
+        else
+        {
+            REQUIRE(
+                s.error() ==
+                LocalizedString::from_raw(
+                    R"(error: expected the end of input parsing a package spec; this usually means the indicated character is not allowed to be in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hypens.
+  on expression: zlib:x86-uwp:
+                             ^)"));
+        }
+    }
+
+    SECTION ("parsed specifier from string with illegal character package name special case")
+    {
+        // we emit a better error message here because without features, triplet, or platform specification, we know the
+        // caller only wants a port name
+        auto s = vcpkg::parse_qualified_specifier(
+            "zlib#", AllowFeatures::No, ParseExplicitTriplet::Forbid, AllowPlatformSpec::No);
+        if (s.has_value())
+        {
+            FAIL();
+        }
+        else
+        {
+            REQUIRE(
+                s.error() ==
+                LocalizedString::from_raw(
+                    R"(error: expected the end of input parsing a package name; this usually means the indicated character is not allowed to be in a port name. Port names are all lowercase alphanumeric+hypens and not reserved (see https://learn.microsoft.com/vcpkg/reference/vcpkg-json#name for more information).
+  on expression: zlib#
+                     ^)"));
+        }
+    }
+
+    SECTION ("parsed specifier from string with illegal character")
+    {
+        auto s = vcpkg::parse_qualified_specifier(
+            "zlib#", AllowFeatures::Yes, ParseExplicitTriplet::Allow, AllowPlatformSpec::Yes);
+        if (s.has_value())
+        {
+            FAIL();
+        }
+        else
+        {
+            REQUIRE(
+                s.error() ==
+                LocalizedString::from_raw(
+                    R"(error: expected the end of input parsing a package spec; this usually means the indicated character is not allowed to be in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hypens.
+  on expression: zlib#
+                     ^)"));
+        }
+    }
+
+    SECTION ("parsed specifier from string with colons")
+    {
+        auto s = vcpkg::parse_qualified_specifier(
+            "zlib:x86-uwp:", AllowFeatures::Yes, ParseExplicitTriplet::Allow, AllowPlatformSpec::Yes);
+        if (s.has_value())
+        {
+            FAIL();
+        }
+        else
+        {
+            REQUIRE(
+                s.error() ==
+                LocalizedString::from_raw(
+                    R"(error: expected the end of input parsing a package spec; this usually means the indicated character is not allowed to be in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hypens.
+  on expression: zlib:x86-uwp:
+                             ^)"));
+        }
+    }
+
+    SECTION ("parsed specifier with feature in the wrong order")
+    {
+        auto s = vcpkg::parse_qualified_specifier(
+            "zlib:x86-uwp[co,  re]", AllowFeatures::Yes, ParseExplicitTriplet::Allow, AllowPlatformSpec::Yes);
+        if (s.has_value())
+        {
+            FAIL();
+        }
+        else
+        {
+            REQUIRE(
+                s.error() ==
+                LocalizedString::from_raw(
+                    R"(error: expected the end of input parsing a package spec; did you mean zlib[co,re]:x86-uwp instead?
+  on expression: zlib:x86-uwp[co,  re]
+                             ^)"));
+        }
+    }
+
+    SECTION ("parsed specifier with feature in the wrong order but no triplet")
+    {
+        auto s = vcpkg::parse_qualified_specifier(
+            "zlib(windows)[co,  re]", AllowFeatures::Yes, ParseExplicitTriplet::Allow, AllowPlatformSpec::Yes);
+        if (s.has_value())
+        {
+            FAIL();
+        }
+        else
+        {
+            REQUIRE(
+                s.error() ==
+                LocalizedString::from_raw(
+                    R"(error: expected the end of input parsing a package spec; this usually means the indicated character is not allowed to be in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hypens.
+  on expression: zlib(windows)[co,  re]
+                              ^)"));
+        }
+    }
+
+    SECTION ("parsed specifier with feature in the wrong order but also platform expression")
+    {
+        auto s = vcpkg::parse_qualified_specifier(
+            "zlib:x86-uwp (windows)[co,  re]", AllowFeatures::Yes, ParseExplicitTriplet::Allow, AllowPlatformSpec::Yes);
+        if (s.has_value())
+        {
+            FAIL();
+        }
+        else
+        {
+            REQUIRE(
+                s.error() ==
+                LocalizedString::from_raw(
+                    R"(error: expected the end of input parsing a package spec; this usually means the indicated character is not allowed to be in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hypens.
+  on expression: zlib:x86-uwp (windows)[co,  re]
+                                       ^)"));
+        }
+    }
+
+    SECTION ("parsed specifier from string with unclosed feature suffix")
+    {
+        // even though there is a [, that doesn't parse as a valid feature list so the 'did you mean?' special case
+        // should not engage
+        auto s = vcpkg::parse_qualified_specifier("zlib:x64-windows[no-ending-square-bracket",
+                                                  AllowFeatures::Yes,
+                                                  ParseExplicitTriplet::Allow,
+                                                  AllowPlatformSpec::Yes);
+        if (s.has_value())
+        {
+            FAIL();
+        }
+        else
+        {
+            REQUIRE(
+                s.error() ==
+                LocalizedString::from_raw(
+                    R"(error: expected the end of input parsing a package spec; this usually means the indicated character is not allowed to be in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hypens.
+  on expression: zlib:x64-windows[no-ending-square-bracket
+                                 ^)"));
+        }
+    }
+
+    SECTION ("parsed specifier from string with malformed feature suffix")
+    {
+        auto s = vcpkg::parse_qualified_specifier(
+            "zlib:x64-windows[feature]suffix", AllowFeatures::Yes, ParseExplicitTriplet::Allow, AllowPlatformSpec::Yes);
+        if (s.has_value())
+        {
+            FAIL();
+        }
+        else
+        {
+            REQUIRE(
+                s.error() ==
+                LocalizedString::from_raw(
+                    R"(error: expected the end of input parsing a package spec; this usually means the indicated character is not allowed to be in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hypens.
+  on expression: zlib:x64-windows[feature]suffix
+                                 ^)"));
+        }
     }
 
     SECTION ("parsed specifier from string with feature")
     {
-        auto spec = vcpkg::parse_qualified_specifier("zlib[feature]:x64-uwp").value_or_exit(VCPKG_LINE_INFO);
+        auto spec =
+            vcpkg::parse_qualified_specifier(
+                "zlib[feature]:x64-uwp", AllowFeatures::Yes, ParseExplicitTriplet::Allow, AllowPlatformSpec::Yes)
+                .value_or_exit(VCPKG_LINE_INFO);
         REQUIRE(spec.name == "zlib");
         REQUIRE(spec.features.value_or(std::vector<std::string>{}) == std::vector<std::string>{"feature"});
         REQUIRE(spec.triplet.value_or("") == "x64-uwp");
         REQUIRE(!spec.platform);
 
-        auto full_spec_implicit =
-            spec.to_full_spec(Test::X86_WINDOWS, ImplicitDefault::YES).value_or_exit(VCPKG_LINE_INFO);
+        auto full_spec_implicit = spec.to_full_spec(Test::X86_WINDOWS, ImplicitDefault::Yes);
         REQUIRE(full_spec_implicit.package_spec.name() == "zlib");
         REQUIRE(full_spec_implicit.package_spec.triplet() == Test::X64_UWP);
         REQUIRE(full_spec_implicit.features == std::vector<std::string>{"feature", "core", "default"});
 
-        auto full_spec_explicit =
-            spec.to_full_spec(Test::X86_WINDOWS, ImplicitDefault::NO).value_or_exit(VCPKG_LINE_INFO);
+        auto full_spec_explicit = spec.to_full_spec(Test::X86_WINDOWS, ImplicitDefault::No);
         REQUIRE(full_spec_explicit.package_spec.name() == "zlib");
         REQUIRE(full_spec_explicit.package_spec.triplet() == Test::X64_UWP);
         REQUIRE(full_spec_explicit.features == std::vector<std::string>{"feature", "core"});
 
-        auto maybe_package_spec = spec.to_package_spec(Test::X86_WINDOWS);
-        REQUIRE(!maybe_package_spec.has_value());
-        REQUIRE(maybe_package_spec.error() ==
-                LocalizedString::from_raw("error: List of features is not allowed in this context"));
+        auto spec_forbidding_features = vcpkg::parse_qualified_specifier(
+            "zlib[feature]:x64-uwp", AllowFeatures::No, ParseExplicitTriplet::Allow, AllowPlatformSpec::Yes);
+        REQUIRE(!spec_forbidding_features.has_value());
+        REQUIRE(spec_forbidding_features.error() ==
+                LocalizedString::from_raw(R"(error: List of features is not allowed in this context
+  on expression: zlib[feature]:x64-uwp
+                     ^)"));
     }
 
     SECTION ("parsed specifier from string with many features")
     {
-        auto spec = vcpkg::parse_qualified_specifier("zlib[0, 1,2]").value_or_exit(VCPKG_LINE_INFO);
+        auto spec = vcpkg::parse_qualified_specifier(
+                        "zlib[0, 1,2]", AllowFeatures::Yes, ParseExplicitTriplet::Allow, AllowPlatformSpec::Yes)
+                        .value_or_exit(VCPKG_LINE_INFO);
         REQUIRE(spec.name == "zlib");
         REQUIRE(spec.features.value_or_exit(VCPKG_LINE_INFO) == std::vector<std::string>{"0", "1", "2"});
         REQUIRE(!spec.triplet);
@@ -127,7 +304,9 @@ TEST_CASE ("specifier parsing", "[specifier]")
 
     SECTION ("parsed specifier wildcard feature")
     {
-        auto spec = vcpkg::parse_qualified_specifier("zlib[*]").value_or_exit(VCPKG_LINE_INFO);
+        auto spec = vcpkg::parse_qualified_specifier(
+                        "zlib[*]", AllowFeatures::Yes, ParseExplicitTriplet::Allow, AllowPlatformSpec::Yes)
+                        .value_or_exit(VCPKG_LINE_INFO);
         REQUIRE(spec.name == "zlib");
         REQUIRE(spec.features.value_or_exit(VCPKG_LINE_INFO) == std::vector<std::string>{"*"});
         REQUIRE(!spec.triplet);
@@ -160,25 +339,20 @@ TEST_CASE ("specifier parsing", "[specifier]")
     SECTION ("parsed qualifier platform expression")
     {
         // this form was used in CONTROL files
-        auto spec = vcpkg::parse_qualified_specifier("zlib (windows)").value_or_exit(VCPKG_LINE_INFO);
+        auto spec = vcpkg::parse_qualified_specifier(
+                        "zlib (windows)", AllowFeatures::Yes, ParseExplicitTriplet::Allow, AllowPlatformSpec::Yes)
+                        .value_or_exit(VCPKG_LINE_INFO);
         REQUIRE(spec.name == "zlib");
         REQUIRE(!spec.features);
         REQUIRE(!spec.triplet);
         REQUIRE(to_string(spec.platform.value_or_exit(VCPKG_LINE_INFO)) == "windows");
 
-        auto maybe_full_spec_implicit = spec.to_full_spec(Test::X86_WINDOWS, ImplicitDefault::YES);
-        REQUIRE(!maybe_full_spec_implicit.has_value());
-        REQUIRE(maybe_full_spec_implicit.error() ==
-                LocalizedString::from_raw("error: Platform qualifier is not allowed in this context"));
-
-        auto maybe_full_spec_explicit = spec.to_full_spec(Test::X86_WINDOWS, ImplicitDefault::NO);
-        REQUIRE(!maybe_full_spec_explicit.has_value());
-        REQUIRE(maybe_full_spec_explicit.error() ==
-                LocalizedString::from_raw("error: Platform qualifier is not allowed in this context"));
-
-        auto maybe_package_spec = spec.to_package_spec(Test::X86_WINDOWS);
-        REQUIRE(!maybe_package_spec.has_value());
-        REQUIRE(maybe_package_spec.error() ==
-                LocalizedString::from_raw("error: Platform qualifier is not allowed in this context"));
+        auto forbidden_spec = vcpkg::parse_qualified_specifier(
+            "zlib (windows)", AllowFeatures::Yes, ParseExplicitTriplet::Allow, AllowPlatformSpec::No);
+        REQUIRE(!forbidden_spec.has_value());
+        REQUIRE(forbidden_spec.error() ==
+                LocalizedString::from_raw(R"(error: Platform qualifier is not allowed in this context
+  on expression: zlib (windows)
+                      ^)"));
     }
 }
