@@ -140,7 +140,7 @@ namespace vcpkg
 
         var_provider.load_tag_vars(action_plan, host_triplet);
 
-        compute_all_abis(paths, build_options, action_plan, var_provider, status_db);
+        compute_all_abis(paths, action_plan, var_provider, status_db);
 
         InstallPlanAction* action = nullptr;
         for (auto& install_action : action_plan.already_installed)
@@ -1296,7 +1296,6 @@ namespace vcpkg
     }
 
     void compute_all_abis(const VcpkgPaths& paths,
-                          const BuildPackageOptions& build_options,
                           ActionPlan& action_plan,
                           const CMakeVars::CMakeVarProvider& var_provider,
                           const StatusParagraphs& status_db)

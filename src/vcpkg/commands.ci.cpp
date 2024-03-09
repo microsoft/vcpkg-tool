@@ -122,7 +122,6 @@ namespace
     }
 
     ActionPlan compute_full_plan(const VcpkgPaths& paths,
-                                 const BuildPackageOptions& build_options,
                                  const PortFileProvider& provider,
                                  const CMakeVars::CMakeVarProvider& var_provider,
                                  const std::vector<FullPackageSpec>& specs,
@@ -152,7 +151,7 @@ namespace
         Checks::check_exit(VCPKG_LINE_INFO, action_plan.already_installed.empty());
         Checks::check_exit(VCPKG_LINE_INFO, action_plan.remove_actions.empty());
 
-        compute_all_abis(paths, build_options, action_plan, var_provider, {});
+        compute_all_abis(paths, action_plan, var_provider, {});
         return action_plan;
     }
 
@@ -411,8 +410,8 @@ namespace vcpkg
 
         CreateInstallPlanOptions create_install_plan_options(
             randomizer, host_triplet, paths.packages(), UnsupportedPortAction::Warn, UseHeadVersion::No, Editable::No);
-        auto action_plan = compute_full_plan(
-            paths, build_options, provider, var_provider, all_default_full_specs, create_install_plan_options);
+        auto action_plan =
+            compute_full_plan(paths, provider, var_provider, all_default_full_specs, create_install_plan_options);
         auto binary_cache = BinaryCache::make(args, paths, out_sink).value_or_exit(VCPKG_LINE_INFO);
         const auto precheck_results = binary_cache.precheck(action_plan.install_actions);
         auto split_specs = compute_action_statuses(ExclusionPredicate{&exclusions_map}, precheck_results, action_plan);

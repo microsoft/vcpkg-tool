@@ -431,10 +431,13 @@ namespace vcpkg
         };
     }
 
-    static void format_plan_row(LocalizedString& out, const InstallPlanAction& action, const Path& builtin_ports_dir)
+    static void format_plan_ipa_row(LocalizedString& out,
+                                    bool add_head_tag,
+                                    const InstallPlanAction& action,
+                                    const Path& builtin_ports_dir)
     {
         out.append_raw(request_type_indent(action.request_type)).append_raw(action.display_name());
-        if (action.use_head_version == UseHeadVersion::Yes)
+        if (add_head_tag && action.use_head_version == UseHeadVersion::Yes)
         {
             out.append_raw(" (+HEAD)");
         }
@@ -1205,6 +1208,32 @@ namespace vcpkg
     {
     }
 
+    void format_plan_block(LocalizedString& msg,
+                           msg::MessageT<> header,
+                           bool add_head_tag,
+                           View<const InstallPlanAction*> actions,
+                           const Path& builtin_ports_dir)
+    {
+        msg.append(header).append_raw('\n');
+        for (auto action : actions)
+        {
+            format_plan_ipa_row(msg, add_head_tag, *action, builtin_ports_dir);
+            msg.append_raw('\n');
+        }
+    }
+
+    void format_plan_block(LocalizedString& msg,
+                           msg::MessageT<> header,
+                           const std::set<PackageSpec>& specs,
+                           const Path& builtin_ports_dir)
+    {
+        msg.append(header).append_raw('\n');
+        for (auto&& spec : specs)
+        {
+            msg.append_raw(request_type_indent(RequestType::USER_REQUESTED)).append_raw(spec).append_raw('\n');
+        }
+    }
+
     FormattedPlan format_plan(const ActionPlan& action_plan, const Path& builtin_ports_dir)
     {
         FormattedPlan ret;
@@ -1256,51 +1285,29 @@ namespace vcpkg
         std::sort(already_installed_plans.begin(), already_installed_plans.end(), &InstallPlanAction::compare_by_name);
         std::sort(excluded.begin(), excluded.end(), &InstallPlanAction::compare_by_name);
 
-        struct
-        {
-            void operator()(LocalizedString& msg, msg::MessageT<> header, View<const InstallPlanAction*> actions)
-            {
-                msg.append(header).append_raw('\n');
-                for (auto action : actions)
-                {
-                    format_plan_row(msg, *action, builtin_ports_dir);
-                    msg.append_raw('\n');
-                }
-            }
-            void operator()(LocalizedString& msg, msg::MessageT<> header, const std::set<PackageSpec>& specs)
-            {
-                msg.append(header).append_raw('\n');
-                for (auto&& spec : specs)
-                {
-                    msg.append_raw(request_type_indent(RequestType::USER_REQUESTED)).append_raw(spec).append_raw('\n');
-                }
-            }
-            const Path& builtin_ports_dir;
-        } format_plan{builtin_ports_dir};
-
         if (!excluded.empty())
         {
-            format_plan(ret.text, msgExcludedPackages, excluded);
+            format_plan_block(ret.text, msgExcludedPackages, false, excluded, builtin_ports_dir);
         }
 
         if (!already_installed_plans.empty())
         {
-            format_plan(ret.text, msgInstalledPackages, already_installed_plans);
+            format_plan_block(ret.text, msgInstalledPackages, false, already_installed_plans, builtin_ports_dir);
         }
 
         if (!remove_specs.empty())
         {
-            format_plan(ret.text, msgPackagesToRemove, remove_specs);
+            format_plan_block(ret.text, msgPackagesToRemove, remove_specs, builtin_ports_dir);
         }
 
         if (!rebuilt_plans.empty())
         {
-            format_plan(ret.text, msgPackagesToRebuild, rebuilt_plans);
+            format_plan_block(ret.text, msgPackagesToRebuild, true, rebuilt_plans, builtin_ports_dir);
         }
 
         if (!new_plans.empty())
         {
-            format_plan(ret.text, msgPackagesToInstall, new_plans);
+            format_plan_block(ret.text, msgPackagesToInstall, true, new_plans, builtin_ports_dir);
         }
 
         if (has_non_user_requested_packages)
@@ -1348,7 +1355,7 @@ namespace vcpkg
          * (pinned means there is a matching override or overlay)
          *
          * Phase 1 does not depend on the order of evaluation. The implementation below exploits this to batch calls to
-         * CMake for calculationg dependency resolution tags. However, the results are sensitive to the definition of
+         * CMake for calculating dependency resolution tags. However, the results are sensitive to the definition of
          * comparison. If "compares >= the baseline" changes, the set of considered constraints will change, and so will
          * the results.
          */

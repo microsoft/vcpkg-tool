@@ -252,7 +252,6 @@ namespace vcpkg
     };
 
     void compute_all_abis(const VcpkgPaths& paths,
-                          const BuildPackageOptions& build_options,
                           ActionPlan& action_plan,
                           const CMakeVars::CMakeVarProvider& var_provider,
                           const StatusParagraphs& status_db);

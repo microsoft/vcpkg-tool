@@ -1321,7 +1321,7 @@ namespace vcpkg
         if (it_pkgsconfig != options.settings.end())
         {
             get_global_metrics_collector().track_define(DefineMetric::X_WriteNugetPackagesConfig);
-            compute_all_abis(paths, build_package_options, action_plan, var_provider, status_db);
+            compute_all_abis(paths, action_plan, var_provider, status_db);
 
             auto pkgsconfig_path = paths.original_cwd / it_pkgsconfig->second;
             auto pkgsconfig_contents = generate_nuget_packages_config(action_plan, args.nuget_id_prefix.value_or(""));
@@ -1330,7 +1330,7 @@ namespace vcpkg
         }
         else if (!dry_run)
         {
-            compute_all_abis(paths, build_package_options, action_plan, var_provider, status_db);
+            compute_all_abis(paths, action_plan, var_provider, status_db);
         }
 
         if (dry_run)
