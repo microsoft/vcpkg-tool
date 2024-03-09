@@ -87,7 +87,6 @@ namespace vcpkg
     {
         // Build only takes a single package and all dependencies must already be installed
         const ParsedArguments options = args.parse_arguments(CommandBuildMetadata);
-
         static constexpr BuildPackageOptions build_command_build_package_options{
             BuildMissing::Yes,
             AllowDownloads::Yes,
@@ -100,10 +99,9 @@ namespace vcpkg
             PrintUsage::Yes,
         };
 
-        const FullPackageSpec spec = check_and_get_full_package_spec(options.command_arguments[0],
-                                                                     default_triplet,
-                                                                     CommandBuildMetadata.get_example_text(),
-                                                                     paths.get_triplet_db());
+        const FullPackageSpec spec =
+            check_and_get_full_package_spec(options.command_arguments[0], default_triplet, paths.get_triplet_db())
+                .value_or_exit(VCPKG_LINE_INFO);
 
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();
@@ -1721,7 +1719,7 @@ namespace vcpkg
             }
         }
 
-        std::string version = parser.optional_field(ParagraphIdVersion);
+        std::string version = parser.optional_field_or_empty(ParagraphIdVersion);
         if (!version.empty())
         {
             sanitize_version_string(version);
@@ -1731,7 +1729,7 @@ namespace vcpkg
         std::unordered_map<BuildPolicy, bool> policies;
         for (const auto& policy : ALL_POLICIES)
         {
-            const auto setting = parser.optional_field(to_string_view(policy));
+            const auto setting = parser.optional_field_or_empty(to_string_view(policy));
             if (setting.empty()) continue;
             if (setting == "enabled")
                 policies.emplace(policy, true);

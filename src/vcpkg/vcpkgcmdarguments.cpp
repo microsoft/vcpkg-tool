@@ -323,18 +323,19 @@ namespace vcpkg
             SwitchVcpkgRoot,
             StabilityTag::Standard,
             args.vcpkg_root_dir_arg,
-            msg::format(msgVcpkgRootsDir, msg::env_var = format_environment_variable("VCPKG_ROOT")));
+            msg::format(msgVcpkgRootsDir, msg::env_var = format_environment_variable(EnvironmentVariableVcpkgRoot)));
         args.parser.parse_option(
             SwitchTriplet,
             StabilityTag::Standard,
             args.triplet,
-            msg::format(msgSpecifyTargetArch, msg::env_var = format_environment_variable("VCPKG_DEFAULT_TRIPLET")));
+            msg::format(msgSpecifyTargetArch,
+                        msg::env_var = format_environment_variable(EnvironmentVariableVcpkgDefaultTriplet)));
         args.parser.parse_option(
             SwitchHostTriplet,
             StabilityTag::Standard,
             args.host_triplet,
-            msg::format(msgSpecifyHostArch, msg::env_var = format_environment_variable("VCPKG_DEFAULT_HOST_TRIPLET")));
-        args.parser.parse_option(JsonIdManifestRoot, StabilityTag::Experimental, args.manifest_root_dir);
+            msg::format(msgSpecifyHostArch,
+                        msg::env_var = format_environment_variable(EnvironmentVariableVcpkgDefaultHostTriplet)));
         args.parser.parse_option(SwitchManifestRoot, StabilityTag::Experimental, args.manifest_root_dir);
         args.parser.parse_option(SwitchBuildtreesRoot,
                                  StabilityTag::Experimental,
@@ -344,7 +345,8 @@ namespace vcpkg
             SwitchDownloadsRoot,
             StabilityTag::Standard,
             args.downloads_root_dir,
-            msg::format(msgDownloadRootsDir, msg::env_var = format_environment_variable("VCPKG_DOWNLOADS")));
+            msg::format(msgDownloadRootsDir,
+                        msg::env_var = format_environment_variable(EnvironmentVariableVcpkgDownloads)));
         args.parser.parse_option(
             SwitchInstallRoot, StabilityTag::Experimental, args.install_root_dir, msg::format(msgInstallRootDir));
         args.parser.parse_option(

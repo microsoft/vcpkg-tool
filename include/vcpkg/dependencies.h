@@ -40,7 +40,8 @@ namespace vcpkg
         InstallPlanAction& operator=(InstallPlanAction&&) = default;
 
         InstallPlanAction(InstalledPackageView&& spghs,
-                          RequestType request_type, UseHeadVersion use_head_version,
+                          RequestType request_type,
+                          UseHeadVersion use_head_version,
                           Editable editable);
 
         InstallPlanAction(const PackageSpec& spec,

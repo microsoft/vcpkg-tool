@@ -142,7 +142,10 @@ namespace vcpkg
 {
     constexpr CommandMetadata CommandEditMetadata{
         "edit",
-        [] { return msg::format(msgHelpEditCommand, msg::env_var = format_environment_variable("EDITOR")); },
+        [] {
+            return msg::format(msgHelpEditCommand,
+                               msg::env_var = format_environment_variable(EnvironmentVariableEditor));
+        },
         {msgCmdEditExample1, "vcpkg edit zlib"},
         Undocumented,
         AutocompletePriority::Public,
@@ -173,7 +176,7 @@ namespace vcpkg
 
         // Scope to prevent use of moved-from variable
         {
-            auto maybe_editor_path = get_environment_variable("EDITOR");
+            auto maybe_editor_path = get_environment_variable(EnvironmentVariableEditor);
             if (std::string* editor_path = maybe_editor_path.get())
             {
                 candidate_paths.emplace_back(std::move(*editor_path));
@@ -198,7 +201,7 @@ namespace vcpkg
             candidate_paths.push_back(*pf / VS_CODE);
         }
 
-        auto app_data = get_environment_variable("APPDATA");
+        auto app_data = get_environment_variable(EnvironmentVariableAppData);
         if (auto* ad = app_data.get())
         {
             Path default_base = std::move(*ad);
@@ -253,11 +256,12 @@ namespace vcpkg
         const auto it = Util::find_if(candidate_paths, [&](const Path& p) { return fs.exists(p, IgnoreErrors{}); });
         if (it == candidate_paths.cend())
         {
-            msg::println_error(msg::format(msgErrorVsCodeNotFound, msg::env_var = format_environment_variable("EDITOR"))
+            msg::println_error(msg::format(msgErrorVsCodeNotFound,
+                                           msg::env_var = format_environment_variable(EnvironmentVariableEditor))
                                    .append_raw('\n')
                                    .append(msgErrorVsCodeNotFoundPathExamined));
             print_paths(out_sink, candidate_paths);
-            msg::println(msgInfoSetEnvVar, msg::env_var = format_environment_variable("EDITOR"));
+            msg::println(msgInfoSetEnvVar, msg::env_var = format_environment_variable(EnvironmentVariableEditor));
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
