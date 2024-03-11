@@ -656,15 +656,12 @@ namespace vcpkg
             int code = 0;
             RedirectedProcessLaunchSettings launch_settings;
             launch_settings.stdin_content = {buffer.data(), bytes_read};
-            auto res = cmd_execute_and_stream_lines(
-                cmd,
-                launch_settings,
-                [&code](StringView line) {
-                    if (Strings::starts_with(line, guid_marker))
-                    {
-                        code = std::strtol(line.data() + guid_marker.size(), nullptr, 10);
-                    }
-                });
+            auto res = cmd_execute_and_stream_lines(cmd, launch_settings, [&code](StringView line) {
+                if (Strings::starts_with(line, guid_marker))
+                {
+                    code = std::strtol(line.data() + guid_marker.size(), nullptr, 10);
+                }
+            });
             if (!res.get() || *res.get() != 0 || (code >= 100 && code < 200) || code >= 300)
             {
                 return msg::format_error(msgCurlFailedToPutHttp,
