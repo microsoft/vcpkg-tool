@@ -1208,11 +1208,11 @@ namespace vcpkg
     {
     }
 
-    void format_plan_block(LocalizedString& msg,
-                           msg::MessageT<> header,
-                           bool add_head_tag,
-                           View<const InstallPlanAction*> actions,
-                           const Path& builtin_ports_dir)
+    static void format_plan_block(LocalizedString& msg,
+                                  msg::MessageT<> header,
+                                  bool add_head_tag,
+                                  View<const InstallPlanAction*> actions,
+                                  const Path& builtin_ports_dir)
     {
         msg.append(header).append_raw('\n');
         for (auto action : actions)
@@ -1222,10 +1222,7 @@ namespace vcpkg
         }
     }
 
-    void format_plan_block(LocalizedString& msg,
-                           msg::MessageT<> header,
-                           const std::set<PackageSpec>& specs,
-                           const Path& builtin_ports_dir)
+    static void format_plan_block(LocalizedString& msg, msg::MessageT<> header, const std::set<PackageSpec>& specs)
     {
         msg.append(header).append_raw('\n');
         for (auto&& spec : specs)
@@ -1297,7 +1294,7 @@ namespace vcpkg
 
         if (!remove_specs.empty())
         {
-            format_plan_block(ret.text, msgPackagesToRemove, remove_specs, builtin_ports_dir);
+            format_plan_block(ret.text, msgPackagesToRemove, remove_specs);
         }
 
         if (!rebuilt_plans.empty())
