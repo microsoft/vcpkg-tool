@@ -532,7 +532,7 @@
   "ControlSupportsMustBeAPlatformExpression": "\"Supports\" must be a platform expression",
   "CopyrightIsDir": "`{path}` being a directory is deprecated.",
   "_CopyrightIsDir.comment": "An example of {path} is /foo/bar.",
-  "CorruptedDatabase": "Database corrupted.",
+  "CorruptedDatabase": "vcpkg's installation database corrupted. This is either a bug in vcpkg or something else has modified the contents of the 'installed' directory in an unexpected way. You may be able to fix this by deleting the 'installed' directory and reinstalling what you want to use. If this problem happens consistently, please file a bug at https://github.com/microsoft/vcpkg .",
   "CorruptedInstallTree": "Your vcpkg 'installed' tree is corrupted.",
   "CouldNotDeduceNugetIdAndVersion": "Could not deduce nuget id and version from filename: {path}",
   "_CouldNotDeduceNugetIdAndVersion.comment": "An example of {path} is /foo/bar.",

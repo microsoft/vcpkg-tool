@@ -20,7 +20,8 @@ TEST_CASE ("spdx maximum serialization", "[spdx]")
     cpgh.version_scheme = VersionScheme::Relaxed;
     cpgh.version = Version{"1.0", 5};
 
-    InstallPlanAction ipa(spec, scfl, "test_packages_root", RequestType::USER_REQUESTED, Test::X86_WINDOWS, {}, {}, {});
+    InstallPlanAction ipa(
+        spec, scfl, "test_packages_root", RequestType::USER_REQUESTED, UseHeadVersion::No, Editable::No, {}, {}, {});
     auto& abi = *(ipa.abi_info = AbiInfo{}).get();
     abi.package_abi = "ABIHASH";
 
@@ -174,7 +175,8 @@ TEST_CASE ("spdx minimum serialization", "[spdx]")
     cpgh.version_scheme = VersionScheme::String;
     cpgh.version = Version{"1.0", 0};
 
-    InstallPlanAction ipa(spec, scfl, "test_packages_root", RequestType::USER_REQUESTED, Test::X86_WINDOWS, {}, {}, {});
+    InstallPlanAction ipa(
+        spec, scfl, "test_packages_root", RequestType::USER_REQUESTED, UseHeadVersion::No, Editable::No, {}, {}, {});
     auto& abi = *(ipa.abi_info = AbiInfo{}).get();
     abi.package_abi = "deadbeef";
 
@@ -302,7 +304,8 @@ TEST_CASE ("spdx concat resources", "[spdx]")
     cpgh.version_scheme = VersionScheme::String;
     cpgh.version = Version{"1.0", 0};
 
-    InstallPlanAction ipa(spec, scfl, "test_packages_root", RequestType::USER_REQUESTED, Test::X86_WINDOWS, {}, {}, {});
+    InstallPlanAction ipa(
+        spec, scfl, "test_packages_root", RequestType::USER_REQUESTED, UseHeadVersion::No, Editable::No, {}, {}, {});
     auto& abi = *(ipa.abi_info = AbiInfo{}).get();
     abi.package_abi = "deadbeef";
 

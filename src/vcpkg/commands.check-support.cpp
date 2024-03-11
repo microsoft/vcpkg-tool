@@ -133,7 +133,8 @@ namespace vcpkg
         auto cmake_vars = CMakeVars::make_triplet_cmake_var_provider(paths);
 
         // for each spec in the user-requested specs, check all dependencies
-        CreateInstallPlanOptions create_options{host_triplet, paths.packages()};
+        CreateInstallPlanOptions create_options{
+            nullptr, host_triplet, paths.packages(), UnsupportedPortAction::Error, UseHeadVersion::No, Editable::No};
         for (const auto& user_spec : specs)
         {
             auto action_plan = create_feature_install_plan(provider, *cmake_vars, {&user_spec, 1}, {}, create_options);
