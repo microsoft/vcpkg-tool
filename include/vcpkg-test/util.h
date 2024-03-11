@@ -125,7 +125,7 @@ namespace vcpkg::Test
         const std::vector<std::pair<const char*, const char*>>& features = {},
         const std::vector<const char*>& default_features = {});
 
-    ParseExpected<SourceControlFile> test_parse_control_file(
+    ExpectedL<std::unique_ptr<SourceControlFile>> test_parse_control_file(
         const std::vector<std::unordered_map<std::string, std::string>>& v);
 
     std::unique_ptr<vcpkg::StatusParagraph> make_status_pgh(const char* name,
@@ -199,5 +199,5 @@ namespace vcpkg::Test
 #define REQUIRE_LINES(a, b)                                                                                            \
     do                                                                                                                 \
     {                                                                                                                  \
-        if (auto delta = ::vcpkg::Test::diff_lines((a), (b))) FAIL(*delta.get());                                      \
+        if (auto delta = ::vcpkg::Test::diff_lines((b), (a))) FAIL(*delta.get());                                      \
     } while (0)

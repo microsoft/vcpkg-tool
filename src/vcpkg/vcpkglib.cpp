@@ -31,7 +31,7 @@ namespace vcpkg
         status_pghs.reserve(pghs.size());
         for (auto&& p : pghs)
         {
-            status_pghs.push_back(std::make_unique<StatusParagraph>(std::move(p)));
+            status_pghs.push_back(std::make_unique<StatusParagraph>(vcpkg_dir_status_file, std::move(p)));
         }
 
         return StatusParagraphs(std::move(status_pghs));
@@ -67,7 +67,7 @@ namespace vcpkg
             auto pghs = Paragraphs::get_paragraphs(fs, file).value_or_exit(VCPKG_LINE_INFO);
             for (auto&& p : pghs)
             {
-                current_status_db.insert(std::make_unique<StatusParagraph>(std::move(p)));
+                current_status_db.insert(std::make_unique<StatusParagraph>(file, std::move(p)));
             }
         }
 

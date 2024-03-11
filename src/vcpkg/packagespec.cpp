@@ -1,23 +1,70 @@
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/fmt.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/parse.h>
+#include <vcpkg/base/strings.h>
 
+#include <vcpkg/documentation.h>
 #include <vcpkg/packagespec.h>
 
 namespace
 {
     using namespace vcpkg;
-    Triplet resolve_triplet(const Optional<std::string>& specified_triplet,
-                            Triplet default_triplet,
-                            bool& default_triplet_used)
+    Triplet resolve_triplet(const Optional<std::string>& specified_triplet, Triplet default_triplet)
     {
         if (auto pspecified = specified_triplet.get())
         {
             return Triplet::from_canonical_name(*pspecified);
         }
 
-        default_triplet_used = true;
         return default_triplet;
+    }
+
+    bool parse_features(char32_t& ch, ParsedQualifiedSpecifier& ret, ParserBase& parser)
+    {
+        auto& features = ret.features.emplace();
+        for (;;)
+        {
+            parser.next();
+            parser.skip_tabs_spaces();
+            if (parser.cur() == '*')
+            {
+                features.emplace_back("*");
+                parser.next();
+            }
+            else
+            {
+                auto feature = parse_feature_name(parser);
+                if (auto f = feature.get())
+                    features.push_back(std::move(*f));
+                else
+                    return false;
+            }
+            auto skipped_space = parser.skip_tabs_spaces();
+            ch = parser.cur();
+            if (ch == ']')
+            {
+                ch = parser.next();
+                return true;
+            }
+            else if (ch == ',')
+            {
+                continue;
+            }
+            else
+            {
+                if (skipped_space.size() > 0 || ParserBase::is_lineend(parser.cur()))
+                {
+                    parser.add_error(msg::format(msgExpectedFeatureListTerminal));
+                }
+                else
+                {
+                    parser.add_error(msg::format(msgInvalidCharacterInFeatureList));
+                }
+
+                return false;
+            }
+        }
     }
 } // unnamed namespace
 
@@ -40,7 +87,10 @@ namespace vcpkg
         return fmt::format("{}[{}]", package_name, feature_name);
     }
 
-    bool InternalFeatureSet::empty_or_only_core() const { return empty() || (size() == 1 && *begin() == "core"); }
+    bool InternalFeatureSet::empty_or_only_core() const
+    {
+        return empty() || (size() == 1 && *begin() == FeatureNameCore);
+    }
 
     InternalFeatureSet internalize_feature_list(View<std::string> fs, ImplicitDefault id)
     {
@@ -48,7 +98,7 @@ namespace vcpkg
         bool core = false;
         for (auto&& f : fs)
         {
-            if (f == "core")
+            if (f == FeatureNameCore)
             {
                 core = true;
             }
@@ -57,10 +107,10 @@ namespace vcpkg
 
         if (!core)
         {
-            ret.emplace_back("core");
-            if (id == ImplicitDefault::YES)
+            ret.emplace_back(FeatureNameCore);
+            if (id == ImplicitDefault::Yes)
             {
-                ret.emplace_back("default");
+                ret.emplace_back(FeatureNameDefault);
             }
         }
         return ret;
@@ -91,13 +141,13 @@ namespace vcpkg
         return left.name() == right.name() && left.triplet() == right.triplet();
     }
 
-    ExpectedL<FullPackageSpec> ParsedQualifiedSpecifier::to_full_spec(Triplet default_triplet,
-                                                                      bool& default_triplet_used,
-                                                                      ImplicitDefault id) const
+    FullPackageSpec ParsedQualifiedSpecifier::to_full_spec(Triplet default_triplet, ImplicitDefault id) const
     {
         if (platform)
         {
-            return msg::format_error(msgIllegalPlatformSpec);
+            Checks::unreachable(
+                VCPKG_LINE_INFO,
+                "AllowPlatformSpec must be No when calling parse_qualified_specifier and using to_full_spec");
         }
 
         View<std::string> fs{};
@@ -106,32 +156,72 @@ namespace vcpkg
             fs = *pfeatures;
         }
 
-        return FullPackageSpec{{name, resolve_triplet(triplet, default_triplet, default_triplet_used)},
-                               internalize_feature_list(fs, id)};
+        return FullPackageSpec{{name, resolve_triplet(triplet, default_triplet)}, internalize_feature_list(fs, id)};
     }
 
-    ExpectedL<PackageSpec> ParsedQualifiedSpecifier::to_package_spec(Triplet default_triplet,
-                                                                     bool& default_triplet_used) const
+    PackageSpec ParsedQualifiedSpecifier::to_package_spec(Triplet default_triplet) const
     {
-        if (platform)
+        if (platform || features)
         {
-            return msg::format_error(msgIllegalPlatformSpec);
+            Checks::unreachable(VCPKG_LINE_INFO,
+                                "AllowFeatures and AllowPlatformSpec must be No when calling "
+                                "parse_qualified_specifier and using to_package_spec");
         }
 
-        if (features)
-        {
-            return msg::format_error(msgIllegalFeatures);
-        }
-
-        return PackageSpec{name, resolve_triplet(triplet, default_triplet, default_triplet_used)};
+        return PackageSpec{name, resolve_triplet(triplet, default_triplet)};
     }
 
-    ExpectedL<ParsedQualifiedSpecifier> parse_qualified_specifier(StringView input)
+    ExpectedL<ParsedQualifiedSpecifier> parse_qualified_specifier(StringView input,
+                                                                  AllowFeatures allow_features,
+                                                                  ParseExplicitTriplet parse_explicit_triplet,
+                                                                  AllowPlatformSpec allow_platform_spec)
     {
-        auto parser = ParserBase(input, "<unknown>");
-        auto maybe_pqs = parse_qualified_specifier(parser);
-        if (!parser.at_eof()) parser.add_error(msg::format(msgExpectedEof));
-        if (auto e = parser.get_error()) return LocalizedString::from_raw(e->to_string());
+        // there is no origin because this function is used for user inputs
+        auto parser = ParserBase(input, nullopt);
+        auto maybe_pqs = parse_qualified_specifier(parser, allow_features, parse_explicit_triplet, allow_platform_spec);
+        if (!parser.at_eof())
+        {
+            if (allow_features == AllowFeatures::No && parse_explicit_triplet == ParseExplicitTriplet::Forbid &&
+                allow_platform_spec == AllowPlatformSpec::No)
+            {
+                parser.add_error(msg::format(msgParsePackageNameNotEof, msg::url = docs::package_name_url));
+            }
+            else
+            {
+                // check if the user said zlib:x64-windows[core] instead of zlib[core]:x64-windows
+                auto pqs = maybe_pqs.get();
+                auto triplet = pqs ? pqs->triplet.get() : nullptr;
+                if (pqs && triplet && !pqs->platform.has_value() && parser.cur() == '[')
+                {
+                    auto speculative_parser_copy = parser;
+                    char32_t ch = '[';
+                    if (parse_features(ch, *pqs, speculative_parser_copy) && speculative_parser_copy.at_eof())
+                    {
+                        auto presumed_spec =
+                            fmt::format("{}[{}]:{}",
+                                        pqs->name,
+                                        Strings::join(",", pqs->features.value_or_exit(VCPKG_LINE_INFO)),
+                                        *triplet);
+                        parser.add_error(msg::format(msgParseQualifiedSpecifierNotEofSquareBracket,
+                                                     msg::version_spec = presumed_spec));
+                    }
+                    else
+                    {
+                        parser.add_error(msg::format(msgParseQualifiedSpecifierNotEof));
+                    }
+                }
+                else
+                {
+                    parser.add_error(msg::format(msgParseQualifiedSpecifierNotEof));
+                }
+            }
+        }
+
+        if (auto e = parser.get_error())
+        {
+            return LocalizedString::from_raw(e->to_string());
+        }
+
         return std::move(maybe_pqs).value_or_exit(VCPKG_LINE_INFO);
     }
 
@@ -148,7 +238,7 @@ namespace vcpkg
             return nullopt;
         }
 
-        if (ret == "default")
+        if (ret == FeatureNameDefault)
         {
             parser.add_error(msg::format(msgInvalidDefaultFeatureName));
             return nullopt;
@@ -167,7 +257,7 @@ namespace vcpkg
         auto ch = parser.cur();
         if (ParserBase::is_upper_alpha(ch) || ch == '_')
         {
-            parser.add_error(msg::format(msgInvalidCharacterInPackageName));
+            parser.add_error(msg::format(msgInvalidCharacterInPortName));
             return nullopt;
         }
         if (ret.empty())
@@ -178,7 +268,10 @@ namespace vcpkg
         return ret;
     }
 
-    Optional<ParsedQualifiedSpecifier> parse_qualified_specifier(ParserBase& parser)
+    Optional<ParsedQualifiedSpecifier> parse_qualified_specifier(ParserBase& parser,
+                                                                 AllowFeatures allow_features,
+                                                                 ParseExplicitTriplet allow_triplet,
+                                                                 AllowPlatformSpec allow_platform_spec)
     {
         ParsedQualifiedSpecifier ret;
         auto name = parse_package_name(parser);
@@ -189,65 +282,55 @@ namespace vcpkg
         auto ch = parser.cur();
         if (ch == '[')
         {
-            std::vector<std::string> features;
-            do
+            if (allow_features == AllowFeatures::No)
             {
-                parser.next();
-                parser.skip_tabs_spaces();
-                if (parser.cur() == '*')
-                {
-                    features.emplace_back("*");
-                    parser.next();
-                }
-                else
-                {
-                    auto feature = parse_feature_name(parser);
-                    if (auto f = feature.get())
-                        features.push_back(std::move(*f));
-                    else
-                        return nullopt;
-                }
-                auto skipped_space = parser.skip_tabs_spaces();
-                ch = parser.cur();
-                if (ch == ']')
-                {
-                    ch = parser.next();
-                    break;
-                }
-                else if (ch == ',')
-                {
-                    continue;
-                }
-                else
-                {
-                    if (skipped_space.size() > 0 || ParserBase::is_lineend(parser.cur()))
-                    {
-                        parser.add_error(msg::format(msgExpectedFeatureListTerminal));
-                    }
-                    else
-                    {
-                        parser.add_error(msg::format(msgInvalidCharacterInFeatureList));
-                    }
+                parser.add_error(msg::format(msgIllegalFeatures));
+                return nullopt;
+            }
 
-                    return nullopt;
-                }
-            } while (true);
-            ret.features = std::move(features);
+            if (!parse_features(ch, ret, parser))
+            {
+                return nullopt;
+            }
         }
         if (ch == ':')
         {
+            auto triplet_start = parser.cur_loc();
             parser.next();
-            ret.triplet = parser.match_while(ParserBase::is_package_name_char).to_string();
-            if (ret.triplet.get()->empty())
+            auto triplet_parsed = parser.match_while(ParserBase::is_package_name_char);
+            if (allow_triplet == ParseExplicitTriplet::Forbid)
+            {
+                parser.add_error(msg::format(msgAddTripletExpressionNotAllowed,
+                                             msg::package_name = ret.name,
+                                             msg::triplet = triplet_parsed),
+                                 triplet_start);
+                return nullopt;
+            }
+
+            if (triplet_parsed.empty())
             {
                 parser.add_error(msg::format(msgExpectedTripletName));
                 return nullopt;
             }
+
+            ret.triplet.emplace(triplet_parsed.to_string());
         }
+        else if (allow_triplet == ParseExplicitTriplet::Require)
+        {
+            parser.add_error(msg::format(msgExpectedExplicitTriplet));
+            return nullopt;
+        }
+
         parser.skip_tabs_spaces();
         ch = parser.cur();
         if (ch == '(')
         {
+            if (allow_platform_spec == AllowPlatformSpec::No)
+            {
+                parser.add_error(msg::format(msgIllegalPlatformSpec));
+                return nullopt;
+            }
+
             auto loc = parser.cur_loc();
             std::string platform_string;
             int depth = 1;

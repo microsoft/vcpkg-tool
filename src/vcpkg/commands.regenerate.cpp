@@ -1,4 +1,5 @@
 #include <vcpkg/base/checks.h>
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/util.h>
 
@@ -13,14 +14,10 @@ using namespace vcpkg;
 
 namespace
 {
-    constexpr StringLiteral DRY_RUN = "dry-run";
-    constexpr StringLiteral FORCE = "force";
-    constexpr StringLiteral NORMALIZE = "normalize";
-
     constexpr CommandSwitch command_switches[] = {
-        {FORCE, msgCmdRegenerateOptForce},
-        {DRY_RUN, msgCmdRegenerateOptDryRun},
-        {NORMALIZE, msgCmdRegenerateOptNormalize},
+        {SwitchForce, msgCmdRegenerateOptForce},
+        {SwitchDryRun, msgCmdRegenerateOptDryRun},
+        {SwitchNormalize, msgCmdRegenerateOptNormalize},
     };
 } // unnamed namespace
 
@@ -45,17 +42,17 @@ namespace vcpkg
         const auto parsed = args.parse_arguments(CommandRegenerateMetadata);
         forwarded_args.push_back(parsed.command_arguments[0]);
 
-        if (Util::Sets::contains(parsed.switches, FORCE))
+        if (Util::Sets::contains(parsed.switches, SwitchForce))
         {
             forwarded_args.emplace_back("--force");
         }
 
-        if (Util::Sets::contains(parsed.switches, DRY_RUN))
+        if (Util::Sets::contains(parsed.switches, SwitchDryRun))
         {
             forwarded_args.emplace_back("--what-if");
         }
 
-        if (Util::Sets::contains(parsed.switches, NORMALIZE))
+        if (Util::Sets::contains(parsed.switches, SwitchNormalize))
         {
             forwarded_args.emplace_back("--normalize");
         }

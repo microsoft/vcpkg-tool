@@ -1,3 +1,4 @@
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/util.h>
@@ -43,7 +44,7 @@ namespace
         {
             // If we've already printed the set of dependencies, print an elipsis instead
             Strings::append(prefix_buf, "+- ...\n");
-            msg::write_unlocalized_text_to_stdout(Color::none, prefix_buf);
+            msg::write_unlocalized_text(Color::none, prefix_buf);
             prefix_buf.resize(original_size);
         }
         else
@@ -54,7 +55,7 @@ namespace
             {
                 // Print the current level
                 Strings::append(prefix_buf, "+-- ", *i, "\n");
-                msg::write_unlocalized_text_to_stdout(Color::none, prefix_buf);
+                msg::write_unlocalized_text(Color::none, prefix_buf);
                 prefix_buf.resize(original_size);
 
                 // Recurse
@@ -65,7 +66,7 @@ namespace
 
             // Print the last of the current level
             Strings::append(prefix_buf, "+-- ", currPos->dependencies.back(), "\n");
-            msg::write_unlocalized_text_to_stdout(Color::none, prefix_buf);
+            msg::write_unlocalized_text(Color::none, prefix_buf);
             prefix_buf.resize(original_size);
 
             // Recurse
@@ -75,23 +76,16 @@ namespace
         }
     }
 
-    constexpr StringLiteral OPTION_DOT = "dot";
-    constexpr StringLiteral OPTION_DGML = "dgml";
-    constexpr StringLiteral OPTION_SHOW_DEPTH = "show-depth";
-    constexpr StringLiteral OPTION_MAX_RECURSE = "max-recurse";
-    constexpr StringLiteral OPTION_SORT = "sort";
-    constexpr StringLiteral OPTION_FORMAT = "format";
-
     constexpr CommandSwitch DEPEND_SWITCHES[] = {
-        {OPTION_DOT, {}},
-        {OPTION_DGML, {}},
-        {OPTION_SHOW_DEPTH, msgCmdDependInfoOptDepth},
+        {SwitchDot, {}},
+        {SwitchDgml, {}},
+        {SwitchShowDepth, msgCmdDependInfoOptDepth},
     };
 
     constexpr CommandSetting DEPEND_SETTINGS[] = {
-        {OPTION_MAX_RECURSE, msgCmdDependInfoOptMaxRecurse},
-        {OPTION_SORT, msgCmdDependInfoOptSort},
-        {OPTION_FORMAT, msgCmdDependInfoFormatHelp},
+        {SwitchMaxRecurse, msgCmdDependInfoOptMaxRecurse},
+        {SwitchSort, msgCmdDependInfoOptSort},
+        {SwitchFormat, msgCmdDependInfoFormatHelp},
     };
 
     void assign_depth_to_dependencies(const std::string& package,
@@ -133,7 +127,7 @@ namespace
 
             std::unordered_set<std::string> features{install_action.feature_list.begin(),
                                                      install_action.feature_list.end()};
-            features.erase("core");
+            features.erase(FeatureNameCore.to_string());
 
             auto& port_name = install_action.spec.name();
 
@@ -252,37 +246,37 @@ namespace vcpkg
 
     ExpectedL<DependInfoStrategy> determine_depend_info_mode(const ParsedArguments& args)
     {
-        static constexpr StringLiteral OPTION_FORMAT_LIST = "list";
-        static constexpr StringLiteral OPTION_FORMAT_TREE = "tree";
-        static constexpr StringLiteral OPTION_FORMAT_DOT = "dot";
-        static constexpr StringLiteral OPTION_FORMAT_DGML = "dgml";
-        static constexpr StringLiteral OPTION_FORMAT_MERMAID = "mermaid";
+        static constexpr StringLiteral SwitchFormatList = "list";
+        static constexpr StringLiteral SwitchFormatTree = "tree";
+        static constexpr StringLiteral SwitchFormatDot = "dot";
+        static constexpr StringLiteral SwitchFormatDgml = "dgml";
+        static constexpr StringLiteral SwitchFormatMermaid = "mermaid";
 
         auto& settings = args.settings;
 
         Optional<DependInfoFormat> maybe_format;
         {
-            auto it = settings.find(OPTION_FORMAT);
+            auto it = settings.find(SwitchFormat);
             if (it != settings.end())
             {
                 auto as_lower = Strings::ascii_to_lowercase(it->second);
-                if (as_lower == OPTION_FORMAT_LIST)
+                if (as_lower == SwitchFormatList)
                 {
                     maybe_format.emplace(DependInfoFormat::List);
                 }
-                else if (as_lower == OPTION_FORMAT_TREE)
+                else if (as_lower == SwitchFormatTree)
                 {
                     maybe_format.emplace(DependInfoFormat::Tree);
                 }
-                else if (as_lower == OPTION_FORMAT_DOT)
+                else if (as_lower == SwitchFormatDot)
                 {
                     maybe_format.emplace(DependInfoFormat::Dot);
                 }
-                else if (as_lower == OPTION_FORMAT_DGML)
+                else if (as_lower == SwitchFormatDgml)
                 {
                     maybe_format.emplace(DependInfoFormat::Dgml);
                 }
-                else if (as_lower == OPTION_FORMAT_MERMAID)
+                else if (as_lower == SwitchFormatMermaid)
                 {
                     maybe_format.emplace(DependInfoFormat::Mermaid);
                 }
@@ -293,7 +287,7 @@ namespace vcpkg
             }
         }
 
-        if (Util::Sets::contains(args.switches, OPTION_DOT))
+        if (Util::Sets::contains(args.switches, SwitchDot))
         {
             if (emplace_inconsistent(maybe_format, DependInfoFormat::Dot))
             {
@@ -301,7 +295,7 @@ namespace vcpkg
             }
         }
 
-        if (Util::Sets::contains(args.switches, OPTION_DGML))
+        if (Util::Sets::contains(args.switches, SwitchDgml))
         {
             if (emplace_inconsistent(maybe_format, DependInfoFormat::Dgml))
             {
@@ -309,29 +303,25 @@ namespace vcpkg
             }
         }
 
-        static constexpr StringLiteral OPTION_SORT_LEXICOGRAPHICAL = "lexicographical";
-        static constexpr StringLiteral OPTION_SORT_TOPOLOGICAL = "topological";
-        static constexpr StringLiteral OPTION_SORT_REVERSE = "reverse";
-        static constexpr StringLiteral OPTION_SORT_TREE = "x-tree";
         Optional<DependInfoSortMode> maybe_sort_mode;
         {
-            auto it = settings.find(OPTION_SORT);
+            auto it = settings.find(SwitchSort);
             if (it != settings.end())
             {
                 auto as_lower = Strings::ascii_to_lowercase(it->second);
-                if (as_lower == OPTION_SORT_LEXICOGRAPHICAL)
+                if (as_lower == SortLexicographical)
                 {
                     maybe_sort_mode.emplace(DependInfoSortMode::Lexicographical);
                 }
-                else if (as_lower == OPTION_SORT_TOPOLOGICAL)
+                else if (as_lower == SortTopological)
                 {
                     maybe_sort_mode.emplace(DependInfoSortMode::Topological);
                 }
-                else if (as_lower == OPTION_SORT_REVERSE)
+                else if (as_lower == SortReverse)
                 {
                     maybe_sort_mode.emplace(DependInfoSortMode::ReverseTopological);
                 }
-                else if (as_lower == OPTION_SORT_TREE)
+                else if (as_lower == SortXTree)
                 {
                     if (emplace_inconsistent(maybe_format, DependInfoFormat::Tree))
                     {
@@ -348,10 +338,10 @@ namespace vcpkg
         DependInfoStrategy result{maybe_sort_mode.value_or(DependInfoSortMode::Topological),
                                   maybe_format.value_or(DependInfoFormat::List),
                                   INT_MAX,
-                                  Util::Sets::contains(args.switches, OPTION_SHOW_DEPTH)};
+                                  Util::Sets::contains(args.switches, SwitchShowDepth)};
 
         {
-            auto it = settings.find(OPTION_MAX_RECURSE);
+            auto it = settings.find(SwitchMaxRecurse);
             if (it != settings.end())
             {
                 auto maybe_parsed = Strings::strto<int>(it->second);
@@ -364,7 +354,7 @@ namespace vcpkg
                 }
                 else
                 {
-                    return msg::format_error(msgOptionMustBeInteger, msg::option = OPTION_MAX_RECURSE);
+                    return msg::format_error(msgOptionMustBeInteger, msg::option = SwitchMaxRecurse);
                 }
             }
         }
@@ -392,22 +382,14 @@ namespace vcpkg
                                       Triplet default_triplet,
                                       Triplet host_triplet)
     {
+        msg::default_output_stream = OutputStream::StdErr;
         const ParsedArguments options = args.parse_arguments(CommandDependInfoMetadata);
         const auto strategy = determine_depend_info_mode(options).value_or_exit(VCPKG_LINE_INFO);
 
-        bool default_triplet_used = false;
-        const std::vector<FullPackageSpec> specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
-            return check_and_get_full_package_spec(arg,
-                                                   default_triplet,
-                                                   default_triplet_used,
-                                                   CommandDependInfoMetadata.get_example_text(),
-                                                   paths.get_triplet_db());
+        const std::vector<FullPackageSpec> specs = Util::fmap(options.command_arguments, [&](const std::string& arg) {
+            return check_and_get_full_package_spec(arg, default_triplet, paths.get_triplet_db())
+                .value_or_exit(VCPKG_LINE_INFO);
         });
-
-        if (default_triplet_used)
-        {
-            print_default_triplet_warning(args, paths.get_triplet_db());
-        }
 
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();
@@ -476,16 +458,16 @@ namespace vcpkg
 
             if (strategy.show_depth)
             {
-                msg::write_unlocalized_text_to_stdout(Color::error, fmt::format("({})", first->depth));
+                msg::write_unlocalized_text(Color::error, fmt::format("({})", first->depth));
             }
 
-            msg::write_unlocalized_text_to_stdout(Color::success, first->package);
+            msg::write_unlocalized_text(Color::success, first->package);
             if (!features.empty())
             {
-                msg::write_unlocalized_text_to_stdout(Color::warning, "[" + features + "]");
+                msg::write_unlocalized_text(Color::warning, "[" + features + "]");
             }
 
-            msg::write_unlocalized_text_to_stdout(Color::none, "\n");
+            msg::write_unlocalized_text(Color::none, "\n");
             std::set<std::string> printed;
             std::string prefix_buf;
             print_dep_tree(prefix_buf, first->package, depend_info, printed);
@@ -514,16 +496,16 @@ namespace vcpkg
 
             if (strategy.show_depth)
             {
-                msg::write_unlocalized_text_to_stdout(Color::error, fmt::format("({})", info.depth));
+                msg::write_unlocalized_text(Color::error, fmt::format("({})", info.depth));
             }
 
-            msg::write_unlocalized_text_to_stdout(Color::success, info.package);
+            msg::write_unlocalized_text(Color::success, info.package);
             if (!info.features.empty())
             {
-                msg::write_unlocalized_text_to_stdout(Color::warning, "[" + Strings::join(", ", info.features) + "]");
+                msg::write_unlocalized_text(Color::warning, "[" + Strings::join(", ", info.features) + "]");
             }
 
-            msg::write_unlocalized_text_to_stdout(Color::none, ": " + Strings::join(", ", info.dependencies) + "\n");
+            msg::write_unlocalized_text(Color::none, ": " + Strings::join(", ", info.dependencies) + "\n");
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);

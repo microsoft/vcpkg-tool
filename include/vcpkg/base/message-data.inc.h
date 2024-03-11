@@ -1,4 +1,4 @@
-﻿DECLARE_MESSAGE(ABaseline, (), "", "a baseline")
+DECLARE_MESSAGE(ABaseline, (), "", "a baseline")
 DECLARE_MESSAGE(ABaselineObject, (), "", "a baseline object")
 DECLARE_MESSAGE(ADefaultFeature, (), "", "a default feature")
 DECLARE_MESSAGE(ABoolean, (), "", "a boolean")
@@ -158,7 +158,7 @@ DECLARE_MESSAGE(APackagePattern, (), "", "a package pattern")
 DECLARE_MESSAGE(APackagePatternArray, (), "", "a package pattern array")
 DECLARE_MESSAGE(APath, (), "", "a path")
 DECLARE_MESSAGE(AppliedUserIntegration, (), "", "Applied user-wide integration for this vcpkg root.")
-DECLARE_MESSAGE(ApplocalProcessing, (msg::path), "", "vcpkg applocal processing: {path}")
+DECLARE_MESSAGE(ApplocalProcessing, (), "", "deploying dependencies")
 DECLARE_MESSAGE(ARegistry, (), "", "a registry")
 DECLARE_MESSAGE(ARegistryImplementationKind, (), "", "a registry implementation kind")
 DECLARE_MESSAGE(ARegistryPath, (), "", "a registry path")
@@ -482,6 +482,7 @@ DECLARE_MESSAGE(CISwitchOptSkipFailures,
                 "Skips ports marked `=fail` in ci.baseline.txt")
 DECLARE_MESSAGE(CISwitchOptXUnitAll, (), "", "Reports unchanged ports in the XUnit output")
 DECLARE_MESSAGE(ClearingContents, (msg::path), "", "Clearing contents of {path}")
+DECLARE_MESSAGE(CMakePkgConfigTargetsUsage, (msg::package_name), "", "{package_name} provides pkg-config modules:")
 DECLARE_MESSAGE(CmakeTargetsExcluded, (msg::count), "", "{count} additional targets are not displayed.")
 DECLARE_MESSAGE(CMakeTargetsUsage,
                 (msg::package_name),
@@ -865,10 +866,7 @@ DECLARE_MESSAGE(CommandFailed,
                 "{command_line}\n"
                 "failed with the following results:")
 DECLARE_MESSAGE(CommunityTriplets, (), "", "Community Triplets:")
-DECLARE_MESSAGE(ComparingUtf8Decoders,
-                (),
-                "",
-                "Comparing Utf8Decoders with different provenance; this is always an error")
+DECLARE_MESSAGE(CompilerPath, (msg::path), "", "Compiler found: {path}")
 DECLARE_MESSAGE(CompressFolderFailed, (msg::path), "", "Failed to compress folder \"{path}\":")
 DECLARE_MESSAGE(ComputingInstallPlan, (), "", "Computing installation plan...")
 DECLARE_MESSAGE(ConfigurationErrorRegistriesWithoutBaseline,
@@ -898,6 +896,7 @@ DECLARE_MESSAGE(ControlAndManifestFilesPresent,
                 "",
                 "Both a manifest file and a CONTROL file exist in port directory: {path}")
 DECLARE_MESSAGE(ControlCharacterInString, (), "", "Control character in string")
+DECLARE_MESSAGE(ControlSupportsMustBeAPlatformExpression, (), "", "\"Supports\" must be a platform expression")
 DECLARE_MESSAGE(CopyrightIsDir, (msg::path), "", "`{path}` being a directory is deprecated.")
 DECLARE_MESSAGE(CorruptedDatabase, (), "", "Database corrupted.")
 DECLARE_MESSAGE(CorruptedInstallTree, (), "", "Your vcpkg 'installed' tree is corrupted.")
@@ -982,14 +981,6 @@ DECLARE_MESSAGE(
 DECLARE_MESSAGE(DefaultFeatureIdentifier, (), "", "the names of default features must be identifiers")
 DECLARE_MESSAGE(DefaultFlag, (msg::option), "", "Defaulting to --{option} being on.")
 DECLARE_MESSAGE(DefaultRegistryIsArtifact, (), "", "The default registry cannot be an artifact registry.")
-DECLARE_MESSAGE(
-    DefaultTripletChanged,
-    (msg::triplet),
-    "The parts naming --triplet are command line switches that should be unlocalized. The space after the last "
-    "'triplet' and the period is intended to avoid the period looking like it's part of the command line switch",
-    "In the September 2023 release, the default triplet for vcpkg libraries changed from x86-windows to "
-    "the detected host triplet ({triplet}). For the old behavior, add --triplet x86-windows . To "
-    "suppress this message, add --triplet {triplet} .")
 DECLARE_MESSAGE(DeleteVcpkgConfigFromManifest,
                 (msg::path),
                 "",
@@ -1168,14 +1159,12 @@ DECLARE_MESSAGE(ExpectedDigitsAfterDecimal, (), "", "Expected digits after the d
 DECLARE_MESSAGE(ExpectedFailOrSkip, (), "", "expected 'fail', 'skip', or 'pass' here")
 DECLARE_MESSAGE(ExpectedFeatureListTerminal, (), "", "expected ',' or ']' in feature list")
 DECLARE_MESSAGE(ExpectedFeatureName, (), "", "expected feature name (must be lowercase, digits, '-')")
-DECLARE_MESSAGE(ExpectedEof, (), "", "expected eof")
 DECLARE_MESSAGE(ExpectedExplicitTriplet, (), "", "expected an explicit triplet")
 DECLARE_MESSAGE(ExpectedOneSetOfTags,
                 (msg::count, msg::old_value, msg::new_value, msg::value),
                 "{old_value} is a left tag and {new_value} is the right tag. {value} is the input.",
                 "Found {count} sets of {old_value}.*{new_value} but expected exactly 1, in block:\n{value}")
 DECLARE_MESSAGE(ExpectedOneVersioningField, (), "", "expected only one versioning field")
-DECLARE_MESSAGE(ExpectedPackageSpecifier, (), "", "expected a package specifier")
 DECLARE_MESSAGE(ExpectedPathToExist, (msg::path), "", "Expected {path} to exist after fetching")
 DECLARE_MESSAGE(ExpectedPortName, (), "", "expected a port name here (must be lowercase, digits, '-')")
 DECLARE_MESSAGE(ExpectedReadWriteReadWrite, (), "", "unexpected argument: expected 'read', readwrite', or 'write'")
@@ -1246,9 +1235,6 @@ DECLARE_MESSAGE(
     "The control or manifest file for {package_name} could not be loaded due to the following error. Please "
     "remove {package_name} and try again.")
 DECLARE_MESSAGE(FailedToLoadManifest, (msg::path), "", "Failed to load manifest from directory {path}")
-DECLARE_MESSAGE(FailedToLoadPort, (msg::package_name, msg::path), "", "Failed to load port {package_name} from {path}")
-DECLARE_MESSAGE(FailedToLoadPortFrom, (msg::path), "", "Failed to load port from {path}")
-DECLARE_MESSAGE(FailedToLoadUnnamedPortFromPath, (msg::path), "", "Failed to load port from {path}")
 DECLARE_MESSAGE(FailedToLocateSpec, (msg::spec), "", "Failed to locate spec in graph: {spec}")
 DECLARE_MESSAGE(FailedToObtainDependencyVersion, (), "", "Cannot find desired dependency version.")
 DECLARE_MESSAGE(FailedToObtainLocalPortGitSha, (), "", "Failed to obtain git SHAs for local ports.")
@@ -1288,13 +1274,14 @@ DECLARE_MESSAGE(FailedToRunToolToDetermineVersion,
                 "Failed to run \"{path}\" to determine the {tool_name} version.")
 DECLARE_MESSAGE(FailedToStoreBackToMirror, (), "", "failed to store back to mirror:")
 DECLARE_MESSAGE(FailedToStoreBinaryCache, (msg::path), "", "Failed to store binary cache {path}")
-DECLARE_MESSAGE(FailedToTakeFileSystemLock, (msg::path), "", "Failed to take the filesystem lock on {path}")
+DECLARE_MESSAGE(FailedToTakeFileSystemLock, (), "", "Failed to take the filesystem lock")
 DECLARE_MESSAGE(FailedToWriteManifest, (msg::path), "", "Failed to write manifest file {path}")
 DECLARE_MESSAGE(FailedVendorAuthentication,
                 (msg::vendor, msg::url),
                 "",
                 "One or more {vendor} credential providers failed to authenticate. See '{url}' for more details "
                 "on how to provide credentials.")
+DECLARE_MESSAGE(FileIsNotExecutable, (), "", "this file does not appear to be executable")
 DECLARE_MESSAGE(FilesContainAbsolutePath1,
                 (),
                 "This message is printed before a list of found absolute paths, followed by FilesContainAbsolutePath2, "
@@ -1344,10 +1331,7 @@ DECLARE_MESSAGE(
     (),
     "",
     "Environment variable VCPKG_FORCE_SYSTEM_BINARIES must be set on arm, s390x, ppc64le and riscv platforms.")
-DECLARE_MESSAGE(FormattedParseMessageExpression,
-                (msg::value),
-                "Example of {value} is 'x64 & windows'",
-                "on expression: {value}")
+DECLARE_MESSAGE(FormattedParseMessageExpressionPrefix, (), "", "on expression:")
 DECLARE_MESSAGE(ForMoreHelp,
                 (),
                 "Printed before a suggestion for the user to run `vcpkg help <topic>`",
@@ -1698,11 +1682,11 @@ DECLARE_MESSAGE(
     "value {path}. To suppress this message, unset the environment variable or use the --vcpkg-root command line "
     "switch.")
 DECLARE_MESSAGE(IllegalFeatures, (), "", "List of features is not allowed in this context")
+DECLARE_MESSAGE(IllegalTriplet, (), "", "Triplet is not allowed in this context")
 DECLARE_MESSAGE(IllegalPlatformSpec, (), "", "Platform qualifier is not allowed in this context")
 DECLARE_MESSAGE(ImproperShaLength, (msg::value), "{value} is a sha.", "SHA512's must be 128 hex characters: {value}")
 DECLARE_MESSAGE(IncorrectArchiveFileSignature, (), "", "Incorrect archive file signature")
 DECLARE_MESSAGE(IncorrectPESignature, (), "", "Incorrect PE signature")
-DECLARE_MESSAGE(IncrementedUtf8Decoder, (), "", "Incremented Utf8Decoder at the end of the string")
 DECLARE_MESSAGE(InfoSetEnvVar,
                 (msg::env_var),
                 "In this context 'editor' means IDE",
@@ -1720,14 +1704,11 @@ DECLARE_MESSAGE(InstalledBy, (msg::path), "", "Installed by {path}")
 DECLARE_MESSAGE(InstalledPackages, (), "", "The following packages are already installed:")
 DECLARE_MESSAGE(InstalledRequestedPackages, (), "", "All requested packages are currently installed.")
 DECLARE_MESSAGE(InstallFailed, (msg::path, msg::error_msg), "", "failed: {path}: {error_msg}")
-DECLARE_MESSAGE(InstallingFromLocation,
-                (msg::path),
-                "'--' at the beginning must be preserved",
-                "-- Installing port from location: {path}")
 DECLARE_MESSAGE(InstallingMavenFile,
                 (msg::path),
                 "Printed after a filesystem operation error",
                 "{path} installing Maven file")
+DECLARE_MESSAGE(InstallingOverlayPort, (), "", "installing overlay port from here")
 DECLARE_MESSAGE(InstallingPackage,
                 (msg::action_index, msg::count, msg::spec),
                 "",
@@ -1876,10 +1857,7 @@ DECLARE_MESSAGE(InvalidCharacterInFeatureName,
                 (),
                 "",
                 "invalid character in feature name (must be lowercase, digits, '-')")
-DECLARE_MESSAGE(InvalidCharacterInPackageName,
-                (),
-                "",
-                "invalid character in package name (must be lowercase, digits, '-')")
+DECLARE_MESSAGE(InvalidCharacterInPortName, (), "", "invalid character in port name (must be lowercase, digits, '-')")
 DECLARE_MESSAGE(InvalidCodePoint, (), "", "Invalid code point passed to utf8_encoded_code_point_count")
 DECLARE_MESSAGE(InvalidCodeUnit, (), "", "invalid code unit")
 DECLARE_MESSAGE(InvalidCommandArgSort,
@@ -2020,22 +1998,16 @@ DECLARE_MESSAGE(LinkageDynamicRelease, (), "", "Dynamic Release (/MD)")
 DECLARE_MESSAGE(LinkageStaticDebug, (), "", "Static Debug (/MTd)")
 DECLARE_MESSAGE(LinkageStaticRelease, (), "", "Static Release (/MT)")
 DECLARE_MESSAGE(ListHelp, (), "", "Lists installed libraries")
-DECLARE_MESSAGE(ListOfValidFieldsForControlFiles,
+DECLARE_MESSAGE(LoadedCommunityTriplet,
                 (),
                 "",
-                "This is the list of valid fields for CONTROL files (case-sensitive):")
-DECLARE_MESSAGE(LoadingCommunityTriplet,
-                (msg::path),
-                "'-- [COMMUNITY]' at the beginning must be preserved",
-                "-- [COMMUNITY] Loading triplet configuration from: {path}")
+                "loaded community triplet from here. Community triplets are not built in the curated registry and are "
+                "thus less likely to succeed.")
+DECLARE_MESSAGE(LoadedOverlayTriplet, (), "", "loaded overlay triplet from here")
 DECLARE_MESSAGE(LoadingDependencyInformation,
                 (msg::count),
                 "",
                 "Loading dependency information for {count} packages...")
-DECLARE_MESSAGE(LoadingOverlayTriplet,
-                (msg::path),
-                "'-- [OVERLAY]' at the beginning must be preserved",
-                "-- [OVERLAY] Loading triplet configuration from: {path}")
 DECLARE_MESSAGE(LocalPortfileVersion,
                 (),
                 "",
@@ -2095,6 +2067,7 @@ DECLARE_MESSAGE(MissingRequiredField,
                 "Example completely formatted message:\nerror: missing required field 'dependencies' (an array of "
                 "dependencies)",
                 "missing required field '{json_field}' ({json_type})")
+DECLARE_MESSAGE(MissingRequiredField2, (msg::json_field), "", "missing required field '{json_field}'")
 DECLARE_MESSAGE(MixingBooleanOperationsNotAllowed,
                 (),
                 "",
@@ -2201,6 +2174,7 @@ DECLARE_MESSAGE(OverlayPortsDirectoriesHelp, (msg::env_var), "", "Directories of
 DECLARE_MESSAGE(OverlayTripletDirectoriesHelp, (msg::env_var), "", "Directories of overlay triplets (also: {env_var})")
 DECLARE_MESSAGE(OverlayTriplets, (msg::path), "", "Overlay Triplets from \"{path}\":")
 DECLARE_MESSAGE(OverwritingFile, (msg::path), "", "File {path} was already present and will be overwritten")
+DECLARE_MESSAGE(PackageAbi, (msg::spec, msg::package_abi), "", "{spec} package ABI: {package_abi}")
 DECLARE_MESSAGE(PackageAlreadyRemoved, (msg::spec), "", "unable to remove {spec}: already removed")
 DECLARE_MESSAGE(PackageDiscoveryHeader, (), "", "Package Discovery")
 DECLARE_MESSAGE(PackageManipulationHeader, (), "", "Package Manipulation")
@@ -2231,18 +2205,6 @@ DECLARE_MESSAGE(ParagraphExactlyOne, (), "", "There should be exactly one paragr
 DECLARE_MESSAGE(ParagraphExpectedColonAfterField, (), "", "expected ':' after field name")
 DECLARE_MESSAGE(ParagraphExpectedFieldName, (), "", "expected field name")
 DECLARE_MESSAGE(ParagraphUnexpectedEndOfLine, (), "", "unexpected end of line, to span a blank line use \"  .\"")
-DECLARE_MESSAGE(ParseControlErrorInfoInvalidFields, (), "", "The following fields were not expected:")
-DECLARE_MESSAGE(ParseControlErrorInfoMissingFields, (), "", "The following fields were missing:")
-DECLARE_MESSAGE(ParseControlErrorInfoTypesEntry,
-                (msg::value, msg::expected),
-                "{value} is the name of a field in an on-disk file, {expected} is a short description "
-                "of what it should be like 'a non-negative integer' (which isn't localized yet)",
-                "{value} was expected to be {expected}")
-DECLARE_MESSAGE(ParseControlErrorInfoWhileLoading,
-                (msg::path),
-                "Error messages are is printed after this.",
-                "while loading {path}:")
-DECLARE_MESSAGE(ParseControlErrorInfoWrongTypeFields, (), "", "The following fields had the wrong types:")
 DECLARE_MESSAGE(
     ParseFeatureNameError,
     (msg::package_name, msg::url),
@@ -2255,6 +2217,13 @@ DECLARE_MESSAGE(ParseIdentifierError,
                 "\"{value}\" is not a valid identifier. "
                 "Identifiers must be lowercase alphanumeric+hypens and not reserved (see {url} for more information).")
 DECLARE_MESSAGE(
+    ParsePackageNameNotEof,
+    (msg::url),
+    "",
+    "expected the end of input parsing a package name; this usually means the indicated character is not allowed to be "
+    "in a port name. Port names are all lowercase alphanumeric+hypens and not reserved (see {url} for more "
+    "information).")
+DECLARE_MESSAGE(
     ParsePackageNameError,
     (msg::package_name, msg::url),
     "",
@@ -2266,6 +2235,16 @@ DECLARE_MESSAGE(ParsePackagePatternError,
                 "\"{package_name}\" is not a valid package pattern. "
                 "Package patterns must use only one wildcard character (*) and it must be the last character in "
                 "the pattern (see {url} for more information).")
+DECLARE_MESSAGE(
+    ParseQualifiedSpecifierNotEof,
+    (),
+    "",
+    "expected the end of input parsing a package spec; this usually means the indicated character is not allowed to be "
+    "in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hypens.")
+DECLARE_MESSAGE(ParseQualifiedSpecifierNotEofSquareBracket,
+                (msg::version_spec),
+                "",
+                "expected the end of input parsing a package spec; did you mean {version_spec} instead?")
 DECLARE_MESSAGE(PathMustBeAbsolute,
                 (msg::path),
                 "",
@@ -2291,10 +2270,6 @@ DECLARE_MESSAGE(PERvaNotFound,
                 "{value:#X} is the Relative Virtual Address sought. Portable executable is a term-of-art, see "
                 "https://learn.microsoft.com/windows/win32/debug/pe-format",
                 "While parsing Portable Executable {path}, could not find RVA {value:#X}.")
-DECLARE_MESSAGE(PESignatureMismatch,
-                (msg::path),
-                "Portable Executable is a term-of-art, see https://learn.microsoft.com/windows/win32/debug/pe-format",
-                "While parsing Portable Executable {path}, signature mismatch.")
 DECLARE_MESSAGE(PerformingPostBuildValidation, (), "", "-- Performing post-build validation")
 DECLARE_MESSAGE(PortBugAllowRestrictedHeaders,
                 (msg::env_var),
@@ -2478,6 +2453,7 @@ DECLARE_MESSAGE(PortVersionMultipleSpecification,
                 (),
                 "",
                 "\"port_version\" cannot be combined with an embedded '#' in the version")
+DECLARE_MESSAGE(PortVersionControlMustBeANonNegativeInteger, (), "", "\"Port-Version\" must be a non-negative integer")
 DECLARE_MESSAGE(PrebuiltPackages, (), "", "There are packages that have not been built. To build them run:")
 DECLARE_MESSAGE(PreviousIntegrationFileRemains, (), "", "Previous integration file was not removed.")
 DECLARE_MESSAGE(ProgramReturnedNonzeroExitCode,
@@ -2611,10 +2587,6 @@ DECLARE_MESSAGE(SuggestStartingBashShell,
                 (),
                 "",
                 "Please make sure you have started a new bash shell for the change to take effect.")
-DECLARE_MESSAGE(SuggestUpdateVcpkg,
-                (msg::command_line),
-                "",
-                "You may need to update the vcpkg binary; try running {command_line} to update.")
 DECLARE_MESSAGE(SupportedPort, (msg::package_name), "", "Port {package_name} is supported.")
 DECLARE_MESSAGE(SwitchUsedMultipleTimes, (msg::option), "", "the switch '{option}' was specified multiple times")
 DECLARE_MESSAGE(SynopsisHeader, (), "Printed before a description of what a command does", "Synopsis:")
@@ -2696,7 +2668,6 @@ DECLARE_MESSAGE(UnexpectedEOFMidUnicodeEscape, (), "", "Unexpected end of file i
 DECLARE_MESSAGE(UnexpectedErrorDuringBulkDownload, (), "", "an unexpected error occurred during bulk download.")
 DECLARE_MESSAGE(UnexpectedEscapeSequence, (), "", "Unexpected escape sequence continuation")
 DECLARE_MESSAGE(UnexpectedExtension, (msg::extension), "", "Unexpected archive extension: '{extension}'.")
-DECLARE_MESSAGE(UnexpectedFeatureList, (), "", "unexpected list of features")
 DECLARE_MESSAGE(UnexpectedField, (msg::json_field), "", "unexpected field '{json_field}'")
 DECLARE_MESSAGE(UnexpectedFieldSuggest,
                 (msg::json_field, msg::value),
@@ -2710,7 +2681,6 @@ DECLARE_MESSAGE(UnexpectedOption,
                 (msg::option),
                 "Option is a command line option like --option=value",
                 "unexpected option: {option}")
-DECLARE_MESSAGE(UnexpectedPlatformExpression, (), "", "unexpected platform expression")
 DECLARE_MESSAGE(UnexpectedPortName,
                 (msg::expected, msg::actual, msg::path),
                 "{expected} is the expected port and {actual} is the port declared by the user.",
@@ -2727,6 +2697,10 @@ DECLARE_MESSAGE(UnexpectedToolOutput,
                 (msg::tool_name, msg::path),
                 "The actual command line output will be appended after this message.",
                 "{tool_name} ({path}) produced unexpected output when attempting to determine the version:")
+DECLARE_MESSAGE(UnexpectedWindowsArchitecture,
+                (msg::actual),
+                "{actual} is the CPU kind we observed like ARM or MIPS",
+                "unexpected Windows host architecture: {actual}")
 DECLARE_MESSAGE(UnknownBaselineFileContent,
                 (),
                 "",
@@ -2735,7 +2709,7 @@ DECLARE_MESSAGE(UnknownBinaryProviderType,
                 (),
                 "",
                 "unknown binary provider type: valid providers are 'clear', 'default', 'nuget', "
-                "'nugetconfig','nugettimeout', 'interactive', 'x-azblob', 'x-gcs', 'x-aws', "
+                "'nugetconfig', 'nugettimeout', 'interactive', 'x-azblob', 'x-gcs', 'x-aws', "
                 "'x-aws-config', 'http', and 'files'")
 DECLARE_MESSAGE(UnknownBooleanSetting,
                 (msg::option, msg::value),
@@ -2873,10 +2847,6 @@ DECLARE_MESSAGE(UseEnvVar,
                 "-- Using {env_var} in environment variables.")
 DECLARE_MESSAGE(UserWideIntegrationDeleted, (), "", "User-wide integration is not installed.")
 DECLARE_MESSAGE(UserWideIntegrationRemoved, (), "", "User-wide integration was removed.")
-DECLARE_MESSAGE(UsingCommunityTriplet,
-                (msg::triplet),
-                "'--' at the beginning must be preserved",
-                "-- Using community triplet {triplet}. This triplet configuration is not guaranteed to succeed.")
 DECLARE_MESSAGE(UsingManifestAt, (msg::path), "", "Using manifest file at {path}.")
 DECLARE_MESSAGE(Utf8ConversionFailed, (), "", "Failed to convert to UTF-8")
 DECLARE_MESSAGE(VcpkgCeIsExperimental,
@@ -3107,6 +3077,7 @@ DECLARE_MESSAGE(WhileGettingLocalTreeIshObjectsForPorts, (), "", "while getting 
 DECLARE_MESSAGE(WhileLoadingLocalPort, (msg::package_name), "", "while attempting to load local port {package_name}")
 DECLARE_MESSAGE(WhileLoadingPortFromGitTree, (msg::commit_sha), "", "while trying to load port from: {commit_sha}")
 DECLARE_MESSAGE(WhileLookingForSpec, (msg::spec), "", "while looking for {spec}:")
+DECLARE_MESSAGE(WhileLoadingPortVersion, (msg::version_spec), "", "while loading {version_spec}")
 DECLARE_MESSAGE(WhileParsingVersionsForPort,
                 (msg::package_name, msg::path),
                 "",

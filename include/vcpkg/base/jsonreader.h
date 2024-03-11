@@ -44,20 +44,21 @@ namespace vcpkg::Json
 
     struct Reader
     {
-        Reader();
+        explicit Reader(StringView origin);
 
         const std::vector<LocalizedString>& errors() const { return m_errors; }
 
         void add_missing_field_error(const LocalizedString& type, StringView key, const LocalizedString& key_type);
         void add_expected_type_error(const LocalizedString& expected_type);
         void add_extra_field_error(const LocalizedString& type, StringView fields, StringView suggestion = {});
-        void add_generic_error(const LocalizedString& type, LocalizedString&& message);
+        void add_generic_error(const LocalizedString& type, StringView message);
 
         void add_warning(LocalizedString type, StringView msg);
 
         const std::vector<LocalizedString>& warnings() const { return m_warnings; }
 
         std::string path() const noexcept;
+        StringView origin() const noexcept;
 
     private:
         template<class Type>
@@ -88,6 +89,7 @@ namespace vcpkg::Json
             std::vector<JsonPathElement>& m_path;
         };
 
+        std::string m_origin;
         std::vector<JsonPathElement> m_path;
 
     public:

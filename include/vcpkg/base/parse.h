@@ -9,42 +9,7 @@
 
 #include <vcpkg/textrowcol.h>
 
-#include <memory>
 #include <string>
-
-namespace vcpkg
-{
-    struct ParseError
-    {
-        ParseError(std::string origin, int row, int column, int caret_col, std::string line, LocalizedString message)
-            : origin(std::move(origin))
-            , row(row)
-            , column(column)
-            , caret_col(caret_col)
-            , line(std::move(line))
-            , message(std::move(message))
-        {
-        }
-
-        const std::string origin;
-        const int row;
-        const int column;
-        const int caret_col;
-        const std::string line;
-        const LocalizedString message;
-
-        std::string to_string() const;
-    };
-
-    constexpr struct ParseErrorFormatter
-    {
-        LocalizedString operator()(const std::unique_ptr<ParseError>& up)
-        {
-            return LocalizedString::from_raw(up->to_string());
-        }
-    } parse_error_formatter;
-
-} // namespace vcpkg
 
 namespace vcpkg
 {
@@ -66,7 +31,7 @@ namespace vcpkg
 
     struct ParseMessages
     {
-        std::unique_ptr<ParseError> error;
+        Optional<LocalizedString> error;
         std::vector<ParseMessage> warnings;
 
         void exit_if_errors_or_warnings(StringView origin) const;
@@ -75,7 +40,7 @@ namespace vcpkg
 
     struct ParserBase
     {
-        ParserBase(StringView text, StringView origin, TextRowCol init_rowcol = {});
+        ParserBase(StringView text, Optional<StringView> origin, TextRowCol init_rowcol = {});
 
         static constexpr bool is_whitespace(char32_t ch) { return ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n'; }
         static constexpr bool is_lower_alpha(char32_t ch) { return ch >= 'a' && ch <= 'z'; }
@@ -141,8 +106,8 @@ namespace vcpkg
         void add_warning(LocalizedString&& message);
         void add_warning(LocalizedString&& message, const SourceLoc& loc);
 
-        const ParseError* get_error() const { return m_messages.error.get(); }
-        std::unique_ptr<ParseError> extract_error() { return std::move(m_messages.error); }
+        const LocalizedString* get_error() const& { return m_messages.error.get(); }
+        LocalizedString* get_error() && { return m_messages.error.get(); }
 
         const ParseMessages& messages() const { return m_messages; }
         ParseMessages&& extract_messages() { return std::move(m_messages); }
@@ -154,7 +119,7 @@ namespace vcpkg
         int m_column;
 
         StringView m_text;
-        StringView m_origin;
+        Optional<StringView> m_origin;
 
         ParseMessages m_messages;
     };

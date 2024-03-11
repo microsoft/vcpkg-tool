@@ -159,7 +159,7 @@ if (Test-Path $installedDir)
         const auto& vcpkg_root_path = paths.root;
         const auto raw_exported_dir_path = vcpkg_root_path / "chocolatey";
         const auto exported_dir_path = vcpkg_root_path / "chocolatey_exports";
-        const Path& nuget_exe = paths.get_tool_exe(Tools::NUGET, stdout_sink);
+        const Path& nuget_exe = paths.get_tool_exe(Tools::NUGET, out_sink);
 
         fs.remove_all(raw_exported_dir_path, VCPKG_LINE_INFO);
         fs.create_directory(raw_exported_dir_path, VCPKG_LINE_INFO);
@@ -217,14 +217,15 @@ if (Test-Path $installedDir)
             const auto chocolatey_uninstall_file_path = per_package_dir_path / "tools" / "chocolateyUninstall.ps1";
             fs.write_contents(chocolatey_uninstall_file_path, chocolatey_uninstall_content, VCPKG_LINE_INFO);
 
-            auto cmd_line = Command(nuget_exe)
-                                .string_arg("pack")
-                                .string_arg("-OutputDirectory")
-                                .string_arg(exported_dir_path)
-                                .string_arg(nuspec_file_path)
-                                .string_arg("-NoDefaultExcludes");
-
-            flatten(cmd_execute_and_capture_output(cmd_line, default_working_directory, get_clean_environment()),
+            RedirectedProcessLaunchSettings settings;
+            settings.environment = get_clean_environment();
+            flatten(cmd_execute_and_capture_output(Command(nuget_exe)
+                                                       .string_arg("pack")
+                                                       .string_arg("-OutputDirectory")
+                                                       .string_arg(exported_dir_path)
+                                                       .string_arg(nuspec_file_path)
+                                                       .string_arg("-NoDefaultExcludes"),
+                                                   settings),
                     Tools::NUGET)
                 .value_or_exit(VCPKG_LINE_INFO);
         }

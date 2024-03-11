@@ -2,6 +2,7 @@
 
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/chrono.h>
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/parallel-algorithms.h>
 #include <vcpkg/base/parse.h>
@@ -19,7 +20,7 @@ extern char** environ;
 #include <mach-o/dyld.h>
 #endif
 
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined(__OpenBSD__)
 extern char** environ;
 #include <sys/sysctl.h>
 #include <sys/wait.h>
@@ -250,11 +251,18 @@ namespace vcpkg
         Checks::check_exit(VCPKG_LINE_INFO, len > 0, "Could not determine current executable path.");
         return Path(exePath, len - 1);
 #elif defined(__OpenBSD__)
-        const char* progname = getprogname();
-        char resolved_path[PATH_MAX];
-        auto ret = realpath(progname, resolved_path);
-        Checks::check_exit(VCPKG_LINE_INFO, ret != nullptr, "Could not determine current executable path.");
-        return resolved_path;
+        int mib[4] = {CTL_KERN, KERN_PROC_ARGS, getpid(), KERN_PROC_ARGV};
+        size_t argc = 0;
+        auto argc_query = sysctl(mib, 4, nullptr, &argc, nullptr, 0);
+        Checks::check_exit(VCPKG_LINE_INFO, argc_query == 0, "Could not determine current executable path.");
+        Checks::check_exit(VCPKG_LINE_INFO, argc > 0, "Could not determine current executable path.");
+        std::vector<char*> argv(argc);
+        auto argv_query = sysctl(mib, 4, &argv[0], &argc, nullptr, 0);
+        Checks::check_exit(VCPKG_LINE_INFO, argv_query == 0, "Could not determine current executable path.");
+        char buf[PATH_MAX];
+        char* exePath(realpath(argv[0], buf));
+        Checks::check_exit(VCPKG_LINE_INFO, exePath != nullptr, "Could not determine current executable path.");
+        return Path(exePath);
 #else /* LINUX */
         char buf[1024 * 4] = {};
         auto written = readlink("/proc/self/exe", buf, sizeof(buf));
@@ -326,8 +334,8 @@ namespace
         }
         explicit operator bool() const noexcept { return snapshot != INVALID_HANDLE_VALUE; }
 
-        BOOL Process32First(PPROCESSENTRY32W entry) const noexcept { return Process32FirstW(snapshot, entry); }
-        BOOL Process32Next(PPROCESSENTRY32W entry) const noexcept { return Process32NextW(snapshot, entry); }
+        BOOL Process32First(PPROCESSENTRY32W entry) const noexcept { return ::Process32FirstW(snapshot, entry); }
+        BOOL Process32Next(PPROCESSENTRY32W entry) const noexcept { return ::Process32NextW(snapshot, entry); }
 
     private:
         HANDLE snapshot;
@@ -574,7 +582,7 @@ namespace vcpkg
             "GXDKLatest",
         };
 
-        const Optional<std::string> keep_vars = get_environment_variable("VCPKG_KEEP_ENV_VARS");
+        const Optional<std::string> keep_vars = get_environment_variable(EnvironmentVariableVcpkgKeepEnvVars);
         const auto k = keep_vars.get();
 
         if (k && !k->empty())
@@ -583,11 +591,11 @@ namespace vcpkg
 
             for (auto&& var : vars)
             {
-                if (Strings::case_insensitive_ascii_equals(var, "PATH"))
+                if (Strings::case_insensitive_ascii_equals(var, EnvironmentVariablePath))
                 {
                     new_path.assign(prepend_to_path.data(), prepend_to_path.size());
                     if (!new_path.empty()) new_path.push_back(';');
-                    new_path.append(get_environment_variable("PATH").value_or(""));
+                    new_path.append(get_environment_variable(EnvironmentVariablePath).value_or(""));
                 }
                 else
                 {
@@ -607,21 +615,22 @@ namespace vcpkg
             env.add_entry(env_string, *v);
         }
 
-        if (extra_env.find("PATH") != extra_env.end())
+        const auto path_iter = extra_env.find(EnvironmentVariablePath.to_string());
+        if (path_iter != extra_env.end())
         {
             new_path.push_back(';');
-            new_path += extra_env.find("PATH")->second;
+            new_path += path_iter->second;
         }
-        env.add_entry("PATH", new_path);
+        env.add_entry(EnvironmentVariablePath, new_path);
         // NOTE: we support VS's without the english language pack,
         // but we still want to default to english just in case your specific
         // non-standard build system doesn't support non-english
-        env.add_entry("VSLANG", "1033");
-        env.add_entry("VSCMD_SKIP_SENDTELEMETRY", "1");
+        env.add_entry(EnvironmentVariableVsLang, "1033");
+        env.add_entry(EnvironmentVariableVSCmdSkipSendTelemetry, "1");
 
         for (const auto& item : extra_env)
         {
-            if (item.first == "PATH") continue;
+            if (item.first == EnvironmentVariablePath) continue;
             env.add_entry(item.first, item.second);
         }
 
@@ -635,8 +644,10 @@ namespace vcpkg
         if (!prepend_to_path.empty())
         {
             env.add_entry(
-                "PATH",
-                Strings::concat(prepend_to_path, ':', get_environment_variable("PATH").value_or_exit(VCPKG_LINE_INFO)));
+                EnvironmentVariablePath,
+                Strings::concat(prepend_to_path,
+                                ':',
+                                get_environment_variable(EnvironmentVariablePath).value_or_exit(VCPKG_LINE_INFO)));
         }
 
         return env;
@@ -666,25 +677,21 @@ namespace vcpkg
         return clean_env;
     }
 
-    const WorkingDirectory default_working_directory;
-    const Environment default_environment;
-
-    std::vector<ExpectedL<ExitCodeAndOutput>> cmd_execute_and_capture_output_parallel(View<Command> cmd_lines,
-                                                                                      const WorkingDirectory& wd,
-                                                                                      const Environment& env)
+    std::vector<ExpectedL<ExitCodeAndOutput>> cmd_execute_and_capture_output_parallel(View<Command> commands)
     {
-        std::vector<ExpectedL<ExitCodeAndOutput>> res(cmd_lines.size(), LocalizedString{});
-
-        parallel_transform(cmd_lines, res.begin(), [&](const Command& cmd_line) {
-            return cmd_execute_and_capture_output(cmd_line, wd, env);
-        });
-
-        return res;
+        RedirectedProcessLaunchSettings default_redirected_process_launch_settings;
+        return cmd_execute_and_capture_output_parallel(commands, default_redirected_process_launch_settings);
     }
 
-    ExpectedL<int> cmd_execute_clean(const Command& cmd_line, const WorkingDirectory& wd)
+    std::vector<ExpectedL<ExitCodeAndOutput>> cmd_execute_and_capture_output_parallel(
+        View<Command> commands, const RedirectedProcessLaunchSettings& settings)
     {
-        return cmd_execute(cmd_line, wd, get_clean_environment());
+        std::vector<ExpectedL<ExitCodeAndOutput>> res(commands.size(), LocalizedString{});
+
+        parallel_transform(
+            commands, res.begin(), [&](const Command& cmd) { return cmd_execute_and_capture_output(cmd, settings); });
+
+        return res;
     }
 } // namespace vcpkg
 
@@ -723,36 +730,37 @@ namespace
         }
     };
 
-    /// <param name="maybe_environment">If non-null, an environment block to use for the new process. If null, the
-    /// new process will inherit the current environment.</param>
     ExpectedL<Unit> windows_create_process(std::int32_t debug_id,
                                            ProcessInfo& process_info,
-                                           StringView cmd_line,
-                                           const WorkingDirectory& wd,
-                                           const Environment& env,
+                                           StringView command_line,
+                                           const Optional<Path>& working_directory,
+                                           const Optional<Environment>& environment,
                                            BOOL bInheritHandles,
                                            DWORD dwCreationFlags,
                                            STARTUPINFOEXW& startup_info) noexcept
     {
-        Debug::print(fmt::format("{}: CreateProcessW({})\n", debug_id, cmd_line));
+        Debug::print(fmt::format("{}: CreateProcessW({})\n", debug_id, command_line));
 
         // Flush stdout before launching external process
         fflush(nullptr);
 
-        std::wstring working_directory;
-        if (!wd.working_directory.empty())
-        {
+        Optional<std::wstring> working_directory_wide = working_directory.map([](const Path& wd) {
             // this only fails if we can't get the current working directory of vcpkg, and we assume that we have that,
             // so it's fine anyways
-            working_directory = Strings::to_utf16(real_filesystem.absolute(wd.working_directory, VCPKG_LINE_INFO));
+            return Strings::to_utf16(real_filesystem.absolute(wd, VCPKG_LINE_INFO));
+        });
+
+        LPCWSTR working_directory_arg = nullptr;
+        if (auto wd = working_directory_wide.get())
+        {
+            working_directory_arg = wd->c_str();
         }
 
-        auto&& env_unpacked = env.get();
         std::wstring environment_block;
         LPVOID call_environment = nullptr;
-        if (!env_unpacked.empty())
+        if (auto env_unpacked = environment.get())
         {
-            environment_block = env_unpacked;
+            environment_block = env_unpacked->get();
             environment_block.push_back('\0');
             call_environment = environment_block.data();
         }
@@ -761,14 +769,14 @@ namespace
         // /analyze can't tell that we transferred ownership here
         VCPKG_MSVC_WARNING(suppress : 6335)
         if (!CreateProcessW(nullptr,
-                            Strings::to_utf16(cmd_line).data(),
+                            Strings::to_utf16(command_line).data(),
                             nullptr,
                             nullptr,
                             bInheritHandles,
                             IDLE_PRIORITY_CLASS | CREATE_UNICODE_ENVIRONMENT | EXTENDED_STARTUPINFO_PRESENT |
                                 dwCreationFlags,
                             call_environment,
-                            working_directory.empty() ? nullptr : working_directory.data(),
+                            working_directory_arg,
                             &startup_info.StartupInfo,
                             &process_info))
         {
@@ -1071,65 +1079,6 @@ namespace
             return child_exit_code;
         }
     };
-
-    ExpectedL<Unit> windows_create_process_redirect(std::int32_t debug_id,
-                                                    RedirectedProcessInfo& ret,
-                                                    StringView cmd_line,
-                                                    const WorkingDirectory& wd,
-                                                    const Environment& env,
-                                                    DWORD dwCreationFlags) noexcept
-    {
-        STARTUPINFOEXW startup_info_ex{};
-        startup_info_ex.StartupInfo.cb = sizeof(STARTUPINFOEXW);
-        startup_info_ex.StartupInfo.dwFlags |= STARTF_USESTDHANDLES;
-
-        // Create a pipe for the child process's STDIN.
-        auto stdin_create = ret.stdin_pipe.create(debug_id);
-        if (!stdin_create)
-        {
-            return std::move(stdin_create).error();
-        }
-
-        startup_info_ex.StartupInfo.hStdInput = ret.stdin_pipe.read_pipe;
-
-        // Create a pipe for the child process's STDOUT/STDERR.
-        auto stdout_create = ret.stdout_pipe.create();
-        if (!stdout_create)
-        {
-            return std::move(stdout_create).error();
-        }
-
-        startup_info_ex.StartupInfo.hStdOutput = ret.stdout_pipe.write_pipe;
-        startup_info_ex.StartupInfo.hStdError = ret.stdout_pipe.write_pipe;
-
-        ProcAttributeList proc_attribute_list;
-        auto proc_attribute_list_create = proc_attribute_list.create(1);
-        if (!proc_attribute_list_create)
-        {
-            return std::move(proc_attribute_list_create).error();
-        }
-
-        HANDLE handles_to_inherit[2] = {startup_info_ex.StartupInfo.hStdOutput, startup_info_ex.StartupInfo.hStdInput};
-        auto maybe_error = proc_attribute_list.update_attribute(
-            PROC_THREAD_ATTRIBUTE_HANDLE_LIST, handles_to_inherit, 2 * sizeof(HANDLE));
-        if (!maybe_error.has_value())
-        {
-            return maybe_error.error();
-        }
-        startup_info_ex.lpAttributeList = proc_attribute_list.get();
-
-        auto process_create =
-            windows_create_process(debug_id, ret.proc_info, cmd_line, wd, env, TRUE, dwCreationFlags, startup_info_ex);
-
-        if (!process_create)
-        {
-            return std::move(process_create).error();
-        }
-
-        close_handle_mark_invalid(ret.stdin_pipe.read_pipe);
-        close_handle_mark_invalid(ret.stdout_pipe.write_pipe);
-        return Unit{};
-    }
 #else // ^^^ _WIN32 // !_WIN32 vvv
     struct AnonymousPipe
     {
@@ -1247,15 +1196,19 @@ namespace
 namespace vcpkg
 {
 #if defined(_WIN32)
-    Environment cmd_execute_and_capture_environment(const Command& cmd_line, const Environment& env)
+    Environment cmd_execute_and_capture_environment(const Command& cmd, const Environment& env)
     {
         static StringLiteral magic_string = "cdARN4xjKueKScMy9C6H";
 
-        auto actual_cmd_line = cmd_line;
-        actual_cmd_line.raw_arg(Strings::concat(" & echo ", magic_string, " & set"));
+        Command actual_cmd = cmd;
+        actual_cmd.raw_arg(Strings::concat(" & echo ", magic_string, " & set"));
 
-        Debug::print("command line: ", actual_cmd_line.command_line(), "\n");
-        auto maybe_rc_output = cmd_execute_and_capture_output(actual_cmd_line, default_working_directory, env);
+        Debug::print("command line: ", actual_cmd.command_line(), "\n");
+
+        RedirectedProcessLaunchSettings settings;
+        settings.environment = env;
+        settings.create_new_console = CreateNewConsole::Yes;
+        auto maybe_rc_output = cmd_execute_and_capture_output(actual_cmd, settings);
         if (!maybe_rc_output)
         {
             Checks::msg_exit_with_error(
@@ -1324,10 +1277,10 @@ namespace vcpkg
         auto process_create = windows_create_process(debug_id,
                                                      process_info,
                                                      cmd_line.command_line(),
-                                                     default_working_directory,
-                                                     default_environment,
+                                                     nullopt,
+                                                     nullopt,
                                                      FALSE,
-                                                     CREATE_NEW_CONSOLE | CREATE_NO_WINDOW | CREATE_BREAKAWAY_FROM_JOB,
+                                                     CREATE_NEW_CONSOLE | CREATE_BREAKAWAY_FROM_JOB,
                                                      startup_info_ex);
         if (!process_create)
         {
@@ -1361,10 +1314,9 @@ namespace vcpkg
 #endif // ^^^ !_WIN32
     }
 
-    static ExpectedL<int> cmd_execute_impl(const int32_t debug_id,
-                                           const Command& cmd_line,
-                                           const WorkingDirectory& wd,
-                                           const Environment& env)
+    static ExpectedL<int> cmd_execute_impl(const Command& cmd,
+                                           const ProcessLaunchSettings& settings,
+                                           const int32_t debug_id)
     {
 #if defined(_WIN32)
         STARTUPINFOEXW startup_info_ex;
@@ -1391,14 +1343,20 @@ namespace vcpkg
             PROC_THREAD_ATTRIBUTE_HANDLE_LIST, handles_to_inherit, number_of_handles * sizeof(HANDLE));
         if (!maybe_error.has_value())
         {
-            return maybe_error.error();
+            return std::move(maybe_error).error();
         }
         startup_info_ex.lpAttributeList = proc_attribute_list.get();
 
         SpawnProcessGuard spawn_process_guard;
         ProcessInfo process_info;
-        auto process_create =
-            windows_create_process(debug_id, process_info, cmd_line.command_line(), wd, env, TRUE, 0, startup_info_ex);
+        auto process_create = windows_create_process(debug_id,
+                                                     process_info,
+                                                     cmd.command_line(),
+                                                     settings.working_directory,
+                                                     settings.environment,
+                                                     TRUE,
+                                                     0,
+                                                     startup_info_ex);
         if (!process_create)
         {
             return std::move(process_create).error();
@@ -1408,21 +1366,20 @@ namespace vcpkg
         if (long_exit_code > INT_MAX) long_exit_code = INT_MAX;
         return static_cast<int>(long_exit_code);
 #else
-        (void)env;
         Command real_command_line_builder;
-        if (!wd.working_directory.empty())
+        if (const auto wd = settings.working_directory.get())
         {
             real_command_line_builder.string_arg("cd");
-            real_command_line_builder.string_arg(wd.working_directory);
+            real_command_line_builder.string_arg(*wd);
             real_command_line_builder.raw_arg("&&");
         }
 
-        if (!env.get().empty())
+        if (const auto env = settings.environment.get())
         {
-            real_command_line_builder.raw_arg(env.get());
+            real_command_line_builder.raw_arg(env->get());
         }
 
-        real_command_line_builder.raw_arg(cmd_line.command_line());
+        real_command_line_builder.raw_arg(cmd.command_line());
 
         std::string real_command_line = std::move(real_command_line_builder).extract();
         Debug::print(fmt::format("{}: system({})\n", debug_id, real_command_line));
@@ -1432,11 +1389,17 @@ namespace vcpkg
 #endif
     }
 
-    ExpectedL<int> cmd_execute(const Command& cmd_line, const WorkingDirectory& wd, const Environment& env)
+    ExpectedL<int> cmd_execute(const Command& cmd)
+    {
+        ProcessLaunchSettings default_process_launch_settings;
+        return cmd_execute(cmd, default_process_launch_settings);
+    }
+
+    ExpectedL<int> cmd_execute(const Command& cmd, const ProcessLaunchSettings& settings)
     {
         const ElapsedTimer timer;
         const auto debug_id = debug_id_counter.fetch_add(1, std::memory_order_relaxed);
-        auto maybe_result = cmd_execute_impl(debug_id, cmd_line, wd, env);
+        auto maybe_result = cmd_execute_impl(cmd, settings, debug_id);
         const auto elapsed = timer.us_64();
         g_subprocess_stats += elapsed;
         if (auto result = maybe_result.get())
@@ -1452,16 +1415,19 @@ namespace vcpkg
         return maybe_result;
     }
 
-    ExpectedL<int> cmd_execute_and_stream_lines(const Command& cmd_line,
-                                                const std::function<void(StringView)>& per_line_cb,
-                                                const WorkingDirectory& wd,
-                                                const Environment& env,
-                                                Encoding encoding,
-                                                StringView stdin_content)
+    ExpectedL<int> cmd_execute_and_stream_lines(const Command& cmd, const std::function<void(StringView)>& per_line_cb)
+    {
+        RedirectedProcessLaunchSettings default_redirected_process_launch_settings;
+        return cmd_execute_and_stream_lines(cmd, default_redirected_process_launch_settings, per_line_cb);
+    }
+
+    ExpectedL<int> cmd_execute_and_stream_lines(const Command& cmd,
+                                                const RedirectedProcessLaunchSettings& settings,
+                                                const std::function<void(StringView)>& per_line_cb)
     {
         Strings::LinesStream lines;
-        auto rc = cmd_execute_and_stream_data(
-            cmd_line, [&](const StringView sv) { lines.on_data(sv, per_line_cb); }, wd, env, encoding, stdin_content);
+        auto rc =
+            cmd_execute_and_stream_data(cmd, settings, [&](const StringView sv) { lines.on_data(sv, per_line_cb); });
         lines.on_end(per_line_cb);
         return rc;
     }
@@ -1500,17 +1466,15 @@ namespace
     };
 #endif // ^^^ !_WIN32
 
-    ExpectedL<int> cmd_execute_and_stream_data_impl(const Command& cmd_line,
-                                                    uint32_t debug_id,
+    ExpectedL<int> cmd_execute_and_stream_data_impl(const Command& cmd,
+                                                    const RedirectedProcessLaunchSettings& settings,
                                                     const std::function<void(StringView)>& data_cb,
-                                                    const WorkingDirectory& wd,
-                                                    const Environment& env,
-                                                    Encoding encoding,
-                                                    StringView stdin_content)
+                                                    uint32_t debug_id)
     {
 #if defined(_WIN32)
         std::wstring as_utf16;
-        if (encoding == Encoding::Utf16)
+        StringView stdin_content = settings.stdin_content;
+        if (!stdin_content.empty() && settings.encoding == Encoding::Utf16)
         {
             as_utf16 = Strings::to_utf16(stdin_content);
             stdin_content =
@@ -1527,19 +1491,84 @@ namespace
 
         SpawnProcessGuard spawn_process_guard;
         RedirectedProcessInfo process_info;
-        auto process_create =
-            windows_create_process_redirect(debug_id, process_info, cmd_line.command_line(), wd, env, 0);
+        DWORD dwCreationFlags = 0;
+        STARTUPINFOEXW startup_info_ex{};
+        startup_info_ex.StartupInfo.cb = sizeof(STARTUPINFOEXW);
+        startup_info_ex.StartupInfo.dwFlags = STARTF_USESTDHANDLES;
+        switch (settings.create_new_console)
+        {
+            case CreateNewConsole::No: break;
+            case CreateNewConsole::Yes:
+                dwCreationFlags |= CREATE_NEW_CONSOLE;
+                startup_info_ex.StartupInfo.dwFlags |= STARTF_USESHOWWINDOW;
+                startup_info_ex.StartupInfo.wShowWindow = SW_HIDE;
+                break;
+            default: Checks::unreachable(VCPKG_LINE_INFO);
+        }
+
+        // Create a pipe for the child process's STDIN.
+        auto stdin_create = process_info.stdin_pipe.create(debug_id);
+        if (!stdin_create)
+        {
+            return std::move(stdin_create).error();
+        }
+
+        startup_info_ex.StartupInfo.hStdInput = process_info.stdin_pipe.read_pipe;
+
+        // Create a pipe for the child process's STDOUT/STDERR.
+        auto stdout_create = process_info.stdout_pipe.create();
+        if (!stdout_create)
+        {
+            return std::move(stdout_create).error();
+        }
+
+        startup_info_ex.StartupInfo.hStdOutput = process_info.stdout_pipe.write_pipe;
+        startup_info_ex.StartupInfo.hStdError = process_info.stdout_pipe.write_pipe;
+
+        ProcAttributeList proc_attribute_list;
+        auto proc_attribute_list_create = proc_attribute_list.create(1);
+        if (!proc_attribute_list_create)
+        {
+            return std::move(proc_attribute_list_create).error();
+        }
+
+        HANDLE handles_to_inherit[2] = {startup_info_ex.StartupInfo.hStdOutput, startup_info_ex.StartupInfo.hStdInput};
+        auto maybe_error = proc_attribute_list.update_attribute(
+            PROC_THREAD_ATTRIBUTE_HANDLE_LIST, handles_to_inherit, 2 * sizeof(HANDLE));
+        if (!maybe_error.has_value())
+        {
+            return std::move(maybe_error).error();
+        }
+        startup_info_ex.lpAttributeList = proc_attribute_list.get();
+
+        auto process_create = windows_create_process(debug_id,
+                                                     process_info.proc_info,
+                                                     cmd.command_line(),
+                                                     settings.working_directory,
+                                                     settings.environment,
+                                                     TRUE,
+                                                     dwCreationFlags,
+                                                     startup_info_ex);
+
         if (!process_create)
         {
             return std::move(process_create).error();
         }
 
+        close_handle_mark_invalid(process_info.stdin_pipe.read_pipe);
+        close_handle_mark_invalid(process_info.stdout_pipe.write_pipe);
+
         std::function<void(char*, size_t)> raw_cb;
-        switch (encoding)
+        switch (settings.encoding)
         {
             case Encoding::Utf8:
                 raw_cb = [&](char* buf, size_t bytes_read) {
                     std::replace(buf, buf + bytes_read, '\0', '?');
+                    if (settings.echo_in_debug == EchoInDebug::Show && Debug::g_debugging)
+                    {
+                        msg::write_unlocalized_text_to_stdout(Color::none, StringView{buf, bytes_read});
+                    }
+
                     data_cb(StringView{buf, bytes_read});
                 };
                 break;
@@ -1550,6 +1579,11 @@ namespace
                     std::string encoded;
                     Strings::to_utf8(encoded, reinterpret_cast<const wchar_t*>(buf), bytes_read / 2);
                     std::replace(encoded.begin(), encoded.end(), '\0', '?');
+                    if (settings.echo_in_debug == EchoInDebug::Show && Debug::g_debugging)
+                    {
+                        msg::write_unlocalized_text_to_stdout(Color::none, StringView{encoded});
+                    }
+
                     data_cb(StringView{encoded});
                 };
                 break;
@@ -1559,23 +1593,21 @@ namespace
         return process_info.wait_and_stream_output(debug_id, stdin_content.data(), stdin_content_size, raw_cb);
 #else  // ^^^ _WIN32 // !_WIN32 vvv
 
-        Checks::check_exit(VCPKG_LINE_INFO, encoding == Encoding::Utf8);
         std::string actual_cmd_line;
-        if (!wd.working_directory.empty())
+        if (auto wd = settings.working_directory.get())
         {
             actual_cmd_line.append("cd ");
-            append_shell_escaped(actual_cmd_line, wd.working_directory);
+            append_shell_escaped(actual_cmd_line, *wd);
             actual_cmd_line.append(" && ");
         }
 
-        const auto& env_text = env.get();
-        if (!env_text.empty())
+        if (auto env_unpacked = settings.environment.get())
         {
-            actual_cmd_line.append(env_text);
+            actual_cmd_line.append(env_unpacked->get());
             actual_cmd_line.push_back(' ');
         }
 
-        const auto unwrapped_to_execute = cmd_line.command_line();
+        const auto unwrapped_to_execute = cmd.command_line();
         actual_cmd_line.append(unwrapped_to_execute.data(), unwrapped_to_execute.size());
 
         Debug::print(fmt::format("{}: execute_process({})\n", debug_id, actual_cmd_line));
@@ -1631,8 +1663,8 @@ namespace
         close_mark_invalid(child_output.pipefd[1]);
 
         char buf[1024];
-        ChildStdinTracker stdin_tracker{stdin_content, 0};
-        if (stdin_content.empty())
+        ChildStdinTracker stdin_tracker{settings.stdin_content, 0};
+        if (settings.stdin_content.empty())
         {
             close_mark_invalid(child_input.pipefd[1]);
         }
@@ -1708,7 +1740,12 @@ namespace
                             Checks::unreachable(VCPKG_LINE_INFO);
                         }
 
-                        data_cb(StringView{buf, static_cast<size_t>(read_amount)});
+                        StringView this_read_data{buf, static_cast<size_t>(read_amount)};
+                        data_cb(this_read_data);
+                        if (settings.echo_in_debug == EchoInDebug::Show && Debug::g_debugging)
+                        {
+                            msg::write_unlocalized_text(Color::none, this_read_data);
+                        }
                     }
                 }
             }
@@ -1735,7 +1772,12 @@ namespace
                 break;
             }
 
-            data_cb(StringView{buf, static_cast<size_t>(read_amount)});
+            StringView this_read_data{buf, static_cast<size_t>(read_amount)};
+            data_cb(this_read_data);
+            if (settings.echo_in_debug == EchoInDebug::Show && Debug::g_debugging)
+            {
+                msg::write_unlocalized_text(Color::none, this_read_data);
+            }
         }
 
         return pid.wait_for_termination();
@@ -1745,17 +1787,19 @@ namespace
 
 namespace vcpkg
 {
-    ExpectedL<int> cmd_execute_and_stream_data(const Command& cmd_line,
-                                               const std::function<void(StringView)>& data_cb,
-                                               const WorkingDirectory& wd,
-                                               const Environment& env,
-                                               Encoding encoding,
-                                               StringView stdin_content)
+    ExpectedL<int> cmd_execute_and_stream_data(const Command& cmd, const std::function<void(StringView)>& data_cb)
+    {
+        RedirectedProcessLaunchSettings default_redirected_process_launch_settings;
+        return cmd_execute_and_stream_data(cmd, default_redirected_process_launch_settings, data_cb);
+    }
+
+    ExpectedL<int> cmd_execute_and_stream_data(const Command& cmd,
+                                               const RedirectedProcessLaunchSettings& settings,
+                                               const std::function<void(StringView)>& data_cb)
     {
         const ElapsedTimer timer;
         const auto debug_id = debug_id_counter.fetch_add(1, std::memory_order_relaxed);
-        auto maybe_exit_code =
-            cmd_execute_and_stream_data_impl(cmd_line, debug_id, data_cb, wd, env, encoding, stdin_content);
+        auto maybe_exit_code = cmd_execute_and_stream_data_impl(cmd, settings, data_cb, debug_id);
         const auto elapsed = timer.us_64();
         g_subprocess_stats += elapsed;
         if (const auto exit_code = maybe_exit_code.get())
@@ -1769,27 +1813,17 @@ namespace vcpkg
         return maybe_exit_code;
     }
 
-    ExpectedL<ExitCodeAndOutput> cmd_execute_and_capture_output(const Command& cmd_line,
-                                                                const WorkingDirectory& wd,
-                                                                const Environment& env,
-                                                                Encoding encoding,
-                                                                EchoInDebug echo_in_debug,
-                                                                StringView stdin_content)
+    ExpectedL<ExitCodeAndOutput> cmd_execute_and_capture_output(const Command& cmd)
+    {
+        RedirectedProcessLaunchSettings default_redirected_process_launch_settings;
+        return cmd_execute_and_capture_output(cmd, default_redirected_process_launch_settings);
+    }
+
+    ExpectedL<ExitCodeAndOutput> cmd_execute_and_capture_output(const Command& cmd,
+                                                                const RedirectedProcessLaunchSettings& settings)
     {
         std::string output;
-        return cmd_execute_and_stream_data(
-                   cmd_line,
-                   [&](StringView sv) {
-                       Strings::append(output, sv);
-                       if (echo_in_debug == EchoInDebug::Show && Debug::g_debugging)
-                       {
-                           msg::write_unlocalized_text_to_stdout(Color::none, sv);
-                       }
-                   },
-                   wd,
-                   env,
-                   encoding,
-                   stdin_content)
+        return cmd_execute_and_stream_data(cmd, settings, [&](StringView sv) { Strings::append(output, sv); })
             .map([&](int exit_code) {
                 return ExitCodeAndOutput{exit_code, std::move(output)};
             });
