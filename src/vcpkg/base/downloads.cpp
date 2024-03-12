@@ -664,10 +664,8 @@ namespace vcpkg
             });
             if (!res.get() || *res.get() != 0 || (code >= 100 && code < 200) || code >= 300)
             {
-                return msg::format_error(msgCurlFailedToPutHttp,
-                                         msg::exit_code = res.value_or(-1),
-                                         msg::url = url,
-                                         msg::value = code);
+                return msg::format_error(
+                    msgCurlFailedToPutHttp, msg::exit_code = res.value_or(-1), msg::url = url, msg::value = code);
             }
         }
 
