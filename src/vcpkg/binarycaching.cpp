@@ -910,8 +910,11 @@ namespace
 
             if (auto cacheId = reserve_cache_entry(request.spec.name(), abi, cache_size))
             {
-                std::vector<std::string> custom_headers{
-                    m_token_header, m_accept_header.to_string(), "Content-Type: application/octet-stream"};
+                const std::string custom_headers[] = {
+                    m_token_header,
+                    m_accept_header.to_string(),
+                    "Content-Type: application/octet-stream",
+                };
                 auto url = m_url + "/" + std::to_string(*cacheId.get());
 
                 if (patch_file(m_fs, url, custom_headers, zip_path, cache_size))
