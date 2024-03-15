@@ -444,7 +444,7 @@ jobs:
     # Do compliance checks.
     - task: APIScan@2
       env:
-        AzureServicesAuthConnectionString: runAs=App;AppId=$(ApiScanClientId);TenantId=$(ApiScanTenantId);AppKey=$(ApiScanSecret)
+        AzureServicesAuthConnectionString: RunAs=App;AppId=d318cba7-db4d-4fb3-99e1-01879cb74e91
       inputs:
         softwareFolder: '$(Build.ArtifactStagingDirectory)\drop'
         softwareName: 'vcpkg'
