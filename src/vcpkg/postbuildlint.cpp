@@ -709,11 +709,9 @@ namespace vcpkg
         return LintStatus::SUCCESS;
     }
 
-    static LintStatus check_no_dlls_present(const BuildPolicies& policies,
-                                            const std::vector<Path>& dlls,
-                                            MessageSink& msg_sink)
+    static LintStatus check_no_dlls_present(const std::vector<Path>& dlls, MessageSink& msg_sink)
     {
-        if (dlls.empty() || policies.is_enabled(BuildPolicy::DLLS_IN_STATIC_LIBRARY))
+        if (dlls.empty())
         {
             return LintStatus::SUCCESS;
         }
@@ -774,13 +772,10 @@ namespace vcpkg
         return LintStatus::SUCCESS;
     }
 
-    static LintStatus check_bin_folders_are_not_present_in_static_build(const BuildPolicies& policies,
-                                                                        const ReadOnlyFilesystem& fs,
+    static LintStatus check_bin_folders_are_not_present_in_static_build(const ReadOnlyFilesystem& fs,
                                                                         const Path& package_dir,
                                                                         MessageSink& msg_sink)
     {
-        if (policies.is_enabled(BuildPolicy::DLLS_IN_STATIC_LIBRARY)) return LintStatus::SUCCESS;
-
         const auto bin = package_dir / "bin";
         const auto debug_bin = package_dir / "debug" / "bin";
 
@@ -1245,19 +1240,10 @@ namespace vcpkg
 
         if (extension.empty())
         {
-            std::error_code ec;
-            ReadFilePointer read_file(file, ec);
-            if (ec) return false;
-            char buffer[5];
-            if (read_file.read(buffer, 1, sizeof(buffer)) < sizeof(buffer)) return false;
-            if (Strings::starts_with(StringView(buffer, sizeof(buffer)), "#!") ||
-                Strings::starts_with(StringView(buffer, sizeof(buffer)), "\xEF\xBB\xBF#!") /* ignore byte-order mark */)
-            {
-                const auto contents = fs.read_contents(file, IgnoreErrors{});
-                return Strings::contains_any_ignoring_hash_comments(contents, searcher_paths);
-            }
-            return false;
+            const auto contents = fs.best_effort_read_contents_if_shebang(file);
+            return Strings::contains_any_ignoring_hash_comments(contents, searcher_paths);
         }
+
         return false;
     }
 
@@ -1287,22 +1273,25 @@ namespace vcpkg
             string_paths, [](std::string& s) { return Strings::boyer_moore_horspool_searcher(s.begin(), s.end()); });
 
         std::vector<Path> failing_files;
-        std::mutex mtx;
-        auto files = fs.get_regular_files_recursive(dir, IgnoreErrors{});
+        {
+            std::mutex mtx;
+            auto files = fs.get_regular_files_recursive(dir, IgnoreErrors{});
 
-        parallel_for_each(files, [&](const Path& file) {
-            if (file_contains_absolute_paths(fs, file, searcher_paths))
-            {
-                std::lock_guard lock{mtx};
-                failing_files.push_back(file);
-            }
-        });
+            parallel_for_each(files, [&](const Path& file) {
+                if (file_contains_absolute_paths(fs, file, searcher_paths))
+                {
+                    std::lock_guard lock{mtx};
+                    failing_files.push_back(file);
+                }
+            });
+        } // destroy mtx
 
         if (failing_files.empty())
         {
             return LintStatus::SUCCESS;
         }
 
+        Util::sort(failing_files);
         auto error_message = msg::format(msgFilesContainAbsolutePath1);
         for (auto&& absolute_path : absolute_paths)
         {
@@ -1425,47 +1414,40 @@ namespace vcpkg
             error_count += perform_post_build_checks_dll_loads(fs, dlls_data, release_dlls, msg_sink);
             error_count += check_bad_kernel32_from_xbox(dlls_data, pre_build_info, msg_sink);
 
-            switch (build_info.library_linkage)
+            if (!pre_build_info.build_type &&
+                !build_info.policies.is_enabled(BuildPolicy::MISMATCHED_NUMBER_OF_BINARIES))
+                error_count += check_matching_debug_and_release_binaries(debug_dlls, release_dlls, msg_sink);
+
+            error_count += check_lib_files_are_available_if_dlls_are_available(
+                build_info.policies, debug_libs.size(), debug_dlls.size(), debug_lib_dir, msg_sink);
+            error_count += check_lib_files_are_available_if_dlls_are_available(
+                build_info.policies, release_libs.size(), release_dlls.size(), release_lib_dir, msg_sink);
+
+            error_count += check_exports_of_dlls(build_info.policies, dlls_data, msg_sink);
+            error_count += check_uwp_bit_of_dlls(pre_build_info.cmake_system_name, dlls_data, msg_sink);
+            error_count += check_outdated_crt_linkage_of_dlls(dlls_data, build_info, pre_build_info, msg_sink);
+            if (!build_info.policies.is_enabled(BuildPolicy::SKIP_ARCHITECTURE_CHECK))
             {
-                case LinkageType::Dynamic:
-                {
-                    if (!pre_build_info.build_type &&
-                        !build_info.policies.is_enabled(BuildPolicy::MISMATCHED_NUMBER_OF_BINARIES))
-                        error_count += check_matching_debug_and_release_binaries(debug_dlls, release_dlls, msg_sink);
-
-                    error_count += check_lib_files_are_available_if_dlls_are_available(
-                        build_info.policies, debug_libs.size(), debug_dlls.size(), debug_lib_dir, msg_sink);
-                    error_count += check_lib_files_are_available_if_dlls_are_available(
-                        build_info.policies, release_libs.size(), release_dlls.size(), release_lib_dir, msg_sink);
-
-                    error_count += check_exports_of_dlls(build_info.policies, dlls_data, msg_sink);
-                    error_count += check_uwp_bit_of_dlls(pre_build_info.cmake_system_name, dlls_data, msg_sink);
-                    error_count += check_outdated_crt_linkage_of_dlls(dlls_data, build_info, pre_build_info, msg_sink);
-                    if (!build_info.policies.is_enabled(BuildPolicy::SKIP_ARCHITECTURE_CHECK))
-                    {
-                        error_count += check_dll_architecture(pre_build_info.target_architecture, dlls_data, msg_sink);
-                    }
-                }
-                break;
-                case LinkageType::Static:
-                {
-                    auto& dlls = debug_dlls;
-                    dlls.insert(dlls.end(),
-                                std::make_move_iterator(release_dlls.begin()),
-                                std::make_move_iterator(release_dlls.end()));
-                    error_count += check_no_dlls_present(build_info.policies, dlls, msg_sink);
-                    error_count += check_bin_folders_are_not_present_in_static_build(
-                        build_info.policies, fs, package_dir, msg_sink);
-                    if (!build_info.policies.is_enabled(BuildPolicy::ONLY_RELEASE_CRT))
-                    {
-                        error_count += check_crt_linkage_of_libs(fs, build_info, false, debug_libs, msg_sink);
-                    }
-
-                    error_count += check_crt_linkage_of_libs(fs, build_info, true, release_libs, msg_sink);
-                    break;
-                }
-                default: Checks::unreachable(VCPKG_LINE_INFO);
+                error_count += check_dll_architecture(pre_build_info.target_architecture, dlls_data, msg_sink);
             }
+
+            if (build_info.library_linkage == LinkageType::Static &&
+                !build_info.policies.is_enabled(BuildPolicy::DLLS_IN_STATIC_LIBRARY))
+            {
+                auto& dlls = debug_dlls;
+                dlls.insert(dlls.end(),
+                            std::make_move_iterator(release_dlls.begin()),
+                            std::make_move_iterator(release_dlls.end()));
+                error_count += check_no_dlls_present(dlls, msg_sink);
+                error_count += check_bin_folders_are_not_present_in_static_build(fs, package_dir, msg_sink);
+            }
+
+            if (!build_info.policies.is_enabled(BuildPolicy::ONLY_RELEASE_CRT))
+            {
+                error_count += check_crt_linkage_of_libs(fs, build_info, false, debug_libs, msg_sink);
+            }
+
+            error_count += check_crt_linkage_of_libs(fs, build_info, true, release_libs, msg_sink);
         }
 
         error_count += check_no_empty_folders(fs, package_dir, msg_sink);

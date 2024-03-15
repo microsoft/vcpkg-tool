@@ -1,5 +1,6 @@
 #include <vcpkg/base/cache.h>
 #include <vcpkg/base/checks.h>
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/lazy.h>
@@ -733,14 +734,12 @@ namespace vcpkg
             return get_tool_pathversion(tool, status_sink).p;
         }
 
-        static constexpr StringLiteral s_env_vcpkg_force_system_binaries = "VCPKG_FORCE_SYSTEM_BINARIES";
-
         PathAndVersion get_path(const ToolProvider& tool, MessageSink& status_sink) const
         {
             const bool env_force_system_binaries =
-                get_environment_variable(s_env_vcpkg_force_system_binaries).has_value();
+                get_environment_variable(EnvironmentVariableVcpkgForceSystemBinaries).has_value();
             const bool env_force_download_binaries =
-                get_environment_variable("VCPKG_FORCE_DOWNLOADED_BINARIES").has_value();
+                get_environment_variable(EnvironmentVariableVcpkgForceDownloadedBinaries).has_value();
             const auto maybe_tool_data =
                 parse_tool_data_from_xml(get_config_contents(), xml_config, tool.tool_data_name());
 
@@ -843,7 +842,8 @@ namespace vcpkg
             if (env_force_system_binaries && download_available)
             {
                 s.append_raw(' ').append(msgDownloadAvailable,
-                                         msg::env_var = format_environment_variable(s_env_vcpkg_force_system_binaries));
+                                         msg::env_var =
+                                             format_environment_variable(EnvironmentVariableVcpkgForceSystemBinaries));
             }
             if (consider_system)
             {

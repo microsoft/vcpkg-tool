@@ -1,3 +1,4 @@
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/system.debug.h>
@@ -18,24 +19,16 @@ using namespace vcpkg;
 
 namespace
 {
-    constexpr StringLiteral OPTION_DRY_RUN = "dry-run";
-    constexpr StringLiteral OPTION_KEEP_GOING = "keep-going";
-    constexpr StringLiteral OPTION_ONLY_DOWNLOADS = "only-downloads";
-    constexpr StringLiteral OPTION_WRITE_PACKAGES_CONFIG = "x-write-nuget-packages-config";
-    constexpr StringLiteral OPTION_NO_PRINT_USAGE = "no-print-usage";
-    constexpr StringLiteral OPTION_ENFORCE_PORT_CHECKS = "enforce-port-checks";
-    constexpr StringLiteral OPTION_ALLOW_UNSUPPORTED_PORT = "allow-unsupported";
-
     constexpr CommandSwitch INSTALL_SWITCHES[] = {
-        {OPTION_DRY_RUN, msgCmdSetInstalledOptDryRun},
-        {OPTION_NO_PRINT_USAGE, msgCmdSetInstalledOptNoUsage},
-        {OPTION_ONLY_DOWNLOADS, msgHelpTxtOptOnlyDownloads},
-        {OPTION_ENFORCE_PORT_CHECKS, msgHelpTxtOptEnforcePortChecks},
-        {OPTION_ALLOW_UNSUPPORTED_PORT, msgHelpTxtOptAllowUnsupportedPort},
+        {SwitchDryRun, msgCmdSetInstalledOptDryRun},
+        {SwitchNoPrintUsage, msgCmdSetInstalledOptNoUsage},
+        {SwitchOnlyDownloads, msgHelpTxtOptOnlyDownloads},
+        {SwitchEnforcePortChecks, msgHelpTxtOptEnforcePortChecks},
+        {SwitchAllowUnsupported, msgHelpTxtOptAllowUnsupportedPort},
     };
 
     constexpr CommandSetting INSTALL_SETTINGS[] = {
-        {OPTION_WRITE_PACKAGES_CONFIG, msgCmdSetInstalledOptWritePkgConfig},
+        {SwitchXWriteNuGetPackagesConfig, msgCmdSetInstalledOptWritePkgConfig},
     };
 } // unnamed namespace
 
@@ -60,24 +53,25 @@ namespace vcpkg
             args.github_workflow.has_value() && args.github_run_id.has_value())
         {
             Json::Object detector;
-            detector.insert("name", Json::Value::string("vcpkg"));
-            detector.insert("url", Json::Value::string("https://github.com/microsoft/vcpkg"));
-            detector.insert("version", Json::Value::string("1.0.0"));
+            detector.insert(JsonIdName, Json::Value::string("vcpkg"));
+            detector.insert(JsonIdUrl, Json::Value::string("https://github.com/microsoft/vcpkg"));
+            detector.insert(JsonIdVersion, Json::Value::string("1.0.0"));
 
             Json::Object job;
-            job.insert("id", Json::Value::string(*args.github_run_id.get()));
-            job.insert("correlator", Json::Value::string(*args.github_workflow.get() + "-" + *args.github_job.get()));
+            job.insert(JsonIdId, Json::Value::string(*args.github_run_id.get()));
+            job.insert(JsonIdCorrelator,
+                       Json::Value::string(*args.github_workflow.get() + "-" + *args.github_job.get()));
 
             Json::Object snapshot;
-            snapshot.insert("job", job);
-            snapshot.insert("version", Json::Value::integer(0));
-            snapshot.insert("sha", Json::Value::string(*args.github_sha.get()));
-            snapshot.insert("ref", Json::Value::string(*args.github_ref.get()));
-            snapshot.insert("scanned", Json::Value::string(CTime::now_string()));
-            snapshot.insert("detector", detector);
+            snapshot.insert(JsonIdJob, job);
+            snapshot.insert(JsonIdVersion, Json::Value::integer(0));
+            snapshot.insert(JsonIdSha, Json::Value::string(*args.github_sha.get()));
+            snapshot.insert(JsonIdRef, Json::Value::string(*args.github_ref.get()));
+            snapshot.insert(JsonIdScanned, Json::Value::string(CTime::now_string()));
+            snapshot.insert(JsonIdDetector, detector);
 
             Json::Object manifest;
-            manifest.insert("name", "vcpkg.json");
+            manifest.insert(JsonIdName, FileVcpkgDotJson);
 
             std::unordered_map<std::string, std::string> map;
             for (auto&& action : action_plan.install_actions)
@@ -100,8 +94,8 @@ namespace vcpkg
                 if (map.find(action.spec.to_string()) != map.end())
                 {
                     auto pkg_url = map.at(action.spec.to_string());
-                    resolved_item.insert("package_url", pkg_url);
-                    resolved_item.insert("relationship", Json::Value::string("direct"));
+                    resolved_item.insert(JsonIdPackageUnderscoreUrl, pkg_url);
+                    resolved_item.insert(JsonIdRelationship, Json::Value::string(JsonIdDirect));
                     Json::Array deps_list;
                     for (auto&& dep : action.package_dependencies)
                     {
@@ -111,14 +105,14 @@ namespace vcpkg
                             deps_list.push_back(dep_pkg_url);
                         }
                     }
-                    resolved_item.insert("dependencies", deps_list);
+                    resolved_item.insert(JsonIdDependencies, deps_list);
                     resolved.insert(pkg_url, resolved_item);
                 }
             }
-            manifest.insert("resolved", resolved);
+            manifest.insert(JsonIdResolved, resolved);
             Json::Object manifests;
-            manifests.insert("vcpkg.json", manifest);
-            snapshot.insert("manifests", manifests);
+            manifests.insert(JsonIdVcpkgDotJson, manifest);
+            snapshot.insert(JsonIdManifests, manifests);
 
             Debug::print(Json::stringify(snapshot));
             return snapshot;
@@ -281,31 +275,21 @@ namespace vcpkg
     {
         // input sanitization
         const ParsedArguments options = args.parse_arguments(CommandSetInstalledMetadata);
-        bool default_triplet_used = false;
-        const std::vector<FullPackageSpec> specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
-            return check_and_get_full_package_spec(arg,
-                                                   default_triplet,
-                                                   default_triplet_used,
-                                                   CommandSetInstalledMetadata.get_example_text(),
-                                                   paths.get_triplet_db());
+        const std::vector<FullPackageSpec> specs = Util::fmap(options.command_arguments, [&](const std::string& arg) {
+            return check_and_get_full_package_spec(arg, default_triplet, paths.get_triplet_db())
+                .value_or_exit(VCPKG_LINE_INFO);
         });
 
-        if (default_triplet_used)
-        {
-            print_default_triplet_warning(args, paths.get_triplet_db());
-        }
-
-        const bool dry_run = Util::Sets::contains(options.switches, OPTION_DRY_RUN);
-        const bool only_downloads = Util::Sets::contains(options.switches, OPTION_ONLY_DOWNLOADS);
-        const KeepGoing keep_going = Util::Sets::contains(options.switches, OPTION_KEEP_GOING) || only_downloads
-                                         ? KeepGoing::YES
-                                         : KeepGoing::NO;
+        const bool dry_run = Util::Sets::contains(options.switches, SwitchDryRun);
+        const bool only_downloads = Util::Sets::contains(options.switches, SwitchOnlyDownloads);
+        const KeepGoing keep_going =
+            Util::Sets::contains(options.switches, SwitchKeepGoing) || only_downloads ? KeepGoing::YES : KeepGoing::NO;
         const PrintUsage print_cmake_usage =
-            Util::Sets::contains(options.switches, OPTION_NO_PRINT_USAGE) ? PrintUsage::No : PrintUsage::Yes;
-        const auto unsupported_port_action = Util::Sets::contains(options.switches, OPTION_ALLOW_UNSUPPORTED_PORT)
+            Util::Sets::contains(options.switches, SwitchNoPrintUsage) ? PrintUsage::No : PrintUsage::Yes;
+        const auto unsupported_port_action = Util::Sets::contains(options.switches, SwitchAllowUnsupported)
                                                  ? UnsupportedPortAction::Warn
                                                  : UnsupportedPortAction::Error;
-        const bool prohibit_backcompat_features = Util::Sets::contains(options.switches, (OPTION_ENFORCE_PORT_CHECKS));
+        const bool prohibit_backcompat_features = Util::Sets::contains(options.switches, (SwitchEnforcePortChecks));
 
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();
@@ -314,7 +298,7 @@ namespace vcpkg
         auto cmake_vars = CMakeVars::make_triplet_cmake_var_provider(paths);
 
         Optional<Path> pkgsconfig;
-        auto it_pkgsconfig = options.settings.find(OPTION_WRITE_PACKAGES_CONFIG);
+        auto it_pkgsconfig = options.settings.find(SwitchXWriteNuGetPackagesConfig);
         if (it_pkgsconfig != options.settings.end())
         {
             get_global_metrics_collector().track_define(DefineMetric::X_WriteNugetPackagesConfig);

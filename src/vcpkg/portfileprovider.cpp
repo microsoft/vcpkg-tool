@@ -173,6 +173,11 @@ namespace vcpkg
                 const auto& maybe_ent = entry(version_spec.port_name);
                 if (auto ent = maybe_ent.get())
                 {
+                    if (!ent->get())
+                    {
+                        return msg::format_error(msgPortDoesNotExist, msg::package_name = version_spec.port_name);
+                    }
+
                     auto maybe_path = ent->get()->get_version(version_spec.version);
                     if (auto path = maybe_path.get())
                     {
@@ -205,7 +210,7 @@ namespace vcpkg
                     else
                     {
                         get_global_metrics_collector().track_define(DefineMetric::VersioningErrorVersion);
-                        return maybe_path.error();
+                        return std::move(maybe_path).error();
                     }
                 }
 

@@ -1,5 +1,6 @@
 #include <vcpkg-test/util.h>
 
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/strings.h>
 
 #include <vcpkg/vcpkgcmdarguments.h>
@@ -161,7 +162,7 @@ TEST_CASE ("Combine asset cache params", "[arguments]")
     REQUIRE(v.asset_sources_template() == "x-azurl,value");
 
     std::map<StringLiteral, std::string, std::less<>> envmap = {
-        {VcpkgCmdArguments::ASSET_SOURCES_ENV, "x-azurl,value1"},
+        {EnvironmentVariableXVcpkgAssetSources, "x-azurl,value1"},
     };
     v = VcpkgCmdArguments::create_from_arg_sequence(nullptr, nullptr);
     v.imbue_from_fake_environment(envmap);
