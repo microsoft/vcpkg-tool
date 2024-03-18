@@ -4,94 +4,96 @@ namespace vcpkg
 {
     enum class BuildResult
     {
-        SUCCEEDED,
-        BUILD_FAILED,
-        POST_BUILD_CHECKS_FAILED,
-        FILE_CONFLICTS,
-        CASCADED_DUE_TO_MISSING_DEPENDENCIES,
-        EXCLUDED,
-        CACHE_MISSING,
-        DOWNLOADED,
-        REMOVED
+        Succeeded,
+        BuildFailed,
+        PostBuildChecksFailed,
+        FileConflicts,
+        CascadedDueToMissingDependencies,
+        Excluded,
+        CacheMissing,
+        Downloaded,
+        Removed
     };
 
     enum class UseHeadVersion
     {
-        NO = 0,
-        YES
+        No = 0,
+        Yes
     };
 
     enum class AllowDownloads
     {
-        NO = 0,
-        YES
+        No = 0,
+        Yes
     };
 
     enum class OnlyDownloads
     {
-        NO = 0,
-        YES
+        No = 0,
+        Yes
     };
 
     enum class CleanBuildtrees
     {
-        NO = 0,
-        YES
+        No = 0,
+        Yes
     };
 
     enum class CleanPackages
     {
-        NO = 0,
-        YES
+        No = 0,
+        Yes
     };
 
     enum class CleanDownloads
     {
-        NO = 0,
-        YES
+        No = 0,
+        Yes
     };
 
     enum class ConfigurationType
     {
-        DEBUG,
-        RELEASE,
+        Debug,
+        Release,
     };
 
     enum class DownloadTool
     {
-        BUILT_IN,
-        ARIA2,
+        Builtin,
+        Aria2,
     };
+
     enum class PurgeDecompressFailure
     {
-        NO = 0,
-        YES
+        No = 0,
+        Yes
     };
 
     enum class Editable
     {
-        NO = 0,
-        YES
+        No = 0,
+        Yes
     };
 
     enum class BackcompatFeatures
     {
-        ALLOW = 0,
-        PROHIBIT
+        Allow = 0,
+        Prohibit
     };
 
     enum class BuildMissing
     {
-        NO = 0,
-        YES
+        No = 0,
+        Yes
     };
 
     enum class PrintUsage
     {
-        YES = 0,
-        NO
+        No = 0,
+        Yes
     };
 
+    // These names are intended to match VCPKG_POLICY_Xxx constants settable in portfile.cmake
     enum class BuildPolicy
     {
         EMPTY_PACKAGE,

@@ -866,10 +866,7 @@ DECLARE_MESSAGE(CommandFailed,
                 "{command_line}\n"
                 "failed with the following results:")
 DECLARE_MESSAGE(CommunityTriplets, (), "", "Community Triplets:")
-DECLARE_MESSAGE(ComparingUtf8Decoders,
-                (),
-                "",
-                "Comparing Utf8Decoders with different provenance; this is always an error")
+DECLARE_MESSAGE(CompilerPath, (msg::path), "", "Compiler found: {path}")
 DECLARE_MESSAGE(CompressFolderFailed, (msg::path), "", "Failed to compress folder \"{path}\":")
 DECLARE_MESSAGE(ComputingInstallPlan, (), "", "Computing installation plan...")
 DECLARE_MESSAGE(ConfigurationErrorRegistriesWithoutBaseline,
@@ -901,7 +898,13 @@ DECLARE_MESSAGE(ControlAndManifestFilesPresent,
 DECLARE_MESSAGE(ControlCharacterInString, (), "", "Control character in string")
 DECLARE_MESSAGE(ControlSupportsMustBeAPlatformExpression, (), "", "\"Supports\" must be a platform expression")
 DECLARE_MESSAGE(CopyrightIsDir, (msg::path), "", "`{path}` being a directory is deprecated.")
-DECLARE_MESSAGE(CorruptedDatabase, (), "", "Database corrupted.")
+DECLARE_MESSAGE(CorruptedDatabase,
+                (),
+                "",
+                "vcpkg's installation database corrupted. This is either a bug in vcpkg or something else has modified "
+                "the contents of the 'installed' directory in an unexpected way. You may be able to fix this by "
+                "deleting the 'installed' directory and reinstalling what you want to use. If this problem happens "
+                "consistently, please file a bug at https://github.com/microsoft/vcpkg .")
 DECLARE_MESSAGE(CorruptedInstallTree, (), "", "Your vcpkg 'installed' tree is corrupted.")
 DECLARE_MESSAGE(CouldNotDeduceNugetIdAndVersion,
                 (msg::path),
@@ -984,14 +987,6 @@ DECLARE_MESSAGE(
 DECLARE_MESSAGE(DefaultFeatureIdentifier, (), "", "the names of default features must be identifiers")
 DECLARE_MESSAGE(DefaultFlag, (msg::option), "", "Defaulting to --{option} being on.")
 DECLARE_MESSAGE(DefaultRegistryIsArtifact, (), "", "The default registry cannot be an artifact registry.")
-DECLARE_MESSAGE(
-    DefaultTripletChanged,
-    (msg::triplet),
-    "The parts naming --triplet are command line switches that should be unlocalized. The space after the last "
-    "'triplet' and the period is intended to avoid the period looking like it's part of the command line switch",
-    "In the September 2023 release, the default triplet for vcpkg libraries changed from x86-windows to "
-    "the detected host triplet ({triplet}). For the old behavior, add --triplet x86-windows . To "
-    "suppress this message, add --triplet {triplet} .")
 DECLARE_MESSAGE(DeleteVcpkgConfigFromManifest,
                 (msg::path),
                 "",
@@ -1170,14 +1165,12 @@ DECLARE_MESSAGE(ExpectedDigitsAfterDecimal, (), "", "Expected digits after the d
 DECLARE_MESSAGE(ExpectedFailOrSkip, (), "", "expected 'fail', 'skip', or 'pass' here")
 DECLARE_MESSAGE(ExpectedFeatureListTerminal, (), "", "expected ',' or ']' in feature list")
 DECLARE_MESSAGE(ExpectedFeatureName, (), "", "expected feature name (must be lowercase, digits, '-')")
-DECLARE_MESSAGE(ExpectedEof, (), "", "expected eof")
 DECLARE_MESSAGE(ExpectedExplicitTriplet, (), "", "expected an explicit triplet")
 DECLARE_MESSAGE(ExpectedOneSetOfTags,
                 (msg::count, msg::old_value, msg::new_value, msg::value),
                 "{old_value} is a left tag and {new_value} is the right tag. {value} is the input.",
                 "Found {count} sets of {old_value}.*{new_value} but expected exactly 1, in block:\n{value}")
 DECLARE_MESSAGE(ExpectedOneVersioningField, (), "", "expected only one versioning field")
-DECLARE_MESSAGE(ExpectedPackageSpecifier, (), "", "expected a package specifier")
 DECLARE_MESSAGE(ExpectedPathToExist, (msg::path), "", "Expected {path} to exist after fetching")
 DECLARE_MESSAGE(ExpectedPortName, (), "", "expected a port name here (must be lowercase, digits, '-')")
 DECLARE_MESSAGE(ExpectedReadWriteReadWrite, (), "", "unexpected argument: expected 'read', readwrite', or 'write'")
@@ -1344,10 +1337,7 @@ DECLARE_MESSAGE(
     (),
     "",
     "Environment variable VCPKG_FORCE_SYSTEM_BINARIES must be set on arm, s390x, ppc64le and riscv platforms.")
-DECLARE_MESSAGE(FormattedParseMessageExpression,
-                (msg::value),
-                "Example of {value} is 'x64 & windows'",
-                "on expression: {value}")
+DECLARE_MESSAGE(FormattedParseMessageExpressionPrefix, (), "", "on expression:")
 DECLARE_MESSAGE(ForMoreHelp,
                 (),
                 "Printed before a suggestion for the user to run `vcpkg help <topic>`",
@@ -1698,11 +1688,11 @@ DECLARE_MESSAGE(
     "value {path}. To suppress this message, unset the environment variable or use the --vcpkg-root command line "
     "switch.")
 DECLARE_MESSAGE(IllegalFeatures, (), "", "List of features is not allowed in this context")
+DECLARE_MESSAGE(IllegalTriplet, (), "", "Triplet is not allowed in this context")
 DECLARE_MESSAGE(IllegalPlatformSpec, (), "", "Platform qualifier is not allowed in this context")
 DECLARE_MESSAGE(ImproperShaLength, (msg::value), "{value} is a sha.", "SHA512's must be 128 hex characters: {value}")
 DECLARE_MESSAGE(IncorrectArchiveFileSignature, (), "", "Incorrect archive file signature")
 DECLARE_MESSAGE(IncorrectPESignature, (), "", "Incorrect PE signature")
-DECLARE_MESSAGE(IncrementedUtf8Decoder, (), "", "Incremented Utf8Decoder at the end of the string")
 DECLARE_MESSAGE(InfoSetEnvVar,
                 (msg::env_var),
                 "In this context 'editor' means IDE",
@@ -1720,14 +1710,11 @@ DECLARE_MESSAGE(InstalledBy, (msg::path), "", "Installed by {path}")
 DECLARE_MESSAGE(InstalledPackages, (), "", "The following packages are already installed:")
 DECLARE_MESSAGE(InstalledRequestedPackages, (), "", "All requested packages are currently installed.")
 DECLARE_MESSAGE(InstallFailed, (msg::path, msg::error_msg), "", "failed: {path}: {error_msg}")
-DECLARE_MESSAGE(InstallingFromLocation,
-                (msg::path),
-                "'--' at the beginning must be preserved",
-                "-- Installing port from location: {path}")
 DECLARE_MESSAGE(InstallingMavenFile,
                 (msg::path),
                 "Printed after a filesystem operation error",
                 "{path} installing Maven file")
+DECLARE_MESSAGE(InstallingOverlayPort, (), "", "installing overlay port from here")
 DECLARE_MESSAGE(InstallingPackage,
                 (msg::action_index, msg::count, msg::spec),
                 "",
@@ -1876,10 +1863,7 @@ DECLARE_MESSAGE(InvalidCharacterInFeatureName,
                 (),
                 "",
                 "invalid character in feature name (must be lowercase, digits, '-')")
-DECLARE_MESSAGE(InvalidCharacterInPackageName,
-                (),
-                "",
-                "invalid character in package name (must be lowercase, digits, '-')")
+DECLARE_MESSAGE(InvalidCharacterInPortName, (), "", "invalid character in port name (must be lowercase, digits, '-')")
 DECLARE_MESSAGE(InvalidCodePoint, (), "", "Invalid code point passed to utf8_encoded_code_point_count")
 DECLARE_MESSAGE(InvalidCodeUnit, (), "", "invalid code unit")
 DECLARE_MESSAGE(InvalidCommandArgSort,
@@ -2020,18 +2004,16 @@ DECLARE_MESSAGE(LinkageDynamicRelease, (), "", "Dynamic Release (/MD)")
 DECLARE_MESSAGE(LinkageStaticDebug, (), "", "Static Debug (/MTd)")
 DECLARE_MESSAGE(LinkageStaticRelease, (), "", "Static Release (/MT)")
 DECLARE_MESSAGE(ListHelp, (), "", "Lists installed libraries")
-DECLARE_MESSAGE(LoadingCommunityTriplet,
-                (msg::path),
-                "'-- [COMMUNITY]' at the beginning must be preserved",
-                "-- [COMMUNITY] Loading triplet configuration from: {path}")
+DECLARE_MESSAGE(LoadedCommunityTriplet,
+                (),
+                "",
+                "loaded community triplet from here. Community triplets are not built in the curated registry and are "
+                "thus less likely to succeed.")
+DECLARE_MESSAGE(LoadedOverlayTriplet, (), "", "loaded overlay triplet from here")
 DECLARE_MESSAGE(LoadingDependencyInformation,
                 (msg::count),
                 "",
                 "Loading dependency information for {count} packages...")
-DECLARE_MESSAGE(LoadingOverlayTriplet,
-                (msg::path),
-                "'-- [OVERLAY]' at the beginning must be preserved",
-                "-- [OVERLAY] Loading triplet configuration from: {path}")
 DECLARE_MESSAGE(LocalPortfileVersion,
                 (),
                 "",
@@ -2241,6 +2223,13 @@ DECLARE_MESSAGE(ParseIdentifierError,
                 "\"{value}\" is not a valid identifier. "
                 "Identifiers must be lowercase alphanumeric+hypens and not reserved (see {url} for more information).")
 DECLARE_MESSAGE(
+    ParsePackageNameNotEof,
+    (msg::url),
+    "",
+    "expected the end of input parsing a package name; this usually means the indicated character is not allowed to be "
+    "in a port name. Port names are all lowercase alphanumeric+hypens and not reserved (see {url} for more "
+    "information).")
+DECLARE_MESSAGE(
     ParsePackageNameError,
     (msg::package_name, msg::url),
     "",
@@ -2252,6 +2241,16 @@ DECLARE_MESSAGE(ParsePackagePatternError,
                 "\"{package_name}\" is not a valid package pattern. "
                 "Package patterns must use only one wildcard character (*) and it must be the last character in "
                 "the pattern (see {url} for more information).")
+DECLARE_MESSAGE(
+    ParseQualifiedSpecifierNotEof,
+    (),
+    "",
+    "expected the end of input parsing a package spec; this usually means the indicated character is not allowed to be "
+    "in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hypens.")
+DECLARE_MESSAGE(ParseQualifiedSpecifierNotEofSquareBracket,
+                (msg::version_spec),
+                "",
+                "expected the end of input parsing a package spec; did you mean {version_spec} instead?")
 DECLARE_MESSAGE(PathMustBeAbsolute,
                 (msg::path),
                 "",
@@ -2675,7 +2674,6 @@ DECLARE_MESSAGE(UnexpectedEOFMidUnicodeEscape, (), "", "Unexpected end of file i
 DECLARE_MESSAGE(UnexpectedErrorDuringBulkDownload, (), "", "an unexpected error occurred during bulk download.")
 DECLARE_MESSAGE(UnexpectedEscapeSequence, (), "", "Unexpected escape sequence continuation")
 DECLARE_MESSAGE(UnexpectedExtension, (msg::extension), "", "Unexpected archive extension: '{extension}'.")
-DECLARE_MESSAGE(UnexpectedFeatureList, (), "", "unexpected list of features")
 DECLARE_MESSAGE(UnexpectedField, (msg::json_field), "", "unexpected field '{json_field}'")
 DECLARE_MESSAGE(UnexpectedFieldSuggest,
                 (msg::json_field, msg::value),
@@ -2689,7 +2687,6 @@ DECLARE_MESSAGE(UnexpectedOption,
                 (msg::option),
                 "Option is a command line option like --option=value",
                 "unexpected option: {option}")
-DECLARE_MESSAGE(UnexpectedPlatformExpression, (), "", "unexpected platform expression")
 DECLARE_MESSAGE(UnexpectedPortName,
                 (msg::expected, msg::actual, msg::path),
                 "{expected} is the expected port and {actual} is the port declared by the user.",
@@ -2718,7 +2715,7 @@ DECLARE_MESSAGE(UnknownBinaryProviderType,
                 (),
                 "",
                 "unknown binary provider type: valid providers are 'clear', 'default', 'nuget', "
-                "'nugetconfig','nugettimeout', 'interactive', 'x-azblob', 'x-gcs', 'x-aws', "
+                "'nugetconfig', 'nugettimeout', 'interactive', 'x-azblob', 'x-gcs', 'x-aws', "
                 "'x-aws-config', 'http', and 'files'")
 DECLARE_MESSAGE(UnknownBooleanSetting,
                 (msg::option, msg::value),
@@ -2856,10 +2853,6 @@ DECLARE_MESSAGE(UseEnvVar,
                 "-- Using {env_var} in environment variables.")
 DECLARE_MESSAGE(UserWideIntegrationDeleted, (), "", "User-wide integration is not installed.")
 DECLARE_MESSAGE(UserWideIntegrationRemoved, (), "", "User-wide integration was removed.")
-DECLARE_MESSAGE(UsingCommunityTriplet,
-                (msg::triplet),
-                "'--' at the beginning must be preserved",
-                "-- Using community triplet {triplet}. This triplet configuration is not guaranteed to succeed.")
 DECLARE_MESSAGE(UsingManifestAt, (msg::path), "", "Using manifest file at {path}.")
 DECLARE_MESSAGE(Utf8ConversionFailed, (), "", "Failed to convert to UTF-8")
 DECLARE_MESSAGE(VcpkgCeIsExperimental,

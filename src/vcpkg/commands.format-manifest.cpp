@@ -1,6 +1,7 @@
 #include <vcpkg/base/fwd/message_sinks.h>
 
 #include <vcpkg/base/checks.h>
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/system.debug.h>
@@ -32,7 +33,7 @@ namespace
         auto parsed_json_opt = Json::parse(contents, manifest_path);
         if (!parsed_json_opt)
         {
-            msg::println(Color::error, LocalizedString::from_raw(parsed_json_opt.error()->to_string()));
+            msg::println(Color::error, parsed_json_opt.error());
             return nullopt;
         }
 
@@ -154,12 +155,9 @@ namespace
         }
     }
 
-    constexpr StringLiteral OPTION_ALL = "all";
-    constexpr StringLiteral OPTION_CONVERT_CONTROL = "convert-control";
-
     constexpr CommandSwitch FORMAT_SWITCHES[] = {
-        {OPTION_ALL, msgCmdFormatManifestOptAll},
-        {OPTION_CONVERT_CONTROL, msgCmdFormatManifestOptConvertControl},
+        {SwitchAll, msgCmdFormatManifestOptAll},
+        {SwitchConvertControl, msgCmdFormatManifestOptConvertControl},
     };
 
 } // unnamed namespace
@@ -185,8 +183,8 @@ namespace vcpkg
         auto& fs = paths.get_filesystem();
         bool has_error = false;
 
-        const bool format_all = Util::Sets::contains(parsed_args.switches, OPTION_ALL);
-        const bool convert_control = Util::Sets::contains(parsed_args.switches, OPTION_CONVERT_CONTROL);
+        const bool format_all = Util::Sets::contains(parsed_args.switches, SwitchAll);
+        const bool convert_control = Util::Sets::contains(parsed_args.switches, SwitchConvertControl);
 
         if (!format_all && convert_control)
         {

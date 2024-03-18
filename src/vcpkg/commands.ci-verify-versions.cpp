@@ -1,6 +1,7 @@
 #include <vcpkg/base/fwd/message_sinks.h>
 
 #include <vcpkg/base/checks.h>
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/util.h>
@@ -15,14 +16,14 @@ using namespace vcpkg;
 
 namespace
 {
-    std::string get_scheme_name(VersionScheme scheme)
+    StringLiteral get_scheme_name(VersionScheme scheme)
     {
         switch (scheme)
         {
-            case VersionScheme::Relaxed: return "version";
-            case VersionScheme::Semver: return "version-semver";
-            case VersionScheme::String: return "version-string";
-            case VersionScheme::Date: return "version-date";
+            case VersionScheme::Relaxed: return JsonIdVersion;
+            case VersionScheme::Semver: return JsonIdVersionSemver;
+            case VersionScheme::String: return JsonIdVersionString;
+            case VersionScheme::Date: return JsonIdVersionDate;
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
@@ -210,17 +211,13 @@ namespace
         };
     }
 
-    constexpr StringLiteral OPTION_EXCLUDE = "exclude";
-    constexpr StringLiteral OPTION_VERBOSE = "verbose";
-    constexpr StringLiteral OPTION_VERIFY_GIT_TREES = "verify-git-trees";
-
     constexpr CommandSwitch VERIFY_VERSIONS_SWITCHES[]{
-        {OPTION_VERBOSE, msgCISettingsVerifyVersion},
-        {OPTION_VERIFY_GIT_TREES, msgCISettingsVerifyGitTree},
+        {SwitchVerbose, msgCISettingsVerifyVersion},
+        {SwitchVerifyGitTrees, msgCISettingsVerifyGitTree},
     };
 
     constexpr CommandSetting VERIFY_VERSIONS_SETTINGS[] = {
-        {OPTION_EXCLUDE, msgCISettingsExclude},
+        {SwitchExclude, msgCISettingsExclude},
     };
 } // unnamed namespace
 
@@ -242,16 +239,17 @@ namespace vcpkg
     {
         auto parsed_args = args.parse_arguments(CommandCiVerifyVersionsMetadata);
 
-        bool verbose = Util::Sets::contains(parsed_args.switches, OPTION_VERBOSE);
-        bool verify_git_trees = Util::Sets::contains(parsed_args.switches, OPTION_VERIFY_GIT_TREES);
+        bool verbose = Util::Sets::contains(parsed_args.switches, SwitchVerbose);
+        bool verify_git_trees = Util::Sets::contains(parsed_args.switches, SwitchVerifyGitTrees);
 
         std::set<std::string> exclusion_set;
         auto& settings = parsed_args.settings;
-        auto it_exclusions = settings.find(OPTION_EXCLUDE);
+        auto it_exclusions = settings.find(SwitchExclude);
         if (it_exclusions != settings.end())
         {
             auto exclusions = Strings::split(it_exclusions->second, ',');
-            exclusion_set.insert(exclusions.begin(), exclusions.end());
+            exclusion_set.insert(std::make_move_iterator(exclusions.begin()),
+                                 std::make_move_iterator(exclusions.end()));
         }
 
         auto maybe_port_git_tree_map = paths.git_get_local_port_treeish_map();

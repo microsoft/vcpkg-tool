@@ -14,8 +14,8 @@
             "name": "base",
             "hidden": true,
             "generator": "Ninja",
-            "binaryDir": "out\\build\\${presetName}",
-            "installDir": "out\\install\\${presetName}",
+            "binaryDir": "out/build/${presetName}",
+            "installDir": "out/install/${presetName}",
             "cacheVariables": {
                 "VCPKG_BUILD_BENCHMARKING": true,
                 "VCPKG_BUILD_FUZZING": true
