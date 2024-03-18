@@ -1,6 +1,7 @@
 #include <vcpkg/base/fwd/message_sinks.h>
 
 #include <vcpkg/base/checks.h>
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/strings.h>
@@ -237,12 +238,7 @@ namespace vcpkg
     }
 #endif // ^^^ _WIN32
 
-    static constexpr StringLiteral vcpkg_path_txt = "vcpkg.path.txt";
-
 #if defined(_WIN32)
-    static constexpr StringLiteral vcpkg_user_props = "vcpkg.user.props";
-    static constexpr StringLiteral vcpkg_user_targets = "vcpkg.user.targets";
-
     static bool integrate_install_msbuild14(const Filesystem& fs)
     {
         Path OLD_SYSTEM_TARGET_FILES[] = {
@@ -311,13 +307,13 @@ namespace vcpkg
 
         auto& user_configuration_home = get_user_configuration_home().value_or_exit(VCPKG_LINE_INFO);
         fs.create_directories(user_configuration_home, VCPKG_LINE_INFO);
-        fs.write_contents(user_configuration_home / vcpkg_path_txt, paths.root.generic_u8string(), VCPKG_LINE_INFO);
+        fs.write_contents(user_configuration_home / FileVcpkgPathTxt, paths.root.generic_u8string(), VCPKG_LINE_INFO);
 
 #if defined(_WIN32)
-        fs.write_contents(user_configuration_home / vcpkg_user_props,
+        fs.write_contents(user_configuration_home / FileVcpkgUserProps,
                           create_appdata_shortcut(paths.buildsystems_msbuild_props),
                           VCPKG_LINE_INFO);
-        fs.write_contents(user_configuration_home / vcpkg_user_targets,
+        fs.write_contents(user_configuration_home / FileVcpkgUserTargets,
                           create_appdata_shortcut(paths.buildsystems_msbuild_targets),
                           VCPKG_LINE_INFO);
 
@@ -341,10 +337,10 @@ namespace vcpkg
         bool was_deleted = false;
         auto& user_configuration_home = get_user_configuration_home().value_or_exit(VCPKG_LINE_INFO);
 #if defined(_WIN32)
-        was_deleted |= fs.remove(user_configuration_home / vcpkg_user_props, VCPKG_LINE_INFO);
-        was_deleted |= fs.remove(user_configuration_home / vcpkg_user_targets, VCPKG_LINE_INFO);
+        was_deleted |= fs.remove(user_configuration_home / FileVcpkgUserProps, VCPKG_LINE_INFO);
+        was_deleted |= fs.remove(user_configuration_home / FileVcpkgUserTargets, VCPKG_LINE_INFO);
 #endif // ^^^ _WIN32
-        was_deleted |= fs.remove(user_configuration_home / vcpkg_path_txt, VCPKG_LINE_INFO);
+        was_deleted |= fs.remove(user_configuration_home / FileVcpkgPathTxt, VCPKG_LINE_INFO);
 
         if (was_deleted)
         {

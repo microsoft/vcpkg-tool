@@ -1,4 +1,5 @@
 #include <vcpkg/base/api-stable-format.h>
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
@@ -247,7 +248,7 @@ namespace vcpkg
             // If the environment variable HTTPS_PROXY is set
             // use that variable as proxy. This situation might exist when user is in a company network
             // with restricted network/proxy settings
-            auto maybe_https_proxy_env = get_environment_variable("HTTPS_PROXY");
+            auto maybe_https_proxy_env = get_environment_variable(EnvironmentVariableHttpsProxy);
             if (auto p_https_proxy = maybe_https_proxy_env.get())
             {
                 std::wstring env_proxy_settings = Strings::to_utf16(*p_https_proxy);

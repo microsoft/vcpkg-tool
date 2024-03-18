@@ -1,3 +1,4 @@
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.remove.h>
@@ -139,16 +140,11 @@ namespace
         }
     }
 
-    constexpr StringLiteral OPTION_PURGE = "purge";
-    constexpr StringLiteral OPTION_RECURSE = "recurse";
-    constexpr StringLiteral OPTION_DRY_RUN = "dry-run";
-    constexpr StringLiteral OPTION_OUTDATED = "outdated";
-
     constexpr CommandSwitch SWITCHES[] = {
-        {OPTION_PURGE, {}},
-        {OPTION_RECURSE, msgCmdRemoveOptRecurse},
-        {OPTION_DRY_RUN, msgCmdRemoveOptDryRun},
-        {OPTION_OUTDATED, msgCmdRemoveOptOutdated},
+        {SwitchPurge, {}},
+        {SwitchRecurse, msgCmdRemoveOptRecurse},
+        {SwitchDryRun, msgCmdRemoveOptDryRun},
+        {SwitchOutdated, msgCmdRemoveOptOutdated},
     };
 
     std::vector<std::string> valid_arguments(const VcpkgPaths& paths)
@@ -188,7 +184,7 @@ namespace vcpkg
 
         StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
         std::vector<PackageSpec> specs;
-        if (Util::Sets::contains(options.switches, OPTION_OUTDATED))
+        if (Util::Sets::contains(options.switches, SwitchOutdated))
         {
             if (options.command_arguments.size() != 0)
             {
@@ -219,21 +215,14 @@ namespace vcpkg
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
-            bool default_triplet_used = false;
             specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
-                return parse_package_spec(
-                    arg, default_triplet, default_triplet_used, CommandRemoveMetadata.get_example_text());
+                return parse_package_spec(arg, default_triplet).value_or_exit(VCPKG_LINE_INFO);
             });
-
-            if (default_triplet_used)
-            {
-                print_default_triplet_warning(args, paths.get_triplet_db());
-            }
         }
 
-        const Purge purge = Util::Sets::contains(options.switches, OPTION_PURGE) ? Purge::YES : Purge::NO;
-        const bool is_recursive = Util::Sets::contains(options.switches, OPTION_RECURSE);
-        const bool dry_run = Util::Sets::contains(options.switches, OPTION_DRY_RUN);
+        const Purge purge = Util::Sets::contains(options.switches, SwitchPurge) ? Purge::YES : Purge::NO;
+        const bool is_recursive = Util::Sets::contains(options.switches, SwitchRecurse);
+        const bool dry_run = Util::Sets::contains(options.switches, SwitchDryRun);
 
         const auto plan = create_remove_plan(specs, status_db);
 
