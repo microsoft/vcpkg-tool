@@ -140,8 +140,6 @@ std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
                                     std::string document_namespace,
                                     std::vector<Json::Value>&& resource_docs)
 {
-    Checks::check_exit(VCPKG_LINE_INFO, relative_paths.size() == hashes.size());
-
     const auto& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
     const auto& cpgh = *scfl.source_control_file->core_paragraph;
     StringView abi{SpdxNone};

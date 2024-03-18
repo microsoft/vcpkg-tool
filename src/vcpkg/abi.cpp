@@ -1,5 +1,6 @@
 #include <vcpkg/base/cache.h>
 #include <vcpkg/base/checks.h>
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/lineinfo.h>
@@ -19,6 +20,7 @@
 #include <vcpkg/tools.h>
 #include <vcpkg/vcpkgpaths.h>
 
+#include <future>
 #include <mutex>
 #include <utility>
 #include <vector>
@@ -129,7 +131,7 @@ namespace vcpkg
 
         for (auto&& file : files)
         {
-            if (file.filename() == ".DS_Store")
+            if (file.filename() == FileDotDsStore)
             {
                 continue;
             }
@@ -174,7 +176,7 @@ namespace vcpkg
         // Check that no "default" feature is present. Default features must be resolved before attempting to calculate
         // a package ABI, so the "default" should not have made it here.
         const bool has_pseudo_features =
-            std::binary_search(sorted_feature_list.begin(), sorted_feature_list.end(), StringLiteral{"default"});
+            std::binary_search(sorted_feature_list.begin(), sorted_feature_list.end(), FeatureNameDefault);
         Checks::check_exit(VCPKG_LINE_INFO, !has_pseudo_features);
         Util::sort_unique_erase(sorted_feature_list);
 
@@ -182,7 +184,7 @@ namespace vcpkg
         // default" should have already been handled so "core" should be here.
         Checks::check_exit(
             VCPKG_LINE_INFO,
-            std::binary_search(sorted_feature_list.begin(), sorted_feature_list.end(), StringLiteral{"core"}));
+            std::binary_search(sorted_feature_list.begin(), sorted_feature_list.end(), FeatureNameCore));
 
         abi_entries.emplace_back("features", Strings::join(";", sorted_feature_list));
     }
@@ -230,12 +232,12 @@ namespace vcpkg
         abi_info.toolset.emplace(toolset);
 
         // return when using editable or head flags
-        if (action.build_options.use_head_version == UseHeadVersion::YES)
+        if (action.build_options.use_head_version == UseHeadVersion::Yes)
         {
             Debug::print("Binary caching for package ", action.spec, " is disabled due to --head\n");
             return;
         }
-        if (action.build_options.editable == Editable::YES)
+        if (action.build_options.editable == Editable::Yes)
         {
             Debug::print("Binary caching for package ", action.spec, " is disabled due to --editable\n");
             return;
@@ -271,8 +273,8 @@ namespace vcpkg
                                                 View<AbiEntry> common_abi,
                                                 View<AbiEntry> cmake_script_hashes)
     {
-        if (action.build_options.use_head_version == UseHeadVersion::YES ||
-            action.build_options.editable == Editable::YES)
+        if (action.build_options.use_head_version == UseHeadVersion::Yes ||
+            action.build_options.editable == Editable::Yes)
         {
             return nullopt;
         }
@@ -466,7 +468,7 @@ namespace vcpkg
         }
 
         // write abi tag file
-        fs.write_contents_and_dirs(dir / "vcpkg_abi_info.txt", *abi_tag_file_contents.get(), VCPKG_LINE_INFO);
+        fs.write_contents_and_dirs(dir / FileVcpkgAbiInfo, *abi_tag_file_contents.get(), VCPKG_LINE_INFO);
 
         // write sbom file
         fs.write_contents(std::move(dir) / "vcpkg.spdx.json", *sbom_file_contents.get(), VCPKG_LINE_INFO);
