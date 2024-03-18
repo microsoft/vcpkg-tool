@@ -92,7 +92,7 @@ namespace
         }
 
         Json::Object baseline_obj;
-        baseline_obj.insert("default", std::move(port_entries_obj));
+        baseline_obj.insert(JsonIdDefault, std::move(port_entries_obj));
         return baseline_obj;
     }
 
