@@ -182,9 +182,8 @@ namespace vcpkg
 
         // Check that the "core" feature is present. After resolution into InternalFeatureSet "core" meaning "not
         // default" should have already been handled so "core" should be here.
-        Checks::check_exit(
-            VCPKG_LINE_INFO,
-            std::binary_search(sorted_feature_list.begin(), sorted_feature_list.end(), FeatureNameCore));
+        Checks::check_exit(VCPKG_LINE_INFO,
+                           std::binary_search(sorted_feature_list.begin(), sorted_feature_list.end(), FeatureNameCore));
 
         abi_entries.emplace_back("features", Strings::join(";", sorted_feature_list));
     }
