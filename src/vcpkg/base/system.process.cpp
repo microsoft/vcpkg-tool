@@ -582,7 +582,7 @@ namespace vcpkg
             "GXDKLatest",
         };
 
-        const Optional<std::string> keep_vars = get_environment_variable("VCPKG_KEEP_ENV_VARS");
+        const Optional<std::string> keep_vars = get_environment_variable(EnvironmentVariableVcpkgKeepEnvVars);
         const auto k = keep_vars.get();
 
         if (k && !k->empty())
@@ -626,7 +626,7 @@ namespace vcpkg
         // but we still want to default to english just in case your specific
         // non-standard build system doesn't support non-english
         env.add_entry(EnvironmentVariableVsLang, "1033");
-        env.add_entry("VSCMD_SKIP_SENDTELEMETRY", "1");
+        env.add_entry(EnvironmentVariableVSCmdSkipSendTelemetry, "1");
 
         for (const auto& item : extra_env)
         {

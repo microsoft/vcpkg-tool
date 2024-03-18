@@ -8,6 +8,7 @@ namespace vcpkg
     {
         inline constexpr StringLiteral registries_url = "https://learn.microsoft.com/vcpkg/users/registries";
         inline constexpr StringLiteral manifests_url = "https://learn.microsoft.com/vcpkg/users/manifests";
+        inline constexpr StringLiteral package_name_url = "https://learn.microsoft.com/vcpkg/reference/vcpkg-json#name";
         inline constexpr StringLiteral assetcaching_url = "https://learn.microsoft.com/vcpkg/users/assetcaching";
         inline constexpr StringLiteral binarycaching_url = "https://learn.microsoft.com/vcpkg/users/binarycaching";
         inline constexpr StringLiteral versioning_url = "https://learn.microsoft.com/vcpkg/users/versioning";

@@ -414,6 +414,7 @@ namespace vcpkg
             return ExtendedBuildResult{BuildResult::Succeeded};
         }
 
+        bool all_dependencies_satisfied;
         if (plan_type == InstallPlanType::BUILD_AND_INSTALL)
         {
             std::unique_ptr<BinaryControlFile> bcf;
@@ -422,6 +423,7 @@ namespace vcpkg
                 auto maybe_bcf = Paragraphs::try_load_cached_package(
                     fs, action.package_dir.value_or_exit(VCPKG_LINE_INFO), action.spec);
                 bcf = std::make_unique<BinaryControlFile>(std::move(maybe_bcf).value_or_exit(VCPKG_LINE_INFO));
+                all_dependencies_satisfied = true;
             }
             else if (action.build_options.build_missing == BuildMissing::No)
             {
@@ -440,6 +442,7 @@ namespace vcpkg
                     return result;
                 }
 
+                all_dependencies_satisfied = result.unmet_dependencies.empty();
                 if (result.code != BuildResult::Succeeded)
                 {
                     LocalizedString warnings;
@@ -461,16 +464,23 @@ namespace vcpkg
             }
             // Build or restore succeeded and `bcf` is populated with the control file.
             Checks::check_exit(VCPKG_LINE_INFO, bcf != nullptr);
-
-            const auto install_result = install_package(paths, *bcf, &status_db);
             BuildResult code;
-            switch (install_result)
+            if (all_dependencies_satisfied)
             {
-                case InstallResult::SUCCESS: code = BuildResult::Succeeded; break;
-                case InstallResult::FILE_CONFLICTS: code = BuildResult::FileConflicts; break;
-                default: Checks::unreachable(VCPKG_LINE_INFO);
+                const auto install_result = install_package(paths, *bcf, &status_db);
+                switch (install_result)
+                {
+                    case InstallResult::SUCCESS: code = BuildResult::Succeeded; break;
+                    case InstallResult::FILE_CONFLICTS: code = BuildResult::FileConflicts; break;
+                    default: Checks::unreachable(VCPKG_LINE_INFO);
+                }
+                binary_cache.push_success(action);
             }
-            binary_cache.push_success(action);
+            else
+            {
+                Checks::check_exit(VCPKG_LINE_INFO, action.build_options.only_downloads == OnlyDownloads::Yes);
+                code = BuildResult::Downloaded;
+            }
 
             if (action.build_options.clean_downloads == CleanDownloads::Yes)
             {
@@ -1336,9 +1346,9 @@ namespace vcpkg
         PathsPortFileProvider provider(
             fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
 
-        const std::vector<FullPackageSpec> specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
-            return check_and_get_full_package_spec(
-                arg, default_triplet, CommandInstallMetadataClassic.get_example_text(), paths.get_triplet_db());
+        const std::vector<FullPackageSpec> specs = Util::fmap(options.command_arguments, [&](const std::string& arg) {
+            return check_and_get_full_package_spec(arg, default_triplet, paths.get_triplet_db())
+                .value_or_exit(VCPKG_LINE_INFO);
         });
 
         // create the plan

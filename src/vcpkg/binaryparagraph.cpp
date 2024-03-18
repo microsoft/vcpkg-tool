@@ -16,46 +16,57 @@ namespace vcpkg
                                  Triplet::from_canonical_name(parser.required_field(ParagraphIdArchitecture)));
 
         // one or the other
-        this->version.text = parser.optional_field(ParagraphIdVersion);
-        TextRowCol pv_position;
-        auto pv_str = parser.optional_field(ParagraphIdPortVersion, pv_position);
+        this->version.text = parser.optional_field_or_empty(ParagraphIdVersion);
+        auto maybe_port_version = parser.optional_field(ParagraphIdPortVersion);
+        auto port_version = maybe_port_version.get();
         this->version.port_version = 0;
-        if (!pv_str.empty())
+        if (port_version)
         {
-            auto pv_opt = Strings::strto<int>(pv_str);
+            auto pv_opt = Strings::strto<int>(port_version->first);
             if (auto pv = pv_opt.get())
             {
                 this->version.port_version = *pv;
             }
             else
             {
-                parser.add_error(pv_position, msgPortVersionControlMustBeANonNegativeInteger);
+                parser.add_error(port_version->second, msgPortVersionControlMustBeANonNegativeInteger);
             }
         }
 
-        this->feature = parser.optional_field(ParagraphIdFeature);
-        this->description = Strings::split(parser.optional_field(ParagraphIdDescription), '\n');
-        this->maintainers = Strings::split(parser.optional_field(ParagraphIdMaintainer), '\n');
+        this->feature = parser.optional_field_or_empty(ParagraphIdFeature);
+        this->description = Strings::split(parser.optional_field_or_empty(ParagraphIdDescription), '\n');
+        this->maintainers = Strings::split(parser.optional_field_or_empty(ParagraphIdMaintainer), '\n');
 
-        this->abi = parser.optional_field(ParagraphIdAbi);
+        this->abi = parser.optional_field_or_empty(ParagraphIdAbi);
 
         std::string multi_arch = parser.required_field(ParagraphIdMultiArch);
 
         Triplet my_triplet = this->spec.triplet();
-        this->dependencies = Util::fmap(
-            parse_qualified_specifier_list(parser.optional_field(ParagraphIdDepends)).value_or_exit(VCPKG_LINE_INFO),
-            [my_triplet](const ParsedQualifiedSpecifier& dep) {
-                // for compatibility with previous vcpkg versions, we discard all irrelevant information
-                return PackageSpec{
-                    dep.name,
-                    dep.triplet.map([](auto&& s) { return Triplet::from_canonical_name(std::string(s)); })
-                        .value_or(my_triplet),
-                };
-            });
+        auto maybe_depends_field = parser.optional_field(ParagraphIdDepends);
+        if (auto depends_field = maybe_depends_field.get())
+        {
+            this->dependencies = Util::fmap(
+                parse_qualified_specifier_list(std::move(depends_field->first), origin, depends_field->second)
+                    .value_or_exit(VCPKG_LINE_INFO),
+                [my_triplet](const ParsedQualifiedSpecifier& dep) {
+                    // for compatibility with previous vcpkg versions, we discard all irrelevant information
+                    return PackageSpec{
+                        dep.name,
+                        dep.triplet.map([](auto&& s) { return Triplet::from_canonical_name(std::string(s)); })
+                            .value_or(my_triplet),
+                    };
+                });
+        }
         if (!this->is_feature())
         {
-            this->default_features = parse_default_features_list(parser.optional_field(ParagraphIdDefaultFeatures))
-                                         .value_or_exit(VCPKG_LINE_INFO);
+            auto maybe_default_features_field = parser.optional_field(ParagraphIdDefaultFeatures);
+            if (auto default_features_field = maybe_default_features_field.get())
+            {
+                this->default_features = parse_default_features_list(std::move(default_features_field->first),
+                                                                     origin,
+                                                                     default_features_field->second)
+                                             .value_or_exit(VCPKG_LINE_INFO);
+            }
         }
 
         // This is leftover from a previous attempt to add "alias ports", not currently used.

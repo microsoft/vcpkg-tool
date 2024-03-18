@@ -21,40 +21,33 @@ static std::atomic<uint64_t> g_load_ports_stats(0);
 
 namespace vcpkg
 {
-    static Optional<std::pair<std::string, TextRowCol>> remove_field(Paragraph* fields, StringView fieldname)
+    Optional<FieldValue> ParagraphParser::optional_field(StringLiteral fieldname)
     {
-        auto it = fields->find(fieldname.to_string());
-        if (it == fields->end())
+        auto it = fields.find(fieldname.to_string());
+        if (it == fields.end())
         {
             return nullopt;
         }
 
         auto value = std::move(it->second);
-        fields->erase(it);
+        fields.erase(it);
         return value;
     }
 
-    std::string ParagraphParser::optional_field(StringLiteral fieldname, TextRowCol& position)
+    std::string ParagraphParser::optional_field_or_empty(StringLiteral fieldname)
     {
-        auto maybe_field = remove_field(&fields, fieldname);
+        auto maybe_field = optional_field(fieldname);
         if (auto field = maybe_field.get())
         {
-            position = field->second;
             return std::move(field->first);
         }
 
         return std::string();
     }
 
-    std::string ParagraphParser::optional_field(StringLiteral fieldname)
-    {
-        TextRowCol ignore;
-        return optional_field(fieldname, ignore);
-    }
-
     std::string ParagraphParser::required_field(StringLiteral fieldname)
     {
-        auto maybe_field = remove_field(&fields, fieldname);
+        auto maybe_field = optional_field(fieldname);
         if (const auto field = maybe_field.get())
         {
             return std::move(field->first);
@@ -167,7 +160,7 @@ namespace vcpkg
     }
 
     ExpectedL<std::vector<std::string>> parse_default_features_list(const std::string& str,
-                                                                    StringView origin,
+                                                                    Optional<StringView> origin,
                                                                     TextRowCol textrowcol)
     {
         auto parser = ParserBase(str, origin, textrowcol);
@@ -176,12 +169,15 @@ namespace vcpkg
         return {std::move(opt).value_or_exit(VCPKG_LINE_INFO), expected_left_tag};
     }
     ExpectedL<std::vector<ParsedQualifiedSpecifier>> parse_qualified_specifier_list(const std::string& str,
-                                                                                    StringView origin,
+                                                                                    Optional<StringView> origin,
                                                                                     TextRowCol textrowcol)
     {
         auto parser = ParserBase(str, origin, textrowcol);
-        auto opt = parse_list_until_eof<ParsedQualifiedSpecifier>(
-            msgExpectedDependenciesList, parser, [](ParserBase& parser) { return parse_qualified_specifier(parser); });
+        auto opt =
+            parse_list_until_eof<ParsedQualifiedSpecifier>(msgExpectedDependenciesList, parser, [](ParserBase& parser) {
+                return parse_qualified_specifier(
+                    parser, AllowFeatures::Yes, ParseExplicitTriplet::Allow, AllowPlatformSpec::Yes);
+            });
         if (!opt) return {LocalizedString::from_raw(parser.get_error()->to_string()), expected_right_tag};
 
         return {std::move(opt).value_or_exit(VCPKG_LINE_INFO), expected_left_tag};
@@ -192,30 +188,23 @@ namespace vcpkg
     {
         auto parser = ParserBase(str, origin, textrowcol);
         auto opt = parse_list_until_eof<Dependency>(msgExpectedDependenciesList, parser, [](ParserBase& parser) {
-            auto loc = parser.cur_loc();
-            return parse_qualified_specifier(parser).then([&](ParsedQualifiedSpecifier&& pqs) -> Optional<Dependency> {
-                if (const auto triplet = pqs.triplet.get())
-                {
-                    parser.add_error(msg::format(msgAddTripletExpressionNotAllowed,
-                                                 msg::package_name = pqs.name,
-                                                 msg::triplet = *triplet),
-                                     loc);
-                    return nullopt;
-                }
-                Dependency dependency{pqs.name, {}, pqs.platform.value_or({})};
-                for (const auto& feature : pqs.features.value_or({}))
-                {
-                    if (feature == FeatureNameCore)
+            return parse_qualified_specifier(
+                       parser, AllowFeatures::Yes, ParseExplicitTriplet::Forbid, AllowPlatformSpec::Yes)
+                .then([&](ParsedQualifiedSpecifier&& pqs) -> Optional<Dependency> {
+                    Dependency dependency{pqs.name, {}, pqs.platform.value_or({})};
+                    for (const auto& feature : pqs.features.value_or({}))
                     {
-                        dependency.default_features = false;
+                        if (feature == FeatureNameCore)
+                        {
+                            dependency.default_features = false;
+                        }
+                        else
+                        {
+                            dependency.features.push_back({feature});
+                        }
                     }
-                    else
-                    {
-                        dependency.features.push_back({feature});
-                    }
-                }
-                return dependency;
-            });
+                    return dependency;
+                });
         });
         if (!opt) return {LocalizedString::from_raw(parser.get_error()->to_string()), expected_right_tag};
 

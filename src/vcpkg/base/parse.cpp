@@ -90,7 +90,7 @@ namespace vcpkg
         }
     }
 
-    ParserBase::ParserBase(StringView text, StringView origin, TextRowCol init_rowcol)
+    ParserBase::ParserBase(StringView text, Optional<StringView> origin, TextRowCol init_rowcol)
         : m_it(text.begin(), text.end())
         , m_start_of_line(m_it)
         , m_row(init_rowcol.row_or(1))
@@ -98,6 +98,15 @@ namespace vcpkg
         , m_text(text)
         , m_origin(origin)
     {
+#ifndef NDEBUG
+        if (auto check_origin = origin.get())
+        {
+            if (check_origin->empty())
+            {
+                Checks::unreachable(VCPKG_LINE_INFO, "origin should not be empty");
+            }
+        }
+#endif
     }
 
     StringView ParserBase::skip_whitespace() { return match_while(is_whitespace); }
@@ -187,9 +196,9 @@ namespace vcpkg
         if (!m_messages.error)
         {
             auto& res = m_messages.error.emplace();
-            if (!m_origin.empty())
+            if (auto origin = m_origin.get())
             {
-                res.append_raw(fmt::format("{}:{}:{}: ", m_origin, loc.row, loc.column));
+                res.append_raw(fmt::format("{}:{}:{}: ", *origin, loc.row, loc.column));
             }
 
             res.append_raw(ErrorPrefix);

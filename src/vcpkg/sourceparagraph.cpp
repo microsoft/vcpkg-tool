@@ -296,87 +296,95 @@ namespace vcpkg
         spgh->name = parser.required_field(ParagraphIdSource);
         spgh->version.text = parser.required_field(ParagraphIdVersion);
 
-        TextRowCol pv_position;
-        auto pv_str = parser.optional_field(ParagraphIdPortVersion, pv_position);
-        if (!pv_str.empty())
+        auto maybe_port_version_field = parser.optional_field(ParagraphIdPortVersion);
+        auto port_version_field = maybe_port_version_field.get();
+        if (port_version_field && !port_version_field->first.empty())
         {
-            auto pv_opt = Strings::strto<int>(pv_str);
+            auto pv_opt = Strings::strto<int>(port_version_field->first);
             if (auto pv = pv_opt.get())
             {
                 spgh->version.port_version = *pv;
             }
             else
             {
-                parser.add_error(pv_position, msgPortVersionControlMustBeANonNegativeInteger);
+                parser.add_error(port_version_field->second, msgPortVersionControlMustBeANonNegativeInteger);
             }
         }
 
-        spgh->description = Strings::split(parser.optional_field(ParagraphIdDescription), '\n');
+        spgh->description = Strings::split(parser.optional_field_or_empty(ParagraphIdDescription), '\n');
         trim_all(spgh->description);
 
-        spgh->maintainers = Strings::split(parser.optional_field(ParagraphIdMaintainer), '\n');
+        spgh->maintainers = Strings::split(parser.optional_field_or_empty(ParagraphIdMaintainer), '\n');
         trim_all(spgh->maintainers);
 
-        spgh->homepage = parser.optional_field(ParagraphIdHomepage);
-        TextRowCol textrowcol;
-        std::string buf = parser.optional_field(ParagraphIdBuildDepends, textrowcol);
-
-        auto maybe_dependencies = parse_dependencies_list(buf, origin, textrowcol);
-        if (const auto dependencies = maybe_dependencies.get())
+        spgh->homepage = parser.optional_field_or_empty(ParagraphIdHomepage);
+        auto maybe_build_depends_field = parser.optional_field(ParagraphIdBuildDepends);
+        auto build_depends_field = maybe_build_depends_field.get();
+        if (build_depends_field && !build_depends_field->first.empty())
         {
-            spgh->dependencies = *dependencies;
-        }
-        else
-        {
-            return std::move(maybe_dependencies).error();
-        }
-
-        buf = parser.optional_field(ParagraphIdDefaultFeatures, textrowcol);
-
-        auto maybe_default_features = parse_default_features_list(buf, origin, textrowcol);
-        if (const auto default_features = maybe_default_features.get())
-        {
-            for (auto&& default_feature : *default_features)
+            auto maybe_dependencies =
+                parse_dependencies_list(std::move(build_depends_field->first), origin, build_depends_field->second);
+            if (const auto dependencies = maybe_dependencies.get())
             {
-                if (default_feature == FeatureNameCore)
-                {
-                    return msg::format_error(msgDefaultFeatureCore);
-                }
-
-                if (default_feature == FeatureNameDefault)
-                {
-                    return msg::format_error(msgDefaultFeatureDefault);
-                }
-
-                if (!Json::IdentifierDeserializer::is_ident(default_feature))
-                {
-                    return msg::format_error(msgDefaultFeatureIdentifier)
-                        .append_raw('\n')
-                        .append_raw(NotePrefix)
-                        .append(msgParseIdentifierError, msg::value = default_feature, msg::url = docs::manifests_url);
-                }
-
-                spgh->default_features.push_back({std::move(default_feature)});
+                spgh->dependencies = *dependencies;
+            }
+            else
+            {
+                return std::move(maybe_dependencies).error();
             }
         }
-        else
+
+        auto maybe_default_features_field = parser.optional_field(ParagraphIdDefaultFeatures);
+        auto default_features_field = maybe_default_features_field.get();
+        if (default_features_field && !default_features_field->first.empty())
         {
-            return std::move(maybe_default_features).error();
+            auto maybe_default_features = parse_default_features_list(
+                std::move(default_features_field->first), origin, default_features_field->second);
+            if (const auto default_features = maybe_default_features.get())
+            {
+                for (auto&& default_feature : *default_features)
+                {
+                    if (default_feature == FeatureNameCore)
+                    {
+                        return msg::format_error(msgDefaultFeatureCore);
+                    }
+
+                    if (default_feature == FeatureNameDefault)
+                    {
+                        return msg::format_error(msgDefaultFeatureDefault);
+                    }
+
+                    if (!Json::IdentifierDeserializer::is_ident(default_feature))
+                    {
+                        return msg::format_error(msgDefaultFeatureIdentifier)
+                            .append_raw('\n')
+                            .append_raw(NotePrefix)
+                            .append(
+                                msgParseIdentifierError, msg::value = default_feature, msg::url = docs::manifests_url);
+                    }
+
+                    spgh->default_features.push_back({std::move(default_feature)});
+                }
+            }
+            else
+            {
+                return std::move(maybe_default_features).error();
+            }
         }
 
-        TextRowCol supports_position;
-        auto supports_text = parser.optional_field(ParagraphIdSupports, supports_position);
-        if (!supports_text.empty())
+        auto maybe_supports_field = parser.optional_field(ParagraphIdSupports);
+        auto supports_field = maybe_supports_field.get();
+        if (supports_field && !supports_field->first.empty())
         {
             auto maybe_expr = PlatformExpression::parse_platform_expression(
-                supports_text, PlatformExpression::MultipleBinaryOperators::Allow);
+                std::move(supports_field->first), PlatformExpression::MultipleBinaryOperators::Allow);
             if (auto expr = maybe_expr.get())
             {
                 spgh->supports_expression = std::move(*expr);
             }
             else
             {
-                parser.add_error(supports_position, msgControlSupportsMustBeAPlatformExpression);
+                parser.add_error(supports_field->second, msgControlSupportsMustBeAPlatformExpression);
             }
         }
 
@@ -401,14 +409,20 @@ namespace vcpkg
         fpgh->description = Strings::split(parser.required_field(ParagraphIdDescription), '\n');
         trim_all(fpgh->description);
 
-        auto maybe_dependencies = parse_dependencies_list(parser.optional_field(ParagraphIdBuildDepends), origin);
-        if (maybe_dependencies.has_value())
+        auto maybe_dependencies_field = parser.optional_field(ParagraphIdBuildDepends);
+        auto dependencies_field = maybe_dependencies_field.get();
+        if (dependencies_field && !dependencies_field->first.empty())
         {
-            fpgh->dependencies = maybe_dependencies.value_or_exit(VCPKG_LINE_INFO);
-        }
-        else
-        {
-            return std::move(maybe_dependencies).error();
+            auto maybe_dependencies =
+                parse_dependencies_list(std::move(dependencies_field->first), origin, dependencies_field->second);
+            if (auto dependencies = maybe_dependencies.get())
+            {
+                fpgh->dependencies = std::move(*dependencies);
+            }
+            else
+            {
+                return std::move(maybe_dependencies).error();
+            }
         }
 
         auto maybe_error = parser.error();
@@ -960,7 +974,7 @@ namespace vcpkg
         // but with whitespace normalized
         virtual Optional<std::string> visit_string(Json::Reader& r, StringView sv) const override
         {
-            auto parser = SpdxLicenseExpressionParser(sv, "");
+            auto parser = SpdxLicenseExpressionParser(sv, r.origin());
             auto res = parser.parse();
 
             for (const auto& warning : parser.messages().warnings)
