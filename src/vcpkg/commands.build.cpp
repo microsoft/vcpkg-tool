@@ -1159,6 +1159,22 @@ namespace vcpkg
         constexpr int max_port_file_count = 100;
 
         std::string portfile_cmake_contents;
+        std::vector<Path> files;
+        std::vector<std::string> hashes;
+
+        size_t i = 0;
+        for (auto& filestr : abi_info.pre_build_info->hash_additional_files)
+        {
+            Path file(filestr);
+            if (file.is_relative() || !fs.is_regular_file(file))
+            {
+                Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgInvalidValueHashAdditionalFiles, msg::path = file);
+            }
+            const auto hash =
+                vcpkg::Hash::get_file_hash(fs, file, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO);
+            abi_tag_entries.emplace_back(fmt::format("additional_file_{}", i++), hash);
+        }
+
         auto&& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
         auto port_dir = scfl.port_directory();
         auto raw_files = fs.get_regular_files_recursive_lexically_proximate(port_dir, VCPKG_LINE_INFO);
@@ -1168,8 +1184,6 @@ namespace vcpkg
                 msgHashPortManyFiles, msg::package_name = action.spec.name(), msg::count = raw_files.size());
         }
 
-        std::vector<Path> files;         // will be port_files without .DS_Store entries
-        std::vector<std::string> hashes; // will be corresponding hashes
         for (auto& port_file : raw_files)
         {
             if (port_file.filename() == FileDotDsStore)
@@ -1776,6 +1790,7 @@ namespace vcpkg
             PUBLIC_ABI_OVERRIDE,
             LOAD_VCVARS_ENV,
             DISABLE_COMPILER_TRACKING,
+            HASH_ADDITIONAL_FILES,
             XBOX_CONSOLE_TARGET,
             Z_VCPKG_GameDKLatest
         };
@@ -1792,6 +1807,7 @@ namespace vcpkg
             {CMakeVariableEnvPassthrough, VcpkgTripletVar::ENV_PASSTHROUGH},
             {CMakeVariableEnvPassthroughUntracked, VcpkgTripletVar::ENV_PASSTHROUGH_UNTRACKED},
             {CMakeVariablePublicAbiOverride, VcpkgTripletVar::PUBLIC_ABI_OVERRIDE},
+            {CMakeVariableHashAdditionalFiles, VcpkgTripletVar::HASH_ADDITIONAL_FILES},
             // Note: this value must come after CMakeVariableChainloadToolchainFile because its default depends upon it.
             {CMakeVariableLoadVcvarsEnv, VcpkgTripletVar::LOAD_VCVARS_ENV},
             {CMakeVariableDisableCompilerTracking, VcpkgTripletVar::DISABLE_COMPILER_TRACKING},
@@ -1840,6 +1856,9 @@ namespace vcpkg
                     break;
                 case VcpkgTripletVar::PUBLIC_ABI_OVERRIDE:
                     public_abi_override = variable_value.empty() ? nullopt : Optional<std::string>{variable_value};
+                    break;
+                case VcpkgTripletVar::HASH_ADDITIONAL_FILES:
+                    hash_additional_files = Strings::split(variable_value, ';');
                     break;
                 case VcpkgTripletVar::LOAD_VCVARS_ENV:
                     if (variable_value.empty())
