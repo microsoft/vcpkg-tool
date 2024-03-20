@@ -1,4 +1,5 @@
 #include <vcpkg/base/api-stable-format.h>
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
@@ -247,7 +248,7 @@ namespace vcpkg
             // If the environment variable HTTPS_PROXY is set
             // use that variable as proxy. This situation might exist when user is in a company network
             // with restricted network/proxy settings
-            auto maybe_https_proxy_env = get_environment_variable("HTTPS_PROXY");
+            auto maybe_https_proxy_env = get_environment_variable(EnvironmentVariableHttpsProxy);
             if (auto p_https_proxy = maybe_https_proxy_env.get())
             {
                 std::wstring env_proxy_settings = Strings::to_utf16(*p_https_proxy);
@@ -959,20 +960,21 @@ namespace vcpkg
                     const auto escaped_url = Command(urls[0]).extract();
                     const auto escaped_sha512 = Command(*hash).extract();
                     const auto escaped_dpath = Command(download_path_part_path).extract();
-                    auto cmd = Command{api_stable_format(*script, [&](std::string& out, StringView key) {
-                                           if (key == "url")
-                                           {
-                                               Strings::append(out, escaped_url);
-                                           }
-                                           else if (key == "sha512")
-                                           {
-                                               Strings::append(out, escaped_sha512);
-                                           }
-                                           else if (key == "dst")
-                                           {
-                                               Strings::append(out, escaped_dpath);
-                                           }
-                                       }).value_or_exit(VCPKG_LINE_INFO)};
+                    Command cmd;
+                    cmd.raw_arg(api_stable_format(*script, [&](std::string& out, StringView key) {
+                                    if (key == "url")
+                                    {
+                                        Strings::append(out, escaped_url);
+                                    }
+                                    else if (key == "sha512")
+                                    {
+                                        Strings::append(out, escaped_sha512);
+                                    }
+                                    else if (key == "dst")
+                                    {
+                                        Strings::append(out, escaped_dpath);
+                                    }
+                                }).value_or_exit(VCPKG_LINE_INFO));
 
                     RedirectedProcessLaunchSettings settings;
                     settings.environment = get_clean_environment();

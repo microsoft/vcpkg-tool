@@ -572,7 +572,7 @@
   "FollowingPackagesUpgraded": "下列套件是最新的:",
   "ForMoreHelp": "更多協助",
   "ForceSystemBinariesOnWeirdPlatforms": "環境變數 VCPKG_FORCE_SYSTEM_BINARIES 必須在 s390x、ppc64le 和 riscv 平台上設定。",
-  "FormattedParseMessageExpressionPrefix": "on expression:",
+  "FormattedParseMessageExpressionPrefix": "在運算式上:",
   "GHAParametersMissing": "GHA 二進位來源需要設定 ACTIONS_RUNTIME_TOKEN 和 ACTIONS_CACHE_URL 環境變數。如需詳細資料，請參閱 {url}。",
   "GeneratedConfiguration": "已產生設定 {path}。",
   "GeneratedInstaller": "{path} 安裝程式已產生。",

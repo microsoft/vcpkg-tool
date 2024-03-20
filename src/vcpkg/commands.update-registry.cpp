@@ -1,4 +1,5 @@
 #include <vcpkg/base/checks.h>
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.update-registry.h>
@@ -9,9 +10,8 @@ using namespace vcpkg;
 
 namespace
 {
-    constexpr StringLiteral OPTION_ALL = "all";
     constexpr CommandSwitch UpdateRegistrySwitches[] = {
-        {OPTION_ALL, msgCmdUpdateRegistryAll},
+        {SwitchAll, msgCmdUpdateRegistryAll},
     };
 } // unnamed namespace
 
@@ -37,7 +37,7 @@ namespace vcpkg
     void command_update_registry_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
         auto parsed = args.parse_arguments(CommandUpdateRegistryMetadata);
-        const bool all = Util::Sets::contains(parsed.switches, OPTION_ALL);
+        const bool all = Util::Sets::contains(parsed.switches, SwitchAll);
         auto&& command_arguments = parsed.command_arguments;
         if (all)
         {

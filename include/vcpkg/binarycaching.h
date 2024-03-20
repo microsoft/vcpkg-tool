@@ -157,7 +157,6 @@ namespace vcpkg
         // These are filled in after construction by reading from args and environment
         std::string nuget_prefix;
         bool use_nuget_cache = false;
-        NuGetRepoInfo nuget_repo_info;
 
         void clear();
     };
