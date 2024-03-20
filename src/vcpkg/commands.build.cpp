@@ -85,10 +85,9 @@ namespace vcpkg
     {
         // Build only takes a single package and all dependencies must already be installed
         const ParsedArguments options = args.parse_arguments(CommandBuildMetadata);
-        const FullPackageSpec spec = check_and_get_full_package_spec(options.command_arguments[0],
-                                                                     default_triplet,
-                                                                     CommandBuildMetadata.get_example_text(),
-                                                                     paths.get_triplet_db());
+        const FullPackageSpec spec =
+            check_and_get_full_package_spec(options.command_arguments[0], default_triplet, paths.get_triplet_db())
+                .value_or_exit(VCPKG_LINE_INFO);
 
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();
@@ -157,37 +156,42 @@ namespace vcpkg
         const ElapsedTimer build_timer;
         const auto result = build_package(args, paths, *action, build_logs_recorder, status_db);
         msg::print(msgElapsedForPackage, msg::spec = spec, msg::elapsed = build_timer);
-        if (result.code == BuildResult::CascadedDueToMissingDependencies)
+        switch (result.code)
         {
-            LocalizedString errorMsg = msg::format_error(msgBuildDependenciesMissing);
-            for (const auto& p : result.unmet_dependencies)
+            case BuildResult::Succeeded: binary_cache.push_success(*action); return 0;
+            case BuildResult::CascadedDueToMissingDependencies:
             {
-                errorMsg.append_raw('\n').append_indent().append_raw(p.to_string());
-            }
+                LocalizedString errorMsg = msg::format_error(msgBuildDependenciesMissing);
+                for (const auto& p : result.unmet_dependencies)
+                {
+                    errorMsg.append_raw('\n').append_indent().append_raw(p.to_string());
+                }
 
-            Checks::msg_exit_with_message(VCPKG_LINE_INFO, errorMsg);
+                Checks::msg_exit_with_message(VCPKG_LINE_INFO, errorMsg);
+            }
+            case BuildResult::BuildFailed:
+            case BuildResult::PostBuildChecksFailed:
+            case BuildResult::FileConflicts:
+            case BuildResult::CacheMissing:
+            case BuildResult::Downloaded:
+            case BuildResult::Removed:
+            {
+                LocalizedString warnings;
+                for (auto&& msg : action->build_failure_messages)
+                {
+                    warnings.append(msg).append_raw('\n');
+                }
+                if (!warnings.data().empty())
+                {
+                    msg::print(Color::warning, warnings);
+                }
+                msg::println_error(create_error_message(result, spec));
+                msg::print(create_user_troubleshooting_message(*action, paths, nullopt));
+                return 1;
+            }
+            case BuildResult::Excluded:
+            default: Checks::unreachable(VCPKG_LINE_INFO);
         }
-
-        Checks::check_exit(VCPKG_LINE_INFO, result.code != BuildResult::Excluded);
-
-        if (result.code != BuildResult::Succeeded)
-        {
-            LocalizedString warnings;
-            for (auto&& msg : action->build_failure_messages)
-            {
-                warnings.append(msg).append_raw('\n');
-            }
-            if (!warnings.data().empty())
-            {
-                msg::print(Color::warning, warnings);
-            }
-            msg::println_error(create_error_message(result, spec));
-            msg::print(create_user_troubleshooting_message(*action, paths, nullopt));
-            return 1;
-        }
-        binary_cache.push_success(*action);
-
-        return 0;
     }
 
     static std::remove_const_t<decltype(ALL_POLICIES)> generate_all_policies()
@@ -1155,6 +1159,22 @@ namespace vcpkg
         constexpr int max_port_file_count = 100;
 
         std::string portfile_cmake_contents;
+        std::vector<Path> files;
+        std::vector<std::string> hashes;
+
+        size_t i = 0;
+        for (auto& filestr : abi_info.pre_build_info->hash_additional_files)
+        {
+            Path file(filestr);
+            if (file.is_relative() || !fs.is_regular_file(file))
+            {
+                Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgInvalidValueHashAdditionalFiles, msg::path = file);
+            }
+            const auto hash =
+                vcpkg::Hash::get_file_hash(fs, file, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO);
+            abi_tag_entries.emplace_back(fmt::format("additional_file_{}", i++), hash);
+        }
+
         auto&& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
         auto port_dir = scfl.port_directory();
         auto raw_files = fs.get_regular_files_recursive_lexically_proximate(port_dir, VCPKG_LINE_INFO);
@@ -1164,8 +1184,6 @@ namespace vcpkg
                 msgHashPortManyFiles, msg::package_name = action.spec.name(), msg::count = raw_files.size());
         }
 
-        std::vector<Path> files;         // will be port_files without .DS_Store entries
-        std::vector<std::string> hashes; // will be corresponding hashes
         for (auto& port_file : raw_files)
         {
             if (port_file.filename() == FileDotDsStore)
@@ -1275,31 +1293,28 @@ namespace vcpkg
             if (action.abi_info.has_value()) continue;
 
             std::vector<AbiEntry> dependency_abis;
-            if (!Util::Enum::to_bool(action.build_options.only_downloads))
+            for (auto&& pspec : action.package_dependencies)
             {
-                for (auto&& pspec : action.package_dependencies)
+                if (pspec == action.spec) continue;
+
+                auto pred = [&](const InstallPlanAction& ipa) { return ipa.spec == pspec; };
+                auto it2 = std::find_if(action_plan.install_actions.begin(), it, pred);
+                if (it2 == it)
                 {
-                    if (pspec == action.spec) continue;
-
-                    auto pred = [&](const InstallPlanAction& ipa) { return ipa.spec == pspec; };
-                    auto it2 = std::find_if(action_plan.install_actions.begin(), it, pred);
-                    if (it2 == it)
+                    // Finally, look in current installed
+                    auto status_it = status_db.find(pspec);
+                    if (status_it == status_db.end())
                     {
-                        // Finally, look in current installed
-                        auto status_it = status_db.find(pspec);
-                        if (status_it == status_db.end())
-                        {
-                            Checks::unreachable(
-                                VCPKG_LINE_INFO,
-                                fmt::format("Failed to find dependency abi for {} -> {}", action.spec, pspec));
-                        }
+                        Checks::unreachable(
+                            VCPKG_LINE_INFO,
+                            fmt::format("Failed to find dependency abi for {} -> {}", action.spec, pspec));
+                    }
 
-                        dependency_abis.emplace_back(pspec.name(), status_it->get()->package.abi);
-                    }
-                    else
-                    {
-                        dependency_abis.emplace_back(pspec.name(), it2->public_abi());
-                    }
+                    dependency_abis.emplace_back(pspec.name(), status_it->get()->package.abi);
+                }
+                else
+                {
+                    dependency_abis.emplace_back(pspec.name(), it2->public_abi());
                 }
             }
 
@@ -1337,21 +1352,25 @@ namespace vcpkg
         }
 
         const bool all_dependencies_satisfied = missing_fspecs.empty();
-        if (!all_dependencies_satisfied && !Util::Enum::to_bool(action.build_options.only_downloads))
-        {
-            return {BuildResult::CascadedDueToMissingDependencies, std::move(missing_fspecs)};
-        }
-
         if (action.build_options.only_downloads == OnlyDownloads::No)
         {
+            if (!all_dependencies_satisfied)
+            {
+                return {BuildResult::CascadedDueToMissingDependencies, std::move(missing_fspecs)};
+            }
+
+            // assert that all_dependencies_satisfied is accurate above by checking that they're all installed
             for (auto&& pspec : action.package_dependencies)
             {
                 if (pspec == spec)
                 {
                     continue;
                 }
-                const auto status_it = status_db.find_installed(pspec);
-                Checks::check_exit(VCPKG_LINE_INFO, status_it != status_db.end());
+
+                if (status_db.find_installed(pspec) == status_db.end())
+                {
+                    Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgCorruptedDatabase);
+                }
             }
         }
 
@@ -1688,7 +1707,7 @@ namespace vcpkg
             }
         }
 
-        std::string version = parser.optional_field(ParagraphIdVersion);
+        std::string version = parser.optional_field_or_empty(ParagraphIdVersion);
         if (!version.empty())
         {
             sanitize_version_string(version);
@@ -1698,7 +1717,7 @@ namespace vcpkg
         std::unordered_map<BuildPolicy, bool> policies;
         for (const auto& policy : ALL_POLICIES)
         {
-            const auto setting = parser.optional_field(to_string_view(policy));
+            const auto setting = parser.optional_field_or_empty(to_string_view(policy));
             if (setting.empty()) continue;
             if (setting == "enabled")
                 policies.emplace(policy, true);
@@ -1786,6 +1805,10 @@ namespace vcpkg
         }
 
         Util::assign_if_set_and_nonempty(public_abi_override, cmakevars, CMakeVariablePublicAbiOverride);
+        if (auto value = Util::value_if_set_and_nonempty(cmakevars, CMakeVariableHashAdditionalFiles))
+        {
+            hash_additional_files = Strings::split(*value, ';');
+        }
         // Note that this value must come after CMakeVariableChainloadToolchainFile because its default depends upon it
         load_vcvars_env = !external_toolchain_file.has_value();
         if (auto value = Util::value_if_set_and_nonempty(cmakevars, CMakeVariableLoadVcvarsEnv))

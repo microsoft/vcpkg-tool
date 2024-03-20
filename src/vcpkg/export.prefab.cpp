@@ -1,6 +1,7 @@
 #include <vcpkg/base/fwd/message_sinks.h>
 
 #include <vcpkg/base/checks.h>
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.process.h>
@@ -303,7 +304,7 @@ namespace vcpkg::Prefab
 
         Checks::msg_check_exit(VCPKG_LINE_INFO, required_archs.empty(), msgExportArchitectureReq);
 
-        Optional<std::string> android_ndk_home = get_environment_variable("ANDROID_NDK_HOME");
+        Optional<std::string> android_ndk_home = get_environment_variable(EnvironmentVariableAndroidNdkHome);
 
         if (!android_ndk_home.has_value())
         {
@@ -323,7 +324,7 @@ namespace vcpkg::Prefab
         Checks::msg_check_maybe_upgrade(VCPKG_LINE_INFO,
                                         fs.exists(ndk_location, IgnoreErrors{}),
                                         msgAndroidHomeDirMissingProps,
-                                        msg::env_var = format_environment_variable("ANDROID_NDK_HOME"),
+                                        msg::env_var = format_environment_variable(EnvironmentVariableAndroidNdkHome),
                                         msg::path = source_properties_location);
 
         std::string content = fs.read_contents(source_properties_location, VCPKG_LINE_INFO);
