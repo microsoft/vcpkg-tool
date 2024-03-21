@@ -162,7 +162,7 @@ namespace vcpkg
         Optional<std::string> public_abi_override;
         std::vector<std::string> passthrough_env_vars;
         std::vector<std::string> passthrough_env_vars_tracked;
-        std::vector<std::string> hash_additional_files;
+        std::vector<Path> hash_additional_files;
         Optional<Path> gamedk_latest_path;
 
         Path toolchain_file() const;
