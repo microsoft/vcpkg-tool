@@ -1805,11 +1805,7 @@ namespace vcpkg
         Util::assign_if_set_and_nonempty(public_abi_override, cmakevars, CMakeVariablePublicAbiOverride);
         if (auto value = Util::value_if_set_and_nonempty(cmakevars, CMakeVariableHashAdditionalFiles))
         {
-            auto files_str = Strings::split(*value, ';');
-            std::transform(files_str.begin(),
-                           files_str.end(),
-                           std::back_inserter(hash_additional_files),
-                           [](auto&& str) { return Path(std::move(str)); });
+            hash_additional_files = Util::fmap(Strings::split(*value, ';'), [](auto&& str) { return Path(std::move(str)); });
         }
         // Note that this value must come after CMakeVariableChainloadToolchainFile because its default depends upon it
         load_vcvars_env = !external_toolchain_file.has_value();
