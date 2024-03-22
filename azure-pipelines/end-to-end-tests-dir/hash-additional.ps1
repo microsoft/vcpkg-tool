@@ -6,6 +6,3 @@ if (-Not ($out.Contains("additional_file_0|61ba0c7fc1f696e28c1b7aa9460980a571025
 {
     throw "Additional file hash not found in output"
 }
-
-Run-Vcpkg 
-Throw-IfFailed
