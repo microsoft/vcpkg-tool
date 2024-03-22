@@ -1914,6 +1914,11 @@ DECLARE_MESSAGE(InvalidSharpInVersionDidYouMean,
                 "invalid character '#' in version text. Did you mean \"port-version\": {value}?")
 DECLARE_MESSAGE(InvalidString, (), "", "Invalid utf8 passed to Value::string(std::string)")
 DECLARE_MESSAGE(InvalidTriplet, (msg::triplet), "", "Invalid triplet: {triplet}")
+DECLARE_MESSAGE(InvalidValueHashAdditionalFiles,
+                (msg::path),
+                "",
+                "Variable VCPKG_HASH_ADDITIONAL_FILES contains invalid file path: '{path}'. The value must be "
+                "an absolute path to an existent file.")
 DECLARE_MESSAGE(IrregularFile, (msg::path), "", "path was not a regular file: {path}")
 DECLARE_MESSAGE(JsonErrorMustBeAnObject, (msg::path), "", "Expected \"{path}\" to be an object.")
 DECLARE_MESSAGE(JsonFieldNotObject, (msg::json_field), "", "value of [\"{json_field}\"] must be an object")

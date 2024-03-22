@@ -64,6 +64,23 @@ namespace vcpkg
         return "none";
     }
 
+    static void hash_additional_files(const Filesystem& fs,
+                                      const std::vector<std::string>& files,
+                                      AbiEntries& abi_tag_entries)
+    {
+        for (size_t i = 0; i < files.size(); ++i)
+        {
+            Path file = files[i];
+            if (file.is_relative() || !fs.is_regular_file(file))
+            {
+                Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgInvalidValueHashAdditionalFiles, msg::path = file);
+            }
+            abi_tag_entries.emplace_back(
+                fmt::format("additional_file_{}", i),
+                Hash::get_file_hash(fs, file, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO));
+        }
+    }
+
     static void abi_entries_from_pre_build_info(const Filesystem& fs,
                                                 const PreBuildInfo& pre_build_info,
                                                 AbiEntries& abi_tag_entries)
@@ -88,6 +105,7 @@ namespace vcpkg
         {
             abi_tag_entries.emplace_back("grdk.h", grdk_hash(fs, pre_build_info));
         }
+        hash_additional_files(fs, pre_build_info.hash_additional_files, abi_tag_entries);
     }
 
     static AbiEntries get_common_abi(const VcpkgPaths& paths)

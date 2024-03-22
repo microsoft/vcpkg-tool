@@ -1090,6 +1090,8 @@
   "_InvalidTriplet.comment": "An example of {triplet} is x64-windows.",
   "InvalidUri": "unable to parse uri: {value}",
   "_InvalidUri.comment": "{value} is the URI we attempted to parse.",
+  "InvalidValueHashAdditionalFiles": "Variable VCPKG_HASH_ADDITIONAL_FILES contains invalid file path: '{path}'. The value must be an absolute path to an existent file.",
+  "_InvalidValueHashAdditionalFiles.comment": "An example of {path} is /foo/bar.",
   "IrregularFile": "path was not a regular file: {path}",
   "_IrregularFile.comment": "An example of {path} is /foo/bar.",
   "JsonErrorMustBeAnObject": "Expected \"{path}\" to be an object.",
