@@ -967,7 +967,7 @@ namespace vcpkg
 
     const char* Path::c_str() const noexcept { return m_str.c_str(); }
 
-    std::string Path::generic_u8string() const
+    std::string Path::generic_u8string() const&
     {
 #if defined(_WIN32)
         auto result = m_str;
@@ -975,6 +975,17 @@ namespace vcpkg
         return result;
 #else
         return m_str;
+#endif
+    }
+
+    std::string Path::generic_u8string() &&
+    {
+#if defined(_WIN32)
+        auto result = std::move(m_str);
+        std::replace(result.begin(), result.end(), '\\', '/');
+        return result;
+#else
+        return std::move(m_str);
 #endif
     }
 
