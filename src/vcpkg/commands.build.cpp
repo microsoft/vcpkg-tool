@@ -1169,8 +1169,9 @@ namespace vcpkg
             {
                 Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgInvalidValueHashAdditionalFiles, msg::path = file);
             }
-            auto hash = Hash::get_file_hash(fs, file, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO);
-            abi_tag_entries.emplace_back(fmt::format("additional_file_{}", i), std::move(hash));
+            abi_tag_entries.emplace_back(
+                fmt::format("additional_file_{}", i),
+                Hash::get_file_hash(fs, file, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO));
         }
 
         auto&& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
