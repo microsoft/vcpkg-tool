@@ -182,7 +182,7 @@ namespace vcpkg
             }
         }
 
-        fmt::format_to(std::back_inserter(s), "empty [label=\"{} singletons...\"];\n}}", empty_node_count);
+        fmt::format_to(std::back_inserter(s), "\"{} singletons...\";\n}}", empty_node_count);
         return s;
     }
 
