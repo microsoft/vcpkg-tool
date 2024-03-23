@@ -175,12 +175,10 @@ namespace vcpkg
                 continue;
             }
 
-            const std::string name = Strings::replace_all(std::string{package.package}, "-", "_");
-            fmt::format_to(std::back_inserter(s), "{};\n", name);
+            fmt::format_to(std::back_inserter(s), "\"{}\";\n", package.package);
             for (const auto& d : package.dependencies)
             {
-                const std::string dependency_name = Strings::replace_all(std::string{d}, "-", "_");
-                fmt::format_to(std::back_inserter(s), "{} -> {};\n", name, dependency_name);
+                fmt::format_to(std::back_inserter(s), "\"{}\" -> \"{}\";\n", package.package, d);
             }
         }
 
