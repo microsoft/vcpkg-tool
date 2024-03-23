@@ -165,7 +165,7 @@ namespace vcpkg
     {
         int empty_node_count = 0;
 
-        std::string s = "digraph G{ rankdir=LR; edge [minlen=3]; overlap=false;";
+        std::string s = "digraph G{ rankdir=LR; edge [minlen=3]; overlap=false;\n";
 
         for (const auto& package : depend_info)
         {
@@ -176,15 +176,15 @@ namespace vcpkg
             }
 
             const std::string name = Strings::replace_all(std::string{package.package}, "-", "_");
-            fmt::format_to(std::back_inserter(s), "{};", name);
+            fmt::format_to(std::back_inserter(s), "{};\n", name);
             for (const auto& d : package.dependencies)
             {
                 const std::string dependency_name = Strings::replace_all(std::string{d}, "-", "_");
-                fmt::format_to(std::back_inserter(s), "{} -> {};", name, dependency_name);
+                fmt::format_to(std::back_inserter(s), "{} -> {};\n", name, dependency_name);
             }
         }
 
-        fmt::format_to(std::back_inserter(s), "empty [label=\"{} singletons...\"]; }}", empty_node_count);
+        fmt::format_to(std::back_inserter(s), "empty [label=\"{} singletons...\"];\n}}", empty_node_count);
         return s;
     }
 
