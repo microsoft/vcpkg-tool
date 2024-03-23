@@ -169,13 +169,13 @@ namespace vcpkg
 
         for (const auto& package : depend_info)
         {
+            fmt::format_to(std::back_inserter(s), "\"{}\";\n", package.package);
             if (package.dependencies.empty())
             {
                 empty_node_count++;
                 continue;
             }
 
-            fmt::format_to(std::back_inserter(s), "\"{}\";\n", package.package);
             for (const auto& d : package.dependencies)
             {
                 fmt::format_to(std::back_inserter(s), "\"{}\" -> \"{}\";\n", package.package, d);
