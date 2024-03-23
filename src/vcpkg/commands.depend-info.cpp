@@ -165,7 +165,7 @@ namespace vcpkg
     {
         int empty_node_count = 0;
 
-        std::string s = "digraph G{ rankdir=LR; edge [minlen=3]; overlap=false;\n";
+        std::string s = "digraph G{ rankdir=LR; node [fontname=Sans]; edge [minlen=3]; overlap=false;\n";
 
         for (const auto& package : depend_info)
         {
