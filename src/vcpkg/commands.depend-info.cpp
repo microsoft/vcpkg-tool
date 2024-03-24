@@ -243,7 +243,7 @@ namespace vcpkg
         "https://learn.microsoft.com/vcpkg/commands/depend-info",
         AutocompletePriority::Public,
         1,
-        1,
+        SIZE_MAX,
         {DEPEND_SWITCHES, DEPEND_SETTINGS},
         nullptr,
     };
@@ -457,30 +457,34 @@ namespace vcpkg
 
         if (strategy.format == DependInfoFormat::Tree)
         {
-            Util::sort(depend_info, reverse);
-            auto first = depend_info.begin();
-            std::string features = Strings::join(", ", first->features);
-
-            if (strategy.show_depth)
-            {
-                msg::write_unlocalized_text(Color::error, fmt::format("({})", first->depth));
-            }
-
-            auto end_of_name = first->package.find(':');
-            msg::write_unlocalized_text(Color::success, first->package.substr(0, end_of_name));
-            if (!features.empty())
-            {
-                msg::write_unlocalized_text(Color::warning, "[" + features + "]");
-            }
-            if (end_of_name != std::string::npos)
-            {
-                msg::write_unlocalized_text(Color::success, first->package.substr(end_of_name));
-            }
-
-            msg::write_unlocalized_text(Color::none, "\n");
             std::set<std::string> printed;
-            std::string prefix_buf;
-            print_dep_tree(prefix_buf, first->package, depend_info, printed);
+            for (auto&& info : depend_info)
+            {
+                if (info.depth != 0) continue;
+
+                std::string features = Strings::join(", ", info.features);
+
+                if (strategy.show_depth)
+                {
+                    msg::write_unlocalized_text(Color::error, "(0)"); // legacy
+                }
+
+                auto end_of_name = info.package.find(':');
+                msg::write_unlocalized_text(Color::success, info.package.substr(0, end_of_name));
+                if (!features.empty())
+                {
+                    msg::write_unlocalized_text(Color::warning, "[" + features + "]");
+                }
+                if (end_of_name != std::string::npos)
+                {
+                    msg::write_unlocalized_text(Color::success, info.package.substr(end_of_name));
+                }
+
+                msg::write_unlocalized_text(Color::none, "\n");
+                std::string prefix_buf;
+                print_dep_tree(prefix_buf, info.package, depend_info, printed);
+            }
+
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 
