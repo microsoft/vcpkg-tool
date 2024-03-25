@@ -63,4 +63,5 @@ Write-Host "Time taken: $($elapsed.TotalSeconds) seconds."
 
 if ($unused_messages.Count -gt 0) {
     Write-Host "Please remove unused messages from $MESSAGE_FILE."
+    exit 1
 }
