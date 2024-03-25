@@ -19,7 +19,6 @@ Get-Content $MESSAGE_FILE | ForEach-Object {
     if ($_ -match "DECLARE_MESSAGE\(([^,]+),") {
         $messageName = $matches[1].Trim()
         $declared_messages += $messageName
-        $messageName
     }
 }
 
