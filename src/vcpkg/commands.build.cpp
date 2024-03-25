@@ -1162,17 +1162,16 @@ namespace vcpkg
         std::vector<Path> files;
         std::vector<std::string> hashes;
 
-        size_t i = 0;
-        for (auto& filestr : abi_info.pre_build_info->hash_additional_files)
+        for (size_t i = 0; i < abi_info.pre_build_info->hash_additional_files.size(); ++i)
         {
-            Path file(filestr);
+            auto& file = abi_info.pre_build_info->hash_additional_files[i];
             if (file.is_relative() || !fs.is_regular_file(file))
             {
                 Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgInvalidValueHashAdditionalFiles, msg::path = file);
             }
-            const auto hash =
-                vcpkg::Hash::get_file_hash(fs, file, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO);
-            abi_tag_entries.emplace_back(fmt::format("additional_file_{}", i++), hash);
+            abi_tag_entries.emplace_back(
+                fmt::format("additional_file_{}", i),
+                Hash::get_file_hash(fs, file, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO));
         }
 
         auto&& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
@@ -1807,7 +1806,8 @@ namespace vcpkg
         Util::assign_if_set_and_nonempty(public_abi_override, cmakevars, CMakeVariablePublicAbiOverride);
         if (auto value = Util::value_if_set_and_nonempty(cmakevars, CMakeVariableHashAdditionalFiles))
         {
-            hash_additional_files = Strings::split(*value, ';');
+            hash_additional_files =
+                Util::fmap(Strings::split(*value, ';'), [](auto&& str) { return Path(std::move(str)); });
         }
         // Note that this value must come after CMakeVariableChainloadToolchainFile because its default depends upon it
         load_vcvars_env = !external_toolchain_file.has_value();
