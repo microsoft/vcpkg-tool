@@ -557,7 +557,6 @@ set_property(TARGET test-script-asset-cache PROPERTY PDB_NAME "test-script-asset
 endif()
 
 # === Target: verify_messages ===
-# Define the path to the PowerShell script and the arguments it requires
 set(PS_SCRIPT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/scripts/verifyMessages.ps1")
 set(SEARCH_DIR "${CMAKE_CURRENT_SOURCE_DIR}") # Adjust this path as necessary
 set(MESSAGE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/include/vcpkg/base/message-data.inc.h") # Adjust this path as necessary
