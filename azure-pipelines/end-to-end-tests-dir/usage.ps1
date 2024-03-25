@@ -32,8 +32,8 @@ vcpkg-hello-world-2 provides CMake targets:
 @"
 wrong-pkgconfig provides pkg-config modules:
 
-    # Test lib
-    wrong-pkgconfig
+  # Test lib
+  wrong-pkgconfig
 "@
 )
 
