@@ -561,7 +561,6 @@ set(PS_SCRIPT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/scripts/verifyMessages.ps1")
 set(SEARCH_DIR "${CMAKE_CURRENT_SOURCE_DIR}") # Adjust this path as necessary
 set(MESSAGE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/include/vcpkg/base/message-data.inc.h") # Adjust this path as necessary
 
-# Add a custom target that runs the PowerShell script
 add_custom_target(
     verify-messages
     COMMAND pwsh -File ${PS_SCRIPT_PATH} ${SEARCH_DIR} ${MESSAGE_FILE}
