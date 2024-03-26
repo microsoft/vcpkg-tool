@@ -87,7 +87,7 @@ extends:
           - output: pipelineArtifact
             displayName: 'Publish Architecture Independent Staging'
             targetPath: '$(Build.ArtifactStagingDirectory)\staging'
-            artifactName: 'staging'
+            artifactName: 'stagingArchIndependent'
             publishLocation: 'Container'
         steps:
         - task: Powershell@2
@@ -213,7 +213,7 @@ extends:
           outputs:
           - output: pipelineArtifact
             displayName: 'Publish Unsigned MacOS Binary'
-            artifactName: 'staging'
+            artifactName: 'stagingMacOS'
             publishLocation: 'Container'
             targetPath: '$(Build.ArtifactStagingDirectory)'
         steps:
@@ -239,7 +239,7 @@ extends:
           outputs:
           - output: pipelineArtifact
             displayName: 'Publish Unsigned glibc Binary'
-            artifactName: 'staging'
+            artifactName: 'stagingGlibc'
             publishLocation: 'Container'
             targetPath: '$(Build.ArtifactStagingDirectory)'
         steps:
@@ -269,7 +269,7 @@ extends:
           outputs:
           - output: pipelineArtifact
             displayName: 'Publish Unsigned muslc Binary'
-            artifactName: 'staging'
+            artifactName: 'stagingMuslc'
             publishLocation: 'Container'
             targetPath: '$(Build.ArtifactStagingDirectory)'
         steps:
@@ -356,18 +356,30 @@ extends:
             feedsToUse: 'config'
             restoreDirectory: '$(Build.SourcesDirectory)\packages'
         - task: DownloadBuildArtifacts@0
-          displayName: 'Download Staging'
+          displayName: 'Download stagingArchIndependent'
           inputs:
-            artifactName: staging
+            artifactName: stagingArchIndependent
+        - task: DownloadBuildArtifacts@0
+          displayName: 'Download stagingMacOS'
+          inputs:
+            artifactName: stagingMacOS
+        - task: DownloadBuildArtifacts@0
+          displayName: 'Download stagingGlibc'
+          inputs:
+            artifactName: stagingGlibc
+        - task : DownloadBuildArtifacts@0
+          displayName: 'Download stagingMuslc'
+          inputs:
+            artifactName: stagingMuslc
         - task: CmdLine@2
           displayName: 'Copy Linux Binaries to BinariesDirectory'
           inputs:
             failOnStderr: true
             script: |
               mkdir "$(Build.BinariesDirectory)\build"
-              copy /Y "$(Build.ArtifactStagingDirectory)\staging\vcpkg-init" "$(Build.BinariesDirectory)\vcpkg-init"
-              copy /Y "$(Build.ArtifactStagingDirectory)\staging\vcpkg-glibc" "$(Build.BinariesDirectory)\vcpkg-glibc"
-              copy /Y "$(Build.ArtifactStagingDirectory)\staging\vcpkg-muslc" "$(Build.BinariesDirectory)\vcpkg-muslc"
+              copy /Y "$(Build.ArtifactStagingDirectory)\stagingArchIndependent\vcpkg-init" "$(Build.BinariesDirectory)\vcpkg-init"
+              copy /Y "$(Build.ArtifactStagingDirectory)\stagingGlibc\vcpkg-glibc" "$(Build.BinariesDirectory)\vcpkg-glibc"
+              copy /Y "$(Build.ArtifactStagingDirectory)\stagingMuslc\vcpkg-muslc" "$(Build.BinariesDirectory)\vcpkg-muslc"
         - task: MSBuild@1
           displayName: 'Sign Binaries'
           inputs:
@@ -377,7 +389,7 @@ extends:
           displayName: 'Developer Sign Mac Binaries'
           condition: and(eq(variables.SignType, 'test'), succeeded())
           inputs:
-            SigningTarget: '$(Build.ArtifactStagingDirectory)\staging\vcpkg-macos.zip'
+            SigningTarget: '$(Build.ArtifactStagingDirectory)\stagingMacOS\vcpkg-macos.zip'
             SigningCert: '8005'
             SigningPluginSource: 'https://devdiv.pkgs.visualstudio.com/DefaultCollection/_packaging/MicroBuildToolset/nuget/v3/index.json'
             SigningPluginVersion: 'latest'
@@ -385,7 +397,7 @@ extends:
           displayName: 'Sign and Harden Mac Binaries'
           condition: and(eq(variables.SignType, 'real'), succeeded())
           inputs:
-            SigningTarget: '$(Build.ArtifactStagingDirectory)\staging\vcpkg-macos.zip'
+            SigningTarget: '$(Build.ArtifactStagingDirectory)\stagingMacOS\vcpkg-macos.zip'
             SigningCert: '8025'
             SigningPluginSource: 'https://devdiv.pkgs.visualstudio.com/DefaultCollection/_packaging/MicroBuildToolset/nuget/v3/index.json'
             SigningPluginVersion: 'latest'
@@ -393,7 +405,7 @@ extends:
           displayName: 'Notarize Mac Binaries'
           condition: and(eq(variables.SignType, 'real'), succeeded())
           inputs:
-            SigningTarget: '$(Build.ArtifactStagingDirectory)\staging\vcpkg-macos.zip'
+            SigningTarget: '$(Build.ArtifactStagingDirectory)\stagingMacOS\vcpkg-macos.zip'
             SigningCert: '8020'
             MacAppName: 'vcpkg'
             SigningPluginSource: 'https://devdiv.pkgs.visualstudio.com/DefaultCollection/_packaging/MicroBuildToolset/nuget/v3/index.json'
@@ -413,15 +425,15 @@ extends:
 
               copy "$(Build.SourcesDirectory)\NOTICE.txt" "$(Build.ArtifactStagingDirectory)\drop\NOTICE.txt"
 
-              move "$(Build.ArtifactStagingDirectory)\staging\vcpkg-init" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-init"
-              move "$(Build.ArtifactStagingDirectory)\staging\vcpkg-init.cmd" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-init.cmd"
-              move "$(Build.ArtifactStagingDirectory)\staging\vcpkg-init.ps1" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-init.ps1"
-              move "$(Build.ArtifactStagingDirectory)\staging\scripts\applocal.ps1" "$(Build.ArtifactStagingDirectory)\drop\applocal.ps1"
-              move "$(Build.ArtifactStagingDirectory)\staging\scripts\addPoshVcpkgToPowershellProfile.ps1" "$(Build.ArtifactStagingDirectory)\drop\addPoshVcpkgToPowershellProfile.ps1"
-              move "$(Build.ArtifactStagingDirectory)\staging\scripts\posh-vcpkg.psm1" "$(Build.ArtifactStagingDirectory)\drop\posh-vcpkg.psm1"
-              move "$(Build.ArtifactStagingDirectory)\staging\vcpkg-glibc" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-glibc"
-              move "$(Build.ArtifactStagingDirectory)\staging\vcpkg-muslc" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-muslc"
-              move "$(Build.ArtifactStagingDirectory)\staging\vcpkg-standalone-bundle.tar.gz" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-standalone-bundle.tar.gz"
+              move "$(Build.ArtifactStagingDirectory)\stagingArchIndependent\vcpkg-init" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-init"
+              move "$(Build.ArtifactStagingDirectory)\stagingArchIndependent\vcpkg-init.cmd" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-init.cmd"
+              move "$(Build.ArtifactStagingDirectory)\stagingArchIndependent\vcpkg-init.ps1" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-init.ps1"
+              move "$(Build.ArtifactStagingDirectory)\stagingArchIndependent\scripts\applocal.ps1" "$(Build.ArtifactStagingDirectory)\drop\applocal.ps1"
+              move "$(Build.ArtifactStagingDirectory)\stagingArchIndependent\scripts\addPoshVcpkgToPowershellProfile.ps1" "$(Build.ArtifactStagingDirectory)\drop\addPoshVcpkgToPowershellProfile.ps1"
+              move "$(Build.ArtifactStagingDirectory)\stagingArchIndependent\scripts\posh-vcpkg.psm1" "$(Build.ArtifactStagingDirectory)\drop\posh-vcpkg.psm1"
+              move "$(Build.ArtifactStagingDirectory)\stagingGlibc\vcpkg-glibc" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-glibc"
+              move "$(Build.ArtifactStagingDirectory)\stagingMuslc\vcpkg-muslc" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-muslc"
+              move "$(Build.ArtifactStagingDirectory)\stagingArchIndependent\vcpkg-standalone-bundle.tar.gz" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-standalone-bundle.tar.gz"
 
               move "$(Build.BinariesDirectory)\amd64\vcpkg.exe" "$(Build.ArtifactStagingDirectory)\drop\vcpkg.exe"
               copy "$(Build.ArtifactStagingDirectory)\drop\vcpkg.exe" "$(Build.ArtifactStagingDirectory)\vs-insertion\staging\vcpkg.exe"
@@ -435,7 +447,7 @@ extends:
               move "$(Build.BinariesDirectory)\arm64\tls12-download-arm64.pdb" "$(Build.ArtifactStagingDirectory)\drop\tls12-download-arm64.pdb"
 
               mkdir "$(Build.ArtifactStagingDirectory)\staging\macos"
-              tar.exe -C "$(Build.ArtifactStagingDirectory)\staging\macos" -xf "$(Build.ArtifactStagingDirectory)\staging\vcpkg-macos.zip"
+              tar.exe -C "$(Build.ArtifactStagingDirectory)\staging\macos" -xf "$(Build.ArtifactStagingDirectory)\stagingMacOS\vcpkg-macos.zip"
               move "$(Build.ArtifactStagingDirectory)\staging\macos\vcpkg" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-macos"
 
               copy "$(Build.SourcesDirectory)\azure-pipelines\vs-insertion\vcpkg.nuspec" "$(Build.ArtifactStagingDirectory)\vs-insertion\staging\vcpkg.nuspec"
