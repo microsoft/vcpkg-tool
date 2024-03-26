@@ -56,6 +56,7 @@ extends:
         image: 1ESPT-Windows2022
     stages:
     - stage: stage
+      displayName: 'Build and Sign vcpkg'
       jobs:
       - job: arch_independent
         displayName: 'Build and Sign Arch-Independent Scripts and vcpkg-artifacts'
