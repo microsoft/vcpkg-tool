@@ -209,7 +209,9 @@ extends:
         dependsOn:
         - arch_independent
         pool:
+          name: Azure Pipelines
           vmImage: macOS-12
+          os: macOS
         variables:
           VCPKG_STANDALONE_BUNDLE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_STANDALONE_BUNDLE_SHA'] ]
           VCPKG_BASE_VERSION: $[ dependencies.arch_independent.outputs['versions.VCPKG_BASE_VERSION'] ]
@@ -235,6 +237,7 @@ extends:
         - arch_independent
         pool:
           name: 'vcpkg-mariner-1espt'
+          os: linux
         variables:
           VCPKG_STANDALONE_BUNDLE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_STANDALONE_BUNDLE_SHA'] ]
           VCPKG_BASE_VERSION: $[ dependencies.arch_independent.outputs['versions.VCPKG_BASE_VERSION'] ]
@@ -262,6 +265,7 @@ extends:
         displayName: 'muslc (Alpine) Build'
         pool:
           name: 'vcpkg-mariner-1espt'
+          os: linux
         dependsOn:
         - arch_independent
         variables:
