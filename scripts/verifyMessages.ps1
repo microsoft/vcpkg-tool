@@ -1,8 +1,5 @@
 #! /usr/bin/env pwsh
 
-# Start timer
-$start_time = Get-Date
-
 # Validate input
 if ($args.Count -ne 2) {
     Write-Host "Usage: <script> <directory-to-search> <message-declaration-file>"
@@ -23,8 +20,8 @@ Get-Content $MESSAGE_FILE | ForEach-Object {
 }
 
 # Find all instances of 'msg' prefixed variables in .cpp and .h files and store them in an array
-$used_messages = Get-ChildItem -Path $SEARCH_DIR -Include *.cpp, *.h -Recurse |
-    Select-String -Pattern 'msg[A-Za-z0-9_]*' -AllMatches |
+$used_messages = Get-ChildItem -Path $SEARCH_DIR -Include @('*.cpp', '*.h') -Recurse |
+    Select-String -Pattern '\bmsg[A-Za-z0-9_]+\b' -AllMatches |
     ForEach-Object { $_.Matches } |
     ForEach-Object { $_.Value } |
     Sort-Object -Unique
@@ -54,11 +51,6 @@ else {
 
 Write-Host "Total messages declared: $($declared_messages.Count)"
 Write-Host "Total unused messages: $($unused_messages.Count)"
-
-# End timer and calculate elapsed time
-$end_time = Get-Date
-$elapsed = $end_time - $start_time
-Write-Host "Time taken: $($elapsed.TotalSeconds) seconds."
 
 if ($unused_messages.Count -gt 0) {
     Write-Host "Please remove unused messages from $MESSAGE_FILE."

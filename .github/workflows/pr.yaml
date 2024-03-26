@@ -14,19 +14,6 @@ jobs:
   builds:
     uses: ./.github/workflows/build.yaml
 
-  verify-messages:
-    runs-on: windows-2022
-    steps:
-      - uses: actions/checkout@v3
-      - uses: lukka/get-cmake@v3.26.3
-        with:
-          cmakeVersion: 3.22.1
-      - name: Verify Messages
-        shell: pwsh
-        run: |
-          cmake --preset windows-ci
-          cmake --build --preset windows-ci --target verify-messages -- -k0
-
   format:
     runs-on: windows-2022
     timeout-minutes: 60
@@ -41,6 +28,11 @@ jobs:
         with:
           cmakeVersion: 3.22.1 # ubuntu 22.04
           ninjaVersion: 1.11.1
+      - name: Verify Messages
+        shell: pwsh
+        run: |
+          cmake --preset windows-ci
+          cmake --build --preset windows-ci --target verify-messages -- -k0
       - name: Configure and Build (Windows)
         shell: cmd
         run: |
