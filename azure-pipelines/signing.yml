@@ -220,8 +220,12 @@ jobs:
       VCPKG_STANDALONE_BUNDLE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_STANDALONE_BUNDLE_SHA'] ]
       VCPKG_BASE_VERSION: $[ dependencies.arch_independent.outputs['versions.VCPKG_BASE_VERSION'] ]
     steps:
+    - bash: |
+        az login --identity --username 29a4d3e7-c7d5-41c7-b5a0-fee8cf466371
+        az acr login --name vcpkgdockercontainers
+      displayName: 'Set up managed identity'
     - task: CmdLine@2
-      displayName: "Build vcpkg with CMake"
+      displayName: "Build vcpkg in Mariner with Ubuntu 16.04 Libraries"
       inputs:
         failOnStderr: true
         script: |
@@ -243,7 +247,7 @@ jobs:
       VCPKG_BASE_VERSION: $[ dependencies.arch_independent.outputs['versions.VCPKG_BASE_VERSION'] ]
     steps:
     - bash: |
-        az login --identity
+        az login --identity --username 29a4d3e7-c7d5-41c7-b5a0-fee8cf466371
         az acr login --name vcpkgdockercontainers
       displayName: 'Set up managed identity'
     - task: CmdLine@2
