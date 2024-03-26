@@ -308,6 +308,19 @@ extends:
               feedSource: 'https://devdiv.pkgs.visualstudio.com/DefaultCollection/_packaging/MicroBuildToolset/nuget/v3/index.json'
               signType: $(SignType)
               zipSources: false
+          inputs:
+          - input: pipelineArtifact
+            artifactName: stagingArchIndependent
+            targetPath: $(Build.ArtifactStagingDirectory)\stagingArchIndependent
+          - input: pipelineArtifact
+            artifactName: stagingMacOS
+            targetPath: $(Build.ArtifactStagingDirectory)\stagingMacOS
+          - input: pipelineArtifact
+            artifactName: stagingGlibc
+            targetPath: $(Build.ArtifactStagingDirectory)\stagingGlibc
+          - input: pipelineArtifact
+            artifactName: stagingMuslc
+            targetPath: $(Build.ArtifactStagingDirectory)\stagingMuslc
           outputs:
           - output: pipelineArtifact
             displayName: 'Publish Drop'
@@ -355,22 +368,6 @@ extends:
             restoreSolution: 'azure-pipelines/binary-signing.signproj'
             feedsToUse: 'config'
             restoreDirectory: '$(Build.SourcesDirectory)\packages'
-        - task: DownloadBuildArtifacts@0
-          displayName: 'Download stagingArchIndependent'
-          inputs:
-            artifactName: stagingArchIndependent
-        - task: DownloadBuildArtifacts@0
-          displayName: 'Download stagingMacOS'
-          inputs:
-            artifactName: stagingMacOS
-        - task: DownloadBuildArtifacts@0
-          displayName: 'Download stagingGlibc'
-          inputs:
-            artifactName: stagingGlibc
-        - task : DownloadBuildArtifacts@0
-          displayName: 'Download stagingMuslc'
-          inputs:
-            artifactName: stagingMuslc
         - task: CmdLine@2
           displayName: 'Copy Linux Binaries to BinariesDirectory'
           inputs:
