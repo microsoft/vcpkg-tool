@@ -210,8 +210,8 @@ jobs:
       inputs:
         ArtifactName: 'staging'
         publishLocation: 'Container'
-  - job: rhel_build
-    displayName: 'glibc (RHEL) Build'
+  - job: glibc_build
+    displayName: 'glibc Build'
     dependsOn:
       - arch_independent
     pool:
@@ -264,7 +264,7 @@ jobs:
     dependsOn:
       - arch_independent
       - macos_build
-      - rhel_build
+      - glibc_build
       - muslc_build
     pool:
       name: 'VSEngSS-MicroBuild2022-1ES'
