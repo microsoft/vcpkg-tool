@@ -55,7 +55,7 @@ endif()
 
 if(VCPKG_EMBED_GIT_SHA)
     if(DEFINED VCPKG_VERSION)
-        message(WARNING "Using supplied version SHA ${VCPKG_VERSION}.")
+        message(STATUS "Using supplied version SHA ${VCPKG_VERSION}.")
     else()
         find_package(Git REQUIRED)
         execute_process(
