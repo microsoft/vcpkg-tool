@@ -24,6 +24,7 @@ parameters:
   values:
   - 'GitHub and NuGet'
   - 'NuGet Only'
+  - 'None'
 variables:
   - group: vcpkg Terrapin URLs
   - name: TeamName
@@ -214,7 +215,7 @@ jobs:
     dependsOn:
       - arch_independent
     pool:
-      name: 'vcpkg-rhel-7-5'
+      name: 'vcpkg-mariner-1espt'
     variables:
       VCPKG_STANDALONE_BUNDLE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_STANDALONE_BUNDLE_SHA'] ]
       VCPKG_BASE_VERSION: $[ dependencies.arch_independent.outputs['versions.VCPKG_BASE_VERSION'] ]
@@ -224,10 +225,8 @@ jobs:
       inputs:
         failOnStderr: true
         script: |
-          # CHANGE THIS TO USE vcpkgdockercontainers.azurecr.io/vcpkg/vcpkg-linux:2024-03-21
-          scl enable devtoolset-9 'cmake3 -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON -DCMAKE_CXX_FLAGS="-static-libgcc -static-libstdc++" "-DVCPKG_FMT_URL=$(fmt-tarball-url)" "-DVCPKG_CMAKERC_URL=$(cmakerc-tarball-url)" "-DVCPKG_BASE_VERSION=$VCPKG_BASE_VERSION" "-DVCPKG_STANDALONE_BUNDLE_SHA=$VCPKG_STANDALONE_BUNDLE_SHA" -B "$(Build.BinariesDirectory)/build"'  2>&1
-          make -j 4 -C "$(Build.BinariesDirectory)/build"
-          mv "$(Build.BinariesDirectory)/build/vcpkg" "$(Build.ArtifactStagingDirectory)/vcpkg-glibc"
+          docker run --rm --mount "type=bind,source=$(Build.Repository.LocalPath),target=/source,readonly" --mount "type=bind,source=$(Build.ArtifactStagingDirectory),target=/build" vcpkgdockercontainers.azurecr.io/vcpkg/vcpkg-linux:2024-03-21 sh -c "cmake -G Ninja -DCMAKE_TOOLCHAIN_FILE=/source/azure-pipelines/vcpkg-linux/toolchain.cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON -DVCPKG_CMAKERC_URL=$(cmakerc-tarball-url) -DVCPKG_FMT_URL=$(fmt-tarball-url) -DVCPKG_STANDALONE_BUNDLE_SHA=$(VCPKG_STANDALONE_BUNDLE_SHA) -DVCPKG_BASE_VERSION=$(VCPKG_BASE_VERSION) -S /source -B /build 2>&1 && ninja -C /build"
+          mv "$(Build.ArtifactStagingDirectory)/vcpkg" "$(Build.ArtifactStagingDirectory)/vcpkg-glibc"
     - task: PublishBuildArtifacts@1
       displayName: "Publish Unsigned glibc Binary"
       inputs:
@@ -236,7 +235,7 @@ jobs:
   - job: muslc_build
     displayName: 'muslc (Alpine) Build'
     pool:
-      name: 'vcpkg-mariner-docker-gen1'
+      name: 'vcpkg-mariner-1espt'
     dependsOn:
       - arch_independent
     variables:
@@ -252,10 +251,8 @@ jobs:
       inputs:
         failOnStderr: false
         script: |
-          # CHANGE THIS TO USE vcpkgdockercontainers.azurecr.io/vcpkg/vcpkg-alpine:3.16
-          docker build --build-arg "FMT_TARBALL_URL=$(fmt-tarball-url)" --build-arg "CMAKERC_TARBALL_URL=$(cmakerc-tarball-url)" --build-arg "VCPKG_STANDALONE_BUNDLE_SHA=$(VCPKG_STANDALONE_BUNDLE_SHA)" --build-arg "VCPKG_BASE_VERSION=$(VCPKG_BASE_VERSION)" -t vcpkg-muslc-image -f azure-pipelines/vcpkg-alpine/Dockerfile . || exit 1
-          docker create -ti --name vcpkg-muslc-container vcpkg-muslc-image sh || exit 1
-          docker cp vcpkg-muslc-container:/build/vcpkg "$(Build.ArtifactStagingDirectory)/vcpkg-muslc" || exit 1
+          docker run --rm --mount "type=bind,source=$(Build.Repository.LocalPath),target=/source,readonly" --mount "type=bind,source=$(Build.ArtifactStagingDirectory),target=/build" vcpkgdockercontainers.azurecr.io/vcpkg/vcpkg-alpine:3.16 sh -c "cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON -DCMAKE_CXX_FLAGS=\"-static -s -static-libgcc -static-libstdc++\" -DVCPKG_CMAKERC_URL=$(cmakerc-tarball-url) -DVCPKG_FMT_URL=$(fmt-tarball-url) -DVCPKG_STANDALONE_BUNDLE_SHA=$(VCPKG_STANDALONE_BUNDLE_SHA) -DVCPKG_BASE_VERSION=$(VCPKG_BASE_VERSION) -S /source -B /build 2>&1 && ninja -C /build"
+          mv "$(Build.ArtifactStagingDirectory)/vcpkg" "$(Build.ArtifactStagingDirectory)/vcpkg-muslc"
     - task: PublishBuildArtifacts@1
       displayName: "Publish Unsigned muslc Binary"
       inputs:
@@ -473,21 +470,23 @@ jobs:
         ArtifactName: 'Drop'
         publishLocation: 'Container'
     # Publish everything to VS Insertion
-    - task: NuGetCommand@2
-      displayName: 'NuGet publish for VS Insertion'
-      condition: and(eq(variables.SignType, 'real'), succeeded())
-      inputs:
-        command: push
-        packagesToPush: '$(Build.ArtifactStagingDirectory)/vs-insertion/drop/VS.Redist.Vcpkg.amd64.1.0.0-$(VCPKG_FULL_VERSION).nupkg'
-        publishVstsFeed: '97a41293-2972-4f48-8c0e-05493ae82010'
+    - ${{ if or(eq(parameters.PublishTo, 'GitHub and NuGet'),eq(parameters.PublishTo, 'NuGet Only')) }}:
+      - task: NuGetCommand@2
+        displayName: 'NuGet publish for VS Insertion'
+        condition: and(eq(variables.SignType, 'real'), succeeded())
+        inputs:
+          command: push
+          packagesToPush: '$(Build.ArtifactStagingDirectory)/vs-insertion/drop/VS.Redist.Vcpkg.amd64.1.0.0-$(VCPKG_FULL_VERSION).nupkg'
+          publishVstsFeed: '97a41293-2972-4f48-8c0e-05493ae82010'
     # Publish symbols
-    - task: MicroBuildArchiveSymbols@4
-      displayName: 'Upload Symbols'
-      inputs:
-        SymbolsFeatureName: 'vcpkg'
-        SymbolsProject: 'VS'
-        SymbolsAgentPath: '$(Build.ArtifactStagingDirectory)\symbols'
-        azureSubscription: 'Symbols Upload (DevDiv)'
+    - ${{ if ne(parameters.PublishTo, 'None') }}:
+      - task: MicroBuildArchiveSymbols@4
+        displayName: 'Upload Symbols'
+        inputs:
+          SymbolsFeatureName: 'vcpkg'
+          SymbolsProject: 'VS'
+          SymbolsAgentPath: '$(Build.ArtifactStagingDirectory)\symbols'
+          azureSubscription: 'Symbols Upload (DevDiv)'
     # Publish everything to a GitHub Release
     - ${{ if eq(parameters.PublishTo, 'GitHub and NuGet') }}:
       - task: DownloadSecureFile@1
