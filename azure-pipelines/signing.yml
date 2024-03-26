@@ -201,7 +201,6 @@ jobs:
       inputs:
         failOnStderr: true
         script: |
-          # CHANGE THIS TO USE vcpkgdockercontainers.azurecr.io/vcpkg/vcpkg-linux:2024-03-21
           cmake -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13 -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" "-DVCPKG_FMT_URL=$(fmt-tarball-url)" "-DVCPKG_CMAKERC_URL=$(cmakerc-tarball-url)" "-DVCPKG_BASE_VERSION=$VCPKG_BASE_VERSION" "-DVCPKG_STANDALONE_BUNDLE_SHA=$VCPKG_STANDALONE_BUNDLE_SHA" -B "$(Build.BinariesDirectory)/build" 2>&1
           make -j 8 -C "$(Build.BinariesDirectory)/build"
           zip -j "$(Build.ArtifactStagingDirectory)/vcpkg-macos.zip" "$(Build.BinariesDirectory)/build/vcpkg"
@@ -225,6 +224,7 @@ jobs:
       inputs:
         failOnStderr: true
         script: |
+          # CHANGE THIS TO USE vcpkgdockercontainers.azurecr.io/vcpkg/vcpkg-linux:2024-03-21
           scl enable devtoolset-9 'cmake3 -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON -DCMAKE_CXX_FLAGS="-static-libgcc -static-libstdc++" "-DVCPKG_FMT_URL=$(fmt-tarball-url)" "-DVCPKG_CMAKERC_URL=$(cmakerc-tarball-url)" "-DVCPKG_BASE_VERSION=$VCPKG_BASE_VERSION" "-DVCPKG_STANDALONE_BUNDLE_SHA=$VCPKG_STANDALONE_BUNDLE_SHA" -B "$(Build.BinariesDirectory)/build"'  2>&1
           make -j 4 -C "$(Build.BinariesDirectory)/build"
           mv "$(Build.BinariesDirectory)/build/vcpkg" "$(Build.ArtifactStagingDirectory)/vcpkg-glibc"
