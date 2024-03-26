@@ -218,6 +218,7 @@ extends:
             displayName: 'Publish Unsigned MacOS Binary'
             artifactName: 'staging'
             publishLocation: 'Container'
+            targetPath: '$(Build.ArtifactStagingDirectory)'
         steps:
         - task: CmdLine@2
           displayName: "Build vcpkg with CMake"
@@ -270,6 +271,7 @@ extends:
             displayName: 'Publish Unsigned muslc Binary'
             artifactName: 'staging'
             publishLocation: 'Container'
+            targetPath: '$(Build.ArtifactStagingDirectory)'
         steps:
         - bash: |
             az login --identity --username 29a4d3e7-c7d5-41c7-b5a0-fee8cf466371
