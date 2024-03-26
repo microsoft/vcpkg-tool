@@ -29,8 +29,6 @@ variables:
 - group: vcpkg Terrapin URLs
 - name: TeamName
   value: vcpkg
-- name: Codeql.Enabled
-  value: true
   # If the user didn't override the signing type, then only real-sign on main.
 - ${{ if ne(parameters.SignTypeOverride, 'default') }}:
   - name: SignType
@@ -124,15 +122,11 @@ extends:
           displayName: Detect Components
           inputs:
             sourceScanPath: vcpkg-artifacts
-        - task: CodeQL3000Init@0
-          displayName: CodeQL Initialize
         - script: |
             mkdir "$(Build.BinariesDirectory)"
             mkdir "$(Build.BinariesDirectory)\vcpkg-artifacts"
             node "$(Build.SourcesDirectory)\vcpkg-artifacts\node_modules\typescript\bin\tsc" -p "$(Build.SourcesDirectory)\vcpkg-artifacts" --outDir "$(Build.BinariesDirectory)\vcpkg-artifacts"
           displayName: Build TypeScript
-        - task: CodeQL3000Finalize@0
-          displayName: CodeQL Finalize
         - task: Npm@1
           inputs:
             command: 'custom'
@@ -333,8 +327,6 @@ extends:
             publishVstsFeed: '97a41293-2972-4f48-8c0e-05493ae82010'
             condition: and(or(eq(parameters.PublishTo, 'GitHub and NuGet'),eq(parameters.PublishTo, 'NuGet Only')), eq(variables.SignType, 'real'), succeeded())
         steps:
-        - task: CodeQL3000Init@0
-          displayName: 'CodeQL Initialize'
         - task: CmdLine@2
           displayName: "Build vcpkg amd64 with CMake"
           inputs:
@@ -353,8 +345,6 @@ extends:
               cmake.exe --version
               cmake.exe -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_BUILD_TLS12_DOWNLOADER=ON -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON -DVCPKG_PDB_SUFFIX="-arm64" "-DVCPKG_FMT_URL=$(fmt-tarball-url)" "-DVCPKG_CMAKERC_URL=$(cmakerc-tarball-url)" "-DVCPKG_BASE_VERSION=$(VCPKG_BASE_VERSION)" "-DVCPKG_VERSION=$(Build.SourceVersion)" "-DVCPKG_STANDALONE_BUNDLE_SHA=$(VCPKG_STANDALONE_BUNDLE_SHA)" -B "$(Build.BinariesDirectory)\arm64"
               ninja.exe -C "$(Build.BinariesDirectory)\arm64"
-        - task: CodeQL3000Finalize@0
-          displayName: 'CodeQL Finalize'
         - task: NuGetToolInstaller@1
           inputs:
             versionSpec: 5.7
