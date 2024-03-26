@@ -312,19 +312,18 @@ extends:
             targetPath: '$(Build.ArtifactStagingDirectory)\drop'
             artifactName: 'Drop'
             publishLocation: 'Container'
-          - ${{ if or(eq(parameters.PublishTo, 'GitHub and NuGet'),eq(parameters.PublishTo, 'NuGet Only')) }}:
-            - output: pipelineArtifact
-              displayName: 'Publish nupkg as Artifact'
-              targetPath: '$(Build.ArtifactStagingDirectory)/vs-insertion/drop'
-              artifactName: 'vs-insertion'
-              publishLocation: 'Container'
-          - ${{ if and(eq(parameters.PublishTo, 'GitHub and NuGet'), eq(variables.SignType, 'real'), succeeded()) }}:
-            - output: nuget
-              displayName: 'NuGet publish for VS Insertion'
-              condition: and(eq(variables.SignType, 'real'), succeeded())
-              packageParentPath: '$(Build.ArtifactStagingDirectory)'
-              packagesToPush: '$(Build.ArtifactStagingDirectory)/vs-insertion/drop/VS.Redist.Vcpkg.amd64.1.0.0-$(VCPKG_FULL_VERSION).nupkg'
-              publishVstsFeed: '97a41293-2972-4f48-8c0e-05493ae82010'
+          - output: pipelineArtifact
+            displayName: 'Publish nupkg as Artifact'
+            targetPath: '$(Build.ArtifactStagingDirectory)/vs-insertion/drop'
+            artifactName: 'vs-insertion'
+            publishLocation: 'Container'
+            condition: or(eq(parameters.PublishTo, 'GitHub and NuGet'),eq(parameters.PublishTo, 'NuGet Only'), succeeded())
+          - output: nuget
+            displayName: 'NuGet publish for VS Insertion'
+            packageParentPath: '$(Build.ArtifactStagingDirectory)'
+            packagesToPush: '$(Build.ArtifactStagingDirectory)/vs-insertion/drop/VS.Redist.Vcpkg.amd64.1.0.0-$(VCPKG_FULL_VERSION).nupkg'
+            publishVstsFeed: '97a41293-2972-4f48-8c0e-05493ae82010'
+            condition: and(or(eq(parameters.PublishTo, 'GitHub and NuGet'),eq(parameters.PublishTo, 'NuGet Only')), eq(variables.SignType, 'real'), succeeded())
         steps:
         - task: CodeQL3000Init@0
           displayName: 'CodeQL Initialize'
