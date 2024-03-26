@@ -556,6 +556,17 @@ add_executable(test-script-asset-cache ${TEST_SCRIPT_ASSET_CACHE_SOURCES} "${CMA
 set_property(TARGET test-script-asset-cache PROPERTY PDB_NAME "test-script-asset-cache${VCPKG_PDB_SUFFIX}")
 endif()
 
+# === Target: verify_messages ===
+set(PS_SCRIPT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/scripts/verifyMessages.ps1")
+set(SEARCH_DIR "${CMAKE_CURRENT_SOURCE_DIR}") 
+set(MESSAGE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/include/vcpkg/base/message-data.inc.h")
+
+add_custom_target(
+    verify-messages
+    COMMAND pwsh -File ${PS_SCRIPT_PATH} ${SEARCH_DIR} ${MESSAGE_FILE}
+    COMMENT "Running PowerShell script to verify message usage..."
+)
+
 # === Target: format ===
 
 find_program(CLANG_FORMAT clang-format PATHS "$ENV{PROGRAMFILES}/LLVM/bin")
