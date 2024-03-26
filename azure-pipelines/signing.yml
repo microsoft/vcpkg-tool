@@ -176,7 +176,7 @@ extends:
           inputs:
             pwsh: true
             filePath: vcpkg-init/mint-standalone-bundle.ps1
-            arguments: '-DestinationTarball "$(Build.BinariesDirectory)\vcpkg-standalone-bundle.tar.gz" -TempDir standalone-temp -SignedFilesRoot "$(Build.BinariesDirectory)" -Deployment OneLiner -VcpkgBaseVersion "$(VCPKG_INITIAL_BASE_VERSION)"'
+            arguments: '-DestinationTarball "$(Build.BinariesDirectory)\vcpkg-standalone-bundle.tar.gz" -TempDir standalone-temp -ArchIndependentSignedFilesRoot "$(Build.BinariesDirectory)" -Deployment OneLiner -VcpkgBaseVersion "$(VCPKG_INITIAL_BASE_VERSION)"'
         - script: |
             mkdir "$(Build.ArtifactStagingDirectory)\staging"
             mkdir "$(Build.ArtifactStagingDirectory)\staging\scripts"
@@ -210,6 +210,9 @@ extends:
           VCPKG_STANDALONE_BUNDLE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_STANDALONE_BUNDLE_SHA'] ]
           VCPKG_BASE_VERSION: $[ dependencies.arch_independent.outputs['versions.VCPKG_BASE_VERSION'] ]
         templateContext:
+          mb:
+            signing:
+              enabled: false
           outputs:
           - output: pipelineArtifact
             displayName: 'Publish Unsigned MacOS Binary'
@@ -236,6 +239,9 @@ extends:
           VCPKG_STANDALONE_BUNDLE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_STANDALONE_BUNDLE_SHA'] ]
           VCPKG_BASE_VERSION: $[ dependencies.arch_independent.outputs['versions.VCPKG_BASE_VERSION'] ]
         templateContext:
+          mb:
+            signing:
+              enabled: false
           outputs:
           - output: pipelineArtifact
             displayName: 'Publish Unsigned glibc Binary'
@@ -266,6 +272,9 @@ extends:
           VCPKG_STANDALONE_BUNDLE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_STANDALONE_BUNDLE_SHA'] ]
           VCPKG_BASE_VERSION: $[ dependencies.arch_independent.outputs['versions.VCPKG_BASE_VERSION'] ]
         templateContext:
+          mb:
+            signing:
+              enabled: false
           outputs:
           - output: pipelineArtifact
             displayName: 'Publish Unsigned muslc Binary'
@@ -412,7 +421,7 @@ extends:
           inputs:
             pwsh: true
             filePath: vcpkg-init/mint-standalone-bundle.ps1
-            arguments: '-DestinationDir "$(Build.ArtifactStagingDirectory)/vs-insertion/staging" -TempDir standalone-temp -SignedFilesRoot "$(Build.ArtifactStagingDirectory)\staging" -Deployment "VisualStudio" -VcpkgBaseVersion "$(VCPKG_BASE_VERSION)"'
+            arguments: '-DestinationDir "$(Build.ArtifactStagingDirectory)/vs-insertion/staging" -TempDir standalone-temp -ArchIndependentSignedFilesRoot "$(Build.ArtifactStagingDirectory)\stagingArchIndependent" -Deployment "VisualStudio" -VcpkgBaseVersion "$(VCPKG_BASE_VERSION)"'
         - task: CmdLine@2
           displayName: 'Arrange Drop and Symbols'
           inputs:
