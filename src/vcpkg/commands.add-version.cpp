@@ -62,21 +62,13 @@ namespace
         {
             if (DateVersion::try_parse(version.version.text))
             {
-                Checks::msg_exit_with_message(VCPKG_LINE_INFO,
-                                              msgAddVersionSuggestNewVersionScheme,
-                                              msg::new_scheme = JsonIdVersionDate,
-                                              msg::old_scheme = JsonIdVersionString,
-                                              msg::package_name = port_name,
-                                              msg::option = SwitchSkipVersionFormatCheck);
+                Checks::msg_exit_with_message(
+                    VCPKG_LINE_INFO, msgAddVersionSuggestVersionDate, msg::package_name = port_name);
             }
             if (DotVersion::try_parse_relaxed(version.version.text))
             {
-                Checks::msg_exit_with_message(VCPKG_LINE_INFO,
-                                              msgAddVersionSuggestNewVersionScheme,
-                                              msg::new_scheme = JsonIdVersion,
-                                              msg::old_scheme = JsonIdVersionString,
-                                              msg::package_name = port_name,
-                                              msg::option = SwitchSkipVersionFormatCheck);
+                Checks::msg_exit_with_message(
+                    VCPKG_LINE_INFO, msgAddVersionSuggestVersionRelaxed, msg::package_name = port_name);
             }
         }
     }

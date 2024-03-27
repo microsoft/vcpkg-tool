@@ -76,11 +76,24 @@ DECLARE_MESSAGE(AddVersionPortFilesShaUnchanged,
                 "",
                 "checked-in files for {package_name} are unchanged from version {version}")
 DECLARE_MESSAGE(AddVersionPortHasImproperFormat, (msg::package_name), "", "{package_name} is not properly formatted")
-DECLARE_MESSAGE(AddVersionSuggestNewVersionScheme,
-                (msg::new_scheme, msg::old_scheme, msg::package_name, msg::option),
-                "The -- before {option} must be preserved as they're part of the help message for the user.",
-                "Use the version scheme \"{new_scheme}\" rather than \"{old_scheme}\" in port "
-                "\"{package_name}\".\nUse --{option} to disable this check.")
+DECLARE_MESSAGE(AddVersionSuggestVersionDate,
+                (msg::package_name),
+                "\"version-string\" and \"version-date\" are JSON keys, and --skip-version-format-check is a command "
+                "line switch. They should not be translated",
+                "The version format of \"{package_name}\" uses \"version-string\", but the format is acceptable as a "
+                "\"version-date\". If this format is actually intended to be an ISO 8601 date, change the format to "
+                "\"version-date\", and rerun this command. Otherwise, disable this check by rerunning this command and "
+                "adding --skip-version-format-check .")
+DECLARE_MESSAGE(
+    AddVersionSuggestVersionRelaxed,
+    (msg::package_name),
+    "\"version-string\" and \"version\" are JSON keys, and --skip-version-format-check is a command line switch. They "
+    "should not be translated",
+    "The version format of \"{package_name}\" uses \"version-string\", but the format is acceptable as a \"version\". "
+    "If the versions for this port are orderable using Semantic Versioning ( https://semver.org/ ) rules, change the "
+    "format to \"version\", and rerun this command. Note that Semantic Versioning considers all versions with a dashed "
+    "suffix as *older* than versions without one. If versions for this port are not so orderable, disable this check "
+    "by rerunning this command and adding --skip-version-format-check .")
 DECLARE_MESSAGE(AddVersionUnableToParseVersionsFile, (msg::path), "", "unable to parse versions file {path}")
 DECLARE_MESSAGE(AddVersionUncommittedChanges,
                 (msg::package_name),
