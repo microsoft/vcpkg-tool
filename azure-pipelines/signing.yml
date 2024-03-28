@@ -486,10 +486,15 @@ extends:
           inputs:
             solution: 'azure-pipelines\nuget-package.signproj'
             msbuildArguments: '/p:OutDir=$(Build.ArtifactStagingDirectory)\vs-insertion\drop /p:IntermediateOutputPath=$(Build.ArtifactStagingDirectory)\vs-insertion\drop'
-        - task: BinSkim@4
+        - task: APIScan@2
+          env:
+            AzureServicesAuthConnectionString: RunAs=App;AppId=d318cba7-db4d-4fb3-99e1-01879cb74e91
           inputs:
-            InputType: 'CommandLine'
-            arguments: 'analyze "$(Build.ArtifactStagingDirectory)\drop\vcpkg.exe" "$(Build.ArtifactStagingDirectory)\drop\tls12-download.exe" "$(Build.ArtifactStagingDirectory)\vcpkg-arm64.exe" "$(Build.ArtifactStagingDirectory)\tls12-download-arm64.exe"'
+            softwareFolder: '$(Build.ArtifactStagingDirectory)\drop'
+            softwareName: 'vcpkg'
+            softwareVersionNum: 'N/A'
+            softwareBuildNum: '$(Build.BuildId)'
+            symbolsFolder: '$(Build.ArtifactStagingDirectory)\drop'
         - task: PoliCheck@2
           inputs:
             inputType: 'Basic'
