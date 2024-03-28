@@ -173,7 +173,17 @@ namespace vcpkg
 
         for (const auto& package : depend_info)
         {
-            fmt::format_to(std::back_inserter(s), "\"{}\";\n", package.package);
+            const char* node_style = "";
+            if (Strings::ends_with(package.package, ":host"))
+            {
+                node_style = " [color=gray fontcolor=gray]";
+            }
+            else if (Strings::contains(package.package, ':'))
+            {
+                node_style = " [color=blue fontcolor=blue]";
+            }
+
+            fmt::format_to(std::back_inserter(s), "\"{}\"{};\n", package.package, node_style);
             if (package.dependencies.empty())
             {
                 empty_node_count++;
@@ -182,7 +192,16 @@ namespace vcpkg
 
             for (const auto& d : package.dependencies)
             {
-                fmt::format_to(std::back_inserter(s), "\"{}\" -> \"{}\";\n", package.package, d);
+                const char* edge_style = " [color=blue fontcolor=blue]";
+                if (!Strings::contains(d, ':'))
+                {
+                    edge_style = "";
+                }
+                else if (Strings::ends_with(d, ":host"))
+                {
+                    edge_style = " [color=gray fontcolor=gray]";
+                }
+                fmt::format_to(std::back_inserter(s), "\"{}\" -> \"{}\"{};\n", package.package, d, edge_style);
             }
         }
 
