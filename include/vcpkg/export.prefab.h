@@ -88,7 +88,8 @@ namespace vcpkg::Prefab
     void do_export(const std::vector<ExportPlanAction>& export_plan,
                    const VcpkgPaths& paths,
                    const Options& prefab_options,
-                   const Triplet& triplet);
+                   const Triplet& triplet,
+                   const Triplet& host_triplet);
     Optional<StringView> find_ndk_version(StringView content);
     Optional<NdkVersion> to_version(StringView version);
 }
