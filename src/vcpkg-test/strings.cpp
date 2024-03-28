@@ -10,6 +10,8 @@
 #include <utility>
 #include <vector>
 
+using namespace vcpkg;
+
 TEST_CASE ("b32 encoding", "[strings]")
 {
     using u64 = uint64_t;
@@ -30,7 +32,7 @@ TEST_CASE ("b32 encoding", "[strings]")
 
     for (const auto& pr : map)
     {
-        REQUIRE(vcpkg::Strings::b32_encode(pr.first) == pr.second);
+        REQUIRE(Strings::b32_encode(pr.first) == pr.second);
     }
 }
 
@@ -38,17 +40,17 @@ TEST_CASE ("percent encoding", "[strings]")
 {
     std::string ascii(127, 0);
     std::iota(ascii.begin(), ascii.end(), static_cast<char>(1));
-    REQUIRE(vcpkg::Strings::percent_encode(ascii) ==
+    REQUIRE(Strings::percent_encode(ascii) ==
             "%01%02%03%04%05%06%07%08%09%0A%0B%0C%0D%0E%0F%10%11%12%13%14%15%16%17%18%19%1A%1B%1C%1D%1E%1F%20%21%22%23%"
             "24%25%26%27%28%29%2A%2B%2C-.%2F0123456789%3A%3B%3C%3D%3E%3F%40ABCDEFGHIJKLMNOPQRSTUVWXYZ%5B%5C%5D%5E_%"
             "60abcdefghijklmnopqrstuvwxyz%7B%7C%7D~%7F");
     // U+1F44D THUMBS UP SIGN and U+1F30F EARTH GLOBE ASIA-AUSTRALIA
-    REQUIRE(vcpkg::Strings::percent_encode("\xF0\x9F\x91\x8d\xf0\x9f\x8c\x8f") == "%F0%9F%91%8D%F0%9F%8C%8F");
+    REQUIRE(Strings::percent_encode("\xF0\x9F\x91\x8d\xf0\x9f\x8c\x8f") == "%F0%9F%91%8D%F0%9F%8C%8F");
 }
 
 TEST_CASE ("split by char", "[strings]")
 {
-    using vcpkg::Strings::split;
+    using Strings::split;
     using result_t = std::vector<std::string>;
     REQUIRE(split(",,,,,,", ',').empty());
     REQUIRE(split(",,a,,b,,", ',') == result_t{"a", "b"});
@@ -59,7 +61,7 @@ TEST_CASE ("split by char", "[strings]")
 
 TEST_CASE ("find_first_of", "[strings]")
 {
-    using vcpkg::Strings::find_first_of;
+    using Strings::find_first_of;
     REQUIRE(find_first_of("abcdefg", "hij") == std::string());
     REQUIRE(find_first_of("abcdefg", "a") == std::string("abcdefg"));
     REQUIRE(find_first_of("abcdefg", "g") == std::string("g"));
@@ -69,13 +71,12 @@ TEST_CASE ("find_first_of", "[strings]")
 
 TEST_CASE ("contains_any_ignoring_c_comments", "[strings]")
 {
-    using vcpkg::Strings::contains_any_ignoring_c_comments;
+    using Strings::contains_any_ignoring_c_comments;
     std::string a = "abc";
     std::string b = "wer";
 
-    vcpkg::Strings::boyer_moore_horspool_searcher to_find[] = {
-        vcpkg::Strings::boyer_moore_horspool_searcher(a.begin(), a.end()),
-        vcpkg::Strings::boyer_moore_horspool_searcher(b.begin(), b.end())};
+    Strings::vcpkg_searcher to_find[] = {Strings::vcpkg_searcher(a.begin(), a.end()),
+                                         Strings::vcpkg_searcher(b.begin(), b.end())};
     REQUIRE(contains_any_ignoring_c_comments(R"(abc)", to_find));
     REQUIRE(contains_any_ignoring_c_comments(R"("abc")", to_find));
     REQUIRE_FALSE(contains_any_ignoring_c_comments(R"("" //abc)", to_find));
@@ -129,13 +130,12 @@ TEST_CASE ("contains_any_ignoring_c_comments", "[strings]")
 
 TEST_CASE ("contains_any_ignoring_hash_comments", "[strings]")
 {
-    using vcpkg::Strings::contains_any_ignoring_hash_comments;
+    using Strings::contains_any_ignoring_hash_comments;
     std::string a = "abc";
     std::string b = "wer";
 
-    vcpkg::Strings::boyer_moore_horspool_searcher to_find[] = {
-        vcpkg::Strings::boyer_moore_horspool_searcher(a.begin(), a.end()),
-        vcpkg::Strings::boyer_moore_horspool_searcher(b.begin(), b.end())};
+    Strings::vcpkg_searcher to_find[] = {Strings::vcpkg_searcher(a.begin(), a.end()),
+                                         Strings::vcpkg_searcher(b.begin(), b.end())};
     REQUIRE(contains_any_ignoring_hash_comments("abc", to_find));
     REQUIRE(contains_any_ignoring_hash_comments("wer", to_find));
     REQUIRE(contains_any_ignoring_hash_comments("wer # test", to_find));
@@ -148,7 +148,7 @@ TEST_CASE ("contains_any_ignoring_hash_comments", "[strings]")
 
 TEST_CASE ("edit distance", "[strings]")
 {
-    using vcpkg::Strings::byte_edit_distance;
+    using Strings::byte_edit_distance;
     REQUIRE(byte_edit_distance("", "") == 0);
     REQUIRE(byte_edit_distance("a", "a") == 0);
     REQUIRE(byte_edit_distance("abcd", "abcd") == 0);
@@ -163,12 +163,12 @@ TEST_CASE ("edit distance", "[strings]")
 
 TEST_CASE ("replace_all", "[strings]")
 {
-    REQUIRE(vcpkg::Strings::replace_all(vcpkg::StringView("literal"), "ter", "x") == "lixal");
+    REQUIRE(Strings::replace_all(StringView("literal"), "ter", "x") == "lixal");
 }
 
 TEST_CASE ("inplace_replace_all", "[strings]")
 {
-    using vcpkg::Strings::inplace_replace_all;
+    using Strings::inplace_replace_all;
     std::string target;
     inplace_replace_all(target, "", "content");
     REQUIRE(target.empty());
@@ -187,7 +187,7 @@ TEST_CASE ("inplace_replace_all", "[strings]")
 
 TEST_CASE ("inplace_replace_all(char)", "[strings]")
 {
-    using vcpkg::Strings::inplace_replace_all;
+    using Strings::inplace_replace_all;
     static_assert(noexcept(inplace_replace_all(std::declval<std::string&>(), 'a', 'a')));
 
     std::string target;
@@ -204,11 +204,6 @@ TEST_CASE ("inplace_replace_all(char)", "[strings]")
 
 TEST_CASE ("api_stable_format(sv,append_f)", "[strings]")
 {
-    namespace Strings = vcpkg::Strings;
-    using vcpkg::api_stable_format;
-    using vcpkg::nullopt;
-    using vcpkg::StringView;
-
     std::string target;
     auto res = api_stable_format("{", [](std::string&, StringView) { CHECK(false); });
     REQUIRE(!res.has_value());
@@ -246,13 +241,13 @@ TEST_CASE ("ascii to utf16", "[utf16]")
 {
     SECTION ("ASCII to utf16")
     {
-        auto str = vcpkg::Strings::to_utf16("abc");
+        auto str = Strings::to_utf16("abc");
         REQUIRE(str == L"abc");
     }
 
     SECTION ("ASCII to utf16 with whitespace")
     {
-        auto str = vcpkg::Strings::to_utf16("abc -x86-windows");
+        auto str = Strings::to_utf16("abc -x86-windows");
         REQUIRE(str == L"abc -x86-windows");
     }
 }

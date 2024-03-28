@@ -1217,7 +1217,7 @@ namespace vcpkg
 
     static bool file_contains_absolute_paths(const ReadOnlyFilesystem& fs,
                                              const Path& file,
-                                             View<Strings::boyer_moore_horspool_searcher> searcher_paths)
+                                             View<Strings::vcpkg_searcher> searcher_paths)
     {
         const auto extension = file.extension();
         if (extension == ".h" || extension == ".hpp" || extension == ".hxx")
@@ -1269,8 +1269,8 @@ namespace vcpkg
 
         Util::sort_unique_erase(string_paths);
 
-        const auto searcher_paths = Util::fmap(
-            string_paths, [](std::string& s) { return Strings::boyer_moore_horspool_searcher(s.begin(), s.end()); });
+        const auto searcher_paths =
+            Util::fmap(string_paths, [](std::string& s) { return Strings::vcpkg_searcher(s.begin(), s.end()); });
 
         std::vector<Path> failing_files;
         {
