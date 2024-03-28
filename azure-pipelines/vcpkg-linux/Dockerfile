@@ -21,21 +21,14 @@ RUN tdnf install -y \
         openssl-devel
 
 # Obtain ubuntu package signing key (for use by debootstrap)
-# 1. Add public key used to sign the ubuntu keyring
-COPY dimitri_john_ledkov.asc .
-RUN gpg --output dimitri_john_ledkov.gpg --dearmor dimitri_john_ledkov.asc && \
-    rm dimitri_john_ledkov.asc && \
-# 2. Download the ubuntu keyrings
-    curl -L -o ubuntu-keyring_2021.03.26.tar.gz https://mirrors.edge.kernel.org/ubuntu/pool/main/u/ubuntu-keyring/ubuntu-keyring_2021.03.26.tar.gz && \
+# 1. Download the ubuntu keyrings
+RUN curl -L -o ubuntu-keyring_2021.03.26.tar.gz https://mirrors.edge.kernel.org/ubuntu/pool/main/u/ubuntu-keyring/ubuntu-keyring_2021.03.26.tar.gz && \
+# 2. Check that they have the correct SHA
     echo "492eed5c06408c6f632577adb0796130af5d6542013ef418f47187a209e49bb1 ubuntu-keyring_2021.03.26.tar.gz" | sha256sum -c && \
     tar xf ubuntu-keyring_2021.03.26.tar.gz && \
     rm ubuntu-keyring_2021.03.26.tar.gz && \
-# 3. Verify keyrings
+# 3. Install the needed keyring and delete the rest
     pushd ubuntu-keyring-2021.03.26 && \
-    gpg --keyring /dimitri_john_ledkov.gpg --output SHA512SUMS.txt --decrypt SHA512SUMS.txt.asc && \
-    rm /dimitri_john_ledkov.gpg && \
-    sha512sum -c SHA512SUMS.txt && \
-# 4. Install the needed keyring and delete the rest
     mkdir -p /usr/share/keyrings && \
     mv keyrings/ubuntu-archive-keyring.gpg /usr/share/keyrings && \
     popd && \
@@ -55,6 +48,10 @@ RUN chroot /crossrootfs/x64 apt-get clean && \
 # Repeated runs of apt-get install workaround 'hash sum mismatch' errors
 # (This is also why these are a separate cache layer)
 RUN chroot /crossrootfs/x64 apt-get install -y build-essential symlinks "g++-9" || \
+    chroot /crossrootfs/x64 apt-get install -y build-essential symlinks "g++-9" || \
+    chroot /crossrootfs/x64 apt-get install -y build-essential symlinks "g++-9" || \
+    chroot /crossrootfs/x64 apt-get install -y build-essential symlinks "g++-9" || \
+    chroot /crossrootfs/x64 apt-get install -y build-essential symlinks "g++-9" || \
     chroot /crossrootfs/x64 apt-get install -y build-essential symlinks "g++-9" || \
     chroot /crossrootfs/x64 apt-get install -y build-essential symlinks "g++-9" && \
     chroot /crossrootfs/x64 symlinks -cr /usr && \
