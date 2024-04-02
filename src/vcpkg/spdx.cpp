@@ -105,8 +105,8 @@ Json::Value vcpkg::run_resource_heuristics(StringView contents, StringView versi
     auto git = find_cmake_invocation(contents, "vcpkg_from_git");
     if (!git.empty())
     {
-        auto url = extract_cmake_invocation_argument(github, CMakeVariableUrl);
-        auto ref = fix_ref_version(extract_cmake_invocation_argument(github, CMakeVariableRef), version_text);
+        auto url = extract_cmake_invocation_argument(git, CMakeVariableUrl);
+        auto ref = fix_ref_version(extract_cmake_invocation_argument(git, CMakeVariableRef), version_text);
         packages.push_back(make_resource(
             fmt::format("SPDXRef-resource-{}", ++n), url.to_string(), fmt::format("git+{}@{}", url, ref), {}, {}));
     }
