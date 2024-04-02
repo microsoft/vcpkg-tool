@@ -16,6 +16,8 @@ endfunction()
 
 add_toolchain_linker_flag("-Wl,--rpath-link=/crossrootfs/x64/lib/x86_64-linux-gnu")
 add_toolchain_linker_flag("-Wl,--rpath-link=/crossrootfs/x64/usr/lib/x86_64-linux-gnu")
+# Workaround for https://gcc.gnu.org/bugzilla/show_bug.cgi?id=52590
+set(CMAKE_EXE_LINKER_FLAGS "-Wl,--whole-archive -lpthread -Wl,--no-whole-archive")
 
 set(CMAKE_C_COMPILER /usr/bin/gcc)
 set(CMAKE_CXX_COMPILER /usr/bin/g++)
