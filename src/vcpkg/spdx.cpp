@@ -10,7 +10,10 @@
 
 using namespace vcpkg;
 
-static std::string fix_ref_version(StringView ref, StringView version) { return replace_cmake_var(ref, "VERSION", version); }
+static std::string fix_ref_version(StringView ref, StringView version)
+{
+    return replace_cmake_var(ref, "VERSION", version);
+}
 
 static std::string conclude_license(const std::string& license)
 {

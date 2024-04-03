@@ -41,7 +41,8 @@ TEST_CASE ("find cmake invocation", "[cmake]")
     }
 }
 
-TEST_CASE("extract cmake invocation argument", "[cmake]") {
+TEST_CASE ("extract cmake invocation argument", "[cmake]")
+{
     {
         auto res = extract_cmake_invocation_argument("loremipsum", "lorem");
         REQUIRE(res.empty());
