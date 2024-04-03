@@ -1,4 +1,7 @@
+#include <vcpkg/base/fwd/message_sinks.h>
+
 #include <vcpkg/base/expected.h>
+#include <vcpkg/base/files.h>
 #include <vcpkg/base/git.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/parse.h>
@@ -8,10 +11,8 @@
 
 #include <vcpkg/tools.h>
 
-namespace
+namespace vcpkg
 {
-    using namespace vcpkg;
-
     Command git_cmd_builder(const GitConfig& config)
     {
         auto cmd = Command(config.git_exe);
@@ -26,14 +27,11 @@ namespace
         }
         return cmd;
     }
-}
 
-namespace vcpkg
-{
     std::string try_extract_port_name_from_path(StringView path)
     {
         static constexpr StringLiteral prefix = "ports/";
-        static constexpr size_t min_path_size = sizeof("ports/*/") - 1;
+        static constexpr size_t min_path_size = prefix.size();
         if (path.size() >= min_path_size && Strings::starts_with(path, prefix))
         {
             auto no_prefix = path.substr(prefix.size());
@@ -198,5 +196,60 @@ namespace vcpkg
                                git_cmd_builder(config).string_arg("rev-parse").string_arg("--is-shallow-repository")),
                            Tools::GIT)
             .map([](std::string&& output) { return "true" == Strings::trim(std::move(output)); });
+    }
+
+    ExpectedL<std::string> git_head_sha(const GitConfig& config, StringView refname)
+    {
+        const auto cmd_line = git_cmd_builder(config).string_arg("rev-parse").string_arg(refname);
+        return flatten_out(cmd_execute_and_capture_output(cmd_line), Tools::GIT)
+            .map([](std::string&& output) {
+                Strings::inplace_trim(output);
+                return std::move(output);
+            })
+            .map_error([&](LocalizedString&& err) {
+                return msg::format(msgGitCommandFailed, msg::command_line = cmd_line.command_line())
+                    .append_raw('\n')
+                    .append(std::move(err));
+            });
+    }
+
+    ExpectedL<Unit> git_fetch(const Filesystem& fs, const GitConfig& config, StringView repo, StringView treeish)
+    {
+        const auto& work_tree = config.git_work_tree;
+        fs.create_directories(work_tree, VCPKG_LINE_INFO);
+
+        auto lock_file = work_tree / ".vcpkg-lock";
+
+        auto guard = fs.take_exclusive_file_lock(lock_file, stderr_sink, IgnoreErrors{});
+
+        auto init_registries_git_dir = git_cmd_builder(config).string_arg("init");
+        auto maybe_init_output = flatten(cmd_execute_and_capture_output(init_registries_git_dir), Tools::GIT);
+        if (!maybe_init_output)
+        {
+            return msg::format(msgGitFailedToInitializeLocalRepository, msg::path = work_tree)
+                .append_raw('\n')
+                .append(msgGitCommandFailed, msg::command_line = init_registries_git_dir.command_line())
+                .append_raw('\n')
+                .append(std::move(maybe_init_output).error());
+        }
+
+        auto fetch_git_ref = git_cmd_builder(config)
+                                 .string_arg("fetch")
+                                 .string_arg("--update-shallow")
+                                 .string_arg("--")
+                                 .string_arg(repo)
+                                 .string_arg(treeish);
+
+        auto maybe_fetch_output = flatten(cmd_execute_and_capture_output(fetch_git_ref), Tools::GIT);
+        if (!maybe_fetch_output)
+        {
+            return msg::format(msgGitFailedToFetch, msg::value = treeish, msg::url = repo)
+                .append_raw('\n')
+                .append(msgGitCommandFailed, msg::command_line = fetch_git_ref.command_line())
+                .append_raw('\n')
+                .append(std::move(maybe_fetch_output).error());
+        }
+
+        return {Unit{}};
     }
 }

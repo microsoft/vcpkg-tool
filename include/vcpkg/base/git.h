@@ -5,6 +5,7 @@
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/path.h>
 #include <vcpkg/base/stringview.h>
+#include <vcpkg/base/system.process.h>
 
 #include <set>
 #include <string>
@@ -42,6 +43,8 @@ namespace vcpkg
         std::string old_path;
     };
 
+    Command git_cmd_builder(const GitConfig& config);
+
     // Try to extract a port name from a path.
     // The path should start with the "ports/" prefix
     std::string try_extract_port_name_from_path(StringView path);
@@ -58,4 +61,8 @@ namespace vcpkg
 
     // Check whether a repository is a shallow clone
     ExpectedL<bool> is_shallow_clone(const GitConfig& config);
+
+    ExpectedL<std::string> git_head_sha(const GitConfig& config, StringView refname = "HEAD");
+    // runs `git fetch {uri} {treeish}`
+    ExpectedL<Unit> git_fetch(const Filesystem& fs, const GitConfig& config, StringView repo, StringView treeish);
 }

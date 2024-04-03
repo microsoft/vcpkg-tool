@@ -1,4 +1,5 @@
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/git.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
 
@@ -73,7 +74,7 @@ namespace
     {
         static constexpr StringLiteral VALID_COMMIT_OUTPUT = "commit\n";
         Checks::msg_check_exit(VCPKG_LINE_INFO,
-                               cmd_execute_and_capture_output(paths.git_cmd_builder(paths.root / ".git", paths.root)
+                               cmd_execute_and_capture_output(git_cmd_builder(paths.git_builtin_config())
                                                                   .string_arg("cat-file")
                                                                   .string_arg("-t")
                                                                   .string_arg(git_commit_id))

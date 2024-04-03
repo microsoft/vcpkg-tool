@@ -2,6 +2,7 @@
 #include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/delayed-init.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/git.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/jsonreader.h>
 #include <vcpkg/base/messages.h>
@@ -1012,13 +1013,12 @@ namespace
             if (!maybe_contents)
             {
                 msg::println(msgFetchingBaselineInfo, msg::package_name = m_repo);
-                auto maybe_err = m_paths.git_fetch(m_repo, m_baseline_identifier);
+                auto maybe_err =
+                    git_fetch(m_paths.get_filesystem(), m_paths.git_registries_config(), m_repo, m_baseline_identifier);
                 if (!maybe_err)
                 {
                     get_global_metrics_collector().track_define(DefineMetric::RegistriesErrorCouldNotFindBaseline);
-                    return msg::format_error(msgFailedToFetchRepo, msg::url = m_repo)
-                        .append_raw('\n')
-                        .append(maybe_err.error());
+                    return msg::format_error(maybe_err.error());
                 }
 
                 maybe_contents = m_paths.git_show_from_remote_registry(m_baseline_identifier, path_to_baseline);

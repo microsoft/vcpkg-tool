@@ -888,19 +888,10 @@ namespace vcpkg
         return conf;
     }
 
-    Command VcpkgPaths::git_cmd_builder(const Path& dot_git_dir, const Path& work_tree) const
+    Command VcpkgPaths::git_cmd_builder(Path dot_git_dir, Path work_tree) const
     {
-        Command ret(get_tool_exe(Tools::GIT, out_sink));
-        if (!dot_git_dir.empty())
-        {
-            ret.string_arg(Strings::concat("--git-dir=", dot_git_dir));
-        }
-        if (!work_tree.empty())
-        {
-            ret.string_arg(Strings::concat("--work-tree=", work_tree));
-        }
-        ret.string_arg("-c").string_arg("core.autocrlf=false");
-        return ret;
+        const GitConfig config{get_tool_exe(Tools::GIT, out_sink), std::move(dot_git_dir), std::move(work_tree)};
+        return vcpkg::git_cmd_builder(config);
     }
 
     ExpectedL<std::string> VcpkgPaths::get_current_git_sha() const
@@ -910,19 +901,12 @@ namespace vcpkg
             return {*sha, expected_left_tag};
         }
 
-        return flatten_out(
-                   cmd_execute_and_capture_output(
-                       git_cmd_builder(this->root / ".git", this->root).string_arg("rev-parse").string_arg("HEAD")),
-                   Tools::GIT)
-            .map([](std::string&& output) {
-                Strings::inplace_trim(output);
-                return std::move(output);
-            });
+        return git_head_sha(git_builtin_config());
     }
 
     LocalizedString VcpkgPaths::get_current_git_sha_baseline_message() const
     {
-        const auto& git_config = git_builtin_config();
+        const auto git_config = git_builtin_config();
         if (is_shallow_clone(git_config).value_or(false))
         {
             return msg::format(msgShallowRepositoryDetected, msg::path = git_config.git_dir);
@@ -1027,95 +1011,25 @@ namespace vcpkg
             .append(msgWhileGettingLocalTreeIshObjectsForPorts);
     }
 
-    ExpectedL<std::string> VcpkgPaths::git_fetch_from_remote_registry(StringView repo, StringView treeish) const
+    GitConfig VcpkgPaths::git_registries_config() const
     {
-        auto& fs = get_filesystem();
-
-        const auto& work_tree = m_pimpl->m_registries_work_tree_dir;
-        fs.create_directories(work_tree, VCPKG_LINE_INFO);
-        const auto& dot_git_dir = m_pimpl->m_registries_dot_git_dir;
-
-        auto init_cmd = git_cmd_builder(dot_git_dir, work_tree).string_arg("init");
-        auto maybe_init_output = flatten(cmd_execute_and_capture_output(init_cmd), Tools::GIT);
-        if (!maybe_init_output)
-        {
-            return msg::format_error(msgGitCommandFailed, msg::command_line = init_cmd.command_line())
-                .append_raw('\n')
-                .append(maybe_init_output.error());
-        }
-
-        auto lock_file = work_tree / ".vcpkg-lock";
-
-        auto guard = fs.take_exclusive_file_lock(lock_file, stderr_sink, IgnoreErrors{});
-        auto fetch_git_ref = git_cmd_builder(dot_git_dir, work_tree)
-                                 .string_arg("fetch")
-                                 .string_arg("--update-shallow")
-                                 .string_arg("--")
-                                 .string_arg(repo)
-                                 .string_arg(treeish);
-
-        auto maybe_fetch_output = flatten(cmd_execute_and_capture_output(fetch_git_ref), Tools::GIT);
-        if (!maybe_fetch_output)
-        {
-            return msg::format_error(msgGitFailedToFetch, msg::value = treeish, msg::url = repo)
-                .append_raw('\n')
-                .append(msgGitCommandFailed, msg::command_line = fetch_git_ref.command_line())
-                .append_raw('\n')
-                .append(std::move(maybe_fetch_output).error());
-        }
-
-        auto get_fetch_head = git_cmd_builder(dot_git_dir, work_tree).string_arg("rev-parse").string_arg("FETCH_HEAD");
-        return flatten_out(cmd_execute_and_capture_output(get_fetch_head), Tools::GIT)
-            .map([](std::string&& output) { return Strings::trim(output).to_string(); })
-            .map_error([&](LocalizedString&& err) {
-                return msg::format_error(msgGitCommandFailed, msg::command_line = get_fetch_head.command_line())
-                    .append_raw('\n')
-                    .append(std::move(err));
-            });
+        GitConfig conf;
+        conf.git_exe = get_tool_exe(Tools::GIT, out_sink);
+        conf.git_dir = m_pimpl->m_registries_dot_git_dir;
+        conf.git_work_tree = m_pimpl->m_registries_work_tree_dir;
+        return conf;
     }
 
-    ExpectedL<Unit> VcpkgPaths::git_fetch(StringView repo, StringView treeish) const
+    ExpectedL<std::string> VcpkgPaths::git_fetch_from_remote_registry(StringView repo, StringView treeish) const
     {
-        auto& fs = get_filesystem();
+        auto git_config = git_registries_config();
+        auto maybe_fetch_result = vcpkg::git_fetch(get_filesystem(), git_config, repo, treeish);
 
-        const auto& work_tree = m_pimpl->m_registries_work_tree_dir;
-        fs.create_directories(work_tree, VCPKG_LINE_INFO);
-
-        auto lock_file = work_tree / ".vcpkg-lock";
-
-        auto guard = fs.take_exclusive_file_lock(lock_file, stderr_sink, IgnoreErrors{});
-
-        const auto& dot_git_dir = m_pimpl->m_registries_dot_git_dir;
-
-        auto init_registries_git_dir = git_cmd_builder(dot_git_dir, work_tree).string_arg("init");
-        auto maybe_init_output = flatten(cmd_execute_and_capture_output(init_registries_git_dir), Tools::GIT);
-        if (!maybe_init_output)
+        if (!maybe_fetch_result)
         {
-            return msg::format_error(msgGitFailedToInitializeLocalRepository, msg::path = work_tree)
-                .append_raw('\n')
-                .append(msgGitCommandFailed, msg::command_line = init_registries_git_dir.command_line())
-                .append_raw('\n')
-                .append(std::move(maybe_init_output).error());
+            return std::move(maybe_fetch_result).error();
         }
-
-        auto fetch_git_ref = git_cmd_builder(dot_git_dir, work_tree)
-                                 .string_arg("fetch")
-                                 .string_arg("--update-shallow")
-                                 .string_arg("--")
-                                 .string_arg(repo)
-                                 .string_arg(treeish);
-
-        auto maybe_fetch_output = flatten(cmd_execute_and_capture_output(fetch_git_ref), Tools::GIT);
-        if (!maybe_fetch_output)
-        {
-            return msg::format_error(msgGitFailedToFetch, msg::value = treeish, msg::url = repo)
-                .append_raw('\n')
-                .append(msgGitCommandFailed, msg::command_line = fetch_git_ref.command_line())
-                .append_raw('\n')
-                .append(std::move(maybe_fetch_output).error());
-        }
-
-        return {Unit{}};
+        return git_head_sha(git_config, "FETCH_HEAD");
     }
 
     // returns an error if there was an unexpected error; returns nullopt if the file doesn't exist at the specified
@@ -1124,24 +1038,14 @@ namespace vcpkg
     {
         auto revision = fmt::format("{}:{}", hash, relative_path.generic_u8string());
         return flatten_out(cmd_execute_and_capture_output(
-                               git_cmd_builder(m_pimpl->m_registries_dot_git_dir, m_pimpl->m_registries_work_tree_dir)
-                                   .string_arg("show")
-                                   .string_arg(revision)),
+                               vcpkg::git_cmd_builder(git_registries_config()).string_arg("show").string_arg(revision)),
                            Tools::GIT);
     }
     ExpectedL<std::string> VcpkgPaths::git_find_object_id_for_remote_registry_path(StringView hash,
                                                                                    const Path& relative_path) const
     {
         auto revision = fmt::format("{}:{}", hash, relative_path.generic_u8string());
-        return flatten_out(cmd_execute_and_capture_output(
-                               git_cmd_builder(m_pimpl->m_registries_dot_git_dir, m_pimpl->m_registries_work_tree_dir)
-                                   .string_arg("rev-parse")
-                                   .string_arg(revision)),
-                           Tools::GIT)
-            .map([](std::string&& output) {
-                Strings::inplace_trim(output);
-                return std::move(output);
-            });
+        return git_head_sha(git_registries_config(), revision);
     }
 
     ExpectedL<Unit> VcpkgPaths::git_read_tree(const Path& destination, StringView tree, const Path& dot_git_dir) const
