@@ -1,13 +1,10 @@
 #include <vcpkg/base/fwd/message_sinks.h>
 
-#include <vcpkg/base/expected.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/git.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/strings.h>
-#include <vcpkg/base/stringview.h>
-#include <vcpkg/base/system.process.h>
 
 #include <vcpkg/tools.h>
 
