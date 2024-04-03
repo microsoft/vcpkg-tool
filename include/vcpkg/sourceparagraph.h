@@ -9,6 +9,7 @@
 
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/path.h>
+#include <vcpkg/base/strings.h>
 #include <vcpkg/base/stringview.h>
 
 #include <vcpkg/paragraphparser.h>
