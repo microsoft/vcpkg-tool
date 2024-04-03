@@ -368,6 +368,7 @@ namespace vcpkg
     inline constexpr StringLiteral CMakeVariableFeatures = "FEATURES";
     inline constexpr StringLiteral CMakeVariableFilename = "FILENAME";
     inline constexpr StringLiteral CMakeVariableGit = "GIT";
+    inline constexpr StringLiteral CMakeVariableGitlabUrl = "GITLAB_URL";
     inline constexpr StringLiteral CMakeVariableHashAdditionalFiles = "VCPKG_HASH_ADDITIONAL_FILES";
     inline constexpr StringLiteral CMakeVariableHostTriplet = "_HOST_TRIPLET";
     inline constexpr StringLiteral CMakeVariableLoadVcvarsEnv = "VCPKG_LOAD_VCVARS_ENV";
