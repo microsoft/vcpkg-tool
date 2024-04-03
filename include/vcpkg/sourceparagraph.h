@@ -209,6 +209,10 @@ namespace vcpkg
         SchemedVersion schemed_version() const { return {scheme(), to_version()}; }
         VersionSpec to_version_spec() const { return source_control_file->to_version_spec(); }
         Path port_directory() const { return control_path.parent_path(); }
+        bool is_overlay_port(const Path& default_port_dir) const
+        {
+            return !Strings::starts_with(control_path, default_port_dir);
+        }
 
         std::unique_ptr<SourceControlFile> source_control_file;
         Path control_path;
