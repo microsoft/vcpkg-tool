@@ -841,8 +841,8 @@ namespace vcpkg
         if (m_pimpl->m_bundle.read_only)
         {
             Strings::append(ret, "    vcpkg-readonly: true\n");
-            const auto sha = get_current_git_sha();
-            Strings::append(ret, "    vcpkg-scripts version: ", sha ? StringView(*sha.get()) : "unknown", "\n");
+            const auto sha = get_current_git_sha().value_or("unknown");
+            Strings::append(ret, "    vcpkg-scripts version: ", StringView{sha}, "\n");
         }
         else
         {
@@ -1027,7 +1027,7 @@ namespace vcpkg
 
         if (!maybe_fetch_result)
         {
-            return std::move(maybe_fetch_result).error();
+            return msg::format_error(maybe_fetch_result.error());
         }
         return git_head_sha(git_config, "FETCH_HEAD");
     }
