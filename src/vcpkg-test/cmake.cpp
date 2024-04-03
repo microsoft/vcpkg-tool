@@ -20,28 +20,23 @@ TEST_CASE ("replace CMake variable", "[cmake]")
 TEST_CASE ("find cmake invocation", "[cmake]")
 {
     {
-        static constexpr StringLiteral str{"lorem_ipsum()"};
-        auto res = find_cmake_invocation(str, "lorem_ipsum");
+        auto res = find_cmake_invocation("lorem_ipsum()", "lorem_ipsum");
         REQUIRE(res.empty());
     }
     {
-        static constexpr StringLiteral str{"lorem_ipsum()"};
-        auto res = find_cmake_invocation(str, "lorem_ipsu");
+        auto res = find_cmake_invocation("lorem_ipsum()", "lorem_ipsu");
         REQUIRE(res.empty());
     }
     {
-        static constexpr StringLiteral str{"lorem_ipsum("};
-        auto res = find_cmake_invocation(str, "lorem_ipsum");
+        auto res = find_cmake_invocation("lorem_ipsum(", "lorem_ipsum");
         REQUIRE(res.empty());
     }
     {
-        static constexpr StringLiteral str{"lorem_ipum()"};
-        auto res = find_cmake_invocation(str, "lorem_ipsum");
+        auto res = find_cmake_invocation("lorem_ipum()", "lorem_ipsum");
         REQUIRE(res.empty());
     }
     {
-        static constexpr StringLiteral str{"lorem_ipsum( )"};
-        auto res = find_cmake_invocation(str, "lorem_ipsum");
+        auto res = find_cmake_invocation("lorem_ipsum( )", "lorem_ipsum");
         REQUIRE(res == " ");
     }
 }
