@@ -165,6 +165,18 @@ namespace
 
 namespace vcpkg
 {
+    namespace
+    {
+        const char* get_dot_element_style(const std::string& label)
+        {
+            if (!Strings::contains(label, ':')) return "";
+
+            if (Strings::ends_with(label, ":host")) return " [color=gray51 fontcolor=gray51]";
+
+            return " [color=blue fontcolor=blue]";
+        }
+    }
+
     std::string create_dot_as_string(const std::vector<PackageDependInfo>& depend_info)
     {
         int empty_node_count = 0;
@@ -173,17 +185,8 @@ namespace vcpkg
 
         for (const auto& package : depend_info)
         {
-            const char* node_style = "";
-            if (Strings::ends_with(package.package, ":host"))
-            {
-                node_style = " [color=gray51 fontcolor=gray51]";
-            }
-            else if (Strings::contains(package.package, ':'))
-            {
-                node_style = " [color=blue fontcolor=blue]";
-            }
-
-            fmt::format_to(std::back_inserter(s), "\"{}\"{};\n", package.package, node_style);
+            fmt::format_to(
+                std::back_inserter(s), "\"{}\"{};\n", package.package, get_dot_element_style(package.package));
             if (package.dependencies.empty())
             {
                 empty_node_count++;
@@ -192,16 +195,8 @@ namespace vcpkg
 
             for (const auto& d : package.dependencies)
             {
-                const char* edge_style = " [color=blue fontcolor=blue]";
-                if (!Strings::contains(d, ':'))
-                {
-                    edge_style = "";
-                }
-                else if (Strings::ends_with(d, ":host"))
-                {
-                    edge_style = " [color=gray51 fontcolor=gray51]";
-                }
-                fmt::format_to(std::back_inserter(s), "\"{}\" -> \"{}\"{};\n", package.package, d, edge_style);
+                fmt::format_to(
+                    std::back_inserter(s), "\"{}\" -> \"{}\"{};\n", package.package, d, get_dot_element_style(d));
             }
         }
 
