@@ -176,7 +176,7 @@ namespace vcpkg
             const char* node_style = "";
             if (Strings::ends_with(package.package, ":host"))
             {
-                node_style = " [color=gray fontcolor=gray]";
+                node_style = " [color=gray51 fontcolor=gray51]";
             }
             else if (Strings::contains(package.package, ':'))
             {
@@ -199,7 +199,7 @@ namespace vcpkg
                 }
                 else if (Strings::ends_with(d, ":host"))
                 {
-                    edge_style = " [color=gray fontcolor=gray]";
+                    edge_style = " [color=gray51 fontcolor=gray51]";
                 }
                 fmt::format_to(std::back_inserter(s), "\"{}\" -> \"{}\"{};\n", package.package, d, edge_style);
             }
