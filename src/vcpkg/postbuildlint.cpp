@@ -1380,6 +1380,8 @@ namespace vcpkg
 
         if (windows_target)
         {
+            Debug::println("Running windows targeting post-build checks");
+
             auto release_lib_info = get_lib_info(fs, release_libs);
             Optional<std::vector<Optional<LibInformation>>> debug_lib_info;
 
@@ -1389,7 +1391,6 @@ namespace vcpkg
                 debug_lib_info.emplace(get_lib_info(fs, release_libs));
             }
 
-            Debug::println("Running windows targeting post-build checks");
             if (!build_info.policies.is_enabled(BuildPolicy::SKIP_ARCHITECTURE_CHECK))
             {
                 error_count += check_lib_architecture(
