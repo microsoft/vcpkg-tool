@@ -1388,7 +1388,7 @@ namespace vcpkg
             if (!build_info.policies.is_enabled(BuildPolicy::SKIP_ARCHITECTURE_CHECK) ||
                 !build_info.policies.is_enabled(BuildPolicy::ONLY_RELEASE_CRT))
             {
-                debug_lib_info.emplace(get_lib_info(fs, release_libs));
+                debug_lib_info.emplace(get_lib_info(fs, debug_libs));
             }
 
             if (!build_info.policies.is_enabled(BuildPolicy::SKIP_ARCHITECTURE_CHECK))
