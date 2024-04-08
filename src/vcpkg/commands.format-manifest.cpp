@@ -104,7 +104,7 @@ namespace
         }
         else
         {
-            Debug::println("Converting ", file_to_write_string, " -> ", original_path_string);
+            Debug::println("Converting ", original_path_string, " -> ", file_to_write_string);
         }
 
         auto res = serialize_manifest(data.scf);
