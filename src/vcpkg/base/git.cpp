@@ -28,7 +28,7 @@ namespace vcpkg
     std::string try_extract_port_name_from_path(StringView path)
     {
         static constexpr StringLiteral prefix = "ports/";
-        static constexpr size_t min_path_size = prefix.size();
+        static constexpr size_t min_path_size = sizeof("ports/*/") - 1;
         if (path.size() >= min_path_size && Strings::starts_with(path, prefix))
         {
             auto no_prefix = path.substr(prefix.size());
