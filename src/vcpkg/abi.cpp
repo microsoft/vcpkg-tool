@@ -65,12 +65,12 @@ namespace vcpkg
     }
 
     static void hash_additional_files(const Filesystem& fs,
-                                      const std::vector<std::string>& files,
+                                      const std::vector<Path>& files,
                                       AbiEntries& abi_tag_entries)
     {
         for (size_t i = 0; i < files.size(); ++i)
         {
-            Path file = files[i];
+            auto& file = files[i];
             if (file.is_relative() || !fs.is_regular_file(file))
             {
                 Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgInvalidValueHashAdditionalFiles, msg::path = file);
