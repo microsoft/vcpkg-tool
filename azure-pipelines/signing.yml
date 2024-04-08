@@ -508,7 +508,6 @@ extends:
               SymbolsFeatureName: 'vcpkg'
               SymbolsProject: 'VS'
               SymbolsAgentPath: '$(Build.ArtifactStagingDirectory)\symbols'
-              azureSubscription: 'Symbols Upload (DevDiv)'
         # Publish everything to a GitHub Release
         - ${{ if eq(parameters.PublishTo, 'GitHub and NuGet') }}:
           - task: DownloadSecureFile@1
