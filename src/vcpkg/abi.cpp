@@ -64,9 +64,7 @@ namespace vcpkg
         return "none";
     }
 
-    static void hash_additional_files(const Filesystem& fs,
-                                      const std::vector<Path>& files,
-                                      AbiEntries& abi_tag_entries)
+    static void hash_additional_files(const Filesystem& fs, const std::vector<Path>& files, AbiEntries& abi_tag_entries)
     {
         for (size_t i = 0; i < files.size(); ++i)
         {
