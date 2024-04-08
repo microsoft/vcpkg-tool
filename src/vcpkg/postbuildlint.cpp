@@ -1394,9 +1394,9 @@ namespace vcpkg
             if (!build_info.policies.is_enabled(BuildPolicy::SKIP_ARCHITECTURE_CHECK))
             {
                 error_count += check_lib_architecture(
-                    pre_build_info.target_architecture, release_libs, release_lib_info, msg_sink);
-                error_count += check_lib_architecture(
                     pre_build_info.target_architecture, debug_libs, *debug_lib_info.get(), msg_sink);
+                error_count += check_lib_architecture(
+                    pre_build_info.target_architecture, release_libs, release_lib_info, msg_sink);
             }
 
             std::vector<Path> debug_dlls = fs.get_regular_files_recursive(debug_bin_dir, IgnoreErrors{});
