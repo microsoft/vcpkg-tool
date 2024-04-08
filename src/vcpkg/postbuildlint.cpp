@@ -651,7 +651,6 @@ namespace vcpkg
     }
 
     static LintStatus check_lib_architecture(const std::string& expected_architecture,
-                                             const std::string& cmake_system_name,
                                              View<Path> files,
                                              View<Optional<LibInformation>> maybe_lib_infos,
                                              MessageSink& msg_sink)
@@ -1394,12 +1393,10 @@ namespace vcpkg
             if (!build_info.policies.is_enabled(BuildPolicy::SKIP_ARCHITECTURE_CHECK))
             {
                 error_count += check_lib_architecture(pre_build_info.target_architecture,
-                                                      pre_build_info.cmake_system_name,
                                                       release_libs,
                                                       release_lib_info,
                                                       msg_sink);
                 error_count += check_lib_architecture(pre_build_info.target_architecture,
-                                                      pre_build_info.cmake_system_name,
                                                       debug_libs,
                                                       *debug_lib_info.get(),
                                                       msg_sink);
