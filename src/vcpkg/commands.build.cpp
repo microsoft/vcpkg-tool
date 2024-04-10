@@ -1580,11 +1580,11 @@ namespace vcpkg
 
         fmt::format_to(std::back_inserter(issue_body), "-{}\n", paths.get_toolver_diagnostics());
         fmt::format_to(std::back_inserter(issue_body),
-                       "**To Reproduce**\n\n`vcpkg {} {}`\n",
+                       "**To Reproduce**\n\n`vcpkg {} {}`\n\n",
                        args.get_command(),
                        Strings::join(" ", args.get_forwardable_arguments()));
         fmt::format_to(std::back_inserter(issue_body),
-                       "**Failure logs**\n\n```\n{}\n```\n",
+                       "**Failure logs**\n\n```\n{}\n```\n\n",
                        paths.get_filesystem().read_contents(build_result.stdoutlog.value_or_exit(VCPKG_LINE_INFO),
                                                             VCPKG_LINE_INFO));
 
