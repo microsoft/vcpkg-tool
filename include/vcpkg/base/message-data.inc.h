@@ -1644,7 +1644,6 @@ DECLARE_MESSAGE(
     "value {path}. To suppress this message, unset the environment variable or use the --vcpkg-root command line "
     "switch.")
 DECLARE_MESSAGE(IllegalFeatures, (), "", "List of features is not allowed in this context")
-DECLARE_MESSAGE(IllegalTriplet, (), "", "Triplet is not allowed in this context")
 DECLARE_MESSAGE(IllegalPlatformSpec, (), "", "Platform qualifier is not allowed in this context")
 DECLARE_MESSAGE(ImproperShaLength, (msg::value), "{value} is a sha.", "SHA512's must be 128 hex characters: {value}")
 DECLARE_MESSAGE(IncorrectArchiveFileSignature, (), "", "Incorrect archive file signature")
@@ -2615,8 +2614,6 @@ DECLARE_MESSAGE(UnexpectedEOFMidString, (), "", "Unexpected EOF in middle of str
 DECLARE_MESSAGE(UnexpectedEOFMidUnicodeEscape, (), "", "Unexpected end of file in middle of unicode escape")
 DECLARE_MESSAGE(UnexpectedErrorDuringBulkDownload, (), "", "an unexpected error occurred during bulk download.")
 DECLARE_MESSAGE(UnexpectedEscapeSequence, (), "", "Unexpected escape sequence continuation")
-DECLARE_MESSAGE(UnexpectedFeatureList, (), "", "unexpected list of features")
-DECLARE_MESSAGE(UnexpectedExtension, (msg::extension), "", "Unexpected archive extension: '{extension}'.")
 DECLARE_MESSAGE(UnexpectedField, (msg::json_field), "", "unexpected field '{json_field}'")
 DECLARE_MESSAGE(UnexpectedFieldSuggest,
                 (msg::json_field, msg::value),
