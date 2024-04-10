@@ -1,3 +1,4 @@
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/span.h>
 #include <vcpkg/base/strings.h>
@@ -150,6 +151,7 @@ VCPKG_ENV_PASSTHROUGH=${VCPKG_ENV_PASSTHROUGH}
 VCPKG_ENV_PASSTHROUGH_UNTRACKED=${VCPKG_ENV_PASSTHROUGH_UNTRACKED}
 VCPKG_LOAD_VCVARS_ENV=${VCPKG_LOAD_VCVARS_ENV}
 VCPKG_DISABLE_COMPILER_TRACKING=${VCPKG_DISABLE_COMPILER_TRACKING}
+VCPKG_HASH_ADDITIONAL_FILES=${VCPKG_HASH_ADDITIONAL_FILES}
 VCPKG_XBOX_CONSOLE_TARGET=${VCPKG_XBOX_CONSOLE_TARGET}
 Z_VCPKG_GameDKLatest=$ENV{GameDKLatest}
 e1e74b5c-18cb-4474-a6bd-5c1c8bc81f3f
@@ -164,7 +166,7 @@ endfunction()
             std::string featurelist;
             for (auto&& f : spec.features)
             {
-                if (f == "core" || f == "default" || f == "*") continue;
+                if (f == FeatureNameCore || f == FeatureNameDefault || f == "*") continue;
                 if (!featurelist.empty()) featurelist.push_back(';');
                 featurelist.append(f);
             }

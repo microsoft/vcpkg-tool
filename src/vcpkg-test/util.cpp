@@ -66,7 +66,7 @@ namespace vcpkg::Test
                 pghs.back().emplace(kv.first, std::make_pair(kv.second, vcpkg::TextRowCol{}));
             }
         }
-        return vcpkg::SourceControlFile::parse_control_file("", std::move(pghs));
+        return vcpkg::SourceControlFile::parse_control_file("test-origin", std::move(pghs));
     }
 
     std::unique_ptr<vcpkg::StatusParagraph> make_status_pgh(const char* name,
@@ -131,11 +131,16 @@ namespace vcpkg::Test
         ParserBase parser(sv, "test");
         while (!parser.at_eof())
         {
-            auto opt = parse_qualified_specifier(parser);
-            REQUIRE(opt.has_value());
-            bool unused = false;
-            ret.push_back(
-                opt.get()->to_full_spec(X86_WINDOWS, unused, ImplicitDefault::YES).value_or_exit(VCPKG_LINE_INFO));
+            auto maybe_opt = parse_qualified_specifier(
+                parser, AllowFeatures::Yes, ParseExplicitTriplet::Allow, AllowPlatformSpec::No);
+            if (auto opt = maybe_opt.get())
+            {
+                ret.push_back(opt->to_full_spec(X86_WINDOWS, ImplicitDefault::Yes));
+            }
+            else
+            {
+                FAIL();
+            }
         }
 
         return ret;
