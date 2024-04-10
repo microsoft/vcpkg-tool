@@ -1,14 +1,9 @@
 #! /usr/bin/env pwsh
 
-# Validate input
-if ($args.Count -ne 3) {
-    Write-Host "Usage: <script> <directory-to-search> <cpp-messages.json> <artifact-messages.json>"
-    exit 1
-}
-
-$SEARCH_DIR = $args[0]
-$CPP_MESSAGES = $args[1]
-$ARITFACT_MESSAGES = $args[2]
+# Define paths relative to the script's directory
+$SEARCH_DIR = Resolve-Path -Path (Join-Path -Path $PSScriptRoot -ChildPath "..\")
+$CPP_MESSAGES = Resolve-Path -Path (Join-Path -Path $PSScriptRoot -ChildPath "..\locales\messages.es.json")
+$ARITFACT_MESSAGES = Resolve-Path -Path (Join-Path -Path $PSScriptRoot -ChildPath "..\vcpkg-artifacts\locales\messages.json")
 
 Write-Host "Processing message declarations..."
 
@@ -51,7 +46,7 @@ Write-Host "Total unused messages: $($unused_messages.Count)"
 if ($unused_messages.Count -gt 0) {
     Write-Host "Please remove the following messages:"
     foreach ($msg in $unused_messages) {
-        Write-Host $msg
+        Write-Host "`n$msg"
     }
     exit 1
 }

@@ -557,14 +557,9 @@ set_property(TARGET test-script-asset-cache PROPERTY PDB_NAME "test-script-asset
 endif()
 
 # === Target: verify_messages ===
-set(PS_SCRIPT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/scripts/verifyMessages.ps1")
-set(SEARCH_DIR "${CMAKE_CURRENT_SOURCE_DIR}") 
-set(MESSAGE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/locales/messages.es.json")
-set(ARTIFACT_MESSAGES_FILE "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg-artifacts/locales/messages.json")
-
 add_custom_target(
     verify-messages
-    COMMAND pwsh -File ${PS_SCRIPT_PATH} ${SEARCH_DIR} ${MESSAGE_FILE} ${ARTIFACT_MESSAGES_FILE}
+    COMMAND pwsh -File "${CMAKE_CURRENT_SOURCE_DIR}/scripts/verifyMessages.ps1"
     COMMENT "Running PowerShell script to verify message usage..."
 )
 
