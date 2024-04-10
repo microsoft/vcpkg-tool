@@ -2,7 +2,7 @@
 
 # Define paths relative to the script's directory
 $SEARCH_DIR = Resolve-Path -Path (Join-Path -Path $PSScriptRoot -ChildPath "..\")
-$CPP_MESSAGES = Resolve-Path -Path (Join-Path -Path $PSScriptRoot -ChildPath "..\locales\messages.es.json")
+$CPP_MESSAGES = Resolve-Path -Path (Join-Path -Path $PSScriptRoot -ChildPath "..\locales\messages.json")
 $ARITFACT_MESSAGES = Resolve-Path -Path (Join-Path -Path $PSScriptRoot -ChildPath "..\vcpkg-artifacts\locales\messages.json")
 
 Write-Host "Processing message declarations..."
