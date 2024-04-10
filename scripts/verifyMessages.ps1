@@ -1,14 +1,14 @@
 #! /usr/bin/env pwsh
 
 # Validate input
-if ($args.Count -ne 2) {
-    Write-Host "Usage: <script> <directory-to-search> <message-declaration-file>"
+if ($args.Count -ne 3) {
+    Write-Host "Usage: <script> <directory-to-search> <cpp-messages.json> <artifact-messages.json>"
     exit 1
 }
 
 $SEARCH_DIR = $args[0]
 $CPP_MESSAGES = $args[1]
-$ARITFACT_MESSAGES = "vcpkg-artifacts/locales/messages.json"
+$ARITFACT_MESSAGES = $args[2]
 
 Write-Host "Processing message declarations..."
 
