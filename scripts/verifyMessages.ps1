@@ -41,8 +41,8 @@ foreach ($msg in $declared_messages) {
     }
 }
 
-# Filter out any empty or whitespace-only entries from unused messages
-$unused_messages = $unused_messages | Where-Object { $_.Trim() -ne '' }
+# Remove any empty or whitespace-only entries from unused messages just before reporting
+$unused_messages = $unused_messages | Where-Object { ![string]::IsNullOrWhiteSpace($_) }
 
 # Report findings
 Write-Host "Total messages declared: $($declared_messages.Count)"
