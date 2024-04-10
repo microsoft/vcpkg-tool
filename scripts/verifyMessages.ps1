@@ -7,17 +7,21 @@ if ($args.Count -ne 2) {
 }
 
 $SEARCH_DIR = $args[0]
-$MESSAGE_FILE = $args[1]
-Write-Host "Processing message declarations from $MESSAGE_FILE..."
+$CPP_MESSAGES = $args[1]
+$ARITFACT_MESSAGES = "vcpkg-artifacts/locales/messages.json"
 
-# Extract message names directly into an array
-$declared_messages = @()
-Get-Content $MESSAGE_FILE | ForEach-Object {
-    if ($_ -match "DECLARE_MESSAGE\(([^,]+),") {
-        $messageName = $matches[1].Trim()
-        $declared_messages += $messageName
-    }
-}
+Write-Host "Processing message declarations..."
+
+# Read JSON file into a hashtable to accommodate case-sensitive keys
+$jsonContent = Get-Content $CPP_MESSAGES -Raw | ConvertFrom-Json -AsHashTable
+$declared_messages = @($jsonContent.Keys) | Where-Object { -not $_.EndsWith('.comment') }
+
+# Read the JSON file with messages to remove into another hashtable
+$jsonToRemove = Get-Content $ARITFACT_MESSAGES -Raw | ConvertFrom-Json -AsHashTable
+$messages_to_remove = @($jsonToRemove.Keys) | Where-Object { -not $_.EndsWith('.comment') }
+
+# Subtract the artifact messages
+$declared_messages = Compare-Object -ReferenceObject $declared_messages -DifferenceObject $messages_to_remove -PassThru
 
 # Find all instances of 'msg' prefixed variables in .cpp and .h files and store them in an array
 $used_messages = Get-ChildItem -Path $SEARCH_DIR -Include @('*.cpp', '*.h') -Recurse |
@@ -25,7 +29,6 @@ $used_messages = Get-ChildItem -Path $SEARCH_DIR -Include @('*.cpp', '*.h') -Rec
     ForEach-Object { $_.Matches } |
     ForEach-Object { $_.Value } |
     Sort-Object -Unique
-    
 
 # Initialize array for unused messages
 $unused_messages = @()
@@ -39,20 +42,13 @@ foreach ($msg in $declared_messages) {
 }
 
 # Report findings
-if ($unused_messages.Count -gt 0) {
-    Write-Host "Unused messages found."
-    foreach ($msg in $unused_messages) {
-        Write-Host $msg
-    }
-}
-else {
-    Write-Host "All messages are used."
-}
-
 Write-Host "Total messages declared: $($declared_messages.Count)"
 Write-Host "Total unused messages: $($unused_messages.Count)"
 
 if ($unused_messages.Count -gt 0) {
-    Write-Host "Please remove unused messages from $MESSAGE_FILE."
+    Write-Host "Please remove the following messages:"
+    foreach ($msg in $unused_messages) {
+        Write-Host $msg
+    }
     exit 1
 }

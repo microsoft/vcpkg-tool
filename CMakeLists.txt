@@ -559,7 +559,7 @@ endif()
 # === Target: verify_messages ===
 set(PS_SCRIPT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/scripts/verifyMessages.ps1")
 set(SEARCH_DIR "${CMAKE_CURRENT_SOURCE_DIR}") 
-set(MESSAGE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/include/vcpkg/base/message-data.inc.h")
+set(MESSAGE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/locales/messages.es.json")
 
 add_custom_target(
     verify-messages
