@@ -717,8 +717,6 @@
   "_FailedToDeleteDueToFile.comment": "{value} is the parent path of {path} we tried to delete; the underlying Windows error message is printed after this An example of {path} is /foo/bar.",
   "FailedToDeleteInsideDueToFile": "failed to remove_all_inside({value}) due to {path}: ",
   "_FailedToDeleteInsideDueToFile.comment": "{value} is the parent path of {path} we tried to delete; the underlying Windows error message is printed after this An example of {path} is /foo/bar.",
-  "FailedToDetermineArchitecture": "unable to determine the architecture of {path}.\n{command_line}",
-  "_FailedToDetermineArchitecture.comment": "An example of {path} is /foo/bar. An example of {command_line} is vcpkg install zlib.",
   "FailedToDetermineCurrentCommit": "Failed to determine the current commit:",
   "FailedToDownloadFromMirrorSet": "Failed to download from mirror set",
   "FailedToExtract": "Failed to extract \"{path}\":",

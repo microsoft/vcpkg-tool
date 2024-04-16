@@ -1184,10 +1184,6 @@ DECLARE_MESSAGE(FailedToDeleteInsideDueToFile,
                 "{value} is the parent path of {path} we tried to delete; the underlying Windows error message is "
                 "printed after this",
                 "failed to remove_all_inside({value}) due to {path}: ")
-DECLARE_MESSAGE(FailedToDetermineArchitecture,
-                (msg::path, msg::command_line),
-                "",
-                "unable to determine the architecture of {path}.\n{command_line}")
 DECLARE_MESSAGE(FailedToDetermineCurrentCommit, (), "", "Failed to determine the current commit:")
 DECLARE_MESSAGE(FailedToDownloadFromMirrorSet, (), "", "Failed to download from mirror set")
 DECLARE_MESSAGE(FailedToExtract, (msg::path), "", "Failed to extract \"{path}\":")
