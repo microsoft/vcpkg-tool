@@ -650,16 +650,17 @@ namespace vcpkg
         return maybe_lib_infos;
     }
 
+    // lib_infos[n] is the lib info for libs[n] for all n in [0, libs.size())
     static LintStatus check_lib_architecture(const std::string& expected_architecture,
-                                             View<Path> files,
-                                             View<Optional<LibInformation>> maybe_lib_infos,
+                                             View<Path> libs,
+                                             View<Optional<LibInformation>> lib_infos,
                                              MessageSink& msg_sink)
     {
         std::vector<FileAndArch> binaries_with_invalid_architecture;
-        for (size_t i = 0; i < files.size(); ++i)
+        for (size_t i = 0; i < libs.size(); ++i)
         {
-            auto& maybe_lib_information = maybe_lib_infos[i];
-            auto& file = files[i];
+            auto& maybe_lib_information = lib_infos[i];
+            auto& lib = libs[i];
 
             if (!maybe_lib_information.has_value())
             {
@@ -684,7 +685,7 @@ namespace vcpkg
             if (!printable_machine_types.empty() &&
                 !Util::Vectors::contains(printable_machine_types, expected_architecture))
             {
-                binaries_with_invalid_architecture.push_back({file, Strings::join(",", printable_machine_types)});
+                binaries_with_invalid_architecture.push_back({lib, Strings::join(",", printable_machine_types)});
             }
         }
 
@@ -980,6 +981,7 @@ namespace vcpkg
         }
     }
 
+    // lib_infos[n] is the lib info for libs[n] for all n in [0, libs.size())
     static LintStatus check_crt_linkage_of_libs(const BuildInfo& build_info,
                                                 bool expect_release,
                                                 const std::vector<Path>& libs,
@@ -1385,6 +1387,7 @@ namespace vcpkg
             auto release_lib_info = get_lib_info(fs, release_libs);
             Optional<std::vector<Optional<LibInformation>>> debug_lib_info;
 
+            // Note that this condition is paired with the debug check_crt_linkage_of_libs below
             if (!build_info.policies.is_enabled(BuildPolicy::SKIP_ARCHITECTURE_CHECK) ||
                 !build_info.policies.is_enabled(BuildPolicy::ONLY_RELEASE_CRT))
             {
@@ -1438,10 +1441,11 @@ namespace vcpkg
                 error_count += check_bin_folders_are_not_present_in_static_build(fs, package_dir, msg_sink);
             }
 
+            // Note that this condition is paired with the possible initialization of `debug_lib_info` above
             if (!build_info.policies.is_enabled(BuildPolicy::ONLY_RELEASE_CRT))
             {
-                error_count +=
-                    check_crt_linkage_of_libs(build_info, false, debug_libs, *debug_lib_info.get(), msg_sink);
+                error_count += check_crt_linkage_of_libs(
+                    build_info, false, debug_libs, debug_lib_info.value_or_exit(VCPKG_LINE_INFO), msg_sink);
             }
 
             error_count += check_crt_linkage_of_libs(build_info, true, release_libs, release_lib_info, msg_sink);
