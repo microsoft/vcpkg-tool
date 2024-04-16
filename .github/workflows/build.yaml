@@ -37,7 +37,8 @@ jobs:
         if: inputs.codeql
         uses: github/codeql-action/init@v3
         with:
-          languages: javascript
+          languages: cpp, javascript
+          debug: true
       - name: Configure and Build
         if: matrix.preset != 'windows-ci'
         run: |
