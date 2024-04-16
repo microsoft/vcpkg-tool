@@ -502,13 +502,12 @@ extends:
             targetArgument: '$(Build.ArtifactStagingDirectory)\drop'
             result: 'PoliCheck.xml'
         - ${{ if ne(parameters.PublishTo, 'None') }}:
-          - task: MicroBuildArchiveSymbols@4
+          - task: MicroBuildArchiveSymbols@5
             displayName: 'Upload Symbols'
             inputs:
               SymbolsFeatureName: 'vcpkg'
               SymbolsProject: 'VS'
               SymbolsAgentPath: '$(Build.ArtifactStagingDirectory)\symbols'
-              azureSubscription: 'Symbols Upload (DevDiv)'
         # Publish everything to a GitHub Release
         - ${{ if eq(parameters.PublishTo, 'GitHub and NuGet') }}:
           - task: DownloadSecureFile@1
