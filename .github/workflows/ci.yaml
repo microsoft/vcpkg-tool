@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - codeql-debug
 
 permissions:
   # Required for CodeQL
