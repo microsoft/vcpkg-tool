@@ -124,7 +124,7 @@ namespace vcpkg
         CreateInstallPlanOptions(Triplet t,
                                  const Path& p,
                                  UnsupportedPortAction action = UnsupportedPortAction::Error,
-                                 ImplicitDefault implicit_default = ImplicitDefault::YES)
+                                 ImplicitDefault implicit_default = ImplicitDefault::Yes)
             : host_triplet(t), packages_dir(p), unsupported_port_action(action), implicit_default(implicit_default)
         {
         }

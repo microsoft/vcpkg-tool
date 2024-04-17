@@ -15,7 +15,7 @@ namespace vcpkg
     ///
     struct StatusParagraphs
     {
-        StatusParagraphs();
+        StatusParagraphs() = default;
         explicit StatusParagraphs(std::vector<std::unique_ptr<StatusParagraph>>&& ps);
 
         using container = std::vector<std::unique_ptr<StatusParagraph>>;

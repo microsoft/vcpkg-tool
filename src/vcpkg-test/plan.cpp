@@ -1,5 +1,6 @@
 #include <vcpkg-test/util.h>
 
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/graphs.h>
 
 #include <vcpkg/dependencies.h>
@@ -37,9 +38,9 @@ static void features_check(InstallPlanAction& plan,
     for (auto&& feature_name : expected_features)
     {
         // TODO: see if this can be simplified
-        if (feature_name == "core" || feature_name.empty())
+        if (feature_name == FeatureNameCore || feature_name.empty())
         {
-            REQUIRE((Util::find(feature_list, "core") != feature_list.end() ||
+            REQUIRE((Util::find(feature_list, FeatureNameCore) != feature_list.end() ||
                      Util::find(feature_list, "") != feature_list.end()));
             continue;
         }
