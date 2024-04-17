@@ -61,7 +61,7 @@ static ActionPlan create_feature_install_plan(const PortFileProvider& port_provi
                                               const CMakeVars::CMakeVarProvider& var_provider,
                                               View<FullPackageSpec> specs,
                                               const StatusParagraphs& status_db,
-                                              ImplicitDefault implicit_defaults = ImplicitDefault::YES)
+                                              ImplicitDefault implicit_defaults = ImplicitDefault::Yes)
 {
     const CreateInstallPlanOptions create_options{
         Test::X64_ANDROID, "pkg", UnsupportedPortAction::Error, implicit_defaults};
@@ -845,7 +845,7 @@ TEST_CASE ("install with ImplicitDefault::NO", "[plan]")
     SECTION ("depend-defaults true from core")
     {
         auto install_plan =
-            create_feature_install_plan(map_port, var_provider, full_package_specs, {}, ImplicitDefault::NO);
+            create_feature_install_plan(map_port, var_provider, full_package_specs, {}, ImplicitDefault::No);
         REQUIRE(install_plan.size() == 2);
         features_check(install_plan.install_actions.at(0), "b", {"0", "core"});
         features_check(install_plan.install_actions.at(1), "a", {"core"});
@@ -854,7 +854,7 @@ TEST_CASE ("install with ImplicitDefault::NO", "[plan]")
     SECTION ("depend-defaults true from feature")
     {
         auto install_plan =
-            create_feature_install_plan(map_port, var_provider, full_package_specs2, {}, ImplicitDefault::NO);
+            create_feature_install_plan(map_port, var_provider, full_package_specs2, {}, ImplicitDefault::No);
         REQUIRE(install_plan.size() == 2);
         features_check(install_plan.install_actions.at(0), "b", {"0", "core"});
         features_check(install_plan.install_actions.at(1), "c", {"0", "core"});
@@ -866,7 +866,7 @@ TEST_CASE ("install with ImplicitDefault::NO", "[plan]")
     SECTION ("depend-defaults false from core")
     {
         auto install_plan =
-            create_feature_install_plan(map_port, var_provider, full_package_specs, {}, ImplicitDefault::NO);
+            create_feature_install_plan(map_port, var_provider, full_package_specs, {}, ImplicitDefault::No);
         REQUIRE(install_plan.size() == 2);
         features_check(install_plan.install_actions.at(0), "b", {"core"});
         features_check(install_plan.install_actions.at(1), "a", {"core"});
@@ -875,7 +875,7 @@ TEST_CASE ("install with ImplicitDefault::NO", "[plan]")
     {
         spec_map.map["c"].source_control_file->core_paragraph->depend_defaults = false;
         auto install_plan =
-            create_feature_install_plan(map_port, var_provider, full_package_specs2, {}, ImplicitDefault::NO);
+            create_feature_install_plan(map_port, var_provider, full_package_specs2, {}, ImplicitDefault::No);
         REQUIRE(install_plan.size() == 2);
         features_check(install_plan.install_actions.at(0), "b", {"core"});
         features_check(install_plan.install_actions.at(1), "c", {"0", "core"});

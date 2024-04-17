@@ -227,7 +227,7 @@ static ExpectedL<ActionPlan> create_versioned_install_plan(const IVersionedPortf
                                          deps,
                                          overrides,
                                          toplevel,
-                                         {Test::ARM_UWP, "pkgs", UnsupportedPortAction::Error, ImplicitDefault::YES});
+                                         {Test::ARM_UWP, "pkgs", UnsupportedPortAction::Error, ImplicitDefault::Yes});
 }
 
 static ExpectedL<ActionPlan> create_versioned_install_plan(const IVersionedPortfileProvider& provider,
@@ -246,7 +246,7 @@ static ExpectedL<ActionPlan> create_versioned_install_plan(const IVersionedPortf
         deps,
         overrides,
         toplevel,
-        {Test::ARM_UWP, "pkgs", UnsupportedPortAction::Error, ImplicitDefault::YES});
+        {Test::ARM_UWP, "pkgs", UnsupportedPortAction::Error, ImplicitDefault::Yes});
 }
 
 static ExpectedL<ActionPlan> create_versioned_install_plan(const IOverlayProvider& oprovider,
@@ -1699,18 +1699,18 @@ TEST_CASE ("version install depend-defaults", "[versionplan]")
     auto& d_scf = op.emplace("c");
     d_scf.source_control_file->core_paragraph->dependencies.push_back(Dependency{"b"});
 
-    SECTION ("toplevel ImplicitDefault::YES")
+    SECTION ("toplevel ImplicitDefault::Yes")
     {
-        auto install_plan = create_versioned_install_plan(op, {Dependency{"a"}}, toplevel_spec(), ImplicitDefault::YES)
+        auto install_plan = create_versioned_install_plan(op, {Dependency{"a"}}, toplevel_spec(), ImplicitDefault::Yes)
                                 .value_or_exit(VCPKG_LINE_INFO);
         REQUIRE(install_plan.size() == 2);
         check_name_and_features(install_plan.install_actions[0], "b", {"0"});
         check_name_and_features(install_plan.install_actions[1], "a", {});
     }
 
-    SECTION ("toplevel ImplicitDefault::NO")
+    SECTION ("toplevel ImplicitDefault::No")
     {
-        auto install_plan = create_versioned_install_plan(op, {Dependency{"a"}}, toplevel_spec(), ImplicitDefault::NO)
+        auto install_plan = create_versioned_install_plan(op, {Dependency{"a"}}, toplevel_spec(), ImplicitDefault::No)
                                 .value_or_exit(VCPKG_LINE_INFO);
         REQUIRE(install_plan.size() == 2);
 
@@ -1718,7 +1718,7 @@ TEST_CASE ("version install depend-defaults", "[versionplan]")
         check_name_and_features(install_plan.install_actions[1], "a", {});
 
         // c -> b[default], so depend-defaults should not suppress it
-        install_plan = create_versioned_install_plan(op, {Dependency{"c"}}, toplevel_spec(), ImplicitDefault::NO)
+        install_plan = create_versioned_install_plan(op, {Dependency{"c"}}, toplevel_spec(), ImplicitDefault::No)
                            .value_or_exit(VCPKG_LINE_INFO);
         REQUIRE(install_plan.size() == 2);
         check_name_and_features(install_plan.install_actions[0], "b", {"0"});
