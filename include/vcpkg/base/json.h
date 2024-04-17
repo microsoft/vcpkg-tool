@@ -327,10 +327,8 @@ namespace vcpkg::Json
         JsonStyle style;
     };
 
-    ExpectedT<ParsedJson, std::unique_ptr<ParseError>> parse_file(const ReadOnlyFilesystem&,
-                                                                  const Path&,
-                                                                  std::error_code& ec);
-    ExpectedT<ParsedJson, std::unique_ptr<ParseError>> parse(StringView text, StringView origin);
+    ExpectedL<ParsedJson> parse_file(const ReadOnlyFilesystem&, const Path&, std::error_code& ec);
+    ExpectedL<ParsedJson> parse(StringView text, StringView origin);
     ParsedJson parse_file(LineInfo li, const ReadOnlyFilesystem&, const Path&);
     ExpectedL<Json::Object> parse_object(StringView text, StringView origin);
 
@@ -340,6 +338,11 @@ namespace vcpkg::Json
     std::string stringify(const Object&, JsonStyle style);
     std::string stringify(const Array&);
     std::string stringify(const Array&, JsonStyle style);
+
+    std::string stringify_object_member(StringLiteral member_name,
+                                        const Array& arr,
+                                        JsonStyle style,
+                                        int initial_indent);
 
     uint64_t get_json_parsing_stats();
 }

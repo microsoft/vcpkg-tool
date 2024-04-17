@@ -1,4 +1,5 @@
 #include <vcpkg/base/checks.h>
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/path.h>
@@ -7,6 +8,10 @@
 
 #if defined(__APPLE__)
 #include <sys/sysctl.h>
+#endif
+
+#if defined(__linux__)
+#include <sched.h>
 #endif
 
 #if defined(_WIN32)
@@ -392,9 +397,9 @@ namespace vcpkg
     {
         static ExpectedL<Path> s_home = []() -> ExpectedL<Path> {
 #ifdef _WIN32
-            static constexpr StringLiteral HOMEVAR = "USERPROFILE";
+            constexpr StringLiteral HOMEVAR = EnvironmentVariableUserprofile;
 #else  // ^^^ _WIN32 // !_WIN32 vvv
-            static constexpr StringLiteral HOMEVAR = "HOME";
+            constexpr StringLiteral HOMEVAR = EnvironmentVariableHome;
 #endif // ^^^ !_WIN32
 
             auto maybe_home = get_environment_variable(HOMEVAR);
@@ -422,12 +427,12 @@ namespace vcpkg
     const ExpectedL<Path>& get_appdata_local() noexcept
     {
         static ExpectedL<Path> s_home = []() -> ExpectedL<Path> {
-            auto maybe_home = get_environment_variable("LOCALAPPDATA");
+            auto maybe_home = get_environment_variable(EnvironmentVariableLocalAppData);
             if (!maybe_home.has_value() || maybe_home.get()->empty())
             {
                 // Consult %APPDATA% as a workaround for Service accounts
                 // Microsoft/vcpkg#12285
-                maybe_home = get_environment_variable("APPDATA");
+                maybe_home = get_environment_variable(EnvironmentVariableAppData);
                 if (!maybe_home.has_value() || maybe_home.get()->empty())
                 {
                     return msg::format(msgUnableToReadAppDatas);
@@ -437,7 +442,9 @@ namespace vcpkg
                 p /= "Local";
                 if (!p.is_absolute())
                 {
-                    return msg::format(msgEnvVarMustBeAbsolutePath, msg::path = p, msg::env_var = "%APPDATA%");
+                    return msg::format(msgEnvVarMustBeAbsolutePath,
+                                       msg::path = p,
+                                       msg::env_var = format_environment_variable(EnvironmentVariableAppData));
                 }
 
                 return p;
@@ -446,7 +453,9 @@ namespace vcpkg
             auto p = Path(*maybe_home.get());
             if (!p.is_absolute())
             {
-                return msg::format(msgEnvVarMustBeAbsolutePath, msg::path = p, msg::env_var = "%LOCALAPPDATA%");
+                return msg::format(msgEnvVarMustBeAbsolutePath,
+                                   msg::path = p,
+                                   msg::env_var = format_environment_variable(EnvironmentVariableLocalAppData));
             }
 
             return p;
@@ -457,7 +466,7 @@ namespace vcpkg
     const ExpectedL<Path>& get_system_root() noexcept
     {
         static const ExpectedL<Path> s_system_root = []() -> ExpectedL<Path> {
-            auto env = get_environment_variable("SystemRoot");
+            auto env = get_environment_variable(EnvironmentVariableSystemRoot);
             if (const auto p = env.get())
             {
                 return Path(std::move(*p));
@@ -620,7 +629,7 @@ namespace vcpkg
     static const Optional<Path>& get_program_files()
     {
         static const auto PROGRAMFILES = []() -> Optional<Path> {
-            auto value = get_environment_variable("PROGRAMFILES");
+            auto value = get_environment_variable(EnvironmentVariableProgramFiles);
             if (auto v = value.get())
             {
                 return *v;
@@ -635,7 +644,7 @@ namespace vcpkg
     const Optional<Path>& get_program_files_32_bit()
     {
         static const auto PROGRAMFILES_x86 = []() -> Optional<Path> {
-            auto value = get_environment_variable("ProgramFiles(x86)");
+            auto value = get_environment_variable(EnvironmentVariableProgramFilesX86);
             if (auto v = value.get())
             {
                 return *v;
@@ -648,7 +657,7 @@ namespace vcpkg
     const Optional<Path>& get_program_files_platform_bitness()
     {
         static const auto ProgramW6432 = []() -> Optional<Path> {
-            auto value = get_environment_variable("ProgramW6432");
+            auto value = get_environment_variable(EnvironmentVariableProgramW6432);
             if (auto v = value.get())
             {
                 return *v;
@@ -661,7 +670,7 @@ namespace vcpkg
     unsigned int get_concurrency()
     {
         static unsigned int concurrency = [] {
-            auto user_defined_concurrency = get_environment_variable("VCPKG_MAX_CONCURRENCY");
+            auto user_defined_concurrency = get_environment_variable(EnvironmentVariableVcpkgMaxConcurrency);
             if (user_defined_concurrency)
             {
                 int res = -1;
@@ -672,20 +681,29 @@ namespace vcpkg
                 catch (std::exception&)
                 {
                     Checks::msg_exit_with_message(
-                        VCPKG_LINE_INFO, msgOptionMustBeInteger, msg::option = "VCPKG_MAX_CONCURRENCY");
+                        VCPKG_LINE_INFO, msgOptionMustBeInteger, msg::option = EnvironmentVariableVcpkgMaxConcurrency);
                 }
 
                 if (!(res > 0))
                 {
                     Checks::msg_exit_with_message(VCPKG_LINE_INFO,
                                                   msgEnvInvalidMaxConcurrency,
-                                                  msg::env_var = "VCPKG_MAX_CONCURRENCY",
+                                                  msg::env_var = EnvironmentVariableVcpkgMaxConcurrency,
                                                   msg::value = res);
                 }
                 return static_cast<unsigned int>(res);
             }
             else
             {
+#if defined(__linux__)
+                // Get the number of threads we are allowed to run on,
+                // this might be less than the number of hardware threads.
+                cpu_set_t set;
+                if (sched_getaffinity(getpid(), sizeof(set), &set) == 0)
+                {
+                    return static_cast<unsigned int>(CPU_COUNT(&set)) + 1;
+                }
+#endif
                 return std::thread::hardware_concurrency() + 1;
             }
         }();
@@ -696,16 +714,16 @@ namespace vcpkg
     Optional<CPUArchitecture> guess_visual_studio_prompt_target_architecture()
     {
         // Check for the "vsdevcmd" infrastructure used by Visual Studio 2017 and later
-        const auto vscmd_arg_tgt_arch_env = get_environment_variable("VSCMD_ARG_TGT_ARCH");
+        const auto vscmd_arg_tgt_arch_env = get_environment_variable(EnvironmentVariableVscmdArgTgtArch);
         if (vscmd_arg_tgt_arch_env)
         {
             return to_cpu_architecture(vscmd_arg_tgt_arch_env.value_or_exit(VCPKG_LINE_INFO));
         }
 
         // Check for the "vcvarsall" infrastructure used by Visual Studio 2015
-        if (get_environment_variable("VCINSTALLDIR"))
+        if (get_environment_variable(EnvironmentVariableVCInstallDir))
         {
-            const auto Platform = get_environment_variable("Platform");
+            const auto Platform = get_environment_variable(EnvironmentVariablePlatform);
             if (Platform)
             {
                 return to_cpu_architecture(Platform.value_or_exit(VCPKG_LINE_INFO));

@@ -1,3 +1,4 @@
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/jsonreader.h>
@@ -994,7 +995,7 @@ namespace vcpkg::Json
                 }
             }
 
-            static ExpectedT<ParsedJson, std::unique_ptr<ParseError>> parse(StringView json, StringView origin)
+            static ExpectedL<ParsedJson> parse(StringView json, StringView origin)
             {
                 StatsTimer t(g_json_parsing_stats);
 
@@ -1006,16 +1007,14 @@ namespace vcpkg::Json
                 if (!parser.at_eof())
                 {
                     parser.add_error(msg::format(msgUnexpectedEOFExpectedChar));
-                    return parser.extract_error();
                 }
-                else if (parser.get_error())
+
+                if (const auto maybe_error = std::move(parser).get_error())
                 {
-                    return parser.extract_error();
+                    return std::move(*maybe_error);
                 }
-                else
-                {
-                    return ParsedJson{std::move(val), parser.style()};
-                }
+
+                return ParsedJson{std::move(val), parser.style()};
             }
 
             JsonStyle style() const noexcept { return style_; }
@@ -1094,7 +1093,7 @@ namespace vcpkg::Json
 
         if (sv.size() < 5)
         {
-            if (sv == "prn" || sv == "aux" || sv == "nul" || sv == "con" || sv == "core")
+            if (sv == "prn" || sv == "aux" || sv == "nul" || sv == "con" || sv == FeatureNameCore)
             {
                 return false; // we're a reserved identifier
             }
@@ -1106,7 +1105,7 @@ namespace vcpkg::Json
         }
         else
         {
-            if (sv == "default")
+            if (sv == FeatureNameDefault)
             {
                 return false;
             }
@@ -1115,14 +1114,12 @@ namespace vcpkg::Json
         return true;
     }
 
-    ExpectedT<ParsedJson, std::unique_ptr<ParseError>> parse_file(const ReadOnlyFilesystem& fs,
-                                                                  const Path& json_file,
-                                                                  std::error_code& ec)
+    ExpectedL<ParsedJson> parse_file(const ReadOnlyFilesystem& fs, const Path& json_file, std::error_code& ec)
     {
         auto res = fs.read_contents(json_file, ec);
         if (ec)
         {
-            return std::unique_ptr<ParseError>();
+            return format_filesystem_call_error(ec, "read_contents", {json_file});
         }
 
         return parse(res, json_file);
@@ -1131,7 +1128,7 @@ namespace vcpkg::Json
     ParsedJson parse_file(vcpkg::LineInfo li, const ReadOnlyFilesystem& fs, const Path& json_file)
     {
         std::error_code ec;
-        auto ret = parse_file(fs, json_file, ec).map_error(parse_error_formatter);
+        auto ret = parse_file(fs, json_file, ec);
         if (ec)
         {
             Checks::msg_exit_with_error(li, format_filesystem_call_error(ec, "read_contents", {json_file}));
@@ -1139,26 +1136,19 @@ namespace vcpkg::Json
         return std::move(ret).value_or_exit(VCPKG_LINE_INFO);
     }
 
-    ExpectedT<ParsedJson, std::unique_ptr<ParseError>> parse(StringView json, StringView origin)
-    {
-        return Parser::parse(json, origin);
-    }
+    ExpectedL<ParsedJson> parse(StringView json, StringView origin) { return Parser::parse(json, origin); }
 
     ExpectedL<Json::Object> parse_object(StringView text, StringView origin)
     {
-        auto maybeValueIsh = parse(text, origin);
-        if (auto asValueIsh = maybeValueIsh.get())
-        {
-            auto& asValue = asValueIsh->value;
+        return parse(text, origin).then([&](ParsedJson&& mabeValueIsh) -> ExpectedL<Json::Object> {
+            auto& asValue = mabeValueIsh.value;
             if (asValue.is_object())
             {
                 return std::move(asValue).object(VCPKG_LINE_INFO);
             }
 
             return msg::format(msgJsonErrorMustBeAnObject, msg::path = origin);
-        }
-
-        return LocalizedString::from_raw(maybeValueIsh.error()->to_string());
+        });
     }
     // } auto parse()
 
@@ -1281,6 +1271,13 @@ namespace vcpkg::Json
                 buffer.push_back('}');
             }
 
+            void stringify_object_member(StringView member_name, const Array& val, size_t current_indent)
+            {
+                append_quoted_json_string(member_name);
+                buffer.append(": ");
+                stringify_array(val, current_indent);
+            }
+
             void stringify_array(const Array& arr, size_t current_indent)
             {
                 buffer.push_back('[');
@@ -1377,6 +1374,19 @@ namespace vcpkg::Json
         return res;
     }
     // } auto stringify()
+
+    std::string stringify_object_member(StringLiteral member_name,
+                                        const Array& arr,
+                                        JsonStyle style,
+                                        int initial_indent)
+    {
+        std::string res;
+        Stringifier stringifier{style, res};
+        stringifier.append_indent(initial_indent);
+        stringifier.stringify_object_member(member_name, arr, initial_indent);
+        res.push_back('\n');
+        return res;
+    }
 
     uint64_t get_json_parsing_stats() { return g_json_parsing_stats.load(); }
 
@@ -1501,6 +1511,8 @@ namespace vcpkg::Json
         }
         return p;
     }
+
+    StringView Reader::origin() const noexcept { return m_origin; }
 
     LocalizedString ParagraphDeserializer::type_name() const { return msg::format(msgAStringOrArrayOfStrings); }
 

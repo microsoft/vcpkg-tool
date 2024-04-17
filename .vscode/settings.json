@@ -27,8 +27,8 @@
     }
   ],
   "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": true,
-    "source.organizeImports": true
+    "source.fixAll.eslint": "explicit",
+    "source.organizeImports": "explicit"
   },
   "eslint.format.enable": true,
   "files.eol": "\n",

@@ -1,6 +1,7 @@
 #include <vcpkg/base/api-stable-format.h>
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/chrono.h>
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/json.h>
@@ -23,6 +24,7 @@
 #include <vcpkg/documentation.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/tools.h>
+#include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
 #include <iterator>
@@ -534,7 +536,7 @@ namespace
                 {
                     msg_sink.println_error(msg::format(msgFailedToParseJson, msg::path = settings_path)
                                                .append_raw('\n')
-                                               .append_raw(obj.error()->to_string()));
+                                               .append_raw(obj.error().to_string()));
                 }
                 else
                 {
@@ -811,7 +813,7 @@ namespace
                 auto archive_path = m_dir / files_archive_subpath(abi_tag);
                 if (m_fs.exists(archive_path, IgnoreErrors{}))
                 {
-                    auto to_remove = actions[i]->build_options.purge_decompress_failure == PurgeDecompressFailure::YES
+                    auto to_remove = actions[i]->build_options.purge_decompress_failure == PurgeDecompressFailure::Yes
                                          ? RemoveWhen::on_fail
                                          : RemoveWhen::nothing;
                     out_zip_paths[i].emplace(std::move(archive_path), to_remove);
@@ -986,7 +988,7 @@ namespace
     private:
         Command subcommand(StringLiteral sub) const
         {
-            Command cmd = m_cmd;
+            auto cmd = m_cmd;
             cmd.string_arg(sub).string_arg("-ForceEnglishOutput").string_arg("-Verbosity").string_arg("detailed");
             if (!m_interactive) cmd.string_arg("-NonInteractive");
             return cmd;
@@ -994,7 +996,7 @@ namespace
 
         Command install_cmd(StringView packages_config, const Path& out_dir, const NuGetSource& src) const
         {
-            Command cmd = subcommand("install");
+            auto cmd = subcommand("install");
             cmd.string_arg(packages_config)
                 .string_arg("-OutputDirectory")
                 .string_arg(out_dir)
@@ -1026,11 +1028,11 @@ namespace
                 .string_arg(src.value);
         }
 
-        ExpectedL<Unit> run_nuget_commandline(const Command& cmdline, MessageSink& msg_sink) const
+        ExpectedL<Unit> run_nuget_commandline(const Command& cmd, MessageSink& msg_sink) const
         {
             if (m_interactive)
             {
-                return cmd_execute(cmdline).then([](int exit_code) -> ExpectedL<Unit> {
+                return cmd_execute(cmd).then([](int exit_code) -> ExpectedL<Unit> {
                     if (exit_code == 0)
                     {
                         return {Unit{}};
@@ -1040,52 +1042,46 @@ namespace
                 });
             }
 
-            return cmd_execute_and_capture_output(cmdline).then([&](ExitCodeAndOutput&& res) -> ExpectedL<Unit> {
-                if (Debug::g_debugging)
-                {
-                    msg_sink.print(Color::error, res.output);
-                }
+            RedirectedProcessLaunchSettings show_in_debug_settings;
+            show_in_debug_settings.echo_in_debug = EchoInDebug::Show;
+            return cmd_execute_and_capture_output(cmd, show_in_debug_settings)
+                .then([&](ExitCodeAndOutput&& res) -> ExpectedL<Unit> {
+                    if (res.output.find("Authentication may require manual action.") != std::string::npos)
+                    {
+                        msg_sink.println(
+                            Color::warning, msgAuthenticationMayRequireManualAction, msg::vendor = "Nuget");
+                    }
 
-                if (res.output.find("Authentication may require manual action.") != std::string::npos)
-                {
-                    msg_sink.println(Color::warning, msgAuthenticationMayRequireManualAction, msg::vendor = "Nuget");
-                }
+                    if (res.exit_code == 0)
+                    {
+                        return {Unit{}};
+                    }
 
-                if (res.exit_code == 0)
-                {
-                    return {Unit{}};
-                }
+                    if (res.output.find("Response status code does not indicate success: 401 (Unauthorized)") !=
+                        std::string::npos)
+                    {
+                        msg_sink.println(Color::warning,
+                                         msgFailedVendorAuthentication,
+                                         msg::vendor = "NuGet",
+                                         msg::url = docs::binarycaching_url);
+                    }
+                    else if (res.output.find("for example \"-ApiKey AzureDevOps\"") != std::string::npos)
+                    {
+                        auto real_cmd = cmd;
+                        real_cmd.string_arg("-ApiKey").string_arg("AzureDevOps");
+                        return cmd_execute_and_capture_output(real_cmd, show_in_debug_settings)
+                            .then([&](ExitCodeAndOutput&& res) -> ExpectedL<Unit> {
+                                if (res.exit_code == 0)
+                                {
+                                    return {Unit{}};
+                                }
 
-                if (res.output.find("Response status code does not indicate success: 401 (Unauthorized)") !=
-                    std::string::npos)
-                {
-                    msg_sink.println(Color::warning,
-                                     msgFailedVendorAuthentication,
-                                     msg::vendor = "NuGet",
-                                     msg::url = docs::binarycaching_url);
-                }
-                else if (res.output.find("for example \"-ApiKey AzureDevOps\"") != std::string::npos)
-                {
-                    auto real_cmdline = cmdline;
-                    real_cmdline.string_arg("-ApiKey").string_arg("AzureDevOps");
-                    return cmd_execute_and_capture_output(real_cmdline)
-                        .then([&](ExitCodeAndOutput&& res) -> ExpectedL<Unit> {
-                            if (Debug::g_debugging)
-                            {
-                                msg_sink.print(Color::error, res.output);
-                            }
+                                return LocalizedString::from_raw(std::move(res).output);
+                            });
+                    }
 
-                            if (res.exit_code == 0)
-                            {
-                                return {Unit{}};
-                            }
-
-                            return LocalizedString::from_raw(std::move(res).output);
-                        });
-                }
-
-                return LocalizedString::from_raw(std::move(res).output);
-            });
+                    return LocalizedString::from_raw(std::move(res).output);
+                });
         }
 
         Command m_cmd;
@@ -1268,18 +1264,19 @@ namespace
 
         std::string lookup_cache_entry(StringView name, const std::string& abi) const
         {
-            auto url = format_url_query(m_url, std::vector<std::string>{"keys=" + name + "-" + abi, "version=" + abi});
-            auto res =
-                invoke_http_request("GET",
-                                    std::vector<std::string>{
-                                        m_content_type_header.to_string(), m_token_header, m_accept_header.to_string()},
-                                    url);
+            const auto url = format_url_query(m_url, {{"keys=" + name + "-" + abi, "version=" + abi}});
+            const std::string headers[] = {
+                m_content_type_header.to_string(),
+                m_token_header,
+                m_accept_header.to_string(),
+            };
+            auto res = invoke_http_request("GET", headers, url);
             if (auto p = res.get())
             {
                 auto maybe_json = Json::parse_object(*p, m_url);
                 if (auto json = maybe_json.get())
                 {
-                    auto archive_location = json->get("archiveLocation");
+                    auto archive_location = json->get(JsonIdArchiveCapitalLocation);
                     if (archive_location && archive_location->is_string())
                     {
                         return archive_location->string(VCPKG_LINE_INFO).to_string();
@@ -1305,7 +1302,7 @@ namespace
                 url_indices.push_back(idx);
             }
 
-            auto codes = download_files(m_fs, url_paths, {});
+            const auto codes = download_files(m_fs, url_paths, {});
 
             for (size_t i = 0; i < codes.size(); ++i)
             {
@@ -1341,14 +1338,15 @@ namespace
         Optional<int64_t> reserve_cache_entry(const std::string& name, const std::string& abi, int64_t cacheSize) const
         {
             Json::Object payload;
-            payload.insert("key", name + "-" + abi);
-            payload.insert("version", abi);
-            payload.insert("cacheSize", Json::Value::integer(cacheSize));
+            payload.insert(JsonIdKey, name + "-" + abi);
+            payload.insert(JsonIdVersion, abi);
+            payload.insert(JsonIdCacheCapitalSize, Json::Value::integer(cacheSize));
 
-            std::vector<std::string> headers;
-            headers.emplace_back(m_accept_header.data(), m_accept_header.size());
-            headers.emplace_back(m_content_type_header.data(), m_content_type_header.size());
-            headers.emplace_back(m_token_header);
+            const std::string headers[] = {
+                m_accept_header.to_string(),
+                m_content_type_header.to_string(),
+                m_token_header,
+            };
 
             auto res = invoke_http_request("POST", headers, m_url, stringify(payload));
             if (auto p = res.get())
@@ -1356,7 +1354,7 @@ namespace
                 auto maybe_json = Json::parse_object(*p, m_url);
                 if (auto json = maybe_json.get())
                 {
-                    auto cache_id = json->get("cacheId");
+                    auto cache_id = json->get(JsonIdCacheCapitalId);
                     if (cache_id && cache_id->is_integer())
                     {
                         return cache_id->integer(VCPKG_LINE_INFO);
@@ -1379,22 +1377,24 @@ namespace
 
             if (auto cacheId = reserve_cache_entry(request.spec.name(), abi, cache_size))
             {
-                std::vector<std::string> custom_headers{
+                const std::string custom_headers[] = {
                     m_token_header,
                     m_accept_header.to_string(),
                     "Content-Type: application/octet-stream",
                     "Content-Range: bytes 0-" + std::to_string(cache_size) + "/*",
                 };
-                auto url = m_url + "/" + std::to_string(*cacheId.get());
 
+                const auto url = m_url + "/" + std::to_string(*cacheId.get());
                 if (put_file(m_fs, url, {}, custom_headers, zip_path, "PATCH"))
                 {
                     Json::Object commit;
                     commit.insert("size", std::to_string(cache_size));
-                    std::vector<std::string> headers;
-                    headers.emplace_back(m_accept_header.data(), m_accept_header.size());
-                    headers.emplace_back(m_content_type_header.data(), m_content_type_header.size());
-                    headers.emplace_back(m_token_header);
+                    const std::string headers[] = {
+                        m_accept_header.to_string(),
+                        m_content_type_header.to_string(),
+                        m_token_header,
+                    };
+
                     auto res = invoke_http_request("POST", headers, url, stringify(commit));
                     if (res)
                     {
@@ -1545,27 +1545,30 @@ namespace
             return msg::format(msgRestoredPackagesFromGCS, msg::count = count, msg::elapsed = ElapsedTime(elapsed));
         }
 
-        Command command() const { return m_tool; }
-
         ExpectedL<Unit> stat(StringView url) const override
         {
-            auto cmd = command().string_arg("-q").string_arg("stat").string_arg(url);
-            return flatten(cmd_execute_and_capture_output(cmd), Tools::GSUTIL);
+            return flatten(
+                cmd_execute_and_capture_output(Command{m_tool}.string_arg("-q").string_arg("stat").string_arg(url)),
+                Tools::GSUTIL);
         }
 
         ExpectedL<Unit> download_file(StringView object, const Path& archive) const override
         {
-            auto cmd = command().string_arg("-q").string_arg("cp").string_arg(object).string_arg(archive);
-            return flatten(cmd_execute_and_capture_output(cmd), Tools::GSUTIL);
+            return flatten(
+                cmd_execute_and_capture_output(
+                    Command{m_tool}.string_arg("-q").string_arg("cp").string_arg(object).string_arg(archive)),
+                Tools::GSUTIL);
         }
 
         ExpectedL<Unit> upload_file(StringView object, const Path& archive) const override
         {
-            auto cmd = command().string_arg("-q").string_arg("cp").string_arg(archive).string_arg(object);
-            return flatten(cmd_execute_and_capture_output(cmd), Tools::GSUTIL);
+            return flatten(
+                cmd_execute_and_capture_output(
+                    Command{m_tool}.string_arg("-q").string_arg("cp").string_arg(archive).string_arg(object)),
+                Tools::GSUTIL);
         }
 
-        Command m_tool;
+        Path m_tool;
     };
 
     struct AwsStorageTool : IObjectStorageTool
@@ -1581,11 +1584,9 @@ namespace
             return msg::format(msgRestoredPackagesFromAWS, msg::count = count, msg::elapsed = ElapsedTime(elapsed));
         }
 
-        Command command() const { return m_tool; }
-
         ExpectedL<Unit> stat(StringView url) const override
         {
-            auto cmd = command().string_arg("s3").string_arg("ls").string_arg(url);
+            auto cmd = Command{m_tool}.string_arg("s3").string_arg("ls").string_arg(url);
             if (m_no_sign_request)
             {
                 cmd.string_arg("--no-sign-request");
@@ -1599,7 +1600,7 @@ namespace
             auto r = stat(object);
             if (!r) return r;
 
-            auto cmd = command().string_arg("s3").string_arg("cp").string_arg(object).string_arg(archive);
+            auto cmd = Command{m_tool}.string_arg("s3").string_arg("cp").string_arg(object).string_arg(archive);
             if (m_no_sign_request)
             {
                 cmd.string_arg("--no-sign-request");
@@ -1610,7 +1611,7 @@ namespace
 
         ExpectedL<Unit> upload_file(StringView object, const Path& archive) const override
         {
-            auto cmd = command().string_arg("s3").string_arg("cp").string_arg(archive).string_arg(object);
+            auto cmd = Command{m_tool}.string_arg("s3").string_arg("cp").string_arg(archive).string_arg(object);
             if (m_no_sign_request)
             {
                 cmd.string_arg("--no-sign-request");
@@ -1618,7 +1619,7 @@ namespace
             return flatten(cmd_execute_and_capture_output(cmd), Tools::AWSCLI);
         }
 
-        Command m_tool;
+        Path m_tool;
         bool m_no_sign_request;
     };
 
@@ -1632,32 +1633,32 @@ namespace
             return msg::format(msgRestoredPackagesFromCOS, msg::count = count, msg::elapsed = ElapsedTime(elapsed));
         }
 
-        Command command() const { return m_tool; }
-
         ExpectedL<Unit> stat(StringView url) const override
         {
-            auto cmd = command().string_arg("ls").string_arg(url);
-            return flatten(cmd_execute_and_capture_output(cmd), Tools::COSCLI);
+            return flatten(cmd_execute_and_capture_output(Command{m_tool}.string_arg("ls").string_arg(url)),
+                           Tools::COSCLI);
         }
 
         ExpectedL<Unit> download_file(StringView object, const Path& archive) const override
         {
-            auto cmd = command().string_arg("cp").string_arg(object).string_arg(archive);
-            return flatten(cmd_execute_and_capture_output(cmd), Tools::COSCLI);
+            return flatten(
+                cmd_execute_and_capture_output(Command{m_tool}.string_arg("cp").string_arg(object).string_arg(archive)),
+                Tools::COSCLI);
         }
 
         ExpectedL<Unit> upload_file(StringView object, const Path& archive) const override
         {
-            auto cmd = command().string_arg("cp").string_arg(archive).string_arg(object);
-            return flatten(cmd_execute_and_capture_output(cmd), Tools::COSCLI);
+            return flatten(
+                cmd_execute_and_capture_output(Command{m_tool}.string_arg("cp").string_arg(archive).string_arg(object)),
+                Tools::COSCLI);
         }
 
-        Command m_tool;
+        Path m_tool;
     };
 
     ExpectedL<Path> default_cache_path_impl()
     {
-        auto maybe_cachepath = get_environment_variable("VCPKG_DEFAULT_BINARY_CACHE");
+        auto maybe_cachepath = get_environment_variable(EnvironmentVariableVcpkgDefaultBinaryCache);
         if (auto p_str = maybe_cachepath.get())
         {
             get_global_metrics_collector().track_define(DefineMetric::VcpkgDefaultBinaryCache);
@@ -1696,7 +1697,7 @@ namespace
 
     struct BinaryConfigParser : ConfigSegmentsParser
     {
-        BinaryConfigParser(StringView text, StringView origin, BinaryConfigParserState* state)
+        BinaryConfigParser(StringView text, Optional<StringView> origin, BinaryConfigParserState* state)
             : ConfigSegmentsParser(text, origin), state(state)
         {
         }
@@ -2218,7 +2219,7 @@ namespace vcpkg
         });
         if (!result)
         {
-            return result.error();
+            return std::move(result).error();
         }
         if (!invalid_keys.empty())
         {
@@ -2267,13 +2268,13 @@ namespace vcpkg
             return {*p};
         }
 
-        auto gh_repo = get_environment_variable("GITHUB_REPOSITORY").value_or("");
+        auto gh_repo = get_environment_variable(EnvironmentVariableGitHubRepository).value_or("");
         if (gh_repo.empty())
         {
             return {};
         }
 
-        auto gh_server = get_environment_variable("GITHUB_SERVER_URL").value_or("");
+        auto gh_server = get_environment_variable(EnvironmentVariableGitHubServerUrl).value_or("");
         if (gh_server.empty())
         {
             return {};
@@ -2281,8 +2282,8 @@ namespace vcpkg
 
         get_global_metrics_collector().track_define(DefineMetric::GitHubRepository);
         return {Strings::concat(gh_server, '/', gh_repo, ".git"),
-                get_environment_variable("GITHUB_REF").value_or(""),
-                get_environment_variable("GITHUB_SHA").value_or("")};
+                get_environment_variable(EnvironmentVariableGitHubRef).value_or(""),
+                get_environment_variable(EnvironmentVariableGitHubSha).value_or("")};
     }
 
     static ExpectedL<BinaryProviders> make_binary_providers(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
@@ -2346,8 +2347,11 @@ namespace vcpkg
 
             s.nuget_prefix = args.nuget_id_prefix.value_or("");
             if (!s.nuget_prefix.empty()) s.nuget_prefix.push_back('_');
+            ret.nuget_prefix = s.nuget_prefix;
+
             s.use_nuget_cache = args.use_nuget_cache.value_or(false);
-            s.nuget_repo_info = get_nuget_repo_info_from_env(args);
+
+            ret.nuget_repo = get_nuget_repo_info_from_env(args);
 
             auto& fs = paths.get_filesystem();
             auto& tools = paths.get_tool_cache();
@@ -2608,7 +2612,6 @@ namespace vcpkg
         : ReadOnlyBinaryCache(std::move(providers)), m_fs(fs)
     {
     }
-    BinaryCache::~BinaryCache() { }
 
     void BinaryCache::push_success(const InstallPlanAction& action)
     {
@@ -2663,7 +2666,7 @@ namespace vcpkg
                     msgStoredBinariesToDestinations, msg::count = num_destinations, msg::elapsed = timer.elapsed());
             }
         }
-        if (action.build_options.clean_packages == CleanPackages::YES)
+        if (action.build_options.clean_packages == CleanPackages::Yes)
         {
             m_fs.remove_all(action.package_dir.value_or_exit(VCPKG_LINE_INFO), VCPKG_LINE_INFO);
         }
@@ -2763,7 +2766,7 @@ ExpectedL<DownloadManagerConfig> vcpkg::parse_download_configuration(const Optio
     get_global_metrics_collector().track_define(DefineMetric::AssetSource);
 
     AssetSourcesState s;
-    const auto source = Strings::concat("$", VcpkgCmdArguments::ASSET_SOURCES_ENV);
+    const auto source = Strings::concat("$", EnvironmentVariableXVcpkgAssetSources);
     AssetSourcesParser parser(*arg.get(), source, &s);
     parser.parse();
     if (auto err = parser.get_error())
@@ -2821,23 +2824,23 @@ ExpectedL<BinaryConfigParserState> vcpkg::parse_binary_provider_configs(const st
     default_parser.parse();
     if (auto err = default_parser.get_error())
     {
-        return LocalizedString::from_raw(err->message);
+        return *err;
     }
 
     BinaryConfigParser env_parser(env_string, "VCPKG_BINARY_SOURCES", &s);
     env_parser.parse();
     if (auto err = env_parser.get_error())
     {
-        return LocalizedString::from_raw(err->to_string());
+        return *err;
     }
 
     for (auto&& arg : args)
     {
-        BinaryConfigParser arg_parser(arg, "<command>", &s);
+        BinaryConfigParser arg_parser(arg, nullopt, &s);
         arg_parser.parse();
         if (auto err = arg_parser.get_error())
         {
-            return LocalizedString::from_raw(err->to_string());
+            return *err;
         }
     }
 

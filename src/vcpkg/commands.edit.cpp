@@ -1,3 +1,4 @@
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.h>
@@ -79,10 +80,6 @@ namespace
     }
 #endif
 
-    constexpr StringLiteral OPTION_BUILDTREES = "buildtrees";
-
-    constexpr StringLiteral OPTION_ALL = "all";
-
     std::vector<std::string> valid_arguments(const VcpkgPaths& paths)
     {
         return Util::fmap(
@@ -91,15 +88,15 @@ namespace
     }
 
     constexpr CommandSwitch EDIT_SWITCHES[] = {
-        {OPTION_BUILDTREES, msgCmdEditOptBuildTrees},
-        {OPTION_ALL, msgCmdEditOptAll},
+        {SwitchBuildtrees, msgCmdEditOptBuildTrees},
+        {SwitchAll, msgCmdEditOptAll},
     };
 
     std::vector<std::string> create_editor_arguments(const VcpkgPaths& paths,
                                                      const ParsedArguments& options,
                                                      const std::vector<std::string>& ports)
     {
-        if (Util::Sets::contains(options.switches, OPTION_ALL))
+        if (Util::Sets::contains(options.switches, SwitchAll))
         {
             const auto& fs = paths.get_filesystem();
             auto packages = fs.get_files_non_recursive(paths.packages(), VCPKG_LINE_INFO);
@@ -107,7 +104,7 @@ namespace
             // TODO: Support edit for --overlay-ports
             return Util::fmap(ports, [&](const std::string& port_name) -> std::string {
                 const auto portpath = paths.builtin_ports_directory() / port_name;
-                const auto portfile = portpath / "portfile.cmake";
+                const auto portfile = portpath / FilePortfileDotCMake;
                 const auto buildtrees_current_dir = paths.build_dir(port_name);
                 const auto pattern = port_name + "_";
 
@@ -125,7 +122,7 @@ namespace
             });
         }
 
-        if (Util::Sets::contains(options.switches, OPTION_BUILDTREES))
+        if (Util::Sets::contains(options.switches, SwitchBuildtrees))
         {
             return Util::fmap(ports, [&](const std::string& port_name) -> std::string {
                 return fmt::format(R"###("{}")###", paths.build_dir(port_name));
@@ -145,7 +142,10 @@ namespace vcpkg
 {
     constexpr CommandMetadata CommandEditMetadata{
         "edit",
-        [] { return msg::format(msgHelpEditCommand, msg::env_var = format_environment_variable("EDITOR")); },
+        [] {
+            return msg::format(msgHelpEditCommand,
+                               msg::env_var = format_environment_variable(EnvironmentVariableEditor));
+        },
         {msgCmdEditExample1, "vcpkg edit zlib"},
         Undocumented,
         AutocompletePriority::Public,
@@ -176,7 +176,7 @@ namespace vcpkg
 
         // Scope to prevent use of moved-from variable
         {
-            auto maybe_editor_path = get_environment_variable("EDITOR");
+            auto maybe_editor_path = get_environment_variable(EnvironmentVariableEditor);
             if (std::string* editor_path = maybe_editor_path.get())
             {
                 candidate_paths.emplace_back(std::move(*editor_path));
@@ -201,7 +201,7 @@ namespace vcpkg
             candidate_paths.push_back(*pf / VS_CODE);
         }
 
-        auto app_data = get_environment_variable("APPDATA");
+        auto app_data = get_environment_variable(EnvironmentVariableAppData);
         if (auto* ad = app_data.get())
         {
             Path default_base = std::move(*ad);
@@ -230,15 +230,19 @@ namespace vcpkg
         candidate_paths.emplace_back("/usr/share/code/bin/code");
         candidate_paths.emplace_back("/usr/bin/code");
 
-        if (succeeded(cmd_execute(Command("command").string_arg("-v").string_arg("xdg-mime"))))
+        if (succeeded(cmd_execute({Command("command").string_arg("-v").string_arg("xdg-mime")})))
         {
-            auto mime_qry = Command("xdg-mime").string_arg("query").string_arg("default").string_arg("text/plain");
-            auto maybe_output = flatten_out(cmd_execute_and_capture_output(mime_qry), "xdg-mime");
+            auto maybe_output =
+                flatten_out(cmd_execute_and_capture_output(
+                                Command("xdg-mime").string_arg("query").string_arg("default").string_arg("text/plain")),
+                            "xdg-mime");
             const auto output = maybe_output.get();
             if (output && !output->empty())
             {
-                mime_qry = Command("command").string_arg("-v").string_arg(output->substr(0, output->find('.')));
-                auto maybe_output2 = flatten_out(cmd_execute_and_capture_output(mime_qry), "xdg-mime");
+                auto maybe_output2 =
+                    flatten_out(cmd_execute_and_capture_output(Command("command").string_arg("-v").string_arg(
+                                    output->substr(0, output->find('.')))),
+                                "xdg-mime");
                 const auto output2 = maybe_output2.get();
                 if (output2 && !output2->empty())
                 {
@@ -252,29 +256,30 @@ namespace vcpkg
         const auto it = Util::find_if(candidate_paths, [&](const Path& p) { return fs.exists(p, IgnoreErrors{}); });
         if (it == candidate_paths.cend())
         {
-            msg::println_error(msg::format(msgErrorVsCodeNotFound, msg::env_var = format_environment_variable("EDITOR"))
+            msg::println_error(msg::format(msgErrorVsCodeNotFound,
+                                           msg::env_var = format_environment_variable(EnvironmentVariableEditor))
                                    .append_raw('\n')
                                    .append(msgErrorVsCodeNotFoundPathExamined));
             print_paths(out_sink, candidate_paths);
-            msg::println(msgInfoSetEnvVar, msg::env_var = format_environment_variable("EDITOR"));
+            msg::println(msgInfoSetEnvVar, msg::env_var = format_environment_variable(EnvironmentVariableEditor));
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
         const Path& env_editor = *it;
         const std::vector<std::string> arguments = create_editor_arguments(paths, options, ports);
         const auto args_as_string = Strings::join(" ", arguments);
-        auto cmd_line = Command(env_editor).raw_arg(args_as_string).string_arg("-n");
+        auto cmd = Command(env_editor).raw_arg(args_as_string).string_arg("-n");
 #if defined(_WIN32)
         auto editor_exe = env_editor.filename();
         if (editor_exe == "Code.exe" || editor_exe == "Code - Insiders.exe")
         {
             // note that we are invoking cmd silently but Code.exe is relaunched from there
             cmd_execute_background(Command("cmd").string_arg("/d").string_arg("/c").raw_arg(
-                Strings::concat('"', cmd_line.command_line(), R"( <NUL")")));
+                Strings::concat('"', cmd.command_line(), R"( <NUL")")));
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 #endif // ^^^ _WIN32
 
-        Checks::exit_with_code(VCPKG_LINE_INFO, cmd_execute(cmd_line).value_or_exit(VCPKG_LINE_INFO));
+        Checks::exit_with_code(VCPKG_LINE_INFO, cmd_execute(cmd).value_or_exit(VCPKG_LINE_INFO));
     }
 } // namespace vcpkg
