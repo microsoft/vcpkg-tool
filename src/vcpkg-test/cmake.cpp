@@ -1,6 +1,6 @@
 #include <vcpkg-test/util.h>
 
-#include <vcpkg/cmake.h>
+#include <vcpkg/spdx.h>
 
 using namespace vcpkg;
 
@@ -24,15 +24,15 @@ TEST_CASE ("find cmake invocation", "[cmake]")
         REQUIRE(res.empty());
     }
     {
-        auto res = find_cmake_invocation("lorem_ipsum()", "lorem_ipsu");
+        auto res = find_cmake_invocation("lorem_ipsum(abc)", "lorem_ipsu");
         REQUIRE(res.empty());
     }
     {
-        auto res = find_cmake_invocation("lorem_ipsum(", "lorem_ipsum");
+        auto res = find_cmake_invocation("lorem_ipsum(abc", "lorem_ipsum");
         REQUIRE(res.empty());
     }
     {
-        auto res = find_cmake_invocation("lorem_ipum()", "lorem_ipsum");
+        auto res = find_cmake_invocation("lorem_ipum(abc)", "lorem_ipsum");
         REQUIRE(res.empty());
     }
     {
