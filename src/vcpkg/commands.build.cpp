@@ -1171,6 +1171,19 @@ namespace vcpkg
                     msgHashPortManyFiles, msg::package_name = action.spec.name(), msg::count = raw_files.size());
             }
 
+            for (size_t i = 0; i < abi_info.pre_build_info->hash_additional_files.size(); ++i)
+            {
+                auto& file = abi_info.pre_build_info->hash_additional_files[i];
+                if (file.is_relative() || !fs.is_regular_file(file))
+                {
+                    Checks::msg_exit_with_message(
+                        VCPKG_LINE_INFO, msgInvalidValueHashAdditionalFiles, msg::path = file);
+                }
+                abi_tag_entries.emplace_back(
+                    fmt::format("additional_file_{}", i),
+                    Hash::get_file_hash(fs, file, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO));
+            }
+
             for (auto& port_file : raw_files)
             {
                 if (port_file.filename() == FileDotDsStore)
