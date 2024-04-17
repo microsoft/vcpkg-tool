@@ -286,11 +286,6 @@ DECLARE_MESSAGE(BaselineMissing,
                 "git add versions\n"
                 "git commit -m \"Update version database\"\n"
                 "to set {version} as the baseline version.")
-DECLARE_MESSAGE(BaselineMissingDefault,
-                (msg::commit_sha, msg::url),
-                "",
-                "The baseline.json from commit `\"{commit_sha}\"` in the repo {url} was invalid (did not "
-                "contain a \"default\" field).")
 DECLARE_MESSAGE(BaselineOnlyPlatformExpressionOrTriplet,
                 (),
                 "",

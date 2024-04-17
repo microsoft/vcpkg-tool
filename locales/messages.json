@@ -189,8 +189,6 @@
   "_BaselineGitShowFailed.comment": "An example of {commit_sha} is 7cfad47ae9f68b183983090afd6337cd60fd4949.",
   "BaselineMissing": "Baseline version not found. Run:\nvcpkg x-add-version {package_name}\ngit add versions\ngit commit -m \"Update version database\"\nto set {version} as the baseline version.",
   "_BaselineMissing.comment": "An example of {package_name} is zlib. An example of {version} is 1.3.8.",
-  "BaselineMissingDefault": "The baseline.json from commit `\"{commit_sha}\"` in the repo {url} was invalid (did not contain a \"default\" field).",
-  "_BaselineMissingDefault.comment": "An example of {commit_sha} is 7cfad47ae9f68b183983090afd6337cd60fd4949. An example of {url} is https://github.com/microsoft/vcpkg.",
   "BaselineOnlyPlatformExpressionOrTriplet": "You can not specify a platform expression and a triplet",
   "BinarySourcesArg": "Binary caching sources. See 'vcpkg help binarycaching'",
   "_BinarySourcesArg.comment": "'vcpkg help binarycaching' is a command line and should not be localized",
