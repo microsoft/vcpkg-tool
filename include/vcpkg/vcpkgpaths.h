@@ -112,7 +112,7 @@ namespace vcpkg
         const std::string& get_tool_version(StringView tool, MessageSink& status_messages) const;
 
         GitConfig git_builtin_config() const;
-        Command git_cmd_builder(Path dot_git_dir, Path work_tree) const;
+        Command git_cmd_builder(const Path& dot_git_dir, const Path& work_tree) const;
 
         // Git manipulation in the vcpkg directory
         ExpectedL<std::string> get_current_git_sha() const;

@@ -195,7 +195,7 @@ namespace vcpkg
             .map([](std::string&& output) { return "true" == Strings::trim(std::move(output)); });
     }
 
-    ExpectedL<std::string> git_head_sha(const GitConfig& config, StringView refname)
+    ExpectedL<std::string> git_ref_sha(const GitConfig& config, StringView refname)
     {
         const auto cmd_line = git_cmd_builder(config).string_arg("rev-parse").string_arg(refname);
         return flatten_out(cmd_execute_and_capture_output(cmd_line), Tools::GIT)

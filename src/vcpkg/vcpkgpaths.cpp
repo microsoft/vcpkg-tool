@@ -888,9 +888,9 @@ namespace vcpkg
         return conf;
     }
 
-    Command VcpkgPaths::git_cmd_builder(Path dot_git_dir, Path work_tree) const
+    Command VcpkgPaths::git_cmd_builder(const Path& dot_git_dir, const Path& work_tree) const
     {
-        const GitConfig config{get_tool_exe(Tools::GIT, out_sink), std::move(dot_git_dir), std::move(work_tree)};
+        const GitConfig config{get_tool_exe(Tools::GIT, out_sink), dot_git_dir, work_tree};
         return vcpkg::git_cmd_builder(config);
     }
 
@@ -901,7 +901,7 @@ namespace vcpkg
             return {*sha, expected_left_tag};
         }
 
-        return git_head_sha(git_builtin_config());
+        return git_ref_sha(git_builtin_config());
     }
 
     LocalizedString VcpkgPaths::get_current_git_sha_baseline_message() const
@@ -1029,7 +1029,7 @@ namespace vcpkg
         {
             return msg::format_error(maybe_fetch_result.error());
         }
-        return git_head_sha(git_config, "FETCH_HEAD");
+        return git_ref_sha(git_config, "FETCH_HEAD");
     }
 
     // returns an error if there was an unexpected error; returns nullopt if the file doesn't exist at the specified
@@ -1045,7 +1045,7 @@ namespace vcpkg
                                                                                    const Path& relative_path) const
     {
         auto revision = fmt::format("{}:{}", hash, relative_path.generic_u8string());
-        return git_head_sha(git_registries_config(), revision);
+        return git_ref_sha(git_registries_config(), revision);
     }
 
     ExpectedL<Unit> VcpkgPaths::git_read_tree(const Path& destination, StringView tree, const Path& dot_git_dir) const

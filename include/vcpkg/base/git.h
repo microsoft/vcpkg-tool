@@ -62,7 +62,8 @@ namespace vcpkg
     // Check whether a repository is a shallow clone
     ExpectedL<bool> is_shallow_clone(const GitConfig& config);
 
-    ExpectedL<std::string> git_head_sha(const GitConfig& config, StringView refname = "HEAD");
+    // runs git ref-parse for a given refname, e.g. HEAD
+    ExpectedL<std::string> git_ref_sha(const GitConfig& config, StringView refname = "HEAD");
     // runs `git fetch {uri} {treeish}`
     ExpectedL<Unit> git_fetch(const Filesystem& fs, const GitConfig& config, StringView repo, StringView treeish);
 }
