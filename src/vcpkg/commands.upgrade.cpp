@@ -1,3 +1,4 @@
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/util.h>
 
@@ -19,14 +20,10 @@ using namespace vcpkg;
 
 namespace
 {
-    constexpr StringLiteral OPTION_NO_DRY_RUN = "no-dry-run";
-    constexpr StringLiteral OPTION_NO_KEEP_GOING = "no-keep-going";
-    constexpr StringLiteral OPTION_ALLOW_UNSUPPORTED_PORT = "allow-unsupported";
-
     constexpr CommandSwitch SWITCHES[] = {
-        {OPTION_NO_DRY_RUN, msgCmdUpgradeOptNoDryRun},
-        {OPTION_NO_KEEP_GOING, msgCmdUpgradeOptNoKeepGoing},
-        {OPTION_ALLOW_UNSUPPORTED_PORT, msgHelpTxtOptAllowUnsupportedPort},
+        {SwitchNoDryRun, msgCmdUpgradeOptNoDryRun},
+        {SwitchNoKeepGoing, msgCmdUpgradeOptNoKeepGoing},
+        {SwitchAllowUnsupported, msgHelpTxtOptAllowUnsupportedPort},
     };
 } // unnamed namespace
 
@@ -56,10 +53,10 @@ namespace vcpkg
 
         const ParsedArguments options = args.parse_arguments(CommandUpgradeMetadata);
 
-        const bool no_dry_run = Util::Sets::contains(options.switches, OPTION_NO_DRY_RUN);
+        const bool no_dry_run = Util::Sets::contains(options.switches, SwitchNoDryRun);
         const KeepGoing keep_going =
-            Util::Sets::contains(options.switches, OPTION_NO_KEEP_GOING) ? KeepGoing::NO : KeepGoing::YES;
-        const auto unsupported_port_action = Util::Sets::contains(options.switches, OPTION_ALLOW_UNSUPPORTED_PORT)
+            Util::Sets::contains(options.switches, SwitchNoKeepGoing) ? KeepGoing::NO : KeepGoing::YES;
+        const auto unsupported_port_action = Util::Sets::contains(options.switches, SwitchAllowUnsupported)
                                                  ? UnsupportedPortAction::Warn
                                                  : UnsupportedPortAction::Error;
 
@@ -95,19 +92,10 @@ namespace vcpkg
         else
         {
             // input sanitization
-            bool default_triplet_used = false;
-            const std::vector<PackageSpec> specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
-                return check_and_get_package_spec(arg,
-                                                  default_triplet,
-                                                  default_triplet_used,
-                                                  CommandUpgradeMetadata.get_example_text(),
-                                                  paths.get_triplet_db());
+            const std::vector<PackageSpec> specs = Util::fmap(options.command_arguments, [&](const std::string& arg) {
+                return check_and_get_package_spec(arg, default_triplet, paths.get_triplet_db())
+                    .value_or_exit(VCPKG_LINE_INFO);
             });
-
-            if (default_triplet_used)
-            {
-                print_default_triplet_warning(args, paths.get_triplet_db());
-            }
 
             std::vector<PackageSpec> not_installed;
             std::vector<PackageSpec> no_control_file;

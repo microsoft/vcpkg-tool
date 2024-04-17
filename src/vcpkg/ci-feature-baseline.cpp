@@ -54,7 +54,8 @@ namespace vcpkg
             }
 
             // port-name     =    (fail|skip)\b
-            auto maybe_spec = parse_qualified_specifier(parser);
+            auto maybe_spec = parse_qualified_specifier(
+                parser, AllowFeatures::Yes, ParseExplicitTriplet::Allow, AllowPlatformSpec::Yes);
             if (!maybe_spec) break;
             auto& spec = maybe_spec.value_or_exit(VCPKG_LINE_INFO);
             if (spec.platform.has_value() && spec.triplet.has_value())

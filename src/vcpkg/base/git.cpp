@@ -194,9 +194,9 @@ namespace vcpkg
 
     ExpectedL<bool> is_shallow_clone(const GitConfig& config)
     {
-        auto cmd = git_cmd_builder(config).string_arg("rev-parse").string_arg("--is-shallow-repository");
-        return flatten_out(cmd_execute_and_capture_output(cmd), Tools::GIT).map([](std::string&& output) {
-            return "true" == Strings::trim(std::move(output));
-        });
+        return flatten_out(cmd_execute_and_capture_output(
+                               git_cmd_builder(config).string_arg("rev-parse").string_arg("--is-shallow-repository")),
+                           Tools::GIT)
+            .map([](std::string&& output) { return "true" == Strings::trim(std::move(output)); });
     }
 }

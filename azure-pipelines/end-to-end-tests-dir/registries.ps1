@@ -383,10 +383,9 @@ finally
     Pop-Location
 }
 
-
 # test builtin registry
 Write-Trace "test builtin registry with baseline"
-$manifestDir = "$TestingRoot/manifest"
+$manifestDir = "$TestingRoot/manifest-builtin"
 
 New-Item -Path $manifestDir -ItemType Directory
 $manifestDir = (Get-Item $manifestDir).FullName
@@ -405,6 +404,50 @@ try
 
     Run-Vcpkg search @commonArgs zlib
     Throw-IfFailed
+}
+finally
+{
+    Pop-Location
+}
+
+
+# test nonexistent overrides regression (https://github.com/microsoft/vcpkg/issues/36994)
+Write-Trace "test nonexistent overrides regression"
+$manifestDir = "$TestingRoot/manifest-nonexistent-override"
+
+New-Item -Path $manifestDir -ItemType Directory
+$manifestDir = (Get-Item $manifestDir).FullName
+
+Push-Location $manifestDir
+try
+{
+    $vcpkgJson = @{
+        "name" = "manifest-test";
+        "version" = "1.0.0";
+        "dependencies" = @(
+            "nonexistent"
+        );
+        "overrides" = @(@{
+            "name" = "nonexistent";
+            "version" = "0";
+        });
+        "vcpkg-configuration" = @{
+            "default-registry" = @{
+                "kind" = "git";
+                "repository" = "https://github.com/microsoft/vcpkg";
+                "baseline" = "a4b5cde7f504c1bbbbc455f4a6ee60efd9034772";
+            };
+        };
+    }
+
+    New-Item -Path 'vcpkg.json' -ItemType File `
+        -Value (ConvertTo-Json -Depth 5 -InputObject $vcpkgJson)
+
+    $out = Run-VcpkgAndCaptureOutput install @commonArgs
+    Throw-IfNotFailed
+    if (-not $out.Contains("error: nonexistent does not exist")) {
+        throw "Expected nonexistent package to be mentioned in the output"
+    }
 }
 finally
 {

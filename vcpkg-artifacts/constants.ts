@@ -20,7 +20,7 @@ export const defaultConfig =
     {
       "kind": "artifact",
       "name": "arm",
-      "location": "https://artifacts.keil.arm.com/vcpkg-ce-registry/registry.zip"
+      "location": "https://artifacts.tools.arm.com/vcpkg-registry"
     }
   ]
 }

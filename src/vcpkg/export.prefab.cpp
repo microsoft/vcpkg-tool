@@ -1,6 +1,7 @@
 #include <vcpkg/base/fwd/message_sinks.h>
 
 #include <vcpkg/base/checks.h>
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.process.h>
@@ -216,15 +217,19 @@ namespace vcpkg::Prefab
             msg::println(Color::warning, msgDeprecatedPrefabDebugOption);
         }
         Debug::print("Installing POM and AAR file to ~/.m2");
-        auto cmd_line = Command(Tools::MAVEN);
+        auto cmd = Command{Tools::MAVEN};
         if (!prefab_options.enable_debug)
         {
-            cmd_line.string_arg("-q");
+            cmd.string_arg("-q");
         }
-        cmd_line.string_arg("install:install-file")
+
+        cmd.string_arg("install:install-file")
             .string_arg(Strings::concat("-Dfile=", aar))
             .string_arg(Strings::concat("-DpomFile=", pom));
-        const int exit_code = cmd_execute_clean(cmd_line).value_or_exit(VCPKG_LINE_INFO);
+
+        ProcessLaunchSettings settings;
+        settings.environment = get_clean_environment();
+        const int exit_code = cmd_execute(cmd, settings).value_or_exit(VCPKG_LINE_INFO);
 
         if (!(exit_code == 0))
         {
@@ -275,11 +280,11 @@ namespace vcpkg::Prefab
         std::unordered_map<Triplet, std::string> triplet_abi_map;
         std::unordered_map<Triplet, int> triplet_api_map;
 
-        for (auto& triplet_file : triplet_db.available_triplets)
+        for (const auto& triplet_file : triplet_db.available_triplets)
         {
             if (triplet_file.name.size() > 0)
             {
-                Triplet triplet = Triplet::from_canonical_name(std::move(triplet_file.name));
+                Triplet triplet = Triplet::from_canonical_name(triplet_file.name);
                 auto triplet_build_info = build_info_from_triplet(paths, provider, triplet);
                 if (is_supported(*triplet_build_info))
                 {
@@ -299,7 +304,7 @@ namespace vcpkg::Prefab
 
         Checks::msg_check_exit(VCPKG_LINE_INFO, required_archs.empty(), msgExportArchitectureReq);
 
-        Optional<std::string> android_ndk_home = get_environment_variable("ANDROID_NDK_HOME");
+        Optional<std::string> android_ndk_home = get_environment_variable(EnvironmentVariableAndroidNdkHome);
 
         if (!android_ndk_home.has_value())
         {
@@ -319,7 +324,7 @@ namespace vcpkg::Prefab
         Checks::msg_check_maybe_upgrade(VCPKG_LINE_INFO,
                                         fs.exists(ndk_location, IgnoreErrors{}),
                                         msgAndroidHomeDirMissingProps,
-                                        msg::env_var = format_environment_variable("ANDROID_NDK_HOME"),
+                                        msg::env_var = format_environment_variable(EnvironmentVariableAndroidNdkHome),
                                         msg::path = source_properties_location);
 
         std::string content = fs.read_contents(source_properties_location, VCPKG_LINE_INFO);

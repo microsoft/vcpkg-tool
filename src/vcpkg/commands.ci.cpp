@@ -1,3 +1,4 @@
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/graphs.h>
 #include <vcpkg/base/sortedvector.h>
@@ -38,7 +39,7 @@ namespace
                                          const PackageSpec& spec,
                                          BuildResult result) const override
         {
-            if (result == BuildResult::SUCCEEDED)
+            if (result == BuildResult::Succeeded)
             {
                 return;
             }
@@ -72,38 +73,23 @@ namespace
         Path base_path;
     };
 
-    constexpr StringLiteral OPTION_DRY_RUN = "dry-run";
-    constexpr StringLiteral OPTION_EXCLUDE = "exclude";
-    constexpr StringLiteral OPTION_HOST_EXCLUDE = "host-exclude";
-    constexpr StringLiteral OPTION_FAILURE_LOGS = "failure-logs";
-    constexpr StringLiteral OPTION_XUNIT = "x-xunit";
-    constexpr StringLiteral OPTION_XUNIT_ALL = "x-xunit-all";
-    constexpr StringLiteral OPTION_CI_BASELINE = "ci-baseline";
-    constexpr StringLiteral OPTION_ALLOW_UNEXPECTED_PASSING = "allow-unexpected-passing";
-    constexpr StringLiteral OPTION_SKIP_FAILURES = "skip-failures";
-    constexpr StringLiteral OPTION_RANDOMIZE = "x-randomize";
-    constexpr StringLiteral OPTION_OUTPUT_HASHES = "output-hashes";
-    constexpr StringLiteral OPTION_PARENT_HASHES = "parent-hashes";
-    constexpr StringLiteral OPTION_KNOWN_FAILURES = "known-failures-from";
-
     constexpr CommandSetting CI_SETTINGS[] = {
-        {OPTION_EXCLUDE, msgCISettingsOptExclude},
-        {OPTION_HOST_EXCLUDE, msgCISettingsOptHostExclude},
-        {OPTION_XUNIT, msgCISettingsOptXUnit},
-        {OPTION_CI_BASELINE, msgCISettingsOptCIBase},
-        {OPTION_FAILURE_LOGS, msgCISettingsOptFailureLogs},
-        {OPTION_OUTPUT_HASHES, msgCISettingsOptOutputHashes},
-        {OPTION_PARENT_HASHES, msgCISettingsOptParentHashes},
-        {OPTION_KNOWN_FAILURES,
-         []() { return LocalizedString::from_raw("Path to the file of known package build failures"); }},
-    };
+        {SwitchExclude, msgCISettingsOptExclude},
+        {SwitchHostExclude, msgCISettingsOptHostExclude},
+        {SwitchXXUnit, msgCISettingsOptXUnit},
+        {SwitchCIBaseline, msgCISettingsOptCIBase},
+        {SwitchFailureLogs, msgCISettingsOptFailureLogs},
+        {SwitchOutputHashes, msgCISettingsOptOutputHashes},
+        {SwitchParentHashes, msgCISettingsOptParentHashes},
+        {SwitchKnownFailuresFrom,
+         []() { return LocalizedString::from_raw("Path to the file of known package build failures"); }}};
 
     constexpr CommandSwitch CI_SWITCHES[] = {
-        {OPTION_DRY_RUN, msgCISwitchOptDryRun},
-        {OPTION_RANDOMIZE, msgCISwitchOptRandomize},
-        {OPTION_ALLOW_UNEXPECTED_PASSING, msgCISwitchOptAllowUnexpectedPassing},
-        {OPTION_SKIP_FAILURES, msgCISwitchOptSkipFailures},
-        {OPTION_XUNIT_ALL, msgCISwitchOptXUnitAll},
+        {SwitchDryRun, msgCISwitchOptDryRun},
+        {SwitchXRandomize, msgCISwitchOptRandomize},
+        {SwitchAllowUnexpectedPassing, msgCISwitchOptAllowUnexpectedPassing},
+        {SwitchSkipFailures, msgCISwitchOptSkipFailures},
+        {SwitchXXUnitAll, msgCISwitchOptXUnitAll},
     };
 
     struct UnknownCIPortsResults
@@ -191,26 +177,26 @@ namespace
             if (is_excluded(p->spec))
             {
                 ret->action_state_string.emplace_back("skip");
-                ret->known.emplace(p->spec, BuildResult::EXCLUDED);
+                ret->known.emplace(p->spec, BuildResult::Excluded);
                 will_fail.emplace(p->spec);
             }
             else if (Util::Sets::contains(known_failures, p->public_abi()))
             {
                 ret->action_state_string.emplace_back("will fail");
-                ret->known.emplace(p->spec, BuildResult::BUILD_FAILED);
+                ret->known.emplace(p->spec, BuildResult::BuildFailed);
                 will_fail.emplace(p->spec);
             }
             else if (Util::any_of(p->package_dependencies,
                                   [&](const PackageSpec& spec) { return Util::Sets::contains(will_fail, spec); }))
             {
                 ret->action_state_string.emplace_back("cascade");
-                ret->known.emplace(p->spec, BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES);
+                ret->known.emplace(p->spec, BuildResult::CascadedDueToMissingDependencies);
                 will_fail.emplace(p->spec);
             }
             else if (precheck_results[action_idx] == CacheAvailability::available)
             {
                 ret->action_state_string.emplace_back("pass");
-                ret->known.emplace(p->spec, BuildResult::SUCCEEDED);
+                ret->known.emplace(p->spec, BuildResult::Succeeded);
             }
             else
             {
@@ -242,7 +228,7 @@ namespace
 
             if (Util::Sets::contains(to_keep, it->spec))
             {
-                if (it_known != known.end() && it_known->second == BuildResult::EXCLUDED)
+                if (it_known != known.end() && it_known->second == BuildResult::Excluded)
                 {
                     it->plan_type = InstallPlanType::EXCLUDED;
                 }
@@ -259,7 +245,7 @@ namespace
         });
     }
 
-    void parse_exclusions(const std::map<std::string, std::string, std::less<>>& settings,
+    void parse_exclusions(const std::map<StringLiteral, std::string, std::less<>>& settings,
                           StringLiteral opt,
                           Triplet triplet,
                           ExclusionsMap& exclusions_map)
@@ -338,17 +324,14 @@ namespace vcpkg
                              Triplet host_triplet)
     {
         msg::println_warning(msgInternalCICommand);
-
-        print_default_triplet_warning(args, paths.get_triplet_db());
-
         const ParsedArguments options = args.parse_arguments(CommandCiMetadata);
         const auto& settings = options.settings;
 
         ExclusionsMap exclusions_map;
-        parse_exclusions(settings, OPTION_EXCLUDE, target_triplet, exclusions_map);
-        parse_exclusions(settings, OPTION_HOST_EXCLUDE, host_triplet, exclusions_map);
-        auto baseline_iter = settings.find(OPTION_CI_BASELINE);
-        const bool allow_unexpected_passing = Util::Sets::contains(options.switches, OPTION_ALLOW_UNEXPECTED_PASSING);
+        parse_exclusions(settings, SwitchExclude, target_triplet, exclusions_map);
+        parse_exclusions(settings, SwitchHostExclude, host_triplet, exclusions_map);
+        auto baseline_iter = settings.find(SwitchCIBaseline);
+        const bool allow_unexpected_passing = Util::Sets::contains(options.switches, SwitchAllowUnexpectedPassing);
         CiBaselineData cidata;
         if (baseline_iter == settings.end())
         {
@@ -360,7 +343,7 @@ namespace vcpkg
         else
         {
             auto skip_failures =
-                Util::Sets::contains(options.switches, OPTION_SKIP_FAILURES) ? SkipFailures::Yes : SkipFailures::No;
+                Util::Sets::contains(options.switches, SwitchSkipFailures) ? SkipFailures::Yes : SkipFailures::No;
             const auto& ci_baseline_file_name = baseline_iter->second;
             const auto ci_baseline_file_contents =
                 paths.get_filesystem().read_contents(ci_baseline_file_name, VCPKG_LINE_INFO);
@@ -371,7 +354,7 @@ namespace vcpkg
         }
 
         std::unordered_set<std::string> known_failures;
-        auto it_known_failures = settings.find(OPTION_KNOWN_FAILURES);
+        auto it_known_failures = settings.find(SwitchKnownFailuresFrom);
         if (it_known_failures != settings.end())
         {
             Path raw_path = it_known_failures->second;
@@ -379,12 +362,12 @@ namespace vcpkg
             known_failures.insert(lines.begin(), lines.end());
         }
 
-        const auto is_dry_run = Util::Sets::contains(options.switches, OPTION_DRY_RUN);
+        const auto is_dry_run = Util::Sets::contains(options.switches, SwitchDryRun);
 
         auto& filesystem = paths.get_filesystem();
         Optional<CiBuildLogsRecorder> build_logs_recorder_storage;
         {
-            auto it_failure_logs = settings.find(OPTION_FAILURE_LOGS);
+            auto it_failure_logs = settings.find(SwitchFailureLogs);
             if (it_failure_logs != settings.end())
             {
                 msg::println(msgCreateFailureLogsDir, msg::path = it_failure_logs->second);
@@ -408,8 +391,9 @@ namespace vcpkg
         std::vector<FullPackageSpec> all_default_full_specs;
         for (auto scfl : provider.load_all_control_files())
         {
-            all_default_full_specs.emplace_back(PackageSpec{scfl->to_name(), target_triplet},
-                                                InternalFeatureSet{"core", "default"});
+            all_default_full_specs.emplace_back(
+                PackageSpec{scfl->to_name(), target_triplet},
+                InternalFeatureSet{FeatureNameCore.to_string(), FeatureNameDefault.to_string()});
         }
 
         CreateInstallPlanOptions serialize_options(host_triplet, paths.packages(), UnsupportedPortAction::Warn);
@@ -426,7 +410,7 @@ namespace vcpkg
             std::random_device e;
         } randomizer_instance;
 
-        if (Util::Sets::contains(options.switches, OPTION_RANDOMIZE))
+        if (Util::Sets::contains(options.switches, SwitchXRandomize))
         {
             serialize_options.randomizer = &randomizer_instance;
         }
@@ -446,8 +430,8 @@ namespace vcpkg
                 {
                     bool supp = supported_for_triplet(var_provider, provider, spec.package_spec);
                     split_specs->known.emplace(spec.package_spec,
-                                               supp ? BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES
-                                                    : BuildResult::EXCLUDED);
+                                               supp ? BuildResult::CascadedDueToMissingDependencies
+                                                    : BuildResult::Excluded);
 
                     if (cidata.expected_failures.contains(spec.package_spec))
                     {
@@ -470,7 +454,7 @@ namespace vcpkg
             }
 
             msg::write_unlocalized_text(Color::none, msg);
-            auto it_output_hashes = settings.find(OPTION_OUTPUT_HASHES);
+            auto it_output_hashes = settings.find(SwitchOutputHashes);
             if (it_output_hashes != settings.end())
             {
                 const Path output_hash_json = paths.original_cwd / it_output_hashes->second;
@@ -479,10 +463,11 @@ namespace vcpkg
                 {
                     auto&& action = action_plan.install_actions[i];
                     Json::Object obj;
-                    obj.insert("name", Json::Value::string(action.spec.name()));
-                    obj.insert("triplet", Json::Value::string(action.spec.triplet().canonical_name()));
-                    obj.insert("state", Json::Value::string(split_specs->action_state_string[i]));
-                    obj.insert("abi", Json::Value::string(action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi));
+                    obj.insert(JsonIdName, Json::Value::string(action.spec.name()));
+                    obj.insert(JsonIdTriplet, Json::Value::string(action.spec.triplet().canonical_name()));
+                    obj.insert(JsonIdState, Json::Value::string(split_specs->action_state_string[i]));
+                    obj.insert(JsonIdAbi,
+                               Json::Value::string(action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi));
                     arr.push_back(std::move(obj));
                 }
                 filesystem.write_contents(output_hash_json, Json::stringify(arr), VCPKG_LINE_INFO);
@@ -491,13 +476,13 @@ namespace vcpkg
 
         std::vector<std::string> parent_hashes;
 
-        auto it_parent_hashes = settings.find(OPTION_PARENT_HASHES);
+        auto it_parent_hashes = settings.find(SwitchParentHashes);
         if (it_parent_hashes != settings.end())
         {
             const Path parent_hashes_path = paths.original_cwd / it_parent_hashes->second;
             auto parsed_json = Json::parse_file(VCPKG_LINE_INFO, filesystem, parent_hashes_path).value;
             parent_hashes = Util::fmap(parsed_json.array(VCPKG_LINE_INFO), [](const auto& json_object) {
-                auto abi = json_object.object(VCPKG_LINE_INFO).get("abi");
+                auto abi = json_object.object(VCPKG_LINE_INFO).get(JsonIdAbi);
                 Checks::check_exit(VCPKG_LINE_INFO, abi);
 #ifdef _MSC_VER
                 _Analysis_assume_(abi);
@@ -558,7 +543,7 @@ namespace vcpkg
                               regressions,
                               allow_unexpected_passing);
 
-            auto it_xunit = settings.find(OPTION_XUNIT);
+            auto it_xunit = settings.find(SwitchXXUnit);
             if (it_xunit != settings.end())
             {
                 XunitWriter xunitTestResults;
@@ -574,7 +559,7 @@ namespace vcpkg
                 }
 
                 // Adding results for ports that were not built because they have known states
-                if (Util::Sets::contains(options.switches, OPTION_XUNIT_ALL))
+                if (Util::Sets::contains(options.switches, SwitchXXUnitAll))
                 {
                     for (auto&& port : split_specs->known)
                     {

@@ -63,6 +63,12 @@ namespace vcpkg
         VersionScheme scheme;
         Version version;
 
+        SchemedVersion() noexcept;
+        SchemedVersion(VersionScheme scheme, Version&& version) noexcept;
+        SchemedVersion(VersionScheme scheme, const Version& version);
+        SchemedVersion(VersionScheme scheme, std::string&& value, int port_version) noexcept;
+        SchemedVersion(VersionScheme scheme, StringView value, int port_version);
+
         friend bool operator==(const SchemedVersion& lhs, const SchemedVersion& rhs);
         friend bool operator!=(const SchemedVersion& lhs, const SchemedVersion& rhs);
     };

@@ -158,7 +158,6 @@ namespace vcpkg
         // These are filled in after construction by reading from args and environment
         std::string nuget_prefix;
         bool use_nuget_cache = false;
-        NuGetRepoInfo nuget_repo_info;
 
         void clear();
     };
@@ -205,7 +204,6 @@ namespace vcpkg
         BinaryCache(const Filesystem& fs);
         BinaryCache(const BinaryCache&) = delete;
         BinaryCache(BinaryCache&&) = default;
-        ~BinaryCache();
 
         /// Called upon a successful build of `action` to store those contents in the binary cache.
         void push_success(const InstallPlanAction& action);

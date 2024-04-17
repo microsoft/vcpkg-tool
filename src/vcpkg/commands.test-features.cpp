@@ -41,7 +41,7 @@ namespace
 
         void record_build_result(const VcpkgPaths& paths, const PackageSpec& spec, BuildResult result) const override
         {
-            if (result == BuildResult::SUCCEEDED)
+            if (result == BuildResult::Succeeded)
             {
                 return;
             }
@@ -443,7 +443,7 @@ namespace vcpkg
             {
                 switch (result.build_result.value_or_exit(VCPKG_LINE_INFO).code)
                 {
-                    case BuildResult::BUILD_FAILED:
+                    case BuildResult::BuildFailed:
                         if (Path* dir = logs_dir.get())
                         {
                             auto issue_body_path = *dir / "issue_body.md";
@@ -465,7 +465,7 @@ namespace vcpkg
                             Strings::append(failed_dependencies, result.get_spec());
                         }
                         [[fallthrough]];
-                    case BuildResult::POST_BUILD_CHECKS_FAILED:
+                    case BuildResult::PostBuildChecksFailed:
                         known_failures.insert(result.get_abi().value_or_exit(VCPKG_LINE_INFO));
                         break;
                     default: break;
@@ -474,12 +474,12 @@ namespace vcpkg
             const auto time_to_install = install_timer.elapsed();
             switch (summary.results.back().build_result.value_or_exit(VCPKG_LINE_INFO).code)
             {
-                case BuildResult::DOWNLOADED:
-                case vcpkg::BuildResult::SUCCEEDED:
+                case BuildResult::Downloaded:
+                case vcpkg::BuildResult::Succeeded:
                     handle_result(
                         std::move(spec), CiFeatureBaselineState::Pass, baseline, {}, logs_dir, time_to_install);
                     break;
-                case vcpkg::BuildResult::CASCADED_DUE_TO_MISSING_DEPENDENCIES:
+                case vcpkg::BuildResult::CascadedDueToMissingDependencies:
                     handle_result(std::move(spec),
                                   CiFeatureBaselineState::Cascade,
                                   baseline,
@@ -487,12 +487,12 @@ namespace vcpkg
                                   logs_dir,
                                   time_to_install);
                     break;
-                case BuildResult::BUILD_FAILED:
-                case BuildResult::POST_BUILD_CHECKS_FAILED:
-                case BuildResult::FILE_CONFLICTS:
-                case BuildResult::CACHE_MISSING:
-                case BuildResult::REMOVED:
-                case BuildResult::EXCLUDED:
+                case BuildResult::BuildFailed:
+                case BuildResult::PostBuildChecksFailed:
+                case BuildResult::FileConflicts:
+                case BuildResult::CacheMissing:
+                case BuildResult::Removed:
+                case BuildResult::Excluded:
                     if (auto abi = summary.results.back().get_abi().get())
                     {
                         known_failures.insert(*abi);

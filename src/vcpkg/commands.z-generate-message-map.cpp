@@ -1,3 +1,5 @@
+#include <vcpkg/base/contractual-constants.h>
+#include <vcpkg/base/files.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/setup-messages.h>
@@ -5,15 +7,14 @@
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.z-generate-message-map.h>
+#include <vcpkg/vcpkgcmdarguments.h>
 
 using namespace vcpkg;
 
 namespace
 {
-    constexpr StringLiteral OPTION_NO_OUTPUT_COMMENTS = "no-output-comments";
-
     constexpr CommandSwitch GENERATE_MESSAGE_MAP_SWITCHES[]{
-        {OPTION_NO_OUTPUT_COMMENTS, msgCmdGenerateMessageMapOptNoOutputComments},
+        {SwitchNoOutputComments, msgCmdGenerateMessageMapOptNoOutputComments},
     };
 
     struct BadPrefixTest
@@ -142,7 +143,7 @@ namespace vcpkg
     void command_z_generate_default_message_map_and_exit(const VcpkgCmdArguments& args, const Filesystem& fs)
     {
         auto parsed_args = args.parse_arguments(CommandZGenerateDefaultMessageMapMetadata);
-        const bool output_comments = !Util::Sets::contains(parsed_args.switches, OPTION_NO_OUTPUT_COMMENTS);
+        const bool output_comments = !Util::Sets::contains(parsed_args.switches, SwitchNoOutputComments);
 
         auto messages = msg::get_sorted_english_messages();
 
