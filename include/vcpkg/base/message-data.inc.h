@@ -90,10 +90,15 @@ DECLARE_MESSAGE(
     "\"version-string\" and \"version\" are JSON keys, and --skip-version-format-check is a command line switch. They "
     "should not be translated",
     "The version format of \"{package_name}\" uses \"version-string\", but the format is acceptable as a \"version\". "
-    "If the versions for this port are orderable using Semantic Versioning ( https://semver.org/ ) rules, change the "
-    "format to \"version\", and rerun this command. Note that Semantic Versioning considers all versions with a dashed "
-    "suffix as *older* than versions without one. If versions for this port are not so orderable, disable this check "
-    "by rerunning this command and adding --skip-version-format-check .")
+    "If the versions for this port are orderable using relaxed-version rules, change the format to \"version\", and "
+    "rerun this command. Relaxed-version rules order versions by each numeric component. Then, versions with dash "
+    "suffixes are sorted lexcographically before. Plus'd build tags are ignored. Examples:\n"
+    "1.0 < 1.1-alpha < 1.1-b < 1.1 < 1.1.1 < 1.2+build = 1.2 < 2.0\n"
+    "Note in particular that dashed suffixes sort *before*, not after. 1.0-anything < 1.0\n"
+    "Note that this sort order is the same as chosen in Semantic Versioning (see https://semver.org), even though the "
+    "actually semantic parts do not apply.\n"
+    "If versions for this port are not ordered by these rules, disable this check by rerunning this command and adding "
+    "--skip-version-format-check .")
 DECLARE_MESSAGE(AddVersionUnableToParseVersionsFile, (msg::path), "", "unable to parse versions file {path}")
 DECLARE_MESSAGE(AddVersionUncommittedChanges,
                 (msg::package_name),
