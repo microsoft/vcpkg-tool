@@ -267,6 +267,7 @@ namespace vcpkg
         static constexpr StringLiteral SwitchFormatDot = "dot";
         static constexpr StringLiteral SwitchFormatDgml = "dgml";
         static constexpr StringLiteral SwitchFormatMermaid = "mermaid";
+        static constexpr StringLiteral SwitchFormatJson = "json";
 
         auto& settings = args.settings;
 
@@ -295,6 +296,10 @@ namespace vcpkg
                 else if (as_lower == SwitchFormatMermaid)
                 {
                     maybe_format.emplace(DependInfoFormat::Mermaid);
+                }
+                else if (as_lower == SwitchFormatJson)
+                {
+                    maybe_format.emplace(DependInfoFormat::Json);
                 }
                 else
                 {
@@ -499,7 +504,47 @@ namespace vcpkg
 
             Checks::exit_success(VCPKG_LINE_INFO);
         }
+        
+        if (strategy.format == DependInfoFormat::Json)
+        {
+            std::string prifex_str = "";
+            for (auto&& info : depend_info)
+            {
+                if (info.depth < 0)
+                {
+                    continue;
+                }
 
+                if (strategy.show_depth)
+                {
+                    msg::write_unlocalized_text(Color::error, fmt::format("({})", info.depth));
+                }
+
+                if (!info.features.empty())
+                {
+                    msg::write_unlocalized_text(Color::warning, "[" + Strings::join(", ", info.features) + "]");
+                }
+
+                if (info.dependencies.empty())
+                {
+                    continue;
+                }
+                prifex_str = "{ \n    \"name\": \"" + info.package + "\",\n" + "    \"dependency\": [ \n";
+                for (auto i = info.dependencies.begin(); i != info.dependencies.end(); ++i)
+                {
+                    if (i == info.dependencies.end() - 1)
+                    {
+                        break;
+                    }
+                    prifex_str += "      \"" + *i + "\",\n";
+                }
+                auto m = info.dependencies.end()-1;
+                prifex_str += "      \"" + *m + "\"\n" + "     ]\n\}\n";
+                msg::write_unlocalized_text(Color::none, prifex_str);
+            }            
+            Checks::exit_success(VCPKG_LINE_INFO);
+        }
+        
         if (strategy.format != DependInfoFormat::List)
         {
             Checks::unreachable(VCPKG_LINE_INFO);
