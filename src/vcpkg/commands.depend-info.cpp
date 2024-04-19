@@ -88,59 +88,63 @@ namespace
         {SwitchFormat, msgCmdDependInfoFormatHelp},
     };
 
-    void assign_depth_to_dependencies(const std::string& package,
-                                      const int depth,
-                                      const int max_depth,
-                                      std::map<std::string, PackageDependInfo>& dependencies_map)
+    void assign_depth_to_dependencies(const std::vector<PackageDependInfo>& packages,
+                                      const std::map<std::string, PackageDependInfo&>& dependencies_map)
     {
-        auto iter = dependencies_map.find(package);
-        if (iter == dependencies_map.end())
+        for (auto it = packages.rbegin(), last = packages.rend(); it != last; ++it)
         {
-            Checks::unreachable(VCPKG_LINE_INFO, fmt::format("Not found in dependency graph: {}", package));
-        }
-
-        PackageDependInfo& info = iter->second;
-
-        if (depth > info.depth)
-        {
-            info.depth = depth;
-            if (depth < max_depth)
+            int new_depth = it->depth + 1;
+            for (const auto& dependency : it->dependencies)
             {
-                for (auto&& dependency : info.dependencies)
+                auto match = dependencies_map.find(dependency);
+                if (match == dependencies_map.end())
                 {
-                    assign_depth_to_dependencies(dependency, depth + 1, max_depth, dependencies_map);
+                    Checks::unreachable(VCPKG_LINE_INFO, fmt::format("Not found in dependency graph: {}", dependency));
+                }
+
+                if (match->second.depth < new_depth)
+                {
+                    match->second.depth = new_depth;
                 }
             }
-        }
+        };
     }
 
     std::vector<PackageDependInfo> extract_depend_info(const std::vector<const InstallPlanAction*>& install_actions,
+                                                       const Triplet& default_triplet,
+                                                       const Triplet& host_triplet,
                                                        const int max_depth)
     {
-        std::map<std::string, PackageDependInfo> package_dependencies;
+        const bool is_native = default_triplet == host_triplet;
+        auto decorated_name = [&default_triplet, &host_triplet, is_native](const PackageSpec& spec) -> std::string {
+            if (!is_native && spec.triplet() == host_triplet) return spec.name() + ":host";
+            if (spec.triplet() == default_triplet) return spec.name();
+            return spec.name() + ':' + spec.triplet().canonical_name();
+        };
+
+        std::vector<PackageDependInfo> out;
+        out.reserve(install_actions.size());
+
+        std::map<std::string, PackageDependInfo&> package_dependencies;
         for (const InstallPlanAction* pia : install_actions)
         {
             const InstallPlanAction& install_action = *pia;
 
             const std::vector<std::string> dependencies =
-                Util::fmap(install_action.package_dependencies, [](const PackageSpec& spec) { return spec.name(); });
+                Util::fmap(install_action.package_dependencies,
+                           [&decorated_name](const PackageSpec& spec) { return decorated_name(spec); });
 
             std::unordered_set<std::string> features{install_action.feature_list.begin(),
                                                      install_action.feature_list.end()};
             features.erase(FeatureNameCore.to_string());
 
-            auto& port_name = install_action.spec.name();
+            out.push_back({decorated_name(install_action.spec), 0, std::move(features), std::move(dependencies)});
 
-            PackageDependInfo info{port_name, -1, features, dependencies};
-            package_dependencies.emplace(port_name, std::move(info));
+            package_dependencies.emplace(out.back().package, out.back());
         }
 
-        const InstallPlanAction& init = *install_actions.back();
-        assign_depth_to_dependencies(init.spec.name(), 0, max_depth, package_dependencies);
-
-        std::vector<PackageDependInfo> out =
-            Util::fmap(package_dependencies, [](auto&& kvpair) -> PackageDependInfo { return kvpair.second; });
-        Util::erase_remove_if(out, [](auto&& info) { return info.depth < 0; });
+        assign_depth_to_dependencies(out, package_dependencies);
+        Util::erase_remove_if(out, [max_depth](auto&& info) { return info.depth > max_depth; });
         return out;
     }
 
@@ -161,30 +165,42 @@ namespace
 
 namespace vcpkg
 {
+    namespace
+    {
+        const char* get_dot_element_style(const std::string& label)
+        {
+            if (!Strings::contains(label, ':')) return "";
+
+            if (Strings::ends_with(label, ":host")) return " [color=gray51 fontcolor=gray51]";
+
+            return " [color=blue fontcolor=blue]";
+        }
+    }
+
     std::string create_dot_as_string(const std::vector<PackageDependInfo>& depend_info)
     {
         int empty_node_count = 0;
 
-        std::string s = "digraph G{ rankdir=LR; edge [minlen=3]; overlap=false;";
+        std::string s = "digraph G{ rankdir=LR; node [fontname=Sans]; edge [minlen=3]; overlap=false;\n";
 
         for (const auto& package : depend_info)
         {
+            fmt::format_to(
+                std::back_inserter(s), "\"{}\"{};\n", package.package, get_dot_element_style(package.package));
             if (package.dependencies.empty())
             {
                 empty_node_count++;
                 continue;
             }
 
-            const std::string name = Strings::replace_all(std::string{package.package}, "-", "_");
-            fmt::format_to(std::back_inserter(s), "{};", name);
             for (const auto& d : package.dependencies)
             {
-                const std::string dependency_name = Strings::replace_all(std::string{d}, "-", "_");
-                fmt::format_to(std::back_inserter(s), "{} -> {};", name, dependency_name);
+                fmt::format_to(
+                    std::back_inserter(s), "\"{}\" -> \"{}\"{};\n", package.package, d, get_dot_element_style(d));
             }
         }
 
-        fmt::format_to(std::back_inserter(s), "empty [label=\"{} singletons...\"]; }}", empty_node_count);
+        fmt::format_to(std::back_inserter(s), "\"{} singletons...\";\n}}", empty_node_count);
         return s;
     }
 
@@ -239,7 +255,7 @@ namespace vcpkg
         "https://learn.microsoft.com/vcpkg/commands/depend-info",
         AutocompletePriority::Public,
         1,
-        1,
+        SIZE_MAX,
         {DEPEND_SWITCHES, DEPEND_SETTINGS},
         nullptr,
     };
@@ -421,7 +437,8 @@ namespace vcpkg
             install_actions.push_back(&action);
         }
 
-        std::vector<PackageDependInfo> depend_info = extract_depend_info(install_actions, strategy.max_depth);
+        std::vector<PackageDependInfo> depend_info =
+            extract_depend_info(install_actions, default_triplet, host_triplet, strategy.max_depth);
 
         if (strategy.format == DependInfoFormat::Dot)
         {
@@ -456,25 +473,34 @@ namespace vcpkg
 
         if (strategy.format == DependInfoFormat::Tree)
         {
-            Util::sort(depend_info, reverse);
-            auto first = depend_info.begin();
-            std::string features = Strings::join(", ", first->features);
-
-            if (strategy.show_depth)
-            {
-                msg::write_unlocalized_text(Color::error, fmt::format("({})", first->depth));
-            }
-
-            msg::write_unlocalized_text(Color::success, first->package);
-            if (!features.empty())
-            {
-                msg::write_unlocalized_text(Color::warning, "[" + features + "]");
-            }
-
-            msg::write_unlocalized_text(Color::none, "\n");
             std::set<std::string> printed;
-            std::string prefix_buf;
-            print_dep_tree(prefix_buf, first->package, depend_info, printed);
+            for (auto&& info : depend_info)
+            {
+                if (info.depth != 0) continue;
+
+                std::string features = Strings::join(", ", info.features);
+
+                if (strategy.show_depth)
+                {
+                    msg::write_unlocalized_text(Color::error, "(0)"); // legacy
+                }
+
+                auto end_of_name = info.package.find(':');
+                msg::write_unlocalized_text(Color::success, info.package.substr(0, end_of_name));
+                if (!features.empty())
+                {
+                    msg::write_unlocalized_text(Color::warning, "[" + features + "]");
+                }
+                if (end_of_name != std::string::npos)
+                {
+                    msg::write_unlocalized_text(Color::success, info.package.substr(end_of_name));
+                }
+
+                msg::write_unlocalized_text(Color::none, "\n");
+                std::string prefix_buf;
+                print_dep_tree(prefix_buf, info.package, depend_info, printed);
+            }
+
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 
@@ -493,20 +519,20 @@ namespace vcpkg
 
         for (auto&& info : depend_info)
         {
-            if (info.depth < 0)
-            {
-                continue;
-            }
-
             if (strategy.show_depth)
             {
                 msg::write_unlocalized_text(Color::error, fmt::format("({})", info.depth));
             }
 
-            msg::write_unlocalized_text(Color::success, info.package);
+            auto end_of_name = info.package.find(':');
+            msg::write_unlocalized_text(Color::success, info.package.substr(0, end_of_name));
             if (!info.features.empty())
             {
                 msg::write_unlocalized_text(Color::warning, "[" + Strings::join(", ", info.features) + "]");
+            }
+            if (end_of_name != std::string::npos)
+            {
+                msg::write_unlocalized_text(Color::success, info.package.substr(end_of_name));
             }
 
             msg::write_unlocalized_text(Color::none, ": " + Strings::join(", ", info.dependencies) + "\n");

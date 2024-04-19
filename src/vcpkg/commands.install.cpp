@@ -978,18 +978,24 @@ namespace vcpkg
                 };
 
                 const auto name = cmakeify(bpgh.spec.name());
-                auto msg = msg::format(msgHeaderOnlyUsage, msg::package_name = bpgh.spec.name()).extract_data();
-                Strings::append(msg, "\n\n");
-                Strings::append(msg, "    find_path(", name, "_INCLUDE_DIRS \"", header_path, "\")\n");
-                Strings::append(msg, "    target_include_directories(main PRIVATE ${", name, "_INCLUDE_DIRS})\n\n");
+                auto msg = msg::format(msgHeaderOnlyUsage, msg::package_name = bpgh.spec.name()).append_raw("\n\n");
+                msg.append_indent()
+                    .append_raw("find_path(")
+                    .append_raw(name)
+                    .append_raw("_INCLUDE_DIRS \")")
+                    .append_raw(header_path)
+                    .append_raw("\")\n");
+                msg.append_indent()
+                    .append_raw("target_include_directories(main PRIVATE ${")
+                    .append_raw(name)
+                    .append_raw("_INCLUDE_DIRS})\n\n");
 
-                ret.message = std::move(msg);
+                ret.message = msg.extract_data();
             }
             if (!pkgconfig_files.empty())
             {
-                auto msg = msg::format(msgCMakePkgConfigTargetsUsage, msg::package_name = bpgh.spec.name())
-                               .append_raw("\n\n")
-                               .extract_data();
+                auto msg =
+                    msg::format(msgCMakePkgConfigTargetsUsage, msg::package_name = bpgh.spec.name()).append_raw("\n\n");
                 for (auto&& path : pkgconfig_files)
                 {
                     const auto lines = fs.read_lines(path).value_or_exit(VCPKG_LINE_INFO);
@@ -997,14 +1003,16 @@ namespace vcpkg
                     {
                         if (Strings::starts_with(line, "Description: "))
                         {
-                            Strings::append(msg, "    # ", line.substr(StringLiteral("Description: ").size()), '\n');
+                            msg.append_indent()
+                                .append_raw("# ")
+                                .append_raw(line.substr(StringLiteral("Description: ").size()))
+                                .append_raw('\n');
                             break;
                         }
                     }
-                    const auto name = path.stem();
-                    Strings::append(msg, "    ", name, "\n\n");
+                    msg.append_indent().append_raw(path.stem()).append_raw("\n\n");
                 }
-                ret.message += msg;
+                ret.message += msg.extract_data();
             }
         }
         return ret;
