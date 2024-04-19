@@ -539,7 +539,7 @@ namespace vcpkg
                     prifex_str += "      \"" + *i + "\",\n";
                 }
                 auto m = info.dependencies.end()-1;
-                prifex_str += "      \"" + *m + "\"\n" + "     ]\n\}\n";
+                prifex_str += "      \"" + *m + "\"\n" + "     ]\n}\n";
                 msg::write_unlocalized_text(Color::none, prifex_str);
             }            
             Checks::exit_success(VCPKG_LINE_INFO);
