@@ -103,7 +103,7 @@ namespace vcpkg
     public:
         std::vector<std::string> overlay_ports;
 
-        bool is_overlay_port(const std::string& port_name) const { return Util::contains(overlay_ports, port_name); }
+        bool is_overlay_port(const std::string& port_name) const;
 
         std::string get_toolver_diagnostics() const;
 
