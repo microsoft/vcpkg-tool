@@ -54,23 +54,27 @@ if(MSVC AND NOT COMMAND target_precompile_headers)
 endif()
 
 if(VCPKG_EMBED_GIT_SHA)
-    find_package(Git REQUIRED)
-    execute_process(
-        COMMAND "${GIT_EXECUTABLE}" status --porcelain=v1
-        WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}"
-        OUTPUT_VARIABLE VCPKG_GIT_STATUS
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-
-    if(VCPKG_GIT_STATUS STREQUAL "")
+    if(DEFINED VCPKG_VERSION)
+        message(STATUS "Using supplied version SHA ${VCPKG_VERSION}.")
+    else()
+        find_package(Git REQUIRED)
         execute_process(
-            COMMAND "${GIT_EXECUTABLE}" rev-parse HEAD
+            COMMAND "${GIT_EXECUTABLE}" status --porcelain=v1
             WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}"
-            OUTPUT_VARIABLE VCPKG_VERSION
+            OUTPUT_VARIABLE VCPKG_GIT_STATUS
             OUTPUT_STRIP_TRAILING_WHITESPACE
         )
-    else()
-        message(WARNING "Skipping embedding SHA due to local changes.")
+
+        if(VCPKG_GIT_STATUS STREQUAL "")
+            execute_process(
+                COMMAND "${GIT_EXECUTABLE}" rev-parse HEAD
+                WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}"
+                OUTPUT_VARIABLE VCPKG_VERSION
+                OUTPUT_STRIP_TRAILING_WHITESPACE
+            )
+        else()
+            message(WARNING "Skipping embedding SHA due to local changes.")
+        endif()
     endif()
 endif()
 
@@ -555,6 +559,13 @@ set_property(TARGET test-editor PROPERTY PDB_NAME "test-editor${VCPKG_PDB_SUFFIX
 add_executable(test-script-asset-cache ${TEST_SCRIPT_ASSET_CACHE_SOURCES} "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg.manifest")
 set_property(TARGET test-script-asset-cache PROPERTY PDB_NAME "test-script-asset-cache${VCPKG_PDB_SUFFIX}")
 endif()
+
+# === Target: verify_messages ===
+add_custom_target(
+    verify-messages
+    COMMAND pwsh -File "${CMAKE_CURRENT_SOURCE_DIR}/scripts/verifyMessages.ps1"
+    COMMENT "Running PowerShell script to verify message usage..."
+)
 
 # === Target: format ===
 

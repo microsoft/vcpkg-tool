@@ -9,7 +9,7 @@ Param(
     [Parameter(Mandatory = $True)]
     [string]$Deployment,
     [Parameter(Mandatory = $True)]
-    [string]$SignedFilesRoot,
+    [string]$ArchIndependentSignedFilesRoot,
     [Parameter(Mandatory = $true)]
     [string]$VcpkgBaseVersion
 )
@@ -85,12 +85,12 @@ try {
     Set-Content -Path "out/vcpkg-version.txt" -Value $VcpkgBaseVersion -NoNewLine -Encoding Ascii
     Copy-Item -Path "$PSScriptRoot/../NOTICE.txt" -Destination 'out/NOTICE.txt'
     Copy-Item -Path "$PSScriptRoot/vcpkg-cmd.cmd" -Destination 'out/vcpkg-cmd.cmd'
-    Copy-Item -Path "$SignedFilesRoot/vcpkg-init" -Destination 'out/vcpkg-init'
-    Copy-Item -Path "$SignedFilesRoot/vcpkg-init.ps1" -Destination 'out/vcpkg-init.ps1'
-    Copy-Item -Path "$SignedFilesRoot/vcpkg-init.cmd" -Destination 'out/vcpkg-init.cmd'
-    Copy-Item -Path "$SignedFilesRoot/scripts/addPoshVcpkgToPowershellProfile.ps1" -Destination 'out/scripts/addPoshVcpkgToPowershellProfile.ps1'
+    Copy-Item -Path "$ArchIndependentSignedFilesRoot/vcpkg-init" -Destination 'out/vcpkg-init'
+    Copy-Item -Path "$ArchIndependentSignedFilesRoot/vcpkg-init.ps1" -Destination 'out/vcpkg-init.ps1'
+    Copy-Item -Path "$ArchIndependentSignedFilesRoot/vcpkg-init.cmd" -Destination 'out/vcpkg-init.cmd'
+    Copy-Item -Path "$ArchIndependentSignedFilesRoot/scripts/addPoshVcpkgToPowershellProfile.ps1" -Destination 'out/scripts/addPoshVcpkgToPowershellProfile.ps1'
     New-Item -Path 'out/scripts/buildsystems/msbuild' -ItemType 'Directory' -Force
-    Copy-Item -Path "$SignedFilesRoot/scripts/applocal.ps1" -Destination 'out/scripts/buildsystems/msbuild/applocal.ps1'
+    Copy-Item -Path "$ArchIndependentSignedFilesRoot/scripts/applocal.ps1" -Destination 'out/scripts/buildsystems/msbuild/applocal.ps1'
 
     # None of the standalone bundles support classic mode, so turn that off in the bundled copy of the props
     $propsContent = Get-Content "$PSScriptRoot/vcpkg.props" -Raw -Encoding Ascii
@@ -101,9 +101,9 @@ try {
 
     Copy-Item -Path "$PSScriptRoot/vcpkg.targets" -Destination 'out/scripts/buildsystems/msbuild/vcpkg.targets'
     New-Item -Path 'out/scripts/posh-vcpkg/0.0.1' -ItemType 'Directory' -Force
-    Copy-Item -Path "$SignedFilesRoot/scripts/posh-vcpkg.psm1" -Destination 'out/scripts/posh-vcpkg/0.0.1/posh-vcpkg.psm1'
+    Copy-Item -Path "$ArchIndependentSignedFilesRoot/scripts/posh-vcpkg.psm1" -Destination 'out/scripts/posh-vcpkg/0.0.1/posh-vcpkg.psm1'
 
-    Copy-Item -Path "$SignedFilesRoot/vcpkg-artifacts" -Destination 'out/vcpkg-artifacts' -Recurse
+    Copy-Item -Path "$ArchIndependentSignedFilesRoot/vcpkg-artifacts" -Destination 'out/vcpkg-artifacts' -Recurse
 
     New-Item -Path "out/.vcpkg-root" -ItemType "File"
     Set-Content -Path "out/vcpkg-bundle.json" `

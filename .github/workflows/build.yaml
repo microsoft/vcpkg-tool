@@ -35,9 +35,9 @@ jobs:
         run: echo "::add-matcher::.github/workflows/matchers.json"
       - name: '[CI Only] Initialize CodeQL'
         if: inputs.codeql
-        uses: github/codeql-action/init@v2
+        uses: github/codeql-action/init@v3
         with:
-          languages: cpp, javascript
+          languages: javascript
       - name: Configure and Build
         if: matrix.preset != 'windows-ci'
         run: |
@@ -57,7 +57,7 @@ jobs:
           cmake --build --preset ${{ matrix.preset }} -- -k0
       - name: '[CI Only] Perform CodeQL Analysis'
         if: inputs.codeql
-        uses: github/codeql-action/analyze@v2
+        uses: github/codeql-action/analyze@v3
       - name: Run vcpkg unit tests
         run: ctest --preset ${{ matrix.preset }} --output-on-failure 2>&1
       - name: Run vcpkg-artifacts unit tests
