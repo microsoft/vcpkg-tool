@@ -933,7 +933,7 @@ namespace vcpkg
                            .append_raw('\n'));
         }
 
-        if (scfl.is_overlay_port(paths.builtin_ports_directory()))
+        if (paths.is_overlay_port(action.spec.name()))
         {
             msg::print(LocalizedString::from_raw(scfl.port_directory())
                            .append_raw(": ")
