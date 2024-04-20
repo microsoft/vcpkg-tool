@@ -157,11 +157,12 @@ namespace vcpkg
         Optional<std::string> platform_toolset;
         Optional<std::string> platform_toolset_version;
         Optional<Path> visual_studio_path;
-        Optional<std::string> external_toolchain_file;
+        Optional<Path> external_toolchain_file;
         Optional<ConfigurationType> build_type;
         Optional<std::string> public_abi_override;
         std::vector<std::string> passthrough_env_vars;
         std::vector<std::string> passthrough_env_vars_tracked;
+        std::vector<Path> hash_additional_files;
         Optional<Path> gamedk_latest_path;
 
         Path toolchain_file() const;
@@ -209,7 +210,7 @@ namespace vcpkg
 
     StringLiteral to_string_view(BuildPolicy policy);
     std::string to_string(BuildPolicy policy);
-    ZStringView to_cmake_variable(BuildPolicy policy);
+    StringLiteral to_cmake_variable(BuildPolicy policy);
 
     struct BuildPolicies
     {
@@ -261,6 +262,7 @@ namespace vcpkg
         std::string id;
         std::string version;
         std::string hash;
+        std::string path;
     };
 
     struct AbiInfo

@@ -1,3 +1,4 @@
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/util.h>
@@ -28,10 +29,10 @@ namespace
     Json::Object to_object(const Port& p)
     {
         Json::Object res;
-        res.insert("name", Json::Value::string(p.port_name));
-        res.insert("triplet", Json::Value::string(p.triplet.to_string()));
+        res.insert(JsonIdName, Json::Value::string(p.port_name));
+        res.insert(JsonIdTriplet, Json::Value::string(p.triplet.to_string()));
 
-        Json::Array& features = res.insert("features", Json::Array{});
+        Json::Array& features = res.insert(JsonIdFeatures, Json::Array{});
         for (const auto& feature : p.features)
         {
             features.push_back(Json::Value::string(feature));
@@ -39,7 +40,7 @@ namespace
 
         if (!p.supports_expr.empty())
         {
-            res.insert("supports", Json::Value::string(p.supports_expr));
+            res.insert(JsonIdSupports, Json::Value::string(p.supports_expr));
         }
 
         return res;
@@ -90,9 +91,8 @@ namespace
         msg::println(message);
     }
 
-    constexpr StringLiteral OPTION_JSON{"x-json"};
     constexpr CommandSwitch CHECK_SUPPORT_SWITCHES[] = {
-        {OPTION_JSON, msgJsonSwitch},
+        {SwitchXJson, msgJsonSwitch},
     };
 } // unnamed namespace
 
@@ -117,19 +117,14 @@ namespace vcpkg
     {
         msg::default_output_stream = OutputStream::StdErr;
         const ParsedArguments options = args.parse_arguments(CommandCheckSupportMetadata);
-        const bool use_json = Util::Sets::contains(options.switches, OPTION_JSON);
+        const bool use_json = Util::Sets::contains(options.switches, SwitchXJson);
 
         Json::Array json_to_print; // only used when `use_json`
 
-        bool default_triplet_used = false;
-        const std::vector<FullPackageSpec> specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
-            return check_and_get_full_package_spec(arg, default_triplet, default_triplet_used, paths.get_triplet_db());
+        const std::vector<FullPackageSpec> specs = Util::fmap(options.command_arguments, [&](const std::string& arg) {
+            return check_and_get_full_package_spec(arg, default_triplet, paths.get_triplet_db())
+                .value_or_exit(VCPKG_LINE_INFO);
         });
-
-        if (default_triplet_used)
-        {
-            print_default_triplet_warning(args, paths.get_triplet_db());
-        }
 
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();

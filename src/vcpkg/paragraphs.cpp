@@ -1,6 +1,7 @@
 #include <vcpkg/base/fwd/message_sinks.h>
 
 #include <vcpkg/base/chrono.h>
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/parse.h>
@@ -20,40 +21,33 @@ static std::atomic<uint64_t> g_load_ports_stats(0);
 
 namespace vcpkg
 {
-    static Optional<std::pair<std::string, TextRowCol>> remove_field(Paragraph* fields, StringView fieldname)
+    Optional<FieldValue> ParagraphParser::optional_field(StringLiteral fieldname)
     {
-        auto it = fields->find(fieldname.to_string());
-        if (it == fields->end())
+        auto it = fields.find(fieldname.to_string());
+        if (it == fields.end())
         {
             return nullopt;
         }
 
         auto value = std::move(it->second);
-        fields->erase(it);
+        fields.erase(it);
         return value;
     }
 
-    std::string ParagraphParser::optional_field(StringLiteral fieldname, TextRowCol& position)
+    std::string ParagraphParser::optional_field_or_empty(StringLiteral fieldname)
     {
-        auto maybe_field = remove_field(&fields, fieldname);
+        auto maybe_field = optional_field(fieldname);
         if (auto field = maybe_field.get())
         {
-            position = field->second;
             return std::move(field->first);
         }
 
         return std::string();
     }
 
-    std::string ParagraphParser::optional_field(StringLiteral fieldname)
-    {
-        TextRowCol ignore;
-        return optional_field(fieldname, ignore);
-    }
-
     std::string ParagraphParser::required_field(StringLiteral fieldname)
     {
-        auto maybe_field = remove_field(&fields, fieldname);
+        auto maybe_field = optional_field(fieldname);
         if (const auto field = maybe_field.get())
         {
             return std::move(field->first);
@@ -172,85 +166,81 @@ namespace vcpkg
     Optional<std::vector<std::string>> parse_default_features_list(DiagnosticContext& context,
                                                                    const std::string& str,
                                                                    Optional<StringView> origin,
-                                                                   TextRowCol position)
+                                                                   TextRowCol textrowcol)
     {
-        auto parser = ParserBase(context, str, origin, position);
+        auto parser = ParserBase(context, str, origin, textrowcol);
         return parse_list_until_eof<std::string>(msgExpectedDefaultFeaturesList, parser, &parse_feature_name);
     }
     ExpectedL<std::vector<std::string>> parse_default_features_list(const std::string& str,
                                                                     Optional<StringView> origin,
-                                                                    TextRowCol position)
+                                                                    TextRowCol textrowcol)
     {
         return adapt_context_to_expected(
             static_cast<Optional<std::vector<std::string>> (*)(
                 DiagnosticContext&, const std::string&, Optional<StringView>, TextRowCol)>(parse_default_features_list),
             str,
             origin,
-            position);
+            textrowcol);
     }
     Optional<std::vector<ParsedQualifiedSpecifier>> parse_qualified_specifier_list(DiagnosticContext& context,
                                                                                    const std::string& str,
                                                                                    Optional<StringView> origin,
-                                                                                   TextRowCol position)
+                                                                                   TextRowCol textrowcol)
     {
-        auto parser = ParserBase(context, str, origin, position);
+        auto parser = ParserBase(context, str, origin, textrowcol);
         return parse_list_until_eof<ParsedQualifiedSpecifier>(
-            msgExpectedDependenciesList, parser, [](ParserBase& parser) { return parse_qualified_specifier(parser); });
+            msgExpectedDependenciesList, parser, [](ParserBase& parser) {
+                return parse_qualified_specifier(
+                    parser, AllowFeatures::Yes, ParseExplicitTriplet::Allow, AllowPlatformSpec::Yes);
+            });
     }
     ExpectedL<std::vector<ParsedQualifiedSpecifier>> parse_qualified_specifier_list(const std::string& str,
                                                                                     Optional<StringView> origin,
-                                                                                    TextRowCol position)
+                                                                                    TextRowCol textrowcol)
     {
         return adapt_context_to_expected(static_cast<Optional<std::vector<ParsedQualifiedSpecifier>> (*)(
                                              DiagnosticContext&, const std::string&, Optional<StringView>, TextRowCol)>(
                                              parse_qualified_specifier_list),
                                          str,
                                          origin,
-                                         position);
+                                         textrowcol);
     }
     Optional<std::vector<Dependency>> parse_dependencies_list(DiagnosticContext& context,
                                                               const std::string& str,
                                                               StringView origin,
-                                                              TextRowCol position)
+                                                              TextRowCol textrowcol)
     {
-        auto parser = ParserBase(context, str, origin, position);
+        auto parser = ParserBase(context, str, origin, textrowcol);
         return parse_list_until_eof<Dependency>(msgExpectedDependenciesList, parser, [](ParserBase& parser) {
-            auto loc = parser.cur_loc();
-            return parse_qualified_specifier(parser).then([&](ParsedQualifiedSpecifier&& pqs) -> Optional<Dependency> {
-                if (const auto triplet = pqs.triplet.get())
-                {
-                    parser.add_error(msg::format(msgAddTripletExpressionNotAllowed,
-                                                 msg::package_name = pqs.name,
-                                                 msg::triplet = *triplet),
-                                     loc);
-                    return nullopt;
-                }
-                Dependency dependency{pqs.name, {}, pqs.platform.value_or({})};
-                for (const auto& feature : pqs.features.value_or({}))
-                {
-                    if (feature == "core")
+            return parse_qualified_specifier(
+                       parser, AllowFeatures::Yes, ParseExplicitTriplet::Forbid, AllowPlatformSpec::Yes)
+                .then([&](ParsedQualifiedSpecifier&& pqs) -> Optional<Dependency> {
+                    Dependency dependency{pqs.name, {}, pqs.platform.value_or({})};
+                    for (const auto& feature : pqs.features.value_or({}))
                     {
-                        dependency.default_features = false;
+                        if (feature == FeatureNameCore)
+                        {
+                            dependency.default_features = false;
+                        }
+                        else
+                        {
+                            dependency.features.push_back({feature});
+                        }
                     }
-                    else
-                    {
-                        dependency.features.push_back({feature});
-                    }
-                }
-                return dependency;
-            });
+                    return dependency;
+                });
         });
     }
     ExpectedL<std::vector<Dependency>> parse_dependencies_list(const std::string& str,
                                                                StringView origin,
-                                                               TextRowCol position)
+                                                               TextRowCol textrowcol)
     {
         return adapt_context_to_expected(
             static_cast<Optional<std::vector<Dependency>> (*)(
                 DiagnosticContext&, const std::string&, StringView, TextRowCol)>(parse_dependencies_list),
             str,
             origin,
-            position);
+            textrowcol);
     }
 }
 

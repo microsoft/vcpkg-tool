@@ -33,7 +33,7 @@ namespace vcpkg
         ParserBase(DiagnosticContext& context,
                    StringView text,
                    Optional<StringView> origin,
-                   TextRowCol init_rowcol = {1, 1});
+                   TextRowCol init_rowcol = {});
 
         static constexpr bool is_whitespace(char32_t ch) { return ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n'; }
         static constexpr bool is_lower_alpha(char32_t ch) { return ch >= 'a' && ch <= 'z'; }

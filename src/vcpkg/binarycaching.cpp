@@ -1,6 +1,7 @@
 #include <vcpkg/base/api-stable-format.h>
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/chrono.h>
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/json.h>
@@ -809,7 +810,7 @@ namespace
                 auto maybe_json = Json::parse_object(*p, m_url);
                 if (auto json = maybe_json.get())
                 {
-                    auto archive_location = json->get("archiveLocation");
+                    auto archive_location = json->get(JsonIdArchiveCapitalLocation);
                     if (archive_location && archive_location->is_string())
                     {
                         return archive_location->string(VCPKG_LINE_INFO).to_string();
@@ -871,9 +872,9 @@ namespace
         Optional<int64_t> reserve_cache_entry(const std::string& name, const std::string& abi, int64_t cacheSize) const
         {
             Json::Object payload;
-            payload.insert("key", name + "-" + abi);
-            payload.insert("version", abi);
-            payload.insert("cacheSize", Json::Value::integer(cacheSize));
+            payload.insert(JsonIdKey, name + "-" + abi);
+            payload.insert(JsonIdVersion, abi);
+            payload.insert(JsonIdCacheCapitalSize, Json::Value::integer(cacheSize));
 
             const std::string headers[] = {
                 m_accept_header.to_string(),
@@ -887,7 +888,7 @@ namespace
                 auto maybe_json = Json::parse_object(*p, m_url);
                 if (auto json = maybe_json.get())
                 {
-                    auto cache_id = json->get("cacheId");
+                    auto cache_id = json->get(JsonIdCacheCapitalId);
                     if (cache_id && cache_id->is_integer())
                     {
                         return cache_id->integer(VCPKG_LINE_INFO);
@@ -1191,7 +1192,7 @@ namespace
 
     ExpectedL<Path> default_cache_path_impl()
     {
-        auto maybe_cachepath = get_environment_variable("VCPKG_DEFAULT_BINARY_CACHE");
+        auto maybe_cachepath = get_environment_variable(EnvironmentVariableVcpkgDefaultBinaryCache);
         if (auto p_str = maybe_cachepath.get())
         {
             get_global_metrics_collector().track_define(DefineMetric::VcpkgDefaultBinaryCache);
@@ -1804,13 +1805,13 @@ namespace vcpkg
             return {*p};
         }
 
-        auto gh_repo = get_environment_variable("GITHUB_REPOSITORY").value_or("");
+        auto gh_repo = get_environment_variable(EnvironmentVariableGitHubRepository).value_or("");
         if (gh_repo.empty())
         {
             return {};
         }
 
-        auto gh_server = get_environment_variable("GITHUB_SERVER_URL").value_or("");
+        auto gh_server = get_environment_variable(EnvironmentVariableGitHubServerUrl).value_or("");
         if (gh_server.empty())
         {
             return {};
@@ -1818,8 +1819,8 @@ namespace vcpkg
 
         get_global_metrics_collector().track_define(DefineMetric::GitHubRepository);
         return {Strings::concat(gh_server, '/', gh_repo, ".git"),
-                get_environment_variable("GITHUB_REF").value_or(""),
-                get_environment_variable("GITHUB_SHA").value_or("")};
+                get_environment_variable(EnvironmentVariableGitHubRef).value_or(""),
+                get_environment_variable(EnvironmentVariableGitHubSha).value_or("")};
     }
 
     static ExpectedL<BinaryProviders> make_binary_providers(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
@@ -1883,8 +1884,11 @@ namespace vcpkg
 
             s.nuget_prefix = args.nuget_id_prefix.value_or("");
             if (!s.nuget_prefix.empty()) s.nuget_prefix.push_back('_');
+            ret.nuget_prefix = s.nuget_prefix;
+
             s.use_nuget_cache = args.use_nuget_cache.value_or(false);
-            s.nuget_repo_info = get_nuget_repo_info_from_env(args);
+
+            ret.nuget_repo = get_nuget_repo_info_from_env(args);
 
             auto& fs = paths.get_filesystem();
             auto& tools = paths.get_tool_cache();
@@ -2300,7 +2304,7 @@ Optional<DownloadManagerConfig> vcpkg::parse_download_configuration(DiagnosticCo
     get_global_metrics_collector().track_define(DefineMetric::AssetSource);
 
     AssetSourcesState s;
-    const auto source = Strings::concat("$", VcpkgCmdArguments::ASSET_SOURCES_ENV);
+    const auto source = Strings::concat("$", EnvironmentVariableXVcpkgAssetSources);
     AssetSourcesParser parser(context, *arg.get(), source, &s);
     parser.parse();
     if (parser.any_errors())
@@ -2378,7 +2382,7 @@ Optional<BinaryConfigParserState> vcpkg::parse_binary_provider_configs(Diagnosti
 
     for (auto&& arg : args)
     {
-        BinaryConfigParser arg_parser(context, arg, nullopt, &s);
+        BinaryConfigParser arg_parser(context, arg, "<command>", &s);
         arg_parser.parse();
         if (arg_parser.any_errors())
         {

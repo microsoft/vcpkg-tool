@@ -9,6 +9,7 @@
 
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/path.h>
+#include <vcpkg/base/stringview.h>
 
 #include <vcpkg/paragraphparser.h>
 #include <vcpkg/platform-expression.h>
@@ -70,13 +71,14 @@ namespace vcpkg
     {
         std::string name;
         Version version;
-        VersionScheme scheme;
 
         Json::Object extra_info;
 
         friend bool operator==(const DependencyOverride& lhs, const DependencyOverride& rhs);
         friend bool operator!=(const DependencyOverride& lhs, const DependencyOverride& rhs) { return !(lhs == rhs); }
     };
+
+    void serialize_dependency_override(Json::Array& arr, const DependencyOverride& dep);
 
     std::vector<FullPackageSpec> filter_dependencies(const std::vector<Dependency>& deps,
                                                      Triplet t,
@@ -222,8 +224,10 @@ namespace vcpkg
     Optional<std::vector<Dependency>> parse_dependencies_list(DiagnosticContext& context,
                                                               const std::string& str,
                                                               StringView origin,
-                                                              TextRowCol position = {1, 1});
+                                                              TextRowCol textrowcol = {});
     ExpectedL<std::vector<Dependency>> parse_dependencies_list(const std::string& str,
                                                                StringView origin,
-                                                               TextRowCol position = {1, 1});
+                                                               TextRowCol textrowcol = {});
+
+    constexpr StringLiteral OVERRIDES = "overrides";
 }

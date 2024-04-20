@@ -1,3 +1,4 @@
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.h>
@@ -79,10 +80,6 @@ namespace
     }
 #endif
 
-    constexpr StringLiteral OPTION_BUILDTREES = "buildtrees";
-
-    constexpr StringLiteral OPTION_ALL = "all";
-
     std::vector<std::string> valid_arguments(const VcpkgPaths& paths)
     {
         return Util::fmap(
@@ -91,15 +88,15 @@ namespace
     }
 
     constexpr CommandSwitch EDIT_SWITCHES[] = {
-        {OPTION_BUILDTREES, msgCmdEditOptBuildTrees},
-        {OPTION_ALL, msgCmdEditOptAll},
+        {SwitchBuildtrees, msgCmdEditOptBuildTrees},
+        {SwitchAll, msgCmdEditOptAll},
     };
 
     std::vector<std::string> create_editor_arguments(const VcpkgPaths& paths,
                                                      const ParsedArguments& options,
                                                      const std::vector<std::string>& ports)
     {
-        if (Util::Sets::contains(options.switches, OPTION_ALL))
+        if (Util::Sets::contains(options.switches, SwitchAll))
         {
             const auto& fs = paths.get_filesystem();
             auto packages = fs.get_files_non_recursive(paths.packages(), VCPKG_LINE_INFO);
@@ -107,7 +104,7 @@ namespace
             // TODO: Support edit for --overlay-ports
             return Util::fmap(ports, [&](const std::string& port_name) -> std::string {
                 const auto portpath = paths.builtin_ports_directory() / port_name;
-                const auto portfile = portpath / "portfile.cmake";
+                const auto portfile = portpath / FilePortfileDotCMake;
                 const auto buildtrees_current_dir = paths.build_dir(port_name);
                 const auto pattern = port_name + "_";
 
@@ -125,7 +122,7 @@ namespace
             });
         }
 
-        if (Util::Sets::contains(options.switches, OPTION_BUILDTREES))
+        if (Util::Sets::contains(options.switches, SwitchBuildtrees))
         {
             return Util::fmap(ports, [&](const std::string& port_name) -> std::string {
                 return fmt::format(R"###("{}")###", paths.build_dir(port_name));
@@ -145,7 +142,10 @@ namespace vcpkg
 {
     constexpr CommandMetadata CommandEditMetadata{
         "edit",
-        [] { return msg::format(msgHelpEditCommand, msg::env_var = format_environment_variable("EDITOR")); },
+        [] {
+            return msg::format(msgHelpEditCommand,
+                               msg::env_var = format_environment_variable(EnvironmentVariableEditor));
+        },
         {msgCmdEditExample1, "vcpkg edit zlib"},
         Undocumented,
         AutocompletePriority::Public,
@@ -176,7 +176,7 @@ namespace vcpkg
 
         // Scope to prevent use of moved-from variable
         {
-            auto maybe_editor_path = get_environment_variable("EDITOR");
+            auto maybe_editor_path = get_environment_variable(EnvironmentVariableEditor);
             if (std::string* editor_path = maybe_editor_path.get())
             {
                 candidate_paths.emplace_back(std::move(*editor_path));
@@ -201,7 +201,7 @@ namespace vcpkg
             candidate_paths.push_back(*pf / VS_CODE);
         }
 
-        auto app_data = get_environment_variable("APPDATA");
+        auto app_data = get_environment_variable(EnvironmentVariableAppData);
         if (auto* ad = app_data.get())
         {
             Path default_base = std::move(*ad);
@@ -256,11 +256,12 @@ namespace vcpkg
         const auto it = Util::find_if(candidate_paths, [&](const Path& p) { return fs.exists(p, IgnoreErrors{}); });
         if (it == candidate_paths.cend())
         {
-            msg::println_error(msg::format(msgErrorVsCodeNotFound, msg::env_var = format_environment_variable("EDITOR"))
+            msg::println_error(msg::format(msgErrorVsCodeNotFound,
+                                           msg::env_var = format_environment_variable(EnvironmentVariableEditor))
                                    .append_raw('\n')
                                    .append(msgErrorVsCodeNotFoundPathExamined));
             print_paths(out_sink, candidate_paths);
-            msg::println(msgInfoSetEnvVar, msg::env_var = format_environment_variable("EDITOR"));
+            msg::println(msgInfoSetEnvVar, msg::env_var = format_environment_variable(EnvironmentVariableEditor));
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 

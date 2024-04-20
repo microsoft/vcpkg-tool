@@ -1,3 +1,4 @@
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/util.h>
@@ -43,12 +44,9 @@ namespace
                 .append(new_baseline_res.error()));
     }
 
-    constexpr StringLiteral OPTION_ADD_INITIAL_BASELINE = "add-initial-baseline";
-    constexpr StringLiteral OPTION_DRY_RUN = "dry-run";
-
     constexpr CommandSwitch switches[] = {
-        {OPTION_ADD_INITIAL_BASELINE, msgCmdUpdateBaselineOptInitial},
-        {OPTION_DRY_RUN, msgCmdUpdateBaselineOptDryRun},
+        {SwitchAddInitialBaseline, msgCmdUpdateBaselineOptInitial},
+        {SwitchDryRun, msgCmdUpdateBaselineOptDryRun},
     };
 
 } // unnamed namespace
@@ -71,8 +69,8 @@ namespace vcpkg
     {
         auto options = args.parse_arguments(CommandUpdateBaselineMetadata);
 
-        const bool add_builtin_baseline = Util::Sets::contains(options.switches, OPTION_ADD_INITIAL_BASELINE);
-        const bool dry_run = Util::Sets::contains(options.switches, OPTION_DRY_RUN);
+        const bool add_builtin_baseline = Util::Sets::contains(options.switches, SwitchAddInitialBaseline);
+        const bool dry_run = Util::Sets::contains(options.switches, SwitchDryRun);
 
         auto configuration = paths.get_configuration();
 
@@ -85,16 +83,16 @@ namespace vcpkg
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 
-        bool has_builtin_baseline = manifest.manifest.contains("builtin-baseline");
+        bool has_builtin_baseline = manifest.manifest.contains(JsonIdBuiltinBaseline);
 
         if (add_builtin_baseline && !has_manifest)
         {
             Checks::msg_exit_with_error(
-                VCPKG_LINE_INFO, msgUpdateBaselineAddBaselineNoManifest, msg::option = OPTION_ADD_INITIAL_BASELINE);
+                VCPKG_LINE_INFO, msgUpdateBaselineAddBaselineNoManifest, msg::option = SwitchAddInitialBaseline);
         }
         if (!has_builtin_baseline && !add_builtin_baseline && configuration.source == ConfigurationSource::None)
         {
-            msg::println_warning(msgUpdateBaselineNoExistingBuiltinBaseline, msg::option = OPTION_ADD_INITIAL_BASELINE);
+            msg::println_warning(msgUpdateBaselineNoExistingBuiltinBaseline, msg::option = SwitchAddInitialBaseline);
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 
@@ -104,8 +102,8 @@ namespace vcpkg
             configuration.config.default_reg = nullopt;
 
             RegistryConfig synthesized_registry;
-            synthesized_registry.kind = "builtin";
-            if (auto p = manifest.manifest.get("builtin-baseline"))
+            synthesized_registry.kind = JsonIdBuiltin.to_string();
+            if (auto p = manifest.manifest.get(JsonIdBuiltinBaseline))
             {
                 synthesized_registry.baseline = p->string(VCPKG_LINE_INFO).to_string();
             }
@@ -114,7 +112,7 @@ namespace vcpkg
 
             if (auto p = synthesized_registry.baseline.get())
             {
-                manifest.manifest.insert_or_replace("builtin-baseline", std::move(*p));
+                manifest.manifest.insert_or_replace(JsonIdBuiltinBaseline, std::move(*p));
             }
         }
 
@@ -130,12 +128,12 @@ namespace vcpkg
 
         if (configuration.source == ConfigurationSource::ManifestFile)
         {
-            manifest.manifest.insert_or_replace("vcpkg-configuration", configuration.config.serialize());
+            manifest.manifest.insert_or_replace(JsonIdVcpkgConfiguration, configuration.config.serialize());
         }
 
         if (!dry_run && configuration.source == ConfigurationSource::VcpkgConfigurationFile)
         {
-            paths.get_filesystem().write_contents(configuration.directory / "vcpkg-configuration.json",
+            paths.get_filesystem().write_contents(configuration.directory / FileVcpkgConfigurationDotJson,
                                                   Json::stringify(configuration.config.serialize()),
                                                   VCPKG_LINE_INFO);
         }

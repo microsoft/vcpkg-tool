@@ -1,3 +1,4 @@
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/jsonreader.h>
@@ -1081,7 +1082,7 @@ namespace vcpkg::Json
 
         if (sv.size() < 5)
         {
-            if (sv == "prn" || sv == "aux" || sv == "nul" || sv == "con" || sv == "core")
+            if (sv == "prn" || sv == "aux" || sv == "nul" || sv == "con" || sv == FeatureNameCore)
             {
                 return false; // we're a reserved identifier
             }
@@ -1093,7 +1094,7 @@ namespace vcpkg::Json
         }
         else
         {
-            if (sv == "default")
+            if (sv == FeatureNameDefault)
             {
                 return false;
             }
@@ -1259,6 +1260,13 @@ namespace vcpkg::Json
                 buffer.push_back('}');
             }
 
+            void stringify_object_member(StringView member_name, const Array& val, size_t current_indent)
+            {
+                append_quoted_json_string(member_name);
+                buffer.append(": ");
+                stringify_array(val, current_indent);
+            }
+
             void stringify_array(const Array& arr, size_t current_indent)
             {
                 buffer.push_back('[');
@@ -1348,6 +1356,19 @@ namespace vcpkg::Json
         return res;
     }
     // } auto stringify()
+
+    std::string stringify_object_member(StringLiteral member_name,
+                                        const Array& arr,
+                                        JsonStyle style,
+                                        int initial_indent)
+    {
+        std::string res;
+        Stringifier stringifier{style, res};
+        stringifier.append_indent(initial_indent);
+        stringifier.stringify_object_member(member_name, arr, initial_indent);
+        res.push_back('\n');
+        return res;
+    }
 
     uint64_t get_json_parsing_stats() { return g_json_parsing_stats.load(); }
 
