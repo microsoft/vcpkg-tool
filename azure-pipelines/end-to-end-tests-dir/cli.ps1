@@ -50,36 +50,6 @@ $out = Run-VcpkgAndCaptureOutput -TestArgs @('install', 'this-is-super-not-a-#po
 Throw-IfNotFailed
 
 [string]$expected = @"
-error: expected eof
-  on expression: this-is-super-not-a-#port
-                                     ^
-
-"@
-
-if (-Not ($out.Replace("`r`n", "`n").EndsWith($expected)))
-{
-    throw 'Bad malformed port name output; it was: ' + $out
-}
-
-$out = Run-VcpkgAndCaptureOutput -TestArgs @('install', 'zlib', '--binarysource=clear;not-a-backend')
-Throw-IfNotFailed
-
-[string]$expected = @"
-error: unknown binary provider type: valid providers are 'clear', 'default', 'nuget', 'nugetconfig', 'nugettimeout', 'interactive', 'x-azblob', 'x-gcs', 'x-aws', 'x-aws-config', 'http', and 'files'
-  on expression: clear;not-a-backend
-                       ^
-
-"@
-
-if (-Not ($out.Replace("`r`n", "`n").EndsWith($expected)))
-{
-    throw 'Bad malformed --binarysource output; it was: ' + $out
-}
-
-$out = Run-VcpkgAndCaptureOutput -TestArgs @('install', 'this-is-super-not-a-#port')
-Throw-IfNotFailed
-
-[string]$expected = @"
 error: expected the end of input parsing a package spec; this usually means the indicated character is not allowed to be in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hypens.
   on expression: this-is-super-not-a-#port
                                      ^
