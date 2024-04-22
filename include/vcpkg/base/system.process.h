@@ -36,26 +36,8 @@ namespace vcpkg
         explicit Command(StringView s) { string_arg(s); }
 
         Command& string_arg(StringView s) &;
-        Command& raw_arg(StringView s) &
-        {
-            if (!buf.empty())
-            {
-                buf.push_back(' ');
-            }
-
-            buf.append(s.data(), s.size());
-            return *this;
-        }
-
-        Command& forwarded_args(View<std::string> args) &
-        {
-            for (auto&& arg : args)
-            {
-                string_arg(arg);
-            }
-
-            return *this;
-        }
+        Command& raw_arg(StringView s) &;
+        Command& forwarded_args(View<std::string> args) &;
 
         Command&& string_arg(StringView s) && { return std::move(string_arg(s)); };
         Command&& raw_arg(StringView s) && { return std::move(raw_arg(s)); }
@@ -67,6 +49,13 @@ namespace vcpkg
 
         void clear() { buf.clear(); }
         bool empty() const { return buf.empty(); }
+
+        // maximum UNICODE_STRING, with enough space for one MAX_PATH prepended
+        static constexpr size_t maximum_allowed = 32768 - 260 - 1;
+
+        // if `other` can be appended to this command without exceeding `maximum_allowed`, appends `other` and returns
+        // true; otherwise, returns false
+        bool try_append(const Command& other);
 
     private:
         std::string buf;

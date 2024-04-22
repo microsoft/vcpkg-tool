@@ -444,7 +444,7 @@ namespace
                                        make_temp_archive_path(m_buildtrees, action.spec));
             }
 
-            auto codes = download_files(m_fs, url_paths, m_url_template.headers);
+            auto codes = download_files(url_paths, m_url_template.headers, m_secrets);
 
             for (size_t i = 0; i < codes.size(); ++i)
             {
@@ -792,8 +792,10 @@ namespace
             : ZipReadBinaryProvider(std::move(zip), fs)
             , m_buildtrees(buildtrees)
             , m_url(url + "_apis/artifactcache/cache")
+            , m_secrets()
             , m_token_header("Authorization: Bearer " + token)
         {
+            m_secrets.emplace_back(token);
         }
 
         std::string lookup_cache_entry(StringView name, const std::string& abi) const
@@ -836,7 +838,7 @@ namespace
                 url_indices.push_back(idx);
             }
 
-            const auto codes = download_files(m_fs, url_paths, {});
+            const auto codes = download_files(url_paths, {}, m_secrets);
 
             for (size_t i = 0; i < codes.size(); ++i)
             {
@@ -857,6 +859,7 @@ namespace
 
         Path m_buildtrees;
         std::string m_url;
+        std::vector<std::string> m_secrets;
         std::string m_token_header;
         static constexpr StringLiteral m_accept_header = "Accept: application/json;api-version=6.0-preview.1";
         static constexpr StringLiteral m_content_type_header = "Content-Type: application/json";

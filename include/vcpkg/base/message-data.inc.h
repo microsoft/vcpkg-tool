@@ -837,7 +837,13 @@ DECLARE_MESSAGE(CommandFailed,
                 "",
                 "command:\n"
                 "{command_line}\n"
-                "failed with the following results:")
+                "failed with the following output:")
+DECLARE_MESSAGE(CommandFailedCode,
+                (msg::command_line, msg::exit_code),
+                "",
+                "command:\n"
+                "{command_line}\n"
+                "failed with exit code {exit_code} and the following output:")
 DECLARE_MESSAGE(CommunityTriplets, (), "", "Community Triplets:")
 DECLARE_MESSAGE(CompilerPath, (msg::path), "", "Compiler found: {path}")
 DECLARE_MESSAGE(CompressFolderFailed, (msg::path), "", "Failed to compress folder \"{path}\":")
@@ -902,10 +908,6 @@ DECLARE_MESSAGE(Creating7ZipArchive, (), "", "Creating 7zip archive...")
 DECLARE_MESSAGE(CreatingNugetPackage, (), "", "Creating NuGet package...")
 DECLARE_MESSAGE(CreatingZipArchive, (), "", "Creating zip archive...")
 DECLARE_MESSAGE(CreationFailed, (msg::path), "", "Creating {path} failed.")
-DECLARE_MESSAGE(CurlFailedToExecute,
-                (msg::exit_code),
-                "curl is the name of a program, see curl.se",
-                "curl failed to execute with exit code {exit_code}.")
 DECLARE_MESSAGE(CurlFailedToPut,
                 (msg::exit_code, msg::url),
                 "curl is the name of a program, see curl.se",
@@ -914,22 +916,15 @@ DECLARE_MESSAGE(CurlFailedToPutHttp,
                 (msg::exit_code, msg::url, msg::value),
                 "curl is the name of a program, see curl.se. {value} is an HTTP status code",
                 "curl failed to put file to {url} with exit code {exit_code} and http code {value}.")
-DECLARE_MESSAGE(CurlReportedUnexpectedResults,
-                (msg::command_line, msg::actual),
-                "{command_line} is the command line to call curl.exe, {actual} is the console output "
-                "of curl.exe locale-invariant download results.",
-                "curl has reported unexpected results to vcpkg and vcpkg cannot continue.\n"
-                "Please review the following text for sensitive information and open an issue on the "
-                "Microsoft/vcpkg GitHub to help fix this problem!\n"
-                "cmd: {command_line}\n"
-                "=== curl output ===\n"
-                "{actual}\n"
-                "=== end curl output ===")
-DECLARE_MESSAGE(CurlReturnedUnexpectedResponseCodes,
-                (msg::actual, msg::expected),
-                "{actual} and {expected} are integers, curl is the name of a program, see curl.se",
-                "curl returned a different number of response codes than were expected for the request ({actual} "
-                "vs expected {expected}).")
+DECLARE_MESSAGE(CurlResponseTruncatedRetrying,
+                (msg::value),
+                "{value} is the number of milliseconds for which we are waiting this time",
+                "curl returned a partial response; waiting {value} milliseconds and trying again")
+DECLARE_MESSAGE(CurlTimeout,
+                (msg::command_line),
+                "",
+                "curl was unable to perform all requested HTTP operations, even after timeout and retries. The last "
+                "command line was: {command_line}")
 DECLARE_MESSAGE(CurrentCommitBaseline,
                 (msg::commit_sha),
                 "",
@@ -2606,7 +2601,6 @@ DECLARE_MESSAGE(UnexpectedEOFMidArray, (), "", "Unexpected EOF in middle of arra
 DECLARE_MESSAGE(UnexpectedEOFMidKeyword, (), "", "Unexpected EOF in middle of keyword")
 DECLARE_MESSAGE(UnexpectedEOFMidString, (), "", "Unexpected EOF in middle of string")
 DECLARE_MESSAGE(UnexpectedEOFMidUnicodeEscape, (), "", "Unexpected end of file in middle of unicode escape")
-DECLARE_MESSAGE(UnexpectedErrorDuringBulkDownload, (), "", "an unexpected error occurred during bulk download.")
 DECLARE_MESSAGE(UnexpectedEscapeSequence, (), "", "Unexpected escape sequence continuation")
 DECLARE_MESSAGE(UnexpectedField, (msg::json_field), "", "unexpected field '{json_field}'")
 DECLARE_MESSAGE(UnexpectedFieldSuggest,
