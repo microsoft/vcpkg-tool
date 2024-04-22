@@ -46,15 +46,15 @@ namespace vcpkg
     Optional<std::vector<std::string>> parse_default_features_list(DiagnosticContext& context,
                                                                    const std::string& str,
                                                                    Optional<StringView> origin,
-                                                                   TextRowCol textrowcol);
+                                                                   int init_row);
     ExpectedL<std::vector<std::string>> parse_default_features_list(const std::string& str,
                                                                     Optional<StringView> origin,
-                                                                    TextRowCol textrowcol);
+                                                                    int init_row);
     Optional<std::vector<ParsedQualifiedSpecifier>> parse_qualified_specifier_list(DiagnosticContext& context,
                                                                                    const std::string& str,
                                                                                    Optional<StringView> origin,
-                                                                                   TextRowCol textrowcol);
+                                                                                   int init_row);
     ExpectedL<std::vector<ParsedQualifiedSpecifier>> parse_qualified_specifier_list(const std::string& str,
                                                                                     Optional<StringView> origin,
-                                                                                    TextRowCol textrowcol);
+                                                                                    int init_row);
 }

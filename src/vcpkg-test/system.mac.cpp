@@ -63,7 +63,7 @@ TEST_CASE ("test getmac output parse", "[metrics.mac]")
 
     static constexpr StringLiteral bad_line = "00-11-22-DD-EE-FF      \\Device\\Tcip_{GUID}";
     REQUIRE(!extract_mac_from_getmac_output_line(bdc, bad_line));
-    REQUIRE(bdc.to_string() == R"(getmac output:1:1: error: expected '"' here
+    REQUIRE(bdc.to_string() == R"(getmac output: error: expected '"' here
   on expression: 00-11-22-DD-EE-FF      \Device\Tcip_{GUID}
                  ^)");
 }

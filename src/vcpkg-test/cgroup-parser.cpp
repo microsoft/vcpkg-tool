@@ -15,7 +15,7 @@ TEST_CASE ("parse", "[cgroup-parser]")
 0::/
 )";
 
-    auto cgroups = parse_cgroup_file(ok_text, "ok_text");
+    auto cgroups = parse_cgroup_file(ok_text, "ok_text", 0);
     REQUIRE(cgroups.size() == 4);
     CHECK(cgroups[0].hierarchy_id == 3);
     CHECK(cgroups[0].subsystems == "cpu");
@@ -30,19 +30,19 @@ TEST_CASE ("parse", "[cgroup-parser]")
     CHECK(cgroups[3].subsystems == "");
     CHECK(cgroups[3].control_group == "/");
 
-    auto cgroups_short = parse_cgroup_file("2::", "short_text");
+    auto cgroups_short = parse_cgroup_file("2::", "short_text", 0);
     REQUIRE(cgroups_short.size() == 1);
     CHECK(cgroups_short[0].hierarchy_id == 2);
     CHECK(cgroups_short[0].subsystems == "");
     CHECK(cgroups_short[0].control_group == "");
 
-    auto cgroups_incomplete = parse_cgroup_file("0:/", "incomplete_text");
+    auto cgroups_incomplete = parse_cgroup_file("0:/", "incomplete_text", 0);
     CHECK(cgroups_incomplete.empty());
 
-    auto cgroups_bad_id = parse_cgroup_file("ab::", "non_numeric_id_text");
+    auto cgroups_bad_id = parse_cgroup_file("ab::", "non_numeric_id_text", 0);
     CHECK(cgroups_bad_id.empty());
 
-    auto cgroups_empty = parse_cgroup_file("", "empty");
+    auto cgroups_empty = parse_cgroup_file("", "empty", 0);
     CHECK(cgroups_empty.empty());
 }
 
@@ -61,8 +61,8 @@ TEST_CASE ("detect docker", "[cgroup-parser]")
 0::/
 )";
 
-    CHECK(detect_docker_in_cgroup_file(with_docker, "with_docker"));
-    CHECK(!detect_docker_in_cgroup_file(without_docker, "without_docker"));
+    CHECK(detect_docker_in_cgroup_file(with_docker, "with_docker", 0));
+    CHECK(!detect_docker_in_cgroup_file(without_docker, "without_docker", 0));
 }
 
 TEST_CASE ("parse proc/pid/stat file", "[cgroup-parser]")

@@ -62,7 +62,8 @@ namespace vcpkg
     {
         Optional<std::vector<CiBaselineLine>> result_storage;
         auto& result = result_storage.emplace();
-        ParserBase parser(context, text, origin);
+        // This assumes we're always parsing a whole file
+        ParserBase parser(context, text, origin, 1);
         for (;;)
         {
             parser.skip_whitespace();

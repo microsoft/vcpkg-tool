@@ -320,7 +320,7 @@ namespace vcpkg
     {
         MetricsUserConfig ret;
         auto maybe_paragraph =
-            Paragraphs::parse_single_merged_paragraph(console_diagnostic_context, content, "userconfig");
+            Paragraphs::parse_single_merged_paragraph(console_diagnostic_context, content, "userconfig", 0);
         if (const auto p = maybe_paragraph.get())
         {
             const auto& paragraph = *p;

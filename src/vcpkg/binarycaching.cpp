@@ -1237,8 +1237,9 @@ namespace
         BinaryConfigParser(DiagnosticContext& context,
                            StringView text,
                            Optional<StringView> origin,
+                           int init_row,
                            BinaryConfigParserState* state)
-            : ConfigSegmentsParser(context, text, origin), state(state)
+            : ConfigSegmentsParser(context, text, origin, init_row), state(state)
         {
         }
 
@@ -1647,8 +1648,9 @@ namespace
 
     struct AssetSourcesParser : ConfigSegmentsParser
     {
-        AssetSourcesParser(DiagnosticContext& context, StringView text, StringView origin, AssetSourcesState* state)
-            : ConfigSegmentsParser(context, text, origin), state(state)
+        AssetSourcesParser(
+            DiagnosticContext& context, StringView text, StringView origin, int init_row, AssetSourcesState* state)
+            : ConfigSegmentsParser(context, text, origin, init_row), state(state)
         {
         }
 
@@ -2308,7 +2310,7 @@ Optional<DownloadManagerConfig> vcpkg::parse_download_configuration(DiagnosticCo
 
     AssetSourcesState s;
     const auto source = Strings::concat("$", EnvironmentVariableXVcpkgAssetSources);
-    AssetSourcesParser parser(context, *arg.get(), source, &s);
+    AssetSourcesParser parser(context, *arg.get(), source, 0, &s);
     parser.parse();
     if (parser.any_errors())
     {
@@ -2367,7 +2369,7 @@ Optional<BinaryConfigParserState> vcpkg::parse_binary_provider_configs(Diagnosti
     Optional<BinaryConfigParserState> result;
     auto& s = result.emplace();
 
-    BinaryConfigParser default_parser(context, "default,readwrite", "<defaults>", &s);
+    BinaryConfigParser default_parser(context, "default,readwrite", "<defaults>", 0, &s);
     default_parser.parse();
     if (default_parser.any_errors())
     {
@@ -2375,7 +2377,7 @@ Optional<BinaryConfigParserState> vcpkg::parse_binary_provider_configs(Diagnosti
         return result;
     }
 
-    BinaryConfigParser env_parser(context, env_string, "VCPKG_BINARY_SOURCES", &s);
+    BinaryConfigParser env_parser(context, env_string, "VCPKG_BINARY_SOURCES", 0, &s);
     env_parser.parse();
     if (env_parser.any_errors())
     {
@@ -2385,7 +2387,7 @@ Optional<BinaryConfigParserState> vcpkg::parse_binary_provider_configs(Diagnosti
 
     for (auto&& arg : args)
     {
-        BinaryConfigParser arg_parser(context, arg, "<command>", &s);
+        BinaryConfigParser arg_parser(context, arg, nullopt, 0, &s);
         arg_parser.parse();
         if (arg_parser.any_errors())
         {

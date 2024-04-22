@@ -118,8 +118,9 @@ namespace vcpkg::PlatformExpression
         {
             ExpressionParser(DiagnosticContext& context,
                              StringView str,
+                             int init_row,
                              MultipleBinaryOperators multiple_binary_operators)
-                : ParserBase(context, str, "CONTROL"), multiple_binary_operators(multiple_binary_operators)
+                : ParserBase(context, str, "CONTROL", init_row), multiple_binary_operators(multiple_binary_operators)
             {
             }
 
@@ -650,7 +651,7 @@ namespace vcpkg::PlatformExpression
                                              StringView expression,
                                              MultipleBinaryOperators multiple_binary_operators)
     {
-        ExpressionParser parser(context, expression, multiple_binary_operators);
+        ExpressionParser parser(context, expression, 0, multiple_binary_operators);
         auto res = parser.parse();
         if (parser.any_errors())
         {

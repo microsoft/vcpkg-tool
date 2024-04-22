@@ -1329,7 +1329,7 @@ TEST_CASE ("license error messages", "[manifests][license]")
         BufferedDiagnosticContext bdc;
         CHECK(!parse_spdx_license_expression(bdc, "").has_value());
         CHECK(bdc.to_string() ==
-              R"(<license string>:1:1: error: SPDX license expression was empty.
+              R"(<license string>: error: SPDX license expression was empty.
   on expression: 
                  ^)");
     }
@@ -1338,7 +1338,7 @@ TEST_CASE ("license error messages", "[manifests][license]")
         BufferedDiagnosticContext bdc;
         CHECK(!parse_spdx_license_expression(bdc, "MIT ()").has_value());
         CHECK(bdc.to_string() ==
-              R"(<license string>:1:5: error: Expected a compound or the end of the string, found a parenthesis.
+              R"(<license string>: error: Expected a compound or the end of the string, found a parenthesis.
   on expression: MIT ()
                      ^)");
     }
@@ -1348,7 +1348,7 @@ TEST_CASE ("license error messages", "[manifests][license]")
         CHECK(!parse_spdx_license_expression(bdc, "MIT +").has_value());
         CHECK(
             bdc.to_string() ==
-            R"(<license string>:1:5: error: SPDX license expression contains an extra '+'. These are only allowed directly after a license identifier.
+            R"(<license string>: error: SPDX license expression contains an extra '+'. These are only allowed directly after a license identifier.
   on expression: MIT +
                      ^)");
     }
@@ -1357,7 +1357,7 @@ TEST_CASE ("license error messages", "[manifests][license]")
         BufferedDiagnosticContext bdc;
         CHECK(!parse_spdx_license_expression(bdc, "MIT AND").has_value());
         CHECK(bdc.to_string() ==
-              R"(<license string>:1:8: error: Expected a license name, found the end of the string.
+              R"(<license string>: error: Expected a license name, found the end of the string.
   on expression: MIT AND
                         ^)");
     }
@@ -1366,7 +1366,7 @@ TEST_CASE ("license error messages", "[manifests][license]")
         CHECK(parse_spdx_license_expression(bdc, "MIT AND unknownlicense").has_value());
         CHECK(
             bdc.to_string() ==
-            R"(<license string>:1:9: warning: Unknown license identifier 'unknownlicense'. Known values are listed at https://spdx.org/licenses/
+            R"(<license string>: warning: Unknown license identifier 'unknownlicense'. Known values are listed at https://spdx.org/licenses/
   on expression: MIT AND unknownlicense
                          ^)");
     }

@@ -323,7 +323,7 @@ namespace vcpkg
         if (build_depends_field && !build_depends_field->first.empty())
         {
             auto maybe_dependencies =
-                parse_dependencies_list(std::move(build_depends_field->first), origin, build_depends_field->second);
+                parse_dependencies_list(std::move(build_depends_field->first), origin, build_depends_field->second.row);
             if (const auto dependencies = maybe_dependencies.get())
             {
                 spgh->dependencies = *dependencies;
@@ -339,7 +339,7 @@ namespace vcpkg
         if (default_features_field && !default_features_field->first.empty())
         {
             auto maybe_default_features = parse_default_features_list(
-                std::move(default_features_field->first), origin, default_features_field->second);
+                std::move(default_features_field->first), origin, default_features_field->second.row);
             if (const auto default_features = maybe_default_features.get())
             {
                 for (auto&& default_feature : *default_features)
@@ -414,7 +414,7 @@ namespace vcpkg
         if (dependencies_field && !dependencies_field->first.empty())
         {
             auto maybe_dependencies =
-                parse_dependencies_list(std::move(dependencies_field->first), origin, dependencies_field->second);
+                parse_dependencies_list(std::move(dependencies_field->first), origin, dependencies_field->second.row);
             if (auto dependencies = maybe_dependencies.get())
             {
                 fpgh->dependencies = std::move(*dependencies);
@@ -965,7 +965,7 @@ namespace vcpkg
     Optional<std::string> parse_spdx_license_expression(DiagnosticContext& context, StringView sv)
     {
         auto license_string = msg::format(msgLicenseExpressionString); // must live through parse
-        auto parser = SpdxLicenseExpressionParser(context, sv, license_string);
+        auto parser = SpdxLicenseExpressionParser(context, sv, license_string, 0);
         auto result = parser.parse();
         return result;
     }
@@ -981,7 +981,7 @@ namespace vcpkg
         virtual Optional<std::string> visit_string(Json::Reader& r, StringView sv) const override
         {
             BufferedDiagnosticContext bdc;
-            auto parser = SpdxLicenseExpressionParser(bdc, sv, r.origin());
+            auto parser = SpdxLicenseExpressionParser(bdc, sv, r.origin(), 0);
             auto res = parser.parse();
             for (auto&& diagnostic_line : bdc.lines)
             {

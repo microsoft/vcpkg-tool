@@ -68,7 +68,7 @@ namespace
 
         auto manifest_path = Path(control_path.parent_path()) / "vcpkg.json";
         auto contents = fs.read_contents(control_path, VCPKG_LINE_INFO);
-        auto paragraphs = Paragraphs::parse_paragraphs(contents, control_path);
+        auto paragraphs = Paragraphs::parse_paragraphs(contents, control_path, 1);
 
         if (!paragraphs)
         {

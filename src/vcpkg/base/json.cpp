@@ -482,8 +482,8 @@ namespace vcpkg::Json
     {
         struct Parser : private ParserBase
         {
-            Parser(DiagnosticContext& context, StringView text, StringView origin)
-                : ParserBase(context, text, origin), style_()
+            Parser(DiagnosticContext& context, StringView text, StringView origin, int init_row)
+                : ParserBase(context, text, origin, init_row), style_()
             {
             }
 
@@ -1001,7 +1001,8 @@ namespace vcpkg::Json
                 StatsTimer t(g_json_parsing_stats);
 
                 BufferedDiagnosticContext context;
-                auto parser = Parser(context, json, origin);
+                // This assumes that anything we're parsing as JSON is going to be the whole file
+                auto parser = Parser(context, json, origin, 1);
 
                 auto val = parser.parse_value();
 

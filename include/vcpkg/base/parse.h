@@ -30,10 +30,11 @@ namespace vcpkg
 
     struct ParserBase
     {
-        ParserBase(DiagnosticContext& context,
-                   StringView text,
-                   Optional<StringView> origin,
-                   TextRowCol init_rowcol = {});
+        // When parsing an in memory entity or similar not-on-disk entity, init_row should be set to 0
+        // When parsing a file, init_rowcol should be set to 1 if starting from the top of the file
+        ParserBase(DiagnosticContext& context, StringView text, Optional<StringView> origin, int init_row);
+
+        ParserBase clone_with_context(DiagnosticContext& context);
 
         static constexpr bool is_whitespace(char32_t ch) { return ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n'; }
         static constexpr bool is_lower_alpha(char32_t ch) { return ch >= 'a' && ch <= 'z'; }
@@ -102,6 +103,15 @@ namespace vcpkg
         bool any_errors() const noexcept { return m_any_errors; }
 
     private:
+        ParserBase(Unicode::Utf8Decoder it,
+                   Unicode::Utf8Decoder start_of_line,
+                   int row,
+                   int column,
+                   StringView text,
+                   Optional<StringView> origin,
+                   DiagnosticContext& context,
+                   bool any_errors);
+
         Unicode::Utf8Decoder m_it;
         Unicode::Utf8Decoder m_start_of_line;
         int m_row;

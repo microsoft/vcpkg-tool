@@ -23,12 +23,12 @@ namespace vcpkg
     // 1. hierarchy ID number
     // 2. set of subsystems bound to the hierarchy
     // 3. control group in the hierarchy to which the process belongs
-    std::vector<ControlGroup> parse_cgroup_file(StringView text, StringView origin)
+    std::vector<ControlGroup> parse_cgroup_file(StringView text, StringView origin, int init_row)
     {
         using P = ParserBase;
         constexpr auto is_separator_or_lineend = [](auto ch) { return ch == ':' || P::is_lineend(ch); };
 
-        ParserBase parser{console_diagnostic_context, text, origin};
+        ParserBase parser{console_diagnostic_context, text, origin, init_row};
         parser.skip_whitespace();
 
         std::vector<ControlGroup> ret;
@@ -60,9 +60,9 @@ namespace vcpkg
         return ret;
     }
 
-    bool detect_docker_in_cgroup_file(StringView text, StringView origin)
+    bool detect_docker_in_cgroup_file(StringView text, StringView origin, int init_row)
     {
-        return Util::any_of(parse_cgroup_file(text, origin), [](auto&& cgroup) {
+        return Util::any_of(parse_cgroup_file(text, origin, init_row), [](auto&& cgroup) {
             return Strings::starts_with(cgroup.control_group, "/docker") ||
                    Strings::starts_with(cgroup.control_group, "/lxc");
         });

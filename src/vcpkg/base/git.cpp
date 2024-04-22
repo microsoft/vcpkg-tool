@@ -88,7 +88,7 @@ namespace vcpkg
 
         Optional<std::vector<GitStatusLine>> results_storage;
         auto& results = results_storage.emplace();
-        ParserBase parser(context, output, "git status");
+        ParserBase parser(context, output, "git status", 0);
         while (!parser.at_eof())
         {
             GitStatusLine result;

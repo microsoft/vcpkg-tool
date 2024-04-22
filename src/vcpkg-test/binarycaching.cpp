@@ -210,7 +210,8 @@ Feature: b
 Description: enable bzip capabilities
 Build-Depends: bzip
 )",
-                                             "<testdata>");
+                                             "<testdata>",
+                                             0);
     REQUIRE(pghs.has_value());
     auto maybe_scf = SourceControlFile::parse_control_file("test-origin", std::move(*pghs.get()));
     REQUIRE(maybe_scf.has_value());
@@ -336,7 +337,8 @@ Source: someheadpackage
 Version: 1.5
 Description:
 )",
-                                             "<testdata>");
+                                             "<testdata>",
+                                             0);
     REQUIRE(pghs.has_value());
     auto maybe_scf = SourceControlFile::parse_control_file("test-origin", std::move(*pghs.get()));
     REQUIRE(maybe_scf.has_value());
@@ -414,7 +416,8 @@ Source: zlib
 Version: 1.5
 Description: a spiffy compression library wrapper
 )",
-                                             "<testdata>");
+                                             "<testdata>",
+                                             0);
     REQUIRE(pghs.has_value());
     auto maybe_scf = SourceControlFile::parse_control_file("test-origin", std::move(*pghs.get()));
     REQUIRE(maybe_scf.has_value());
@@ -442,7 +445,8 @@ Source: zlib2
 Version: 1.52
 Description: a spiffy compression library wrapper
 )",
-                                              "<testdata>");
+                                              "<testdata>",
+                                              0);
     REQUIRE(pghs2.has_value());
     auto maybe_scf2 = SourceControlFile::parse_control_file("test-origin", std::move(*pghs2.get()));
     REQUIRE(maybe_scf2.has_value());

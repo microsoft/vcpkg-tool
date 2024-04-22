@@ -72,14 +72,11 @@ namespace vcpkg
         return res;
     }
 
-    ParserBase::ParserBase(DiagnosticContext& context,
-                           StringView text,
-                           Optional<StringView> origin,
-                           TextRowCol init_rowcol)
+    ParserBase::ParserBase(DiagnosticContext& context, StringView text, Optional<StringView> origin, int init_row)
         : m_it(text.begin(), text.end())
         , m_start_of_line(m_it)
-        , m_row(init_rowcol.row)
-        , m_column(init_rowcol.column)
+        , m_row(init_row)
+        , m_column(init_row == 0 ? 0 : 1)
         , m_text(text)
         , m_origin(origin)
         , m_context(context)
@@ -94,6 +91,11 @@ namespace vcpkg
             }
         }
 #endif
+    }
+
+    ParserBase ParserBase::clone_with_context(DiagnosticContext& context)
+    {
+        return ParserBase(m_it, m_start_of_line, m_row, m_column, m_text, m_origin, context, m_any_errors);
     }
 
     StringView ParserBase::skip_whitespace() { return match_while(is_whitespace); }
@@ -215,5 +217,24 @@ namespace vcpkg
         {
             m_context.report(DiagnosticLine{DiagKind::Warning, std::move(message)});
         }
+    }
+
+    ParserBase::ParserBase(Unicode::Utf8Decoder it,
+                           Unicode::Utf8Decoder start_of_line,
+                           int row,
+                           int column,
+                           StringView text,
+                           Optional<StringView> origin,
+                           DiagnosticContext& context,
+                           bool any_errors)
+        : m_it(it)
+        , m_start_of_line(start_of_line)
+        , m_row(row)
+        , m_column(column)
+        , m_text(text)
+        , m_origin(origin)
+        , m_context(context)
+        , m_any_errors(any_errors)
+    {
     }
 }

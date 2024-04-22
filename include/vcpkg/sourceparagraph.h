@@ -224,10 +224,8 @@ namespace vcpkg
     Optional<std::vector<Dependency>> parse_dependencies_list(DiagnosticContext& context,
                                                               const std::string& str,
                                                               StringView origin,
-                                                              TextRowCol textrowcol = {});
-    ExpectedL<std::vector<Dependency>> parse_dependencies_list(const std::string& str,
-                                                               StringView origin,
-                                                               TextRowCol textrowcol = {});
+                                                              int init_row);
+    ExpectedL<std::vector<Dependency>> parse_dependencies_list(const std::string& str, StringView origin, int init_row);
 
     constexpr StringLiteral OVERRIDES = "overrides";
 }

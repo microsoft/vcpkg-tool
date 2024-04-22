@@ -178,7 +178,7 @@ namespace vcpkg
                                                                  AllowPlatformSpec allow_platform_spec)
     {
         // there is no origin because this function is used for user inputs
-        auto parser = ParserBase(context, input, nullopt);
+        auto parser = ParserBase(context, input, nullopt, 0);
         auto maybe_pqs = parse_qualified_specifier(parser, allow_features, parse_explicit_triplet, allow_platform_spec);
         if (!parser.at_eof())
         {
@@ -194,7 +194,7 @@ namespace vcpkg
                 auto triplet = pqs ? pqs->triplet.get() : nullptr;
                 if (pqs && triplet && !pqs->platform.has_value() && parser.cur() == '[')
                 {
-                    auto speculative_parser_copy = parser;
+                    auto speculative_parser_copy = parser.clone_with_context(null_diagnostic_context);
                     char32_t ch = '[';
                     if (parse_features(ch, *pqs, speculative_parser_copy) && speculative_parser_copy.at_eof())
                     {
