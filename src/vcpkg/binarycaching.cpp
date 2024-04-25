@@ -7,6 +7,7 @@
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/message_sinks.h>
 #include <vcpkg/base/messages.h>
+#include <vcpkg/base/parallel-algorithms.h>
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.debug.h>
@@ -988,38 +989,38 @@ namespace
         void acquire_zips(View<const InstallPlanAction*> actions,
                           Span<Optional<ZipResource>> out_zip_paths) const override
         {
-            for (size_t idx = 0; idx < actions.size(); ++idx)
-            {
-                auto&& action = *actions[idx];
-                const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
-                auto tmp = make_temp_archive_path(m_buildtrees, action.spec);
-                auto res = m_tool->download_file(make_object_path(m_prefix, abi), tmp);
-                if (res)
-                {
-                    out_zip_paths[idx].emplace(std::move(tmp), RemoveWhen::always);
-                }
-                else
-                {
-                    out_sink.println_warning(res.error());
-                }
-            }
+            parallel_transform(
+                actions, out_zip_paths.begin(), [&](const InstallPlanAction* plan) -> Optional<ZipResource> {
+                    auto&& action = *plan;
+                    const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
+                    auto tmp = make_temp_archive_path(m_buildtrees, action.spec);
+                    auto res = m_tool->download_file(make_object_path(m_prefix, abi), tmp);
+                    if (res)
+                    {
+                        return ZipResource{ZipResource(std::move(tmp), RemoveWhen::always)};
+                    }
+                    else
+                    {
+                        out_sink.println_warning(res.error());
+                        return nullopt;
+                    }
+                });
         }
 
         void precheck(View<const InstallPlanAction*> actions, Span<CacheAvailability> cache_status) const override
         {
-            for (size_t idx = 0; idx < actions.size(); ++idx)
-            {
-                auto&& action = *actions[idx];
+            parallel_transform(actions, cache_status.begin(), [&](const InstallPlanAction* plan) {
+                auto&& action = *plan;
                 const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
                 if (m_tool->stat(make_object_path(m_prefix, abi)))
                 {
-                    cache_status[idx] = CacheAvailability::available;
+                    return CacheAvailability::available;
                 }
                 else
                 {
-                    cache_status[idx] = CacheAvailability::unavailable;
+                    return CacheAvailability::unavailable;
                 }
-            }
+            });
         }
 
         LocalizedString restored_message(size_t count,
@@ -1048,9 +1049,8 @@ namespace
         {
             if (!request.zip_path) return 0;
             const auto& zip_path = *request.zip_path.get();
-            size_t upload_count = 0;
-            for (const auto& prefix : m_prefixes)
-            {
+            std::atomic_size_t upload_count = 0;
+            parallel_for_each(m_prefixes, [&](std::string const& prefix) {
                 auto res = m_tool->upload_file(make_object_path(prefix, request.package_abi), zip_path);
                 if (res)
                 {
@@ -1060,7 +1060,7 @@ namespace
                 {
                     msg_sink.println_warning(res.error());
                 }
-            }
+            });
             return upload_count;
         }
 
