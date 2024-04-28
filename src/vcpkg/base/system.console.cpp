@@ -88,7 +88,7 @@ namespace vcpkg
         while (count != 0)
         {
             DWORD written = 0;
-            if (::WriteFile(fd, text, size_to_write(count), &written, nullptr))
+            if (!::WriteFile(fd, text, size_to_write(count), &written, nullptr))
             {
                 ::fwprintf(stderr, L"[DEBUG] Failed to write to stdout: %lu\n", GetLastError());
                 std::abort();
