@@ -104,13 +104,13 @@ namespace
         }
         else
         {
-            Debug::println("Converting ", file_to_write_string, " -> ", original_path_string);
+            Debug::println("Converting ", original_path_string, " -> ", file_to_write_string);
         }
 
         auto res = serialize_manifest(data.scf);
 
         // reparse res to ensure no semantic changes were made
-        auto maybe_reparsed = SourceControlFile::parse_project_manifest_object(StringView{}, res, null_sink);
+        auto maybe_reparsed = SourceControlFile::parse_project_manifest_object("<unsaved>", res, null_sink);
         bool reparse_matches;
         if (auto reparsed = maybe_reparsed.get())
         {
