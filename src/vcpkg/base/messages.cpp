@@ -381,4 +381,9 @@ namespace vcpkg::msg
 
         return nullopt;
     }
+
+    LocalizedString format_error(const LocalizedString& s) { return error_prefix().append(s); }
+    void println_error(const LocalizedString& s) { println(Color::error, format_error(s)); }
+    LocalizedString format_warning(const LocalizedString& s) { return warning_prefix().append(s); }
+    void println_warning(const LocalizedString& s) { println(Color::warning, format_warning(s)); }
 }
