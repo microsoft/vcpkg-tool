@@ -1,0 +1,5 @@
+{
+	"name": "vcpkg-e2e-test-fails-in-download-only",
+	"version": "1.0.0",
+	"dependencies": ["vcpkg-internal-e2e-test-port"]
+}

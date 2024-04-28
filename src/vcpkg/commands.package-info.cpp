@@ -1,3 +1,4 @@
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/parse.h>
@@ -16,14 +17,10 @@ using namespace vcpkg;
 
 namespace
 {
-    constexpr StringLiteral OPTION_JSON = "x-json";
-    constexpr StringLiteral OPTION_TRANSITIVE = "x-transitive";
-    constexpr StringLiteral OPTION_INSTALLED = "x-installed";
-
     constexpr CommandSwitch INFO_SWITCHES[] = {
-        {OPTION_JSON, msgJsonSwitch},
-        {OPTION_INSTALLED, msgCmdInfoOptInstalled},
-        {OPTION_TRANSITIVE, msgCmdInfoOptTransitive},
+        {SwitchXJson, msgJsonSwitch},
+        {SwitchXInstalled, msgCmdInfoOptInstalled},
+        {SwitchXTransitive, msgCmdInfoOptTransitive},
     };
 } // unnamed namespace
 
@@ -45,20 +42,20 @@ namespace vcpkg
     {
         msg::default_output_stream = OutputStream::StdErr;
         const ParsedArguments options = args.parse_arguments(CommandPackageInfoMetadata);
-        if (!Util::Vectors::contains(options.switches, OPTION_JSON))
+        if (!Util::Vectors::contains(options.switches, SwitchXJson))
         {
-            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, msgMissingOption, msg::option = OPTION_JSON);
+            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, msgMissingOption, msg::option = SwitchXJson);
         }
 
-        const bool installed = Util::Sets::contains(options.switches, OPTION_INSTALLED);
-        const bool transitive = Util::Sets::contains(options.switches, OPTION_TRANSITIVE);
+        const bool installed = Util::Sets::contains(options.switches, SwitchXInstalled);
+        const bool transitive = Util::Sets::contains(options.switches, SwitchXTransitive);
 
         if (transitive && !installed)
         {
             Checks::msg_exit_with_message(VCPKG_LINE_INFO,
                                           msgOptionRequiresOption,
-                                          msg::value = OPTION_TRANSITIVE,
-                                          msg::option = OPTION_INSTALLED);
+                                          msg::value = SwitchXTransitive,
+                                          msg::option = SwitchXInstalled);
         }
 
         auto& fs = paths.get_filesystem();
@@ -69,32 +66,12 @@ namespace vcpkg
             std::vector<PackageSpec> specs_to_write;
             for (auto&& arg : options.command_arguments)
             {
-                ParserBase parser(arg, "<command>");
-                auto maybe_qpkg = parse_qualified_specifier(parser);
-                if (!parser.at_eof() || !maybe_qpkg)
-                {
-                    parser.add_error(msg::format(msgExpectedPackageSpecifier));
-                }
-                else if (!maybe_qpkg.get()->triplet)
-                {
-                    parser.add_error(msg::format(msgExpectedExplicitTriplet));
-                }
-                else if (maybe_qpkg.get()->features)
-                {
-                    parser.add_error(msg::format(msgUnexpectedFeatureList));
-                }
-                else if (maybe_qpkg.get()->platform)
-                {
-                    parser.add_error(msg::format(msgUnexpectedPlatformExpression));
-                }
-                if (auto err = parser.get_error())
-                {
-                    Checks::exit_with_message(VCPKG_LINE_INFO, err->to_string());
-                }
-
-                auto& qpkg = *maybe_qpkg.get();
+                auto qpkg = parse_qualified_specifier(
+                                arg, AllowFeatures::No, ParseExplicitTriplet::Require, AllowPlatformSpec::No)
+                                .value_or_exit(VCPKG_LINE_INFO);
                 // intentionally no triplet name check
-                specs_to_write.emplace_back(qpkg.name, Triplet::from_canonical_name(*qpkg.triplet.get()));
+                specs_to_write.emplace_back(qpkg.name,
+                                            Triplet::from_canonical_name(qpkg.triplet.value_or_exit(VCPKG_LINE_INFO)));
             }
 
             Json::Object response;
@@ -130,7 +107,7 @@ namespace vcpkg
 
             for (auto&& arg : options.command_arguments)
             {
-                ParserBase parser(arg, "<command>");
+                ParserBase parser(arg, nullopt);
                 auto maybe_pkg = parse_package_name(parser);
                 if (!parser.at_eof() || !maybe_pkg)
                 {

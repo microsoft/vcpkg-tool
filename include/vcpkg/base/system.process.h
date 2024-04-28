@@ -35,26 +35,8 @@ namespace vcpkg
         explicit Command(StringView s) { string_arg(s); }
 
         Command& string_arg(StringView s) &;
-        Command& raw_arg(StringView s) &
-        {
-            if (!buf.empty())
-            {
-                buf.push_back(' ');
-            }
-
-            buf.append(s.data(), s.size());
-            return *this;
-        }
-
-        Command& forwarded_args(View<std::string> args) &
-        {
-            for (auto&& arg : args)
-            {
-                string_arg(arg);
-            }
-
-            return *this;
-        }
+        Command& raw_arg(StringView s) &;
+        Command& forwarded_args(View<std::string> args) &;
 
         Command&& string_arg(StringView s) && { return std::move(string_arg(s)); };
         Command&& raw_arg(StringView s) && { return std::move(raw_arg(s)); }
@@ -66,6 +48,13 @@ namespace vcpkg
 
         void clear() { buf.clear(); }
         bool empty() const { return buf.empty(); }
+
+        // maximum UNICODE_STRING, with enough space for one MAX_PATH prepended
+        static constexpr size_t maximum_allowed = 32768 - 260 - 1;
+
+        // if `other` can be appended to this command without exceeding `maximum_allowed`, appends `other` and returns
+        // true; otherwise, returns false
+        bool try_append(const Command& other);
 
     private:
         std::string buf;
@@ -109,51 +98,53 @@ namespace vcpkg
     Environment get_modified_clean_environment(const std::unordered_map<std::string, std::string>& extra_env,
                                                StringView prepend_to_path = {});
 
-    struct WorkingDirectory
+    struct ProcessLaunchSettings
     {
-        Path working_directory;
+        Optional<Path> working_directory;
+        Optional<Environment> environment;
     };
 
-    extern const WorkingDirectory default_working_directory;
-    extern const Environment default_environment;
-
-    ExpectedL<int> cmd_execute(const Command& cmd_line,
-                               const WorkingDirectory& wd = default_working_directory,
-                               const Environment& env = default_environment);
-    ExpectedL<int> cmd_execute_clean(const Command& cmd_line, const WorkingDirectory& wd = default_working_directory);
+    struct RedirectedProcessLaunchSettings
+    {
+        Optional<Path> working_directory;
+        Optional<Environment> environment;
 
 #if defined(_WIN32)
-    Environment cmd_execute_and_capture_environment(const Command& cmd_line,
-                                                    const Environment& env = default_environment);
+        // the encoding to use for standard streams of the child
+        Encoding encoding = Encoding::Utf8;
+        CreateNewConsole create_new_console = CreateNewConsole::No;
+#endif // ^^^ _WIN32
+       // whether to echo all read content to the enclosing terminal;
+        EchoInDebug echo_in_debug = EchoInDebug::Hide;
+        std::string stdin_content;
+    };
+
+    ExpectedL<int> cmd_execute(const Command& cmd);
+    ExpectedL<int> cmd_execute(const Command& cmd, const ProcessLaunchSettings& settings);
+
+#if defined(_WIN32)
+    Environment cmd_execute_and_capture_environment(const Command& cmd, const Environment& env);
 #endif
 
     void cmd_execute_background(const Command& cmd_line);
 
-    ExpectedL<ExitCodeAndOutput> cmd_execute_and_capture_output(const Command& cmd_line,
-                                                                const WorkingDirectory& wd = default_working_directory,
-                                                                const Environment& env = default_environment,
-                                                                Encoding encoding = Encoding::Utf8,
-                                                                EchoInDebug echo_in_debug = EchoInDebug::Hide,
-                                                                StringView stdin_content = {});
+    ExpectedL<ExitCodeAndOutput> cmd_execute_and_capture_output(const Command& cmd);
+    ExpectedL<ExitCodeAndOutput> cmd_execute_and_capture_output(const Command& cmd,
+                                                                const RedirectedProcessLaunchSettings& settings);
 
+    std::vector<ExpectedL<ExitCodeAndOutput>> cmd_execute_and_capture_output_parallel(View<Command> commands);
     std::vector<ExpectedL<ExitCodeAndOutput>> cmd_execute_and_capture_output_parallel(
-        View<Command> cmd_lines,
-        const WorkingDirectory& wd = default_working_directory,
-        const Environment& env = default_environment);
+        View<Command> commands, const RedirectedProcessLaunchSettings& settings);
 
-    ExpectedL<int> cmd_execute_and_stream_lines(const Command& cmd_line,
-                                                const std::function<void(StringView)>& per_line_cb,
-                                                const WorkingDirectory& wd = default_working_directory,
-                                                const Environment& env = default_environment,
-                                                Encoding encoding = Encoding::Utf8,
-                                                StringView stdin_content = {});
+    ExpectedL<int> cmd_execute_and_stream_lines(const Command& cmd, const std::function<void(StringView)>& per_line_cb);
+    ExpectedL<int> cmd_execute_and_stream_lines(const Command& cmd,
+                                                const RedirectedProcessLaunchSettings& settings,
+                                                const std::function<void(StringView)>& per_line_cb);
 
-    ExpectedL<int> cmd_execute_and_stream_data(const Command& cmd_line,
-                                               const std::function<void(StringView)>& data_cb,
-                                               const WorkingDirectory& wd = default_working_directory,
-                                               const Environment& env = default_environment,
-                                               Encoding encoding = Encoding::Utf8,
-                                               StringView stdin_content = {});
+    ExpectedL<int> cmd_execute_and_stream_data(const Command& cmd, const std::function<void(StringView)>& data_cb);
+    ExpectedL<int> cmd_execute_and_stream_data(const Command& cmd,
+                                               const RedirectedProcessLaunchSettings& settings,
+                                               const std::function<void(StringView)>& data_cb);
 
     uint64_t get_subproccess_stats();
 

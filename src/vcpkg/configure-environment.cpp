@@ -1,6 +1,7 @@
 #include <vcpkg/base/fwd/message_sinks.h>
 
 #include <vcpkg/base/checks.h>
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/json.h>
@@ -41,7 +42,7 @@ namespace
             return;
         }
 
-        auto acquired_artifacts = pparsed->get("acquired_artifacts");
+        auto acquired_artifacts = pparsed->get(JsonIdAcquiredArtifacts);
         if (acquired_artifacts)
         {
             if (acquired_artifacts->is_string())
@@ -56,7 +57,7 @@ namespace
             Debug::println("No artifacts acquired.");
         }
 
-        auto activated_artifacts = pparsed->get("activated_artifacts");
+        auto activated_artifacts = pparsed->get(JsonIdActivatedArtifacts);
         if (activated_artifacts)
         {
             if (activated_artifacts->is_string())
@@ -73,13 +74,14 @@ namespace
     }
 
     constexpr const StringLiteral* ArtifactOperatingSystemsSwitchNamesStorage[] = {
-        &SWITCH_WINDOWS, &SWITCH_OSX, &SWITCH_LINUX, &SWITCH_FREEBSD};
+        &SwitchWindows, &SwitchOsx, &SwitchLinux, &SwitchFreeBsd};
     constexpr const StringLiteral* ArtifactHostPlatformSwitchNamesStorage[] = {
-        &SWITCH_X86, &SWITCH_X64, &SWITCH_ARM, &SWITCH_ARM64};
+        &SwitchX86, &SwitchX64, &SwitchArm, &SwitchArm64};
     constexpr const StringLiteral* ArtifactTargetPlatformSwitchNamesStorage[] = {
-        &SWITCH_TARGET_X86, &SWITCH_TARGET_X64, &SWITCH_TARGET_ARM, &SWITCH_TARGET_ARM64};
+        &SwitchTargetX86, &SwitchTargetX64, &SwitchTargetArm, &SwitchTargetArm64};
 
-    bool more_than_one_mapped(View<const StringLiteral*> candidates, const std::set<std::string, std::less<>>& switches)
+    bool more_than_one_mapped(View<const StringLiteral*> candidates,
+                              const std::set<StringLiteral, std::less<>>& switches)
     {
         bool seen = false;
         for (auto&& candidate : candidates)
@@ -185,12 +187,12 @@ namespace vcpkg
 
         auto temp_directory = fs.create_or_get_temp_directory(VCPKG_LINE_INFO);
 
-        Command cmd_run(paths.get_tool_exe(Tools::NODE, out_sink));
-        cmd_run.string_arg(vcpkg_artifacts_main_path);
-        cmd_run.forwarded_args(args);
+        auto cmd = Command{paths.get_tool_exe(Tools::NODE, out_sink)};
+        cmd.string_arg(vcpkg_artifacts_main_path);
+        cmd.forwarded_args(args);
         if (Debug::g_debugging)
         {
-            cmd_run.string_arg("--debug");
+            cmd.string_arg("--debug");
         }
 
         Optional<Path> maybe_telemetry_file_path;
@@ -198,28 +200,30 @@ namespace vcpkg
         {
             auto& p = maybe_telemetry_file_path.emplace(temp_directory /
                                                         (generate_random_UUID() + "_artifacts_telemetry.txt"));
-            cmd_run.string_arg("--z-telemetry-file").string_arg(p);
+            cmd.string_arg("--z-telemetry-file").string_arg(p);
         }
 
-        cmd_run.string_arg("--vcpkg-root").string_arg(paths.root);
-        cmd_run.string_arg("--z-vcpkg-command").string_arg(get_exe_path_of_current_process());
+        cmd.string_arg("--vcpkg-root").string_arg(paths.root);
+        cmd.string_arg("--z-vcpkg-command").string_arg(get_exe_path_of_current_process());
 
-        cmd_run.string_arg("--z-vcpkg-artifacts-root").string_arg(paths.artifacts());
-        cmd_run.string_arg("--z-vcpkg-downloads").string_arg(paths.downloads);
-        cmd_run.string_arg("--z-vcpkg-registries-cache").string_arg(paths.registries_cache());
-        cmd_run.string_arg("--z-next-previous-environment")
+        cmd.string_arg("--z-vcpkg-artifacts-root").string_arg(paths.artifacts());
+        cmd.string_arg("--z-vcpkg-downloads").string_arg(paths.downloads);
+        cmd.string_arg("--z-vcpkg-registries-cache").string_arg(paths.registries_cache());
+        cmd.string_arg("--z-next-previous-environment")
             .string_arg(temp_directory / (generate_random_UUID() + "_previous_environment.txt"));
-        cmd_run.string_arg("--z-global-config").string_arg(paths.global_config());
+        cmd.string_arg("--z-global-config").string_arg(paths.global_config());
 
         auto maybe_file = msg::get_loaded_file();
         if (!maybe_file.empty())
         {
             auto temp_file = temp_directory / "messages.json";
             fs.write_contents(temp_file, maybe_file, VCPKG_LINE_INFO);
-            cmd_run.string_arg("--language").string_arg(temp_file);
+            cmd.string_arg("--language").string_arg(temp_file);
         }
 
-        auto result = cmd_execute(cmd_run, WorkingDirectory{paths.original_cwd}).value_or_exit(VCPKG_LINE_INFO);
+        ProcessLaunchSettings settings;
+        settings.working_directory = paths.original_cwd;
+        auto result = cmd_execute(cmd, settings).value_or_exit(VCPKG_LINE_INFO);
         if (auto telemetry_file_path = maybe_telemetry_file_path.get())
         {
             track_telemetry(fs, *telemetry_file_path);

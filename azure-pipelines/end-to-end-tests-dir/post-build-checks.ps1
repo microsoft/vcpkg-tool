@@ -25,6 +25,7 @@ $buildOutput = Run-VcpkgAndCaptureOutput @commonArgs install --overlay-ports="$T
 $expected = "warning: The following files were built for an incorrect architecture:`n" + `
 "warning:   $packagesRoot\test-dll_x86-windows\debug\lib\test_dll.lib`n" + `
 " Expected: x86, but was x64`n" + `
+"warning: The following files were built for an incorrect architecture:`n" + `
 "warning:   $packagesRoot\test-dll_x86-windows\lib\test_dll.lib`n" + `
 " Expected: x86, but was x64`n" + `
 "warning: The following files were built for an incorrect architecture:`n" + `
