@@ -201,7 +201,7 @@ namespace vcpkg::msg
     {
         std_out.print(Color::none, s.append_raw('\n'));
     }
-    inline [[nodiscard]] LocalizedString format_error(const LocalizedString& s) { return error_prefix().append(s); }
+    [[nodiscard]] inline LocalizedString format_error(const LocalizedString& s) { return error_prefix().append(s); }
     template<VCPKG_DECL_MSG_TEMPLATE>
     [[nodiscard]] LocalizedString format_error(VCPKG_DECL_MSG_ARGS)
     {
@@ -218,7 +218,7 @@ namespace vcpkg::msg
         println(Color::error, s);
     }
 
-    inline [[nodiscard]] LocalizedString format_warning(const LocalizedString& s) { return warning_prefix().append(s); }
+    [[nodiscard]] inline LocalizedString format_warning(const LocalizedString& s) { return warning_prefix().append(s); }
     template<VCPKG_DECL_MSG_TEMPLATE>
     [[nodiscard]] LocalizedString format_warning(VCPKG_DECL_MSG_ARGS)
     {
