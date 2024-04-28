@@ -190,11 +190,13 @@ namespace vcpkg::msg
 
     inline void print(Color c, const LocalizedString& s) { std_out.print(c, s); }
     inline void print(const LocalizedString& s) { std_out.print(Color::none, s); }
-    inline void println(Color c, LocalizedString&& s)
+    template<typename T>
+    inline void println(Color c, T s)
     {
         std_out.print(c, s.append_raw('\n'));
     }
-    inline void println(LocalizedString&& s)
+    template<typename T>
+    inline void println(T s)
     {
         std_out.print(Color::none, s.append_raw('\n'));
     }
