@@ -148,5 +148,5 @@ namespace vcpkg
 #endif
 
     Console& std_out = std_out_instance;
-    Console& std_error = std_out_instance;
+    Console& std_error = std_error_instance;
 } // namespace vcpkg
