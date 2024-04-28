@@ -31,6 +31,7 @@ namespace vcpkg
 
         // This function is safe to call from multiple threads.
         // When called from multiple threads, calls are atomic with respect to other callers
+        // If a line doesn't end with \n, a \n is automatically printed.
         void print_lines(View<std::pair<Color, StringView>> lines);
 
         // This function is safe to call from multiple threads.
@@ -58,7 +59,7 @@ namespace vcpkg
         bool check_is_terminal() noexcept;
 
         std::mutex mtx;
-#if _WIN32
+#ifdef _WIN32
         void* fd;
 #else
         int fd;
