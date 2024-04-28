@@ -192,14 +192,8 @@ namespace vcpkg::msg
 
     inline void print(Color c, const LocalizedString& s) { msg::write_unlocalized_text(c, s); }
     inline void print(const LocalizedString& s) { msg::write_unlocalized_text(Color::none, s); }
-    inline void println(Color c, LocalizedString s)
-    {
-        msg::write_unlocalized_text(c, s.append_raw('\n'));
-    }
-    inline void println(LocalizedString s)
-    {
-        msg::write_unlocalized_text(Color::none, s.append_raw('\n'));
-    }
+    inline void println(Color c, LocalizedString s) { msg::write_unlocalized_text(c, s.append_raw('\n')); }
+    inline void println(LocalizedString s) { msg::write_unlocalized_text(Color::none, s.append_raw('\n')); }
 
     [[nodiscard]] LocalizedString format_error(const LocalizedString& s);
     template<VCPKG_DECL_MSG_TEMPLATE>
