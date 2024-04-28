@@ -24,7 +24,7 @@ namespace vcpkg
 #ifdef _WIN32
         ::FlushFileBuffers(fd);
 #else
-        ::fdatasync(fd);
+        ::fsync(fd);
 #endif
     }
 
