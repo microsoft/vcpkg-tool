@@ -47,7 +47,7 @@ namespace vcpkg
         for (auto&& line : lines)
         {
             print_unlocked(line.first, line.second);
-            
+
             if (line.second.back() != '\n')
             {
                 print_unlocked(Color::none, "\n");
