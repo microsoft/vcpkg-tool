@@ -1,11 +1,11 @@
 #pragma once
 
 #include <vcpkg/base/fwd/messages.h>
-#include <vcpkg/base/fwd/system.console.h>
 
 #include <vcpkg/base/fmt.h>
 #include <vcpkg/base/span.h>
 #include <vcpkg/base/stringview.h>
+#include <vcpkg/base/system.console.h>
 
 #include <string>
 #include <type_traits>
