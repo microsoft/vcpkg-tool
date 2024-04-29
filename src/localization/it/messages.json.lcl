@@ -1144,15 +1144,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";ArtifactsNotOfficialWarning" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Using vcpkg-artifacts with an unofficial ]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Uso di vcpkg-artifacts con un elemento non ufficiale ]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";ArtifactsOptionIncompatibility" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[--{option} has no effect on find artifact.]]></Val>
@@ -1222,18 +1213,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";ArtifactsSwitchAll" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Updates all known artifact registries]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Aggiorna tutti i registri di artefatti noti]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Update all known artifact registries]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";ArtifactsSwitchAllLanguages" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Acquires all language files when acquiring artifacts]]></Val>
@@ -1278,18 +1257,6 @@
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Force host detection to Linux when acquiring artifacts]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ArtifactsSwitchNormalize" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Applies any deprecation fixups]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Applica tutte le correzioni deprecate]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Apply any deprecation fixups]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -1447,15 +1414,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";AttemptingToFetchPackagesFromVendor" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Attempting to fetch {count} package(s) from {vendor}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Tentativo di recupero di {count} pacchetti da {vendor}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";AttemptingToSetBuiltInBaseline" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[attempting to set builtin-baseline in vcpkg.json while overriding the default-registry in vcpkg-configuration.json.]A;the default-registry from vcpkg-configuration.json will be used.]]></Val>
@@ -1537,15 +1495,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";BaselineFileNoDefaultField" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The baseline file at commit {commit_sha} was invalid (no "default" field).]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Il file baseline nel commit {commit_sha} non è valido (nessun campo "default").]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";BaselineGitShowFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[while checking out baseline from commit '{commit_sha}', failed to `git show` versions/baseline.json. This may be fixed by fetching commits with `git fetch`.]]></Val>
@@ -1560,15 +1509,6 @@
           <Val><![CDATA[Baseline version not found. Run:]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit -m "Update version database"]A;to set {version} as the baseline version.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Versione baseline non trovata. Eseguire:]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit -m "Aggiorna database delle versioni"]A;per impostare {version} come versione baseline.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";BinaryCacheVendorHTTP" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[HTTP servers]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Server HTTP]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1756,18 +1696,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";BuildTroubleshootingMessage4" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Please use the prefilled template from {path} when reporting your issue.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Usare il modello precompilato di {path} per la creazione del report del problema.]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[You can also use the prefilled template from {path}.]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";BuildTroubleshootingMessageGH" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[You can also submit an issue by running (GitHub CLI must be installed):]]></Val>
@@ -1896,15 +1824,6 @@
           <Val><![CDATA[File to read package hashes for a parent CI state, to reduce the set of changed packages]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[File per la lettura degli hash dei pacchetti per uno stato CI padre, per ridurre il set di pacchetti modificati]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CISettingsOptSkippedCascadeCount" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Asserts that the number of --exclude and supports skips exactly equal this number]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Asserisce che il numero di --exclude e skip di supports corrisponda esattamente a questo numero]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2440,24 +2359,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CmdCacheExample1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[vcpkg cache <search substring>]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[cache vcpkg <cerca sottostringa>]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CmdCacheSynopsis" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[List specs of packages]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Elenca le specifiche dei pacchetti]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";CmdCheckSupportExample1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[vcpkg x-check-support <port name>]]></Val>
@@ -2499,15 +2400,6 @@
           <Val><![CDATA[Checks integrity of the version database]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Controlla l'integrità del database della versione]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CmdContactOptSurvey" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Launch default browser to the current vcpkg survey]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Avvia il browser predefinito per il sondaggio vcpkg corrente]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -3891,13 +3783,22 @@
       </Item>
       <Item ItemId=";CommandFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[command:]A;{command_line}]A;failed with the following results:]]></Val>
+          <Val><![CDATA[command:]A;{command_line}]A;failed with the following output:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Comando:]A;{command_line}]A;non riuscito con i seguenti risultati:]]></Val>
+            <Val><![CDATA[comando:]A;{command_line}]A;non riuscito con l'output seguente:]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[command:]A;{command_line}]A;failed with the following results:]A;]]></Val>
+            <Val><![CDATA[command:]A;{command_line}]A;failed with the following results:]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CommandFailedCode" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[command:]A;{command_line}]A;failed with exit code {exit_code} and the following output:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[comando:]A;{command_line}]A;non riuscito con codice di uscita {exit_code} e l'output seguente:]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -3910,6 +3811,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[VCPKG community triplets:]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CompilerPath" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Compiler found: {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Compilatore trovato: {path}]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -4035,10 +3945,13 @@
       </Item>
       <Item ItemId=";CorruptedDatabase" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Database corrupted.]]></Val>
+          <Val><![CDATA[vcpkg's installation database corrupted. This is either a bug in vcpkg or something else has modified the contents of the 'installed' directory in an unexpected way. You may be able to fix this by deleting the 'installed' directory and reinstalling what you want to use. If this problem happens consistently, please file a bug at https://github.com/microsoft/vcpkg .]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Database danneggiato.]]></Val>
+            <Val><![CDATA[Il database di installazione di vcpkg è danneggiato. Si tratta di un bug in vcpkg o di un altro elemento che ha modificato il contenuto della directory 'installed' in modo imprevisto. È possibile risolvere il problema eliminando la directory "installata" e reinstallando ciò che si vuole usare. Se il problema si verifica costantemente, segnalare un bug in https://github.com/microsoft/vcpkg .]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Database corrupted.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -4177,15 +4090,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CurlFailedToExecute" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[curl failed to execute with exit code {exit_code}.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Esecuzione di curl non riuscita. Codice di uscita: {exit_code}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";CurlFailedToPut" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[curl failed to put file to {url} with exit code {exit_code}.]]></Val>
@@ -4204,23 +4108,20 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CurlReportedUnexpectedResults" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";CurlResponseTruncatedRetrying" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[curl has reported unexpected results to vcpkg and vcpkg cannot continue.]A;Please review the following text for sensitive information and open an issue on the Microsoft/vcpkg GitHub to help fix this problem!]A;cmd: {command_line}]A;=== curl output ===]A;{actual}]A;=== end curl output ===]]></Val>
+          <Val><![CDATA[curl returned a partial response; waiting {value} milliseconds and trying again]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[curl ha segnalato risultati imprevisti a vcpkg e vcpkg non può continuare.]A;Esaminare il testo seguente per informazioni riservate e aprire un problema in Microsoft/vcpkg GitHub per risolvere il problema!]A;cmd: {command_line}]A;=== curl output ===]A;{actual}]A;=== end curl output ===]]></Val>
+            <Val><![CDATA[curl ha restituito una risposta parziale; in attesa di {value} millisecondi e riprovare]]></Val>
           </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[curl has reported unexpected results to vcpkg and vcpkg cannot continue.]A;Please review the following text for sensitive information and open an issue on the Microsoft/vcpkg GitHub to help fix this problem!]A;cmd: {command_line}]A;=== curl output ===]A;{actual}]A;=== end curl output ===]A;]]></Val>
-          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CurlReturnedUnexpectedResponseCodes" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";CurlTimeout" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[curl returned a different number of response codes than were expected for the request ({actual} vs expected {expected}).]]></Val>
+          <Val><![CDATA[curl was unable to perform all requested HTTP operations, even after timeout and retries. The last command line was: {command_line}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Curl ha restituito un numero di codici di risposta diverso da quello previsto per la richiesta ({actual} rispetto a {expected} previsto).]]></Val>
+            <Val><![CDATA[curl non è riuscito a eseguire tutte le operazioni HTTP richieste, anche dopo timeout e tentativi. Ultima riga di comando: {command_line}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4242,15 +4143,6 @@
           <Val><![CDATA[cycle detected during {spec}:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[ciclo rilevato durante {spec}:]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";DateTableHeader" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Date]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Data]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4332,15 +4224,6 @@
           <Val><![CDATA[The default registry cannot be an artifact registry.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Il registro predefinito non può essere un registro artefatti.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";DefaultTripletChanged" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[In the September 2023 release, the default triplet for vcpkg libraries changed from x86-windows to the detected host triplet ({triplet}). For the old behavior, add --triplet x86-windows . To suppress this message, add --triplet {triplet} .]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Nella versione di settembre 2023 la tripletta predefinita per le librerie vcpkg è cambiata da x86-windows a tripletta host rilevata ({triplet}). Per il comportamento precedente, aggiungere --triplet x86-windows. Per eliminare questo messaggio, aggiungere --tripletta {triplet}.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4701,15 +4584,6 @@
           <Val><![CDATA[Elapsed time to handle {spec}: {elapsed}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Tempo trascorso per la gestione di {spec}: {elapsed}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ElapsedInstallTime" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Total elapsed time: {count}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Tempo totale trascorso: {count}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -5167,15 +5041,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";ExpectedEof" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[expected eof]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[previsto eof]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";ExpectedExplicitTriplet" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[expected an explicit triplet]]></Val>
@@ -5251,15 +5116,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";ExpectedPackageSpecifier" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[expected a package specifier]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[previsto un identificatore di pacchetto]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";ExpectedPathToExist" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Expected {path} to exist after fetching]]></Val>
@@ -5325,15 +5181,6 @@
           <Val><![CDATA[export prefab requires an Android triplet.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[l'esportazione di prefab richiede una tripletta Android.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ExportUnsupportedInManifest" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[vcpkg export does not support manifest mode, in order to allow for future design considerations. You may use export in classic mode by running vcpkg outside of a manifest-based project.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[l'esportazione vcpkg non supporta la modalità manifesto per consentire considerazioni future sulla progettazione. È possibile usare l'esportazione in modalità classica eseguendo vcpkg all'esterno di un progetto basato su manifesto.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -5469,15 +5316,6 @@
           <Val><![CDATA[Failed to deserialize index ${p0}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Non è stato possibile deserializzare l'indice ${p0}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";FailedToDetermineArchitecture" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[unable to determine the architecture of {path}.]A;{command_line}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[impossibile determinare l'architettura di {path}.]A; {command_line}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -5710,18 +5548,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";FailedToProvisionCe" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Failed to provision vcpkg-artifacts.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Non è stato possibile effettuare il provisioning di vcpkg-artifacts.]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Failed to provision vcpkg-ce.]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";FailedToReadParagraph" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Failed to read paragraphs from {path}]]></Val>
@@ -5902,15 +5728,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";FileSystemOperationFailed" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Filesystem operation failed:]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Operazione del file system non riuscita:]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";FilesContainAbsolutePath1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[There should be no absolute paths, such as the following, in an installed package:]]></Val>
@@ -5934,15 +5751,6 @@
           <Val><![CDATA[Files exported at: {path}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[File esportati in: {path}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";FindHelp" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Searches for the indicated artifact or port. With no parameter after 'artifact' or 'port', displays everything.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Cerca l'artefatto o la porta indicati. Senza parametri dopo 'artifact' o 'port', visualizza tutto.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -6523,24 +6331,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";HelpExportCommand" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Exports a package.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Esporta un pacchetto.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";HelpHashCommand" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Hash a file by specific algorithm, default SHA512.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Esegue l'hash di un file in base a un algoritmo specifico. Valore predefinito: Sha512.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";HelpInstallCommand" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Installs a package]]></Val>
@@ -6549,18 +6339,6 @@
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Install a package.]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";HelpListCommand" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Lists installed packages]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Elenca i pacchetti installati]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[List installed packages.]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -7090,15 +6868,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";IncorrectPESignature" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Incorrect PE signature]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Firma PE non corretta]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";InfoSetEnvVar" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[You can also set {env_var} to your editor of choice.]]></Val>
@@ -7258,15 +7027,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";InstallingFromLocation" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[-- Installing port from location: {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[-- Installazione della porta dal percorso: {path}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";InstallingMavenFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[{path} installing Maven file]]></Val>
@@ -7276,6 +7036,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[{path} installing maven file]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InstallingOverlayPort" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[installing overlay port from here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[installazione della porta di sovrimpressione da qui]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -7639,11 +7408,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";InvalidCharacterInPackageName" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";InvalidCharacterInPortName" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[invalid character in package name (must be lowercase, digits, '-')]]></Val>
+          <Val><![CDATA[invalid character in port name (must be lowercase, digits, '-')]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[carattere non valido nel nome del pacchetto (deve essere minuscolo, con cifre, '-')]]></Val>
+            <Val><![CDATA[carattere non valido nel nome della porta (deve essere minuscolo, con cifre, '-')]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -7893,6 +7662,15 @@
           <Val><![CDATA[unable to parse uri: {value}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[impossibile analizzare l'URI: {value}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidValueHashAdditionalFiles" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Variable VCPKG_HASH_ADDITIONAL_FILES contains invalid file path: '{path}'. The value must be an absolute path to an existent file.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[La variabile VCPKG_HASH_ADDITIONAL_FILES contiene un percorso di file non valido: '{path}'. Il valore deve essere un percorso assoluto di un file esistente.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -8221,11 +7999,20 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";LoadingCommunityTriplet" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";LoadedCommunityTriplet" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[-- [COMMUNITY]5D; Loading triplet configuration from: {path}]]></Val>
+          <Val><![CDATA[loaded community triplet from here. Community triplets are not built in the curated registry and are thus less likely to succeed.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[-- [COMMUNITY]5D; Caricamento della configurazione della tripletta da: {path}]]></Val>
+            <Val><![CDATA[ha caricato una tripletta della community da qui. Le triplette della community non vengono compilate nel registro curato e hanno quindi meno probabilità di riuscire.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";LoadedOverlayTriplet" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[loaded overlay triplet from here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[ha caricato una tripletta di sovrimpressione della community da qui.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -8235,15 +8022,6 @@
           <Val><![CDATA[Loading dependency information for {count} packages...]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Caricamento delle informazioni sulle dipendenze per {count} pacchetti in corso...]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";LoadingOverlayTriplet" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[-- [OVERLAY]5D; Loading triplet configuration from: {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[-- [OVERLAY]5D; Caricamento della configurazione della tripletta da: {path}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -8485,18 +8263,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";MsiexecFailedToExtract" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[msiexec failed while extracting "{path}" with launch or exit code {exit_code} and message:]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[msiexec non riuscito durante l'estrazione di "{path}" con codice di avvio o uscita {exit_code} e messaggio:]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[msiexec failed while extracting '{path}' with launch or exit code {exit_code} and message:]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";MultiArch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Multi-Arch must be 'same' but was {option}]]></Val>
@@ -8590,15 +8356,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";NoArgumentsForOption" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The option --{option} does not accept an argument.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[L'opzione --{option} non accetta un argomento.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";NoArtifactsAreAcquired" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[No artifacts are acquired]]></Val>
@@ -8650,18 +8407,6 @@
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Nessun pacchetto installato. Si intendeva "cerca"?]]></Val>
           </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";NoLocalizationForMessages" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[No localized messages for the following: ]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Nessun messaggio localizzato per gli elementi seguenti: ]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[No localization for the following messages:]]></Val>
-          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -9043,15 +8788,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";PackagesToInstallDirectly" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The following packages will be directly installed:]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[I pacchetti seguenti verranno installati direttamente:]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";PackagesToModify" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Additional packages (*) will be modified to complete this operation.]]></Val>
@@ -9223,6 +8959,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ParsePackageNameNotEof" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[expected the end of input parsing a package name; this usually means the indicated character is not allowed to be in a port name. Port names are all lowercase alphanumeric+hypens and not reserved (see {url} for more information).]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[è prevista la fine dell'analisi dell'input del nome di un pacchetto; questo significa in genere che il carattere indicato non può trovarsi in un nome di porta. I nomi delle porte devono essere alfanumerici minuscoli+trattino e non riservati (per altre informazioni, vedere {url}).]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ParsePackagePatternError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA["{package_name}" is not a valid package pattern. Package patterns must use only one wildcard character (*) and it must be the last character in the pattern (see {url} for more information).]]></Val>
@@ -9232,6 +8977,24 @@
           <Prev Cat="Text">
             <Val><![CDATA["{package_name}" is not a valid package pattern. Package patterns must use only one wildcard character (*) and it must be the last character in the pattern (see {url} for more information)]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ParseQualifiedSpecifierNotEof" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[expected the end of input parsing a package spec; this usually means the indicated character is not allowed to be in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hypens.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[è prevista la fine dell'analisi dell'input di un pacchetto specifico; questo significa in genere che il carattere indicato non può trovarsi in un pacchetto specifico. I nomi di porta, tripletta e funzionalità sono tutti alfanumerici minuscoli+trattino.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ParseQualifiedSpecifierNotEofSquareBracket" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[expected the end of input parsing a package spec; did you mean {version_spec} instead?]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[è prevista la fine dell'analisi dell'input di una specifica del pacchetto; si intendeva invece {version_spec}?]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -9249,15 +9012,6 @@
           <Val><![CDATA[-- Performing post-build validation]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[-- Esecuzione della convalida post-compilazione]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";PortBugAllowRestrictedHeaders" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[In exceptional circumstances, this policy can be disabled via {env_var}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[In circostanze eccezionali, questo criterio può essere disabilitato tramite {env_var}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -9694,15 +9448,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";PortsDiffHelp" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The argument should be a branch/tag/hash to checkout.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[L'argomento deve essere un ramo/tag/hash da estrarre.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";PortsNoDiff" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[There were no changes in the ports between the two commits.]]></Val>
@@ -9988,15 +9733,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";SearchHelp" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The argument should be a substring to search for, or no argument to display all libraries.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[L'argomento deve essere una sottostringa da cercare oppure nessun argomento per visualizzare tutte le librerie.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";SecretBanner" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[*** SECRET ***]]></Val>
@@ -10149,18 +9885,6 @@
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Stored binaries in {count} destinations.]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";StoredBinaryCache" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Stored binary cache: "{path}"]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Cache binaria archiviata: "{path}"]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Stored binary cache: '{path}']]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -10582,15 +10306,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";UnexpectedCharExpectedComma" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Unexpected character; expected comma or close brace]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Carattere imprevisto; prevista virgola o parentesi graffa chiusa]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";UnexpectedCharExpectedName" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Unexpected character; expected property name]]></Val>
@@ -10762,38 +10477,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";UnexpectedErrorDuringBulkDownload" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[an unexpected error occurred during bulk download.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[si è verificato un errore imprevisto durante il download in blocco.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";UnexpectedEscapeSequence" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Unexpected escape sequence continuation]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Continuazione sequenza escape imprevista]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";UnexpectedExtension" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Unexpected archive extension: '{extension}'.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Estensione archivio imprevista: '{extension}'.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";UnexpectedFeatureList" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[unexpected list of features]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[elenco di funzionalità imprevisto]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10830,15 +10518,6 @@
           <Val><![CDATA[unexpected option: {option}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[opzione imprevista: {option}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";UnexpectedPlatformExpression" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[unexpected platform expression]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[espressione di piattaforma imprevista]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10902,12 +10581,12 @@
       </Item>
       <Item ItemId=";UnknownBinaryProviderType" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[unknown binary provider type: valid providers are 'clear', 'default', 'nuget', 'nugetconfig','nugettimeout', 'interactive', 'x-azblob', 'x-gcs', 'x-aws', 'x-aws-config', 'http', and 'files']]></Val>
+          <Val><![CDATA[unknown binary provider type: valid providers are 'clear', 'default', 'nuget', 'nugetconfig', 'nugettimeout', 'interactive', 'x-azblob', 'x-gcs', 'x-aws', 'x-aws-config', 'http', and 'files']]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[tipo di provider binario sconosciuto: i provider validi sono 'clear', 'default', 'nuget', 'nugetconfig', 'nugettimeout', 'interactive', 'x-azblob', 'x-gcs', 'x-aws', 'x-aws-config', 'http' e 'files']]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[unknown binary provider type: valid providers are 'clear', 'default', 'nuget', 'nugetconfig', 'interactive', and 'files']]></Val>
+            <Val><![CDATA[unknown binary provider type: valid providers are 'clear', 'default', 'nuget', 'nugetconfig','nugettimeout', 'interactive', 'x-azblob', 'x-gcs', 'x-aws', 'x-aws-config', 'http', and 'files']]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -10926,15 +10605,6 @@
           <Val><![CDATA[Unknown installer type ${p0}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Tipo di programma di installazione sconosciuto ${p0}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";UnknownOptions" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Unknown option(s) for command '{command_name}':]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Opzioni sconosciute per il comando '{command_name}':]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -11088,15 +10758,6 @@
           <Val><![CDATA[Unsupported registry scheme '${p0}']]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Schema del registro '${p0}' non supportato]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";UnsupportedShortOptions" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[short options are not supported: '{value}']]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[le opzioni brevi non sono supportate: '{value}']]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -11257,27 +10918,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";UploadedBinaries" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Uploaded binaries to {count} {vendor}.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[File binari caricati in {count}.{vendor}.]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Uploaded binaries to '{count}' '{vendor}'.]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";UploadedPackagesToVendor" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Uploaded {count} package(s) to {vendor} in {elapsed}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Sono stati caricati {count} pacchetti a {vendor} in {elapsed}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";UploadingBinariesToVendor" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Uploading binaries for '{spec}' to '{vendor}' source "{path}".]]></Val>
@@ -11286,18 +10926,6 @@
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Uploading binaries for '{spec}' to '{vendor}' source '{path}'.]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";UploadingBinariesUsingVendor" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Uploading binaries for '{spec}' using '{vendor}' "{path}".]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Caricamento dei file binari per '{spec}' con '{vendor}' "{path}".]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Uploading binaries for '{spec}' using '{vendor}' '{path}'.]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -11334,15 +10962,6 @@
           <Val><![CDATA[User-wide integration was removed.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[L'integrazione a livello di utente è stata rimossa.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";UsingCommunityTriplet" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[-- Using community triplet {triplet}. This triplet configuration is not guaranteed to succeed.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[-- Uso della tripletta della community {triplet}. Non è garantito il completamento di questa configurazione della tripletta.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -11419,15 +11038,6 @@
           <Prev Cat="Text">
             <Val><![CDATA[vcpkg-ce ('configure environment') is experimental and may change at any time.]]></Val>
           </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";VcpkgCommitTableHeader" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[VCPKG Commit]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[VCPKG Commit]]></Val>
-          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -11605,15 +11215,6 @@
           <Prev Cat="Text">
             <Val><![CDATA[port-version (after the '#') in "version>=" must be a positive integer]]></Val>
           </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";VersionConstraintUnresolvable" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Cannot resolve a minimum constraint for dependency {package_name} from {spec}.]A;The dependency was not found in the baseline, indicating that the package did not exist at that time. This may be fixed by providing an explicit override version via the "overrides" field or by updating the baseline.]A;See `vcpkg help versioning` for more information.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Non è possibile risolvere un vincolo minimo per la dipendenza {package_name} da {spec}.]A;La dipendenza non è stata trovata nella baseline a indicare che il pacchetto non esisteva in quel momento. Questo problema può essere risolto fornendo una versione di override esplicita tramite il campo "overrides" o aggiornando la baseline.]A;Per altre informazioni, vedere 'vcpkg help versioning'.]]></Val>
-          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -11869,15 +11470,6 @@
           <Prev Cat="Text">
             <Val><![CDATA[error: Failed to load port because version specs did not match]A;    Path: {path}]A;    Expected: {expected_version}]A;    Actual: {actual_version}]]></Val>
           </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";VersionTableHeader" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Version]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Versione]]></Val>
-          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
