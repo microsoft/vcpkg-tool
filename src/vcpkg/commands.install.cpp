@@ -330,7 +330,6 @@ namespace vcpkg
         const InstallPlanType& plan_type = action.plan_type;
         if (plan_type == InstallPlanType::ALREADY_INSTALLED)
         {
-            // FIXME check that this can still get printed
             if (action.use_head_version == UseHeadVersion::Yes)
                 msg::println(Color::warning, msgAlreadyInstalledNotHead, msg::spec = action.spec);
             else
