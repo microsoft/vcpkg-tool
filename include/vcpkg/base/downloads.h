@@ -32,9 +32,9 @@ namespace vcpkg
 
     View<std::string> azure_blob_headers();
 
-    std::vector<int> download_files(const Filesystem& fs,
-                                    View<std::pair<std::string, Path>> url_pairs,
-                                    View<std::string> headers);
+    std::vector<int> download_files(View<std::pair<std::string, Path>> url_pairs,
+                                    View<std::string> headers,
+                                    View<std::string> secrets);
 
     bool send_snapshot_to_api(const std::string& github_token,
                               const std::string& github_repository,

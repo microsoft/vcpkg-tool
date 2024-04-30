@@ -14,6 +14,7 @@ function feature {
 }
 
 $vcpkgJson = @{
+    'name' = 'toplevel-spec';
     'default-features' = @( 'default-fail' );
     'features' = @{
         'default-fail' = feature 'vcpkg-fail-if-depended-upon';
@@ -28,6 +29,11 @@ $vcpkgJson = @{
             'name' = 'vcpkg-default-features-fail-require-other-feature';
             'default-features' = $False;
             'features' = @( 'success' )
+        };
+        'no-default-features-3' = feature @{
+            'name' = 'toplevel-spec';
+            'default-features' = $False;
+            'features' = @( 'no-default-features-1' )
         };
     }
 }
@@ -76,6 +82,75 @@ Write-Trace "test manifest features: no-default-features, features = [no-default
 Run-Vcpkg install @noDefaultFeatureArgs --x-feature=no-default-features-1
 Throw-IfFailed
 Write-Trace "test manifest features: no-default-features, features = [no-default-features-2]"
+Run-Vcpkg install @noDefaultFeatureArgs --x-feature=no-default-features-2
+Throw-IfFailed
+Write-Trace "test manifest features: no-default-features, features = [no-default-features-1,no-default-features-3]"
+Run-Vcpkg install @noDefaultFeatureArgs --x-feature=no-default-features-1 --x-feature=no-default-features-3
+Throw-IfFailed
+Write-Trace "test manifest features: no-default-features, features = [no-default-features-3]"
+Run-Vcpkg install @noDefaultFeatureArgs --x-feature=no-default-features-3
+Throw-IfFailed
+
+$vcpkgJson = @{
+    'default-features' = @( 'default-fail' );
+    'features' = @{
+        'default-fail' = feature 'vcpkg-fail-if-depended-upon';
+        'copied-feature' = feature 'vcpkg-empty-port'
+        'multiple-dep-1' = feature 'vcpkg-empty-port'
+        'multiple-dep-2' = feature 'vcpkg-empty-port'
+        'no-default-features-1' = feature @{
+            'name' = 'vcpkg-default-features-fail';
+            'default-features' = $False;
+        };
+        'no-default-features-2' = feature @{
+            'name' = 'vcpkg-default-features-fail-require-other-feature';
+            'default-features' = $False;
+            'features' = @( 'success' )
+        };
+    }
+}
+
+Set-Content -Path "$manifestDir/vcpkg.json" `
+    -Value (ConvertTo-Json -Depth 5 -InputObject $vcpkgJson) `
+    -Encoding Ascii -NoNewline
+
+Write-Trace "test nameless manifest features: default-features, features = []"
+Run-Vcpkg install @manifestDirArgs
+Throw-IfNotFailed
+
+Write-Trace "test nameless manifest features: no-default-features, features = []"
+Run-Vcpkg install @manifestDirArgs --x-no-default-features
+Throw-IfFailed
+Write-Trace "test nameless manifest features: default-features, features = [core]"
+Run-Vcpkg install @manifestDirArgs --x-feature=core
+Throw-IfFailed
+# test having both
+Write-Trace "test nameless manifest features: no-default-features, features = [core]"
+Run-Vcpkg install @manifestDirArgs --x-no-default-features --x-feature=core
+Throw-IfFailed
+
+Write-Trace "test nameless manifest features: no-default-features, features = [default-fail]"
+Run-Vcpkg install @manifestDirArgs --x-no-default-features --x-feature=default-fail
+Throw-IfNotFailed
+Write-Trace "test nameless manifest features: default-features, features = [core, default-fail]"
+Run-Vcpkg install @manifestDirArgs --x-feature=core --x-feature=default-fail
+Throw-IfNotFailed
+
+Write-Trace "test nameless manifest features: no-default-features, features = [copied-feature]"
+Run-Vcpkg install @noDefaultFeatureArgs --x-feature=copied-feature
+Throw-IfFailed
+Write-Trace "test nameless manifest features: no-default-features, features = [copied-feature, copied-feature]"
+Run-Vcpkg install @noDefaultFeatureArgs --x-feature=copied-feature --x-feature=copied-feature
+Throw-IfFailed
+
+Write-Trace "test nameless manifest features: no-default-features, features = [multiple-dep-1, multiple-dep-2]"
+Run-Vcpkg install @noDefaultFeatureArgs --x-feature=multiple-dep-1 --x-feature=multiple-dep-2
+Throw-IfFailed
+
+Write-Trace "test nameless manifest features: no-default-features, features = [no-default-features-1]"
+Run-Vcpkg install @noDefaultFeatureArgs --x-feature=no-default-features-1
+Throw-IfFailed
+Write-Trace "test nameless manifest features: no-default-features, features = [no-default-features-2]"
 Run-Vcpkg install @noDefaultFeatureArgs --x-feature=no-default-features-2
 Throw-IfFailed
 
