@@ -11,7 +11,6 @@ namespace vcpkg
     {
         virtual void print(Color c, StringView sv) = 0;
 
-        void println() { this->print(Color::none, "\n"); }
         void print(const LocalizedString& s) { this->print(Color::none, s); }
         void println(Color c, const LocalizedString& s)
         {
