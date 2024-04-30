@@ -215,7 +215,7 @@ namespace vcpkg
             print_msg.append(msgPortsNoDiff).append_raw('\n');
         }
 
-        msg::write_unlocalized_text(Color::none, print_msg);
+        msg::print(print_msg);
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 } // namespace vcpkg
