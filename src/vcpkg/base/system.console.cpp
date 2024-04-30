@@ -44,11 +44,11 @@ namespace vcpkg
     {
         std::lock_guard<std::mutex> lck{mtx};
 
-        for (auto&& line : lines)
+        for (auto&& [color, text] : lines)
         {
-            print_unlocked(line.first, line.second);
+            print_unlocked(color, text);
 
-            if (line.second.back() != '\n')
+            if (text.back() != '\n')
             {
                 print_unlocked(Color::none, "\n");
             }
