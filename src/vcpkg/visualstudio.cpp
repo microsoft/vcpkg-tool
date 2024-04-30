@@ -169,6 +169,7 @@ namespace vcpkg::VisualStudio
         // VS 2017 changed the installer such that cl.exe cannot be found by path navigation and
         // the env variable is only set when vcvars has been run. Therefore we close the safety valves.
         maybe_append_comntools("vs160comntools", "16.0", false);
+        maybe_append_comntools("VS170COMNTOOLS", "17.0", false);
         maybe_append_legacy_vs("vs140comntools", "Microsoft Visual Studio 14.0", "14.0");
         maybe_append_legacy_vs("vs120comntools", "Microsoft Visual Studio 12.0", "12.0");
 
