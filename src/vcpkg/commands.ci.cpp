@@ -289,8 +289,7 @@ namespace
         {
             return;
         }
-        auto output_data = output.extract_data();
-        fwrite(output_data.data(), 1, output_data.size(), stderr);
+        msg::write_unlocalized_text_to_stderr(Color::none, output);
     }
 
 } // unnamed namespace
@@ -529,8 +528,8 @@ namespace vcpkg
                            .append(msgTripletLabel)
                            .append_raw(' ')
                            .append_raw(target_triplet)
-                           .append_raw('\n'));
-            summary.print();
+                           .append_raw('\n')
+                           .append(summary.format()));
             print_regressions(summary.results,
                               split_specs->known,
                               cidata,

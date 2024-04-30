@@ -437,14 +437,16 @@ namespace vcpkg
             .append_raw(result.timing.to_string());
     }
 
-    void InstallSummary::print() const
+    LocalizedString InstallSummary::format() const
     {
-        msg::println(msgResultsHeader);
+        LocalizedString to_print;
+        to_print.append(msgResultsHeader).append_raw('\n');
 
         for (const SpecSummary& result : this->results)
         {
-            msg::println(format_result_row(result));
+            to_print.append(format_result_row(result)).append_raw('\n');
         }
+        to_print.append_raw('\n');
 
         std::map<Triplet, BuildResultCounts> summary;
         for (const SpecSummary& r : this->results)
@@ -452,27 +454,27 @@ namespace vcpkg
             summary[r.get_spec().triplet()].increment(r.build_result.value_or_exit(VCPKG_LINE_INFO).code);
         }
 
-        msg::println();
-
         for (auto&& entry : summary)
         {
-            entry.second.println(entry.first);
+            to_print.append(entry.second.format(entry.first));
         }
+        return to_print;
     }
 
     void InstallSummary::print_failed() const
     {
-        msg::println();
-        msg::println(msgResultsHeader);
+        auto output = LocalizedString::from_raw("\n");
+        output.append(msgResultsHeader).append_raw('\n');
 
         for (const SpecSummary& result : this->results)
         {
             if (result.build_result.value_or_exit(VCPKG_LINE_INFO).code != BuildResult::Succeeded)
             {
-                msg::println(format_result_row(result));
+                output.append(format_result_row(result)).append_raw('\n');
             }
         }
-        msg::println();
+        output.append_raw('\n');
+        msg::print(output);
     }
 
     bool InstallSummary::failed() const
@@ -1364,7 +1366,7 @@ namespace vcpkg
 
         if (keep_going == KeepGoing::Yes)
         {
-            summary.print();
+            msg::print(summary.format());
         }
 
         auto it_xunit = options.settings.find(SwitchXXUnit);

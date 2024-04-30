@@ -208,7 +208,7 @@ namespace vcpkg
 
         if (keep_going == KeepGoing::Yes)
         {
-            summary.print();
+            msg::print(summary.format());
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);
