@@ -13,10 +13,7 @@ using namespace vcpkg;
 
 namespace
 {
-    std::string format_name_only(StringView name)
-    {
-        return fmt::format("\t- {:<15}\n", name);
-    }
+    std::string format_name_only(StringView name) { return fmt::format("\t- {:<15}\n", name); }
 
     std::string format_name_and_version(StringView name, const Version& version)
     {

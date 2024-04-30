@@ -1441,8 +1441,11 @@ namespace vcpkg
     {
         if (count != 0)
         {
-            str.append_indent().append(
-                msgBuildResultSummaryLine, msg::build_result = msg::format(build_result_message), msg::count = count).append_raw('\n');
+            str.append_indent()
+                .append(msgBuildResultSummaryLine,
+                        msg::build_result = msg::format(build_result_message),
+                        msg::count = count)
+                .append_raw('\n');
         }
     }
 
@@ -1454,8 +1457,8 @@ namespace vcpkg
         append_build_result_summary_line(msgBuildResultBuildFailed, build_failed, str);
         append_build_result_summary_line(msgBuildResultPostBuildChecksFailed, post_build_checks_failed, str);
         append_build_result_summary_line(msgBuildResultFileConflicts, file_conflicts, str);
-        append_build_result_summary_line(msgBuildResultCascadeDueToMissingDependencies,
-                                        cascaded_due_to_missing_dependencies, str);
+        append_build_result_summary_line(
+            msgBuildResultCascadeDueToMissingDependencies, cascaded_due_to_missing_dependencies, str);
         append_build_result_summary_line(msgBuildResultExcluded, excluded, str);
         append_build_result_summary_line(msgBuildResultCacheMissing, cache_missing, str);
         append_build_result_summary_line(msgBuildResultDownloaded, downloaded, str);
