@@ -751,15 +751,21 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";AddVersionSuggestNewVersionScheme" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";AddVersionSuggestVersionDate" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Use the version scheme "{new_scheme}" rather than "{old_scheme}" in port "{package_name}".]A;Use --{option} to disable this check.]]></Val>
+          <Val><![CDATA[The version format of "{package_name}" uses "version-string", but the format is acceptable as a "version-date". If this format is actually intended to be an ISO 8601 date, change the format to "version-date", and rerun this command. Otherwise, disable this check by rerunning this command and adding --skip-version-format-check .]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Usare lo schema della versione "{new_scheme}" anziché "{old_scheme}" nella porta "{package_name}".]A;Usare --{option} per disabilitare questo controllo.]]></Val>
+            <Val><![CDATA[Il formato della versione di "{package_name}" utilizza "version-string", ma il formato è accettabile come "version-date". Se questo formato è effettivamente destinato a essere una data ISO 8601, modificare il formato in "version-date" ed eseguire di nuovo questo comando. In caso contrario, disabilitare questo controllo eseguendo di nuovo il comando e aggiungendo --skip-version-format-check.]]></Val>
           </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Use the version scheme "{new_scheme}" instead of "{old_scheme}" in port "{package_name}".]A;Use --{option} to disable this check.]]></Val>
-          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AddVersionSuggestVersionRelaxed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The version format of "{package_name}" uses "version-string", but the format is acceptable as a "version". If the versions for this port are orderable using relaxed-version rules, change the format to "version", and rerun this command. Relaxed-version rules order versions by each numeric component. Then, versions with dash suffixes are sorted lexcographically before. Plus'd build tags are ignored. Examples:]A;1.0 < 1.1-alpha < 1.1-b < 1.1 < 1.1.1 < 1.2+build = 1.2 < 2.0]A;Note in particular that dashed suffixes sort *before*, not after. 1.0-anything < 1.0]A;Note that this sort order is the same as chosen in Semantic Versioning (see https://semver.org), even though the actually semantic parts do not apply.]A;If versions for this port are not ordered by these rules, disable this check by rerunning this command and adding --skip-version-format-check .]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Il formato della versione di "{package_name}" utilizza "version-string", ma il formato è accettabile come "version". Se le versioni per questa porta sono ordinabili utilizzando regole di versione rilassata, impostare il formato su "versione" ed eseguire di nuovo il comando. Le regole di versione rilassata ordinano le versioni in base a ogni componente numerico. Quindi, le versioni con suffissi trattino vengono ordinate lessicalmente in precedenza. I tag di compilazione aggiunti vengono ignorati. Esempi:]A;1.0 < 1.1-alpha < 1.1-b < 1.1 < 1.1.1 < 1.2+build = 1.2 < 2.0]A;Si noti in particolare che i suffissi tratteggiati ordinano *prima*, non dopo. 1.0-anything < 1.0]A;Si noti che questo ordinamento è uguale a quello scelto nel controllo delle versioni semantiche (vedere https://semver.org), anche se le parti effettivamente semantiche non si applicano.]A;Se le versioni per questa porta non sono ordinate in base a queste regole, disabilitare questo controllo eseguendo di nuovo il comando e aggiungendo --skip-version-format-check.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>

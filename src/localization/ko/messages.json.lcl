@@ -751,15 +751,21 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";AddVersionSuggestNewVersionScheme" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";AddVersionSuggestVersionDate" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Use the version scheme "{new_scheme}" rather than "{old_scheme}" in port "{package_name}".]A;Use --{option} to disable this check.]]></Val>
+          <Val><![CDATA[The version format of "{package_name}" uses "version-string", but the format is acceptable as a "version-date". If this format is actually intended to be an ISO 8601 date, change the format to "version-date", and rerun this command. Otherwise, disable this check by rerunning this command and adding --skip-version-format-check .]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[포트 "{package_name}"에서 "{old_scheme}" 대신 "{new_scheme}" 버전 체계를 사용합니다.]A;--{option}을(를) 사용하여 이 검사를 사용하지 않도록 설정합니다.]]></Val>
+            <Val><![CDATA["{package_name}"의 버전 형식은 "version-string"을 사용하지만 형식은 "version-date"로 허용됩니다. 이 형식이 실제로 ISO 8601 날짜인 경우 형식을 "version-date"로 변경하고 이 명령을 다시 실행합니다. 그렇지 않으면 이 명령을 다시 실행하고 --skip-version-format-check를 추가하여 이 검사를 사용하지 않도록 설정합니다.]]></Val>
           </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Use the version scheme "{new_scheme}" instead of "{old_scheme}" in port "{package_name}".]A;Use --{option} to disable this check.]]></Val>
-          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AddVersionSuggestVersionRelaxed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The version format of "{package_name}" uses "version-string", but the format is acceptable as a "version". If the versions for this port are orderable using relaxed-version rules, change the format to "version", and rerun this command. Relaxed-version rules order versions by each numeric component. Then, versions with dash suffixes are sorted lexcographically before. Plus'd build tags are ignored. Examples:]A;1.0 < 1.1-alpha < 1.1-b < 1.1 < 1.1.1 < 1.2+build = 1.2 < 2.0]A;Note in particular that dashed suffixes sort *before*, not after. 1.0-anything < 1.0]A;Note that this sort order is the same as chosen in Semantic Versioning (see https://semver.org), even though the actually semantic parts do not apply.]A;If versions for this port are not ordered by these rules, disable this check by rerunning this command and adding --skip-version-format-check .]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA["{package_name}"의 버전 형식은 "version-string"을 사용하지만 형식은 "version"으로 허용됩니다. 이 포트의 버전이 완화 버전 규칙을 사용하여 정렬 가능한 경우 형식을 "version"으로 변경하고 이 명령을 다시 실행합니다. 완화된 버전 규칙은 각 숫자 구성 요소별로 버전을 정렬합니다. 그런 다음 대시 접미사가 있는 버전은 먼저 어휘순으로 정렬됩니다. 더하기 빌드 태그는 무시됩니다. 예:]A;1.0 < 1.1-alpha < 1.1-b < 1.1 < 1.1.1 < 1.2+build = 1.2 < 2.0]A;특히 대시 접미사는 이후가 아니라 *먼저* 정렬됩니다. 1.0-anything < 1.0]A;실제로 의미 체계 부분이 적용되지 않더라도 이 정렬 순서는 의미 체계 버전 관리에서 선택한 순서와 동일합니다(https://semver.org 참조).]A;이 포트의 버전이 이러한 규칙에 따라 정렬되지 않은 경우 이 명령을 다시 실행하고 --skip-version-format-check를 추가하여 이 검사를 사용하지 않도록 설정합니다.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>

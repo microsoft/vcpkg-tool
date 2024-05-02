@@ -751,15 +751,21 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";AddVersionSuggestNewVersionScheme" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";AddVersionSuggestVersionDate" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Use the version scheme "{new_scheme}" rather than "{old_scheme}" in port "{package_name}".]A;Use --{option} to disable this check.]]></Val>
+          <Val><![CDATA[The version format of "{package_name}" uses "version-string", but the format is acceptable as a "version-date". If this format is actually intended to be an ISO 8601 date, change the format to "version-date", and rerun this command. Otherwise, disable this check by rerunning this command and adding --skip-version-format-check .]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Verwenden Sie das Versionsschema „{new_scheme}“ anstelle von „{old_scheme}“ in Port „{package_name}“.]A;Verwenden Sie --{option}, um diese Überprüfung zu deaktivieren.]]></Val>
+            <Val><![CDATA[Das Versionsformat von „{package_name}“ verwendet „version-string“, das Format ist jedoch als „version-date“ zulässig. Wenn dieses Format tatsächlich als ISO 8601-Datum vorgesehen ist, ändern Sie das Format in „version-date“, und führen Sie diesen Befehl erneut aus. Deaktivieren Sie andernfalls diese Überprüfung, indem Sie diesen Befehl erneut ausführen und „--skip-version-format-check“ hinzufügen.]]></Val>
           </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Use the version scheme "{new_scheme}" instead of "{old_scheme}" in port "{package_name}".]A;Use --{option} to disable this check.]]></Val>
-          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AddVersionSuggestVersionRelaxed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The version format of "{package_name}" uses "version-string", but the format is acceptable as a "version". If the versions for this port are orderable using relaxed-version rules, change the format to "version", and rerun this command. Relaxed-version rules order versions by each numeric component. Then, versions with dash suffixes are sorted lexcographically before. Plus'd build tags are ignored. Examples:]A;1.0 < 1.1-alpha < 1.1-b < 1.1 < 1.1.1 < 1.2+build = 1.2 < 2.0]A;Note in particular that dashed suffixes sort *before*, not after. 1.0-anything < 1.0]A;Note that this sort order is the same as chosen in Semantic Versioning (see https://semver.org), even though the actually semantic parts do not apply.]A;If versions for this port are not ordered by these rules, disable this check by rerunning this command and adding --skip-version-format-check .]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Das Versionsformat von „{package_name}“ verwendet „version-string“, das Format ist jedoch als „version“ zulässig. Wenn die Versionen für diesen Port mithilfe von Regeln mit lockerer Versionen sortiert werden können, ändern Sie das Format in „version“, und führen Sie diesen Befehl erneut aus. Regeln mit lockerer Version sortieren Versionen nach jeder numerischen Komponente. Versionen mit Bindestrichsuffixen werden zuvor lexikographische sortiert. „Plus'd“-Buildtags werden ignoriert. Beispiele:]A;1.0 < 1.1-alpha < 1.1-b < 1.1 < 1.1.1 < 1.2+Build = 1.2 < 2.0]A;Beachten Sie insbesondere, dass Bindestrichsuffixen als *vor* und nicht als danach sortiert werden. 1.0-beliebig < 1.0]A;Beachten Sie, dass diese Sortierreihenfolge mit der in der semantischen Versionsverwaltung ausgewählten Sortierreihenfolge übereinstimmt (siehe https://semver.org), obwohl die tatsächlichen semantischen Teile nicht angewendet werden.]A;Wenn Versionen für diesen Port nicht nach diesen Regeln geordnet werden, deaktivieren Sie diese Überprüfung, indem Sie diesen Befehl erneut ausführen und „--skip-version-format-check“ hinzufügen.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
