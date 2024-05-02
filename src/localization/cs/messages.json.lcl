@@ -751,15 +751,21 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";AddVersionSuggestNewVersionScheme" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";AddVersionSuggestVersionDate" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Use the version scheme "{new_scheme}" rather than "{old_scheme}" in port "{package_name}".]A;Use --{option} to disable this check.]]></Val>
+          <Val><![CDATA[The version format of "{package_name}" uses "version-string", but the format is acceptable as a "version-date". If this format is actually intended to be an ISO 8601 date, change the format to "version-date", and rerun this command. Otherwise, disable this check by rerunning this command and adding --skip-version-format-check .]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Na portu {package_name} použijte schéma verze {new_scheme} místo {old_scheme}.]A;Pokud chcete tuto kontrolu zakázat, použijte --{option}.]]></Val>
+            <Val><![CDATA[Formát verze {package_name} používá version-string, ale formát je přijatelný jako version-date. Pokud má být tento formát ve skutečnosti datem ISO 8601, změňte formát na version-date a spusťte tento příkaz znovu. Jinak tuto kontrolu zakažte opětovným spuštěním tohoto příkazu a přidáním příkazu --skip-version-format-check.]]></Val>
           </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Use the version scheme "{new_scheme}" instead of "{old_scheme}" in port "{package_name}".]A;Use --{option} to disable this check.]]></Val>
-          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AddVersionSuggestVersionRelaxed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The version format of "{package_name}" uses "version-string", but the format is acceptable as a "version". If the versions for this port are orderable using relaxed-version rules, change the format to "version", and rerun this command. Relaxed-version rules order versions by each numeric component. Then, versions with dash suffixes are sorted lexcographically before. Plus'd build tags are ignored. Examples:]A;1.0 < 1.1-alpha < 1.1-b < 1.1 < 1.1.1 < 1.2+build = 1.2 < 2.0]A;Note in particular that dashed suffixes sort *before*, not after. 1.0-anything < 1.0]A;Note that this sort order is the same as chosen in Semantic Versioning (see https://semver.org), even though the actually semantic parts do not apply.]A;If versions for this port are not ordered by these rules, disable this check by rerunning this command and adding --skip-version-format-check .]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Formát verze {package_name} používá version-string, ale formát je přijatelný jako version. Pokud je možné verze pro tento port objednat pomocí pravidel relaxed-version, změňte formát na version a spusťte tento příkaz znovu. Pravidla relaxed-version seřadí verze podle jednotlivých číselných komponent. Verze s příponami pomlček se pak seřadí lexikograficky před. Značky sestavení plus se ignorují. Příklady:]A;1.0 < 1.1-alpha < 1.1-b < 1.1 < 1.1.1 < 1.2+build = 1.2 < 2.0]A;Všimněte si zejména, že přípony s pomlčkami řadí *před*, ne po. 1.0-anything < 1.0]A;Všimněte si, že toto pořadí je stejné jako u sémantické správy verzí (viz https://semver.org), i když se skutečně sémantické části nepoužívají.]A;Pokud verze pro tento port nejsou seřazené podle těchto pravidel, zakažte tuto kontrolu opětovným spuštěním tohoto příkazu a přidáním --skip-version-format-check .]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>

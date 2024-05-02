@@ -751,15 +751,21 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";AddVersionSuggestNewVersionScheme" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";AddVersionSuggestVersionDate" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Use the version scheme "{new_scheme}" rather than "{old_scheme}" in port "{package_name}".]A;Use --{option} to disable this check.]]></Val>
+          <Val><![CDATA[The version format of "{package_name}" uses "version-string", but the format is acceptable as a "version-date". If this format is actually intended to be an ISO 8601 date, change the format to "version-date", and rerun this command. Otherwise, disable this check by rerunning this command and adding --skip-version-format-check .]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[在端口“{package_name}”中使用版本方案“{new_scheme}”而不是“{old_scheme}”。]A;使用 --{option} 来禁用此检查。]]></Val>
+            <Val><![CDATA[“{package_name}”的版本格式使用了 “version-string”，但可以接受该格式作为 “version-date”。如果此格式实际上旨在表示 ISO 8601 日期，请将格式更改为 “version-date”，然后重新运行此命令。否则，请通过重新运行此命令并添加 --skip-version-format-check 来禁用此检查。]]></Val>
           </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Use the version scheme "{new_scheme}" instead of "{old_scheme}" in port "{package_name}".]A;Use --{option} to disable this check.]]></Val>
-          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AddVersionSuggestVersionRelaxed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The version format of "{package_name}" uses "version-string", but the format is acceptable as a "version". If the versions for this port are orderable using relaxed-version rules, change the format to "version", and rerun this command. Relaxed-version rules order versions by each numeric component. Then, versions with dash suffixes are sorted lexcographically before. Plus'd build tags are ignored. Examples:]A;1.0 < 1.1-alpha < 1.1-b < 1.1 < 1.1.1 < 1.2+build = 1.2 < 2.0]A;Note in particular that dashed suffixes sort *before*, not after. 1.0-anything < 1.0]A;Note that this sort order is the same as chosen in Semantic Versioning (see https://semver.org), even though the actually semantic parts do not apply.]A;If versions for this port are not ordered by these rules, disable this check by rerunning this command and adding --skip-version-format-check .]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[“{package_name}”的版本格式使用了 “version-string”，但可以接受该格式作为 “version”。如果此端口的版本可使用宽松版本规则进行排序，请将格式更改为 “version”，然后重新运行此命令。宽松版本规则按每个数字组件对版本进行排序。然后，具有短划线后缀的版本按字典顺序排在前面。加号内部版本标记将被忽略。示例:]A;1.0 < 1.1-alpha < 1.1-b < 1.1 < 1.1.1 < 1.2+内部版本 = 1.2 < 2.0]A;请特别注意，短划线后缀排在 *前面*，而不是后面。1.0-任何内容 < 1.0]A;请注意，此排序顺序与语义版本控制中选择的排序顺序相同(请参阅 https://semver.org)，即使语义部分实际上并不适用。]A;如果此端口的版本未按这些规则排序，请通过重新运行此命令并添加 --skip-version-format-check 来禁用此检查。]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
