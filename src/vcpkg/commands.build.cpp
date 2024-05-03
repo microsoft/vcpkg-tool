@@ -215,19 +215,6 @@ namespace vcpkg
         }
     }
 
-    static std::remove_const_t<decltype(ALL_POLICIES)> generate_all_policies()
-    {
-        std::remove_const_t<decltype(ALL_POLICIES)> res{};
-        for (size_t i = 0; i < res.size(); ++i)
-        {
-            res[i] = static_cast<BuildPolicy>(i);
-        }
-
-        return res;
-    }
-
-    decltype(ALL_POLICIES) ALL_POLICIES = generate_all_policies();
-
     StringLiteral to_string_view(BuildPolicy policy)
     {
         switch (policy)
@@ -245,6 +232,21 @@ namespace vcpkg
             case BuildPolicy::SKIP_ARCHITECTURE_CHECK: return PolicySkipArchitectureCheck;
             case BuildPolicy::CMAKE_HELPER_PORT: return PolicyCMakeHelperPort;
             case BuildPolicy::SKIP_ABSOLUTE_PATHS_CHECK: return PolicySkipAbsolutePathsCheck;
+            case BuildPolicy::SKIP_ALL_POST_BUILD_CHECKS: return PolicySkipAllPostBuildChecks;
+            case BuildPolicy::SKIP_APPCONTAINER_CHECK: return PolicySkipAppcontainerCheck;
+            case BuildPolicy::SKIP_CRT_LINKAGE_CHECK: return PolicySkipCrtLinkageCheck;
+            case BuildPolicy::SKIP_MISPLACED_CMAKE_FILES_CHECK: return PolicySkipMisplacedCMakeFilesCheck;
+            case BuildPolicy::SKIP_LIB_CMAKE_MERGE_CHECK: return PolicySkipLibCMakeMergeCheck;
+            case BuildPolicy::ALLOW_DLLS_IN_LIB: return PolicyAllowDllsInLib;
+            case BuildPolicy::SKIP_MISPLACED_REGULAR_FILES_CHECK: return PolicySkipMisplacedRegularFilesCheck;
+            case BuildPolicy::SKIP_COPYRIGHT_CHECK: return PolicySkipCopyrightCheck;
+            case BuildPolicy::ALLOW_KERNEL32_FROM_XBOX: return PolicyAllowKernel32FromXBox;
+            case BuildPolicy::ALLOW_EXES_IN_BIN: return PolicyAllowExesInBin;
+            case BuildPolicy::SKIP_USAGE_INSTALL_CHECK: return PolicySkipUsageInstallCheck;
+            case BuildPolicy::ALLOW_EMPTY_FOLDERS: return PolicyAllowEmptyFolders;
+            case BuildPolicy::ALLOW_DEBUG_INCLUDE: return PolicyAllowDebugInclude;
+            case BuildPolicy::ALLOW_DEBUG_SHARE: return PolicyAllowDebugShare;
+            case BuildPolicy::SKIP_PKGCONFIG_CHECK: return PolicySkipPkgConfigCheck;
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
@@ -267,6 +269,22 @@ namespace vcpkg
             case BuildPolicy::SKIP_ARCHITECTURE_CHECK: return CMakeVariablePolicySkipArchitectureCheck;
             case BuildPolicy::CMAKE_HELPER_PORT: return CMakeVariablePolicyCMakeHelperPort;
             case BuildPolicy::SKIP_ABSOLUTE_PATHS_CHECK: return CMakeVariablePolicySkipAbsolutePathsCheck;
+            case BuildPolicy::SKIP_ALL_POST_BUILD_CHECKS: return CMakeVariablePolicySkipAllPostBuildChecks;
+            case BuildPolicy::SKIP_APPCONTAINER_CHECK: return CMakeVariablePolicySkipAppcontainerCheck;
+            case BuildPolicy::SKIP_CRT_LINKAGE_CHECK: return CMakeVariablePolicySkipCrtLinkageCheck;
+            case BuildPolicy::SKIP_MISPLACED_CMAKE_FILES_CHECK: return CMakeVariablePolicySkipMisplacedCMakeFilesCheck;
+            case BuildPolicy::SKIP_LIB_CMAKE_MERGE_CHECK: return CMakeVariablePolicySkipLibCMakeMergeCheck;
+            case BuildPolicy::ALLOW_DLLS_IN_LIB: return CMakeVariablePolicyAllowDllsInLib;
+            case BuildPolicy::SKIP_MISPLACED_REGULAR_FILES_CHECK:
+                return CMakeVariablePolicySkipMisplacedRegularFilesCheck;
+            case BuildPolicy::SKIP_COPYRIGHT_CHECK: return CMakeVariablePolicySkipCopyrightCheck;
+            case BuildPolicy::ALLOW_KERNEL32_FROM_XBOX: return CMakeVariablePolicyAllowKernel32FromXBox;
+            case BuildPolicy::ALLOW_EXES_IN_BIN: return CMakeVariablePolicyAllowExesInBin;
+            case BuildPolicy::SKIP_USAGE_INSTALL_CHECK: return CMakeVariablePolicySkipUsageInstallCheck;
+            case BuildPolicy::ALLOW_EMPTY_FOLDERS: return CMakeVariablePolicyAllowEmptyFolders;
+            case BuildPolicy::ALLOW_DEBUG_INCLUDE: return CMakeVariablePolicyAllowDebugInclude;
+            case BuildPolicy::ALLOW_DEBUG_SHARE: return CMakeVariablePolicyAllowDebugShare;
+            case BuildPolicy::SKIP_PKGCONFIG_CHECK: return CMakeVariablePolicySkipPkgConfigCheck;
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
@@ -1744,8 +1762,9 @@ namespace vcpkg
         }
 
         std::unordered_map<BuildPolicy, bool> policies;
-        for (const auto& policy : ALL_POLICIES)
+        for (size_t policy_idx = 0; policy_idx < static_cast<size_t>(BuildPolicy::COUNT); ++policy_idx)
         {
+            auto policy = static_cast<BuildPolicy>(policy_idx);
             const auto setting = parser.optional_field_or_empty(to_string_view(policy));
             if (setting.empty()) continue;
             if (setting == "enabled")
@@ -1753,10 +1772,10 @@ namespace vcpkg
             else if (setting == "disabled")
                 policies.emplace(policy, false);
             else
-                Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                               msgUnknownPolicySetting,
-                                               msg::option = setting,
-                                               msg::value = to_string_view(policy));
+                Checks::msg_exit_with_error(VCPKG_LINE_INFO,
+                                            msgUnknownPolicySetting,
+                                            msg::value = setting,
+                                            msg::cmake_var = to_cmake_variable(policy));
         }
 
         auto maybe_error = parser.error();
@@ -1830,7 +1849,7 @@ namespace vcpkg
         // Note that this must come after CMakeVariableEnvPassthrough since the leading values come from there
         if (auto value = Util::value_if_set_and_nonempty(cmakevars, CMakeVariableEnvPassthroughUntracked))
         {
-            Util::Vectors::append(&passthrough_env_vars, Strings::split(*value, ';'));
+            Util::Vectors::append(passthrough_env_vars, Strings::split(*value, ';'));
         }
 
         Util::assign_if_set_and_nonempty(public_abi_override, cmakevars, CMakeVariablePublicAbiOverride);

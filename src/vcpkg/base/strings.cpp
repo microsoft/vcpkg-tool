@@ -14,8 +14,6 @@
 #include <string>
 #include <vector>
 
-#include <fmt/compile.h>
-
 using namespace vcpkg;
 
 namespace vcpkg::Strings::details

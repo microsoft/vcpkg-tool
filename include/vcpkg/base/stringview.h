@@ -6,7 +6,6 @@
 #include <stddef.h>
 #include <string.h>
 
-#include <array>
 #include <iterator>
 #include <limits>
 #include <string>

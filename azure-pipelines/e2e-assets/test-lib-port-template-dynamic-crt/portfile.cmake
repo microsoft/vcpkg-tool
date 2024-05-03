@@ -10,3 +10,6 @@ file(COPY "${CMAKE_CURRENT_LIST_DIR}/release/test_lib.lib" DESTINATION "${CURREN
 file(COPY "${CMAKE_CURRENT_LIST_DIR}/both/both_lib.lib" DESTINATION "${CURRENT_PACKAGES_DIR}/lib")
 file(COPY "${CMAKE_CURRENT_LIST_DIR}/test.h" DESTINATION "${CURRENT_PACKAGES_DIR}/include")
 file(TOUCH "${CURRENT_PACKAGES_DIR}/share/${PORT}/copyright")
+if (policy-skip-crt-linkage-check IN_LIST FEATURES)
+	set(VCPKG_POLICY_SKIP_CRT_LINKAGE_CHECK enabled)
+endif()

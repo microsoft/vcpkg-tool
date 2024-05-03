@@ -1,0 +1,8 @@
+set(VCPKG_POLICY_EMPTY_INCLUDE_FOLDER enabled)
+file(MAKE_DIRECTORY "${CURRENT_PACKAGES_DIR}/share/${PORT}")
+file(WRITE "${CURRENT_PACKAGES_DIR}/share/${PORT}/copyright" "this is some license text")
+file(MAKE_DIRECTORY "${CURRENT_PACKAGES_DIR}/empty-directory")
+file(MAKE_DIRECTORY "${CURRENT_PACKAGES_DIR}/root/empty-inner-directory")
+if (policy IN_LIST FEATURES)
+    set(VCPKG_POLICY_ALLOW_EMPTY_FOLDERS enabled)
+endif()

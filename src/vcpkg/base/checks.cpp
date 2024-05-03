@@ -146,6 +146,7 @@ namespace vcpkg
     [[noreturn]] void Checks::msg_exit_maybe_upgrade(const LineInfo& line_info, const LocalizedString& error_message)
     {
         msg::write_unlocalized_text_to_stderr(Color::error, error_message);
+        msg::write_unlocalized_text_to_stderr(Color::error, "\n");
         display_upgrade_message();
         exit_fail(line_info);
     }
