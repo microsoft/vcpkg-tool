@@ -341,12 +341,16 @@ namespace vcpkg
         if (plan_type == InstallPlanType::BUILD_AND_INSTALL)
         {
             std::unique_ptr<BinaryControlFile> bcf;
-            if (binary_cache.is_restored(action))
+            if (Optional<CacheStatus> status = binary_cache.cache_status(action);
+                status.has_value() && status.get()->is_restored())
             {
                 auto maybe_bcf = Paragraphs::try_load_cached_package(
                     fs, action.package_dir.value_or_exit(VCPKG_LINE_INFO), action.spec);
                 bcf = std::make_unique<BinaryControlFile>(std::move(maybe_bcf).value_or_exit(VCPKG_LINE_INFO));
                 all_dependencies_satisfied = true;
+
+                /// Write back the cached packages to other write-capable binary caches.
+                binary_cache.push_success(build_options.clean_packages, action);
             }
             else if (build_options.build_missing == BuildMissing::No)
             {
