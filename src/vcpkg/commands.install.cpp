@@ -981,7 +981,7 @@ namespace vcpkg
                 msg.append_indent()
                     .append_raw("find_path(")
                     .append_raw(name)
-                    .append_raw("_INCLUDE_DIRS \")")
+                    .append_raw("_INCLUDE_DIRS \"")
                     .append_raw(header_path)
                     .append_raw("\")\n");
                 msg.append_indent()
