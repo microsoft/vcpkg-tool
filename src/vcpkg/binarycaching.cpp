@@ -951,14 +951,37 @@ namespace
         static constexpr StringLiteral m_accept_header = "Accept: application/json;api-version=6.0-preview.1";
     };
 
+    template<class ResultOnSuccessType>
+    static ExpectedL<ResultOnSuccessType> flatten_generic(const ExpectedL<ExitCodeAndOutput>& maybe_exit,
+                                                          StringView tool_name,
+                                                          ResultOnSuccessType result_on_success)
+    {
+        if (auto exit = maybe_exit.get())
+        {
+            if (exit->exit_code == 0)
+            {
+                return {result_on_success};
+            }
+
+            return {msg::format_error(
+                        msgProgramReturnedNonzeroExitCode, msg::tool_name = tool_name, msg::exit_code = exit->exit_code)
+                        .append_raw('\n')
+                        .append_raw(exit->output)};
+        }
+
+        return {msg::format_error(msgLaunchingProgramFailed, msg::tool_name = tool_name)
+                    .append_raw(' ')
+                    .append_raw(maybe_exit.error().to_string())};
+    }
+
     struct IObjectStorageTool
     {
         virtual ~IObjectStorageTool() = default;
 
         virtual LocalizedString restored_message(size_t count,
                                                  std::chrono::high_resolution_clock::duration elapsed) const = 0;
-        virtual ExpectedL<Unit> stat(StringView url) const = 0;
-        virtual ExpectedL<Unit> download_file(StringView object, const Path& archive) const = 0;
+        virtual ExpectedL<CacheAvailability> stat(StringView url) const = 0;
+        virtual ExpectedL<RestoreResult> download_file(StringView object, const Path& archive) const = 0;
         virtual ExpectedL<Unit> upload_file(StringView object, const Path& archive) const = 0;
     };
 
@@ -990,9 +1013,12 @@ namespace
                 const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
                 auto tmp = make_temp_archive_path(m_buildtrees, action.spec);
                 auto res = m_tool->download_file(make_object_path(m_prefix, abi), tmp);
-                if (res)
+                if (auto cache_result = res.get())
                 {
-                    out_zip_paths[idx].emplace(std::move(tmp), RemoveWhen::always);
+                    if (*cache_result == RestoreResult::restored)
+                    {
+                        out_zip_paths[idx].emplace(std::move(tmp), RemoveWhen::always);
+                    }
                 }
                 else
                 {
@@ -1007,9 +1033,10 @@ namespace
             {
                 auto&& action = *actions[idx];
                 const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
-                if (m_tool->stat(make_object_path(m_prefix, abi)))
+                auto maybe_res = m_tool->stat(make_object_path(m_prefix, abi));
+                if (auto res = maybe_res.get())
                 {
-                    cache_status[idx] = CacheAvailability::available;
+                    cache_status[idx] = *res;
                 }
                 else
                 {
@@ -1077,19 +1104,21 @@ namespace
             return msg::format(msgRestoredPackagesFromGCS, msg::count = count, msg::elapsed = ElapsedTime(elapsed));
         }
 
-        ExpectedL<Unit> stat(StringView url) const override
+        ExpectedL<CacheAvailability> stat(StringView url) const override
         {
-            return flatten(
+            return flatten_generic(
                 cmd_execute_and_capture_output(Command{m_tool}.string_arg("-q").string_arg("stat").string_arg(url)),
-                Tools::GSUTIL);
+                Tools::GSUTIL,
+                CacheAvailability::available);
         }
 
-        ExpectedL<Unit> download_file(StringView object, const Path& archive) const override
+        ExpectedL<RestoreResult> download_file(StringView object, const Path& archive) const override
         {
-            return flatten(
+            return flatten_generic(
                 cmd_execute_and_capture_output(
                     Command{m_tool}.string_arg("-q").string_arg("cp").string_arg(object).string_arg(archive)),
-                Tools::GSUTIL);
+                Tools::GSUTIL,
+                RestoreResult::restored);
         }
 
         ExpectedL<Unit> upload_file(StringView object, const Path& archive) const override
@@ -1116,7 +1145,7 @@ namespace
             return msg::format(msgRestoredPackagesFromAWS, msg::count = count, msg::elapsed = ElapsedTime(elapsed));
         }
 
-        ExpectedL<Unit> stat(StringView url) const override
+        ExpectedL<CacheAvailability> stat(StringView url) const override
         {
             auto cmd = Command{m_tool}.string_arg("s3").string_arg("ls").string_arg(url);
             if (m_no_sign_request)
@@ -1124,13 +1153,23 @@ namespace
                 cmd.string_arg("--no-sign-request");
             }
 
-            return flatten(cmd_execute_and_capture_output(cmd), Tools::AWSCLI);
+            return flatten_generic(cmd_execute_and_capture_output(cmd), Tools::AWSCLI, CacheAvailability::available);
         }
 
-        ExpectedL<Unit> download_file(StringView object, const Path& archive) const override
+        ExpectedL<RestoreResult> download_file(StringView object, const Path& archive) const override
         {
             auto r = stat(object);
-            if (!r) return r;
+            if (auto stat_result = r.get())
+            {
+                if (*stat_result != CacheAvailability::available)
+                {
+                    return RestoreResult::unavailable;
+                }
+            }
+            else
+            {
+                return r.error();
+            }
 
             auto cmd = Command{m_tool}.string_arg("s3").string_arg("cp").string_arg(object).string_arg(archive);
             if (m_no_sign_request)
@@ -1138,7 +1177,7 @@ namespace
                 cmd.string_arg("--no-sign-request");
             }
 
-            return flatten(cmd_execute_and_capture_output(cmd), Tools::AWSCLI);
+            return flatten_generic(cmd_execute_and_capture_output(cmd), Tools::AWSCLI, RestoreResult::restored);
         }
 
         ExpectedL<Unit> upload_file(StringView object, const Path& archive) const override
@@ -1165,17 +1204,19 @@ namespace
             return msg::format(msgRestoredPackagesFromCOS, msg::count = count, msg::elapsed = ElapsedTime(elapsed));
         }
 
-        ExpectedL<Unit> stat(StringView url) const override
+        ExpectedL<CacheAvailability> stat(StringView url) const override
         {
-            return flatten(cmd_execute_and_capture_output(Command{m_tool}.string_arg("ls").string_arg(url)),
-                           Tools::COSCLI);
+            return flatten_generic(cmd_execute_and_capture_output(Command{m_tool}.string_arg("ls").string_arg(url)),
+                                   Tools::COSCLI,
+                                   CacheAvailability::available);
         }
 
-        ExpectedL<Unit> download_file(StringView object, const Path& archive) const override
+        ExpectedL<RestoreResult> download_file(StringView object, const Path& archive) const override
         {
-            return flatten(
+            return flatten_generic(
                 cmd_execute_and_capture_output(Command{m_tool}.string_arg("cp").string_arg(object).string_arg(archive)),
-                Tools::COSCLI);
+                Tools::COSCLI,
+                RestoreResult::restored);
         }
 
         ExpectedL<Unit> upload_file(StringView object, const Path& archive) const override
