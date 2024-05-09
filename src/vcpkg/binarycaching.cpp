@@ -1153,7 +1153,28 @@ namespace
                 cmd.string_arg("--no-sign-request");
             }
 
-            return flatten_generic(cmd_execute_and_capture_output(cmd), Tools::AWSCLI, CacheAvailability::available);
+            auto maybe_exit = cmd_execute_and_capture_output(cmd);
+
+            // When the file is not found, "aws s3 ls" prints nothing, and returns exit code 1.
+            // flatten_generic() would treat this as an error, but we want to treat it as a (silent) cache miss instead,
+            // so we handle this special case before calling flatten_generic().
+            // See https://github.com/aws/aws-cli/issues/5544 for the related aws-cli bug report.
+            if (auto exit = maybe_exit.get())
+            {
+                // We want to return CacheAvailability::unavailable even if aws-cli starts to return exit code 0 with an
+                // empty output when the file is missing. This way, both the current and possible future behavior of
+                // aws-cli is covered.
+                if (exit->exit_code == 0 || exit->exit_code == 1)
+                {
+                    if (Strings::trim(exit->output) == "")
+                    {
+                        return CacheAvailability::unavailable;
+                    }
+                }
+            }
+
+            // In the non-special case, simply let flatten_generic() do its job.
+            return flatten_generic(maybe_exit, Tools::AWSCLI, CacheAvailability::available);
         }
 
         ExpectedL<RestoreResult> download_file(StringView object, const Path& archive) const override
