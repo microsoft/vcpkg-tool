@@ -1543,7 +1543,7 @@ namespace vcpkg
             string_paths.push_back(path_preferred.native());
             string_paths.push_back(path.generic_u8string());
 #else
-            string_paths.push_back(paths.native());
+            string_paths.push_back(path.native());
 #endif
         }
 
