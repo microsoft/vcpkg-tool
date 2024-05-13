@@ -518,6 +518,7 @@ namespace vcpkg
             return LintStatus::PROBLEM_DETECTED;
         }
 
+        Util::sort(src_relative_dirs);
         auto& build_dir_relative_dirs = src_relative_dirs;
         add_prefix_to_all(build_dir_relative_dirs, "src");
         std::vector<Path> build_dir_relative_copyright_files;
@@ -1567,6 +1568,7 @@ namespace vcpkg
                     }
                     else
                     {
+                        std::lock_guard lock{mtx};
                         failing_files.push_back(file);
                     }
                 }
