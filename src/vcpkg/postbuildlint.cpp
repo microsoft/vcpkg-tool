@@ -1877,6 +1877,7 @@ namespace vcpkg
             !policies.is_enabled(BuildPolicy::SKIP_ABSOLUTE_PATHS_CHECK))
         {
             relative_all_files = fs.get_regular_files_recursive_lexically_proximate(package_dir, IgnoreErrors{});
+            Util::sort(relative_all_files);
         }
 
         if (!policies.is_enabled(BuildPolicy::SKIP_PKGCONFIG_CHECK))
