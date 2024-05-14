@@ -43,7 +43,7 @@ TEST_CASE ("spdx maximum serialization", "[spdx]")
   "name": "zlib:arm-uwp@1.0#5 ABIHASH",
   "creationInfo": {
     "creators": [
-      "Tool: vcpkg-unknownhash"
+      "Tool: vcpkg-2999-12-31-unknownhash"
     ],
     "created": "now"
   },
@@ -197,7 +197,7 @@ TEST_CASE ("spdx minimum serialization", "[spdx]")
   "name": "zlib:arm-uwp@1.0 deadbeef",
   "creationInfo": {
     "creators": [
-      "Tool: vcpkg-unknownhash"
+      "Tool: vcpkg-2999-12-31-unknownhash"
     ],
     "created": "now+1"
   },
@@ -338,7 +338,7 @@ TEST_CASE ("spdx concat resources", "[spdx]")
   "name": "zlib:arm-uwp@1.0 deadbeef",
   "creationInfo": {
     "creators": [
-      "Tool: vcpkg-unknownhash"
+      "Tool: vcpkg-2999-12-31-unknownhash"
     ],
     "created": "now+1"
   },
