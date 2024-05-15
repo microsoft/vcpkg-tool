@@ -1049,8 +1049,9 @@ namespace
         {
             if (!request.zip_path) return 0;
             const auto& zip_path = *request.zip_path.get();
-            std::atomic_size_t upload_count = 0;
-            parallel_for_each(m_prefixes, [&](std::string const& prefix) {
+            size_t upload_count = 0;
+            for (const auto& prefix : m_prefixes)
+            {
                 auto res = m_tool->upload_file(make_object_path(prefix, request.package_abi), zip_path);
                 if (res)
                 {
@@ -1060,7 +1061,7 @@ namespace
                 {
                     msg_sink.println_warning(res.error());
                 }
-            });
+            }
             return upload_count;
         }
 
