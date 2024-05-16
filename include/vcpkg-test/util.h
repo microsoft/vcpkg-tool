@@ -199,5 +199,5 @@ namespace vcpkg::Test
 #define REQUIRE_LINES(a, b)                                                                                            \
     do                                                                                                                 \
     {                                                                                                                  \
-        if (auto delta = ::vcpkg::Test::diff_lines((a), (b))) FAIL(*delta.get());                                      \
+        if (auto delta = ::vcpkg::Test::diff_lines((b), (a))) FAIL(*delta.get());                                      \
     } while (0)

@@ -2,6 +2,7 @@
 
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/chrono.h>
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/parallel-algorithms.h>
 #include <vcpkg/base/parse.h>
@@ -473,6 +474,67 @@ namespace vcpkg
         return *this;
     }
 
+    Command& Command::raw_arg(StringView s) &
+    {
+        if (!buf.empty())
+        {
+            buf.push_back(' ');
+        }
+
+        buf.append(s.data(), s.size());
+        return *this;
+    }
+
+    Command& Command::forwarded_args(View<std::string> args) &
+    {
+        for (auto&& arg : args)
+        {
+            string_arg(arg);
+        }
+
+        return *this;
+    }
+
+    bool Command::try_append(const Command& other)
+    {
+        if (buf.size() > maximum_allowed)
+        {
+            return false;
+        }
+
+        if (other.buf.empty())
+        {
+            return true;
+        }
+
+        if (buf.empty())
+        {
+            if (other.buf.size() > maximum_allowed)
+            {
+                return false;
+            }
+
+            buf = other.buf;
+            return true;
+        }
+
+        size_t leftover = maximum_allowed - buf.size();
+        if (leftover == 0)
+        {
+            return false;
+        }
+
+        --leftover; // for the space
+        if (other.buf.size() > leftover)
+        {
+            return false;
+        }
+
+        buf.push_back(' ');
+        buf.append(other.buf);
+        return true;
+    }
+
 #if defined(_WIN32)
     Environment get_modified_clean_environment(const std::unordered_map<std::string, std::string>& extra_env,
                                                StringView prepend_to_path)
@@ -581,7 +643,7 @@ namespace vcpkg
             "GXDKLatest",
         };
 
-        const Optional<std::string> keep_vars = get_environment_variable("VCPKG_KEEP_ENV_VARS");
+        const Optional<std::string> keep_vars = get_environment_variable(EnvironmentVariableVcpkgKeepEnvVars);
         const auto k = keep_vars.get();
 
         if (k && !k->empty())
@@ -590,11 +652,11 @@ namespace vcpkg
 
             for (auto&& var : vars)
             {
-                if (Strings::case_insensitive_ascii_equals(var, "PATH"))
+                if (Strings::case_insensitive_ascii_equals(var, EnvironmentVariablePath))
                 {
                     new_path.assign(prepend_to_path.data(), prepend_to_path.size());
                     if (!new_path.empty()) new_path.push_back(';');
-                    new_path.append(get_environment_variable("PATH").value_or(""));
+                    new_path.append(get_environment_variable(EnvironmentVariablePath).value_or(""));
                 }
                 else
                 {
@@ -614,21 +676,22 @@ namespace vcpkg
             env.add_entry(env_string, *v);
         }
 
-        if (extra_env.find("PATH") != extra_env.end())
+        const auto path_iter = extra_env.find(EnvironmentVariablePath.to_string());
+        if (path_iter != extra_env.end())
         {
             new_path.push_back(';');
-            new_path += extra_env.find("PATH")->second;
+            new_path += path_iter->second;
         }
-        env.add_entry("PATH", new_path);
+        env.add_entry(EnvironmentVariablePath, new_path);
         // NOTE: we support VS's without the english language pack,
         // but we still want to default to english just in case your specific
         // non-standard build system doesn't support non-english
-        env.add_entry("VSLANG", "1033");
-        env.add_entry("VSCMD_SKIP_SENDTELEMETRY", "1");
+        env.add_entry(EnvironmentVariableVsLang, "1033");
+        env.add_entry(EnvironmentVariableVSCmdSkipSendTelemetry, "1");
 
         for (const auto& item : extra_env)
         {
-            if (item.first == "PATH") continue;
+            if (item.first == EnvironmentVariablePath) continue;
             env.add_entry(item.first, item.second);
         }
 
@@ -642,8 +705,10 @@ namespace vcpkg
         if (!prepend_to_path.empty())
         {
             env.add_entry(
-                "PATH",
-                Strings::concat(prepend_to_path, ':', get_environment_variable("PATH").value_or_exit(VCPKG_LINE_INFO)));
+                EnvironmentVariablePath,
+                Strings::concat(prepend_to_path,
+                                ':',
+                                get_environment_variable(EnvironmentVariablePath).value_or_exit(VCPKG_LINE_INFO)));
         }
 
         return env;

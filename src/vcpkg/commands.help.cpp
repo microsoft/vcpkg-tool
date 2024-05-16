@@ -23,6 +23,13 @@ namespace
 
     LocalizedString help_topics();
 
+    void help_topic_valid_triplet(const TripletDatabase& database)
+    {
+        LocalizedString result;
+        append_help_topic_valid_triplet(result, database);
+        msg::print(result);
+    }
+
     void help_topic_versioning(const VcpkgPaths&)
     {
         HelpTableFormatter tbl;
@@ -114,14 +121,13 @@ namespace vcpkg
         nullptr,
     };
 
-    void help_topic_valid_triplet(const TripletDatabase& database)
+    void append_help_topic_valid_triplet(LocalizedString& result, const TripletDatabase& database)
     {
         std::map<StringView, std::vector<const TripletFile*>> triplets_per_location;
         Util::group_by(database.available_triplets,
                        &triplets_per_location,
                        [](const TripletFile& triplet_file) -> StringView { return triplet_file.location; });
 
-        LocalizedString result;
         result.append(msgBuiltInTriplets).append_raw('\n');
         for (auto* triplet : triplets_per_location[database.default_triplet_directory])
         {
@@ -147,7 +153,6 @@ namespace vcpkg
 
         result.append(msgSeeURL, msg::url = docs::triplets_url);
         result.append_raw('\n');
-        msg::print(result);
     }
 
     void command_help_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)

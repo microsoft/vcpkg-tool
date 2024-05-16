@@ -60,3 +60,66 @@ TEST_CASE ("no closes-stdout crash", "[system.process]")
     REQUIRE(run.exit_code == 0);
     REQUIRE(run.output == "hello world");
 }
+
+TEST_CASE ("command try_append", "[system.process]")
+{
+    {
+        Command a;
+        REQUIRE(a.try_append(Command{"b"}));
+        REQUIRE(a.command_line() == "b");
+    }
+
+    {
+        Command a{"a"};
+        REQUIRE(a.try_append(Command{}));
+        REQUIRE(a.command_line() == "a");
+    }
+
+    {
+        Command a{"a"};
+        REQUIRE(a.try_append(Command{"b"}));
+        REQUIRE(a.command_line() == "a b");
+    }
+
+    // size limits
+
+    std::string one_string(1, 'a');
+    std::string big_string(Command::maximum_allowed, 'a');
+    std::string bigger_string(Command::maximum_allowed + 1, 'a');
+    Command empty_cmd;
+    Command one_cmd{one_string};
+    Command big_cmd{big_string};
+    Command bigger_cmd{bigger_string};
+
+    REQUIRE(!bigger_cmd.try_append(empty_cmd));
+    REQUIRE(bigger_cmd.command_line() == bigger_string);
+
+    REQUIRE(big_cmd.try_append(empty_cmd));
+    REQUIRE(big_cmd.command_line() == big_string);
+
+    {
+        auto cmd = empty_cmd;
+        REQUIRE(!cmd.try_append(bigger_cmd));
+        REQUIRE(cmd.empty());
+        REQUIRE(cmd.try_append(big_cmd));
+        REQUIRE(cmd.command_line() == big_string);
+    }
+
+    {
+        auto cmd = one_cmd;
+        REQUIRE(!cmd.try_append(big_cmd));
+        REQUIRE(cmd.command_line() == one_string);
+        // does not fit due to the needed space
+        std::string almost_string(Command::maximum_allowed - 1, 'a');
+        Command almost_cmd{almost_string};
+        REQUIRE(!cmd.try_append(almost_cmd));
+        REQUIRE(cmd.command_line() == one_string);
+        // fits exactly
+        std::string ok_string(Command::maximum_allowed - 2, 'a');
+        Command ok_cmd{ok_string};
+        REQUIRE(cmd.try_append(ok_cmd));
+        auto expected = big_string;
+        expected[1] = ' ';
+        REQUIRE(cmd.command_line() == expected);
+    }
+}

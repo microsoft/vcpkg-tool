@@ -1,14 +1,10 @@
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/statusparagraph.h>
 
 namespace vcpkg
 {
-    namespace BinaryParagraphRequiredField
-    {
-        static constexpr StringLiteral STATUS = "Status";
-    }
-
     StatusParagraph::StatusParagraph() noexcept : want(Want::ERROR_STATE), state(InstallState::ERROR_STATE) { }
 
     void serialize(const StatusParagraph& pgh, std::string& out_str)
@@ -24,7 +20,7 @@ namespace vcpkg
     StatusParagraph::StatusParagraph(StringView origin, Paragraph&& fields)
         : want(Want::ERROR_STATE), state(InstallState::ERROR_STATE)
     {
-        auto status_it = fields.find(BinaryParagraphRequiredField::STATUS);
+        auto status_it = fields.find(ParagraphIdStatus);
         Checks::msg_check_maybe_upgrade(VCPKG_LINE_INFO, status_it != fields.end(), msgExpectedStatusField);
         std::string status_field = std::move(status_it->second.first);
         fields.erase(status_it);
@@ -85,11 +81,11 @@ namespace vcpkg
 
     std::map<std::string, std::vector<FeatureSpec>> InstalledPackageView::feature_dependencies() const
     {
-        auto extract_deps = [&](const PackageSpec& spec) { return FeatureSpec{spec, "core"}; };
+        auto extract_deps = [&](const PackageSpec& spec) { return FeatureSpec{spec, FeatureNameCore.to_string()}; };
 
         std::map<std::string, std::vector<FeatureSpec>> deps;
 
-        deps.emplace("core", Util::fmap(core->package.dependencies, extract_deps));
+        deps.emplace(FeatureNameCore, Util::fmap(core->package.dependencies, extract_deps));
 
         for (const StatusParagraph* const& feature : features)
             deps.emplace(feature->package.feature, Util::fmap(feature->package.dependencies, extract_deps));
@@ -100,7 +96,7 @@ namespace vcpkg
     InternalFeatureSet InstalledPackageView::feature_list() const
     {
         InternalFeatureSet ret;
-        ret.emplace_back("core");
+        ret.emplace_back(FeatureNameCore);
         for (const auto& f : features)
         {
             ret.emplace_back(f->package.feature);

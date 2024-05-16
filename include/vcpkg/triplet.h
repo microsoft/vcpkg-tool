@@ -59,7 +59,6 @@ namespace vcpkg
 {
     Triplet default_triplet(const VcpkgCmdArguments& args, const TripletDatabase& database);
     Triplet default_host_triplet(const VcpkgCmdArguments& args, const TripletDatabase& database);
-    void print_default_triplet_warning(const VcpkgCmdArguments& arg, const TripletDatabase& database);
 
     struct TripletFile
     {

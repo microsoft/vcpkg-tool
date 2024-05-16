@@ -132,22 +132,40 @@ namespace vcpkg::Util
         return it->second;
     }
 
-    template<class Map, class Key>
-    const typename Map::mapped_type& value_or_default(const Map& map,
-                                                      Key&& key,
-                                                      const typename Map::mapped_type& default_value)
+    inline void assign_if_set_and_nonempty(std::string& target,
+                                           const std::unordered_map<std::string, std::string>& haystack,
+                                           StringLiteral needle)
     {
-        const auto it = map.find(static_cast<Key&&>(key));
-        if (it == map.end())
+        auto it = haystack.find(needle.to_string());
+        if (it != haystack.end() && !it->second.empty())
         {
-            return default_value;
+            target = it->second;
         }
-
-        return it->second;
     }
 
-    template<class Map, class Key>
-    void value_or_default(const Map& map, Key&& key, typename Map::mapped_type&& default_value) = delete;
+    template<class T>
+    void assign_if_set_and_nonempty(Optional<T>& target,
+                                    const std::unordered_map<std::string, std::string>& haystack,
+                                    StringLiteral needle)
+    {
+        auto it = haystack.find(needle.to_string());
+        if (it != haystack.end() && !it->second.empty())
+        {
+            target.emplace(it->second);
+        }
+    }
+
+    inline const std::string* value_if_set_and_nonempty(const std::unordered_map<std::string, std::string>& haystack,
+                                                        StringLiteral needle)
+    {
+        auto it = haystack.find(needle.to_string());
+        if (it != haystack.end() && !it->second.empty())
+        {
+            return &it->second;
+        }
+
+        return nullptr;
+    }
 
     template<class Map, class Key>
     Optional<const typename Map::mapped_type&> lookup_value(const Map& map, Key&& key)
@@ -311,6 +329,9 @@ namespace vcpkg::Util
     }
 
     template<class ForwardIt1, class ForwardRange2>
+    void search_and_skip(ForwardIt1 first, ForwardIt1 last, const char*) = delete;
+
+    template<class ForwardIt1, class ForwardRange2>
     ForwardIt1 search(ForwardIt1 first, ForwardIt1 last, const ForwardRange2& rng)
     {
         using std::begin;
@@ -318,6 +339,9 @@ namespace vcpkg::Util
 
         return std::search(first, last, begin(rng), end(rng));
     }
+
+    template<class ForwardIt1, class ForwardRange2>
+    void search(ForwardIt1 first, ForwardIt1 last, const char*) = delete;
 
     // 0th is the first occurence
     // so find_nth({1, 2, 1, 3, 1, 4}, 1, 2)

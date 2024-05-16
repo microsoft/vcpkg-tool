@@ -1,6 +1,7 @@
 #include <vcpkg/base/api-stable-format.h>
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/chrono.h>
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/json.h>
@@ -253,7 +254,6 @@ namespace
     {
         nothing,
         always,
-        on_fail,
     };
 
     struct ZipResource
@@ -305,13 +305,13 @@ namespace
                     Debug::print("Failed to decompress archive package: ", zip_path.path, '\n');
                 }
 
-                post_decompress(zip_path, job_results[j].has_value());
+                post_decompress(zip_path);
             }
         }
 
-        void post_decompress(const ZipResource& r, bool succeeded) const
+        void post_decompress(const ZipResource& r) const
         {
-            if ((!succeeded && r.to_remove == RemoveWhen::on_fail) || r.to_remove == RemoveWhen::always)
+            if (r.to_remove == RemoveWhen::always)
             {
                 m_fs.remove(r.path, IgnoreErrors{});
             }
@@ -345,10 +345,7 @@ namespace
                 auto archive_path = m_dir / files_archive_subpath(abi_tag);
                 if (m_fs.exists(archive_path, IgnoreErrors{}))
                 {
-                    auto to_remove = actions[i]->build_options.purge_decompress_failure == PurgeDecompressFailure::Yes
-                                         ? RemoveWhen::on_fail
-                                         : RemoveWhen::nothing;
-                    out_zip_paths[i].emplace(std::move(archive_path), to_remove);
+                    out_zip_paths[i].emplace(std::move(archive_path), RemoveWhen::nothing);
                 }
             }
         }
@@ -442,7 +439,7 @@ namespace
                                        make_temp_archive_path(m_buildtrees, action.spec));
             }
 
-            auto codes = download_files(m_fs, url_paths, m_url_template.headers);
+            auto codes = download_files(url_paths, m_url_template.headers, m_secrets);
 
             for (size_t i = 0; i < codes.size(); ++i)
             {
@@ -790,8 +787,10 @@ namespace
             : ZipReadBinaryProvider(std::move(zip), fs)
             , m_buildtrees(buildtrees)
             , m_url(url + "_apis/artifactcache/cache")
+            , m_secrets()
             , m_token_header("Authorization: Bearer " + token)
         {
+            m_secrets.emplace_back(token);
         }
 
         std::string lookup_cache_entry(StringView name, const std::string& abi) const
@@ -808,7 +807,7 @@ namespace
                 auto maybe_json = Json::parse_object(*p, m_url);
                 if (auto json = maybe_json.get())
                 {
-                    auto archive_location = json->get("archiveLocation");
+                    auto archive_location = json->get(JsonIdArchiveCapitalLocation);
                     if (archive_location && archive_location->is_string())
                     {
                         return archive_location->string(VCPKG_LINE_INFO).to_string();
@@ -834,7 +833,7 @@ namespace
                 url_indices.push_back(idx);
             }
 
-            const auto codes = download_files(m_fs, url_paths, {});
+            const auto codes = download_files(url_paths, {}, m_secrets);
 
             for (size_t i = 0; i < codes.size(); ++i)
             {
@@ -855,6 +854,7 @@ namespace
 
         Path m_buildtrees;
         std::string m_url;
+        std::vector<std::string> m_secrets;
         std::string m_token_header;
         static constexpr StringLiteral m_accept_header = "Accept: application/json;api-version=6.0-preview.1";
         static constexpr StringLiteral m_content_type_header = "Content-Type: application/json";
@@ -870,9 +870,9 @@ namespace
         Optional<int64_t> reserve_cache_entry(const std::string& name, const std::string& abi, int64_t cacheSize) const
         {
             Json::Object payload;
-            payload.insert("key", name + "-" + abi);
-            payload.insert("version", abi);
-            payload.insert("cacheSize", Json::Value::integer(cacheSize));
+            payload.insert(JsonIdKey, name + "-" + abi);
+            payload.insert(JsonIdVersion, abi);
+            payload.insert(JsonIdCacheCapitalSize, Json::Value::integer(cacheSize));
 
             const std::string headers[] = {
                 m_accept_header.to_string(),
@@ -886,7 +886,7 @@ namespace
                 auto maybe_json = Json::parse_object(*p, m_url);
                 if (auto json = maybe_json.get())
                 {
-                    auto cache_id = json->get("cacheId");
+                    auto cache_id = json->get(JsonIdCacheCapitalId);
                     if (cache_id && cache_id->is_integer())
                     {
                         return cache_id->integer(VCPKG_LINE_INFO);
@@ -1190,7 +1190,7 @@ namespace
 
     ExpectedL<Path> default_cache_path_impl()
     {
-        auto maybe_cachepath = get_environment_variable("VCPKG_DEFAULT_BINARY_CACHE");
+        auto maybe_cachepath = get_environment_variable(EnvironmentVariableVcpkgDefaultBinaryCache);
         if (auto p_str = maybe_cachepath.get())
         {
             get_global_metrics_collector().track_define(DefineMetric::VcpkgDefaultBinaryCache);
@@ -1229,7 +1229,7 @@ namespace
 
     struct BinaryConfigParser : ConfigSegmentsParser
     {
-        BinaryConfigParser(StringView text, StringView origin, BinaryConfigParserState* state)
+        BinaryConfigParser(StringView text, Optional<StringView> origin, BinaryConfigParserState* state)
             : ConfigSegmentsParser(text, origin), state(state)
         {
         }
@@ -1800,13 +1800,13 @@ namespace vcpkg
             return {*p};
         }
 
-        auto gh_repo = get_environment_variable("GITHUB_REPOSITORY").value_or("");
+        auto gh_repo = get_environment_variable(EnvironmentVariableGitHubRepository).value_or("");
         if (gh_repo.empty())
         {
             return {};
         }
 
-        auto gh_server = get_environment_variable("GITHUB_SERVER_URL").value_or("");
+        auto gh_server = get_environment_variable(EnvironmentVariableGitHubServerUrl).value_or("");
         if (gh_server.empty())
         {
             return {};
@@ -1814,8 +1814,8 @@ namespace vcpkg
 
         get_global_metrics_collector().track_define(DefineMetric::GitHubRepository);
         return {Strings::concat(gh_server, '/', gh_repo, ".git"),
-                get_environment_variable("GITHUB_REF").value_or(""),
-                get_environment_variable("GITHUB_SHA").value_or("")};
+                get_environment_variable(EnvironmentVariableGitHubRef).value_or(""),
+                get_environment_variable(EnvironmentVariableGitHubSha).value_or("")};
     }
 
     static ExpectedL<BinaryProviders> make_binary_providers(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
@@ -1879,8 +1879,11 @@ namespace vcpkg
 
             s.nuget_prefix = args.nuget_id_prefix.value_or("");
             if (!s.nuget_prefix.empty()) s.nuget_prefix.push_back('_');
+            ret.nuget_prefix = s.nuget_prefix;
+
             s.use_nuget_cache = args.use_nuget_cache.value_or(false);
-            s.nuget_repo_info = get_nuget_repo_info_from_env(args);
+
+            ret.nuget_repo = get_nuget_repo_info_from_env(args);
 
             auto& fs = paths.get_filesystem();
             auto& tools = paths.get_tool_cache();
@@ -2142,7 +2145,7 @@ namespace vcpkg
     {
     }
 
-    void BinaryCache::push_success(const InstallPlanAction& action)
+    void BinaryCache::push_success(CleanPackages clean_packages, const InstallPlanAction& action)
     {
         if (auto abi = action.package_abi().get())
         {
@@ -2195,7 +2198,8 @@ namespace vcpkg
                     msgStoredBinariesToDestinations, msg::count = num_destinations, msg::elapsed = timer.elapsed());
             }
         }
-        if (action.build_options.clean_packages == CleanPackages::Yes)
+
+        if (clean_packages == CleanPackages::Yes)
         {
             m_fs.remove_all(action.package_dir.value_or_exit(VCPKG_LINE_INFO), VCPKG_LINE_INFO);
         }
@@ -2295,7 +2299,7 @@ ExpectedL<DownloadManagerConfig> vcpkg::parse_download_configuration(const Optio
     get_global_metrics_collector().track_define(DefineMetric::AssetSource);
 
     AssetSourcesState s;
-    const auto source = Strings::concat("$", VcpkgCmdArguments::ASSET_SOURCES_ENV);
+    const auto source = Strings::concat("$", EnvironmentVariableXVcpkgAssetSources);
     AssetSourcesParser parser(*arg.get(), source, &s);
     parser.parse();
     if (auto err = parser.get_error())
@@ -2365,7 +2369,7 @@ ExpectedL<BinaryConfigParserState> vcpkg::parse_binary_provider_configs(const st
 
     for (auto&& arg : args)
     {
-        BinaryConfigParser arg_parser(arg, "<command>", &s);
+        BinaryConfigParser arg_parser(arg, nullopt, &s);
         arg_parser.parse();
         if (auto err = arg_parser.get_error())
         {

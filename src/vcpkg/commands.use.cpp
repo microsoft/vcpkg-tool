@@ -1,4 +1,5 @@
 #include <vcpkg/base/checks.h>
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.use.h>
@@ -11,16 +12,12 @@ using namespace vcpkg;
 
 namespace
 {
-    constexpr StringLiteral OPTION_MSBUILD_PROPS = "msbuild-props";
-
     constexpr CommandSetting UseOptions[] = {
-        {OPTION_MSBUILD_PROPS, msgArtifactsOptionMSBuildProps},
+        {SwitchMSBuildProps, msgArtifactsOptionMSBuildProps},
     };
 
-    constexpr StringLiteral OPTION_VERSION = "version";
-
     constexpr CommandMultiSetting UseMultiOptions[] = {
-        {OPTION_VERSION, msgArtifactsOptionVersion},
+        {SwitchVersion, msgArtifactsOptionVersion},
     };
 } // unnamed namespace
 
@@ -46,7 +43,7 @@ namespace vcpkg
 
         forward_common_artifacts_arguments(ecmascript_args, parsed);
 
-        auto maybe_versions = Util::lookup_value(parsed.multisettings, OPTION_VERSION);
+        auto maybe_versions = Util::lookup_value(parsed.multisettings, SwitchVersion);
         if (auto versions = maybe_versions.get())
         {
             if (versions->size() != parsed.command_arguments.size())

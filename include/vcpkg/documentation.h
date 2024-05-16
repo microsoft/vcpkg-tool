@@ -15,6 +15,7 @@ namespace vcpkg
         static constexpr StringLiteral triplets_url = "https://learn.microsoft.com/vcpkg/users/triplets?WT.mc_id=vcpkg_inproduct_cli";
         static constexpr StringLiteral vcpkg_visual_studio_path_url =
             "https://learn.microsoft.com/vcpkg/users/triplets?WT.mc_id=vcpkg_inproduct_cli#VCPKG_VISUAL_STUDIO_PATH";
+        inline constexpr StringLiteral package_name_url = "https://learn.microsoft.com/vcpkg/reference/vcpkg-json?WT.mc_id=vcpkg_inproduct_cli#name";
         static constexpr StringLiteral troubleshoot_build_failures_url = "https://learn.microsoft.com/vcpkg/troubleshoot/build-failures?WT.mc_id=vcpkg_inproduct_cli";
         static constexpr StringLiteral add_command_url = "https://learn.microsoft.com/vcpkg/commands/add?WT.mc_id=vcpkg_inproduct_cli";
         static constexpr StringLiteral add_command_recurse_opt_url = "https://learn.microsoft.com/vcpkg/commands/remove?WT.mc_id=vcpkg_inproduct_cli#--recurse";

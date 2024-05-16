@@ -32,19 +32,27 @@ vcpkg-hello-world-2 provides CMake targets:
 @"
 wrong-pkgconfig provides pkg-config modules:
 
-    # Test lib
-    wrong-pkgconfig
+  # Test lib
+  wrong-pkgconfig
+"@,
+@"
+vcpkg-header-only is header-only and can be used from CMake via:
+
+  find_path(VCPKG_HEADER_ONLY_INCLUDE_DIRS "vcpkg-header-only.h")
+  target_include_directories(main PRIVATE `${VCPKG_HEADER_ONLY_INCLUDE_DIRS})
 "@
 )
 
 [string[]]$prohibitedUsages = @(
-    'vcpkg-empty-port provides CMake targets'
+    'vcpkg-empty-port provides CMake targets',
+    'vcpkg-header-only provides CMake targets'
 )
 
 [string]$usage = Run-VcpkgAndCaptureOutput ($commonArgs + @('install',
     'vcpkg-cmake-config-many-targets',
     'vcpkg-empty-port',
     'vcpkg-explicit-usage',
+    'vcpkg-header-only',
     'vcpkg-hello-world-1',
     'vcpkg-hello-world-2',
     'wrong-pkgconfig[header-only-good]'

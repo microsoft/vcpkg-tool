@@ -53,7 +53,7 @@ namespace vcpkg
             std::vector<std::string> ecmascript_args;
             ecmascript_args.emplace_back("add");
             ecmascript_args.emplace_back(artifact_name);
-            auto maybe_version = Util::lookup_value(parsed.settings, OPTION_VERSION);
+            auto maybe_version = Util::lookup_value(parsed.settings, SwitchVersion);
             if (auto version = maybe_version.get())
             {
                 ecmascript_args.emplace_back("--version");
@@ -72,7 +72,7 @@ namespace vcpkg
                     VCPKG_LINE_INFO, msg::format(msgAddPortRequiresManifest, msg::command_line = "vcpkg add port").append_raw('\n').append(msgSeeURL, msg::url = docs::add_command_url));
             }
 
-            if (Util::Maps::contains(parsed.settings, OPTION_VERSION))
+            if (Util::Maps::contains(parsed.settings, SwitchVersion))
             {
                 Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgAddVersionArtifactsOnly);
             }
@@ -81,17 +81,11 @@ namespace vcpkg
             specs.reserve(parsed.command_arguments.size() - 1);
             for (std::size_t idx = 1; idx < parsed.command_arguments.size(); ++idx)
             {
-                ParsedQualifiedSpecifier value =
-                    parse_qualified_specifier(parsed.command_arguments[idx]).value_or_exit(VCPKG_LINE_INFO);
-                if (const auto t = value.triplet.get())
-                {
-                    Checks::msg_exit_with_error(VCPKG_LINE_INFO,
-                                                msgAddTripletExpressionNotAllowed,
-                                                msg::package_name = value.name,
-                                                msg::triplet = *t);
-                }
-
-                specs.push_back(std::move(value));
+                specs.push_back(parse_qualified_specifier(parsed.command_arguments[idx],
+                                                          AllowFeatures::Yes,
+                                                          ParseExplicitTriplet::Forbid,
+                                                          AllowPlatformSpec::No)
+                                    .value_or_exit(VCPKG_LINE_INFO));
             }
 
             auto maybe_manifest_scf =
@@ -122,7 +116,8 @@ namespace vcpkg
                     return false;
                 });
                 const auto features = Util::fmap(feature_names, [](const std::string& feature) {
-                    Checks::check_exit(VCPKG_LINE_INFO, !feature.empty() && feature != "core" && feature != "default");
+                    Checks::check_exit(VCPKG_LINE_INFO,
+                                       !feature.empty() && feature != FeatureNameCore && feature != FeatureNameDefault);
                     return DependencyRequestedFeature{feature};
                 });
                 if (dep == manifest_scf.core_paragraph->dependencies.end())
