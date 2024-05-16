@@ -8,6 +8,7 @@
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.add-version.h>
+#include <vcpkg/documentation.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/registries.h>
 #include <vcpkg/vcpkgcmdarguments.h>
@@ -73,20 +74,20 @@ namespace
             if (DateVersion::try_parse(version.version.text))
             {
                 Checks::msg_exit_with_message(VCPKG_LINE_INFO,
-                                              msgAddVersionSuggestNewVersionScheme,
+                                              msg::format(msgAddVersionSuggestNewVersionScheme,
                                               msg::new_scheme = VERSION_DATE,
                                               msg::old_scheme = VERSION_STRING,
                                               msg::package_name = port_name,
-                                              msg::option = OPTION_SKIP_VERSION_FORMAT_CHECK);
+                                              msg::option = OPTION_SKIP_VERSION_FORMAT_CHECK).append_raw("\n").append(msgSeeURL, msg::url = docs::version_schemes));
             }
             if (DotVersion::try_parse_relaxed(version.version.text))
             {
                 Checks::msg_exit_with_message(VCPKG_LINE_INFO,
-                                              msgAddVersionSuggestNewVersionScheme,
+                                              msg::format(msgAddVersionSuggestNewVersionScheme,
                                               msg::new_scheme = VERSION_RELAXED,
                                               msg::old_scheme = VERSION_STRING,
                                               msg::package_name = port_name,
-                                              msg::option = OPTION_SKIP_VERSION_FORMAT_CHECK);
+                                              msg::option = OPTION_SKIP_VERSION_FORMAT_CHECK).append_raw("\n").append(msgSeeURL, msg::url = docs::version_schemes));
             }
         }
     }
@@ -254,6 +255,8 @@ namespace
                                      .append(msgAddVersionCommitChangesReminder)
                                      .append_raw("\n***")
                                      .append(msgAddVersionNoFilesUpdated)
+                                     .append_raw("\n***")
+                                     .append(msgSeeURL, msg::url = docs::add_version_command_url)
                                      .append_raw("***"));
             if (keep_going) return UpdateResult::NotUpdated;
             Checks::exit_fail(VCPKG_LINE_INFO);
@@ -279,6 +282,8 @@ namespace
                         .append(msgAddVersionUpdateVersionReminder)
                         .append_raw('\n')
                         .append(msgAddVersionOverwriteOptionSuggestion, msg::option = OPTION_OVERWRITE_VERSION)
+                        .append_raw('\n')
+                        .append(msgSeeURL, msg::url = docs::add_version_command_overwrite_version_opt_url)
                         .append_raw("\n***")
                         .append(msgAddVersionNoFilesUpdated)
                         .append_raw("***"));
@@ -363,9 +368,9 @@ namespace vcpkg
         {
             Checks::msg_check_exit(VCPKG_LINE_INFO,
                                    add_all,
-                                   msgAddVersionUseOptionAll,
+                                   msg::format(msgAddVersionUseOptionAll,
                                    msg::command_name = "x-add-version",
-                                   msg::option = OPTION_ALL);
+                                   msg::option = OPTION_ALL).append_raw("\n").append(msgSeeURL, msg::url = docs::add_version_command_url));
 
             for (auto&& port_dir : fs.get_directories_non_recursive(paths.builtin_ports_directory(), VCPKG_LINE_INFO))
             {
@@ -433,8 +438,10 @@ namespace vcpkg
                                 .append_raw('\n')
                                 .append(msgAddVersionFormatPortSuggestion, msg::command_line = command_line)
                                 .append_raw('\n')
-                                .append(msgAddVersionCommitResultReminder)
-                                .append_raw('\n'));
+                                .append(msgSeeURL, msg::url = docs::format_manifest_command_url)
+                                .append(msgAddVersionCommitChangesReminder)
+                                .append_raw('\n')
+                                .append(msgSeeURL, msg::url = docs::add_version_command_url));
                         Checks::check_exit(VCPKG_LINE_INFO, !add_all);
                         continue;
                     }
@@ -456,6 +463,8 @@ namespace vcpkg
                                          .append(msgAddVersionCommitChangesReminder)
                                          .append_raw("\n***")
                                          .append(msgAddVersionNoFilesUpdated)
+                                         .append_raw("\n***")
+                                         .append(msgSeeURL, msg::url = docs::add_version_command_url)
                                          .append_raw("***"));
                 if (add_all) continue;
                 Checks::exit_fail(VCPKG_LINE_INFO);

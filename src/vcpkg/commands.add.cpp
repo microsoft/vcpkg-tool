@@ -69,7 +69,7 @@ namespace vcpkg
             if (!manifest)
             {
                 Checks::msg_exit_with_message(
-                    VCPKG_LINE_INFO, msgAddPortRequiresManifest, msg::command_line = "vcpkg add port");
+                    VCPKG_LINE_INFO, msg::format(msgAddPortRequiresManifest, msg::command_line = "vcpkg add port").append_raw('\n').append(msgSeeURL, msg::url = docs::add_command_url));
             }
 
             if (Util::Maps::contains(parsed.settings, OPTION_VERSION))
@@ -164,6 +164,6 @@ namespace vcpkg
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 
-        Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgAddFirstArgument, msg::command_line = "vcpkg add");
+        Checks::msg_exit_with_message(VCPKG_LINE_INFO, msg::format(msgAddCommandFirstArg).append_raw('\n').append(msgSeeURL, msg::url = docs::add_command_url));
     }
 }
