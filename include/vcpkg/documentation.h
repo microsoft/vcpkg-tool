@@ -12,6 +12,7 @@ namespace vcpkg
         static constexpr StringLiteral binarycaching_url = "https://learn.microsoft.com/vcpkg/users/binarycaching?WT.mc_id=vcpkg_inproduct_cli";
         static constexpr StringLiteral versioning_url = "https://learn.microsoft.com/vcpkg/users/versioning?WT.mc_id=vcpkg_inproduct_cli";
         static constexpr StringLiteral version_schemes = "https://learn.microsoft.com/vcpkg/users/versioning?WT.mc_id=vcpkg_inproduct_cli#version-schemes";
+        static constexpr StringLiteral triplets_url = "https://learn.microsoft.com/vcpkg/users/triplets?WT.mc_id=vcpkg_inproduct_cli";
         static constexpr StringLiteral vcpkg_visual_studio_path_url =
             "https://learn.microsoft.com/vcpkg/users/triplets?WT.mc_id=vcpkg_inproduct_cli#VCPKG_VISUAL_STUDIO_PATH";
         static constexpr StringLiteral troubleshoot_build_failures_url = "https://learn.microsoft.com/vcpkg/troubleshoot/build-failures?WT.mc_id=vcpkg_inproduct_cli";
