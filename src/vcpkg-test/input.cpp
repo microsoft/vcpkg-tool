@@ -100,7 +100,8 @@ Built-in Triplets:
 Community Triplets:
 Overlay Triplets from "x64-windows.cmake":
   x64-windows
-See )" + docs::triplets_url + R"( for more information.)";
+See )" + docs::triplets_url + R"( for more information.
+)";
     REQUIRE(maybe_check.error() == expected_error);
 }
 
