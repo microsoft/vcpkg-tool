@@ -187,13 +187,14 @@ TEST_CASE ("check_and_get_full_package_spec validates the triplet", "[input][che
     maybe_spec =
         check_and_get_full_package_spec("zlib[core]:x86-windows", Triplet::from_canonical_name("x64-windows"), db);
     REQUIRE(!maybe_spec.has_value());
-    REQUIRE(maybe_spec.error() == LocalizedString::from_raw(R"(error: Invalid triplet: x86-windows
+    std::string expected_error = R"(error: Invalid triplet: x86-windows
 Built-in Triplets:
 Community Triplets:
 Overlay Triplets from "x64-windows.cmake":
   x64-windows
-See )" + docs::triplets_url + R"( for more information.
-)"));
+See )" + std::string(vcpkg::docs::triplets_url) + R"( for more information.
+)";
+    REQUIRE(maybe_spec.error() == expected_error);
 }
 
 TEST_CASE ("check_and_get_full_package_spec forbids malformed", "[input][check_and_get_full_package_spec]")
