@@ -3,6 +3,7 @@
 #include <vcpkg/base/jsonreader.h>
 #include <vcpkg/base/strings.h>
 
+#include <vcpkg/documentation.h>
 #include <vcpkg/configuration.h>
 #include <vcpkg/registries.h>
 
@@ -421,16 +422,16 @@ TEST_CASE ("registries report pattern errors", "[registries]")
     REQUIRE(errors.size() == 3);
     CHECK(errors[0] == "test: error: $.registries[0].packages[1] (a package pattern): \"\" is not a valid package "
                        "pattern. Package patterns must "
-                       "use only one wildcard character (*) and it must be the last character in the pattern (see "
-                       "https://learn.microsoft.com/vcpkg/users/registries for more information).");
+                       "use only one wildcard character (*) and it must be the last character in the pattern (see " + docs::registries_url +
+                       " for more information).");
     CHECK(errors[1] == "test: error: $.registries[0].packages[2] (a package pattern): \"a*a\" is not a valid package "
                        "pattern. Package patterns "
-                       "must use only one wildcard character (*) and it must be the last character in the pattern (see "
-                       "https://learn.microsoft.com/vcpkg/users/registries for more information).");
+                       "must use only one wildcard character (*) and it must be the last character in the pattern (see " + docs::registries_url +
+                       " for more information).");
     CHECK(errors[2] == "test: error: $.registries[0].packages[3] (a package pattern): \"*a\" is not a valid package "
                        "pattern. Package patterns "
-                       "must use only one wildcard character (*) and it must be the last character in the pattern (see "
-                       "https://learn.microsoft.com/vcpkg/users/registries for more information).");
+                       "must use only one wildcard character (*) and it must be the last character in the pattern (see " + docs::registries_url +
+                       " for more information).");
 }
 
 TEST_CASE ("registries ignored patterns warning", "[registries]")

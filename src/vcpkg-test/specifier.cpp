@@ -2,6 +2,7 @@
 
 #include <vcpkg/base/util.h>
 
+#include <vcpkg/documentation.h>
 #include <vcpkg/packagespec.h>
 
 using namespace vcpkg;
@@ -118,7 +119,7 @@ TEST_CASE ("specifier parsing", "[specifier]")
             REQUIRE(
                 s.error() ==
                 LocalizedString::from_raw(
-                    R"(error: expected the end of input parsing a package name; this usually means the indicated character is not allowed to be in a port name. Port names are all lowercase alphanumeric+hypens and not reserved (see https://learn.microsoft.com/vcpkg/reference/vcpkg-json#name for more information).
+                    R"(error: expected the end of input parsing a package name; this usually means the indicated character is not allowed to be in a port name. Port names are all lowercase alphanumeric+hypens and not reserved (see )" + docs::vcpkg_json_ref_name + R"( for more information).
   on expression: zlib#
                      ^)"));
         }

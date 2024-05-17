@@ -1,5 +1,6 @@
 #include <vcpkg-test/util.h>
 
+#include <vcpkg/documentation.h>
 #include <vcpkg/input.h>
 #include <vcpkg/triplet.h>
 
@@ -99,8 +100,7 @@ Built-in Triplets:
 Community Triplets:
 Overlay Triplets from "x64-windows.cmake":
   x64-windows
-See https://learn.microsoft.com/vcpkg/users/triplets for more information.
-)"));
+See )" + docs::triplets_url + R"( for more information.)"));
 }
 
 TEST_CASE ("check_and_get_package_spec validates the triplet", "[input][check_and_get_package_spec]")
@@ -125,7 +125,7 @@ Built-in Triplets:
 Community Triplets:
 Overlay Triplets from "x64-windows.cmake":
   x64-windows
-See https://learn.microsoft.com/vcpkg/users/triplets for more information.
+See )" + docs::triplets_url + R"( for more information.
 )"));
 }
 
@@ -192,7 +192,7 @@ Built-in Triplets:
 Community Triplets:
 Overlay Triplets from "x64-windows.cmake":
   x64-windows
-See https://learn.microsoft.com/vcpkg/users/triplets for more information.
+See )" + docs::triplets_url + R"( for more information.
 )"));
 }
 
