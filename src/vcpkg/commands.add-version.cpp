@@ -64,12 +64,18 @@ namespace
             if (DateVersion::try_parse(version.version.text))
             {
                 Checks::msg_exit_with_message(
-                    VCPKG_LINE_INFO, msg::format(msgAddVersionSuggestVersionDate, msg::package_name = port_name).append_raw("\n").append(msgSeeURL, msg::url = docs::version_schemes));
+                    VCPKG_LINE_INFO,
+                    msg::format(msgAddVersionSuggestVersionDate, msg::package_name = port_name)
+                        .append_raw("\n")
+                        .append(msgSeeURL, msg::url = docs::version_schemes));
             }
             if (DotVersion::try_parse_relaxed(version.version.text))
             {
                 Checks::msg_exit_with_message(
-                    VCPKG_LINE_INFO, msg::format(msgAddVersionSuggestVersionRelaxed, msg::package_name = port_name).append_raw("\n").append(msgSeeURL, msg::url = docs::version_schemes));
+                    VCPKG_LINE_INFO,
+                    msg::format(msgAddVersionSuggestVersionRelaxed, msg::package_name = port_name)
+                        .append_raw("\n")
+                        .append(msgSeeURL, msg::url = docs::version_schemes));
             }
         }
     }
@@ -347,12 +353,12 @@ namespace vcpkg
         }
         else
         {
-            Checks::msg_check_exit(VCPKG_LINE_INFO,
-                                   add_all,
-                                   msg::format(msgAddVersionUseOptionAll,
-                                   msg::command_name = "x-add-version",
-                                   msg::option = SwitchAll).append_raw("\n").append(msgSeeURL, msg::url = docs::add_version_command_url));
-
+            Checks::msg_check_exit(
+                VCPKG_LINE_INFO,
+                add_all,
+                msg::format(msgAddVersionUseOptionAll, msg::command_name = "x-add-version", msg::option = SwitchAll)
+                    .append_raw("\n")
+                    .append(msgSeeURL, msg::url = docs::add_version_command_url));
 
             for (auto&& port_dir : fs.get_directories_non_recursive(paths.builtin_ports_directory(), VCPKG_LINE_INFO))
             {

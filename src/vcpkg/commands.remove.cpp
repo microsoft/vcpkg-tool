@@ -240,7 +240,9 @@ namespace vcpkg
 
             if (!is_recursive)
             {
-                msg::println_warning(msg::format(msgAddRecurseOption).append_raw('\n').append(msgSeeURL, msg::url = docs::add_command_recurse_opt_url));
+                msg::println_warning(msg::format(msgAddRecurseOption)
+                                         .append_raw('\n')
+                                         .append(msgSeeURL, msg::url = docs::add_command_recurse_opt_url));
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
         }
