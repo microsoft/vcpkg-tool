@@ -1,3 +1,4 @@
+#include <regex>
 #include <vcpkg/base/api-stable-format.h>
 #include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/downloads.h>
@@ -29,6 +30,52 @@ namespace vcpkg
     }
 
 #if defined(_WIN32)
+    static std::wsmatch regex_match(const std::wregex& pattern, const std::wstring& str)
+    {
+        std::wsmatch match;
+        std::regex_search(str, match, pattern);
+        return match;
+    }
+
+    struct ProxyUrlParts
+    {
+        std::wstring host;
+        std::wstring username;
+        std::wstring password;
+    };
+
+    ProxyUrlParts parse_proxy_url(const std::wstring& url)
+    {
+        std::wregex scheme_pattern(L"^(.+://)(.*)"); // Matches scheme part
+        std::wregex credentials_pattern(L"(.+)@(.*)"); // Matches login part
+        std::wregex login_password_pattern(L"([^:]+)(:(.*))?");
+
+        std::wstring protocol;
+        std::wstring host;
+        std::wstring username;
+        std::wstring password;
+
+        auto matchProtocol = regex_match(scheme_pattern, url);
+        std::wstring remainingParts = url;
+        if (matchProtocol.size() == 3) {
+            protocol = matchProtocol[1];
+            remainingParts = matchProtocol[2];
+        }
+        auto matchCredentials = regex_match(credentials_pattern, remainingParts);
+        if (matchCredentials.size() == 3) {
+            std::wstring credentials = matchCredentials[1];
+            remainingParts = matchCredentials[2];
+
+            auto matchLoginPwd = regex_match(login_password_pattern, credentials);
+            username = matchLoginPwd[1];
+            if (matchLoginPwd.size() == 4) {
+                password = matchLoginPwd[3];
+            }
+        }
+        host = remainingParts;
+        return ProxyUrlParts{protocol + host, username, password};
+    }
+
     struct WinHttpHandle
     {
         HINTERNET h;
@@ -227,6 +274,8 @@ namespace vcpkg
 
     struct WinHttpSession
     {
+
+
         static ExpectedL<WinHttpSession> make(StringView sanitized_url)
         {
             WinHttpSession ret;
@@ -253,12 +302,21 @@ namespace vcpkg
             if (auto p_https_proxy = maybe_https_proxy_env.get())
             {
                 std::wstring env_proxy_settings = Strings::to_utf16(*p_https_proxy);
+                ProxyUrlParts parts = parse_proxy_url(env_proxy_settings);
+
                 WINHTTP_PROXY_INFO proxy;
                 proxy.dwAccessType = WINHTTP_ACCESS_TYPE_NAMED_PROXY;
-                proxy.lpszProxy = env_proxy_settings.data();
+                proxy.lpszProxy = parts.host.data();
+                // TODO: We should consider NO_PROXY variable
                 proxy.lpszProxyBypass = nullptr;
 
                 WinHttpSetOption(ret.m_hSession.h, WINHTTP_OPTION_PROXY, &proxy, sizeof(proxy));
+                if (!parts.username.empty())
+                {
+                    WinHttpSetOption(ret.m_hSession.h, WINHTTP_OPTION_PROXY_USERNAME, parts.username.data(), parts.username.size() * sizeof(wchar_t));
+                    if (!parts.password.empty())
+                        WinHttpSetOption(ret.m_hSession.h, WINHTTP_OPTION_PROXY_PASSWORD, parts.password.data(), parts.password.size() * sizeof(wchar_t));
+                }
             }
             // IE Proxy fallback, this works on Windows 10
             else
