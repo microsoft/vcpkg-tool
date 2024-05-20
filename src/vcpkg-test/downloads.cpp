@@ -178,3 +178,13 @@ TEST_CASE ("url_encode_spaces", "[downloads]")
     REQUIRE(url_encode_spaces("https://example.com/a  space/b?query=value&query2=value2") ==
             "https://example.com/a%20%20space/b?query=value&query2=value2");
 }
+
+TEST_CASE ("parse_proxy_url", "[downloads]")
+{
+    REQUIRE(parse_proxy_url(L"my-hostname.com:8080") == ProxyUrlParts{L"my-hostname.com:8080", {}});
+    REQUIRE(parse_proxy_url(L"Joe:secret@my-hostname.com:8080") ==
+            ProxyUrlParts{L"my-hostname.com:8080", ProxyCredentials{L"Joe", L"secret"}});
+    REQUIRE(parse_proxy_url(L"https://my-hostname.com:8080") == ProxyUrlParts{L"https://my-hostname.com:8080", {}});
+    REQUIRE(parse_proxy_url(L"https://Joe:secret@my-hostname.com:8080") ==
+            ProxyUrlParts{L"https://my-hostname.com:8080", ProxyCredentials{L"Joe", L"secret"}});
+}

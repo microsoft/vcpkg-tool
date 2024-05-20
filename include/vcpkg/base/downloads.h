@@ -123,4 +123,24 @@ namespace vcpkg
     // Notably, callers of this function can't use Strings::percent_encode because the URL
     // is likely to contain query parameters or similar.
     std::string url_encode_spaces(StringView url);
+
+    struct ProxyCredentials
+    {
+        std::wstring username;
+        std::wstring password;
+    };
+
+    bool operator==(const ProxyCredentials &lhs, const ProxyCredentials &rhs);
+
+    struct ProxyUrlParts
+    {
+        std::wstring host;
+        Optional<ProxyCredentials> credentials;
+    };
+
+    bool operator==(const ProxyUrlParts &lhs, const ProxyUrlParts &rhs);
+
+    // Parses strings such as http://login:password@host.com:8080
+    // Into plain URL and credentials
+    ProxyUrlParts parse_proxy_url(const std::wstring& url);
 }
