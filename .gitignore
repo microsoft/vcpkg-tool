@@ -5,7 +5,6 @@
 /.idea
 /cmake-build-*
 /.vs
-.vscode/settings.json
 /CMakeSettings.json
 /out
 /OneLocBuild
