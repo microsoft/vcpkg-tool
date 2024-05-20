@@ -130,7 +130,7 @@ namespace vcpkg
         std::wstring password;
     };
 
-    bool operator==(const ProxyCredentials &lhs, const ProxyCredentials &rhs);
+    bool operator==(const ProxyCredentials& lhs, const ProxyCredentials& rhs);
 
     struct ProxyUrlParts
     {
@@ -138,7 +138,7 @@ namespace vcpkg
         Optional<ProxyCredentials> credentials;
     };
 
-    bool operator==(const ProxyUrlParts &lhs, const ProxyUrlParts &rhs);
+    bool operator==(const ProxyUrlParts& lhs, const ProxyUrlParts& rhs);
 
     // Parses strings such as http://login:password@host.com:8080
     // Into plain URL and credentials

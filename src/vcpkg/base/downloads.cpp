@@ -42,14 +42,14 @@ namespace vcpkg
         return lhs.username == rhs.username && lhs.password == rhs.password;
     }
 
-    bool operator==(const ProxyUrlParts &lhs, const ProxyUrlParts &rhs)
+    bool operator==(const ProxyUrlParts& lhs, const ProxyUrlParts& rhs)
     {
         return lhs.host == rhs.host && lhs.credentials == rhs.credentials;
     }
 
     ProxyUrlParts parse_proxy_url(const std::wstring& url)
     {
-        std::wregex scheme_pattern(L"^(.+://)(.*)");   // Matches scheme part
+        std::wregex scheme_pattern(L"^(.+://)(.*)");           // Matches scheme part
         std::wregex credentials_pattern(L"([^:]+):(.*)@(.*)"); // Matches login:pwd@host:port
 
         std::wstring protocol;
