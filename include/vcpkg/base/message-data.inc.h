@@ -236,10 +236,18 @@ DECLARE_MESSAGE(ArtifactsSwitchOsx, (), "", "Forces host detection to MacOS when
 DECLARE_MESSAGE(ArtifactsSwitchX64, (), "", "Forces host detection to x64 when acquiring artifacts")
 DECLARE_MESSAGE(ArtifactsSwitchX86, (), "", "Forces host detection to x86 when acquiring artifacts")
 DECLARE_MESSAGE(ArtifactsSwitchWindows, (), "", "Forces host detection to Windows when acquiring artifacts")
+DECLARE_MESSAGE(AssetCacheAttemptingDownload, (msg::url), "", "Attempting to download from: \"{url}\".")
+DECLARE_MESSAGE(AssetCacheHit, (), "", "Asset cache hit!")
+DECLARE_MESSAGE(AssetCacheMiss, (), "", "Asset cache miss!")
 DECLARE_MESSAGE(AssetCacheProviderAcceptsNoArguments,
                 (msg::value),
                 "{value} is a asset caching provider name such as azurl, clear, or x-block-origin",
                 "unexpected arguments: '{value}' does not accept arguments")
+DECLARE_MESSAGE(AssetCacheSuccesfullyStored, (), "", "Successfully stored back to mirror.")
+DECLARE_MESSAGE(AssetCachingEnabled, (), "", "Asset caching is enabled.")
+DECLARE_MESSAGE(AssetCachingNotConfigured, (), "", "Asset caching is not configured.")
+DECLARE_MESSAGE(AssetDownloadsBlocked, (), "`x-block-origin` is a vcpkg option. Do not translate. ", "External asset downloads are blocked (x-block-origin is enabled)..")
+DECLARE_MESSAGE(AssetDownloadsEnabled, (), "`x-block-origin` is a vcpkg option. Do not translate. ", "External asset downloads are allowed (x-block-origin is disabled).")
 DECLARE_MESSAGE(AssetSourcesArg, (), "", "Asset caching sources. See 'vcpkg help assetcaching'")
 DECLARE_MESSAGE(ASemanticVersionString, (), "", "a semantic version string")
 DECLARE_MESSAGE(ASetOfFeatures, (), "", "a set of features")
