@@ -130,6 +130,78 @@ namespace vcpkg
         }
     }
 
+
+    struct ProxyLogin
+    {
+        std::wstring username;
+        std::wstring password;
+    };
+
+    // On redirect, WinHttp API apparently requires to set again proxy credentials.
+    // Having this callback looks like the only way to achieve this.
+    void set_proxy_credentials_on_redirect(
+        HINTERNET hInternet,
+        DWORD_PTR dwContext,
+        DWORD dwInternetStatus,
+        LPVOID lpvStatusInformation,
+        DWORD dwStatusInformationLength
+    )
+    {
+        if (dwInternetStatus == WINHTTP_CALLBACK_STATUS_REDIRECT) {
+            ProxyLogin** ctxt_ptr = (ProxyLogin**) dwContext;
+            ProxyLogin& ctxt = **ctxt_ptr;
+            WinHttpSetCredentials(hInternet,
+                                  WINHTTP_AUTH_TARGET_PROXY,
+                                  WINHTTP_AUTH_SCHEME_BASIC,
+                                  ctxt.username.data(),
+                                  ctxt.password.data(),
+                                  NULL);
+        }
+    }
+
+    // Only purpose of this class is to manage the lifetime of a request context
+    // which needs to be provided as a "DWORD_PTR" to WinHttpSendRequest
+    // (pointer to a pointer-sized variable).
+    template <class T>
+    struct WinHttpContext
+    {
+        WinHttpContext() : m_value_ptr_ptr(nullptr) { }
+        explicit WinHttpContext(T* value_ptr) {
+            m_value_ptr_ptr = new T*(value_ptr);
+        }
+        WinHttpContext(const WinHttpContext&) = delete;
+        WinHttpHandle& operator=(const WinHttpHandle&) = delete;
+        WinHttpContext(WinHttpContext&& other) : m_value_ptr_ptr(other.m_value_ptr_ptr)
+        {
+            other.m_value_ptr_ptr = nullptr;
+        }
+        WinHttpContext& operator=(WinHttpContext&& other)
+        {
+            if (m_value_ptr_ptr){
+                delete *m_value_ptr_ptr;
+                delete m_value_ptr_ptr;
+            }
+            m_value_ptr_ptr = other.m_value_ptr_ptr;
+            other.m_value_ptr_ptr = nullptr;
+            return *this;
+        }
+
+        ~WinHttpContext()
+        {
+            if (m_value_ptr_ptr)
+            {
+                delete *m_value_ptr_ptr;
+                delete m_value_ptr_ptr;
+            }
+        }
+
+        DWORD_PTR as_dword_ptr() {
+            return (DWORD_PTR) m_value_ptr_ptr;
+        }
+
+        T** m_value_ptr_ptr;
+    };
+
     struct WinHttpRequest
     {
         static ExpectedL<WinHttpRequest> make(HINTERNET hConnect,
@@ -157,9 +229,31 @@ namespace vcpkg
                 ret.m_hRequest = WinHttpHandle{h};
             }
 
+            auto maybe_https_proxy_env = get_environment_variable(EnvironmentVariableHttpsProxy);
+            if (auto p_https_proxy = maybe_https_proxy_env.get())
+            {
+                std::wstring env_proxy_settings = Strings::to_utf16(*p_https_proxy);
+                ProxyUrlParts parts = parse_proxy_url(env_proxy_settings);
+
+                ret.m_proxy_login = WinHttpContext(new ProxyLogin{parts.username, parts.password});
+
+                WinHttpSetCredentials(ret.m_hRequest.h,
+                                      WINHTTP_AUTH_TARGET_PROXY,
+                                      WINHTTP_AUTH_SCHEME_BASIC,
+                                      parts.username.data(),
+                                      parts.password.data(),
+                                      NULL);
+
+
+                WinHttpSetStatusCallback( ret.m_hRequest.h, &set_proxy_credentials_on_redirect,
+                                         WINHTTP_CALLBACK_FLAG_REDIRECT,
+                                         NULL );
+            }
+
             // Send a request.
             auto bResults = WinHttpSendRequest(
-                ret.m_hRequest.h, WINHTTP_NO_ADDITIONAL_HEADERS, 0, WINHTTP_NO_REQUEST_DATA, 0, 0, 0);
+                ret.m_hRequest.h, WINHTTP_NO_ADDITIONAL_HEADERS, 0, WINHTTP_NO_REQUEST_DATA, 0, 0,
+                                               ret.m_proxy_login.as_dword_ptr());
 
             if (!bResults)
             {
@@ -172,7 +266,6 @@ namespace vcpkg
             {
                 return format_winhttp_last_error_message("WinHttpReceiveResponse", sanitized_url);
             }
-
             return ret;
         }
 
@@ -270,6 +363,7 @@ namespace vcpkg
 
         WinHttpHandle m_hRequest;
         std::string m_sanitized_url;
+        WinHttpContext<ProxyLogin> m_proxy_login;
     };
 
     struct WinHttpSession
@@ -311,12 +405,6 @@ namespace vcpkg
                 proxy.lpszProxyBypass = nullptr;
 
                 WinHttpSetOption(ret.m_hSession.h, WINHTTP_OPTION_PROXY, &proxy, sizeof(proxy));
-                if (!parts.username.empty())
-                {
-                    WinHttpSetOption(ret.m_hSession.h, WINHTTP_OPTION_PROXY_USERNAME, parts.username.data(), parts.username.size() * sizeof(wchar_t));
-                    if (!parts.password.empty())
-                        WinHttpSetOption(ret.m_hSession.h, WINHTTP_OPTION_PROXY_PASSWORD, parts.password.data(), parts.password.size() * sizeof(wchar_t));
-                }
             }
             // IE Proxy fallback, this works on Windows 10
             else
