@@ -1037,7 +1037,6 @@ DECLARE_MESSAGE(DownloadingPortableToolVersionX,
                 "",
                 "A suitable version of {tool_name} was not found (required v{version}) Downloading "
                 "portable {tool_name} {version}...")
-DECLARE_MESSAGE(DownloadingTool, (msg::tool_name, msg::url, msg::path), "", "Downloading {tool_name}...\n{url}->{path}")
 DECLARE_MESSAGE(DownloadingUrl, (msg::url), "", "Downloading {url}")
 DECLARE_MESSAGE(DownloadWinHttpError,
                 (msg::system_api, msg::exit_code, msg::url),
