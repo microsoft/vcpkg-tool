@@ -134,8 +134,8 @@ namespace vcpkg
     void set_proxy_credentials_on_redirect(HINTERNET hInternet,
                                            DWORD_PTR dwContext,
                                            DWORD dwInternetStatus,
-                                           LPVOID lpvStatusInformation,
-                                           DWORD dwStatusInformationLength)
+                                           LPVOID /*lpvStatusInformation*/,
+                                           DWORD /*dwStatusInformationLength*/)
     {
         if (dwInternetStatus == WINHTTP_CALLBACK_STATUS_REDIRECT)
         {
