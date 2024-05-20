@@ -878,9 +878,10 @@ namespace vcpkg
                                         const Optional<std::string>& sha512,
                                         MessageSink& progress_sink) const
     {
-        m_config.m_block_origin ?  msg::println(msgAssetDownloadsBlocked) :  msg::println(msgAssetDownloadsEnabled);
-        m_config.m_read_url_template.has_value() ? msg::println(msgAssetCachingEnabled) :  msg::println(msgAssetCachingNotConfigured);
-        
+        m_config.m_block_origin ? msg::println(msgAssetDownloadsBlocked) : msg::println(msgAssetDownloadsEnabled);
+        m_config.m_read_url_template.has_value() ? msg::println(msgAssetCachingEnabled)
+                                                 : msg::println(msgAssetCachingNotConfigured);
+
         this->download_file(fs, View<std::string>(&url, 1), headers, download_path, sha512, progress_sink);
     }
 
@@ -921,7 +922,8 @@ namespace vcpkg
                     msg::println(msgAssetCacheHit);
                     return read_url;
                 }
-                else{
+                else
+                {
                     msg::println(msgAssetCacheMiss);
                 }
             }
@@ -990,7 +992,8 @@ namespace vcpkg
                             msg::println_warning(msgFailedToStoreBackToMirror);
                             msg::println(maybe_push.error());
                         }
-                        else{
+                        else
+                        {
                             msg::println(msgAssetCacheSuccesfullyStored);
                         }
                     }

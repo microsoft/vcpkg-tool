@@ -246,8 +246,14 @@ DECLARE_MESSAGE(AssetCacheProviderAcceptsNoArguments,
 DECLARE_MESSAGE(AssetCacheSuccesfullyStored, (), "", "Successfully stored back to mirror.")
 DECLARE_MESSAGE(AssetCachingEnabled, (), "", "Asset caching is enabled.")
 DECLARE_MESSAGE(AssetCachingNotConfigured, (), "", "Asset caching is not configured.")
-DECLARE_MESSAGE(AssetDownloadsBlocked, (), "`x-block-origin` is a vcpkg option. Do not translate. ", "External asset downloads are blocked (x-block-origin is enabled)..")
-DECLARE_MESSAGE(AssetDownloadsEnabled, (), "`x-block-origin` is a vcpkg option. Do not translate. ", "External asset downloads are allowed (x-block-origin is disabled).")
+DECLARE_MESSAGE(AssetDownloadsBlocked,
+                (),
+                "`x-block-origin` is a vcpkg option. Do not translate. ",
+                "External asset downloads are blocked (x-block-origin is enabled)..")
+DECLARE_MESSAGE(AssetDownloadsEnabled,
+                (),
+                "`x-block-origin` is a vcpkg option. Do not translate. ",
+                "External asset downloads are allowed (x-block-origin is disabled).")
 DECLARE_MESSAGE(AssetSourcesArg, (), "", "Asset caching sources. See 'vcpkg help assetcaching'")
 DECLARE_MESSAGE(ASemanticVersionString, (), "", "a semantic version string")
 DECLARE_MESSAGE(ASetOfFeatures, (), "", "a set of features")
