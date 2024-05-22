@@ -343,7 +343,9 @@ namespace vcpkg
             void upgrade(Span<const PackageSpec> specs, UnsupportedPortAction unsupported_port_action);
             void mark_user_requested(const PackageSpec& spec);
 
-            ActionPlan serialize(GraphRandomizer* randomizer) const;
+            ActionPlan serialize(GraphRandomizer* randomizer,
+                                 UseHeadVersion use_head_version_if_user_requested,
+                                 Editable editable_if_user_requested) const;
 
             void mark_for_reinstall(const PackageSpec& spec,
                                     std::vector<FeatureSpec>& out_reinstall_requirements) const;
@@ -429,10 +431,13 @@ namespace vcpkg
         };
     }
 
-    static void format_plan_row(LocalizedString& out, const InstallPlanAction& action, const Path& builtin_ports_dir)
+    static void format_plan_ipa_row(LocalizedString& out,
+                                    bool add_head_tag,
+                                    const InstallPlanAction& action,
+                                    const Path& builtin_ports_dir)
     {
         out.append_raw(request_type_indent(action.request_type)).append_raw(action.display_name());
-        if (action.build_options.use_head_version == UseHeadVersion::Yes)
+        if (add_head_tag && action.use_head_version == UseHeadVersion::Yes)
         {
             out.append_raw(" (+HEAD)");
         }
@@ -487,11 +492,26 @@ namespace vcpkg
         return ret;
     }
 
+    InstallPlanAction::InstallPlanAction(InstalledPackageView&& ipv,
+                                         RequestType request_type,
+                                         UseHeadVersion use_head_version,
+                                         Editable editable)
+        : PackageAction{{ipv.spec()}, ipv.dependencies(), ipv.feature_list()}
+        , installed_package(std::move(ipv))
+        , plan_type(InstallPlanType::ALREADY_INSTALLED)
+        , request_type(request_type)
+        , use_head_version(use_head_version)
+        , editable(editable)
+        , feature_dependencies(installed_package.get()->feature_dependencies())
+    {
+    }
+
     InstallPlanAction::InstallPlanAction(const PackageSpec& spec,
                                          const SourceControlFileAndLocation& scfl,
                                          const Path& packages_dir,
-                                         const RequestType& request_type,
-                                         Triplet host_triplet,
+                                         RequestType request_type,
+                                         UseHeadVersion use_head_version,
+                                         Editable editable,
                                          std::map<std::string, std::vector<FeatureSpec>>&& dependencies,
                                          std::vector<LocalizedString>&& build_failure_messages,
                                          std::vector<std::string> default_features)
@@ -500,21 +520,11 @@ namespace vcpkg
         , default_features(std::move(default_features))
         , plan_type(InstallPlanType::BUILD_AND_INSTALL)
         , request_type(request_type)
-        , build_options{}
+        , use_head_version(use_head_version)
+        , editable(editable)
         , feature_dependencies(std::move(dependencies))
         , build_failure_messages(std::move(build_failure_messages))
-        , host_triplet(host_triplet)
         , package_dir(packages_dir / spec.dir())
-    {
-    }
-
-    InstallPlanAction::InstallPlanAction(InstalledPackageView&& ipv, const RequestType& request_type)
-        : PackageAction{{ipv.spec()}, ipv.dependencies(), ipv.feature_list()}
-        , installed_package(std::move(ipv))
-        , plan_type(InstallPlanType::ALREADY_INSTALLED)
-        , request_type(request_type)
-        , build_options{}
-        , feature_dependencies(installed_package.get()->feature_dependencies())
     {
     }
 
@@ -769,7 +779,8 @@ namespace vcpkg
 
         pgraph.install(feature_specs, options.unsupported_port_action);
 
-        return pgraph.serialize(options.randomizer);
+        return pgraph.serialize(
+            options.randomizer, options.use_head_version_if_user_requested, options.editable_if_user_requested);
     }
 
     void PackageGraph::mark_for_reinstall(const PackageSpec& first_remove_spec,
@@ -969,16 +980,18 @@ namespace vcpkg
                                    const CMakeVars::CMakeVarProvider& var_provider,
                                    const std::vector<PackageSpec>& specs,
                                    const StatusParagraphs& status_db,
-                                   const CreateInstallPlanOptions& options)
+                                   const CreateUpgradePlanOptions& options)
     {
         PackageGraph pgraph(port_provider, var_provider, status_db, options.host_triplet, options.packages_dir);
 
         pgraph.upgrade(specs, options.unsupported_port_action);
 
-        return pgraph.serialize(options.randomizer);
+        return pgraph.serialize(options.randomizer, UseHeadVersion::No, Editable::No);
     }
 
-    ActionPlan PackageGraph::serialize(GraphRandomizer* randomizer) const
+    ActionPlan PackageGraph::serialize(GraphRandomizer* randomizer,
+                                       UseHeadVersion use_head_version_if_user_requested,
+                                       Editable editable_if_user_requested) const
     {
         struct BaseEdgeProvider : AdjacencyProvider<PackageSpec, const Cluster*>
         {
@@ -1111,11 +1124,26 @@ namespace vcpkg
                     }
                     computed_edges[kv.first].assign(fspecs.begin(), fspecs.end());
                 }
+
+                UseHeadVersion use_head_version;
+                Editable editable;
+                if (p_cluster->request_type == RequestType::USER_REQUESTED)
+                {
+                    use_head_version = use_head_version_if_user_requested;
+                    editable = editable_if_user_requested;
+                }
+                else
+                {
+                    use_head_version = UseHeadVersion::No;
+                    editable = Editable::No;
+                }
+
                 plan.install_actions.emplace_back(p_cluster->m_spec,
                                                   p_cluster->get_scfl_or_exit(),
                                                   m_packages_dir,
                                                   p_cluster->request_type,
-                                                  m_graph->m_host_triplet,
+                                                  use_head_version,
+                                                  editable,
                                                   std::move(computed_edges),
                                                   std::move(constraint_violations),
                                                   info_ptr->default_features);
@@ -1123,7 +1151,10 @@ namespace vcpkg
             else if (p_cluster->request_type == RequestType::USER_REQUESTED && p_cluster->m_installed.has_value())
             {
                 auto&& installed = p_cluster->m_installed.value_or_exit(VCPKG_LINE_INFO);
-                plan.already_installed.emplace_back(InstalledPackageView(installed.ipv), p_cluster->request_type);
+                plan.already_installed.emplace_back(InstalledPackageView(installed.ipv),
+                                                    p_cluster->request_type,
+                                                    use_head_version_if_user_requested,
+                                                    editable_if_user_requested);
             }
         }
         plan.unsupported_features = m_unsupported_features;
@@ -1177,6 +1208,29 @@ namespace vcpkg
     {
     }
 
+    static void format_plan_block(LocalizedString& msg,
+                                  msg::MessageT<> header,
+                                  bool add_head_tag,
+                                  View<const InstallPlanAction*> actions,
+                                  const Path& builtin_ports_dir)
+    {
+        msg.append(header).append_raw('\n');
+        for (auto action : actions)
+        {
+            format_plan_ipa_row(msg, add_head_tag, *action, builtin_ports_dir);
+            msg.append_raw('\n');
+        }
+    }
+
+    static void format_plan_block(LocalizedString& msg, msg::MessageT<> header, const std::set<PackageSpec>& specs)
+    {
+        msg.append(header).append_raw('\n');
+        for (auto&& spec : specs)
+        {
+            msg.append_raw(request_type_indent(RequestType::USER_REQUESTED)).append_raw(spec).append_raw('\n');
+        }
+    }
+
     FormattedPlan format_plan(const ActionPlan& action_plan, const Path& builtin_ports_dir)
     {
         FormattedPlan ret;
@@ -1228,51 +1282,29 @@ namespace vcpkg
         std::sort(already_installed_plans.begin(), already_installed_plans.end(), &InstallPlanAction::compare_by_name);
         std::sort(excluded.begin(), excluded.end(), &InstallPlanAction::compare_by_name);
 
-        struct
-        {
-            void operator()(LocalizedString& msg, msg::MessageT<> header, View<const InstallPlanAction*> actions)
-            {
-                msg.append(header).append_raw('\n');
-                for (auto action : actions)
-                {
-                    format_plan_row(msg, *action, builtin_ports_dir);
-                    msg.append_raw('\n');
-                }
-            }
-            void operator()(LocalizedString& msg, msg::MessageT<> header, const std::set<PackageSpec>& specs)
-            {
-                msg.append(header).append_raw('\n');
-                for (auto&& spec : specs)
-                {
-                    msg.append_raw(request_type_indent(RequestType::USER_REQUESTED)).append_raw(spec).append_raw('\n');
-                }
-            }
-            const Path& builtin_ports_dir;
-        } format_plan{builtin_ports_dir};
-
         if (!excluded.empty())
         {
-            format_plan(ret.text, msgExcludedPackages, excluded);
+            format_plan_block(ret.text, msgExcludedPackages, false, excluded, builtin_ports_dir);
         }
 
         if (!already_installed_plans.empty())
         {
-            format_plan(ret.text, msgInstalledPackages, already_installed_plans);
+            format_plan_block(ret.text, msgInstalledPackages, false, already_installed_plans, builtin_ports_dir);
         }
 
         if (!remove_specs.empty())
         {
-            format_plan(ret.text, msgPackagesToRemove, remove_specs);
+            format_plan_block(ret.text, msgPackagesToRemove, remove_specs);
         }
 
         if (!rebuilt_plans.empty())
         {
-            format_plan(ret.text, msgPackagesToRebuild, rebuilt_plans);
+            format_plan_block(ret.text, msgPackagesToRebuild, true, rebuilt_plans, builtin_ports_dir);
         }
 
         if (!new_plans.empty())
         {
-            format_plan(ret.text, msgPackagesToInstall, new_plans);
+            format_plan_block(ret.text, msgPackagesToInstall, true, new_plans, builtin_ports_dir);
         }
 
         if (has_non_user_requested_packages)
@@ -1320,7 +1352,7 @@ namespace vcpkg
          * (pinned means there is a matching override or overlay)
          *
          * Phase 1 does not depend on the order of evaluation. The implementation below exploits this to batch calls to
-         * CMake for calculationg dependency resolution tags. However, the results are sensitive to the definition of
+         * CMake for calculating dependency resolution tags. However, the results are sensitive to the definition of
          * comparison. If "compares >= the baseline" changes, the set of considered constraints will change, and so will
          * the results.
          */
@@ -1331,12 +1363,14 @@ namespace vcpkg
                                   const IBaselineProvider& base_provider,
                                   const IOverlayProvider& oprovider,
                                   const CMakeVars::CMakeVarProvider& var_provider,
+                                  const PackageSpec& toplevel,
                                   Triplet host_triplet,
                                   const Path& packages_dir)
                 : m_ver_provider(ver_provider)
                 , m_base_provider(base_provider)
                 , m_o_provider(oprovider)
                 , m_var_provider(var_provider)
+                , m_toplevel(toplevel)
                 , m_host_triplet(host_triplet)
                 , m_packages_dir(packages_dir)
             {
@@ -1344,16 +1378,18 @@ namespace vcpkg
 
             void add_override(const std::string& name, const Version& v);
 
-            void solve_with_roots(View<Dependency> dep, const PackageSpec& toplevel);
+            void solve_with_roots(View<Dependency> dep);
 
-            ExpectedL<ActionPlan> finalize_extract_plan(const PackageSpec& toplevel,
-                                                        UnsupportedPortAction unsupported_port_action);
+            ExpectedL<ActionPlan> finalize_extract_plan(UnsupportedPortAction unsupported_port_action,
+                                                        UseHeadVersion use_head_version_if_user_requested,
+                                                        Editable editable_if_user_requested);
 
         private:
             const IVersionedPortfileProvider& m_ver_provider;
             const IBaselineProvider& m_base_provider;
             const IOverlayProvider& m_o_provider;
             const CMakeVars::CMakeVarProvider& m_var_provider;
+            const PackageSpec& m_toplevel;
             const Triplet m_host_triplet;
             const Path m_packages_dir;
 
@@ -1592,10 +1628,14 @@ namespace vcpkg
         Optional<VersionedPackageGraph::PackageNode&> VersionedPackageGraph::require_package(const PackageSpec& spec,
                                                                                              const std::string& origin)
         {
+            // Implicit defaults are disabled if spec is requested from top-level spec.
+            const bool default_features_mask = origin != m_toplevel.name();
+
             auto it = m_graph.find(spec);
             if (it != m_graph.end())
             {
                 it->second.origins.insert(origin);
+                it->second.default_features &= default_features_mask;
                 return *it;
             }
 
@@ -1650,9 +1690,8 @@ namespace vcpkg
                 }
             }
 
-            // Implicit defaults are disabled if spec has been mentioned at top-level.
+            it->second.default_features = default_features_mask;
             // Note that if top-level doesn't also mark that reference as `[core]`, defaults will be re-engaged.
-            it->second.default_features = !Util::Maps::contains(m_user_requested, spec);
             it->second.requested_features.insert(FeatureNameCore.to_string());
 
             require_scfl(*it, it->second.scfl, origin);
@@ -1670,19 +1709,19 @@ namespace vcpkg
             m_overrides.emplace(name, v);
         }
 
-        void VersionedPackageGraph::solve_with_roots(View<Dependency> deps, const PackageSpec& toplevel)
+        void VersionedPackageGraph::solve_with_roots(View<Dependency> deps)
         {
-            auto dep_to_spec = [&toplevel, this](const Dependency& d) {
-                return PackageSpec{d.name, d.host ? m_host_triplet : toplevel.triplet()};
+            auto dep_to_spec = [this](const Dependency& d) {
+                return PackageSpec{d.name, d.host ? m_host_triplet : m_toplevel.triplet()};
             };
             auto specs = Util::fmap(deps, dep_to_spec);
 
-            specs.push_back(toplevel);
+            specs.push_back(m_toplevel);
             Util::sort_unique_erase(specs);
             for (auto&& dep : deps)
             {
                 if (!dep.platform.is_empty() &&
-                    !dep.platform.evaluate(m_var_provider.get_or_load_dep_info_vars(toplevel, m_host_triplet)))
+                    !dep.platform.evaluate(m_var_provider.get_or_load_dep_info_vars(m_toplevel, m_host_triplet)))
                 {
                     continue;
                 }
@@ -1692,7 +1731,7 @@ namespace vcpkg
                 m_roots.push_back(DepSpec{std::move(spec), dep.constraint, dep.features});
             }
 
-            m_resolve_stack.push_back({toplevel, deps});
+            m_resolve_stack.push_back({m_toplevel, deps});
 
             while (!m_resolve_stack.empty())
             {
@@ -1798,7 +1837,9 @@ namespace vcpkg
         // This function is called after all versioning constraints have been resolved. It is responsible for
         // serializing out the final execution graph and performing all final validations.
         ExpectedL<ActionPlan> VersionedPackageGraph::finalize_extract_plan(
-            const PackageSpec& toplevel, UnsupportedPortAction unsupported_port_action)
+            UnsupportedPortAction unsupported_port_action,
+            UseHeadVersion use_head_version_if_user_requested,
+            Editable editable_if_user_requested)
         {
             if (!m_errors.empty())
             {
@@ -1818,7 +1859,8 @@ namespace vcpkg
             std::vector<Frame> stack;
 
             // Adds a new Frame to the stack if the spec was not already added
-            auto push = [&emitted, this, &stack](const DepSpec& dep, StringView origin) -> ExpectedL<Unit> {
+            auto push = [&emitted, this, &stack, use_head_version_if_user_requested, editable_if_user_requested](
+                            const DepSpec& dep, StringView origin) -> ExpectedL<Unit> {
                 auto p = emitted.emplace(dep.spec, false);
                 // Dependency resolution should have ensured that either every node exists OR an error should have been
                 // logged to m_errors
@@ -1877,13 +1919,28 @@ namespace vcpkg
                         }
                     }
                     std::vector<DepSpec> deps;
-                    RequestType request = Util::Sets::contains(m_user_requested, dep.spec) ? RequestType::USER_REQUESTED
-                                                                                           : RequestType::AUTO_SELECTED;
+                    RequestType request;
+                    UseHeadVersion use_head_version;
+                    Editable editable;
+                    if (Util::Sets::contains(m_user_requested, dep.spec))
+                    {
+                        request = RequestType::USER_REQUESTED;
+                        use_head_version = use_head_version_if_user_requested;
+                        editable = editable_if_user_requested;
+                    }
+                    else
+                    {
+                        request = RequestType::AUTO_SELECTED;
+                        use_head_version = UseHeadVersion::No;
+                        editable = Editable::No;
+                    }
+
                     InstallPlanAction ipa(dep.spec,
                                           *node.second.scfl,
                                           m_packages_dir,
                                           request,
-                                          m_host_triplet,
+                                          use_head_version,
+                                          editable,
                                           compute_feature_dependencies(node, deps),
                                           {},
                                           std::move(default_features));
@@ -1905,7 +1962,7 @@ namespace vcpkg
 
             for (auto&& root : m_roots)
             {
-                auto x = push(root, toplevel.name());
+                auto x = push(root, m_toplevel.name());
                 if (!x.has_value())
                 {
                     return std::move(x).error();
@@ -2005,13 +2062,15 @@ namespace vcpkg
                                                         const CreateInstallPlanOptions& options)
     {
         VersionedPackageGraph vpg(
-            provider, bprovider, oprovider, var_provider, options.host_triplet, options.packages_dir);
+            provider, bprovider, oprovider, var_provider, toplevel, options.host_triplet, options.packages_dir);
         for (auto&& o : overrides)
         {
             vpg.add_override(o.name, o.version);
         }
 
-        vpg.solve_with_roots(deps, toplevel);
-        return vpg.finalize_extract_plan(toplevel, options.unsupported_port_action);
+        vpg.solve_with_roots(deps);
+        return vpg.finalize_extract_plan(options.unsupported_port_action,
+                                         options.use_head_version_if_user_requested,
+                                         options.editable_if_user_requested);
     }
 }

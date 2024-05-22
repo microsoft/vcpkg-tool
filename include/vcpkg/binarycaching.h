@@ -3,6 +3,7 @@
 #include <vcpkg/base/fwd/message_sinks.h>
 
 #include <vcpkg/fwd/binarycaching.h>
+#include <vcpkg/fwd/build.h>
 #include <vcpkg/fwd/dependencies.h>
 #include <vcpkg/fwd/tools.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
@@ -206,7 +207,7 @@ namespace vcpkg
         BinaryCache(BinaryCache&&) = default;
 
         /// Called upon a successful build of `action` to store those contents in the binary cache.
-        void push_success(const InstallPlanAction& action);
+        void push_success(CleanPackages clean_packages, const InstallPlanAction& action);
 
     private:
         BinaryCache(BinaryProviders&& providers, const Filesystem& fs);

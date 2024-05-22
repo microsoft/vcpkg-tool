@@ -288,7 +288,8 @@ namespace vcpkg
         std::vector<FullPackageSpec> specs;
         std::vector<Path> port_locations;
         std::vector<const InstallPlanAction*> actions_to_check;
-        CreateInstallPlanOptions install_plan_options{host_triplet, paths.packages(), UnsupportedPortAction::Warn};
+        CreateInstallPlanOptions install_plan_options{
+            nullptr, host_triplet, paths.packages(), UnsupportedPortAction::Warn, UseHeadVersion::No, Editable::No};
         auto install_plans = Util::fmap(specs_to_test, [&](auto& spec) {
             auto install_plan = create_feature_install_plan(
                 provider, var_provider, Span<FullPackageSpec>(&spec, 1), {}, install_plan_options);
@@ -418,10 +419,6 @@ namespace vcpkg
                     continue;
                 }
             }
-            for (auto&& action : install_plan.install_actions)
-            {
-                action.build_options = backcompat_prohibiting_package_options;
-            }
             Optional<CiBuildLogsRecorder> feature_build_logs_recorder_storage =
                 build_logs_recorder_storage.map([&, &spec = spec](const CiBuildLogsRecorder& recorder) {
                     return recorder.create_for_feature_test(spec, filesystem);
@@ -434,8 +431,27 @@ namespace vcpkg
             ElapsedTimer install_timer;
             install_preclear_packages(paths, install_plan);
             binary_cache.fetch(install_plan.install_actions);
-            const auto summary = install_execute_plan(
-                args, install_plan, KeepGoing::YES, paths, status_db, binary_cache, build_logs_recorder);
+            static constexpr BuildPackageOptions build_options{
+                BuildMissing::Yes,
+                AllowDownloads::Yes,
+                OnlyDownloads::No,
+                CleanBuildtrees::Yes,
+                CleanPackages::Yes,
+                CleanDownloads::No,
+                DownloadTool::Builtin,
+                BackcompatFeatures::Prohibit,
+                PrintUsage::No,
+                KeepGoing::Yes,
+            };
+            const auto summary = install_execute_plan(args,
+                                                      paths,
+                                                      host_triplet,
+                                                      build_options,
+                                                      install_plan,
+                                                      status_db,
+                                                      binary_cache,
+                                                      build_logs_recorder,
+                                                      false);
             binary_cache.clear_cache();
 
             std::string failed_dependencies;

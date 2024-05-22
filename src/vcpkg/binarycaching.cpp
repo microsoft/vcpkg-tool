@@ -254,7 +254,6 @@ namespace
     {
         nothing,
         always,
-        on_fail,
     };
 
     struct ZipResource
@@ -306,13 +305,13 @@ namespace
                     Debug::print("Failed to decompress archive package: ", zip_path.path, '\n');
                 }
 
-                post_decompress(zip_path, job_results[j].has_value());
+                post_decompress(zip_path);
             }
         }
 
-        void post_decompress(const ZipResource& r, bool succeeded) const
+        void post_decompress(const ZipResource& r) const
         {
-            if ((!succeeded && r.to_remove == RemoveWhen::on_fail) || r.to_remove == RemoveWhen::always)
+            if (r.to_remove == RemoveWhen::always)
             {
                 m_fs.remove(r.path, IgnoreErrors{});
             }
@@ -346,10 +345,7 @@ namespace
                 auto archive_path = m_dir / files_archive_subpath(abi_tag);
                 if (m_fs.exists(archive_path, IgnoreErrors{}))
                 {
-                    auto to_remove = actions[i]->build_options.purge_decompress_failure == PurgeDecompressFailure::Yes
-                                         ? RemoveWhen::on_fail
-                                         : RemoveWhen::nothing;
-                    out_zip_paths[i].emplace(std::move(archive_path), to_remove);
+                    out_zip_paths[i].emplace(std::move(archive_path), RemoveWhen::nothing);
                 }
             }
         }
@@ -443,7 +439,7 @@ namespace
                                        make_temp_archive_path(m_buildtrees, action.spec));
             }
 
-            auto codes = download_files(m_fs, url_paths, m_url_template.headers);
+            auto codes = download_files(url_paths, m_url_template.headers, m_secrets);
 
             for (size_t i = 0; i < codes.size(); ++i)
             {
@@ -791,8 +787,10 @@ namespace
             : ZipReadBinaryProvider(std::move(zip), fs)
             , m_buildtrees(buildtrees)
             , m_url(url + "_apis/artifactcache/cache")
+            , m_secrets()
             , m_token_header("Authorization: Bearer " + token)
         {
+            m_secrets.emplace_back(token);
         }
 
         std::string lookup_cache_entry(StringView name, const std::string& abi) const
@@ -835,7 +833,7 @@ namespace
                 url_indices.push_back(idx);
             }
 
-            const auto codes = download_files(m_fs, url_paths, {});
+            const auto codes = download_files(url_paths, {}, m_secrets);
 
             for (size_t i = 0; i < codes.size(); ++i)
             {
@@ -856,6 +854,7 @@ namespace
 
         Path m_buildtrees;
         std::string m_url;
+        std::vector<std::string> m_secrets;
         std::string m_token_header;
         static constexpr StringLiteral m_accept_header = "Accept: application/json;api-version=6.0-preview.1";
         static constexpr StringLiteral m_content_type_header = "Content-Type: application/json";
@@ -2155,7 +2154,7 @@ namespace vcpkg
     {
     }
 
-    void BinaryCache::push_success(const InstallPlanAction& action)
+    void BinaryCache::push_success(CleanPackages clean_packages, const InstallPlanAction& action)
     {
         if (auto abi = action.package_abi().get())
         {
@@ -2208,7 +2207,8 @@ namespace vcpkg
                     msgStoredBinariesToDestinations, msg::count = num_destinations, msg::elapsed = timer.elapsed());
             }
         }
-        if (action.build_options.clean_packages == CleanPackages::Yes)
+
+        if (clean_packages == CleanPackages::Yes)
         {
             m_fs.remove_all(action.package_dir.value_or_exit(VCPKG_LINE_INFO), VCPKG_LINE_INFO);
         }

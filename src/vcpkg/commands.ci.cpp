@@ -234,7 +234,6 @@ namespace
                 }
                 else
                 {
-                    it->build_options = backcompat_prohibiting_package_options;
                     to_keep.insert(it->package_dependencies.begin(), it->package_dependencies.end());
                 }
             }
@@ -327,6 +326,19 @@ namespace vcpkg
         const ParsedArguments options = args.parse_arguments(CommandCiMetadata);
         const auto& settings = options.settings;
 
+        static constexpr BuildPackageOptions build_options{
+            BuildMissing::Yes,
+            AllowDownloads::Yes,
+            OnlyDownloads::No,
+            CleanBuildtrees::Yes,
+            CleanPackages::Yes,
+            CleanDownloads::No,
+            DownloadTool::Builtin,
+            BackcompatFeatures::Prohibit,
+            PrintUsage::Yes,
+            KeepGoing::Yes,
+        };
+
         ExclusionsMap exclusions_map;
         parse_exclusions(settings, SwitchExclude, target_triplet, exclusions_map);
         parse_exclusions(settings, SwitchHostExclude, host_triplet, exclusions_map);
@@ -396,8 +408,6 @@ namespace vcpkg
                 InternalFeatureSet{FeatureNameCore.to_string(), FeatureNameDefault.to_string()});
         }
 
-        CreateInstallPlanOptions serialize_options(host_triplet, paths.packages(), UnsupportedPortAction::Warn);
-
         struct RandomizerInstance : GraphRandomizer
         {
             virtual int random(int i) override
@@ -409,14 +419,16 @@ namespace vcpkg
 
             std::random_device e;
         } randomizer_instance;
-
+        GraphRandomizer* randomizer = nullptr;
         if (Util::Sets::contains(options.switches, SwitchXRandomize))
         {
-            serialize_options.randomizer = &randomizer_instance;
+            randomizer = &randomizer_instance;
         }
-
-        auto action_plan = compute_full_plan(paths, provider, var_provider, all_default_full_specs, serialize_options);
-        auto binary_cache = BinaryCache::make(args, paths, stdout_sink).value_or_exit(VCPKG_LINE_INFO);
+        CreateInstallPlanOptions create_install_plan_options(
+            randomizer, host_triplet, paths.packages(), UnsupportedPortAction::Warn, UseHeadVersion::No, Editable::No);
+        auto action_plan =
+            compute_full_plan(paths, provider, var_provider, all_default_full_specs, create_install_plan_options);
+        auto binary_cache = BinaryCache::make(args, paths, out_sink).value_or_exit(VCPKG_LINE_INFO);
         auto install_actions = Util::fmap(action_plan.install_actions, [](const auto& action) { return &action; });
         const auto precheck_results = binary_cache.precheck(install_actions);
         auto split_specs =
@@ -522,8 +534,9 @@ namespace vcpkg
 
             install_preclear_packages(paths, action_plan);
             binary_cache.fetch(action_plan.install_actions);
+
             auto summary = install_execute_plan(
-                args, action_plan, KeepGoing::YES, paths, status_db, binary_cache, build_logs_recorder);
+                args, paths, host_triplet, build_options, action_plan, status_db, binary_cache, build_logs_recorder);
 
             for (auto&& result : summary.results)
             {

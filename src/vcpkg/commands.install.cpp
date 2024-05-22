@@ -319,6 +319,8 @@ namespace vcpkg
 
     static ExtendedBuildResult perform_install_plan_action(const VcpkgCmdArguments& args,
                                                            const VcpkgPaths& paths,
+                                                           Triplet host_triplet,
+                                                           const BuildPackageOptions& build_options,
                                                            const InstallPlanAction& action,
                                                            StatusParagraphs& status_db,
                                                            BinaryCache& binary_cache,
@@ -326,13 +328,9 @@ namespace vcpkg
     {
         auto& fs = paths.get_filesystem();
         const InstallPlanType& plan_type = action.plan_type;
-
-        const bool is_user_requested = action.request_type == RequestType::USER_REQUESTED;
-        const bool use_head_version = Util::Enum::to_bool(action.build_options.use_head_version);
-
         if (plan_type == InstallPlanType::ALREADY_INSTALLED)
         {
-            if (use_head_version && is_user_requested)
+            if (action.use_head_version == UseHeadVersion::Yes)
                 msg::println(Color::warning, msgAlreadyInstalledNotHead, msg::spec = action.spec);
             else
                 msg::println(Color::success, msgAlreadyInstalled, msg::spec = action.spec);
@@ -350,16 +348,17 @@ namespace vcpkg
                 bcf = std::make_unique<BinaryControlFile>(std::move(maybe_bcf).value_or_exit(VCPKG_LINE_INFO));
                 all_dependencies_satisfied = true;
             }
-            else if (action.build_options.build_missing == BuildMissing::No)
+            else if (build_options.build_missing == BuildMissing::No)
             {
                 return ExtendedBuildResult{BuildResult::CacheMissing};
             }
             else
             {
-                msg::println(use_head_version ? msgBuildingFromHead : msgBuildingPackage,
+                msg::println(action.use_head_version == UseHeadVersion::Yes ? msgBuildingFromHead : msgBuildingPackage,
                              msg::spec = action.display_name());
 
-                auto result = build_package(args, paths, action, build_logs_recorder, status_db);
+                auto result =
+                    build_package(args, paths, host_triplet, build_options, action, build_logs_recorder, status_db);
 
                 if (BuildResult::Downloaded == result.code)
                 {
@@ -399,15 +398,15 @@ namespace vcpkg
                     case InstallResult::FILE_CONFLICTS: code = BuildResult::FileConflicts; break;
                     default: Checks::unreachable(VCPKG_LINE_INFO);
                 }
-                binary_cache.push_success(action);
+                binary_cache.push_success(build_options.clean_packages, action);
             }
             else
             {
-                Checks::check_exit(VCPKG_LINE_INFO, action.build_options.only_downloads == OnlyDownloads::Yes);
+                Checks::check_exit(VCPKG_LINE_INFO, build_options.only_downloads == OnlyDownloads::Yes);
                 code = BuildResult::Downloaded;
             }
 
-            if (action.build_options.clean_downloads == CleanDownloads::Yes)
+            if (build_options.clean_downloads == CleanDownloads::Yes)
             {
                 for (auto& p : fs.get_regular_files_non_recursive(paths.downloads, IgnoreErrors{}))
                 {
@@ -568,9 +567,10 @@ namespace vcpkg
     }
 
     InstallSummary install_execute_plan(const VcpkgCmdArguments& args,
-                                        const ActionPlan& action_plan,
-                                        const KeepGoing keep_going,
                                         const VcpkgPaths& paths,
+                                        Triplet host_triplet,
+                                        const BuildPackageOptions& build_options,
+                                        const ActionPlan& action_plan,
                                         StatusParagraphs& status_db,
                                         BinaryCache& binary_cache,
                                         const IBuildLogsRecorder& build_logs_recorder,
@@ -591,16 +591,16 @@ namespace vcpkg
 
         for (auto&& action : action_plan.already_installed)
         {
-            results.emplace_back(action).build_result.emplace(
-                perform_install_plan_action(args, paths, action, status_db, binary_cache, build_logs_recorder));
+            results.emplace_back(action).build_result.emplace(perform_install_plan_action(
+                args, paths, host_triplet, build_options, action, status_db, binary_cache, build_logs_recorder));
         }
 
         for (auto&& action : action_plan.install_actions)
         {
             TrackedPackageInstallGuard this_install(action_index++, action_count, results, action);
-            auto result =
-                perform_install_plan_action(args, paths, action, status_db, binary_cache, build_logs_recorder);
-            if (result.code != BuildResult::Succeeded && keep_going == KeepGoing::NO)
+            auto result = perform_install_plan_action(
+                args, paths, host_triplet, build_options, action, status_db, binary_cache, build_logs_recorder);
+            if (result.code != BuildResult::Succeeded && build_options.keep_going == KeepGoing::No)
             {
                 this_install.print_elapsed_time();
                 print_user_troubleshooting_message(action, paths, result.stdoutlog.then([&](auto&) -> Optional<Path> {
@@ -981,7 +981,7 @@ namespace vcpkg
                 msg.append_indent()
                     .append_raw("find_path(")
                     .append_raw(name)
-                    .append_raw("_INCLUDE_DIRS \")")
+                    .append_raw("_INCLUDE_DIRS \"")
                     .append_raw(header_path)
                     .append_raw("\")\n");
                 msg.append_indent()
@@ -1046,7 +1046,7 @@ namespace vcpkg
         const bool clean_downloads_after_build =
             Util::Sets::contains(options.switches, (SwitchCleanDownloadsAfterBuild));
         const KeepGoing keep_going =
-            Util::Sets::contains(options.switches, SwitchKeepGoing) || only_downloads ? KeepGoing::YES : KeepGoing::NO;
+            Util::Sets::contains(options.switches, SwitchKeepGoing) || only_downloads ? KeepGoing::Yes : KeepGoing::No;
         const bool prohibit_backcompat_features =
             Util::Sets::contains(options.switches, (SwitchXProhibitBackcompatFeatures)) ||
             Util::Sets::contains(options.switches, (SwitchEnforcePortChecks));
@@ -1114,24 +1114,28 @@ namespace vcpkg
         DownloadTool download_tool = DownloadTool::Builtin;
         if (use_aria2) download_tool = DownloadTool::Aria2;
 
-        const BuildPackageOptions install_plan_options = {
+        const BuildPackageOptions build_package_options = {
             Util::Enum::to_enum<BuildMissing>(!no_build_missing),
-            Util::Enum::to_enum<UseHeadVersion>(use_head_version),
             Util::Enum::to_enum<AllowDownloads>(!no_downloads),
             Util::Enum::to_enum<OnlyDownloads>(only_downloads),
             Util::Enum::to_enum<CleanBuildtrees>(clean_after_build || clean_buildtrees_after_build),
             Util::Enum::to_enum<CleanPackages>(clean_after_build || clean_packages_after_build),
             Util::Enum::to_enum<CleanDownloads>(clean_after_build || clean_downloads_after_build),
             download_tool,
-            PurgeDecompressFailure::No,
-            Util::Enum::to_enum<Editable>(is_editable),
             prohibit_backcompat_features ? BackcompatFeatures::Prohibit : BackcompatFeatures::Allow,
-            print_cmake_usage};
+            print_cmake_usage,
+            keep_going,
+        };
+
+        const CreateInstallPlanOptions create_options{nullptr,
+                                                      host_triplet,
+                                                      paths.packages(),
+                                                      unsupported_port_action,
+                                                      Util::Enum::to_enum<UseHeadVersion>(use_head_version),
+                                                      Util::Enum::to_enum<Editable>(is_editable)};
 
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
-
-        const CreateInstallPlanOptions create_options{host_triplet, paths.packages(), unsupported_port_action};
 
         if (auto manifest = paths.get_manifest().get())
         {
@@ -1251,12 +1255,6 @@ namespace vcpkg
                                     .value_or_exit(VCPKG_LINE_INFO);
 
             install_plan.print_unsupported_warnings();
-            for (InstallPlanAction& action : install_plan.install_actions)
-            {
-                action.build_options = install_plan_options;
-                action.build_options.use_head_version = UseHeadVersion::No;
-                action.build_options.editable = Editable::No;
-            }
 
             // If the manifest refers to itself, it will be added to the install plan.
             Util::erase_remove_if(install_plan.install_actions,
@@ -1264,14 +1262,12 @@ namespace vcpkg
 
             command_set_installed_and_exit_ex(args,
                                               paths,
+                                              host_triplet,
+                                              build_package_options,
                                               var_provider,
                                               std::move(install_plan),
                                               dry_run ? DryRun::Yes : DryRun::No,
                                               pkgsconfig,
-                                              host_triplet,
-                                              keep_going,
-                                              only_downloads,
-                                              print_cmake_usage,
                                               true);
         }
 
@@ -1292,16 +1288,6 @@ namespace vcpkg
         auto action_plan = create_feature_install_plan(provider, var_provider, specs, status_db, create_options);
 
         action_plan.print_unsupported_warnings();
-        for (auto&& action : action_plan.install_actions)
-        {
-            action.build_options = install_plan_options;
-            if (action.request_type != RequestType::USER_REQUESTED)
-            {
-                action.build_options.use_head_version = UseHeadVersion::No;
-                action.build_options.editable = Editable::No;
-            }
-        }
-
         var_provider.load_tag_vars(action_plan, host_triplet);
 
         // install plan will be empty if it is already installed - need to change this at status paragraph part
@@ -1367,10 +1353,16 @@ namespace vcpkg
         auto binary_cache = only_downloads ? BinaryCache(paths.get_filesystem())
                                            : BinaryCache::make(args, paths, out_sink).value_or_exit(VCPKG_LINE_INFO);
         binary_cache.fetch(action_plan.install_actions);
-        const InstallSummary summary = install_execute_plan(
-            args, action_plan, keep_going, paths, status_db, binary_cache, null_build_logs_recorder());
+        const InstallSummary summary = install_execute_plan(args,
+                                                            paths,
+                                                            host_triplet,
+                                                            build_package_options,
+                                                            action_plan,
+                                                            status_db,
+                                                            binary_cache,
+                                                            null_build_logs_recorder());
 
-        if (keep_going == KeepGoing::YES)
+        if (keep_going == KeepGoing::Yes)
         {
             summary.print();
         }
@@ -1393,7 +1385,7 @@ namespace vcpkg
             fs.write_contents(it_xunit->second, xwriter.build_xml(default_triplet), VCPKG_LINE_INFO);
         }
 
-        if (install_plan_options.print_usage == PrintUsage::Yes)
+        if (build_package_options.print_usage == PrintUsage::Yes)
         {
             std::set<std::string> printed_usages;
             for (auto&& result : summary.results)

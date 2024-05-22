@@ -1,5 +1,5 @@
 {
-  "$id": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/master/docs/artifact.schema.json",
+  "$id": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/artifact.schema.json",
   "type": "object",
   "properties": {
     "id": {

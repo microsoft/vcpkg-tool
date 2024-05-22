@@ -105,9 +105,10 @@ namespace vcpkg
     void install_preclear_packages(const VcpkgPaths& paths, const ActionPlan& action_plan);
 
     InstallSummary install_execute_plan(const VcpkgCmdArguments& args,
-                                        const ActionPlan& action_plan,
-                                        const KeepGoing keep_going,
                                         const VcpkgPaths& paths,
+                                        Triplet host_triplet,
+                                        const BuildPackageOptions& build_options,
+                                        const ActionPlan& action_plan,
                                         StatusParagraphs& status_db,
                                         BinaryCache& binary_cache,
                                         const IBuildLogsRecorder& build_logs_recorder,
