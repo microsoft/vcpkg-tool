@@ -37,3 +37,16 @@ Throw-IfNotFailed
 if ($output -notmatch 'expected a versioning field') {
     throw 'Did not detect missing field'
 }
+
+# Check for msgAlreadyInstalled vs. msgAlreadyInstalledNotHead
+$output = Run-VcpkgAndCaptureOutput @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports" install vcpkg-internal-e2e-test-port3
+Throw-IfFailed
+if ($output -notmatch 'vcpkg-internal-e2e-test-port3:[^ ]+ is already installed') {
+    throw 'Wrong already installed message'
+}
+
+$output = Run-VcpkgAndCaptureOutput @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports" install vcpkg-internal-e2e-test-port3 --head
+Throw-IfFailed
+if ($output -notmatch 'vcpkg-internal-e2e-test-port3:[^ ]+ is already installed -- not building from HEAD') {
+    throw 'Wrong already installed message for --head'
+}

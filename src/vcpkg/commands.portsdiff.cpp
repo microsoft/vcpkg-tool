@@ -172,6 +172,12 @@ namespace vcpkg
         const StringView git_commit_id_for_current_snapshot =
             parsed.command_arguments.size() < 2 ? StringLiteral{"HEAD"} : StringView{parsed.command_arguments[1]};
 
+        if (git_commit_id_for_previous_snapshot == git_commit_id_for_current_snapshot)
+        {
+            msg::println(msgPortsNoDiff);
+            Checks::exit_success(VCPKG_LINE_INFO);
+        }
+
         const auto portsdiff =
             find_portsdiff(paths, git_commit_id_for_previous_snapshot, git_commit_id_for_current_snapshot);
         const auto& added_ports = portsdiff.added_ports;

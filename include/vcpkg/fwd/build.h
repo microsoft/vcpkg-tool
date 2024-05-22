@@ -63,12 +63,6 @@ namespace vcpkg
         Aria2,
     };
 
-    enum class PurgeDecompressFailure
-    {
-        No = 0,
-        Yes
-    };
-
     enum class Editable
     {
         No = 0,
@@ -88,6 +82,12 @@ namespace vcpkg
     };
 
     enum class PrintUsage
+    {
+        No = 0,
+        Yes
+    };
+
+    enum class KeepGoing
     {
         No = 0,
         Yes

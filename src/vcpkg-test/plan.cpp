@@ -63,8 +63,13 @@ static ActionPlan create_feature_install_plan(const PortFileProvider& port_provi
                                               const StatusParagraphs& status_db,
                                               ImplicitDefault implicit_defaults = ImplicitDefault::Yes)
 {
-    const CreateInstallPlanOptions create_options{
-        Test::X64_ANDROID, "pkg", UnsupportedPortAction::Error, implicit_defaults};
+    const CreateInstallPlanOptions create_options{nullptr,
+                                                  Test::X64_ANDROID,
+                                                  "pkg",
+                                                  UnsupportedPortAction::Error,
+                                                  UseHeadVersion::No,
+                                                  Editable::No,
+                                                  implicit_defaults};
     return create_feature_install_plan(port_provider, var_provider, specs, status_db, create_options);
 }
 
@@ -74,7 +79,8 @@ static ActionPlan create_feature_install_plan(const PortFileProvider& port_provi
                                               const StatusParagraphs& status_db,
                                               Triplet host_triplet)
 {
-    const CreateInstallPlanOptions create_options{host_triplet, "pkg"};
+    const CreateInstallPlanOptions create_options{
+        nullptr, host_triplet, "pkg", UnsupportedPortAction::Error, UseHeadVersion::No, Editable::No};
     return create_feature_install_plan(port_provider, var_provider, specs, status_db, create_options);
 }
 
@@ -83,7 +89,7 @@ static ActionPlan create_upgrade_plan(const PortFileProvider& provider,
                                       const std::vector<PackageSpec>& specs,
                                       const StatusParagraphs& status_db)
 {
-    const CreateInstallPlanOptions create_options{Test::X64_ANDROID, "pkg"};
+    const CreateUpgradePlanOptions create_options{nullptr, Test::X64_ANDROID, "pkg", UnsupportedPortAction::Error};
     return create_upgrade_plan(provider, var_provider, specs, status_db, create_options);
 }
 
