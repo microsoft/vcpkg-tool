@@ -236,14 +236,14 @@ DECLARE_MESSAGE(ArtifactsSwitchOsx, (), "", "Forces host detection to MacOS when
 DECLARE_MESSAGE(ArtifactsSwitchX64, (), "", "Forces host detection to x64 when acquiring artifacts")
 DECLARE_MESSAGE(ArtifactsSwitchX86, (), "", "Forces host detection to x86 when acquiring artifacts")
 DECLARE_MESSAGE(ArtifactsSwitchWindows, (), "", "Forces host detection to Windows when acquiring artifacts")
-DECLARE_MESSAGE(AssetCacheAttemptingDownload, (msg::url), "", "Attempting to download from: \"{url}\".")
+DECLARE_MESSAGE(AssetCacheAttemptingDownload, (msg::url, msg::path), "", "Attempting to download from: {url} -> {path}...")
 DECLARE_MESSAGE(AssetCacheHit, (), "", "Asset cache hit!")
 DECLARE_MESSAGE(AssetCacheMiss, (), "", "Asset cache miss!")
 DECLARE_MESSAGE(AssetCacheProviderAcceptsNoArguments,
                 (msg::value),
                 "{value} is a asset caching provider name such as azurl, clear, or x-block-origin",
                 "unexpected arguments: '{value}' does not accept arguments")
-DECLARE_MESSAGE(AssetCacheSuccesfullyStored, (), "", "Successfully stored back to mirror.")
+DECLARE_MESSAGE(AssetCacheSuccesfullyStored, (msg::path), "", "Successfully stored {path} back to mirror.")
 DECLARE_MESSAGE(AssetCachingEnabled, (), "", "Asset caching is enabled.")
 DECLARE_MESSAGE(AssetCachingNotConfigured, (), "", "Asset caching is not configured.")
 DECLARE_MESSAGE(AssetDownloadsBlocked,
