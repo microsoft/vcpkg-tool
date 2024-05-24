@@ -1086,6 +1086,10 @@ DECLARE_MESSAGE(
     "",
     "Could not detect vcpkg-root. If you are trying to use a copy of vcpkg that you've built, you must "
     "define the VCPKG_ROOT environment variable to point to a cloned copy of https://github.com/Microsoft/vcpkg.")
+DECLARE_MESSAGE(ErrorNoMSVCToolset,
+                (msg::triplet, msg::version),
+                "",
+                "in triplet {triplet}: Unable to find the specific MSVC toolset version {version}")
 DECLARE_MESSAGE(ErrorNoVSInstance,
                 (msg::triplet),
                 "",

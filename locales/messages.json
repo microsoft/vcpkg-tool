@@ -641,6 +641,8 @@
   "ErrorInvalidManifestModeOption": "The option --{option} is not supported in manifest mode.",
   "_ErrorInvalidManifestModeOption.comment": "An example of {option} is editable.",
   "ErrorMissingVcpkgRoot": "Could not detect vcpkg-root. If you are trying to use a copy of vcpkg that you've built, you must define the VCPKG_ROOT environment variable to point to a cloned copy of https://github.com/Microsoft/vcpkg.",
+  "ErrorNoMSVCToolset": "in triplet {triplet}: Unable to find the specific MSVC toolset version {version}",
+  "_ErrorNoMSVCToolset.comment": "An example of {triplet} is x64-windows. An example of {version} is 1.3.8.",
   "ErrorNoVSInstance": "in triplet {triplet}: Unable to find a valid Visual Studio instance",
   "_ErrorNoVSInstance.comment": "An example of {triplet} is x64-windows.",
   "ErrorNoVSInstanceAt": "at \"{path}\"",
