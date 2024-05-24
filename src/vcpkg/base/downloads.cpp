@@ -871,6 +871,15 @@ namespace vcpkg
         return s_headers;
     }
 
+    bool DownloadManager::get_block_origin() const {
+        return m_config.m_block_origin;
+    }
+
+    bool DownloadManager::asset_cache_configured() const
+    {
+        return m_config.m_read_url_template.has_value();
+    }
+
     void DownloadManager::download_file(const Filesystem& fs,
                                         const std::string& url,
                                         View<std::string> headers,
@@ -878,8 +887,8 @@ namespace vcpkg
                                         const Optional<std::string>& sha512,
                                         MessageSink& progress_sink) const
     {
-        m_config.m_block_origin ? msg::println(msgAssetDownloadsBlocked) : msg::println(msgAssetDownloadsEnabled);
-        m_config.m_read_url_template.has_value() ? msg::println(msgAssetCachingEnabled)
+        get_block_origin() ? msg::println(msgAssetDownloadsBlocked) : msg::println(msgAssetDownloadsEnabled);
+        asset_cache_configured() ? msg::println(msgAssetCachingEnabled)
                                                  : msg::println(msgAssetCachingNotConfigured);
 
         this->download_file(fs, View<std::string>(&url, 1), headers, download_path, sha512, progress_sink);

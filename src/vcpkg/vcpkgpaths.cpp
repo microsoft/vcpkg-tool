@@ -316,7 +316,7 @@ namespace
             , scripts(process_input_directory(fs, root, args.scripts_root_dir.get(), "scripts", VCPKG_LINE_INFO))
             , m_registries_cache(compute_registries_cache_root(fs, args))
         {
-            Debug::println("Using builtin-ports: ", m_builtin_ports);
+            Debug::println("Using builtin-ports: ", m_builtin_ports);         
         }
 
         const Filesystem& m_fs;
@@ -655,9 +655,10 @@ namespace vcpkg
         , community_triplets(filesystem.almost_canonical(triplets / "community", VCPKG_LINE_INFO))
     {
         Debug::print("Using vcpkg-root: ", root, '\n');
-        Debug::print("Using scripts-root: ", scripts, '\n');
         Debug::print("Using builtin-registry: ", builtin_registry_versions, '\n');
         Debug::print("Using downloads-root: ", downloads, '\n');
+        m_pimpl->m_download_manager->get_block_origin() ? Debug::println("External asset downloads are blocked (x-block-origin is enabled)..") : Debug::println("External asset downloads are allowed (x-block-origin is disabled)...");
+        m_pimpl->m_download_manager->asset_cache_configured() ? Debug::println("Asset caching is enabled.") : Debug::println("Asset cache is not configured.");
 
         {
             const auto config_path = m_pimpl->m_config_dir / "vcpkg-configuration.json";

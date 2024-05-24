@@ -11,6 +11,7 @@
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.h>
 #include <vcpkg/base/system.process.h>
+#include <vcpkg/base/system.debug.h>
 
 #include <vcpkg/archives.h>
 #include <vcpkg/tools.h>
