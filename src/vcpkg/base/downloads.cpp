@@ -887,10 +887,6 @@ namespace vcpkg
                                         const Optional<std::string>& sha512,
                                         MessageSink& progress_sink) const
     {
-        get_block_origin() ? msg::println(msgAssetDownloadsBlocked) : msg::println(msgAssetDownloadsEnabled);
-        asset_cache_configured() ? msg::println(msgAssetCachingEnabled)
-                                                 : msg::println(msgAssetCachingNotConfigured);
-
         this->download_file(fs, View<std::string>(&url, 1), headers, download_path, sha512, progress_sink);
     }
 
@@ -928,12 +924,12 @@ namespace vcpkg
                                       errors,
                                       progress_sink))
                 {
-                    msg::println(msgAssetCacheHit);
+                    msg::println(msgAssetCacheHit, msg::path = download_path.filename());
                     return read_url;
                 }
                 else
                 {
-                    msg::println(msgAssetCacheMiss);
+                    msg::println(msgAssetCacheMiss, msg::path = download_path.filename());
                 }
             }
             else if (auto script = m_config.m_script.get())
@@ -988,30 +984,29 @@ namespace vcpkg
         {
             if (urls.size() != 0)
             {
-                msg::println(msgAssetCacheAttemptingDownload, msg::url = urls[0], msg::path = download_path.filename());
+                msg::println(LocalizedString::from_raw(fmt::format("Downloading {}", urls[0])));
+                
                 auto maybe_url = try_download_file(
                     fs, urls, headers, download_path, sha512, m_config.m_secrets, errors, progress_sink);
                 if (auto url = maybe_url.get())
                 {
                     if (auto hash = sha512.get())
                     {
-                        auto maybe_push = put_file_to_mirror(fs, download_path, *hash);
-                        if (!maybe_push)
+                        if(m_config.m_write_url_template.has_value())
                         {
-                            msg::println_warning(msgFailedToStoreBackToMirror);
-                            msg::println(maybe_push.error());
-                        }
-                        else
-                        {
+                            put_file_to_mirror(fs, download_path, *hash);
                             msg::println(msgAssetCacheSuccesfullyStored, msg::path = download_path.filename());
-                        }
+                        
+                        }else{
+                            msg::println_warning(msgFailedToStoreBackToMirror, msg::path = download_path.filename());
+                        }                       
                     }
 
                     return *url;
                 }
             }
         }
-        msg::println_error(msgFailedToDownloadFromMirrorSet);
+        msg::println_error(msgFailedToDownloadFromMirrorSet, msg::path = download_path.filename());
         for (LocalizedString& error : errors)
         {
             msg::println(error);

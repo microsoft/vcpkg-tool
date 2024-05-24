@@ -236,14 +236,13 @@ DECLARE_MESSAGE(ArtifactsSwitchOsx, (), "", "Forces host detection to MacOS when
 DECLARE_MESSAGE(ArtifactsSwitchX64, (), "", "Forces host detection to x64 when acquiring artifacts")
 DECLARE_MESSAGE(ArtifactsSwitchX86, (), "", "Forces host detection to x86 when acquiring artifacts")
 DECLARE_MESSAGE(ArtifactsSwitchWindows, (), "", "Forces host detection to Windows when acquiring artifacts")
-DECLARE_MESSAGE(AssetCacheAttemptingDownload, (msg::url, msg::path), "", "Attempting to download: {url} -> {path}...")
-DECLARE_MESSAGE(AssetCacheHit, (), "", "Asset cache hit!")
-DECLARE_MESSAGE(AssetCacheMiss, (), "", "Asset cache miss!")
+DECLARE_MESSAGE(AssetCacheHit, (msg::path), "", "Asset cache hit for {path}.")
+DECLARE_MESSAGE(AssetCacheMiss, (msg::path), "", "Asset cache miss for {path}.")
 DECLARE_MESSAGE(AssetCacheProviderAcceptsNoArguments,
                 (msg::value),
                 "{value} is a asset caching provider name such as azurl, clear, or x-block-origin",
                 "unexpected arguments: '{value}' does not accept arguments")
-DECLARE_MESSAGE(AssetCacheSuccesfullyStored, (msg::path), "", "Successfully stored {path} back to mirror.")
+DECLARE_MESSAGE(AssetCacheSuccesfullyStored, (msg::path), "", "Successfully stored {path} to mirror.")
 DECLARE_MESSAGE(AssetCachingDisabled, (), "", "Asset caching is not configured.")
 DECLARE_MESSAGE(AssetCachingEnabled, (), "", "Asset caching is enabled.")
 DECLARE_MESSAGE(AssetCachingNotConfigured, (), "", "Asset caching is not configured.")
@@ -1042,8 +1041,7 @@ DECLARE_MESSAGE(DownloadFailedStatusCode,
 DECLARE_MESSAGE(DownloadingPortableToolVersionX,
                 (msg::tool_name, msg::version),
                 "",
-                "A suitable version of {tool_name} was not found (required v{version}) Downloading "
-                "portable {tool_name} {version}...")
+                "A suitable version of {tool_name} was not found (required v{version}).")
 DECLARE_MESSAGE(DownloadingUrl, (msg::url), "", "Downloading {url}")
 DECLARE_MESSAGE(DownloadWinHttpError,
                 (msg::system_api, msg::exit_code, msg::url),
@@ -1212,7 +1210,7 @@ DECLARE_MESSAGE(FailedToDeleteInsideDueToFile,
                 "printed after this",
                 "failed to remove_all_inside({value}) due to {path}: ")
 DECLARE_MESSAGE(FailedToDetermineCurrentCommit, (), "", "Failed to determine the current commit:")
-DECLARE_MESSAGE(FailedToDownloadFromMirrorSet, (), "", "Failed to download from mirror set")
+DECLARE_MESSAGE(FailedToDownloadFromMirrorSet, (msg::path), "", "Failed to download {path}.")
 DECLARE_MESSAGE(FailedToExtract, (msg::path), "", "Failed to extract \"{path}\":")
 DECLARE_MESSAGE(FailedToFetchRepo, (msg::url), "", "Failed to fetch {url}.")
 DECLARE_MESSAGE(FailedToFindPortFeature,
@@ -1266,7 +1264,7 @@ DECLARE_MESSAGE(FailedToRunToolToDetermineVersion,
                 "Additional information, such as the command line output, if any, will be appended on "
                 "the line after this message",
                 "Failed to run \"{path}\" to determine the {tool_name} version.")
-DECLARE_MESSAGE(FailedToStoreBackToMirror, (), "", "failed to store back to mirror:")
+DECLARE_MESSAGE(FailedToStoreBackToMirror, (msg::path), "", "Asset Caching is not configured. Failed to store {path} to mirror.")
 DECLARE_MESSAGE(FailedToStoreBinaryCache, (msg::path), "", "Failed to store binary cache {path}")
 DECLARE_MESSAGE(FailedToTakeFileSystemLock, (), "", "Failed to take the filesystem lock")
 DECLARE_MESSAGE(FailedToWriteManifest, (msg::path), "", "Failed to write manifest file {path}")
