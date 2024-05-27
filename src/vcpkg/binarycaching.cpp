@@ -991,9 +991,8 @@ namespace
         {
             parallel_transform(
                 actions, out_zip_paths.begin(), [&](const InstallPlanAction* plan) -> Optional<ZipResource> {
-                    auto&& action = *plan;
-                    const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
-                    auto tmp = make_temp_archive_path(m_buildtrees, action.spec);
+                    const auto& abi = plan->package_abi().value_or_exit(VCPKG_LINE_INFO);
+                    auto tmp = make_temp_archive_path(m_buildtrees, plan->spec);
                     auto res = m_tool->download_file(make_object_path(m_prefix, abi), tmp);
                     if (res)
                     {
@@ -1010,8 +1009,7 @@ namespace
         void precheck(View<const InstallPlanAction*> actions, Span<CacheAvailability> cache_status) const override
         {
             parallel_transform(actions, cache_status.begin(), [&](const InstallPlanAction* plan) {
-                auto&& action = *plan;
-                const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
+                const auto& abi = plan->package_abi().value_or_exit(VCPKG_LINE_INFO);
                 if (m_tool->stat(make_object_path(m_prefix, abi)))
                 {
                     return CacheAvailability::available;
