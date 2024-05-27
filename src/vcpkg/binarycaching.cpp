@@ -962,7 +962,11 @@ namespace
 
         virtual LocalizedString restored_message(size_t count,
                                                  std::chrono::high_resolution_clock::duration elapsed) const = 0;
+        /// checks if package abi is present in this storage
+        /// NOTE: Operation must be thread safe. Multiple calls will occur in parallel
         virtual ExpectedL<Unit> stat(StringView url) const = 0;
+        /// download a package zip from this storage
+        /// NOTE: Operation must be thread safe. Multiple calls will occur in parallel
         virtual ExpectedL<Unit> download_file(StringView object, const Path& archive) const = 0;
         virtual ExpectedL<Unit> upload_file(StringView object, const Path& archive) const = 0;
     };
