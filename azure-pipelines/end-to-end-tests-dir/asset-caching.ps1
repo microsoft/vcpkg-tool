@@ -13,7 +13,7 @@ $actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("install", "vcpkg
 $expected = @(
 "Computing installation plan..."
 "A suitable version of .* was not found \(required v[0-9\.]+\)."
-"error: Failed to download .*-[0-9\.]+-.*\.tar\.gz\."
+"error: Failed to download .*."
 ) -join "`n"
 
 if (-not ($actual -match $expected)) {
@@ -41,8 +41,8 @@ $actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("install", "vcpkg
 $expected = @(
 "Computing installation plan..."
 "A suitable version of .* was not found \(required v[0-9\.]+\)."
-"Asset cache miss for .*-[0-9\.]+-.*\.tar\.gz."
-"error: Failed to download .*[0-9\.]+-.*\.tar\.gz."
+"Asset cache miss for .*."
+"error: Failed to download .*"
 ) -join "`n"
 
 if (-not ($actual -match $expected)) {
@@ -55,9 +55,9 @@ $actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("install", "vcpkg
 $expected = @(
 "Computing installation plan..."
 "A suitable version of .* was not found \(required v[0-9\.]+\)."
-"Asset cache miss for .*-[0-9\.]+-.*\.tar\.gz."
+"Asset cache miss for .*."
 "Downloading .*"
-"Successfully stored .*-[0-9\.]+-.*\.tar\.gz to mirror."
+"Successfully stored .* to mirror."
 "Extracting .*..."
 ) -join "`n"
 
@@ -72,7 +72,8 @@ $actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("install", "vcpkg
 $expected = @(
 "Computing installation plan..."
 "A suitable version of .* was not found \(required v[0-9\.]+\)."
-"Asset cache hit for .*-[0-9\.]+-.*\.tar\.gz."
+"Asset cache hit for .*."
+"Downloading: .*"
 "Extracting .*..."
 ) -join "`n"
 

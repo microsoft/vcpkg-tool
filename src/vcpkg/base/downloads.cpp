@@ -924,7 +924,7 @@ namespace vcpkg
                                       errors,
                                       progress_sink))
                 {
-                    msg::println(msgAssetCacheHit, msg::path = download_path.filename());
+                    msg::println(msgAssetCacheHit, msg::path = download_path.filename(), msg::url = read_url);
                     return read_url;
                 }
                 else
