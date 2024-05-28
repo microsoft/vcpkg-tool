@@ -6,6 +6,9 @@ $NuGetRoot = Join-Path $TestingRoot 'nuget'
 $NuGetRoot2 = Join-Path $TestingRoot 'nuget2'
 $ArchiveRoot = Join-Path $TestingRoot 'archives'
 $VersionFilesRoot = Join-Path $TestingRoot 'version-test'
+$DownloadsRoot = Join-Path $TestingRoot 'downloads'
+$AssetCache = Join-Path $TestingRoot 'asset-cache'
+
 $directoryArgs = @(
     "--x-buildtrees-root=$buildtreesRoot",
     "--x-install-root=$installRoot",
@@ -34,6 +37,13 @@ function Refresh-TestRoot {
     Remove-Item -Recurse -Force $TestingRoot -ErrorAction SilentlyContinue
     New-Item -ItemType Directory -Force $TestingRoot | Out-Null
     New-Item -ItemType Directory -Force $NuGetRoot | Out-Null
+    New-Item -ItemType Directory -Force $DownloadsRoot | Out-Null
+    New-Item -ItemType Directory -Force $AssetCache | Out-Null
+}
+
+function Refresh-Downloads{
+    Remove-Item -Recurse -Force $DownloadsRoot -ErrorAction SilentlyContinue
+    New-Item -ItemType Directory -Force $DownloadsRoot | Out-Null
 }
 
 function Write-Stack {
