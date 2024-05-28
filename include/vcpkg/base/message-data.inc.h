@@ -243,17 +243,6 @@ DECLARE_MESSAGE(AssetCacheProviderAcceptsNoArguments,
                 "{value} is a asset caching provider name such as azurl, clear, or x-block-origin",
                 "unexpected arguments: '{value}' does not accept arguments")
 DECLARE_MESSAGE(AssetCacheSuccesfullyStored, (msg::path, msg::url), "", "Successfully stored {path} to {url}.")
-DECLARE_MESSAGE(AssetCachingDisabled, (), "", "Asset caching is not configured.")
-DECLARE_MESSAGE(AssetCachingEnabled, (), "", "Asset caching is enabled.")
-DECLARE_MESSAGE(AssetCachingNotConfigured, (), "", "Asset caching is not configured.")
-DECLARE_MESSAGE(AssetDownloadsBlocked,
-                (),
-                "`x-block-origin` is a vcpkg option. Do not translate. ",
-                "External asset downloads are blocked (x-block-origin is enabled)...")
-DECLARE_MESSAGE(AssetDownloadsEnabled,
-                (),
-                "`x-block-origin` is a vcpkg option. Do not translate.",
-                "External asset downloads are allowed (x-block-origin is disabled)...")
 DECLARE_MESSAGE(AssetSourcesArg, (), "", "Asset caching sources. See 'vcpkg help assetcaching'")
 DECLARE_MESSAGE(ASemanticVersionString, (), "", "a semantic version string")
 DECLARE_MESSAGE(ASetOfFeatures, (), "", "a set of features")
@@ -1042,7 +1031,6 @@ DECLARE_MESSAGE(DownloadingPortableToolVersionX,
                 (msg::tool_name, msg::version),
                 "",
                 "A suitable version of {tool_name} was not found (required v{version}).")
-DECLARE_MESSAGE(DownloadingUrl, (msg::url), "", "Downloading {url}")
 DECLARE_MESSAGE(DownloadWinHttpError,
                 (msg::system_api, msg::exit_code, msg::url),
                 "",
@@ -1210,7 +1198,7 @@ DECLARE_MESSAGE(FailedToDeleteInsideDueToFile,
                 "printed after this",
                 "failed to remove_all_inside({value}) due to {path}: ")
 DECLARE_MESSAGE(FailedToDetermineCurrentCommit, (), "", "Failed to determine the current commit:")
-DECLARE_MESSAGE(FailedToDownloadFromMirrorSet, (msg::path), "", "Asset cache miss for {path} and external downloads are blocked by x-block-origin.")
+DECLARE_MESSAGE(FailedToDownloadFromMirrorSet, (msg::path), "x-block-origin is a vcpkg term. Do not translate", "Asset cache miss for {path} and external downloads are blocked by x-block-origin.")
 DECLARE_MESSAGE(FailedToExtract, (msg::path), "", "Failed to extract \"{path}\":")
 DECLARE_MESSAGE(FailedToFetchRepo, (msg::url), "", "Failed to fetch {url}.")
 DECLARE_MESSAGE(FailedToFindPortFeature,
@@ -2607,7 +2595,7 @@ DECLARE_MESSAGE(UnexpectedArgument,
 DECLARE_MESSAGE(
     UnexpectedAssetCacheProvider,
     (),
-    "",
+    "'x-azurl', 'x-script', 'clear' are valid source types. Do not translate",
     "unknown asset provider type: valid source types are 'x-azurl', 'x-script', 'x-block-origin', and 'clear'")
 DECLARE_MESSAGE(UnexpectedByteSize,
                 (msg::expected, msg::actual),
