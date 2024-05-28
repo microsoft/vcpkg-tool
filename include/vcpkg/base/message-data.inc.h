@@ -1198,7 +1198,10 @@ DECLARE_MESSAGE(FailedToDeleteInsideDueToFile,
                 "printed after this",
                 "failed to remove_all_inside({value}) due to {path}: ")
 DECLARE_MESSAGE(FailedToDetermineCurrentCommit, (), "", "Failed to determine the current commit:")
-DECLARE_MESSAGE(FailedToDownloadFromMirrorSet, (msg::path), "x-block-origin is a vcpkg term. Do not translate", "Asset cache miss for {path} and external downloads are blocked by x-block-origin.")
+DECLARE_MESSAGE(FailedToDownloadFromMirrorSet,
+                (msg::path),
+                "x-block-origin is a vcpkg term. Do not translate",
+                "Asset cache miss for {path} and external downloads are blocked by x-block-origin.")
 DECLARE_MESSAGE(FailedToExtract, (msg::path), "", "Failed to extract \"{path}\":")
 DECLARE_MESSAGE(FailedToFetchRepo, (msg::url), "", "Failed to fetch {url}.")
 DECLARE_MESSAGE(FailedToFindPortFeature,

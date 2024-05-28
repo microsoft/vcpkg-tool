@@ -870,14 +870,9 @@ namespace vcpkg
         return s_headers;
     }
 
-    bool DownloadManager::get_block_origin() const {
-        return m_config.m_block_origin;
-    }
+    bool DownloadManager::get_block_origin() const { return m_config.m_block_origin; }
 
-    bool DownloadManager::asset_cache_configured() const
-    {
-        return m_config.m_read_url_template.has_value();
-    }
+    bool DownloadManager::asset_cache_configured() const { return m_config.m_read_url_template.has_value(); }
 
     void DownloadManager::download_file(const Filesystem& fs,
                                         const std::string& url,
@@ -980,7 +975,7 @@ namespace vcpkg
             if (urls.size() != 0)
             {
                 msg::println(msgAssetCacheMiss, msg::path = download_path.filename(), msg::url = urls[0]);
-                
+
                 auto maybe_url = try_download_file(
                     fs, urls, headers, download_path, sha512, m_config.m_secrets, errors, progress_sink);
                 if (auto url = maybe_url.get())
@@ -998,7 +993,6 @@ namespace vcpkg
                     return *url;
                 }
             }
-
         }
         msg::println_error(msgFailedToDownloadFromMirrorSet, msg::path = download_path.filename());
         for (LocalizedString& error : errors)
@@ -1016,7 +1010,8 @@ namespace vcpkg
         auto maybe_mirror_url = Strings::replace_all(m_config.m_write_url_template.value_or(""), "<SHA>", sha512);
         if (!maybe_mirror_url.empty())
         {
-            msg::println(msgAssetCacheSuccesfullyStored, msg::path = file_to_put.filename(), msg::url = maybe_mirror_url);
+            msg::println(
+                msgAssetCacheSuccesfullyStored, msg::path = file_to_put.filename(), msg::url = maybe_mirror_url);
             return put_file(fs, maybe_mirror_url, m_config.m_secrets, m_config.m_write_headers, file_to_put);
         }
         return 0;
