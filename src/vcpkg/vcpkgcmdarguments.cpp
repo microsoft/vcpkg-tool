@@ -712,10 +712,9 @@ namespace vcpkg
 
             // Remove newlines from JSON so that environment can be captured on !windows
             auto json_str = Json::stringify(obj, Json::JsonStyle::with_spaces(0));
-            std::replace(json_str.begin(), json_str.end(), '\n',' ');
+            std::replace(json_str.begin(), json_str.end(), '\n', ' ');
 
-            set_environment_variable(EnvironmentVariableXVcpkgRecursiveData,
-                                     std::move(json_str));
+            set_environment_variable(EnvironmentVariableXVcpkgRecursiveData, std::move(json_str));
         }
     }
 

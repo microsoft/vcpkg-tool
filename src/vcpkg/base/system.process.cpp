@@ -1277,16 +1277,20 @@ namespace vcpkg
 
         if (!maybe_rc_output)
         {
-            Checks::msg_exit_with_error(
-                VCPKG_LINE_INFO, msgCaptureCmdRunFailed, msg::command_name = actual_cmd.command_line(), msg::error_msg = maybe_rc_output.error());
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO,
+                                        msgCaptureCmdRunFailed,
+                                        msg::command_name = actual_cmd.command_line(),
+                                        msg::error_msg = maybe_rc_output.error());
         }
 
         auto& rc_output = maybe_rc_output.value_or_exit(VCPKG_LINE_INFO);
         Debug::print(rc_output.output, "\n");
         if (rc_output.exit_code != 0)
         {
-            Checks::msg_exit_with_error(
-                VCPKG_LINE_INFO, msgCaptureCmdEnvFailedExitCode, msg::command_name = actual_cmd.command_line(), msg::exit_code = rc_output.exit_code);
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO,
+                                        msgCaptureCmdEnvFailedExitCode,
+                                        msg::command_name = actual_cmd.command_line(),
+                                        msg::exit_code = rc_output.exit_code);
         }
 
         auto it = Strings::search(rc_output.output, magic_string);

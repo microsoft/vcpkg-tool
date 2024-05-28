@@ -135,7 +135,6 @@ namespace vcpkg
         std::vector<std::string> environment_setup_scripts;
         std::vector<Path> hash_additional_files;
 
-
         Optional<Path> gamedk_latest_path;
 
         Path toolchain_file() const;

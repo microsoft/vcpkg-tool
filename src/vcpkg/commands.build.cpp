@@ -470,48 +470,50 @@ namespace vcpkg
         return base_env.cmd_cache.get_lazy(build_env_cmd, [&]() {
             const Path& powershell_exe_path = paths.get_tool_exe("powershell-core", out_sink);
             auto clean_env = get_modified_clean_environment(base_env.env_map, powershell_exe_path.parent_path());
-            auto action_env = build_env_cmd.empty() ? clean_env : cmd_execute_and_capture_environment(build_env_cmd, clean_env);
-            for(const auto& env_setup_script : pre_build_info.environment_setup_scripts)
+            auto action_env =
+                build_env_cmd.empty() ? clean_env : cmd_execute_and_capture_environment(build_env_cmd, clean_env);
+            for (const auto& env_setup_script : pre_build_info.environment_setup_scripts)
             {
                 const auto env_setup_cmd = make_setup_env_cmd(paths, env_setup_script);
-                if(vcpkg::Strings::ends_with(env_setup_script,".cmake")) 
+                if (vcpkg::Strings::ends_with(env_setup_script, ".cmake"))
                 {
                     ProcessLaunchSettings settings;
                     settings.environment = action_env;
                     cmd_execute(env_setup_cmd, settings);
                 }
-                else 
+                else
                 {
                     action_env = cmd_execute_and_capture_environment(env_setup_cmd, action_env);
-                }                     
-
+                }
             }
             return action_env;
         });
     }
 #else
-    const Environment& EnvCache::get_action_env(const VcpkgPaths& paths, const PreBuildInfo& pre_build_info, const Toolset&)
+    const Environment& EnvCache::get_action_env(const VcpkgPaths& paths,
+                                                const PreBuildInfo& pre_build_info,
+                                                const Toolset&)
     {
         auto action_env = get_clean_environment();
-        const auto& base_env = envs.get_lazy(pre_build_info.environment_setup_scripts,[] () {return EnvMapEntry{};});
+        const auto& base_env = envs.get_lazy(pre_build_info.environment_setup_scripts, []() { return EnvMapEntry{}; });
 
         // I think this should be done differently but I don't exactly know how to build the commands beforehand.
         // Can I stack base_env.cmd_cache.get_lazy in a loop?
 
         return base_env.cmd_cache.get_lazy(vcpkg::Command{}, [&]() {
-            for(const auto& env_setup_script : pre_build_info.environment_setup_scripts)
+            for (const auto& env_setup_script : pre_build_info.environment_setup_scripts)
             {
-                    const auto env_setup_cmd = make_setup_env_cmd(paths, env_setup_script);
-                    if(vcpkg::Strings::ends_with(env_setup_script,".cmake")) 
-                    {
-                        ProcessLaunchSettings settings;
-                        settings.environment = action_env;
-                        cmd_execute(env_setup_cmd, settings);
-                    }
-                    else 
-                    {
-                        action_env = cmd_execute_and_capture_environment(env_setup_cmd, action_env);
-                    }
+                const auto env_setup_cmd = make_setup_env_cmd(paths, env_setup_script);
+                if (vcpkg::Strings::ends_with(env_setup_script, ".cmake"))
+                {
+                    ProcessLaunchSettings settings;
+                    settings.environment = action_env;
+                    cmd_execute(env_setup_cmd, settings);
+                }
+                else
+                {
+                    action_env = cmd_execute_and_capture_environment(env_setup_cmd, action_env);
+                }
             }
             return action_env;
         });
@@ -624,17 +626,18 @@ namespace vcpkg
 #endif
     }
 
-    vcpkg::Command make_setup_env_cmd(const VcpkgPaths& paths, const Path& script) 
+    vcpkg::Command make_setup_env_cmd(const VcpkgPaths& paths, const Path& script)
     {
         vcpkg::Command env_setup_cmd;
-        const auto& fs = paths.get_filesystem(); 
-        
-        if(script.is_relative() || !fs.is_regular_file(script)) {
+        const auto& fs = paths.get_filesystem();
+
+        if (script.is_relative() || !fs.is_regular_file(script))
+        {
             // Throw error
             Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgInvalidEnvSetupScripts, msg::path = script);
         }
 
-        if(script.extension() == ".cmake") 
+        if (script.extension() == ".cmake")
         {
             env_setup_cmd = vcpkg::make_cmake_cmd(paths, script, {});
         }
@@ -642,12 +645,11 @@ namespace vcpkg
         {
 #ifdef _WIN32
             env_setup_cmd = vcpkg::Command{"cmd"}.string_arg("/d").string_arg("/c");
-            env_setup_cmd.raw_arg(fmt::format(R"("{}" 2>&1 <NUL)",script));
+            env_setup_cmd.raw_arg(fmt::format(R"("{}" 2>&1 <NUL)", script));
 #else
-            env_setup_cmd = vcpkg::Command{"."}.raw_arg(fmt::format(R"({} 2>&1 </dev/null)",script));
+            env_setup_cmd = vcpkg::Command{"."}.raw_arg(fmt::format(R"({} 2>&1 </dev/null)", script));
 #endif
-
-        }  
+        }
         return env_setup_cmd;
     }
 

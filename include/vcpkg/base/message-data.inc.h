@@ -1840,8 +1840,9 @@ DECLARE_MESSAGE(InvalidCommentStyle,
                 "comments.")
 DECLARE_MESSAGE(InvalidCommitId, (msg::commit_sha), "", "Invalid commit id: {commit_sha}")
 DECLARE_MESSAGE(InvalidDefaultFeatureName, (), "", "'default' is a reserved feature name")
-DECLARE_MESSAGE(InvalidEnvSetupScripts, (msg::path), 
-                "", 
+DECLARE_MESSAGE(InvalidEnvSetupScripts,
+                (msg::path),
+                "",
                 "Variable VCPKG_ENVIRONMENT_SETUP_SCRIPTS contains invalid file path: '{path}'. The value must be "
                 "an absolute path to an existent file.")
 DECLARE_MESSAGE(InvalidFeature,
@@ -2833,7 +2834,10 @@ DECLARE_MESSAGE(VcpkgRegistriesCacheIsNotDirectory,
 DECLARE_MESSAGE(VcpkgRootRequired, (), "", "Setting VCPKG_ROOT is required for standalone bootstrap.")
 DECLARE_MESSAGE(VcpkgRootsDir, (msg::env_var), "", "The vcpkg root directory (default: {env_var})")
 DECLARE_MESSAGE(VcpkgSendMetricsButDisabled, (), "", "passed --sendmetrics, but metrics are disabled.")
-DECLARE_MESSAGE(CaptureCmdRunFailed, (msg::command_name, msg::error_msg), "", "failed to run '{command_name}' to get environment ({error_msg}).")
+DECLARE_MESSAGE(CaptureCmdRunFailed,
+                (msg::command_name, msg::error_msg),
+                "",
+                "failed to run '{command_name}' to get environment ({error_msg}).")
 DECLARE_MESSAGE(CaptureCmdEnvFailedExitCode,
                 (msg::command_name, msg::exit_code),
                 "",
