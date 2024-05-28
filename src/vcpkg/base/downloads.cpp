@@ -717,7 +717,6 @@ namespace vcpkg
         fs.create_directories(dir, VCPKG_LINE_INFO);
 
         const auto sanitized_url = replace_secrets(url, secrets);
-        msg::println(msgDownloadingUrl, msg::url = sanitized_url);
         static auto s = WinHttpSession::make(sanitized_url).value_or_exit(VCPKG_LINE_INFO);
         for (size_t trials = 0; trials < 4; ++trials)
         {
