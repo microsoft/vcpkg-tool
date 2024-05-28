@@ -237,12 +237,12 @@ DECLARE_MESSAGE(ArtifactsSwitchX64, (), "", "Forces host detection to x64 when a
 DECLARE_MESSAGE(ArtifactsSwitchX86, (), "", "Forces host detection to x86 when acquiring artifacts")
 DECLARE_MESSAGE(ArtifactsSwitchWindows, (), "", "Forces host detection to Windows when acquiring artifacts")
 DECLARE_MESSAGE(AssetCacheHit, (msg::path, msg::url), "", "Asset cache hit for {path}.\nDownloading: {url}")
-DECLARE_MESSAGE(AssetCacheMiss, (msg::path), "", "Asset cache miss for {path}.\nDownloading: {url}")
+DECLARE_MESSAGE(AssetCacheMiss, (msg::path, msg::url), "", "Asset cache miss for {path}.\nDownloading: {url}")
 DECLARE_MESSAGE(AssetCacheProviderAcceptsNoArguments,
                 (msg::value),
                 "{value} is a asset caching provider name such as azurl, clear, or x-block-origin",
                 "unexpected arguments: '{value}' does not accept arguments")
-DECLARE_MESSAGE(AssetCacheSuccesfullyStored, (msg::path), "", "Successfully stored {path} to mirror.")
+DECLARE_MESSAGE(AssetCacheSuccesfullyStored, (msg::path, msg::url), "", "Successfully stored {path} to {url}.")
 DECLARE_MESSAGE(AssetCachingDisabled, (), "", "Asset caching is not configured.")
 DECLARE_MESSAGE(AssetCachingEnabled, (), "", "Asset caching is enabled.")
 DECLARE_MESSAGE(AssetCachingNotConfigured, (), "", "Asset caching is not configured.")
@@ -1210,7 +1210,7 @@ DECLARE_MESSAGE(FailedToDeleteInsideDueToFile,
                 "printed after this",
                 "failed to remove_all_inside({value}) due to {path}: ")
 DECLARE_MESSAGE(FailedToDetermineCurrentCommit, (), "", "Failed to determine the current commit:")
-DECLARE_MESSAGE(FailedToDownloadFromMirrorSet, (msg::path), "", "Failed to download {path}.")
+DECLARE_MESSAGE(FailedToDownloadFromMirrorSet, (msg::path), "", "Asset cache miss for {path} and external downloads are blocked by x-block-origin.")
 DECLARE_MESSAGE(FailedToExtract, (msg::path), "", "Failed to extract \"{path}\":")
 DECLARE_MESSAGE(FailedToFetchRepo, (msg::url), "", "Failed to fetch {url}.")
 DECLARE_MESSAGE(FailedToFindPortFeature,

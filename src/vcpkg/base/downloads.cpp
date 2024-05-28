@@ -927,10 +927,6 @@ namespace vcpkg
                     msg::println(msgAssetCacheHit, msg::path = download_path.filename(), msg::url = read_url);
                     return read_url;
                 }
-                else
-                {
-                    msg::println(msgAssetCacheMiss, msg::path = download_path.filename());
-                }
             }
             else if (auto script = m_config.m_script.get())
             {
@@ -984,7 +980,7 @@ namespace vcpkg
         {
             if (urls.size() != 0)
             {
-                msg::println(msgDownloadingUrl, msg::url = urls[0]);
+                msg::println(msgAssetCacheMiss, msg::path = download_path.filename(), msg::url = urls[0]);
                 
                 auto maybe_url = try_download_file(
                     fs, urls, headers, download_path, sha512, m_config.m_secrets, errors, progress_sink);
@@ -992,16 +988,18 @@ namespace vcpkg
                 {
                     if (auto hash = sha512.get())
                     {
-                        if(m_config.m_write_url_template.has_value())
+                        auto maybe_push = put_file_to_mirror(fs, download_path, *hash);
+                        if (!maybe_push)
                         {
-
-                            put_file_to_mirror(fs, download_path, *hash) ? msg::println(msgAssetCacheSuccesfullyStored, msg::path = download_path.filename()) :  msg::println(msgFailedToStoreBackToMirror, msg::path = download_path.filename());
-                        }     
+                            msg::println_warning(msgFailedToStoreBackToMirror, msg::path = download_path.filename());
+                            msg::println(maybe_push.error());
+                        }
                     }
 
                     return *url;
                 }
             }
+
         }
         msg::println_error(msgFailedToDownloadFromMirrorSet, msg::path = download_path.filename());
         for (LocalizedString& error : errors)
@@ -1019,6 +1017,7 @@ namespace vcpkg
         auto maybe_mirror_url = Strings::replace_all(m_config.m_write_url_template.value_or(""), "<SHA>", sha512);
         if (!maybe_mirror_url.empty())
         {
+            msg::println(msgAssetCacheSuccesfullyStored, msg::path = file_to_put.filename(), msg::url = maybe_mirror_url);
             return put_file(fs, maybe_mirror_url, m_config.m_secrets, m_config.m_write_headers, file_to_put);
         }
         return 0;

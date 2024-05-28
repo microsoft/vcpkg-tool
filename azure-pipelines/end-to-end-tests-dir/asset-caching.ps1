@@ -6,55 +6,41 @@ Run-Vcpkg -TestArgs ($commonArgs + @('fetch', 'cmake'))
 Run-Vcpkg -TestArgs ($commonArgs + @("install", "vcpkg-test-x-script", "--x-binarysource=clear", "--overlay-ports=$PSScriptRoot/../e2e-ports", "--x-asset-sources=x-script,$TestScriptAssetCacheExe {url} {sha512} {dst};x-block-origin"))
 Throw-IfFailed
 
-# Testing asset cache not configured + x-block-origin enabled
+# Testing asset cache miss + x-block-origin enabled
 Refresh-TestRoot
 $actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("install", "vcpkg-internal-e2e-test-port", "--overlay-ports=$PSScriptRoot/../e2e-ports", "--x-asset-sources=clear;x-block-origin", "--downloads-root=$DownloadsRoot"))
 
 $expected = @(
 "A suitable version of .* was not found \(required v[0-9\.]+\)."
-"error: Failed to download .*."
+"error: Asset cache miss for .* and external downloads are blocked by x-block-origin."
 ) -join "`n"
 
 if (-not ($actual -match $expected)) {
     throw "Asset cache not configured + x-block-origin enabled failed"
 }
 
-# Testing asset cache not configured + x-block-origin disabled
+# Testing asset cache miss (not configured) + x-block-origin disabled
 $actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("install", "vcpkg-internal-e2e-test-port", "--overlay-ports=$PSScriptRoot/../e2e-ports", "--x-asset-sources=clear;", "--downloads-root=$DownloadsRoot"))
 
 $expected = @(
 "A suitable version of .* was not found \(required v[0-9\.]+\)."
-"Downloading .*"
-"Extracting .*..."
+"Asset cache miss for .*."
+"Downloading: .*"
 ) -join "`n"
 
 if (-not ($actual -match $expected)) {
     throw "Asset cache not configured + x-block-origin disabled failed"
 }
 
-# Testing asset cache miss + x-block-origin enabled
+# Testing asset cache miss (configured) + x-block-origin disabled
 Refresh-TestRoot
-$actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("install", "vcpkg-internal-e2e-test-port", "--overlay-ports=$PSScriptRoot/../e2e-ports", "--x-asset-sources=x-azurl,file://$AssetCache,,readwrite;x-block-origin", "--downloads-root=$DownloadsRoot"))
-
-$expected = @(
-"A suitable version of .* was not found \(required v[0-9\.]+\)."
-"Asset cache miss for .*."
-"error: Failed to download .*"
-) -join "`n"
-
-if (-not ($actual -match $expected)) {
-    throw "Asset cache miss + x-block-origin enabled failed"
-}
-
-# Testing asset cache miss + x-block-origin disabled
 $actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("install", "vcpkg-internal-e2e-test-port", "--overlay-ports=$PSScriptRoot/../e2e-ports", "--x-asset-sources=x-azurl,file://$AssetCache,,readwrite;", "--downloads-root=$DownloadsRoot"))
 
 $expected = @(
 "A suitable version of .* was not found \(required v[0-9\.]+\)."
 "Asset cache miss for .*."
-"Downloading .*"
-"Successfully stored .* to mirror."
-"Extracting .*..."
+"Downloading: .*"
+"Successfully stored .* to .*."
 ) -join "`n"
 
 if (-not ($actual -match $expected)) {
@@ -69,7 +55,6 @@ $expected = @(
 "A suitable version of .* was not found \(required v[0-9\.]+\)."
 "Asset cache hit for .*."
 "Downloading: .*"
-"Extracting .*..."
 ) -join "`n"
 
 if (-not ($actual -match $expected)) {
