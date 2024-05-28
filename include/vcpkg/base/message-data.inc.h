@@ -249,7 +249,7 @@ DECLARE_MESSAGE(AssetCachingNotConfigured, (), "", "Asset caching is not configu
 DECLARE_MESSAGE(AssetDownloadsBlocked,
                 (),
                 "`x-block-origin` is a vcpkg option. Do not translate. ",
-                "External asset downloads are blocked (x-block-origin is enabled)..")
+                "External asset downloads are blocked (x-block-origin is enabled)...")
 DECLARE_MESSAGE(AssetDownloadsEnabled,
                 (),
                 "`x-block-origin` is a vcpkg option. Do not translate.",

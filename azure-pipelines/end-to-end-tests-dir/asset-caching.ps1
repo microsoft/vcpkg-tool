@@ -5,8 +5,8 @@ Refresh-TestRoot
 Run-Vcpkg -TestArgs ($commonArgs + @('fetch', 'cmake'))
 Run-Vcpkg -TestArgs ($commonArgs + @("install", "vcpkg-test-x-script", "--x-binarysource=clear", "--overlay-ports=$PSScriptRoot/../e2e-ports", "--x-asset-sources=x-script,$TestScriptAssetCacheExe {url} {sha512} {dst};x-block-origin"))
 Throw-IfFailed
+$env:VCPKG_FORCE_DOWNLOADED_BINARIES = "ON"
 
-# Testing asset cache miss + x-block-origin enabled
 Refresh-TestRoot
 $actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("install", "vcpkg-internal-e2e-test-port", "--overlay-ports=$PSScriptRoot/../e2e-ports", "--x-asset-sources=clear;x-block-origin", "--downloads-root=$DownloadsRoot"))
 
@@ -66,7 +66,7 @@ Refresh-TestRoot
 $actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("install", "vcpkg-internal-e2e-test-port", "--overlay-ports=$PSScriptRoot/../e2e-ports", "--x-asset-sources=x-azurl,file://$AssetCache,,readwrite;x-block-origin", "--downloads-root=$DownloadsRoot", "--debug"))
 # Define the regex pattern that accounts for multiline input
 $expectedPattern = "(?s)" +
-                   ".*\[DEBUG\] External asset downloads are blocked \(x-block-origin is enabled\)\.\.?" +
+                   ".*\[DEBUG\] External asset downloads are blocked \(x-block-origin is enabled\)\.\.\.?" +
                    ".*\[DEBUG\] Asset caching is enabled\..*"
 
 if (-not ($actual -match $expectedPattern)) {
