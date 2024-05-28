@@ -1895,7 +1895,7 @@ namespace vcpkg
             Util::Vectors::append(&passthrough_env_vars, Strings::split(*value, ';'));
         }
 
-        if (auto value = Util::value_if_set_and_nonempty(cmakevars, CMakeVariableHashAdditionalFiles))
+        if (auto value = Util::value_if_set_and_nonempty(cmakevars, CMakeVariableEnvSetupScripts))
         {
             Util::Vectors::append(&environment_setup_scripts, Strings::split(*value, ';'));
         }
