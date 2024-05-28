@@ -1270,7 +1270,9 @@ namespace vcpkg
 
         RedirectedProcessLaunchSettings settings;
         settings.environment = env;
+#ifdef _WIN32
         settings.create_new_console = CreateNewConsole::Yes;
+#endif
         auto maybe_rc_output = cmd_execute_and_capture_output(actual_cmd, settings);
 
         if (!maybe_rc_output)
