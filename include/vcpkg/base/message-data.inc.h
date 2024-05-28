@@ -2833,7 +2833,7 @@ DECLARE_MESSAGE(VcpkgRegistriesCacheIsNotDirectory,
 DECLARE_MESSAGE(VcpkgRootRequired, (), "", "Setting VCPKG_ROOT is required for standalone bootstrap.")
 DECLARE_MESSAGE(VcpkgRootsDir, (msg::env_var), "", "The vcpkg root directory (default: {env_var})")
 DECLARE_MESSAGE(VcpkgSendMetricsButDisabled, (), "", "passed --sendmetrics, but metrics are disabled.")
-DECLARE_MESSAGE(CaptureCmdRunFailed, (msg::command_name, msg::error_msg), "", "failed to run '{command_name}' to get environment ({msg::error_msg}).")
+DECLARE_MESSAGE(CaptureCmdRunFailed, (msg::command_name, msg::error_msg), "", "failed to run '{command_name}' to get environment ({error_msg}).")
 DECLARE_MESSAGE(CaptureCmdEnvFailedExitCode,
                 (msg::command_name, msg::exit_code),
                 "",
