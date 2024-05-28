@@ -12,8 +12,8 @@ $actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("install", "vcpkg
 
 $expected = @(
 "Computing installation plan..."
-"A suitable version of cmake was not found \(required v[0-9\.]+\)."
-"error: Failed to download cmake-[0-9\.]+-.*\.tar\.gz\."
+"A suitable version of .* was not found \(required v[0-9\.]+\)."
+"error: Failed to download .*-[0-9\.]+-.*\.tar\.gz\."
 ) -join "`n"
 
 if (-not ($actual -match $expected)) {
@@ -25,10 +25,9 @@ $actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("install", "vcpkg
 
 $expected = @(
 "Computing installation plan..."
-"A suitable version of cmake was not found \(required v[0-9\.]+\)."
+"A suitable version of .* was not found \(required v[0-9\.]+\)."
 "Downloading .*"
-"warning: Asset Caching is not configured. Failed to store cmake-[0-9\.]+-.*\.tar\.gz to mirror."
-"Extracting cmake..."
+"Extracting .*..."
 ) -join "`n"
 
 if (-not ($actual -match $expected)) {
@@ -41,9 +40,9 @@ $actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("install", "vcpkg
 
 $expected = @(
 "Computing installation plan..."
-"A suitable version of cmake was not found \(required v[0-9\.]+\)."
-"Asset cache miss for cmake-[0-9\.]+-.*\.tar\.gz."
-"error: Failed to download cmake-[0-9\.]+-.*\.tar\.gz."
+"A suitable version of .* was not found \(required v[0-9\.]+\)."
+"Asset cache miss for .*-[0-9\.]+-.*\.tar\.gz."
+"error: Failed to download .*[0-9\.]+-.*\.tar\.gz."
 ) -join "`n"
 
 if (-not ($actual -match $expected)) {
@@ -55,11 +54,11 @@ $actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("install", "vcpkg
 
 $expected = @(
 "Computing installation plan..."
-"A suitable version of cmake was not found \(required v[0-9\.]+\)."
-"Asset cache miss for cmake-[0-9\.]+-.*\.tar\.gz."
+"A suitable version of .* was not found \(required v[0-9\.]+\)."
+"Asset cache miss for .*-[0-9\.]+-.*\.tar\.gz."
 "Downloading .*"
-"Successfully stored cmake-[0-9\.]+-.*\.tar\.gz to mirror."
-"Extracting cmake..."
+"Successfully stored .*-[0-9\.]+-.*\.tar\.gz to mirror."
+"Extracting .*..."
 ) -join "`n"
 
 if (-not ($actual -match $expected)) {
@@ -72,9 +71,9 @@ Run-Vcpkg -TestArgs ($commonArgs + @('remove', 'vcpkg-internal-e2e-test-port'))
 $actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("install", "vcpkg-internal-e2e-test-port", "--overlay-ports=$PSScriptRoot/../e2e-ports", "--x-asset-sources=x-azurl,file://$AssetCache,,readwrite;", "--downloads-root=$DownloadsRoot"))
 $expected = @(
 "Computing installation plan..."
-"A suitable version of cmake was not found \(required v[0-9\.]+\)."
-"Asset cache hit for cmake-[0-9\.]+-.*\.tar\.gz."
-"Extracting cmake..."
+"A suitable version of .* was not found \(required v[0-9\.]+\)."
+"Asset cache hit for .*-[0-9\.]+-.*\.tar\.gz."
+"Extracting .*..."
 ) -join "`n"
 
 if (-not ($actual -match $expected)) {

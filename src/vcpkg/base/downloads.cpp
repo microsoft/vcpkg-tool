@@ -984,7 +984,7 @@ namespace vcpkg
         {
             if (urls.size() != 0)
             {
-                msg::println(LocalizedString::from_raw(fmt::format("Downloading {}", urls[0])));
+                msg::println(msgDownloadingUrl, msg::url = urls[0]);
                 
                 auto maybe_url = try_download_file(
                     fs, urls, headers, download_path, sha512, m_config.m_secrets, errors, progress_sink);
@@ -994,12 +994,9 @@ namespace vcpkg
                     {
                         if(m_config.m_write_url_template.has_value())
                         {
-                            put_file_to_mirror(fs, download_path, *hash);
-                            msg::println(msgAssetCacheSuccesfullyStored, msg::path = download_path.filename());
-                        
-                        }else{
-                            msg::println_warning(msgFailedToStoreBackToMirror, msg::path = download_path.filename());
-                        }                       
+
+                            put_file_to_mirror(fs, download_path, *hash) ? msg::println(msgAssetCacheSuccesfullyStored, msg::path = download_path.filename()) :  msg::println(msgFailedToStoreBackToMirror, msg::path = download_path.filename());
+                        }     
                     }
 
                     return *url;

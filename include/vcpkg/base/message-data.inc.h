@@ -1264,7 +1264,7 @@ DECLARE_MESSAGE(FailedToRunToolToDetermineVersion,
                 "Additional information, such as the command line output, if any, will be appended on "
                 "the line after this message",
                 "Failed to run \"{path}\" to determine the {tool_name} version.")
-DECLARE_MESSAGE(FailedToStoreBackToMirror, (msg::path), "", "Asset Caching is not configured. Failed to store {path} to mirror.")
+DECLARE_MESSAGE(FailedToStoreBackToMirror, (msg::path), "", "Failed to store {path} to mirror.")
 DECLARE_MESSAGE(FailedToStoreBinaryCache, (msg::path), "", "Failed to store binary cache {path}")
 DECLARE_MESSAGE(FailedToTakeFileSystemLock, (), "", "Failed to take the filesystem lock")
 DECLARE_MESSAGE(FailedToWriteManifest, (msg::path), "", "Failed to write manifest file {path}")
