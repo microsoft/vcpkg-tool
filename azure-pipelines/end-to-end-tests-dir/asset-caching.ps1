@@ -6,12 +6,11 @@ Run-Vcpkg -TestArgs ($commonArgs + @('fetch', 'cmake'))
 Run-Vcpkg -TestArgs ($commonArgs + @("install", "vcpkg-test-x-script", "--x-binarysource=clear", "--overlay-ports=$PSScriptRoot/../e2e-ports", "--x-asset-sources=x-script,$TestScriptAssetCacheExe {url} {sha512} {dst};x-block-origin"))
 Throw-IfFailed
 
-# Test Asset Cache not configured + x-block-origin enabled
+# Testing asset cache not configured + x-block-origin enabled
 Refresh-TestRoot
 $actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("install", "vcpkg-internal-e2e-test-port", "--overlay-ports=$PSScriptRoot/../e2e-ports", "--x-asset-sources=clear;x-block-origin", "--downloads-root=$DownloadsRoot"))
 
 $expected = @(
-"Computing installation plan..."
 "A suitable version of .* was not found \(required v[0-9\.]+\)."
 "error: Failed to download .*."
 ) -join "`n"
@@ -20,11 +19,10 @@ if (-not ($actual -match $expected)) {
     throw "Asset cache not configured + x-block-origin enabled failed"
 }
 
-# Test Asset Cache not configured + x-block-origin disabled
+# Testing asset cache not configured + x-block-origin disabled
 $actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("install", "vcpkg-internal-e2e-test-port", "--overlay-ports=$PSScriptRoot/../e2e-ports", "--x-asset-sources=clear;", "--downloads-root=$DownloadsRoot"))
 
 $expected = @(
-"Computing installation plan..."
 "A suitable version of .* was not found \(required v[0-9\.]+\)."
 "Downloading .*"
 "Extracting .*..."
@@ -34,12 +32,11 @@ if (-not ($actual -match $expected)) {
     throw "Asset cache not configured + x-block-origin disabled failed"
 }
 
-# Test Asset Cache Miss + x-block-origin enabled
+# Testing asset cache miss + x-block-origin enabled
 Refresh-TestRoot
 $actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("install", "vcpkg-internal-e2e-test-port", "--overlay-ports=$PSScriptRoot/../e2e-ports", "--x-asset-sources=x-azurl,file://$AssetCache,,readwrite;x-block-origin", "--downloads-root=$DownloadsRoot"))
 
 $expected = @(
-"Computing installation plan..."
 "A suitable version of .* was not found \(required v[0-9\.]+\)."
 "Asset cache miss for .*."
 "error: Failed to download .*"
@@ -49,11 +46,10 @@ if (-not ($actual -match $expected)) {
     throw "Asset cache miss + x-block-origin enabled failed"
 }
 
-# Test Asset Cache Miss + x-block-origin disabled
+# Testing asset cache miss + x-block-origin disabled
 $actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("install", "vcpkg-internal-e2e-test-port", "--overlay-ports=$PSScriptRoot/../e2e-ports", "--x-asset-sources=x-azurl,file://$AssetCache,,readwrite;", "--downloads-root=$DownloadsRoot"))
 
 $expected = @(
-"Computing installation plan..."
 "A suitable version of .* was not found \(required v[0-9\.]+\)."
 "Asset cache miss for .*."
 "Downloading .*"
@@ -65,12 +61,11 @@ if (-not ($actual -match $expected)) {
     throw "Asset cache miss + x-block-origin disabled failed"
 }
 
-# Test Asset Cache Hit
+# Testing asset cache hit
 Refresh-Downloads
 Run-Vcpkg -TestArgs ($commonArgs + @('remove', 'vcpkg-internal-e2e-test-port'))
 $actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("install", "vcpkg-internal-e2e-test-port", "--overlay-ports=$PSScriptRoot/../e2e-ports", "--x-asset-sources=x-azurl,file://$AssetCache,,readwrite;", "--downloads-root=$DownloadsRoot"))
 $expected = @(
-"Computing installation plan..."
 "A suitable version of .* was not found \(required v[0-9\.]+\)."
 "Asset cache hit for .*."
 "Downloading: .*"
@@ -81,7 +76,7 @@ if (-not ($actual -match $expected)) {
     throw "Asset cache hit failed"
 }
 
-# Test asset caching && x-block-orgin promises when --debug is passed (enabled)
+# Testing asset caching && x-block-orgin promises when --debug is passed (enabled)
 Refresh-TestRoot
 $actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("install", "vcpkg-internal-e2e-test-port", "--overlay-ports=$PSScriptRoot/../e2e-ports", "--x-asset-sources=x-azurl,file://$AssetCache,,readwrite;x-block-origin", "--downloads-root=$DownloadsRoot", "--debug"))
 # Define the regex pattern that accounts for multiline input
@@ -93,7 +88,7 @@ if (-not ($actual -match $expectedPattern)) {
     throw "Test failed: Debug messages mismatch"
 }
 
-# Test asset caching && x-block-orgin promises when --debug is passed (disabled)
+# Testing asset caching && x-block-orgin promises when --debug is passed (disabled)
 Refresh-TestRoot
 $actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("install", "vcpkg-internal-e2e-test-port", "--overlay-ports=$PSScriptRoot/../e2e-ports", "--x-asset-sources=clear", "--downloads-root=$DownloadsRoot", "--debug"))
 $expectedPattern = "(?s)" +

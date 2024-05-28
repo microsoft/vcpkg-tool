@@ -237,7 +237,7 @@ DECLARE_MESSAGE(ArtifactsSwitchX64, (), "", "Forces host detection to x64 when a
 DECLARE_MESSAGE(ArtifactsSwitchX86, (), "", "Forces host detection to x86 when acquiring artifacts")
 DECLARE_MESSAGE(ArtifactsSwitchWindows, (), "", "Forces host detection to Windows when acquiring artifacts")
 DECLARE_MESSAGE(AssetCacheHit, (msg::path, msg::url), "", "Asset cache hit for {path}.\nDownloading: {url}")
-DECLARE_MESSAGE(AssetCacheMiss, (msg::path), "", "Asset cache miss for {path}.")
+DECLARE_MESSAGE(AssetCacheMiss, (msg::path), "", "Asset cache miss for {path}.\nDownloading: {url}")
 DECLARE_MESSAGE(AssetCacheProviderAcceptsNoArguments,
                 (msg::value),
                 "{value} is a asset caching provider name such as azurl, clear, or x-block-origin",
