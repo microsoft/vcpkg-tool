@@ -476,7 +476,9 @@ namespace vcpkg
                 const auto env_setup_cmd = make_setup_env_cmd(paths, env_setup_script);
                 if(vcpkg::Strings::ends_with(env_setup_script,".cmake")) 
                 {
-                    cmd_execute(env_setup_cmd, default_working_directory, action_env);
+                    ProcessLaunchSettings settings;
+                    settings.environment = action_env;
+                    cmd_execute(env_setup_cmd, settings);
                 }
                 else 
                 {
@@ -502,7 +504,9 @@ namespace vcpkg
                     const auto env_setup_cmd = make_setup_env_cmd(paths, env_setup_script);
                     if(vcpkg::Strings::ends_with(env_setup_script,".cmake")) 
                     {
-                        cmd_execute(env_setup_cmd, default_working_directory, action_env);
+                        ProcessLaunchSettings settings;
+                        settings.environment = action_env;
+                        cmd_execute(env_setup_cmd, settings);
                     }
                     else 
                     {
