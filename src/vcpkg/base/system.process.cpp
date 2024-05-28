@@ -1278,7 +1278,7 @@ namespace vcpkg
         if (!maybe_rc_output)
         {
             Checks::msg_exit_with_error(
-                VCPKG_LINE_INFO, msg::format(msgVcvarsRunFailed).append_raw("\n").append(maybe_rc_output.error())); // This msg is incorrect
+                VCPKG_LINE_INFO, msgCaptureCmdRunFailed, msg::command_name = actual_cmd.command_line(), msg::error_msg = maybe_rc_output.error());
         }
 
         auto& rc_output = maybe_rc_output.value_or_exit(VCPKG_LINE_INFO);
@@ -1286,7 +1286,7 @@ namespace vcpkg
         if (rc_output.exit_code != 0)
         {
             Checks::msg_exit_with_error(
-                VCPKG_LINE_INFO, msgVcvarsRunFailedExitCode, msg::exit_code = rc_output.exit_code); // This msg is incorrect
+                VCPKG_LINE_INFO, msgCaptureCmdEnvFailedExitCode, msg::command_name = actual_cmd.command_line(), msg::exit_code = rc_output.exit_code);
         }
 
         auto it = Strings::search(rc_output.output, magic_string);
