@@ -1,0 +1,5 @@
+{
+    "name": "test-env-scripts",
+    "version": "0",
+    "description": "A port that tests VCPKG_ENVIRONMENT_SETUP_SCRIPTS"
+}
