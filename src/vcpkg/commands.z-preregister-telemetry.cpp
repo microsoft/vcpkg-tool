@@ -62,7 +62,9 @@ namespace vcpkg
         }
         else
         {
-            msg::println_warning(msgVcpkgSendMetricsButDisabled);
+            msg::write_unlocalized_text_to_stderr(
+                Color::warning,
+                LocalizedString::from_raw(WarningPrefix).append(msgVcpkgSendMetricsButDisabled).append_raw('\n'));
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);

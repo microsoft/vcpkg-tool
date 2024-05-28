@@ -133,10 +133,11 @@ namespace
 
     [[noreturn]] void fuzz_json_and_exit(StringView text)
     {
-        auto res = Json::parse(text);
+        static constexpr StringLiteral origin = "<stdin>";
+        auto res = Json::parse(text, origin);
         if (!res)
         {
-            Checks::exit_with_message(VCPKG_LINE_INFO, res.error()->to_string());
+            Checks::msg_exit_with_message(VCPKG_LINE_INFO, res.error());
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);

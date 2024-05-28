@@ -1,4 +1,5 @@
 #include <vcpkg/base/checks.h>
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/jsonreader.h>
 #include <vcpkg/base/util.h>
@@ -14,27 +15,17 @@ using namespace vcpkg;
 
 namespace
 {
-    constexpr StringLiteral OPTION_APPLICATION = "application";
-    constexpr StringLiteral OPTION_SINGLE_FILE = "single-file";
-
-    constexpr StringLiteral SETTING_NAME = "name";
-    constexpr StringLiteral SETTING_VERSION = "version";
-
-    constexpr StringLiteral OPTION_VERSION_RELAXED = "version-relaxed";
-    constexpr StringLiteral OPTION_VERSION_DATE = "version-date";
-    constexpr StringLiteral OPTION_VERSION_STRING = "version-string";
-
     constexpr CommandSwitch SWITCHES[] = {
-        {OPTION_APPLICATION, msgCmdNewOptApplication},
-        {OPTION_SINGLE_FILE, msgCmdNewOptSingleFile},
-        {OPTION_VERSION_RELAXED, msgCmdNewOptVersionRelaxed},
-        {OPTION_VERSION_DATE, msgCmdNewOptVersionDate},
-        {OPTION_VERSION_STRING, msgCmdNewOptVersionString},
+        {SwitchApplication, msgCmdNewOptApplication},
+        {SwitchSingleFile, msgCmdNewOptSingleFile},
+        {SwitchVersionRelaxed, msgCmdNewOptVersionRelaxed},
+        {SwitchVersionDate, msgCmdNewOptVersionDate},
+        {SwitchVersionString, msgCmdNewOptVersionString},
     };
 
     constexpr CommandSetting SETTINGS[] = {
-        {SETTING_NAME, msgCmdNewSettingName},
-        {SETTING_VERSION, msgCmdNewSettingVersion},
+        {SwitchName, msgCmdNewSettingName},
+        {SwitchVersion, msgCmdNewSettingVersion},
     };
 } // unnamed namespace
 
@@ -84,7 +75,7 @@ namespace vcpkg
                                          msg::url = "https://learn.microsoft.com/vcpkg/commands/new");
             }
 
-            manifest.insert("name", *name);
+            manifest.insert(JsonIdName, *name);
         }
 
         if (version)
@@ -99,7 +90,7 @@ namespace vcpkg
                 auto maybe_parsed = DotVersion::try_parse_relaxed(*version);
                 if (maybe_parsed.has_value())
                 {
-                    manifest.insert("version", *version);
+                    manifest.insert(JsonIdVersion, *version);
                 }
                 else
                 {
@@ -111,7 +102,7 @@ namespace vcpkg
                 auto maybe_parsed = DateVersion::try_parse(*version);
                 if (maybe_parsed.has_value())
                 {
-                    manifest.insert("version-date", *version);
+                    manifest.insert(JsonIdVersionDate, *version);
                 }
                 else
                 {
@@ -120,19 +111,19 @@ namespace vcpkg
             }
             else if (option_version_string)
             {
-                manifest.insert("version-string", *version);
+                manifest.insert(JsonIdVersionString, *version);
             }
             else if (DateVersion::try_parse(*version).has_value())
             {
-                manifest.insert("version-date", *version);
+                manifest.insert(JsonIdVersionDate, *version);
             }
             else if (DotVersion::try_parse_relaxed(*version).has_value())
             {
-                manifest.insert("version", *version);
+                manifest.insert(JsonIdVersion, *version);
             }
             else
             {
-                manifest.insert("version-string", *version);
+                manifest.insert(JsonIdVersionString, *version);
             }
         }
 
@@ -145,22 +136,22 @@ namespace vcpkg
         const auto& current_configuration = paths.get_configuration();
         const auto parsed = args.parse_arguments(CommandNewMetadata);
 
-        const bool option_application = Util::Sets::contains(parsed.switches, OPTION_APPLICATION);
-        const bool option_single_file = Util::Sets::contains(parsed.switches, OPTION_SINGLE_FILE);
-        const bool option_version_relaxed = Util::Sets::contains(parsed.switches, OPTION_VERSION_RELAXED);
-        const bool option_version_date = Util::Sets::contains(parsed.switches, OPTION_VERSION_DATE);
-        const bool option_version_string = Util::Sets::contains(parsed.switches, OPTION_VERSION_STRING);
+        const bool option_application = Util::Sets::contains(parsed.switches, SwitchApplication);
+        const bool option_single_file = Util::Sets::contains(parsed.switches, SwitchSingleFile);
+        const bool option_version_relaxed = Util::Sets::contains(parsed.switches, SwitchVersionRelaxed);
+        const bool option_version_date = Util::Sets::contains(parsed.switches, SwitchVersionDate);
+        const bool option_version_string = Util::Sets::contains(parsed.switches, SwitchVersionString);
 
-        const std::string* name = parsed.read_setting(SETTING_NAME);
-        const std::string* version = parsed.read_setting(SETTING_VERSION);
+        const std::string* name = parsed.read_setting(SwitchName);
+        const std::string* version = parsed.read_setting(SwitchVersion);
 
         auto maybe_manifest = build_prototype_manifest(
             name, version, option_application, option_version_relaxed, option_version_date, option_version_string);
         auto& manifest = maybe_manifest.value_or_exit(VCPKG_LINE_INFO);
 
         const auto almost_original_cwd = fs.almost_canonical(paths.original_cwd, VCPKG_LINE_INFO);
-        const auto candidate_manifest_path = almost_original_cwd / "vcpkg.json";
-        const auto candidate_configuration_path = almost_original_cwd / "vcpkg-configuration.json";
+        const auto candidate_manifest_path = almost_original_cwd / FileVcpkgDotJson;
+        const auto candidate_configuration_path = almost_original_cwd / FileVcpkgConfigurationDotJson;
         if (fs.exists(candidate_manifest_path, VCPKG_LINE_INFO))
         {
             Checks::msg_exit_with_error(
@@ -194,7 +185,7 @@ namespace vcpkg
             if (auto current_builtin_sha = maybe_current_builtin_sha.get())
             {
                 RegistryConfig default_registry;
-                default_registry.kind.emplace("git");
+                default_registry.kind.emplace(JsonIdGit);
                 default_registry.repo.emplace(builtin_registry_git_url.data(), builtin_registry_git_url.size());
                 default_registry.baseline.emplace(*current_builtin_sha);
                 configuration.default_reg.emplace(std::move(default_registry));
@@ -205,8 +196,8 @@ namespace vcpkg
         {
             // fill out default registries if there aren't any
             RegistryConfig default_ms_registry;
-            default_ms_registry.kind.emplace("artifact");
-            default_ms_registry.name.emplace("microsoft");
+            default_ms_registry.kind.emplace(JsonIdArtifact);
+            default_ms_registry.name.emplace(JsonIdMicrosoft);
             default_ms_registry.location.emplace(
                 "https://github.com/microsoft/vcpkg-ce-catalog/archive/refs/heads/main.zip");
             configuration.registries.emplace_back(std::move(default_ms_registry));
@@ -214,7 +205,7 @@ namespace vcpkg
 
         if (option_single_file)
         {
-            manifest.insert("vcpkg-configuration", configuration.serialize());
+            manifest.insert(JsonIdVcpkgConfiguration, configuration.serialize());
         }
         else
         {

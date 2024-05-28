@@ -3,6 +3,7 @@
 #include <vcpkg/base/fwd/message_sinks.h>
 
 #include <vcpkg/fwd/binarycaching.h>
+#include <vcpkg/fwd/build.h>
 #include <vcpkg/fwd/dependencies.h>
 #include <vcpkg/fwd/tools.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
@@ -157,7 +158,6 @@ namespace vcpkg
         // These are filled in after construction by reading from args and environment
         std::string nuget_prefix;
         bool use_nuget_cache = false;
-        NuGetRepoInfo nuget_repo_info;
 
         void clear();
     };
@@ -202,10 +202,9 @@ namespace vcpkg
         BinaryCache(const Filesystem& fs);
         BinaryCache(const BinaryCache&) = delete;
         BinaryCache(BinaryCache&&) = default;
-        ~BinaryCache();
 
         /// Called upon a successful build of `action` to store those contents in the binary cache.
-        void push_success(const InstallPlanAction& action);
+        void push_success(CleanPackages clean_packages, const InstallPlanAction& action);
 
     private:
         BinaryCache(BinaryProviders&& providers, const Filesystem& fs);

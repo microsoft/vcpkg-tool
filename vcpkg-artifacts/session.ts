@@ -253,8 +253,8 @@ export class Session {
     const telemetryFile = this.telemetryFile;
     if (telemetryFile) {
       return telemetryFile.writeUTF8(JSON.stringify({
-        'acquired_artifacts': acquiredArtifacts,
-        'activated_artifacts': activatedArtifacts
+        'acquired-artifacts': acquiredArtifacts,
+        'activated-artifacts': activatedArtifacts
       }));
     }
 

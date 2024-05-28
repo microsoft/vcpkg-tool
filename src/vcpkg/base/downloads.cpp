@@ -1,4 +1,5 @@
 #include <vcpkg/base/api-stable-format.h>
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
@@ -10,6 +11,7 @@
 #include <vcpkg/base/system.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/system.proxy.h>
+#include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.version.h>
 
@@ -247,7 +249,7 @@ namespace vcpkg
             // If the environment variable HTTPS_PROXY is set
             // use that variable as proxy. This situation might exist when user is in a company network
             // with restricted network/proxy settings
-            auto maybe_https_proxy_env = get_environment_variable("HTTPS_PROXY");
+            auto maybe_https_proxy_env = get_environment_variable(EnvironmentVariableHttpsProxy);
             if (auto p_https_proxy = maybe_https_proxy_env.get())
             {
                 std::wstring env_proxy_settings = Strings::to_utf16(*p_https_proxy);
@@ -370,152 +372,115 @@ namespace vcpkg
         return Unit{};
     }
 
-    static void url_heads_inner(View<std::string> urls,
-                                View<std::string> headers,
-                                std::vector<int>* out,
-                                View<std::string> secrets)
+    static std::vector<int> curl_bulk_operation(View<Command> operation_args,
+                                                StringLiteral prefixArgs,
+                                                View<std::string> headers,
+                                                View<std::string> secrets)
     {
-        static constexpr StringLiteral guid_marker = "8a1db05f-a65d-419b-aa72-037fb4d0672e";
-
-        const size_t start_size = out->size();
-
-        Command cmd;
-        cmd.string_arg("curl")
-            .string_arg("--head")
-            .string_arg("--location")
-            .string_arg("-w")
-            .string_arg(guid_marker.to_string() + " %{http_code}\\n");
-        for (auto&& header : headers)
+#define GUID_MARKER "5ec47b8e-6776-4d70-b9b3-ac2a57bc0a1c"
+        static constexpr StringLiteral guid_marker = GUID_MARKER;
+        Command prefix_cmd{"curl"};
+        if (!prefixArgs.empty())
         {
-            cmd.string_arg("-H").string_arg(header);
-        }
-        for (auto&& url : urls)
-        {
-            cmd.string_arg(url_encode_spaces(url));
+            prefix_cmd.raw_arg(prefixArgs);
         }
 
-        std::vector<std::string> lines;
-
-        auto res = cmd_execute_and_stream_lines(cmd, [out, &lines](StringView line) {
-                       lines.push_back(line.to_string());
-                       if (Strings::starts_with(line, guid_marker))
-                       {
-                           out->push_back(std::strtol(line.data() + guid_marker.size(), nullptr, 10));
-                       }
-                   }).value_or_exit(VCPKG_LINE_INFO);
-
-        if (res != 0)
-        {
-            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgCurlFailedToExecute, msg::exit_code = res);
-        }
-
-        if (out->size() != start_size + urls.size())
-        {
-            auto command_line = replace_secrets(std::move(cmd).extract(), secrets);
-            auto actual = replace_secrets(Strings::join("\n", lines), secrets);
-            Checks::msg_exit_with_error(VCPKG_LINE_INFO,
-                                        msgCurlReportedUnexpectedResults,
-                                        msg::command_line = command_line,
-                                        msg::actual = actual);
-        }
-    }
-    std::vector<int> url_heads(View<std::string> urls, View<std::string> headers, View<std::string> secrets)
-    {
-        static constexpr size_t batch_size = 100;
+        prefix_cmd.string_arg("-L").string_arg("-w").string_arg(GUID_MARKER "%{http_code}\\n");
+#undef GUID_MARKER
 
         std::vector<int> ret;
+        ret.reserve(operation_args.size());
 
-        size_t i = 0;
-        for (; i + batch_size <= urls.size(); i += batch_size)
+        for (auto&& header : headers)
         {
-            url_heads_inner({urls.data() + i, batch_size}, headers, &ret, secrets);
+            prefix_cmd.string_arg("-H").string_arg(header);
         }
 
-        if (i != urls.size())
+        static constexpr auto initial_timeout_delay_ms = 100;
+        auto timeout_delay_ms = initial_timeout_delay_ms;
+        static constexpr auto maximum_timeout_delay_ms = 100000;
+
+        while (ret.size() != operation_args.size())
         {
-            url_heads_inner({urls.begin() + i, urls.end()}, headers, &ret, secrets);
-        }
+            // there's an edge case that we aren't handling here where not even one operation fits with the configured
+            // headers but this seems unlikely
 
-        Checks::check_exit(VCPKG_LINE_INFO, ret.size() == urls.size());
-        return ret;
-    }
-
-    static void download_files_inner(const Filesystem&,
-                                     View<std::pair<std::string, Path>> url_pairs,
-                                     View<std::string> headers,
-                                     std::vector<int>* out)
-    {
-        for (auto i : {100, 1000, 10000, 0})
-        {
-            size_t start_size = out->size();
-            static constexpr StringLiteral guid_marker = "5ec47b8e-6776-4d70-b9b3-ac2a57bc0a1c";
-
-            Command cmd;
-            cmd.string_arg("curl")
-                .string_arg("--create-dirs")
-                .string_arg("--location")
-                .string_arg("-w")
-                .string_arg(guid_marker.to_string() + " %{http_code}\\n");
-            for (StringView header : headers)
+            // form a maximum length command line of operations:
+            auto batch_cmd = prefix_cmd;
+            size_t last_try_op = ret.size();
+            while (last_try_op != operation_args.size() && batch_cmd.try_append(operation_args[last_try_op]))
             {
-                cmd.string_arg("-H").string_arg(header);
-            }
-            for (auto&& url : url_pairs)
-            {
-                cmd.string_arg(url_encode_spaces(url.first)).string_arg("-o").string_arg(url.second);
-            }
-            auto res =
-                cmd_execute_and_stream_lines(cmd, [out](StringView line) {
-                    if (Strings::starts_with(line, guid_marker))
-                    {
-                        out->push_back(static_cast<int>(std::strtol(line.data() + guid_marker.size(), nullptr, 10)));
-                    }
-                }).value_or_exit(VCPKG_LINE_INFO);
-
-            if (res != 0)
-            {
-                Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgCurlFailedToExecute, msg::exit_code = res);
+                ++last_try_op;
             }
 
-            if (start_size + url_pairs.size() > out->size())
+            // actually run curl
+            auto this_batch_result = cmd_execute_and_capture_output(batch_cmd).value_or_exit(VCPKG_LINE_INFO);
+            if (this_batch_result.exit_code != 0)
             {
-                // curl stopped before finishing all downloads; retry after some time
-                msg::println_warning(msgUnexpectedErrorDuringBulkDownload);
-                std::this_thread::sleep_for(std::chrono::milliseconds(i));
-                url_pairs =
-                    View<std::pair<std::string, Path>>{url_pairs.begin() + out->size() - start_size, url_pairs.end()};
+                Checks::msg_exit_with_error(VCPKG_LINE_INFO,
+                                            msgCommandFailedCode,
+                                            msg::command_line =
+                                                replace_secrets(std::move(batch_cmd).extract(), secrets),
+                                            msg::exit_code = this_batch_result.exit_code);
+            }
+
+            // extract HTTP response codes
+            for (auto&& line : Strings::split(this_batch_result.output, '\n'))
+            {
+                if (Strings::starts_with(line, guid_marker))
+                {
+                    ret.push_back(static_cast<int>(std::strtol(line.data() + guid_marker.size(), nullptr, 10)));
+                }
+            }
+
+            // check if we got a partial response, and, if so, issue a timed delay
+            if (ret.size() == last_try_op)
+            {
+                timeout_delay_ms = initial_timeout_delay_ms;
             }
             else
             {
-                break;
+                // curl stopped before finishing all operations; retry after some time
+                if (timeout_delay_ms >= maximum_timeout_delay_ms)
+                {
+                    Checks::msg_exit_with_error(VCPKG_LINE_INFO,
+                                                msgCurlTimeout,
+                                                msg::command_line =
+                                                    replace_secrets(std::move(batch_cmd).extract(), secrets));
+                }
+
+                msg::println_warning(msgCurlResponseTruncatedRetrying, msg::value = timeout_delay_ms);
+                std::this_thread::sleep_for(std::chrono::milliseconds(timeout_delay_ms));
+                timeout_delay_ms *= 10;
             }
         }
-    }
-    std::vector<int> download_files(const Filesystem& fs,
-                                    View<std::pair<std::string, Path>> url_pairs,
-                                    View<std::string> headers)
-    {
-        static constexpr size_t batch_size = 50;
 
-        std::vector<int> ret;
-
-        size_t i = 0;
-        for (; i + batch_size <= url_pairs.size(); i += batch_size)
-        {
-            download_files_inner(fs, {url_pairs.data() + i, batch_size}, headers, &ret);
-        }
-
-        if (i != url_pairs.size())
-        {
-            download_files_inner(fs, {url_pairs.begin() + i, url_pairs.end()}, headers, &ret);
-        }
-
-        Checks::msg_check_exit(VCPKG_LINE_INFO,
-                               ret.size() == url_pairs.size(),
-                               msgCurlReturnedUnexpectedResponseCodes,
-                               msg::actual = ret.size(),
-                               msg::expected = url_pairs.size());
         return ret;
+    }
+
+    std::vector<int> url_heads(View<std::string> urls, View<std::string> headers, View<std::string> secrets)
+    {
+        return curl_bulk_operation(
+            Util::fmap(urls, [](const std::string& url) { return Command{}.string_arg(url_encode_spaces(url)); }),
+            "--head",
+            headers,
+            secrets);
+    }
+
+    std::vector<int> download_files(View<std::pair<std::string, Path>> url_pairs,
+                                    View<std::string> headers,
+                                    View<std::string> secrets)
+    {
+        return curl_bulk_operation(Util::fmap(url_pairs,
+                                              [](const std::pair<std::string, Path>& url_pair) {
+                                                  return Command{}
+                                                      .string_arg(url_encode_spaces(url_pair.first))
+                                                      .string_arg("-o")
+                                                      .string_arg(url_pair.second);
+                                              }),
+                                   "--create-dirs",
+                                   headers,
+                                   secrets);
     }
 
     bool send_snapshot_to_api(const std::string& github_token,
@@ -524,8 +489,7 @@ namespace vcpkg
     {
         static constexpr StringLiteral guid_marker = "fcfad8a3-bb68-4a54-ad00-dab1ff671ed2";
 
-        Command cmd;
-        cmd.string_arg("curl");
+        auto cmd = Command{"curl"};
         cmd.string_arg("-w").string_arg("\\n" + guid_marker.to_string() + "%{http_code}");
         cmd.string_arg("-X").string_arg("POST");
         cmd.string_arg("-H").string_arg("Accept: application/vnd.github+json");
@@ -536,23 +500,20 @@ namespace vcpkg
         cmd.string_arg(Strings::concat(
             "https://api.github.com/repos/", url_encode_spaces(github_repository), "/dependency-graph/snapshots"));
         cmd.string_arg("-d").string_arg("@-");
+
+        RedirectedProcessLaunchSettings settings;
+        settings.stdin_content = Json::stringify(snapshot);
         int code = 0;
-        auto result = cmd_execute_and_stream_lines(
-            cmd,
-            [&code](StringView line) {
-                if (Strings::starts_with(line, guid_marker))
-                {
-                    code = std::strtol(line.data() + guid_marker.size(), nullptr, 10);
-                }
-                else
-                {
-                    Debug::println(line);
-                }
-            },
-            default_working_directory,
-            default_environment,
-            Encoding::Utf8,
-            Json::stringify(snapshot));
+        auto result = cmd_execute_and_stream_lines(cmd, settings, [&code](StringView line) {
+            if (Strings::starts_with(line, guid_marker))
+            {
+                code = std::strtol(line.data() + guid_marker.size(), nullptr, 10);
+            }
+            else
+            {
+                Debug::println(line);
+            }
+        });
 
         auto r = result.get();
         if (r && *r == 0 && code >= 200 && code < 300)
@@ -574,11 +535,10 @@ namespace vcpkg
         if (Strings::starts_with(url, "ftp://"))
         {
             // HTTP headers are ignored for FTP clients
-            Command cmd;
-            cmd.string_arg("curl");
-            cmd.string_arg(url_encode_spaces(url));
-            cmd.string_arg("-T").string_arg(file);
-            auto maybe_res = cmd_execute_and_capture_output(cmd);
+            auto ftp_cmd = Command{"curl"};
+            ftp_cmd.string_arg(url_encode_spaces(url));
+            ftp_cmd.string_arg("-T").string_arg(file);
+            auto maybe_res = cmd_execute_and_capture_output(ftp_cmd);
             if (auto res = maybe_res.get())
             {
                 if (res->exit_code == 0)
@@ -595,19 +555,17 @@ namespace vcpkg
             return std::move(maybe_res).error();
         }
 
-        Command cmd;
-        cmd.string_arg("curl").string_arg("-X").string_arg(method);
-
+        auto http_cmd = Command{"curl"}.string_arg("-X").string_arg(method);
         for (auto&& header : headers)
         {
-            cmd.string_arg("-H").string_arg(header);
+            http_cmd.string_arg("-H").string_arg(header);
         }
 
-        cmd.string_arg("-w").string_arg("\\n" + guid_marker.to_string() + "%{http_code}");
-        cmd.string_arg(url);
-        cmd.string_arg("-T").string_arg(file);
+        http_cmd.string_arg("-w").string_arg("\\n" + guid_marker.to_string() + "%{http_code}");
+        http_cmd.string_arg(url);
+        http_cmd.string_arg("-T").string_arg(file);
         int code = 0;
-        auto res = cmd_execute_and_stream_lines(cmd, [&code](StringView line) {
+        auto res = cmd_execute_and_stream_lines(http_cmd, [&code](StringView line) {
             if (Strings::starts_with(line, guid_marker))
             {
                 code = std::strtol(line.data() + guid_marker.size(), nullptr, 10);
@@ -644,8 +602,7 @@ namespace vcpkg
                                                StringView url,
                                                StringView data)
     {
-        Command cmd;
-        cmd.string_arg("curl").string_arg("-s").string_arg("-L");
+        auto cmd = Command{"curl"}.string_arg("-s").string_arg("-L");
         cmd.string_arg("-H").string_arg(
             fmt::format("User-Agent: vcpkg/{}-{} (curl)", VCPKG_BASE_VERSION_AS_STRING, VCPKG_VERSION_AS_STRING));
 
@@ -831,37 +788,31 @@ namespace vcpkg
             }
         }
 #endif
-        Command cmd;
-        cmd.string_arg("curl")
-            .string_arg("--fail")
-            .string_arg("-L")
-            .string_arg(url_encode_spaces(url))
-            .string_arg("--create-dirs")
-            .string_arg("--output")
-            .string_arg(download_path_part_path);
+        auto cmd = Command{"curl"}
+                       .string_arg("--fail")
+                       .string_arg("-L")
+                       .string_arg(url_encode_spaces(url))
+                       .string_arg("--create-dirs")
+                       .string_arg("--output")
+                       .string_arg(download_path_part_path);
         for (auto&& header : headers)
         {
             cmd.string_arg("-H").string_arg(header);
         }
 
         std::string non_progress_content;
-        auto maybe_exit_code = cmd_execute_and_stream_lines(
-            cmd,
-            [&](StringView line) {
-                const auto maybe_parsed = try_parse_curl_progress_data(line);
-                if (const auto parsed = maybe_parsed.get())
-                {
-                    progress_sink.print(Color::none, fmt::format("{}%\n", parsed->total_percent));
-                }
-                else
-                {
-                    non_progress_content.append(line.data(), line.size());
-                    non_progress_content.push_back('\n');
-                }
-            },
-            default_working_directory,
-            default_environment,
-            Encoding::Utf8);
+        auto maybe_exit_code = cmd_execute_and_stream_lines(cmd, [&](StringView line) {
+            const auto maybe_parsed = try_parse_curl_progress_data(line);
+            if (const auto parsed = maybe_parsed.get())
+            {
+                progress_sink.print(Color::none, fmt::format("{}%\n", parsed->total_percent));
+            }
+            else
+            {
+                non_progress_content.append(line.data(), line.size());
+                non_progress_content.push_back('\n');
+            }
+        });
 
         const auto sanitized_url = replace_secrets(url, secrets);
         if (const auto exit_code = maybe_exit_code.get())
@@ -975,28 +926,26 @@ namespace vcpkg
                     const auto escaped_url = Command(urls[0]).extract();
                     const auto escaped_sha512 = Command(*hash).extract();
                     const auto escaped_dpath = Command(download_path_part_path).extract();
-                    auto cmd = api_stable_format(*script, [&](std::string& out, StringView key) {
-                                   if (key == "url")
-                                   {
-                                       Strings::append(out, escaped_url);
-                                   }
-                                   else if (key == "sha512")
-                                   {
-                                       Strings::append(out, escaped_sha512);
-                                   }
-                                   else if (key == "dst")
-                                   {
-                                       Strings::append(out, escaped_dpath);
-                                   }
-                               }).value_or_exit(VCPKG_LINE_INFO);
+                    Command cmd;
+                    cmd.raw_arg(api_stable_format(*script, [&](std::string& out, StringView key) {
+                                    if (key == "url")
+                                    {
+                                        Strings::append(out, escaped_url);
+                                    }
+                                    else if (key == "sha512")
+                                    {
+                                        Strings::append(out, escaped_sha512);
+                                    }
+                                    else if (key == "dst")
+                                    {
+                                        Strings::append(out, escaped_dpath);
+                                    }
+                                }).value_or_exit(VCPKG_LINE_INFO));
 
-                    auto maybe_res = flatten(cmd_execute_and_capture_output(Command{}.raw_arg(cmd),
-                                                                            default_working_directory,
-                                                                            get_clean_environment(),
-                                                                            Encoding::Utf8,
-                                                                            EchoInDebug::Show),
-                                             "<mirror-script>");
-
+                    RedirectedProcessLaunchSettings settings;
+                    settings.environment = get_clean_environment();
+                    settings.echo_in_debug = EchoInDebug::Show;
+                    auto maybe_res = flatten(cmd_execute_and_capture_output(cmd, settings), "<mirror-script>");
                     if (maybe_res)
                     {
                         auto maybe_success =

@@ -1,5 +1,6 @@
 #include <vcpkg/base/cmd-parser.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/message_sinks.h>
 #include <vcpkg/base/strings.h>
 
 #include <stdint.h>
@@ -392,8 +393,6 @@ namespace vcpkg
 
     bool OptionTableKey::operator<(const OptionTableKey& rhs) const { return switch_name < rhs.switch_name; }
 
-    CmdParser::CmdParser() = default;
-
     CmdParser::CmdParser(View<std::string> inputs)
         : argument_strings(inputs.begin(), inputs.end())
         , argument_strings_lowercase()
@@ -413,11 +412,6 @@ namespace vcpkg
     {
         insert_lowercase_strings(argument_strings_lowercase, argument_strings);
     }
-
-    CmdParser::CmdParser(const CmdParser&) = default;
-    CmdParser::CmdParser(CmdParser&&) = default;
-    CmdParser& CmdParser::operator=(const CmdParser&) = default;
-    CmdParser& CmdParser::operator=(CmdParser&&) = default;
 
     bool CmdParser::parse_switch(StringView switch_name, StabilityTag stability, bool& value)
     {
@@ -1010,14 +1004,11 @@ namespace vcpkg
             return;
         }
 
-        for (auto&& error : errors)
-        {
-            msg::write_unlocalized_text_to_stdout(Color::error, error.append_raw("\n"));
-        }
+        msg::write_unlocalized_text_to_stderr(Color::error, Strings::join("\n", errors).append("\n"));
 
         example.append_raw('\n');
         append_options_table(example);
-        msg::println(Color::none, example);
+        stderr_sink.println(Color::none, example);
         Checks::exit_with_code(VCPKG_LINE_INFO, 1);
     }
 }

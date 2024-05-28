@@ -9,6 +9,7 @@
 
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/path.h>
+#include <vcpkg/base/stringview.h>
 
 #include <vcpkg/paragraphparser.h>
 #include <vcpkg/platform-expression.h>
@@ -70,13 +71,14 @@ namespace vcpkg
     {
         std::string name;
         Version version;
-        VersionScheme scheme;
 
         Json::Object extra_info;
 
         friend bool operator==(const DependencyOverride& lhs, const DependencyOverride& rhs);
         friend bool operator!=(const DependencyOverride& lhs, const DependencyOverride& rhs) { return !(lhs == rhs); }
     };
+
+    void serialize_dependency_override(Json::Array& arr, const DependencyOverride& dep);
 
     std::vector<FullPackageSpec> filter_dependencies(const std::vector<Dependency>& deps,
                                                      Triplet t,
@@ -161,8 +163,8 @@ namespace vcpkg
                                                                                         const Json::Object& object,
                                                                                         MessageSink& warnings_sink);
 
-        static ParseExpected<SourceControlFile> parse_control_file(StringView origin,
-                                                                   std::vector<Paragraph>&& control_paragraphs);
+        static ExpectedL<std::unique_ptr<SourceControlFile>> parse_control_file(
+            StringView origin, std::vector<Paragraph>&& control_paragraphs);
 
         // Always non-null in non-error cases
         std::unique_ptr<SourceParagraph> core_paragraph;
@@ -217,7 +219,6 @@ namespace vcpkg
     };
 
     void print_error_message(const LocalizedString& message);
-    void print_error_message(const std::unique_ptr<ParseControlErrorInfo>& error_info_list);
 
     std::string parse_spdx_license_expression(StringView sv, ParseMessages& messages);
 
@@ -225,4 +226,6 @@ namespace vcpkg
     ExpectedL<std::vector<Dependency>> parse_dependencies_list(const std::string& str,
                                                                StringView origin,
                                                                TextRowCol textrowcol = {});
+
+    constexpr StringLiteral OVERRIDES = "overrides";
 }

@@ -19,12 +19,13 @@ Multi-Arch: same
 Description:
 Status: install ok installed
 )",
-                                 "");
+                                 "test-origin");
 
     REQUIRE(pghs);
 
-    StatusParagraphs status_db(
-        Util::fmap(*pghs.get(), [](Paragraph& rpgh) { return std::make_unique<StatusParagraph>(std::move(rpgh)); }));
+    StatusParagraphs status_db(Util::fmap(*pghs.get(), [](Paragraph& rpgh) {
+        return std::make_unique<StatusParagraph>(StringLiteral{"test"}, std::move(rpgh));
+    }));
 
     auto it = status_db.find_installed({"ffmpeg", Test::X64_WINDOWS});
     REQUIRE(it != status_db.end());
@@ -40,12 +41,13 @@ Multi-Arch: same
 Description:
 Status: purge ok not-installed
 )",
-                                 "");
+                                 "test-origin");
 
     REQUIRE(pghs);
 
-    StatusParagraphs status_db(
-        Util::fmap(*pghs.get(), [](Paragraph& rpgh) { return std::make_unique<StatusParagraph>(std::move(rpgh)); }));
+    StatusParagraphs status_db(Util::fmap(*pghs.get(), [](Paragraph& rpgh) {
+        return std::make_unique<StatusParagraph>(StringLiteral{"test"}, std::move(rpgh));
+    }));
 
     auto it = status_db.find_installed({"ffmpeg", Test::X64_WINDOWS});
     REQUIRE(it == status_db.end());
@@ -69,12 +71,13 @@ Multi-Arch: same
 Description:
 Status: purge ok not-installed
 )",
-                                 "");
+                                 "test-origin");
 
     REQUIRE(pghs);
 
-    StatusParagraphs status_db(
-        Util::fmap(*pghs.get(), [](Paragraph& rpgh) { return std::make_unique<StatusParagraph>(std::move(rpgh)); }));
+    StatusParagraphs status_db(Util::fmap(*pghs.get(), [](Paragraph& rpgh) {
+        return std::make_unique<StatusParagraph>(StringLiteral{"test"}, std::move(rpgh));
+    }));
 
     auto it = status_db.find_installed({"ffmpeg", Test::X64_WINDOWS});
     REQUIRE(it != status_db.end());
@@ -102,11 +105,12 @@ Multi-Arch: same
 Description:
 Status: install ok installed
 )",
-                                 "");
+                                 "test-origin");
     REQUIRE(pghs);
 
-    StatusParagraphs status_db(
-        Util::fmap(*pghs.get(), [](Paragraph& rpgh) { return std::make_unique<StatusParagraph>(std::move(rpgh)); }));
+    StatusParagraphs status_db(Util::fmap(*pghs.get(), [](Paragraph& rpgh) {
+        return std::make_unique<StatusParagraph>(StringLiteral{"test"}, std::move(rpgh));
+    }));
 
     // Feature "openssl" is installed and should therefore be found
     auto it = status_db.find_installed({{"ffmpeg", Test::X64_WINDOWS}, "openssl"});

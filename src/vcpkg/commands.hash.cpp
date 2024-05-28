@@ -31,7 +31,7 @@ namespace vcpkg
         }
 
         const std::string hash = vcpkg::Hash::get_file_hash(fs, file_to_hash, algorithm).value_or_exit(VCPKG_LINE_INFO);
-        msg::write_unlocalized_text_to_stdout(Color::none, hash + '\n');
+        msg::write_unlocalized_text(Color::none, hash + '\n');
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 }
