@@ -1023,9 +1023,9 @@ namespace vcpkg
             fs.get_directories_recursive_lexically_proximate(package_dir, IgnoreErrors{});
         Util::erase_remove_if(relative_empty_directories,
                               [&](const Path& current) { return !fs.is_empty(package_dir / current, IgnoreErrors{}); });
-
         if (!relative_empty_directories.empty())
         {
+            Util::sort(relative_empty_directories);
             msg_sink.print(Color::warning,
                            LocalizedString::from_raw(portfile_cmake)
                                .append_raw(": ")
