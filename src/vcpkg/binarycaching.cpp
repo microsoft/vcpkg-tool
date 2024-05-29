@@ -7,6 +7,7 @@
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/message_sinks.h>
 #include <vcpkg/base/messages.h>
+#include <vcpkg/base/parallel-algorithms.h>
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.debug.h>
@@ -957,7 +958,11 @@ namespace
 
         virtual LocalizedString restored_message(size_t count,
                                                  std::chrono::high_resolution_clock::duration elapsed) const = 0;
+        /// checks if package abi is present in this storage
+        /// NOTE: Operation must be thread safe. Multiple calls will occur in parallel
         virtual ExpectedL<Unit> stat(StringView url) const = 0;
+        /// download a package zip from this storage
+        /// NOTE: Operation must be thread safe. Multiple calls will occur in parallel
         virtual ExpectedL<Unit> download_file(StringView object, const Path& archive) const = 0;
         virtual ExpectedL<Unit> upload_file(StringView object, const Path& archive) const = 0;
     };
@@ -984,38 +989,36 @@ namespace
         void acquire_zips(View<const InstallPlanAction*> actions,
                           Span<Optional<ZipResource>> out_zip_paths) const override
         {
-            for (size_t idx = 0; idx < actions.size(); ++idx)
-            {
-                auto&& action = *actions[idx];
-                const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
-                auto tmp = make_temp_archive_path(m_buildtrees, action.spec);
-                auto res = m_tool->download_file(make_object_path(m_prefix, abi), tmp);
-                if (res)
-                {
-                    out_zip_paths[idx].emplace(std::move(tmp), RemoveWhen::always);
-                }
-                else
-                {
-                    out_sink.println_warning(res.error());
-                }
-            }
+            parallel_transform(
+                actions, out_zip_paths.begin(), [&](const InstallPlanAction* plan) -> Optional<ZipResource> {
+                    const auto& abi = plan->package_abi().value_or_exit(VCPKG_LINE_INFO);
+                    auto tmp = make_temp_archive_path(m_buildtrees, plan->spec);
+                    auto res = m_tool->download_file(make_object_path(m_prefix, abi), tmp);
+                    if (res)
+                    {
+                        return ZipResource{ZipResource(std::move(tmp), RemoveWhen::always)};
+                    }
+                    else
+                    {
+                        out_sink.println_warning(res.error());
+                        return nullopt;
+                    }
+                });
         }
 
         void precheck(View<const InstallPlanAction*> actions, Span<CacheAvailability> cache_status) const override
         {
-            for (size_t idx = 0; idx < actions.size(); ++idx)
-            {
-                auto&& action = *actions[idx];
-                const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
+            parallel_transform(actions, cache_status.begin(), [&](const InstallPlanAction* plan) {
+                const auto& abi = plan->package_abi().value_or_exit(VCPKG_LINE_INFO);
                 if (m_tool->stat(make_object_path(m_prefix, abi)))
                 {
-                    cache_status[idx] = CacheAvailability::available;
+                    return CacheAvailability::available;
                 }
                 else
                 {
-                    cache_status[idx] = CacheAvailability::unavailable;
+                    return CacheAvailability::unavailable;
                 }
-            }
+            });
         }
 
         LocalizedString restored_message(size_t count,
