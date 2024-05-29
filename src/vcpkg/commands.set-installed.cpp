@@ -23,6 +23,7 @@ namespace
         {SwitchDryRun, msgCmdSetInstalledOptDryRun},
         {SwitchNoPrintUsage, msgCmdSetInstalledOptNoUsage},
         {SwitchOnlyDownloads, msgHelpTxtOptOnlyDownloads},
+        {SwitchKeepGoing, msgHelpTxtOptKeepGoing},
         {SwitchEnforcePortChecks, msgHelpTxtOptEnforcePortChecks},
         {SwitchAllowUnsupported, msgHelpTxtOptAllowUnsupportedPort},
     };
