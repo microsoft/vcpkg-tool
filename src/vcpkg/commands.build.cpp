@@ -535,7 +535,7 @@ namespace vcpkg
                         Checks::msg_exit_with_error(VCPKG_LINE_INFO,
                                                     msgCmdRunFailedExitCode,
                                                     msg::command_name = env_setup_cmd.command_line(),
-                                                    msg::error_code = err_code);
+                                                    msg::exit_code = err_code);
                     }
                 }
                 else
