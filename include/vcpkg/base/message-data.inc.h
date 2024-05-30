@@ -2834,6 +2834,8 @@ DECLARE_MESSAGE(VcpkgRegistriesCacheIsNotDirectory,
 DECLARE_MESSAGE(VcpkgRootRequired, (), "", "Setting VCPKG_ROOT is required for standalone bootstrap.")
 DECLARE_MESSAGE(VcpkgRootsDir, (msg::env_var), "", "The vcpkg root directory (default: {env_var})")
 DECLARE_MESSAGE(VcpkgSendMetricsButDisabled, (), "", "passed --sendmetrics, but metrics are disabled.")
+DECLARE_MESSAGE(CmdRunFailed, (msg::command_name, msg::error_msg), "", "failed to run '{command_name}' ({error_msg}).")
+DECLARE_MESSAGE(CmdRunFailedExitCode, (msg::command_name, msg::exit_code), "", "'{command_name}' returned {exit_code}.")
 DECLARE_MESSAGE(CaptureCmdRunFailed,
                 (msg::command_name, msg::error_msg),
                 "",

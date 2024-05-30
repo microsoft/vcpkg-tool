@@ -479,7 +479,21 @@ namespace vcpkg
                 {
                     ProcessLaunchSettings settings;
                     settings.environment = action_env;
-                    cmd_execute(env_setup_cmd, settings);
+                    auto cmd_res_output = cmd_execute(env_setup_cmd, settings);
+                    if (!cmd_res_output)
+                    {
+                        Checks::msg_exit_with_error(VCPKG_LINE_INFO,
+                                                    msgCmdRunFailed,
+                                                    msg::command_name = env_setup_cmd.command_line(),
+                                                    msg::error_msg = cmd_res_output.error());
+                    }
+                    if (auto err_code = cmd_res_output.value(VCPKG_LINE_INFO); err_code != 0)
+                    {
+                        Checks::msg_exit_with_error(VCPKG_LINE_INFO,
+                                                    msgCmdRunFailedExitCode,
+                                                    msg::command_name = env_setup_cmd.command_line(),
+                                                    msg::exit_code = err_code);
+                    }
                 }
                 else
                 {
@@ -508,7 +522,21 @@ namespace vcpkg
                 {
                     ProcessLaunchSettings settings;
                     settings.environment = action_env;
-                    cmd_execute(env_setup_cmd, settings);
+                    auto cmd_res_output = cmd_execute(env_setup_cmd, settings);
+                    if (!cmd_res_output)
+                    {
+                        Checks::msg_exit_with_error(VCPKG_LINE_INFO,
+                                                    msgCmdRunFailed,
+                                                    msg::command_name = env_setup_cmd.command_line(),
+                                                    msg::error_msg = cmd_res_output.error());
+                    }
+                    if (auto err_code = cmd_res_output.value(VCPKG_LINE_INFO); err_code != 0)
+                    {
+                        Checks::msg_exit_with_error(VCPKG_LINE_INFO,
+                                                    msgCmdRunFailedExitCode,
+                                                    msg::command_name = env_setup_cmd.command_line(),
+                                                    msg::error_code = err_code);
+                    }
                 }
                 else
                 {
