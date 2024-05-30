@@ -661,7 +661,6 @@ namespace vcpkg
 
         if (script.is_relative() || !fs.is_regular_file(script))
         {
-            // Throw error
             Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgInvalidEnvSetupScripts, msg::path = script);
         }
 
