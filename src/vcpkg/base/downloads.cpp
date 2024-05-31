@@ -580,7 +580,9 @@ namespace vcpkg
                     msgCurlFailedToPutHttp, msg::exit_code = *pres, msg::url = url, msg::value = code);
             }
         }
-
+        msg::println(
+                msgAssetCacheSuccesfullyStored, msg::path = file.filename());
+        Debug::println(fmt::format("Uploaded {} to {} ", file.filename(), url));
         return res;
     }
 
@@ -918,7 +920,8 @@ namespace vcpkg
                                       errors,
                                       progress_sink))
                 {
-                    msg::println(msgAssetCacheHit, msg::path = download_path.filename(), msg::url = read_url);
+                    msg::println(msgAssetCacheHit, msg::path = download_path.filename());
+                    Debug::println("Downloaded from: ", read_url);
                     return read_url;
                 }
             }
@@ -974,12 +977,12 @@ namespace vcpkg
         {
             if (urls.size() != 0)
             {
-                msg::println(msgAssetCacheMiss, msg::path = download_path.filename(), msg::url = urls[0]);
-
                 auto maybe_url = try_download_file(
                     fs, urls, headers, download_path, sha512, m_config.m_secrets, errors, progress_sink);
                 if (auto url = maybe_url.get())
                 {
+                    m_config.m_read_url_template.has_value() ? msg::println(msgAssetCacheMiss, msg::url = urls[0]) : msg::println(msgDownloadingUrl, msg::url = urls[0]); 
+                    
                     if (auto hash = sha512.get())
                     {
                         auto maybe_push = put_file_to_mirror(fs, download_path, *hash);
@@ -994,10 +997,22 @@ namespace vcpkg
                 }
             }
         }
-        msg::println_error(msgFailedToDownloadFromMirrorSet, msg::path = download_path.filename());
+        // Asset cache is not configured and x-block-origin enabled
+        if (m_config.m_read_url_template.has_value())
+        {
+            msg::println(msgAssetCacheMissBlockOrigin, msg::path = download_path.filename());
+        }
+        else
+        {
+            msg::println_error(msgMissingAssetBlockOrigin, msg::path = download_path.filename());
+        }
+    
         for (LocalizedString& error : errors)
         {
-            msg::println(error);
+            // Debug only since:
+            // 1. curl already prints the error
+            // 2. the printed url can contain sensitive information like username/password
+            Debug::println(error);
         }
 
         Checks::exit_fail(VCPKG_LINE_INFO);
@@ -1010,8 +1025,6 @@ namespace vcpkg
         auto maybe_mirror_url = Strings::replace_all(m_config.m_write_url_template.value_or(""), "<SHA>", sha512);
         if (!maybe_mirror_url.empty())
         {
-            msg::println(
-                msgAssetCacheSuccesfullyStored, msg::path = file_to_put.filename(), msg::url = maybe_mirror_url);
             return put_file(fs, maybe_mirror_url, m_config.m_secrets, m_config.m_write_headers, file_to_put);
         }
         return 0;

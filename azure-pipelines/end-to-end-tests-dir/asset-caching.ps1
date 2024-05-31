@@ -15,7 +15,7 @@ $actual = $actual -replace "`r`n", "`n"
 
 $expected = @(
 "A suitable version of .* was not found \(required v[0-9\.]+\)."
-"error: Asset cache miss for .* and external downloads are blocked by x-block-origin."
+"error: Missing .* and external downloads are blocked by x-block-origin."
 ) -join "`n"
 
 if (-not ($actual -match $expected)) {
@@ -28,12 +28,25 @@ $actual = $actual -replace "`r`n", "`n"
 
 $expected = @(
 "A suitable version of .* was not found \(required v[0-9\.]+\)."
-"Asset cache miss for .*."
-"Downloading: .*"
+"Downloading .*."
 ) -join "`n"
 
 if (-not ($actual -match $expected)) {
     throw "Failure: asset cache miss (not configured) + x-block-origin disabled"
+}
+
+# Testing asset cache miss (configured) + x-block-origin enabled
+Refresh-TestRoot
+$actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("install", "vcpkg-internal-e2e-test-port", "--overlay-ports=$PSScriptRoot/../e2e-ports", "--x-asset-sources=x-azurl,file://$AssetCache,,readwrite;x-block-origin", "--downloads-root=$DownloadsRoot"))
+$actual = $actual -replace "`r`n", "`n"
+
+$expected = @(
+"A suitable version of .* was not found \(required v[0-9\.]+\)."
+"Asset cache miss for .* and external downloads are blocked by x-block-origin"
+) -join "`n"
+
+if (-not ($actual -match $expected)) {
+    throw "Failure: asset cache miss (configured) + x-block-origin disabled"
 }
 
 # Testing asset cache miss (configured) + x-block-origin disabled
@@ -43,9 +56,8 @@ $actual = $actual -replace "`r`n", "`n"
 
 $expected = @(
 "A suitable version of .* was not found \(required v[0-9\.]+\)."
-"Asset cache miss for .*."
-"Downloading: .*"
-"Successfully stored .* to .*."
+"Asset cache miss; downloading from .*"
+"Successfully stored .* to mirror."
 ) -join "`n"
 
 if (-not ($actual -match $expected)) {
@@ -61,11 +73,22 @@ $actual = $actual -replace "`r`n", "`n"
 $expected = @(
 "A suitable version of .* was not found \(required v[0-9\.]+\)."
 "Asset cache hit for .*."
-"Downloading: .*"
 ) -join "`n"
 
 if (-not ($actual -match $expected)) {
     throw "Failure: asset cache hit"
+}
+
+# Testing asset cache hit with --debug
+Refresh-Downloads
+Run-Vcpkg -TestArgs ($commonArgs + @('remove', 'vcpkg-internal-e2e-test-port'))
+$actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("install", "vcpkg-internal-e2e-test-port", "--overlay-ports=$PSScriptRoot/../e2e-ports", "--x-asset-sources=x-azurl,file://$AssetCache,,readwrite;", "--downloads-root=$DownloadsRoot", "--debug"))
+$actual = $actual -replace "`r`n", "`n"
+
+$expectedPattern = "(?s)" + ".*\[DEBUG\] Downloaded from: .*"
+
+if (-not ($actual -match $expectedPattern)) {
+    throw "Failure: asset cache hit (--debug)"
 }
 
 # Testing asset caching && x-block-orgin promises when --debug is passed (enabled)

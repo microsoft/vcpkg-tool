@@ -236,13 +236,14 @@ DECLARE_MESSAGE(ArtifactsSwitchOsx, (), "", "Forces host detection to MacOS when
 DECLARE_MESSAGE(ArtifactsSwitchX64, (), "", "Forces host detection to x64 when acquiring artifacts")
 DECLARE_MESSAGE(ArtifactsSwitchX86, (), "", "Forces host detection to x86 when acquiring artifacts")
 DECLARE_MESSAGE(ArtifactsSwitchWindows, (), "", "Forces host detection to Windows when acquiring artifacts")
-DECLARE_MESSAGE(AssetCacheHit, (msg::path, msg::url), "", "Asset cache hit for {path}.\nDownloading: {url}")
-DECLARE_MESSAGE(AssetCacheMiss, (msg::path, msg::url), "", "Asset cache miss for {path}.\nDownloading: {url}")
+DECLARE_MESSAGE(AssetCacheHit, (msg::path), "", "Asset cache hit for {path}.")
+DECLARE_MESSAGE(AssetCacheMiss, (msg::url), "", "Asset cache miss; downloading from {url}")
+DECLARE_MESSAGE(DownloadingUrl, (msg::url), "", "Downloading {url}")
 DECLARE_MESSAGE(AssetCacheProviderAcceptsNoArguments,
                 (msg::value),
                 "{value} is a asset caching provider name such as azurl, clear, or x-block-origin",
                 "unexpected arguments: '{value}' does not accept arguments")
-DECLARE_MESSAGE(AssetCacheSuccesfullyStored, (msg::path, msg::url), "", "Successfully stored {path} to {url}.")
+DECLARE_MESSAGE(AssetCacheSuccesfullyStored, (msg::path), "", "Successfully stored {path} to mirror.")
 DECLARE_MESSAGE(AssetSourcesArg, (), "", "Asset caching sources. See 'vcpkg help assetcaching'")
 DECLARE_MESSAGE(ASemanticVersionString, (), "", "a semantic version string")
 DECLARE_MESSAGE(ASetOfFeatures, (), "", "a set of features")
@@ -1198,10 +1199,11 @@ DECLARE_MESSAGE(FailedToDeleteInsideDueToFile,
                 "printed after this",
                 "failed to remove_all_inside({value}) due to {path}: ")
 DECLARE_MESSAGE(FailedToDetermineCurrentCommit, (), "", "Failed to determine the current commit:")
-DECLARE_MESSAGE(FailedToDownloadFromMirrorSet,
+DECLARE_MESSAGE(MissingAssetBlockOrigin,
                 (msg::path),
                 "x-block-origin is a vcpkg term. Do not translate",
-                "Asset cache miss for {path} and external downloads are blocked by x-block-origin.")
+                "Missing {path} and external downloads are blocked by x-block-origin.")
+DECLARE_MESSAGE(AssetCacheMissBlockOrigin, (msg::path), "x-block-origin is a vcpkg term. Do not translate", "Asset cache miss for {path} and external downloads are blocked by x-block-origin.")
 DECLARE_MESSAGE(FailedToExtract, (msg::path), "", "Failed to extract \"{path}\":")
 DECLARE_MESSAGE(FailedToFetchRepo, (msg::url), "", "Failed to fetch {url}.")
 DECLARE_MESSAGE(FailedToFindPortFeature,
