@@ -15,8 +15,6 @@
 
 #include <vcpkg/commands.version.h>
 
-#include <regex>
-
 namespace vcpkg
 {
     static std::string replace_secrets(std::string input, View<std::string> secrets)
@@ -28,13 +26,6 @@ namespace vcpkg
         }
 
         return input;
-    }
-
-    static std::wsmatch regex_match(const std::wregex& pattern, const std::wstring& str)
-    {
-        std::wsmatch match;
-        std::regex_search(str, match, pattern);
-        return match;
     }
 
     bool operator==(const ProxyCredentials& lhs, const ProxyCredentials& rhs)
@@ -49,28 +40,29 @@ namespace vcpkg
 
     ProxyUrlParts parse_proxy_url(const std::wstring& url)
     {
-        std::wregex scheme_pattern(L"^(.+://)(.*)");           // Matches scheme part
-        std::wregex credentials_pattern(L"([^:]+):(.*)@(.*)"); // Matches login:pwd@host:port
-
-        std::wstring protocol;
-        std::wstring host;
+        constexpr auto npos = std::wstring::npos;
+        auto scheme_separator_pos = url.find(L"://");
+        std::wstring scheme;
+        std::wstring_view remaining_parts = url;
+        if (scheme_separator_pos != npos)
+        {
+            scheme = remaining_parts.substr(0, scheme_separator_pos + 3);
+            remaining_parts = remaining_parts.substr(scheme_separator_pos + 3);
+        }
         Optional<ProxyCredentials> credentials;
-
-        auto matchProtocol = regex_match(scheme_pattern, url);
-        std::wstring remainingParts = url;
-        if (matchProtocol.size() == 3)
+        auto credentials_separator_pos = remaining_parts.find(L"@");
+        auto password_separator_pos = remaining_parts.find(L":");
+        if (credentials_separator_pos != npos && password_separator_pos != npos &&
+            password_separator_pos < credentials_separator_pos)
         {
-            protocol = matchProtocol[1];
-            remainingParts = matchProtocol[2];
+            const auto password_start = password_separator_pos + 1;
+            const auto password_size = credentials_separator_pos - password_start;
+            credentials = ProxyCredentials{std::wstring(remaining_parts.substr(0, password_separator_pos)),
+                                           std::wstring(remaining_parts.substr(password_start, password_size))};
+            remaining_parts = remaining_parts.substr(credentials_separator_pos + 1);
         }
-        auto matchCredentials = regex_match(credentials_pattern, remainingParts);
-        if (matchCredentials.size() == 4)
-        {
-            credentials = ProxyCredentials{matchCredentials[1], matchCredentials[2]};
-            remainingParts = matchCredentials[3];
-        }
-        host = remainingParts;
-        return ProxyUrlParts{protocol + host, credentials};
+        std::wstring host(remaining_parts);
+        return ProxyUrlParts{scheme + host, credentials};
     }
 
 #if defined(_WIN32)
@@ -225,7 +217,7 @@ namespace vcpkg
             if (maybe_proxy_creds)
             {
                 const auto& proxy_creds = maybe_proxy_creds.value_or_exit(VCPKG_LINE_INFO);
-                ret.m_proxy_login = WinHttpContext(proxy_creds);
+                ret.m_proxy_credentials = WinHttpContext(proxy_creds);
 
                 WinHttpSetCredentials(ret.m_hRequest.h,
                                       WINHTTP_AUTH_TARGET_PROXY,
@@ -245,7 +237,7 @@ namespace vcpkg
                                                WINHTTP_NO_REQUEST_DATA,
                                                0,
                                                0,
-                                               ret.m_proxy_login.as_dword_ptr());
+                                               ret.m_proxy_credentials.as_dword_ptr());
 
             if (!bResults)
             {
@@ -355,7 +347,7 @@ namespace vcpkg
 
         WinHttpHandle m_hRequest;
         std::string m_sanitized_url;
-        WinHttpContext<ProxyCredentials> m_proxy_login;
+        WinHttpContext<ProxyCredentials> m_proxy_credentials;
     };
 
     struct WinHttpSession
