@@ -430,34 +430,28 @@ namespace
     LockFile::LockDataType lockdata_from_json_object(const Json::Object& obj)
     {
         LockFile::LockDataType ret;
-        for (auto&& repo_to_ref_info_value : obj)
+        for (auto&& kv : obj)
         {
-            auto repo = repo_to_ref_info_value.first;
-            const auto& ref_info_value = repo_to_ref_info_value.second;
-
-            if (!ref_info_value.is_object())
+            if (!kv.value.is_object())
             {
-                Debug::print("Lockfile value for key '", repo, "' was not an object\n");
+                Debug::print("Lockfile value for key '", kv.key, "' was not an object\n");
                 return ret;
             }
 
-            for (auto&& reference_to_commit : ref_info_value.object(VCPKG_LINE_INFO))
+            for (auto&& ref_kv : kv.value.object(VCPKG_LINE_INFO))
             {
-                auto reference = reference_to_commit.first;
-                const auto& commit = reference_to_commit.second;
-
-                if (!commit.is_string())
+                if (!ref_kv.value.is_string())
                 {
-                    Debug::print("Lockfile value for key '", reference, "' was not a string\n");
+                    Debug::print("Lockfile value for key '", ref_kv.key, "' was not a string\n");
                     return ret;
                 }
-                auto sv = commit.string(VCPKG_LINE_INFO);
+                auto sv = ref_kv.value.string(VCPKG_LINE_INFO);
                 if (!is_git_commit_sha(sv))
                 {
-                    Debug::print("Lockfile value for key '", reference, "' was not a string\n");
+                    Debug::print("Lockfile value for key '", ref_kv.key, "' was not a string\n");
                     return ret;
                 }
-                ret.emplace(repo.to_string(), LockFile::EntryData{reference.to_string(), sv.to_string(), true});
+                ret.emplace(kv.key, LockFile::EntryData{ref_kv.key, sv.to_string(), true});
             }
         }
         return ret;

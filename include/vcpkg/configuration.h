@@ -64,6 +64,8 @@ namespace vcpkg
         static View<StringView> known_fields();
     };
 
+    extern const Json::IDeserializer<Unit>& artifacts_object_validator;
+
     enum class ConfigurationSource
     {
         None,

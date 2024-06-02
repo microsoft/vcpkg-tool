@@ -5,10 +5,15 @@
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/unicode.h>
+#include <vcpkg/base/util.h>
 
 #include <vcpkg/documentation.h>
 
+#include <inttypes.h>
+#include <math.h>
+
 #include <atomic>
+#include <memory>
 #include <type_traits>
 
 namespace vcpkg::Json
@@ -345,7 +350,7 @@ namespace vcpkg::Json
                                 fmt::format("attempted to insert duplicate key {} into JSON object", key));
         }
 
-        return underlying_.emplace_back(key.to_string(), std::move(value)).second;
+        return underlying_.emplace_back(key.to_string(), std::move(value)).value;
     }
     Value& Object::insert(StringView key, const Value& value)
     {
@@ -355,7 +360,7 @@ namespace vcpkg::Json
                                 fmt::format("attempted to insert duplicate key {} into JSON object", key));
         }
 
-        return underlying_.emplace_back(key.to_string(), value).second;
+        return underlying_.emplace_back(key.to_string(), value).value;
     }
     Array& Object::insert(StringView key, Array&& value)
     {
@@ -388,7 +393,7 @@ namespace vcpkg::Json
         }
         else
         {
-            return underlying_.emplace_back(key, std::move(value)).second;
+            return underlying_.emplace_back(key.to_string(), std::move(value)).value;
         }
     }
     Value& Object::insert_or_replace(StringView key, const Value& value)
@@ -401,7 +406,7 @@ namespace vcpkg::Json
         }
         else
         {
-            return underlying_.emplace_back(key, value).second;
+            return underlying_.emplace_back(key.to_string(), value).value;
         }
     }
     Array& Object::insert_or_replace(StringView key, Array&& value)
@@ -421,16 +426,49 @@ namespace vcpkg::Json
         return insert_or_replace(key, Value::object(value)).object(VCPKG_LINE_INFO);
     }
 
-    auto Object::internal_find_key(StringView key) const noexcept -> underlying_t::const_iterator
+    void Object::insert_or_replace_all(const Object& other)
+    {
+        for (auto&& kv : other)
+        {
+            insert_or_replace(kv.key, kv.value);
+        }
+    }
+
+    namespace
+    {
+        static constexpr const struct IsJsonComment
+        {
+            bool operator()(StringView sv) const { return !sv.empty() && *sv.begin() == '$'; }
+        } is_json_comment;
+    }
+
+    Object Object::clone_comments() const
+    {
+        Object r;
+        for (auto&& kv : *this)
+        {
+            if (!kv.key.empty() && kv.key[0] == '$')
+            {
+                r.underlying_.push_back(kv);
+            }
+        }
+        return r;
+    }
+    void Object::remove_comments() noexcept
+    {
+        Util::erase_remove_if(underlying_, [](auto&& e) { return is_json_comment(e.key); });
+    }
+
+    Object::const_iterator Object::find(StringView key) const noexcept
     {
         return std::find_if(
-            underlying_.begin(), underlying_.end(), [key](const auto& pair) { return pair.first == key; });
+            underlying_.begin(), underlying_.end(), [key](const auto& pair) { return pair.key == key; });
     }
 
     // returns whether the key existed
     bool Object::remove(StringView key) noexcept
     {
-        auto it = internal_find_key(key);
+        auto it = find(key);
         if (it == underlying_.end())
         {
             return false;
@@ -444,33 +482,33 @@ namespace vcpkg::Json
 
     Value* Object::get(StringView key) noexcept
     {
-        auto it = internal_find_key(key);
+        auto it = find(key);
         if (it == underlying_.end())
         {
             return nullptr;
         }
         else
         {
-            return &underlying_[it - underlying_.begin()].second;
+            return &underlying_[it - underlying_.begin()].value;
         }
     }
     const Value* Object::get(StringView key) const noexcept
     {
-        auto it = internal_find_key(key);
+        auto it = find(key);
         if (it == underlying_.end())
         {
             return nullptr;
         }
         else
         {
-            return &it->second;
+            return &it->value;
         }
     }
 
     void Object::sort_keys()
     {
         std::sort(underlying_.begin(), underlying_.end(), [](const value_type& lhs, const value_type& rhs) {
-            return lhs.first < rhs.first;
+            return lhs.key < rhs.key;
         });
     }
 
@@ -1246,9 +1284,9 @@ namespace vcpkg::Json
                         buffer.append(style.newline());
                         append_indent(current_indent + 1);
 
-                        append_quoted_json_string(el.first);
+                        append_quoted_json_string(el.key);
                         buffer.append(": ");
-                        stringify(el.second, current_indent + 1);
+                        stringify(el.value, current_indent + 1);
                     }
                     buffer.append(style.newline());
                     append_indent(current_indent);
@@ -1371,21 +1409,21 @@ namespace vcpkg::Json
     static std::vector<std::string> invalid_json_fields(const Json::Object& obj,
                                                         Span<const StringView> known_fields) noexcept
     {
-        const auto field_is_unknown = [known_fields](StringView sv) {
-            // allow directives
-            if (sv.size() != 0 && *sv.begin() == '$')
-            {
-                return false;
-            }
-            return std::find(known_fields.begin(), known_fields.end(), sv) == known_fields.end();
-        };
-
         std::vector<std::string> res;
         for (const auto& kv : obj)
         {
-            if (field_is_unknown(kv.first))
+            if (is_json_comment(kv.key))
             {
-                res.push_back(kv.first.to_string());
+                // allow directives
+            }
+            else if (std::find(known_fields.begin(), known_fields.end(), kv.key) != known_fields.end())
+            {
+                // skip known fields
+            }
+            else
+            {
+                // collect unknown fields
+                res.push_back(kv.key);
             }
         }
 
