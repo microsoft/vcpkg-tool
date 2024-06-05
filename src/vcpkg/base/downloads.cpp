@@ -580,8 +580,7 @@ namespace vcpkg
                     msgCurlFailedToPutHttp, msg::exit_code = *pres, msg::url = url, msg::value = code);
             }
         }
-        msg::println(
-                msgAssetCacheSuccesfullyStored, msg::path = file.filename());
+        msg::println(msgAssetCacheSuccesfullyStored, msg::path = file.filename());
         Debug::println(fmt::format("Uploaded {} to {} ", file.filename(), url));
         return res;
     }
@@ -981,8 +980,9 @@ namespace vcpkg
                     fs, urls, headers, download_path, sha512, m_config.m_secrets, errors, progress_sink);
                 if (auto url = maybe_url.get())
                 {
-                    m_config.m_read_url_template.has_value() ? msg::println(msgAssetCacheMiss, msg::url = urls[0]) : msg::println(msgDownloadingUrl, msg::url = urls[0]); 
-                    
+                    m_config.m_read_url_template.has_value() ? msg::println(msgAssetCacheMiss, msg::url = urls[0])
+                                                             : msg::println(msgDownloadingUrl, msg::url = urls[0]);
+
                     if (auto hash = sha512.get())
                     {
                         auto maybe_push = put_file_to_mirror(fs, download_path, *hash);
@@ -1006,7 +1006,7 @@ namespace vcpkg
         {
             msg::println_error(msgMissingAssetBlockOrigin, msg::path = download_path.filename());
         }
-    
+
         for (LocalizedString& error : errors)
         {
             // Debug only since:
