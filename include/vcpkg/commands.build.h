@@ -90,7 +90,7 @@ namespace vcpkg
         int removed = 0;
 
         void increment(const BuildResult build_result);
-        void println(const Triplet& triplet) const;
+        LocalizedString format(const Triplet& triplet) const;
     };
 
     StringLiteral to_string_locale_invariant(const BuildResult build_result);

@@ -1437,28 +1437,33 @@ namespace vcpkg
     }
 
     template<class Message>
-    static void print_build_result_summary_line(Message build_result_message, int count)
+    static void append_build_result_summary_line(Message build_result_message, int count, LocalizedString& str)
     {
         if (count != 0)
         {
-            msg::println(LocalizedString().append_indent().append(
-                msgBuildResultSummaryLine, msg::build_result = msg::format(build_result_message), msg::count = count));
+            str.append_indent()
+                .append(msgBuildResultSummaryLine,
+                        msg::build_result = msg::format(build_result_message),
+                        msg::count = count)
+                .append_raw('\n');
         }
     }
 
-    void BuildResultCounts::println(const Triplet& triplet) const
+    LocalizedString BuildResultCounts::format(const Triplet& triplet) const
     {
-        msg::println(msgBuildResultSummaryHeader, msg::triplet = triplet);
-        print_build_result_summary_line(msgBuildResultSucceeded, succeeded);
-        print_build_result_summary_line(msgBuildResultBuildFailed, build_failed);
-        print_build_result_summary_line(msgBuildResultPostBuildChecksFailed, post_build_checks_failed);
-        print_build_result_summary_line(msgBuildResultFileConflicts, file_conflicts);
-        print_build_result_summary_line(msgBuildResultCascadeDueToMissingDependencies,
-                                        cascaded_due_to_missing_dependencies);
-        print_build_result_summary_line(msgBuildResultExcluded, excluded);
-        print_build_result_summary_line(msgBuildResultCacheMissing, cache_missing);
-        print_build_result_summary_line(msgBuildResultDownloaded, downloaded);
-        print_build_result_summary_line(msgBuildResultRemoved, removed);
+        LocalizedString str;
+        str.append(msgBuildResultSummaryHeader, msg::triplet = triplet).append_raw('\n');
+        append_build_result_summary_line(msgBuildResultSucceeded, succeeded, str);
+        append_build_result_summary_line(msgBuildResultBuildFailed, build_failed, str);
+        append_build_result_summary_line(msgBuildResultPostBuildChecksFailed, post_build_checks_failed, str);
+        append_build_result_summary_line(msgBuildResultFileConflicts, file_conflicts, str);
+        append_build_result_summary_line(
+            msgBuildResultCascadeDueToMissingDependencies, cascaded_due_to_missing_dependencies, str);
+        append_build_result_summary_line(msgBuildResultExcluded, excluded, str);
+        append_build_result_summary_line(msgBuildResultCacheMissing, cache_missing, str);
+        append_build_result_summary_line(msgBuildResultDownloaded, downloaded, str);
+        append_build_result_summary_line(msgBuildResultRemoved, removed, str);
+        return str;
     }
 
     StringLiteral to_string_locale_invariant(const BuildResult build_result)
