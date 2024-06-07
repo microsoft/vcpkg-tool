@@ -1,5 +1,7 @@
 #include <vcpkg/base/cofffilereader.h>
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/fmt.h>
 #include <vcpkg/base/message_sinks.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/parallel-algorithms.h>
@@ -15,7 +17,14 @@
 
 namespace vcpkg
 {
-    constexpr static std::array<StringLiteral, 4> windows_system_names = {
+    static constexpr StringLiteral debug_lib_relative_path = "debug" VCPKG_PREFERRED_SEPARATOR "lib";
+    static constexpr StringLiteral release_lib_relative_path = "lib";
+    static constexpr StringLiteral lib_relative_paths[] = {debug_lib_relative_path, release_lib_relative_path};
+    static constexpr StringLiteral debug_bin_relative_path = "debug" VCPKG_PREFERRED_SEPARATOR "bin";
+    static constexpr StringLiteral release_bin_relative_path = "bin";
+    static constexpr StringLiteral bin_relative_paths[] = {debug_bin_relative_path, release_bin_relative_path};
+
+    constexpr static StringLiteral windows_system_names[] = {
         "",
         "Windows",
         "WindowsStore",
@@ -28,35 +37,60 @@ namespace vcpkg
         PROBLEM_DETECTED = 1
     };
 
+    static void print_relative_paths(MessageSink& msg_sink,
+                                     msg::MessageT<> kind_prefix,
+                                     const Path& relative_dir,
+                                     const std::vector<Path>& relative_paths)
+    {
+        auto ls = LocalizedString()
+                      .append_raw('\n')
+                      .append_raw(relative_dir)
+                      .append_raw(": ")
+                      .append_raw(NotePrefix)
+                      .append(kind_prefix)
+                      .append_raw('\n');
+        for (const Path& package_relative_path : relative_paths)
+        {
+            auto as_generic = package_relative_path;
+            as_generic.make_generic();
+            ls.append_raw(NotePrefix).append_raw(as_generic).append_raw('\n');
+        }
+
+        msg_sink.print(ls);
+    }
+
     // clang-format off
 #define OUTDATED_V_NO_120 \
-    StringLiteral{"msvcp100.dll"},          \
-    StringLiteral{"msvcp100d.dll"},         \
-    StringLiteral{"msvcp110.dll"},          \
-    StringLiteral{"msvcp110_win.dll"},      \
-    StringLiteral{"msvcp60.dll"},           \
-    StringLiteral{"msvcp60.dll"},           \
-                               \
-    StringLiteral{"msvcrt.dll"},            \
-    StringLiteral{"msvcr100.dll"},          \
-    StringLiteral{"msvcr100d.dll"},         \
-    StringLiteral{"msvcr100_clr0400.dll"},  \
-    StringLiteral{"msvcr110.dll"},          \
-    StringLiteral{"msvcrt20.dll"},          \
-    StringLiteral{"msvcrt40.dll"}
+    "msvcp100.dll",         \
+    "msvcp100d.dll",        \
+    "msvcp110.dll",         \
+    "msvcp110_win.dll",     \
+    "msvcp60.dll",          \
+    "msvcr60.dll",          \
+                            \
+    "msvcrt.dll",           \
+    "msvcr100.dll",         \
+    "msvcr100d.dll",        \
+    "msvcr100_clr0400.dll", \
+    "msvcr110.dll",         \
+    "msvcr110d.dll",         \
+    "msvcrt20.dll",         \
+    "msvcrt40.dll"
 
     // clang-format on
 
     static View<StringLiteral> get_outdated_dynamic_crts(const Optional<std::string>& toolset_version)
     {
-        static constexpr std::array<StringLiteral, 13> V_NO_120 = {OUTDATED_V_NO_120};
+        static constexpr StringLiteral V_NO_120[] = {OUTDATED_V_NO_120};
 
-        static constexpr std::array<StringLiteral, 17> V_NO_MSVCRT = {
+        static constexpr StringLiteral V_NO_MSVCRT[] = {
             OUTDATED_V_NO_120,
-            StringLiteral{"msvcp120.dll"},
-            StringLiteral{"msvcp120_clr0400.dll"},
-            StringLiteral{"msvcr120.dll"},
-            StringLiteral{"msvcr120_clr0400.dll"},
+            "msvcp120.dll",
+            "msvcp120d.dll",
+            "msvcp120_clr0400.dll",
+            "msvcr120.dll",
+            "msvcr120d.dll",
+            "msvcr120_clr0400.dll",
         };
 
         const auto tsv = toolset_version.get();
@@ -72,33 +106,40 @@ namespace vcpkg
 #undef OUTDATED_V_NO_120
 
     static LintStatus check_for_files_in_include_directory(const ReadOnlyFilesystem& fs,
-                                                           const BuildPolicies& policies,
                                                            const Path& package_dir,
+                                                           const Path& portfile_cmake,
                                                            MessageSink& msg_sink)
     {
-        if (policies.is_enabled(BuildPolicy::EMPTY_INCLUDE_FOLDER))
-        {
-            return LintStatus::SUCCESS;
-        }
-
         const auto include_dir = package_dir / "include";
-
-        if (policies.is_enabled(BuildPolicy::CMAKE_HELPER_PORT))
-        {
-            if (fs.exists(include_dir, IgnoreErrors{}))
-            {
-                msg_sink.println_warning(msgPortBugIncludeDirInCMakeHelperPort);
-                return LintStatus::PROBLEM_DETECTED;
-            }
-            else
-            {
-                return LintStatus::SUCCESS;
-            }
-        }
-
         if (!fs.exists(include_dir, IgnoreErrors{}) || fs.is_empty(include_dir, IgnoreErrors{}))
         {
-            msg_sink.println_warning(msgPortBugMissingIncludeDir);
+            msg_sink.print(Color::warning,
+                           LocalizedString::from_raw(portfile_cmake)
+                               .append_raw(": ")
+                               .append_raw(WarningPrefix)
+                               .append(msgPortBugMissingIncludeDir)
+                               .append_raw('\n'));
+
+            return LintStatus::PROBLEM_DETECTED;
+        }
+
+        return LintStatus::SUCCESS;
+    }
+
+    static LintStatus check_for_no_files_in_cmake_helper_port_include_directory(const ReadOnlyFilesystem& fs,
+                                                                                const Path& package_dir,
+                                                                                const Path& portfile_cmake,
+                                                                                MessageSink& msg_sink)
+    {
+        const auto include_dir = package_dir / "include";
+        if (fs.exists(include_dir, IgnoreErrors{}))
+        {
+            msg_sink.print(Color::warning,
+                           LocalizedString::from_raw(portfile_cmake)
+                               .append_raw(": ")
+                               .append_raw(WarningPrefix)
+                               .append(msgPortBugIncludeDirInCMakeHelperPort)
+                               .append_raw('\n'));
             return LintStatus::PROBLEM_DETECTED;
         }
 
@@ -106,15 +147,10 @@ namespace vcpkg
     }
 
     static LintStatus check_for_restricted_include_files(const ReadOnlyFilesystem& fs,
-                                                         const BuildPolicies& policies,
                                                          const Path& package_dir,
+                                                         const Path& portfile_cmake,
                                                          MessageSink& msg_sink)
     {
-        if (policies.is_enabled(BuildPolicy::ALLOW_RESTRICTED_HEADERS))
-        {
-            return LintStatus::SUCCESS;
-        }
-
         // These files are taken from the libc6-dev package on Ubuntu inside /usr/include/x86_64-linux-gnu/sys/
         static constexpr StringLiteral restricted_sys_filenames[] = {
             "acct.h",      "auxv.h",        "bitypes.h",  "cdefs.h",    "debugreg.h",  "dir.h",         "elf.h",
@@ -176,21 +212,37 @@ namespace vcpkg
             filenames_s.insert(file.filename());
         }
 
-        std::vector<Path> violations;
+        std::vector<std::string> violations;
         for (auto&& flist : restricted_lists)
+        {
             for (auto&& f : flist)
             {
                 if (Util::Sets::contains(filenames_s, f))
                 {
-                    violations.push_back(Path("include") / f);
+                    violations.push_back(fmt::format(FMT_COMPILE("<{}>"), f));
                 }
             }
+        }
 
         if (!violations.empty())
         {
-            msg_sink.println_warning(msgPortBugRestrictedHeaderPaths);
-            print_paths(msg_sink, violations);
-            msg_sink.println(msgPortBugRestrictedHeaderPaths);
+            Util::sort(violations);
+            msg_sink.print(Color::warning,
+                           LocalizedString::from_raw(portfile_cmake)
+                               .append_raw(": ")
+                               .append_raw(WarningPrefix)
+                               .append(msgPortBugRestrictedHeaderPaths)
+                               .append_raw('\n'));
+            msg_sink.print(LocalizedString::from_raw(include_dir)
+                               .append_raw(": ")
+                               .append_raw(NotePrefix)
+                               .append(msgPortBugRestrictedHeaderPathsNote)
+                               .append_raw('\n'));
+            for (auto&& violation : violations)
+            {
+                msg_sink.print(LocalizedString::from_raw(NotePrefix).append_raw(violation).append_raw('\n'));
+            }
+
             return LintStatus::PROBLEM_DETECTED;
         }
 
@@ -199,9 +251,10 @@ namespace vcpkg
 
     static LintStatus check_for_files_in_debug_include_directory(const ReadOnlyFilesystem& fs,
                                                                  const Path& package_dir,
+                                                                 const Path& portfile_cmake,
                                                                  MessageSink& msg_sink)
     {
-        const auto debug_include_dir = package_dir / "debug" / "include";
+        const auto debug_include_dir = package_dir / "debug" VCPKG_PREFERRED_SEPARATOR "include";
 
         std::vector<Path> files_found = fs.get_regular_files_recursive(debug_include_dir, IgnoreErrors{});
 
@@ -209,7 +262,14 @@ namespace vcpkg
 
         if (!files_found.empty())
         {
-            msg_sink.println_warning(msgPortBugDuplicateIncludeFiles);
+            msg_sink.print(Color::warning,
+                           LocalizedString::from_raw(portfile_cmake)
+                               .append_raw(": ")
+                               .append_raw(WarningPrefix)
+                               .append(msgPortBugDuplicateIncludeFiles)
+                               .append_raw('\n'));
+            msg_sink.print(
+                LocalizedString::from_raw(NotePrefix).append(msgPortBugDuplicateIncludeFilesFixIt).append_raw('\n'));
             return LintStatus::PROBLEM_DETECTED;
         }
 
@@ -218,33 +278,39 @@ namespace vcpkg
 
     static LintStatus check_for_files_in_debug_share_directory(const ReadOnlyFilesystem& fs,
                                                                const Path& package_dir,
+                                                               const Path& portfile_cmake,
                                                                MessageSink& msg_sink)
     {
-        const auto debug_share = package_dir / "debug" / "share";
+        const auto debug_share = package_dir / "debug" VCPKG_PREFERRED_SEPARATOR "share";
         if (fs.exists(debug_share, IgnoreErrors{}))
         {
-            msg_sink.println_warning(msgPortBugDebugShareDir);
+            msg_sink.print(Color::warning,
+                           LocalizedString::from_raw(portfile_cmake)
+                               .append_raw(": ")
+                               .append_raw(WarningPrefix)
+                               .append(msgPortBugDebugShareDir)
+                               .append_raw('\n'));
             return LintStatus::PROBLEM_DETECTED;
         }
 
         return LintStatus::SUCCESS;
     }
 
-    static LintStatus check_for_vcpkg_port_config(const ReadOnlyFilesystem& fs,
-                                                  const BuildPolicies& policies,
-                                                  const Path& package_dir,
-                                                  const PackageSpec& spec,
-                                                  MessageSink& msg_sink)
+    static LintStatus check_for_vcpkg_port_config_in_cmake_helper_port(const ReadOnlyFilesystem& fs,
+                                                                       const Path& package_dir,
+                                                                       StringView package_name,
+                                                                       const Path& portfile_cmake,
+                                                                       MessageSink& msg_sink)
     {
-        const auto relative_path = Path("share") / spec.name() / "vcpkg-port-config.cmake";
-        const auto absolute_path = package_dir / relative_path;
-        if (policies.is_enabled(BuildPolicy::CMAKE_HELPER_PORT))
+        if (!fs.exists(package_dir / "share" / package_name / "vcpkg-port-config.cmake", IgnoreErrors{}))
         {
-            if (!fs.exists(absolute_path, IgnoreErrors{}))
-            {
-                msg_sink.println_warning(msgPortBugMissingFile, msg::path = relative_path);
-                return LintStatus::PROBLEM_DETECTED;
-            }
+            msg_sink.print(Color::warning,
+                           LocalizedString::from_raw(portfile_cmake)
+                               .append_raw(": ")
+                               .append_raw(WarningPrefix)
+                               .append(msgPortBugMissingCMakeHelperPortFile)
+                               .append_raw("\n"));
+            return LintStatus::PROBLEM_DETECTED;
         }
 
         return LintStatus::SUCCESS;
@@ -253,35 +319,35 @@ namespace vcpkg
     static LintStatus check_for_usage_forgot_install(const ReadOnlyFilesystem& fs,
                                                      const Path& port_dir,
                                                      const Path& package_dir,
-                                                     const PackageSpec& spec,
+                                                     const StringView package_name,
+                                                     const Path& portfile_cmake,
                                                      MessageSink& msg_sink)
     {
         static constexpr StringLiteral STANDARD_INSTALL_USAGE =
             R"###(file(INSTALL "${CMAKE_CURRENT_LIST_DIR}/usage" DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}"))###";
 
         auto usage_path_from = port_dir / "usage";
-        auto usage_path_to = package_dir / "share" / spec.name() / "usage";
+        auto usage_path_to = package_dir / "share" / package_name / "usage";
 
         if (fs.is_regular_file(usage_path_from) && !fs.is_regular_file(usage_path_to))
         {
-            msg_sink.println_warning(msg::format(msgPortBugMissingProvidedUsage, msg::package_name = spec.name())
-                                         .append_raw('\n')
-                                         .append_raw(STANDARD_INSTALL_USAGE));
-            return LintStatus::PROBLEM_DETECTED;
-        }
-
-        return LintStatus::SUCCESS;
-    }
-
-    static LintStatus check_folder_lib_cmake(const ReadOnlyFilesystem& fs,
-                                             const Path& package_dir,
-                                             const PackageSpec& spec,
-                                             MessageSink& msg_sink)
-    {
-        const auto lib_cmake = package_dir / "lib" / "cmake";
-        if (fs.exists(lib_cmake, IgnoreErrors{}))
-        {
-            msg_sink.println_warning(msgPortBugMergeLibCMakeDir, msg::package_name = spec.name());
+            msg_sink.print(Color::warning,
+                           LocalizedString::from_raw(portfile_cmake)
+                               .append_raw(": ")
+                               .append_raw(WarningPrefix)
+                               .append(msgPortBugMissingProvidedUsage)
+                               .append_raw('\n'));
+            msg_sink.print(LocalizedString::from_raw(usage_path_from)
+                               .append_raw(": ")
+                               .append_raw(NotePrefix)
+                               .append(msgUsageTextHere)
+                               .append_raw('\n')
+                               .append_raw(NotePrefix)
+                               .append(msgUsageInstallInstructions)
+                               .append_raw('\n')
+                               .append_raw(NotePrefix)
+                               .append_raw(STANDARD_INSTALL_USAGE)
+                               .append_raw('\n'));
             return LintStatus::PROBLEM_DETECTED;
         }
 
@@ -290,64 +356,103 @@ namespace vcpkg
 
     static LintStatus check_for_misplaced_cmake_files(const ReadOnlyFilesystem& fs,
                                                       const Path& package_dir,
-                                                      const PackageSpec& spec,
+                                                      const Path& portfile_cmake,
                                                       MessageSink& msg_sink)
     {
-        std::vector<Path> dirs = {
-            package_dir / "cmake",
-            package_dir / "debug" / "cmake",
-            package_dir / "lib" / "cmake",
-            package_dir / "debug" / "lib" / "cmake",
+        static constexpr StringLiteral deny_relative_dirs[] = {
+            "cmake",
+            "debug" VCPKG_PREFERRED_SEPARATOR "cmake",
+            "lib" VCPKG_PREFERRED_SEPARATOR "cmake",
+            "debug" VCPKG_PREFERRED_SEPARATOR "lib" VCPKG_PREFERRED_SEPARATOR "cmake",
         };
 
         std::vector<Path> misplaced_cmake_files;
-        for (auto&& dir : dirs)
+        for (auto&& deny_relative_dir : deny_relative_dirs)
         {
-            for (auto&& file : fs.get_regular_files_recursive(dir, IgnoreErrors{}))
+            for (auto&& file :
+                 fs.get_regular_files_recursive_lexically_proximate(package_dir / deny_relative_dir, IgnoreErrors{}))
             {
                 if (Strings::case_insensitive_ascii_equals(file.extension(), ".cmake"))
                 {
-                    misplaced_cmake_files.push_back(std::move(file));
+                    misplaced_cmake_files.push_back(Path(deny_relative_dir) / std::move(file));
                 }
             }
         }
 
         if (!misplaced_cmake_files.empty())
         {
-            msg_sink.println_warning(msgPortBugMisplacedCMakeFiles, msg::spec = spec.name());
-            print_paths(msg_sink, misplaced_cmake_files);
+            msg_sink.print(Color::warning,
+                           LocalizedString::from_raw(portfile_cmake)
+                               .append_raw(": ")
+                               .append_raw(WarningPrefix)
+                               .append(msgPortBugMisplacedCMakeFiles));
+            print_relative_paths(
+                msg_sink, msgFilesRelativeToThePackageDirectoryHere, package_dir, misplaced_cmake_files);
             return LintStatus::PROBLEM_DETECTED;
         }
 
         return LintStatus::SUCCESS;
     }
 
-    static LintStatus check_folder_debug_lib_cmake(const ReadOnlyFilesystem& fs,
-                                                   const Path& package_dir,
-                                                   const PackageSpec& spec,
-                                                   MessageSink& msg_sink)
+    static LintStatus check_lib_cmake_merge(const ReadOnlyFilesystem& fs,
+                                            const Path& package_dir,
+                                            const Path& portfile_cmake,
+                                            MessageSink& msg_sink)
     {
-        const auto lib_cmake_debug = package_dir / "debug" / "lib" / "cmake";
-        if (fs.exists(lib_cmake_debug, IgnoreErrors{}))
+        if (fs.exists(package_dir / "lib" VCPKG_PREFERRED_SEPARATOR "cmake", IgnoreErrors{}) ||
+            fs.exists(package_dir / "debug" VCPKG_PREFERRED_SEPARATOR "lib" VCPKG_PREFERRED_SEPARATOR "cmake",
+                      IgnoreErrors{}))
         {
-            msg_sink.println_warning(msgPortBugMergeLibCMakeDir, msg::package_name = spec.name());
+            msg_sink.print(Color::warning,
+                           LocalizedString::from_raw(portfile_cmake)
+                               .append_raw(": ")
+                               .append_raw(WarningPrefix)
+                               .append(msgPortBugMergeLibCMakeDir)
+                               .append_raw('\n'));
             return LintStatus::PROBLEM_DETECTED;
         }
 
         return LintStatus::SUCCESS;
     }
 
-    static LintStatus check_for_dlls_in_lib_dir(const ReadOnlyFilesystem& fs,
+    static void add_prefix_to_all(std::vector<Path>& paths, const Path& prefix)
+    {
+        for (auto&& path : paths)
+        {
+            path = prefix / std::move(path);
+        }
+    }
+
+    static std::vector<Path> find_relative_dlls(const ReadOnlyFilesystem& fs,
                                                 const Path& package_dir,
-                                                MessageSink& msg_sink)
+                                                StringLiteral relative_dir)
     {
-        std::vector<Path> dlls = fs.get_regular_files_recursive(package_dir / "lib", IgnoreErrors{});
-        Util::erase_remove_if(dlls, NotExtensionCaseInsensitive{".dll"});
+        std::vector<Path> relative_dlls =
+            fs.get_regular_files_recursive_lexically_proximate(package_dir / relative_dir, IgnoreErrors{});
+        Util::erase_remove_if(relative_dlls, NotExtensionCaseInsensitive{".dll"});
+        add_prefix_to_all(relative_dlls, relative_dir);
+        return relative_dlls;
+    }
 
-        if (!dlls.empty())
+    static LintStatus check_for_dlls_in_lib_dirs(const ReadOnlyFilesystem& fs,
+                                                 const Path& package_dir,
+                                                 const Path& portfile_cmake,
+                                                 MessageSink& msg_sink)
+    {
+        std::vector<Path> bad_dlls;
+        for (auto&& relative_path : lib_relative_paths)
         {
-            msg_sink.println_warning(msgPortBugDllInLibDir);
-            print_paths(msg_sink, dlls);
+            Util::Vectors::append(bad_dlls, find_relative_dlls(fs, package_dir, relative_path));
+        }
+
+        if (!bad_dlls.empty())
+        {
+            msg_sink.print(Color::warning,
+                           LocalizedString::from_raw(portfile_cmake)
+                               .append_raw(": ")
+                               .append_raw(WarningPrefix)
+                               .append(msgPortBugDllInLibDir));
+            print_relative_paths(msg_sink, msgDllsRelativeToThePackageDirectoryHere, package_dir, bad_dlls);
             return LintStatus::PROBLEM_DETECTED;
         }
 
@@ -355,71 +460,122 @@ namespace vcpkg
     }
 
     static LintStatus check_for_copyright_file(const ReadOnlyFilesystem& fs,
-                                               const PackageSpec& spec,
+                                               StringView spec_name,
                                                const Path& package_dir,
-                                               const VcpkgPaths& paths,
+                                               const Path& build_dir,
+                                               const Path& portfile_cmake,
                                                MessageSink& msg_sink)
     {
-        const auto copyright_file = package_dir / "share" / spec.name() / "copyright";
+        static constexpr StringLiteral copyright_filenames[] = {"COPYING", "LICENSE", "LICENSE.txt"};
+        const auto copyright_file = package_dir / "share" / spec_name / "copyright";
 
         switch (fs.status(copyright_file, IgnoreErrors{}))
         {
             case FileType::regular: return LintStatus::SUCCESS; break;
-            case FileType::directory: msg_sink.println_warning(msgCopyrightIsDir, msg::path = "copyright"); break;
+            case FileType::directory:
+                msg_sink.print(Color::warning,
+                               LocalizedString::from_raw(portfile_cmake)
+                                   .append_raw(": ")
+                                   .append_raw(WarningPrefix)
+                                   .append(msgCopyrightIsDir)
+                                   .append_raw('\n'));
+                return LintStatus::PROBLEM_DETECTED;
             default: break;
         }
 
-        const auto current_buildtrees_dir = paths.build_dir(spec);
-        const auto current_buildtrees_dir_src = current_buildtrees_dir / "src";
+        msg_sink.print(Color::warning,
+                       LocalizedString::from_raw(portfile_cmake)
+                           .append_raw(": ")
+                           .append_raw(WarningPrefix)
+                           .append(msgPortBugMissingLicense)
+                           .append_raw('\n'));
 
-        std::vector<Path> potential_copyright_files;
         // We only search in the root of each unpacked source archive to reduce false positives
-        auto src_dirs = fs.get_directories_non_recursive(current_buildtrees_dir_src, IgnoreErrors{});
-        for (auto&& src_dir : src_dirs)
+        auto src_relative_dirs = Util::fmap(fs.get_directories_non_recursive(build_dir / "src", IgnoreErrors{}),
+                                            [](Path&& full) -> Path { return Path(full.filename()); });
+
+        if (src_relative_dirs.size() == 1)
         {
-            for (auto&& src_file : fs.get_regular_files_non_recursive(src_dir, IgnoreErrors{}))
+            // only one src dir, try to explain the vcpkg_install_copyright line for the user to use
+            std::vector<StringLiteral> src_dir_relative_copyright_files;
+            for (auto&& copyright_filename : copyright_filenames)
             {
-                const auto filename = src_file.filename();
-                if (Strings::case_insensitive_ascii_equals(filename, "LICENSE") ||
-                    Strings::case_insensitive_ascii_equals(filename, "LICENSE.txt") ||
-                    Strings::case_insensitive_ascii_equals(filename, "COPYING"))
+                if (fs.is_regular_file(build_dir / "src" / src_relative_dirs[0] / copyright_filename))
                 {
-                    potential_copyright_files.push_back(src_file);
+                    src_dir_relative_copyright_files.push_back(copyright_filename);
+                }
+            }
+
+            if (!src_dir_relative_copyright_files.empty())
+            {
+                auto args = Util::fmap(src_dir_relative_copyright_files, [](StringLiteral copyright_file) {
+                    return fmt::format(FMT_COMPILE("\"${{SOURCE_PATH}}/{}\""), copyright_file);
+                });
+                msg_sink.print(
+                    LocalizedString::from_raw(portfile_cmake)
+                        .append_raw(": ")
+                        .append_raw(NotePrefix)
+                        .append(msgPortBugMissingLicenseFixIt,
+                                msg::value = fmt::format(FMT_COMPILE("vcpkg_install_copyright(FILE_LIST {})"),
+                                                         fmt::join(args, " ")))
+                        .append_raw('\n'));
+            }
+
+            return LintStatus::PROBLEM_DETECTED;
+        }
+
+        Util::sort(src_relative_dirs);
+        auto& build_dir_relative_dirs = src_relative_dirs;
+        add_prefix_to_all(build_dir_relative_dirs, "src");
+        std::vector<Path> build_dir_relative_copyright_files;
+        for (auto&& build_dir_relative_dir : build_dir_relative_dirs)
+        {
+            for (auto&& copyright_filename : copyright_filenames)
+            {
+                if (fs.is_regular_file(build_dir / build_dir_relative_dir / copyright_filename))
+                {
+                    build_dir_relative_copyright_files.push_back(build_dir_relative_dir / copyright_filename);
                 }
             }
         }
 
-        msg_sink.println_warning(msgPortBugMissingLicense, msg::package_name = spec.name());
-        if (potential_copyright_files.size() == 1)
+        if (!build_dir_relative_copyright_files.empty())
         {
-            // if there is only one candidate, provide the cmake lines needed to place it in the proper location
-            const auto& found_file = potential_copyright_files[0];
-            auto found_relative_native = found_file.native();
-            found_relative_native.erase(current_buildtrees_dir.native().size() +
-                                        1); // The +1 is needed to remove the "/"
-            const Path relative_path = found_relative_native;
-            msg_sink.print(Color::none,
-                           fmt::format("\n    vcpkg_install_copyright(FILE_LIST \"${{SOURCE_PATH}}/{}/{}\")\n",
-                                       relative_path.generic_u8string(),
-                                       found_file.filename()));
+            msg_sink.print(LocalizedString::from_raw(portfile_cmake)
+                               .append_raw(": ")
+                               .append_raw(NotePrefix)
+                               .append(msgPortBugFoundCopyrightFiles));
+            print_relative_paths(
+                msg_sink, msgFilesRelativeToTheBuildDirectoryHere, build_dir, build_dir_relative_copyright_files);
         }
-        else if (potential_copyright_files.size() > 1)
-        {
-            msg_sink.println_warning(msgPortBugFoundCopyrightFiles);
-            print_paths(msg_sink, potential_copyright_files);
-        }
+
         return LintStatus::PROBLEM_DETECTED;
     }
 
-    static LintStatus check_for_exes(const ReadOnlyFilesystem& fs, const Path& package_dir, MessageSink& msg_sink)
+    static LintStatus check_for_exes_in_bin_dirs(const ReadOnlyFilesystem& fs,
+                                                 const Path& package_dir,
+                                                 const Path& portfile_cmake,
+                                                 MessageSink& msg_sink)
     {
-        std::vector<Path> exes = fs.get_regular_files_recursive(package_dir / "bin", IgnoreErrors{});
-        Util::erase_remove_if(exes, NotExtensionCaseInsensitive{".exe"});
+        std::vector<Path> exes;
+        for (auto&& bin_relative_path : bin_relative_paths)
+        {
+            auto this_bad_exes =
+                fs.get_regular_files_recursive_lexically_proximate(package_dir / bin_relative_path, IgnoreErrors{});
+            Util::erase_remove_if(this_bad_exes, NotExtensionCaseInsensitive{".exe"});
+            add_prefix_to_all(this_bad_exes, bin_relative_path);
+            Util::Vectors::append(exes, std::move(this_bad_exes));
+        }
 
         if (!exes.empty())
         {
-            msg_sink.println_warning(msgPortBugFoundExeInBinDir);
-            print_paths(msg_sink, exes);
+            msg_sink.print(Color::warning,
+                           LocalizedString::from_raw(portfile_cmake)
+                               .append_raw(": ")
+                               .append_raw(WarningPrefix)
+                               .append(msgPortBugFoundExeInBinDir));
+
+            print_relative_paths(msg_sink, msgExecutablesRelativeToThePackageDirectoryHere, package_dir, exes);
             return LintStatus::PROBLEM_DETECTED;
         }
 
@@ -428,7 +584,7 @@ namespace vcpkg
 
     struct PostBuildCheckDllData
     {
-        Path path;
+        Path relative_path;
         MachineType machine_type;
         bool is_arm64_ec;
         bool has_exports;
@@ -436,9 +592,11 @@ namespace vcpkg
         std::vector<std::string> dependencies;
     };
 
-    static ExpectedL<PostBuildCheckDllData> try_load_dll_data(const ReadOnlyFilesystem& fs, const Path& path)
+    static ExpectedL<PostBuildCheckDllData> try_load_dll_data(const ReadOnlyFilesystem& fs,
+                                                              const Path& package_dir,
+                                                              const Path& relative_path)
     {
-        auto maybe_file = fs.try_open_for_read(path);
+        auto maybe_file = fs.try_open_for_read(package_dir / relative_path);
         auto file = maybe_file.get();
         if (!file)
         {
@@ -479,7 +637,7 @@ namespace vcpkg
             return std::move(maybe_dependencies).error();
         }
 
-        return PostBuildCheckDllData{path,
+        return PostBuildCheckDllData{relative_path,
                                      metadata->get_machine_type(),
                                      metadata->is_arm64_ec(),
                                      has_exports,
@@ -487,34 +645,39 @@ namespace vcpkg
                                      std::move(*dependencies)};
     }
 
-    static LintStatus check_exports_of_dlls(const BuildPolicies& policies,
-                                            const std::vector<PostBuildCheckDllData>& dlls_data,
+    static LintStatus check_exports_of_dlls(const std::vector<PostBuildCheckDllData>& dlls_data,
+                                            const Path& package_dir,
+                                            const Path& portfile_cmake,
                                             MessageSink& msg_sink)
     {
-        if (policies.is_enabled(BuildPolicy::DLLS_WITHOUT_EXPORTS)) return LintStatus::SUCCESS;
-
         std::vector<Path> dlls_with_no_exports;
         for (const PostBuildCheckDllData& dll_data : dlls_data)
         {
             if (!dll_data.has_exports)
             {
-                dlls_with_no_exports.push_back(dll_data.path);
+                dlls_with_no_exports.push_back(dll_data.relative_path);
             }
         }
 
         if (!dlls_with_no_exports.empty())
         {
-            msg_sink.println_warning(msgPortBugSetDllsWithoutExports);
-            print_paths(msg_sink, dlls_with_no_exports);
+            msg_sink.print(Color::warning,
+                           LocalizedString::from_raw(portfile_cmake)
+                               .append_raw(": ")
+                               .append_raw(WarningPrefix)
+                               .append(msgPortBugSetDllsWithoutExports));
+            print_relative_paths(msg_sink, msgDllsRelativeToThePackageDirectoryHere, package_dir, dlls_with_no_exports);
             return LintStatus::PROBLEM_DETECTED;
         }
 
         return LintStatus::SUCCESS;
     }
 
-    static LintStatus check_uwp_bit_of_dlls(StringView expected_system_name,
-                                            const std::vector<PostBuildCheckDllData>& dlls_data,
-                                            MessageSink& msg_sink)
+    static LintStatus check_appcontainer_bit_if_uwp(StringView expected_system_name,
+                                                    const Path& package_dir,
+                                                    const Path& portfile_cmake,
+                                                    const std::vector<PostBuildCheckDllData>& dlls_data,
+                                                    MessageSink& msg_sink)
     {
         if (expected_system_name != "WindowsStore")
         {
@@ -526,14 +689,19 @@ namespace vcpkg
         {
             if (!dll_data.has_appcontainer)
             {
-                dlls_with_improper_uwp_bit.push_back(dll_data.path);
+                dlls_with_improper_uwp_bit.push_back(dll_data.relative_path);
             }
         }
 
         if (!dlls_with_improper_uwp_bit.empty())
         {
-            msg_sink.println_warning(msgPortBugDllAppContainerBitNotSet);
-            print_paths(msg_sink, dlls_with_improper_uwp_bit);
+            msg_sink.print(Color::warning,
+                           LocalizedString::from_raw(portfile_cmake)
+                               .append_raw(": ")
+                               .append_raw(WarningPrefix)
+                               .append(msgPortBugDllAppContainerBitNotSet));
+            print_relative_paths(
+                msg_sink, msgDllsRelativeToThePackageDirectoryHere, package_dir, dlls_with_improper_uwp_bit);
             return LintStatus::PROBLEM_DETECTED;
         }
 
@@ -542,7 +710,7 @@ namespace vcpkg
 
     struct FileAndArch
     {
-        Path file;
+        Path relative_file;
         std::string actual_arch;
     };
 
@@ -580,30 +748,44 @@ namespace vcpkg
             case MachineType::LLVM_BITCODE: return "llvm-bitcode";
             case MachineType::LOONGARCH32: return "loongarch32";
             case MachineType::LOONGARCH64: return "loongarch64";
-            default: return fmt::format("unknown-{}", static_cast<uint16_t>(machine_type));
+            default: return fmt::format(FMT_COMPILE("unknown-{}"), static_cast<uint16_t>(machine_type));
         }
     }
 
     static void print_invalid_architecture_files(const std::string& expected_architecture,
+                                                 const Path& package_dir,
+                                                 const Path& portfile_cmake,
                                                  std::vector<FileAndArch> binaries_with_invalid_architecture,
                                                  MessageSink& msg_sink)
     {
-        msg_sink.println_warning(msgBuiltWithIncorrectArchitecture);
+        msg_sink.print(Color::warning,
+                       LocalizedString::from_raw(portfile_cmake)
+                           .append_raw(": ")
+                           .append_raw(WarningPrefix)
+                           .append(msgBuiltWithIncorrectArchitecture, msg::arch = expected_architecture)
+                           .append_raw('\n'));
+
+        auto msg = LocalizedString::from_raw(package_dir)
+                       .append_raw(": ")
+                       .append_raw(NotePrefix)
+                       .append(msgBinariesRelativeToThePackageDirectoryHere)
+                       .append_raw('\n');
         for (const FileAndArch& b : binaries_with_invalid_architecture)
         {
-            msg_sink.println_warning(LocalizedString().append_indent().append(msgBinaryWithInvalidArchitecture,
-                                                                              msg::path = b.file,
-                                                                              msg::expected = expected_architecture,
-                                                                              msg::actual = b.actual_arch));
+            msg.append_raw(NotePrefix)
+                .append(msgBinaryWithInvalidArchitecture,
+                        msg::path = b.relative_file.generic_u8string(),
+                        msg::arch = b.actual_arch)
+                .append_raw('\n');
         }
+
+        msg_sink.print(msg);
     }
 
-    static LintStatus check_dll_architecture(const std::string& expected_architecture,
-                                             const std::vector<PostBuildCheckDllData>& dlls_data,
-                                             MessageSink& msg_sink)
+    static void check_dll_architecture(const std::string& expected_architecture,
+                                       const std::vector<PostBuildCheckDllData>& dlls_data,
+                                       std::vector<FileAndArch>& binaries_with_invalid_architecture)
     {
-        std::vector<FileAndArch> binaries_with_invalid_architecture;
-
         for (const PostBuildCheckDllData& dll_data : dlls_data)
         {
             const std::string actual_architecture = get_printable_architecture(dll_data.machine_type);
@@ -611,56 +793,51 @@ namespace vcpkg
             {
                 if (dll_data.machine_type != MachineType::AMD64 || !dll_data.is_arm64_ec)
                 {
-                    binaries_with_invalid_architecture.push_back({dll_data.path, actual_architecture});
+                    binaries_with_invalid_architecture.push_back({dll_data.relative_path, actual_architecture});
                 }
             }
             else if (expected_architecture != actual_architecture)
             {
-                binaries_with_invalid_architecture.push_back({dll_data.path, actual_architecture});
+                binaries_with_invalid_architecture.push_back({dll_data.relative_path, actual_architecture});
             }
         }
-
-        if (!binaries_with_invalid_architecture.empty())
-        {
-            print_invalid_architecture_files(expected_architecture, binaries_with_invalid_architecture, msg_sink);
-            return LintStatus::PROBLEM_DETECTED;
-        }
-
-        return LintStatus::SUCCESS;
     }
 
-    static std::vector<Optional<LibInformation>> get_lib_info(const Filesystem& fs, View<Path> libs)
+    static std::vector<Optional<LibInformation>> get_lib_info(const Filesystem& fs,
+                                                              const Path& relative_root,
+                                                              View<Path> libs)
     {
         std::vector<Optional<LibInformation>> maybe_lib_infos(libs.size());
-        std::transform(
-            libs.begin(), libs.end(), maybe_lib_infos.begin(), [&fs](const Path& lib) -> Optional<LibInformation> {
-                auto maybe_rfp = fs.try_open_for_read(lib);
+        std::transform(libs.begin(),
+                       libs.end(),
+                       maybe_lib_infos.begin(),
+                       [&](const Path& relative_lib) -> Optional<LibInformation> {
+                           auto maybe_rfp = fs.try_open_for_read(relative_root / relative_lib);
 
-                if (auto file_handle = maybe_rfp.get())
-                {
-                    auto maybe_lib_info = read_lib_information(*file_handle);
-                    if (auto lib_info = maybe_lib_info.get())
-                    {
-                        return std::move(*lib_info);
-                    }
-                    return nullopt;
-                }
-                return nullopt;
-            });
+                           if (auto file_handle = maybe_rfp.get())
+                           {
+                               auto maybe_lib_info = read_lib_information(*file_handle);
+                               if (auto lib_info = maybe_lib_info.get())
+                               {
+                                   return std::move(*lib_info);
+                               }
+                               return nullopt;
+                           }
+                           return nullopt;
+                       });
         return maybe_lib_infos;
     }
 
     // lib_infos[n] is the lib info for libs[n] for all n in [0, libs.size())
-    static LintStatus check_lib_architecture(const std::string& expected_architecture,
-                                             View<Path> libs,
-                                             View<Optional<LibInformation>> lib_infos,
-                                             MessageSink& msg_sink)
+    static void check_lib_architecture(const std::string& expected_architecture,
+                                       View<Path> relative_libs,
+                                       View<Optional<LibInformation>> lib_infos,
+                                       std::vector<FileAndArch>& binaries_with_invalid_architecture)
     {
-        std::vector<FileAndArch> binaries_with_invalid_architecture;
-        for (size_t i = 0; i < libs.size(); ++i)
+        for (size_t i = 0; i < relative_libs.size(); ++i)
         {
             auto& maybe_lib_information = lib_infos[i];
-            auto& lib = libs[i];
+            auto& relative_lib = relative_libs[i];
 
             if (!maybe_lib_information.has_value())
             {
@@ -685,140 +862,192 @@ namespace vcpkg
             if (!printable_machine_types.empty() &&
                 !Util::Vectors::contains(printable_machine_types, expected_architecture))
             {
-                binaries_with_invalid_architecture.push_back({lib, Strings::join(",", printable_machine_types)});
+                binaries_with_invalid_architecture.push_back(
+                    {relative_lib, Strings::join(",", printable_machine_types)});
             }
         }
-
-        if (!binaries_with_invalid_architecture.empty())
-        {
-            print_invalid_architecture_files(expected_architecture, binaries_with_invalid_architecture, msg_sink);
-            return LintStatus::PROBLEM_DETECTED;
-        }
-        return LintStatus::SUCCESS;
     }
 
-    static LintStatus check_no_dlls_present(const std::vector<Path>& dlls, MessageSink& msg_sink)
+    static LintStatus check_no_dlls_present(const Path& package_dir,
+                                            const std::vector<Path>& relative_dlls,
+                                            const Path& portfile_cmake,
+                                            MessageSink& msg_sink)
     {
-        if (dlls.empty())
+        if (relative_dlls.empty())
         {
             return LintStatus::SUCCESS;
         }
-        msg_sink.println_warning(msgPortBugFoundDllInStaticBuild);
-        print_paths(msg_sink, dlls);
+
+        msg_sink.print(Color::warning,
+                       LocalizedString::from_raw(portfile_cmake)
+                           .append_raw(": ")
+                           .append_raw(WarningPrefix)
+                           .append(msgPortBugFoundDllInStaticBuild));
+        print_relative_paths(msg_sink, msgDllsRelativeToThePackageDirectoryHere, package_dir, relative_dlls);
         return LintStatus::PROBLEM_DETECTED;
     }
 
-    static LintStatus check_matching_debug_and_release_binaries(const std::vector<Path>& debug_binaries,
-                                                                const std::vector<Path>& release_binaries,
+    static size_t total_size(View<View<Path>> path_sets)
+    {
+        size_t result = 0;
+        for (auto&& paths : path_sets)
+        {
+            result += paths.size();
+        }
+        return result;
+    }
+
+    static void append_binary_set(LocalizedString& ls, View<View<Path>> relative_binary_sets)
+    {
+        for (auto&& binary_set : relative_binary_sets)
+        {
+            for (auto&& binary : binary_set)
+            {
+                auto as_generic = binary;
+                as_generic.make_generic();
+                ls.append_raw(NotePrefix).append_raw(as_generic).append_raw('\n');
+            }
+        }
+    }
+
+    static LintStatus check_matching_debug_and_release_binaries(const Path& package_dir,
+                                                                View<View<Path>> relative_debug_binary_sets,
+                                                                View<View<Path>> relative_release_binary_sets,
+                                                                const Path& portfile_cmake,
                                                                 MessageSink& msg_sink)
     {
-        const size_t debug_count = debug_binaries.size();
-        const size_t release_count = release_binaries.size();
+        const size_t debug_count = total_size(relative_debug_binary_sets);
+        const size_t release_count = total_size(relative_release_binary_sets);
         if (debug_count == release_count)
         {
             return LintStatus::SUCCESS;
         }
 
-        msg_sink.println_warning(msgPortBugMismatchedNumberOfBinaries);
+        msg_sink.print(Color::warning,
+                       LocalizedString::from_raw(portfile_cmake)
+                           .append_raw(": ")
+                           .append_raw(WarningPrefix)
+                           .append(msgPortBugMismatchingNumberOfBinaries)
+                           .append_raw('\n'));
+        LocalizedString ls = LocalizedString::from_raw(package_dir)
+                                 .append_raw(": ")
+                                 .append_raw(NotePrefix)
+                                 .append(msgBinariesRelativeToThePackageDirectoryHere)
+                                 .append_raw('\n');
         if (debug_count == 0)
         {
-            msg_sink.println(msgPortBugMissingDebugBinaries);
+            ls.append_raw(NotePrefix).append(msgPortBugMissingDebugBinaries).append_raw('\n');
         }
         else
         {
-            msg_sink.println(msgPortBugFoundDebugBinaries, msg::count = debug_count);
-            print_paths(msg_sink, debug_binaries);
+            ls.append_raw(NotePrefix).append(msgPortBugFoundDebugBinaries).append_raw('\n');
+            append_binary_set(ls, relative_debug_binary_sets);
         }
 
         if (release_count == 0)
         {
-            msg_sink.println(msgPortBugMissingReleaseBinaries);
+            ls.append_raw(NotePrefix).append(msgPortBugMissingReleaseBinaries).append_raw('\n');
         }
         else
         {
-            msg_sink.println(msgPortBugFoundReleaseBinaries, msg::count = release_count);
-            print_paths(msg_sink, release_binaries);
+            ls.append_raw(NotePrefix).append(msgPortBugFoundReleaseBinaries).append_raw('\n');
+            append_binary_set(ls, relative_release_binary_sets);
         }
 
+        msg_sink.print(ls);
         return LintStatus::PROBLEM_DETECTED;
     }
 
-    static LintStatus check_lib_files_are_available_if_dlls_are_available(const BuildPolicies& policies,
-                                                                          const size_t lib_count,
+    static LintStatus check_lib_files_are_available_if_dlls_are_available(const size_t lib_count,
                                                                           const size_t dll_count,
-                                                                          const Path& lib_dir,
+                                                                          const Path& portfile_cmake,
                                                                           MessageSink& msg_sink)
     {
-        if (policies.is_enabled(BuildPolicy::DLLS_WITHOUT_LIBS)) return LintStatus::SUCCESS;
-
         if (lib_count == 0 && dll_count != 0)
         {
-            msg_sink.println_warning(msgPortBugMissingImportedLibs, msg::path = lib_dir);
+            msg_sink.print(LocalizedString::from_raw(portfile_cmake)
+                               .append_raw(": ")
+                               .append_raw(WarningPrefix)
+                               .append(msgPortBugMissingImportedLibs)
+                               .append_raw('\n'));
             return LintStatus::PROBLEM_DETECTED;
         }
 
         return LintStatus::SUCCESS;
     }
 
-    static LintStatus check_bin_folders_are_not_present_in_static_build(const ReadOnlyFilesystem& fs,
-                                                                        const Path& package_dir,
-                                                                        MessageSink& msg_sink)
+    static size_t check_bin_folders_are_not_present_in_static_build(const ReadOnlyFilesystem& fs,
+                                                                    const Path& package_dir,
+                                                                    const Path& portfile_cmake,
+                                                                    MessageSink& msg_sink)
     {
-        const auto bin = package_dir / "bin";
-        const auto debug_bin = package_dir / "debug" / "bin";
-
-        const bool bin_exists = fs.exists(bin, IgnoreErrors{});
-        const bool debug_bin_exists = fs.exists(debug_bin, IgnoreErrors{});
-        if (!bin_exists && !debug_bin_exists)
+        std::vector<Path> bad_dirs;
+        for (auto&& bin_relative_path : bin_relative_paths)
         {
-            return LintStatus::SUCCESS;
+            if (fs.exists(package_dir / bin_relative_path, IgnoreErrors{}))
+            {
+                bad_dirs.push_back(Path(bin_relative_path).generic_u8string());
+            }
         }
 
-        if (bin_exists)
+        if (bad_dirs.empty())
         {
-            msg_sink.println_warning(msgPortBugBinDirExists, msg::path = bin);
+            return 0;
         }
 
-        if (debug_bin_exists)
+        for (auto&& bad_dir : bad_dirs)
         {
-            msg_sink.println_warning(msgPortBugDebugBinDirExists, msg::path = debug_bin);
+            msg_sink.print(Color::warning,
+                           LocalizedString::from_raw(portfile_cmake)
+                               .append_raw(": ")
+                               .append_raw(WarningPrefix)
+                               .append(msgPortBugBinDirExists, msg::path = bad_dir)
+                               .append_raw('\n'));
         }
 
-        msg_sink.println_warning(msgPortBugRemoveBinDir);
+        auto args = Util::fmap(bad_dirs, [](const Path& bad_dir) {
+            return fmt::format(FMT_COMPILE("\"${{CURRENT_PACKAGES_DIR}}/{}\""), bad_dir);
+        });
         msg_sink.print(
-            Color::warning,
-            R"###(    if(VCPKG_LIBRARY_LINKAGE STREQUAL "static"))###"
-            "\n"
-            R"###(        file(REMOVE_RECURSE "${CURRENT_PACKAGES_DIR}/bin" "${CURRENT_PACKAGES_DIR}/debug/bin"))###"
-            "\n"
-            R"###(    endif())###"
-            "\n\n");
-
-        return LintStatus::PROBLEM_DETECTED;
+            LocalizedString::from_raw(NotePrefix)
+                .append(msgPortBugRemoveBinDir)
+                .append_raw('\n')
+                .append_raw("if(VCPKG_LIBRARY_LINKAGE STREQUAL \"static\")\n")
+                .append_indent()
+                .append_raw(fmt::format(FMT_COMPILE("file(REMOVE_RECURSE {})\nendif()\n"), fmt::join(args, " "))));
+        return bad_dirs.size();
     }
 
-    static LintStatus check_no_empty_folders(const ReadOnlyFilesystem& fs, const Path& dir, MessageSink& msg_sink)
+    static LintStatus check_no_empty_folders(const ReadOnlyFilesystem& fs,
+                                             const Path& package_dir,
+                                             const Path& portfile_cmake,
+                                             MessageSink& msg_sink)
     {
-        std::vector<Path> empty_directories = fs.get_directories_recursive(dir, IgnoreErrors{});
-        Util::erase_remove_if(empty_directories,
-                              [&fs](const Path& current) { return !fs.is_empty(current, IgnoreErrors{}); });
-
-        if (!empty_directories.empty())
+        std::vector<Path> relative_empty_directories =
+            fs.get_directories_recursive_lexically_proximate(package_dir, IgnoreErrors{});
+        Util::erase_remove_if(relative_empty_directories,
+                              [&](const Path& current) { return !fs.is_empty(package_dir / current, IgnoreErrors{}); });
+        if (!relative_empty_directories.empty())
         {
-            msg_sink.println_warning(msgPortBugFoundEmptyDirectories, msg::path = dir);
-            print_paths(msg_sink, empty_directories);
+            Util::sort(relative_empty_directories);
+            msg_sink.print(Color::warning,
+                           LocalizedString::from_raw(portfile_cmake)
+                               .append_raw(": ")
+                               .append_raw(WarningPrefix)
+                               .append(msgPortBugFoundEmptyDirectories)
+                               .append_raw('\n'));
 
-            std::string dirs = "    file(REMOVE_RECURSE";
-            for (auto&& empty_dir : empty_directories)
-            {
-                Strings::append(dirs,
-                                " \"${CURRENT_PACKAGES_DIR}",
-                                empty_dir.generic_u8string().substr(dir.generic_u8string().size()),
-                                '"');
-            }
-            dirs += ")\n";
-            msg_sink.println_warning(msg::format(msgPortBugRemoveEmptyDirectories).append_raw('\n').append_raw(dirs));
-
+            auto args = Util::fmap(relative_empty_directories, [](const Path& empty_dir) {
+                return fmt::format(FMT_COMPILE("\"${{CURRENT_PACKAGES_DIR}}/{}\""), empty_dir.generic_u8string());
+            });
+            msg_sink.print(
+                LocalizedString::from_raw(package_dir)
+                    .append_raw(": ")
+                    .append_raw(NotePrefix)
+                    .append(msgDirectoriesRelativeToThePackageDirectoryHere)
+                    .append_raw('\n')
+                    .append_raw(NotePrefix)
+                    .append_raw(fmt::format(FMT_COMPILE("file(REMOVE_RECURSE {})\n"), fmt::join(args, " "))));
             return LintStatus::PROBLEM_DETECTED;
         }
 
@@ -826,12 +1055,14 @@ namespace vcpkg
     }
 
     static LintStatus check_pkgconfig_dir_only_in_lib_dir(const ReadOnlyFilesystem& fs,
-                                                          const Path& dir_raw,
+                                                          const Path& package_dir,
+                                                          View<Path> relative_all_files,
+                                                          const Path& portfile_cmake,
                                                           MessageSink& msg_sink)
     {
         struct MisplacedFile
         {
-            Path path;
+            Path relative_path;
             enum class Type
             {
                 Release,
@@ -844,20 +1075,23 @@ namespace vcpkg
         bool contains_debug = false;
         bool contains_share = false;
 
-        auto dir = dir_raw.lexically_normal().generic_u8string(); // force /s
+        static constexpr StringLiteral share_dir = "share" VCPKG_PREFERRED_SEPARATOR "pkgconfig";
+        static constexpr StringLiteral lib_dir = "lib" VCPKG_PREFERRED_SEPARATOR "pkgconfig";
+        static constexpr StringLiteral debug_dir =
+            "debug" VCPKG_PREFERRED_SEPARATOR "lib" VCPKG_PREFERRED_SEPARATOR "pkgconfig";
 
-        const auto share_dir = Path(dir) / "share" / "pkgconfig";
-        const auto lib_dir = Path(dir) / "lib" / "pkgconfig";
-        const auto debug_dir = Path(dir) / "debug" / "lib" / "pkgconfig";
-        for (Path& path : fs.get_regular_files_recursive(dir, IgnoreErrors{}))
+        static constexpr StringLiteral generic_share_dir = "share/pkgconfig";
+        static constexpr StringLiteral generic_lib_dir = "lib/pkgconfig";
+        static constexpr StringLiteral generic_debug_dir = "debug/lib/pkgconfig";
+        for (const Path& path : relative_all_files)
         {
             if (!Strings::ends_with(path, ".pc")) continue;
-            const auto parent_path = Path(path.parent_path());
+            const auto parent_path = path.parent_path();
             // Always allow .pc files at 'lib/pkgconfig' and 'debug/lib/pkgconfig'
             if (parent_path == lib_dir || parent_path == debug_dir) continue;
 
-            const bool contains_libs =
-                Util::any_of(fs.read_lines(path).value_or_exit(VCPKG_LINE_INFO), [](const std::string& line) {
+            const bool contains_libs = Util::any_of(
+                fs.read_lines(package_dir / path).value_or_exit(VCPKG_LINE_INFO), [](const std::string& line) {
                     if (Strings::starts_with(line, "Libs"))
                     {
                         // only consider "Libs:" or "Libs.private:" directives when they have a value
@@ -872,71 +1106,86 @@ namespace vcpkg
             {
                 if (parent_path == share_dir) continue;
                 contains_share = true;
-                misplaced_pkgconfig_files.push_back({std::move(path), MisplacedFile::Type::Share});
+                misplaced_pkgconfig_files.push_back({path, MisplacedFile::Type::Share});
                 continue;
             }
 
-            const bool is_debug = Strings::starts_with(path, Path(dir) / "debug");
+            const bool is_debug = Strings::starts_with(path, "debug" VCPKG_PREFERRED_SEPARATOR);
             if (is_debug)
             {
-                misplaced_pkgconfig_files.push_back({std::move(path), MisplacedFile::Type::Debug});
+                misplaced_pkgconfig_files.push_back({path, MisplacedFile::Type::Debug});
                 contains_debug = true;
             }
             else
             {
-                misplaced_pkgconfig_files.push_back({std::move(path), MisplacedFile::Type::Release});
+                misplaced_pkgconfig_files.push_back({path, MisplacedFile::Type::Release});
                 contains_release = true;
             }
         }
 
         if (!misplaced_pkgconfig_files.empty())
         {
-            msg_sink.println_warning(msgPortBugMisplacedPkgConfigFiles);
+            msg_sink.print(Color::warning,
+                           LocalizedString::from_raw(portfile_cmake)
+                               .append_raw(": ")
+                               .append_raw(WarningPrefix)
+                               .append(msgPortBugMisplacedPkgConfigFiles));
+            print_relative_paths(msg_sink,
+                                 msgFilesRelativeToThePackageDirectoryHere,
+                                 package_dir,
+                                 Util::fmap(misplaced_pkgconfig_files,
+                                            [](const MisplacedFile& mf) -> Path { return mf.relative_path; }));
+
+            msg_sink.print(LocalizedString::from_raw(NotePrefix).append(msgPortBugMovePkgConfigFiles).append_raw('\n'));
+            {
+                auto create_directory_line = LocalizedString::from_raw("file(MAKE_DIRECTORY");
+                std::vector<StringLiteral> directories;
+                if (contains_debug)
+                {
+                    directories.push_back(generic_debug_dir);
+                }
+
+                if (contains_release)
+                {
+                    directories.push_back(generic_lib_dir);
+                }
+
+                if (contains_share)
+                {
+                    directories.push_back(generic_share_dir);
+                }
+
+                for (auto&& directory : directories)
+                {
+                    create_directory_line.append_raw(
+                        fmt::format(FMT_COMPILE(R"###( "${{CURRENT_PACKAGES_DIR}}/{}")###"), directory));
+                }
+
+                create_directory_line.append_raw(")\n");
+                msg_sink.print(create_directory_line);
+            } // destroy create_directory_line
+
             for (const auto& item : misplaced_pkgconfig_files)
             {
-                msg_sink.print(Color::warning, fmt::format("    {}\n", item.path));
-            }
-            msg_sink.println(Color::warning, msgPortBugMovePkgConfigFiles);
-
-            std::string create_directory_line("    file(MAKE_DIRECTORY");
-            if (contains_release)
-            {
-                create_directory_line += R"###( "${CURRENT_PACKAGES_DIR}/lib/pkgconfig")###";
-            }
-
-            if (contains_debug)
-            {
-                create_directory_line += R"###( "${CURRENT_PACKAGES_DIR}/lib/debug/pkgconfig")###";
-            }
-
-            if (contains_share)
-            {
-                create_directory_line += R"###( "${CURRENT_PACKAGES_DIR}/share/pkgconfig")###";
-            }
-
-            create_directory_line.append(")\n");
-
-            msg_sink.print(Color::warning, create_directory_line);
-
-            for (const auto& item : misplaced_pkgconfig_files)
-            {
-                auto relative = item.path.native().substr(dir.size());
-                std::string rename_line(R"###(    file(RENAME "${CURRENT_PACKAGES_DIR})###");
-                rename_line.append(relative);
-                rename_line.append(R"###(" "${CURRENT_PACKAGES_DIR}/)###");
+                const StringLiteral* dir;
                 switch (item.type)
                 {
-                    case MisplacedFile::Type::Debug: rename_line.append("debug/lib/pkgconfig/"); break;
-                    case MisplacedFile::Type::Release: rename_line.append("lib/pkgconfig/"); break;
-                    case MisplacedFile::Type::Share: rename_line.append("share/pkgconfig/"); break;
+                    case MisplacedFile::Type::Debug: dir = &generic_debug_dir; break;
+                    case MisplacedFile::Type::Release: dir = &generic_lib_dir; break;
+                    case MisplacedFile::Type::Share: dir = &generic_share_dir; break;
+                    default: Checks::unreachable(VCPKG_LINE_INFO);
                 }
-                rename_line.append(item.path.filename().to_string());
-                rename_line.append("\")\n");
-                msg_sink.print(Color::warning, rename_line);
+
+                msg_sink.print(LocalizedString::from_raw(fmt::format(
+                    FMT_COMPILE(R"###(file(RENAME "${{CURRENT_PACKAGES_DIR}}/{}" "${{CURRENT_PACKAGES_DIR}}/{}/{}"))###"
+                                "\n"),
+                    item.relative_path.generic_u8string(),
+                    *dir,
+                    item.relative_path.filename())));
             }
 
-            msg_sink.print(Color::warning, "    vcpkg_fixup_pkgconfig()\n    ");
-            msg_sink.println(Color::warning, msgPortBugRemoveEmptyDirs);
+            msg_sink.print(LocalizedString::from_raw("vcpkg_fixup_pkgconfig()\n"));
+            msg_sink.println(msgPortBugRemoveEmptyDirs);
 
             return LintStatus::PROBLEM_DETECTED;
         }
@@ -944,21 +1193,43 @@ namespace vcpkg
         return LintStatus::SUCCESS;
     }
 
-    struct BuildTypeAndFile
+    // lib_infos[n] is the lib info for libs[n] for all n in [0, libs.size())
+    struct LinkageAndBuildType
     {
-        Path file;
-        bool has_static_release = false;
-        bool has_static_debug = false;
-        bool has_dynamic_release = false;
-        bool has_dynamic_debug = false;
+        LinkageType kind;
+        bool release;
+
+        friend bool operator==(const LinkageAndBuildType& lhs, const LinkageAndBuildType& rhs) noexcept
+        {
+            return lhs.kind == rhs.kind && lhs.release == rhs.release;
+        }
+        friend bool operator!=(const LinkageAndBuildType& lhs, const LinkageAndBuildType& rhs) noexcept
+        {
+            return !(lhs == rhs);
+        }
+
+        bool operator<(const LinkageAndBuildType& other) const noexcept
+        {
+            if (static_cast<char>(kind) < static_cast<char>(other.kind))
+            {
+                return true;
+            }
+
+            if (static_cast<char>(kind) > static_cast<char>(other.kind))
+            {
+                return false;
+            }
+
+            return release < other.release;
+        }
     };
 
-    static LocalizedString format_linkage(LinkageType linkage, bool release)
+    static LocalizedString to_string(const LinkageAndBuildType& linkage)
     {
-        switch (linkage)
+        switch (linkage.kind)
         {
             case LinkageType::Dynamic:
-                if (release)
+                if (linkage.release)
                 {
                     return msg::format(msgLinkageDynamicRelease);
                 }
@@ -968,7 +1239,7 @@ namespace vcpkg
                 }
                 break;
             case LinkageType::Static:
-                if (release)
+                if (linkage.release)
                 {
                     return msg::format(msgLinkageStaticRelease);
                 }
@@ -981,18 +1252,23 @@ namespace vcpkg
         }
     }
 
-    // lib_infos[n] is the lib info for libs[n] for all n in [0, libs.size())
-    static LintStatus check_crt_linkage_of_libs(const BuildInfo& build_info,
-                                                bool expect_release,
-                                                const std::vector<Path>& libs,
-                                                View<Optional<LibInformation>> lib_infos,
-                                                MessageSink& msg_sink)
+    struct FileAndLinkages
     {
-        std::vector<BuildTypeAndFile> libs_with_invalid_crt;
-        for (size_t i = 0; i < libs.size(); ++i)
+        Path relative_file;
+        std::vector<LinkageAndBuildType> linkages;
+    };
+
+    static void check_crt_group_linkage_of_libs(
+        LinkageAndBuildType expected,
+        const Path& relative_root,
+        const std::vector<Path>& relative_libs,
+        View<Optional<LibInformation>> lib_infos,
+        std::map<LinkageAndBuildType, std::vector<FileAndLinkages>>& groups_of_invalid_crt)
+    {
+        for (size_t i = 0; i < relative_libs.size(); ++i)
         {
             auto& maybe_lib_info = lib_infos[i];
-            auto& lib = libs[i];
+            auto& relative_lib = relative_libs[i];
 
             if (!maybe_lib_info.has_value())
             {
@@ -1000,106 +1276,87 @@ namespace vcpkg
             }
 
             auto&& lib_info = maybe_lib_info.value_or_exit(VCPKG_LINE_INFO);
-            Debug::println(
-                "The lib ", lib.native(), " has directives: ", Strings::join(" ", lib_info.linker_directives));
+            Debug::println("The lib ",
+                           (relative_root / relative_lib).native(),
+                           " has directives: ",
+                           Strings::join(" ", lib_info.linker_directives));
 
-            BuildTypeAndFile this_lib{lib};
-            constexpr static StringLiteral static_release_crt = "/DEFAULTLIB:LIBCMT";
-            constexpr static StringLiteral static_debug_crt = "/DEFAULTLIB:LIBCMTd";
-            constexpr static StringLiteral dynamic_release_crt = "/DEFAULTLIB:MSVCRT";
+            FileAndLinkages this_lib{relative_lib};
             constexpr static StringLiteral dynamic_debug_crt = "/DEFAULTLIB:MSVCRTd";
+            constexpr static StringLiteral dynamic_release_crt = "/DEFAULTLIB:MSVCRT";
+            constexpr static StringLiteral static_debug_crt = "/DEFAULTLIB:LIBCMTd";
+            constexpr static StringLiteral static_release_crt = "/DEFAULTLIB:LIBCMT";
 
             for (auto&& directive : lib_info.linker_directives)
             {
-                if (Strings::case_insensitive_ascii_equals(directive, static_release_crt))
+                if (Strings::case_insensitive_ascii_equals(directive, dynamic_debug_crt))
                 {
-                    this_lib.has_static_release = true;
-                }
-                else if (Strings::case_insensitive_ascii_equals(directive, static_debug_crt))
-                {
-                    this_lib.has_static_debug = true;
+                    this_lib.linkages.push_back(LinkageAndBuildType{LinkageType::Dynamic, false});
                 }
                 else if (Strings::case_insensitive_ascii_equals(directive, dynamic_release_crt))
                 {
-                    this_lib.has_dynamic_release = true;
+                    this_lib.linkages.push_back(LinkageAndBuildType{LinkageType::Dynamic, true});
                 }
-                else if (Strings::case_insensitive_ascii_equals(directive, dynamic_debug_crt))
+                else if (Strings::case_insensitive_ascii_equals(directive, static_debug_crt))
                 {
-                    this_lib.has_dynamic_debug = true;
+                    this_lib.linkages.push_back(LinkageAndBuildType{LinkageType::Static, false});
+                }
+                else if (Strings::case_insensitive_ascii_equals(directive, static_release_crt))
+                {
+                    this_lib.linkages.push_back(LinkageAndBuildType{LinkageType::Static, true});
                 }
             }
 
-            bool fail = false;
-            if (expect_release)
+            Util::sort_unique_erase(this_lib.linkages);
+            if (this_lib.linkages.size() > 1 || (this_lib.linkages.size() == 1 && this_lib.linkages[0] != expected))
             {
-                fail |= this_lib.has_static_debug;
-                fail |= this_lib.has_dynamic_debug;
-            }
-            else
-            {
-                fail |= this_lib.has_static_release;
-                fail |= this_lib.has_dynamic_release;
-            }
-
-            switch (build_info.crt_linkage)
-            {
-                case LinkageType::Dynamic:
-                    fail |= this_lib.has_static_debug;
-                    fail |= this_lib.has_static_release;
-                    break;
-                case LinkageType::Static:
-                    fail |= this_lib.has_dynamic_debug;
-                    fail |= this_lib.has_dynamic_release;
-                    break;
-                default: Checks::unreachable(VCPKG_LINE_INFO);
-            }
-
-            if (fail)
-            {
-                libs_with_invalid_crt.push_back(std::move(this_lib));
+                groups_of_invalid_crt[expected].push_back(std::move(this_lib));
             }
         }
+    }
 
-        if (!libs_with_invalid_crt.empty())
+    static LintStatus check_crt_linkage_of_libs(
+        const Path& package_dir,
+        const Path& portfile_cmake,
+        std::map<LinkageAndBuildType, std::vector<FileAndLinkages>>& groups_of_invalid_crt,
+        MessageSink& msg_sink)
+    {
+        if (groups_of_invalid_crt.empty())
         {
-            msg_sink.println_warning(msgPortBugInvalidCrtLinkage,
-                                     msg::expected = format_linkage(build_info.crt_linkage, expect_release));
-            std::vector<LocalizedString> printed_linkages;
-            for (const BuildTypeAndFile& btf : libs_with_invalid_crt)
-            {
-                printed_linkages.clear();
-                LocalizedString this_entry;
-                this_entry.append_indent().append(msgPortBugInvalidCrtLinkageEntry, msg::path = btf.file);
-                if (btf.has_dynamic_debug)
-                {
-                    printed_linkages.push_back(msg::format(msgLinkageDynamicDebug));
-                }
-
-                if (btf.has_dynamic_release)
-                {
-                    printed_linkages.push_back(msg::format(msgLinkageDynamicRelease));
-                }
-
-                if (btf.has_static_debug)
-                {
-                    printed_linkages.push_back(msg::format(msgLinkageStaticDebug));
-                }
-
-                if (btf.has_static_release)
-                {
-                    printed_linkages.push_back(msg::format(msgLinkageStaticRelease));
-                }
-
-                this_entry.append_floating_list(2, printed_linkages);
-                msg_sink.println(this_entry);
-            }
-
-            msg_sink.println(msg::format(msgPortBugInspectFiles, msg::extension = "lib")
-                                 .append_raw("\n  dumpbin.exe /directives mylibfile.lib"));
-            return LintStatus::PROBLEM_DETECTED;
+            return LintStatus::SUCCESS;
         }
 
-        return LintStatus::SUCCESS;
+        msg_sink.print(Color::warning,
+                       LocalizedString::from_raw(portfile_cmake)
+                           .append_raw(": ")
+                           .append_raw(WarningPrefix)
+                           .append(msgPortBugInvalidCrtLinkageHeader)
+                           .append_raw('\n'));
+
+        msg_sink.print(LocalizedString::from_raw(package_dir)
+                           .append_raw(": ")
+                           .append_raw(NotePrefix)
+                           .append(msgBinariesRelativeToThePackageDirectoryHere)
+                           .append_raw('\n'));
+        for (auto&& group : groups_of_invalid_crt)
+        {
+            msg_sink.print(LocalizedString::from_raw(NotePrefix)
+                               .append(msgPortBugInvalidCrtLinkageCrtGroup, msg::expected = to_string(group.first))
+                               .append_raw('\n'));
+            for (auto&& file : group.second)
+            {
+                for (auto&& linkage : file.linkages)
+                {
+                    msg_sink.print(LocalizedString::from_raw(NotePrefix)
+                                       .append(msgPortBugInvalidCrtLinkageEntry,
+                                               msg::path = file.relative_file.generic_u8string(),
+                                               msg::actual = to_string(linkage))
+                                       .append_raw('\n'));
+                }
+            }
+        }
+
+        return LintStatus::PROBLEM_DETECTED;
     }
 
     struct OutdatedDynamicCrtAndFile
@@ -1109,12 +1366,11 @@ namespace vcpkg
     };
 
     static LintStatus check_outdated_crt_linkage_of_dlls(const std::vector<PostBuildCheckDllData>& dlls_data,
-                                                         const BuildInfo& build_info,
+                                                         const Path& package_dir,
                                                          const PreBuildInfo& pre_build_info,
+                                                         const Path& portfile_cmake,
                                                          MessageSink& msg_sink)
     {
-        if (build_info.policies.is_enabled(BuildPolicy::ALLOW_OBSOLETE_MSVCRT)) return LintStatus::SUCCESS;
-
         const auto outdated_crts = get_outdated_dynamic_crts(pre_build_info.platform_toolset);
         std::vector<OutdatedDynamicCrtAndFile> dlls_with_outdated_crt;
 
@@ -1125,7 +1381,7 @@ namespace vcpkg
                 if (Util::Vectors::contains(
                         dll_data.dependencies, outdated_crt, Strings::case_insensitive_ascii_equals))
                 {
-                    dlls_with_outdated_crt.push_back({dll_data.path, outdated_crt});
+                    dlls_with_outdated_crt.push_back({dll_data.relative_path, outdated_crt});
                     break;
                 }
             }
@@ -1133,13 +1389,18 @@ namespace vcpkg
 
         if (!dlls_with_outdated_crt.empty())
         {
-            msg_sink.println_warning(msgPortBugOutdatedCRT);
-            for (const OutdatedDynamicCrtAndFile& btf : dlls_with_outdated_crt)
-            {
-                msg_sink.print(Color::warning, fmt::format("  {}:{}\n", btf.file, btf.outdated_crt));
-            }
-            msg_sink.println(msg::format(msgPortBugInspectFiles, msg::extension = "dll")
-                                 .append_raw("\n  dumpbin.exe /dependents mylibfile.dll"));
+            msg_sink.print(Color::warning,
+                           LocalizedString::from_raw(portfile_cmake)
+                               .append_raw(": ")
+                               .append_raw(WarningPrefix)
+                               .append(msgPortBugOutdatedCRT));
+
+            print_relative_paths(
+                msg_sink,
+                msgDllsRelativeToThePackageDirectoryHere,
+                package_dir,
+                Util::fmap(std::move(dlls_with_outdated_crt),
+                           [](OutdatedDynamicCrtAndFile&& btf) -> Path { return std::move(btf.file); }));
             return LintStatus::PROBLEM_DETECTED;
         }
 
@@ -1147,7 +1408,9 @@ namespace vcpkg
     }
 
     static LintStatus check_bad_kernel32_from_xbox(const std::vector<PostBuildCheckDllData>& dlls_data,
+                                                   const Path& package_dir,
                                                    const PreBuildInfo& pre_build_info,
+                                                   const Path& portfile_cmake,
                                                    MessageSink& msg_sink)
     {
         if (!pre_build_info.target_is_xbox)
@@ -1160,7 +1423,6 @@ namespace vcpkg
         {
             for (auto&& dependency : dll_data.dependencies)
             {
-                Debug::println("Dependency: ", dependency);
                 if (Strings::case_insensitive_ascii_equals("kernel32.dll", dependency))
                 {
                     bad_dlls.push_back(&dll_data);
@@ -1174,30 +1436,62 @@ namespace vcpkg
             return LintStatus::SUCCESS;
         }
 
-        msg_sink.println(msgPortBugKernel32FromXbox);
-        for (auto&& bad_dll : bad_dlls)
-        {
-            msg_sink.println(LocalizedString{}.append_indent().append_raw(bad_dll->path));
-        }
+        msg_sink.print(Color::warning,
+                       LocalizedString::from_raw(portfile_cmake)
+                           .append_raw(": ")
+                           .append_raw(WarningPrefix)
+                           .append(msgPortBugKernel32FromXbox));
+        print_relative_paths(
+            msg_sink,
+            msgDllsRelativeToThePackageDirectoryHere,
+            package_dir,
+            Util::fmap(bad_dlls, [](const PostBuildCheckDllData* btf) -> Path { return btf->relative_path; }));
 
-        msg_sink.println(msg::format(msgPortBugInspectFiles, msg::extension = "dll")
-                             .append_raw("\n  dumpbin.exe /dependents mylibfile.dll"));
         return LintStatus::PROBLEM_DETECTED;
     }
 
-    static LintStatus check_no_files_in_dir(const ReadOnlyFilesystem& fs, const Path& dir, MessageSink& msg_sink)
+    static LintStatus check_no_regular_files_in_relative_path(const ReadOnlyFilesystem& fs,
+                                                              const Path& package_dir,
+                                                              const Path& portfile_cmake,
+                                                              View<StringLiteral> relative_paths,
+                                                              MessageSink& msg_sink)
     {
-        std::vector<Path> misplaced_files = fs.get_regular_files_non_recursive(dir, IgnoreErrors{});
-        Util::erase_remove_if(misplaced_files, [](const Path& target) {
-            const auto filename = target.filename();
-            return filename == "CONTROL" || filename == "BUILD_INFO" || filename == ".DS_Store";
-        });
+        std::vector<Path> misplaced_files;
+        for (auto&& relative_path : relative_paths)
+        {
+            auto start_in = package_dir;
+            if (!relative_path.empty())
+            {
+                start_in /= relative_path;
+            }
+
+            for (auto&& absolute_path : fs.get_regular_files_non_recursive(start_in, IgnoreErrors{}))
+            {
+                auto filename = absolute_path.filename();
+                if (filename == "CONTROL" || filename == "BUILD_INFO" || filename == ".DS_Store")
+                {
+                    continue;
+                }
+
+                if (relative_path.empty())
+                {
+                    misplaced_files.emplace_back(filename);
+                }
+                else
+                {
+                    misplaced_files.emplace_back(Path(relative_path) / filename);
+                }
+            }
+        }
 
         if (!misplaced_files.empty())
         {
-            msg_sink.println_warning(msg::format(msgPortBugMisplacedFiles, msg::path = dir).append_raw('\n'));
-            print_paths(msg_sink, misplaced_files);
-            msg_sink.println_warning(msgPortBugMisplacedFilesCont);
+            msg_sink.print(Color::warning,
+                           LocalizedString::from_raw(portfile_cmake)
+                               .append_raw(": ")
+                               .append_raw(WarningPrefix)
+                               .append(msgPortBugMisplacedFiles));
+            print_relative_paths(msg_sink, msgFilesRelativeToThePackageDirectoryHere, package_dir, misplaced_files);
             return LintStatus::PROBLEM_DETECTED;
         }
 
@@ -1237,12 +1531,14 @@ namespace vcpkg
     }
 
     static LintStatus check_no_absolute_paths_in(const ReadOnlyFilesystem& fs,
-                                                 const Path& dir,
-                                                 Span<Path> absolute_paths,
+                                                 const Path& package_dir,
+                                                 View<Path> prohibited_absolute_paths,
+                                                 View<Path> relative_all_files,
+                                                 const Path& portfile_cmake,
                                                  MessageSink& msg_sink)
     {
         std::vector<std::string> string_paths;
-        for (const auto& path : absolute_paths)
+        for (const auto& path : prohibited_absolute_paths)
         {
 #if defined(_WIN32)
             // As supplied, all /s, and all \s
@@ -1262,15 +1558,23 @@ namespace vcpkg
             Util::fmap(string_paths, [](std::string& s) { return Strings::vcpkg_searcher(s.begin(), s.end()); });
 
         std::vector<Path> failing_files;
+        bool any_pc_file_fails = false;
         {
             std::mutex mtx;
-            auto files = fs.get_regular_files_recursive(dir, IgnoreErrors{});
-
-            parallel_for_each(files, [&](const Path& file) {
-                if (file_contains_absolute_paths(fs, file, searcher_paths))
+            parallel_for_each(relative_all_files, [&](const Path& file) {
+                if (file_contains_absolute_paths(fs, package_dir / file, searcher_paths))
                 {
-                    std::lock_guard lock{mtx};
-                    failing_files.push_back(file);
+                    if (Strings::ends_with(file, ".pc"))
+                    {
+                        std::lock_guard lock{mtx};
+                        any_pc_file_fails = true;
+                        failing_files.push_back(file);
+                    }
+                    else
+                    {
+                        std::lock_guard lock{mtx};
+                        failing_files.push_back(file);
+                    }
                 }
             });
         } // destroy mtx
@@ -1281,19 +1585,27 @@ namespace vcpkg
         }
 
         Util::sort(failing_files);
-        auto error_message = msg::format(msgFilesContainAbsolutePath1);
-        for (auto&& absolute_path : absolute_paths)
+        msg_sink.print(Color::warning,
+                       LocalizedString::from_raw(portfile_cmake)
+                           .append_raw(": ")
+                           .append_raw(WarningPrefix)
+                           .append(msgFilesContainAbsolutePath1));
+        for (auto&& absolute_path : prohibited_absolute_paths)
         {
-            error_message.append_raw('\n').append_indent().append_raw(absolute_path);
+            msg_sink.print(LocalizedString::from_raw("\n").append_raw(NotePrefix).append_raw(absolute_path));
         }
 
-        error_message.append_raw('\n').append(msgFilesContainAbsolutePath2);
-        for (auto&& failure : failing_files)
+        if (any_pc_file_fails)
         {
-            error_message.append_raw('\n').append_indent().append_raw(failure);
+            msg_sink.print(LocalizedString::from_raw("\n")
+                               .append_raw(portfile_cmake)
+                               .append_raw(": ")
+                               .append_raw(NotePrefix)
+                               .append(msgFilesContainAbsolutePathPkgconfigNote));
         }
 
-        msg_sink.println_warning(error_message);
+        msg_sink.print(LocalizedString::from_raw("\n").append_raw(NotePrefix).append(msgFilesContainAbsolutePath2));
+        print_relative_paths(msg_sink, msgFilesRelativeToThePackageDirectoryHere, package_dir, failing_files);
         return LintStatus::PROBLEM_DETECTED;
     }
 
@@ -1301,13 +1613,14 @@ namespace vcpkg
 
     static size_t perform_post_build_checks_dll_loads(const ReadOnlyFilesystem& fs,
                                                       std::vector<PostBuildCheckDllData>& dlls_data,
-                                                      const std::vector<Path>& dll_files,
+                                                      const Path& package_dir,
+                                                      const std::vector<Path>& relative_dll_files,
                                                       MessageSink& msg_sink)
     {
         size_t error_count = 0;
-        for (const Path& dll : dll_files)
+        for (const Path& relative_dll : relative_dll_files)
         {
-            auto maybe_dll_data = try_load_dll_data(fs, dll);
+            auto maybe_dll_data = try_load_dll_data(fs, package_dir, relative_dll);
             if (auto dll_data = maybe_dll_data.get())
             {
                 dlls_data.emplace_back(std::move(*dll_data));
@@ -1322,146 +1635,276 @@ namespace vcpkg
         return error_count;
     }
 
+    static std::vector<Path> find_relative_static_libs(const ReadOnlyFilesystem& fs,
+                                                       const bool windows_target,
+                                                       const Path& package_dir,
+                                                       const Path& relative_path)
+    {
+        View<StringLiteral> lib_extensions;
+        if (windows_target)
+        {
+            static constexpr StringLiteral windows_lib_extensions[] = {".lib"};
+            lib_extensions = windows_lib_extensions;
+        }
+        else
+        {
+            static constexpr StringLiteral unix_lib_extensions[] = {".so", ".a", ".dylib"};
+            lib_extensions = unix_lib_extensions;
+        }
+
+        std::vector<Path> relative_libs =
+            fs.get_regular_files_recursive_lexically_proximate(package_dir / relative_path, IgnoreErrors{});
+        Util::erase_remove_if(relative_libs, NotExtensionsCaseInsensitive{lib_extensions});
+        add_prefix_to_all(relative_libs, relative_path);
+        return relative_libs;
+    }
+
     static size_t perform_all_checks_and_return_error_count(const PackageSpec& spec,
                                                             const VcpkgPaths& paths,
                                                             const PreBuildInfo& pre_build_info,
                                                             const BuildInfo& build_info,
                                                             const Path& port_dir,
+                                                            const Path& portfile_cmake,
                                                             MessageSink& msg_sink)
     {
+        const bool windows_target = Util::Vectors::contains(windows_system_names, pre_build_info.cmake_system_name);
         const auto& fs = paths.get_filesystem();
+        const auto build_dir = paths.build_dir(spec);
         const auto package_dir = paths.package_dir(spec);
+        const bool not_release_only = !pre_build_info.build_type;
 
         size_t error_count = 0;
 
-        if (build_info.policies.is_enabled(BuildPolicy::EMPTY_PACKAGE))
+        auto& policies = build_info.policies;
+        if (policies.is_enabled(BuildPolicy::CMAKE_HELPER_PORT))
         {
-            return error_count;
+            // no suppression for these because CMAKE_HELPER_PORT is opt-in
+            error_count +=
+                check_for_no_files_in_cmake_helper_port_include_directory(fs, package_dir, portfile_cmake, msg_sink);
+            error_count += check_for_vcpkg_port_config_in_cmake_helper_port(
+                fs, package_dir, spec.name(), portfile_cmake, msg_sink);
+        }
+        else if (!policies.is_enabled(BuildPolicy::EMPTY_INCLUDE_FOLDER))
+        {
+            error_count += check_for_files_in_include_directory(fs, package_dir, portfile_cmake, msg_sink);
         }
 
-        error_count += check_for_files_in_include_directory(fs, build_info.policies, package_dir, msg_sink);
-        error_count += check_for_restricted_include_files(fs, build_info.policies, package_dir, msg_sink);
-        error_count += check_for_files_in_debug_include_directory(fs, package_dir, msg_sink);
-        error_count += check_for_files_in_debug_share_directory(fs, package_dir, msg_sink);
-        error_count += check_for_vcpkg_port_config(fs, build_info.policies, package_dir, spec, msg_sink);
-        error_count += check_folder_lib_cmake(fs, package_dir, spec, msg_sink);
-        error_count += check_for_misplaced_cmake_files(fs, package_dir, spec, msg_sink);
-        error_count += check_folder_debug_lib_cmake(fs, package_dir, spec, msg_sink);
-        error_count += check_for_dlls_in_lib_dir(fs, package_dir, msg_sink);
-        error_count += check_for_dlls_in_lib_dir(fs, package_dir / "debug", msg_sink);
-        error_count += check_for_copyright_file(fs, spec, package_dir, paths, msg_sink);
-        error_count += check_for_exes(fs, package_dir, msg_sink);
-        error_count += check_for_exes(fs, package_dir / "debug", msg_sink);
-        error_count += check_for_usage_forgot_install(fs, port_dir, package_dir, spec, msg_sink);
+        if (!policies.is_enabled(BuildPolicy::ALLOW_RESTRICTED_HEADERS))
+        {
+            error_count += check_for_restricted_include_files(fs, package_dir, portfile_cmake, msg_sink);
+        }
+        if (!policies.is_enabled(BuildPolicy::ALLOW_DEBUG_INCLUDE))
+        {
+            error_count += check_for_files_in_debug_include_directory(fs, package_dir, portfile_cmake, msg_sink);
+        }
+        if (!policies.is_enabled(BuildPolicy::ALLOW_DEBUG_SHARE))
+        {
+            error_count += check_for_files_in_debug_share_directory(fs, package_dir, portfile_cmake, msg_sink);
+        }
+        if (!policies.is_enabled(BuildPolicy::SKIP_MISPLACED_CMAKE_FILES_CHECK))
+        {
+            error_count += check_for_misplaced_cmake_files(fs, package_dir, portfile_cmake, msg_sink);
+        }
+        if (!policies.is_enabled(BuildPolicy::SKIP_LIB_CMAKE_MERGE_CHECK))
+        {
+            error_count += check_lib_cmake_merge(fs, package_dir, portfile_cmake, msg_sink);
+        }
 
-        const auto debug_lib_dir = package_dir / "debug" / "lib";
-        const auto release_lib_dir = package_dir / "lib";
-        const auto debug_bin_dir = package_dir / "debug" / "bin";
-        const auto release_bin_dir = package_dir / "bin";
+        if (windows_target && !policies.is_enabled(BuildPolicy::ALLOW_DLLS_IN_LIB))
+        {
+            error_count += check_for_dlls_in_lib_dirs(fs, package_dir, portfile_cmake, msg_sink);
+        }
+        if (!policies.is_enabled(BuildPolicy::SKIP_COPYRIGHT_CHECK))
+        {
+            error_count += check_for_copyright_file(fs, spec.name(), package_dir, build_dir, portfile_cmake, msg_sink);
+        }
+        if (windows_target && !policies.is_enabled(BuildPolicy::ALLOW_EXES_IN_BIN))
+        {
+            error_count += check_for_exes_in_bin_dirs(fs, package_dir, portfile_cmake, msg_sink);
+        }
+        if (!policies.is_enabled(BuildPolicy::SKIP_USAGE_INSTALL_CHECK))
+        {
+            error_count +=
+                check_for_usage_forgot_install(fs, port_dir, package_dir, spec.name(), portfile_cmake, msg_sink);
+        }
 
-        NotExtensionsCaseInsensitive lib_filter;
-        const bool windows_target = Util::Vectors::contains(windows_system_names, pre_build_info.cmake_system_name);
+        std::vector<Path> relative_debug_libs =
+            find_relative_static_libs(fs, windows_target, package_dir, debug_lib_relative_path);
+        std::vector<Path> relative_release_libs =
+            find_relative_static_libs(fs, windows_target, package_dir, release_lib_relative_path);
+        std::vector<Path> relative_debug_dlls;
+        std::vector<Path> relative_release_dlls;
+
         if (windows_target)
         {
-            lib_filter = NotExtensionsCaseInsensitive{{".lib"}};
-        }
-        else
-        {
-            lib_filter = NotExtensionsCaseInsensitive{{".so", ".a", ".dylib"}};
+            relative_debug_dlls = find_relative_dlls(fs, package_dir, debug_bin_relative_path);
+            relative_release_dlls = find_relative_dlls(fs, package_dir, release_bin_relative_path);
         }
 
-        std::vector<Path> debug_libs = fs.get_regular_files_recursive(debug_lib_dir, IgnoreErrors{});
-        Util::erase_remove_if(debug_libs, lib_filter);
-        std::vector<Path> release_libs = fs.get_regular_files_recursive(release_lib_dir, IgnoreErrors{});
-        Util::erase_remove_if(release_libs, lib_filter);
-
-        if (!pre_build_info.build_type && !build_info.policies.is_enabled(BuildPolicy::MISMATCHED_NUMBER_OF_BINARIES))
+        if (not_release_only && !policies.is_enabled(BuildPolicy::MISMATCHED_NUMBER_OF_BINARIES))
         {
-            error_count += check_matching_debug_and_release_binaries(debug_libs, release_libs, msg_sink);
+            View<Path> relative_debug_binary_sets[] = {relative_debug_libs, relative_debug_dlls};
+            View<Path> relative_release_binary_sets[] = {relative_release_libs, relative_release_dlls};
+            error_count += check_matching_debug_and_release_binaries(
+                package_dir, relative_debug_binary_sets, relative_release_binary_sets, portfile_cmake, msg_sink);
         }
 
         if (windows_target)
         {
-            Debug::println("Running windows targeting post-build checks");
-
-            auto release_lib_info = get_lib_info(fs, release_libs);
             Optional<std::vector<Optional<LibInformation>>> debug_lib_info;
+            Optional<std::vector<Optional<LibInformation>>> release_lib_info;
 
-            // Note that this condition is paired with the debug check_crt_linkage_of_libs below
-            if (!build_info.policies.is_enabled(BuildPolicy::SKIP_ARCHITECTURE_CHECK) ||
-                !build_info.policies.is_enabled(BuildPolicy::ONLY_RELEASE_CRT))
+            // Note that this condition is paired with the guarded calls to check_crt_linkage_of_libs below
+            if (!policies.is_enabled(BuildPolicy::SKIP_ARCHITECTURE_CHECK) ||
+                !policies.is_enabled(BuildPolicy::SKIP_CRT_LINKAGE_CHECK))
             {
-                debug_lib_info.emplace(get_lib_info(fs, debug_libs));
+                debug_lib_info.emplace(get_lib_info(fs, package_dir, relative_debug_libs));
+                release_lib_info.emplace(get_lib_info(fs, package_dir, relative_release_libs));
             }
 
-            if (!build_info.policies.is_enabled(BuildPolicy::SKIP_ARCHITECTURE_CHECK))
+            std::vector<FileAndArch> binaries_with_invalid_architecture;
+            if (!policies.is_enabled(BuildPolicy::SKIP_ARCHITECTURE_CHECK))
             {
-                error_count += check_lib_architecture(
-                    pre_build_info.target_architecture, debug_libs, *debug_lib_info.get(), msg_sink);
-                error_count += check_lib_architecture(
-                    pre_build_info.target_architecture, release_libs, release_lib_info, msg_sink);
+                check_lib_architecture(pre_build_info.target_architecture,
+                                       relative_debug_libs,
+                                       debug_lib_info.value_or_exit(VCPKG_LINE_INFO),
+                                       binaries_with_invalid_architecture);
+                check_lib_architecture(pre_build_info.target_architecture,
+                                       relative_release_libs,
+                                       release_lib_info.value_or_exit(VCPKG_LINE_INFO),
+                                       binaries_with_invalid_architecture);
             }
-
-            std::vector<Path> debug_dlls = fs.get_regular_files_recursive(debug_bin_dir, IgnoreErrors{});
-            Util::erase_remove_if(debug_dlls, NotExtensionCaseInsensitive{".dll"});
-            std::vector<Path> release_dlls = fs.get_regular_files_recursive(release_bin_dir, IgnoreErrors{});
-            Util::erase_remove_if(release_dlls, NotExtensionCaseInsensitive{".dll"});
 
             std::vector<PostBuildCheckDllData> dlls_data;
-            dlls_data.reserve(debug_dlls.size() + release_dlls.size());
-            error_count += perform_post_build_checks_dll_loads(fs, dlls_data, debug_dlls, msg_sink);
-            error_count += perform_post_build_checks_dll_loads(fs, dlls_data, release_dlls, msg_sink);
-            error_count += check_bad_kernel32_from_xbox(dlls_data, pre_build_info, msg_sink);
-
-            if (!pre_build_info.build_type &&
-                !build_info.policies.is_enabled(BuildPolicy::MISMATCHED_NUMBER_OF_BINARIES))
-                error_count += check_matching_debug_and_release_binaries(debug_dlls, release_dlls, msg_sink);
-
-            error_count += check_lib_files_are_available_if_dlls_are_available(
-                build_info.policies, debug_libs.size(), debug_dlls.size(), debug_lib_dir, msg_sink);
-            error_count += check_lib_files_are_available_if_dlls_are_available(
-                build_info.policies, release_libs.size(), release_dlls.size(), release_lib_dir, msg_sink);
-
-            error_count += check_exports_of_dlls(build_info.policies, dlls_data, msg_sink);
-            error_count += check_uwp_bit_of_dlls(pre_build_info.cmake_system_name, dlls_data, msg_sink);
-            error_count += check_outdated_crt_linkage_of_dlls(dlls_data, build_info, pre_build_info, msg_sink);
-            if (!build_info.policies.is_enabled(BuildPolicy::SKIP_ARCHITECTURE_CHECK))
+            dlls_data.reserve(relative_debug_dlls.size() + relative_release_dlls.size());
+            error_count +=
+                perform_post_build_checks_dll_loads(fs, dlls_data, package_dir, relative_debug_dlls, msg_sink);
+            error_count +=
+                perform_post_build_checks_dll_loads(fs, dlls_data, package_dir, relative_release_dlls, msg_sink);
+            if (!policies.is_enabled(BuildPolicy::ALLOW_KERNEL32_FROM_XBOX))
             {
-                error_count += check_dll_architecture(pre_build_info.target_architecture, dlls_data, msg_sink);
+                error_count +=
+                    check_bad_kernel32_from_xbox(dlls_data, package_dir, pre_build_info, portfile_cmake, msg_sink);
             }
-
+            if (!policies.is_enabled(BuildPolicy::DLLS_WITHOUT_LIBS))
+            {
+                if (check_lib_files_are_available_if_dlls_are_available(
+                        relative_debug_libs.size(), relative_debug_dlls.size(), portfile_cmake, msg_sink) ==
+                    LintStatus::PROBLEM_DETECTED)
+                {
+                    ++error_count;
+                }
+                else
+                {
+                    error_count += check_lib_files_are_available_if_dlls_are_available(
+                        relative_release_libs.size(), relative_release_dlls.size(), portfile_cmake, msg_sink);
+                }
+            }
+            if (!policies.is_enabled(BuildPolicy::DLLS_WITHOUT_EXPORTS))
+            {
+                error_count += check_exports_of_dlls(dlls_data, package_dir, portfile_cmake, msg_sink);
+            }
+            if (!policies.is_enabled(BuildPolicy::SKIP_APPCONTAINER_CHECK))
+            {
+                error_count += check_appcontainer_bit_if_uwp(
+                    pre_build_info.cmake_system_name, package_dir, portfile_cmake, dlls_data, msg_sink);
+            }
+            if (!policies.is_enabled(BuildPolicy::ALLOW_OBSOLETE_MSVCRT))
+            {
+                error_count += check_outdated_crt_linkage_of_dlls(
+                    dlls_data, package_dir, pre_build_info, portfile_cmake, msg_sink);
+            }
+            if (!policies.is_enabled(BuildPolicy::SKIP_ARCHITECTURE_CHECK))
+            {
+                check_dll_architecture(
+                    pre_build_info.target_architecture, dlls_data, binaries_with_invalid_architecture);
+            }
+            if (!binaries_with_invalid_architecture.empty())
+            {
+                ++error_count;
+                print_invalid_architecture_files(pre_build_info.target_architecture,
+                                                 package_dir,
+                                                 portfile_cmake,
+                                                 binaries_with_invalid_architecture,
+                                                 msg_sink);
+            }
             if (build_info.library_linkage == LinkageType::Static &&
                 !build_info.policies.is_enabled(BuildPolicy::DLLS_IN_STATIC_LIBRARY))
             {
-                auto& dlls = debug_dlls;
-                dlls.insert(dlls.end(),
-                            std::make_move_iterator(release_dlls.begin()),
-                            std::make_move_iterator(release_dlls.end()));
-                error_count += check_no_dlls_present(dlls, msg_sink);
-                error_count += check_bin_folders_are_not_present_in_static_build(fs, package_dir, msg_sink);
+                auto& relative_dlls = relative_debug_dlls;
+                Util::Vectors::append(relative_dlls, std::move(relative_release_dlls));
+                error_count += check_no_dlls_present(package_dir, relative_dlls, portfile_cmake, msg_sink);
+                error_count +=
+                    check_bin_folders_are_not_present_in_static_build(fs, package_dir, portfile_cmake, msg_sink);
             }
 
             // Note that this condition is paired with the possible initialization of `debug_lib_info` above
-            if (!build_info.policies.is_enabled(BuildPolicy::ONLY_RELEASE_CRT))
+            if (!policies.is_enabled(BuildPolicy::SKIP_CRT_LINKAGE_CHECK))
             {
-                error_count += check_crt_linkage_of_libs(
-                    build_info, false, debug_libs, debug_lib_info.value_or_exit(VCPKG_LINE_INFO), msg_sink);
-            }
+                std::map<LinkageAndBuildType, std::vector<FileAndLinkages>> groups_of_invalid_crt;
+                check_crt_group_linkage_of_libs(
+                    LinkageAndBuildType{build_info.crt_linkage,
+                                        build_info.policies.is_enabled(BuildPolicy::ONLY_RELEASE_CRT)},
+                    package_dir,
+                    relative_debug_libs,
+                    debug_lib_info.value_or_exit(VCPKG_LINE_INFO),
+                    groups_of_invalid_crt);
+                check_crt_group_linkage_of_libs(LinkageAndBuildType{build_info.crt_linkage, true},
+                                                package_dir,
+                                                relative_release_libs,
+                                                release_lib_info.value_or_exit(VCPKG_LINE_INFO),
+                                                groups_of_invalid_crt);
 
-            error_count += check_crt_linkage_of_libs(build_info, true, release_libs, release_lib_info, msg_sink);
+                error_count += check_crt_linkage_of_libs(package_dir, portfile_cmake, groups_of_invalid_crt, msg_sink);
+            }
         }
 
-        error_count += check_no_empty_folders(fs, package_dir, msg_sink);
-        error_count += check_no_files_in_dir(fs, package_dir, msg_sink);
-        error_count += check_no_files_in_dir(fs, package_dir / "debug", msg_sink);
-        error_count += check_pkgconfig_dir_only_in_lib_dir(fs, package_dir, msg_sink);
-        if (!build_info.policies.is_enabled(BuildPolicy::SKIP_ABSOLUTE_PATHS_CHECK))
+        if (!policies.is_enabled(BuildPolicy::ALLOW_EMPTY_FOLDERS))
         {
-            Path tests[] = {package_dir, paths.installed().root(), paths.build_dir(spec), paths.downloads};
-            error_count += check_no_absolute_paths_in(fs, package_dir, tests, msg_sink);
+            error_count += check_no_empty_folders(fs, package_dir, portfile_cmake, msg_sink);
+        }
+        if (!policies.is_enabled(BuildPolicy::SKIP_MISPLACED_REGULAR_FILES_CHECK))
+        {
+            static constexpr StringLiteral bad_dirs[] = {"debug", ""};
+            error_count += check_no_regular_files_in_relative_path(fs, package_dir, portfile_cmake, bad_dirs, msg_sink);
+        }
+
+        std::vector<Path> relative_all_files;
+        if (!policies.is_enabled(BuildPolicy::SKIP_PKGCONFIG_CHECK) ||
+            !policies.is_enabled(BuildPolicy::SKIP_ABSOLUTE_PATHS_CHECK))
+        {
+            relative_all_files = fs.get_regular_files_recursive_lexically_proximate(package_dir, IgnoreErrors{});
+            Util::sort(relative_all_files);
+        }
+
+        if (!policies.is_enabled(BuildPolicy::SKIP_PKGCONFIG_CHECK))
+        {
+            error_count +=
+                check_pkgconfig_dir_only_in_lib_dir(fs, package_dir, relative_all_files, portfile_cmake, msg_sink);
+        }
+        if (!policies.is_enabled(BuildPolicy::SKIP_ABSOLUTE_PATHS_CHECK))
+        {
+            Path prohibited_absolute_paths[] = {
+                paths.packages(), paths.installed().root(), paths.buildtrees(), paths.downloads};
+            error_count += check_no_absolute_paths_in(
+                fs, package_dir, prohibited_absolute_paths, relative_all_files, portfile_cmake, msg_sink);
         }
 
         return error_count;
+    }
+
+    static bool should_skip_all_post_build_checks(const BuildPolicies& policies,
+                                                  BuildPolicy tested_policy,
+                                                  MessageSink& msg_sink)
+    {
+        if (policies.is_enabled(tested_policy))
+        {
+            msg_sink.println(LocalizedString::from_raw("-- ").append(
+                msgSkippingPostBuildValidationDueTo, msg::cmake_var = to_cmake_variable(tested_policy)));
+            return true;
+        }
+
+        return false;
     }
 
     size_t perform_post_build_lint_checks(const PackageSpec& spec,
@@ -1471,15 +1914,27 @@ namespace vcpkg
                                           const Path& port_dir,
                                           MessageSink& msg_sink)
     {
-        msg_sink.println(msgPerformingPostBuildValidation);
-        const size_t error_count =
-            perform_all_checks_and_return_error_count(spec, paths, pre_build_info, build_info, port_dir, msg_sink);
+        auto& policies = build_info.policies;
+        if (should_skip_all_post_build_checks(policies, BuildPolicy::EMPTY_PACKAGE, msg_sink) ||
+            should_skip_all_post_build_checks(policies, BuildPolicy::SKIP_ALL_POST_BUILD_CHECKS, msg_sink))
+        {
+            return 0;
+        }
 
+        msg_sink.println(LocalizedString::from_raw("-- ").append(msgPerformingPostBuildValidation));
+        const auto portfile_cmake = port_dir / FilePortfileDotCMake;
+        const size_t error_count = perform_all_checks_and_return_error_count(
+            spec, paths, pre_build_info, build_info, port_dir, portfile_cmake, msg_sink);
         if (error_count != 0)
         {
-            const auto portfile = port_dir / "portfile.cmake";
-            msg_sink.println_error(msgFailedPostBuildChecks, msg::count = error_count, msg::path = portfile);
+            msg_sink.print(Color::warning,
+                           LocalizedString::from_raw(portfile_cmake)
+                               .append_raw(": ")
+                               .append_raw(WarningPrefix)
+                               .append(msgFailedPostBuildChecks, msg::count = error_count)
+                               .append_raw('\n'));
         }
+
         return error_count;
     }
 }

@@ -374,6 +374,12 @@ namespace vcpkg
     inline constexpr StringLiteral CMakeVariableNoDownloads = "_VCPKG_NO_DOWNLOADS";
     inline constexpr StringLiteral CMakeVariablePlatformToolset = "VCPKG_PLATFORM_TOOLSET";
     inline constexpr StringLiteral CMakeVariablePlatformToolsetVersion = "VCPKG_PLATFORM_TOOLSET_VERSION";
+    inline constexpr StringLiteral CMakeVariablePolicyAllowDebugInclude = "VCPKG_POLICY_ALLOW_DEBUG_INCLUDE";
+    inline constexpr StringLiteral CMakeVariablePolicyAllowDebugShare = "VCPKG_POLICY_ALLOW_DEBUG_SHARE";
+    inline constexpr StringLiteral CMakeVariablePolicyAllowDllsInLib = "VCPKG_POLICY_ALLOW_DLLS_IN_LIB";
+    inline constexpr StringLiteral CMakeVariablePolicyAllowEmptyFolders = "VCPKG_POLICY_ALLOW_EMPTY_FOLDERS";
+    inline constexpr StringLiteral CMakeVariablePolicyAllowExesInBin = "VCPKG_POLICY_ALLOW_EXES_IN_BIN";
+    inline constexpr StringLiteral CMakeVariablePolicyAllowKernel32FromXBox = "VCPKG_POLICY_ALLOW_KERNEL32_FROM_XBOX";
     inline constexpr StringLiteral CMakeVariablePolicyAllowObsoleteMsvcrt = "VCPKG_POLICY_ALLOW_OBSOLETE_MSVCRT";
     inline constexpr StringLiteral CMakeVariablePolicyAllowRestrictedHeaders = "VCPKG_POLICY_ALLOW_RESTRICTED_HEADERS";
     inline constexpr StringLiteral CMakeVariablePolicyCMakeHelperPort = "VCPKG_POLICY_CMAKE_HELPER_PORT";
@@ -386,8 +392,21 @@ namespace vcpkg
         "VCPKG_POLICY_MISMATCHED_NUMBER_OF_BINARIES";
     inline constexpr StringLiteral CMakeVariablePolicyOnlyReleaseCrt = "VCPKG_POLICY_ONLY_RELEASE_CRT";
     inline constexpr StringLiteral CMakeVariablePolicySkipAbsolutePathsCheck = "VCPKG_POLICY_SKIP_ABSOLUTE_PATHS_CHECK";
+    inline constexpr StringLiteral CMakeVariablePolicySkipAllPostBuildChecks =
+        "VCPKG_POLICY_SKIP_ALL_POST_BUILD_CHECKS";
+    inline constexpr StringLiteral CMakeVariablePolicySkipAppcontainerCheck = "VCPKG_POLICY_SKIP_APPCONTAINER_CHECK";
     inline constexpr StringLiteral CMakeVariablePolicySkipArchitectureCheck = "VCPKG_POLICY_SKIP_ARCHITECTURE_CHECK";
+    inline constexpr StringLiteral CMakeVariablePolicySkipCopyrightCheck = "VCPKG_POLICY_SKIP_COPYRIGHT_CHECK";
+    inline constexpr StringLiteral CMakeVariablePolicySkipCrtLinkageCheck = "VCPKG_POLICY_SKIP_CRT_LINKAGE_CHECK";
     inline constexpr StringLiteral CMakeVariablePolicySkipDumpbinChecks = "VCPKG_POLICY_SKIP_DUMPBIN_CHECKS";
+    inline constexpr StringLiteral CMakeVariablePolicySkipLibCMakeMergeCheck =
+        "VCPKG_POLICY_SKIP_LIB_CMAKE_MERGE_CHECK";
+    inline constexpr StringLiteral CMakeVariablePolicySkipMisplacedCMakeFilesCheck =
+        "VCPKG_POLICY_SKIP_MISPLACED_CMAKE_FILES_CHECK";
+    inline constexpr StringLiteral CMakeVariablePolicySkipMisplacedRegularFilesCheck =
+        "VCPKG_POLICY_SKIP_MISPLACED_REGULAR_FILES_CHECK";
+    inline constexpr StringLiteral CMakeVariablePolicySkipPkgConfigCheck = "VCPKG_POLICY_SKIP_PKGCONFIG_CHECK";
+    inline constexpr StringLiteral CMakeVariablePolicySkipUsageInstallCheck = "VCPKG_POLICY_SKIP_USAGE_INSTALL_CHECK";
     inline constexpr StringLiteral CMakeVariablePort = "PORT";
     inline constexpr StringLiteral CMakeVariablePortConfigs = "VCPKG_PORT_CONFIGS";
     inline constexpr StringLiteral CMakeVariableProhibitBackcompatFeatures = "_VCPKG_PROHIBIT_BACKCOMPAT_FEATURES";
@@ -408,6 +427,12 @@ namespace vcpkg
     inline constexpr StringLiteral CMakeVariableZVcpkgGameDKLatest = "Z_VCPKG_GameDKLatest";
 
     // Policies are PascalCase
+    inline constexpr StringLiteral PolicyAllowDebugInclude = "PolicyAllowDebugInclude";
+    inline constexpr StringLiteral PolicyAllowDebugShare = "PolicyAllowDebugShare";
+    inline constexpr StringLiteral PolicyAllowDllsInLib = "PolicyAllowDllsInLib";
+    inline constexpr StringLiteral PolicyAllowEmptyFolders = "PolicyAllowEmptyFolders";
+    inline constexpr StringLiteral PolicyAllowExesInBin = "PolicyAllowExesInBin";
+    inline constexpr StringLiteral PolicyAllowKernel32FromXBox = "PolicyAllowKernel32FromXBox";
     inline constexpr StringLiteral PolicyAllowObsoleteMsvcrt = "PolicyAllowObsoleteMsvcrt";
     inline constexpr StringLiteral PolicyAllowRestrictedHeaders = "PolicyAllowRestrictedHeaders";
     inline constexpr StringLiteral PolicyCMakeHelperPort = "PolicyCmakeHelperPort";
@@ -419,8 +444,17 @@ namespace vcpkg
     inline constexpr StringLiteral PolicyMismatchedNumberOfBinaries = "PolicyMismatchedNumberOfBinaries";
     inline constexpr StringLiteral PolicyOnlyReleaseCrt = "PolicyOnlyReleaseCRT";
     inline constexpr StringLiteral PolicySkipAbsolutePathsCheck = "PolicySkipAbsolutePathsCheck";
+    inline constexpr StringLiteral PolicySkipAllPostBuildChecks = "PolicySkipAllPostBuildChecks";
+    inline constexpr StringLiteral PolicySkipAppcontainerCheck = "PolicySkipAppcontainerCheck";
     inline constexpr StringLiteral PolicySkipArchitectureCheck = "PolicySkipArchitectureCheck";
+    inline constexpr StringLiteral PolicySkipCopyrightCheck = "PolicySkipCopyrightCheck";
+    inline constexpr StringLiteral PolicySkipCrtLinkageCheck = "PolicySkipCrtLinkageCheck";
     inline constexpr StringLiteral PolicySkipDumpbinChecks = "PolicySkipDumpbinChecks";
+    inline constexpr StringLiteral PolicySkipLibCMakeMergeCheck = "PolicySkipLibCMakeMergeCheck";
+    inline constexpr StringLiteral PolicySkipMisplacedCMakeFilesCheck = "PolicySkipMisplacedCMakeFilesCheck";
+    inline constexpr StringLiteral PolicySkipMisplacedRegularFilesCheck = "PolicySkipMisplacedRegularFilesCheck";
+    inline constexpr StringLiteral PolicySkipPkgConfigCheck = "PolicySkipPkgConfigCheck";
+    inline constexpr StringLiteral PolicySkipUsageInstallCheck = "PolicySkipUsageInstallCheck";
 
     // Environment variables are ALL_CAPS_WITH_UNDERSCORES
     inline constexpr StringLiteral EnvironmentVariableActionsCacheUrl = "ACTIONS_CACHE_URL";

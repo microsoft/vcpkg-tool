@@ -1,0 +1,9 @@
+{
+  "name": "vcpkg-policy-forgot-usage",
+  "version": "1",
+  "features": {
+    "policy": {
+      "description": "enable VCPKG_POLICY_SKIP_USAGE_INSTALL_CHECK"
+    }
+  }
+}
