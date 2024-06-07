@@ -21,7 +21,7 @@ Requires:
 Cflags: "-I${includedir}"
 ]])
 
-if(install-arch-dependent-good IN_LIST FEATURES)
+if("install-arch-dependent-good" IN_LIST FEATURES)
     file(MAKE_DIRECTORY "${CURRENT_PACKAGES_DIR}/debug/lib/pkgconfig")
     file(WRITE "${CURRENT_PACKAGES_DIR}/debug/lib/pkgconfig/zlib.pc" "${ARCH_DEPENDENT_DEBUG_PC_CONTENT}")
 endif()
@@ -41,22 +41,22 @@ Libs: "-L${libdir}" "-L${sharedlibdir}" -lzlib
 Cflags: "-I${includedir}"
 ]])
 
-if(install-arch-dependent-good-release-only IN_LIST FEATURES)
+if("install-arch-dependent-good-release-only" IN_LIST FEATURES)
     file(MAKE_DIRECTORY "${CURRENT_PACKAGES_DIR}/lib/pkgconfig")
     file(WRITE "${CURRENT_PACKAGES_DIR}/lib/pkgconfig/zlib.pc" "${ARCH_DEPENDENT_PC_CONTENT}")
 endif()
 
-if(install-arch-dependent-bad-share IN_LIST FEATURES)
+if("install-arch-dependent-bad-share" IN_LIST FEATURES)
     file(MAKE_DIRECTORY "${CURRENT_PACKAGES_DIR}/share/pkgconfig")
     file(WRITE "${CURRENT_PACKAGES_DIR}/share/pkgconfig/zlib.pc" "${ARCH_DEPENDENT_PC_CONTENT}")
 endif()
 
-if(install-arch-dependent-bad-misplaced IN_LIST FEATURES)
+if("install-arch-dependent-bad-misplaced" IN_LIST FEATURES)
     file(MAKE_DIRECTORY "${CURRENT_PACKAGES_DIR}/debug/bin/pkgconfig")
     file(WRITE "${CURRENT_PACKAGES_DIR}/debug/bin/pkgconfig/zlib.pc" "${ARCH_DEPENDENT_DEBUG_PC_CONTENT}")
 endif()
 
-if(install-arch-dependent-bad-misplaced-release-only IN_LIST FEATURES)
+if("install-arch-dependent-bad-misplaced-release-only" IN_LIST FEATURES)
     file(MAKE_DIRECTORY "${CURRENT_PACKAGES_DIR}/bin/pkgconfig")
     file(WRITE "${CURRENT_PACKAGES_DIR}/bin/pkgconfig/zlib.pc" "${ARCH_DEPENDENT_PC_CONTENT}")
 endif()
@@ -76,17 +76,17 @@ Libs:
 Cflags: "-I${includedir}"
 ]])
 
-if(install-arch-agnostic-empty-libs-good IN_LIST FEATURES)
+if("install-arch-agnostic-empty-libs-good" IN_LIST FEATURES)
     file(MAKE_DIRECTORY "${CURRENT_PACKAGES_DIR}/lib/pkgconfig")
     file(WRITE "${CURRENT_PACKAGES_DIR}/lib/pkgconfig/zlib-no-libs.pc" "${ARCH_AGNOSTIC_WITH_EMPTY_LIBS_PC_CONTENT}")
 endif()
 
-if(install-arch-agnostic-empty-libs-good-share IN_LIST FEATURES)
+if("install-arch-agnostic-empty-libs-good-share" IN_LIST FEATURES)
     file(MAKE_DIRECTORY "${CURRENT_PACKAGES_DIR}/share/pkgconfig")
     file(WRITE "${CURRENT_PACKAGES_DIR}/share/pkgconfig/zlib-no-libs.pc" "${ARCH_AGNOSTIC_WITH_EMPTY_LIBS_PC_CONTENT}")
 endif()
 
-if(install-arch-agnostic-empty-libs-bad-misplaced IN_LIST FEATURES)
+if("install-arch-agnostic-empty-libs-bad-misplaced" IN_LIST FEATURES)
     file(MAKE_DIRECTORY "${CURRENT_PACKAGES_DIR}/bin/pkgconfig")
     file(WRITE "${CURRENT_PACKAGES_DIR}/bin/pkgconfig/zlib-no-libs.pc" "${ARCH_AGNOSTIC_WITH_EMPTY_LIBS_PC_CONTENT}")
 endif()
@@ -104,21 +104,21 @@ Version: 0.2.8
 Cflags: "-I${includedir}"
 ]])
 
-if(install-arch-agnostic-good IN_LIST FEATURES)
+if("install-arch-agnostic-good" IN_LIST FEATURES)
     file(MAKE_DIRECTORY "${CURRENT_PACKAGES_DIR}/lib/pkgconfig")
     file(WRITE "${CURRENT_PACKAGES_DIR}/lib/pkgconfig/libmorton.pc" "${ARCH_AGNOSTIC_PC_CONTENT}")
 endif()
 
-if(install-arch-agnostic-good-share IN_LIST FEATURES)
+if("install-arch-agnostic-good-share" IN_LIST FEATURES)
     file(MAKE_DIRECTORY "${CURRENT_PACKAGES_DIR}/share/pkgconfig")
     file(WRITE "${CURRENT_PACKAGES_DIR}/share/pkgconfig/libmorton.pc" "${ARCH_AGNOSTIC_PC_CONTENT}")
 endif()
 
-if(install-arch-agnostic-bad-misplaced IN_LIST FEATURES)
+if("install-arch-agnostic-bad-misplaced" IN_LIST FEATURES)
     file(MAKE_DIRECTORY "${CURRENT_PACKAGES_DIR}/bin/pkgconfig")
     file(WRITE "${CURRENT_PACKAGES_DIR}/bin/pkgconfig/libmorton.pc" "${ARCH_AGNOSTIC_PC_CONTENT}")
 endif()
 
-if (policy IN_LIST FEATURES)
+if("policy" IN_LIST FEATURES)
     set(VCPKG_POLICY_SKIP_PKGCONFIG_CHECK enabled)
 endif()

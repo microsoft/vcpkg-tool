@@ -10,6 +10,6 @@ file(REMOVE_RECURSE
     "${CURRENT_PACKAGES_DIR}/debug/lib"
     "${CURRENT_PACKAGES_DIR}/lib")
 file(TOUCH "${CURRENT_PACKAGES_DIR}/share/${PORT}/copyright")
-if(policy IN_LIST FEATURES)
+if("policy" IN_LIST FEATURES)
     set(VCPKG_POLICY_DLLS_WITHOUT_EXPORTS enabled)
 endif()
