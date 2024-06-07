@@ -2303,7 +2303,7 @@ DECLARE_MESSAGE(
     PortBugDuplicateIncludeFilesFixIt,
     (),
     "",
-    "If this directory was created by a CMake build system that does not allow installing headers in debug to be "
+    "If this directory was created by a build system that does not allow installing headers in debug to be "
     "disabled, delete the duplicate directory with file(REMOVE_RECURSE \"${{CURRENT_PACKAGES_DIR}}/debug/include\")")
 DECLARE_MESSAGE(PortBugFoundCopyrightFiles, (), "", "the following files are potential copyright files")
 DECLARE_MESSAGE(PortBugFoundDebugBinaries, (), "", "The following are debug binaries:")
@@ -2402,8 +2402,8 @@ DECLARE_MESSAGE(PortBugMismatchingNumberOfBinaries,
 DECLARE_MESSAGE(PortBugMisplacedCMakeFiles,
                 (),
                 "",
-                "This port installs the following CMake files in places CMake files are not expected. CMake should be "
-                "installed in ${{CURRENT_PACKAGES_DIR}}/share/${{PORT}}. To suppress this message, add "
+                "This port installs the following CMake files in places CMake files are not expected. CMake files "
+                "should be installed in ${{CURRENT_PACKAGES_DIR}}/share/${{PORT}}. To suppress this message, add "
                 "set(VCPKG_POLICY_SKIP_MISPLACED_CMAKE_FILES_CHECK enabled)")
 DECLARE_MESSAGE(PortBugMisplacedFiles,
                 (),
@@ -2418,7 +2418,7 @@ DECLARE_MESSAGE(
     "The following misplaced pkgconfig directories were installed. Misplaced pkgconfig files will not be found "
     "correctly by pkgconf or pkg-config. pkgconfig directories should be ${{CURRENT_PACKAGES_DIR}}/share/pkgconfig "
     "(for architecture agnostic / header only libraries only), ${{CURRENT_PACKAGES_DIR}}/lib/pkgconfig (for release "
-    "dependencies), or ${{CURRENT_PACKAGES_DIR}}/lib/debug/pkgconfig (for debug dependencies). To suppress this "
+    "dependencies), or ${{CURRENT_PACKAGES_DIR}}/debug/lib/pkgconfig (for debug dependencies). To suppress this "
     "message, add set(VCPKG_POLICY_SKIP_PKGCONFIG_CHECK enabled)")
 DECLARE_MESSAGE(PortBugMissingDebugBinaries, (), "", "Debug binaries were not found.")
 DECLARE_MESSAGE(

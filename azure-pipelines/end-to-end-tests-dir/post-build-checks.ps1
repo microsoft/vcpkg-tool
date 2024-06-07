@@ -90,7 +90,7 @@ $buildOutput = Run-VcpkgAndCaptureOutput @commonArgs install --overlay-ports="$P
 Throw-IfNotFailed
 $expected = @"
 $($PortfilePath): warning: `${CURRENT_PACKAGES_DIR}/debug/include should not exist. To suppress this message, add set(VCPKG_POLICY_ALLOW_DEBUG_INCLUDE enabled)
-note: If this directory was created by a CMake build system that does not allow installing headers in debug to be disabled, delete the duplicate directory with file(REMOVE_RECURSE "`${CURRENT_PACKAGES_DIR}/debug/include")
+note: If this directory was created by a build system that does not allow installing headers in debug to be disabled, delete the duplicate directory with file(REMOVE_RECURSE "`${CURRENT_PACKAGES_DIR}/debug/include")
 "@
 if (-not $buildOutput.Replace("`r`n", "`n").Contains($expected)) {
     throw 'Did not detect debug headers'
@@ -128,7 +128,7 @@ Refresh-TestRoot
 $buildOutput = Run-VcpkgAndCaptureOutput @commonArgs install --overlay-ports="$PSScriptRoot/../e2e-ports" 'vcpkg-policy-misplaced-cmake-files[do-install-cmake]' --no-binarycaching --enforce-port-checks
 Throw-IfNotFailed
 $expected = @"
-$($PortfilePath): warning: This port installs the following CMake files in places CMake files are not expected. CMake should be installed in `${CURRENT_PACKAGES_DIR}/share/`${PORT}. To suppress this message, add set(VCPKG_POLICY_SKIP_MISPLACED_CMAKE_FILES_CHECK enabled)
+$($PortfilePath): warning: This port installs the following CMake files in places CMake files are not expected. CMake files should be installed in `${CURRENT_PACKAGES_DIR}/share/`${PORT}. To suppress this message, add set(VCPKG_POLICY_SKIP_MISPLACED_CMAKE_FILES_CHECK enabled)
 $($packagesRoot)$($NativeSlash)vcpkg-policy-misplaced-cmake-files_$($Triplet): note: the files are relative to `${CURRENT_PACKAGES_DIR} here
 note: cmake/some_cmake.cmake
 note: debug/cmake/some_cmake.cmake
@@ -144,7 +144,7 @@ Refresh-TestRoot
 $buildOutput = Run-VcpkgAndCaptureOutput @commonArgs install --overlay-ports="$PSScriptRoot/../e2e-ports" 'vcpkg-policy-misplaced-cmake-files[do-install-lib]' --no-binarycaching --enforce-port-checks
 Throw-IfNotFailed
 $expected = @"
-$($PortfilePath): warning: This port installs the following CMake files in places CMake files are not expected. CMake should be installed in `${CURRENT_PACKAGES_DIR}/share/`${PORT}. To suppress this message, add set(VCPKG_POLICY_SKIP_MISPLACED_CMAKE_FILES_CHECK enabled)
+$($PortfilePath): warning: This port installs the following CMake files in places CMake files are not expected. CMake files should be installed in `${CURRENT_PACKAGES_DIR}/share/`${PORT}. To suppress this message, add set(VCPKG_POLICY_SKIP_MISPLACED_CMAKE_FILES_CHECK enabled)
 $($packagesRoot)$($NativeSlash)vcpkg-policy-misplaced-cmake-files_$($Triplet): note: the files are relative to `${CURRENT_PACKAGES_DIR} here
 note: lib/cmake/some_cmake.cmake
 note: debug/lib/cmake/some_cmake.cmake
@@ -161,7 +161,7 @@ Refresh-TestRoot
 $buildOutput = Run-VcpkgAndCaptureOutput @commonArgs install --overlay-ports="$PSScriptRoot/../e2e-ports" 'vcpkg-policy-misplaced-cmake-files[do-install-cmake,do-install-lib]' --no-binarycaching --enforce-port-checks
 Throw-IfNotFailed
 $expected = @"
-$($PortfilePath): warning: This port installs the following CMake files in places CMake files are not expected. CMake should be installed in `${CURRENT_PACKAGES_DIR}/share/`${PORT}. To suppress this message, add set(VCPKG_POLICY_SKIP_MISPLACED_CMAKE_FILES_CHECK enabled)
+$($PortfilePath): warning: This port installs the following CMake files in places CMake files are not expected. CMake files should be installed in `${CURRENT_PACKAGES_DIR}/share/`${PORT}. To suppress this message, add set(VCPKG_POLICY_SKIP_MISPLACED_CMAKE_FILES_CHECK enabled)
 $($packagesRoot)$($NativeSlash)vcpkg-policy-misplaced-cmake-files_$($Triplet): note: the files are relative to `${CURRENT_PACKAGES_DIR} here
 note: cmake/some_cmake.cmake
 note: debug/cmake/some_cmake.cmake
@@ -193,7 +193,7 @@ Refresh-TestRoot
 $buildOutput = Run-VcpkgAndCaptureOutput @commonArgs install --overlay-ports="$PSScriptRoot/../e2e-ports" 'vcpkg-policy-misplaced-cmake-files[do-install-cmake,do-install-lib,policy-skip-lib-cmake-merge-check]' --no-binarycaching --enforce-port-checks
 Throw-IfNotFailed
 $expected = @"
-$($PortfilePath): warning: This port installs the following CMake files in places CMake files are not expected. CMake should be installed in `${CURRENT_PACKAGES_DIR}/share/`${PORT}. To suppress this message, add set(VCPKG_POLICY_SKIP_MISPLACED_CMAKE_FILES_CHECK enabled)
+$($PortfilePath): warning: This port installs the following CMake files in places CMake files are not expected. CMake files should be installed in `${CURRENT_PACKAGES_DIR}/share/`${PORT}. To suppress this message, add set(VCPKG_POLICY_SKIP_MISPLACED_CMAKE_FILES_CHECK enabled)
 $($packagesRoot)$($NativeSlash)vcpkg-policy-misplaced-cmake-files_$($Triplet): note: the files are relative to `${CURRENT_PACKAGES_DIR} here
 note: cmake/some_cmake.cmake
 note: debug/cmake/some_cmake.cmake
@@ -823,7 +823,7 @@ $PortfilePath = "$PSScriptRoot/../e2e-ports$($NativeSlash)vcpkg-policy-misplaced
 $buildOutput = Run-VcpkgAndCaptureOutput @commonArgs install --overlay-ports="$PSScriptRoot/../e2e-ports" 'vcpkg-policy-misplaced-pkgconfig[install-arch-dependent-bad-misplaced]' --no-binarycaching --enforce-port-checks
 Throw-IfNotFailed
 $expected = @"
-$($PortfilePath): warning: The following misplaced pkgconfig directories were installed. Misplaced pkgconfig files will not be found correctly by pkgconf or pkg-config. pkgconfig directories should be `${CURRENT_PACKAGES_DIR}/share/pkgconfig (for architecture agnostic / header only libraries only), `${CURRENT_PACKAGES_DIR}/lib/pkgconfig (for release dependencies), or `${CURRENT_PACKAGES_DIR}/lib/debug/pkgconfig (for debug dependencies). To suppress this message, add set(VCPKG_POLICY_SKIP_PKGCONFIG_CHECK enabled)
+$($PortfilePath): warning: The following misplaced pkgconfig directories were installed. Misplaced pkgconfig files will not be found correctly by pkgconf or pkg-config. pkgconfig directories should be `${CURRENT_PACKAGES_DIR}/share/pkgconfig (for architecture agnostic / header only libraries only), `${CURRENT_PACKAGES_DIR}/lib/pkgconfig (for release dependencies), or `${CURRENT_PACKAGES_DIR}/debug/lib/pkgconfig (for debug dependencies). To suppress this message, add set(VCPKG_POLICY_SKIP_PKGCONFIG_CHECK enabled)
 $($packagesRoot)$($NativeSlash)vcpkg-policy-misplaced-pkgconfig_$($Triplet): note: the files are relative to `${CURRENT_PACKAGES_DIR} here
 note: bin/pkgconfig/zlib.pc
 note: debug/bin/pkgconfig/zlib.pc
@@ -840,7 +840,7 @@ if (-not $buildOutput.Replace("`r`n", "`n").Contains($expected)) {
 $buildOutput = Run-VcpkgAndCaptureOutput @commonArgs install --overlay-ports="$PSScriptRoot/../e2e-ports" 'vcpkg-policy-misplaced-pkgconfig[install-arch-agnostic-bad-misplaced,install-arch-agnostic-empty-libs-bad-misplaced,install-arch-dependent-bad-misplaced,install-arch-dependent-bad-share]' --no-binarycaching --enforce-port-checks
 Throw-IfNotFailed
 $expected = @"
-$($PortfilePath): warning: The following misplaced pkgconfig directories were installed. Misplaced pkgconfig files will not be found correctly by pkgconf or pkg-config. pkgconfig directories should be `${CURRENT_PACKAGES_DIR}/share/pkgconfig (for architecture agnostic / header only libraries only), `${CURRENT_PACKAGES_DIR}/lib/pkgconfig (for release dependencies), or `${CURRENT_PACKAGES_DIR}/lib/debug/pkgconfig (for debug dependencies). To suppress this message, add set(VCPKG_POLICY_SKIP_PKGCONFIG_CHECK enabled)
+$($PortfilePath): warning: The following misplaced pkgconfig directories were installed. Misplaced pkgconfig files will not be found correctly by pkgconf or pkg-config. pkgconfig directories should be `${CURRENT_PACKAGES_DIR}/share/pkgconfig (for architecture agnostic / header only libraries only), `${CURRENT_PACKAGES_DIR}/lib/pkgconfig (for release dependencies), or `${CURRENT_PACKAGES_DIR}/debug/lib/pkgconfig (for debug dependencies). To suppress this message, add set(VCPKG_POLICY_SKIP_PKGCONFIG_CHECK enabled)
 $($packagesRoot)$($NativeSlash)vcpkg-policy-misplaced-pkgconfig_$($Triplet): note: the files are relative to `${CURRENT_PACKAGES_DIR} here
 note: bin/pkgconfig/libmorton.pc
 note: bin/pkgconfig/zlib-no-libs.pc
@@ -871,7 +871,7 @@ Refresh-TestRoot
 $buildOutput = Run-VcpkgAndCaptureOutput @commonArgs install --overlay-ports="$PSScriptRoot/../e2e-ports" 'vcpkg-policy-misplaced-pkgconfig[install-arch-dependent-bad-misplaced-release-only]' --no-binarycaching --enforce-port-checks
 Throw-IfNotFailed
 $expected = @"
-$($PortfilePath): warning: The following misplaced pkgconfig directories were installed. Misplaced pkgconfig files will not be found correctly by pkgconf or pkg-config. pkgconfig directories should be `${CURRENT_PACKAGES_DIR}/share/pkgconfig (for architecture agnostic / header only libraries only), `${CURRENT_PACKAGES_DIR}/lib/pkgconfig (for release dependencies), or `${CURRENT_PACKAGES_DIR}/lib/debug/pkgconfig (for debug dependencies). To suppress this message, add set(VCPKG_POLICY_SKIP_PKGCONFIG_CHECK enabled)
+$($PortfilePath): warning: The following misplaced pkgconfig directories were installed. Misplaced pkgconfig files will not be found correctly by pkgconf or pkg-config. pkgconfig directories should be `${CURRENT_PACKAGES_DIR}/share/pkgconfig (for architecture agnostic / header only libraries only), `${CURRENT_PACKAGES_DIR}/lib/pkgconfig (for release dependencies), or `${CURRENT_PACKAGES_DIR}/debug/lib/pkgconfig (for debug dependencies). To suppress this message, add set(VCPKG_POLICY_SKIP_PKGCONFIG_CHECK enabled)
 $($packagesRoot)$($NativeSlash)vcpkg-policy-misplaced-pkgconfig_$($Triplet): note: the files are relative to `${CURRENT_PACKAGES_DIR} here
 note: bin/pkgconfig/zlib.pc
 note: You can move the pkgconfig files with commands similar to:
@@ -887,7 +887,7 @@ if (-not $buildOutput.Replace("`r`n", "`n").Contains($expected)) {
 $buildOutput = Run-VcpkgAndCaptureOutput @commonArgs install --overlay-ports="$PSScriptRoot/../e2e-ports" 'vcpkg-policy-misplaced-pkgconfig[install-arch-agnostic-bad-misplaced]' --no-binarycaching --enforce-port-checks
 Throw-IfNotFailed
 $expected = @"
-$($PortfilePath): warning: The following misplaced pkgconfig directories were installed. Misplaced pkgconfig files will not be found correctly by pkgconf or pkg-config. pkgconfig directories should be `${CURRENT_PACKAGES_DIR}/share/pkgconfig (for architecture agnostic / header only libraries only), `${CURRENT_PACKAGES_DIR}/lib/pkgconfig (for release dependencies), or `${CURRENT_PACKAGES_DIR}/lib/debug/pkgconfig (for debug dependencies). To suppress this message, add set(VCPKG_POLICY_SKIP_PKGCONFIG_CHECK enabled)
+$($PortfilePath): warning: The following misplaced pkgconfig directories were installed. Misplaced pkgconfig files will not be found correctly by pkgconf or pkg-config. pkgconfig directories should be `${CURRENT_PACKAGES_DIR}/share/pkgconfig (for architecture agnostic / header only libraries only), `${CURRENT_PACKAGES_DIR}/lib/pkgconfig (for release dependencies), or `${CURRENT_PACKAGES_DIR}/debug/lib/pkgconfig (for debug dependencies). To suppress this message, add set(VCPKG_POLICY_SKIP_PKGCONFIG_CHECK enabled)
 $($packagesRoot)$($NativeSlash)vcpkg-policy-misplaced-pkgconfig_$($Triplet): note: the files are relative to `${CURRENT_PACKAGES_DIR} here
 note: bin/pkgconfig/libmorton.pc
 note: You can move the pkgconfig files with commands similar to:
@@ -903,7 +903,7 @@ if (-not $buildOutput.Replace("`r`n", "`n").Contains($expected)) {
 $buildOutput = Run-VcpkgAndCaptureOutput @commonArgs install --overlay-ports="$PSScriptRoot/../e2e-ports" 'vcpkg-policy-misplaced-pkgconfig[install-arch-agnostic-empty-libs-bad-misplaced]' --no-binarycaching --enforce-port-checks
 Throw-IfNotFailed
 $expected = @"
-$($PortfilePath): warning: The following misplaced pkgconfig directories were installed. Misplaced pkgconfig files will not be found correctly by pkgconf or pkg-config. pkgconfig directories should be `${CURRENT_PACKAGES_DIR}/share/pkgconfig (for architecture agnostic / header only libraries only), `${CURRENT_PACKAGES_DIR}/lib/pkgconfig (for release dependencies), or `${CURRENT_PACKAGES_DIR}/lib/debug/pkgconfig (for debug dependencies). To suppress this message, add set(VCPKG_POLICY_SKIP_PKGCONFIG_CHECK enabled)
+$($PortfilePath): warning: The following misplaced pkgconfig directories were installed. Misplaced pkgconfig files will not be found correctly by pkgconf or pkg-config. pkgconfig directories should be `${CURRENT_PACKAGES_DIR}/share/pkgconfig (for architecture agnostic / header only libraries only), `${CURRENT_PACKAGES_DIR}/lib/pkgconfig (for release dependencies), or `${CURRENT_PACKAGES_DIR}/debug/lib/pkgconfig (for debug dependencies). To suppress this message, add set(VCPKG_POLICY_SKIP_PKGCONFIG_CHECK enabled)
 $($packagesRoot)$($NativeSlash)vcpkg-policy-misplaced-pkgconfig_$($Triplet): note: the files are relative to `${CURRENT_PACKAGES_DIR} here
 note: bin/pkgconfig/zlib-no-libs.pc
 note: You can move the pkgconfig files with commands similar to:
@@ -919,7 +919,7 @@ if (-not $buildOutput.Replace("`r`n", "`n").Contains($expected)) {
 $buildOutput = Run-VcpkgAndCaptureOutput @commonArgs install --overlay-ports="$PSScriptRoot/../e2e-ports" 'vcpkg-policy-misplaced-pkgconfig[install-arch-dependent-bad-share]' --no-binarycaching --enforce-port-checks
 Throw-IfNotFailed
 $expected = @"
-$($PortfilePath): warning: The following misplaced pkgconfig directories were installed. Misplaced pkgconfig files will not be found correctly by pkgconf or pkg-config. pkgconfig directories should be `${CURRENT_PACKAGES_DIR}/share/pkgconfig (for architecture agnostic / header only libraries only), `${CURRENT_PACKAGES_DIR}/lib/pkgconfig (for release dependencies), or `${CURRENT_PACKAGES_DIR}/lib/debug/pkgconfig (for debug dependencies). To suppress this message, add set(VCPKG_POLICY_SKIP_PKGCONFIG_CHECK enabled)
+$($PortfilePath): warning: The following misplaced pkgconfig directories were installed. Misplaced pkgconfig files will not be found correctly by pkgconf or pkg-config. pkgconfig directories should be `${CURRENT_PACKAGES_DIR}/share/pkgconfig (for architecture agnostic / header only libraries only), `${CURRENT_PACKAGES_DIR}/lib/pkgconfig (for release dependencies), or `${CURRENT_PACKAGES_DIR}/debug/lib/pkgconfig (for debug dependencies). To suppress this message, add set(VCPKG_POLICY_SKIP_PKGCONFIG_CHECK enabled)
 $($packagesRoot)$($NativeSlash)vcpkg-policy-misplaced-pkgconfig_$($Triplet): note: the files are relative to `${CURRENT_PACKAGES_DIR} here
 note: share/pkgconfig/zlib.pc
 note: You can move the pkgconfig files with commands similar to:
