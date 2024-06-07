@@ -32,12 +32,12 @@ namespace vcpkg
 
     static void print_relative_paths(MessageSink& msg_sink,
                                      msg::MessageT<> kind_prefix,
-                                     const Path& relative_prefix_dir,
+                                     const Path& relative_dir,
                                      const std::vector<Path>& relative_paths)
     {
         auto ls = LocalizedString()
                       .append_raw('\n')
-                      .append_raw(relative_prefix_dir)
+                      .append_raw(relative_dir)
                       .append_raw(": ")
                       .append_raw(NotePrefix)
                       .append(kind_prefix)
@@ -418,25 +418,25 @@ namespace vcpkg
 
     static std::vector<Path> find_relative_dlls(const ReadOnlyFilesystem& fs,
                                                 const Path& package_dir,
-                                                StringLiteral prefix)
+                                                StringLiteral relative_dir)
     {
         std::vector<Path> relative_dlls =
-            fs.get_regular_files_recursive_lexically_proximate(package_dir / prefix, IgnoreErrors{});
+            fs.get_regular_files_recursive_lexically_proximate(package_dir / relative_dir, IgnoreErrors{});
         Util::erase_remove_if(relative_dlls, NotExtensionCaseInsensitive{".dll"});
-        add_prefix_to_all(relative_dlls, prefix);
+        add_prefix_to_all(relative_dlls, relative_dir);
         return relative_dlls;
     }
 
     static LintStatus check_for_dlls_in_lib_dirs(const ReadOnlyFilesystem& fs,
                                                  const Path& package_dir,
-                                                 View<StringLiteral> lib_dir_prefixes,
+                                                 View<StringLiteral> lib_dir_relative_paths,
                                                  const Path& portfile_cmake,
                                                  MessageSink& msg_sink)
     {
         std::vector<Path> bad_dlls;
-        for (auto&& prefix : lib_dir_prefixes)
+        for (auto&& relative_path : lib_dir_relative_paths)
         {
-            Util::Vectors::append(bad_dlls, find_relative_dlls(fs, package_dir, prefix));
+            Util::Vectors::append(bad_dlls, find_relative_dlls(fs, package_dir, relative_path));
         }
 
         if (!bad_dlls.empty())
@@ -548,17 +548,17 @@ namespace vcpkg
 
     static LintStatus check_for_exes(const ReadOnlyFilesystem& fs,
                                      const Path& package_dir,
-                                     View<StringLiteral> bin_prefixes,
+                                     View<StringLiteral> bin_relative_paths,
                                      const Path& portfile_cmake,
                                      MessageSink& msg_sink)
     {
         std::vector<Path> exes;
-        for (auto&& bin_prefix : bin_prefixes)
+        for (auto&& bin_relative_path : bin_relative_paths)
         {
             auto this_bad_exes =
-                fs.get_regular_files_recursive_lexically_proximate(package_dir / bin_prefix, IgnoreErrors{});
+                fs.get_regular_files_recursive_lexically_proximate(package_dir / bin_relative_path, IgnoreErrors{});
             Util::erase_remove_if(this_bad_exes, NotExtensionCaseInsensitive{".exe"});
-            add_prefix_to_all(this_bad_exes, bin_prefix);
+            add_prefix_to_all(this_bad_exes, bin_relative_path);
             Util::Vectors::append(exes, std::move(this_bad_exes));
         }
 
@@ -973,16 +973,16 @@ namespace vcpkg
 
     static size_t check_bin_folders_are_not_present_in_static_build(const ReadOnlyFilesystem& fs,
                                                                     const Path& package_dir,
-                                                                    View<StringLiteral> bin_prefixes,
+                                                                    View<StringLiteral> bin_relative_paths,
                                                                     const Path& portfile_cmake,
                                                                     MessageSink& msg_sink)
     {
         std::vector<Path> bad_dirs;
-        for (auto&& bin_prefix : bin_prefixes)
+        for (auto&& bin_relative_path : bin_relative_paths)
         {
-            if (fs.exists(package_dir / bin_prefix, IgnoreErrors{}))
+            if (fs.exists(package_dir / bin_relative_path, IgnoreErrors{}))
             {
-                bad_dirs.push_back(Path(bin_prefix).generic_u8string());
+                bad_dirs.push_back(Path(bin_relative_path).generic_u8string());
             }
         }
 
@@ -1446,19 +1446,19 @@ namespace vcpkg
         return LintStatus::PROBLEM_DETECTED;
     }
 
-    static LintStatus check_no_regular_files_in_dirs(const ReadOnlyFilesystem& fs,
+    static LintStatus check_no_regular_files_in_relative_path(const ReadOnlyFilesystem& fs,
                                                      const Path& package_dir,
                                                      const Path& portfile_cmake,
-                                                     View<StringLiteral> prefixes,
+                                                     View<StringLiteral> relative_paths,
                                                      MessageSink& msg_sink)
     {
         std::vector<Path> misplaced_files;
-        for (auto&& prefix : prefixes)
+        for (auto&& relative_path : relative_paths)
         {
             auto start_in = package_dir;
-            if (!prefix.empty())
+            if (!relative_path.empty())
             {
-                start_in /= prefix;
+                start_in /= relative_path;
             }
 
             for (auto&& absolute_path : fs.get_regular_files_non_recursive(start_in, IgnoreErrors{}))
@@ -1469,13 +1469,13 @@ namespace vcpkg
                     continue;
                 }
 
-                if (prefix.empty())
+                if (relative_path.empty())
                 {
                     misplaced_files.emplace_back(filename);
                 }
                 else
                 {
-                    misplaced_files.emplace_back(Path(prefix) / filename);
+                    misplaced_files.emplace_back(Path(relative_path) / filename);
                 }
             }
         }
@@ -1634,7 +1634,7 @@ namespace vcpkg
     static std::vector<Path> find_relative_static_libs(const ReadOnlyFilesystem& fs,
                                                        const bool windows_target,
                                                        const Path& package_dir,
-                                                       const Path& prefix)
+                                                       const Path& relative_path)
     {
         View<StringLiteral> lib_extensions;
         if (windows_target)
@@ -1649,9 +1649,9 @@ namespace vcpkg
         }
 
         std::vector<Path> relative_libs =
-            fs.get_regular_files_recursive_lexically_proximate(package_dir / prefix, IgnoreErrors{});
+            fs.get_regular_files_recursive_lexically_proximate(package_dir / relative_path, IgnoreErrors{});
         Util::erase_remove_if(relative_libs, NotExtensionsCaseInsensitive{lib_extensions});
-        add_prefix_to_all(relative_libs, prefix);
+        add_prefix_to_all(relative_libs, relative_path);
         return relative_libs;
     }
 
@@ -1706,16 +1706,16 @@ namespace vcpkg
             error_count += check_lib_cmake_merge(fs, package_dir, portfile_cmake, msg_sink);
         }
 
-        static constexpr StringLiteral debug_lib_prefix = "debug" VCPKG_PREFERRED_SEPARATOR "lib";
-        static constexpr StringLiteral release_lib_prefix = "lib";
-        static constexpr StringLiteral lib_prefixes[] = {debug_lib_prefix, release_lib_prefix};
-        static constexpr StringLiteral debug_bin_prefix = "debug" VCPKG_PREFERRED_SEPARATOR "bin";
-        static constexpr StringLiteral release_bin_prefix = "bin";
-        static constexpr StringLiteral bin_prefixes[] = {debug_bin_prefix, release_bin_prefix};
+        static constexpr StringLiteral debug_lib_relative_path = "debug" VCPKG_PREFERRED_SEPARATOR "lib";
+        static constexpr StringLiteral release_lib_relative_path = "lib";
+        static constexpr StringLiteral lib_relative_paths[] = {debug_lib_relative_path, release_lib_relative_path};
+        static constexpr StringLiteral debug_bin_relative_path = "debug" VCPKG_PREFERRED_SEPARATOR "bin";
+        static constexpr StringLiteral release_bin_relative_path = "bin";
+        static constexpr StringLiteral bin_relative_paths[] = {debug_bin_relative_path, release_bin_relative_path};
 
         if (windows_target && !policies.is_enabled(BuildPolicy::ALLOW_DLLS_IN_LIB))
         {
-            error_count += check_for_dlls_in_lib_dirs(fs, package_dir, lib_prefixes, portfile_cmake, msg_sink);
+            error_count += check_for_dlls_in_lib_dirs(fs, package_dir, lib_relative_paths, portfile_cmake, msg_sink);
         }
         if (!policies.is_enabled(BuildPolicy::SKIP_COPYRIGHT_CHECK))
         {
@@ -1723,7 +1723,7 @@ namespace vcpkg
         }
         if (windows_target && !policies.is_enabled(BuildPolicy::ALLOW_EXES_IN_BIN))
         {
-            error_count += check_for_exes(fs, package_dir, bin_prefixes, portfile_cmake, msg_sink);
+            error_count += check_for_exes(fs, package_dir, bin_relative_paths, portfile_cmake, msg_sink);
         }
         if (!policies.is_enabled(BuildPolicy::SKIP_USAGE_INSTALL_CHECK))
         {
@@ -1732,16 +1732,16 @@ namespace vcpkg
         }
 
         std::vector<Path> relative_debug_libs =
-            find_relative_static_libs(fs, windows_target, package_dir, debug_lib_prefix);
+            find_relative_static_libs(fs, windows_target, package_dir, debug_lib_relative_path);
         std::vector<Path> relative_release_libs =
-            find_relative_static_libs(fs, windows_target, package_dir, release_lib_prefix);
+            find_relative_static_libs(fs, windows_target, package_dir, release_lib_relative_path);
         std::vector<Path> relative_debug_dlls;
         std::vector<Path> relative_release_dlls;
 
         if (windows_target)
         {
-            relative_debug_dlls = find_relative_dlls(fs, package_dir, debug_bin_prefix);
-            relative_release_dlls = find_relative_dlls(fs, package_dir, release_bin_prefix);
+            relative_debug_dlls = find_relative_dlls(fs, package_dir, debug_bin_relative_path);
+            relative_release_dlls = find_relative_dlls(fs, package_dir, release_bin_relative_path);
         }
 
         if (not_release_only && !policies.is_enabled(BuildPolicy::MISMATCHED_NUMBER_OF_BINARIES))
@@ -1838,7 +1838,7 @@ namespace vcpkg
                 Util::Vectors::append(relative_dlls, std::move(relative_release_dlls));
                 error_count += check_no_dlls_present(package_dir, relative_dlls, portfile_cmake, msg_sink);
                 error_count += check_bin_folders_are_not_present_in_static_build(
-                    fs, package_dir, bin_prefixes, portfile_cmake, msg_sink);
+                    fs, package_dir, bin_relative_paths, portfile_cmake, msg_sink);
             }
 
             // Note that this condition is paired with the possible initialization of `debug_lib_info` above
@@ -1869,7 +1869,7 @@ namespace vcpkg
         if (!policies.is_enabled(BuildPolicy::SKIP_MISPLACED_REGULAR_FILES_CHECK))
         {
             static constexpr StringLiteral bad_dirs[] = {"debug", ""};
-            error_count += check_no_regular_files_in_dirs(fs, package_dir, portfile_cmake, bad_dirs, msg_sink);
+            error_count += check_no_regular_files_in_relative_path(fs, package_dir, portfile_cmake, bad_dirs, msg_sink);
         }
 
         std::vector<Path> relative_all_files;
