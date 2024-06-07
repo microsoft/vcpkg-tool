@@ -214,5 +214,5 @@ namespace vcpkg
 
     FormattedPlan format_plan(const ActionPlan& action_plan, const Path& builtin_ports_dir);
 
-    void print_plan(const ActionPlan& action_plan, const bool is_recursive, const Path& builtin_ports_dir);
+    FormattedPlan print_plan(const ActionPlan& action_plan, const Path& builtin_ports_dir);
 }
