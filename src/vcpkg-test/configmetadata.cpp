@@ -41,7 +41,7 @@ static Configuration parse_test_configuration(StringView text)
 
     Json::Reader reader(origin);
     auto parsed_config_opt = reader.visit(object, get_configuration_deserializer());
-    REQUIRE(reader.messages().empty());
+    REQUIRE(reader.errors().empty());
 
     return std::move(parsed_config_opt).value_or_exit(VCPKG_LINE_INFO);
 }
@@ -61,9 +61,9 @@ static void check_errors(const std::string& config_text, const std::string& expe
 
     Json::Reader reader(origin);
     auto parsed_config_opt = reader.visit(object, get_configuration_deserializer());
-    REQUIRE(reader.error_count() != 0);
+    REQUIRE(!reader.errors().empty());
 
-    CHECK_LINES(Json::join(reader.messages()).data(), expected_errors);
+    CHECK_LINES(Strings::join("\n", reader.errors()), expected_errors);
 }
 
 TEST_CASE ("config registries only", "[ce-metadata]")

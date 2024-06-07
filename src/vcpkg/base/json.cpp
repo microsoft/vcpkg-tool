@@ -2,7 +2,6 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/jsonreader.h>
-#include <vcpkg/base/message_sinks.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/unicode.h>
@@ -1393,71 +1392,9 @@ namespace vcpkg::Json
         return res;
     }
 
-    ReaderMessage::ReaderMessage(MessageKind kind, LocalizedString&& message) : kind(kind), message(std::move(message))
-    {
-    }
-
-    ReaderMessage::ReaderMessage(const ReaderMessage&) = default;
-    ReaderMessage::ReaderMessage(ReaderMessage&&) = default;
-    ReaderMessage& ReaderMessage::operator=(const ReaderMessage&) = default;
-    ReaderMessage& ReaderMessage::operator=(ReaderMessage&&) = default;
-
-    LocalizedString join(const std::vector<ReaderMessage>& messages)
-    {
-        LocalizedString result;
-        auto first = messages.begin();
-        const auto last = messages.end();
-        if (first == last)
-        {
-            return result;
-        }
-
-        for (;;)
-        {
-            result.append(first->message);
-            if (++first == last)
-            {
-                return result;
-            }
-
-            result.append_raw('\n');
-        }
-    }
-
-    LocalizedString flatten_reader_messages(const std::vector<ReaderMessage>& messages, MessageSink& warningsSink)
-    {
-        LocalizedString flat_errors;
-        for (auto&& message : messages)
-        {
-            switch (message.kind)
-            {
-                case MessageKind::Warning: warningsSink.println(Color::warning, message.message); break;
-                case MessageKind::Error:
-                    if (!flat_errors.empty())
-                    {
-                        flat_errors.append_raw('\n');
-                    }
-
-                    flat_errors.append(message.message);
-
-                    break;
-                default: Checks::unreachable(VCPKG_LINE_INFO);
-            }
-        }
-
-        return flat_errors;
-    }
-
     static std::atomic<uint64_t> g_json_reader_stats(0);
 
-    Reader::Reader(StringView origin)
-        : m_messages()
-        , m_error_count(0)
-        , m_origin(origin.data(), origin.size())
-        , m_path()
-        , m_stat_timer(g_json_reader_stats)
-    {
-    }
+    Reader::Reader(StringView origin) : m_origin(origin.data(), origin.size()), m_stat_timer(g_json_reader_stats) { }
 
     uint64_t Reader::get_reader_stats() { return g_json_reader_stats.load(); }
 
@@ -1467,13 +1404,10 @@ namespace vcpkg::Json
     }
     void Reader::add_expected_type_error(const LocalizedString& expected_type)
     {
-        ++m_error_count;
-        m_messages.emplace_back(
-            MessageKind::Error,
-            LocalizedString::from_raw(m_origin)
-                .append_raw(": ")
-                .append_raw(ErrorPrefix)
-                .append(msgMismatchedType, msg::json_field = path(), msg::json_type = expected_type));
+        m_errors.push_back(LocalizedString::from_raw(m_origin)
+                               .append_raw(": ")
+                               .append_raw(ErrorPrefix)
+                               .append(msgMismatchedType, msg::json_field = path(), msg::json_type = expected_type));
     }
     void Reader::add_extra_field_error(const LocalizedString& type, StringView field, StringView suggestion)
     {
@@ -1489,16 +1423,14 @@ namespace vcpkg::Json
     }
     void Reader::add_generic_error(const LocalizedString& type, StringView message)
     {
-        ++m_error_count;
-        m_messages.emplace_back(MessageKind::Error,
-                                LocalizedString::from_raw(m_origin)
-                                    .append_raw(": ")
-                                    .append_raw(ErrorPrefix)
-                                    .append_raw(path())
-                                    .append_raw(" (")
-                                    .append(type)
-                                    .append_raw("): ")
-                                    .append_raw(message));
+        m_errors.push_back(LocalizedString::from_raw(m_origin)
+                               .append_raw(": ")
+                               .append_raw(ErrorPrefix)
+                               .append_raw(path())
+                               .append_raw(" (")
+                               .append(type)
+                               .append_raw("): ")
+                               .append_raw(message));
     }
 
     void Reader::check_for_unexpected_fields(const Object& obj,
@@ -1530,15 +1462,30 @@ namespace vcpkg::Json
 
     void Reader::add_warning(LocalizedString type, StringView msg)
     {
-        m_messages.emplace_back(MessageKind::Warning,
-                                LocalizedString::from_raw(m_origin)
-                                    .append_raw(": ")
-                                    .append_raw(WarningPrefix)
-                                    .append_raw(path())
-                                    .append_raw(" (")
-                                    .append(type)
-                                    .append_raw("): ")
-                                    .append_raw(msg));
+        m_warnings.push_back(LocalizedString::from_raw(m_origin)
+                                 .append_raw(": ")
+                                 .append_raw(WarningPrefix)
+                                 .append_raw(path())
+                                 .append_raw(" (")
+                                 .append(type)
+                                 .append_raw("): ")
+                                 .append_raw(msg));
+    }
+
+    LocalizedString Reader::join() const
+    {
+        LocalizedString res;
+        for (const auto& e : m_errors)
+        {
+            if (!res.empty()) res.append_raw("\n");
+            res.append(e);
+        }
+        for (const auto& w : m_warnings)
+        {
+            if (!res.empty()) res.append_raw("\n");
+            res.append(w);
+        }
+        return res;
     }
 
     std::string Reader::path() const noexcept

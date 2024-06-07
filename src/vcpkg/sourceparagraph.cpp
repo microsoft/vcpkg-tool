@@ -1301,13 +1301,34 @@ namespace vcpkg
         Json::Reader reader(origin);
         auto res = reader.visit(manifest, ManifestConfigurationDeserializer::instance);
 
-        LocalizedString flat_errors = flatten_reader_messages(reader.messages(), warningsSink);
-        if (flat_errors.empty())
+        if (!reader.warnings().empty())
         {
-            return std::move(res).value_or_exit(VCPKG_LINE_INFO);
+            warningsSink.println(Color::warning, msgWarnOnParseConfig, msg::path = origin);
+            for (auto&& warning : reader.warnings())
+            {
+                warningsSink.println(Color::warning, LocalizedString::from_raw(warning));
+            }
+            warningsSink.println(Color::warning, msgExtendedDocumentationAtUrl, msg::url = docs::registries_url);
+            warningsSink.println(Color::warning, msgExtendedDocumentationAtUrl, msg::url = docs::manifests_url);
         }
 
-        return flat_errors;
+        if (!reader.errors().empty())
+        {
+            LocalizedString ret;
+            ret.append(msgFailedToParseConfig, msg::path = origin);
+            ret.append_raw('\n');
+            for (auto&& err : reader.errors())
+            {
+                ret.append_indent().append(err).append_raw("\n");
+            }
+            ret.append(msgExtendedDocumentationAtUrl, msg::url = docs::registries_url);
+            ret.append_raw('\n');
+            ret.append(msgExtendedDocumentationAtUrl, msg::url = docs::manifests_url);
+            ret.append_raw('\n');
+            return std::move(ret);
+        }
+
+        return std::move(res).value_or_exit(VCPKG_LINE_INFO);
     }
 
     SourceControlFile SourceControlFile::clone() const
@@ -1329,18 +1350,41 @@ namespace vcpkg
         Json::Reader reader(control_path);
 
         auto res = reader.visit(manifest, ManifestDeserializerType::instance);
-        LocalizedString flat_errors = flatten_reader_messages(reader.messages(), warnings_sink);
-        if (flat_errors.empty())
-        {
-            if (auto p = res.get())
-            {
-                return std::move(*p);
-            }
 
-            Checks::unreachable(VCPKG_LINE_INFO);
+        for (auto&& w : reader.warnings())
+        {
+            warnings_sink.println(Color::warning, w);
         }
 
-        return flat_errors;
+        switch (reader.errors().size())
+        {
+            case 0:
+                if (auto p = res.get())
+                {
+                    return std::move(*p);
+                }
+                else
+                {
+                    Checks::unreachable(VCPKG_LINE_INFO);
+                }
+            case 1: return reader.errors()[0];
+            default:
+            {
+                LocalizedString result;
+                auto first = reader.errors().begin();
+                const auto last = reader.errors().end();
+                for (;;)
+                {
+                    result.append(*first);
+                    if (++first == last)
+                    {
+                        return result;
+                    }
+
+                    result.append_raw('\n');
+                }
+            }
+        }
     }
 
     ExpectedL<std::unique_ptr<SourceControlFile>> SourceControlFile::parse_project_manifest_object(

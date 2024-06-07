@@ -380,10 +380,10 @@ namespace
     {
         auto extract_string = [&](const Json::Object& obj, StringView key, Json::Object& put_into) {
             std::string value;
-            const auto errors_count = r.error_count();
+            const auto errors_count = r.errors();
             if (r.optional_object_field(obj, key, value, Json::UntypedStringDeserializer::instance))
             {
-                if (errors_count != r.error_count()) return;
+                if (errors_count != r.errors()) return;
                 put_into.insert_or_replace(key, std::move(value));
             }
         };
@@ -402,10 +402,10 @@ namespace
         };
         auto extract_dictionary = [&](const Json::Object& obj, StringView key, Json::Object& put_into) {
             Json::Object value;
-            const auto errors_count = r.error_count();
+            const auto errors_count = r.errors();
             if (r.optional_object_field(obj, key, value, DictionaryDeserializer::instance))
             {
-                if (errors_count != r.error_count()) return;
+                if (errors_count != r.errors()) return;
                 put_into.insert_or_replace(key, value);
             }
         };
@@ -849,25 +849,34 @@ namespace vcpkg
 
     Optional<Configuration> parse_configuration(const Json::Object& obj, StringView origin, MessageSink& messageSink)
     {
-        Json::Reader reader{origin};
+        Json::Reader reader(origin);
         auto maybe_configuration = reader.visit(obj, get_configuration_deserializer());
-        bool has_messages = !reader.messages().empty();
-        if (has_messages)
+        bool has_warnings = !reader.warnings().empty();
+        bool has_errors = !reader.errors().empty();
+        if (has_warnings || has_errors)
         {
-            for (auto&& msg : reader.messages())
+            if (has_errors)
             {
-                Color c;
-                switch (msg.kind)
-                {
-                    case MessageKind::Error: c = Color::error; break;
-                    case MessageKind::Warning: c = Color::warning; break;
-                    default: Checks::unreachable(VCPKG_LINE_INFO); break;
-                }
-
-                messageSink.println(c, msg.message);
+                messageSink.println(Color::error, msgFailedToParseConfig, msg::path = origin);
+            }
+            else
+            {
+                messageSink.println(Color::warning, msgWarnOnParseConfig, msg::path = origin);
             }
 
-            if (reader.error_count() != 0) return nullopt;
+            for (auto&& msg : reader.errors())
+            {
+                messageSink.println(Color::error, LocalizedString().append_indent().append_raw(msg));
+            }
+
+            for (auto&& msg : reader.warnings())
+            {
+                messageSink.println(Color::warning, LocalizedString().append_indent().append(msg));
+            }
+
+            msg::println(msgExtendedDocumentationAtUrl, msg::url = docs::registries_url);
+
+            if (has_errors) return nullopt;
         }
         return maybe_configuration;
     }

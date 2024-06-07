@@ -1,7 +1,6 @@
 #pragma once
 
 #include <vcpkg/base/fwd/json.h>
-#include <vcpkg/base/fwd/parse.h>
 
 #include <vcpkg/base/chrono.h>
 #include <vcpkg/base/json.h>
@@ -43,27 +42,11 @@ namespace vcpkg::Json
         IDeserializer& operator=(IDeserializer&&) = default;
     };
 
-    struct ReaderMessage
-    {
-        MessageKind kind;
-        LocalizedString message;
-
-        ReaderMessage(MessageKind kind, LocalizedString&& message);
-        ReaderMessage(const ReaderMessage&);
-        ReaderMessage(ReaderMessage&&);
-        ReaderMessage& operator=(const ReaderMessage&);
-        ReaderMessage& operator=(ReaderMessage&&);
-    };
-
-    LocalizedString join(const std::vector<ReaderMessage>& messages);
-    LocalizedString flatten_reader_messages(const std::vector<ReaderMessage>& messages, MessageSink& warningsSink);
-
     struct Reader
     {
         explicit Reader(StringView origin);
 
-        const std::vector<ReaderMessage>& messages() const { return m_messages; }
-        std::size_t error_count() const { return m_error_count; }
+        const std::vector<LocalizedString>& errors() const { return m_errors; }
 
         void add_missing_field_error(const LocalizedString& type, StringView key, const LocalizedString& key_type);
         void add_expected_type_error(const LocalizedString& expected_type);
@@ -72,6 +55,10 @@ namespace vcpkg::Json
 
         void add_warning(LocalizedString type, StringView msg);
 
+        const std::vector<LocalizedString>& warnings() const { return m_warnings; }
+
+        LocalizedString join() const;
+
         std::string path() const noexcept;
         StringView origin() const noexcept;
 
@@ -79,8 +66,8 @@ namespace vcpkg::Json
         template<class Type>
         friend struct IDeserializer;
 
-        std::vector<ReaderMessage> m_messages;
-        std::size_t m_error_count;
+        std::vector<LocalizedString> m_errors;
+        std::vector<LocalizedString> m_warnings;
         struct JsonPathElement
         {
             constexpr JsonPathElement() = default;

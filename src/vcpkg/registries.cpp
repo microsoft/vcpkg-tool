@@ -1240,12 +1240,12 @@ namespace
         Json::Reader r(origin);
         Baseline result;
         r.visit_in_key(*baseline_value, real_baseline, result, BaselineDeserializer::instance);
-        if (r.error_count() == 0)
+        if (r.errors().empty())
         {
             return std::move(result);
         }
 
-        return join(r.messages());
+        return msg::format_error(msgFailedToParseBaseline, msg::path = origin).append_raw('\n').append_raw(r.join());
     }
 
     ExpectedL<Baseline> load_baseline_versions(const ReadOnlyFilesystem& fs,
@@ -1520,9 +1520,11 @@ namespace
                 GitVersionDbEntryArrayDeserializer deserializer{};
                 Json::Reader r(versions_file_path);
                 r.visit_in_key(*maybe_versions_array, JsonIdVersions, db_entries, deserializer);
-                if (r.error_count() != 0)
+                if (!r.errors().empty() != 0)
                 {
-                    return join(r.messages());
+                    return msg::format_error(msgFailedToParseVersionFile, msg::path = versions_file_path)
+                        .append_raw('\n')
+                        .append_raw(r.join());
                 }
 
                 return db_entries;
@@ -1556,9 +1558,11 @@ namespace
                 FilesystemVersionDbEntryArrayDeserializer deserializer{registry_root};
                 Json::Reader r(versions_file_path);
                 r.visit_in_key(*maybe_versions_array, JsonIdVersions, db_entries, deserializer);
-                if (r.error_count() != 0)
+                if (!r.errors().empty() != 0)
                 {
-                    return join(r.messages());
+                    return msg::format_error(msgFailedToParseVersionFile, msg::path = versions_file_path)
+                        .append_raw('\n')
+                        .append_raw(r.join());
                 }
 
                 return db_entries;
