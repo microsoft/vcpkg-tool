@@ -17,6 +17,13 @@
 
 namespace vcpkg
 {
+    static constexpr StringLiteral debug_lib_relative_path = "debug" VCPKG_PREFERRED_SEPARATOR "lib";
+    static constexpr StringLiteral release_lib_relative_path = "lib";
+    static constexpr StringLiteral lib_relative_paths[] = {debug_lib_relative_path, release_lib_relative_path};
+    static constexpr StringLiteral debug_bin_relative_path = "debug" VCPKG_PREFERRED_SEPARATOR "bin";
+    static constexpr StringLiteral release_bin_relative_path = "bin";
+    static constexpr StringLiteral bin_relative_paths[] = {debug_bin_relative_path, release_bin_relative_path};
+
     constexpr static StringLiteral windows_system_names[] = {
         "",
         "Windows",
@@ -429,12 +436,11 @@ namespace vcpkg
 
     static LintStatus check_for_dlls_in_lib_dirs(const ReadOnlyFilesystem& fs,
                                                  const Path& package_dir,
-                                                 View<StringLiteral> lib_dir_relative_paths,
                                                  const Path& portfile_cmake,
                                                  MessageSink& msg_sink)
     {
         std::vector<Path> bad_dlls;
-        for (auto&& relative_path : lib_dir_relative_paths)
+        for (auto&& relative_path : lib_relative_paths)
         {
             Util::Vectors::append(bad_dlls, find_relative_dlls(fs, package_dir, relative_path));
         }
@@ -548,7 +554,6 @@ namespace vcpkg
 
     static LintStatus check_for_exes_in_bin_dirs(const ReadOnlyFilesystem& fs,
                                      const Path& package_dir,
-                                     View<StringLiteral> bin_relative_paths,
                                      const Path& portfile_cmake,
                                      MessageSink& msg_sink)
     {
@@ -973,7 +978,6 @@ namespace vcpkg
 
     static size_t check_bin_folders_are_not_present_in_static_build(const ReadOnlyFilesystem& fs,
                                                                     const Path& package_dir,
-                                                                    View<StringLiteral> bin_relative_paths,
                                                                     const Path& portfile_cmake,
                                                                     MessageSink& msg_sink)
     {
@@ -1706,16 +1710,9 @@ namespace vcpkg
             error_count += check_lib_cmake_merge(fs, package_dir, portfile_cmake, msg_sink);
         }
 
-        static constexpr StringLiteral debug_lib_relative_path = "debug" VCPKG_PREFERRED_SEPARATOR "lib";
-        static constexpr StringLiteral release_lib_relative_path = "lib";
-        static constexpr StringLiteral lib_relative_paths[] = {debug_lib_relative_path, release_lib_relative_path};
-        static constexpr StringLiteral debug_bin_relative_path = "debug" VCPKG_PREFERRED_SEPARATOR "bin";
-        static constexpr StringLiteral release_bin_relative_path = "bin";
-        static constexpr StringLiteral bin_relative_paths[] = {debug_bin_relative_path, release_bin_relative_path};
-
         if (windows_target && !policies.is_enabled(BuildPolicy::ALLOW_DLLS_IN_LIB))
         {
-            error_count += check_for_dlls_in_lib_dirs(fs, package_dir, lib_relative_paths, portfile_cmake, msg_sink);
+            error_count += check_for_dlls_in_lib_dirs(fs, package_dir, portfile_cmake, msg_sink);
         }
         if (!policies.is_enabled(BuildPolicy::SKIP_COPYRIGHT_CHECK))
         {
@@ -1723,7 +1720,7 @@ namespace vcpkg
         }
         if (windows_target && !policies.is_enabled(BuildPolicy::ALLOW_EXES_IN_BIN))
         {
-            error_count += check_for_exes_in_bin_dirs(fs, package_dir, bin_relative_paths, portfile_cmake, msg_sink);
+            error_count += check_for_exes_in_bin_dirs(fs, package_dir, portfile_cmake, msg_sink);
         }
         if (!policies.is_enabled(BuildPolicy::SKIP_USAGE_INSTALL_CHECK))
         {
@@ -1838,7 +1835,7 @@ namespace vcpkg
                 Util::Vectors::append(relative_dlls, std::move(relative_release_dlls));
                 error_count += check_no_dlls_present(package_dir, relative_dlls, portfile_cmake, msg_sink);
                 error_count += check_bin_folders_are_not_present_in_static_build(
-                    fs, package_dir, bin_relative_paths, portfile_cmake, msg_sink);
+                    fs, package_dir, portfile_cmake, msg_sink);
             }
 
             // Note that this condition is paired with the possible initialization of `debug_lib_info` above
