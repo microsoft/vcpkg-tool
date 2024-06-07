@@ -35,8 +35,6 @@ namespace
 
 namespace vcpkg
 {
-    PortFileProvider::~PortFileProvider() = default;
-
     MapPortFileProvider::MapPortFileProvider(const std::unordered_map<std::string, SourceControlFileAndLocation>& map)
         : ports(map)
     {
@@ -53,12 +51,6 @@ namespace vcpkg
     {
         return Util::fmap(ports, [](auto&& kvpair) -> const SourceControlFileAndLocation* { return &kvpair.second; });
     }
-
-    IVersionedPortfileProvider::~IVersionedPortfileProvider() = default;
-
-    IBaselineProvider::~IBaselineProvider() = default;
-
-    IOverlayProvider::~IOverlayProvider() = default;
 
     PathsPortFileProvider::PathsPortFileProvider(const ReadOnlyFilesystem& fs,
                                                  const RegistrySet& registry_set,
@@ -177,6 +169,11 @@ namespace vcpkg
                 const auto& maybe_ent = entry(version_spec.port_name);
                 if (auto ent = maybe_ent.get())
                 {
+                    if (!ent->get())
+                    {
+                        return msg::format_error(msgPortDoesNotExist, msg::package_name = version_spec.port_name);
+                    }
+
                     auto maybe_path = ent->get()->get_version(version_spec.version);
                     if (auto path = maybe_path.get())
                     {
@@ -199,20 +196,18 @@ namespace vcpkg
                         }
                         else
                         {
-                            // This should change to a soft error when ParseExpected is eliminated.
-                            print_error_message(
-                                maybe_scfl.error()
-                                    .append_raw('\n')
-                                    .append_raw(NotePrefix)
-                                    .append(msgWhileLoadingPortVersion, msg::version_spec = version_spec)
-                                    .append_raw('\n'));
-                            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
+                            return std::move(maybe_scfl)
+                                .error()
+                                .append_raw('\n')
+                                .append_raw(NotePrefix)
+                                .append(msgWhileLoadingPortVersion, msg::version_spec = version_spec)
+                                .append_raw('\n');
                         }
                     }
                     else
                     {
                         get_global_metrics_collector().track_define(DefineMetric::VersioningErrorVersion);
-                        return maybe_path.error();
+                        return std::move(maybe_path).error();
                     }
                 }
 

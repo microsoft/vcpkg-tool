@@ -36,9 +36,10 @@ static void CHECK_LINES(const std::string& a, const std::string& b)
 
 static Configuration parse_test_configuration(StringView text)
 {
-    auto object = Json::parse_object(text).value_or_exit(VCPKG_LINE_INFO);
+    static constexpr StringLiteral origin = "test";
+    auto object = Json::parse_object(text, origin).value_or_exit(VCPKG_LINE_INFO);
 
-    Json::Reader reader{"test"};
+    Json::Reader reader(origin);
     auto parsed_config_opt = reader.visit(object, get_configuration_deserializer());
     REQUIRE(reader.messages().empty());
 
@@ -55,9 +56,10 @@ static void check_string(const Json::Object& obj, StringView key, StringView exp
 
 static void check_errors(const std::string& config_text, const std::string& expected_errors)
 {
-    auto object = Json::parse_object(config_text).value_or_exit(VCPKG_LINE_INFO);
+    static constexpr StringLiteral origin = "test";
+    auto object = Json::parse_object(config_text, origin).value_or_exit(VCPKG_LINE_INFO);
 
-    Json::Reader reader{"test"};
+    Json::Reader reader(origin);
     auto parsed_config_opt = reader.visit(object, get_configuration_deserializer());
     REQUIRE(reader.error_count() != 0);
 
@@ -138,7 +140,7 @@ TEST_CASE ("config registries only", "[ce-metadata]")
 
         REQUIRE(config.registries[3].packages);
 
-        auto raw_obj = Json::parse_object(raw_config).value_or_exit(VCPKG_LINE_INFO);
+        auto raw_obj = Json::parse_object(raw_config, "test").value_or_exit(VCPKG_LINE_INFO);
         auto serialized_obj = config.serialize();
         Test::check_json_eq(raw_obj, serialized_obj);
     }
@@ -283,7 +285,7 @@ TEST_CASE ("config ce metadata only", "[ce-metadata]")
     REQUIRE(nested.contains("$comment"));
     REQUIRE(nested.contains("unexpected"));
 
-    auto raw_obj = Json::parse_object(raw_config).value_or_exit(VCPKG_LINE_INFO);
+    auto raw_obj = Json::parse_object(raw_config, "test").value_or_exit(VCPKG_LINE_INFO);
     auto serialized_obj = config.serialize();
     Test::check_json_eq(raw_obj, serialized_obj);
 }
@@ -304,7 +306,7 @@ TEST_CASE ("metadata strings", "[ce-metadata]")
         check_string(valid_config.ce_metadata, CE_WARNING, "this is a valid warning");
         check_string(valid_config.ce_metadata, CE_ERROR, "this is a valid error");
 
-        auto raw_obj = Json::parse_object(valid_raw).value_or_exit(VCPKG_LINE_INFO);
+        auto raw_obj = Json::parse_object(valid_raw, "test").value_or_exit(VCPKG_LINE_INFO);
         Test::check_json_eq(raw_obj, valid_config.serialize());
     }
 
@@ -356,7 +358,7 @@ TEST_CASE ("metadata dictionaries", "[ce-metadata]")
         check_string(settings, "SETTING_1", "value1");
         check_string(settings, "SETTING_2", "value2");
 
-        auto raw_obj = Json::parse_object(valid_raw).value_or_exit(VCPKG_LINE_INFO);
+        auto raw_obj = Json::parse_object(valid_raw, "test").value_or_exit(VCPKG_LINE_INFO);
         Test::check_json_eq(raw_obj, valid_config.serialize());
     }
 
@@ -427,7 +429,7 @@ TEST_CASE ("metadata demands", "[ce-metadata]")
         CHECK(level1.size() == 1);
         check_string(level1, CE_MESSAGE, "this is level 1");
 
-        auto raw_obj = Json::parse_object(simple_raw).value_or_exit(VCPKG_LINE_INFO);
+        auto raw_obj = Json::parse_object(simple_raw, "test").value_or_exit(VCPKG_LINE_INFO);
         Test::check_json_eq(raw_obj, config.serialize());
     }
 
@@ -476,7 +478,7 @@ TEST_CASE ("serialize configuration", "[ce-metadata]")
 })json";
         // parsing of configuration is tested elsewhere
         auto config = parse_test_configuration(raw);
-        Test::check_json_eq(Json::parse_object(raw).value_or_exit(VCPKG_LINE_INFO), config.serialize());
+        Test::check_json_eq(Json::parse_object(raw, "test").value_or_exit(VCPKG_LINE_INFO), config.serialize());
     }
 
     SECTION ("invalid overlay ports")
@@ -502,7 +504,7 @@ test: error: $.overlay-ports[2]: mismatched type: expected an overlay path
 })json";
         // parsing of configuration is tested elsewhere
         auto config = parse_test_configuration(raw);
-        Test::check_json_eq(Json::parse_object(raw).value_or_exit(VCPKG_LINE_INFO), config.serialize());
+        Test::check_json_eq(Json::parse_object(raw, "test").value_or_exit(VCPKG_LINE_INFO), config.serialize());
     }
 
     SECTION ("invalid overlay triplets")
@@ -531,7 +533,7 @@ test: error: $.overlay-triplets[0]: mismatched type: expected a triplet path
 })json";
         // parsing of configuration is tested elsewhere
         auto config = parse_test_configuration(raw);
-        Test::check_json_eq(Json::parse_object(raw).value_or_exit(VCPKG_LINE_INFO), config.serialize());
+        Test::check_json_eq(Json::parse_object(raw, "test").value_or_exit(VCPKG_LINE_INFO), config.serialize());
     }
 
     SECTION ("overriden default registry, registries and overlays")
@@ -560,7 +562,7 @@ test: error: $.overlay-triplets[0]: mismatched type: expected a triplet path
 })json";
         // parsing of configuration is tested elsewhere
         auto config = parse_test_configuration(raw);
-        Test::check_json_eq(Json::parse_object(raw).value_or_exit(VCPKG_LINE_INFO), config.serialize());
+        Test::check_json_eq(Json::parse_object(raw, "test").value_or_exit(VCPKG_LINE_INFO), config.serialize());
     }
 
     SECTION ("null default registry")
@@ -578,7 +580,7 @@ test: error: $.overlay-triplets[0]: mismatched type: expected a triplet path
 })json";
         // parsing of configuration is tested elsewhere
         auto config = parse_test_configuration(raw);
-        Test::check_json_eq(Json::parse_object(raw).value_or_exit(VCPKG_LINE_INFO), config.serialize());
+        Test::check_json_eq(Json::parse_object(raw, "test").value_or_exit(VCPKG_LINE_INFO), config.serialize());
     }
 
     SECTION ("overriden default registry and registries")
@@ -599,7 +601,7 @@ test: error: $.overlay-triplets[0]: mismatched type: expected a triplet path
 })json";
         // parsing of configuration is tested elsewhere
         auto config = parse_test_configuration(raw);
-        Test::check_json_eq(Json::parse_object(raw).value_or_exit(VCPKG_LINE_INFO), config.serialize());
+        Test::check_json_eq(Json::parse_object(raw, "test").value_or_exit(VCPKG_LINE_INFO), config.serialize());
     }
 
     SECTION ("only registries")
@@ -616,7 +618,7 @@ test: error: $.overlay-triplets[0]: mismatched type: expected a triplet path
 })json";
         // parsing of configuration is tested elsewhere
         auto config = parse_test_configuration(raw);
-        Test::check_json_eq(Json::parse_object(raw).value_or_exit(VCPKG_LINE_INFO), config.serialize());
+        Test::check_json_eq(Json::parse_object(raw, "test").value_or_exit(VCPKG_LINE_INFO), config.serialize());
     }
 
     SECTION ("preserve comments and unexpected fields")
@@ -641,7 +643,7 @@ test: error: $.overlay-triplets[0]: mismatched type: expected a triplet path
 })json";
 
         auto config = parse_test_configuration(raw);
-        Test::check_json_eq(Json::parse_object(raw).value_or_exit(VCPKG_LINE_INFO), config.serialize());
+        Test::check_json_eq(Json::parse_object(raw, "test").value_or_exit(VCPKG_LINE_INFO), config.serialize());
 
         auto extra_fields = find_unknown_fields(config);
         CHECK(extra_fields.size() == 4);
@@ -735,7 +737,7 @@ test: error: $.overlay-triplets[0]: mismatched type: expected a triplet path
         //   demands
         // Object values in `demands` are also sorted recursively.
         auto config = parse_test_configuration(raw);
-        Test::check_json_eq(Json::parse_object(formatted).value_or_exit(VCPKG_LINE_INFO), config.serialize());
+        Test::check_json_eq(Json::parse_object(formatted, "test").value_or_exit(VCPKG_LINE_INFO), config.serialize());
     }
 }
 
@@ -952,7 +954,7 @@ TEST_CASE ("config with ce metadata full example", "[ce-metadata]")
     check_string(demand2, "$comment", "this fields won't be reordered at all");
 
     // finally test serialization is OK
-    auto raw_obj = Json::parse_object(raw_config).value_or_exit(VCPKG_LINE_INFO);
+    auto raw_obj = Json::parse_object(raw_config, "test").value_or_exit(VCPKG_LINE_INFO);
     auto serialized_obj = config.serialize();
     Test::check_json_eq(raw_obj, serialized_obj);
 }

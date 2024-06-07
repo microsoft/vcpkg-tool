@@ -1,6 +1,7 @@
 #include <vcpkg/base/fwd/message_sinks.h>
 
 #include <vcpkg/base/checks.h>
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/strings.h>
@@ -237,12 +238,7 @@ namespace vcpkg
     }
 #endif // ^^^ _WIN32
 
-    static constexpr StringLiteral vcpkg_path_txt = "vcpkg.path.txt";
-
 #if defined(_WIN32)
-    static constexpr StringLiteral vcpkg_user_props = "vcpkg.user.props";
-    static constexpr StringLiteral vcpkg_user_targets = "vcpkg.user.targets";
-
     static bool integrate_install_msbuild14(const Filesystem& fs)
     {
         Path OLD_SYSTEM_TARGET_FILES[] = {
@@ -311,13 +307,13 @@ namespace vcpkg
 
         auto& user_configuration_home = get_user_configuration_home().value_or_exit(VCPKG_LINE_INFO);
         fs.create_directories(user_configuration_home, VCPKG_LINE_INFO);
-        fs.write_contents(user_configuration_home / vcpkg_path_txt, paths.root.generic_u8string(), VCPKG_LINE_INFO);
+        fs.write_contents(user_configuration_home / FileVcpkgPathTxt, paths.root.generic_u8string(), VCPKG_LINE_INFO);
 
 #if defined(_WIN32)
-        fs.write_contents(user_configuration_home / vcpkg_user_props,
+        fs.write_contents(user_configuration_home / FileVcpkgUserProps,
                           create_appdata_shortcut(paths.buildsystems_msbuild_props),
                           VCPKG_LINE_INFO);
-        fs.write_contents(user_configuration_home / vcpkg_user_targets,
+        fs.write_contents(user_configuration_home / FileVcpkgUserTargets,
                           create_appdata_shortcut(paths.buildsystems_msbuild_targets),
                           VCPKG_LINE_INFO);
 
@@ -341,10 +337,10 @@ namespace vcpkg
         bool was_deleted = false;
         auto& user_configuration_home = get_user_configuration_home().value_or_exit(VCPKG_LINE_INFO);
 #if defined(_WIN32)
-        was_deleted |= fs.remove(user_configuration_home / vcpkg_user_props, VCPKG_LINE_INFO);
-        was_deleted |= fs.remove(user_configuration_home / vcpkg_user_targets, VCPKG_LINE_INFO);
+        was_deleted |= fs.remove(user_configuration_home / FileVcpkgUserProps, VCPKG_LINE_INFO);
+        was_deleted |= fs.remove(user_configuration_home / FileVcpkgUserTargets, VCPKG_LINE_INFO);
 #endif // ^^^ _WIN32
-        was_deleted |= fs.remove(user_configuration_home / vcpkg_path_txt, VCPKG_LINE_INFO);
+        was_deleted |= fs.remove(user_configuration_home / FileVcpkgPathTxt, VCPKG_LINE_INFO);
 
         if (was_deleted)
         {
@@ -363,7 +359,7 @@ namespace vcpkg
 #if defined(WIN32)
         auto& fs = paths.get_filesystem();
 
-        const Path& nuget_exe = paths.get_tool_exe(Tools::NUGET, stdout_sink);
+        const Path& nuget_exe = paths.get_tool_exe(Tools::NUGET, out_sink);
 
         const auto tmp_dir = fs.create_or_get_temp_directory(VCPKG_LINE_INFO);
         const auto targets_file_path = tmp_dir / "vcpkg.nuget.targets";
@@ -379,19 +375,20 @@ namespace vcpkg
             nuspec_file_path, create_nuspec_file_contents(paths.root, nuget_id, nupkg_version), VCPKG_LINE_INFO);
 
         // Using all forward slashes for the command line
-        auto cmd_line = Command(nuget_exe)
-                            .string_arg("pack")
-                            .string_arg("-OutputDirectory")
-                            .string_arg(paths.original_cwd)
-                            .string_arg(nuspec_file_path);
+        auto cmd = Command(nuget_exe)
+                       .string_arg("pack")
+                       .string_arg("-OutputDirectory")
+                       .string_arg(paths.original_cwd)
+                       .string_arg(nuspec_file_path);
+        RedirectedProcessLaunchSettings settings;
+        settings.environment = get_clean_environment();
 
-        const auto maybe_nuget_output = flatten(
-            cmd_execute_and_capture_output(cmd_line, default_working_directory, get_clean_environment()), Tools::NUGET);
+        const auto maybe_nuget_output = flatten(cmd_execute_and_capture_output(cmd, settings), Tools::NUGET);
 
         if (!maybe_nuget_output)
         {
             Checks::msg_exit_with_message(VCPKG_LINE_INFO,
-                                          msg::format(msgCommandFailed, msg::command_line = cmd_line.command_line())
+                                          msg::format(msgCommandFailed, msg::command_line = cmd.command_line())
                                               .append_raw('\n')
                                               .append(maybe_nuget_output.error()));
         }
@@ -421,14 +418,14 @@ namespace vcpkg
         static constexpr StringLiteral TITLE = "PowerShell Tab-Completion";
         const auto script_path = paths.scripts / "addPoshVcpkgToPowershellProfile.ps1";
 
-        const auto& ps = paths.get_tool_exe("powershell-core", stdout_sink);
-        auto cmd = Command(ps)
-                       .string_arg("-NoProfile")
-                       .string_arg("-ExecutionPolicy")
-                       .string_arg("Bypass")
-                       .string_arg("-Command")
-                       .string_arg(fmt::format("& {{& '{}' }}", script_path));
-        const int rc = cmd_execute(cmd).value_or_exit(VCPKG_LINE_INFO);
+        const auto& ps = paths.get_tool_exe("powershell-core", out_sink);
+        const int rc = cmd_execute(Command{ps}
+                                       .string_arg("-NoProfile")
+                                       .string_arg("-ExecutionPolicy")
+                                       .string_arg("Bypass")
+                                       .string_arg("-Command")
+                                       .string_arg(fmt::format("& {{& '{}' }}", script_path)))
+                           .value_or_exit(VCPKG_LINE_INFO);
         if (rc)
         {
             msg::println_error(msg::format(msgCommandFailed, msg::command_line = TITLE)

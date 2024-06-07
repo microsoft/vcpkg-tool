@@ -18,6 +18,7 @@ namespace vcpkg::PlatformExpression
         arm,
         arm32,
         arm64,
+        arm64ec,
         wasm32,
         mips64,
 
@@ -32,6 +33,7 @@ namespace vcpkg::PlatformExpression
         android,
         emscripten,
         ios,
+        qnx,
 
         static_link,
         static_crt,
@@ -47,6 +49,7 @@ namespace vcpkg::PlatformExpression
             {"arm", Identifier::arm},
             {"arm32", Identifier::arm32},
             {"arm64", Identifier::arm64},
+            {"arm64ec", Identifier::arm64ec},
             {"wasm32", Identifier::wasm32},
             {"mips64", Identifier::mips64},
             {"windows", Identifier::windows},
@@ -60,6 +63,7 @@ namespace vcpkg::PlatformExpression
             {"android", Identifier::android},
             {"emscripten", Identifier::emscripten},
             {"ios", Identifier::ios},
+            {"qnx", Identifier::qnx},
             {"static", Identifier::static_link},
             {"staticcrt", Identifier::static_crt},
             {"native", Identifier::native},
@@ -412,9 +416,9 @@ namespace vcpkg::PlatformExpression
 
     using namespace detail;
 
-    Expr::Expr() = default;
-    Expr::Expr(Expr&& other) = default;
-    Expr& Expr::operator=(Expr&& other) = default;
+    Expr::Expr() noexcept = default;
+    Expr::Expr(Expr&& other) noexcept = default;
+    Expr& Expr::operator=(Expr&& other) noexcept = default;
 
     Expr::Expr(const Expr& other)
     {
@@ -475,11 +479,11 @@ namespace vcpkg::PlatformExpression
                     {
                         if (override_id[0] == '!')
                         {
-                            override_ctxt.insert({override_id.substr(1), false});
+                            override_ctxt.emplace(override_id.substr(1), false);
                         }
                         else
                         {
-                            override_ctxt.insert({override_id, true});
+                            override_ctxt.emplace(override_id, true);
                         }
                     }
                 }
@@ -544,6 +548,8 @@ namespace vcpkg::PlatformExpression
                                    true_if_exists_and_equal("VCPKG_TARGET_ARCHITECTURE", "arm64");
                         case Identifier::arm32: return true_if_exists_and_equal("VCPKG_TARGET_ARCHITECTURE", "arm");
                         case Identifier::arm64: return true_if_exists_and_equal("VCPKG_TARGET_ARCHITECTURE", "arm64");
+                        case Identifier::arm64ec:
+                            return true_if_exists_and_equal("VCPKG_TARGET_ARCHITECTURE", "arm64ec");
                         case Identifier::windows:
                             return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "") ||
                                    true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "WindowsStore") ||
@@ -560,6 +566,7 @@ namespace vcpkg::PlatformExpression
                         case Identifier::emscripten:
                             return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "Emscripten");
                         case Identifier::ios: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "iOS");
+                        case Identifier::qnx: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "QNX");
                         case Identifier::wasm32: return true_if_exists_and_equal("VCPKG_TARGET_ARCHITECTURE", "wasm32");
                         case Identifier::static_link:
                             return true_if_exists_and_equal("VCPKG_LIBRARY_LINKAGE", "static");
@@ -642,7 +649,7 @@ namespace vcpkg::PlatformExpression
         ExpressionParser parser(expression, multiple_binary_operators);
         auto res = parser.parse();
 
-        if (auto p = parser.extract_error())
+        if (auto p = parser.get_error())
         {
             return LocalizedString::from_raw(p->to_string());
         }

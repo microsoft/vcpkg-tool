@@ -3,9 +3,11 @@
 #include <vcpkg/base/fwd/system.process.h>
 
 #include <vcpkg/fwd/binarycaching.h>
+#include <vcpkg/fwd/build.h>
 #include <vcpkg/fwd/cmakevars.h>
 #include <vcpkg/fwd/dependencies.h>
 #include <vcpkg/fwd/portfileprovider.h>
+#include <vcpkg/fwd/vcpkgcmdarguments.h>
 
 #include <vcpkg/base/cache.h>
 #include <vcpkg/base/files.h>
@@ -19,7 +21,6 @@
 #include <vcpkg/packagespec.h>
 #include <vcpkg/statusparagraphs.h>
 #include <vcpkg/triplet.h>
-#include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
 #include <array>
@@ -40,17 +41,19 @@ namespace vcpkg
 
     extern const CommandMetadata CommandBuildMetadata;
     int command_build_ex(const VcpkgCmdArguments& args,
-                         const FullPackageSpec& full_spec,
+                         const VcpkgPaths& paths,
                          Triplet host_triplet,
+                         const BuildPackageOptions& build_options,
+                         const FullPackageSpec& full_spec,
                          const PathsPortFileProvider& provider,
-                         const IBuildLogsRecorder& build_logs_recorder,
-                         const VcpkgPaths& paths);
+                         const IBuildLogsRecorder& build_logs_recorder);
     void command_build_and_exit_ex(const VcpkgCmdArguments& args,
-                                   const FullPackageSpec& full_spec,
+                                   const VcpkgPaths& paths,
                                    Triplet host_triplet,
+                                   const BuildPackageOptions& build_options,
+                                   const FullPackageSpec& full_spec,
                                    const PathsPortFileProvider& provider,
-                                   const IBuildLogsRecorder& build_logs_recorder,
-                                   const VcpkgPaths& paths);
+                                   const IBuildLogsRecorder& build_logs_recorder);
 
     void command_build_and_exit(const VcpkgCmdArguments& args,
                                 const VcpkgPaths& paths,
@@ -63,47 +66,15 @@ namespace vcpkg
     struct BuildPackageOptions
     {
         BuildMissing build_missing;
-        UseHeadVersion use_head_version;
         AllowDownloads allow_downloads;
         OnlyDownloads only_downloads;
         CleanBuildtrees clean_buildtrees;
         CleanPackages clean_packages;
         CleanDownloads clean_downloads;
         DownloadTool download_tool;
-        PurgeDecompressFailure purge_decompress_failure;
-        Editable editable;
         BackcompatFeatures backcompat_features;
         PrintUsage print_usage;
-    };
-
-    static constexpr BuildPackageOptions default_build_package_options{
-        BuildMissing::YES,
-        UseHeadVersion::NO,
-        AllowDownloads::YES,
-        OnlyDownloads::NO,
-        CleanBuildtrees::YES,
-        CleanPackages::YES,
-        CleanDownloads::NO,
-        DownloadTool::BUILT_IN,
-        PurgeDecompressFailure::YES,
-        Editable::NO,
-        BackcompatFeatures::ALLOW,
-        PrintUsage::YES,
-    };
-
-    static constexpr BuildPackageOptions backcompat_prohibiting_package_options{
-        BuildMissing::YES,
-        UseHeadVersion::NO,
-        AllowDownloads::YES,
-        OnlyDownloads::NO,
-        CleanBuildtrees::YES,
-        CleanPackages::YES,
-        CleanDownloads::NO,
-        DownloadTool::BUILT_IN,
-        PurgeDecompressFailure::YES,
-        Editable::NO,
-        BackcompatFeatures::PROHIBIT,
-        PrintUsage::YES,
+        KeepGoing keep_going;
     };
 
     struct BuildResultCounts
@@ -119,7 +90,7 @@ namespace vcpkg
         int removed = 0;
 
         void increment(const BuildResult build_result);
-        void println(const Triplet& triplet) const;
+        LocalizedString format(const Triplet& triplet) const;
     };
 
     StringLiteral to_string_locale_invariant(const BuildResult build_result);
@@ -156,11 +127,12 @@ namespace vcpkg
         Optional<std::string> platform_toolset;
         Optional<std::string> platform_toolset_version;
         Optional<Path> visual_studio_path;
-        Optional<std::string> external_toolchain_file;
+        Optional<Path> external_toolchain_file;
         Optional<ConfigurationType> build_type;
         Optional<std::string> public_abi_override;
         std::vector<std::string> passthrough_env_vars;
         std::vector<std::string> passthrough_env_vars_tracked;
+        std::vector<Path> hash_additional_files;
         Optional<Path> gamedk_latest_path;
 
         Path toolchain_file() const;
@@ -199,6 +171,8 @@ namespace vcpkg
 
     ExtendedBuildResult build_package(const VcpkgCmdArguments& args,
                                       const VcpkgPaths& paths,
+                                      Triplet host_triplet,
+                                      const BuildPackageOptions& build_options,
                                       const InstallPlanAction& config,
                                       const IBuildLogsRecorder& build_logs_recorder,
                                       const StatusParagraphs& status_db);
@@ -208,7 +182,7 @@ namespace vcpkg
 
     StringLiteral to_string_view(BuildPolicy policy);
     std::string to_string(BuildPolicy policy);
-    ZStringView to_cmake_variable(BuildPolicy policy);
+    StringLiteral to_cmake_variable(BuildPolicy policy);
 
     struct BuildPolicies
     {
@@ -223,16 +197,16 @@ namespace vcpkg
 
     enum class LinkageType : char
     {
-        DYNAMIC,
-        STATIC,
+        Dynamic,
+        Static,
     };
 
     Optional<LinkageType> to_linkage_type(StringView str);
 
     struct BuildInfo
     {
-        LinkageType crt_linkage = LinkageType::DYNAMIC;
-        LinkageType library_linkage = LinkageType::DYNAMIC;
+        LinkageType crt_linkage = LinkageType::Dynamic;
+        LinkageType library_linkage = LinkageType::Dynamic;
 
         Optional<Version> detected_head_version;
 
@@ -260,6 +234,7 @@ namespace vcpkg
         std::string id;
         std::string version;
         std::string hash;
+        std::string path;
     };
 
     struct AbiInfo

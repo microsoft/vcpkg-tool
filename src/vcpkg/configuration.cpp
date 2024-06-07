@@ -1,3 +1,4 @@
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/jsonreader.h>
 #include <vcpkg/base/message_sinks.h>
@@ -97,19 +98,6 @@ namespace
 
     struct RegistryConfigDeserializer final : Json::IDeserializer<RegistryConfig>
     {
-        constexpr static StringLiteral KIND = "kind";
-        constexpr static StringLiteral BASELINE = "baseline";
-        constexpr static StringLiteral PATH = "path";
-        constexpr static StringLiteral REPO = "repository";
-        constexpr static StringLiteral REFERENCE = "reference";
-        constexpr static StringLiteral NAME = "name";
-        constexpr static StringLiteral LOCATION = "location";
-
-        constexpr static StringLiteral KIND_BUILTIN = "builtin";
-        constexpr static StringLiteral KIND_FILESYSTEM = "filesystem";
-        constexpr static StringLiteral KIND_GIT = "git";
-        constexpr static StringLiteral KIND_ARTIFACT = "artifact";
-
         virtual LocalizedString type_name() const override { return msg::format(msgARegistry); }
         virtual View<StringView> valid_fields() const override;
 
@@ -119,17 +107,6 @@ namespace
         static const RegistryConfigDeserializer instance;
     };
     const RegistryConfigDeserializer RegistryConfigDeserializer::instance;
-    constexpr StringLiteral RegistryConfigDeserializer::KIND;
-    constexpr StringLiteral RegistryConfigDeserializer::BASELINE;
-    constexpr StringLiteral RegistryConfigDeserializer::PATH;
-    constexpr StringLiteral RegistryConfigDeserializer::REPO;
-    constexpr StringLiteral RegistryConfigDeserializer::REFERENCE;
-    constexpr StringLiteral RegistryConfigDeserializer::NAME;
-    constexpr StringLiteral RegistryConfigDeserializer::LOCATION;
-    constexpr StringLiteral RegistryConfigDeserializer::KIND_BUILTIN;
-    constexpr StringLiteral RegistryConfigDeserializer::KIND_FILESYSTEM;
-    constexpr StringLiteral RegistryConfigDeserializer::KIND_GIT;
-    constexpr StringLiteral RegistryConfigDeserializer::KIND_ARTIFACT;
 
     struct OverlayPathStringDeserializer final : Json::StringDeserializer
     {
@@ -169,8 +146,6 @@ namespace
 
     struct RegistryDeserializer final : Json::IDeserializer<RegistryConfig>
     {
-        constexpr static StringLiteral PACKAGES = "packages";
-
         virtual LocalizedString type_name() const override { return msg::format(msgARegistry); }
         virtual View<StringView> valid_fields() const override;
 
@@ -179,7 +154,6 @@ namespace
         static RegistryDeserializer instance;
     };
     RegistryDeserializer RegistryDeserializer::instance;
-    constexpr StringLiteral RegistryDeserializer::PACKAGES;
 
     struct RegistriesArrayDeserializer : Json::ArrayDeserializer<RegistryDeserializer>
     {
@@ -192,48 +166,43 @@ namespace
 
     View<StringView> RegistryConfigDeserializer::valid_fields() const
     {
-        static constexpr StringView t[] = {KIND, BASELINE, PATH, REPO, REFERENCE, NAME, LOCATION};
-        return t;
-    }
-    View<StringView> valid_builtin_fields()
-    {
         static constexpr StringView t[] = {
-            RegistryConfigDeserializer::KIND,
-            RegistryConfigDeserializer::BASELINE,
-            RegistryDeserializer::PACKAGES,
+            JsonIdKind,
+            JsonIdBaseline,
+            JsonIdPath,
+            JsonIdRepository,
+            JsonIdReference,
+            JsonIdName,
+            JsonIdLocation,
         };
         return t;
     }
-    View<StringView> valid_filesystem_fields()
-    {
-        static constexpr StringView t[] = {
-            RegistryConfigDeserializer::KIND,
-            RegistryConfigDeserializer::BASELINE,
-            RegistryConfigDeserializer::PATH,
-            RegistryDeserializer::PACKAGES,
-        };
-        return t;
-    }
-    View<StringView> valid_git_fields()
-    {
-        static constexpr StringView t[] = {
-            RegistryConfigDeserializer::KIND,
-            RegistryConfigDeserializer::BASELINE,
-            RegistryConfigDeserializer::REPO,
-            RegistryConfigDeserializer::REFERENCE,
-            RegistryDeserializer::PACKAGES,
-        };
-        return t;
-    }
-    View<StringView> valid_artifact_fields()
-    {
-        static constexpr StringView t[] = {
-            RegistryConfigDeserializer::KIND,
-            RegistryConfigDeserializer::NAME,
-            RegistryConfigDeserializer::LOCATION,
-        };
-        return t;
-    }
+    static constexpr StringView valid_builtin_fields[] = {
+        JsonIdKind,
+        JsonIdBaseline,
+        JsonIdPackages,
+    };
+
+    static constexpr StringView valid_filesystem_fields[] = {
+        JsonIdKind,
+        JsonIdBaseline,
+        JsonIdPath,
+        JsonIdPackages,
+    };
+
+    static constexpr StringView valid_git_fields[] = {
+        JsonIdKind,
+        JsonIdBaseline,
+        JsonIdRepository,
+        JsonIdReference,
+        JsonIdPackages,
+    };
+
+    static constexpr StringView valid_artifact_fields[] = {
+        JsonIdKind,
+        JsonIdName,
+        JsonIdLocation,
+    };
 
     Optional<RegistryConfig> RegistryConfigDeserializer::visit_null(Json::Reader&) const { return RegistryConfig(); }
 
@@ -241,62 +210,69 @@ namespace
     {
         RegistryConfig res;
         auto& kind = res.kind.emplace();
-        r.required_object_field(type_name(), obj, KIND, kind, RegistryImplementationKindDeserializer::instance);
+        r.required_object_field(type_name(), obj, JsonIdKind, kind, RegistryImplementationKindDeserializer::instance);
 
-        if (kind == KIND_BUILTIN)
+        if (kind == JsonIdBuiltin)
         {
             auto& baseline = res.baseline.emplace();
             r.required_object_field(
-                msg::format(msgABuiltinRegistry), obj, BASELINE, baseline, BaselineShaDeserializer::instance);
-            r.check_for_unexpected_fields(obj, valid_builtin_fields(), msg::format(msgABuiltinRegistry));
+                msg::format(msgABuiltinRegistry), obj, JsonIdBaseline, baseline, BaselineShaDeserializer::instance);
+            r.check_for_unexpected_fields(obj, valid_builtin_fields, msg::format(msgABuiltinRegistry));
         }
-        else if (kind == KIND_FILESYSTEM)
+        else if (kind == JsonIdFilesystem)
         {
             std::string baseline;
-            if (r.optional_object_field(obj, BASELINE, baseline, BaselineShaDeserializer::instance))
+            if (r.optional_object_field(obj, JsonIdBaseline, baseline, BaselineShaDeserializer::instance))
             {
                 res.baseline = std::move(baseline);
             }
 
-            r.required_object_field(
-                msg::format(msgAFilesystemRegistry), obj, PATH, res.path.emplace(), Json::PathDeserializer::instance);
+            r.required_object_field(msg::format(msgAFilesystemRegistry),
+                                    obj,
+                                    JsonIdPath,
+                                    res.path.emplace(),
+                                    Json::PathDeserializer::instance);
 
-            r.check_for_unexpected_fields(obj, valid_filesystem_fields(), msg::format(msgAFilesystemRegistry));
+            r.check_for_unexpected_fields(obj, valid_filesystem_fields, msg::format(msgAFilesystemRegistry));
         }
-        else if (kind == KIND_GIT)
+        else if (kind == JsonIdGit)
         {
             r.required_object_field(
-                msg::format(msgAGitRegistry), obj, REPO, res.repo.emplace(), GitUrlDeserializer::instance);
+                msg::format(msgAGitRegistry), obj, JsonIdRepository, res.repo.emplace(), GitUrlDeserializer::instance);
 
-            if (!r.optional_object_field(obj, REFERENCE, res.reference.emplace(), GitReferenceDeserializer::instance))
+            if (!r.optional_object_field(
+                    obj, JsonIdReference, res.reference.emplace(), GitReferenceDeserializer::instance))
             {
                 res.reference = nullopt;
             }
 
-            r.required_object_field(
-                msg::format(msgAGitRegistry), obj, BASELINE, res.baseline.emplace(), BaselineShaDeserializer::instance);
+            r.required_object_field(msg::format(msgAGitRegistry),
+                                    obj,
+                                    JsonIdBaseline,
+                                    res.baseline.emplace(),
+                                    BaselineShaDeserializer::instance);
 
-            r.check_for_unexpected_fields(obj, valid_git_fields(), msg::format(msgAGitRegistry));
+            r.check_for_unexpected_fields(obj, valid_git_fields, msg::format(msgAGitRegistry));
         }
-        else if (kind == KIND_ARTIFACT)
+        else if (kind == JsonIdArtifact)
         {
             r.required_object_field(msg::format(msgAnArtifactsRegistry),
                                     obj,
-                                    NAME,
+                                    JsonIdName,
                                     res.name.emplace(),
                                     Json::IdentifierDeserializer::instance);
 
             r.required_object_field(msg::format(msgAnArtifactsRegistry),
                                     obj,
-                                    LOCATION,
+                                    JsonIdLocation,
                                     res.location.emplace(),
                                     ArtifactsGitRegistryUrlDeserializer::instance);
 
-            r.check_for_unexpected_fields(obj, valid_artifact_fields(), msg::format(msgAnArtifactsRegistry));
+            r.check_for_unexpected_fields(obj, valid_artifact_fields, msg::format(msgAnArtifactsRegistry));
         }
         else
         {
-            StringLiteral valid_kinds[] = {KIND_BUILTIN, KIND_FILESYSTEM, KIND_GIT, KIND_ARTIFACT};
+            StringLiteral valid_kinds[] = {JsonIdBuiltin, JsonIdFilesystem, JsonIdGit, JsonIdArtifact};
             r.add_generic_error(type_name(),
                                 msg::format(msgFieldKindDidNotHaveExpectedValue,
                                             msg::expected = Strings::join(", ", valid_kinds),
@@ -310,14 +286,14 @@ namespace
     View<StringView> RegistryDeserializer::valid_fields() const
     {
         static constexpr StringView t[] = {
-            RegistryConfigDeserializer::KIND,
-            RegistryConfigDeserializer::BASELINE,
-            RegistryConfigDeserializer::PATH,
-            RegistryConfigDeserializer::REPO,
-            RegistryConfigDeserializer::REFERENCE,
-            RegistryConfigDeserializer::NAME,
-            RegistryConfigDeserializer::LOCATION,
-            PACKAGES,
+            JsonIdKind,
+            JsonIdBaseline,
+            JsonIdPath,
+            JsonIdRepository,
+            JsonIdReference,
+            JsonIdName,
+            JsonIdLocation,
+            JsonIdPackages,
         };
         return t;
     }
@@ -328,11 +304,11 @@ namespace
 
         if (auto config = impl.get())
         {
-            if (config->kind && *config->kind.get() != RegistryConfigDeserializer::KIND_ARTIFACT)
+            if (config->kind && *config->kind.get() != JsonIdArtifact)
             {
                 auto& declarations = config->package_declarations.emplace();
                 r.required_object_field(
-                    type_name(), obj, PACKAGES, declarations, PackagePatternArrayDeserializer::instance);
+                    type_name(), obj, JsonIdPackages, declarations, PackagePatternArrayDeserializer::instance);
                 config->packages.emplace(Util::fmap(declarations, [](auto&& decl) { return decl.pattern; }));
             }
         }
@@ -357,57 +333,32 @@ namespace
             return msg::format(msgAnObjectContainingVcpkgArtifactsMetadata);
         }
 
-        constexpr static StringLiteral CE_ERROR = "error";
-        constexpr static StringLiteral CE_WARNING = "warning";
-        constexpr static StringLiteral CE_MESSAGE = "message";
-        constexpr static StringLiteral CE_APPLY = "apply";
-        constexpr static StringLiteral CE_SETTINGS = "settings";
-        constexpr static StringLiteral CE_REQUIRES = "requires";
-
         virtual Optional<Json::Object> visit_object(Json::Reader& r, const Json::Object& obj) const override;
 
         static const CeMetadataDeserializer instance;
     };
 
     const CeMetadataDeserializer CeMetadataDeserializer::instance;
-    constexpr StringLiteral CeMetadataDeserializer::CE_ERROR;
-    constexpr StringLiteral CeMetadataDeserializer::CE_WARNING;
-    constexpr StringLiteral CeMetadataDeserializer::CE_MESSAGE;
-    constexpr StringLiteral CeMetadataDeserializer::CE_APPLY;
-    constexpr StringLiteral CeMetadataDeserializer::CE_SETTINGS;
-    constexpr StringLiteral CeMetadataDeserializer::CE_REQUIRES;
 
     struct DemandsDeserializer final : Json::IDeserializer<Json::Object>
     {
         virtual LocalizedString type_name() const override { return msg::format(msgADemandObject); }
-
-        constexpr static StringLiteral CE_DEMANDS = "demands";
 
         virtual Optional<Json::Object> visit_object(Json::Reader& r, const Json::Object& obj) const override;
 
         static DemandsDeserializer instance;
     };
     DemandsDeserializer DemandsDeserializer::instance;
-    constexpr StringLiteral DemandsDeserializer::CE_DEMANDS;
 
     struct ConfigurationDeserializer final : Json::IDeserializer<Configuration>
     {
         virtual LocalizedString type_name() const override { return msg::format(msgAConfigurationObject); }
-
-        constexpr static StringLiteral DEFAULT_REGISTRY = "default-registry";
-        constexpr static StringLiteral REGISTRIES = "registries";
-        constexpr static StringLiteral OVERLAY_PORTS = "overlay-ports";
-        constexpr static StringLiteral OVERLAY_TRIPLETS = "overlay-triplets";
 
         virtual Optional<Configuration> visit_object(Json::Reader& r, const Json::Object& obj) const override;
 
         static ConfigurationDeserializer instance;
     };
     ConfigurationDeserializer ConfigurationDeserializer::instance;
-    constexpr StringLiteral ConfigurationDeserializer::DEFAULT_REGISTRY;
-    constexpr StringLiteral ConfigurationDeserializer::REGISTRIES;
-    constexpr StringLiteral ConfigurationDeserializer::OVERLAY_PORTS;
-    constexpr StringLiteral ConfigurationDeserializer::OVERLAY_TRIPLETS;
 
     Optional<Json::Object> DictionaryDeserializer::visit_object(Json::Reader& r, const Json::Object& obj) const
     {
@@ -468,12 +419,12 @@ namespace
                 ret.insert_or_replace(key, el.second);
             }
         }
-        extract_string(obj, CE_ERROR, ret);
-        extract_string(obj, CE_WARNING, ret);
-        extract_string(obj, CE_MESSAGE, ret);
-        extract_object(obj, CE_APPLY, ret);
-        extract_object(obj, CE_SETTINGS, ret);
-        extract_dictionary(obj, CE_REQUIRES, ret);
+        extract_string(obj, JsonIdError, ret);
+        extract_string(obj, JsonIdWarning, ret);
+        extract_string(obj, JsonIdMessage, ret);
+        extract_object(obj, JsonIdApply, ret);
+        extract_object(obj, JsonIdSettings, ret);
+        extract_dictionary(obj, JsonIdRequires, ret);
         return ret;
     }
 
@@ -497,7 +448,7 @@ namespace
             }
 
             const auto& demand_obj = el.second.object(VCPKG_LINE_INFO);
-            if (demand_obj.contains(CE_DEMANDS))
+            if (demand_obj.contains(JsonIdDemands))
             {
                 r.add_generic_error(type_name(),
                                     msg::format(msgConfigurationNestedDemands, msg::json_field = el.first));
@@ -596,21 +547,21 @@ namespace
             }
         }
 
-        r.optional_object_field(obj, OVERLAY_PORTS, ret.overlay_ports, OverlayPathArrayDeserializer::instance);
+        r.optional_object_field(obj, JsonIdOverlayPorts, ret.overlay_ports, OverlayPathArrayDeserializer::instance);
         r.optional_object_field(
-            obj, OVERLAY_TRIPLETS, ret.overlay_triplets, OverlayTripletsPathArrayDeserializer::instance);
+            obj, JsonIdOverlayTriplets, ret.overlay_triplets, OverlayTripletsPathArrayDeserializer::instance);
 
         RegistryConfig default_registry;
-        if (r.optional_object_field(obj, DEFAULT_REGISTRY, default_registry, RegistryConfigDeserializer::instance))
+        if (r.optional_object_field(obj, JsonIdDefaultRegistry, default_registry, RegistryConfigDeserializer::instance))
         {
-            if (default_registry.kind.value_or("") == RegistryConfigDeserializer::KIND_ARTIFACT)
+            if (default_registry.kind.value_or("") == JsonIdArtifact)
             {
                 r.add_generic_error(type_name(), msg::format(msgDefaultRegistryIsArtifact));
             }
             ret.default_reg = std::move(default_registry);
         }
 
-        r.optional_object_field(obj, REGISTRIES, ret.registries, RegistriesArrayDeserializer::instance);
+        r.optional_object_field(obj, JsonIdRegistries, ret.registries, RegistriesArrayDeserializer::instance);
 
         for (auto&& warning : collect_package_pattern_warnings(ret.registries))
         {
@@ -625,9 +576,9 @@ namespace
         }
 
         Json::Object demands_obj;
-        if (r.optional_object_field(obj, DemandsDeserializer::CE_DEMANDS, demands_obj, DemandsDeserializer::instance))
+        if (r.optional_object_field(obj, JsonIdDemands, demands_obj, DemandsDeserializer::instance))
         {
-            ce_metadata_obj.insert_or_replace(DemandsDeserializer::CE_DEMANDS, demands_obj);
+            ce_metadata_obj.insert_or_replace(JsonIdDemands, demands_obj);
         }
 
         // Remove comments duplicated in ce_metadata
@@ -649,7 +600,7 @@ namespace
         };
 
         auto serialize_demands = [](const Json::Object& obj, Json::Object& put_into) {
-            if (auto demands = obj.get(DemandsDeserializer::CE_DEMANDS))
+            if (auto demands = obj.get(JsonIdDemands))
             {
                 if (!demands->is_object())
                 {
@@ -672,7 +623,7 @@ namespace
                         serialize_ce_metadata(el.second.object(VCPKG_LINE_INFO), inserted);
                     }
                 }
-                put_into.insert_or_replace(DemandsDeserializer::CE_DEMANDS, serialized_demands);
+                put_into.insert_or_replace(JsonIdDemands, serialized_demands);
             }
         };
 
@@ -685,12 +636,12 @@ namespace
             }
         }
 
-        extract_object(ce_metadata, CeMetadataDeserializer::CE_MESSAGE, put_into);
-        extract_object(ce_metadata, CeMetadataDeserializer::CE_WARNING, put_into);
-        extract_object(ce_metadata, CeMetadataDeserializer::CE_ERROR, put_into);
-        extract_object(ce_metadata, CeMetadataDeserializer::CE_SETTINGS, put_into);
-        extract_object(ce_metadata, CeMetadataDeserializer::CE_APPLY, put_into);
-        extract_object(ce_metadata, CeMetadataDeserializer::CE_REQUIRES, put_into);
+        extract_object(ce_metadata, JsonIdMessage, put_into);
+        extract_object(ce_metadata, JsonIdWarning, put_into);
+        extract_object(ce_metadata, JsonIdError, put_into);
+        extract_object(ce_metadata, JsonIdSettings, put_into);
+        extract_object(ce_metadata, JsonIdApply, put_into);
+        extract_object(ce_metadata, JsonIdRequires, put_into);
         serialize_demands(ce_metadata, put_into);
     }
 
@@ -714,7 +665,7 @@ namespace
                 out.push_back(Strings::concat(path, ".", key));
             }
 
-            if (el.first == DemandsDeserializer::CE_DEMANDS)
+            if (el.first == JsonIdDemands)
             {
                 if (!el.second.is_object())
                 {
@@ -728,10 +679,9 @@ namespace
                         continue;
                     }
 
-                    find_unknown_fields_impl(
-                        demand.second.object(VCPKG_LINE_INFO),
-                        out,
-                        Strings::concat(path, ".", DemandsDeserializer::CE_DEMANDS, ".", demand.first));
+                    find_unknown_fields_impl(demand.second.object(VCPKG_LINE_INFO),
+                                             out,
+                                             Strings::concat(path, ".", JsonIdDemands, ".", demand.first));
                 }
             }
         }
@@ -757,11 +707,11 @@ namespace vcpkg
 
     ExpectedL<Optional<std::string>> RegistryConfig::get_latest_baseline(const VcpkgPaths& paths) const
     {
-        if (kind == RegistryConfigDeserializer::KIND_GIT)
+        if (kind == JsonIdGit)
         {
             return get_baseline_from_git_repo(paths, repo.value_or_exit(VCPKG_LINE_INFO));
         }
-        else if (kind == RegistryConfigDeserializer::KIND_BUILTIN)
+        else if (kind == JsonIdBuiltin)
         {
             if (paths.use_git_default_registry())
             {
@@ -791,19 +741,19 @@ namespace vcpkg
 
     StringView RegistryConfig::pretty_location() const
     {
-        if (kind == RegistryConfigDeserializer::KIND_BUILTIN)
+        if (kind == JsonIdBuiltin)
         {
             return builtin_registry_git_url;
         }
-        if (kind == RegistryConfigDeserializer::KIND_FILESYSTEM)
+        if (kind == JsonIdFilesystem)
         {
             return path.value_or_exit(VCPKG_LINE_INFO);
         }
-        if (kind == RegistryConfigDeserializer::KIND_GIT)
+        if (kind == JsonIdGit)
         {
             return repo.value_or_exit(VCPKG_LINE_INFO);
         }
-        if (kind == RegistryConfigDeserializer::KIND_ARTIFACT)
+        if (kind == JsonIdArtifact)
         {
             return location.value_or_exit(VCPKG_LINE_INFO);
         }
@@ -814,17 +764,17 @@ namespace vcpkg
     View<StringView> Configuration::known_fields()
     {
         static constexpr StringView known_fields[]{
-            ConfigurationDeserializer::DEFAULT_REGISTRY,
-            ConfigurationDeserializer::REGISTRIES,
-            ConfigurationDeserializer::OVERLAY_PORTS,
-            ConfigurationDeserializer::OVERLAY_TRIPLETS,
-            CeMetadataDeserializer::CE_MESSAGE,
-            CeMetadataDeserializer::CE_WARNING,
-            CeMetadataDeserializer::CE_ERROR,
-            CeMetadataDeserializer::CE_SETTINGS,
-            CeMetadataDeserializer::CE_APPLY,
-            CeMetadataDeserializer::CE_REQUIRES,
-            DemandsDeserializer::CE_DEMANDS,
+            JsonIdDefaultRegistry,
+            JsonIdRegistries,
+            JsonIdOverlayPorts,
+            JsonIdOverlayTriplets,
+            JsonIdMessage,
+            JsonIdWarning,
+            JsonIdError,
+            JsonIdSettings,
+            JsonIdApply,
+            JsonIdRequires,
+            JsonIdDemands,
         };
         return known_fields;
     }
@@ -883,7 +833,7 @@ namespace vcpkg
         auto conf = Json::parse(contents, origin);
         if (!conf)
         {
-            messageSink.println(Color::error, LocalizedString::from_raw(conf.error()->to_string()));
+            messageSink.println(Color::error, conf.error());
             return nullopt;
         }
 
@@ -928,18 +878,18 @@ namespace vcpkg
     {
         if (auto k = config.kind.get())
         {
-            if (*k == RegistryConfigDeserializer::KIND_BUILTIN)
+            if (*k == JsonIdBuiltin)
             {
                 return make_builtin_registry(paths, config.baseline.value_or_exit(VCPKG_LINE_INFO));
             }
-            else if (*k == RegistryConfigDeserializer::KIND_GIT)
+            else if (*k == JsonIdGit)
             {
                 return make_git_registry(paths,
                                          config.repo.value_or_exit(VCPKG_LINE_INFO),
                                          config.reference.value_or("HEAD"),
                                          config.baseline.value_or_exit(VCPKG_LINE_INFO));
             }
-            else if (*k == RegistryConfigDeserializer::KIND_FILESYSTEM)
+            else if (*k == JsonIdFilesystem)
             {
                 return make_filesystem_registry(paths.get_filesystem(),
                                                 config_dir / config.path.value_or_exit(VCPKG_LINE_INFO),
@@ -984,12 +934,12 @@ namespace vcpkg
 
         if (auto default_registry = default_reg.get())
         {
-            obj.insert(ConfigurationDeserializer::DEFAULT_REGISTRY, default_registry->serialize());
+            obj.insert(JsonIdDefaultRegistry, default_registry->serialize());
         }
 
         if (!registries.empty())
         {
-            auto& reg_arr = obj.insert(ConfigurationDeserializer::REGISTRIES, Json::Array());
+            auto& reg_arr = obj.insert(JsonIdRegistries, Json::Array());
             for (const auto& reg : registries)
             {
                 reg_arr.push_back(reg.serialize());
@@ -998,7 +948,7 @@ namespace vcpkg
 
         if (!overlay_ports.empty())
         {
-            auto& op_arr = obj.insert(ConfigurationDeserializer::OVERLAY_PORTS, Json::Array());
+            auto& op_arr = obj.insert(JsonIdOverlayPorts, Json::Array());
             for (const auto& port : overlay_ports)
             {
                 op_arr.push_back(port);
@@ -1007,7 +957,7 @@ namespace vcpkg
 
         if (!overlay_triplets.empty())
         {
-            auto& ot_arr = obj.insert(ConfigurationDeserializer::OVERLAY_TRIPLETS, Json::Array());
+            auto& ot_arr = obj.insert(JsonIdOverlayTriplets, Json::Array());
             for (const auto& triplet : overlay_triplets)
             {
                 ot_arr.push_back(triplet);
@@ -1029,16 +979,16 @@ namespace vcpkg
             return Json::Value::null(nullptr);
         }
         Json::Object obj;
-        obj.insert(RegistryConfigDeserializer::KIND, Json::Value::string(*kind.get()));
-        if (auto p = baseline.get()) obj.insert(RegistryConfigDeserializer::BASELINE, Json::Value::string(*p));
-        if (auto p = location.get()) obj.insert(RegistryConfigDeserializer::LOCATION, Json::Value::string(*p));
-        if (auto p = name.get()) obj.insert(RegistryConfigDeserializer::NAME, Json::Value::string(*p));
-        if (auto p = path.get()) obj.insert(RegistryConfigDeserializer::PATH, Json::Value::string(p->native()));
-        if (auto p = reference.get()) obj.insert(RegistryConfigDeserializer::REFERENCE, Json::Value::string(*p));
-        if (auto p = repo.get()) obj.insert(RegistryConfigDeserializer::REPO, Json::Value::string(*p));
+        obj.insert(JsonIdKind, Json::Value::string(*kind.get()));
+        if (auto p = baseline.get()) obj.insert(JsonIdBaseline, Json::Value::string(*p));
+        if (auto p = location.get()) obj.insert(JsonIdLocation, Json::Value::string(*p));
+        if (auto p = name.get()) obj.insert(JsonIdName, Json::Value::string(*p));
+        if (auto p = path.get()) obj.insert(JsonIdPath, Json::Value::string(p->native()));
+        if (auto p = reference.get()) obj.insert(JsonIdReference, Json::Value::string(*p));
+        if (auto p = repo.get()) obj.insert(JsonIdRepository, Json::Value::string(*p));
         if (packages)
         {
-            auto& arr = obj.insert(RegistryDeserializer::PACKAGES, Json::Array());
+            auto& arr = obj.insert(JsonIdPackages, Json::Array());
             for (auto&& p : *packages.get())
             {
                 arr.push_back(Json::Value::string(p));

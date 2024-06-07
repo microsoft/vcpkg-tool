@@ -1,3 +1,4 @@
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/optional.h>
 
@@ -42,28 +43,28 @@ namespace vcpkg
     {
         (void)args.parse_arguments(CommandZPrintConfigMetadata);
         Json::Object obj;
-        obj.insert("downloads", paths.downloads.native());
-        obj.insert("default_triplet", default_triplet.canonical_name());
-        obj.insert("host_triplet", host_triplet.canonical_name());
-        obj.insert("vcpkg_root", paths.root.native());
-        obj.insert("tools", paths.tools.native());
+        obj.insert(JsonIdDownloads, paths.downloads.native());
+        obj.insert(JsonIdDefaultTriplet, default_triplet.canonical_name());
+        obj.insert(JsonIdHostTriplet, host_triplet.canonical_name());
+        obj.insert(JsonIdVcpkgRoot, paths.root.native());
+        obj.insert(JsonIdTools, paths.tools.native());
         if (auto ci_env = args.detected_ci_environment().get())
         {
-            obj.insert("detected_ci_environment", *ci_env);
+            obj.insert(JsonIdDetectedCIEnvironment, *ci_env);
         }
         if (auto i = paths.maybe_installed().get())
         {
-            obj.insert("installed", i->root().native());
+            obj.insert(JsonIdInstalled, i->root().native());
         }
-        opt_add(obj, "buildtrees", paths.maybe_buildtrees());
-        opt_add(obj, "packages", paths.maybe_packages());
+        opt_add(obj, JsonIdBuildtrees, paths.maybe_buildtrees());
+        opt_add(obj, JsonIdPackages, paths.maybe_packages());
         if (paths.maybe_installed())
         {
-            obj.insert("versions_output", paths.versions_output().native());
-            obj.insert("manifest_mode_enabled", Json::Value::boolean(paths.manifest_mode_enabled()));
+            obj.insert(JsonIdVersionsOutput, paths.versions_output().native());
+            obj.insert(JsonIdManifestModeEnabled, Json::Value::boolean(paths.manifest_mode_enabled()));
         }
         obj.sort_keys();
-        msg::write_unlocalized_text_to_stdout(Color::none, Json::stringify(obj) + "\n");
+        msg::write_unlocalized_text(Color::none, Json::stringify(obj) + "\n");
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 } // namespace vcpkg

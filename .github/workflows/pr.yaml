@@ -39,6 +39,10 @@ jobs:
           cmake --preset windows-ci
           IF %ERRORLEVEL% NEQ 0 exit /B %ERRORLEVEL%
           cmake --build --preset windows-ci --target generate-message-map -- -k0
+      - name: Verify Messages
+        shell: pwsh
+        run: |
+          cmake --build --preset windows-ci --target verify-messages -- -k0
       - name: 'Format C++'
         shell: pwsh
         run: ./azure-pipelines/Format-CxxCode.ps1

@@ -2,8 +2,17 @@
 
 $CurrentTest = "Build Test Ports"
 
-Run-Vcpkg @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports" install vcpkg-internal-e2e-test-port3
+$output = Run-VcpkgAndCaptureOutput @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports" install vcpkg-internal-e2e-test-port3
 Throw-IfFailed
+if ($output -match "Compiler found: ([^\r\n]+)") {
+    $detected = $matches[1]
+    if (-Not (Test-Path $detected)) {
+        throw "Did not print a valid compiler path (detected $detected)"
+    }
+} else {
+    throw "Did not detect a compiler"
+}
+
 
 $output = Run-VcpkgAndCaptureOutput @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports/vcpkg-internal-e2e-test-port2" install vcpkg-internal-e2e-test-port2
 Throw-IfFailed
@@ -27,4 +36,17 @@ $output = Run-VcpkgAndCaptureOutput @commonArgs --overlay-ports="$PSScriptRoot/.
 Throw-IfNotFailed
 if ($output -notmatch 'expected a versioning field') {
     throw 'Did not detect missing field'
+}
+
+# Check for msgAlreadyInstalled vs. msgAlreadyInstalledNotHead
+$output = Run-VcpkgAndCaptureOutput @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports" install vcpkg-internal-e2e-test-port3
+Throw-IfFailed
+if ($output -notmatch 'vcpkg-internal-e2e-test-port3:[^ ]+ is already installed') {
+    throw 'Wrong already installed message'
+}
+
+$output = Run-VcpkgAndCaptureOutput @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports" install vcpkg-internal-e2e-test-port3 --head
+Throw-IfFailed
+if ($output -notmatch 'vcpkg-internal-e2e-test-port3:[^ ]+ is already installed -- not building from HEAD') {
+    throw 'Wrong already installed message for --head'
 }

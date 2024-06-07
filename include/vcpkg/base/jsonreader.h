@@ -73,6 +73,7 @@ namespace vcpkg::Json
         void add_warning(LocalizedString type, StringView msg);
 
         std::string path() const noexcept;
+        StringView origin() const noexcept;
 
     private:
         template<class Type>
@@ -103,7 +104,7 @@ namespace vcpkg::Json
             std::vector<JsonPathElement>& m_path;
         };
 
-        StringView m_origin;
+        std::string m_origin;
         std::vector<JsonPathElement> m_path;
 
     public:

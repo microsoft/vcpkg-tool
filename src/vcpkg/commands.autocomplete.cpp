@@ -23,7 +23,7 @@ namespace
     [[noreturn]] void output_sorted_results_and_exit(const LineInfo& line_info, std::vector<std::string>&& results)
     {
         Util::sort(results);
-        msg::write_unlocalized_text_to_stdout(Color::none, Strings::join("\n", results));
+        msg::write_unlocalized_text(Color::none, Strings::join("\n", results));
         Checks::exit_success(line_info);
     }
 

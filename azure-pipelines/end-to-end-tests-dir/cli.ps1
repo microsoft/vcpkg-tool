@@ -10,151 +10,133 @@ Throw-IfNotFailed
 Run-Vcpkg -TestArgs ($commonArgs + @("install", "vcpkg-hello-world-1", "--fast")) # --fast is not a switch
 Throw-IfNotFailed
 
-if ($IsWindows) {
-    $warningText = 'In the September 2023 release'
+# Test switching stdout vs. stderr for help topics and errors
+[string]$out = Run-VcpkgAndCaptureOutput -TestArgs @('help')
+Throw-IfFailed
+if (-Not ($out.StartsWith('usage: vcpkg <command> [--switches] [--options=values] [arguments] @response_file')))
+{
+    throw 'Bad help output'
+}
 
-    # build-external not tested
-    # ci not tested
-    # export not tested
+$out = Run-VcpkgAndCaptureOutput -TestArgs @('help', 'help')
+Throw-IfFailed
+if (-Not ($out.StartsWith('Synopsis: Displays specific help topic')))
+{
+    throw 'Bad help help output'
+}
 
-    # depend-info
-    [string]$output = Run-VcpkgAndCaptureOutput -TestArgs ($directoryArgs + @('depend-info', 'vcpkg-hello-world-1'))
-    Throw-IfFailed
-    if (-Not $output.Contains($warningText)) {
-        throw 'depend-info with unqualified spec should emit the triplet warning'
-    }
-    
-    $output = Run-VcpkgAndCaptureOutput -TestArgs ($directoryArgs + @('depend-info', 'vcpkg-hello-world-1:x64-windows'))
-    Throw-IfFailed
-    if ($output.Contains($warningText)) {
-        throw 'depend-info with qualified parameters should not emit the triplet warning'
-    }
+$out = Run-VcpkgAndCaptureStdErr -TestArgs @('help', 'not-a-topic')
+Throw-IfNotFailed
+if (-Not ($out.StartsWith('error: unknown topic not-a-topic')))
+{
+    throw 'Bad help not-a-topic output'
+}
 
-    $output = Run-VcpkgAndCaptureOutput -TestArgs ($directoryArgs + @('depend-info', 'vcpkg-hello-world-1', '--triplet', 'x86-windows'))
-    Throw-IfFailed
-    if ($output.Contains($warningText)) {
-        throw 'depend-info with arg should not emit the triplet warning'
-    }
+$out = Run-VcpkgAndCaptureStdErr -TestArgs @('not-a-command')
+Throw-IfNotFailed
+if (-Not ($out.StartsWith('error: invalid command: not-a-command')))
+{
+    throw 'Bad not-a-command output'
+}
 
-    $output = Run-VcpkgAndCaptureOutput -TestArgs ($directoryArgs + @('depend-info', 'vcpkg-hello-world-1', '--triplet', 'x64-windows'))
-    Throw-IfFailed
-    if ($output.Contains($warningText)) {
-        throw 'depend-info with new default arg should not emit the triplet warning'
-    }
+$out = Run-VcpkgAndCaptureStdErr -TestArgs @('install', '--not-a-switch')
+Throw-IfNotFailed
+if (-Not ($out.StartsWith('error: unexpected switch: --not-a-switch')))
+{
+    throw 'Bad install --not-a-switch output'
+}
 
-    # set-installed
-    $output = Run-VcpkgAndCaptureOutput -TestArgs ($directoryArgs + @('x-set-installed'))
-    Throw-IfFailed
-    if ($output.Contains($warningText)) {
-        throw 'x-set-installed with no parameters should not emit the triplet warning'
-    }
-    
-    $output = Run-VcpkgAndCaptureOutput -TestArgs ($directoryArgs + @('x-set-installed', 'vcpkg-hello-world-1'))
-    Throw-IfFailed
-    if (-Not $output.Contains($warningText)) {
-        throw 'x-set-installed with unqualified spec should emit the triplet warning'
-    }
-    
-    $output = Run-VcpkgAndCaptureOutput -TestArgs ($directoryArgs + @('x-set-installed', 'vcpkg-hello-world-1:x64-windows'))
-    Throw-IfFailed
-    if ($output.Contains($warningText)) {
-        throw 'x-set-installed with qualified parameters should not emit the triplet warning'
-    }
+$out = Run-VcpkgAndCaptureOutput -TestArgs @('install', 'this-is-super-not-a-#port')
+Throw-IfNotFailed
 
-    $output = Run-VcpkgAndCaptureOutput -TestArgs ($directoryArgs + @('x-set-installed', 'vcpkg-hello-world-1', '--triplet', 'x86-windows'))
-    Throw-IfFailed
-    if ($output.Contains($warningText)) {
-        throw 'x-set-installed with arg should not emit the triplet warning'
-    }
+[string]$expected = @"
+error: expected the end of input parsing a package spec; this usually means the indicated character is not allowed to be in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hypens.
+  on expression: this-is-super-not-a-#port
+                                     ^
 
-    # install
-    Refresh-TestRoot
-    $sub = Join-Path $TestingRoot 'manifest-warn'
-    New-Item -ItemType Directory -Force $sub | Out-Null
-    Push-Location $sub
-    try {
-        Run-Vcpkg -TestArgs ($directoryArgs + @('new', '--application'))
-        Throw-IfFailed
+"@
 
-        $output = Run-VcpkgAndCaptureOutput -TestArgs ($directoryArgs + @('install'))
-        Throw-IfFailed
-        if (-Not $output.Contains($warningText)) {
-            throw 'manifest install should emit the triplet warning'
-        }
-    } finally {
-        Pop-Location
-    }
+if (-Not ($out.Replace("`r`n", "`n").EndsWith($expected)))
+{
+    throw 'Bad malformed port name output; it was: ' + $out
+}
 
-    Refresh-TestRoot
-    $output = Run-VcpkgAndCaptureOutput -TestArgs ($directoryArgs + @('install', 'vcpkg-hello-world-1'))
-    Throw-IfFailed
-    if (-Not $output.Contains($warningText)) {
-        throw 'install with unqualified spec should emit the triplet warning'
-    }
-    
-    $output = Run-VcpkgAndCaptureOutput -TestArgs ($directoryArgs + @('install', 'vcpkg-hello-world-1:x64-windows'))
-    Throw-IfFailed
-    if ($output.Contains($warningText)) {
-        throw 'install with qualified parameters should not emit the triplet warning'
-    }
+$out = Run-VcpkgAndCaptureOutput -TestArgs @('install', 'zlib', '--binarysource=clear;not-a-backend')
+Throw-IfNotFailed
 
-    $output = Run-VcpkgAndCaptureOutput -TestArgs ($directoryArgs + @('install', 'vcpkg-hello-world-1', '--triplet', 'x86-windows'))
-    Throw-IfFailed
-    if ($output.Contains($warningText)) {
-        throw 'install with arg should not emit the triplet warning'
-    }
+$expected = @"
+error: unknown binary provider type: valid providers are 'clear', 'default', 'nuget', 'nugetconfig', 'nugettimeout', 'interactive', 'x-azblob', 'x-gcs', 'x-aws', 'x-aws-config', 'http', and 'files'
+  on expression: clear;not-a-backend
+                       ^
 
-    # upgrade
-    $output = Run-VcpkgAndCaptureOutput -TestArgs ($directoryArgs + @('upgrade'))
-    Throw-IfFailed
-    if ($output.Contains($warningText)) {
-        throw 'upgrade with no parameters should not emit the triplet warning'
-    }
-    
-    $output = Run-VcpkgAndCaptureOutput -TestArgs ($directoryArgs + @('upgrade', 'vcpkg-hello-world-1'))
-    Throw-IfFailed
-    if (-Not $output.Contains($warningText)) {
-        throw 'upgrade with unqualified spec should emit the triplet warning'
-    }
-    
-    $output = Run-VcpkgAndCaptureOutput -TestArgs ($directoryArgs + @('upgrade', 'vcpkg-hello-world-1:x64-windows'))
-    Throw-IfFailed
-    if ($output.Contains($warningText)) {
-        throw 'upgrade with qualified parameters should not emit the triplet warning'
-    }
+"@
 
-    $output = Run-VcpkgAndCaptureOutput -TestArgs ($directoryArgs + @('upgrade', 'vcpkg-hello-world-1', '--triplet', 'x86-windows'))
-    Throw-IfFailed
-    if ($output.Contains($warningText)) {
-        throw 'upgrade with arg should not emit the triplet warning'
-    }
+if (-Not ($out.Replace("`r`n", "`n").EndsWith($expected)))
+{
+    throw 'Bad malformed --binarysource output; it was: ' + $out
+}
 
-    # remove
-    $output = Run-VcpkgAndCaptureOutput -TestArgs ($directoryArgs + @('remove', 'vcpkg-hello-world-1'))
-    Throw-IfFailed
-    if (-Not $output.Contains($warningText)) {
-        throw 'remove with unqualified spec should emit the triplet warning'
-    }
-    
-    $output = Run-VcpkgAndCaptureOutput -TestArgs ($directoryArgs + @('remove', 'vcpkg-hello-world-1:x64-windows'))
-    Throw-IfFailed
-    if ($output.Contains($warningText)) {
-        throw 'remove with qualified parameters should not emit the triplet warning'
-    }
+$out = Run-VcpkgAndCaptureStdErr -TestArgs @('x-package-info', 'zlib#notaport', '--x-json', '--x-installed')
+Throw-IfNotFailed
+$expected = @"
+error: expected an explicit triplet
+  on expression: zlib#notaport
+                     ^
 
-    $output = Run-VcpkgAndCaptureOutput -TestArgs ($directoryArgs + @('remove', 'vcpkg-hello-world-1', '--triplet', 'x86-windows'))
-    Throw-IfFailed
-    if ($output.Contains($warningText)) {
-        throw 'remove with arg should not emit the triplet warning'
-    }
+"@
+if (-Not ($out.Replace("`r`n", "`n").EndsWith($expected)))
+{
+    throw ('Bad error output: ' + $out)
+}
 
-    $env:VCPKG_DEFAULT_TRIPLET = 'x86-windows'
-    Refresh-TestRoot
-    $output = Run-VcpkgAndCaptureOutput -TestArgs ($directoryArgs + @('install', 'vcpkg-hello-world-1'))
-    Throw-IfFailed
-    if ($output.Contains($warningText)) {
-        throw 'install with environment variable set should not emit the triplet warning'
-    }
+$out = Run-VcpkgAndCaptureStdErr -TestArgs @('x-package-info', 'zlib', '--x-json', '--x-installed')
+Throw-IfNotFailed
+$expected = @"
+error: expected an explicit triplet
+  on expression: zlib
+                     ^
 
-    Remove-Item env:VCPKG_DEFAULT_TRIPLET
+"@
+if (-Not ($out.Replace("`r`n", "`n").EndsWith($expected)))
+{
+    throw ('Bad error output: ' + $out)
+}
+
+$out = Run-VcpkgAndCaptureStdErr -TestArgs @('x-package-info', 'zlib:x64-windows[core]', '--x-json', '--x-installed')
+Throw-IfNotFailed
+$expected = @"
+error: expected the end of input parsing a package spec; did you mean zlib[core]:x64-windows instead?
+  on expression: zlib:x64-windows[core]
+                                 ^
+
+"@
+if (-Not ($out.Replace("`r`n", "`n").EndsWith($expected)))
+{
+    throw ('Bad error output: ' + $out)
+}
+
+$out = Run-VcpkgAndCaptureStdErr -TestArgs @('x-package-info', 'zlib[core]:x64-windows', '--x-json', '--x-installed')
+Throw-IfNotFailed
+$expected = @"
+error: List of features is not allowed in this context
+  on expression: zlib[core]:x64-windows
+                     ^
+
+"@
+if (-Not ($out.Replace("`r`n", "`n").EndsWith($expected)))
+{
+    throw ('Bad error output: ' + $out)
+}
+
+$out = Run-VcpkgAndCaptureStdErr -TestArgs @('x-package-info', 'zlib:x64-windows(windows)', '--x-json', '--x-installed')
+Throw-IfNotFailed
+$expected = @"
+error: Platform qualifier is not allowed in this context
+  on expression: zlib:x64-windows(windows)
+                                 ^
+
+"@
+if (-Not ($out.Replace("`r`n", "`n").EndsWith($expected)))
+{
+    throw ('Bad error output: ' + $out)
 }

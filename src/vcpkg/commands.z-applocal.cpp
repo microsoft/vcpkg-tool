@@ -1,5 +1,6 @@
 #if defined(_WIN32)
 #include <vcpkg/base/cofffilereader.h>
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/system.debug.h>
@@ -12,12 +13,13 @@
 #include <map>
 #include <set>
 #include <string>
+#include <system_error>
 
 using namespace vcpkg;
 
 namespace
 {
-    WriteFilePointer maybe_create_log(const std::map<std::string, std::string, std::less<>>& settings,
+    WriteFilePointer maybe_create_log(const std::map<StringLiteral, std::string, std::less<>>& settings,
                                       StringLiteral setting,
                                       const Filesystem& fs)
     {
@@ -104,11 +106,22 @@ namespace
 
         void resolve(const Path& binary)
         {
-            msg::println(msgApplocalProcessing, msg::path = binary);
+            msg::print(LocalizedString::from_raw(binary)
+                           .append_raw(": ")
+                           .append_raw(MessagePrefix)
+                           .append(msgApplocalProcessing)
+                           .append_raw('\n'));
+
             auto dll_file = m_fs.open_for_read(binary, VCPKG_LINE_INFO);
-            const auto dll_metadata = vcpkg::try_read_dll_metadata(dll_file).value_or_exit(VCPKG_LINE_INFO);
+            const auto dll_metadata = vcpkg::try_read_dll_metadata_required(dll_file).value_or_exit(VCPKG_LINE_INFO);
             const auto imported_names =
                 vcpkg::try_read_dll_imported_dll_names(dll_metadata, dll_file).value_or_exit(VCPKG_LINE_INFO);
+            dll_file.close();
+            resolve_explicit(binary, imported_names);
+        }
+
+        void resolve_explicit(const Path& binary, const std::vector<std::string>& imported_names)
+        {
             Debug::print("Imported DLLs of ", binary, " were ", Strings::join("\n", imported_names), "\n");
 
             for (auto&& imported_name : imported_names)
@@ -541,16 +554,11 @@ namespace
         bool m_qt_installed;
     };
 
-    constexpr StringLiteral OPTION_TARGET_BINARY = "target-binary";
-    constexpr StringLiteral OPTION_INSTALLED_DIR = "installed-bin-dir";
-    constexpr StringLiteral OPTION_TLOG_FILE = "tlog-file";
-    constexpr StringLiteral OPTION_COPIED_FILES_LOG = "copied-files-log";
-
     constexpr CommandSetting SETTINGS[] = {
-        {OPTION_TARGET_BINARY, msgCmdSettingTargetBin},
-        {OPTION_INSTALLED_DIR, msgCmdSettingInstalledDir},
-        {OPTION_TLOG_FILE, msgCmdSettingTLogFile},
-        {OPTION_COPIED_FILES_LOG, msgCmdSettingCopiedFilesLog},
+        {SwitchTargetBinary, msgCmdSettingTargetBin},
+        {SwitchInstalledBinDir, msgCmdSettingInstalledDir},
+        {SwitchTLogFile, msgCmdSettingTLogFile},
+        {SwitchCopiedFilesLog, msgCmdSettingCopiedFilesLog},
     };
 } // unnamed namespace
 
@@ -569,33 +577,86 @@ namespace vcpkg
         nullptr,
     };
 
-    void command_z_applocal_and_exit(const VcpkgCmdArguments& args, const Filesystem&)
+    void command_z_applocal_and_exit(const VcpkgCmdArguments& args, const Filesystem& fs)
     {
         auto parsed = args.parse_arguments(CommandZApplocalMetadata);
-        const auto target_binary = parsed.settings.find(OPTION_TARGET_BINARY);
+        const auto target_binary = parsed.settings.find(SwitchTargetBinary);
         if (target_binary == parsed.settings.end())
         {
-            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgOptionRequiresAValue, msg::option = OPTION_TARGET_BINARY);
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgOptionRequiresAValue, msg::option = SwitchTargetBinary);
         }
 
-        const auto target_installed_bin_setting = parsed.settings.find(OPTION_INSTALLED_DIR);
+        const auto target_installed_bin_setting = parsed.settings.find(SwitchInstalledBinDir);
         if (target_installed_bin_setting == parsed.settings.end())
         {
-            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgOptionRequiresAValue, msg::option = OPTION_INSTALLED_DIR);
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgOptionRequiresAValue, msg::option = SwitchInstalledBinDir);
         }
 
         const auto target_installed_bin_dir =
-            real_filesystem.almost_canonical(target_installed_bin_setting->second, VCPKG_LINE_INFO);
-        const auto target_binary_path = real_filesystem.almost_canonical(target_binary->second, VCPKG_LINE_INFO);
+            fs.almost_canonical(target_installed_bin_setting->second, VCPKG_LINE_INFO);
         const auto decoded = decode_from_canonical_bin_dir(target_installed_bin_dir);
-        AppLocalInvocation invocation(real_filesystem,
+
+        // the first binary is special in that it might not be a DLL or might not exist
+        const Path target_binary_path = target_binary->second;
+        msg::print(LocalizedString::from_raw(target_binary_path)
+                       .append_raw(": ")
+                       .append_raw(MessagePrefix)
+                       .append(msgApplocalProcessing)
+                       .append_raw('\n'));
+
+        std::error_code ec;
+        auto dll_file = fs.open_for_read(target_binary_path, ec);
+        if (ec)
+        {
+            auto io_error = ec.message();
+            if (ec == std::errc::no_such_file_or_directory)
+            {
+                msg::print(Color::warning,
+                           LocalizedString::from_raw(target_binary_path)
+                               .append_raw(": ")
+                               .append_raw(WarningPrefix)
+                               .append_raw(io_error)
+                               .append_raw('\n'));
+            }
+            else
+            {
+                msg::print(Color::error,
+                           LocalizedString::from_raw(target_binary_path)
+                               .append_raw(": ")
+                               .append_raw(ErrorPrefix)
+                               .append_raw(io_error)
+                               .append_raw('\n'));
+            }
+
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
+
+        auto maybe_dll_metadata = vcpkg::try_read_dll_metadata(dll_file).value_or_exit(VCPKG_LINE_INFO);
+        auto dll_metadata = maybe_dll_metadata.get();
+        if (!dll_metadata)
+        {
+            msg::print(Color::warning,
+                       LocalizedString::from_raw(target_binary_path)
+                           .append_raw(": ")
+                           .append_raw(WarningPrefix)
+                           .append(msgFileIsNotExecutable)
+                           .append_raw('\n'));
+
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
+
+        const auto imported_names =
+            vcpkg::try_read_dll_imported_dll_names(*dll_metadata, dll_file).value_or_exit(VCPKG_LINE_INFO);
+        dll_file.close();
+
+        AppLocalInvocation invocation(fs,
                                       target_binary_path.parent_path(),
                                       target_installed_bin_dir,
                                       decoded.installed_root,
                                       decoded.is_debug,
-                                      maybe_create_log(parsed.settings, OPTION_TLOG_FILE, real_filesystem),
-                                      maybe_create_log(parsed.settings, OPTION_COPIED_FILES_LOG, real_filesystem));
-        invocation.resolve(target_binary_path);
+                                      maybe_create_log(parsed.settings, SwitchTLogFile, fs),
+                                      maybe_create_log(parsed.settings, SwitchCopiedFilesLog, fs));
+        invocation.resolve_explicit(target_binary_path, imported_names);
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 } // namespace vcpkg

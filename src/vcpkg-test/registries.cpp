@@ -73,7 +73,7 @@ namespace
     }
 
     // test functions which parse string literals, so no concerns about failure
-    Json::Value parse_json(StringView sv) { return Json::parse(sv).value(VCPKG_LINE_INFO).value; }
+    Json::Value parse_json(StringView sv) { return Json::parse(sv, "test").value(VCPKG_LINE_INFO).value; }
 }
 
 TEST_CASE ("registry_set_selects_registry", "[registries]")
@@ -420,19 +420,16 @@ TEST_CASE ("registries report pattern errors", "[registries]")
     REQUIRE(messages.size() == 3);
     CHECK(messages[0].message ==
           "test: error: $.registries[0].packages[1] (a package pattern): \"\" is not a valid package pattern. Package "
-          "patterns must "
-          "use only one wildcard character (*) and it must be the last character in the pattern (see "
+          "patterns must use only one wildcard character (*) and it must be the last character in the pattern (see "
           "https://learn.microsoft.com/vcpkg/users/registries for more information).");
     CHECK(messages[1].message ==
           "test: error: $.registries[0].packages[2] (a package pattern): \"a*a\" is not a valid package pattern. "
-          "Package patterns "
-          "must use only one wildcard character (*) and it must be the last character in the pattern (see "
-          "https://learn.microsoft.com/vcpkg/users/registries for more information).");
+          "Package patterns must use only one wildcard character (*) and it must be the last character in the pattern "
+          "(see https://learn.microsoft.com/vcpkg/users/registries for more information).");
     CHECK(messages[2].message ==
           "test: error: $.registries[0].packages[3] (a package pattern): \"*a\" is not a valid package pattern. "
-          "Package patterns "
-          "must use only one wildcard character (*) and it must be the last character in the pattern (see "
-          "https://learn.microsoft.com/vcpkg/users/registries for more information).");
+          "Package patterns must use only one wildcard character (*) and it must be the last character in the pattern "
+          "(see https://learn.microsoft.com/vcpkg/users/registries for more information).");
 }
 
 TEST_CASE ("registries ignored patterns warning", "[registries]")

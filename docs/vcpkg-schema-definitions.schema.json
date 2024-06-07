@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema",
-  "$id": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/master/docs/vcpkg-schema-definitions.schema.json",
+  "$id": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg-schema-definitions.schema.json",
   "definitions": {
     "artifact-references": {
       "description": "A key/value pair of artifact name to selected artifact version.",
@@ -763,26 +763,27 @@
                 "$ref": "#/definitions/identifier"
               },
             "version-string": {
-              "description": "Text used to identify an arbitrary version",
+              "description": "Deprecated in favor of 'version' in overrides. Text used to identify an arbitrary version",
               "type": "string",
               "pattern": "^[^#]+(#\\d+)?$"
             },
             "version": {
-              "description": "A relaxed version string (1.2.3.4...)",
+              "description": "Text used to identify the overridden version.",
               "type": "string",
-              "pattern": "^\\d+(\\.\\d+)*(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?(#\\d+)?$"
+              "pattern": "^[^#]+(#\\d+)?$"
             },
             "version-date": {
-              "description": "A date version string (e.g. 2020-01-20)",
+              "description": "Deprecated in favor of 'version' in overrides. A date version string (e.g. 2020-01-20).",
               "type": "string",
               "pattern": "^\\d{4}-\\d{2}-\\d{2}(\\.\\d+)*(#\\d+)?$"
             },
             "version-semver": {
-              "description": "A semantic version string. See https://semver.org/",
+              "description": "Deprecated in favor of 'version' in overrides. A semantic version string. See https://semver.org/",
               "type": "string",
               "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?(#\\d+)?$"
             },
             "port-version": {
+              "description": "Deprecated in favor of being a part of 'version' in overrides. Specifies the port-version portion of the version. Overrides the value in one of the other version fields.",
               "$ref": "#/definitions/port-version"
             }
           },

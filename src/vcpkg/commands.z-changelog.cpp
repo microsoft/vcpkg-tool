@@ -44,7 +44,8 @@ namespace vcpkg
         result.append("|x64-uwp|Building...|\n");
         result.append("|arm64-windows|Building...|\n");
         result.append("|arm64-uwp|Building...|\n");
-        result.append("|**x64-osx**|Building...|\n");
+        result.append("|**arm64-osx**|Building...|\n");
+        result.append("|x64-osx|Building...|\n");
         result.append("|**x64-linux**|Building...|\n");
         result.append("|arm-neon-android|Building...|\n");
         result.append("|x64-android|Building...|\n");
@@ -113,7 +114,7 @@ namespace vcpkg
 
         result.append("#### New Contributors\n");
 
-        msg::write_unlocalized_text_to_stdout(Color::none, result);
+        msg::write_unlocalized_text(Color::none, result);
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 }
