@@ -668,7 +668,7 @@ namespace vcpkg
         return LintStatus::SUCCESS;
     }
 
-    static LintStatus check_appcontainer_bit(StringView expected_system_name,
+    static LintStatus check_appcontainer_bit_if_uwp(StringView expected_system_name,
                                              const Path& package_dir,
                                              const Path& portfile_cmake,
                                              const std::vector<PostBuildCheckDllData>& dlls_data,
@@ -1809,7 +1809,7 @@ namespace vcpkg
             }
             if (!policies.is_enabled(BuildPolicy::SKIP_APPCONTAINER_CHECK))
             {
-                error_count += check_appcontainer_bit(
+                error_count += check_appcontainer_bit_if_uwp(
                     pre_build_info.cmake_system_name, package_dir, portfile_cmake, dlls_data, msg_sink);
             }
             if (!policies.is_enabled(BuildPolicy::ALLOW_OBSOLETE_MSVCRT))
