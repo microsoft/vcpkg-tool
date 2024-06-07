@@ -1166,7 +1166,7 @@ namespace
                 // aws-cli is covered.
                 if (exit->exit_code == 0 || exit->exit_code == 1)
                 {
-                    if (Strings::trim(exit->output) == "")
+                    if (Strings::trim(exit->output).empty())
                     {
                         return CacheAvailability::unavailable;
                     }
