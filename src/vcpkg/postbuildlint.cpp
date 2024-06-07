@@ -553,9 +553,9 @@ namespace vcpkg
     }
 
     static LintStatus check_for_exes_in_bin_dirs(const ReadOnlyFilesystem& fs,
-                                     const Path& package_dir,
-                                     const Path& portfile_cmake,
-                                     MessageSink& msg_sink)
+                                                 const Path& package_dir,
+                                                 const Path& portfile_cmake,
+                                                 MessageSink& msg_sink)
     {
         std::vector<Path> exes;
         for (auto&& bin_relative_path : bin_relative_paths)
@@ -674,10 +674,10 @@ namespace vcpkg
     }
 
     static LintStatus check_appcontainer_bit_if_uwp(StringView expected_system_name,
-                                             const Path& package_dir,
-                                             const Path& portfile_cmake,
-                                             const std::vector<PostBuildCheckDllData>& dlls_data,
-                                             MessageSink& msg_sink)
+                                                    const Path& package_dir,
+                                                    const Path& portfile_cmake,
+                                                    const std::vector<PostBuildCheckDllData>& dlls_data,
+                                                    MessageSink& msg_sink)
     {
         if (expected_system_name != "WindowsStore")
         {
@@ -1451,10 +1451,10 @@ namespace vcpkg
     }
 
     static LintStatus check_no_regular_files_in_relative_path(const ReadOnlyFilesystem& fs,
-                                                     const Path& package_dir,
-                                                     const Path& portfile_cmake,
-                                                     View<StringLiteral> relative_paths,
-                                                     MessageSink& msg_sink)
+                                                              const Path& package_dir,
+                                                              const Path& portfile_cmake,
+                                                              View<StringLiteral> relative_paths,
+                                                              MessageSink& msg_sink)
     {
         std::vector<Path> misplaced_files;
         for (auto&& relative_path : relative_paths)
@@ -1834,8 +1834,8 @@ namespace vcpkg
                 auto& relative_dlls = relative_debug_dlls;
                 Util::Vectors::append(relative_dlls, std::move(relative_release_dlls));
                 error_count += check_no_dlls_present(package_dir, relative_dlls, portfile_cmake, msg_sink);
-                error_count += check_bin_folders_are_not_present_in_static_build(
-                    fs, package_dir, portfile_cmake, msg_sink);
+                error_count +=
+                    check_bin_folders_are_not_present_in_static_build(fs, package_dir, portfile_cmake, msg_sink);
             }
 
             // Note that this condition is paired with the possible initialization of `debug_lib_info` above
