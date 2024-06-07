@@ -546,7 +546,7 @@ namespace vcpkg
         return LintStatus::PROBLEM_DETECTED;
     }
 
-    static LintStatus check_for_exes(const ReadOnlyFilesystem& fs,
+    static LintStatus check_for_exes_in_bin_dirs(const ReadOnlyFilesystem& fs,
                                      const Path& package_dir,
                                      View<StringLiteral> bin_relative_paths,
                                      const Path& portfile_cmake,
@@ -1723,7 +1723,7 @@ namespace vcpkg
         }
         if (windows_target && !policies.is_enabled(BuildPolicy::ALLOW_EXES_IN_BIN))
         {
-            error_count += check_for_exes(fs, package_dir, bin_relative_paths, portfile_cmake, msg_sink);
+            error_count += check_for_exes_in_bin_dirs(fs, package_dir, bin_relative_paths, portfile_cmake, msg_sink);
         }
         if (!policies.is_enabled(BuildPolicy::SKIP_USAGE_INSTALL_CHECK))
         {
