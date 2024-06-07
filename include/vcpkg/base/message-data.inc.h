@@ -102,7 +102,6 @@ DECLARE_MESSAGE(
     "actually semantic parts do not apply.\n"
     "If versions for this port are not ordered by these rules, disable this check by rerunning this command and adding "
     "--skip-version-format-check .")
-DECLARE_MESSAGE(AddVersionUnableToParseVersionsFile, (msg::path), "", "unable to parse versions file {path}")
 DECLARE_MESSAGE(AddVersionUncommittedChanges,
                 (msg::package_name),
                 "",
@@ -441,7 +440,6 @@ DECLARE_MESSAGE(CiBaselineUnexpectedPass,
                 (msg::spec, msg::path),
                 "",
                 "PASSING, REMOVE FROM FAIL LIST: {spec} ({path}).")
-DECLARE_MESSAGE(CISettingsExclude, (), "", "Comma-separated list of ports to skip")
 DECLARE_MESSAGE(CISettingsOptCIBase,
                 (),
                 "",
@@ -1220,8 +1218,6 @@ DECLARE_MESSAGE(FailedToParseCMakeConsoleOut,
                 "Failed to parse CMake console output to locate block start/end markers.")
 DECLARE_MESSAGE(FailedToParseBaseline, (msg::path), "", "Failed to parse baseline: {path}")
 DECLARE_MESSAGE(FailedToParseConfig, (msg::path), "", "Failed to parse configuration: {path}")
-DECLARE_MESSAGE(FailedToParseControl, (msg::path), "", "Failed to parse CONTROL file: {path}")
-DECLARE_MESSAGE(FailedToParseManifest, (msg::path), "", "Failed to parse manifest file: {path}")
 DECLARE_MESSAGE(FailedToParseVersionFile, (msg::path), "", "Failed to parse version file: {path}")
 DECLARE_MESSAGE(FailedToParseNoTopLevelObj, (msg::path), "", "Failed to parse {path}, expected a top-level object.")
 DECLARE_MESSAGE(FailedToParseNoVersionsArray, (msg::path), "", "Failed to parse {path}, expected a 'versions' array.")
@@ -1235,7 +1231,6 @@ DECLARE_MESSAGE(FailedToParseVersionXML,
                 (msg::tool_name, msg::version),
                 "",
                 "Could not parse version for tool {tool_name}. Version string was: {version}")
-DECLARE_MESSAGE(FailedToReadParagraph, (msg::path), "", "Failed to read paragraphs from {path}")
 DECLARE_MESSAGE(FailedToRunToolToDetermineVersion,
                 (msg::tool_name, msg::path),
                 "Additional information, such as the command line output, if any, will be appended on "
