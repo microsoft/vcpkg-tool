@@ -1916,6 +1916,11 @@ DECLARE_MESSAGE(InvalidValueHashAdditionalFiles,
                 "",
                 "Variable VCPKG_HASH_ADDITIONAL_FILES contains invalid file path: '{path}'. The value must be "
                 "an absolute path to an existent file.")
+DECLARE_MESSAGE(InvalidValuePostPortfileIncludes,
+                (msg::path),
+                "",
+                "Variable VCPKG_POST_PORTFILE_INCLUDES contains invalid file path: '{path}'. The value must be "
+                "an absolute path to an existent cmake file.")
 DECLARE_MESSAGE(IrregularFile, (msg::path), "", "path was not a regular file: {path}")
 DECLARE_MESSAGE(JsonErrorMustBeAnObject, (msg::path), "", "Expected \"{path}\" to be an object.")
 DECLARE_MESSAGE(JsonFieldNotObject, (msg::json_field), "", "value of [\"{json_field}\"] must be an object")

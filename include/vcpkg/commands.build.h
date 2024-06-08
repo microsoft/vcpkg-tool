@@ -132,6 +132,7 @@ namespace vcpkg
         std::vector<std::string> passthrough_env_vars;
         std::vector<std::string> passthrough_env_vars_tracked;
         std::vector<Path> hash_additional_files;
+        std::vector<Path> post_portfile_includes;
         Optional<Path> gamedk_latest_path;
 
         Path toolchain_file() const;

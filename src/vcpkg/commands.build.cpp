@@ -36,6 +36,8 @@
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
 
+#include <numeric>
+
 using namespace vcpkg;
 
 namespace
@@ -774,6 +776,16 @@ namespace vcpkg
             all_features.append(feature->name + ";");
         }
 
+        auto& post_portfile_includes = action.pre_build_info(VCPKG_LINE_INFO).post_portfile_includes;
+        std::string all_post_portfile_includes;
+        if (!post_portfile_includes.empty())
+            all_post_portfile_includes = std::accumulate(
+                std::next(post_portfile_includes.begin()),
+                post_portfile_includes.end(),
+                post_portfile_includes[0].generic_u8string(),
+                [](const Path& a, const Path& b) { return a.generic_u8string() + ";" + b.generic_u8string(); });
+        ;
+
         std::vector<CMakeVariable> variables{
             {CMakeVariableAllFeatures, all_features},
             {CMakeVariableCurrentPortDir, scfl.port_directory()},
@@ -786,7 +798,7 @@ namespace vcpkg
             {CMakeVariableEditable, Util::Enum::to_bool(action.editable) ? "1" : "0"},
             {CMakeVariableNoDownloads, !Util::Enum::to_bool(build_options.allow_downloads) ? "1" : "0"},
             {CMakeVariableZChainloadToolchainFile, action.pre_build_info(VCPKG_LINE_INFO).toolchain_file()},
-        };
+            {CMakeVariableZPostPortfileIncludes, all_post_portfile_includes}};
 
         if (build_options.download_tool == DownloadTool::Aria2)
         {
@@ -1217,6 +1229,18 @@ namespace vcpkg
             }
             abi_tag_entries.emplace_back(
                 fmt::format("additional_file_{}", i),
+                Hash::get_file_hash(fs, file, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO));
+        }
+
+        for (size_t i = 0; i < abi_info.pre_build_info->post_portfile_includes.size(); ++i)
+        {
+            auto& file = abi_info.pre_build_info->post_portfile_includes[i];
+            if (file.is_relative() || !fs.is_regular_file(file) || file.extension() != ".cmake")
+            {
+                Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgInvalidValuePostPortfileIncludes, msg::path = file);
+            }
+            abi_tag_entries.emplace_back(
+                fmt::format("post_portfile_include_{}", i),
                 Hash::get_file_hash(fs, file, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO));
         }
 
@@ -1863,6 +1887,13 @@ namespace vcpkg
             hash_additional_files =
                 Util::fmap(Strings::split(*value, ';'), [](auto&& str) { return Path(std::move(str)); });
         }
+
+        if (auto value = Util::value_if_set_and_nonempty(cmakevars, CMakeVariablePostPortfileIncludes))
+        {
+            post_portfile_includes =
+                Util::fmap(Strings::split(*value, ';'), [](auto&& str) { return Path(std::move(str)); });
+        }
+
         // Note that this value must come after CMakeVariableChainloadToolchainFile because its default depends upon it
         load_vcvars_env = !external_toolchain_file.has_value();
         if (auto value = Util::value_if_set_and_nonempty(cmakevars, CMakeVariableLoadVcvarsEnv))
