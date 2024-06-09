@@ -52,8 +52,8 @@ namespace vcpkg
                                                           const Path& exe_path);
     ExpectedL<std::string> extract_regex_match(StringLiteral regex,
                                                StringLiteral tool_name,
-                                               std::string &&output,
-                                               const Path &exe_path);
+                                               std::string&& output,
+                                               const Path& exe_path);
 
     ExpectedL<Path> find_system_tar(const ReadOnlyFilesystem& fs);
     ExpectedL<Path> find_system_cmake(const ReadOnlyFilesystem& fs);

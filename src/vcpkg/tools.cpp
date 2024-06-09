@@ -182,18 +182,18 @@ namespace vcpkg
 
     ExpectedL<std::string> extract_regex_match(StringLiteral regex,
                                                StringLiteral tool_name,
-                                               std::string &&output,
-                                               const Path &exe_path)
+                                               std::string&& output,
+                                               const Path& exe_path)
     {
         std::smatch match;
         if (std::regex_search(output, match, std::regex(regex.data(), regex.size())))
         {
-            return { match[1], expected_left_tag };
+            return {match[1], expected_left_tag};
         }
 
         return std::move(msg::format_error(msgUnexpectedToolOutput, msg::tool_name = tool_name, msg::path = exe_path)
-                         .append_raw('\n')
-                         .append_raw(std::move(output)));
+                             .append_raw('\n')
+                             .append_raw(std::move(output)));
     }
 
     struct ToolProvider
@@ -332,7 +332,8 @@ namespace vcpkg
                     // NuGet Version: 4.6.2.5055
                     // usage: NuGet <command> [args] [options]
                     // Type 'NuGet help <command>' for help on a specific command.
-                    return extract_regex_match(R"###(^NuGet [^:]+: (\S+))###", Tools::NUGET, std::move(output), exe_path);
+                    return extract_regex_match(
+                        R"###(^NuGet [^:]+: (\S+))###", Tools::NUGET, std::move(output), exe_path);
                 });
         }
     };
