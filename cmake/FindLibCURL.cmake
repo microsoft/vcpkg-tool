@@ -23,7 +23,7 @@ if(NOT LibCURL_FIND_REQUIRED)
     message(FATAL_ERROR "LibCURL must be REQUIRED")
 endif()
 
-if(VCPKG_DEPENDENCY_EXTERNAL_FMT)
+if(VCPKG_DEPENDENCY_EXTERNAL_LIBCURL)
     find_package(CURL REQUIRED)
 else()
     function(get_libcurl)
