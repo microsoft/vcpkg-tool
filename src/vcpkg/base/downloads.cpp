@@ -1,5 +1,6 @@
 #include <vcpkg/base/api-stable-format.h>
 #include <vcpkg/base/contractual-constants.h>
+#include <vcpkg/base/curl.h>
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
@@ -12,7 +13,6 @@
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/system.proxy.h>
 #include <vcpkg/base/util.h>
-#include <vcpkg/base/curl.h>
 
 #include <vcpkg/commands.version.h>
 
