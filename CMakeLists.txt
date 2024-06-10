@@ -189,6 +189,7 @@ set(TEST_SCRIPT_ASSET_CACHE_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/test-script
 
 find_package(fmt REQUIRED)
 find_package(CMakeRC REQUIRED)
+find_package(LibCURL REQUIRED)
 
 # === Target: locale-resources ===
 
@@ -222,6 +223,8 @@ target_compile_definitions(vcpkglib PUBLIC
     VCPKG_BASE_VERSION=${VCPKG_BASE_VERSION}
     _FILE_OFFSET_BITS=64
 )
+
+target_link_libraries(vcpkglib PRIVATE CURL::libcurl)
 
 if(VCPKG_STANDALONE_BUNDLE_SHA)
     target_compile_definitions(vcpkglib PUBLIC

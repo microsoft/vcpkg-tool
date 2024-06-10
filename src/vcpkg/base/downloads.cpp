@@ -12,6 +12,7 @@
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/system.proxy.h>
 #include <vcpkg/base/util.h>
+#include <vcpkg/base/curl.h>
 
 #include <vcpkg/commands.version.h>
 
@@ -379,6 +380,7 @@ namespace vcpkg
     {
 #define GUID_MARKER "5ec47b8e-6776-4d70-b9b3-ac2a57bc0a1c"
         static constexpr StringLiteral guid_marker = GUID_MARKER;
+        // TODO: Replace with libcurl code.
         Command prefix_cmd{"curl"};
         if (!prefixArgs.empty())
         {

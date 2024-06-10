@@ -8,6 +8,7 @@
 #include <vcpkg/base/system.mac.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/uuid.h>
+#include <vcpkg/base/curl.h>
 
 #include <vcpkg/commands.version.h>
 #include <vcpkg/metrics.h>
@@ -606,6 +607,7 @@ namespace vcpkg
         builder.string_arg(vcpkg_metrics_txt_path);
         cmd_execute_background(builder);
 #else
+        // TODO: replace with libcurl code
         cmd_execute_background(Command("curl")
                                    .string_arg("https://dc.services.visualstudio.com/v2/track")
                                    .string_arg("--max-time")
