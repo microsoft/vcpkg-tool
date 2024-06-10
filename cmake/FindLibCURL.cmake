@@ -42,7 +42,7 @@ else()
         set(CMAKE_DISABLE_FIND_PACKAGE_ZLIB ON)
         set(CMAKE_DISABLE_FIND_PACKAGE_LibPSL ON)
         set(CMAKE_DISABLE_FIND_PACKAGE_LibSSH2 ON)
-        if(MSVC) # This is in block() so no need to backup the variables
+        if(MSVC) # This is in function() so no need to backup the variables
             string(APPEND CMAKE_C_FLAGS " /wd6101")
             string(APPEND CMAKE_C_FLAGS " /wd6011")
             string(APPEND CMAKE_C_FLAGS " /wd6054")
