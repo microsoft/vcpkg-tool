@@ -83,3 +83,13 @@ jobs:
           ${{ github.workspace }}/azure-pipelines/end-to-end-tests.ps1 -RunArtifactsTests
         env:
           VCPKG_ROOT: ${{ github.workspace }}/vcpkg-root
+      - name: Upload CMake logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cmake-logs
+          path: |
+            out/build/${{ matrix.preset }}/CMakeFiles/CMakeError.log
+            out/build/${{ matrix.preset }}/CMakeFiles/CMakeOutput.log
+            out/build/${{ matrix.preset }}/CMakeFiles/CMakeConfigureLog.yaml
+  
