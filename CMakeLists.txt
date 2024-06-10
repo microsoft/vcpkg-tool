@@ -498,6 +498,7 @@ if (BUILD_TESTING)
         "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg.manifest"
     )
     target_link_libraries(vcpkg-test PRIVATE vcpkglib)
+
     set_property(TARGET vcpkg-test PROPERTY PDB_NAME "vcpkg-test${VCPKG_PDB_SUFFIX}")
     if(ANDROID)
         target_link_libraries(vcpkg-test PRIVATE log)
@@ -507,7 +508,8 @@ if (BUILD_TESTING)
 
     if(CMAKE_VERSION GREATER_EQUAL "3.16")
         target_precompile_headers(vcpkg-test REUSE_FROM vcpkglib)
-    elseif(NOT MSVC)
+        target_compile_definitions(vcpkg-test PRIVATE CURL_STATICLIB)
+   elseif(NOT MSVC)
        target_compile_options(vcpkg-test PRIVATE -include "${CMAKE_CURRENT_SOURCE_DIR}/include/pch.h")
     endif()
 
