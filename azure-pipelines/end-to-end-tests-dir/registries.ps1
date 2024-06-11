@@ -453,3 +453,105 @@ finally
 {
     Pop-Location
 }
+
+# test x-update-baseline reference in registry
+Write-Trace "test x-update-baseline reference in registry"
+$manifestDir = "$TestingRoot/update-baseline-registry-reference"
+
+New-Item -Path $manifestDir -ItemType Directory
+$manifestDir = (Get-Item $manifestDir).FullName
+
+Push-Location $manifestDir
+try
+{
+    $gitMainBranch = 'master'
+    $gitSecondaryBranch = 'secondary'
+
+    $CurrentTest = 'git init .'
+    git @gitConfigOptions init .
+    Throw-IfFailed
+
+    $vcpkgBaseline = @{
+        "default" = @{
+        }
+    }
+
+    New-Item -Path './ports' -ItemType Directory
+    New-Item -Path './versions' -ItemType Directory
+
+    New-Item -Path './versions/baseline.json' -Value (ConvertTo-Json -Depth 5 -InputObject $vcpkgBaseline)
+
+    $CurrentTest = 'git add versions/baseline.json'
+    git add versions/baseline.json
+    Throw-IfFailed
+
+    $CurrentTest = 'git commit initial commit'
+    git commit -m "initial commit"
+    Throw-IfFailed
+
+    $vcpkgConfigurationJson = @{
+        "default-registry"= @{
+            "kind" = "git";
+            "baseline" = "";
+            "repository" = $manifestDir;
+        }
+    }
+
+    $vcpkgJson = @{}
+    New-Item -Path './vcpkg-configuration.json' -Value (ConvertTo-Json -Depth 5 -InputObject $vcpkgConfigurationJson)
+    New-Item -Path './vcpkg.json' -Value (ConvertTo-Json -Depth 5 -InputObject $vcpkgJson)
+
+    $CurrentTest = 'vcpkg x-update-baseline'
+    $out = Run-VcpkgAndCaptureOutput x-update-baseline
+    Throw-IfFailed
+
+    $CurrentTest = 'git rev-parse HEAD'
+    $registryBaseline = git rev-parse HEAD
+    Throw-IfFailed
+
+    $configurationBefore = Get-Content "$manifestDir/vcpkg-configuration.json" | ConvertFrom-Json -AsHashTable
+    if ($configurationBefore["default-registry"]["baseline"] -ne $registryBaseline) {
+        throw "x-update-baseline baseline mismatch"
+    }
+
+    $CurrentTest = 'git checkout secondary branch'
+    git checkout -b $gitSecondaryBranch
+    Throw-IfFailed
+
+    $CurrentTest = 'git commit empty commit'
+    git commit --allow-empty -m "empty commit"
+    Throw-IfFailed
+
+    $CurrentTest = 'git checkout main branch'
+    git checkout $gitMainBranch
+    Throw-IfFailed
+
+    $vcpkgConfigurationJson = @{
+        "default-registry"= @{
+            "kind" = "git";
+            "baseline" = "";
+            "repository" = $manifestDir;
+            "reference" = "secondary";
+        }
+    }
+
+    New-Item -Path './vcpkg-configuration.json' -Value (ConvertTo-Json -Depth 5 -InputObject $vcpkgConfigurationJson) -Force
+
+    $CurrentTest = 'git rev-parse branch'
+    $refBaseline = git rev-parse $gitSecondaryBranch
+    Throw-IfFailed
+
+    $CurrentTest = 'vcpkg x-update-baseline on reference'
+    $out = Run-VcpkgAndCaptureOutput x-update-baseline
+    Throw-IfFailed
+
+    $configurationBefore = Get-Content "$manifestDir/vcpkg-configuration.json" | ConvertFrom-Json -AsHashTable
+
+    if ($configurationBefore["default-registry"]["baseline"] -ne $refBaseline) {
+        throw "Unexpected baseline mismatch on reference branch"
+    }
+}
+finally
+{
+    Pop-Location
+}
