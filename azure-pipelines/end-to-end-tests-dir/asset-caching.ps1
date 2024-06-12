@@ -15,7 +15,7 @@ $actual = $actual -replace "`r`n", "`n"
 
 $expected = @(
 "A suitable version of .* was not found \(required v[0-9\.]+\)."
-"error: Missing .* and external downloads are blocked by x-block-origin."
+"error: Missing .* and downloads are blocked by x-block-origin."
 ) -join "`n"
 
 if (-not ($actual -match $expected)) {
@@ -42,7 +42,7 @@ $actual = $actual -replace "`r`n", "`n"
 
 $expected = @(
 "A suitable version of .* was not found \(required v[0-9\.]+\)."
-"Asset cache miss for .* and external downloads are blocked by x-block-origin"
+"Asset cache miss for .* and downloads are blocked by x-block-origin"
 ) -join "`n"
 
 if (-not ($actual -match $expected)) {
