@@ -482,11 +482,11 @@ try
     New-Item -Path './versions/baseline.json' -Value (ConvertTo-Json -Depth 5 -InputObject $vcpkgBaseline)
 
     $CurrentTest = 'git add versions/baseline.json'
-    git add versions/baseline.json
+    git @gitConfigOptions add versions/baseline.json
     Throw-IfFailed
 
     $CurrentTest = 'git commit initial commit'
-    git commit -m "initial commit"
+    git @gitConfigOptions commit -m "initial commit"
     Throw-IfFailed
 
     $vcpkgConfigurationJson = @{
@@ -515,15 +515,15 @@ try
     }
 
     $CurrentTest = 'git checkout secondary branch'
-    git checkout -b $gitSecondaryBranch
+    git @gitConfigOptions checkout -b $gitSecondaryBranch
     Throw-IfFailed
 
     $CurrentTest = 'git commit empty commit'
-    git commit --allow-empty -m "empty commit"
+    git @gitConfigOptions commit --allow-empty -m "empty commit"
     Throw-IfFailed
 
     $CurrentTest = 'git checkout main branch'
-    git checkout $gitMainBranch
+    git @gitConfigOptions checkout $gitMainBranch
     Throw-IfFailed
 
     $vcpkgConfigurationJson = @{
