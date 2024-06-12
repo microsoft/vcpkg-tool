@@ -581,8 +581,7 @@ namespace vcpkg
             }
         }
         msg::println(
-                msgAssetCacheSuccesfullyStored, msg::path = file.filename());
-        Debug::println(fmt::format("Uploaded {} to {} ", file.filename(), url));
+                msgAssetCacheSuccesfullyStored, msg::path = file.filename(), msg::url = replace_secrets(url.to_string(), secrets));
         return res;
     }
 
@@ -920,8 +919,7 @@ namespace vcpkg
                                       errors,
                                       progress_sink))
                 {
-                    msg::println(msgAssetCacheHit, msg::path = download_path.filename());
-                    Debug::println("Downloaded from: ", read_url);
+                    msg::println(msgAssetCacheHit, msg::path = download_path.filename(), msg::url = replace_secrets(read_url, m_config.m_secrets));
                     return read_url;
                 }
             }
@@ -988,7 +986,7 @@ namespace vcpkg
                         auto maybe_push = put_file_to_mirror(fs, download_path, *hash);
                         if (!maybe_push)
                         {
-                            msg::println_warning(msgFailedToStoreBackToMirror, msg::path = download_path.filename());
+                            msg::println_warning(msgFailedToStoreBackToMirror, msg::path = download_path.filename(), msg::url = replace_secrets(download_path.c_str(), m_config.m_secrets));
                             msg::println(maybe_push.error());
                         }
                     }
@@ -1009,10 +1007,7 @@ namespace vcpkg
     
         for (LocalizedString& error : errors)
         {
-            // Debug only since:
-            // 1. curl already prints the error
-            // 2. the printed url can contain sensitive information like username/password
-            Debug::println(error);
+            msg::println(error);
         }
 
         Checks::exit_fail(VCPKG_LINE_INFO);

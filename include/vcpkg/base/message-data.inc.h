@@ -236,14 +236,14 @@ DECLARE_MESSAGE(ArtifactsSwitchOsx, (), "", "Forces host detection to MacOS when
 DECLARE_MESSAGE(ArtifactsSwitchX64, (), "", "Forces host detection to x64 when acquiring artifacts")
 DECLARE_MESSAGE(ArtifactsSwitchX86, (), "", "Forces host detection to x86 when acquiring artifacts")
 DECLARE_MESSAGE(ArtifactsSwitchWindows, (), "", "Forces host detection to Windows when acquiring artifacts")
-DECLARE_MESSAGE(AssetCacheHit, (msg::path), "", "Asset cache hit for {path}.")
+DECLARE_MESSAGE(AssetCacheHit, (msg::path, msg::url), "", "Asset cache hit for {path}; downloaded from: {url}")
 DECLARE_MESSAGE(AssetCacheMiss, (msg::url), "", "Asset cache miss; downloading from {url}")
 DECLARE_MESSAGE(DownloadingUrl, (msg::url), "", "Downloading {url}")
 DECLARE_MESSAGE(AssetCacheProviderAcceptsNoArguments,
                 (msg::value),
                 "{value} is a asset caching provider name such as azurl, clear, or x-block-origin",
                 "unexpected arguments: '{value}' does not accept arguments")
-DECLARE_MESSAGE(AssetCacheSuccesfullyStored, (msg::path), "", "Successfully stored {path} to mirror.")
+DECLARE_MESSAGE(AssetCacheSuccesfullyStored, (msg::path, msg::url), "", "Successfully stored {path} to {url}.")
 DECLARE_MESSAGE(AssetSourcesArg, (), "", "Asset caching sources. See 'vcpkg help assetcaching'")
 DECLARE_MESSAGE(ASemanticVersionString, (), "", "a semantic version string")
 DECLARE_MESSAGE(ASetOfFeatures, (), "", "a set of features")
@@ -1257,7 +1257,7 @@ DECLARE_MESSAGE(FailedToRunToolToDetermineVersion,
                 "Additional information, such as the command line output, if any, will be appended on "
                 "the line after this message",
                 "Failed to run \"{path}\" to determine the {tool_name} version.")
-DECLARE_MESSAGE(FailedToStoreBackToMirror, (msg::path), "", "Failed to store {path} to mirror.")
+DECLARE_MESSAGE(FailedToStoreBackToMirror, (msg::path, msg::url), "", "Failed to store {path} to {path}.")
 DECLARE_MESSAGE(FailedToStoreBinaryCache, (msg::path), "", "Failed to store binary cache {path}")
 DECLARE_MESSAGE(FailedToTakeFileSystemLock, (), "", "Failed to take the filesystem lock")
 DECLARE_MESSAGE(FailedToWriteManifest, (msg::path), "", "Failed to write manifest file {path}")
