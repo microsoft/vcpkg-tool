@@ -102,8 +102,8 @@ namespace vcpkg
         {
         }
 
-        ExpectedT(const ExpectedT& other) noexcept(
-            std::is_nothrow_copy_constructible_v<Error>&& std::is_nothrow_copy_constructible_v<ExpectedHolder<T>>)
+        ExpectedT(const ExpectedT& other) noexcept(std::is_nothrow_copy_constructible_v<Error> &&
+                                                   std::is_nothrow_copy_constructible_v<ExpectedHolder<T>>)
             : value_is_error(other.value_is_error)
         {
             if (value_is_error)
@@ -116,8 +116,8 @@ namespace vcpkg
             }
         }
 
-        ExpectedT(ExpectedT&& other) noexcept(
-            std::is_nothrow_move_constructible_v<Error>&& std::is_nothrow_move_constructible_v<ExpectedHolder<T>>)
+        ExpectedT(ExpectedT&& other) noexcept(std::is_nothrow_move_constructible_v<Error> &&
+                                              std::is_nothrow_move_constructible_v<ExpectedHolder<T>>)
             : value_is_error(other.value_is_error)
         {
             if (value_is_error)

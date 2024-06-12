@@ -580,8 +580,9 @@ namespace vcpkg
                     msgCurlFailedToPutHttp, msg::exit_code = *pres, msg::url = url, msg::value = code);
             }
         }
-        msg::println(
-                msgAssetCacheSuccesfullyStored, msg::path = file.filename(), msg::url = replace_secrets(url.to_string(), secrets));
+        msg::println(msgAssetCacheSuccesfullyStored,
+                     msg::path = file.filename(),
+                     msg::url = replace_secrets(url.to_string(), secrets));
         return res;
     }
 
@@ -919,7 +920,9 @@ namespace vcpkg
                                       errors,
                                       progress_sink))
                 {
-                    msg::println(msgAssetCacheHit, msg::path = download_path.filename(), msg::url = replace_secrets(read_url, m_config.m_secrets));
+                    msg::println(msgAssetCacheHit,
+                                 msg::path = download_path.filename(),
+                                 msg::url = replace_secrets(read_url, m_config.m_secrets));
                     return read_url;
                 }
             }
@@ -987,7 +990,9 @@ namespace vcpkg
                         auto maybe_push = put_file_to_mirror(fs, download_path, *hash);
                         if (!maybe_push)
                         {
-                            msg::println_warning(msgFailedToStoreBackToMirror, msg::path = download_path.filename(), msg::url = replace_secrets(download_path.c_str(), m_config.m_secrets));
+                            msg::println_warning(msgFailedToStoreBackToMirror,
+                                                 msg::path = download_path.filename(),
+                                                 msg::url = replace_secrets(download_path.c_str(), m_config.m_secrets));
                             msg::println(maybe_push.error());
                         }
                     }
