@@ -1515,7 +1515,7 @@ namespace vcpkg
         }
 
         if (extension == ".py" || extension == ".sh" || extension == ".cmake" || extension == ".pc" ||
-            extension == ".conf")
+            extension == ".conf" || extension == ".csh" || extension == ".pl")
         {
             const auto contents = fs.read_contents(file, IgnoreErrors{});
             return Strings::contains_any_ignoring_hash_comments(contents, searcher_paths);
