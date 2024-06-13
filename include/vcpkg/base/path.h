@@ -36,6 +36,7 @@ namespace vcpkg
         void replace_filename(StringView sv);
         void remove_filename();
         void make_preferred();
+        void make_generic();
         void clear();
         Path lexically_normal() const;
 

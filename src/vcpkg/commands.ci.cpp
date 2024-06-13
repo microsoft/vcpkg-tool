@@ -226,7 +226,6 @@ namespace
                 }
                 else
                 {
-                    it->build_options = backcompat_prohibiting_package_options;
                     to_keep.insert(it->package_dependencies.begin(), it->package_dependencies.end());
                 }
             }
@@ -290,8 +289,7 @@ namespace
         {
             return;
         }
-        auto output_data = output.extract_data();
-        fwrite(output_data.data(), 1, output_data.size(), stderr);
+        msg::write_unlocalized_text_to_stderr(Color::none, output);
     }
 
 } // unnamed namespace
@@ -318,6 +316,19 @@ namespace vcpkg
         msg::println_warning(msgInternalCICommand);
         const ParsedArguments options = args.parse_arguments(CommandCiMetadata);
         const auto& settings = options.settings;
+
+        static constexpr BuildPackageOptions build_options{
+            BuildMissing::Yes,
+            AllowDownloads::Yes,
+            OnlyDownloads::No,
+            CleanBuildtrees::Yes,
+            CleanPackages::Yes,
+            CleanDownloads::No,
+            DownloadTool::Builtin,
+            BackcompatFeatures::Prohibit,
+            PrintUsage::Yes,
+            KeepGoing::Yes,
+        };
 
         ExclusionsMap exclusions_map;
         parse_exclusions(settings, SwitchExclude, target_triplet, exclusions_map);
@@ -379,8 +390,6 @@ namespace vcpkg
                 InternalFeatureSet{FeatureNameCore.to_string(), FeatureNameDefault.to_string()});
         }
 
-        CreateInstallPlanOptions serialize_options(host_triplet, paths.packages(), UnsupportedPortAction::Warn);
-
         struct RandomizerInstance : GraphRandomizer
         {
             virtual int random(int i) override
@@ -392,13 +401,16 @@ namespace vcpkg
 
             std::random_device e;
         } randomizer_instance;
-
+        GraphRandomizer* randomizer = nullptr;
         if (Util::Sets::contains(options.switches, SwitchXRandomize))
         {
-            serialize_options.randomizer = &randomizer_instance;
+            randomizer = &randomizer_instance;
         }
 
-        auto action_plan = compute_full_plan(paths, provider, var_provider, all_default_full_specs, serialize_options);
+        CreateInstallPlanOptions create_install_plan_options(
+            randomizer, host_triplet, paths.packages(), UnsupportedPortAction::Warn, UseHeadVersion::No, Editable::No);
+        auto action_plan =
+            compute_full_plan(paths, provider, var_provider, all_default_full_specs, create_install_plan_options);
         auto binary_cache = BinaryCache::make(args, paths, out_sink).value_or_exit(VCPKG_LINE_INFO);
         const auto precheck_results = binary_cache.precheck(action_plan.install_actions);
         auto split_specs = compute_action_statuses(ExclusionPredicate{&exclusions_map}, precheck_results, action_plan);
@@ -503,8 +515,9 @@ namespace vcpkg
 
             install_preclear_packages(paths, action_plan);
             binary_cache.fetch(action_plan.install_actions);
+
             auto summary = install_execute_plan(
-                args, action_plan, KeepGoing::YES, paths, status_db, binary_cache, build_logs_recorder);
+                args, paths, host_triplet, build_options, action_plan, status_db, binary_cache, build_logs_recorder);
 
             for (auto&& result : summary.results)
             {
@@ -515,8 +528,8 @@ namespace vcpkg
                            .append(msgTripletLabel)
                            .append_raw(' ')
                            .append_raw(target_triplet)
-                           .append_raw('\n'));
-            summary.print();
+                           .append_raw('\n')
+                           .append(summary.format()));
             print_regressions(summary.results,
                               split_specs->known,
                               cidata,

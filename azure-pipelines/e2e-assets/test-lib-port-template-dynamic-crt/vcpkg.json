@@ -1,4 +1,9 @@
 {
   "name": "test-lib",
-  "version": "1.0.0"
+  "version": "1.0.0",
+  "features": {
+    "policy-skip-crt-linkage-check": {
+      "description": "Turn on VCPKG_POLICY_SKIP_CRT_LINKAGE_CHECK"
+    }
+  }
 }
