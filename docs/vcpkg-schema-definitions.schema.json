@@ -731,8 +731,7 @@
         },
         {
           "not": {
-            "description": "Identifiers must not be a Windows filesystem or vcpkg reserved name.",
-            "pattern": "^(prn|aux|nul|con|lpt[1-9]|com[1-9]|core|default)$"
+            "$ref": "#/definitions/reserved-name"
           }
         }
       ]
@@ -930,7 +929,7 @@
         {
           "not": {
             "description": "Identifiers and parts delimited by slashes must not be a Windows filesystem or vcpkg reserved name.",
-            "pattern": "(^|/)(prn|aux|nul|con|lpt[1-9]|com[1-9]|core|default)(/|$)"
+            "pattern": "(^|/)(prn|aux|nul|con|lpt[0-9]|com[0-9]|core|default)(/|$)"
           }
         }
       ]
