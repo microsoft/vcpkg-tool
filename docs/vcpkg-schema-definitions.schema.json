@@ -194,7 +194,7 @@
       "description": "A port dependency fetchable by vcpkg.",
       "oneOf": [
         {
-          "$ref": "#/definitions/port-name"
+          "$ref": "#/definitions/identifier"
         },
         {
           "$ref": "#/definitions/dependency-object"
@@ -206,7 +206,7 @@
       "type": "object",
       "properties": {
         "name": {
-          "$ref": "#/definitions/port-name"
+          "$ref": "#/definitions/identifier"
         },
         "features": {
           "type": "array",
@@ -759,9 +759,9 @@
           "type": "object",
           "$comment": "The regexes below have (#\\d+)? added to the end as overrides allow putting the port-version inline",
           "properties": {
-              "name": {
-                "$ref": "#/definitions/identifier"
-              },
+            "name": {
+              "$ref": "#/definitions/identifier"
+            },
             "version-string": {
               "description": "Deprecated in favor of 'version' in overrides. Text used to identify an arbitrary version",
               "type": "string",
@@ -812,22 +812,6 @@
         {
           "not": {
             "$ref": "#/definitions/reserved-name"
-          }
-        }
-      ]
-    },
-    "port-name": {
-      "type": "string",
-      "description": "Name of a package.",
-      "allOf": [
-        {
-          "description": "Package name must be a dot-separated list of valid identifiers",
-          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*(\\.[a-z0-9]+(-[a-z0-9]+)*)*$"
-        },
-        {
-          "not": {
-            "description": "Identifiers must not be a Windows filesystem or vcpkg reserved name.",
-            "pattern": "(^|\\.)(prn|aux|nul|con|lpt[1-9]|com[1-9]|core|default)(\\.|$)"
           }
         }
       ]

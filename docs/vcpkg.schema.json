@@ -7,7 +7,7 @@
       "properties": {
         "name": {
           "description": "The name of the top-level package",
-          "$ref": "vcpkg-schema-definitions.schema.json#/definitions/port-name"
+          "$ref": "vcpkg-schema-definitions.schema.json#/definitions/identifier"
         },
         "version-string": {
           "description": "Text used to identify an arbitrary version",
