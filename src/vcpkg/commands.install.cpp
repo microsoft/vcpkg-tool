@@ -4,6 +4,7 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/messages.h>
+#include <vcpkg/base/parallel-algorithms.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
 #include <vcpkg/base/util.h>
@@ -28,7 +29,11 @@
 #include <vcpkg/vcpkgpaths.h>
 #include <vcpkg/xunitwriter.h>
 
+#include <future>
 #include <iterator>
+#ifdef _WIN32
+#include <execution>
+#endif
 
 namespace vcpkg
 {
@@ -42,9 +47,90 @@ namespace vcpkg
         return dirs;
     }
 
-    const Path& InstallDir::destination() const { return this->m_destination; }
+    struct PathAndType
+    {
+        Path path;
+        FileType type = FileType::none;
 
-    const Path& InstallDir::listfile() const { return this->m_listfile; }
+        bool operator<(const PathAndType& other) const noexcept { return path < other.path; }
+    };
+
+    static std::vector<PathAndType> filter_files_to_install(const Filesystem& fs, std::vector<Path>&& files)
+    {
+        std::vector<PathAndType> output(files.size());
+        auto first = output.begin();
+        auto last = output.end();
+        static const PathAndType invalid{"", FileType::none};
+        std::mutex mtx;
+
+        parallel_transform(files, first, [&](auto&& file) -> PathAndType {
+            std::error_code ec;
+            auto status = fs.symlink_status(file, ec);
+            if (ec)
+            {
+                std::lock_guard lck(mtx);
+                msg::println_warning(format_filesystem_call_error(ec, "symlink_status", {file}));
+                return invalid;
+            }
+
+            if (is_regular_file(status))
+            {
+                const auto filename = file.filename();
+                if (filename == ".DS_Store" || filename == "CONTROL" || filename == "vcpkg.json" ||
+                    filename == "BUILD_INFO")
+                {
+                    // Don't copy control or manifest files
+                    return invalid;
+                }
+            }
+            else if (!is_symlink(status) && !is_directory(status))
+            {
+                std::lock_guard lck(mtx);
+                msg::println_error(msgInvalidFileType, msg::path = file);
+                return invalid;
+            }
+            return PathAndType{std::move(file), status};
+        });
+        auto last_non_empty = std::partition(first, last, [](const auto& pt) { return !pt.path.empty(); });
+#ifdef _WIN32
+        std::sort(std::execution::par_unseq, first, last_non_empty);
+#else
+        std::sort(first, last_non_empty);
+#endif
+        output.erase(last_non_empty, last);
+        return output;
+    }
+
+    // PRE: files is sorted
+    // install_dest_dir: The directory where files are installed, without final '/'
+    static void install_listfile(const Filesystem& fs,
+                                 size_t prefix_length,
+                                 const Path& install_dest_dir,
+                                 const Path& listfile,
+                                 View<PathAndType> files)
+    {
+        auto install_dest_subdir = install_dest_dir.filename().to_string();
+        install_dest_subdir.push_back('/');
+        std::vector<std::string> output(files.size() + 1, install_dest_subdir);
+
+        // Note that output and files are off by one because
+        // the first element of output is the install_dest_dir itself.
+        for (size_t i = 0; i < files.size(); ++i)
+        {
+            const auto suffix = files[i].path.generic_u8string().substr(prefix_length + 1);
+            auto& this_output = output[i + 1];
+            this_output.append(suffix);
+
+            if (is_directory(files[i].type))
+            {
+                // Trailing slash for directories
+                this_output.push_back('/');
+            }
+        }
+
+        fs.create_directories(listfile.parent_path(), VCPKG_LINE_INFO);
+        fs.write_lines(listfile, output, VCPKG_LINE_INFO);
+    }
 
     void install_package_and_write_listfile(const Filesystem& fs,
                                             const Path& source_dir,
@@ -52,120 +138,109 @@ namespace vcpkg
     {
         Checks::check_exit(VCPKG_LINE_INFO,
                            fs.exists(source_dir, IgnoreErrors{}),
-                           Strings::concat("Source directory ", source_dir, "does not exist"));
+                           Strings::concat("Source directory ", source_dir, " does not exist"));
         auto files = fs.get_files_recursive(source_dir, VCPKG_LINE_INFO);
-        Util::erase_remove_if(files, [](Path& path) { return path.filename() == ".DS_Store"; });
-        install_files_and_write_listfile(fs, source_dir, files, destination_dir);
+        install_files_and_write_listfile(fs, source_dir, std::move(files), destination_dir);
     }
     void install_files_and_write_listfile(const Filesystem& fs,
                                           const Path& source_dir,
-                                          const std::vector<Path>& files,
+                                          std::vector<Path>&& files,
                                           const InstallDir& destination_dir)
     {
-        std::vector<std::string> output;
-
         const size_t prefix_length = source_dir.native().size();
         const Path& destination = destination_dir.destination();
-        std::string destination_subdirectory = destination.filename().to_string();
-        const Path& listfile = destination_dir.listfile();
 
         fs.create_directories(destination, VCPKG_LINE_INFO);
-        const auto listfile_parent = listfile.parent_path();
-        fs.create_directories(listfile_parent, VCPKG_LINE_INFO);
 
-        output.push_back(destination_subdirectory + "/");
-        for (auto&& file : files)
+        const auto filtered_files = filter_files_to_install(fs, std::move(files));
+
+        auto list_file_future = std::async(std::launch::async | std::launch::deferred, [&]() {
+            install_listfile(fs, prefix_length, destination, destination_dir.listfile(), filtered_files);
+        });
+
+        // Copy directories
+        for (const auto& file : filtered_files)
         {
+            if (!is_directory(file.type)) continue;
+
+            const Path target = destination / file.path.generic_u8string().substr(prefix_length + 1);
             std::error_code ec;
-            const auto status = fs.symlink_status(file, ec);
+            fs.create_directory(target, ec);
             if (ec)
             {
-                msg::println_warning(format_filesystem_call_error(ec, "symlink_status", {file}));
-                continue;
-            }
-
-            const auto filename = file.filename();
-            if (vcpkg::is_regular_file(status) &&
-                (filename == "CONTROL" || filename == "vcpkg.json" || filename == "BUILD_INFO"))
-            {
-                // Do not copy the control file or manifest file
-                continue;
-            }
-
-            const auto suffix = file.generic_u8string().substr(prefix_length + 1);
-            const auto target = destination / suffix;
-
-            bool use_hard_link = true;
-            auto this_output = Strings::concat(destination_subdirectory, "/", suffix);
-            switch (status)
-            {
-                case FileType::directory:
-                {
-                    fs.create_directory(target, ec);
-                    if (ec)
-                    {
-                        msg::println_error(msgInstallFailed, msg::path = target, msg::error_msg = ec.message());
-                    }
-
-                    // Trailing backslash for directories
-                    this_output.push_back('/');
-                    output.push_back(std::move(this_output));
-                    break;
-                }
-                case FileType::regular:
-                {
-                    if (fs.exists(target, IgnoreErrors{}))
-                    {
-                        msg::println_warning(msgOverwritingFile, msg::path = target);
-                        fs.remove_all(target, IgnoreErrors{});
-                    }
-                    if (use_hard_link)
-                    {
-                        fs.create_hard_link(file, target, ec);
-                        if (ec)
-                        {
-                            Debug::println("Install from packages to installed: Fallback to copy "
-                                           "instead creating hard links because of: ",
-                                           ec.message());
-                            use_hard_link = false;
-                        }
-                    }
-                    if (!use_hard_link)
-                    {
-                        fs.copy_file(file, target, CopyOptions::overwrite_existing, ec);
-                    }
-
-                    if (ec)
-                    {
-                        msg::println_error(msgInstallFailed, msg::path = target, msg::error_msg = ec.message());
-                    }
-
-                    output.push_back(std::move(this_output));
-                    break;
-                }
-                case FileType::symlink:
-                case FileType::junction:
-                {
-                    if (fs.exists(target, IgnoreErrors{}))
-                    {
-                        msg::println_warning(msgOverwritingFile, msg::path = target);
-                    }
-
-                    fs.copy_symlink(file, target, ec);
-                    if (ec)
-                    {
-                        msg::println_error(msgInstallFailed, msg::path = target, msg::error_msg = ec.message());
-                    }
-
-                    output.push_back(std::move(this_output));
-                    break;
-                }
-                default: msg::println_error(msgInvalidFileType, msg::path = file); break;
+                msg::println_error(msgInstallFailed, msg::path = target, msg::error_msg = ec.message());
             }
         }
 
-        std::sort(output.begin(), output.end());
-        fs.write_lines(listfile, output, VCPKG_LINE_INFO);
+        std::mutex mtx;
+        // Copy files/symlinks
+        parallel_for_each(filtered_files, [&](const auto& file_and_status) {
+            auto& file = file_and_status.path;
+            auto& status = file_and_status.type;
+
+            if (is_directory(status)) return;
+
+            if (!is_regular_file(status) && !is_symlink(status))
+            {
+                Checks::unreachable(VCPKG_LINE_INFO);
+                return;
+            }
+
+            const Path target = destination / file.generic_u8string().substr(prefix_length + 1);
+
+            if (fs.exists(target, IgnoreErrors{}))
+            {
+                {
+                    std::lock_guard lck(mtx);
+                    msg::println_warning(msgOverwritingFile, msg::path = target);
+                }
+                if (is_regular_file(status))
+                {
+                    fs.remove(target, IgnoreErrors{});
+                }
+            }
+
+            bool use_hard_link = true;
+
+            if (is_regular_file(status))
+            {
+                if (use_hard_link)
+                {
+                    std::error_code ec;
+                    fs.create_hard_link(file, target, ec);
+                    if (ec)
+                    {
+                        std::lock_guard lck(mtx);
+                        Debug::println("Install from packages to installed: Fallback to copy "
+                                       "instead creating hard links because of: ",
+                                       ec.message());
+                        use_hard_link = false;
+                    }
+                }
+                if (!use_hard_link)
+                {
+                    std::error_code ec;
+                    fs.copy_file(file, target, CopyOptions::overwrite_existing, ec);
+                    if (ec)
+                    {
+                        std::lock_guard lck(mtx);
+                        msg::println_error(msgInstallFailed, msg::path = target, msg::error_msg = ec.message());
+                    }
+                }
+            }
+            else
+            {
+                // file is symlink
+                std::error_code ec;
+                fs.copy_symlink(file, target, ec);
+                if (ec)
+                {
+                    std::lock_guard lck(mtx);
+                    msg::println_error(msgInstallFailed, msg::path = target, msg::error_msg = ec.message());
+                }
+            }
+        });
+        list_file_future.get();
     }
 
     static std::vector<file_pack> extract_files_in_triplet(
