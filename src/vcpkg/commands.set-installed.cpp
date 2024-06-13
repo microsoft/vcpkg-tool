@@ -50,75 +50,87 @@ namespace vcpkg
     Optional<Json::Object> create_dependency_graph_snapshot(const VcpkgCmdArguments& args,
                                                             const ActionPlan& action_plan)
     {
-        if (args.github_ref.has_value() && args.github_sha.has_value() && args.github_job.has_value() &&
-            args.github_workflow.has_value() && args.github_run_id.has_value())
+        if (!args.github_ref.has_value() || !args.github_sha.has_value() || !args.github_job.has_value() ||
+            !args.github_workflow.has_value() || !args.github_run_id.has_value())
+        {
+            return nullopt;
+        }
+
+        Json::Object snapshot;
+        {
+            Json::Object job;
+            job.insert(JsonIdId, Json::Value::string(*args.github_run_id.get()));
+            job.insert(JsonIdCorrelator,
+                       Json::Value::string(*args.github_workflow.get() + "-" + *args.github_job.get()));
+            snapshot.insert(JsonIdJob, std::move(job));
+        } // destroy job
+
+        snapshot.insert(JsonIdVersion, Json::Value::integer(0));
+        snapshot.insert(JsonIdSha, Json::Value::string(*args.github_sha.get()));
+        snapshot.insert(JsonIdRef, Json::Value::string(*args.github_ref.get()));
+        snapshot.insert(JsonIdScanned, Json::Value::string(CTime::now_string()));
+
         {
             Json::Object detector;
             detector.insert(JsonIdName, Json::Value::string("vcpkg"));
             detector.insert(JsonIdUrl, Json::Value::string("https://github.com/microsoft/vcpkg"));
             detector.insert(JsonIdVersion, Json::Value::string("1.0.0"));
+            snapshot.insert(JsonIdDetector, std::move(detector));
+        } // destroy detector
 
-            Json::Object job;
-            job.insert(JsonIdId, Json::Value::string(*args.github_run_id.get()));
-            job.insert(JsonIdCorrelator,
-                       Json::Value::string(*args.github_workflow.get() + "-" + *args.github_job.get()));
-
-            Json::Object snapshot;
-            snapshot.insert(JsonIdJob, job);
-            snapshot.insert(JsonIdVersion, Json::Value::integer(0));
-            snapshot.insert(JsonIdSha, Json::Value::string(*args.github_sha.get()));
-            snapshot.insert(JsonIdRef, Json::Value::string(*args.github_ref.get()));
-            snapshot.insert(JsonIdScanned, Json::Value::string(CTime::now_string()));
-            snapshot.insert(JsonIdDetector, detector);
-
-            Json::Object manifest;
-            manifest.insert(JsonIdName, FileVcpkgDotJson);
-
-            std::unordered_map<std::string, std::string> map;
-            for (auto&& action : action_plan.install_actions)
+        std::unordered_map<std::string, std::string> map;
+        for (auto&& action : action_plan.install_actions)
+        {
+            if (!action.source_control_file_and_location.has_value())
             {
-                if (!action.source_control_file_and_location.has_value())
-                {
-                    return nullopt;
-                }
-                const auto& scf = *action.source_control_file_and_location.get();
-                auto version = scf.to_version().to_string();
-                auto s = action.spec.to_string();
-                auto pkg_url = Strings::concat("pkg:github/vcpkg/", s, "@", version);
-                map.insert({s, pkg_url});
+                return nullopt;
             }
+            const auto& scf = *action.source_control_file_and_location.get();
+            auto version = scf.to_version().to_string();
+            auto s = action.spec.to_string();
+            auto pkg_url = Strings::concat("pkg:github/vcpkg/", s, "@", version);
+            map.emplace(std::move(s), std::move(pkg_url));
+        }
 
+        Json::Object manifest;
+        manifest.insert(JsonIdName, FileVcpkgDotJson);
+
+        {
             Json::Object resolved;
             for (auto&& action : action_plan.install_actions)
             {
                 Json::Object resolved_item;
-                if (map.find(action.spec.to_string()) != map.end())
+                const auto pkg_it = map.find(action.spec.to_string());
+                if (pkg_it == map.end())
                 {
-                    auto pkg_url = map.at(action.spec.to_string());
-                    resolved_item.insert(JsonIdPackageUnderscoreUrl, pkg_url);
-                    resolved_item.insert(JsonIdRelationship, Json::Value::string(JsonIdDirect));
-                    Json::Array deps_list;
-                    for (auto&& dep : action.package_dependencies)
-                    {
-                        if (map.find(dep.to_string()) != map.end())
-                        {
-                            auto dep_pkg_url = map.at(dep.to_string());
-                            deps_list.push_back(dep_pkg_url);
-                        }
-                    }
-                    resolved_item.insert(JsonIdDependencies, deps_list);
-                    resolved.insert(pkg_url, resolved_item);
+                    continue;
                 }
-            }
-            manifest.insert(JsonIdResolved, resolved);
-            Json::Object manifests;
-            manifests.insert(JsonIdVcpkgDotJson, manifest);
-            snapshot.insert(JsonIdManifests, manifests);
 
-            Debug::print(Json::stringify(snapshot));
-            return snapshot;
-        }
-        return nullopt;
+                const auto& pkg_url = pkg_it->second;
+                resolved_item.insert(JsonIdPackageUnderscoreUrl, pkg_url);
+                resolved_item.insert(JsonIdRelationship, Json::Value::string("direct"));
+                Json::Array deps_list;
+
+                for (auto&& dep : action.package_dependencies)
+                {
+                    const auto dep_pkg_it = map.find(dep.to_string());
+                    if (dep_pkg_it != map.end())
+                    {
+                        deps_list.push_back(dep_pkg_it->second);
+                    }
+                }
+                resolved_item.insert(JsonIdDependencies, std::move(deps_list));
+                resolved.insert(pkg_url, std::move(resolved_item));
+            }
+            manifest.insert(JsonIdResolved, std::move(resolved));
+        } // destroy resolved
+
+        Json::Object manifests;
+        manifests.insert(JsonIdVcpkgDotJson, std::move(manifest));
+        snapshot.insert(JsonIdManifests, std::move(manifests));
+
+        Debug::print(Json::stringify(snapshot));
+        return snapshot;
     }
 
     std::set<PackageSpec> adjust_action_plan_to_status_db(ActionPlan& action_plan, const StatusParagraphs& status_db)

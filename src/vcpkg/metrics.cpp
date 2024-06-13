@@ -443,8 +443,8 @@ namespace vcpkg
                 buildtime_times.push_back(Json::Value::number(buildtime.second));
             }
 
-            properties.insert("buildnames_1", buildtime_names);
-            properties.insert("buildtimes", buildtime_times);
+            properties.insert("buildnames_1", std::move(buildtime_names));
+            properties.insert("buildtimes", std::move(buildtime_times));
         }
 
         Json::Object& measurements = base_data.insert("measurements", Json::Object());
