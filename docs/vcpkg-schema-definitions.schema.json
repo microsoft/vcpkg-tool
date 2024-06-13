@@ -800,6 +800,22 @@
         }
       ]
     },
+    "package-pattern": {
+      "type": "string",
+      "description": "A pattern to match package name.",
+      "allOf": [
+        {
+          "$comment": "https://learn.microsoft.com/en-us/vcpkg/reference/vcpkg-configuration-json#registry-packages",
+          "description": "Package pattern may contain only lowercase letters, digits, and -, with an optional trailing *",
+          "pattern": "^([a-z0-9]+-)*([a-z0-9]+[*]?|[*])$"
+        },
+        {
+          "not": {
+            "$ref": "#/definitions/reserved-name"
+          }
+        }
+      ]
+    },
     "port-name": {
       "type": "string",
       "description": "Name of a package.",
@@ -860,7 +876,7 @@
                     "packages": {
                       "type": "array",
                       "items": {
-                        "$ref": "#/definitions/port-name"
+                        "$ref": "#/definitions/package-pattern"
                       }
                     }
                   },
@@ -884,6 +900,21 @@
               ]
             }
           ]
+        }
+      ]
+    },
+    "reserved-name": {
+      "description": "Vcpkg reserved identifier names for lowercase.",
+      "type": "string",
+      "anyOf": [
+        {
+          "description": "Vcpkg reserved names.",
+          "pattern": "^(core|default)$"
+        },
+        {
+          "$comment": "https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file#naming-conventions",
+          "description": "A relaxed pattern of Win32 filesystem reserved names.",
+          "pattern": "^(con|prn|aux|nul|com[0-9]|lpt[0-9])(\\.[^.]+)*$"
         }
       ]
     },
