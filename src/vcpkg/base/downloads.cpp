@@ -761,7 +761,13 @@ namespace vcpkg
         download_path_part_path += ".part";
 
 #if defined(_WIN32)
-        if (headers.size() == 0)
+        auto maybe_https_proxy_env = get_environment_variable(EnvironmentVariableHttpsProxy);
+        bool needs_proxy_auth = false;
+        if (maybe_https_proxy_env) {
+            const auto& proxy_url = maybe_https_proxy_env.value_or_exit(VCPKG_LINE_INFO);
+            needs_proxy_auth = proxy_url.find('@') != std::string::npos;
+        }
+        if (headers.size() == 0 && !needs_proxy_auth)
         {
             auto split_uri = split_uri_view(url).value_or_exit(VCPKG_LINE_INFO);
             auto authority = split_uri.authority.value_or_exit(VCPKG_LINE_INFO).substr(2);
