@@ -8,8 +8,9 @@
 
 #include <vcpkg/documentation.h>
 
+#include <math.h>
+
 #include <atomic>
-#include <cmath>
 #include <type_traits>
 
 namespace vcpkg::Json
