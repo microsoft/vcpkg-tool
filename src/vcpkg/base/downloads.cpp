@@ -763,7 +763,8 @@ namespace vcpkg
 #if defined(_WIN32)
         auto maybe_https_proxy_env = get_environment_variable(EnvironmentVariableHttpsProxy);
         bool needs_proxy_auth = false;
-        if (maybe_https_proxy_env) {
+        if (maybe_https_proxy_env)
+        {
             const auto& proxy_url = maybe_https_proxy_env.value_or_exit(VCPKG_LINE_INFO);
             needs_proxy_auth = proxy_url.find('@') != std::string::npos;
         }
