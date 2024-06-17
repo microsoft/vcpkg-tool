@@ -26,16 +26,22 @@ Run-Vcpkg @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports" install vcpkg
 Throw-IfFailed
 Run-Vcpkg @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports" install control-file
 Throw-IfFailed
-$output = Run-VcpkgAndCaptureOutput @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports/overlays" install broken-no-name
+$output = Run-VcpkgAndCaptureOutput @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports/broken-manifests" install broken-no-name
 Throw-IfNotFailed
 if ($output -notmatch "missing required field 'name'") {
     throw 'Did not detect missing field'
 }
 
-$output = Run-VcpkgAndCaptureOutput @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports/overlays" install broken-no-version
+$output = Run-VcpkgAndCaptureOutput @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports/broken-manifests" install broken-no-version
 Throw-IfNotFailed
 if ($output -notmatch 'expected a versioning field') {
     throw 'Did not detect missing field'
+}
+
+$output = Run-VcpkgAndCaptureOutput @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports/broken-manifests" install malformed
+Throw-IfNotFailed
+if ($output -notmatch 'Trailing comma') {
+    throw 'Did not detect malformed JSON'
 }
 
 # Check for msgAlreadyInstalled vs. msgAlreadyInstalledNotHead

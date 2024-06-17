@@ -22,23 +22,20 @@ if (-not ($Output.Contains("REGRESSION: dep-on-feature-not-sup:${Triplet} is mar
     throw "feature-not-sup's baseline fail entry should result in a regression because the port is cascade for this triplet"
 }
 
-# test malformed port manifests
-$Output = Run-VcpkgAndCaptureOutput ci --dry-run --triplet=$Triplet --x-builtin-ports-root="$PSScriptRoot/../e2e-ports/ci-overlay"  --binarysource=clear --ci-baseline="$PSScriptRoot/../e2e-assets/ci/ci.baseline.txt"
+# any invalid manifest must raise an error
+$Output = Run-VcpkgAndCaptureOutput ci --dry-run --triplet=$Triplet --x-builtin-ports-root="$PSScriptRoot/../e2e-ports/broken-manifests"  --binarysource=clear --ci-baseline="$PSScriptRoot/../e2e-assets/ci/ci.baseline.txt"
 Throw-IfNotFailed
-if (-not ($Output.Contains("e2e-ports/ci-overlay/malformed/vcpkg.json:3:17: error:"))) {
-    throw 'malformed port manifest must raise a parsing error'
-}
 
 # test malformed individual overlay port manifest
-$Output = Run-VcpkgAndCaptureOutput ci --dry-run --triplet=$Triplet --x-builtin-ports-root="$PSScriptRoot/../e2e-ports/ci"  --binarysource=clear --ci-baseline="$PSScriptRoot/../e2e-assets/ci/ci.baseline.txt" --overlay-ports="$PSScriptRoot/../e2e-ports/ci-overlay/malformed"
+$Output = Run-VcpkgAndCaptureOutput ci --dry-run --triplet=$Triplet --x-builtin-ports-root="$PSScriptRoot/../e2e-ports/ci"  --binarysource=clear --ci-baseline="$PSScriptRoot/../e2e-assets/ci/ci.baseline.txt" --overlay-ports="$PSScriptRoot/../e2e-ports/broken-manifests/malformed"
 Throw-IfNotFailed
-if (-not ($Output.Contains("e2e-ports/ci-overlay/malformed/vcpkg.json:3:17: error:"))) {
+if (-not ($Output.Contains("vcpkg.json:3:17: error: Trailing comma"))) {
     throw 'malformed port manifest must raise a parsing error'
 }
 
 # test malformed overlay port manifests
-$Output = Run-VcpkgAndCaptureOutput ci --dry-run --triplet=$Triplet --x-builtin-ports-root="$PSScriptRoot/../e2e-ports/ci"  --binarysource=clear --ci-baseline="$PSScriptRoot/../e2e-assets/ci/ci.baseline.txt" --overlay-ports="$PSScriptRoot/../e2e-ports/ci-overlay"
+$Output = Run-VcpkgAndCaptureOutput ci --dry-run --triplet=$Triplet --x-builtin-ports-root="$PSScriptRoot/../e2e-ports/ci"  --binarysource=clear --ci-baseline="$PSScriptRoot/../e2e-assets/ci/ci.baseline.txt" --overlay-ports="$PSScriptRoot/../e2e-ports/broken-manifests"
 Throw-IfNotFailed
-if (-not ($Output.Contains("e2e-ports/ci-overlay/malformed/vcpkg.json:3:17: error:"))) {
+if (-not ($Output.Contains("vcpkg.json:3:17: error: Trailing comma"))) {
     throw 'malformed overlay port manifest must raise a parsing error'
 }
