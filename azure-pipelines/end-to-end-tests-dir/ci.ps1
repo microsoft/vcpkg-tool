@@ -29,6 +29,13 @@ if (-not ($Output.Contains("e2e-ports/ci-overlay/malformed/vcpkg.json:3:17: erro
     throw 'malformed port manifest must raise a parsing error'
 }
 
+# test malformed individual overlay port manifest
+$Output = Run-VcpkgAndCaptureOutput ci --dry-run --triplet=$Triplet --x-builtin-ports-root="$PSScriptRoot/../e2e-ports/ci"  --binarysource=clear --ci-baseline="$PSScriptRoot/../e2e-assets/ci/ci.baseline.txt" --overlay-ports="$PSScriptRoot/../e2e-ports/ci-overlay/malformed"
+Throw-IfNotFailed
+if (-not ($Output.Contains("e2e-ports/ci-overlay/malformed/vcpkg.json:3:17: error:"))) {
+    throw 'malformed port manifest must raise a parsing error'
+}
+
 # test malformed overlay port manifests
 $Output = Run-VcpkgAndCaptureOutput ci --dry-run --triplet=$Triplet --x-builtin-ports-root="$PSScriptRoot/../e2e-ports/ci"  --binarysource=clear --ci-baseline="$PSScriptRoot/../e2e-assets/ci/ci.baseline.txt" --overlay-ports="$PSScriptRoot/../e2e-ports/ci-overlay"
 Throw-IfNotFailed
