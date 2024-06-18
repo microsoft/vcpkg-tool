@@ -107,27 +107,23 @@ namespace vcpkg
 
             for (auto&& arg : options.command_arguments)
             {
-                ParserBase parser(arg, nullopt);
+                ParserBase parser(console_diagnostic_context, arg, nullopt, 0);
                 auto maybe_pkg = parse_package_name(parser);
-                if (!parser.at_eof() || !maybe_pkg)
+                auto pkg = maybe_pkg.get();
+                if (!parser.at_eof() || !pkg)
                 {
                     parser.add_error(msg::format(msgExpectedPortName));
-                }
-                if (auto err = parser.get_error())
-                {
-                    Checks::exit_with_message(VCPKG_LINE_INFO, err->to_string());
+                    Checks::exit_fail(VCPKG_LINE_INFO);
                 }
 
-                auto& pkg = *maybe_pkg.get();
+                if (results.contains(*pkg)) continue;
 
-                if (results.contains(pkg)) continue;
-
-                auto maybe_scfl = provider.get_control_file(pkg);
+                auto maybe_scfl = provider.get_control_file(*pkg);
 
                 Json::Object obj;
                 if (auto pscfl = maybe_scfl.get())
                 {
-                    results.insert(pkg, serialize_manifest(*pscfl->source_control_file));
+                    results.insert(*pkg, serialize_manifest(*pscfl->source_control_file));
                 }
             }
             response.insert("results", std::move(results));

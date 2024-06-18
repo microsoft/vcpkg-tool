@@ -84,7 +84,7 @@ namespace
         // 1:name=systemd:/docker/66a5f8000f3f2e2a19c3f7d60d870064d26996bdfe77e40df7e3fc955b811d14
         // 0::/docker/66a5f8000f3f2e2a19c3f7d60d870064d26996bdfe77e40df7e3fc955b811d14
         auto cgroup_contents = fs.read_contents("/proc/1/cgroup", IgnoreErrors{});
-        if (detect_docker_in_cgroup_file(cgroup_contents, "/proc/1/cgroup"))
+        if (detect_docker_in_cgroup_file(cgroup_contents, "/proc/1/cgroup", 1))
         {
             Debug::println("Detected docker in cgroup");
             return true;

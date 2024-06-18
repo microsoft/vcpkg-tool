@@ -1258,12 +1258,11 @@ DECLARE_MESSAGE(FailedToParseControl, (msg::path), "", "Failed to parse CONTROL 
 DECLARE_MESSAGE(FailedToParseManifest, (msg::path), "", "Failed to parse manifest file: {path}")
 DECLARE_MESSAGE(FailedToParseNoTopLevelObj, (msg::path), "", "Failed to parse {path}, expected a top-level object.")
 DECLARE_MESSAGE(FailedToParseNoVersionsArray, (msg::path), "", "Failed to parse {path}, expected a 'versions' array.")
-DECLARE_MESSAGE(FailedToParseSerializedBinParagraph,
-                (msg::error_msg),
-                "'{error_msg}' is the error message for failing to parse the Binary Paragraph.",
-                "[sanity check] Failed to parse a serialized binary paragraph.\nPlease open an issue at "
-                "https://github.com/microsoft/vcpkg, "
-                "with the following output:\n{error_msg}\nSerialized Binary Paragraph:")
+DECLARE_MESSAGE(
+    FailedToParseSerializedBinParagraphSuffix,
+    (),
+    "",
+    "This is a bug in vcpkg. Please open an issue at https://github.com/microsoft/vcpkg, including the following:")
 DECLARE_MESSAGE(FailedToParseVersionsFile, (msg::path), "", "failed to parse versions file {path}")
 DECLARE_MESSAGE(FailedToParseVersionXML,
                 (msg::tool_name, msg::version),
@@ -1845,7 +1844,6 @@ DECLARE_MESSAGE(InvalidArgumentRequiresZeroOrOneArgument,
                 (msg::binary_source),
                 "",
                 "invalid argument: binary config '{binary_source}' requires 0 or 1 argument")
-DECLARE_MESSAGE(InvalidBuildInfo, (msg::error_msg), "", "Invalid BUILD_INFO file for package: {error_msg}")
 DECLARE_MESSAGE(
     InvalidBuiltInBaseline,
     (msg::value),
@@ -3102,7 +3100,6 @@ DECLARE_MESSAGE(VSExaminedPaths, (), "", "The following paths were examined for 
 DECLARE_MESSAGE(VSNoInstances, (), "", "Could not locate a complete Visual Studio instance")
 DECLARE_MESSAGE(WaitingForChildrenToExit, (), "", "Waiting for child processes to exit...")
 DECLARE_MESSAGE(WaitingToTakeFilesystemLock, (msg::path), "", "waiting to take filesystem lock on {path}...")
-DECLARE_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors")
 DECLARE_MESSAGE(WarnOnParseConfig, (msg::path), "", "Found the following warnings in configuration {path}:")
 DECLARE_MESSAGE(WhileCheckingOutBaseline, (msg::commit_sha), "", "while checking out baseline {commit_sha}")
 DECLARE_MESSAGE(WhileCheckingOutPortTreeIsh,

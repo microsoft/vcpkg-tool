@@ -71,7 +71,7 @@ namespace
                     const auto& file = maybe_file.value_or_exit(VCPKG_LINE_INFO);
                     auto maybe_scf = control_file == "vcpkg.json"
                                          ? Paragraphs::try_load_port_manifest_text(file, treeish, out_sink)
-                                         : Paragraphs::try_load_control_file_text(file, treeish);
+                                         : Paragraphs::try_load_control_file_text(file, treeish, 1);
                     auto scf = maybe_scf.get();
                     if (!scf)
                     {
