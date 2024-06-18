@@ -1256,38 +1256,46 @@ namespace
 
 namespace vcpkg
 {
-#if defined(_WIN32)
     Environment cmd_execute_and_capture_environment(const Command& cmd, const Environment& env)
     {
         static StringLiteral magic_string = "cdARN4xjKueKScMy9C6H";
 
         Command actual_cmd = cmd;
+#ifdef _WIN32
         actual_cmd.raw_arg(Strings::concat(" & echo ", magic_string, " & set"));
-
+#else
+        actual_cmd.raw_arg(Strings::concat(" && echo ", magic_string, " && printenv"));
+#endif
         Debug::print("command line: ", actual_cmd.command_line(), "\n");
 
         RedirectedProcessLaunchSettings settings;
         settings.environment = env;
+#ifdef _WIN32
         settings.create_new_console = CreateNewConsole::Yes;
+#endif
         auto maybe_rc_output = cmd_execute_and_capture_output(actual_cmd, settings);
         if (!maybe_rc_output)
         {
-            Checks::msg_exit_with_error(
-                VCPKG_LINE_INFO, msg::format(msgVcvarsRunFailed).append_raw("\n").append(maybe_rc_output.error()));
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO,
+                                        msgCaptureCmdRunFailed,
+                                        msg::command_name = actual_cmd.command_line(),
+                                        msg::error_msg = maybe_rc_output.error());
         }
 
         auto& rc_output = maybe_rc_output.value_or_exit(VCPKG_LINE_INFO);
         Debug::print(rc_output.output, "\n");
         if (rc_output.exit_code != 0)
         {
-            Checks::msg_exit_with_error(
-                VCPKG_LINE_INFO, msgVcvarsRunFailedExitCode, msg::exit_code = rc_output.exit_code);
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO,
+                                        msgCaptureCmdEnvFailedExitCode,
+                                        msg::command_name = actual_cmd.command_line(),
+                                        msg::exit_code = rc_output.exit_code);
         }
 
         auto it = Strings::search(rc_output.output, magic_string);
         const char* const last = rc_output.output.data() + rc_output.output.size();
 
-        Checks::check_exit(VCPKG_LINE_INFO, it != last);
+        Checks::check_exit(VCPKG_LINE_INFO, it != last); // magic string not found !
         // find the first non-whitespace character after the magic string
         it = std::find_if_not(it + magic_string.size(), last, ::isspace);
         Checks::check_exit(VCPKG_LINE_INFO, it != last);
@@ -1299,7 +1307,11 @@ namespace vcpkg
             auto equal_it = std::find(it, last, '=');
             if (equal_it == last) break;
             StringView variable_name(it, equal_it);
+#ifdef _WIN32
             auto newline_it = std::find(equal_it + 1, last, '\r');
+#else
+            auto newline_it = std::find(equal_it + 1, last, '\n');
+#endif
             if (newline_it == last) break;
             StringView value(equal_it + 1, newline_it);
 
@@ -1311,7 +1323,6 @@ namespace vcpkg
 
         return new_env;
     }
-#endif
 } // namespace vcpkg
 
 namespace

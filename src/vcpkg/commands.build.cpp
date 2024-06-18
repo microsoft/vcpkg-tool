@@ -488,16 +488,81 @@ namespace vcpkg
         return base_env.cmd_cache.get_lazy(build_env_cmd, [&]() {
             const Path& powershell_exe_path = paths.get_tool_exe("powershell-core", out_sink);
             auto clean_env = get_modified_clean_environment(base_env.env_map, powershell_exe_path.parent_path());
-            if (build_env_cmd.empty())
-                return clean_env;
-            else
-                return cmd_execute_and_capture_environment(build_env_cmd, clean_env);
+            auto action_env =
+                build_env_cmd.empty() ? clean_env : cmd_execute_and_capture_environment(build_env_cmd, clean_env);
+            for (const auto& env_setup_script : pre_build_info.environment_setup_scripts)
+            {
+                const auto env_setup_cmd = make_setup_env_cmd(paths, env_setup_script);
+                if (vcpkg::Strings::ends_with(env_setup_script, ".cmake"))
+                {
+                    ProcessLaunchSettings settings;
+                    settings.environment = action_env;
+                    auto cmd_res_output = cmd_execute(env_setup_cmd, settings);
+                    if (!cmd_res_output)
+                    {
+                        Checks::msg_exit_with_error(VCPKG_LINE_INFO,
+                                                    msgCmdRunFailed,
+                                                    msg::command_name = env_setup_cmd.command_line(),
+                                                    msg::error_msg = cmd_res_output.error());
+                    }
+                    if (auto err_code = cmd_res_output.value(VCPKG_LINE_INFO); err_code != 0)
+                    {
+                        Checks::msg_exit_with_error(VCPKG_LINE_INFO,
+                                                    msgCmdRunFailedExitCode,
+                                                    msg::command_name = env_setup_cmd.command_line(),
+                                                    msg::exit_code = err_code);
+                    }
+                }
+                else
+                {
+                    action_env = cmd_execute_and_capture_environment(env_setup_cmd, action_env);
+                }
+            }
+            return action_env;
         });
     }
 #else
-    const Environment& EnvCache::get_action_env(const VcpkgPaths&, const PreBuildInfo&, const Toolset&)
+    const Environment& EnvCache::get_action_env(const VcpkgPaths& paths,
+                                                const PreBuildInfo& pre_build_info,
+                                                const Toolset&)
     {
-        return get_clean_environment();
+        auto action_env = get_clean_environment();
+        const auto& base_env = envs.get_lazy(pre_build_info.environment_setup_scripts, []() { return EnvMapEntry{}; });
+
+        // I think this should be done differently but I don't exactly know how to build the commands beforehand.
+        // Can I stack base_env.cmd_cache.get_lazy in a loop?
+
+        return base_env.cmd_cache.get_lazy(vcpkg::Command{}, [&]() {
+            for (const auto& env_setup_script : pre_build_info.environment_setup_scripts)
+            {
+                const auto env_setup_cmd = make_setup_env_cmd(paths, env_setup_script);
+                if (vcpkg::Strings::ends_with(env_setup_script, ".cmake"))
+                {
+                    ProcessLaunchSettings settings;
+                    settings.environment = action_env;
+                    auto cmd_res_output = cmd_execute(env_setup_cmd, settings);
+                    if (!cmd_res_output)
+                    {
+                        Checks::msg_exit_with_error(VCPKG_LINE_INFO,
+                                                    msgCmdRunFailed,
+                                                    msg::command_name = env_setup_cmd.command_line(),
+                                                    msg::error_msg = cmd_res_output.error());
+                    }
+                    if (auto err_code = cmd_res_output.value(VCPKG_LINE_INFO); err_code != 0)
+                    {
+                        Checks::msg_exit_with_error(VCPKG_LINE_INFO,
+                                                    msgCmdRunFailedExitCode,
+                                                    msg::command_name = env_setup_cmd.command_line(),
+                                                    msg::exit_code = err_code);
+                    }
+                }
+                else
+                {
+                    action_env = cmd_execute_and_capture_environment(env_setup_cmd, action_env);
+                }
+            }
+            return action_env;
+        });
     }
 #endif
 
@@ -605,6 +670,32 @@ namespace vcpkg
                         target,
                         tonull));
 #endif
+    }
+
+    vcpkg::Command make_setup_env_cmd(const VcpkgPaths& paths, const Path& script)
+    {
+        vcpkg::Command env_setup_cmd;
+        const auto& fs = paths.get_filesystem();
+
+        if (script.is_relative() || !fs.is_regular_file(script))
+        {
+            Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgInvalidEnvSetupScripts, msg::path = script);
+        }
+
+        if (script.extension() == ".cmake")
+        {
+            env_setup_cmd = vcpkg::make_cmake_cmd(paths, script, {});
+        }
+        else
+        {
+#ifdef _WIN32
+            env_setup_cmd = vcpkg::Command{"cmd"}.string_arg("/d").string_arg("/c");
+            env_setup_cmd.raw_arg(fmt::format(R"("{}" 2>&1 <NUL)", script));
+#else
+            env_setup_cmd = vcpkg::Command{"."}.raw_arg(fmt::format(R"({} 2>&1 </dev/null)", script));
+#endif
+        }
+        return env_setup_cmd;
     }
 
     static std::vector<PackageSpec> fspecs_to_pspecs(View<FeatureSpec> fspecs)
@@ -855,7 +946,7 @@ namespace vcpkg
 
     bool PreBuildInfo::using_vcvars() const
     {
-        return (!external_toolchain_file.has_value() || load_vcvars_env) &&
+        return (!external_toolchain_file.has_value() || !environment_setup_scripts.empty() || load_vcvars_env) &&
                (cmake_system_name.empty() || cmake_system_name == "WindowsStore");
     }
 
@@ -1855,6 +1946,11 @@ namespace vcpkg
         if (auto value = Util::value_if_set_and_nonempty(cmakevars, CMakeVariableEnvPassthroughUntracked))
         {
             Util::Vectors::append(passthrough_env_vars, Strings::split(*value, ';'));
+        }
+
+        if (auto value = Util::value_if_set_and_nonempty(cmakevars, CMakeVariableEnvSetupScripts))
+        {
+            Util::Vectors::append(&environment_setup_scripts, Strings::split(*value, ';'));
         }
 
         Util::assign_if_set_and_nonempty(public_abi_override, cmakevars, CMakeVariablePublicAbiOverride);

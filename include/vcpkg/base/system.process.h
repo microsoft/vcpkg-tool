@@ -122,9 +122,7 @@ namespace vcpkg
     ExpectedL<int> cmd_execute(const Command& cmd);
     ExpectedL<int> cmd_execute(const Command& cmd, const ProcessLaunchSettings& settings);
 
-#if defined(_WIN32)
     Environment cmd_execute_and_capture_environment(const Command& cmd, const Environment& env);
-#endif
 
     void cmd_execute_background(const Command& cmd_line);
 

@@ -1,0 +1,3 @@
+#!/usr/bin/bash
+export VCPKG_ENV_TEST=TRUE
+export VCPKG_ENV_TEST2=MORE_TESTING

@@ -710,8 +710,11 @@ namespace vcpkg
                 obj.insert(JsonIdVcpkgDisableMetrics, Json::Value::boolean(true));
             }
 
-            set_environment_variable(EnvironmentVariableXVcpkgRecursiveData,
-                                     Json::stringify(obj, Json::JsonStyle::with_spaces(0)));
+            // Remove newlines from JSON so that environment can be captured on !windows
+            auto json_str = Json::stringify(obj, Json::JsonStyle::with_spaces(0));
+            std::replace(json_str.begin(), json_str.end(), '\n', ' ');
+
+            set_environment_variable(EnvironmentVariableXVcpkgRecursiveData, std::move(json_str));
         }
     }
 

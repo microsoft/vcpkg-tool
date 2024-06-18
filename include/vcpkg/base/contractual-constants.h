@@ -365,6 +365,7 @@ namespace vcpkg
     inline constexpr StringLiteral CMakeVariableEditable = "_VCPKG_EDITABLE";
     inline constexpr StringLiteral CMakeVariableEnvPassthrough = "VCPKG_ENV_PASSTHROUGH";
     inline constexpr StringLiteral CMakeVariableEnvPassthroughUntracked = "VCPKG_ENV_PASSTHROUGH_UNTRACKED";
+    inline constexpr StringLiteral CMakeVariableEnvSetupScripts = "VCPKG_ENVIRONMENT_SETUP_SCRIPTS";
     inline constexpr StringLiteral CMakeVariableFeatures = "FEATURES";
     inline constexpr StringLiteral CMakeVariableFilename = "FILENAME";
     inline constexpr StringLiteral CMakeVariableGit = "GIT";
