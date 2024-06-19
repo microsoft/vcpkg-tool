@@ -16,6 +16,8 @@ namespace vcpkg
             "https://learn.microsoft.com/vcpkg/users/assetcaching?WT.mc_id=vcpkg_inproduct_cli";
         static constexpr StringLiteral binarycaching_url =
             "https://learn.microsoft.com/vcpkg/users/binarycaching?WT.mc_id=vcpkg_inproduct_cli";
+        static constexpr StringLiteral binarycaching_gha_url =
+            "https://learn.microsoft.com/vcpkg/users/binarycaching?WT.mc_id=vcpkg_inproduct_cli#gha";
         static constexpr StringLiteral versioning_url =
             "https://learn.microsoft.com/vcpkg/users/versioning?WT.mc_id=vcpkg_inproduct_cli";
         static constexpr StringLiteral version_schemes =
@@ -40,5 +42,7 @@ namespace vcpkg
             "https://learn.microsoft.com/vcpkg/commands/add-version?WT.mc_id=vcpkg_inproduct_cli#--all";
         static constexpr StringLiteral format_manifest_command_url =
             "https://learn.microsoft.com/vcpkg/commands/format-manifest?WT.mc_id=vcpkg_inproduct_cli";
+        static constexpr StringLiteral troubleshoot_binary_cache_url = "https://learn.microsoft.com/vcpkg/users/binarycaching-troubleshooting?WT.mc_id=vcpkg_inproduct_cli";
+        static constexpr StringLiteral troubleshoot_versioning_url = "https://learn.microsoft.com/vcpkg/users/versioning-troubleshooting?WT.mc_id=vcpkg_inproduct_cli";
     }
 }

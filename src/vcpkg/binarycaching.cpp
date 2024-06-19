@@ -592,7 +592,7 @@ namespace
                         msg_sink.println(Color::warning,
                                          msgFailedVendorAuthentication,
                                          msg::vendor = "NuGet",
-                                         msg::url = docs::binarycaching_url);
+                                         msg::url = docs::troubleshoot_binary_cache_url);
                     }
                     else if (res.output.find("for example \"-ApiKey AzureDevOps\"") != std::string::npos)
                     {
@@ -751,7 +751,7 @@ namespace
                 if (!m_cmd.push(msg_sink, nupkg_path, nuget_sources_arg({&write_src, 1})))
                 {
                     msg_sink.println(
-                        Color::error, msgPushingVendorFailed, msg::vendor = "NuGet", msg::path = write_src);
+                        Color::error, msg::format(msgPushingVendorFailed, msg::vendor = "NuGet", msg::path = write_src).append(msgSeeURL, msg::url = docs::troubleshoot_binary_cache_url));
                 }
                 else
                 {
@@ -767,7 +767,7 @@ namespace
                 if (!m_cmd.push(msg_sink, nupkg_path, nuget_configfile_arg(write_cfg)))
                 {
                     msg_sink.println(
-                        Color::error, msgPushingVendorFailed, msg::vendor = "NuGet config", msg::path = write_cfg);
+                        Color::error, msg::format(msgPushingVendorFailed, msg::vendor = "NuGet config", msg::path = write_cfg).append(msgSeeURL, msg::url = docs::troubleshoot_binary_cache_url));
                 }
                 else
                 {
@@ -1055,7 +1055,7 @@ namespace
                 else
                 {
                     msg_sink.println_warning(res.error());
-                }
+                } 
             }
             return upload_count;
         }
@@ -1911,9 +1911,9 @@ namespace vcpkg
             {
                 if (!args.actions_cache_url.has_value() || !args.actions_runtime_token.has_value())
                     return msg::format_error(msgGHAParametersMissing,
-                                             msg::url = "https://learn.microsoft.com/vcpkg/users/binarycaching#gha");
+                                             msg::url = docs::binarycaching_gha_url);
             }
-
+   
             if (!s.archives_to_read.empty() || !s.url_templates_to_get.empty() || !s.gcs_read_prefixes.empty() ||
                 !s.aws_read_prefixes.empty() || !s.cos_read_prefixes.empty() || s.gha_read)
             {
