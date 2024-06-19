@@ -34,6 +34,7 @@ namespace vcpkg::PlatformExpression
         emscripten,
         ios,
         qnx,
+        vxworks,
 
         static_link,
         static_crt,
@@ -64,6 +65,7 @@ namespace vcpkg::PlatformExpression
             {"emscripten", Identifier::emscripten},
             {"ios", Identifier::ios},
             {"qnx", Identifier::qnx},
+            {"vxworks", Identifier::vxworks},
             {"static", Identifier::static_link},
             {"staticcrt", Identifier::static_crt},
             {"native", Identifier::native},
@@ -567,6 +569,7 @@ namespace vcpkg::PlatformExpression
                             return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "Emscripten");
                         case Identifier::ios: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "iOS");
                         case Identifier::qnx: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "QNX");
+                        case Identifier::vxworks: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "VxWorks");
                         case Identifier::wasm32: return true_if_exists_and_equal("VCPKG_TARGET_ARCHITECTURE", "wasm32");
                         case Identifier::static_link:
                             return true_if_exists_and_equal("VCPKG_LIBRARY_LINKAGE", "static");

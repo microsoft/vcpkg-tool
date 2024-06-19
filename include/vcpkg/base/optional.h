@@ -76,8 +76,8 @@ namespace vcpkg
                 }
             }
 
-            OptionalStorage& operator=(const OptionalStorage& o) noexcept(
-                std::is_nothrow_copy_constructible_v<T>&& std::is_nothrow_copy_assignable_v<T>)
+            OptionalStorage& operator=(const OptionalStorage& o) noexcept(std::is_nothrow_copy_constructible_v<T> &&
+                                                                          std::is_nothrow_copy_assignable_v<T>)
             {
                 if (m_is_present && o.m_is_present)
                 {

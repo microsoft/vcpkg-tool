@@ -8,6 +8,8 @@
 
 #include <vcpkg/documentation.h>
 
+#include <math.h>
+
 #include <atomic>
 #include <type_traits>
 
