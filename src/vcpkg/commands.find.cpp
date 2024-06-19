@@ -288,6 +288,6 @@ namespace vcpkg
 
         Checks::msg_exit_with_error(
             VCPKG_LINE_INFO,
-           msg::format(msgFindCommandFirstArg).append_raw('\n').append(msgSeeURL, msg::url = docs::add_command_url));
+            msg::format(msgFindCommandFirstArg).append_raw('\n').append(msgSeeURL, msg::url = docs::add_command_url));
     }
 } // namespace vcpkg
