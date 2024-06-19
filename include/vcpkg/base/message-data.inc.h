@@ -1287,6 +1287,7 @@ DECLARE_MESSAGE(FileSeekFailed,
                 "",
                 "Failed to seek to position {byte_offset} in {path}.")
 DECLARE_MESSAGE(FilesExported, (msg::path), "", "Files exported at: {path}")
+DECLARE_MESSAGE(FindCommandFirstArg, (), "'find', 'artifact', and 'port' are vcpkg specific terms and should not be translated.", "The first argument to 'find' must be 'artifact' or 'port' .")
 DECLARE_MESSAGE(FishCompletion, (msg::path), "", "vcpkg fish completion is already added at \"{path}\".")
 DECLARE_MESSAGE(FloatingPointConstTooBig, (msg::count), "", "Floating point constant too big: {count}")
 DECLARE_MESSAGE(FollowingPackagesMissingControl,
