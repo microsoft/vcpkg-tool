@@ -97,7 +97,7 @@ $envvars_clear = @(
     'VCPKG_ROOT',
     'X_VCPKG_ASSET_SOURCES'
 )
-$envvars = $envvars_clear + @("VCPKG_DOWNLOADS", "X_VCPKG_REGISTRIES_CACHE", "PATH")
+$envvars = $envvars_clear + @("VCPKG_DOWNLOADS", "X_VCPKG_REGISTRIES_CACHE", "PATH", "GITHUB_ACTIONS")
 
 foreach ($Test in $AllTests)
 {
