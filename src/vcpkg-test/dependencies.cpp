@@ -480,7 +480,7 @@ This can be resolved by adding an explicit override to the preferred version. Fo
     }
   ]
 See `vcpkg help versioning` or )" +
-            docs::versioning_url + R"( for more information.)");
+            docs::troubleshoot_versioning_url + R"( for more information.)");
 }
 
 TEST_CASE ("version install string port version", "[versionplan]")
@@ -1120,7 +1120,7 @@ This can be resolved by adding an explicit override to the preferred version. Fo
     }
   ]
 See `vcpkg help versioning` or )" +
-                docs::versioning_url + R"( for more information.)");
+                docs::troubleshoot_versioning_url + R"( for more information.)");
     }
     SECTION ("higher baseline")
     {
@@ -1152,7 +1152,7 @@ This can be resolved by adding an explicit override to the preferred version. Fo
     }
   ]
 See `vcpkg help versioning` or )" +
-                docs::versioning_url + R"( for more information.)");
+                docs::troubleshoot_versioning_url + R"( for more information.)");
     }
 }
 
@@ -1246,7 +1246,7 @@ This can be resolved by adding an explicit override to the preferred version. Fo
     }
   ]
 See `vcpkg help versioning` or )" +
-                docs::versioning_url + R"( for more information.)");
+                docs::troubleshoot_versioning_url + R"( for more information.)");
     }
     SECTION ("lower baseline")
     {
