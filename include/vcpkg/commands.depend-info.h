@@ -39,7 +39,8 @@ namespace vcpkg
         Tree,
         Dot,
         Dgml,
-        Mermaid
+        Mermaid,
+        Json
     };
 
     struct DependInfoStrategy
