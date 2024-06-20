@@ -12,7 +12,10 @@ if (-not ($Output.Contains("not-sup-host-b:${Triplet}:     skip"))) {
 if (-not ($Output.Contains("feature-not-sup:${Triplet}:        *"))) {
     throw 'feature-not-sup must be build because the port that causes this port to skip should not be installed'
 }
-if ($Output.Split("*").Length -ne 3) {
+if (-not ($Output.Contains("feature-dep-missing:${Triplet}:        *"))) {
+    throw 'feature-dep-missing must be build because the broken feature is not selected.'
+}
+if ($Output.Split("*").Length -ne 4) {
     throw 'base-port should not be installed for the host'
 }
 if (-not ($Output.Contains("REGRESSION: not-sup-host-b:${Triplet} is marked as fail but not supported for ${Triplet}."))) {
