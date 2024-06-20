@@ -303,6 +303,13 @@ namespace vcpkg::Json
         static const NaturalNumberDeserializer instance;
     };
 
+    struct PositiveNumberDeserializer final : IDeserializer<double>
+    {
+        LocalizedString type_name() const override;
+        Optional<double> visit_number(Reader&, double value) const override;
+        static const PositiveNumberDeserializer instance;
+    };
+
     struct BooleanDeserializer final : IDeserializer<bool>
     {
         virtual LocalizedString type_name() const override;
