@@ -888,10 +888,13 @@
       </Item>
       <Item ItemId=";AllPackagesAreUpdated" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[All installed packages are up-to-date with the local portfile.]]></Val>
+          <Val><![CDATA[All installed packages are up-to-date.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Tüm yüklü paketler yerel bağlantı noktası dosyasıyla güncel.]]></Val>
+            <Val><![CDATA[Tüm yüklü paketler güncel.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[All installed packages are up-to-date with the local portfile.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -1519,6 +1522,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";BinariesRelativeToThePackageDirectoryHere" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the binaries are relative to ${{CURRENT_PACKAGES_DIR}} here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[ikililer burada ${{CURRENT_PACKAGES_DIR}} ile görelidir]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";BinarySourcesArg" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Binary caching sources. See 'vcpkg help binarycaching']]></Val>
@@ -1533,10 +1545,13 @@
       </Item>
       <Item ItemId=";BinaryWithInvalidArchitecture" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[{path}]A; Expected: {expected}, but was {actual}]]></Val>
+          <Val><![CDATA[{path} is built for {arch}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{path}]A; Beklenen: {expected}, ancak bulunan: {actual}]]></Val>
+            <Val><![CDATA[{arch} için {path} oluşturuldu]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[{path}]A; Expected: {expected}, but was {actual}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -1762,12 +1777,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";BuiltWithIncorrectArchitecture" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";BuiltWithIncorrectArchitecture" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The following files were built for an incorrect architecture:]]></Val>
+          <Val><![CDATA[The triplet requests that binaries are built for {arch}, but the following binaries were built for a different architecture. This usually means toolchain information is incorrectly conveyed to the binaries' build system. To suppress this message, add set(VCPKG_POLICY_SKIP_ARCHITECTURE_CHECK enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Aşağıdaki dosyalar yanlış bir mimari için oluşturulmuş:]]></Val>
+            <Val><![CDATA[Üçlü öğe, ikililerin {arch} için oluşturulmasını istiyor ancak aşağıdaki ikililer farklı bir mimari için oluşturulmuş. Bu genellikle araç zinciri bilgilerinin ikililerin derleme sistemine yanlış iletildiği anlamına gelir. Bu iletiyi gizlemek için set(VCPKG_POLICY_SKIP_ARCHITECTURE_CHECK enabled) ekleyin]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The following files were built for an incorrect architecture:]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -3940,12 +3958,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CopyrightIsDir" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";CopyrightIsDir" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[`{path}` being a directory is deprecated.]]></Val>
+          <Val><![CDATA[this port sets ${{CURRENT_PACKAGES_DIR}}/share/${{PORT}}/copyright to a directory, but it should be a file. Consider combining separate copyright files into one using vcpkg_install_copyright. To suppress this message, add set(VCPKG_POLICY_SKIP_COPYRIGHT_CHECK enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA['{path}' bir dizin olarak kullanım dışı bırakıldı.]]></Val>
+            <Val><![CDATA[bu bağlantı noktası ${{CURRENT_PACKAGES_DIR}}/share/${{PORT}}/copyright'ı bir dizine ayarlar, ancak bunun bir dosya olması gerekir. Ayrı telif hakkı dosyalarını vcpkg_install_copyright kullanarak tek bir dosyada birleştirmeyi düşünün. Bu iletiyi gizlemek için set(VCPKG_POLICY_SKIP_COPYRIGHT_CHECK enabled) ekleyin]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[`{path}` being a directory is deprecated.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -4324,6 +4345,24 @@
           <Prev Cat="Text">
             <Val><![CDATA[Detecting compiler hash for triplet "{triplet}"...]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DirectoriesRelativeToThePackageDirectoryHere" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the directories are relative to ${{CURRENT_PACKAGES_DIR}} here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[dizinler burada ${{CURRENT_PACKAGES_DIR}} ile görelidir]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DllsRelativeToThePackageDirectoryHere" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the DLLs are relative to ${{CURRENT_PACKAGES_DIR}} here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[DLL’ler burada ${{CURRENT_PACKAGES_DIR}} ile görelidir]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -4957,6 +4996,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ExecutablesRelativeToThePackageDirectoryHere" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the executables are relative to ${{CURRENT_PACKAGES_DIR}} here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[yürütülebilir dosyalar burada ${{CURRENT_PACKAGES_DIR}} ile görelidir]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ExpectedASingleValueFor$" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Expected a single value for '--${p0}'.]]></Val>
@@ -5274,10 +5322,13 @@
       </Item>
       <Item ItemId=";FailedPostBuildChecks" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Found {count} post-build check problem(s). To submit these ports to curated catalogs, please first correct the portfile: {path}]]></Val>
+          <Val><![CDATA[Found {count} post-build check problem(s). These are usually caused by bugs in portfile.cmake or the upstream build system. Please correct these before submitting this port to the curated registry.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Derleme sonrası {count} denetim sorunu bulundu. Bu bağlantı noktalarını seçki olarak sunulan kataloglara göndermek için lütfen önce portfile’ı düzeltin: {path}]]></Val>
+            <Val><![CDATA[{count} derleme sonrası denetim sorunu bulundu. Bunlar genellikle portfile.cmake veya yukarı akış derleme sistemindeki hatalardan kaynaklanır. Bu bağlantı noktasını seçki olarak sunulan kayıt defterine göndermeden önce lütfen bu hataları düzeltin.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Found {count} post-build check problem(s). To submit these ports to curated catalogs, please first correct the portfile: {path}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -5736,18 +5787,33 @@
       </Item>
       <Item ItemId=";FilesContainAbsolutePath1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[There should be no absolute paths, such as the following, in an installed package:]]></Val>
+          <Val><![CDATA[There should be no absolute paths, such as the following, in an installed package. To suppress this message, add set(VCPKG_POLICY_SKIP_ABSOLUTE_PATHS_CHECK enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Yüklü bir pakette aşağıdaki gibi mutlak yol olmamalıdır:]]></Val>
+            <Val><![CDATA[Yüklü bir pakette aşağıdaki gibi mutlak yol olmamalıdır. Bu iletiyi gizlemek için set(VCPKG_POLICY_SKIP_ABSOLUTE_PATHS_CHECK enabled) ekleyin]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[There should be no absolute paths, such as the following, in an installed package:]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";FilesContainAbsolutePath2" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Absolute paths were found in the following files:]]></Val>
+          <Val><![CDATA[Absolute paths were found in the following files]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Aşağıdaki dosyalarda mutlak yollar bulundu:]]></Val>
+            <Val><![CDATA[Aşağıdaki dosyalarda mutlak yollar bulundu]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Absolute paths were found in the following files:]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FilesContainAbsolutePathPkgconfigNote" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Adding a call to `vcpkg_fixup_pkgconfig()` may fix absolute paths in .pc files]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[`vcpkg_fixup_pkgconfig()` çağrısı eklemek .pc dosyalarındaki mutlak yolları düzeltebilir]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -5757,6 +5823,24 @@
           <Val><![CDATA[Files exported at: {path}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{path} konumunda dışa aktarılan dosyalar]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FilesRelativeToTheBuildDirectoryHere" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the files are relative to the build directory here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[dosyalar burada derleme dizini ile göredir]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FilesRelativeToThePackageDirectoryHere" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the files are relative to ${{CURRENT_PACKAGES_DIR}} here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[dosyalar burada ${{CURRENT_PACKAGES_DIR}} ile görelidir]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -8034,10 +8118,13 @@
       </Item>
       <Item ItemId=";LocalPortfileVersion" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Using local portfile versions. To update the local portfiles, use `git pull`.]]></Val>
+          <Val><![CDATA[Using local port versions. To update the local ports, use `git pull`.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Yerel bağlantı noktası dosyası sürümleri kullanılıyor. Yerel bağlantı noktası dosyalarını güncelleştirmek için `git pull` kullanın.]]></Val>
+            <Val><![CDATA[Yerel bağlantı noktası sürümleri kullanılıyor. Yerel bağlantı noktalarını güncelleştirmek için `git pull` kullanın.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Using local portfile versions. To update the local portfiles, use `git pull`.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -9015,222 +9102,273 @@
       </Item>
       <Item ItemId=";PerformingPostBuildValidation" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[-- Performing post-build validation]]></Val>
+          <Val><![CDATA[Performing post-build validation]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[-- Derleme sonrası doğrulama gerçekleştiriyor]]></Val>
+            <Val><![CDATA[Derleme sonrası doğrulama gerçekleştiriyor]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[-- Performing post-build validation]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";PortBugBinDirExists" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[There should be no bin\ directory in a static build, but {path} is present.]]></Val>
+          <Val><![CDATA[${{CURRENT_PACKAGES_DIR}}/{path} exists but should not in a static build. To suppress this message, add set(VCPKG_POLICY_DLLS_IN_STATIC_LIBRARY enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Statik derlemede bin\ dizini olmamalıdır, ancak {path} var.]]></Val>
+            <Val><![CDATA[${{CURRENT_PACKAGES_DIR}}/{path} var, ancak statik derlemede olmamalıdır. Bu iletiyi gizlemek için set(VCPKG_POLICY_DLLS_IN_STATIC_LIBRARY enabled) ekleyin]]></Val>
           </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";PortBugDebugBinDirExists" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[There should be no debug\bin\ directory in a static build, but {path} is present.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Statik derlemede debug\bin\ dizini olmamalıdır, ancak {path} var.]]></Val>
-          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[There should be no bin\ directory in a static build, but {path} is present.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";PortBugDebugShareDir" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[/debug/share should not exist. Please reorganize any important files, then use]A;file(REMOVE_RECURSE "${{CURRENT_PACKAGES_DIR}}/debug/share")]]></Val>
+          <Val><![CDATA[${{CURRENT_PACKAGES_DIR}}/debug/share should not exist. Please reorganize any important files, then delete any remaining by adding `file(REMOVE_RECURSE "${{CURRENT_PACKAGES_DIR}}/debug/share")`. To suppress this message, add set(VCPKG_POLICY_ALLOW_DEBUG_SHARE enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[/debug/share bulunmamalıdır. Lütfen önemli dosyaları yeniden düzenleyip]A;file(REMOVE_RECURSE "${{CURRENT_PACKAGES_DIR}}/debug/share") kullanın]]></Val>
+            <Val><![CDATA[${{CURRENT_PACKAGES_DIR}}/debug/share mevcut olmamalıdır. Lütfen önemli dosyaları yeniden düzenleyin ve kalan dosyaları `file(REMOVE_RECURSE "${{CURRENT_PACKAGES_DIR}}/debug/share")` ekleyerek kaldırın. Bu iletiyi gizlemek için set(VCPKG_POLICY_ALLOW_DEBUG_SHARE enabled) ekleyin]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[/debug/share should not exist. Please reorganize any important files, then use]A;file(REMOVE_RECURSE "${{CURRENT_PACKAGES_DIR}}/debug/share")]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";PortBugDllAppContainerBitNotSet" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The App Container bit must be set for Windows Store apps. The following DLLs do not have the App Container bit set:]]></Val>
+          <Val><![CDATA[The App Container bit must be set for all DLLs in Windows Store apps, and the triplet requests targeting the Windows Store, but the following DLLs were not built with the bit set. This usually means that toolchain linker flags are not being properly propagated, or the linker in use does not support the /APPCONTAINER switch. To suppress this message, add set(VCPKG_POLICY_SKIP_APPCONTAINER_CHECK enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Uygulama Kapsayıcısı biti, Windows Mağazası uygulamaları için ayarlanmalıdır. Aşağıdaki DLL'lerde Uygulama Kapsayıcısı bit kümesi yok:]]></Val>
+            <Val><![CDATA[Uygulama Kapsayıcısı biti, Windows Mağazası uygulamalarındaki tüm DLL’ler ve Windows Mağazası’nı hedef alan üçlü istekler için ayarlanmalıdır, ancak aşağıdaki DLL’ler bit kümesiyle derlenemedi. Bu genellikle araç zinciri bağlayıcı bayraklarının düzgün şekilde yayılmadığı veya kullanımda olan bağlayıcının /APPCONTAINER anahtarını desteklemediği anlamına gelir. Bu iletiyi gizlemek için set(VCPKG_POLICY_SKIP_APPCONTAINER_CHECK enabled) ekleyin]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The App Container bit must be set for Windows Store apps. The following DLLs do not have the App Container bit set:]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";PortBugDllInLibDir" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The following dlls were found in /lib or /debug/lib. Please move them to /bin or /debug/bin, respectively.]]></Val>
+          <Val><![CDATA[The following dlls were found in ${{CURRENT_PACKAGES_DIR}}/lib or ${{CURRENT_PACKAGES_DIR}}/debug/lib. Please move them to ${{CURRENT_PACKAGES_DIR}}/bin or ${{CURRENT_PACKAGES_DIR}}/debug/bin, respectively.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[/lib veya /debug/lib içinde aşağıdaki DLL'ler bulundu. Lütfen bunları sırasıyla /bin veya /debug/bin'e taşıyın.]]></Val>
+            <Val><![CDATA[${{CURRENT_PACKAGES_DIR}}/lib veya ${{CURRENT_PACKAGES_DIR}}/debug/lib içinde aşağıdaki DLL’ler bulundu. Lütfen bunları sırasıyla ${{CURRENT_PACKAGES_DIR}}/bin veya ${{CURRENT_PACKAGES_DIR}}/debug/bin'e taşıyın.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The following dlls were found in /lib or /debug/lib. Please move them to /bin or /debug/bin, respectively.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";PortBugDuplicateIncludeFiles" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Include files should not be duplicated into the /debug/include directory. If this cannot be disabled in the project cmake, use]A;file(REMOVE_RECURSE "${{CURRENT_PACKAGES_DIR}}/debug/include")]]></Val>
+          <Val><![CDATA[${{CURRENT_PACKAGES_DIR}}/debug/include should not exist. To suppress this message, add set(VCPKG_POLICY_ALLOW_DEBUG_INCLUDE enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Ekleme dosyaları /debug/include dizininde çoğaltılamaz. Bu proje CMake içinde devre dışı bırakılamazsa,]A;file(REMOVE_RECURSE "${{CURRENT_PACKAGES_DIR}}/debug/include") kullanın]]></Val>
+            <Val><![CDATA[${{CURRENT_PACKAGES_DIR}}/debug/include mevcut olmamalıdır. Bu iletiyi gizlemek için set(VCPKG_POLICY_ALLOW_DEBUG_INCLUDE enabled) ekleyin]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Include files should not be duplicated into the /debug/include directory. If this cannot be disabled in the project cmake, use]A;file(REMOVE_RECURSE "${{CURRENT_PACKAGES_DIR}}/debug/include")]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PortBugDuplicateIncludeFilesFixIt" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[If this directory was created by a build system that does not allow installing headers in debug to be disabled, delete the duplicate directory with file(REMOVE_RECURSE "${{CURRENT_PACKAGES_DIR}}/debug/include")]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Bu dizin, hata ayıklamada üst bilgi yüklemenin devre dışı bırakılmasına izin vermeyen bir derleme sistemi tarafından oluşturulmuşsa, yinelenen dizini file(REMOVE_RECURSE "${{CURRENT_PACKAGES_DIR}}/debug/include") ile silin]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";PortBugFoundCopyrightFiles" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The following files are potential copyright files:]]></Val>
+          <Val><![CDATA[the following files are potential copyright files]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Aşağıdaki dosyalar olası telif hakkı dosyalarıdır:]]></Val>
+            <Val><![CDATA[aşağıdaki dosyalar olası telif hakkı dosyalarıdır]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The following files are potential copyright files:]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";PortBugFoundDebugBinaries" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";PortBugFoundDebugBinaries" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Found {count} debug binaries:]]></Val>
+          <Val><![CDATA[The following are debug binaries:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{count} hata ayıklama ikili dosyası bulundu:]]></Val>
+            <Val><![CDATA[Aşağıdakiler hata ayıklama ikilileridir:]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Found {count} debug binaries:]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";PortBugFoundDllInStaticBuild" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[DLLs should not be present in a static build, but the following DLLs were found:]]></Val>
+          <Val><![CDATA[DLLs should not be present in a static build, but the following DLLs were found. To suppress this message, add set(VCPKG_POLICY_DLLS_IN_STATIC_LIBRARY enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[DLL'ler statik bir derlemede mevcut olmamalıdır ancak aşağıdaki DLL'ler bulundu:]]></Val>
+            <Val><![CDATA[DLL’ler statik bir derlemede mevcut olmamalıdır ancak aşağıdaki DLL’ler bulundu. Bu iletiyi gizlemek için set(VCPKG_POLICY_DLLS_IN_STATIC_LIBRARY enabled) ekleyin]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[DLLs should not be present in a static build, but the following DLLs were found:]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";PortBugFoundEmptyDirectories" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";PortBugFoundEmptyDirectories" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[There should be no empty directories in {path}. The following empty directories were found:]]></Val>
+          <Val><![CDATA[There should be no installed empty directories. Empty directories are not representable to several binary cache providers, git repositories, and are not considered semantic build outputs. You should either create a regular file inside each empty directory, or delete them with the following CMake. To suppress this message, add set(VCPKG_POLICY_ALLOW_EMPTY_FOLDERS enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{path} yolunda boş dizin olmamalıdır. Aşağıdaki boş dizinler bulundu:]]></Val>
+            <Val><![CDATA[Yüklü boş dizin olmamalıdır. Boş dizinler birkaç ikili önbellek sağlayıcısı ve git deposu için gösterilemez ve anlamsal derleme çıkışları olarak değerlendirilmez. Her boş dizin içinde normal bir dosya oluşturun veya boş dizinleri aşağıdaki CMake ile silin. Bu iletiyi gizlemek için set(VCPKG_POLICY_ALLOW_EMPTY_FOLDERS enabled) ekleyin]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[There should be no empty directories in {path}. The following empty directories were found:]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";PortBugFoundExeInBinDir" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The following EXEs were found in /bin or /debug/bin. EXEs are not valid distribution targets.]]></Val>
+          <Val><![CDATA[The following executables were found in ${{CURRENT_PACKAGES_DIR}}/bin or ${{CURRENT_PACKAGES_DIR}}/debug/bin. Executables are not valid distribution targets. If these executables are build tools, consider using `vcpkg_copy_tools`. To suppress this message, add set(VCPKG_POLICY_ALLOW_EXES_IN_BIN enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[/bin veya /debug/bin içinde aşağıdaki EXE’ler bulundu. EXE'ler geçerli dağıtım hedefi değil.]]></Val>
+            <Val><![CDATA[Aşağıdaki yürütülebilir dosyalar ${{CURRENT_PACKAGES_DIR}}/bin veya ${{CURRENT_PACKAGES_DIR}}/debug/bin içinde bulundu. Yürütülebilir dosyalar geçerli dağıtım hedefleri değildir. Bu yürütülebilir dosyalar derleme araçlarıysa `vcpkg_copy_tools` kullanmayı düşünün. Bu iletiyi gizlemek için set(VCPKG_POLICY_ALLOW_EXES_IN_BIN enabled) ekleyin]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The following EXEs were found in /bin or /debug/bin. EXEs are not valid distribution targets.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";PortBugFoundReleaseBinaries" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";PortBugFoundReleaseBinaries" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Found {count} release binaries:]]></Val>
+          <Val><![CDATA[The following are release binaries:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{count} yayın ikili dosyaları bulundu:]]></Val>
+            <Val><![CDATA[Aşağıdakiler sürüm ikilileridir:]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Found {count} release binaries:]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";PortBugIncludeDirInCMakeHelperPort" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The folder /include exists in a cmake helper port; this is incorrect, since only cmake files should be installed]]></Val>
+          <Val><![CDATA[The folder ${{CURRENT_PACKAGES_DIR}}/include exists in a CMake helper port; this is incorrect, since only CMake files should be installed. To suppress this message, remove set(VCPKG_POLICY_CMAKE_HELPER_PORT enabled).]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[/include klasörü bir CMake yardımcı bağlantı noktasında var; bu doğru değil çünkü yalnızca CMake dosyaları yüklenmelidir]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";PortBugInspectFiles" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[To inspect the {extension} files, use:]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{extension} dosyalarını incelemek için şu komutu kullanın:]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";PortBugInvalidCrtLinkage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The following binaries should use the {expected} CRT.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Aşağıdaki ikili dosyalar {expected} CRT'yi kullanmalıdır.]]></Val>
+            <Val><![CDATA[${{CURRENT_PACKAGES_DIR}}/include klasörü bir CMake yardımcı bağlantı noktasında var; yalnızca CMake dosyalarının yüklenmesi gerektiğinden bu yanlıştır. Bu iletiyi gizlemek için set(VCPKG_POLICY_CMAKE_HELPER_PORT enabled) öğesini kaldırın.]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[Invalid crt linkage. Expected {expected}, but the following libs had:]]></Val>
+            <Val><![CDATA[The folder /include exists in a cmake helper port; this is incorrect, since only cmake files should be installed]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PortBugInvalidCrtLinkageCrtGroup" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The following binaries should link with only: {expected}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Aşağıdaki ikililer yalnızca şunlarla bağlantı oluşturmalıdır: {expected}]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";PortBugInvalidCrtLinkageEntry" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[{path} links with:]]></Val>
+          <Val><![CDATA[{path} links with: {actual}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Şunları barındıran {path} bağlantıları:]]></Val>
+            <Val><![CDATA[Şunu içeren {path} bağlantıları: {actual}]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[{path} links with:]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PortBugInvalidCrtLinkageHeader" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[binaries built by this port link with C RunTimes ("CRTs") inconsistent with those requested by the triplet and deployment structure. If the triplet is intended to only use the release CRT, you should add set(VCPKG_POLICY_ONLY_RELEASE_CRT enabled) to the triplet .cmake file. To suppress this check entirely, add set(VCPKG_POLICY_SKIP_CRT_LINKAGE_CHECK enabled) to the triplet .cmake if this is triplet-wide, or to portfile.cmake if this is specific to the port. You can inspect the binaries with: dumpbin.exe /directives mylibfile.lib]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[C RunTimes ("CRT") ile bu bağlantı noktası bağlantısı tarafından oluşturulan ikili dosyalar, üçlü ve dağıtım yapısı tarafından istenenlerle tutarsız. Üçlü öğenin yalnızca yayın CRT’sini kullanması amaçlanıyorsa, üçlü .cmake dosyasına set(VCPKG_POLICY_ONLY_RELEASE_CRT enabled) eklemeniz gerekir. Bu denetimi tamamen gizlemek için, bu üçlü genelinde geçerliyse üçlü .cmake dosyasına veya bağlantı noktasına özelse portfile.cmake dosyasına set(VCPKG_POLICY_SKIP_CRT_LINKAGE_CHECK enabled) ekleyin. İkili dosyaları şu şekilde inceleyebilirsiniz: dumpbin.exe /directives mylibfile.lib]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";PortBugKernel32FromXbox" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The selected triplet targets Xbox, but the following DLLs link with kernel32. These DLLs cannot be loaded on Xbox, where kernel32 is not present. This is typically caused by linking with kernel32.lib rather than a suitable umbrella library, such as onecore_apiset.lib or xgameplatform.lib.]]></Val>
+          <Val><![CDATA[The selected triplet targets Xbox, but the following DLLs link with kernel32. These DLLs cannot be loaded on Xbox, where kernel32 is not present. This is typically caused by linking with kernel32.lib rather than a suitable umbrella library, such as onecore_apiset.lib or xgameplatform.lib. You can inspect a DLL's dependencies with `dumpbin.exe /dependents mylibfile.dll`. To suppress this message, add set(VCPKG_POLICY_ALLOW_KERNEL32_FROM_XBOX enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Seçilen üçlü Xbox'ı hedefler, ancak aşağıdaki DLL'ler kernel32 ile bağlantılıdır. Bu DLL'ler, kernel32'nin bulunmadığı Xbox'a yüklenemez. Bu genellikle onecore_apiset.lib veya xgameplatform.lib gibi uygun bir şemsiye kitaplık yerine kernel32.lib ile bağlantı kurulmasından kaynaklanır.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";PortBugMergeLibCMakeDir" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The /lib/cmake folder should be merged with /debug/lib/cmake and moved to /share/{package_name}/cmake. Please use the helper function `vcpkg_cmake_config_fixup()` from the port vcpkg-cmake-config.`]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[/lib/cmake klasörü /debug/lib/cmake ile birleştirilmeli ve /share/{package_name}/cmake konumuna taşınmalıdır. Lütfen vcpkg-cmake-config bağlantı noktasından 'vcpkg_cmake_config_fixup()' yardımcı işlevini kullanın.]]></Val>
+            <Val><![CDATA[Seçilen üçlü Xbox’ı hedefliyor, ancak aşağıdaki DLL’ler kernel32 ile bağlantılı. Bu DLL’ler, kernel32’nin mevcut olmadığı Xbox’a yüklenemiyor. Bu genellikle, onecore_apiset.lib veya xgameplatform.lib gibi uygun bir şemsiye kitaplığı yerine kernel32.lib ile bağlantı yapılmasından kaynaklanır. `dumpbin.exe /dependents mylibfile.dll` ile DLL bağımlılıklarını inceleyebilirsiniz. Bu iletiyi gizlemek için set(VCPKG_POLICY_ALLOW_KERNEL32_FROM_XBOX enabled) ekleyin]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[The /lib/cmake folder should be merged with /debug/lib/cmake and moved to /share/{spec}/cmake. Please use the helper function `vcpkg_cmake_config_fixup()` from the port vcpkg-cmake-config.`]]></Val>
+            <Val><![CDATA[The selected triplet targets Xbox, but the following DLLs link with kernel32. These DLLs cannot be loaded on Xbox, where kernel32 is not present. This is typically caused by linking with kernel32.lib rather than a suitable umbrella library, such as onecore_apiset.lib or xgameplatform.lib.]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";PortBugMismatchedNumberOfBinaries" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";PortBugMergeLibCMakeDir" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Mismatching number of debug and release binaries.]]></Val>
+          <Val><![CDATA[This port creates ${{CURRENT_PACKAGES_DIR}}/lib/cmake and/or ${{CURRENT_PACKAGES_DIR}}/debug/lib/cmake, which should be merged and moved to ${{CURRENT_PACKAGES_DIR}}/share/${{PORT}}/cmake. Please use the helper function vcpkg_cmake_config_fixup() from the port vcpkg-cmake-config. To suppress this message, add set(VCPKG_POLICY_SKIP_LIB_CMAKE_MERGE_CHECK enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Hata ayıklama ve yayın ikili dosyalarının sayısı eşleşmiyor.]]></Val>
+            <Val><![CDATA[Bu bağlantı noktası ${{CURRENT_PACKAGES_DIR}}/lib/cmake ve/veya ${{CURRENT_PACKAGES_DIR}}/debug/lib/cmake oluşturur, bunun birleştirilip ${{CURRENT_PACKAGES_DIR}}/share/${{PORT}}/cmake’e taşınması gerekir. Lütfen vcpkg-cmake-config bağlantı noktasından vcpkg_cmake_config_fixup() yardımcı işlevini kullanın. Bu iletiyi gizlemek için set(VCPKG_POLICY_SKIP_LIB_CMAKE_MERGE_CHECK enabled) ekleyin]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The /lib/cmake folder should be merged with /debug/lib/cmake and moved to /share/{package_name}/cmake. Please use the helper function `vcpkg_cmake_config_fixup()` from the port vcpkg-cmake-config.`]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PortBugMismatchingNumberOfBinaries" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[mismatching number of debug and release binaries. This often indicates incorrect handling of debug or release in portfile.cmake or the build system. If the intent is to only ever produce release components for this triplet, the triplet should have set(VCPKG_BUILD_TYPE release) added to its .cmake file. To suppress this message, add set(VCPKG_POLICY_MISMATCHED_NUMBER_OF_BINARIES enabled)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[hata ayıklama ve yayın ikili dosyalarının sayısı eşleşmiyor. Bu genellikle portfile.cmake veya derleme sistemindeki hata ayıklama veya yayının hatalı işlendiğini gösterir. Yalnızca bu üçlü için yayın bileşenleri oluşturmayı hedefliyorsanız, üçlü öğenin .cmake dosyasına set(VCPKG_BUILD_TYPE release) eklenmelidir. Bu iletiyi gizlemek için set(VCPKG_POLICY_MISMATCHED_NUMBER_OF_BINARIES enabled) ekleyin]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";PortBugMisplacedCMakeFiles" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";PortBugMisplacedCMakeFiles" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The following cmake files were found outside /share/{spec}. Please place cmake files in /share/{spec}.]]></Val>
+          <Val><![CDATA[This port installs the following CMake files in places CMake files are not expected. CMake files should be installed in ${{CURRENT_PACKAGES_DIR}}/share/${{PORT}}. To suppress this message, add set(VCPKG_POLICY_SKIP_MISPLACED_CMAKE_FILES_CHECK enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Aşağıdaki CMake dosyaları /share/{spec} dışında bulundu. Lütfen CMake dosyalarını /share/{spec} dosyasına yerleştirin.]]></Val>
+            <Val><![CDATA[Bu bağlantı noktası aşağıdaki CMake dosyalarını CMake dosyalarının beklenmediği konumlara yüklüyor. CMake dosyaları ${{CURRENT_PACKAGES_DIR}}/share/${{PORT}} konumuna yüklenmelidir. Bu iletiyi gizlemek için set(VCPKG_POLICY_SKIP_MISPLACED_CMAKE_FILES_CHECK enabled) ekleyin]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The following cmake files were found outside /share/{spec}. Please place cmake files in /share/{spec}.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";PortBugMisplacedFiles" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";PortBugMisplacedFiles" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The following files are placed in {path}:]]></Val>
+          <Val><![CDATA[The following regular files are installed to location(s) where regular files may not be installed. These should be installed in a subdirectory. To suppress this message, add set(VCPKG_POLICY_SKIP_MISPLACED_REGULAR_FILES_CHECK enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Şu dosyalar {path} yoluna yerleştirilir:]]></Val>
+            <Val><![CDATA[Aşağıdaki normal dosyalar, normal dosyaların yüklenemeyeceği konumlara yüklenmiş. Bunlar bir alt dizine yüklenmelidir. Bu iletiyi gizlemek için set(VCPKG_POLICY_SKIP_MISPLACED_REGULAR_FILES_CHECK enabled) ekleyin]]></Val>
           </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";PortBugMisplacedFilesCont" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Files cannot be present in those directories.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Dosyalar bu dizinlerde bulunamaz.]]></Val>
-          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The following files are placed in {path}:]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";PortBugMisplacedPkgConfigFiles" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[pkgconfig directories should be one of share/pkgconfig (for header only libraries only), lib/pkgconfig, or lib/debug/pkgconfig. The following misplaced pkgconfig files were found:]]></Val>
+          <Val><![CDATA[The following misplaced pkgconfig directories were installed. Misplaced pkgconfig files will not be found correctly by pkgconf or pkg-config. pkgconfig directories should be ${{CURRENT_PACKAGES_DIR}}/share/pkgconfig (for architecture agnostic / header only libraries only), ${{CURRENT_PACKAGES_DIR}}/lib/pkgconfig (for release dependencies), or ${{CURRENT_PACKAGES_DIR}}/debug/lib/pkgconfig (for debug dependencies). To suppress this message, add set(VCPKG_POLICY_SKIP_PKGCONFIG_CHECK enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[pkgconfig dizinleri, share/pkgconfig (yalnızca üst bilgi kitaplıkları için), lib/pkgconfig veya lib/debug/pkgconfig'den biri olmalıdır. Aşağıdaki yanlış yerleştirilmiş pkgconfig dosyaları bulundu:]]></Val>
+            <Val><![CDATA[Aşağıdaki yanlış yerleştirilmiş pkgconfig dizinleri yüklendi. Yanlış yerleştirilmiş pkgconfig dosyaları pkgconf veya pkg-config tarafından doğru bulunamaz. pkgconfig dizinleri ${{CURRENT_PACKAGES_DIR}}/share/pkgconfig (mimariden bağımsız / yalnızca üst bilgi kitaplıkları için), ${{CURRENT_PACKAGES_DIR}}/lib/pkgconfig (yayın bağımlılıkları için) veya ${{CURRENT_PACKAGES_DIR}}/debug/lib/pkgconfig (hata ayıklama bağımlılıkları için) olmalıdır. Bu iletiyi gizlemek için set(VCPKG_POLICY_SKIP_PKGCONFIG_CHECK enabled) ekleyin]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[pkgconfig directories should be one of share/pkgconfig (for header only libraries only), lib/pkgconfig, or lib/debug/pkgconfig. The following misplaced pkgconfig files were found:]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PortBugMissingCMakeHelperPortFile" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The ${{CURRENT_PACKAGES_DIR}}/share/${{PORT}}/vcpkg-port-config.cmake file does not exist. This file must exist for CMake helper ports. To suppress this message, remove set(VCPKG_POLICY_CMAKE_HELPER_PORT enabled)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[${{CURRENT_PACKAGES_DIR}}/share/${{PORT}}/vcpkg-port-config.cmake dosyası yok. CMake yardımcı bağlantı noktaları için bu dosya bulunmalıdır. Bu iletiyi gizlemek için set(VCPKG_POLICY_CMAKE_HELPER_PORT enabled) öğesini kaldırın]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -9244,51 +9382,60 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";PortBugMissingFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";PortBugMissingImportedLibs" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The /{path} file does not exist. This file must exist for CMake helper ports.]]></Val>
+          <Val><![CDATA[Import libraries for installed DLLs appear to be missing. If this is intended, add set(VCPKG_POLICY_DLLS_WITHOUT_LIBS enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[/{path} dosyası yok. CMake yardımcı bağlantı noktaları için bu dosya bulunmalıdır.]]></Val>
+            <Val><![CDATA[Yüklü DLL’ler için içeri aktarma kitaplıkları eksik gibi görünüyor. Bu amaçlandıysa set(VCPKG_POLICY_DLLS_WITHOUT_LIBS enabled) ekleyin]]></Val>
           </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";PortBugMissingImportedLibs" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Import libraries were not present in {path}.]A;If this is intended, add the following line in the portfile:]A;set(VCPKG_POLICY_DLLS_WITHOUT_LIBS enabled)]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[İçeri aktarma kitaplıkları {path} yolunda yoktu.]A; Bu amaçlandıysa, portfile’da:]A;set(VCPKG_POLICY_DLLS_WITHOUT_LIBS etkin) satırı ekleyin]]></Val>
-          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Import libraries were not present in {path}.]A;If this is intended, add the following line in the portfile:]A;set(VCPKG_POLICY_DLLS_WITHOUT_LIBS enabled)]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";PortBugMissingIncludeDir" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The folder /include is empty or not present. This indicates the library was not correctly installed.]]></Val>
+          <Val><![CDATA[The folder ${{CURRENT_PACKAGES_DIR}}/include is empty or not present. This usually means that headers are not correctly installed. If this is a CMake helper port, add set(VCPKG_POLICY_CMAKE_HELPER_PORT enabled). If this is not a CMake helper port but this is otherwise intentional, add set(VCPKG_POLICY_EMPTY_INCLUDE_FOLDER enabled) to suppress this message.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[/include klasörü boş veya yok. Bu, kitaplığın düzgün yüklenmemiş olduğunu gösterir.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";PortBugMissingLicense" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The software license must be available at ${{CURRENT_PACKAGES_DIR}}/share/{package_name}/copyright]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Yazılım lisansı ${{CURRENT_PACKAGES_DIR}}/share/{package_name}/copyright adresinde kullanıma sunulmalıdır]]></Val>
+            <Val><![CDATA[${{CURRENT_PACKAGES_DIR}}/include klasörü boş veya yok. Bu genellikle üst bilgilerin düzgün yüklenmemiş olduğu anlamına gelir. Bu bir CMake yardımcı bağlantı noktasıysa set(VCPKG_POLICY_CMAKE_HELPER_PORT enabled) ekleyin. Bu bir CMake yardımcı bağlantı noktası değilse ancak bu bilerek yapılmışsa, bu iletiyi gizlemek için set(VCPKG_POLICY_EMPTY_INCLUDE_FOLDER enabled) ekleyin.]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[The software license must be available at ${{CURRENT_PACKAGES_DIR}}/share/{spec}/copyright]]></Val>
+            <Val><![CDATA[The folder /include is empty or not present. This indicates the library was not correctly installed.]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";PortBugMissingProvidedUsage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";PortBugMissingLicense" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The port provided "usage" but forgot to install to /share/{package_name}/usage, add the following linein the portfile:]]></Val>
+          <Val><![CDATA[the license is not installed to ${{CURRENT_PACKAGES_DIR}}/share/${{PORT}}/copyright . This can be fixed by adding a call to vcpkg_install_copyright. To suppress this message, add set(VCPKG_POLICY_SKIP_COPYRIGHT_CHECK enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Bağlantı noktası "usage" sağladı ancak /share/{package_name}/usage içine yüklemeyi unuttu, portfile içine aşağıdaki satırı ekleyin:]]></Val>
+            <Val><![CDATA[lisans ${{CURRENT_PACKAGES_DIR}}/share/${{PORT}}/copyright konumuna yüklenmedi. Bu sorun, vcpkg_install_copyright’a bir çağrı eklenerek düzeltilebilir. Bu iletiyi gizlemek için set(VCPKG_POLICY_SKIP_COPYRIGHT_CHECK enabled) ekleyin]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The software license must be available at ${{CURRENT_PACKAGES_DIR}}/share/{package_name}/copyright]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PortBugMissingLicenseFixIt" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Consider adding: {value}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Şunu eklemeyi düşünün: {value}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PortBugMissingProvidedUsage" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[this port contains a file named "usage" but didn't install it to ${{CURRENT_PACKAGES_DIR}}/share/${{PORT}}/usage . If this file is not intended to be usage text, consider choosing another name; otherwise, install it. To suppress this message, add set(VCPKG_POLICY_SKIP_USAGE_INSTALL_CHECK enabled)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[bu bağlantı noktası "usage" adlı bir dosya içeriyor ancak bunu ${{CURRENT_PACKAGES_DIR}}/share/${{PORT}}/usage konumuna yüklemedi. Bu dosyanın kullanım metni olması amaçlanmadıysa, başka bir ad seçmeyi düşünün; aksi halde yükleyin. Bu iletiyi gizlemek için set(VCPKG_POLICY_SKIP_USAGE_INSTALL_CHECK enabled) ekleyin]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The port provided "usage" but forgot to install to /share/{package_name}/usage, add the following linein the portfile:]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -9312,28 +9459,25 @@
       </Item>
       <Item ItemId=";PortBugOutdatedCRT" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Detected outdated dynamic CRT in the following files:]]></Val>
+          <Val><![CDATA[DLLs that link with obsolete C RunTime ("CRT") DLLs were installed. Installed DLLs should link with an in-support CRT. You can inspect the dependencies of a DLL with `dumpbin.exe /dependents mylibfile.dll`. If you're using a custom triplet targeting an old CRT, add set(VCPKG_POLICY_ALLOW_OBSOLETE_MSVCRT enabled) to the triplet's .cmake file. To suppress this message for this port, add set(VCPKG_POLICY_ALLOW_OBSOLETE_MSVCRT enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Aşağıdaki dosyalarda süresi geçmiş dinamik CRT algılandı:]]></Val>
+            <Val><![CDATA[Artık kullanılmayan C RunTime ("CRT") DLL’leri ile bağlantılı olan DLL’ler yüklendi. Yüklü DLL’lerin desteklenen bir CRT ile bağlanması gerekir. `dumpbin.exe /dependents mylibfile.dll` ile DLL bağımlılıklarını inceleyebilirsiniz. Eski bir CRT’yi hedefleyen özel bir üçlü kullanıyorsanız, üçlü .cmake dosyasına set(VCPKG_POLICY_ALLOW_OBSOLETE_MSVCRT enabled) ekleyin. Bu iletiyi bu bağlantı noktası için gizlemek için set(VCPKG_POLICY_ALLOW_OBSOLETE_MSVCRT enabled) ekleyin]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Detected outdated dynamic CRT in the following files:]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";PortBugRemoveBinDir" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[If the creation of bin\ and/or debug\bin\ cannot be disabled, use this in the portfile to remove them]]></Val>
+          <Val><![CDATA[if creation of these directories cannot be disabled, you can add the following in portfile.cmake to remove them]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[bin\ ve/veya debug\bin\ oluşturma devre dışı bırakılamıyorsa, bunları kaldırmak için bunu portfile’da kullanın]]></Val>
+            <Val><![CDATA[bu dizinlerin oluşturulması devre dışı bırakılamıyorsa, bunları kaldırmak için portfile.cmake’e aşağıdakini ekleyebilirsiniz]]></Val>
           </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";PortBugRemoveEmptyDirectories" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[If a directory should be populated but is not, this might indicate an error in the portfile.]A;If the directories are not needed and their creation cannot be disabled, use something like this in the portfile to remove them:]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Doldurulması gereken bir dizin doldurulmamışsa bu, portfile’da bir hata olabileceğini gösterir.]A;Dizinlere gerek yoksa ve oluşturmaları devre dışı bırakılamıyorsa bunları kaldırmak için portfile’da buna benzer bir özellik kullanın:]]></Val>
-          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[If the creation of bin\ and/or debug\bin\ cannot be disabled, use this in the portfile to remove them]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -9349,24 +9493,36 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";PortBugRestrictedHeaderPaths" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";PortBugRestrictedHeaderPaths" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The following restricted headers can prevent the core C++ runtime and other packages from compiling correctly. In exceptional circumstances, this policy can be disabled by setting CMake variable VCPKG_POLICY_ALLOW_RESTRICTED_HEADERS in portfile.cmake.]]></Val>
+          <Val><![CDATA[Taking the following restricted headers can prevent the core C++ runtime and other packages from compiling correctly. These should be renamed or stored in a subdirectory instead. In exceptional circumstances, this warning can be suppressed by adding set(VCPKG_POLICY_ALLOW_RESTRICTED_HEADERS enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Aşağıdaki kısıtlanmış üst bilgiler çekirdek C++ çalışma zamanının ve diğer paketlerin düzgün bir şekilde derlenmesini önleyebilir. Bu ilke, olağanüstü durumlarda CMake değişkenini portfile.cmake üzerinde VCPKG_POLICY_ALLOW_RESTRICTED_HEADERS olarak ayarlayarak devre dışı bırakılabilir.]]></Val>
+            <Val><![CDATA[Aşağıdaki kısıtlanmış üst bilgiler çekirdek C++ çalışma zamanının ve diğer paketlerin düzgün bir şekilde derlenmesini önleyebilir. Bunlar yeniden adlandırılmalı veya bir alt dizinde depolanmalıdır. Sıra dışı durumlarda, bu uyarı set(VCPKG_POLICY_ALLOW_RESTRICTED_HEADERS enabled) eklenerek gizlenebilir]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[The following restricted headers can prevent the core C++ runtime and other packages from compiling correctly. In exceptional circumstances, this policy can be disabled via {env_var}.]]></Val>
+            <Val><![CDATA[The following restricted headers can prevent the core C++ runtime and other packages from compiling correctly. In exceptional circumstances, this policy can be disabled by setting CMake variable VCPKG_POLICY_ALLOW_RESTRICTED_HEADERS in portfile.cmake.]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";PortBugSetDllsWithoutExports" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";PortBugRestrictedHeaderPathsNote" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[DLLs without any exports are likely a bug in the build script. If this is intended, add the following line in the portfile:]A;set(VCPKG_POLICY_DLLS_WITHOUT_EXPORTS enabled)]A;The following DLLs have no exports:]]></Val>
+          <Val><![CDATA[the headers are relative to ${{CURRENT_PACKAGES_DIR}}/include here]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Dışarı aktarma içermeyen DLL'ler büyük olasılıkla derleme betiğinde bir hatadır. Bu amaçlandıysa, portfile’da şu satırı ekleyin:]A;set(VCPKG_POLICY_DLLS_WITHOUT_EXPORTS etkin)]A;Aşağıdaki DLL'lerde dışarı aktarma yok:]]></Val>
+            <Val><![CDATA[üst bilgiler burada ${{CURRENT_PACKAGES_DIR}}/include ile görelidir]]></Val>
           </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PortBugSetDllsWithoutExports" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the following DLLs were built without any exports. DLLs without exports are likely bugs in the build script. If this is intended, add set(VCPKG_POLICY_DLLS_WITHOUT_EXPORTS enabled)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[aşağıdaki DLL’ler dışarı aktarma olmadan oluşturuldu. Dışarı aktarma içermeyen DLL’ler büyük olasılıkla derleme betiğindeki hatalardır. Bu amaçlandıysa set(VCPKG_POLICY_DLLS_WITHOUT_EXPORTS enabled) ekleyin]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[DLLs without any exports are likely a bug in the build script. If this is intended, add the following line in the portfile:]A;set(VCPKG_POLICY_DLLS_WITHOUT_EXPORTS enabled)]A;The following DLLs have no exports:]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -9807,6 +9963,15 @@
           <Val><![CDATA[Skipping clearing contents of {path} because it was not a directory.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{path} bir dizin olmadığından, {path} içeriğinin temizlenmesi atlanıyor.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";SkippingPostBuildValidationDueTo" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Skipping post-build validation due to {cmake_var}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{cmake_var} nedeniyle derleme sonrası doğrulama atlanıyor]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10626,10 +10791,13 @@
       </Item>
       <Item ItemId=";UnknownPolicySetting" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Unknown setting for policy '{value}': {option}]]></Val>
+          <Val><![CDATA[Unknown setting of {cmake_var}: {value}. Valid policy values are '', 'disabled', and 'enabled'.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA['{value}' ilkesi için bilinmeyen ayar: {option}]]></Val>
+            <Val><![CDATA[Bilinmeyen {cmake_var} ayarı: {value}. Geçerli ilke değerleri: '', 'disabled' ve 'enabled'.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Unknown setting for policy '{value}': {option}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -10941,6 +11109,24 @@
           <Val><![CDATA[Uri may not be empty]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Uri boş olamaz]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UsageInstallInstructions" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[you can install the usage file with the following CMake]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[kullanım dosyasını aşağıdaki CMake ile yükleyebilirsiniz]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UsageTextHere" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the usage file is here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[kullanım dosyası burada]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />

@@ -574,13 +574,16 @@ namespace vcpkg
     static std::vector<std::string> valid_arguments(const VcpkgPaths&)
     {
         // Note that help lists all supported args, but we only want to autocomplete the ones valid on this platform
-        return
-        {
-            INSTALL.to_string(), REMOVE.to_string(),
+        return {
+            INSTALL.to_string(),
+            REMOVE.to_string(),
 #if defined(_WIN32)
-                PROJECT.to_string(), POWERSHELL.to_string(),
+            PROJECT.to_string(),
+            POWERSHELL.to_string(),
 #else
-                BASH.to_string(), FISH.to_string(), ZSH.to_string()
+            BASH.to_string(),
+            FISH.to_string(),
+            ZSH.to_string()
 #endif
         };
     }
