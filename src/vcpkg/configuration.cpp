@@ -1025,17 +1025,21 @@ namespace vcpkg
             return true;
         }*/
 
-        // ([a-z0-9]+(-[a-z0-9]+)*)(\*?)
+        // ^([a-z0-9]+-)*([*]$|[a-z0-9]+($|[*]$))
+        // means that for the non-prefix part: exactly *, or lower-digit with optional *
         auto cur = sv.begin();
         const auto last = sv.end();
+        // first loop or loop the remaining of prefix: ^([a-z0-9]+-)*
         for (;;)
         {
-            // [a-z0-9]+
+            // if no pattern for first loop
+            // if end with - for not first loop
             if (cur == last)
             {
                 return false;
             }
 
+            // if exactly *
             if (!ParserBase::is_lower_digit(*cur))
             {
                 if (*cur != '*')
@@ -1046,6 +1050,7 @@ namespace vcpkg
                 return ++cur == last;
             }
 
+            // if end with lower-digits: [a-z0-9]+$
             do
             {
                 ++cur;
@@ -1058,11 +1063,11 @@ namespace vcpkg
             switch (*cur)
             {
                 case '-':
-                    // repeat outer [a-z0-9]+ again to match -[a-z0-9]+
+                    // continue if is prefix: [a-z0-9]+-
                     ++cur;
                     continue;
                 case '*':
-                    // match last optional *
+                    // match last optional *: [a-z0-9]+[*]$
                     ++cur;
                     return cur == last;
                 default: return false;
