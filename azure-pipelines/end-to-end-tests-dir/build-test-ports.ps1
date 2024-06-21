@@ -38,7 +38,9 @@ if ($output -notmatch 'expected a versioning field') {
     throw 'Did not detect missing field'
 }
 
+Remove-Problem-Matchers
 $output = Run-VcpkgAndCaptureOutput @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports/broken-manifests" install malformed
+Restore-Problem-Matchers
 Throw-IfNotFailed
 if ($output -notmatch 'Trailing comma') {
     throw 'Did not detect malformed JSON'
