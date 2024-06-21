@@ -160,11 +160,17 @@ TEST_CASE ("check valid package patterns", "[registries]")
     CHECK(is_package_pattern("b*"));
     CHECK(is_package_pattern("boost*"));
     CHECK(is_package_pattern("boost-*"));
+    CHECK(is_package_pattern("boost-multi-*"));
 
     // reject invalid patterns
+    CHECK(!is_package_pattern(""));
+    CHECK(!is_package_pattern(" "));
     CHECK(!is_package_pattern("*a"));
     CHECK(!is_package_pattern("a*a"));
     CHECK(!is_package_pattern("a**"));
+    CHECK(!is_package_pattern("a-**"));
+    CHECK(!is_package_pattern("a--*"));
+    CHECK(!is_package_pattern("a-*-*"));
     CHECK(!is_package_pattern("a+"));
     CHECK(!is_package_pattern("a?"));
 }
