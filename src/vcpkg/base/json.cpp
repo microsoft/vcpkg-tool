@@ -1080,12 +1080,13 @@ namespace vcpkg::Json
 
         if (sv.size() < 5)
         {
+            // see https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file#naming-conventions
             if (sv == "prn" || sv == "aux" || sv == "nul" || sv == "con" || sv == FeatureNameCore)
             {
                 return false; // we're a reserved identifier
             }
             if (sv.size() == 4 && (Strings::starts_with(sv, "lpt") || Strings::starts_with(sv, "com")) &&
-                sv[3] >= '1' && sv[3] <= '9')
+                sv[3] >= '0' && sv[3] <= '9')
             {
                 return false; // we're a reserved identifier
             }

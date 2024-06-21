@@ -121,11 +121,15 @@ TEST_CASE ("check valid package patterns", "[registries]")
     CHECK(ID::is_ident("rapidjson"));
     CHECK(ID::is_ident("boost-tuple"));
     CHECK(ID::is_ident("vcpkg-boost-helper"));
+    CHECK(ID::is_ident("lpt"));
+    CHECK(ID::is_ident("com"));
 
     // reject invalid characters
     CHECK(!ID::is_ident(""));
+    CHECK(!ID::is_ident(" "));
     CHECK(!ID::is_ident("boost_tuple"));
     CHECK(!ID::is_ident("boost.tuple"));
+    CHECK(!ID::is_ident("boost."));
     CHECK(!ID::is_ident("boost@1"));
     CHECK(!ID::is_ident("boost#1"));
     CHECK(!ID::is_ident("boost:x64-windows"));
@@ -140,8 +144,10 @@ TEST_CASE ("check valid package patterns", "[registries]")
     CHECK(!ID::is_ident("con"));
     CHECK(!ID::is_ident("core"));
     CHECK(!ID::is_ident("default"));
-    CHECK(!ID::is_ident("lpt1"));
-    CHECK(!ID::is_ident("com1"));
+    CHECK(!ID::is_ident("lpt0"));
+    CHECK(!ID::is_ident("lpt9"));
+    CHECK(!ID::is_ident("com0"));
+    CHECK(!ID::is_ident("com9"));
 
     // reject incomplete segments
     CHECK(!ID::is_ident("-a"));
