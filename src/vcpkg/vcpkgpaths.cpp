@@ -1325,6 +1325,21 @@ namespace vcpkg
             vsp = &m_pimpl->m_default_vs_path;
         }
 
+        auto maybe_use_toolchain_version = get_environment_variable("VCPKG_MSVC_TOOLSET_VERSION");
+        if (maybe_use_toolchain_version)
+        {
+            auto version = maybe_use_toolchain_version.value_or_exit(VCPKG_LINE_INFO);
+            auto specific =
+                Util::find_if(vs_toolsets, [&](const Toolset& t) { return toolset_matches_full_version(t, version); });
+            if (specific == vs_toolsets.end())
+            {
+                auto error_message =
+                    msg::format(msgErrorNoMSVCToolset, msg::triplet = prebuildinfo.triplet, msg::version = version);
+                Checks::msg_exit_with_error(VCPKG_LINE_INFO, error_message);
+            }
+            return *specific;
+        }
+
         auto candidate = Util::find_if(vs_toolsets, [&](const Toolset& t) {
             return (!tsv || *tsv == t.version) && (!vsp || *vsp == t.visual_studio_root_path) &&
                    (!tsvf || toolset_matches_full_version(t, *tsvf));

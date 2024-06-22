@@ -453,6 +453,7 @@
   "ErrorInvalidExtractOption": "--{option} 必须设置为非负整数或 \"AUTO\"。",
   "ErrorInvalidManifestModeOption": "清单模式下不支持选项 --{option}。",
   "ErrorMissingVcpkgRoot": "无法检测 vcpkg-root。如果尝试使用已生成的 vcpkg 的副本，则必须定义 VCPKG_ROOT 环境变量，以指向 https://github.com/Microsoft/vcpkg 的克隆副本。",
+  "ErrorNoMSVCToolset": "在三元组 {triplet} 中: 无法找到指定的 MSVC 版本 {version}",
   "ErrorNoVSInstance": "在三元组 {triplet} 中: 无法找到有效的 Visual Studio 实例",
   "ErrorNoVSInstanceAt": "位于“{path}”",
   "ErrorNoVSInstanceFullVersion": "具有工具集版本前缀 {version}",
