@@ -1,0 +1,12 @@
+{
+  "name": "dependency-not-in-versions-database-feature",
+  "version": "1.0",
+  "features": {
+    "add-things": {
+      "description": "an example feature that adds some things",
+      "dependencies": [
+        "no-versions"
+      ]
+    }
+  }
+}

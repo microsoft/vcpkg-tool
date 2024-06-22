@@ -168,47 +168,39 @@ namespace
                                         const std::string& port_name,
                                         const SchemedVersion& port_version,
                                         const std::string& git_tree,
-                                        const Path& version_db_file_path,
                                         bool overwrite_version,
                                         bool print_success,
                                         bool keep_going,
                                         bool skip_version_format_check)
     {
         auto& fs = paths.get_filesystem();
-        if (!fs.exists(version_db_file_path, IgnoreErrors{}))
-        {
-            if (!skip_version_format_check)
-            {
-                check_used_version_scheme(port_version, port_name);
-            }
-            std::vector<GitVersionDbEntry> new_entry{{port_version, git_tree}};
-            write_versions_file(fs, new_entry, version_db_file_path);
-            if (print_success)
-            {
-                msg::println(Color::success,
-                             msg::format(msgAddVersionAddedVersionToFile,
-                                         msg::version = port_version.version,
-                                         msg::path = version_db_file_path)
-                                 .append_raw(' ')
-                                 .append(msgAddVersionNewFile));
-            }
-            return UpdateResult::Updated;
-        }
-
-        auto maybe_maybe_versions = get_builtin_versions(paths, port_name);
-        auto maybe_versions = maybe_maybe_versions.get();
+        auto maybe_maybe_versions = load_git_versions_file(fs, paths.builtin_registry_versions, port_name);
+        auto maybe_versions = maybe_maybe_versions.entries.get();
         if (!maybe_versions)
         {
-            msg::println_error(msg::format(msgAddVersionUnableToParseVersionsFile, msg::path = version_db_file_path)
-                                   .append_raw('\n')
-                                   .append(maybe_maybe_versions.error()));
+            msg::println(Color::error, maybe_maybe_versions.entries.error());
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
         auto versions = maybe_versions->get();
         if (!versions)
         {
-            Checks::unreachable(VCPKG_LINE_INFO, "Version file existed but was still unknown");
+            if (!skip_version_format_check)
+            {
+                check_used_version_scheme(port_version, port_name);
+            }
+            std::vector<GitVersionDbEntry> new_entry{{port_version, git_tree}};
+            write_versions_file(fs, new_entry, maybe_maybe_versions.versions_file_path);
+            if (print_success)
+            {
+                msg::println(Color::success,
+                             msg::format(msgAddVersionAddedVersionToFile,
+                                         msg::version = port_version.version,
+                                         msg::path = maybe_maybe_versions.versions_file_path)
+                                 .append_raw(' ')
+                                 .append(msgAddVersionNewFile));
+            }
+            return UpdateResult::Updated;
         }
 
         const auto& versions_end = versions->end();
@@ -223,7 +215,7 @@ namespace
                     msg::println(Color::success,
                                  msgAddVersionVersionAlreadyInFile,
                                  msg::version = port_version.version,
-                                 msg::path = version_db_file_path);
+                                 msg::path = maybe_maybe_versions.versions_file_path);
                 }
                 return UpdateResult::NotUpdated;
             }
@@ -281,13 +273,13 @@ namespace
             check_used_version_scheme(port_version, port_name);
         }
 
-        write_versions_file(fs, *versions, version_db_file_path);
+        write_versions_file(fs, *versions, maybe_maybe_versions.versions_file_path);
         if (print_success)
         {
             msg::println(Color::success,
                          msgAddVersionAddedVersionToFile,
                          msg::version = port_version.version,
-                         msg::path = version_db_file_path);
+                         msg::path = maybe_maybe_versions.versions_file_path);
         }
         return UpdateResult::Updated;
     }
@@ -386,11 +378,11 @@ namespace vcpkg
             auto port_dir = paths.builtin_ports_directory() / port_name;
 
             auto maybe_scfl = Paragraphs::try_load_port_required(
-                fs, port_name, PortLocation{paths.builtin_ports_directory() / port_name});
+                                  fs, port_name, PortLocation{paths.builtin_ports_directory() / port_name})
+                                  .maybe_scfl;
             auto scfl = maybe_scfl.get();
             if (!scfl)
             {
-                msg::println_error(msgAddVersionLoadPortFailed, msg::package_name = port_name);
                 msg::println(Color::error, maybe_scfl.error());
                 Checks::check_exit(VCPKG_LINE_INFO, !add_all);
                 continue;
@@ -442,14 +434,10 @@ namespace vcpkg
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
             const auto& git_tree = git_tree_it->second;
-
-            char prefix[] = {port_name[0], '-', '\0'};
-            auto port_versions_path = paths.builtin_registry_versions / prefix / Strings::concat(port_name, ".json");
             auto updated_versions_file = update_version_db_file(paths,
                                                                 port_name,
                                                                 schemed_version,
                                                                 git_tree,
-                                                                port_versions_path,
                                                                 overwrite_version,
                                                                 verbose,
                                                                 add_all,

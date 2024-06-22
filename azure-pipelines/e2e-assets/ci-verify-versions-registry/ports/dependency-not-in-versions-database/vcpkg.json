@@ -1,0 +1,7 @@
+{
+  "name": "dependency-not-in-versions-database",
+  "version": "1.0",
+  "dependencies": [
+    "no-versions"
+  ]
+}

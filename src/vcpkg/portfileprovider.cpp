@@ -99,20 +99,16 @@ namespace vcpkg
             virtual ExpectedL<Version> get_baseline_version(StringView port_name) const override
             {
                 return m_baseline_cache.get_lazy(port_name, [this, port_name]() -> ExpectedL<Version> {
-                    auto maybe_maybe_version = registry_set.baseline_for_port(port_name);
-                    auto maybe_version = maybe_maybe_version.get();
-                    if (!maybe_version)
-                    {
-                        return std::move(maybe_maybe_version).error();
-                    }
+                    return registry_set.baseline_for_port(port_name).then(
+                        [&](Optional<Version>&& maybe_version) -> ExpectedL<Version> {
+                            auto version = maybe_version.get();
+                            if (!version)
+                            {
+                                return msg::format_error(msgPortNotInBaseline, msg::package_name = port_name);
+                            }
 
-                    auto version = maybe_version->get();
-                    if (!version)
-                    {
-                        return msg::format_error(msgPortNotInBaseline, msg::package_name = port_name);
-                    }
-
-                    return std::move(*version);
+                            return std::move(*version);
+                        });
                 });
             }
 
@@ -181,10 +177,11 @@ namespace vcpkg
                     auto maybe_path = ent->get()->get_version(version_spec.version);
                     if (auto path = maybe_path.get())
                     {
-                        auto maybe_scfl = Paragraphs::try_load_port_required(m_fs, version_spec.port_name, *path);
+                        auto maybe_scfl =
+                            Paragraphs::try_load_port_required(m_fs, version_spec.port_name, *path).maybe_scfl;
                         if (auto scfl = maybe_scfl.get())
                         {
-                            auto scf_vspec = scfl->source_control_file->to_version_spec();
+                            auto scf_vspec = scfl->to_version_spec();
                             if (scf_vspec == version_spec)
                             {
                                 return std::move(*scfl);
@@ -279,7 +276,8 @@ namespace vcpkg
                     // Try loading individual port
                     if (Paragraphs::is_port_directory(m_fs, ports_dir))
                     {
-                        auto maybe_scfl = Paragraphs::try_load_port_required(m_fs, port_name, PortLocation{ports_dir});
+                        auto maybe_scfl =
+                            Paragraphs::try_load_port_required(m_fs, port_name, PortLocation{ports_dir}).maybe_scfl;
                         if (auto scfl = maybe_scfl.get())
                         {
                             if (scfl->to_name() == port_name)
@@ -300,7 +298,8 @@ namespace vcpkg
                     auto ports_spec = ports_dir / port_name;
                     if (Paragraphs::is_port_directory(m_fs, ports_spec))
                     {
-                        auto found_scfl = Paragraphs::try_load_port_required(m_fs, port_name, PortLocation{ports_spec});
+                        auto found_scfl =
+                            Paragraphs::try_load_port_required(m_fs, port_name, PortLocation{ports_spec}).maybe_scfl;
                         if (auto scfl = found_scfl.get())
                         {
                             auto& scfl_name = scfl->to_name();
@@ -350,7 +349,8 @@ namespace vcpkg
                     if (Paragraphs::is_port_directory(m_fs, ports_dir))
                     {
                         auto maybe_scfl =
-                            Paragraphs::try_load_port_required(m_fs, ports_dir.filename(), PortLocation{ports_dir});
+                            Paragraphs::try_load_port_required(m_fs, ports_dir.filename(), PortLocation{ports_dir})
+                                .maybe_scfl;
                         if (auto scfl = maybe_scfl.get())
                         {
                             // copy name before moving *scfl

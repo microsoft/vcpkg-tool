@@ -1152,9 +1152,13 @@ namespace vcpkg
                 SourceControlFile::parse_project_manifest_object(manifest->path, manifest->manifest, out_sink);
             if (!maybe_manifest_scf)
             {
-                print_error_message(maybe_manifest_scf.error());
-                msg::println();
-                msg::println(msgExtendedDocumentationAtUrl, msg::url = docs::manifests_url);
+                msg::println(Color::error,
+                             std::move(maybe_manifest_scf)
+                                 .error()
+                                 .append_raw('\n')
+                                 .append_raw(NotePrefix)
+                                 .append(msgExtendedDocumentationAtUrl, msg::url = docs::manifests_url)
+                                 .append_raw('\n'));
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 

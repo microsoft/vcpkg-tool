@@ -592,9 +592,7 @@ namespace vcpkg
             return url;
         }
 
-        std::string query = Strings::join("&", query_params);
-
-        return url + "?" + query;
+        return url + "?" + Strings::join("&", query_params);
     }
 
     ExpectedL<std::string> invoke_http_request(StringView method,

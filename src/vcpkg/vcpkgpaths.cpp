@@ -978,14 +978,14 @@ namespace vcpkg
 
     ExpectedL<std::map<std::string, std::string, std::less<>>> VcpkgPaths::git_get_local_port_treeish_map() const
     {
-        const auto local_repo = this->root / ".git";
-        auto cmd = git_cmd_builder({}, {})
-                       .string_arg("-C")
-                       .string_arg(this->builtin_ports_directory())
-                       .string_arg("ls-tree")
-                       .string_arg("-d")
-                       .string_arg("HEAD")
-                       .string_arg("--");
+        const auto cmd = git_cmd_builder({}, {})
+                             .string_arg("-C")
+                             .string_arg(this->builtin_ports_directory())
+                             .string_arg("ls-tree")
+                             .string_arg("-d")
+                             .string_arg("HEAD")
+                             .string_arg("--");
+
         auto maybe_output = flatten_out(cmd_execute_and_capture_output(cmd), Tools::GIT);
         if (const auto output = maybe_output.get())
         {
