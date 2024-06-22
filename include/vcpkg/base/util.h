@@ -44,6 +44,19 @@ namespace vcpkg::Util
 
             return false;
         }
+        template<class Vec, class Filter>
+        std::vector<ElementT<Vec>> filtered_copy(const Vec& container, const Filter&& filter)
+        {
+            std::vector<ElementT<Vec>> ret;
+            for (auto&& item : container)
+            {
+                if (filter(item))
+                {
+                    ret.push_back(item);
+                }
+            }
+            return ret;
+        }
         template<class Vec, class Key>
         bool contains(const Vec& container, const Key& item)
         {

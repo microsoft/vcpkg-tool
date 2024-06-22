@@ -47,6 +47,27 @@ Require-FileExists "$installRoot/$Triplet/include/hello-1.h"
 Require-FileExists "$buildtreesRoot/vcpkg-hello-world-1/src"
 Require-FileNotExists "$buildtreesRoot/detect_compiler"
 
+# Test write back to files archive
+Remove-Item -Recurse -Force $installRoot
+Remove-Item -Recurse -Force $buildtreesRoot
+Run-Vcpkg -TestArgs ($commonArgs + @("install","vcpkg-hello-world-1", "vcpkg-cmake", "vcpkg-cmake-config", "--x-binarysource=clear;files,$ArchiveRoot;files,$ArchiveRootSecondary,write;files,$ArchiveRootUnused,read"))
+Throw-IfFailed
+Require-FileExists "$installRoot/$Triplet/include/hello-1.h"
+Require-FileNotExists "$buildtreesRoot/vcpkg-hello-world-1/src"
+if ((Get-ChildItem $ArchiveRootSecondary -Recurse -Filter '*.zip' | Measure-Object).Count -ne 3) {
+    throw "In '$CurrentTest': did not write back exactly 3 packages to the secondary archive"
+}
+if ((Get-ChildItem $ArchiveRootUnused -Recurse -Filter '*.zip' | Measure-Object).Count -ne 0) {
+    throw "In '$CurrentTest': some packages were written to the unused archive"
+}
+
+# Test restore from secondary archive
+Remove-Item -Recurse -Force $installRoot
+Run-Vcpkg -TestArgs ($commonArgs + @("install","vcpkg-hello-world-1", "vcpkg-cmake", "vcpkg-cmake-config", "--x-binarysource=clear;files,$ArchiveRootSecondary,read"))
+Throw-IfFailed
+Require-FileExists "$installRoot/$Triplet/include/hello-1.h"
+Require-FileNotExists "$buildtreesRoot/vcpkg-hello-world-1/src"
+
 if(-Not $IsLinux -and -Not $IsMacOS) {
     # Test restoring from nuget
     Remove-Item -Recurse -Force $installRoot
@@ -78,8 +99,8 @@ if(-Not $IsLinux -and -Not $IsMacOS) {
     Require-FileExists "$installRoot/$Triplet/include/hello-2.h"
     Require-FileNotExists "$buildtreesRoot/vcpkg-hello-world-1/src"
     Require-FileExists "$buildtreesRoot/vcpkg-hello-world-2/src"
-    if ((Get-ChildItem $NuGetRoot -Filter '*.nupkg' | Measure-Object).Count -ne 1) {
-        throw "In '$CurrentTest': did not create exactly 1 NuGet package"
+    if ((Get-ChildItem $NuGetRoot -Filter '*.nupkg' | Measure-Object).Count -ne 4) {
+        throw "In '$CurrentTest': did not create exactly 4 NuGet packages"
     }
 
     # Test export

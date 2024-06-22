@@ -23,6 +23,9 @@ struct KnowNothingBinaryProvider : IReadBinaryProvider
             CHECK(out_status[idx] == RestoreResult::unavailable);
         }
     }
+
+    bool can_precheck() const override { return true; }
+
     void precheck(View<const InstallPlanAction*> actions, Span<CacheAvailability> out_status) const override
     {
         REQUIRE(actions.size() == out_status.size());
@@ -36,6 +39,8 @@ struct KnowNothingBinaryProvider : IReadBinaryProvider
     {
         return LocalizedString::from_raw("Nothing");
     }
+
+    ProviderId id() const override { return 1; }
 };
 
 TEST_CASE ("CacheStatus operations", "[BinaryCache]")
