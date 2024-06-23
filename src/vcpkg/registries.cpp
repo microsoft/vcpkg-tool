@@ -752,7 +752,7 @@ namespace
             for (auto&& port_directory : *port_directories)
             {
                 auto filename = port_directory.filename();
-                if (filename == ".DS_Store") continue;
+                if (filename == FileDotDsStore) continue;
                 out.emplace_back(filename.data(), filename.size());
             }
 

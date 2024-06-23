@@ -360,7 +360,7 @@ namespace vcpkg
                                                           .string_arg(destination)
                                                           .string_arg("*")
                                                           .string_arg("--exclude")
-                                                          .string_arg(".DS_Store"),
+                                                          .string_arg(FileDotDsStore),
                                                       settings),
                        "zip");
 #endif

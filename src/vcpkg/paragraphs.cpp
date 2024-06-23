@@ -572,7 +572,7 @@ namespace vcpkg::Paragraphs
         Util::sort(port_dirs);
 
         Util::erase_remove_if(port_dirs,
-                              [&](auto&& port_dir_entry) { return port_dir_entry.filename() == ".DS_Store"; });
+                              [&](auto&& port_dir_entry) { return port_dir_entry.filename() == FileDotDsStore; });
 
         for (auto&& path : port_dirs)
         {
