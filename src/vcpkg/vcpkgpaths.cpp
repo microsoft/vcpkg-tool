@@ -1,5 +1,6 @@
 #include <vcpkg/base/fwd/message_sinks.h>
 
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/files.h>
@@ -738,7 +739,7 @@ namespace vcpkg
             auto files = fs.get_regular_files_non_recursive(this->scripts / "cmake", VCPKG_LINE_INFO);
             for (auto&& file : files)
             {
-                if (file.filename() == ".DS_Store")
+                if (file.filename() == FileDotDsStore)
                 {
                     continue;
                 }
