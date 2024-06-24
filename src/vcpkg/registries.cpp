@@ -1053,6 +1053,7 @@ namespace
         }
 
         error_msg.append(msgVersionIncomparable4, msg::url = docs::versioning_url);
+        error_msg.append(msgSeeURL, msg::url = docs::troubleshoot_versioning_url);
         return error_msg;
     }
 

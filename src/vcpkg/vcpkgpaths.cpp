@@ -793,7 +793,9 @@ namespace vcpkg
             return *i;
         }
 
-        Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgVcpkgDisallowedClassicMode);
+        Checks::msg_exit_with_error(VCPKG_LINE_INFO,
+                                    msg::format(msgVcpkgDisallowedClassicMode)
+                                        .append(msgSeeURL, msg::url = docs::troubleshoot_build_failures_url));
     }
 
     const Path& VcpkgPaths::buildtrees() const
@@ -803,7 +805,9 @@ namespace vcpkg
             return *i;
         }
 
-        Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgVcpkgDisallowedClassicMode);
+        Checks::msg_exit_with_error(VCPKG_LINE_INFO,
+                                    msg::format(msgVcpkgDisallowedClassicMode)
+                                        .append(msgSeeURL, msg::url = docs::troubleshoot_build_failures_url));
     }
 
     const Path& VcpkgPaths::packages() const
@@ -813,7 +817,9 @@ namespace vcpkg
             return *i;
         }
 
-        Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgVcpkgDisallowedClassicMode);
+        Checks::msg_exit_with_error(VCPKG_LINE_INFO,
+                                    msg::format(msgVcpkgDisallowedClassicMode)
+                                        .append(msgSeeURL, msg::url = docs::troubleshoot_build_failures_url));
     }
 
     Path VcpkgPaths::baselines_output() const { return buildtrees() / "versioning_" / "baselines"; }
@@ -1204,6 +1210,7 @@ namespace vcpkg
             }
 
             error.append_raw('\n').append(std::move(maybe_git_read_tree_output).error());
+            error.append(msgSeeURL, msg::url = docs::troubleshoot_versioning_url);
             return error;
         }
 
