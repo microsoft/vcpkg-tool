@@ -1328,7 +1328,12 @@ namespace vcpkg
         }
 #endif // defined(_WIN32)
 
-        print_plan(action_plan, is_recursive, paths.builtin_ports_directory());
+        const auto formatted = print_plan(action_plan, paths.builtin_ports_directory());
+        if (!is_recursive && formatted.has_removals)
+        {
+            msg::println_warning(msgPackagesToRebuildSuggestRecurse);
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
 
         auto it_pkgsconfig = options.settings.find(SwitchXWriteNuGetPackagesConfig);
         if (it_pkgsconfig != options.settings.end())

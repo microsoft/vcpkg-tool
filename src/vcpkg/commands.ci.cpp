@@ -490,7 +490,7 @@ namespace vcpkg
 
         if (is_dry_run)
         {
-            print_plan(action_plan, true, paths.builtin_ports_directory());
+            print_plan(action_plan, paths.builtin_ports_directory());
             if (!regressions.empty())
             {
                 msg::println(Color::error, msgCiBaselineRegressionHeader);
