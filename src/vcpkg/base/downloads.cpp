@@ -28,7 +28,45 @@ namespace vcpkg
         return input;
     }
 
+    bool operator==(const ProxyCredentials& lhs, const ProxyCredentials& rhs)
+    {
+        return lhs.username == rhs.username && lhs.password == rhs.password;
+    }
+
+    bool operator==(const ProxyUrlParts& lhs, const ProxyUrlParts& rhs)
+    {
+        return lhs.host == rhs.host && lhs.credentials == rhs.credentials;
+    }
+
+    ProxyUrlParts parse_proxy_url(const std::wstring& url)
+    {
+        constexpr auto npos = std::wstring::npos;
+        auto scheme_separator_pos = url.find(L"://");
+        std::wstring scheme;
+        std::wstring_view remaining_parts = url;
+        if (scheme_separator_pos != npos)
+        {
+            scheme = remaining_parts.substr(0, scheme_separator_pos + 3);
+            remaining_parts = remaining_parts.substr(scheme_separator_pos + 3);
+        }
+        Optional<ProxyCredentials> credentials;
+        auto credentials_separator_pos = remaining_parts.find(L"@");
+        auto password_separator_pos = remaining_parts.find(L":");
+        if (credentials_separator_pos != npos && password_separator_pos != npos &&
+            password_separator_pos < credentials_separator_pos)
+        {
+            const auto password_start = password_separator_pos + 1;
+            const auto password_size = credentials_separator_pos - password_start;
+            credentials = ProxyCredentials{std::wstring(remaining_parts.substr(0, password_separator_pos)),
+                                           std::wstring(remaining_parts.substr(password_start, password_size))};
+            remaining_parts = remaining_parts.substr(credentials_separator_pos + 1);
+        }
+        std::wstring host(remaining_parts);
+        return ProxyUrlParts{scheme + host, credentials};
+    }
+
 #if defined(_WIN32)
+
     struct WinHttpHandle
     {
         HINTERNET h;
@@ -83,12 +121,78 @@ namespace vcpkg
         }
     }
 
+    // On redirect, WinHttp API apparently requires to set again proxy credentials.
+    // Having this callback looks like the only way to achieve this.
+    void set_proxy_credentials_on_redirect(HINTERNET hInternet,
+                                           DWORD_PTR dwContext,
+                                           DWORD dwInternetStatus,
+                                           LPVOID /*lpvStatusInformation*/,
+                                           DWORD /*dwStatusInformationLength*/)
+    {
+        if (dwInternetStatus == WINHTTP_CALLBACK_STATUS_REDIRECT)
+        {
+            ProxyCredentials** ctxt_ptr_ptr = (ProxyCredentials**)dwContext;
+            ProxyCredentials& ctxt = **ctxt_ptr_ptr;
+            WinHttpSetCredentials(hInternet,
+                                  WINHTTP_AUTH_TARGET_PROXY,
+                                  WINHTTP_AUTH_SCHEME_BASIC,
+                                  ctxt.username.data(),
+                                  ctxt.password.data(),
+                                  NULL);
+        }
+    }
+
+    // Only purpose of this class is to manage the lifetime of a request context
+    // which needs to be provided as a "DWORD_PTR" to WinHttpSendRequest
+    // (pointer to a pointer-sized variable).
+    template<class T>
+    struct WinHttpContext
+    {
+        WinHttpContext() : m_value_ptr_ptr(nullptr) { }
+        explicit WinHttpContext(const T& value)
+        {
+            T* value_ptr = new T(value);
+            m_value_ptr_ptr = new T*(value_ptr);
+        }
+        WinHttpContext(const WinHttpContext&) = delete;
+        WinHttpHandle& operator=(const WinHttpHandle&) = delete;
+        WinHttpContext(WinHttpContext&& other) : m_value_ptr_ptr(other.m_value_ptr_ptr)
+        {
+            other.m_value_ptr_ptr = nullptr;
+        }
+        WinHttpContext& operator=(WinHttpContext&& other)
+        {
+            if (m_value_ptr_ptr)
+            {
+                delete *m_value_ptr_ptr;
+                delete m_value_ptr_ptr;
+            }
+            m_value_ptr_ptr = other.m_value_ptr_ptr;
+            other.m_value_ptr_ptr = nullptr;
+            return *this;
+        }
+
+        ~WinHttpContext()
+        {
+            if (m_value_ptr_ptr)
+            {
+                delete *m_value_ptr_ptr;
+                delete m_value_ptr_ptr;
+            }
+        }
+
+        DWORD_PTR as_dword_ptr() { return (DWORD_PTR)m_value_ptr_ptr; }
+
+        T** m_value_ptr_ptr;
+    };
+
     struct WinHttpRequest
     {
         static ExpectedL<WinHttpRequest> make(HINTERNET hConnect,
                                               StringView url_path,
                                               StringView sanitized_url,
                                               bool https,
+                                              Optional<ProxyCredentials> maybe_proxy_creds,
                                               const wchar_t* method = L"GET")
         {
             WinHttpRequest ret;
@@ -110,9 +214,30 @@ namespace vcpkg
                 ret.m_hRequest = WinHttpHandle{h};
             }
 
+            if (maybe_proxy_creds)
+            {
+                const auto& proxy_creds = maybe_proxy_creds.value_or_exit(VCPKG_LINE_INFO);
+                ret.m_proxy_credentials = WinHttpContext(proxy_creds);
+
+                WinHttpSetCredentials(ret.m_hRequest.h,
+                                      WINHTTP_AUTH_TARGET_PROXY,
+                                      WINHTTP_AUTH_SCHEME_BASIC,
+                                      proxy_creds.username.data(),
+                                      proxy_creds.password.data(),
+                                      NULL);
+
+                WinHttpSetStatusCallback(
+                    ret.m_hRequest.h, &set_proxy_credentials_on_redirect, WINHTTP_CALLBACK_FLAG_REDIRECT, NULL);
+            }
+
             // Send a request.
-            auto bResults = WinHttpSendRequest(
-                ret.m_hRequest.h, WINHTTP_NO_ADDITIONAL_HEADERS, 0, WINHTTP_NO_REQUEST_DATA, 0, 0, 0);
+            auto bResults = WinHttpSendRequest(ret.m_hRequest.h,
+                                               WINHTTP_NO_ADDITIONAL_HEADERS,
+                                               0,
+                                               WINHTTP_NO_REQUEST_DATA,
+                                               0,
+                                               0,
+                                               ret.m_proxy_credentials.as_dword_ptr());
 
             if (!bResults)
             {
@@ -125,7 +250,6 @@ namespace vcpkg
             {
                 return format_winhttp_last_error_message("WinHttpReceiveResponse", sanitized_url);
             }
-
             return ret;
         }
 
@@ -223,6 +347,7 @@ namespace vcpkg
 
         WinHttpHandle m_hRequest;
         std::string m_sanitized_url;
+        WinHttpContext<ProxyCredentials> m_proxy_credentials;
     };
 
     struct WinHttpSession
@@ -253,12 +378,17 @@ namespace vcpkg
             if (auto p_https_proxy = maybe_https_proxy_env.get())
             {
                 std::wstring env_proxy_settings = Strings::to_utf16(*p_https_proxy);
+                ProxyUrlParts parts = parse_proxy_url(env_proxy_settings);
+
                 WINHTTP_PROXY_INFO proxy;
                 proxy.dwAccessType = WINHTTP_ACCESS_TYPE_NAMED_PROXY;
-                proxy.lpszProxy = env_proxy_settings.data();
+                proxy.lpszProxy = parts.host.data();
                 proxy.lpszProxyBypass = nullptr;
 
                 WinHttpSetOption(ret.m_hSession.h, WINHTTP_OPTION_PROXY, &proxy, sizeof(proxy));
+
+                // Store credentials for later use
+                ret.m_proxy_credentials = parts.credentials;
             }
             // IE Proxy fallback, this works on Windows 10
             else
@@ -293,6 +423,7 @@ namespace vcpkg
         }
 
         WinHttpHandle m_hSession;
+        Optional<ProxyCredentials> m_proxy_credentials;
     };
 
     struct WinHttpConnection
@@ -647,8 +778,11 @@ namespace vcpkg
             return WinHttpTrialResult::retry;
         }
 
-        auto maybe_req = WinHttpRequest::make(
-            conn->m_hConnect.h, split_uri.path_query_fragment, sanitized_url, split_uri.scheme == "https");
+        auto maybe_req = WinHttpRequest::make(conn->m_hConnect.h,
+                                              split_uri.path_query_fragment,
+                                              sanitized_url,
+                                              split_uri.scheme == "https",
+                                              s.m_proxy_credentials);
         const auto req = maybe_req.get();
         if (!req)
         {
