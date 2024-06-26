@@ -786,6 +786,10 @@ namespace vcpkg
             }
         }
 #endif
+        // Create directory in advance, otherwise curl will create it in 750 mode on unix style file systems.
+        const auto dir = download_path_part_path.parent_path();
+        fs.create_directories(dir, VCPKG_LINE_INFO);
+
         auto cmd = Command{"curl"}
                        .string_arg("--fail")
                        .string_arg("-L")
