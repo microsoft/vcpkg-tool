@@ -769,8 +769,7 @@ namespace vcpkg
                 auto maybe_authority = split_uri.authority.get();
                 if (!maybe_authority)
                 {
-                    Checks::msg_exit_with_error(
-                        VCPKG_LINE_INFO, split_uri.authority.has_value(), msgInvalidUri, msg::value = url);
+                    Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgInvalidUri, msg::value = url);
                 }
 
                 auto authority = maybe_authority->substr(2);
