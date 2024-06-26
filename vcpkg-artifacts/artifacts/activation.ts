@@ -39,7 +39,7 @@ function findCaseInsensitiveOnWindows<V>(map: Map<string, V>, key: string): V | 
 export type Tuple<K, V> = [K, V];
 
 function displayNoPostScriptError(channels: Channels) {
-  channels.error(i`no postscript file: rerun with the vcpkg shell function rather than executable`);
+  channels.error(i`no postscript file: rerun with the same arguments as vcpkg-shell`);
 }
 
 export class Activation {
