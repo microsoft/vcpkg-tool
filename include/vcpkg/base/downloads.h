@@ -43,8 +43,13 @@ namespace vcpkg
                             StringView url,
                             const std::vector<std::string>& secrets,
                             View<std::string> headers,
-                            const Path& file,
-                            StringView method = "PUT");
+                            const Path& file);
+    ExpectedL<Unit> patch_file(const Filesystem& fs,
+                               StringView url,
+                               View<std::string> headers,
+                               const Path& file,
+                               std::size_t file_size,
+                               std::size_t chunk_size = 450 * 1024 * 1024);
 
     ExpectedL<std::string> invoke_http_request(StringView method,
                                                View<std::string> headers,
