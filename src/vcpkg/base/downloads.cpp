@@ -766,9 +766,13 @@ namespace vcpkg
             auto split_uri = split_uri_view(url).value_or_exit(VCPKG_LINE_INFO);
             if (split_uri.scheme == "https" || split_uri.scheme == "http")
             {
-                Checks::msg_check_exit(
+                auto maybe_authority = split_uri.authority.get();
+                if (!maybe_authority) {
+                Checks::msg_exit_with_error(
                     VCPKG_LINE_INFO, split_uri.authority.has_value(), msgInvalidUri, msg::value = url);
-                auto authority = split_uri.authority.value_or_exit(VCPKG_LINE_INFO).substr(2);
+                }
+
+                auto authority = maybe_authority->substr(2);
                 // This check causes complex URLs (non-default port, embedded basic auth) to be passed down to curl.exe
                 if (Strings::find_first_of(authority, ":@") == authority.end())
                 {
