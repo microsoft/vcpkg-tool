@@ -62,5 +62,7 @@ namespace vcpkg::Paragraphs
 
     std::vector<SourceControlFileAndLocation> load_all_registry_ports(const ReadOnlyFilesystem& fs,
                                                                       const RegistrySet& registries);
+
+    LoadResults try_load_overlay_ports(const ReadOnlyFilesystem& fs, const Path& dir);
     std::vector<SourceControlFileAndLocation> load_overlay_ports(const ReadOnlyFilesystem& fs, const Path& dir);
 }

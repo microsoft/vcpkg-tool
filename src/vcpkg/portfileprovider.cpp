@@ -370,8 +370,19 @@ namespace vcpkg
                     }
 
                     // Try loading all ports inside ports_dir
-                    auto found_scfls = Paragraphs::load_overlay_ports(m_fs, ports_dir);
-                    for (auto&& scfl : found_scfls)
+                    auto results = Paragraphs::try_load_overlay_ports(m_fs, ports_dir);
+                    if (!results.errors.empty())
+                    {
+                        print_error_message(LocalizedString::from_raw(Strings::join(
+                            "\n",
+                            results.errors,
+                            [](const std::pair<std::string, LocalizedString>& err) -> const LocalizedString& {
+                                return err.second;
+                            })));
+                        Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
+                    }
+
+                    for (auto&& scfl : results.paragraphs)
                     {
                         auto name = scfl.to_name();
                         auto it = m_overlay_cache.emplace(std::move(name), std::move(scfl)).first;

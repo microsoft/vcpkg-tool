@@ -582,7 +582,7 @@ namespace vcpkg::Paragraphs
         return std::move(results.paragraphs);
     }
 
-    std::vector<SourceControlFileAndLocation> load_overlay_ports(const ReadOnlyFilesystem& fs, const Path& directory)
+    LoadResults try_load_overlay_ports(const ReadOnlyFilesystem& fs, const Path& directory)
     {
         LoadResults ret;
 
@@ -608,8 +608,14 @@ namespace vcpkg::Paragraphs
             }
         }
 
-        load_results_print_error(ret);
-        return std::move(ret.paragraphs);
+        return ret;
+    }
+
+    std::vector<SourceControlFileAndLocation> load_overlay_ports(const ReadOnlyFilesystem& fs, const Path& directory)
+    {
+        auto results = try_load_overlay_ports(fs, directory);
+        load_results_print_error(results);
+        return std::move(results.paragraphs);
     }
 
     uint64_t get_load_ports_stats() { return g_load_ports_stats.load(); }
