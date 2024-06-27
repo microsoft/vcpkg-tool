@@ -80,7 +80,7 @@ if(-Not (bootstrap-vcpkg)) {
 # Export vcpkg to the current shell.
 New-Module -name vcpkg -ArgumentList @($VCPKG) -ScriptBlock {
   param($VCPKG)
-  function vcpkg() {
+  function vcpkg-shell() {
     # setup the postscript file
     # Generate 31 bits of randomness, to avoid clashing with concurrent executions.
     $env:Z_VCPKG_POSTSCRIPT = Join-Path ([System.IO.Path]::GetTempPath()) "VCPKG_tmp_$(Get-Random -SetSeed $PID).ps1"
@@ -140,7 +140,7 @@ IF ERRORLEVEL 1 (
 SET Z_POWERSHELL_EXE=
 
 :: Install the doskey
-DOSKEY vcpkg="%VCPKG_ROOT%\vcpkg-cmd.cmd" $*
+DOSKEY vcpkg-shell="%VCPKG_ROOT%\vcpkg-cmd.cmd" $*
 
 :: If there were any arguments, also invoke vcpkg with them
 IF "%1"=="" GOTO fin

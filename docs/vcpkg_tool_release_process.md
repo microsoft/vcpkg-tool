@@ -215,7 +215,7 @@ flowchart TD
     and check that a reasonable zlib version is printed.
 1. Back in the developer command prompt, verify that the copy of CMake can be customized by running:
     ```
-    vcpkg use microsoft:cmake
+    vcpkg-shell use microsoft:cmake
     cmake -G Ninja -DCMAKE_TOOLCHAIN_FILE="%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake" -S . -B build_artifact
     ninja -C build_artifact
     build_artifact\program.exe
