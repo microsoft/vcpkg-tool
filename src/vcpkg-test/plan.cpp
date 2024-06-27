@@ -60,11 +60,16 @@ static void remove_plan_check(RemovePlanAction& plan, std::string pkg_name, Trip
 static ActionPlan create_feature_install_plan(const PortFileProvider& port_provider,
                                               const CMakeVars::CMakeVarProvider& var_provider,
                                               View<FullPackageSpec> specs,
-                                              const StatusParagraphs& status_db)
+                                              const StatusParagraphs& status_db,
+                                              ImplicitDefault implicit_defaults = ImplicitDefault::Yes)
 {
-    const CreateInstallPlanOptions create_options{
-        nullptr, Test::X64_ANDROID, "pkg", UnsupportedPortAction::Error, UseHeadVersion::No, Editable::No};
-
+    const CreateInstallPlanOptions create_options{nullptr,
+                                                  Test::X64_ANDROID,
+                                                  "pkg",
+                                                  UnsupportedPortAction::Error,
+                                                  UseHeadVersion::No,
+                                                  Editable::No,
+                                                  implicit_defaults};
     return create_feature_install_plan(port_provider, var_provider, specs, status_db, create_options);
 }
 
@@ -818,6 +823,69 @@ TEST_CASE ("install with default features", "[plan]")
     remove_plan_check(install_plan.remove_actions.at(0), "a");
     features_check(install_plan.install_actions.at(0), "b", {"core"});
     features_check(install_plan.install_actions.at(1), "a", {"0", "core"});
+}
+
+TEST_CASE ("install with ImplicitDefault::NO", "[plan]")
+{
+    StatusParagraphs status_db;
+
+    PackageSpecMap spec_map;
+    auto a_spec = spec_map.emplace("a", "b");
+    auto b_spec = spec_map.emplace("b", "", {{"0", ""}}, {"0"});
+    auto c_spec = spec_map.emplace("c", "", {{"0", "b"}}, {"0"});
+
+    MapPortFileProvider map_port{spec_map.map};
+    MockCMakeVarProvider var_provider;
+
+    std::vector<FullPackageSpec> full_package_specs{
+        FullPackageSpec{a_spec, {"core"}},
+        FullPackageSpec{b_spec, {"core"}},
+    };
+
+    std::vector<FullPackageSpec> full_package_specs2{
+        FullPackageSpec{c_spec, {"default", "core"}},
+        FullPackageSpec{b_spec, {"core"}},
+    };
+
+    // Install "a" and then "b" _should_ install default features
+    SECTION ("depend-defaults true from core")
+    {
+        auto install_plan =
+            create_feature_install_plan(map_port, var_provider, full_package_specs, {}, ImplicitDefault::No);
+        REQUIRE(install_plan.size() == 2);
+        features_check(install_plan.install_actions.at(0), "b", {"0", "core"});
+        features_check(install_plan.install_actions.at(1), "a", {"core"});
+    }
+
+    SECTION ("depend-defaults true from feature")
+    {
+        auto install_plan =
+            create_feature_install_plan(map_port, var_provider, full_package_specs2, {}, ImplicitDefault::No);
+        REQUIRE(install_plan.size() == 2);
+        features_check(install_plan.install_actions.at(0), "b", {"0", "core"});
+        features_check(install_plan.install_actions.at(1), "c", {"0", "core"});
+    }
+
+    // now, disable the default dependency from `a` and `c[0]`
+    spec_map.map["a"].source_control_file->core_paragraph->dependencies.at(0).default_features = false;
+    spec_map.map["c"].source_control_file->feature_paragraphs.at(0)->dependencies.at(0).default_features = false;
+    SECTION ("depend-defaults false from core")
+    {
+        auto install_plan =
+            create_feature_install_plan(map_port, var_provider, full_package_specs, {}, ImplicitDefault::No);
+        REQUIRE(install_plan.size() == 2);
+        features_check(install_plan.install_actions.at(0), "b", {"core"});
+        features_check(install_plan.install_actions.at(1), "a", {"core"});
+    }
+    SECTION ("depend-defaults false from feature")
+    {
+        spec_map.map["c"].source_control_file->core_paragraph->depend_defaults = false;
+        auto install_plan =
+            create_feature_install_plan(map_port, var_provider, full_package_specs2, {}, ImplicitDefault::No);
+        REQUIRE(install_plan.size() == 2);
+        features_check(install_plan.install_actions.at(0), "b", {"core"});
+        features_check(install_plan.install_actions.at(1), "c", {"0", "core"});
+    }
 }
 
 TEST_CASE ("upgrade with default features 1", "[plan]")
