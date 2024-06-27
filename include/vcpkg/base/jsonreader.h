@@ -335,7 +335,7 @@ namespace vcpkg::Json
     struct IdentifierDeserializer final : Json::IDeserializer<std::string>
     {
         virtual LocalizedString type_name() const override;
-        // [a-z0-9]+(-[a-z0-9]+)*, plus not any of {prn, aux, nul, con, lpt[1-9], com[1-9], core, default}
+        // [a-z0-9]+(-[a-z0-9]+)*, plus not any of {prn, aux, nul, con, lpt[0-9], com[0-9], core, default}
         static bool is_ident(StringView sv);
         virtual Optional<std::string> visit_string(Json::Reader&, StringView sv) const override;
         static const IdentifierDeserializer instance;

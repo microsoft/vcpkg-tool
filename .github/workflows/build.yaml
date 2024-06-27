@@ -80,6 +80,14 @@ jobs:
         shell: pwsh
         run: |
           cd out/build/${{ matrix.preset }}
-          ${{ github.workspace }}/azure-pipelines/end-to-end-tests.ps1 -RunArtifactsTests
+          ${{ github.workspace }}/azure-pipelines/end-to-end-tests.ps1 -RunArtifactsTests -Filter:'.+(?<!-generic\.ps1)$'
+        env:
+          VCPKG_ROOT: ${{ github.workspace }}/vcpkg-root
+      - name: Run vcpkg end-to-end tests generic
+        if: matrix.preset == 'linux-ci'
+        shell: pwsh
+        run: |
+          cd out/build/${{ matrix.preset }}
+          ${{ github.workspace }}/azure-pipelines/end-to-end-tests.ps1 -RunArtifactsTests -Filter:'.+-generic\.ps1$'
         env:
           VCPKG_ROOT: ${{ github.workspace }}/vcpkg-root
