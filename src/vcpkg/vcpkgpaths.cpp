@@ -1210,7 +1210,6 @@ namespace vcpkg
             }
 
             error.append_raw('\n').append(std::move(maybe_git_read_tree_output).error());
-            error.append(msgSeeURL, msg::url = docs::troubleshoot_versioning_url);
             return error;
         }
 
