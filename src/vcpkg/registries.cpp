@@ -1074,7 +1074,14 @@ namespace
 
         const auto& git_tree = port_versions_soa.git_trees()[it - port_versions.begin()];
         return m_paths.versions_dot_git_dir()
-            .then([&, this](Path&& dot_git) { return m_paths.git_checkout_port(port_name, git_tree, dot_git); })
+            .then([&, this](Path&& dot_git) {
+                return m_paths.git_checkout_port(port_name, git_tree, dot_git).map_error([](LocalizedString&& err) {
+                    return std::move(err)
+                        .append_raw('\n')
+                        .append_raw(NotePrefix)
+                        .append(msgSeeURL, msg::url = docs::troubleshoot_versioning_url);
+                });
+            })
             .map([&git_tree](Path&& p) -> PortLocation {
                 return {
                     std::move(p),
