@@ -92,6 +92,9 @@ namespace vcpkg
                                           const Path& file_to_put,
                                           StringView sha512) const;
 
+        bool get_block_origin() const;
+        bool asset_cache_configured() const;
+
     private:
         DownloadManagerConfig m_config;
     };
