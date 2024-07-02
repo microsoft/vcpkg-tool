@@ -67,7 +67,7 @@ namespace vcpkg::Prefab
     static std::string null_if_empty(const std::string& str)
     {
         std::string copy = str;
-        if (copy.size() == 0)
+        if (copy.empty())
         {
             copy = "null";
         }
@@ -81,7 +81,7 @@ namespace vcpkg::Prefab
     static std::string null_if_empty_array(const std::string& str)
     {
         std::string copy = str;
-        if (copy.size() == 0)
+        if (copy.empty())
         {
             copy = "null";
         }
@@ -231,7 +231,7 @@ namespace vcpkg::Prefab
         settings.environment = get_clean_environment();
         const int exit_code = cmd_execute(cmd, settings).value_or_exit(VCPKG_LINE_INFO);
 
-        if (!(exit_code == 0))
+        if (exit_code != 0)
         {
             msg::println_error(msgInstallingMavenFile, msg::path = aar);
             Checks::exit_fail(VCPKG_LINE_INFO);
@@ -254,7 +254,8 @@ namespace vcpkg::Prefab
     void do_export(const std::vector<ExportPlanAction>& export_plan,
                    const VcpkgPaths& paths,
                    const Options& prefab_options,
-                   const Triplet& default_triplet)
+                   const Triplet& default_triplet,
+                   const Triplet& host_triplet)
     {
         auto provider = CMakeVars::make_triplet_cmake_var_provider(paths);
 
@@ -282,8 +283,12 @@ namespace vcpkg::Prefab
 
         for (const auto& triplet_file : triplet_db.available_triplets)
         {
-            if (triplet_file.name.size() > 0)
+            if (!triplet_file.name.empty())
             {
+                // The execution of emscripten cmake script causes the prefab export to fail.
+                // But here we don't need this execution at all, so we skip it.
+                if (triplet_file.name == "wasm32-emscripten") continue;
+
                 Triplet triplet = Triplet::from_canonical_name(triplet_file.name);
                 auto triplet_build_info = build_info_from_triplet(paths, provider, triplet);
                 if (is_supported(*triplet_build_info))
@@ -373,6 +378,10 @@ namespace vcpkg::Prefab
 
         for (const auto& action : export_plan)
         {
+            // cross-compiling
+            // Host-only ports (e.g. vcpkg_cmake) are not to be exported.
+            if (host_triplet == action.spec.triplet()) continue;
+
             const std::string name = action.spec.name();
             auto dependencies = action.dependencies();
 
@@ -401,7 +410,10 @@ namespace vcpkg::Prefab
             const auto per_package_dir_path = paths.prefab / name;
 
             const auto& binary_paragraph = action.core_paragraph().value_or_exit(VCPKG_LINE_INFO);
-            const std::string norm_version = binary_paragraph.version.to_string();
+
+            // The port version is not specified during installation (vcpkg install). Just ignore port version.
+            // jsoncpp_1.17#2_x64-android.list -> jsoncpp_1.17_x64-android.list
+            const std::string norm_version = binary_paragraph.version.text;
 
             version_map[name] = norm_version;
 
@@ -465,7 +477,7 @@ namespace vcpkg::Prefab
 
             std::vector<std::string> pom_dependencies;
 
-            if (dependencies_minus_empty_packages.size() > 0)
+            if (!dependencies_minus_empty_packages.empty())
             {
                 pom_dependencies.emplace_back("\n<dependencies>");
             }
@@ -486,7 +498,7 @@ namespace vcpkg::Prefab
                 pm.dependencies.push_back(it.name());
             }
 
-            if (dependencies_minus_empty_packages.size() > 0)
+            if (!dependencies_minus_empty_packages.empty())
             {
                 pom_dependencies.emplace_back("</dependencies>\n");
             }
@@ -510,7 +522,7 @@ namespace vcpkg::Prefab
             }
 
             Debug::print(
-                fmt::format("Found {} triplets:\n\t{}", triplets.size(), Strings::join("\n\t", triplet_names)));
+                fmt::format("Found {} triplets:\n\t{}\n", triplets.size(), Strings::join("\n\t", triplet_names)));
 
             for (const auto& triplet : triplets)
             {
@@ -520,6 +532,8 @@ namespace vcpkg::Prefab
                 if (!(fs.exists(listfile, IgnoreErrors{})))
                 {
                     msg::println_error(msgCorruptedInstallTree);
+                    msg::println_error(msgFileNotFound, msg::path = listfile);
+
                     Checks::exit_fail(VCPKG_LINE_INFO);
                 }
 
