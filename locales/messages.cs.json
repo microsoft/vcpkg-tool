@@ -540,7 +540,7 @@
   "FilesExported": "Soubory exportované v: {path}",
   "FilesRelativeToTheBuildDirectoryHere": "soubory jsou tady relativní vzhledem k adresáři sestavení",
   "FilesRelativeToThePackageDirectoryHere": "soubory jsou tady relativní k ${{CURRENT_PACKAGES_DIR}}",
-  "FindCommandFirstArg": "The first argument to 'find' must be 'artifact' or 'port' .",
+  "FindCommandFirstArg": "Prvním argumentem pro find musí být artifact nebo port.",
   "FindVersionArtifactsOnly": "--version se nedá použít s hledáním vcpkg nebo vcpkg vyhledávacím portem.",
   "FishCompletion": "Dokončení vcpkg fish je už přidáno do {path}.",
   "FloatingPointConstTooBig": "Konstanta čísla s plovoucí desetinnou čárkou je příliš velká: {count}",

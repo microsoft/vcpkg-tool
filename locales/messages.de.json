@@ -540,7 +540,7 @@
   "FilesExported": "Exportierte Dateien unter: {path}",
   "FilesRelativeToTheBuildDirectoryHere": "die Dateien sind hier relativ zum Buildverzeichnis",
   "FilesRelativeToThePackageDirectoryHere": "die Dateien sind hier relativ zu ${{CURRENT_PACKAGES_DIR}}",
-  "FindCommandFirstArg": "The first argument to 'find' must be 'artifact' or 'port' .",
+  "FindCommandFirstArg": "Das erste Argument für „find“ muss „artifact“ oder „port“ sein.",
   "FindVersionArtifactsOnly": "--version kann nicht mit der vcpkg-Suche oder dem vcpkg-Suchport verwendet werden.",
   "FishCompletion": "Die vcpkg-fish-Vervollständigung wurde bereits unter „{path}“ hinzugefügt.",
   "FloatingPointConstTooBig": "Gleitkommakonstante zu groß: {count}",

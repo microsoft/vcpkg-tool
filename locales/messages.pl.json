@@ -540,7 +540,7 @@
   "FilesExported": "Pliki wyeksportowane do: {path}",
   "FilesRelativeToTheBuildDirectoryHere": "pliki są względne względem katalogu kompilacji w tym miejscu",
   "FilesRelativeToThePackageDirectoryHere": "pliki są względne wobec ${{CURRENT_PACKAGES_DIR}}w tym miejscu",
-  "FindCommandFirstArg": "The first argument to 'find' must be 'artifact' or 'port' .",
+  "FindCommandFirstArg": "Pierwszym argumentem elementu „find” musi być „artifact” lub „port”.",
   "FindVersionArtifactsOnly": "Nie można użyć parametru --version z wyszukiwaniem vcpkg lub portem odkrywania vcpkg",
   "FishCompletion": "Uzupełnianie powłoki fish w menedżerze vcpkg zostało już dodane w lokalizacji \"{path}\".",
   "FloatingPointConstTooBig": "Stała zmiennoprzecinkowa jest za duża: {count}",

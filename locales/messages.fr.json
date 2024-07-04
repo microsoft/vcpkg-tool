@@ -540,7 +540,7 @@
   "FilesExported": "Fichiers exportés à : {path}",
   "FilesRelativeToTheBuildDirectoryHere": "les fichiers sont relatifs au répertoire de build ici",
   "FilesRelativeToThePackageDirectoryHere": "les fichiers sont relatifs à ${{CURRENT_PACKAGES_DIR}} ici",
-  "FindCommandFirstArg": "The first argument to 'find' must be 'artifact' or 'port' .",
+  "FindCommandFirstArg": "Le premier argument de « find » doit être « artefact » ou « port ».",
   "FindVersionArtifactsOnly": "--cette version ne peut pas être utilisé avec la recherche vcpkg ou le port de recherche vcpkg",
   "FishCompletion": "La saisie semi-automatique des poissons vcpkg est déjà ajoutée à \"{path}\".",
   "FloatingPointConstTooBig": "Constante à virgule flottante trop grande : {count}",

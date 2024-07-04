@@ -540,7 +540,7 @@
   "FilesExported": "檔案匯出於: {path}",
   "FilesRelativeToTheBuildDirectoryHere": "檔案是相對於這裡的建置目錄",
   "FilesRelativeToThePackageDirectoryHere": "檔案是相對於這裡的 ${{CURRENT_PACKAGES_DIR}}",
-  "FindCommandFirstArg": "The first argument to 'find' must be 'artifact' or 'port' .",
+  "FindCommandFirstArg": "'find' 的第一個引數必須是 'artifact' 或 'port'。",
   "FindVersionArtifactsOnly": "--version 無法與 vcpkg search 或 vcpkg find port 一起使用",
   "FishCompletion": "vcpkg fish 完成已新增於 \"{path}\"。",
   "FloatingPointConstTooBig": "浮點常數太大: {count}",

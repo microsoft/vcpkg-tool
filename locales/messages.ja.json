@@ -540,7 +540,7 @@
   "FilesExported": "エクスポートされたファイルの場所: {path}",
   "FilesRelativeToTheBuildDirectoryHere": "ファイルはビルド ディレクトリに対して相対的です",
   "FilesRelativeToThePackageDirectoryHere": "ファイルは ${{CURRENT_PACKAGES_DIR}} に対して相対的です",
-  "FindCommandFirstArg": "The first argument to 'find' must be 'artifact' or 'port' .",
+  "FindCommandFirstArg": "'find' の最初の引数は 'artifact' または 'port' である必要があります。",
   "FindVersionArtifactsOnly": "--version は vcpkg 検索または vcpkg 検索ポートでは使用できません",
   "FishCompletion": "vcpkg fish 補完は既に \"{path}\" に追加されています。",
   "FloatingPointConstTooBig": "浮動小数点定数が大きすぎます: {count}",

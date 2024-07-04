@@ -540,7 +540,7 @@
   "FilesExported": "File esportati in: {path}",
   "FilesRelativeToTheBuildDirectoryHere": "i file sono relativi alla directory di compilazione qui",
   "FilesRelativeToThePackageDirectoryHere": "i file sono relativi a ${{CURRENT_PACKAGES_DIR}} qui",
-  "FindCommandFirstArg": "The first argument to 'find' must be 'artifact' or 'port' .",
+  "FindCommandFirstArg": "Il primo argomento di 'find' deve essere 'artifact' o 'port' .",
   "FindVersionArtifactsOnly": "--version non può essere utilizzato con la ricerca vcpkg o la porta di ricerca vcpkg",
   "FishCompletion": "Il completamento del pesce vcpkg è già stato aggiunto in \"{path}”.",
   "FloatingPointConstTooBig": "Costante a virgola mobile troppo grande: {count}",

@@ -540,7 +540,7 @@
   "FilesExported": "{path} konumunda dışa aktarılan dosyalar",
   "FilesRelativeToTheBuildDirectoryHere": "dosyalar burada derleme dizini ile göredir",
   "FilesRelativeToThePackageDirectoryHere": "dosyalar burada ${{CURRENT_PACKAGES_DIR}} ile görelidir",
-  "FindCommandFirstArg": "The first argument to 'find' must be 'artifact' or 'port' .",
+  "FindCommandFirstArg": "'Find' için ilk bağımsız değişken 'artifact' veya 'port' olmalıdır.",
   "FindVersionArtifactsOnly": "--version, vcpkg arama veya vcpkg bulma bağlantı noktası ile kullanılamaz",
   "FishCompletion": "vcpkg balık tamamlama zaten \"{path}\" konumuna eklendi.",
   "FloatingPointConstTooBig": "Kayan nokta sabiti çok büyük: {count}",

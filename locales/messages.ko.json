@@ -540,7 +540,7 @@
   "FilesExported": "내보낸 파일: {path}",
   "FilesRelativeToTheBuildDirectoryHere": "파일은 여기서 빌드 디렉터리를 기준으로 합니다.",
   "FilesRelativeToThePackageDirectoryHere": "파일은 여기서 ${{CURRENT_PACKAGES_DIR}}에 상대적입니다.",
-  "FindCommandFirstArg": "The first argument to 'find' must be 'artifact' or 'port' .",
+  "FindCommandFirstArg": "'find'의 첫 번째 인수는 'artifact' 또는 'port'여야 합니다.",
   "FindVersionArtifactsOnly": "--version은 vcpkg 검색 또는 vcpkg 찾기 포트와 함께 사용할 수 없습니다.",
   "FishCompletion": "vcpkg 물고기 완성은 이미 \"{path}\"에 추가되었습니다.",
   "FloatingPointConstTooBig": "부동 소수점 상수가 너무 큼: {count}",
