@@ -158,4 +158,17 @@ function Run-Vcpkg {
     Run-VcpkgAndCaptureOutput -ForceExe:$ForceExe @TestArgs | Out-Null
 }
 
+
+# https://github.com/actions/toolkit/blob/main/docs/commands.md#problem-matchers
+# .github/workflows/matchers.json
+function Remove-Problem-Matchers {
+    Write-Host "::remove-matcher owner=vcpkg-msvc::"
+    Write-Host "::remove-matcher owner=vcpkg-gcc::"
+    Write-Host "::remove-matcher owner=vcpkg-catch::"
+}
+function Restore-Problem-Matchers {
+    Write-Host "::add-matcher::.github/workflows/matchers.json"
+}
+
+
 Refresh-TestRoot
