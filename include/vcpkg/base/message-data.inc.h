@@ -14,10 +14,6 @@ DECLARE_MESSAGE(AString, (), "", "a string")
 DECLARE_MESSAGE(ADateVersionString, (), "", "a date version string")
 DECLARE_MESSAGE(AddArtifactOnlyOne, (msg::command_line), "", "'{command_line}' can only add one artifact at a time.")
 DECLARE_MESSAGE(AddCommandFirstArg, (), "", "The first parameter to add must be 'artifact' or 'port'.")
-DECLARE_MESSAGE(AddFirstArgument,
-                (msg::command_line),
-                "",
-                "The first argument to '{command_line}' must be 'artifact' or 'port'.")
 DECLARE_MESSAGE(AddingCompletionEntry, (msg::path), "", "Adding vcpkg completion entry to {path}.")
 DECLARE_MESSAGE(AdditionalPackagesToExport,
                 (),
@@ -45,7 +41,6 @@ DECLARE_MESSAGE(AddVersionArtifactsOnly,
                 "--version is artifacts only and can't be used with vcpkg add port")
 DECLARE_MESSAGE(AddVersionAddedVersionToFile, (msg::version, msg::path), "", "added version {version} to {path}")
 DECLARE_MESSAGE(AddVersionCommitChangesReminder, (), "", "Did you remember to commit your changes?")
-DECLARE_MESSAGE(AddVersionCommitResultReminder, (), "", "Don't forget to commit the result!")
 DECLARE_MESSAGE(AddVersionDetectLocalChangesError,
                 (),
                 "",
@@ -56,7 +51,10 @@ DECLARE_MESSAGE(AddVersionIgnoringOptionAll,
                 (msg::option),
                 "The -- before {option} must be preserved as they're part of the help message for the user.",
                 "ignoring --{option} since a port name argument was provided")
-DECLARE_MESSAGE(AddVersionLoadPortFailed, (msg::package_name), "", "can't load port {package_name}")
+DECLARE_MESSAGE(AddVersionInstructions,
+                (msg::package_name),
+                "",
+                "you can run the following commands to add the current version of {package_name} automatically:")
 DECLARE_MESSAGE(AddVersionNewFile, (), "", "(new file)")
 DECLARE_MESSAGE(AddVersionNewShaIs, (msg::commit_sha), "", "new SHA: {commit_sha}")
 DECLARE_MESSAGE(AddVersionNoFilesUpdated, (), "", "No files were updated")
@@ -99,7 +97,6 @@ DECLARE_MESSAGE(
     "actually semantic parts do not apply.\n"
     "If versions for this port are not ordered by these rules, disable this check by rerunning this command and adding "
     "--skip-version-format-check .")
-DECLARE_MESSAGE(AddVersionUnableToParseVersionsFile, (msg::path), "", "unable to parse versions file {path}")
 DECLARE_MESSAGE(AddVersionUncommittedChanges,
                 (msg::package_name),
                 "",
@@ -295,14 +292,7 @@ DECLARE_MESSAGE(BaselineGitShowFailed,
                 "",
                 "while checking out baseline from commit '{commit_sha}', failed to `git show` "
                 "versions/baseline.json. This may be fixed by fetching commits with `git fetch`.")
-DECLARE_MESSAGE(BaselineMissing,
-                (msg::package_name, msg::version),
-                "",
-                "Baseline version not found. Run:\n"
-                "vcpkg x-add-version {package_name}\n"
-                "git add versions\n"
-                "git commit -m \"Update version database\"\n"
-                "to set {version} as the baseline version.")
+DECLARE_MESSAGE(BaselineMissing, (msg::package_name), "", "{package_name} is not assigned a version")
 DECLARE_MESSAGE(BinariesRelativeToThePackageDirectoryHere,
                 (),
                 "",
@@ -417,11 +407,6 @@ DECLARE_MESSAGE(
     "The triplet requests that binaries are built for {arch}, but the following binaries were built for a "
     "different architecture. This usually means toolchain information is incorrectly conveyed to the binaries' "
     "build system. To suppress this message, add set(VCPKG_POLICY_SKIP_ARCHITECTURE_CHECK enabled)")
-DECLARE_MESSAGE(CheckedOutGitSha, (msg::commit_sha), "", "Checked out Git SHA: {commit_sha}")
-DECLARE_MESSAGE(CheckedOutObjectMissingManifest,
-                (),
-                "",
-                "The checked-out object does not contain a CONTROL file or vcpkg.json file.")
 DECLARE_MESSAGE(ChecksFailedCheck, (), "", "vcpkg has crashed; no additional details are available.")
 DECLARE_MESSAGE(ChecksUnreachableCode, (), "", "unreachable code was reached")
 DECLARE_MESSAGE(ChecksUpdateVcpkg, (), "", "updating vcpkg by rerunning bootstrap-vcpkg may resolve this failure.")
@@ -457,7 +442,6 @@ DECLARE_MESSAGE(CiBaselineUnexpectedPass,
                 (msg::spec, msg::path),
                 "",
                 "PASSING, REMOVE FROM FAIL LIST: {spec} ({path}).")
-DECLARE_MESSAGE(CISettingsExclude, (), "", "Comma-separated list of ports to skip")
 DECLARE_MESSAGE(CISettingsOptCIBase,
                 (),
                 "",
@@ -895,10 +879,6 @@ DECLARE_MESSAGE(ConsideredVersions,
                 "requirement of {version}:")
 DECLARE_MESSAGE(ConstraintViolation, (), "", "Found a constraint violation:")
 DECLARE_MESSAGE(ContinueCodeUnitInStart, (), "", "found continue code unit in start position")
-DECLARE_MESSAGE(ControlAndManifestFilesPresent,
-                (msg::path),
-                "",
-                "Both a manifest file and a CONTROL file exist in port directory: {path}")
 DECLARE_MESSAGE(ControlCharacterInString, (), "", "Control character in string")
 DECLARE_MESSAGE(ControlSupportsMustBeAPlatformExpression, (), "", "\"Supports\" must be a platform expression")
 DECLARE_MESSAGE(CopyrightIsDir,
@@ -1005,6 +985,11 @@ DECLARE_MESSAGE(
 DECLARE_MESSAGE(DependencyGraphCalculation, (), "", "Dependency graph submission enabled.")
 DECLARE_MESSAGE(DependencyGraphFailure, (), "", "Dependency graph submission failed.")
 DECLARE_MESSAGE(DependencyGraphSuccess, (), "", "Dependency graph submission successful.")
+DECLARE_MESSAGE(DependencyInFeature, (msg::feature), "", "the dependency is in the feature named {feature}")
+DECLARE_MESSAGE(DependencyNotInVersionDatabase,
+                (msg::package_name),
+                "",
+                "the dependency {package_name} does not exist in the version database; does that port exist?")
 DECLARE_MESSAGE(DeprecatedPrefabDebugOption, (), "", "--prefab-debug is now deprecated.")
 DECLARE_MESSAGE(DetectCompilerHash, (msg::triplet), "", "Detecting compiler hash for triplet {triplet}...")
 DECLARE_MESSAGE(DirectoriesRelativeToThePackageDirectoryHere,
@@ -1128,7 +1113,6 @@ DECLARE_MESSAGE(ErrorInvalidExtractOption,
                 (msg::option, msg::value),
                 "The keyword 'AUTO' should not be localized",
                 "--{option} must be set to a nonnegative integer or 'AUTO'.")
-DECLARE_MESSAGE(ErrorsFound, (), "", "Found the following errors:")
 DECLARE_MESSAGE(ErrorUnableToDetectCompilerInfo,
                 (),
                 "failure output will be displayed at the top of this",
@@ -1242,7 +1226,6 @@ DECLARE_MESSAGE(
 DECLARE_MESSAGE(FailedToLoadManifest, (msg::path), "", "Failed to load manifest from directory {path}")
 DECLARE_MESSAGE(FailedToLocateSpec, (msg::spec), "", "Failed to locate spec in graph: {spec}")
 DECLARE_MESSAGE(FailedToObtainDependencyVersion, (), "", "Cannot find desired dependency version.")
-DECLARE_MESSAGE(FailedToObtainLocalPortGitSha, (), "", "Failed to obtain git SHAs for local ports.")
 DECLARE_MESSAGE(FailedToObtainPackageVersion, (), "", "Cannot find desired package version.")
 DECLARE_MESSAGE(FailedToOpenAlgorithm,
                 (msg::value),
@@ -1254,8 +1237,7 @@ DECLARE_MESSAGE(FailedToParseCMakeConsoleOut,
                 "Failed to parse CMake console output to locate block start/end markers.")
 DECLARE_MESSAGE(FailedToParseBaseline, (msg::path), "", "Failed to parse baseline: {path}")
 DECLARE_MESSAGE(FailedToParseConfig, (msg::path), "", "Failed to parse configuration: {path}")
-DECLARE_MESSAGE(FailedToParseControl, (msg::path), "", "Failed to parse CONTROL file: {path}")
-DECLARE_MESSAGE(FailedToParseManifest, (msg::path), "", "Failed to parse manifest file: {path}")
+DECLARE_MESSAGE(FailedToParseVersionFile, (msg::path), "", "Failed to parse version file: {path}")
 DECLARE_MESSAGE(FailedToParseNoTopLevelObj, (msg::path), "", "Failed to parse {path}, expected a top-level object.")
 DECLARE_MESSAGE(FailedToParseNoVersionsArray, (msg::path), "", "Failed to parse {path}, expected a 'versions' array.")
 DECLARE_MESSAGE(FailedToParseSerializedBinParagraph,
@@ -1264,13 +1246,10 @@ DECLARE_MESSAGE(FailedToParseSerializedBinParagraph,
                 "[sanity check] Failed to parse a serialized binary paragraph.\nPlease open an issue at "
                 "https://github.com/microsoft/vcpkg, "
                 "with the following output:\n{error_msg}\nSerialized Binary Paragraph:")
-DECLARE_MESSAGE(FailedToParseVersionsFile, (msg::path), "", "failed to parse versions file {path}")
 DECLARE_MESSAGE(FailedToParseVersionXML,
                 (msg::tool_name, msg::version),
                 "",
                 "Could not parse version for tool {tool_name}. Version string was: {version}")
-DECLARE_MESSAGE(FailedToReadParagraph, (msg::path), "", "Failed to read paragraphs from {path}")
-DECLARE_MESSAGE(FailedToRemoveControl, (msg::path), "", "Failed to remove control file {path}")
 DECLARE_MESSAGE(FailedToRunToolToDetermineVersion,
                 (msg::tool_name, msg::path),
                 "Additional information, such as the command line output, if any, will be appended on "
@@ -1279,7 +1258,6 @@ DECLARE_MESSAGE(FailedToRunToolToDetermineVersion,
 DECLARE_MESSAGE(FailedToStoreBackToMirror, (), "", "failed to store back to mirror:")
 DECLARE_MESSAGE(FailedToStoreBinaryCache, (msg::path), "", "Failed to store binary cache {path}")
 DECLARE_MESSAGE(FailedToTakeFileSystemLock, (), "", "Failed to take the filesystem lock")
-DECLARE_MESSAGE(FailedToWriteManifest, (msg::path), "", "Failed to write manifest file {path}")
 DECLARE_MESSAGE(FailedVendorAuthentication,
                 (msg::vendor, msg::url),
                 "",
@@ -1326,6 +1304,10 @@ DECLARE_MESSAGE(FileSeekFailed,
                 "",
                 "Failed to seek to position {byte_offset} in {path}.")
 DECLARE_MESSAGE(FilesExported, (msg::path), "", "Files exported at: {path}")
+DECLARE_MESSAGE(FindCommandFirstArg,
+                (),
+                "'find', 'artifact', and 'port' are vcpkg specific terms and should not be translated.",
+                "The first argument to 'find' must be 'artifact' or 'port' .")
 DECLARE_MESSAGE(FishCompletion, (msg::path), "", "vcpkg fish completion is already added at \"{path}\".")
 DECLARE_MESSAGE(FloatingPointConstTooBig, (msg::count), "", "Floating point constant too big: {count}")
 DECLARE_MESSAGE(FollowingPackagesMissingControl,
@@ -1356,6 +1338,10 @@ DECLARE_MESSAGE(GHAParametersMissing,
                 "The GHA binary source requires the ACTIONS_RUNTIME_TOKEN and ACTIONS_CACHE_URL environment variables "
                 "to be set. See {url} for details.")
 DECLARE_MESSAGE(GitCommandFailed, (msg::command_line), "", "failed to execute: {command_line}")
+DECLARE_MESSAGE(GitCommitUpdateVersionDatabase,
+                (),
+                "This is a command line; only the 'update version database' part should be localized",
+                "git commit -m \"Update version database\"")
 DECLARE_MESSAGE(GitFailedToFetch,
                 (msg::value, msg::url),
                 "{value} is a git ref like 'origin/main'",
@@ -1898,7 +1884,6 @@ DECLARE_MESSAGE(
     "Invalid {system_name} linkage type: [{value}]")
 DECLARE_MESSAGE(InvalidLogicExpressionUnexpectedCharacter, (), "", "invalid logic expression, unexpected character")
 DECLARE_MESSAGE(InvalidLogicExpressionUsePipe, (), "", "invalid logic expression, use '|' rather than 'or'")
-DECLARE_MESSAGE(InvalidNoVersions, (), "", "File contains no versions.")
 DECLARE_MESSAGE(InvalidOptionForRemove,
                 (),
                 "'remove' is a command that should not be changed.",
@@ -2017,10 +2002,7 @@ DECLARE_MESSAGE(LoadingDependencyInformation,
                 "",
                 "Loading dependency information for {count} packages...")
 DECLARE_MESSAGE(LocalPortfileVersion, (), "", "Using local port versions. To update the local ports, use `git pull`.")
-DECLARE_MESSAGE(ManifestConflict,
-                (msg::path),
-                "",
-                "Found both a manifest and CONTROL files in port \"{path}\"; please rename one or the other")
+DECLARE_MESSAGE(ManifestConflict2, (), "", "Found both a manifest and CONTROL files; please rename one or the other")
 DECLARE_MESSAGE(ManifestFormatCompleted, (), "", "Succeeded in formatting the manifest files.")
 DECLARE_MESSAGE(MismatchedBinParagraphs,
                 (),
@@ -2492,6 +2474,10 @@ DECLARE_MESSAGE(PortBugSetDllsWithoutExports,
                 "",
                 "the following DLLs were built without any exports. DLLs without exports are likely bugs in the build "
                 "script. If this is intended, add set(VCPKG_POLICY_DLLS_WITHOUT_EXPORTS enabled)")
+DECLARE_MESSAGE(PortDeclaredHere,
+                (msg::package_name),
+                "This is printed after NoteMessage to tell the user the path on disk of a related port",
+                "{package_name} is declared here")
 DECLARE_MESSAGE(PortDependencyConflict,
                 (msg::package_name),
                 "",
@@ -2640,10 +2626,6 @@ DECLARE_MESSAGE(StoredBinariesToDestinations,
 DECLARE_MESSAGE(StoreOptionMissingSha, (), "", "--store option is invalid without a sha512")
 DECLARE_MESSAGE(SuccessfulyExported, (msg::package_name, msg::path), "", "Exported {package_name} to {path}")
 DECLARE_MESSAGE(SuggestGitPull, (), "", "The result may be outdated. Run `git pull` to get the latest results.")
-DECLARE_MESSAGE(SuggestResolution,
-                (msg::command_name, msg::option),
-                "",
-                "To attempt to resolve all errors at once, run:\nvcpkg {command_name} --{option}")
 DECLARE_MESSAGE(SuggestStartingBashShell,
                 (),
                 "",
@@ -2939,15 +2921,16 @@ DECLARE_MESSAGE(VcvarsRunFailedExitCode,
                 (msg::exit_code),
                 "",
                 "while trying to get a Visual Studio environment, vcvarsall.bat returned {exit_code}")
+DECLARE_MESSAGE(VersionBaselineMatch, (msg::version_spec), "", "{version_spec} matches the current baseline")
 DECLARE_MESSAGE(VersionBaselineMismatch,
                 (msg::expected, msg::actual, msg::package_name),
-                "{expected} and {actual} are versions",
-                "The latest version is {expected}, but the baseline file contains {actual}.\n"
-                "Run:\n"
-                "vcpkg x-add-version {package_name}\n"
-                "git add versions\n"
-                "git commit -m \"Update version database\"\n"
-                "to update the baseline version.")
+                "{actual} and {expected} are versions",
+                "{package_name} is assigned {actual}, but the local port is {expected}")
+DECLARE_MESSAGE(VersionBuiltinPortTreeEntryMissing,
+                (msg::package_name, msg::expected, msg::actual),
+                "{expected} and {actual} are versions like 1.0.",
+                "no version database entry for {package_name} at {expected}; using the checked out ports tree "
+                "version ({actual}).")
 DECLARE_MESSAGE(VersionCommandHeader,
                 (msg::version),
                 "",
@@ -2957,6 +2940,16 @@ DECLARE_MESSAGE(
     (msg::path, msg::expected_version, msg::actual_version),
     "",
     "Expected {path} version: [{expected_version}], but was [{actual_version}]. Please re-run bootstrap-vcpkg.")
+DECLARE_MESSAGE(VersionConstraintNotInDatabase1,
+                (msg::package_name, msg::version),
+                "",
+                "the \"version>=\" constraint to {package_name} names version {version} which does not exist in the "
+                "version database. All versions must exist in the version database to be interpreted by vcpkg.")
+DECLARE_MESSAGE(VersionConstraintNotInDatabase2,
+                (),
+                "",
+                "consider removing the version constraint or choosing a value declared here")
+DECLARE_MESSAGE(VersionConstraintOk, (), "", "all version constraints are consistent with the version database")
 DECLARE_MESSAGE(VersionConstraintPortVersionMustBePositiveInteger,
                 (),
                 "",
@@ -2966,18 +2959,12 @@ DECLARE_MESSAGE(VersionConstraintViolated,
                 "",
                 "dependency {spec} was expected to be at least version "
                 "{expected_version}, but is currently {actual_version}.")
-DECLARE_MESSAGE(VersionDatabaseFileMissing,
-                (msg::package_name, msg::path),
+DECLARE_MESSAGE(VersionDatabaseFileMissing, (), "", "this port is not in the version database")
+DECLARE_MESSAGE(VersionDatabaseFileMissing2, (), "", "the version database file should be here")
+DECLARE_MESSAGE(VersionDatabaseFileMissing3,
+                (msg::command_line),
                 "",
-                "{package_name} is missing a version database file at {path}\n"
-                "Run:\n"
-                "vcpkg x-add-version {package_name}\n"
-                "to create the versions file.")
-DECLARE_MESSAGE(VersionBuiltinPortTreeEntryMissing,
-                (msg::package_name, msg::expected, msg::actual),
-                "{expected} and {actual} are versions like 1.0.",
-                "no version database entry for {package_name} at {expected}; using the checked out ports tree "
-                "version ({actual}).")
+                "run '{command_line}' to create the version database file")
 DECLARE_MESSAGE(VersionDatabaseEntryMissing,
                 (msg::package_name, msg::version),
                 "",
@@ -3003,9 +2990,9 @@ DECLARE_MESSAGE(VersionIncomparable3,
                 "This can be resolved by adding an explicit override to the preferred version. For example:")
 DECLARE_MESSAGE(VersionIncomparable4, (msg::url), "", "See `vcpkg help versioning` or {url} for more information.")
 DECLARE_MESSAGE(VersionInDeclarationDoesNotMatch,
-                (msg::version),
-                "",
-                "The version declared in file does not match checked-out version: {version}")
+                (msg::git_tree_sha, msg::expected, msg::actual),
+                "{expected} and {actual} are version specs",
+                "{git_tree_sha} is declared to contain {expected}, but appears to contain {actual}")
 DECLARE_MESSAGE(
     VersionInvalidDate,
     (msg::version),
@@ -3033,13 +3020,33 @@ DECLARE_MESSAGE(VersionNotFound,
                 (msg::expected, msg::actual),
                 "{expected} and {actual} are versions",
                 "{expected} not available, only {actual} is available")
-DECLARE_MESSAGE(VersionNotFoundInVersionsFile,
-                (msg::version, msg::package_name),
+DECLARE_MESSAGE(VersionNotFoundInVersionsFile2,
+                (msg::version_spec),
                 "",
-                "Version {version} was not found in versions file for {package_name}.\n"
-                "Run:\n"
-                "vcpkg x-add-version {package_name}\n"
-                "to add the new port version.")
+                "{version_spec} was not found in versions database")
+DECLARE_MESSAGE(VersionNotFoundInVersionsFile3, (), "", "the version should be in this file")
+DECLARE_MESSAGE(VersionNotFoundInVersionsFile4,
+                (msg::command_line),
+                "",
+                "run '{command_line}' to add the new port version")
+DECLARE_MESSAGE(VersionOverrideNotInVersionDatabase,
+                (msg::package_name),
+                "",
+                "the version override {package_name} does not exist in the version database; does that port exist?")
+DECLARE_MESSAGE(
+    VersionOverrideVersionNotInVersionDatabase1,
+    (msg::package_name, msg::version),
+    "",
+    "the override of {package_name} names version {version} which does not exist in the "
+    "version database. Installing this port at the top level will fail as that version will be unresolvable.")
+DECLARE_MESSAGE(VersionOverrideVersionNotInVersionDatabase2,
+                (),
+                "",
+                "consider removing the version override or choosing a value declared here")
+DECLARE_MESSAGE(VersionOverwriteVersion,
+                (msg::version_spec),
+                "",
+                "you can overwrite {version_spec} with correct local values by running:")
 DECLARE_MESSAGE(VersionRejectedDueToBaselineMissing,
                 (msg::path, msg::json_field),
                 "",
@@ -3052,34 +3059,46 @@ DECLARE_MESSAGE(VersionRejectedDueToFeatureFlagOff,
                 "{path} was rejected because it uses \"{json_field}\" and the `versions` feature flag is disabled. "
                 "This can be fixed by removing \"{json_field}\" or enabling the `versions` feature flag.\nSee "
                 "`vcpkg help versioning` for more information.")
-DECLARE_MESSAGE(VersionSchemeMismatch,
-                (msg::version, msg::expected, msg::actual, msg::path, msg::package_name),
-                "{expected} and {actual} are version schemes; it here refers to the {version}",
-                "The version database declares {version} as {expected}, but {path} declares it as {actual}. "
-                "Versions must be unique, even if they are declared with different schemes.\n"
-                "Run:\n"
-                "vcpkg x-add-version {package_name} --overwrite-version\n"
-                "to overwrite the scheme declared in the version database with that declared in the port.")
-DECLARE_MESSAGE(VersionShaMismatch,
+DECLARE_MESSAGE(VersionSchemeMismatch1,
                 (msg::version, msg::expected, msg::actual, msg::package_name),
-                "{expected} and {actual} are git commit SHAs",
-                "{version} is declared with {expected}, but the local port has a different SHA {actual}.\n"
-                "Please update the port's version fields and then run:\n"
-                "vcpkg x-add-version {package_name}\n"
-                "git add versions\n"
-                "git commit -m \"Update version database\"\n"
-                "to add the new version.")
-DECLARE_MESSAGE(VersionShaMissing,
-                (msg::package_name, msg::path),
+                "{expected} and {actual} are version schemes; it here refers to the {version}",
+                "{version} is declared {expected}, but {package_name} is declared with {actual}")
+DECLARE_MESSAGE(VersionSchemeMismatch1Old,
+                (msg::version, msg::expected, msg::actual, msg::package_name, msg::git_tree_sha),
+                "{expected} and {actual} are version schemes; it here refers to the {version}",
+                "{version} is declared {expected}, but {package_name}@{git_tree_sha} is declared with {actual}")
+DECLARE_MESSAGE(VersionSchemeMismatch2,
+                (),
                 "",
-                "while validating {package_name}, missing Git SHA.\n"
-                "Run:\n"
-                "git add \"{path}\"\n"
-                "git commit -m \"wip\"\n"
-                "vcpkg x-add-version {package_name}\n"
-                "git add versions\n"
-                "git commit --amend -m \"[{package_name}] Add new port\"\n"
-                "to commit the new port and create its version file.")
+                "versions must be unique, even if they are declared with different schemes")
+DECLARE_MESSAGE(VersionShaMismatch1,
+                (msg::version_spec, msg::git_tree_sha),
+                "'git tree' is ",
+                "{version_spec} git tree {git_tree_sha} does not match the port directory")
+DECLARE_MESSAGE(VersionShaMismatch2, (msg::git_tree_sha), "", "the port directory has git tree {git_tree_sha}")
+DECLARE_MESSAGE(VersionShaMismatch3,
+                (msg::version_spec),
+                "",
+                "if {version_spec} is already published, update this file with a new version or port-version, commit "
+                "it, then add the new version by running:")
+DECLARE_MESSAGE(VersionShaMismatch4,
+                (msg::version_spec),
+                "",
+                "if {version_spec} is not yet published, overwrite the previous git tree by running:")
+DECLARE_MESSAGE(
+    VersionShaMissing1,
+    (),
+    "",
+    "the git tree of the port directory could not be determined. This is usually caused by uncommitted changes.")
+DECLARE_MESSAGE(VersionShaMissing2,
+                (),
+                "",
+                "you can commit your changes and add them to the version database by running:")
+DECLARE_MESSAGE(VersionShaMissing3,
+                (),
+                "This is short for 'work in progress' and must be enclosed in \" quotes if it is more than 1 word",
+                "wip")
+DECLARE_MESSAGE(VersionShaMissing4, (msg::package_name), "", "[{package_name}] Add new port")
 DECLARE_MESSAGE(VersionSharpMustBeFollowedByPortVersion,
                 (),
                 "",
@@ -3110,9 +3129,11 @@ DECLARE_MESSAGE(WhileCheckingOutPortTreeIsh,
                 "",
                 "while checking out port {package_name} with git tree {git_tree_sha}")
 DECLARE_MESSAGE(WhileGettingLocalTreeIshObjectsForPorts, (), "", "while getting local treeish objects for ports")
-DECLARE_MESSAGE(WhileLoadingLocalPort, (msg::package_name), "", "while attempting to load local port {package_name}")
-DECLARE_MESSAGE(WhileLoadingPortFromGitTree, (msg::commit_sha), "", "while trying to load port from: {commit_sha}")
 DECLARE_MESSAGE(WhileLookingForSpec, (msg::spec), "", "while looking for {spec}:")
+DECLARE_MESSAGE(WhileLoadingBaselineVersionForPort,
+                (msg::package_name),
+                "",
+                "while loading baseline version for {package_name}")
 DECLARE_MESSAGE(WhileLoadingPortVersion, (msg::version_spec), "", "while loading {version_spec}")
 DECLARE_MESSAGE(WhileParsingVersionsForPort,
                 (msg::package_name, msg::path),

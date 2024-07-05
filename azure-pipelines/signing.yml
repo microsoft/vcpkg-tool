@@ -187,6 +187,7 @@ extends:
             move "$(Build.BinariesDirectory)\scripts\applocal.ps1" "$(Build.ArtifactStagingDirectory)\staging\scripts\applocal.ps1"
             move "$(Build.BinariesDirectory)\scripts\addPoshVcpkgToPowershellProfile.ps1" "$(Build.ArtifactStagingDirectory)\staging\scripts\addPoshVcpkgToPowershellProfile.ps1"
             move "$(Build.BinariesDirectory)\scripts\posh-vcpkg.psm1" "$(Build.ArtifactStagingDirectory)\staging\scripts\posh-vcpkg.psm1"
+            move "$(Build.BinariesDirectory)\scripts\posh-vcpkg.psd1" "$(Build.ArtifactStagingDirectory)\staging\scripts\posh-vcpkg.psd1"
             move "$(Build.BinariesDirectory)\vcpkg-artifacts" "$(Build.ArtifactStagingDirectory)\staging\vcpkg-artifacts"
           displayName: 'Arrange Architecture-independent Files for Staging'
         - task: Powershell@2
@@ -437,6 +438,7 @@ extends:
               move "$(Build.ArtifactStagingDirectory)\stagingArchIndependent\scripts\applocal.ps1" "$(Build.ArtifactStagingDirectory)\drop\applocal.ps1"
               move "$(Build.ArtifactStagingDirectory)\stagingArchIndependent\scripts\addPoshVcpkgToPowershellProfile.ps1" "$(Build.ArtifactStagingDirectory)\drop\addPoshVcpkgToPowershellProfile.ps1"
               move "$(Build.ArtifactStagingDirectory)\stagingArchIndependent\scripts\posh-vcpkg.psm1" "$(Build.ArtifactStagingDirectory)\drop\posh-vcpkg.psm1"
+              move "$(Build.ArtifactStagingDirectory)\stagingArchIndependent\scripts\posh-vcpkg.psd1" "$(Build.ArtifactStagingDirectory)\drop\posh-vcpkg.psd1"
               move "$(Build.ArtifactStagingDirectory)\stagingGlibc\vcpkg-glibc" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-glibc"
               move "$(Build.ArtifactStagingDirectory)\stagingMuslc\vcpkg-muslc" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-muslc"
               move "$(Build.ArtifactStagingDirectory)\stagingArchIndependent\vcpkg-standalone-bundle.tar.gz" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-standalone-bundle.tar.gz"

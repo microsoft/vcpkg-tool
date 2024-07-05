@@ -26,16 +26,23 @@ namespace vcpkg::Paragraphs
 
     bool is_port_directory(const ReadOnlyFilesystem& fs, const Path& maybe_directory);
 
+    struct PortLoadResult
+    {
+        ExpectedL<SourceControlFileAndLocation> maybe_scfl;
+        std::string on_disk_contents;
+    };
+
     // If an error occurs, the Expected will be in the error state.
-    // Otherwise, if the port is known, result->source_control_file contains the loaded port information.
-    // Otherwise, result->source_control_file is nullptr.
-    ExpectedL<SourceControlFileAndLocation> try_load_port(const ReadOnlyFilesystem& fs,
-                                                          StringView port_name,
-                                                          const PortLocation& port_location);
+    // Otherwise, if the port is known, the maybe_scfl.get()->source_control_file contains the loaded port information.
+    // Otherwise, maybe_scfl.get()->source_control_file is nullptr.
+    PortLoadResult try_load_port(const ReadOnlyFilesystem& fs, StringView port_name, const PortLocation& port_location);
     // Identical to try_load_port, but the port unknown condition is mapped to an error.
-    ExpectedL<SourceControlFileAndLocation> try_load_port_required(const ReadOnlyFilesystem& fs,
-                                                                   StringView port_name,
-                                                                   const PortLocation& port_location);
+    PortLoadResult try_load_port_required(const ReadOnlyFilesystem& fs,
+                                          StringView port_name,
+                                          const PortLocation& port_location);
+    ExpectedL<std::unique_ptr<SourceControlFile>> try_load_project_manifest_text(StringView text,
+                                                                                 StringView control_path,
+                                                                                 MessageSink& warning_sink);
     ExpectedL<std::unique_ptr<SourceControlFile>> try_load_port_manifest_text(StringView text,
                                                                               StringView control_path,
                                                                               MessageSink& warning_sink);
