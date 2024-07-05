@@ -20,12 +20,14 @@ if ($output -match 'vcpkg-internal-e2e-test-port3') {
     throw "Should not emit messages about -port3 while checking -port2"
 }
 
-Run-Vcpkg @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports/overlays" install vcpkg-empty-port
+# Note that broken-manifests contains ports that must not be 'visited' while trying to install these
+Run-Vcpkg @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports/overlays" --overlay-ports="$PSScriptRoot/../e2e-ports/broken-manifests" install vcpkg-empty-port
 Throw-IfFailed
-Run-Vcpkg @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports" install vcpkg-internal-e2e-test-port
+Run-Vcpkg @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports" --overlay-ports="$PSScriptRoot/../e2e-ports/broken-manifests" install vcpkg-internal-e2e-test-port
 Throw-IfFailed
-Run-Vcpkg @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports" install control-file
+Run-Vcpkg @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports" --overlay-ports="$PSScriptRoot/../e2e-ports/broken-manifests" install control-file
 Throw-IfFailed
+
 $output = Run-VcpkgAndCaptureOutput @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports/broken-manifests" install broken-no-name
 Throw-IfNotFailed
 if ($output -notmatch "missing required field 'name'") {
