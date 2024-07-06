@@ -303,9 +303,7 @@ namespace vcpkg
 #if !defined(_WIN32)
             cmd.string_arg(cache.get_tool_path(Tools::MONO, status_sink));
 #endif // ^^^ !_WIN32
-            cmd.string_arg(exe_path)
-                .string_arg("help")
-                .string_arg("-ForceEnglishOutput");
+            cmd.string_arg(exe_path).string_arg("help").string_arg("-ForceEnglishOutput");
             return run_to_extract_version(Tools::NUGET, exe_path, std::move(cmd))
 #if !defined(_WIN32)
                 .map_error([](LocalizedString&& error) {
