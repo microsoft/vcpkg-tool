@@ -7,6 +7,7 @@
 
 #include <vcpkg/commands.find.h>
 #include <vcpkg/configure-environment.h>
+#include <vcpkg/documentation.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/registries.h>
@@ -285,6 +286,8 @@ namespace vcpkg
             perform_find_port_and_exit(paths, full_description, enable_json, filter, paths.overlay_ports);
         }
 
-        Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgAddCommandFirstArg);
+        Checks::msg_exit_with_error(
+            VCPKG_LINE_INFO,
+            msg::format(msgFindCommandFirstArg).append_raw('\n').append(msgSeeURL, msg::url = docs::add_command_url));
     }
 } // namespace vcpkg

@@ -594,9 +594,7 @@ namespace vcpkg
             return url;
         }
 
-        std::string query = Strings::join("&", query_params);
-
-        return url + "?" + query;
+        return url + "?" + Strings::join("&", query_params);
     }
 
     ExpectedL<std::string> invoke_http_request(StringView method,
@@ -762,12 +760,25 @@ namespace vcpkg
         download_path_part_path += ".part";
 
 #if defined(_WIN32)
-        if (headers.size() == 0)
+        auto maybe_https_proxy_env = get_environment_variable(EnvironmentVariableHttpsProxy);
+        bool needs_proxy_auth = false;
+        if (maybe_https_proxy_env)
+        {
+            const auto& proxy_url = maybe_https_proxy_env.value_or_exit(VCPKG_LINE_INFO);
+            needs_proxy_auth = proxy_url.find('@') != std::string::npos;
+        }
+        if (headers.size() == 0 && !needs_proxy_auth)
         {
             auto split_uri = split_uri_view(url).value_or_exit(VCPKG_LINE_INFO);
-            auto authority = split_uri.authority.value_or_exit(VCPKG_LINE_INFO).substr(2);
             if (split_uri.scheme == "https" || split_uri.scheme == "http")
             {
+                auto maybe_authority = split_uri.authority.get();
+                if (!maybe_authority)
+                {
+                    Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgInvalidUri, msg::value = url);
+                }
+
+                auto authority = maybe_authority->substr(2);
                 // This check causes complex URLs (non-default port, embedded basic auth) to be passed down to curl.exe
                 if (Strings::find_first_of(authority, ":@") == authority.end())
                 {

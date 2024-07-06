@@ -523,18 +523,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";AddFirstArgument" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The first argument to '{command_line}' must be 'artifact' or 'port'.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA['{command_line}'에 대한 첫 번째 인수는 'artifact' 또는 'port'여야 합니다.]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[The first argument to '{command_line}' must be 'artifact' or 'port'.]A;]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";AddPortRequiresManifest" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA['{command_line}' requires an active manifest file.]]></Val>
@@ -601,15 +589,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";AddVersionCommitResultReminder" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Don't forget to commit the result!]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[잊지 말고 결과를 커밋하세요.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";AddVersionDetectLocalChangesError" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[skipping detection of local changes due to unexpected format in git status output]]></Val>
@@ -646,11 +625,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";AddVersionLoadPortFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";AddVersionInstructions" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[can't load port {package_name}]]></Val>
+          <Val><![CDATA[you can run the following commands to add the current version of {package_name} automatically:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{package_name} 포트를 로드할 수 없습니다.]]></Val>
+            <Val><![CDATA[다음 명령을 실행하여 현재 버전의 {package_name}을(를) 자동으로 추가할 수 있습니다.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -769,15 +748,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";AddVersionUnableToParseVersionsFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[unable to parse versions file {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[버전 파일 {path}을(를) 구문 분석할 수 없음]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";AddVersionUncommittedChanges" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[there are uncommitted changes for {package_name}]]></Val>
@@ -888,10 +858,13 @@
       </Item>
       <Item ItemId=";AllPackagesAreUpdated" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[All installed packages are up-to-date with the local portfile.]]></Val>
+          <Val><![CDATA[All installed packages are up-to-date.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[설치된 모든 패키지는 로컬 포트 파일을 사용하여 최신 상태입니다.]]></Val>
+            <Val><![CDATA[설치된 모든 패키지가 최신 상태입니다.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[All installed packages are up-to-date with the local portfile.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -1512,9 +1485,21 @@
       </Item>
       <Item ItemId=";BaselineMissing" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Baseline version not found. Run:]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit -m "Update version database"]A;to set {version} as the baseline version.]]></Val>
+          <Val><![CDATA[{package_name} is not assigned a version]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[기준 버전을 찾을 수 없습니다. 실행:]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit -m "Update version database"]A;{version}을(를) 기본 버전으로 설정합니다.]]></Val>
+            <Val><![CDATA[{package_name}에 버전이 할당되지 않았습니다.]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Baseline version not found. Run:]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit -m "Update version database"]A;to set {version} as the baseline version.]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";BinariesRelativeToThePackageDirectoryHere" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the binaries are relative to ${{CURRENT_PACKAGES_DIR}} here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[이진 파일은 여기서 ${{CURRENT_PACKAGES_DIR}}에 상대적입니다.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1533,10 +1518,13 @@
       </Item>
       <Item ItemId=";BinaryWithInvalidArchitecture" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[{path}]A; Expected: {expected}, but was {actual}]]></Val>
+          <Val><![CDATA[{path} is built for {arch}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{path}]A; 필요한 항목: {expected}, 실제 항목: {actual}]]></Val>
+            <Val><![CDATA[{path}이(가) {arch}용으로 빌드되었습니다.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[{path}]A; Expected: {expected}, but was {actual}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -1762,21 +1750,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";BuiltWithIncorrectArchitecture" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";BuiltWithIncorrectArchitecture" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The following files were built for an incorrect architecture:]]></Val>
+          <Val><![CDATA[The triplet requests that binaries are built for {arch}, but the following binaries were built for a different architecture. This usually means toolchain information is incorrectly conveyed to the binaries' build system. To suppress this message, add set(VCPKG_POLICY_SKIP_ARCHITECTURE_CHECK enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[다음 파일은 잘못된 아키텍처로 빌드되었습니다.]]></Val>
+            <Val><![CDATA[트리플렛은 이진 파일이 {arch}에 대해 빌드되도록 요청하지만 다음 이진 파일은 다른 아키텍처용으로 빌드되었습니다. 이는 일반적으로 도구 체인 정보가 이진 파일의 빌드 시스템에 잘못 전달됨을 의미합니다. 이 메시지를 표시하지 않도록 설정하려면 set(VCPKG_POLICY_SKIP_ARCHITECTURE_CHECK enabled)을 추가합니다.]]></Val>
           </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CISettingsExclude" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Comma-separated list of ports to skip]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[건너뛸 포트를 쉼표로 구분한 목록]]></Val>
-          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The following files were built for an incorrect architecture:]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -2001,24 +1983,6 @@
           <Val><![CDATA[Cannot rename files across filesystems]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[파일 시스템 간에 파일 이름을 바꿀 수 없음]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CheckedOutGitSha" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Checked out Git SHA: {commit_sha}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Git SHA: {commit_sha} 체크 아웃됨]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CheckedOutObjectMissingManifest" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The checked-out object does not contain a CONTROL file or vcpkg.json file.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[체크 아웃된 개체에 CONTROL 파일 또는 vcpkg.json 파일이 없습니다.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -3904,15 +3868,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";ControlAndManifestFilesPresent" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Both a manifest file and a CONTROL file exist in port directory: {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[매니페스트 파일과 CONTROL 파일이 모두 포트 디렉터리에 있습니다. {path}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";ControlCharacterInString" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Control character in string]]></Val>
@@ -3940,12 +3895,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CopyrightIsDir" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";CopyrightIsDir" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[`{path}` being a directory is deprecated.]]></Val>
+          <Val><![CDATA[this port sets ${{CURRENT_PACKAGES_DIR}}/share/${{PORT}}/copyright to a directory, but it should be a file. Consider combining separate copyright files into one using vcpkg_install_copyright. To suppress this message, add set(VCPKG_POLICY_SKIP_COPYRIGHT_CHECK enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[디렉터리인 `{path}`은(는) 더 이상 사용되지 않습니다.]]></Val>
+            <Val><![CDATA[이 포트는 ${{CURRENT_PACKAGES_DIR}}/share/${{PORT}}/copyright를 디렉터리로 설정하지만 파일이어야 합니다. vcpkg_install_copyright을 사용하여 별도의 저작권 파일을 하나로 결합하는 것이 좋습니다. 이 메시지를 표시하지 않도록 설정하려면 set(VCPKG_POLICY_SKIP_COPYRIGHT_CHECK enabled)을 추가합니다.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[`{path}` being a directory is deprecated.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -4306,6 +4264,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";DependencyInFeature" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the dependency is in the feature named {feature}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[종속성이 {feature}(이)라는 기능에 있습니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DependencyNotInVersionDatabase" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the dependency {package_name} does not exist in the version database; does that port exist?]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[종속성 {package_name}이(가) 버전 데이터베이스에 없습니다. 해당 포트가 있나요?]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";DeprecatedPrefabDebugOption" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[--prefab-debug is now deprecated.]]></Val>
@@ -4324,6 +4300,24 @@
           <Prev Cat="Text">
             <Val><![CDATA[Detecting compiler hash for triplet "{triplet}"...]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DirectoriesRelativeToThePackageDirectoryHere" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the directories are relative to ${{CURRENT_PACKAGES_DIR}} here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[디렉터리는 ${{CURRENT_PACKAGES_DIR}}에 상대적입니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DllsRelativeToThePackageDirectoryHere" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the DLLs are relative to ${{CURRENT_PACKAGES_DIR}} here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[DLL은 여기서 ${{CURRENT_PACKAGES_DIR}}에 상대적입니다.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -4912,15 +4906,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";ErrorsFound" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Found the following errors:]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[다음 오류를 발견했습니다.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";ExamplesHeader" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Examples:]]></Val>
@@ -4953,6 +4938,15 @@
           <Val><![CDATA[The following packages are excluded:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[제외되는 패키지:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ExecutablesRelativeToThePackageDirectoryHere" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the executables are relative to ${{CURRENT_PACKAGES_DIR}} here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[실행 파일은 여기서 ${{CURRENT_PACKAGES_DIR}}에 상대적입니다.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -5274,10 +5268,13 @@
       </Item>
       <Item ItemId=";FailedPostBuildChecks" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Found {count} post-build check problem(s). To submit these ports to curated catalogs, please first correct the portfile: {path}]]></Val>
+          <Val><![CDATA[Found {count} post-build check problem(s). These are usually caused by bugs in portfile.cmake or the upstream build system. Please correct these before submitting this port to the curated registry.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[빌드 후 검사 문제를 {count}개 발견했습니다. 큐레이팅된 카탈로그에 포트를 제출하려면 먼저 포트 파일을 수정하세요. {path}]]></Val>
+            <Val><![CDATA[빌드 후 검사 문제 {count}개를 찾았습니다. 이러한 오류는 일반적으로 portfile.cmake 또는 업스트림 빌드 시스템의 버그로 인해 발생합니다. 이 포트를 큐레이팅된 레지스트리에 제출하기 전에 수정하세요.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Found {count} post-build check problem(s). To submit these ports to curated catalogs, please first correct the portfile: {path}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -5431,15 +5428,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";FailedToObtainLocalPortGitSha" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Failed to obtain git SHAs for local ports.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[로컬 포트에 대한 git SHA를 가져오지 못했습니다.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";FailedToObtainPackageVersion" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Cannot find desired package version.]]></Val>
@@ -5488,27 +5476,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";FailedToParseControl" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Failed to parse CONTROL file: {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[제어 파일 {path}을(를) 구문 분석하지 못했습니다.]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Failed to parse control file: {path}]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";FailedToParseManifest" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Failed to parse manifest file: {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[매니페스트 파일을 구문 분석하지 못했습니다. {path}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";FailedToParseNoTopLevelObj" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Failed to parse {path}, expected a top-level object.]]></Val>
@@ -5536,38 +5503,20 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";FailedToParseVersionFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Failed to parse version file: {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[버전 파일을 구문 분석하지 못했습니다. {path}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";FailedToParseVersionXML" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Could not parse version for tool {tool_name}. Version string was: {version}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{tool_name} 도구의 버전을 구문 분석할 수 없습니다. 버전 문자열: {version}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";FailedToParseVersionsFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[failed to parse versions file {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[버전 파일 {path}을(를) 구문 분석하지 못했습니다.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";FailedToReadParagraph" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Failed to read paragraphs from {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{path}에서 단락을 읽지 못했습니다.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";FailedToRemoveControl" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Failed to remove control file {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[제어 파일 {path}을(를) 제거하지 못했습니다.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -5623,15 +5572,6 @@
           <Prev Cat="Text">
             <Val><![CDATA[Failed to take the filesystem lock on {path}]]></Val>
           </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";FailedToWriteManifest" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Failed to write manifest file {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[매니페스트 파일 {path}을(를) 쓰지 못함]]></Val>
-          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -5736,18 +5676,33 @@
       </Item>
       <Item ItemId=";FilesContainAbsolutePath1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[There should be no absolute paths, such as the following, in an installed package:]]></Val>
+          <Val><![CDATA[There should be no absolute paths, such as the following, in an installed package. To suppress this message, add set(VCPKG_POLICY_SKIP_ABSOLUTE_PATHS_CHECK enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[설치된 패키지에는 다음과 같은 절대 경로가 없어야 합니다.]]></Val>
+            <Val><![CDATA[설치된 패키지에는 다음과 같은 절대 경로가 없어야 합니다. 이 메시지를 표시하지 않도록 설정하려면 set(VCPKG_POLICY_SKIP_ABSOLUTE_PATHS_CHECK enabled)을 추가합니다.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[There should be no absolute paths, such as the following, in an installed package:]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";FilesContainAbsolutePath2" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Absolute paths were found in the following files:]]></Val>
+          <Val><![CDATA[Absolute paths were found in the following files]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[다음 파일에서 절대 경로를 찾았습니다.]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Absolute paths were found in the following files:]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FilesContainAbsolutePathPkgconfigNote" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Adding a call to `vcpkg_fixup_pkgconfig()` may fix absolute paths in .pc files]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA['vcpkg_fixup_pkgconfig()'에 대한 호출을 추가하면 .pc 파일의 절대 경로가 수정될 수 있습니다.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -5757,6 +5712,33 @@
           <Val><![CDATA[Files exported at: {path}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[내보낸 파일: {path}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FilesRelativeToTheBuildDirectoryHere" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the files are relative to the build directory here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[파일은 여기서 빌드 디렉터리를 기준으로 합니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FilesRelativeToThePackageDirectoryHere" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the files are relative to ${{CURRENT_PACKAGES_DIR}} here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[파일은 여기서 ${{CURRENT_PACKAGES_DIR}}에 상대적입니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FindCommandFirstArg" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The first argument to 'find' must be 'artifact' or 'port' .]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA['find'의 첫 번째 인수는 'artifact' 또는 'port'여야 합니다.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -5922,6 +5904,15 @@
           <Val><![CDATA[failed to execute: {command_line}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[명령을 실행하지 못했습니다: {command_line}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";GitCommitUpdateVersionDatabase" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[git commit -m "Update version database"]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[git commit -m "Update version database"]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -7591,15 +7582,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";InvalidNoVersions" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[File contains no versions.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[파일에 버전이 없습니다.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";InvalidOptionForRemove" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA['remove' accepts either libraries or '--outdated']]></Val>
@@ -8034,18 +8016,21 @@
       </Item>
       <Item ItemId=";LocalPortfileVersion" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Using local portfile versions. To update the local portfiles, use `git pull`.]]></Val>
+          <Val><![CDATA[Using local port versions. To update the local ports, use `git pull`.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[로컬 포트 파일 버전을 사용하고 있습니다. 로컬 포트 파일을 업데이트하려면 'git pull'을 사용하세요.]]></Val>
+            <Val><![CDATA[로컬 포트 버전 사용. 로컬 포트를 업데이트하려면 'git pull'을 사용하세요.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Using local portfile versions. To update the local portfiles, use `git pull`.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";ManifestConflict" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";ManifestConflict2" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Found both a manifest and CONTROL files in port "{path}"; please rename one or the other]]></Val>
+          <Val><![CDATA[Found both a manifest and CONTROL files; please rename one or the other]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA["{path}" 포트에서 매니페스트 및 CONTROL 파일을 모두 찾았습니다. 하나 또는 다른 이름을 변경하세요.]]></Val>
+            <Val><![CDATA[매니페스트 및 CONTROL 파일을 모두 찾았습니다. 하나 또는 다른 하나의 이름을 바꾸세요.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -9012,222 +8997,273 @@
       </Item>
       <Item ItemId=";PerformingPostBuildValidation" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[-- Performing post-build validation]]></Val>
+          <Val><![CDATA[Performing post-build validation]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[-- 빌드 후 유효성 검사를 수행하는 중]]></Val>
+            <Val><![CDATA[빌드 후 유효성 검사를 수행하는 중]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[-- Performing post-build validation]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";PortBugBinDirExists" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[There should be no bin\ directory in a static build, but {path} is present.]]></Val>
+          <Val><![CDATA[${{CURRENT_PACKAGES_DIR}}/{path} exists but should not in a static build. To suppress this message, add set(VCPKG_POLICY_DLLS_IN_STATIC_LIBRARY enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[정적 빌드에는 bin\ 디렉터리가 없어야 하는데 {path}이(가) 있습니다.]]></Val>
+            <Val><![CDATA[${{CURRENT_PACKAGES_DIR}}/{path}이(가) 존재하지만 정적 빌드에는 없어야 합니다. 이 메시지를 표시하지 않도록 설정하려면 set(VCPKG_POLICY_DLLS_IN_STATIC_LIBRARY enabled)을 추가합니다.]]></Val>
           </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";PortBugDebugBinDirExists" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[There should be no debug\bin\ directory in a static build, but {path} is present.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[정적 빌드에는 debug\bin\ 디렉터리가 없어야 하는데 {path}이(가) 있습니다.]]></Val>
-          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[There should be no bin\ directory in a static build, but {path} is present.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";PortBugDebugShareDir" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[/debug/share should not exist. Please reorganize any important files, then use]A;file(REMOVE_RECURSE "${{CURRENT_PACKAGES_DIR}}/debug/share")]]></Val>
+          <Val><![CDATA[${{CURRENT_PACKAGES_DIR}}/debug/share should not exist. Please reorganize any important files, then delete any remaining by adding `file(REMOVE_RECURSE "${{CURRENT_PACKAGES_DIR}}/debug/share")`. To suppress this message, add set(VCPKG_POLICY_ALLOW_DEBUG_SHARE enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[/debug/share가 없어야 합니다. 중요한 모든 파일을 다시 구성한 다음 다음을 사용하세요.]A;file(REMOVE_RECURSE "${{CURRENT_PACKAGES_DIR}}/debug/share")]]></Val>
+            <Val><![CDATA[${{CURRENT_PACKAGES_DIR}}/debug/share가 없어야 합니다. 중요한 파일을 다시 구성한 다음 `file(REMOVE_RECURSE "${{CURRENT_PACKAGES_DIR}}/debug/share")`을 추가하여 나머지 파일을 삭제하세요. 이 메시지를 표시하지 않도록 설정하려면 set(VCPKG_POLICY_ALLOW_DEBUG_SHARE enabled)을 추가합니다.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[/debug/share should not exist. Please reorganize any important files, then use]A;file(REMOVE_RECURSE "${{CURRENT_PACKAGES_DIR}}/debug/share")]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";PortBugDllAppContainerBitNotSet" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The App Container bit must be set for Windows Store apps. The following DLLs do not have the App Container bit set:]]></Val>
+          <Val><![CDATA[The App Container bit must be set for all DLLs in Windows Store apps, and the triplet requests targeting the Windows Store, but the following DLLs were not built with the bit set. This usually means that toolchain linker flags are not being properly propagated, or the linker in use does not support the /APPCONTAINER switch. To suppress this message, add set(VCPKG_POLICY_SKIP_APPCONTAINER_CHECK enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Windows Store 앱에 앱 컨테이너 비트를 설정해야 합니다. 다음 DLL에 앱 컨테이너 비트가 설정되어 있지 않습니다.]]></Val>
+            <Val><![CDATA[Windows 스토어 앱의 모든 DLL 및 Windows 스토어를 대상으로 하는 트리플렛 요청에 대해 앱 컨테이너 비트를 설정해야 하지만 다음 DLL은 비트 집합으로 빌드되지 않았습니다. 이는 일반적으로 도구 체인 링커 플래그가 제대로 전파되지 않거나 사용 중인 링커가 /APPCONTAINER 스위치를 지원하지 않음을 의미합니다. 이 메시지를 표시하지 않도록 설정하려면 set(VCPKG_POLICY_SKIP_APPCONTAINER_CHECK enabled)을 추가합니다.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The App Container bit must be set for Windows Store apps. The following DLLs do not have the App Container bit set:]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";PortBugDllInLibDir" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The following dlls were found in /lib or /debug/lib. Please move them to /bin or /debug/bin, respectively.]]></Val>
+          <Val><![CDATA[The following dlls were found in ${{CURRENT_PACKAGES_DIR}}/lib or ${{CURRENT_PACKAGES_DIR}}/debug/lib. Please move them to ${{CURRENT_PACKAGES_DIR}}/bin or ${{CURRENT_PACKAGES_DIR}}/debug/bin, respectively.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[/lib 또는 /debug/lib에서 다음 dll을 찾았습니다. 각각 /bin 또는 /debug/bin으로 이동하세요.]]></Val>
+            <Val><![CDATA[${{CURRENT_PACKAGES_DIR}}/lib 또는 ${{CURRENT_PACKAGES_DIR}}/debug/lib에서 다음 dll을 찾았습니다. 각각 ${{CURRENT_PACKAGES_DIR}}/bin 또는 ${{CURRENT_PACKAGES_DIR}}/debug/bin으로 이동하세요.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The following dlls were found in /lib or /debug/lib. Please move them to /bin or /debug/bin, respectively.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";PortBugDuplicateIncludeFiles" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Include files should not be duplicated into the /debug/include directory. If this cannot be disabled in the project cmake, use]A;file(REMOVE_RECURSE "${{CURRENT_PACKAGES_DIR}}/debug/include")]]></Val>
+          <Val><![CDATA[${{CURRENT_PACKAGES_DIR}}/debug/include should not exist. To suppress this message, add set(VCPKG_POLICY_ALLOW_DEBUG_INCLUDE enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[포함 파일은 /debug/include 디렉터리에 중복되지 않아야 합니다. 프로젝트 cmake에서 사용하지 않도록 설정할 수 없는 경우 다음을 사용하세요.]A;file(REMOVE_RECURSE "${{CURRENT_PACKAGES_DIR}}/debug/include")]]></Val>
+            <Val><![CDATA[${{CURRENT_PACKAGES_DIR}}/debug/include는 없어야 합니다. 이 메시지를 표시하지 않도록 설정하려면 set(VCPKG_POLICY_ALLOW_DEBUG_INCLUDE enabled)을 추가합니다.]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Include files should not be duplicated into the /debug/include directory. If this cannot be disabled in the project cmake, use]A;file(REMOVE_RECURSE "${{CURRENT_PACKAGES_DIR}}/debug/include")]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PortBugDuplicateIncludeFilesFixIt" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[If this directory was created by a build system that does not allow installing headers in debug to be disabled, delete the duplicate directory with file(REMOVE_RECURSE "${{CURRENT_PACKAGES_DIR}}/debug/include")]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[이 디렉터리가 디버그에서 헤더 설치를 비활성화할 수 없는 빌드 시스템에 의해 생성된 경우 file(REMOVE_RECURSE "${{CURRENT_PACKAGES_DIR}}/debug/include")을 사용하여 중복 디렉터리를 삭제합니다.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";PortBugFoundCopyrightFiles" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The following files are potential copyright files:]]></Val>
+          <Val><![CDATA[the following files are potential copyright files]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[다음 파일은 잠재적인 저작권 파일입니다.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The following files are potential copyright files:]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";PortBugFoundDebugBinaries" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";PortBugFoundDebugBinaries" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Found {count} debug binaries:]]></Val>
+          <Val><![CDATA[The following are debug binaries:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[다음 {count}개 디버그 이진 파일을 찾았습니다.]]></Val>
+            <Val><![CDATA[다음은 디버그 이진 파일입니다.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Found {count} debug binaries:]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";PortBugFoundDllInStaticBuild" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[DLLs should not be present in a static build, but the following DLLs were found:]]></Val>
+          <Val><![CDATA[DLLs should not be present in a static build, but the following DLLs were found. To suppress this message, add set(VCPKG_POLICY_DLLS_IN_STATIC_LIBRARY enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[정적 빌드에는 DLL이 없어야 하는데, 다음 DLL이 발견되었습니다.]]></Val>
+            <Val><![CDATA[정적 빌드에는 DLL이 없어야 하는데, 다음 DLL이 발견되었습니다. 이 메시지를 표시하지 않도록 설정하려면 set(VCPKG_POLICY_DLLS_IN_STATIC_LIBRARY enabled)을 추가합니다.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[DLLs should not be present in a static build, but the following DLLs were found:]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";PortBugFoundEmptyDirectories" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";PortBugFoundEmptyDirectories" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[There should be no empty directories in {path}. The following empty directories were found:]]></Val>
+          <Val><![CDATA[There should be no installed empty directories. Empty directories are not representable to several binary cache providers, git repositories, and are not considered semantic build outputs. You should either create a regular file inside each empty directory, or delete them with the following CMake. To suppress this message, add set(VCPKG_POLICY_ALLOW_EMPTY_FOLDERS enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{path}에는 빈 디렉터리가 없어야 합니다. 다음 빈 디렉터리를 찾았습니다.]]></Val>
+            <Val><![CDATA[빈 디렉터리가 설치되어 있지 않아야 합니다. 빈 디렉터리는 여러 바이너리 캐시 공급자, git 리포지토리로 표현할 수 없으며 의미 체계 빌드 출력으로 간주되지 않습니다. 각 빈 디렉토리 안에 일반 파일을 만들거나 다음 CMake를 사용하여 삭제해야합니다. 이 메시지를 표시하지 않도록 설정하려면 set(VCPKG_POLICY_ALLOW_EMPTY_FOLDERS enabled)을 추가합니다.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[There should be no empty directories in {path}. The following empty directories were found:]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";PortBugFoundExeInBinDir" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The following EXEs were found in /bin or /debug/bin. EXEs are not valid distribution targets.]]></Val>
+          <Val><![CDATA[The following executables were found in ${{CURRENT_PACKAGES_DIR}}/bin or ${{CURRENT_PACKAGES_DIR}}/debug/bin. Executables are not valid distribution targets. If these executables are build tools, consider using `vcpkg_copy_tools`. To suppress this message, add set(VCPKG_POLICY_ALLOW_EXES_IN_BIN enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[/bin 또는 /debug/bin에 다음 EXE가 있습니다. EXE는 유효한 배포 대상이 아닙니다.]]></Val>
+            <Val><![CDATA[${{CURRENT_PACKAGES_DIR}}/bin 또는 ${{CURRENT_PACKAGES_DIR}}/debug/bin에서 다음 실행 파일을 찾았습니다. 실행 파일은 유효한 배포 대상이 아닙니다. 이러한 실행 파일이 빌드 도구인 경우 'vcpkg_copy_tools'을 사용하는 것이 좋습니다. 이 메시지를 표시하지 않도록 설정하려면 set(VCPKG_POLICY_ALLOW_EXES_IN_BIN enabled)을 추가합니다.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The following EXEs were found in /bin or /debug/bin. EXEs are not valid distribution targets.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";PortBugFoundReleaseBinaries" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";PortBugFoundReleaseBinaries" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Found {count} release binaries:]]></Val>
+          <Val><![CDATA[The following are release binaries:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[다음 {count}개 릴리스 이진 파일을 찾았습니다.]]></Val>
+            <Val><![CDATA[릴리스 이진 파일은 다음과 같습니다.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Found {count} release binaries:]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";PortBugIncludeDirInCMakeHelperPort" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The folder /include exists in a cmake helper port; this is incorrect, since only cmake files should be installed]]></Val>
+          <Val><![CDATA[The folder ${{CURRENT_PACKAGES_DIR}}/include exists in a CMake helper port; this is incorrect, since only CMake files should be installed. To suppress this message, remove set(VCPKG_POLICY_CMAKE_HELPER_PORT enabled).]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[/include 폴더가 cmake 도우미 포트에 있습니다. cmake 파일만 설치해야 하므로 잘못되었습니다.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";PortBugInspectFiles" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[To inspect the {extension} files, use:]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{extension} 파일을 검사하려면 다음을 사용하세요.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";PortBugInvalidCrtLinkage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The following binaries should use the {expected} CRT.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[다음 이진 파일은 {expected} CRT를 사용해야 합니다.]]></Val>
+            <Val><![CDATA[${{CURRENT_PACKAGES_DIR}}/include 폴더가 CMake 도우미 포트에 있습니다. CMake 파일만 설치해야 하므로 잘못되었습니다. 이 메시지를 표시하지 않도록 설정하려면 set(VCPKG_POLICY_CMAKE_HELPER_PORT enabled)을 제거합니다.]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[Invalid crt linkage. Expected {expected}, but the following libs had:]]></Val>
+            <Val><![CDATA[The folder /include exists in a cmake helper port; this is incorrect, since only cmake files should be installed]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PortBugInvalidCrtLinkageCrtGroup" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The following binaries should link with only: {expected}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[다음 이진 파일은 {expected}에만 연결되어야 합니다.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";PortBugInvalidCrtLinkageEntry" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[{path} links with:]]></Val>
+          <Val><![CDATA[{path} links with: {actual}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[다음이 포함된 {path} 링크:]]></Val>
+            <Val><![CDATA[{path} 링크: {actual}]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[{path} links with:]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PortBugInvalidCrtLinkageHeader" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[binaries built by this port link with C RunTimes ("CRTs") inconsistent with those requested by the triplet and deployment structure. If the triplet is intended to only use the release CRT, you should add set(VCPKG_POLICY_ONLY_RELEASE_CRT enabled) to the triplet .cmake file. To suppress this check entirely, add set(VCPKG_POLICY_SKIP_CRT_LINKAGE_CHECK enabled) to the triplet .cmake if this is triplet-wide, or to portfile.cmake if this is specific to the port. You can inspect the binaries with: dumpbin.exe /directives mylibfile.lib]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[이 포트에 의해 빌드된 바이너리는 C RunTime("CRT")과 연결되며, 트리플렛 및 배포 구조에서 요청한 것과 일치하지 않습니다. 트리플렛이 릴리스 CRT만 사용하려는 경우 set(VCPKG_POLICY_ONLY_RELEASE_CRT enabled)을 삼중 .cmake 파일에 추가해야 합니다. 이 검사를 완전히 억제하려면 set(VCPKG_POLICY_SKIP_CRT_LINKAGE_CHECK enabled)를 트리플렛 너비인 경우 트리플렛 .cmake에 추가하고, 포트와 관련된 경우 portfile.cmake에 추가합니다. 다음을 사용하여 이진 파일을 검사할 수 있습니다. dumpbin.exe /directives mylibfile.lib]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";PortBugKernel32FromXbox" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The selected triplet targets Xbox, but the following DLLs link with kernel32. These DLLs cannot be loaded on Xbox, where kernel32 is not present. This is typically caused by linking with kernel32.lib rather than a suitable umbrella library, such as onecore_apiset.lib or xgameplatform.lib.]]></Val>
+          <Val><![CDATA[The selected triplet targets Xbox, but the following DLLs link with kernel32. These DLLs cannot be loaded on Xbox, where kernel32 is not present. This is typically caused by linking with kernel32.lib rather than a suitable umbrella library, such as onecore_apiset.lib or xgameplatform.lib. You can inspect a DLL's dependencies with `dumpbin.exe /dependents mylibfile.dll`. To suppress this message, add set(VCPKG_POLICY_ALLOW_KERNEL32_FROM_XBOX enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[선택한 삼중 항목은 Xbox를 대상으로 하지만 다음 DLL은 kernel32와 연결됩니다. 이러한 DLL은 kernel32가 없는 Xbox에서 로드할 수 없습니다. 이는 일반적으로 onecore_apiset.lib 또는 xgameplatform.lib와 같은 적절한 우산 라이브러리가 아닌 kernel32.lib와 연결하여 발생합니다.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";PortBugMergeLibCMakeDir" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The /lib/cmake folder should be merged with /debug/lib/cmake and moved to /share/{package_name}/cmake. Please use the helper function `vcpkg_cmake_config_fixup()` from the port vcpkg-cmake-config.`]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[/lib/cmake 폴더는 /debug/lib/cmake와 병합하고 /share/{package_name}/cmake로 이동해야 합니다. vcpkg-cmake-config 포트에서 `vcpkg_cmake_config_fixup()` 도우미 함수를 사용하세요.`]]></Val>
+            <Val><![CDATA[선택한 트리플렛은 Xbox를 대상으로 하지만 다음 DLL은 kernel32와 연결됩니다. 이러한 DLL은 kernel32가 없는 Xbox에서 로드할 수 없습니다. 이는 일반적으로 onecore_apiset.lib 또는 xgameplatform.lib와 같은 적절한 상위 라이브러리가 아닌 kernel32.lib와 연결하기 때문에 발생합니다. 'dumpbin.exe /dependents mylibfile.dll'을 사용하여 DLL의 종속성을 검사할 수 있습니다. 이 메시지를 표시하지 않도록 설정하려면 set(VCPKG_POLICY_ALLOW_KERNEL32_FROM_XBOX enabled)을 추가합니다.]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[The /lib/cmake folder should be merged with /debug/lib/cmake and moved to /share/{spec}/cmake. Please use the helper function `vcpkg_cmake_config_fixup()` from the port vcpkg-cmake-config.`]]></Val>
+            <Val><![CDATA[The selected triplet targets Xbox, but the following DLLs link with kernel32. These DLLs cannot be loaded on Xbox, where kernel32 is not present. This is typically caused by linking with kernel32.lib rather than a suitable umbrella library, such as onecore_apiset.lib or xgameplatform.lib.]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";PortBugMismatchedNumberOfBinaries" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";PortBugMergeLibCMakeDir" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Mismatching number of debug and release binaries.]]></Val>
+          <Val><![CDATA[This port creates ${{CURRENT_PACKAGES_DIR}}/lib/cmake and/or ${{CURRENT_PACKAGES_DIR}}/debug/lib/cmake, which should be merged and moved to ${{CURRENT_PACKAGES_DIR}}/share/${{PORT}}/cmake. Please use the helper function vcpkg_cmake_config_fixup() from the port vcpkg-cmake-config. To suppress this message, add set(VCPKG_POLICY_SKIP_LIB_CMAKE_MERGE_CHECK enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[디버그와 릴리스 이진 파일 수가 일치하지 않습니다.]]></Val>
+            <Val><![CDATA[이 포트는 ${{CURRENT_PACKAGES_DIR}}/lib/cmake 및/또는 ${{CURRENT_PACKAGES_DIR}}/debug/lib/cmake를 생성하며, 이를 병합하여 ${{CURRENT_PACKAGES_DIR}}/share/${{PORT}}/cmake로 이동해야 합니다. vcpkg-cmake-config 포트에서 도우미 함수 vcpkg_cmake_config_fixup()를 사용하세요. 이 메시지를 표시하지 않도록 설정하려면 set(VCPKG_POLICY_SKIP_LIB_CMAKE_MERGE_CHECK enabled)을 추가합니다.]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The /lib/cmake folder should be merged with /debug/lib/cmake and moved to /share/{package_name}/cmake. Please use the helper function `vcpkg_cmake_config_fixup()` from the port vcpkg-cmake-config.`]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PortBugMismatchingNumberOfBinaries" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[mismatching number of debug and release binaries. This often indicates incorrect handling of debug or release in portfile.cmake or the build system. If the intent is to only ever produce release components for this triplet, the triplet should have set(VCPKG_BUILD_TYPE release) added to its .cmake file. To suppress this message, add set(VCPKG_POLICY_MISMATCHED_NUMBER_OF_BINARIES enabled)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[디버그와 릴리스 이진 파일 수가 일치하지 않습니다. 이는 종종 portfile.cmake 또는 빌드 시스템에서 디버그 또는 릴리스를 잘못 처리했음을 나타냅니다. 이 트리플렛에 대한 릴리스 구성 요소만 생성하려는 경우 트리플렛은 .cmake 파일에 set(VCPKG_BUILD_TYPE release)를 추가해야 합니다. 이 메시지를 표시하지 않도록 설정하려면 set(VCPKG_POLICY_MISMATCHED_NUMBER_OF_BINARIES enabled)을 추가합니다.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";PortBugMisplacedCMakeFiles" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";PortBugMisplacedCMakeFiles" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The following cmake files were found outside /share/{spec}. Please place cmake files in /share/{spec}.]]></Val>
+          <Val><![CDATA[This port installs the following CMake files in places CMake files are not expected. CMake files should be installed in ${{CURRENT_PACKAGES_DIR}}/share/${{PORT}}. To suppress this message, add set(VCPKG_POLICY_SKIP_MISPLACED_CMAKE_FILES_CHECK enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[/share/{spec} 외부에서 다음 cmake 파일을 찾았습니다. cmake 파일을 /share/{spec}에 배치하세요.]]></Val>
+            <Val><![CDATA[이 포트는 CMake 파일이 필요 없는 위치에 다음 CMake 파일을 설치합니다. CMake 파일은 ${{CURRENT_PACKAGES_DIR}}/share/${{PORT}}에 설치해야 합니다. 이 메시지를 표시하지 않도록 설정하려면 set(VCPKG_POLICY_SKIP_MISPLACED_CMAKE_FILES_CHECK enabled)을 추가합니다.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The following cmake files were found outside /share/{spec}. Please place cmake files in /share/{spec}.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";PortBugMisplacedFiles" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";PortBugMisplacedFiles" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The following files are placed in {path}:]]></Val>
+          <Val><![CDATA[The following regular files are installed to location(s) where regular files may not be installed. These should be installed in a subdirectory. To suppress this message, add set(VCPKG_POLICY_SKIP_MISPLACED_REGULAR_FILES_CHECK enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[다음 파일을 {path} 배치합니다.]]></Val>
+            <Val><![CDATA[다음 일반 파일은 일반 파일이 설치되지 않을 수 있는 위치에 설치되었습니다. 하위 디렉터리에 설치해야 합니다. 이 메시지를 표시하지 않도록 설정하려면 set(VCPKG_POLICY_SKIP_MISPLACED_REGULAR_FILES_CHECK enabled)을 추가합니다.]]></Val>
           </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";PortBugMisplacedFilesCont" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Files cannot be present in those directories.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[해당 디렉터리에는 파일이 있으면 안 됩니다.]]></Val>
-          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The following files are placed in {path}:]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";PortBugMisplacedPkgConfigFiles" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[pkgconfig directories should be one of share/pkgconfig (for header only libraries only), lib/pkgconfig, or lib/debug/pkgconfig. The following misplaced pkgconfig files were found:]]></Val>
+          <Val><![CDATA[The following misplaced pkgconfig directories were installed. Misplaced pkgconfig files will not be found correctly by pkgconf or pkg-config. pkgconfig directories should be ${{CURRENT_PACKAGES_DIR}}/share/pkgconfig (for architecture agnostic / header only libraries only), ${{CURRENT_PACKAGES_DIR}}/lib/pkgconfig (for release dependencies), or ${{CURRENT_PACKAGES_DIR}}/debug/lib/pkgconfig (for debug dependencies). To suppress this message, add set(VCPKG_POLICY_SKIP_PKGCONFIG_CHECK enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[pkgconfig 디렉터리는 share/pkgconfig(헤더 전용 라이브러리의 경우), lib/pkgconfig 또는 lib/debug/pkgconfig 중 하나여야 합니다. 다음 위치가 잘못된 pkgconfig 파일을 찾았습니다.]]></Val>
+            <Val><![CDATA[다음 위치가 잘못된 pkgconfig 디렉터리가 설치되었습니다. 잘못 배치된 pkgconfig 파일은 pkgconf 또는 pkg-config에서 올바르게 찾을 수 없습니다. pkgconfig 디렉토리는 ${{CURRENT_PACKAGES_DIR}}/share/pkgconfig(아키텍처에 구애받지 않는/헤더 전용 라이브러리에만 해당), ${{CURRENT_PACKAGES_DIR}}/lib/pkgconfig(릴리스 종속성의 경우) 또는 ${{CURRENT_PACKAGES_DIR}}/debug/lib/pkgconfig(디버그 종속성의 경우)여야 합니다. 이 메시지를 표시하지 않도록 설정하려면 set(VCPKG_POLICY_SKIP_PKGCONFIG_CHECK enabled)을 추가합니다.]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[pkgconfig directories should be one of share/pkgconfig (for header only libraries only), lib/pkgconfig, or lib/debug/pkgconfig. The following misplaced pkgconfig files were found:]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PortBugMissingCMakeHelperPortFile" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The ${{CURRENT_PACKAGES_DIR}}/share/${{PORT}}/vcpkg-port-config.cmake file does not exist. This file must exist for CMake helper ports. To suppress this message, remove set(VCPKG_POLICY_CMAKE_HELPER_PORT enabled)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[${{CURRENT_PACKAGES_DIR}}/share/${{PORT}}/vcpkg-port-config.cmake 파일이 없습니다. 이 파일은 CMake 도우미 포트에 대해 존재해야 합니다. 이 메시지를 표시하지 않도록 설정하려면 set(VCPKG_POLICY_CMAKE_HELPER_PORT enabled)을 제거합니다.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -9241,51 +9277,60 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";PortBugMissingFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";PortBugMissingImportedLibs" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The /{path} file does not exist. This file must exist for CMake helper ports.]]></Val>
+          <Val><![CDATA[Import libraries for installed DLLs appear to be missing. If this is intended, add set(VCPKG_POLICY_DLLS_WITHOUT_LIBS enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[/{path} 파일이 없습니다. 이 파일은 CMake 도우미 포트에 있어야 합니다.]]></Val>
+            <Val><![CDATA[설치된 DLL에 대한 가져오기 라이브러리가 누락된 것 같습니다. 의도한 경우 set(VCPKG_POLICY_DLLS_WITHOUT_LIBS enabled)을 추가합니다.]]></Val>
           </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";PortBugMissingImportedLibs" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Import libraries were not present in {path}.]A;If this is intended, add the following line in the portfile:]A;set(VCPKG_POLICY_DLLS_WITHOUT_LIBS enabled)]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{path}에 가져오기 라이브러리가 없습니다.]A;의도한 경우 포트 파일에 다음 줄을 추가하세요.]A;set(VCPKG_POLICY_DLLS_WITHOUT_LIBS 사용)]]></Val>
-          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Import libraries were not present in {path}.]A;If this is intended, add the following line in the portfile:]A;set(VCPKG_POLICY_DLLS_WITHOUT_LIBS enabled)]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";PortBugMissingIncludeDir" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The folder /include is empty or not present. This indicates the library was not correctly installed.]]></Val>
+          <Val><![CDATA[The folder ${{CURRENT_PACKAGES_DIR}}/include is empty or not present. This usually means that headers are not correctly installed. If this is a CMake helper port, add set(VCPKG_POLICY_CMAKE_HELPER_PORT enabled). If this is not a CMake helper port but this is otherwise intentional, add set(VCPKG_POLICY_EMPTY_INCLUDE_FOLDER enabled) to suppress this message.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[/include 폴더가 비어 있거나 없습니다. 라이브러리가 올바르게 설치되지 않았음을 나타냅니다.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";PortBugMissingLicense" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The software license must be available at ${{CURRENT_PACKAGES_DIR}}/share/{package_name}/copyright]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[소프트웨어 라이선스는 ${{CURRENT_PACKAGES_DIR}}/share/{package_name}/copyright에서 제공되어야 합니다.]]></Val>
+            <Val><![CDATA[폴더 ${{CURRENT_PACKAGES_DIR}}/include가 비어 있거나 없습니다. 이는 일반적으로 헤더가 올바르게 설치되지 않음을 의미합니다. CMake 도우미 포트인 경우 set(VCPKG_POLICY_CMAKE_HELPER_PORT enabled)을 추가합니다. CMake 도우미 포트가 아니지만 의도적인 포트인 경우 set(VCPKG_POLICY_EMPTY_INCLUDE_FOLDER enabled)을 추가하여 이 메시지를 표시하지 않습니다.]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[The software license must be available at ${{CURRENT_PACKAGES_DIR}}/share/{spec}/copyright]]></Val>
+            <Val><![CDATA[The folder /include is empty or not present. This indicates the library was not correctly installed.]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";PortBugMissingProvidedUsage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";PortBugMissingLicense" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The port provided "usage" but forgot to install to /share/{package_name}/usage, add the following linein the portfile:]]></Val>
+          <Val><![CDATA[the license is not installed to ${{CURRENT_PACKAGES_DIR}}/share/${{PORT}}/copyright . This can be fixed by adding a call to vcpkg_install_copyright. To suppress this message, add set(VCPKG_POLICY_SKIP_COPYRIGHT_CHECK enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[포트는 "usage"를 제공했지만 /share/{package_name}/usage에 설치하는 것을 잊었습니다. portfile에 다음 행을 추가하세요.]]></Val>
+            <Val><![CDATA[라이선스가 ${{CURRENT_PACKAGES_DIR}}/share/${{PORT}}/copyright에 설치되어 있지 않습니다. 이 문제는 vcpkg_install_copyright 호출을 추가하여 해결할 수 있습니다. 이 메시지를 표시하지 않도록 설정하려면 set(VCPKG_POLICY_SKIP_COPYRIGHT_CHECK enabled)을 추가합니다.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The software license must be available at ${{CURRENT_PACKAGES_DIR}}/share/{package_name}/copyright]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PortBugMissingLicenseFixIt" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Consider adding: {value}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[추가 고려: {value}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PortBugMissingProvidedUsage" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[this port contains a file named "usage" but didn't install it to ${{CURRENT_PACKAGES_DIR}}/share/${{PORT}}/usage . If this file is not intended to be usage text, consider choosing another name; otherwise, install it. To suppress this message, add set(VCPKG_POLICY_SKIP_USAGE_INSTALL_CHECK enabled)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[이 포트에는 "usage"라는 파일이 포함되어 있지만 ${{CURRENT_PACKAGES_DIR}}/share/${{PORT}}/usage에 설치하지 않았습니다. 이 파일이 사용 텍스트가 아닌 경우 다른 이름을 선택하는 것이 좋습니다. 그렇지 않으면 설치하세요. 이 메시지를 표시하지 않도록 설정하려면 set(VCPKG_POLICY_SKIP_USAGE_INSTALL_CHECK enabled)을 추가합니다.]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The port provided "usage" but forgot to install to /share/{package_name}/usage, add the following linein the portfile:]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -9309,28 +9354,25 @@
       </Item>
       <Item ItemId=";PortBugOutdatedCRT" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Detected outdated dynamic CRT in the following files:]]></Val>
+          <Val><![CDATA[DLLs that link with obsolete C RunTime ("CRT") DLLs were installed. Installed DLLs should link with an in-support CRT. You can inspect the dependencies of a DLL with `dumpbin.exe /dependents mylibfile.dll`. If you're using a custom triplet targeting an old CRT, add set(VCPKG_POLICY_ALLOW_OBSOLETE_MSVCRT enabled) to the triplet's .cmake file. To suppress this message for this port, add set(VCPKG_POLICY_ALLOW_OBSOLETE_MSVCRT enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[다음 파일에서 오래된 동적 CRT를 검색했습니다.]]></Val>
+            <Val><![CDATA[사용되지 않는 C 런타임("CRT") DLL과 연결되는 DLL이 설치되었습니다. 설치된 DLL은 지원되는 CRT와 연결되어야 합니다. 'dumpbin.exe /dependents mylibfile.dll'을 사용하여 DLL의 종속성을 검사할 수 있습니다. 이전 CRT를 대상으로 하는 사용자 지정 트리플렛 항목을 사용하는 경우 set(VCPKG_POLICY_ALLOW_OBSOLETE_MSVCRT enabled)을 트리플렛의 .cmake 파일에 추가합니다. 이 포트에 대해 이 메시지를 표시하지 않도록 하려면 set(VCPKG_POLICY_ALLOW_OBSOLETE_MSVCRT enabled)을 추가합니다.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Detected outdated dynamic CRT in the following files:]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";PortBugRemoveBinDir" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[If the creation of bin\ and/or debug\bin\ cannot be disabled, use this in the portfile to remove them]]></Val>
+          <Val><![CDATA[if creation of these directories cannot be disabled, you can add the following in portfile.cmake to remove them]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[bin\ 및/또는 debug\bin\을 만들 수 없도록 설정할 수 없는 경우 포트 파일에서 이 항목을 사용하여 제거하세요.]]></Val>
+            <Val><![CDATA[이러한 디렉터리를 만들 수 없으면 portfile.cmake에 다음을 추가하여 제거할 수 있습니다.]]></Val>
           </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";PortBugRemoveEmptyDirectories" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[If a directory should be populated but is not, this might indicate an error in the portfile.]A;If the directories are not needed and their creation cannot be disabled, use something like this in the portfile to remove them:]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[디렉터리를 채워야 하지만 채워지지 않는 경우 포트 파일에서 오류가 발생할 수 있습니다.]A;디렉터리가 필요하지 않고 디렉터리 만들기를 사용하지 않도록 설정할 수 없는 경우 포트 파일에서 다음과 같은 항목을 사용하여 제거하세요.]]></Val>
-          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[If the creation of bin\ and/or debug\bin\ cannot be disabled, use this in the portfile to remove them]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -9346,23 +9388,44 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";PortBugRestrictedHeaderPaths" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";PortBugRestrictedHeaderPaths" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The following restricted headers can prevent the core C++ runtime and other packages from compiling correctly. In exceptional circumstances, this policy can be disabled by setting CMake variable VCPKG_POLICY_ALLOW_RESTRICTED_HEADERS in portfile.cmake.]]></Val>
+          <Val><![CDATA[Taking the following restricted headers can prevent the core C++ runtime and other packages from compiling correctly. These should be renamed or stored in a subdirectory instead. In exceptional circumstances, this warning can be suppressed by adding set(VCPKG_POLICY_ALLOW_RESTRICTED_HEADERS enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[다음 제한된 헤더로 인해 코어 C++ 런타임 및 기타 패키지가 제대로 컴파일되지 않습니다. 예외적인 상황에서는portfile.cmake에서 CMake 변수 VCPKG_POLICY_ALLOW_RESTRICTED_HEADERS를 설정하여 이 정책을 사용하지 않도록 설정할 수 있습니다.]]></Val>
+            <Val><![CDATA[다음과 같은 제한된 헤더를 사용하면 핵심 C++ 런타임 및 기타 패키지가 올바르게 컴파일되지 않을 수 있습니다. 대신 하위 디렉터리에 이름을 바꾸거나 저장해야 합니다. 예외적인 상황에서는 set(VCPKG_POLICY_ALLOW_RESTRICTED_HEADERS enabled)을 추가하여 이 경고를 표시하지 않을 수 있습니다.]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[The following restricted headers can prevent the core C++ runtime and other packages from compiling correctly. In exceptional circumstances, this policy can be disabled via {env_var}.]]></Val>
+            <Val><![CDATA[The following restricted headers can prevent the core C++ runtime and other packages from compiling correctly. In exceptional circumstances, this policy can be disabled by setting CMake variable VCPKG_POLICY_ALLOW_RESTRICTED_HEADERS in portfile.cmake.]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";PortBugSetDllsWithoutExports" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";PortBugRestrictedHeaderPathsNote" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[DLLs without any exports are likely a bug in the build script. If this is intended, add the following line in the portfile:]A;set(VCPKG_POLICY_DLLS_WITHOUT_EXPORTS enabled)]A;The following DLLs have no exports:]]></Val>
+          <Val><![CDATA[the headers are relative to ${{CURRENT_PACKAGES_DIR}}/include here]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[내보내기가 없는 DLL은 빌드 스크립트의 버그일 수 있습니다. 의도한 경우 포트 파일에서 다음 줄을 추가하세요.]A;set(VCPKG_POLICY_DLLS_WITHOUT_EXPORTS 사용)]A;다음 DLL에 내보내기가 없습니다.]]></Val>
+            <Val><![CDATA[헤더는 여기서 ${{CURRENT_PACKAGES_DIR}}/include에 상대적입니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PortBugSetDllsWithoutExports" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the following DLLs were built without any exports. DLLs without exports are likely bugs in the build script. If this is intended, add set(VCPKG_POLICY_DLLS_WITHOUT_EXPORTS enabled)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[다음 DLL은 내보내기 없이 빌드되었습니다. 내보내기가 없는 DLL은 빌드 스크립트의 버그일 수 있습니다. 의도한 경우 set(VCPKG_POLICY_DLLS_WITHOUT_EXPORTS enabled)을 추가합니다.]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[DLLs without any exports are likely a bug in the build script. If this is intended, add the following line in the portfile:]A;set(VCPKG_POLICY_DLLS_WITHOUT_EXPORTS enabled)]A;The following DLLs have no exports:]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PortDeclaredHere" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{package_name} is declared here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{package_name}이(가) 여기에 선언되었습니다.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -9808,6 +9871,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";SkippingPostBuildValidationDueTo" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Skipping post-build validation due to {cmake_var}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{cmake_var}(으)로 인해 빌드 후 유효성 검사를 건너뛰는 중]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";SourceFieldPortNameMismatch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[The 'Source' field inside the CONTROL file, or "name" field inside the vcpkg.json file has the name {package_name} and does not match the port directory "{path}".]]></Val>
@@ -9906,15 +9978,6 @@
           <Val><![CDATA[The result may be outdated. Run `git pull` to get the latest results.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[결과가 오래되었을 수 있습니다. 'git pull'을 실행하여 최신 결과를 가져옵니다.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";SuggestResolution" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[To attempt to resolve all errors at once, run:]A;vcpkg {command_name} --{option}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[한 번에 모든 오류를 해결하려면 다음을 실행합니다.]A;vcpkg {command_name} --{option}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10623,10 +10686,13 @@
       </Item>
       <Item ItemId=";UnknownPolicySetting" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Unknown setting for policy '{value}': {option}]]></Val>
+          <Val><![CDATA[Unknown setting of {cmake_var}: {value}. Valid policy values are '', 'disabled', and 'enabled'.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA['{value}' 정책에 대한 알 수 없는 설정: {option}]]></Val>
+            <Val><![CDATA[{cmake_var}의 알 수 없는 설정: {value}. 유효한 정책 값은 '', 'disabled' 및 'enabled'입니다.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Unknown setting for policy '{value}': {option}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -10942,6 +11008,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";UsageInstallInstructions" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[you can install the usage file with the following CMake]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[다음 CMake를 사용하여 사용 현황 파일을 설치할 수 있습니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UsageTextHere" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the usage file is here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[사용 현황 파일이 여기에 있습니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";UseEnvVar" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[-- Using {env_var} in environment variables.]]></Val>
@@ -11173,12 +11257,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";VersionBaselineMatch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{version_spec} matches the current baseline]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{version_spec}이(가) 현재 기준과 일치합니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";VersionBaselineMismatch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The latest version is {expected}, but the baseline file contains {actual}.]A;Run:]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit -m "Update version database"]A;to update the baseline version.]]></Val>
+          <Val><![CDATA[{package_name} is assigned {actual}, but the local port is {expected}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[최신 버전은 {expected}이지만 기본 파일에는 {actual}이(가) 포함되어 있습니다.]A;실행:]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit -m "Update version database"]A;기본 버전을 업데이트합니다.]]></Val>
+            <Val><![CDATA[{package_name}에 {actual}이(가) 할당되었지만 로컬 포트는 {expected}입니다.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The latest version is {expected}, but the baseline file contains {actual}.]A;Run:]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit -m "Update version database"]A;to update the baseline version.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -11205,6 +11301,33 @@
           <Val><![CDATA[Expected {path} version: [{expected_version}]5D;, but was [{actual_version}]5D;. Please re-run bootstrap-vcpkg.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{path} 버전이 필요([{expected_version}]5D;)하지만 [{actual_version}]5D;입니다. bootstrap-vcpkg를 다시 실행하세요.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionConstraintNotInDatabase1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the "version>=" constraint to {package_name} names version {version} which does not exist in the version database. All versions must exist in the version database to be interpreted by vcpkg.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[버전 데이터베이스에 없는 {package_name version} 이름 버전 {version}의 "version>=" 제약 조건입니다. vcpkg에서 해석하려면 모든 버전이 버전 데이터베이스에 있어야 합니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionConstraintNotInDatabase2" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[consider removing the version constraint or choosing a value declared here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[버전 제약 조건을 제거하거나 여기에 선언된 값을 선택하는 것이 좋습니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionConstraintOk" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[all version constraints are consistent with the version database]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[모든 버전 제약 조건은 버전 데이터베이스와 일치합니다.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -11239,11 +11362,32 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";VersionDatabaseFileMissing" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";VersionDatabaseFileMissing" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[{package_name} is missing a version database file at {path}]A;Run:]A;vcpkg x-add-version {package_name}]A;to create the versions file.]]></Val>
+          <Val><![CDATA[this port is not in the version database]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{package_name}은(는) {path}에 버전 데이터베이스 파일이 없습니다.]A;실행:]A;vcpkg x-add-version {package_name}]A;버전 파일을 만듭니다.]]></Val>
+            <Val><![CDATA[이 포트는 버전 데이터베이스에 없습니다.]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[{package_name} is missing a version database file at {path}]A;Run:]A;vcpkg x-add-version {package_name}]A;to create the versions file.]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionDatabaseFileMissing2" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the version database file should be here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[버전 데이터베이스 파일이 여기에 있어야 합니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionDatabaseFileMissing3" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[run '{command_line}' to create the version database file]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA['{command_line}'을(를) 실행하여 버전 데이터베이스 파일을 만듭니다.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -11259,10 +11403,13 @@
       </Item>
       <Item ItemId=";VersionInDeclarationDoesNotMatch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The version declared in file does not match checked-out version: {version}]]></Val>
+          <Val><![CDATA[{git_tree_sha} is declared to contain {expected}, but appears to contain {actual}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[파일에 선언된 버전이 체크 아웃된 버전과 일치하지 않습니다. {version}]]></Val>
+            <Val><![CDATA[{git_tree_sha}이(가) {expected}을(를) 포함하도록 선언되었지만 {actual}을(를) 포함하는 것으로 나타납니다.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The version declared in file does not match checked-out version: {version}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -11389,15 +11536,66 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";VersionNotFoundInVersionsFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";VersionNotFoundInVersionsFile2" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Version {version} was not found in versions file for {package_name}.]A;Run:]A;vcpkg x-add-version {package_name}]A;to add the new port version.]]></Val>
+          <Val><![CDATA[{version_spec} was not found in versions database]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{package_name}의 버전 파일에서 버전 {version}을(를) 찾을 수 없습니다.]A;실행:]A;vcpkg x-add-version {package_name}]A;새 포트 버전을 추가합니다.]]></Val>
+            <Val><![CDATA[버전 데이터베이스에서 {version_spec}을(를) 찾을 수 없습니다.]]></Val>
           </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Version {version} was not found in versions file.]A;Run:]A;vcpkg x-add-version {package_name}]A;to add the new port version.]]></Val>
-          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionNotFoundInVersionsFile3" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the version should be in this file]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[버전이 이 파일에 있어야 합니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionNotFoundInVersionsFile4" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[run '{command_line}' to add the new port version]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA['{command_line}'을(를) 실행하여 새 포트 버전 추가]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionOverrideNotInVersionDatabase" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the version override {package_name} does not exist in the version database; does that port exist?]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[버전 재정의 {package_name}이(가) 버전 데이터베이스에 없습니다. 해당 포트가 있나요?]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionOverrideVersionNotInVersionDatabase1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the override of {package_name} names version {version} which does not exist in the version database. Installing this port at the top level will fail as that version will be unresolvable.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[버전 데이터베이스에 없는 {package_name} 이름 버전 {version}의 재정의입니다. 최상위 수준에 이 포트를 설치하면 해당 버전을 확인할 수 없으므로 실패합니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionOverrideVersionNotInVersionDatabase2" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[consider removing the version override or choosing a value declared here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[버전 재정의를 제거하거나 여기에 선언된 값을 선택하는 것이 좋습니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionOverwriteVersion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[you can overwrite {version_spec} with correct local values by running:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[다음을 실행하여 올바른 로컬 값으로 {version_spec}을(를) 덮어쓸 수 있습니다.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -11419,29 +11617,101 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";VersionSchemeMismatch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";VersionSchemeMismatch1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The version database declares {version} as {expected}, but {path} declares it as {actual}. Versions must be unique, even if they are declared with different schemes.]A;Run:]A;vcpkg x-add-version {package_name} --overwrite-version]A;to overwrite the scheme declared in the version database with that declared in the port.]]></Val>
+          <Val><![CDATA[{version} is declared {expected}, but {package_name} is declared with {actual}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[버전 데이터베이스는 {version}을(를) {expected}(으)로 선언하지만 {path}은(는) {actual}(으)로 선언합니다. 버전은 서로 다른 체계로 선언된 경우에도 고유해야 합니다.]A;실행:]A;vcpkg x-add-version {package_name} --overwrite-version]A;버전 데이터베이스에 선언된 체계를 포트에 선언된 스키마로 덮어씁니다.]]></Val>
+            <Val><![CDATA[{version}은(는) {expected}(으)로 선언되었지만 {package_name}은(는) {actual}(으)로 선언되었습니다.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";VersionShaMismatch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";VersionSchemeMismatch1Old" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[{version} is declared with {expected}, but the local port has a different SHA {actual}.]A;Please update the port's version fields and then run:]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit -m "Update version database"]A;to add the new version.]]></Val>
+          <Val><![CDATA[{version} is declared {expected}, but {package_name}@{git_tree_sha} is declared with {actual}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{version}이(가) {expected}(으)로 선언되었지만, 로컬 포트에 다른 SHA {actual}이(가) 있습니다.]A;포트의 버전 필드를 업데이트한 다음 실행:]A;vcpkg x-add-version {package_name}]A;git add version]A;git commit -m "Update version database"]A;새 버전을 추가하세요.]]></Val>
+            <Val><![CDATA[{version}은(는) {expected}(으)로 선언되었지만 {package_name}@{git_tree_sha}은(는) {actual}(으)로 선언되었습니다.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";VersionShaMissing" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";VersionSchemeMismatch2" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[while validating {package_name}, missing Git SHA.]A;Run:]A;git add "{path}"]A;git commit -m "wip"]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit --amend -m "[{package_name}]5D; Add new port"]A;to commit the new port and create its version file.]]></Val>
+          <Val><![CDATA[versions must be unique, even if they are declared with different schemes]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{package_name} 유효성을 검사하는 동안 Git SHA가 누락되었습니다.]A;실행:]A;git add "{path}"]A;git commit -m "wip"]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit --amend -m "[{package_name}]5D; Add new port"]A;새 포트를 커밋하고 해당 버전 파일을 만듭니다.]]></Val>
+            <Val><![CDATA[버전은 서로 다른 스키마로 선언된 경우에도 고유해야 합니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionShaMismatch1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{version_spec} git tree {git_tree_sha} does not match the port directory]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{version_spec} git 트리 {git_tree_sha}이(가) 포트 디렉터리와 일치하지 않습니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionShaMismatch2" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the port directory has git tree {git_tree_sha}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[포트 디렉터리에 Git 트리 {git_tree_sha}이(가) 있습니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionShaMismatch3" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[if {version_spec} is already published, update this file with a new version or port-version, commit it, then add the new version by running:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{version_spec}이(가) 이미 게시된 경우 이 파일을 새 버전 또는 포트 버전으로 업데이트하고 커밋한 다음 다음을 실행하여 새 버전을 추가합니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionShaMismatch4" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[if {version_spec} is not yet published, overwrite the previous git tree by running:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{version_spec}이(가) 아직 게시되지 않은 경우 다음을 실행하여 이전 git 트리를 덮어씁니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionShaMissing1" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the git tree of the port directory could not be determined. This is usually caused by uncommitted changes.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[포트 디렉터리의 git 트리를 확인할 수 없습니다. 이는 일반적으로 커밋되지 않은 변경으로 인해 발생합니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionShaMissing2" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[you can commit your changes and add them to the version database by running:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[다음을 실행하여 변경 내용을 커밋하고 버전 데이터베이스에 추가할 수 있습니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionShaMissing3" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[wip]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[wip]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionShaMissing4" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[[{package_name}]5D; Add new port]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[[{package_name}]5D; 새 포트 추가]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -11554,20 +11824,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";WhileLoadingLocalPort" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";WhileLoadingBaselineVersionForPort" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[while attempting to load local port {package_name}]]></Val>
+          <Val><![CDATA[while loading baseline version for {package_name}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[로컬 포트 {package_name}을(를) 로드하는 동안]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";WhileLoadingPortFromGitTree" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[while trying to load port from: {commit_sha}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{commit_sha}에서 포트를 로드하는 동안]]></Val>
+            <Val><![CDATA[{package_name}에 대한 기준 버전을 로드하는 동안]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
