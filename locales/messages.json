@@ -358,7 +358,7 @@
   "CmdEnvOptions": "Adds installed {path} to {env_var}",
   "_CmdEnvOptions.comment": "An example of {path} is /foo/bar. An example of {env_var} is VCPKG_DEFAULT_TRIPLET.",
   "CmdExportEmptyPlan": "Refusing to create an export of zero packages. Install packages before exporting.",
-  "CmdExportExample1": "vcpkg export <port names> [--nuget] [--directory=out_dir]",
+  "CmdExportExample1": "vcpkg export <port names> [--nuget] [--output-dir=out_dir]",
   "_CmdExportExample1.comment": "This is a command line, only <port names> and the out_dir part should be localized",
   "CmdExportOpt7Zip": "Exports to a 7zip (.7z) file",
   "CmdExportOptChocolatey": "Exports a Chocolatey package (experimental)",
