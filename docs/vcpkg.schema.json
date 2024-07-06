@@ -64,6 +64,18 @@
             "$ref": "vcpkg-schema-definitions.schema.json#/definitions/dependency"
           }
         },
+        "options": {
+          "description": "A map of options supported by the package",
+          "type": "object",
+          "patternProperties": {
+            "": {
+              "$ref": "vcpkg-schema-definitions.schema.json#/definitions/option"
+            }
+          },
+          "propertyNames": {
+            "$ref": "vcpkg-schema-definitions.schema.json#/definitions/identifier"
+          }
+        },
         "overrides": {
           "description": "Version overrides for dependencies.",
           "type": "array",
