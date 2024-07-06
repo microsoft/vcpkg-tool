@@ -1,5 +1,6 @@
 #include <vcpkg/base/fwd/message_sinks.h>
 
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/files.h>
@@ -738,7 +739,7 @@ namespace vcpkg
             auto files = fs.get_regular_files_non_recursive(this->scripts / "cmake", VCPKG_LINE_INFO);
             for (auto&& file : files)
             {
-                if (file.filename() == ".DS_Store")
+                if (file.filename() == FileDotDsStore)
                 {
                     continue;
                 }
@@ -792,7 +793,9 @@ namespace vcpkg
             return *i;
         }
 
-        Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgVcpkgDisallowedClassicMode);
+        Checks::msg_exit_with_error(VCPKG_LINE_INFO,
+                                    msg::format(msgVcpkgDisallowedClassicMode)
+                                        .append(msgSeeURL, msg::url = docs::troubleshoot_build_failures_url));
     }
 
     const Path& VcpkgPaths::buildtrees() const
@@ -802,7 +805,9 @@ namespace vcpkg
             return *i;
         }
 
-        Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgVcpkgDisallowedClassicMode);
+        Checks::msg_exit_with_error(VCPKG_LINE_INFO,
+                                    msg::format(msgVcpkgDisallowedClassicMode)
+                                        .append(msgSeeURL, msg::url = docs::troubleshoot_build_failures_url));
     }
 
     const Path& VcpkgPaths::packages() const
@@ -812,7 +817,9 @@ namespace vcpkg
             return *i;
         }
 
-        Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgVcpkgDisallowedClassicMode);
+        Checks::msg_exit_with_error(VCPKG_LINE_INFO,
+                                    msg::format(msgVcpkgDisallowedClassicMode)
+                                        .append(msgSeeURL, msg::url = docs::troubleshoot_build_failures_url));
     }
 
     Path VcpkgPaths::baselines_output() const { return buildtrees() / "versioning_" / "baselines"; }
@@ -978,14 +985,14 @@ namespace vcpkg
 
     ExpectedL<std::map<std::string, std::string, std::less<>>> VcpkgPaths::git_get_local_port_treeish_map() const
     {
-        const auto local_repo = this->root / ".git";
-        auto cmd = git_cmd_builder({}, {})
-                       .string_arg("-C")
-                       .string_arg(this->builtin_ports_directory())
-                       .string_arg("ls-tree")
-                       .string_arg("-d")
-                       .string_arg("HEAD")
-                       .string_arg("--");
+        const auto cmd = git_cmd_builder({}, {})
+                             .string_arg("-C")
+                             .string_arg(this->builtin_ports_directory())
+                             .string_arg("ls-tree")
+                             .string_arg("-d")
+                             .string_arg("HEAD")
+                             .string_arg("--");
+
         auto maybe_output = flatten_out(cmd_execute_and_capture_output(cmd), Tools::GIT);
         if (const auto output = maybe_output.get())
         {

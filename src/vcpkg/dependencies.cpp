@@ -241,7 +241,7 @@ namespace vcpkg
                     }
                 }
 
-                Util::Vectors::append(&out_new_dependencies, std::move(dep_list));
+                Util::Vectors::append(out_new_dependencies, std::move(dep_list));
             }
 
             void create_install_info(std::vector<FeatureSpec>& out_reinstall_requirements)
@@ -1777,7 +1777,7 @@ namespace vcpkg
             serialize_dependency_override(example_array, DependencyOverride{on.name(), baseline.version});
             doc.append_raw(Json::stringify_object_member(OVERRIDES, example_array, Json::JsonStyle::with_spaces(2), 1));
 
-            doc.append(msgVersionIncomparable4, msg::url = docs::versioning_url);
+            doc.append(msgVersionIncomparable4, msg::url = docs::troubleshoot_versioning_url);
             return doc;
         }
 

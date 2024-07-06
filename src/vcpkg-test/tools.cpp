@@ -3,8 +3,6 @@
 #include <vcpkg/tools.h>
 #include <vcpkg/tools.test.h>
 
-#include <array>
-
 using namespace vcpkg;
 
 TEST_CASE ("parse_tool_version_string", "[tools]")

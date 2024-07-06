@@ -20,22 +20,32 @@ if ($output -match 'vcpkg-internal-e2e-test-port3') {
     throw "Should not emit messages about -port3 while checking -port2"
 }
 
-Run-Vcpkg @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports/overlays" install vcpkg-empty-port
+# Note that broken-manifests contains ports that must not be 'visited' while trying to install these
+Run-Vcpkg @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports/overlays" --overlay-ports="$PSScriptRoot/../e2e-ports/broken-manifests" install vcpkg-empty-port
 Throw-IfFailed
-Run-Vcpkg @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports" install vcpkg-internal-e2e-test-port
+Run-Vcpkg @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports" --overlay-ports="$PSScriptRoot/../e2e-ports/broken-manifests" install vcpkg-internal-e2e-test-port
 Throw-IfFailed
-Run-Vcpkg @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports" install control-file
+Run-Vcpkg @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports" --overlay-ports="$PSScriptRoot/../e2e-ports/broken-manifests" install control-file
 Throw-IfFailed
-$output = Run-VcpkgAndCaptureOutput @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports/overlays" install broken-no-name
+
+$output = Run-VcpkgAndCaptureOutput @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports/broken-manifests" install broken-no-name
 Throw-IfNotFailed
 if ($output -notmatch "missing required field 'name'") {
     throw 'Did not detect missing field'
 }
 
-$output = Run-VcpkgAndCaptureOutput @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports/overlays" install broken-no-version
+$output = Run-VcpkgAndCaptureOutput @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports/broken-manifests" install broken-no-version
 Throw-IfNotFailed
 if ($output -notmatch 'expected a versioning field') {
     throw 'Did not detect missing field'
+}
+
+Remove-Problem-Matchers
+$output = Run-VcpkgAndCaptureOutput @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports/broken-manifests" install malformed
+Restore-Problem-Matchers
+Throw-IfNotFailed
+if ($output -notmatch 'Trailing comma') {
+    throw 'Did not detect malformed JSON'
 }
 
 # Check for msgAlreadyInstalled vs. msgAlreadyInstalledNotHead
