@@ -580,7 +580,9 @@ namespace vcpkg
                     msgCurlFailedToPutHttp, msg::exit_code = *pres, msg::url = url, msg::value = code);
             }
         }
-
+        msg::println(msgAssetCacheSuccesfullyStored,
+                     msg::path = file.filename(),
+                     msg::url = replace_secrets(url.to_string(), secrets));
         return res;
     }
 
@@ -715,7 +717,6 @@ namespace vcpkg
         fs.create_directories(dir, VCPKG_LINE_INFO);
 
         const auto sanitized_url = replace_secrets(url, secrets);
-        msg::println(msgDownloadingUrl, msg::url = sanitized_url);
         static auto s = WinHttpSession::make(sanitized_url).value_or_exit(VCPKG_LINE_INFO);
         for (size_t trials = 0; trials < 4; ++trials)
         {
@@ -882,6 +883,10 @@ namespace vcpkg
         return s_headers;
     }
 
+    bool DownloadManager::get_block_origin() const { return m_config.m_block_origin; }
+
+    bool DownloadManager::asset_cache_configured() const { return m_config.m_read_url_template.has_value(); }
+
     void DownloadManager::download_file(const Filesystem& fs,
                                         const std::string& url,
                                         View<std::string> headers,
@@ -926,6 +931,9 @@ namespace vcpkg
                                       errors,
                                       progress_sink))
                 {
+                    msg::println(msgAssetCacheHit,
+                                 msg::path = download_path.filename(),
+                                 msg::url = replace_secrets(read_url, m_config.m_secrets));
                     return read_url;
                 }
             }
@@ -985,12 +993,17 @@ namespace vcpkg
                     fs, urls, headers, download_path, sha512, m_config.m_secrets, errors, progress_sink);
                 if (auto url = maybe_url.get())
                 {
+                    m_config.m_read_url_template.has_value() ? msg::println(msgAssetCacheMiss, msg::url = urls[0])
+                                                             : msg::println(msgDownloadingUrl, msg::url = urls[0]);
+
                     if (auto hash = sha512.get())
                     {
                         auto maybe_push = put_file_to_mirror(fs, download_path, *hash);
                         if (!maybe_push)
                         {
-                            msg::println_warning(msgFailedToStoreBackToMirror);
+                            msg::println_warning(msgFailedToStoreBackToMirror,
+                                                 msg::path = download_path.filename(),
+                                                 msg::url = replace_secrets(download_path.c_str(), m_config.m_secrets));
                             msg::println(maybe_push.error());
                         }
                     }
@@ -999,7 +1012,16 @@ namespace vcpkg
                 }
             }
         }
-        msg::println_error(msgFailedToDownloadFromMirrorSet);
+        // Asset cache is not configured and x-block-origin enabled
+        if (m_config.m_read_url_template.has_value())
+        {
+            msg::println(msgAssetCacheMissBlockOrigin, msg::path = download_path.filename());
+        }
+        else
+        {
+            msg::println_error(msgMissingAssetBlockOrigin, msg::path = download_path.filename());
+        }
+
         for (LocalizedString& error : errors)
         {
             msg::println(error);

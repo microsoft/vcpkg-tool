@@ -233,10 +233,14 @@ DECLARE_MESSAGE(ArtifactsSwitchOsx, (), "", "Forces host detection to MacOS when
 DECLARE_MESSAGE(ArtifactsSwitchX64, (), "", "Forces host detection to x64 when acquiring artifacts")
 DECLARE_MESSAGE(ArtifactsSwitchX86, (), "", "Forces host detection to x86 when acquiring artifacts")
 DECLARE_MESSAGE(ArtifactsSwitchWindows, (), "", "Forces host detection to Windows when acquiring artifacts")
+DECLARE_MESSAGE(AssetCacheHit, (msg::path, msg::url), "", "Asset cache hit for {path}; downloaded from: {url}")
+DECLARE_MESSAGE(AssetCacheMiss, (msg::url), "", "Asset cache miss; downloading from {url}")
+DECLARE_MESSAGE(DownloadingUrl, (msg::url), "", "Downloading {url}")
 DECLARE_MESSAGE(AssetCacheProviderAcceptsNoArguments,
                 (msg::value),
                 "{value} is a asset caching provider name such as azurl, clear, or x-block-origin",
                 "unexpected arguments: '{value}' does not accept arguments")
+DECLARE_MESSAGE(AssetCacheSuccesfullyStored, (msg::path, msg::url), "", "Successfully stored {path} to {url}.")
 DECLARE_MESSAGE(AssetSourcesArg, (), "", "Asset caching sources. See 'vcpkg help assetcaching'")
 DECLARE_MESSAGE(ASemanticVersionString, (), "", "a semantic version string")
 DECLARE_MESSAGE(ASetOfFeatures, (), "", "a set of features")
@@ -1032,10 +1036,7 @@ DECLARE_MESSAGE(DownloadFailedStatusCode,
 DECLARE_MESSAGE(DownloadingPortableToolVersionX,
                 (msg::tool_name, msg::version),
                 "",
-                "A suitable version of {tool_name} was not found (required v{version}) Downloading "
-                "portable {tool_name} {version}...")
-DECLARE_MESSAGE(DownloadingTool, (msg::tool_name, msg::url, msg::path), "", "Downloading {tool_name}...\n{url}->{path}")
-DECLARE_MESSAGE(DownloadingUrl, (msg::url), "", "Downloading {url}")
+                "A suitable version of {tool_name} was not found (required v{version}).")
 DECLARE_MESSAGE(DownloadWinHttpError,
                 (msg::system_api, msg::exit_code, msg::url),
                 "",
@@ -1206,7 +1207,14 @@ DECLARE_MESSAGE(FailedToDeleteInsideDueToFile,
                 "printed after this",
                 "failed to remove_all_inside({value}) due to {path}: ")
 DECLARE_MESSAGE(FailedToDetermineCurrentCommit, (), "", "Failed to determine the current commit:")
-DECLARE_MESSAGE(FailedToDownloadFromMirrorSet, (), "", "Failed to download from mirror set")
+DECLARE_MESSAGE(MissingAssetBlockOrigin,
+                (msg::path),
+                "x-block-origin is a vcpkg term. Do not translate",
+                "Missing {path} and downloads are blocked by x-block-origin.")
+DECLARE_MESSAGE(AssetCacheMissBlockOrigin,
+                (msg::path),
+                "x-block-origin is a vcpkg term. Do not translate",
+                "Asset cache miss for {path} and downloads are blocked by x-block-origin.")
 DECLARE_MESSAGE(FailedToExtract, (msg::path), "", "Failed to extract \"{path}\":")
 DECLARE_MESSAGE(FailedToFetchRepo, (msg::url), "", "Failed to fetch {url}.")
 DECLARE_MESSAGE(FailedToFindPortFeature,
@@ -1255,7 +1263,7 @@ DECLARE_MESSAGE(FailedToRunToolToDetermineVersion,
                 "Additional information, such as the command line output, if any, will be appended on "
                 "the line after this message",
                 "Failed to run \"{path}\" to determine the {tool_name} version.")
-DECLARE_MESSAGE(FailedToStoreBackToMirror, (), "", "failed to store back to mirror:")
+DECLARE_MESSAGE(FailedToStoreBackToMirror, (msg::path, msg::url), "", "Failed to store {path} to {url}.")
 DECLARE_MESSAGE(FailedToStoreBinaryCache, (msg::path), "", "Failed to store binary cache {path}")
 DECLARE_MESSAGE(FailedToTakeFileSystemLock, (), "", "Failed to take the filesystem lock")
 DECLARE_MESSAGE(FailedVendorAuthentication,
@@ -2681,7 +2689,7 @@ DECLARE_MESSAGE(UnexpectedArgument,
 DECLARE_MESSAGE(
     UnexpectedAssetCacheProvider,
     (),
-    "",
+    "'x-azurl', 'x-script', 'clear' are valid source types. Do not translate",
     "unknown asset provider type: valid source types are 'x-azurl', 'x-script', 'x-block-origin', and 'clear'")
 DECLARE_MESSAGE(UnexpectedByteSize,
                 (msg::expected, msg::actual),

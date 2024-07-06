@@ -9,6 +9,7 @@
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/stringview.h>
+#include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
 #include <vcpkg/base/system.process.h>
 
@@ -677,12 +678,6 @@ namespace vcpkg
             const auto download_path = downloads / tool_data.download_subpath;
             if (!fs.exists(download_path, IgnoreErrors{}))
             {
-                status_sink.println(Color::none,
-                                    msgDownloadingTool,
-                                    msg::tool_name = tool_data.name,
-                                    msg::url = tool_data.url,
-                                    msg::path = download_path);
-
                 downloader->download_file(fs, tool_data.url, {}, download_path, tool_data.sha512, null_sink);
             }
             else
