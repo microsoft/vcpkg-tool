@@ -613,7 +613,7 @@ DECLARE_MESSAGE(CmdExportEmptyPlan,
 DECLARE_MESSAGE(CmdExportExample1,
                 (),
                 "This is a command line, only <port names> and the out_dir part should be localized",
-                "vcpkg export <port names> [--nuget] [--directory=out_dir]")
+                "vcpkg export <port names> [--nuget] [--output-dir=out_dir]")
 DECLARE_MESSAGE(CmdExportOpt7Zip, (), "", "Exports to a 7zip (.7z) file")
 DECLARE_MESSAGE(CmdExportOptChocolatey, (), "", "Exports a Chocolatey package (experimental)")
 DECLARE_MESSAGE(CmdExportOptDebug, (), "", "Enables prefab debug")
