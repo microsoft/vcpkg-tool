@@ -52,6 +52,10 @@ extends:
       sourceAnalysisPool:
         name: AzurePipelines-EO
         image: 1ESPT-Windows2022
+      codeql:
+        compiled:
+          enabled: false
+          justificationForDisabling: 'CodeQL causes the build to hang. See https://dev.azure.com/twcdot/Data/_workitems/edit/128379 . Turn CodeQL back on when it is fixed.'
     stages:
     - stage: stage
       displayName: 'Build and Sign vcpkg'
@@ -70,13 +74,13 @@ extends:
         - ${{ if ne(parameters.VcpkgBaseVersionOverride, 'default') }}:
           - name: VCPKG_INITIAL_BASE_VERSION
             value: ${{parameters.VcpkgBaseVersionOverride}}
-        - name: Codeql.BuildIdentifier
-          value: vcpkg_ECMAScript
-        - name: Codeql.Language
-          value: javascript
         pool:
           name: 'VSEngSS-MicroBuild2022-1ES'
         templateContext:
+          sdl:
+            codeql:
+              language: javascript
+              buildIdentifier: vcpkg_ECMAScript
           mb:
             signing:
               enabled: true
@@ -211,6 +215,10 @@ extends:
           VCPKG_STANDALONE_BUNDLE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_STANDALONE_BUNDLE_SHA'] ]
           VCPKG_BASE_VERSION: $[ dependencies.arch_independent.outputs['versions.VCPKG_BASE_VERSION'] ]
         templateContext:
+          sdl:
+            codeql:
+              language: cpp
+              buildIdentifier: vcpkg_cpp_macos
           mb:
             signing:
               enabled: false
@@ -240,6 +248,10 @@ extends:
           VCPKG_STANDALONE_BUNDLE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_STANDALONE_BUNDLE_SHA'] ]
           VCPKG_BASE_VERSION: $[ dependencies.arch_independent.outputs['versions.VCPKG_BASE_VERSION'] ]
         templateContext:
+          sdl:
+            codeql:
+              language: cpp
+              buildIdentifier: vcpkg_cpp_glibc
           mb:
             signing:
               enabled: false
@@ -273,6 +285,10 @@ extends:
           VCPKG_STANDALONE_BUNDLE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_STANDALONE_BUNDLE_SHA'] ]
           VCPKG_BASE_VERSION: $[ dependencies.arch_independent.outputs['versions.VCPKG_BASE_VERSION'] ]
         templateContext:
+          sdl:
+            codeql:
+              language: cpp
+              buildIdentifier: vcpkg_cpp_muslc
           mb:
             signing:
               enabled: false
@@ -309,9 +325,11 @@ extends:
           VCPKG_STANDALONE_BUNDLE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_STANDALONE_BUNDLE_SHA'] ]
           VCPKG_BASE_VERSION: $[ dependencies.arch_independent.outputs['versions.VCPKG_BASE_VERSION'] ]
           VCPKG_FULL_VERSION: $[ dependencies.arch_independent.outputs['versions.VCPKG_FULL_VERSION'] ]
-          Codeql.BuildIdentifier: vcpkg_cpp
-          Codeql.Language: cpp
         templateContext:
+          sdl:
+            codeql:
+              language: cpp
+              buildIdentifier: vcpkg_cpp
           mb:
             signing:
               enabled: true
