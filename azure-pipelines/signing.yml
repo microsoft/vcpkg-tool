@@ -52,6 +52,10 @@ extends:
       sourceAnalysisPool:
         name: AzurePipelines-EO
         image: 1ESPT-Windows2022
+      codeql:
+        compiled:
+          enabled: false
+          justificationForDisabling: 'CodeQL causes the build to hang. See https://dev.azure.com/twcdot/Data/_workitems/edit/128379 . Turn CodeQL back on when it is fixed.'
     stages:
     - stage: stage
       displayName: 'Build and Sign vcpkg'
@@ -213,9 +217,6 @@ extends:
         templateContext:
           sdl:
             codeql:
-              compiled:
-                enabled: false
-                justificationForDisabling: 'CodeQL causes the build to hang. See https://dev.azure.com/twcdot/Data/_workitems/edit/128379 . Turn CodeQL back on when it is fixed.'
               language: cpp
               buildIdentifier: vcpkg_cpp_macos
           mb:
@@ -249,9 +250,6 @@ extends:
         templateContext:
           sdl:
             codeql:
-              compiled:
-                enabled: false
-                justificationForDisabling: 'CodeQL causes the build to hang. See https://dev.azure.com/twcdot/Data/_workitems/edit/128379 . Turn CodeQL back on when it is fixed.'
               language: cpp
               buildIdentifier: vcpkg_cpp_glibc
           mb:
@@ -289,9 +287,6 @@ extends:
         templateContext:
           sdl:
             codeql:
-              compiled:
-                enabled: false
-                justificationForDisabling: 'CodeQL causes the build to hang. See https://dev.azure.com/twcdot/Data/_workitems/edit/128379 . Turn CodeQL back on when it is fixed.'
               language: cpp
               buildIdentifier: vcpkg_cpp_muslc
           mb:
@@ -333,9 +328,6 @@ extends:
         templateContext:
           sdl:
             codeql:
-              compiled:
-                enabled: false
-                justificationForDisabling: 'CodeQL causes the build to hang. See https://dev.azure.com/twcdot/Data/_workitems/edit/128379 . Turn CodeQL back on when it is fixed.'
               language: cpp
               buildIdentifier: vcpkg_cpp
           mb:
