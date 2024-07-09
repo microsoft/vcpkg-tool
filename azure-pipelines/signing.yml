@@ -211,6 +211,13 @@ extends:
           VCPKG_STANDALONE_BUNDLE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_STANDALONE_BUNDLE_SHA'] ]
           VCPKG_BASE_VERSION: $[ dependencies.arch_independent.outputs['versions.VCPKG_BASE_VERSION'] ]
         templateContext:
+          sdl:
+            codeql:
+              compiled:
+                enabled: false
+                justificationForDisabling: 'CodeQL causes the build to hang. See https://dev.azure.com/twcdot/Data/_workitems/edit/128379 . Turn CodeQL back on when it is fixed.'
+              language: cpp
+              buildIdentifier: vcpkg_cpp_macos
           mb:
             signing:
               enabled: false
@@ -240,6 +247,13 @@ extends:
           VCPKG_STANDALONE_BUNDLE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_STANDALONE_BUNDLE_SHA'] ]
           VCPKG_BASE_VERSION: $[ dependencies.arch_independent.outputs['versions.VCPKG_BASE_VERSION'] ]
         templateContext:
+          sdl:
+            codeql:
+              compiled:
+                enabled: false
+                justificationForDisabling: 'CodeQL causes the build to hang. See https://dev.azure.com/twcdot/Data/_workitems/edit/128379 . Turn CodeQL back on when it is fixed.'
+              language: cpp
+              buildIdentifier: vcpkg_cpp_glibc
           mb:
             signing:
               enabled: false
@@ -273,6 +287,13 @@ extends:
           VCPKG_STANDALONE_BUNDLE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_STANDALONE_BUNDLE_SHA'] ]
           VCPKG_BASE_VERSION: $[ dependencies.arch_independent.outputs['versions.VCPKG_BASE_VERSION'] ]
         templateContext:
+          sdl:
+            codeql:
+              compiled:
+                enabled: false
+                justificationForDisabling: 'CodeQL causes the build to hang. See https://dev.azure.com/twcdot/Data/_workitems/edit/128379 . Turn CodeQL back on when it is fixed.'
+              language: cpp
+              buildIdentifier: vcpkg_cpp_muslc
           mb:
             signing:
               enabled: false
