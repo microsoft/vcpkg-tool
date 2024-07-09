@@ -92,8 +92,10 @@ New-Module -name vcpkg -ArgumentList @($VCPKG) -ScriptBlock {
         iex $postscr
       }
 
-      Remove-Item -Force -ea 0 $env:Z_VCPKG_POSTSCRIPT,env:Z_VCPKG_POSTSCRIPT
+      Remove-Item -Force -ea 0 $env:Z_VCPKG_POSTSCRIPT
     }
+
+    Remove-Item env:Z_VCPKG_POSTSCRIPT
   }
 } | Out-Null
 
