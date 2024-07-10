@@ -254,7 +254,7 @@
   "CmdEditOptBuildTrees": "Otevře editor v podsložce stromu buildu specifické pro port",
   "CmdEnvOptions": "Přidá nainstalovanou cestu {path} do {env_var}.",
   "CmdExportEmptyPlan": "Odmítnutí vytvořit export nulových balíčků. Před exportem nainstalujte balíčky.",
-  "CmdExportExample1": "vcpkg export <port names> [--nuget] [--directory=out_dir]",
+  "CmdExportExample1": "vcpkg export <port names> [--nuget] [--output-dir=out_dir]",
   "CmdExportOpt7Zip": "Exportuje do souboru 7zip (.7z).",
   "CmdExportOptChocolatey": "Exportuje balíček Chocolatey (experimentální)",
   "CmdExportOptDebug": "Povolit předběžné ladění",

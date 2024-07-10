@@ -254,7 +254,7 @@
   "CmdEditOptBuildTrees": "ポート固有の buildtree サブフォルダーにエディターを開きます",
   "CmdEnvOptions": "インストールされている {path} を {env_var} に追加します",
   "CmdExportEmptyPlan": "0 個のパッケージのエクスポートの作成を拒否しています。エクスポートする前にパッケージをインストールしてください。",
-  "CmdExportExample1": "vcpkg export <port names> [--nuget] [--directory=out_dir]",
+  "CmdExportExample1": "vcpkg export <port names> [--nuget] [--output-dir=out_dir]",
   "CmdExportOpt7Zip": "7zip (.7z) ファイルにエクスポートします",
   "CmdExportOptChocolatey": "Chocolatey パッケージをエクスポートする (試験段階)",
   "CmdExportOptDebug": "プレハブデバッグを有効にする",

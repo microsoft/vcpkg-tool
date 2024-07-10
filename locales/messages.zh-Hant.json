@@ -254,7 +254,7 @@
   "CmdEditOptBuildTrees": "開啟編輯器進入連接埠特定的 buildtree 子資料夾",
   "CmdEnvOptions": "將已安裝的 {path} 新增至 {env_var}",
   "CmdExportEmptyPlan": "拒絕建立零套件的匯出。匯出之前請先安裝套件。",
-  "CmdExportExample1": "vcpkg export <連接埠名稱> [--nuget] [--directory=out_dir]",
+  "CmdExportExample1": "vcpkg export <port names> [--nuget] [--output-dir=out_dir]",
   "CmdExportOpt7Zip": "匯出至 7zip (.7z) 檔案",
   "CmdExportOptChocolatey": "匯出 Chocolatey 套件 (實驗性)",
   "CmdExportOptDebug": "啟用 Prefab 偵錯",

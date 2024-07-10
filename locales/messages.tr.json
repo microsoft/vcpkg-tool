@@ -254,7 +254,7 @@
   "CmdEditOptBuildTrees": "Düzenleyiciyi bağlantı noktasına özgü derleme ağacı alt klasörüne açar",
   "CmdEnvOptions": "Yüklü {path} yolunu {env_var} ortam değişkenine ekler",
   "CmdExportEmptyPlan": "Sıfır paketlerin dışarı aktarılma işleminin oluşturulması reddediliyor. Dışarı aktarmadan önce paketleri yükleyin.",
-  "CmdExportExample1": "vcpkg export <bağlantı noktası adları> [--nuget] [--directory=out_dir]",
+  "CmdExportExample1": "vcpkg export <port names> [--nuget] [--output-dir=out_dir]",
   "CmdExportOpt7Zip": "7zip (.7z) dosyasına aktarır",
   "CmdExportOptChocolatey": "Chocolatey paketini dışarı aktarır (deneysel)",
   "CmdExportOptDebug": "Prefab hata ayıklamayı etkinleştirir",

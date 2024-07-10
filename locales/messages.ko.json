@@ -254,7 +254,7 @@
   "CmdEditOptBuildTrees": "포트별 빌드 트리 하위 폴더로 편집기 열기",
   "CmdEnvOptions": "설치된 {path}을(를) {env_var}에 추가합니다.",
   "CmdExportEmptyPlan": "제로 패키지 내보내기 생성을 거부합니다. 내보내기 전에 패키지를 설치하세요.",
-  "CmdExportExample1": "vcpkg export <port names> [--nuget] [--directory=out_dir]",
+  "CmdExportExample1": "vcpkg export <port names> [--nuget] [--output-dir=out_dir]",
   "CmdExportOpt7Zip": "7zip(.7z) 파일로 내보냅니다.",
   "CmdExportOptChocolatey": "Chocolatey 패키지를 내보냅니다(실험적).",
   "CmdExportOptDebug": "프리팹 디버그 사용",

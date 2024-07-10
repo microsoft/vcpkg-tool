@@ -254,7 +254,7 @@
   "CmdEditOptBuildTrees": "Öffnet den Editor im portspezifischen Buildstrukturunterordner.",
   "CmdEnvOptions": "Fügt installierten {path} zu {env_var} hinzu.",
   "CmdExportEmptyPlan": "Es wird abgelehnt, einen Export von Nullpaketen zu erstellen. Installieren Sie Pakete vor dem Exportieren.",
-  "CmdExportExample1": "vcpkg-Export <port names> [--nuget] [--directory=out_dir]",
+  "CmdExportExample1": "vcpkg export <port names> [--nuget] [--output-dir=out_dir]",
   "CmdExportOpt7Zip": "Exportiert in eine 7zip(.7z)-Datei.",
   "CmdExportOptChocolatey": "Exportiert ein Chocolatey-Paket (experimentell)",
   "CmdExportOptDebug": "Aktiviert das Prefab-Debuggen",

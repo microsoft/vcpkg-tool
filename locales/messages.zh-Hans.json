@@ -254,7 +254,7 @@
   "CmdEditOptBuildTrees": "打开编辑器以进入特定于端口的生成树子文件夹",
   "CmdEnvOptions": "将安装的 {path} 添加到 {env_var}",
   "CmdExportEmptyPlan": "拒绝创建零包导出。在导出之前安装包。",
-  "CmdExportExample1": "vcpkg 导出 <port names> [--nuget] [--directory=out_dir]",
+  "CmdExportExample1": "vcpkg export <port names> [--nuget] [--output-dir=out_dir]",
   "CmdExportOpt7Zip": "导出为 7zip (.7z)文件",
   "CmdExportOptChocolatey": "导出 Chocolatey 包(实验性)",
   "CmdExportOptDebug": "启用预制调试",

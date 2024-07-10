@@ -254,7 +254,7 @@
   "CmdEditOptBuildTrees": "Otwiera edytor w podfolderze drzewa kompilacji specyficznym dla portu",
   "CmdEnvOptions": "Dodaje zainstalowaną ścieżkę {path} do {env_var}",
   "CmdExportEmptyPlan": "Odmowa utworzenia eksportu pakietów o wartości zero. Zainstaluj pakiety przed wyeksportowaniem.",
-  "CmdExportExample1": "eksportuje vcpkg <port names> [--nuget] [--directory=out_dir]",
+  "CmdExportExample1": "vcpkg export <port names> [--nuget] [--output-dir=out_dir]",
   "CmdExportOpt7Zip": "Eksportuj do pliku 7zip (.7z)",
   "CmdExportOptChocolatey": "Eksportuje pakiet Chocolatey (eksperymentalny)",
   "CmdExportOptDebug": "Włącza debugowanie prefab",
