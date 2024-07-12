@@ -948,9 +948,7 @@ note: $($buildtreesRoot)
 "@
 # downloads directory here
 $expectedFooter = @"
-note: Absolute paths were found in the following files
-$($packagesRoot)$($NativeSlash)vcpkg-policy-absolute-paths_$($Triplet): note: the files are relative to `${CURRENT_PACKAGES_DIR} here
-note: include/vcpkg-policy-absolute-paths.h
+$($packagesRoot)$($NativeSlash)vcpkg-policy-absolute-paths_$($Triplet)$($NativeSlash)include$($NativeSlash)vcpkg-policy-absolute-paths.h: note: Absolute paths found here
 "@
 
 foreach ($bad_dir in @('build-dir', 'downloads', 'installed-root', 'package-dir')) {
@@ -966,11 +964,9 @@ foreach ($bad_dir in @('build-dir', 'downloads', 'installed-root', 'package-dir'
 
 $expectedFooter = @"
 $($PortfilePath): note: Adding a call to ``vcpkg_fixup_pkgconfig()`` may fix absolute paths in .pc files
-note: Absolute paths were found in the following files
-$($packagesRoot)$($NativeSlash)vcpkg-policy-absolute-paths_$($Triplet): note: the files are relative to `${CURRENT_PACKAGES_DIR} here
-note: include/vcpkg-policy-absolute-paths.h
-note: share/pkgconfig/vcpkg-policy-absolute-paths.pc
-note: tools/vcpkg-policy-absolute-paths/bin/port-config.sh
+$($packagesRoot)$($NativeSlash)vcpkg-policy-absolute-paths_$($Triplet)$($NativeSlash)include$($NativeSlash)vcpkg-policy-absolute-paths.h: note: Absolute paths found here
+$($packagesRoot)$($NativeSlash)vcpkg-policy-absolute-paths_$($Triplet)$($NativeSlash)share$($NativeSlash)pkgconfig$($NativeSlash)vcpkg-policy-absolute-paths.pc: note: Absolute paths found here
+$($packagesRoot)$($NativeSlash)vcpkg-policy-absolute-paths_$($Triplet)$($NativeSlash)tools$($NativeSlash)vcpkg-policy-absolute-paths$($NativeSlash)bin$($NativeSlash)port-config.sh: note: Absolute paths found here
 "@
 
 foreach ($bad_dir in @('build-dir', 'downloads', 'installed-root', 'package-dir')) {
