@@ -14,4 +14,5 @@ VCPKG_MSVC_WARNING(push)
 VCPKG_MSVC_WARNING(disable : 6239 4189 4702)
 #include <fmt/compile.h>
 #include <fmt/format.h>
+#include <fmt/ranges.h>
 VCPKG_MSVC_WARNING(pop)
