@@ -1666,6 +1666,30 @@ namespace
                 {
                     return add_error(std::move(err), segments[1].first);
                 }
+                bool has_sha = false;
+                bool has_other = false;
+                api_stable_format(url_template.url_template, [&](std::string&, StringView key) {
+                    if (key == "sha")
+                    {
+                        has_sha = true;
+                    }
+                    else
+                    {
+                        has_other = true;
+                    }
+                });
+                if (!has_sha)
+                {
+                    if (has_other)
+                    {
+                        return add_error(msg::format(msgMissingShaVariable), segments[1].first);
+                    }
+                    if (url_template.url_template.back() != '/')
+                    {
+                        url_template.url_template.push_back('/');
+                    }
+                    url_template.url_template.append("{sha}.zip");
+                }
                 if (segments.size() == 4)
                 {
                     url_template.headers.push_back(segments[3].second);

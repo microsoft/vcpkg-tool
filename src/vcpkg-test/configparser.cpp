@@ -531,6 +531,35 @@ TEST_CASE ("BinaryConfigParser GCS provider", "[binaryconfigparser]")
     }
 }
 
+TEST_CASE ("BinaryConfigParser HTTP provider", "[binaryconfigparser]")
+{
+    {
+        auto parsed = parse_binary_provider_configs("http,http://example.org/", {});
+        auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
+
+        REQUIRE(state.url_templates_to_get.size() == 1);
+        REQUIRE(state.url_templates_to_get[0].url_template == "http://example.org/{sha}.zip");
+    }
+    {
+        auto parsed = parse_binary_provider_configs("http,http://example.org", {});
+        auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
+
+        REQUIRE(state.url_templates_to_get.size() == 1);
+        REQUIRE(state.url_templates_to_get[0].url_template == "http://example.org/{sha}.zip");
+    }
+    {
+        auto parsed = parse_binary_provider_configs("http,http://example.org/{triplet}/{sha}", {});
+        auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
+
+        REQUIRE(state.url_templates_to_get.size() == 1);
+        REQUIRE(state.url_templates_to_get[0].url_template == "http://example.org/{triplet}/{sha}");
+    }
+    {
+        auto parsed = parse_binary_provider_configs("http,http://example.org/{triplet}", {});
+        REQUIRE(!parsed.has_value());
+    }
+}
+
 TEST_CASE ("AssetConfigParser azurl provider", "[assetconfigparser]")
 {
     CHECK(parse_download_configuration({}));

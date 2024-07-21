@@ -1148,6 +1148,8 @@
   "_MissingRequiredField.comment": "Example completely formatted message:\nerror: missing required field 'dependencies' (an array of dependencies) An example of {json_field} is identifer. An example of {json_type} is an array of identifiers.",
   "MissingRequiredField2": "missing required field '{json_field}'",
   "_MissingRequiredField2.comment": "An example of {json_field} is identifer.",
+  "MissingShaVariable": "The {{sha}} variable must be used in the template if other variables are used.",
+  "_MissingShaVariable.comment": "{{sha}} should not be translated",
   "MixingBooleanOperationsNotAllowed": "mixing & and | is not allowed; use () to specify order of operations",
   "MonoInstructions": "This may be caused by an incomplete mono installation. Full mono is available on some systems via `sudo apt install mono-complete`. Ubuntu 18.04 users may need a newer version of mono, available at https://www.mono-project.com/download/stable/",
   "MultiArch": "Multi-Arch must be 'same' but was {option}",
