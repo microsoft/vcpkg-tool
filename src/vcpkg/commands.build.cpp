@@ -1559,7 +1559,7 @@ namespace vcpkg
             }
         }
 
-        return res;
+        return res.append(msgSeeURL, msg::url = docs::troubleshoot_build_failures_url);
     }
 
     void append_log(const Path& path, const std::string& log, size_t max_log_length, std::string& out)

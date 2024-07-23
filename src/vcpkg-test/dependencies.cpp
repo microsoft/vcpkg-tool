@@ -4,6 +4,7 @@
 
 #include <vcpkg/commands.set-installed.h>
 #include <vcpkg/dependencies.h>
+#include <vcpkg/documentation.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/sourceparagraph.h>
 #include <vcpkg/vcpkgcmdarguments.h>
@@ -478,7 +479,8 @@ This can be resolved by adding an explicit override to the preferred version. Fo
       "version": "2with\"quotes"
     }
   ]
-See `vcpkg help versioning` or https://learn.microsoft.com/vcpkg/users/versioning for more information.)");
+See `vcpkg help versioning` or )" +
+            docs::troubleshoot_versioning_url + R"( for more information.)");
 }
 
 TEST_CASE ("version install string port version", "[versionplan]")
@@ -1117,7 +1119,8 @@ This can be resolved by adding an explicit override to the preferred version. Fo
       "version": "1.0.0"
     }
   ]
-See `vcpkg help versioning` or https://learn.microsoft.com/vcpkg/users/versioning for more information.)");
+See `vcpkg help versioning` or )" +
+                docs::troubleshoot_versioning_url + R"( for more information.)");
     }
     SECTION ("higher baseline")
     {
@@ -1148,7 +1151,8 @@ This can be resolved by adding an explicit override to the preferred version. Fo
       "version": "1.0.2"
     }
   ]
-See `vcpkg help versioning` or https://learn.microsoft.com/vcpkg/users/versioning for more information.)");
+See `vcpkg help versioning` or )" +
+                docs::troubleshoot_versioning_url + R"( for more information.)");
     }
 }
 
@@ -1241,7 +1245,8 @@ This can be resolved by adding an explicit override to the preferred version. Fo
       "version": "1"
     }
   ]
-See `vcpkg help versioning` or https://learn.microsoft.com/vcpkg/users/versioning for more information.)");
+See `vcpkg help versioning` or )" +
+                docs::troubleshoot_versioning_url + R"( for more information.)");
     }
     SECTION ("lower baseline")
     {

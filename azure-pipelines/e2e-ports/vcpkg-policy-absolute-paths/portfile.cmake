@@ -22,6 +22,9 @@ endif()
 file(MAKE_DIRECTORY "${CURRENT_PACKAGES_DIR}/include")
 file(WRITE "${CURRENT_PACKAGES_DIR}/include/vcpkg-policy-absolute-paths.h" "${PROBLEM_TEXT}")
 
+file(MAKE_DIRECTORY "${CURRENT_PACKAGES_DIR}/tools/${PORT}/bin")
+file(WRITE "${CURRENT_PACKAGES_DIR}/tools/${PORT}/bin/port-config.sh" "${PROBLEM_TEXT}")
+
 if("policy" IN_LIST FEATURES)
     set(VCPKG_POLICY_SKIP_ABSOLUTE_PATHS_CHECK enabled)
 endif()

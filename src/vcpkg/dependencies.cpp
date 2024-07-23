@@ -1316,15 +1316,11 @@ namespace vcpkg
         return ret;
     }
 
-    void print_plan(const ActionPlan& action_plan, const bool is_recursive, const Path& builtin_ports_dir)
+    FormattedPlan print_plan(const ActionPlan& action_plan, const Path& builtin_ports_dir)
     {
         auto formatted = format_plan(action_plan, builtin_ports_dir);
         msg::print(formatted.text);
-        if (!is_recursive && formatted.has_removals)
-        {
-            msg::println_warning(msgPackagesToRebuildSuggestRecurse);
-            Checks::exit_fail(VCPKG_LINE_INFO);
-        }
+        return formatted;
     }
 
     namespace
@@ -1777,7 +1773,7 @@ namespace vcpkg
             serialize_dependency_override(example_array, DependencyOverride{on.name(), baseline.version});
             doc.append_raw(Json::stringify_object_member(OVERRIDES, example_array, Json::JsonStyle::with_spaces(2), 1));
 
-            doc.append(msgVersionIncomparable4, msg::url = docs::versioning_url);
+            doc.append(msgVersionIncomparable4, msg::url = docs::troubleshoot_versioning_url);
             return doc;
         }
 
