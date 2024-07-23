@@ -1589,23 +1589,32 @@ namespace vcpkg
                        LocalizedString::from_raw(portfile_cmake)
                            .append_raw(": ")
                            .append_raw(WarningPrefix)
-                           .append(msgFilesContainAbsolutePath1));
+                           .append(msgFilesContainAbsolutePath1)
+                           .append_raw('\n'));
         for (auto&& absolute_path : prohibited_absolute_paths)
         {
-            msg_sink.print(LocalizedString::from_raw("\n").append_raw(NotePrefix).append_raw(absolute_path));
+            msg_sink.print(LocalizedString::from_raw(NotePrefix).append_raw(absolute_path).append_raw('\n'));
         }
 
         if (any_pc_file_fails)
         {
-            msg_sink.print(LocalizedString::from_raw("\n")
-                               .append_raw(portfile_cmake)
+            msg_sink.print(LocalizedString::from_raw(portfile_cmake)
                                .append_raw(": ")
                                .append_raw(NotePrefix)
-                               .append(msgFilesContainAbsolutePathPkgconfigNote));
+                               .append(msgFilesContainAbsolutePathPkgconfigNote)
+                               .append_raw('\n'));
         }
 
-        msg_sink.print(LocalizedString::from_raw("\n").append_raw(NotePrefix).append(msgFilesContainAbsolutePath2));
-        print_relative_paths(msg_sink, msgFilesRelativeToThePackageDirectoryHere, package_dir, failing_files);
+        for (auto&& failing_file : failing_files)
+        {
+            failing_file.make_preferred();
+            msg_sink.print(LocalizedString::from_raw(package_dir / failing_file)
+                               .append_raw(": ")
+                               .append_raw(NotePrefix)
+                               .append(msgFilesContainAbsolutePath2)
+                               .append_raw('\n'));
+        }
+
         return LintStatus::PROBLEM_DETECTED;
     }
 
