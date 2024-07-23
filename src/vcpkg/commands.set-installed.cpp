@@ -210,7 +210,7 @@ namespace vcpkg
         auto status_db = database_load_check(fs, paths.installed());
         adjust_action_plan_to_status_db(action_plan, status_db);
 
-        print_plan(action_plan, true, paths.builtin_ports_directory());
+        print_plan(action_plan, paths.builtin_ports_directory());
 
         if (auto p_pkgsconfig = maybe_pkgconfig.get())
         {
