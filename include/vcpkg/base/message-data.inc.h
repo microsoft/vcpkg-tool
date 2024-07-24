@@ -1287,7 +1287,7 @@ DECLARE_MESSAGE(FilesContainAbsolutePath1,
                 "followed by a list of found files.",
                 "There should be no absolute paths, such as the following, in an installed package. To suppress this "
                 "message, add set(VCPKG_POLICY_SKIP_ABSOLUTE_PATHS_CHECK enabled)")
-DECLARE_MESSAGE(FilesContainAbsolutePath2, (), "", "Absolute paths found here")
+DECLARE_MESSAGE(FilesContainAbsolutePath2, (), "", "absolute paths found here")
 DECLARE_MESSAGE(FilesContainAbsolutePathPkgconfigNote,
                 (),
                 "",

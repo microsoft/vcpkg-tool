@@ -233,11 +233,11 @@ namespace
                                      .append_raw(git_tree)
                                      .append_raw("\n-- ")
                                      .append(msgAddVersionCommitChangesReminder)
-                                     .append_raw("\n***")
+                                     .append_raw("\n*** ")
                                      .append(msgAddVersionNoFilesUpdated)
-                                     .append_raw("\n***")
+                                     .append_raw("\n*** ")
                                      .append(msgSeeURL, msg::url = docs::add_version_command_url)
-                                     .append_raw("***"));
+                                     .append_raw("\n***"));
             if (keep_going) return UpdateResult::NotUpdated;
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
@@ -349,7 +349,7 @@ namespace vcpkg
                 VCPKG_LINE_INFO,
                 add_all,
                 msg::format(msgAddVersionUseOptionAll, msg::command_name = "x-add-version", msg::option = SwitchAll)
-                    .append_raw("\n")
+                    .append_raw('\n')
                     .append(msgSeeURL, msg::url = docs::add_version_command_url));
 
             for (auto&& port_dir : fs.get_directories_non_recursive(paths.builtin_ports_directory(), VCPKG_LINE_INFO))

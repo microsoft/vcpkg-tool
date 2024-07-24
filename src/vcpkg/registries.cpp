@@ -1052,7 +1052,7 @@ namespace
             error_msg.append_indent().append_raw(version.to_string()).append_raw('\n');
         }
 
-        error_msg.append(msgVersionIncomparable4, msg::url = docs::versioning_url);
+        error_msg.append(msgVersionIncomparable4, msg::url = docs::versioning_url).append_raw('\n');
         error_msg.append(msgSeeURL, msg::url = docs::troubleshoot_versioning_url);
         return error_msg;
     }
