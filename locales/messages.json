@@ -778,7 +778,7 @@
   "_FileSeekFailed.comment": "An example of {path} is /foo/bar. An example of {byte_offset} is 42.",
   "FilesContainAbsolutePath1": "There should be no absolute paths, such as the following, in an installed package. To suppress this message, add set(VCPKG_POLICY_SKIP_ABSOLUTE_PATHS_CHECK enabled)",
   "_FilesContainAbsolutePath1.comment": "This message is printed before a list of found absolute paths, followed by FilesContainAbsolutePath2, followed by a list of found files.",
-  "FilesContainAbsolutePath2": "Absolute paths found here",
+  "FilesContainAbsolutePath2": "absolute paths found here",
   "FilesContainAbsolutePathPkgconfigNote": "Adding a call to `vcpkg_fixup_pkgconfig()` may fix absolute paths in .pc files",
   "FilesExported": "Files exported at: {path}",
   "_FilesExported.comment": "An example of {path} is /foo/bar.",
