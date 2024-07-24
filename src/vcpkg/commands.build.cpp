@@ -777,14 +777,8 @@ namespace vcpkg
         }
 
         auto& post_portfile_includes = action.pre_build_info(VCPKG_LINE_INFO).post_portfile_includes;
-        std::string all_post_portfile_includes;
-        if (!post_portfile_includes.empty())
-            all_post_portfile_includes = std::accumulate(
-                std::next(post_portfile_includes.begin()),
-                post_portfile_includes.end(),
-                post_portfile_includes[0].generic_u8string(),
-                [](const Path& a, const Path& b) { return a.generic_u8string() + ";" + b.generic_u8string(); });
-        ;
+        std::string all_post_portfile_includes =
+            Strings::join(";", Util::fmap(post_portfile_includes, [](const Path& p) { return p.generic_u8string(); }));
 
         std::vector<CMakeVariable> variables{
             {CMakeVariableAllFeatures, all_features},
@@ -798,7 +792,8 @@ namespace vcpkg
             {CMakeVariableEditable, Util::Enum::to_bool(action.editable) ? "1" : "0"},
             {CMakeVariableNoDownloads, !Util::Enum::to_bool(build_options.allow_downloads) ? "1" : "0"},
             {CMakeVariableZChainloadToolchainFile, action.pre_build_info(VCPKG_LINE_INFO).toolchain_file()},
-            {CMakeVariableZPostPortfileIncludes, all_post_portfile_includes}};
+            {CMakeVariableZPostPortfileIncludes, all_post_portfile_includes},
+        };
 
         if (build_options.download_tool == DownloadTool::Aria2)
         {
@@ -1227,6 +1222,7 @@ namespace vcpkg
             {
                 Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgInvalidValueHashAdditionalFiles, msg::path = file);
             }
+
             abi_tag_entries.emplace_back(
                 fmt::format("additional_file_{}", i),
                 Hash::get_file_hash(fs, file, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO));
@@ -1239,6 +1235,7 @@ namespace vcpkg
             {
                 Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgInvalidValuePostPortfileIncludes, msg::path = file);
             }
+
             abi_tag_entries.emplace_back(
                 fmt::format("post_portfile_include_{}", i),
                 Hash::get_file_hash(fs, file, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO));

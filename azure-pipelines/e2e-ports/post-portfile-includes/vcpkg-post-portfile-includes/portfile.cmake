@@ -3,8 +3,8 @@ list(FILTER lines INCLUDE REGEX "post_portfile_include_(0|1)")
 list(GET lines 0 first_line)
 list(GET lines 1 second_line)
 
-set(expected1 "post_portfile_include_0 e76d04279b66f148165cb1c6480fedd55099cd848702e07522c9d3364841522b")
-set(expected2 "post_portfile_include_1 ce31229919b5f3c6802a5670c06cf91bdf30620127cf109b41b8283e92413e21")
+set(expected1 "post_portfile_include_0 ad6ac07ed1e066eaf23af161afb36b25a3ec03af49cd3e52ceb3a91d388f23f8")
+set(expected2 "post_portfile_include_1 f8b37330094530b0fc7a5606fea7b491ec0e67edd1fd8f7e1a5607f7be0a3ff2")
 
 if(first_line STREQUAL "${expected1}")
     message(STATUS "ABI hash succesful!")
