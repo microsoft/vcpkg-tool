@@ -537,7 +537,7 @@
   "FileReadFailed": "Nie można odczytać {count} bajtów z {path} z przesunięciem {byte_offset}.",
   "FileSeekFailed": "Nie można poszukać pozycji {byte_offset} w ścieżce {path}.",
   "FilesContainAbsolutePath1": "W zainstalowanym pakiecie nie powinny istnieć ścieżki bezwzględne, takie jak następujące. Aby pominąć ten komunikat, dodaj element set(VCPKG_POLICY_SKIP_ABSOLUTE_PATHS_CHECK enabled)",
-  "FilesContainAbsolutePath2": "Absolute paths found here",
+  "FilesContainAbsolutePath2": "absolute paths found here",
   "FilesContainAbsolutePathPkgconfigNote": "Dodanie wywołania funkcji „vcpkg_fixup_pkgconfig()” może naprawić ścieżki bezwzględne w plikach pc",
   "FilesExported": "Pliki wyeksportowane do: {path}",
   "FilesRelativeToTheBuildDirectoryHere": "pliki są względne względem katalogu kompilacji w tym miejscu",

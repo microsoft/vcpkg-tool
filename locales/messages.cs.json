@@ -537,7 +537,7 @@
   "FileReadFailed": "Čtení {count} bajtů z cesty {path} na posunu {byte_offset} se nezdařilo.",
   "FileSeekFailed": "Nepodařilo se vyhledat umístění pro {byte_offset} v cestě {path}.",
   "FilesContainAbsolutePath1": "V nainstalovaném balíčku by neměly být žádné absolutní cesty, jako jsou následující. Pokud chcete tuto zprávu potlačit, přidejte set(VCPKG_POLICY_SKIP_ABSOLUTE_PATHS_CHECK enabled)",
-  "FilesContainAbsolutePath2": "Absolute paths found here",
+  "FilesContainAbsolutePath2": "absolute paths found here",
   "FilesContainAbsolutePathPkgconfigNote": "Přidáním volání do funkce vcpkg_fixup_pkgconfig() lze opravit absolutní cesty v souborech .pc",
   "FilesExported": "Soubory exportované v: {path}",
   "FilesRelativeToTheBuildDirectoryHere": "soubory jsou tady relativní vzhledem k adresáři sestavení",

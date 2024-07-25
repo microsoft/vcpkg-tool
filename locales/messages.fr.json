@@ -537,7 +537,7 @@
   "FileReadFailed": "Échec de la lecture de {count} octets à partir de {path} au décalage {byte_offset}.",
   "FileSeekFailed": "Échec de la recherche de la position {byte_offset} dans {path}.",
   "FilesContainAbsolutePath1": "Il ne doit y avoir aucun chemin absolu, tel que le suivant, dans un package installé : Pour supprimer ce message, ajoutez set (VCPKG_POLICY_SKIP_ABSOLUTE_PATHS_CHECK activé)",
-  "FilesContainAbsolutePath2": "Absolute paths found here",
+  "FilesContainAbsolutePath2": "absolute paths found here",
   "FilesContainAbsolutePathPkgconfigNote": "L’ajout d’un appel à 'vcpkg_fixup_pkgconfig()' peut corriger les chemins absolus dans les fichiers .pc",
   "FilesExported": "Fichiers exportés à : {path}",
   "FilesRelativeToTheBuildDirectoryHere": "les fichiers sont relatifs au répertoire de build ici",

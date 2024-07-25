@@ -537,7 +537,7 @@
   "FileReadFailed": "{byte_offset} uzaklığında {path} yolundan {count} bayt okunamadı.",
   "FileSeekFailed": "{path} içinde {byte_offset} konumlandırma aranamadı.",
   "FilesContainAbsolutePath1": "Yüklü bir pakette aşağıdaki gibi mutlak yol olmamalıdır. Bu iletiyi gizlemek için set(VCPKG_POLICY_SKIP_ABSOLUTE_PATHS_CHECK enabled) ekleyin",
-  "FilesContainAbsolutePath2": "Absolute paths found here",
+  "FilesContainAbsolutePath2": "absolute paths found here",
   "FilesContainAbsolutePathPkgconfigNote": "`vcpkg_fixup_pkgconfig()` çağrısı eklemek .pc dosyalarındaki mutlak yolları düzeltebilir",
   "FilesExported": "{path} konumunda dışa aktarılan dosyalar",
   "FilesRelativeToTheBuildDirectoryHere": "dosyalar burada derleme dizini ile göredir",

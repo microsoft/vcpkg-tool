@@ -537,7 +537,7 @@
   "FileReadFailed": "Fehler beim Lesen von {count} Bytes aus {path} bei Offset {byte_offset}.",
   "FileSeekFailed": "Fehler beim Suchen nach der Position von {byte_offset} in {path}.",
   "FilesContainAbsolutePath1": "In einem installierten Paket sollten keine absoluten Pfade, wie die folgenden, vorhanden sein. Um diese Meldung zu unterdrücken, fügen Sie set(VCPKG_POLICY_SKIP_ABSOLUTE_PATHS_CHECK enabled) hinzu.",
-  "FilesContainAbsolutePath2": "Absolute paths found here",
+  "FilesContainAbsolutePath2": "absolute paths found here",
   "FilesContainAbsolutePathPkgconfigNote": "Durch hinzufügen eines Aufrufs von \"vcpkg_fixup_pkgconfig()\" können absolute Pfade in PC-Dateien korrigiert werden.",
   "FilesExported": "Exportierte Dateien unter: {path}",
   "FilesRelativeToTheBuildDirectoryHere": "die Dateien sind hier relativ zum Buildverzeichnis",

@@ -537,7 +537,7 @@
   "FileReadFailed": "Non è stato possibile leggere {count} byte da {path} all'offset {byte_offset}.",
   "FileSeekFailed": "Impossibile scorrere alla posizione {byte_offset} in {path}.",
   "FilesContainAbsolutePath1": "In un pacchetto installato non deve essere presente alcun percorso assoluto, ad esempio il seguente. Per eliminare questo messaggio, aggiungere set (VCPKG_POLICY_SKIP_ABSOLUTE_PATHS_CHECK abilitato)",
-  "FilesContainAbsolutePath2": "Absolute paths found here",
+  "FilesContainAbsolutePath2": "absolute paths found here",
   "FilesContainAbsolutePathPkgconfigNote": "L'aggiunta di una chiamata a 'vcpkg_fixup_pkgconfig()' può correggere i percorsi assoluti nei file con estensione pc",
   "FilesExported": "File esportati in: {path}",
   "FilesRelativeToTheBuildDirectoryHere": "i file sono relativi alla directory di compilazione qui",

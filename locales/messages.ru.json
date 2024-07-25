@@ -537,7 +537,7 @@
   "FileReadFailed": "Не удалось прочитать {count} байт из {path} по смещению {byte_offset}.",
   "FileSeekFailed": "Не удалось найти расположение {byte_offset} в {path}.",
   "FilesContainAbsolutePath1": "В установленном пакете не должно быть абсолютных путей, таких как следующие. Чтобы скрыть это сообщение, добавьте set(VCPKG_POLICY_SKIP_ABSOLUTE_PATHS_CHECK enabled)",
-  "FilesContainAbsolutePath2": "Absolute paths found here",
+  "FilesContainAbsolutePath2": "absolute paths found here",
   "FilesContainAbsolutePathPkgconfigNote": "Добавление вызова \"vcpkg_fixup_pkgconfig()\" может исправить абсолютные пути в файлах .pc.",
   "FilesExported": "Файлы экспортированы в папку: {path}",
   "FilesRelativeToTheBuildDirectoryHere": "файлы здесь относятся к каталогу сборки",

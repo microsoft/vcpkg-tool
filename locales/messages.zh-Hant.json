@@ -537,7 +537,7 @@
   "FileReadFailed": "無法從位移 {byte_offset} 的 {path} 讀取 {count} 位元組。",
   "FileSeekFailed": "無法在 {path} 中搜尋至位置 {byte_offset}。",
   "FilesContainAbsolutePath1": "在安裝的套件中不應該有絕對路徑，例如下列路徑。若要隱藏此訊息，請新增 set(VCPKG_POLICY_SKIP_ABSOLUTE_PATHS_CHECK enabled)",
-  "FilesContainAbsolutePath2": "Absolute paths found here",
+  "FilesContainAbsolutePath2": "absolute paths found here",
   "FilesContainAbsolutePathPkgconfigNote": "新增 'vcpkg_fixup_pkgconfig()' 的呼叫可能會修正 .pc 檔案中的絕對路徑",
   "FilesExported": "檔案匯出於: {path}",
   "FilesRelativeToTheBuildDirectoryHere": "檔案是相對於這裡的建置目錄",

@@ -537,7 +537,7 @@
   "FileReadFailed": "Falha ao ler {count} bytes de {path} no deslocamento {byte_offset}.",
   "FileSeekFailed": "Falha ao buscar a posição {byte_offset} em {path}.",
   "FilesContainAbsolutePath1": "Não deve haver caminhos absolutos, como os seguintes, em um pacote instalado. Para suprimir esta mensagem, adicione set(VCPKG_POLICY_SKIP_ABSOLUTE_PATHS_CHECK enabled)",
-  "FilesContainAbsolutePath2": "Absolute paths found here",
+  "FilesContainAbsolutePath2": "absolute paths found here",
   "FilesContainAbsolutePathPkgconfigNote": "Adicionar uma chamada a “vcpkg_fixup_pkgconfig()” pode corrigir caminhos absolutos em arquivos .pc",
   "FilesExported": "Arquivos exportados em: {path}",
   "FilesRelativeToTheBuildDirectoryHere": "os arquivos são relativos ao diretório de build aqui",

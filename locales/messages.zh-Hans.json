@@ -537,7 +537,7 @@
   "FileReadFailed": "未能从 {path} 的 {byte_offset} 偏移处读取 {count} 个字节。",
   "FileSeekFailed": "未能在 {path} 中找到位置 {byte_offset}。",
   "FilesContainAbsolutePath1": "安装的包中不得有绝对路径，如下所示。若要抑制此消息，请添加 set(VCPKG_POLICY_SKIP_ABSOLUTE_PATHS_CHECK enabled)",
-  "FilesContainAbsolutePath2": "Absolute paths found here",
+  "FilesContainAbsolutePath2": "absolute paths found here",
   "FilesContainAbsolutePathPkgconfigNote": "添加对 `vcpkg_fixup_pkgconfig()` 的调用可能会修复 .pc 文件中的绝对路径",
   "FilesExported": "文件导出位置: {path}",
   "FilesRelativeToTheBuildDirectoryHere": "文件相对于此处的生成目录",

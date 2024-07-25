@@ -537,7 +537,7 @@
   "FileReadFailed": "オフセット {byte_offset} の {path} から {count} バイトを読み取れませんでした。",
   "FileSeekFailed": "{path}内の位置{byte_offset}を検索できませんでした。",
   "FilesContainAbsolutePath1": "インストールされているパッケージには、次のような絶対パスを指定しないでください。このメッセージを非表示にするには、set(VCPKG_POLICY_SKIP_ABSOLUTE_PATHS_CHECK enabled) を追加します",
-  "FilesContainAbsolutePath2": "Absolute paths found here",
+  "FilesContainAbsolutePath2": "absolute paths found here",
   "FilesContainAbsolutePathPkgconfigNote": "`vcpkg_fixup_pkgconfig()` への呼び出しを追加すると、.pc ファイルの絶対パスが修正される場合があります",
   "FilesExported": "エクスポートされたファイルの場所: {path}",
   "FilesRelativeToTheBuildDirectoryHere": "ファイルはビルド ディレクトリに対して相対的です",
