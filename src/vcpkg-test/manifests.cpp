@@ -5,6 +5,7 @@
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/util.h>
 
+#include <vcpkg/documentation.h>
 #include <vcpkg/sourceparagraph.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 
@@ -1429,8 +1430,8 @@ TEST_CASE ("default-feature-empty errors", "[manifests]")
     REQUIRE(!m_pgh.has_value());
     REQUIRE(m_pgh.error().data() ==
             "<test manifest>: error: $.default-features[0] (a feature name): \"\" is not a valid feature name. Feature "
-            "names must be lowercase alphanumeric+hypens and not reserved (see "
-            "https://learn.microsoft.com/vcpkg/users/manifests for more information).");
+            "names must be lowercase alphanumeric+hypens and not reserved (see " +
+                docs::manifests_url + " for more information).");
 }
 
 TEST_CASE ("default-feature-empty-object errors", "[manifests]")
@@ -1442,8 +1443,8 @@ TEST_CASE ("default-feature-empty-object errors", "[manifests]")
     REQUIRE(!m_pgh.has_value());
     REQUIRE(m_pgh.error().data() ==
             "<test manifest>: error: $.default-features[0].name (a feature name): \"\" is not a valid feature name. "
-            "Feature names must be lowercase alphanumeric+hypens and not reserved (see "
-            "https://learn.microsoft.com/vcpkg/users/manifests for more information).");
+            "Feature names must be lowercase alphanumeric+hypens and not reserved (see " +
+                docs::manifests_url + " for more information).");
 }
 
 TEST_CASE ("dependency-name-empty errors", "[manifests]")
@@ -1455,8 +1456,8 @@ TEST_CASE ("dependency-name-empty errors", "[manifests]")
     REQUIRE(!m_pgh.has_value());
     REQUIRE(m_pgh.error().data() ==
             "<test manifest>: error: $.dependencies[0] (a package name): \"\" is not a valid package name. Package "
-            "names must be lowercase alphanumeric+hypens and not reserved (see "
-            "https://learn.microsoft.com/vcpkg/users/manifests for more information).");
+            "names must be lowercase alphanumeric+hypens and not reserved (see " +
+                docs::manifests_url + " for more information).");
 }
 
 TEST_CASE ("dependency-name-empty-object errors", "[manifests]")
@@ -1468,8 +1469,8 @@ TEST_CASE ("dependency-name-empty-object errors", "[manifests]")
     REQUIRE(!m_pgh.has_value());
     REQUIRE(m_pgh.error().data() ==
             "<test manifest>: error: $.dependencies[0].name (a package name): \"\" is not a valid package name. "
-            "Package names must be lowercase alphanumeric+hypens and not reserved (see "
-            "https://learn.microsoft.com/vcpkg/users/manifests for more information).");
+            "Package names must be lowercase alphanumeric+hypens and not reserved (see " +
+                docs::manifests_url + " for more information).");
 }
 
 TEST_CASE ("dependency-feature-name-core errors", "[manifests]")
@@ -1555,8 +1556,8 @@ TEST_CASE ("dependency-feature-name-empty errors", "[manifests]")
     REQUIRE(!m_pgh.has_value());
     REQUIRE(m_pgh.error().data() ==
             "<test manifest>: error: $.dependencies[0].features[0] (a feature name): \"\" is not a valid feature name. "
-            "Feature names must be lowercase alphanumeric+hypens and not reserved (see "
-            "https://learn.microsoft.com/vcpkg/users/manifests for more information).");
+            "Feature names must be lowercase alphanumeric+hypens and not reserved (see " +
+                docs::manifests_url + " for more information).");
 }
 
 TEST_CASE ("dependency-feature-name-empty-object errors", "[manifests]")
@@ -1573,6 +1574,6 @@ TEST_CASE ("dependency-feature-name-empty-object errors", "[manifests]")
     REQUIRE(!m_pgh.has_value());
     REQUIRE(m_pgh.error().data() ==
             "<test manifest>: error: $.dependencies[0].features[0].name (a feature name): \"\" is not a valid feature "
-            "name. Feature names must be lowercase alphanumeric+hypens and not reserved (see "
-            "https://learn.microsoft.com/vcpkg/users/manifests for more information).");
+            "name. Feature names must be lowercase alphanumeric+hypens and not reserved (see " +
+                docs::manifests_url + " for more information).");
 }

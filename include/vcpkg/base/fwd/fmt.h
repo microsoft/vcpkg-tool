@@ -2,7 +2,7 @@
 
 namespace fmt
 {
-    inline namespace v10
+    inline namespace v11
     {
         template<typename T, typename Char, typename Enable>
         struct formatter;

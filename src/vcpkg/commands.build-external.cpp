@@ -27,6 +27,18 @@ namespace vcpkg
     {
         const ParsedArguments options = args.parse_arguments(CommandBuildExternalMetadata);
 
+        static constexpr BuildPackageOptions build_options{
+            BuildMissing::Yes,
+            AllowDownloads::Yes,
+            OnlyDownloads::No,
+            CleanBuildtrees::Yes,
+            CleanPackages::Yes,
+            CleanDownloads::No,
+            DownloadTool::Builtin,
+            BackcompatFeatures::Allow,
+            PrintUsage::Yes,
+        };
+
         const FullPackageSpec spec =
             check_and_get_full_package_spec(options.command_arguments[0], default_triplet, paths.get_triplet_db())
                 .value_or_exit(VCPKG_LINE_INFO);
@@ -37,6 +49,6 @@ namespace vcpkg
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();
         PathsPortFileProvider provider(fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, overlays));
-        command_build_and_exit_ex(args, spec, host_triplet, provider, null_build_logs_recorder(), paths);
+        command_build_and_exit_ex(args, paths, host_triplet, build_options, spec, provider, null_build_logs_recorder());
     }
 }

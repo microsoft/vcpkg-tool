@@ -221,7 +221,8 @@ Build-Depends: bzip
                           scfl,
                           "test_packages_root",
                           RequestType::USER_REQUESTED,
-                          Test::ARM_UWP,
+                          UseHeadVersion::No,
+                          Editable::No,
                           {{"a", {}}, {"b", {}}},
                           {},
                           {});
@@ -348,7 +349,8 @@ Description:
                               scfl,
                               "test_packages_root",
                               RequestType::USER_REQUESTED,
-                              Test::ARM_UWP,
+                              UseHeadVersion::No,
+                              Editable::No,
                               std::map<std::string, std::vector<FeatureSpec>>{},
                               std::vector<LocalizedString>{},
                               std::vector<std::string>{});
@@ -426,7 +428,8 @@ Description: a spiffy compression library wrapper
                                       scfl,
                                       "test_packages_root",
                                       RequestType::USER_REQUESTED,
-                                      Test::ARM64_WINDOWS,
+                                      UseHeadVersion::No,
+                                      Editable::No,
                                       std::map<std::string, std::vector<FeatureSpec>>{},
                                       std::vector<LocalizedString>{},
                                       std::vector<std::string>{});
@@ -455,7 +458,8 @@ Description: a spiffy compression library wrapper
                                       scfl2,
                                       "test_packages_root",
                                       RequestType::USER_REQUESTED,
-                                      Test::ARM64_WINDOWS,
+                                      UseHeadVersion::No,
+                                      Editable::No,
                                       std::map<std::string, std::vector<FeatureSpec>>{},
                                       std::vector<LocalizedString>{},
                                       std::vector<std::string>{});

@@ -59,6 +59,8 @@ namespace vcpkg::Json
 
         const std::vector<LocalizedString>& warnings() const { return m_warnings; }
 
+        LocalizedString join() const;
+
         std::string path() const noexcept;
         StringView origin() const noexcept;
 

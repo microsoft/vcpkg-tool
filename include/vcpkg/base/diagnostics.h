@@ -4,6 +4,7 @@
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/optional.h>
 
+#include <memory>
 #include <string>
 #include <type_traits>
 #include <vector>

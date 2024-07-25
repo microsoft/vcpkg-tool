@@ -8,6 +8,8 @@
 
 #include <vcpkg/documentation.h>
 
+#include <math.h>
+
 #include <atomic>
 #include <type_traits>
 
@@ -1484,6 +1486,22 @@ namespace vcpkg::Json
     void Reader::add_diagnostic_warning(const LocalizedString& type, const DiagnosticLine& warning)
     {
         m_warnings.push_back(warning.to_json_reader_string(path(), type));
+    }
+
+    LocalizedString Reader::join() const
+    {
+        LocalizedString res;
+        for (const auto& e : m_errors)
+        {
+            if (!res.empty()) res.append_raw("\n");
+            res.append(e);
+        }
+        for (const auto& w : m_warnings)
+        {
+            if (!res.empty()) res.append_raw("\n");
+            res.append(w);
+        }
+        return res;
     }
 
     std::string Reader::path() const noexcept

@@ -1,5 +1,5 @@
 {
-  "$id": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/master/docs/vcpkg-configuration.schema.json",
+  "$id": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg-configuration.schema.json",
   "type": "object",
   "properties": {
     "default-registry": {

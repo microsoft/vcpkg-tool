@@ -1,3 +1,4 @@
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/strings.h>
@@ -360,7 +361,7 @@ namespace vcpkg
                                                           .string_arg(destination)
                                                           .string_arg("*")
                                                           .string_arg("--exclude")
-                                                          .string_arg(".DS_Store"),
+                                                          .string_arg(FileDotDsStore),
                                                       settings),
                        "zip");
 #endif
