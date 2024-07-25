@@ -1061,6 +1061,8 @@
   "_InvalidUri.comment": "{value} is the URI we attempted to parse.",
   "InvalidValueHashAdditionalFiles": "Variable VCPKG_HASH_ADDITIONAL_FILES contains invalid file path: '{path}'. The value must be an absolute path to an existent file.",
   "_InvalidValueHashAdditionalFiles.comment": "An example of {path} is /foo/bar.",
+  "InvalidValuePostPortfileIncludes": "Variable VCPKG_POST_PORTFILE_INCLUDES contains invalid file path: '{path}'. The value must be an absolute path to an existent cmake file.",
+  "_InvalidValuePostPortfileIncludes.comment": "An example of {path} is /foo/bar.",
   "IrregularFile": "path was not a regular file: {path}",
   "_IrregularFile.comment": "An example of {path} is /foo/bar.",
   "JsonErrorMustBeAnObject": "Expected \"{path}\" to be an object.",
