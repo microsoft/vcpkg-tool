@@ -210,7 +210,7 @@ try {
     #  can't deactivate without postscript:
     $output = Run-VcpkgAndCaptureOutput -ForceExe deactivate
     Throw-IfNotFailed
-    Test-Match $output "no postscript file: rerun with the same arguments as vcpkg-shell"
+    Test-Match $output "no postscript file: run vcpkg-shell with the same arguments"
 
     $output = Run-VcpkgAndCaptureOutput deactivate
     Throw-IfFailed
@@ -219,21 +219,21 @@ try {
     #  can't activate without postscript:
     $output = Run-VcpkgAndCaptureOutput -ForceExe activate
     Throw-IfNotFailed
-    Test-Match $output "no postscript file: rerun with the same arguments as vcpkg-shell"
+    Test-Match $output "no postscript file: run vcpkg-shell with the same arguments"
     Test-Activations
 
     #  unless --json passed
     $output = Run-VcpkgAndCaptureOutput -ForceExe activate --json (Join-Path $Project 'result.json')
     Throw-IfFailed
     Test-Match $output "Activating: $ProjectRegex"
-    Test-NoMatch $output "no postscript file: rerun with the same arguments as vcpkg-shell"
+    Test-NoMatch $output "no postscript file: run vcpkg-shell with the same arguments"
     Test-Activations # no shell activation
 
     #  or --msbuild-props passed
     $output = Run-VcpkgAndCaptureOutput -ForceExe activate --msbuild-props (Join-Path $Project 'result.props')
     Throw-IfFailed
     Test-Match $output "Activating: $ProjectRegex"
-    Test-NoMatch $output "no postscript file: rerun with the same arguments as vcpkg-shell"
+    Test-NoMatch $output "no postscript file: run vcpkg-shell with the same arguments"
     Test-Activations # no shell activation
 } finally {
     Run-Vcpkg deactivate

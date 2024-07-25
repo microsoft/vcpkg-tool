@@ -6,7 +6,7 @@ if #ftw NEQ '' goto :init
 # Licensed under the MIT License.
 
 # wrapper script for vcpkg
-# this is intended to be dot-sourced and then you can use the vcpkg() function
+# this is intended to be dot-sourced and then you can use the vcpkg-shell() function
 
 # Workaround for $IsWindows not existing in Windows PowerShell
 if (-Not (Test-Path variable:IsWindows)) {
@@ -100,7 +100,7 @@ New-Module -name vcpkg -ArgumentList @($VCPKG) -ScriptBlock {
 } | Out-Null
 
 if ($args.Count -ne 0) {
-  return vcpkg @args
+  return vcpkg-shell @args
 }
 
 return
