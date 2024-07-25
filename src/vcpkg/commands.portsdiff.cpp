@@ -17,12 +17,12 @@ namespace
 
     std::string format_name_and_version(StringView name, const Version& version)
     {
-        return fmt::format("\t- {:<15}{:<}\n", name, version);
+        return fmt::format("\t- {:<15} {:<}\n", name, version);
     }
 
     std::string format_name_and_version_diff(StringView name, const VersionDiff& version_diff)
     {
-        return fmt::format("\t- {:<15}{:<}\n", name, version_diff);
+        return fmt::format("\t- {:<15} {:<}\n", name, version_diff);
     }
 
     std::vector<VersionSpec> read_ports_from_commit(const VcpkgPaths& paths, StringView git_commit_id)

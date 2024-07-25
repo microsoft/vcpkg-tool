@@ -613,7 +613,7 @@ DECLARE_MESSAGE(CmdExportEmptyPlan,
 DECLARE_MESSAGE(CmdExportExample1,
                 (),
                 "This is a command line, only <port names> and the out_dir part should be localized",
-                "vcpkg export <port names> [--nuget] [--directory=out_dir]")
+                "vcpkg export <port names> [--nuget] [--output-dir=out_dir]")
 DECLARE_MESSAGE(CmdExportOpt7Zip, (), "", "Exports to a 7zip (.7z) file")
 DECLARE_MESSAGE(CmdExportOptChocolatey, (), "", "Exports a Chocolatey package (experimental)")
 DECLARE_MESSAGE(CmdExportOptDebug, (), "", "Enables prefab debug")
@@ -1211,6 +1211,10 @@ DECLARE_MESSAGE(MissingAssetBlockOrigin,
                 (msg::path),
                 "x-block-origin is a vcpkg term. Do not translate",
                 "Missing {path} and downloads are blocked by x-block-origin.")
+DECLARE_MESSAGE(MissingShaVariable,
+                (),
+                "{{sha}} should not be translated",
+                "The {{sha}} variable must be used in the template if other variables are used.")
 DECLARE_MESSAGE(AssetCacheMissBlockOrigin,
                 (msg::path),
                 "x-block-origin is a vcpkg term. Do not translate",
@@ -1283,7 +1287,7 @@ DECLARE_MESSAGE(FilesContainAbsolutePath1,
                 "followed by a list of found files.",
                 "There should be no absolute paths, such as the following, in an installed package. To suppress this "
                 "message, add set(VCPKG_POLICY_SKIP_ABSOLUTE_PATHS_CHECK enabled)")
-DECLARE_MESSAGE(FilesContainAbsolutePath2, (), "", "Absolute paths were found in the following files")
+DECLARE_MESSAGE(FilesContainAbsolutePath2, (), "", "absolute paths found here")
 DECLARE_MESSAGE(FilesContainAbsolutePathPkgconfigNote,
                 (),
                 "",
