@@ -20,7 +20,7 @@ namespace vcpkg
     constexpr CommandMetadata CommandActivateMetadata{
         "activate",
         msgCmdActivateSynopsis,
-        {"vcpkg activate"},
+        {"vcpkg-shell activate", "vcpkg activate --msbuild-props file.targets"},
         Undocumented,
         AutocompletePriority::Public,
         0,
