@@ -52,10 +52,6 @@ extends:
       sourceAnalysisPool:
         name: AzurePipelines-EO
         image: 1ESPT-Windows2022
-      codeql:
-        compiled:
-          enabled: false
-          justificationForDisabling: 'CodeQL causes the build to hang. See https://dev.azure.com/twcdot/Data/_workitems/edit/128379 . Turn CodeQL back on when it is fixed.'
     stages:
     - stage: stage
       displayName: 'Build and Sign vcpkg'
@@ -79,7 +75,7 @@ extends:
         templateContext:
           sdl:
             codeql:
-              language: javascript
+              language: javascript-typescript
               buildIdentifier: vcpkg_ECMAScript
           mb:
             signing:
