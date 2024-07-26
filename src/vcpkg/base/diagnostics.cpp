@@ -52,7 +52,7 @@ namespace
 
 namespace vcpkg
 {
-    void DiagnosticLine::print(MessageSink& sink) const
+    void DiagnosticLine::print_to(MessageSink& sink) const
     {
         std::string buf;
         append_file_prefix(buf, m_origin, m_position);
@@ -113,11 +113,11 @@ namespace vcpkg
     void BufferedDiagnosticContext::report(const DiagnosticLine& line) { lines.push_back(line); }
 
     void BufferedDiagnosticContext::report(DiagnosticLine&& line) { lines.push_back(std::move(line)); }
-    void BufferedDiagnosticContext::print(MessageSink& sink) const
+    void BufferedDiagnosticContext::print_to(MessageSink& sink) const
     {
         for (auto&& line : lines)
         {
-            line.print(sink);
+            line.print_to(sink);
         }
     }
     // Converts this message into a string
@@ -168,7 +168,7 @@ namespace
 {
     struct ConsoleDiagnosticContext : DiagnosticContext
     {
-        virtual void report(const DiagnosticLine& line) override { line.print(out_sink); }
+        virtual void report(const DiagnosticLine& line) override { line.print_to(out_sink); }
     };
 
     ConsoleDiagnosticContext console_diagnostic_context_instance;

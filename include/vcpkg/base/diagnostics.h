@@ -59,9 +59,8 @@ namespace vcpkg
             }
         }
 
-        // Prints this diagnostic to the terminal.
-        // Not thread safe: The console DiagnosticContext must apply its own synchronization.
-        void print(MessageSink& sink) const;
+        // Prints this diagnostic to the supplied sink.
+        void print_to(MessageSink& sink) const;
         // Converts this message into a string
         // Prefer print() if possible because it applies color
         std::string to_string() const;
@@ -104,8 +103,8 @@ namespace vcpkg
 
         std::vector<DiagnosticLine> lines;
 
-        // Prints all diagnostics to the terminal.
-        void print(MessageSink& sink) const;
+        // Prints all diagnostics to the supplied sink.
+        void print_to(MessageSink& sink) const;
         // Converts this message into a string
         // Prefer print() if possible because it applies color
         std::string to_string() const;
