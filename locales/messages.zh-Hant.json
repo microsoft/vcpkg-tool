@@ -727,6 +727,7 @@
   "InvalidTriplet": "無效的三元組: {triplet}",
   "InvalidUri": "無法剖析 URI: {value}",
   "InvalidValueHashAdditionalFiles": "變數 VCPKG_HASH_ADDITIONAL_FILES 包含的檔案路徑無效: '{path}'。值必須是現存檔案的絕對路徑。",
+  "InvalidValuePostPortfileIncludes": "Variable VCPKG_POST_PORTFILE_INCLUDES contains invalid file path: '{path}'. The value must be an absolute path to an existent cmake file.",
   "IrregularFile": "路徑不是一般檔案: {path}",
   "JsonErrorMustBeAnObject": "預期的 \"{path}\" 應該為物件。",
   "JsonFieldNotObject": "[\"{json_field}\"] 的值必須是物件",

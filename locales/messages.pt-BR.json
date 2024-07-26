@@ -727,6 +727,7 @@
   "InvalidTriplet": "Tripleto inválido: {triplet}",
   "InvalidUri": "não é possível analisar o URI: {value}",
   "InvalidValueHashAdditionalFiles": "O VCPKG_HASH_ADDITIONAL_FILES variável contém um caminho de arquivo inválido: ''{path}''. O valor deve ser um caminho absoluto para um arquivo existente.",
+  "InvalidValuePostPortfileIncludes": "Variable VCPKG_POST_PORTFILE_INCLUDES contains invalid file path: '{path}'. The value must be an absolute path to an existent cmake file.",
   "IrregularFile": "path não era um arquivo normal: {path}",
   "JsonErrorMustBeAnObject": "Espera-se que \"{path}\" seja um objeto.",
   "JsonFieldNotObject": "o valor de [\"{json_field}\"] deve ser um objeto",

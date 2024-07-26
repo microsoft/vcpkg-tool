@@ -727,6 +727,7 @@
   "InvalidTriplet": "Neplatný triplet: {triplet}",
   "InvalidUri": "Nejde parsovat identifikátor URI: {value}",
   "InvalidValueHashAdditionalFiles": "Proměnná VCPKG_HASH_ADDITIONAL_FILES obsahuje neplatnou cestu k souboru: {path}. Hodnota musí být absolutní cesta k existujícímu souboru.",
+  "InvalidValuePostPortfileIncludes": "Variable VCPKG_POST_PORTFILE_INCLUDES contains invalid file path: '{path}'. The value must be an absolute path to an existent cmake file.",
   "IrregularFile": "cesta nebyla běžným souborem: {path}",
   "JsonErrorMustBeAnObject": "Očekává se, že {path} bude objekt.",
   "JsonFieldNotObject": "Hodnota [\"{json_field}\"] musí být objekt",

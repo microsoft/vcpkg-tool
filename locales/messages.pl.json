@@ -727,6 +727,7 @@
   "InvalidTriplet": "Nieprawidłowy triplet: {triplet}",
   "InvalidUri": "nie można przeanalizować identyfikatora uri: {value}",
   "InvalidValueHashAdditionalFiles": "Zmienna VCPKG_HASH_ADDITIONAL_FILES zawiera nieprawidłową ścieżkę pliku: „{path}”. Wartość musi być ścieżką bezwzględną do istniejącego pliku.",
+  "InvalidValuePostPortfileIncludes": "Variable VCPKG_POST_PORTFILE_INCLUDES contains invalid file path: '{path}'. The value must be an absolute path to an existent cmake file.",
   "IrregularFile": "ścieżka nie była zwykłym plikiem: {path}",
   "JsonErrorMustBeAnObject": "Oczekiwano, że element \"{path}\" będzie obiektem.",
   "JsonFieldNotObject": "wartość [\"{json_field}\"] musi być obiektem",

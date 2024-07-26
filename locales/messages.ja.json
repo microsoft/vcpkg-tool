@@ -727,6 +727,7 @@
   "InvalidTriplet": "無効なトリプレット: {triplet}",
   "InvalidUri": "URI を解析できません: {value}",
   "InvalidValueHashAdditionalFiles": "変数VCPKG_HASH_ADDITIONAL_FILESに無効なファイル パスが含まれています: '{path}'。値は、存在するファイルへの絶対パスである必要があります。",
+  "InvalidValuePostPortfileIncludes": "Variable VCPKG_POST_PORTFILE_INCLUDES contains invalid file path: '{path}'. The value must be an absolute path to an existent cmake file.",
   "IrregularFile": "パスが通常のファイルではありませんでした: {path}",
   "JsonErrorMustBeAnObject": "\"{path}\" はオブジェクトである必要があります。",
   "JsonFieldNotObject": "[\"{json_field}\"] の値はオブジェクトである必要があります",

@@ -727,6 +727,7 @@
   "InvalidTriplet": "유효하지 않은 삼중자: {triplet}",
   "InvalidUri": "URI를 구문 분석할 수 없음: {value}",
   "InvalidValueHashAdditionalFiles": "변수 VCPKG_HASH_ADDITIONAL_FILES는 잘못된 파일 경로 '{path}'을(를) 포함합니다. 값은 기존 파일의 절대 경로여야 합니다.",
+  "InvalidValuePostPortfileIncludes": "Variable VCPKG_POST_PORTFILE_INCLUDES contains invalid file path: '{path}'. The value must be an absolute path to an existent cmake file.",
   "IrregularFile": "경로가 일반 파일이 아닙니다. {path}",
   "JsonErrorMustBeAnObject": "“{path}”은(는) 개체로 예상됩니다.",
   "JsonFieldNotObject": "[\"{json_field}\"] 값은 개체여야 합니다.",
