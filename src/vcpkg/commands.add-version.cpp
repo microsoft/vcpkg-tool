@@ -9,6 +9,7 @@
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.add-version.h>
+#include <vcpkg/documentation.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/registries.h>
 #include <vcpkg/vcpkgcmdarguments.h>
@@ -63,12 +64,18 @@ namespace
             if (DateVersion::try_parse(version.version.text))
             {
                 Checks::msg_exit_with_message(
-                    VCPKG_LINE_INFO, msgAddVersionSuggestVersionDate, msg::package_name = port_name);
+                    VCPKG_LINE_INFO,
+                    msg::format(msgAddVersionSuggestVersionDate, msg::package_name = port_name)
+                        .append_raw("\n")
+                        .append(msgSeeURL, msg::url = docs::version_schemes));
             }
             if (DotVersion::try_parse_relaxed(version.version.text))
             {
                 Checks::msg_exit_with_message(
-                    VCPKG_LINE_INFO, msgAddVersionSuggestVersionRelaxed, msg::package_name = port_name);
+                    VCPKG_LINE_INFO,
+                    msg::format(msgAddVersionSuggestVersionRelaxed, msg::package_name = port_name)
+                        .append_raw("\n")
+                        .append(msgSeeURL, msg::url = docs::version_schemes));
             }
         }
     }
@@ -168,47 +175,39 @@ namespace
                                         const std::string& port_name,
                                         const SchemedVersion& port_version,
                                         const std::string& git_tree,
-                                        const Path& version_db_file_path,
                                         bool overwrite_version,
                                         bool print_success,
                                         bool keep_going,
                                         bool skip_version_format_check)
     {
         auto& fs = paths.get_filesystem();
-        if (!fs.exists(version_db_file_path, IgnoreErrors{}))
-        {
-            if (!skip_version_format_check)
-            {
-                check_used_version_scheme(port_version, port_name);
-            }
-            std::vector<GitVersionDbEntry> new_entry{{port_version, git_tree}};
-            write_versions_file(fs, new_entry, version_db_file_path);
-            if (print_success)
-            {
-                msg::println(Color::success,
-                             msg::format(msgAddVersionAddedVersionToFile,
-                                         msg::version = port_version.version,
-                                         msg::path = version_db_file_path)
-                                 .append_raw(' ')
-                                 .append(msgAddVersionNewFile));
-            }
-            return UpdateResult::Updated;
-        }
-
-        auto maybe_maybe_versions = get_builtin_versions(paths, port_name);
-        auto maybe_versions = maybe_maybe_versions.get();
+        auto maybe_maybe_versions = load_git_versions_file(fs, paths.builtin_registry_versions, port_name);
+        auto maybe_versions = maybe_maybe_versions.entries.get();
         if (!maybe_versions)
         {
-            msg::println_error(msg::format(msgAddVersionUnableToParseVersionsFile, msg::path = version_db_file_path)
-                                   .append_raw('\n')
-                                   .append(maybe_maybe_versions.error()));
+            msg::println(Color::error, maybe_maybe_versions.entries.error());
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
         auto versions = maybe_versions->get();
         if (!versions)
         {
-            Checks::unreachable(VCPKG_LINE_INFO, "Version file existed but was still unknown");
+            if (!skip_version_format_check)
+            {
+                check_used_version_scheme(port_version, port_name);
+            }
+            std::vector<GitVersionDbEntry> new_entry{{port_version, git_tree}};
+            write_versions_file(fs, new_entry, maybe_maybe_versions.versions_file_path);
+            if (print_success)
+            {
+                msg::println(Color::success,
+                             msg::format(msgAddVersionAddedVersionToFile,
+                                         msg::version = port_version.version,
+                                         msg::path = maybe_maybe_versions.versions_file_path)
+                                 .append_raw(' ')
+                                 .append(msgAddVersionNewFile));
+            }
+            return UpdateResult::Updated;
         }
 
         const auto& versions_end = versions->end();
@@ -223,7 +222,7 @@ namespace
                     msg::println(Color::success,
                                  msgAddVersionVersionAlreadyInFile,
                                  msg::version = port_version.version,
-                                 msg::path = version_db_file_path);
+                                 msg::path = maybe_maybe_versions.versions_file_path);
                 }
                 return UpdateResult::NotUpdated;
             }
@@ -234,9 +233,11 @@ namespace
                                      .append_raw(git_tree)
                                      .append_raw("\n-- ")
                                      .append(msgAddVersionCommitChangesReminder)
-                                     .append_raw("\n***")
+                                     .append_raw("\n*** ")
                                      .append(msgAddVersionNoFilesUpdated)
-                                     .append_raw("***"));
+                                     .append_raw("\n*** ")
+                                     .append(msgSeeURL, msg::url = docs::add_version_command_url)
+                                     .append_raw("\n***"));
             if (keep_going) return UpdateResult::NotUpdated;
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
@@ -261,6 +262,8 @@ namespace
                         .append(msgAddVersionUpdateVersionReminder)
                         .append_raw('\n')
                         .append(msgAddVersionOverwriteOptionSuggestion, msg::option = SwitchOverwriteVersion)
+                        .append_raw('\n')
+                        .append(msgSeeURL, msg::url = docs::add_version_command_overwrite_version_opt_url)
                         .append_raw("\n***")
                         .append(msgAddVersionNoFilesUpdated)
                         .append_raw("***"));
@@ -281,13 +284,13 @@ namespace
             check_used_version_scheme(port_version, port_name);
         }
 
-        write_versions_file(fs, *versions, version_db_file_path);
+        write_versions_file(fs, *versions, maybe_maybe_versions.versions_file_path);
         if (print_success)
         {
             msg::println(Color::success,
                          msgAddVersionAddedVersionToFile,
                          msg::version = port_version.version,
-                         msg::path = version_db_file_path);
+                         msg::path = maybe_maybe_versions.versions_file_path);
         }
         return UpdateResult::Updated;
     }
@@ -342,11 +345,12 @@ namespace vcpkg
         }
         else
         {
-            Checks::msg_check_exit(VCPKG_LINE_INFO,
-                                   add_all,
-                                   msgAddVersionUseOptionAll,
-                                   msg::command_name = "x-add-version",
-                                   msg::option = SwitchAll);
+            Checks::msg_check_exit(
+                VCPKG_LINE_INFO,
+                add_all,
+                msg::format(msgAddVersionUseOptionAll, msg::command_name = "x-add-version", msg::option = SwitchAll)
+                    .append_raw('\n')
+                    .append(msgSeeURL, msg::url = docs::add_version_command_url));
 
             for (auto&& port_dir : fs.get_directories_non_recursive(paths.builtin_ports_directory(), VCPKG_LINE_INFO))
             {
@@ -386,11 +390,11 @@ namespace vcpkg
             auto port_dir = paths.builtin_ports_directory() / port_name;
 
             auto maybe_scfl = Paragraphs::try_load_port_required(
-                fs, port_name, PortLocation{paths.builtin_ports_directory() / port_name});
+                                  fs, port_name, PortLocation{paths.builtin_ports_directory() / port_name})
+                                  .maybe_scfl;
             auto scfl = maybe_scfl.get();
             if (!scfl)
             {
-                msg::println_error(msgAddVersionLoadPortFailed, msg::package_name = port_name);
                 msg::println(Color::error, maybe_scfl.error());
                 Checks::check_exit(VCPKG_LINE_INFO, !add_all);
                 continue;
@@ -414,8 +418,10 @@ namespace vcpkg
                                 .append_raw('\n')
                                 .append(msgAddVersionFormatPortSuggestion, msg::command_line = command_line)
                                 .append_raw('\n')
-                                .append(msgAddVersionCommitResultReminder)
-                                .append_raw('\n'));
+                                .append(msgSeeURL, msg::url = docs::format_manifest_command_url)
+                                .append(msgAddVersionCommitChangesReminder)
+                                .append_raw('\n')
+                                .append(msgSeeURL, msg::url = docs::add_version_command_url));
                         Checks::check_exit(VCPKG_LINE_INFO, !add_all);
                         continue;
                     }
@@ -437,19 +443,17 @@ namespace vcpkg
                                          .append(msgAddVersionCommitChangesReminder)
                                          .append_raw("\n***")
                                          .append(msgAddVersionNoFilesUpdated)
+                                         .append_raw("\n***")
+                                         .append(msgSeeURL, msg::url = docs::add_version_command_url)
                                          .append_raw("***"));
                 if (add_all) continue;
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
             const auto& git_tree = git_tree_it->second;
-
-            char prefix[] = {port_name[0], '-', '\0'};
-            auto port_versions_path = paths.builtin_registry_versions / prefix / Strings::concat(port_name, ".json");
             auto updated_versions_file = update_version_db_file(paths,
                                                                 port_name,
                                                                 schemed_version,
                                                                 git_tree,
-                                                                port_versions_path,
                                                                 overwrite_version,
                                                                 verbose,
                                                                 add_all,

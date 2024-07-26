@@ -18,7 +18,7 @@
 
 namespace vcpkg::Prefab
 {
-    static std::vector<Path> find_modules(const VcpkgPaths& system, const Path& root, const std::string& ext)
+    static std::vector<Path> find_modules(const VcpkgPaths& system, const Path& root, StringLiteral ext)
     {
         const Filesystem& fs = system.get_filesystem();
         std::error_code ec;

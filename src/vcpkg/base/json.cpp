@@ -1510,6 +1510,22 @@ namespace vcpkg::Json
                                  .append_raw(msg));
     }
 
+    LocalizedString Reader::join() const
+    {
+        LocalizedString res;
+        for (const auto& e : m_errors)
+        {
+            if (!res.empty()) res.append_raw("\n");
+            res.append(e);
+        }
+        for (const auto& w : m_warnings)
+        {
+            if (!res.empty()) res.append_raw("\n");
+            res.append(w);
+        }
+        return res;
+    }
+
     std::string Reader::path() const noexcept
     {
         std::string p("$");

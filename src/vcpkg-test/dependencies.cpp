@@ -4,6 +4,7 @@
 
 #include <vcpkg/commands.set-installed.h>
 #include <vcpkg/dependencies.h>
+#include <vcpkg/documentation.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/sourceparagraph.h>
 #include <vcpkg/vcpkgcmdarguments.h>
@@ -219,14 +220,15 @@ static ExpectedL<ActionPlan> create_versioned_install_plan(const IVersionedPortf
                                                            const std::vector<DependencyOverride>& overrides,
                                                            const PackageSpec& toplevel)
 {
-    return create_versioned_install_plan(provider,
-                                         bprovider,
-                                         s_empty_mock_overlay,
-                                         var_provider,
-                                         deps,
-                                         overrides,
-                                         toplevel,
-                                         {Test::ARM_UWP, "pkgs", UnsupportedPortAction::Error});
+    return create_versioned_install_plan(
+        provider,
+        bprovider,
+        s_empty_mock_overlay,
+        var_provider,
+        deps,
+        overrides,
+        toplevel,
+        {nullptr, Test::ARM_UWP, "pkgs", UnsupportedPortAction::Error, UseHeadVersion::No, Editable::No});
 }
 
 static ExpectedL<ActionPlan> create_versioned_install_plan(const IVersionedPortfileProvider& provider,
@@ -237,14 +239,15 @@ static ExpectedL<ActionPlan> create_versioned_install_plan(const IVersionedPortf
                                                            const std::vector<DependencyOverride>& overrides,
                                                            const PackageSpec& toplevel)
 {
-    return create_versioned_install_plan(provider,
-                                         bprovider,
-                                         oprovider,
-                                         var_provider,
-                                         deps,
-                                         overrides,
-                                         toplevel,
-                                         {Test::ARM_UWP, "pkgs", UnsupportedPortAction::Error});
+    return create_versioned_install_plan(
+        provider,
+        bprovider,
+        oprovider,
+        var_provider,
+        deps,
+        overrides,
+        toplevel,
+        {nullptr, Test::ARM_UWP, "pkgs", UnsupportedPortAction::Error, UseHeadVersion::No, Editable::No});
 }
 
 TEST_CASE ("basic version install single", "[versionplan]")
@@ -476,7 +479,8 @@ This can be resolved by adding an explicit override to the preferred version. Fo
       "version": "2with\"quotes"
     }
   ]
-See `vcpkg help versioning` or https://learn.microsoft.com/vcpkg/users/versioning for more information.)");
+See `vcpkg help versioning` or )" +
+            docs::troubleshoot_versioning_url + R"( for more information.)");
 }
 
 TEST_CASE ("version install string port version", "[versionplan]")
@@ -1115,7 +1119,8 @@ This can be resolved by adding an explicit override to the preferred version. Fo
       "version": "1.0.0"
     }
   ]
-See `vcpkg help versioning` or https://learn.microsoft.com/vcpkg/users/versioning for more information.)");
+See `vcpkg help versioning` or )" +
+                docs::troubleshoot_versioning_url + R"( for more information.)");
     }
     SECTION ("higher baseline")
     {
@@ -1146,7 +1151,8 @@ This can be resolved by adding an explicit override to the preferred version. Fo
       "version": "1.0.2"
     }
   ]
-See `vcpkg help versioning` or https://learn.microsoft.com/vcpkg/users/versioning for more information.)");
+See `vcpkg help versioning` or )" +
+                docs::troubleshoot_versioning_url + R"( for more information.)");
     }
 }
 
@@ -1239,7 +1245,8 @@ This can be resolved by adding an explicit override to the preferred version. Fo
       "version": "1"
     }
   ]
-See `vcpkg help versioning` or https://learn.microsoft.com/vcpkg/users/versioning for more information.)");
+See `vcpkg help versioning` or )" +
+                docs::troubleshoot_versioning_url + R"( for more information.)");
     }
     SECTION ("lower baseline")
     {
@@ -2366,23 +2373,34 @@ TEST_CASE ("formatting plan 1", "[dependencies]")
 
     const Path pr = "packages_root";
     InstallPlanAction install_a(
-        {"a", Test::X64_OSX}, scfl_a, pr, RequestType::AUTO_SELECTED, Test::X64_ANDROID, {}, {}, {});
+        {"a", Test::X64_OSX}, scfl_a, pr, RequestType::AUTO_SELECTED, UseHeadVersion::No, Editable::No, {}, {}, {});
     REQUIRE(install_a.display_name() == "a:x64-osx@1");
-    InstallPlanAction install_b(
-        {"b", Test::X64_OSX}, scfl_b, pr, RequestType::AUTO_SELECTED, Test::X64_ANDROID, {{"1", {}}}, {}, {});
+    InstallPlanAction install_b({"b", Test::X64_OSX},
+                                scfl_b,
+                                pr,
+                                RequestType::AUTO_SELECTED,
+                                UseHeadVersion::No,
+                                Editable::No,
+                                {{"1", {}}},
+                                {},
+                                {});
     InstallPlanAction install_c(
-        {"c", Test::X64_OSX}, scfl_c, pr, RequestType::USER_REQUESTED, Test::X64_ANDROID, {}, {}, {});
+        {"c", Test::X64_OSX}, scfl_c, pr, RequestType::USER_REQUESTED, UseHeadVersion::No, Editable::No, {}, {}, {});
     InstallPlanAction install_f(
-        {"f", Test::X64_OSX}, scfl_f, pr, RequestType::USER_REQUESTED, Test::X64_ANDROID, {}, {}, {});
+        {"f", Test::X64_OSX}, scfl_f, pr, RequestType::USER_REQUESTED, UseHeadVersion::No, Editable::No, {}, {}, {});
     install_f.plan_type = InstallPlanType::EXCLUDED;
 
     InstallPlanAction already_installed_d(
         status_db.get_installed_package_view({"d", Test::X86_WINDOWS}).value_or_exit(VCPKG_LINE_INFO),
-        RequestType::AUTO_SELECTED);
+        RequestType::AUTO_SELECTED,
+        UseHeadVersion::No,
+        Editable::No);
     REQUIRE(already_installed_d.display_name() == "d:x86-windows@1");
     InstallPlanAction already_installed_e(
         status_db.get_installed_package_view({"e", Test::X86_WINDOWS}).value_or_exit(VCPKG_LINE_INFO),
-        RequestType::USER_REQUESTED);
+        RequestType::USER_REQUESTED,
+        UseHeadVersion::No,
+        Editable::No);
 
     ActionPlan plan;
     {
@@ -2465,10 +2483,24 @@ TEST_CASE ("dependency graph API snapshot: host and target")
 {
     MockVersionedPortfileProvider vp;
     auto& scfl_a = vp.emplace("a", {"1", 0});
-    InstallPlanAction install_a(
-        {"a", Test::X86_WINDOWS}, scfl_a, "packages_root", RequestType::AUTO_SELECTED, Test::X64_WINDOWS, {}, {}, {});
-    InstallPlanAction install_a_host(
-        {"a", Test::X64_WINDOWS}, scfl_a, "packages_root", RequestType::AUTO_SELECTED, Test::X64_WINDOWS, {}, {}, {});
+    InstallPlanAction install_a({"a", Test::X86_WINDOWS},
+                                scfl_a,
+                                "packages_root",
+                                RequestType::AUTO_SELECTED,
+                                UseHeadVersion::No,
+                                Editable::No,
+                                {},
+                                {},
+                                {});
+    InstallPlanAction install_a_host({"a", Test::X64_WINDOWS},
+                                     scfl_a,
+                                     "packages_root",
+                                     RequestType::AUTO_SELECTED,
+                                     UseHeadVersion::No,
+                                     Editable::No,
+                                     {},
+                                     {},
+                                     {});
     ActionPlan plan;
     plan.install_actions.push_back(std::move(install_a));
     plan.install_actions.push_back(std::move(install_a_host));

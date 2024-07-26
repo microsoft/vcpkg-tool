@@ -580,7 +580,9 @@ namespace vcpkg
                     msgCurlFailedToPutHttp, msg::exit_code = *pres, msg::url = url, msg::value = code);
             }
         }
-
+        msg::println(msgAssetCacheSuccesfullyStored,
+                     msg::path = file.filename(),
+                     msg::url = replace_secrets(url.to_string(), secrets));
         return res;
     }
 
@@ -592,9 +594,7 @@ namespace vcpkg
             return url;
         }
 
-        std::string query = Strings::join("&", query_params);
-
-        return url + "?" + query;
+        return url + "?" + Strings::join("&", query_params);
     }
 
     ExpectedL<std::string> invoke_http_request(StringView method,
@@ -717,7 +717,6 @@ namespace vcpkg
         fs.create_directories(dir, VCPKG_LINE_INFO);
 
         const auto sanitized_url = replace_secrets(url, secrets);
-        msg::println(msgDownloadingUrl, msg::url = sanitized_url);
         static auto s = WinHttpSession::make(sanitized_url).value_or_exit(VCPKG_LINE_INFO);
         for (size_t trials = 0; trials < 4; ++trials)
         {
@@ -761,12 +760,25 @@ namespace vcpkg
         download_path_part_path += ".part";
 
 #if defined(_WIN32)
-        if (headers.size() == 0)
+        auto maybe_https_proxy_env = get_environment_variable(EnvironmentVariableHttpsProxy);
+        bool needs_proxy_auth = false;
+        if (maybe_https_proxy_env)
+        {
+            const auto& proxy_url = maybe_https_proxy_env.value_or_exit(VCPKG_LINE_INFO);
+            needs_proxy_auth = proxy_url.find('@') != std::string::npos;
+        }
+        if (headers.size() == 0 && !needs_proxy_auth)
         {
             auto split_uri = split_uri_view(url).value_or_exit(VCPKG_LINE_INFO);
-            auto authority = split_uri.authority.value_or_exit(VCPKG_LINE_INFO).substr(2);
             if (split_uri.scheme == "https" || split_uri.scheme == "http")
             {
+                auto maybe_authority = split_uri.authority.get();
+                if (!maybe_authority)
+                {
+                    Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgInvalidUri, msg::value = url);
+                }
+
+                auto authority = maybe_authority->substr(2);
                 // This check causes complex URLs (non-default port, embedded basic auth) to be passed down to curl.exe
                 if (Strings::find_first_of(authority, ":@") == authority.end())
                 {
@@ -871,6 +883,10 @@ namespace vcpkg
         return s_headers;
     }
 
+    bool DownloadManager::get_block_origin() const { return m_config.m_block_origin; }
+
+    bool DownloadManager::asset_cache_configured() const { return m_config.m_read_url_template.has_value(); }
+
     void DownloadManager::download_file(const Filesystem& fs,
                                         const std::string& url,
                                         View<std::string> headers,
@@ -915,6 +931,9 @@ namespace vcpkg
                                       errors,
                                       progress_sink))
                 {
+                    msg::println(msgAssetCacheHit,
+                                 msg::path = download_path.filename(),
+                                 msg::url = replace_secrets(read_url, m_config.m_secrets));
                     return read_url;
                 }
             }
@@ -974,12 +993,17 @@ namespace vcpkg
                     fs, urls, headers, download_path, sha512, m_config.m_secrets, errors, progress_sink);
                 if (auto url = maybe_url.get())
                 {
+                    m_config.m_read_url_template.has_value() ? msg::println(msgAssetCacheMiss, msg::url = urls[0])
+                                                             : msg::println(msgDownloadingUrl, msg::url = urls[0]);
+
                     if (auto hash = sha512.get())
                     {
                         auto maybe_push = put_file_to_mirror(fs, download_path, *hash);
                         if (!maybe_push)
                         {
-                            msg::println_warning(msgFailedToStoreBackToMirror);
+                            msg::println_warning(msgFailedToStoreBackToMirror,
+                                                 msg::path = download_path.filename(),
+                                                 msg::url = replace_secrets(download_path.c_str(), m_config.m_secrets));
                             msg::println(maybe_push.error());
                         }
                     }
@@ -988,7 +1012,16 @@ namespace vcpkg
                 }
             }
         }
-        msg::println_error(msgFailedToDownloadFromMirrorSet);
+        // Asset cache is not configured and x-block-origin enabled
+        if (m_config.m_read_url_template.has_value())
+        {
+            msg::println(msgAssetCacheMissBlockOrigin, msg::path = download_path.filename());
+        }
+        else
+        {
+            msg::println_error(msgMissingAssetBlockOrigin, msg::path = download_path.filename());
+        }
+
         for (LocalizedString& error : errors)
         {
             msg::println(error);

@@ -593,9 +593,11 @@ namespace
 
 namespace vcpkg
 {
-    static ExpectedL<Optional<std::string>> get_baseline_from_git_repo(const VcpkgPaths& paths, StringView url)
+    static ExpectedL<Optional<std::string>> get_baseline_from_git_repo(const VcpkgPaths& paths,
+                                                                       StringView url,
+                                                                       std::string reference)
     {
-        auto res = paths.git_fetch_from_remote_registry(url, "HEAD");
+        auto res = paths.git_fetch_from_remote_registry(url, reference);
         if (auto p = res.get())
         {
             return Optional<std::string>(std::move(*p));
@@ -612,13 +614,13 @@ namespace vcpkg
     {
         if (kind == JsonIdGit)
         {
-            return get_baseline_from_git_repo(paths, repo.value_or_exit(VCPKG_LINE_INFO));
+            return get_baseline_from_git_repo(paths, repo.value_or_exit(VCPKG_LINE_INFO), reference.value_or("HEAD"));
         }
         else if (kind == JsonIdBuiltin)
         {
             if (paths.use_git_default_registry())
             {
-                return get_baseline_from_git_repo(paths, builtin_registry_git_url);
+                return get_baseline_from_git_repo(paths, builtin_registry_git_url, reference.value_or("HEAD"));
             }
             else
             {
