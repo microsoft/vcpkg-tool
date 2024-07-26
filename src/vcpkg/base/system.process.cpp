@@ -1885,9 +1885,7 @@ namespace vcpkg
     {
         std::string output;
         return cmd_execute_and_stream_data(cmd, settings, [&](StringView sv) { Strings::append(output, sv); })
-            .map([&](int exit_code) {
-                return ExitCodeAndOutput{exit_code, std::move(output)};
-            });
+            .map([&](int exit_code) { return ExitCodeAndOutput{exit_code, std::move(output)}; });
     }
 
     uint64_t get_subproccess_stats() { return g_subprocess_stats.load(); }
