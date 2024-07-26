@@ -363,6 +363,11 @@
             "type": "string",
             "description": "The location on the filesystem where the registry is rooted."
           },
+          "baseline": {
+            "description": "The key in the JSON document of baseline.json which will be used for version selection",
+            "type": "string",
+            "default": "default"
+          },
           "packages": true
         },
         "required": [
