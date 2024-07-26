@@ -868,10 +868,6 @@ DECLARE_MESSAGE(ConfigurationErrorRegistriesWithoutBaseline,
                 "Using registries requires that a baseline is set for the default registry or that the default "
                 "registry is null.\n\n"
                 "See {url} for more details.")
-DECLARE_MESSAGE(ConfigurationNestedDemands,
-                (msg::json_field),
-                "",
-                "[\"{json_field}\"] contains a nested `demands` object (nested `demands` have no effect)")
 DECLARE_MESSAGE(ConflictingFiles,
                 (msg::path, msg::spec),
                 "",
