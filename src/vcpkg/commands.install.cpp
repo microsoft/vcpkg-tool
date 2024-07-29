@@ -1062,7 +1062,7 @@ namespace vcpkg
 
         if (paths.manifest_mode_enabled())
         {
-            auto p = paths.get_manifest().get()
+            auto p = paths.get_manifest().get();
             bool failure = false;
             if (!options.command_arguments.empty())
             {
