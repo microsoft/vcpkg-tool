@@ -3033,10 +3033,6 @@ DECLARE_MESSAGE(VersionMissingRequiredFeature,
                 (msg::version_spec, msg::feature, msg::constraint_origin),
                 "",
                 "{version_spec} does not have required feature {feature} needed by {constraint_origin}")
-DECLARE_MESSAGE(VersionNotFound,
-                (msg::expected, msg::actual),
-                "{expected} and {actual} are versions",
-                "{expected} not available, only {actual} is available")
 DECLARE_MESSAGE(VersionNotFoundInVersionsFile2,
                 (msg::version_spec),
                 "",

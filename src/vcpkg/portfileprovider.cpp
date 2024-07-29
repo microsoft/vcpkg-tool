@@ -12,27 +12,6 @@
 
 using namespace vcpkg;
 
-namespace
-{
-    struct OverlayRegistryEntry final : RegistryEntry
-    {
-        OverlayRegistryEntry(Path&& p, Version&& v) : root(p), version(v) { }
-
-        ExpectedL<View<Version>> get_port_versions() const override { return View<Version>{&version, 1}; }
-        ExpectedL<PortLocation> get_version(const Version& v) const override
-        {
-            if (v == version)
-            {
-                return PortLocation{root};
-            }
-            return msg::format(msgVersionNotFound, msg::expected = v, msg::actual = version);
-        }
-
-        Path root;
-        Version version;
-    };
-}
-
 namespace vcpkg
 {
     MapPortFileProvider::MapPortFileProvider(const std::unordered_map<std::string, SourceControlFileAndLocation>& map)

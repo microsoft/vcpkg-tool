@@ -1613,8 +1613,6 @@
   "_VersionMissing.comment": "The names version, version-date, version-semver, and version-string are code and must not be localized",
   "VersionMissingRequiredFeature": "{version_spec} does not have required feature {feature} needed by {constraint_origin}",
   "_VersionMissingRequiredFeature.comment": "An example of {version_spec} is zlib:x64-windows@1.0.0. An example of {feature} is avisynthplus. An example of {constraint_origin} is zlib:x64-windows@1.0.0.",
-  "VersionNotFound": "{expected} not available, only {actual} is available",
-  "_VersionNotFound.comment": "{expected} and {actual} are versions",
   "VersionNotFoundInVersionsFile2": "{version_spec} was not found in versions database",
   "_VersionNotFoundInVersionsFile2.comment": "An example of {version_spec} is zlib:x64-windows@1.0.0.",
   "VersionNotFoundInVersionsFile3": "the version should be in this file",
