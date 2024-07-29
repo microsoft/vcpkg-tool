@@ -1257,7 +1257,18 @@ namespace vcpkg
         return nullopt;
     }
 
-    bool VcpkgPaths::manifest_mode_enabled() const { return !m_pimpl->m_manifest_dir.empty(); }
+    bool VcpkgPaths::manifest_mode_enabled() const
+    { 
+        if (!m_pimpl->m_manifest_dir.empty() && 
+            m_pimpl->m_global_config.native().find(m_pimpl->m_manifest_dir.native()) ==std::string::npos)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
 
     const ConfigurationAndSource& VcpkgPaths::get_configuration() const { return m_pimpl->m_config; }
 

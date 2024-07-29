@@ -1060,8 +1060,9 @@ namespace vcpkg
 
         get_global_metrics_collector().track_bool(BoolMetric::InstallManifestMode, paths.manifest_mode_enabled());
 
-        if (auto p = paths.get_manifest().get())
+        if (paths.manifest_mode_enabled())
         {
+            auto p = paths.get_manifest().get()
             bool failure = false;
             if (!options.command_arguments.empty())
             {
