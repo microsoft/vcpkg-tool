@@ -1258,9 +1258,9 @@ namespace vcpkg
     }
 
     bool VcpkgPaths::manifest_mode_enabled() const
-    { 
-        if (!m_pimpl->m_manifest_dir.empty() && 
-            m_pimpl->m_global_config.native().find(m_pimpl->m_manifest_dir.native()) ==std::string::npos)
+    {
+        if (!m_pimpl->m_manifest_dir.empty() &&
+            m_pimpl->m_global_config.native().find(m_pimpl->m_manifest_dir.native()) == std::string::npos)
         {
             return true;
         }
