@@ -26,12 +26,6 @@ namespace vcpkg::Paragraphs
 
     bool is_port_directory(const ReadOnlyFilesystem& fs, const Path& maybe_directory);
 
-    struct PortLoadResult
-    {
-        ExpectedL<SourceControlFileAndLocation> maybe_scfl;
-        std::string on_disk_contents;
-    };
-
     // If an error occurs, the Expected will be in the error state.
     // Otherwise, if the port is known, the maybe_scfl.get()->source_control_file contains the loaded port information.
     // Otherwise, maybe_scfl.get()->source_control_file is nullptr.

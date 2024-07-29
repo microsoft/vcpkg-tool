@@ -218,6 +218,12 @@ namespace vcpkg
         std::string spdx_location;
     };
 
+    struct PortLoadResult
+    {
+        ExpectedL<SourceControlFileAndLocation> maybe_scfl;
+        std::string on_disk_contents;
+    };
+
     void print_error_message(const LocalizedString& message);
 
     std::string parse_spdx_license_expression(StringView sv, ParseMessages& messages);
