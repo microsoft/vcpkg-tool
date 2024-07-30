@@ -2634,10 +2634,13 @@
       </Item>
       <Item ItemId=";CmdExportExample1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[vcpkg export <port names> [--nuget]5D; [--directory=out_dir]5D;]]></Val>
+          <Val><![CDATA[vcpkg export <port names> [--nuget]5D; [--output-dir=out_dir]5D;]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[eksportuje vcpkg <port names> [--nuget]5D; [--directory=out_dir]5D;]]></Val>
+            <Val><![CDATA[vcpkg eksportuje <port names> [--nuget]5D; [--output-dir=out_dir]5D;]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[vcpkg export <port names> [--nuget]5D; [--directory=out_dir]5D;]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -5712,12 +5715,12 @@
       </Item>
       <Item ItemId=";FilesContainAbsolutePath2" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Absolute paths were found in the following files]]></Val>
+          <Val><![CDATA[absolute paths found here]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Ścieżki bezwzględne zostały znalezione w następujących plikach]]></Val>
+            <Val><![CDATA[w tym miejscu znaleziono ścieżki bezwzględne]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[Absolute paths were found in the following files:]]></Val>
+            <Val><![CDATA[Absolute paths were found in the following files]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -7687,6 +7690,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";InvalidValuePostPortfileIncludes" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Variable VCPKG_POST_PORTFILE_INCLUDES contains invalid file path: '{path}'. The value must be an absolute path to an existent cmake file.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Zmienna VCPKG_POST_PORTFILE_INCLUDES zawiera nieprawidłową ścieżkę pliku: „{path}”. Wartość musi być ścieżką bezwzględną do istniejącego pliku CMake.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";IrregularFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[path was not a regular file: {path}]]></Val>
@@ -8253,6 +8265,15 @@
           <Val><![CDATA[missing required field '{json_field}']]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[brak wymaganego pola „{json_field}”]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";MissingShaVariable" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The {{sha}} variable must be used in the template if other variables are used.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Zmienna {{sha}} musi być używana w szablonie, jeśli są używane inne zmienne.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -9814,11 +9835,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";RunvcpkgActivateToApplyToTheCurrentTerminal" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";RunvcpkgshellActivateToApplyToTheCurrentTerminal" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Run \`vcpkg activate\` to apply to the current terminal]]></Val>
+          <Val><![CDATA[Run \`vcpkg-shell activate\` to apply to the current terminal]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Uruchom polecenie \`vcpkg activate\`, aby zastosować je do bieżącego terminalu]]></Val>
+            <Val><![CDATA[Uruchom polecenie \`vcpkg-shell activate\`, aby zastosować je do bieżącego terminalu]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -12058,11 +12079,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";noPostscriptFileRerunWithTheVcpkgShellFunctionRatherThanExecutable" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";noPostscriptFileRunVcpkgshellWithTheSameArguments" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[no postscript file: rerun with the vcpkg shell function rather than executable]]></Val>
+          <Val><![CDATA[no postscript file: run vcpkg-shell with the same arguments]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[brak pliku postscript: uruchom ponownie za pomocą funkcji powłoki vcpkg, a nie pliku wykonywalnego]]></Val>
+            <Val><![CDATA[brak pliku postscript: uruchom polecenie vcpkg-shell z takimi samymi argumentami]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
