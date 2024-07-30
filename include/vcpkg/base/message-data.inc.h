@@ -1387,7 +1387,7 @@ DECLARE_MESSAGE(HashFileFailureToRead,
 DECLARE_MESSAGE(HashPortManyFiles,
                 (msg::package_name, msg::count),
                 "",
-                "The {package_name} contains {count} files. Hashing these contents may take a long time when "
+                "{package_name} contains {count} files. Hashing these contents may take a long time when "
                 "determining the ABI hash for binary caching. Consider reducing the number of files. Common causes of "
                 "this are accidentally checking out source or build files into a port's directory.")
 DECLARE_MESSAGE(HeaderOnlyUsage,
