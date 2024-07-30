@@ -31,11 +31,10 @@ namespace vcpkg
         return Util::fmap(ports, [](auto&& kvpair) -> const SourceControlFileAndLocation* { return &kvpair.second; });
     }
 
-    PathsPortFileProvider::PathsPortFileProvider(const ReadOnlyFilesystem& fs,
-                                                 const RegistrySet& registry_set,
+    PathsPortFileProvider::PathsPortFileProvider(const RegistrySet& registry_set,
                                                  std::unique_ptr<IFullOverlayProvider>&& overlay)
         : m_baseline(make_baseline_provider(registry_set))
-        , m_versioned(make_versioned_portfile_provider(fs, registry_set))
+        , m_versioned(make_versioned_portfile_provider(registry_set))
         , m_overlay(std::move(overlay))
     {
     }
@@ -98,10 +97,7 @@ namespace vcpkg
 
         struct VersionedPortfileProviderImpl : IFullVersionedPortfileProvider
         {
-            VersionedPortfileProviderImpl(const ReadOnlyFilesystem& fs, const RegistrySet& rset)
-                : m_fs(fs), m_registry_set(rset)
-            {
-            }
+            VersionedPortfileProviderImpl(const RegistrySet& rset) : m_registry_set(rset) { }
             VersionedPortfileProviderImpl(const VersionedPortfileProviderImpl&) = delete;
             VersionedPortfileProviderImpl& operator=(const VersionedPortfileProviderImpl&) = delete;
 
@@ -153,40 +149,30 @@ namespace vcpkg
                         return msg::format_error(msgPortDoesNotExist, msg::package_name = version_spec.port_name);
                     }
 
-                    auto maybe_path = ent->get()->get_version(version_spec.version);
-                    if (auto path = maybe_path.get())
+                    auto maybe_scfl = ent->get()->try_load_port(version_spec.version);
+                    if (auto scfl = maybe_scfl.get())
                     {
-                        auto maybe_scfl =
-                            Paragraphs::try_load_port_required(m_fs, version_spec.port_name, *path).maybe_scfl;
-                        if (auto scfl = maybe_scfl.get())
+                        auto scf_vspec = scfl->to_version_spec();
+                        if (scf_vspec == version_spec)
                         {
-                            auto scf_vspec = scfl->to_version_spec();
-                            if (scf_vspec == version_spec)
-                            {
-                                return std::move(*scfl);
-                            }
-                            else
-                            {
-                                return msg::format_error(msgVersionSpecMismatch,
-                                                         msg::path = path->port_directory,
-                                                         msg::expected_version = version_spec,
-                                                         msg::actual_version = scf_vspec);
-                            }
+                            return std::move(*scfl);
                         }
                         else
                         {
-                            return std::move(maybe_scfl)
-                                .error()
-                                .append_raw('\n')
-                                .append_raw(NotePrefix)
-                                .append(msgWhileLoadingPortVersion, msg::version_spec = version_spec)
-                                .append_raw('\n');
+                            get_global_metrics_collector().track_define(DefineMetric::VersioningErrorVersion);
+                            return msg::format_error(msgVersionSpecMismatch,
+                                                     msg::path = scfl->control_path,
+                                                     msg::expected_version = version_spec,
+                                                     msg::actual_version = scf_vspec);
                         }
                     }
                     else
                     {
-                        get_global_metrics_collector().track_define(DefineMetric::VersioningErrorVersion);
-                        return std::move(maybe_path).error();
+                        return maybe_scfl.error()
+                            .append_raw('\n')
+                            .append_raw(NotePrefix)
+                            .append(msgWhileLoadingPortVersion, msg::version_spec = version_spec)
+                            .append_raw('\n');
                     }
                 }
 
@@ -209,7 +195,7 @@ namespace vcpkg
             virtual void load_all_control_files(
                 std::map<std::string, const SourceControlFileAndLocation*>& out) const override
             {
-                auto all_ports = Paragraphs::load_all_registry_ports(m_fs, m_registry_set);
+                auto all_ports = Paragraphs::load_all_registry_ports(m_registry_set);
                 for (auto&& scfl : all_ports)
                 {
                     auto it = m_control_cache.emplace(scfl.to_version_spec(), std::move(scfl)).first;
@@ -218,7 +204,6 @@ namespace vcpkg
             }
 
         private:
-            const ReadOnlyFilesystem& m_fs;
             const RegistrySet& m_registry_set;
             mutable std::unordered_map<VersionSpec, ExpectedL<SourceControlFileAndLocation>, VersionSpecHasher>
                 m_control_cache;
@@ -418,10 +403,9 @@ namespace vcpkg
         return std::make_unique<BaselineProviderImpl>(registry_set);
     }
 
-    std::unique_ptr<IFullVersionedPortfileProvider> make_versioned_portfile_provider(const ReadOnlyFilesystem& fs,
-                                                                                     const RegistrySet& registry_set)
+    std::unique_ptr<IFullVersionedPortfileProvider> make_versioned_portfile_provider(const RegistrySet& registry_set)
     {
-        return std::make_unique<VersionedPortfileProviderImpl>(fs, registry_set);
+        return std::make_unique<VersionedPortfileProviderImpl>(registry_set);
     }
 
     std::unique_ptr<IFullOverlayProvider> make_overlay_provider(const ReadOnlyFilesystem& fs,
