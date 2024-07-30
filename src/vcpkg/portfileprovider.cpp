@@ -159,7 +159,6 @@ namespace vcpkg
                         }
                         else
                         {
-                            get_global_metrics_collector().track_define(DefineMetric::VersioningErrorVersion);
                             return msg::format_error(msgVersionSpecMismatch,
                                                      msg::path = scfl->control_path,
                                                      msg::expected_version = version_spec,
