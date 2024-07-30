@@ -41,7 +41,8 @@ namespace
         auto res = serialize_manifest(*data.scf);
 
         // reparse res to ensure no semantic changes were made
-        auto maybe_reparsed = SourceControlFile::parse_project_manifest_object(StringLiteral{"reparse"}, res, null_sink);
+        auto maybe_reparsed =
+            SourceControlFile::parse_project_manifest_object(StringLiteral{"<unsaved>"}, res, null_sink);
         bool reparse_matches;
         if (auto reparsed = maybe_reparsed.get())
         {

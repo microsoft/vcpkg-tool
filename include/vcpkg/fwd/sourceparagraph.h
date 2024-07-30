@@ -12,5 +12,4 @@ namespace vcpkg
     struct PortLocation;
     struct SourceControlFile;
     struct SourceControlFileAndLocation;
-    struct PortLoadResult;
 }

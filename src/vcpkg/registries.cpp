@@ -444,8 +444,6 @@ namespace
         PortVersionsGitTreesStructOfArrays port_versions_soa;
     };
 
-    struct FilesystemRegistry;
-
     struct FilesystemRegistryEntry final : RegistryEntry
     {
         explicit FilesystemRegistryEntry(const ReadOnlyFilesystem& fs,
@@ -588,8 +586,6 @@ namespace
         ExpectedL<Optional<Version>> get_baseline_version(StringView) const override;
 
     private:
-        friend FilesystemRegistryEntry;
-
         const ReadOnlyFilesystem& m_fs;
 
         Path m_path;
