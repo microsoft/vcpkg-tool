@@ -573,9 +573,12 @@ namespace vcpkg
             }
         }
 
-        if (regressions.empty()) {
+        if (regressions.empty())
+        {
             Checks::exit_success(VCPKG_LINE_INFO);
-        } else {
+        }
+        else
+        {
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
     }
