@@ -2,7 +2,7 @@
 
 # test skipped ports
 $Output = Run-VcpkgAndCaptureOutput ci --dry-run --triplet=$Triplet --x-builtin-ports-root="$PSScriptRoot/../e2e-ports/ci"  --binarysource=clear --ci-baseline="$PSScriptRoot/../e2e-assets/ci/ci.baseline.txt"
-Throw-IfFailed
+Throw-IfNotFailed
 if (-not ($Output.Contains("dep-on-feature-not-sup:${Triplet}:  cascade"))) {
     throw 'dep-on-feature-not-sup must cascade because it depends on a features that is not supported'
 }
@@ -10,10 +10,10 @@ if (-not ($Output.Contains("not-sup-host-b:${Triplet}:     skip"))) {
     throw 'not-sup-host-b must be skipped because it is not supported'
 }
 if (-not ($Output.Contains("feature-not-sup:${Triplet}:        *"))) {
-    throw 'feature-not-sup must be build because the port that causes this port to skip should not be installed'
+    throw 'feature-not-sup must be built because the port that causes this port to skip should not be installed'
 }
 if (-not ($Output.Contains("feature-dep-missing:${Triplet}:        *"))) {
-    throw 'feature-dep-missing must be build because the broken feature is not selected.'
+    throw 'feature-dep-missing must be built because the broken feature is not selected.'
 }
 if ($Output.Split("*").Length -ne 4) {
     throw 'base-port should not be installed for the host'
