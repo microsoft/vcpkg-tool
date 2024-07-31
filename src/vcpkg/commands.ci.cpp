@@ -248,7 +248,7 @@ namespace
                                   : SortedVector<std::string>(Strings::split(it_exclusions->second, ',')));
     }
 
-    void print_regressions(const std::vector<SpecSummary>& results,
+    bool print_regressions(const std::vector<SpecSummary>& results,
                            const std::map<PackageSpec, BuildResult>& known,
                            const CiBaselineData& cidata,
                            const std::string& ci_baseline_file_name,
@@ -285,11 +285,12 @@ namespace
             }
         }
 
-        if (!has_error)
+        if (has_error)
         {
-            return;
+            msg::write_unlocalized_text_to_stderr(Color::none, output);
         }
-        msg::write_unlocalized_text_to_stderr(Color::none, output);
+
+        return has_error;
     }
 
 } // unnamed namespace
@@ -414,7 +415,7 @@ namespace vcpkg
         auto binary_cache = BinaryCache::make(args, paths, out_sink).value_or_exit(VCPKG_LINE_INFO);
         const auto precheck_results = binary_cache.precheck(action_plan.install_actions);
         auto split_specs = compute_action_statuses(ExclusionPredicate{&exclusions_map}, precheck_results, action_plan);
-        LocalizedString regressions;
+        LocalizedString not_supported_regressions;
         {
             std::string msg;
             for (const auto& spec : all_default_full_specs)
@@ -428,7 +429,7 @@ namespace vcpkg
 
                     if (cidata.expected_failures.contains(spec.package_spec))
                     {
-                        regressions
+                        not_supported_regressions
                             .append(supp ? msgCiBaselineUnexpectedFailCascade : msgCiBaselineUnexpectedFail,
                                     msg::spec = spec.package_spec,
                                     msg::triplet = spec.package_spec.triplet())
@@ -491,10 +492,12 @@ namespace vcpkg
         if (is_dry_run)
         {
             print_plan(action_plan, paths.builtin_ports_directory());
-            if (!regressions.empty())
+            if (!not_supported_regressions.empty())
             {
-                msg::println(Color::error, msgCiBaselineRegressionHeader);
-                msg::print(Color::error, regressions);
+                msg::write_unlocalized_text_to_stderr(
+                    Color::error,
+                    msg::format(msgCiBaselineRegressionHeader).append_raw('\n').append_raw(not_supported_regressions));
+                Checks::exit_fail(VCPKG_LINE_INFO);
             }
         }
         else
@@ -530,12 +533,12 @@ namespace vcpkg
                            .append_raw(target_triplet)
                            .append_raw('\n')
                            .append(summary.format()));
-            print_regressions(summary.results,
-                              split_specs->known,
-                              cidata,
-                              baseline_iter->second,
-                              regressions,
-                              allow_unexpected_passing);
+            const bool any_regressions = print_regressions(summary.results,
+                                                           split_specs->known,
+                                                           cidata,
+                                                           baseline_iter->second,
+                                                           not_supported_regressions,
+                                                           allow_unexpected_passing);
 
             auto it_xunit = settings.find(SwitchXXUnit);
             if (it_xunit != settings.end())
@@ -571,15 +574,13 @@ namespace vcpkg
                 filesystem.write_contents(
                     it_xunit->second, xunitTestResults.build_xml(target_triplet), VCPKG_LINE_INFO);
             }
+
+            if (any_regressions)
+            {
+                Checks::exit_fail(VCPKG_LINE_INFO);
+            }
         }
 
-        if (regressions.empty())
-        {
-            Checks::exit_success(VCPKG_LINE_INFO);
-        }
-        else
-        {
-            Checks::exit_fail(VCPKG_LINE_INFO);
-        }
+        Checks::exit_success(VCPKG_LINE_INFO);
     }
 } // namespace vcpkg

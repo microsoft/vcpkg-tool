@@ -3,6 +3,8 @@
 # test skipped ports
 $Output = Run-VcpkgAndCaptureOutput ci --dry-run --triplet=$Triplet --x-builtin-ports-root="$PSScriptRoot/../e2e-ports/ci"  --binarysource=clear --ci-baseline="$PSScriptRoot/../e2e-assets/ci/ci.baseline.txt"
 Throw-IfNotFailed
+$ErrorOutput = Run-VcpkgAndCaptureStdErr ci --dry-run --triplet=$Triplet --x-builtin-ports-root="$PSScriptRoot/../e2e-ports/ci"  --binarysource=clear --ci-baseline="$PSScriptRoot/../e2e-assets/ci/ci.baseline.txt"
+Throw-IfNotFailed
 if (-not ($Output.Contains("dep-on-feature-not-sup:${Triplet}:  cascade"))) {
     throw 'dep-on-feature-not-sup must cascade because it depends on a features that is not supported'
 }
@@ -18,10 +20,10 @@ if (-not ($Output.Contains("feature-dep-missing:${Triplet}:        *"))) {
 if ($Output.Split("*").Length -ne 4) {
     throw 'base-port should not be installed for the host'
 }
-if (-not ($Output.Contains("REGRESSION: not-sup-host-b:${Triplet} is marked as fail but not supported for ${Triplet}."))) {
+if (-not ($ErrorOutput.Contains("REGRESSION: not-sup-host-b:${Triplet} is marked as fail but not supported for ${Triplet}."))) {
     throw "feature-not-sup's baseline fail entry should result in a regression because the port is not supported"
 }
-if (-not ($Output.Contains("REGRESSION: dep-on-feature-not-sup:${Triplet} is marked as fail but one dependency is not supported for ${Triplet}."))) {
+if (-not ($ErrorOutput.Contains("REGRESSION: dep-on-feature-not-sup:${Triplet} is marked as fail but one dependency is not supported for ${Triplet}."))) {
     throw "feature-not-sup's baseline fail entry should result in a regression because the port is cascade for this triplet"
 }
 
