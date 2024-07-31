@@ -571,7 +571,7 @@
   "GitUnexpectedCommandOutputCmd": "Git が {command_line} の実行中に予期しない出力を生成しました",
   "GraphCycleDetected": "{package_name} のグラフ内で循環が検出されました:",
   "HashFileFailureToRead": "ハッシュのためにファイル \"{path}\" を読み取れませんでした: ",
-  "HashPortManyFiles": "{package_name} には {count} 個のファイルが含まれています。バイナリ キャッシュの ABI ハッシュを決定するときに、これらのコンテンツのハッシュ化に時間がかかることがあります。ファイル数を減らすことを検討してください。この一般的な原因は、ソース ファイルまたはビルド ファイルをポートのディレクトリに誤ってチェックアウトすることです。",
+  "HashPortManyFiles": "{package_name} contains {count} files. Hashing these contents may take a long time when determining the ABI hash for binary caching. Consider reducing the number of files. Common causes of this are accidentally checking out source or build files into a port's directory.",
   "HeaderOnlyUsage": "{package_name} はヘッダーのみであり、CMake から次の方法で使用できます:",
   "HelpAssetCaching": "**実験的な機能: これはいつでも変更または削除される可能性があります**\n\nvcpkg はミラーを使用してダウンロードしたアセットをキャッシュし、元のソースが変更または消失した場合でも操作を継続できるようにします。\n\n資産キャッシュは、環境変数 X_VCPKG_ASSET_SOURCES をセミコロンで区切られたソースのリストに設定するか、一連の --x-asset-sources=<source> コマンド ライン オプションを渡すことによって構成できます。コマンド ライン ソースは、環境ソースの後に解釈されます。コンマ、セミコロン、およびバックティックは、バックティック (`) を使用してエスケープできます。\n\n特定の文字列の <rw> オプション パラメーターは、それらへのアクセス方法を制御します。\"read\"、\"write\"、または \"readwrite\" として指定でき、既定値は \"read\" です。\n\n有効なソース:",
   "HelpAssetCachingAzUrl": "オプションで Shared Access Signature 検証を使用して、Azure Blob Storage ソースを追加します。URL にはコンテナー パスを含め、末尾の \"/\" で終了する必要があります。<sas> が定義されている場合は、\"?\" をプレフィックスとして付ける必要があります。Azure 以外のサーバーも、\"<url><sha512><sas>\" の形式の GET および PUT 要求に応答する場合に機能します。",
