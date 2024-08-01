@@ -6051,10 +6051,13 @@
       </Item>
       <Item ItemId=";HashPortManyFiles" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The {package_name} contains {count} files. Hashing these contents may take a long time when determining the ABI hash for binary caching. Consider reducing the number of files. Common causes of this are accidentally checking out source or build files into a port's directory.]]></Val>
+          <Val><![CDATA[{package_name} contains {count} files. Hashing these contents may take a long time when determining the ABI hash for binary caching. Consider reducing the number of files. Common causes of this are accidentally checking out source or build files into a port's directory.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Pakiet {package_name} zawiera {count} plików. Skracanie tej zawartości może zająć dużo czasu podczas określania skrótu ABI dla buforowania binarnego. Rozważ zmniejszenie liczby plików. Najczęstsze przyczyny to przypadkowe sprawdzenie plików źródłowych lub kompilacji w katalogu portu.]]></Val>
+            <Val><![CDATA[Pakiet {package_name} zawiera następującą liczbę plików: {count}. Utworzenie skrótu tej zawartości może zająć dużo czasu podczas określania skrótu instrukcji ABI dla buforowania binarnego. Rozważ zmniejszenie liczby plików. Typowe przyczyny tego problemu to przypadkowe wyewidencjonowanie plików źródłowych lub plików kompilacji w katalogu portu.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The {package_name} contains {count} files. Hashing these contents may take a long time when determining the ABI hash for binary caching. Consider reducing the number of files. Common causes of this are accidentally checking out source or build files into a port's directory.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
