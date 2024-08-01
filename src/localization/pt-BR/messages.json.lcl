@@ -6051,10 +6051,13 @@
       </Item>
       <Item ItemId=";HashPortManyFiles" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The {package_name} contains {count} files. Hashing these contents may take a long time when determining the ABI hash for binary caching. Consider reducing the number of files. Common causes of this are accidentally checking out source or build files into a port's directory.]]></Val>
+          <Val><![CDATA[{package_name} contains {count} files. Hashing these contents may take a long time when determining the ABI hash for binary caching. Consider reducing the number of files. Common causes of this are accidentally checking out source or build files into a port's directory.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[O {package_name} contém {count} arquivos. O hash desses conteúdos pode levar muito tempo ao determinar o hash da ABI para cache binário. Considere reduzir o número de arquivos. Fazer check-out acidental de arquivos de origem ou build no diretório de uma porta estão entre as causas comuns disso.]]></Val>
+            <Val><![CDATA[O {package_name} contém {count} arquivos. O hash desses conteúdos pode levar muito tempo ao determinar o hash da ABI para cache binário. Considere reduzir o número de arquivos. Causas comuns são fazer check-out acidental de arquivos de origem ou build no diretório de uma porta.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The {package_name} contains {count} files. Hashing these contents may take a long time when determining the ABI hash for binary caching. Consider reducing the number of files. Common causes of this are accidentally checking out source or build files into a port's directory.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
