@@ -107,8 +107,8 @@ namespace vcpkg
 
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();
-        PathsPortFileProvider provider(
-            fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
+        PathsPortFileProvider provider(*registry_set,
+                                       make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
         Checks::exit_with_code(VCPKG_LINE_INFO,
                                command_build_ex(args,
                                                 paths,

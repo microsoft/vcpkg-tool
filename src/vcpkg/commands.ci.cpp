@@ -376,8 +376,8 @@ namespace vcpkg
             build_logs_recorder_storage ? *(build_logs_recorder_storage.get()) : null_build_logs_recorder();
 
         auto registry_set = paths.make_registry_set();
-        PathsPortFileProvider provider(
-            filesystem, *registry_set, make_overlay_provider(filesystem, paths.original_cwd, paths.overlay_ports));
+        PathsPortFileProvider provider(*registry_set,
+                                       make_overlay_provider(filesystem, paths.original_cwd, paths.overlay_ports));
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
 

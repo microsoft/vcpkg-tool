@@ -102,8 +102,8 @@ namespace vcpkg
             Json::Object response;
             Json::Object results;
             auto registry_set = paths.make_registry_set();
-            PathsPortFileProvider provider(
-                fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
+            PathsPortFileProvider provider(*registry_set,
+                                           make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
 
             for (auto&& arg : options.command_arguments)
             {
