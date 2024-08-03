@@ -401,30 +401,27 @@ namespace
 
     struct BuiltinPortTreeRegistryEntry final : RegistryEntry
     {
-        BuiltinPortTreeRegistryEntry(const SourceControlFileAndLocation& load_result_,
-                                     StringView port_name_,
-                                     Version version_)
-            : load_result(load_result_), port_name(port_name_.data(), port_name_.size()), version(version_)
-        {
-        }
+        BuiltinPortTreeRegistryEntry(const SourceControlFileAndLocation& load_result_) : load_result(load_result_) { }
 
-        ExpectedL<View<Version>> get_port_versions() const override { return View<Version>{&version, 1}; }
+        ExpectedL<View<Version>> get_port_versions() const override
+        {
+            return View<Version>{&load_result.source_control_file->to_version(), 1};
+        }
         ExpectedL<SourceControlFileAndLocation> try_load_port(const Version& v) const override
         {
-            if (v == version)
+            auto& core_paragraph = load_result.source_control_file->core_paragraph;
+            if (v == core_paragraph->version)
             {
                 return load_result.clone();
             }
 
             return msg::format_error(msgVersionBuiltinPortTreeEntryMissing,
-                                     msg::package_name = port_name,
+                                     msg::package_name = core_paragraph->name,
                                      msg::expected = v.to_string(),
-                                     msg::actual = version.to_string());
+                                     msg::actual = core_paragraph->version.to_string());
         }
 
         const SourceControlFileAndLocation& load_result;
-        std::string port_name;
-        Version version;
     };
 
     struct BuiltinGitRegistryEntry final : RegistryEntry
@@ -498,7 +495,10 @@ namespace
         {
             auto path = m_builtin_ports_directory / port_name;
             return m_scfls.get_lazy(path, [&, this]() {
-                return Paragraphs::try_load_port(m_fs, port_name, PortLocation{path}).maybe_scfl;
+                std::string spdx_location = "git+https://github.com/Microsoft/vcpkg#ports/";
+                spdx_location.append(port_name.data(), port_name.size());
+                return Paragraphs::try_load_port(m_fs, port_name, PortLocation{path, std::move(spdx_location)})
+                    .maybe_scfl;
             });
         }
 
@@ -718,7 +718,7 @@ namespace
 
                 if (scf->core_paragraph->name == port_name)
                 {
-                    return std::make_unique<BuiltinPortTreeRegistryEntry>(scfl, port_name, scf->to_version());
+                    return std::make_unique<BuiltinPortTreeRegistryEntry>(scfl);
                 }
 
                 return msg::format_error(msgUnexpectedPortName,
