@@ -1087,7 +1087,6 @@
   "VersionInvalidSemver": "{version} není platná sémantická verze, řiďte se <https://semver.org>.",
   "VersionMissing": "očekávalo se pole správy verzí (jedna verze, datum verze, verze semver nebo řetězec verze).",
   "VersionMissingRequiredFeature": "{version_spec} nemá požadovanou funkci {feature}, kterou {constraint_origin} potřebuje.",
-  "VersionNotFound": "{expected} není k dispozici, k dispozici je pouze {actual}",
   "VersionNotFoundInVersionsFile2": "verze {version_spec} nebyla v databázi verzí nalezena",
   "VersionNotFoundInVersionsFile3": "verze by měla být v tomto souboru",
   "VersionNotFoundInVersionsFile4": "spuštěním příkazu {command_line} přidejte novou verzi portu",

@@ -1087,7 +1087,6 @@
   "VersionInvalidSemver": "'{version}' は有効なセマンティック バージョンではありません。<https://semver.org> を参照してください。",
   "VersionMissing": "バージョン管理フィールドが必要です (version、version-date、version-semver、version-string のいずれか)",
   "VersionMissingRequiredFeature": "{version_spec} には、{constraint_origin} が必要とする機能 {feature} が必要ありません",
-  "VersionNotFound": "{expected} は利用できません。使用できるのは {actual} のみです",
   "VersionNotFoundInVersionsFile2": "{version_spec} がバージョン データベースに見つかりませんでした",
   "VersionNotFoundInVersionsFile3": "バージョンはこのファイルに含まれている必要があります",
   "VersionNotFoundInVersionsFile4": "'{command_line}' を実行して新しいポート バージョンを追加します",

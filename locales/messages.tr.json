@@ -1087,7 +1087,6 @@
   "VersionInvalidSemver": "'{version}' geçerli bir anlamsal sürüm değil, <https://semver.org> adresine başvurun.",
   "VersionMissing": "sürüm oluşturma alanı bekleniyordu (version, version-date, version-semver veya version-string kodlarından biri)",
   "VersionMissingRequiredFeature": "{version_spec}, {constraint_origin} için gerekli olan {feature} gerekli özelliğine sahip değil",
-  "VersionNotFound": "{expected} kullanılamıyor, yalnızca {actual} kullanılabilir",
   "VersionNotFoundInVersionsFile2": "{version_spec} sürüm veritabanında bulunamadı",
   "VersionNotFoundInVersionsFile3": "sürüm bu dosyada olmalı",
   "VersionNotFoundInVersionsFile4": "yeni bağlantı noktası sürümünü eklemek için '{command_line}' komutunu çalıştırın",

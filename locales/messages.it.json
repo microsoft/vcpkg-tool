@@ -1087,7 +1087,6 @@
   "VersionInvalidSemver": "'{version}' non è una versione semantica valida. Consultare <https://semver.org>.",
   "VersionMissing": "previsto un campo di controllo delle versioni (uno tra version, version-date, version-semver o version-string)",
   "VersionMissingRequiredFeature": "{version_spec} non dispone della funzionalità necessaria {feature} richieste da {constraint_origin}",
-  "VersionNotFound": "{expected} non disponibile, è disponibile solo {actual}",
   "VersionNotFoundInVersionsFile2": "{version_spec} non è stato trovato nel database delle versioni",
   "VersionNotFoundInVersionsFile3": "la versione deve essere in questo file",
   "VersionNotFoundInVersionsFile4": "eseguire '{command_line}' per aggiungere la nuova versione della porta",

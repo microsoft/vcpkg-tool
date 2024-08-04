@@ -1087,7 +1087,6 @@
   "VersionInvalidSemver": "\"{version}\" не является допустимой семантической версией, см. <https://semver.org>.",
   "VersionMissing": "ожидается поле управления версиями (один из вариантов: version, version-date, version-semver или version-string)",
   "VersionMissingRequiredFeature": "{version_spec} не содержит обязательного компонента {feature}, необходимого для {constraint_origin}",
-  "VersionNotFound": "{expected} недоступно, {actual} доступно только {actual}.",
   "VersionNotFoundInVersionsFile2": "{version_spec} не найдено в базе данных версий",
   "VersionNotFoundInVersionsFile3": "версия должна находиться в этом файле",
   "VersionNotFoundInVersionsFile4": "выполните команду \"{command_line}\", чтобы добавить новую версию порта",

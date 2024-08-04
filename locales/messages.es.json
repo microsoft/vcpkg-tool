@@ -1087,7 +1087,6 @@
   "VersionInvalidSemver": "'{version}' no es una versión semántica válida, consulte <https://semver.org>.",
   "VersionMissing": "se esperaba un campo de control de versión (versión, fecha-versión, versión-servidor o versión-cadena)",
   "VersionMissingRequiredFeature": "{version_spec} no tiene la característica {feature} necesaria necesaria para {constraint_origin}",
-  "VersionNotFound": "{expected} no está disponible, solo {actual} está disponible",
   "VersionNotFoundInVersionsFile2": "No se encontró {version_spec} en la base de datos de versiones",
   "VersionNotFoundInVersionsFile3": "la versión debe estar en este archivo",
   "VersionNotFoundInVersionsFile4": "ejecute \"{command_line}\" para agregar la nueva versión del puerto.",

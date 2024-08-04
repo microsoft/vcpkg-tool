@@ -1087,7 +1087,6 @@
   "VersionInvalidSemver": "'{version}'은(는) 올바른 의미 체계 버전이 아닙니다. <https://semver.org>를 참조하세요.",
   "VersionMissing": "버전 관리 필드(버전, 버전 날짜, 버전 셈버 또는 버전 문자열 중 하나)가 필요합니다.",
   "VersionMissingRequiredFeature": "{version_spec}에 {constraint_origin}에 필요한 기능 {feature}이(가) 없음",
-  "VersionNotFound": "{expected}을(를) 사용할 수 없습니다. {actual}만 사용할 수 있습니다.",
   "VersionNotFoundInVersionsFile2": "버전 데이터베이스에서 {version_spec}을(를) 찾을 수 없습니다.",
   "VersionNotFoundInVersionsFile3": "버전이 이 파일에 있어야 합니다.",
   "VersionNotFoundInVersionsFile4": "'{command_line}'을(를) 실행하여 새 포트 버전 추가",

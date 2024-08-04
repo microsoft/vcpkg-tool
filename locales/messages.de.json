@@ -1087,7 +1087,6 @@
   "VersionInvalidSemver": "„{version}“ ist keine gültige semantische Version. Weitere Informationen finden Sie unter <https://semver.org>.",
   "VersionMissing": "Es wurde ein Versionsverwaltungsfeld erwartet (version, version-date, version-semver oder version-string).",
   "VersionMissingRequiredFeature": "{version_spec} verfügt nicht über die erforderliche Funktion {feature}, die von {constraint_origin} benötigt wird",
-  "VersionNotFound": "{expected} nicht verfügbar. Es ist nur {actual} verfügbar.",
   "VersionNotFoundInVersionsFile2": "„{version_spec}“ wurde in der Versionsdatenbank nicht gefunden.",
   "VersionNotFoundInVersionsFile3": "Die Version sollte sich in dieser Datei befinden.",
   "VersionNotFoundInVersionsFile4": "Führen Sie „{command_line}“ aus, um die neue Portversion hinzuzufügen.",

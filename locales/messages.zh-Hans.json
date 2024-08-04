@@ -1087,7 +1087,6 @@
   "VersionInvalidSemver": "“{version}”不是有效的语义版本，请参阅 <https://semver.org>。",
   "VersionMissing": "需要版本控制字段(版本、版本日期、版本-semver 或版本字符串)之一",
   "VersionMissingRequiredFeature": "“{version_spec}”没有“{constraint_origin}”所需的功能“{feature}”",
-  "VersionNotFound": "{expected} 不可用，只有 {actual} 可用",
   "VersionNotFoundInVersionsFile2": "在版本数据库中找不到 {version_spec}",
   "VersionNotFoundInVersionsFile3": "该版本应在此文件中",
   "VersionNotFoundInVersionsFile4": "运行 \"{command_line}\" 以添加新的端口版本",

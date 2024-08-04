@@ -1087,7 +1087,6 @@
   "VersionInvalidSemver": "„{version}“ nie jest prawidłową wersją semantyczną. Zapoznaj się z <https://semver.org>.",
   "VersionMissing": "oczekiwano pola przechowywania wersji (jednej z wersji, version-date, version-semver lub version_string)",
   "VersionMissingRequiredFeature": "{version_spec} nie ma wymaganej funkcji {feature} wymaganej przez użytkownika {constraint_origin}",
-  "VersionNotFound": "{expected} niedostępne, dostępna jest tylko {actual}",
   "VersionNotFoundInVersionsFile2": "Nie znaleziono wersji {version_spec} w bazie danych wersji",
   "VersionNotFoundInVersionsFile3": "wersja powinna znajdować się w tym pliku",
   "VersionNotFoundInVersionsFile4": "uruchom polecenie „{command_line}”, aby dodać nową wersję portu",
