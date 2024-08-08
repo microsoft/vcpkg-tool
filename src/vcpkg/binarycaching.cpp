@@ -752,6 +752,7 @@ namespace
                 {
                     msg_sink.println(Color::error,
                                      msg::format(msgPushingVendorFailed, msg::vendor = "NuGet", msg::path = write_src)
+                                         .append_raw('\n')
                                          .append(msgSeeURL, msg::url = docs::troubleshoot_binary_cache_url));
                 }
                 else
@@ -770,6 +771,7 @@ namespace
                     msg_sink.println(
                         Color::error,
                         msg::format(msgPushingVendorFailed, msg::vendor = "NuGet config", msg::path = write_cfg)
+                            .append_raw('\n')
                             .append(msgSeeURL, msg::url = docs::troubleshoot_binary_cache_url));
                 }
                 else

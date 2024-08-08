@@ -799,6 +799,7 @@ namespace vcpkg
 
         Checks::msg_exit_with_error(VCPKG_LINE_INFO,
                                     msg::format(msgVcpkgDisallowedClassicMode)
+                                        .append_raw('\n')
                                         .append(msgSeeURL, msg::url = docs::troubleshoot_build_failures_url));
     }
 
@@ -811,6 +812,7 @@ namespace vcpkg
 
         Checks::msg_exit_with_error(VCPKG_LINE_INFO,
                                     msg::format(msgVcpkgDisallowedClassicMode)
+                                        .append_raw('\n')
                                         .append(msgSeeURL, msg::url = docs::troubleshoot_build_failures_url));
     }
 
@@ -823,6 +825,7 @@ namespace vcpkg
 
         Checks::msg_exit_with_error(VCPKG_LINE_INFO,
                                     msg::format(msgVcpkgDisallowedClassicMode)
+                                        .append_raw('\n')
                                         .append(msgSeeURL, msg::url = docs::troubleshoot_build_failures_url));
     }
 

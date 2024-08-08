@@ -409,6 +409,7 @@ namespace vcpkg
     inline constexpr StringLiteral CMakeVariablePolicySkipUsageInstallCheck = "VCPKG_POLICY_SKIP_USAGE_INSTALL_CHECK";
     inline constexpr StringLiteral CMakeVariablePort = "PORT";
     inline constexpr StringLiteral CMakeVariablePortConfigs = "VCPKG_PORT_CONFIGS";
+    inline constexpr StringLiteral CMakeVariablePostPortfileIncludes = "VCPKG_POST_PORTFILE_INCLUDES";
     inline constexpr StringLiteral CMakeVariableProhibitBackcompatFeatures = "_VCPKG_PROHIBIT_BACKCOMPAT_FEATURES";
     inline constexpr StringLiteral CMakeVariablePublicAbiOverride = "VCPKG_PUBLIC_ABI_OVERRIDE";
     inline constexpr StringLiteral CMakeVariableRef = "REF";
@@ -425,6 +426,7 @@ namespace vcpkg
     inline constexpr StringLiteral CMakeVariableXBoxConsoleTarget = "VCPKG_XBOX_CONSOLE_TARGET";
     inline constexpr StringLiteral CMakeVariableZChainloadToolchainFile = "Z_VCPKG_CHAINLOAD_TOOLCHAIN_FILE";
     inline constexpr StringLiteral CMakeVariableZVcpkgGameDKLatest = "Z_VCPKG_GameDKLatest";
+    inline constexpr StringLiteral CMakeVariableZPostPortfileIncludes = "Z_VCPKG_POST_PORTFILE_INCLUDES";
 
     // Policies are PascalCase
     inline constexpr StringLiteral PolicyAllowDebugInclude = "PolicyAllowDebugInclude";

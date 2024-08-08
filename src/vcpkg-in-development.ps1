@@ -22,5 +22,7 @@ if (Test-Path $env:Z_VCPKG_POSTSCRIPT) {
     iex $postscr
   }
 
-  Remove-Item -Force -ea 0 $env:Z_VCPKG_POSTSCRIPT,env:Z_VCPKG_POSTSCRIPT
+  Remove-Item -Force -ea 0 $env:Z_VCPKG_POSTSCRIPT
 }
+
+Remove-Item env:Z_VCPKG_POSTSCRIPT

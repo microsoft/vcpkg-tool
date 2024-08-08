@@ -1287,7 +1287,7 @@ DECLARE_MESSAGE(FilesContainAbsolutePath1,
                 "followed by a list of found files.",
                 "There should be no absolute paths, such as the following, in an installed package. To suppress this "
                 "message, add set(VCPKG_POLICY_SKIP_ABSOLUTE_PATHS_CHECK enabled)")
-DECLARE_MESSAGE(FilesContainAbsolutePath2, (), "", "Absolute paths found here")
+DECLARE_MESSAGE(FilesContainAbsolutePath2, (), "", "absolute paths found here")
 DECLARE_MESSAGE(FilesContainAbsolutePathPkgconfigNote,
                 (),
                 "",
@@ -1387,7 +1387,7 @@ DECLARE_MESSAGE(HashFileFailureToRead,
 DECLARE_MESSAGE(HashPortManyFiles,
                 (msg::package_name, msg::count),
                 "",
-                "The {package_name} contains {count} files. Hashing these contents may take a long time when "
+                "{package_name} contains {count} files. Hashing these contents may take a long time when "
                 "determining the ABI hash for binary caching. Consider reducing the number of files. Common causes of "
                 "this are accidentally checking out source or build files into a port's directory.")
 DECLARE_MESSAGE(HeaderOnlyUsage,
@@ -1913,6 +1913,11 @@ DECLARE_MESSAGE(InvalidValueHashAdditionalFiles,
                 "",
                 "Variable VCPKG_HASH_ADDITIONAL_FILES contains invalid file path: '{path}'. The value must be "
                 "an absolute path to an existent file.")
+DECLARE_MESSAGE(InvalidValuePostPortfileIncludes,
+                (msg::path),
+                "",
+                "Variable VCPKG_POST_PORTFILE_INCLUDES contains invalid file path: '{path}'. The value must be "
+                "an absolute path to an existent cmake file.")
 DECLARE_MESSAGE(IrregularFile, (msg::path), "", "path was not a regular file: {path}")
 DECLARE_MESSAGE(JsonErrorMustBeAnObject, (msg::path), "", "Expected \"{path}\" to be an object.")
 DECLARE_MESSAGE(JsonFieldNotObject, (msg::json_field), "", "value of [\"{json_field}\"] must be an object")
@@ -3028,10 +3033,6 @@ DECLARE_MESSAGE(VersionMissingRequiredFeature,
                 (msg::version_spec, msg::feature, msg::constraint_origin),
                 "",
                 "{version_spec} does not have required feature {feature} needed by {constraint_origin}")
-DECLARE_MESSAGE(VersionNotFound,
-                (msg::expected, msg::actual),
-                "{expected} and {actual} are versions",
-                "{expected} not available, only {actual} is available")
 DECLARE_MESSAGE(VersionNotFoundInVersionsFile2,
                 (msg::version_spec),
                 "",
