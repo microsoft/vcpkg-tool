@@ -169,6 +169,7 @@ namespace vcpkg
                 {
                     msg::println(Color::none, LocalizedString().append_indent().append_raw(spec.to_string()));
                 }
+                Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
             if (!no_control_file.empty())
@@ -178,9 +179,8 @@ namespace vcpkg
                 {
                     msg::println(Color::none, LocalizedString().append_indent().append_raw(spec.to_string()));
                 }
+                Checks::exit_fail(VCPKG_LINE_INFO);
             }
-
-            Checks::check_exit(VCPKG_LINE_INFO, not_installed.empty() && no_control_file.empty());
 
             if (to_upgrade.empty()) Checks::exit_success(VCPKG_LINE_INFO);
 
