@@ -105,6 +105,17 @@ See )" + docs::triplets_url + R"( for more information.
     REQUIRE(maybe_check.error() == expected_error);
 }
 
+TEST_CASE ("check_triplet rejects malformed triplet", "[input][check_triplet]")
+{
+    TripletDatabase db;
+    db.available_triplets.push_back(TripletFile{"invalid.triplet_name", "invalid.triplet_name.cmake"});
+    auto maybe_check = check_triplet("invalid.triplet_name", db);
+    REQUIRE(!maybe_check.has_value());
+    static constexpr StringLiteral expected_error{
+        "error: expected the end of input parsing a package spec; this usually means the indicated character is not allowed to be in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hypens."};
+    REQUIRE(maybe_check.error() == expected_error);
+}
+
 TEST_CASE ("check_and_get_package_spec validates the triplet", "[input][check_and_get_package_spec]")
 {
     TripletDatabase db;

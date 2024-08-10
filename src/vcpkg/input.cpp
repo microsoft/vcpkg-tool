@@ -1,6 +1,6 @@
-
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/messages.h>
+#include <vcpkg/base/parse.h>
 #include <vcpkg/base/strings.h>
 
 #include <vcpkg/commands.help.h>
@@ -26,6 +26,12 @@ namespace vcpkg
     {
         // Intentionally show the lowercased string
         auto as_lower = Strings::ascii_to_lowercase(name);
+        
+        if (std::find_if_not(name.begin(), name.end(), ParserBase::is_package_name_char) != name.end())
+        {
+            return msg::format_error(msgParseQualifiedSpecifierNotEof);
+        }
+
         if (!database.is_valid_triplet_canonical_name(as_lower))
         {
             LocalizedString result = msg::format_error(msgInvalidTriplet, msg::triplet = as_lower);
