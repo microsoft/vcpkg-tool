@@ -26,7 +26,7 @@ namespace vcpkg
     {
         // Intentionally show the lowercased string
         auto as_lower = Strings::ascii_to_lowercase(name);
-        
+
         if (std::find_if_not(name.begin(), name.end(), ParserBase::is_package_name_char) != name.end())
         {
             return msg::format_error(msgParseQualifiedSpecifierNotEof);
