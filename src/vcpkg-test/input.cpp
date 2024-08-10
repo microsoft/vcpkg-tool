@@ -112,7 +112,8 @@ TEST_CASE ("check_triplet rejects malformed triplet", "[input][check_triplet]")
     auto maybe_check = check_triplet("invalid.triplet_name", db);
     REQUIRE(!maybe_check.has_value());
     static constexpr StringLiteral expected_error{
-        "error: expected the end of input parsing a package spec; this usually means the indicated character is not allowed to be in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hypens."};
+        "error: expected the end of input parsing a package spec; this usually means the indicated character is not "
+        "allowed to be in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hypens."};
     REQUIRE(maybe_check.error() == expected_error);
 }
 
