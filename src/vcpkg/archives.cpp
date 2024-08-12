@@ -107,8 +107,6 @@ namespace
         Checks::check_exit(VCPKG_LINE_INFO, !recursion_limiter_sevenzip);
         recursion_limiter_sevenzip = true;
 
-                                              '\n');
-
         const auto maybe_output = flatten(cmd_execute_and_capture_output(Command{seven_zip}
                                                                              .string_arg("x")
                                                                              .string_arg(archive)
@@ -182,14 +180,12 @@ namespace vcpkg
             case ExtractionType::Msi: win32_extract_msi(archive, to_path); break;
             case ExtractionType::SevenZip:
                 win32_extract_with_seven_zip(tools.get_tool_path(Tools::SEVEN_ZIP_R, status_sink), archive, to_path);
-                win32_extract_with_seven_zip(
-                    tools.get_tool_path(Tools::SEVEN_ZIP, status_sink), archive, to_path);
+                break;
             case ExtractionType::Zip:
-                win32_extract_with_seven_zip(tools.get_tool_path(Tools::SEVEN_ZIP_EXE, status_sink), archive, to_path);
-                win32_extract_with_seven_zip(
-                    tools.get_tool_path(Tools::SEVEN_ZIP, status_sink), archive, to_path);
+                win32_extract_with_seven_zip(tools.get_tool_path(Tools::SEVEN_ZIP, status_sink), archive, to_path);
+                break;
             case ExtractionType::Tar:
-                win32_extract_with_seven_zip(tools.get_tool_path(Tools::SEVEN_ZIP_EXE, status_sink), archive, to_path);
+                win32_extract_with_seven_zip(tools.get_tool_path(Tools::SEVEN_ZIP, status_sink), archive, to_path);
                 break;
             case ExtractionType::Exe:
                 const Path filename = archive.filename();
@@ -262,7 +258,7 @@ namespace vcpkg
                                    .append(msgMissing7zHeader));
 
         contents = contents.substr(pos);
-        fs.rename_with_retry(to_path_partial, to_path, VCPKG_LINE_INFO);
+        fs.rename_with_retry(to_path, contents, VCPKG_LINE_INFO);
     }
 #endif
 
