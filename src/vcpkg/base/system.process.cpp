@@ -601,6 +601,8 @@ namespace vcpkg
             // Enables proxy information to be passed to Curl, the underlying download library in cmake.exe
             "http_proxy",
             "https_proxy",
+            // Ensure that the proxy certificate information is passed to the underlying download library used by pip
+            "REQUESTS_CA_BUNDLE",
             // Environment variables to tell git to use custom SSH executable or command
             "GIT_SSH",
             "GIT_SSH_COMMAND",
