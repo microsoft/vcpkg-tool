@@ -603,6 +603,7 @@ namespace vcpkg
             "https_proxy",
             // Ensure that the proxy certificate information is passed to the underlying download library used by pip
             "REQUESTS_CA_BUNDLE",
+            "SSL_CERT_FILE",
             // Environment variables to tell git to use custom SSH executable or command
             "GIT_SSH",
             "GIT_SSH_COMMAND",
