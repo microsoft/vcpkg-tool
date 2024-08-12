@@ -16,6 +16,7 @@ namespace vcpkg
     {
         static constexpr StringLiteral SEVEN_ZIP = "7zip";
         static constexpr StringLiteral SEVEN_ZIP_ALT = "7z";
+        static constexpr StringLiteral SEVEN_ZIP_R = "7zr";
         static constexpr StringLiteral TAR = "tar";
         static constexpr StringLiteral MAVEN = "mvn";
         static constexpr StringLiteral CMAKE = "cmake";
@@ -32,8 +33,6 @@ namespace vcpkg
         static constexpr StringLiteral IFW_INSTALLER_BASE = "ifw_installerbase";
         // This duplicate of CMake should only be used as a fallback to unpack
         static constexpr StringLiteral CMAKE_SYSTEM = "cmake_system";
-        // This duplicate of 7zip uses msiexec to unpack, which is a fallback for Windows 7.
-        static constexpr StringLiteral SEVEN_ZIP_MSI = "7zip_msi";
         static constexpr StringLiteral PYTHON3 = "python3";
         static constexpr StringLiteral PYTHON3_WITH_VENV = "python3_with_venv";
     }

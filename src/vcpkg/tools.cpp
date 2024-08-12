@@ -691,18 +691,7 @@ namespace vcpkg
             if (tool_data.is_archive)
             {
                 status_sink.println(Color::none, msgExtractingTool, msg::tool_name = tool_data.name);
-#if defined(_WIN32)
-                if (tool_data.name == "cmake")
-                {
-                    // We use cmake as the core extractor on Windows, so we need to perform a special dance when
-                    // extracting it.
-                    win32_extract_bootstrap_zip(fs, *this, status_sink, download_path, tool_dir_path);
-                }
-                else
-#endif // ^^^ _WIN32
-                {
-                    set_directory_to_archive_contents(fs, *this, status_sink, download_path, tool_dir_path);
-                }
+                set_directory_to_archive_contents(fs, *this, status_sink, download_path, tool_dir_path);
             }
             else
             {
