@@ -561,7 +561,7 @@ namespace vcpkg
                         system32_env,
                         "\\WindowsPowerShell\\v1.0\\");
 
-        std::vector<std::string> env_strings = {
+        std::unordered_set<std::string> env_strings = {
             "ALLUSERSPROFILE",
             "APPDATA",
             "CommonProgramFiles",
@@ -610,15 +610,6 @@ namespace vcpkg
             "SSH_AUTH_SOCK",
             "SSH_AGENT_PID",
             // Enables find_package(CUDA) and enable_language(CUDA) in CMake
-            "CUDA_PATH",
-            "CUDA_PATH_V9_0",
-            "CUDA_PATH_V9_1",
-            "CUDA_PATH_V10_0",
-            "CUDA_PATH_V10_1",
-            "CUDA_PATH_V10_2",
-            "CUDA_PATH_V11_0",
-            "CUDA_PATH_V11_1",
-            "CUDA_PATH_V11_2",
             "CUDA_TOOLKIT_ROOT_DIR",
             // Environment variable generated automatically by CUDA after installation
             "NVCUDASAMPLES_ROOT",
@@ -643,6 +634,11 @@ namespace vcpkg
             "GXDKLatest",
         };
 
+        std::vector<std::string> env_prefix_string = {
+            // Enables find_package(CUDA) and enable_language(CUDA) in CMake
+            "CUDA_PATH",
+        };
+
         const Optional<std::string> keep_vars = get_environment_variable(EnvironmentVariableVcpkgKeepEnvVars);
         const auto k = keep_vars.get();
 
@@ -660,20 +656,23 @@ namespace vcpkg
                 }
                 else
                 {
-                    env_strings.push_back(std::move(var));
+                    env_strings.emplace(std::move(var));
                 }
             }
         }
 
         Environment env;
 
-        for (auto&& env_string : env_strings)
+        for (auto&& env_var : get_environment_variables())
         {
-            const Optional<std::string> value = get_environment_variable(env_string);
-            const auto v = value.get();
-            if (!v || v->empty()) continue;
-
-            env.add_entry(env_string, *v);
+            auto pos = env_var.find('=');
+            auto key = env_var.substr(0, pos);
+            if (Util::Sets::contains(env_strings, key) ||
+                Util::any_of(env_prefix_string, [&](auto&& group) { return Strings::starts_with(key, group); }))
+            {
+                auto value = pos == std::string::npos ? "" : env_var.substr(pos + 1);
+                env.add_entry(key, value);
+            }
         }
 
         const auto path_iter = extra_env.find(EnvironmentVariablePath.to_string());
