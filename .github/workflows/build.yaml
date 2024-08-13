@@ -18,7 +18,11 @@ jobs:
             preset: linux-ci
           - os: macos-12
             preset: macos-ci
+          - os: ubuntu-20.04
+            preset: linux-ci
+            container: dockcross/linux-arm64
     runs-on: ${{ matrix.os }}
+    container: ${{ matrix.container }}
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@v3
@@ -59,11 +63,20 @@ jobs:
         if: inputs.codeql
         uses: github/codeql-action/analyze@v3
       - name: Run vcpkg unit tests
+        if: matrix.container != 'dockcross/linux-arm64'
         run: ctest --preset ${{ matrix.preset }} --output-on-failure 2>&1
       - name: Run vcpkg-artifacts unit tests
         run: |
           cd out/build/${{ matrix.preset }}/vcpkg-artifacts
           node node_modules/mocha/bin/mocha --config mocha-config.yaml
+      - name: Install powershell
+        if: matrix.container == 'dockcross/linux-arm64'
+        run: |
+          curl -L -o /tmp/powershell.tar.gz https://github.com/PowerShell/PowerShell/releases/download/v7.4.4/powershell-7.4.4-linux-x64.tar.gz
+          sudo mkdir -p /opt/microsoft/powershell/7
+          sudo tar zxf /tmp/powershell.tar.gz -C /opt/microsoft/powershell/7
+          sudo chmod +x /opt/microsoft/powershell/7/pwsh
+          sudo ln -s /opt/microsoft/powershell/7/pwsh /usr/bin/pwsh
       - name: Get microsoft/vcpkg pinned sha into VCPKG_SHA
         id: vcpkg_sha
         shell: pwsh
@@ -77,6 +90,7 @@ jobs:
           repository: microsoft/vcpkg
           ref: ${{ steps.vcpkg_sha.outputs.VCPKG_SHA }}
       - name: Run vcpkg end-to-end tests
+        if: matrix.container != 'dockcross/linux-arm64'
         shell: pwsh
         run: |
           cd out/build/${{ matrix.preset }}
