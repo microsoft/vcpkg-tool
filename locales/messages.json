@@ -271,7 +271,7 @@
   "_CMakeUsingExportedLibs.comment": "{value} is a CMake command line switch of the form -DFOO=BAR",
   "ChecksFailedCheck": "vcpkg has crashed; no additional details are available.",
   "ChecksUnreachableCode": "unreachable code was reached",
-  "ChecksUpdateVcpkg": "updating vcpkg by rerunning bootstrap-vcpkg may resolve this failure.",
+  "ChecksUpdateVcpkg": "updating vcpkg by rerunning bootstrap-vcpkg or running `git pull` may resolve this failure.",
   "CiBaselineAllowUnexpectedPassingRequiresBaseline": "--allow-unexpected-passing can only be used if a baseline is provided via --ci-baseline.",
   "CiBaselineDisallowedCascade": "REGRESSION: {spec} cascaded, but it is required to pass. ({path}).",
   "_CiBaselineDisallowedCascade.comment": "An example of {spec} is zlib:x64-windows. An example of {path} is /foo/bar.",
