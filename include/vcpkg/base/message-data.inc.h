@@ -413,7 +413,10 @@ DECLARE_MESSAGE(
     "build system. To suppress this message, add set(VCPKG_POLICY_SKIP_ARCHITECTURE_CHECK enabled)")
 DECLARE_MESSAGE(ChecksFailedCheck, (), "", "vcpkg has crashed; no additional details are available.")
 DECLARE_MESSAGE(ChecksUnreachableCode, (), "", "unreachable code was reached")
-DECLARE_MESSAGE(ChecksUpdateVcpkg, (), "", "updating vcpkg by rerunning bootstrap-vcpkg or running `git pull` may resolve this failure.")
+DECLARE_MESSAGE(ChecksUpdateVcpkg,
+                (),
+                "",
+                "updating vcpkg by rerunning `git pull` and bootstrap-vcpkg may resolve this failure.")
 DECLARE_MESSAGE(CiBaselineAllowUnexpectedPassingRequiresBaseline,
                 (),
                 "",
