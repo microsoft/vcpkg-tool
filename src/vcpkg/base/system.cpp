@@ -569,8 +569,9 @@ namespace vcpkg
                     case REG_SZ:
                     case REG_EXPAND_SZ:
                         // remove trailing nulls
-                        while (!value->data.empty() && !(L'\0' != *reinterpret_cast<const wchar_t*>(
-                                                                      value->data.data() + value->data.size() - 2)))
+                        while (
+                            !value->data.empty() && value->data.size() >= 2 &&
+                            !(L'\0' != *reinterpret_cast<const wchar_t*>(value->data.data() + value->data.size() - 2)))
                         {
                             value->data.pop_back();
                             value->data.pop_back();
