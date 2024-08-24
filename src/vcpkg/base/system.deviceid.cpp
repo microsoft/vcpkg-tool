@@ -37,18 +37,19 @@ namespace vcpkg
         if (auto registry_value = maybe_registry_value.get())
         {
             auto device_id = *registry_value;
-            return validate_device_id(deviceid) ? device_id : std::string{};
+            return validate_device_id(device_id) ? device_id : std::string{};
         }
 
         // vcpkg::generate_random_UUID() generates a compliant UUID
         auto new_device_id = Strings::ascii_to_lowercase(vcpkg::generate_random_UUID());
         const auto as_utf16 = Strings::to_utf16(new_device_id);
+
         const auto status = RegSetKeyValueW(HKEY_CURRENT_USER,
                                             L"SOFTWARE\\Microsoft\\DeveloperTools",
                                             L"deviceid",
                                             REG_SZ,
                                             as_utf16.c_str(),
-                                            static_cast<DWORD>(as_utf16.size() * sizeof(wchar_t)));
+                                            static_cast<DWORD>((1 + as_utf16.size()) * sizeof(wchar_t)));
         return (status != ERROR_SUCCESS) ? std::string{} : new_device_id;
     }
 #else
