@@ -57,6 +57,8 @@ namespace vcpkg
             return is_lower_alpha(ch) || is_ascii_digit(ch) || ch == '-';
         }
 
+        static constexpr bool is_hex_digit_lower(char32_t ch) { return is_ascii_digit(ch) || (ch >= 'a' && ch <= 'f'); }
+
         static constexpr bool is_hex_digit(char32_t ch)
         {
             return is_ascii_digit(ch) || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F');

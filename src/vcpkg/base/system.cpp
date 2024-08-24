@@ -1,10 +1,12 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/expected.h>
+#include <vcpkg/base/files.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/path.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
+#include <vcpkg/base/uuid.h>
 
 #if defined(__APPLE__)
 #include <sys/sysctl.h>
@@ -503,6 +505,17 @@ namespace vcpkg
         return s_home;
     }
 #endif
+
+    const ExpectedL<Path>& get_platform_cache_root() noexcept
+    {
+        return
+#if defined(_WIN32)
+            get_appdata_local()
+#else
+            get_xdg_cache_home()
+#endif
+                ;
+    }
 
     const ExpectedL<Path>& get_platform_cache_vcpkg() noexcept
     {

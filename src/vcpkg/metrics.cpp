@@ -4,6 +4,7 @@
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.debug.h>
+#include <vcpkg/base/system.deviceid.h>
 #include <vcpkg/base/system.h>
 #include <vcpkg/base/system.mac.h>
 #include <vcpkg/base/system.process.h>
@@ -131,6 +132,7 @@ namespace vcpkg
         {StringMetric::CommandName, "command_name", "z-preregister-telemetry"},
         {StringMetric::DeploymentKind, "deployment_kind", "Git"},
         {StringMetric::DetectedCiEnvironment, "detected_ci_environment", "Generic"},
+        {StringMetric::DevDeviceId, "devdeviceid", "00000000-0000-0000-0000-000000000000"},
         {StringMetric::CiProjectId, "ci_project_id", "0"},
         {StringMetric::CiOwnerId, "ci_owner_id", "0"},
         // spec:triplet:version,...
@@ -578,6 +580,16 @@ namespace vcpkg
         auto session = MetricsSessionData::from_system();
 
         auto submission = get_global_metrics_collector().get_submission();
+
+        auto deviceid =
+#if defined(_WIN32)
+            get_device_id()
+#else
+            get_device_id(fs)
+#endif
+            ;
+        submission.track_string(StringMetric::DevDeviceId, deviceid);
+
         const std::string payload = format_metrics_payload(user, session, submission);
         if (g_should_print_metrics.load())
         {
