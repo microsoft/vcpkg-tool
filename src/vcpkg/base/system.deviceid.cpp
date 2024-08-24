@@ -92,7 +92,7 @@ namespace vcpkg
         if (maybe_file)
         {
             auto contents = fs.read_contents(id_file_path, ec);
-            if (ec && !validate_device_id(contents))
+            if (ec || !validate_device_id(contents))
             {
                 return {};
             }
