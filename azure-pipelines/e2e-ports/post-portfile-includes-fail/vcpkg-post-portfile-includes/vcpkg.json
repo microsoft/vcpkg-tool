@@ -1,0 +1,5 @@
+{
+  "name": "vcpkg-post-portfile-includes",
+  "version": "0",
+  "description": "A port to test post portfile includes"
+}

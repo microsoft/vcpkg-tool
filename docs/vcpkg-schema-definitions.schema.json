@@ -1,6 +1,6 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema",
-  "$id": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/master/docs/vcpkg-schema-definitions.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg-schema-definitions.schema.json",
   "definitions": {
     "artifact-references": {
       "description": "A key/value pair of artifact name to selected artifact version.",
@@ -194,7 +194,7 @@
       "description": "A port dependency fetchable by vcpkg.",
       "oneOf": [
         {
-          "$ref": "#/definitions/port-name"
+          "$ref": "#/definitions/identifier"
         },
         {
           "$ref": "#/definitions/dependency-object"
@@ -206,7 +206,7 @@
       "type": "object",
       "properties": {
         "name": {
-          "$ref": "#/definitions/port-name"
+          "$ref": "#/definitions/identifier"
         },
         "features": {
           "type": "array",
@@ -362,6 +362,11 @@
           "path": {
             "type": "string",
             "description": "The location on the filesystem where the registry is rooted."
+          },
+          "baseline": {
+            "description": "The key in the JSON document of baseline.json which will be used for version selection",
+            "type": "string",
+            "default": "default"
           },
           "packages": true
         },
@@ -731,8 +736,7 @@
         },
         {
           "not": {
-            "description": "Identifiers must not be a Windows filesystem or vcpkg reserved name.",
-            "pattern": "^(prn|aux|nul|con|lpt[1-9]|com[1-9]|core|default)$"
+            "$ref": "#/definitions/reserved-name"
           }
         }
       ]
@@ -759,9 +763,9 @@
           "type": "object",
           "$comment": "The regexes below have (#\\d+)? added to the end as overrides allow putting the port-version inline",
           "properties": {
-              "name": {
-                "$ref": "#/definitions/identifier"
-              },
+            "name": {
+              "$ref": "#/definitions/identifier"
+            },
             "version-string": {
               "description": "Deprecated in favor of 'version' in overrides. Text used to identify an arbitrary version",
               "type": "string",
@@ -800,18 +804,18 @@
         }
       ]
     },
-    "port-name": {
+    "package-pattern": {
       "type": "string",
-      "description": "Name of a package.",
+      "description": "A pattern to match package name.",
       "allOf": [
         {
-          "description": "Package name must be a dot-separated list of valid identifiers",
-          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*(\\.[a-z0-9]+(-[a-z0-9]+)*)*$"
+          "$comment": "https://learn.microsoft.com/en-us/vcpkg/reference/vcpkg-configuration-json#registry-packages",
+          "description": "Package pattern may contain only lowercase letters, digits, and -, with an optional trailing *",
+          "pattern": "^([a-z0-9]+-)*([a-z0-9]+[*]?|[*])$"
         },
         {
           "not": {
-            "description": "Identifiers must not be a Windows filesystem or vcpkg reserved name.",
-            "pattern": "(^|\\.)(prn|aux|nul|con|lpt[1-9]|com[1-9]|core|default)(\\.|$)"
+            "$ref": "#/definitions/reserved-name"
           }
         }
       ]
@@ -860,7 +864,7 @@
                     "packages": {
                       "type": "array",
                       "items": {
-                        "$ref": "#/definitions/port-name"
+                        "$ref": "#/definitions/package-pattern"
                       }
                     }
                   },
@@ -884,6 +888,21 @@
               ]
             }
           ]
+        }
+      ]
+    },
+    "reserved-name": {
+      "description": "Vcpkg reserved identifier names for lowercase.",
+      "type": "string",
+      "anyOf": [
+        {
+          "description": "Vcpkg reserved names.",
+          "pattern": "^(core|default)$"
+        },
+        {
+          "$comment": "https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file#naming-conventions",
+          "description": "A relaxed pattern of Win32 filesystem reserved names.",
+          "pattern": "^(con|prn|aux|nul|com[0-9]|lpt[0-9])(\\.[^.]+)*$"
         }
       ]
     },
@@ -915,7 +934,7 @@
         {
           "not": {
             "description": "Identifiers and parts delimited by slashes must not be a Windows filesystem or vcpkg reserved name.",
-            "pattern": "(^|/)(prn|aux|nul|con|lpt[1-9]|com[1-9]|core|default)(/|$)"
+            "pattern": "(^|/)(prn|aux|nul|con|lpt[0-9]|com[0-9]|core|default)(/|$)"
           }
         }
       ]

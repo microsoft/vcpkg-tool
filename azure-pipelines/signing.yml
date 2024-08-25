@@ -52,6 +52,10 @@ extends:
       sourceAnalysisPool:
         name: AzurePipelines-EO
         image: 1ESPT-Windows2022
+      codeql:
+        compiled:
+          enabled: false
+          justificationForDisabling: 'CodeQL causes the build to hang. See https://dev.azure.com/twcdot/Data/_workitems/edit/128379 . Turn CodeQL back on when it is fixed.'
     stages:
     - stage: stage
       displayName: 'Build and Sign vcpkg'
@@ -70,13 +74,13 @@ extends:
         - ${{ if ne(parameters.VcpkgBaseVersionOverride, 'default') }}:
           - name: VCPKG_INITIAL_BASE_VERSION
             value: ${{parameters.VcpkgBaseVersionOverride}}
-        - name: Codeql.BuildIdentifier
-          value: vcpkg_ECMAScript
-        - name: Codeql.Language
-          value: javascript
         pool:
           name: 'VSEngSS-MicroBuild2022-1ES'
         templateContext:
+          sdl:
+            codeql:
+              language: javascript
+              buildIdentifier: vcpkg_ECMAScript
           mb:
             signing:
               enabled: true
@@ -187,6 +191,7 @@ extends:
             move "$(Build.BinariesDirectory)\scripts\applocal.ps1" "$(Build.ArtifactStagingDirectory)\staging\scripts\applocal.ps1"
             move "$(Build.BinariesDirectory)\scripts\addPoshVcpkgToPowershellProfile.ps1" "$(Build.ArtifactStagingDirectory)\staging\scripts\addPoshVcpkgToPowershellProfile.ps1"
             move "$(Build.BinariesDirectory)\scripts\posh-vcpkg.psm1" "$(Build.ArtifactStagingDirectory)\staging\scripts\posh-vcpkg.psm1"
+            move "$(Build.BinariesDirectory)\scripts\posh-vcpkg.psd1" "$(Build.ArtifactStagingDirectory)\staging\scripts\posh-vcpkg.psd1"
             move "$(Build.BinariesDirectory)\vcpkg-artifacts" "$(Build.ArtifactStagingDirectory)\staging\vcpkg-artifacts"
           displayName: 'Arrange Architecture-independent Files for Staging'
         - task: Powershell@2
@@ -210,6 +215,10 @@ extends:
           VCPKG_STANDALONE_BUNDLE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_STANDALONE_BUNDLE_SHA'] ]
           VCPKG_BASE_VERSION: $[ dependencies.arch_independent.outputs['versions.VCPKG_BASE_VERSION'] ]
         templateContext:
+          sdl:
+            codeql:
+              language: cpp
+              buildIdentifier: vcpkg_cpp_macos
           mb:
             signing:
               enabled: false
@@ -239,6 +248,10 @@ extends:
           VCPKG_STANDALONE_BUNDLE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_STANDALONE_BUNDLE_SHA'] ]
           VCPKG_BASE_VERSION: $[ dependencies.arch_independent.outputs['versions.VCPKG_BASE_VERSION'] ]
         templateContext:
+          sdl:
+            codeql:
+              language: cpp
+              buildIdentifier: vcpkg_cpp_glibc
           mb:
             signing:
               enabled: false
@@ -272,6 +285,10 @@ extends:
           VCPKG_STANDALONE_BUNDLE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_STANDALONE_BUNDLE_SHA'] ]
           VCPKG_BASE_VERSION: $[ dependencies.arch_independent.outputs['versions.VCPKG_BASE_VERSION'] ]
         templateContext:
+          sdl:
+            codeql:
+              language: cpp
+              buildIdentifier: vcpkg_cpp_muslc
           mb:
             signing:
               enabled: false
@@ -308,9 +325,11 @@ extends:
           VCPKG_STANDALONE_BUNDLE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_STANDALONE_BUNDLE_SHA'] ]
           VCPKG_BASE_VERSION: $[ dependencies.arch_independent.outputs['versions.VCPKG_BASE_VERSION'] ]
           VCPKG_FULL_VERSION: $[ dependencies.arch_independent.outputs['versions.VCPKG_FULL_VERSION'] ]
-          Codeql.BuildIdentifier: vcpkg_cpp
-          Codeql.Language: cpp
         templateContext:
+          sdl:
+            codeql:
+              language: cpp
+              buildIdentifier: vcpkg_cpp
           mb:
             signing:
               enabled: true
@@ -356,7 +375,7 @@ extends:
             script: |
               call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=amd64 -host_arch=amd64
               cmake.exe --version
-              cmake.exe -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_BUILD_TLS12_DOWNLOADER=ON -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON "-DVCPKG_FMT_URL=$(fmt-tarball-url)" "-DVCPKG_CMAKERC_URL=$(cmakerc-tarball-url)" "-DVCPKG_BASE_VERSION=$(VCPKG_BASE_VERSION)" "-DVCPKG_VERSION=$(Build.SourceVersion)" "-DVCPKG_STANDALONE_BUNDLE_SHA=$(VCPKG_STANDALONE_BUNDLE_SHA)" -B "$(Build.BinariesDirectory)\amd64"
+              cmake.exe -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_BUILD_TLS12_DOWNLOADER=ON -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON "-DVCPKG_FMT_URL=$(fmt-tarball-url)" "-DVCPKG_CMAKERC_URL=$(cmakerc-tarball-url)" "-DVCPKG_BASE_VERSION=$(VCPKG_BASE_VERSION)" "-DVCPKG_VERSION=$(Build.SourceVersion)" "-DVCPKG_STANDALONE_BUNDLE_SHA=$(VCPKG_STANDALONE_BUNDLE_SHA)" -B "$(Build.BinariesDirectory)\amd64" 2>&1
               ninja.exe -C "$(Build.BinariesDirectory)\amd64"
         - task: CmdLine@2
           displayName: "Build vcpkg arm64 with CMake"
@@ -365,7 +384,7 @@ extends:
             script: |
               call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=arm64 -host_arch=amd64
               cmake.exe --version
-              cmake.exe -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_BUILD_TLS12_DOWNLOADER=ON -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON -DVCPKG_PDB_SUFFIX="-arm64" "-DVCPKG_FMT_URL=$(fmt-tarball-url)" "-DVCPKG_CMAKERC_URL=$(cmakerc-tarball-url)" "-DVCPKG_BASE_VERSION=$(VCPKG_BASE_VERSION)" "-DVCPKG_VERSION=$(Build.SourceVersion)" "-DVCPKG_STANDALONE_BUNDLE_SHA=$(VCPKG_STANDALONE_BUNDLE_SHA)" -B "$(Build.BinariesDirectory)\arm64"
+              cmake.exe -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_BUILD_TLS12_DOWNLOADER=ON -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON -DVCPKG_PDB_SUFFIX="-arm64" "-DVCPKG_FMT_URL=$(fmt-tarball-url)" "-DVCPKG_CMAKERC_URL=$(cmakerc-tarball-url)" "-DVCPKG_BASE_VERSION=$(VCPKG_BASE_VERSION)" "-DVCPKG_VERSION=$(Build.SourceVersion)" "-DVCPKG_STANDALONE_BUNDLE_SHA=$(VCPKG_STANDALONE_BUNDLE_SHA)" -B "$(Build.BinariesDirectory)\arm64" 2>&1
               ninja.exe -C "$(Build.BinariesDirectory)\arm64"
         - task: NuGetToolInstaller@1
           inputs:
@@ -437,6 +456,7 @@ extends:
               move "$(Build.ArtifactStagingDirectory)\stagingArchIndependent\scripts\applocal.ps1" "$(Build.ArtifactStagingDirectory)\drop\applocal.ps1"
               move "$(Build.ArtifactStagingDirectory)\stagingArchIndependent\scripts\addPoshVcpkgToPowershellProfile.ps1" "$(Build.ArtifactStagingDirectory)\drop\addPoshVcpkgToPowershellProfile.ps1"
               move "$(Build.ArtifactStagingDirectory)\stagingArchIndependent\scripts\posh-vcpkg.psm1" "$(Build.ArtifactStagingDirectory)\drop\posh-vcpkg.psm1"
+              move "$(Build.ArtifactStagingDirectory)\stagingArchIndependent\scripts\posh-vcpkg.psd1" "$(Build.ArtifactStagingDirectory)\drop\posh-vcpkg.psd1"
               move "$(Build.ArtifactStagingDirectory)\stagingGlibc\vcpkg-glibc" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-glibc"
               move "$(Build.ArtifactStagingDirectory)\stagingMuslc\vcpkg-muslc" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-muslc"
               move "$(Build.ArtifactStagingDirectory)\stagingArchIndependent\vcpkg-standalone-bundle.tar.gz" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-standalone-bundle.tar.gz"
