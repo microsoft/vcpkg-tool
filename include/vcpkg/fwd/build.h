@@ -63,12 +63,6 @@ namespace vcpkg
         Aria2,
     };
 
-    enum class PurgeDecompressFailure
-    {
-        No = 0,
-        Yes
-    };
-
     enum class Editable
     {
         No = 0,
@@ -93,6 +87,12 @@ namespace vcpkg
         Yes
     };
 
+    enum class KeepGoing
+    {
+        No = 0,
+        Yes
+    };
+
     // These names are intended to match VCPKG_POLICY_Xxx constants settable in portfile.cmake
     enum class BuildPolicy
     {
@@ -109,6 +109,21 @@ namespace vcpkg
         SKIP_ARCHITECTURE_CHECK,
         CMAKE_HELPER_PORT,
         SKIP_ABSOLUTE_PATHS_CHECK,
+        SKIP_ALL_POST_BUILD_CHECKS,
+        SKIP_APPCONTAINER_CHECK,
+        SKIP_CRT_LINKAGE_CHECK,
+        SKIP_MISPLACED_CMAKE_FILES_CHECK,
+        SKIP_LIB_CMAKE_MERGE_CHECK,
+        ALLOW_DLLS_IN_LIB,
+        SKIP_MISPLACED_REGULAR_FILES_CHECK,
+        SKIP_COPYRIGHT_CHECK,
+        ALLOW_KERNEL32_FROM_XBOX,
+        ALLOW_EXES_IN_BIN,
+        SKIP_USAGE_INSTALL_CHECK,
+        ALLOW_EMPTY_FOLDERS,
+        ALLOW_DEBUG_INCLUDE,
+        ALLOW_DEBUG_SHARE,
+        SKIP_PKGCONFIG_CHECK,
         // Must be last
         COUNT,
     };

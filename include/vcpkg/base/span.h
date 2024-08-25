@@ -2,7 +2,6 @@
 
 #include <vcpkg/base/fwd/span.h>
 
-#include <array>
 #include <cstddef>
 #include <initializer_list>
 #include <type_traits>

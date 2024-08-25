@@ -523,18 +523,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";AddFirstArgument" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The first argument to '{command_line}' must be 'artifact' or 'port'.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA['{command_line}' için ilk bağımsız değişken, 'yapıt' veya 'bağlantı noktası' olmalıdır.]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[The first argument to '{command_line}' must be 'artifact' or 'port'.]A;]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";AddPortRequiresManifest" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA['{command_line}' requires an active manifest file.]]></Val>
@@ -601,15 +589,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";AddVersionCommitResultReminder" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Don't forget to commit the result!]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Sonucu işlemeyi unutmayın!]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";AddVersionDetectLocalChangesError" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[skipping detection of local changes due to unexpected format in git status output]]></Val>
@@ -646,11 +625,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";AddVersionLoadPortFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";AddVersionInstructions" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[can't load port {package_name}]]></Val>
+          <Val><![CDATA[you can run the following commands to add the current version of {package_name} automatically:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{package_name} bağlantı noktası yüklenemiyor]]></Val>
+            <Val><![CDATA[{package_name}'in geçerli sürümünü otomatik olarak eklemek için aşağıdaki komutları çalıştırabilirsiniz:]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -751,23 +730,20 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";AddVersionSuggestNewVersionScheme" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";AddVersionSuggestVersionDate" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Use the version scheme "{new_scheme}" rather than "{old_scheme}" in port "{package_name}".]A;Use --{option} to disable this check.]]></Val>
+          <Val><![CDATA[The version format of "{package_name}" uses "version-string", but the format is acceptable as a "version-date". If this format is actually intended to be an ISO 8601 date, change the format to "version-date", and rerun this command. Otherwise, disable this check by rerunning this command and adding --skip-version-format-check .]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA["{package_name}" bağlantı noktasında "{old_scheme}" yerine "{new_scheme}" sürüm düzenini kullanın.]A;Bu denetimi devre dışı bırakmak için --{option} seçeneğini kullanın.]]></Val>
+            <Val><![CDATA["{package_name}" paketinin sürüm biçimi "version-string" kullanıyor ancak biçim olarak "version-date" kabul edilebilir. Bu sürümün aslında bir ISO 8601 tarihi olması amaçlanıyorsa, biçimi "version-date" olarak değiştirin ve bu komutu yeniden çalıştırın. Aksi takdirde, bu komutu yeniden çalıştırarak ve --skip-version-format-check ifadesini ekleyerek bu denetimi devre dışı bırakın.]]></Val>
           </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Use the version scheme "{new_scheme}" instead of "{old_scheme}" in port "{package_name}".]A;Use --{option} to disable this check.]]></Val>
-          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";AddVersionUnableToParseVersionsFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";AddVersionSuggestVersionRelaxed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[unable to parse versions file {path}]]></Val>
+          <Val><![CDATA[The version format of "{package_name}" uses "version-string", but the format is acceptable as a "version". If the versions for this port are orderable using relaxed-version rules, change the format to "version", and rerun this command. Relaxed-version rules order versions by each numeric component. Then, versions with dash suffixes are sorted lexcographically before. Plus'd build tags are ignored. Examples:]A;1.0 < 1.1-alpha < 1.1-b < 1.1 < 1.1.1 < 1.2+build = 1.2 < 2.0]A;Note in particular that dashed suffixes sort *before*, not after. 1.0-anything < 1.0]A;Note that this sort order is the same as chosen in Semantic Versioning (see https://semver.org), even though the actually semantic parts do not apply.]A;If versions for this port are not ordered by these rules, disable this check by rerunning this command and adding --skip-version-format-check .]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{path} sürüm dosyası ayrıştırılamıyor]]></Val>
+            <Val><![CDATA["{package_name}" paketinin sürüm biçimi "version-string" kullanıyor ancak biçim olarak "version" kabul edilebilir. Bu bağlantı noktasının sürümleri esnek sürüm kuralları kullanılarak sıralanabilir özellikteyse, biçimi "version" olarak değiştirin ve bu komutu yeniden çalıştırın. Esnek sürüm kuralları sürümleri her sayısal bileşene göre sıralar. Daha sonra, çizgi son ekleri içeren sürümler önce sözlük sırasına göre sıralanır. Ayrıca derleme etiketleri yoksayılır. Örnekler:]A;1.0 < 1.1-alpha < 1.1-b < 1.1 < 1.1.1 < 1.2+build = 1.2 < 2.0]A;Özellikle çizgili son eklerin sonra değil *önce* sıralandığını unutmayın. 1.0-anything < 1.0]A;Gerçekte anlamsal bölümler uygulanmasa bile bu sıralama düzeninin Anlamsal Sürüm Oluşturma (https://semver.org adresine bakın) altında seçilenle aynı olduğunu unutmayın.]A;Bu bağlantı noktasının sürümleri bu kurallara göre sıralanmıyorsa, bu komutu yeniden çalıştırarak ve --skip-version-format-check ifadesini ekleyerek bu denetimi devre dışı bırakın.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -882,10 +858,13 @@
       </Item>
       <Item ItemId=";AllPackagesAreUpdated" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[All installed packages are up-to-date with the local portfile.]]></Val>
+          <Val><![CDATA[All installed packages are up-to-date.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Tüm yüklü paketler yerel bağlantı noktası dosyasıyla güncel.]]></Val>
+            <Val><![CDATA[Tüm yüklü paketler güncel.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[All installed packages are up-to-date with the local portfile.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -1144,15 +1123,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";ArtifactsNotOfficialWarning" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Using vcpkg-artifacts with an unofficial ]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Resmi olmayan uyarı içeren vcpkg yapıtlarını kullanma ]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";ArtifactsOptionIncompatibility" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[--{option} has no effect on find artifact.]]></Val>
@@ -1222,18 +1192,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";ArtifactsSwitchAll" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Updates all known artifact registries]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Bilinen tüm yapıt kayıt defterlerini güncelleştirir]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Update all known artifact registries]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";ArtifactsSwitchAllLanguages" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Acquires all language files when acquiring artifacts]]></Val>
@@ -1278,18 +1236,6 @@
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Force host detection to Linux when acquiring artifacts]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ArtifactsSwitchNormalize" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Applies any deprecation fixups]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Kullanımdan kaldırma düzeltmelerini uygular]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Apply any deprecation fixups]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -1417,11 +1363,47 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";AssetCacheHit" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Asset cache hit for {path}; downloaded from: {url}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{path} için varlık önbelleğine erişildi; {url} adresinden indiriliyor]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AssetCacheMiss" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Asset cache miss; downloading from {url}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Varlık önbelleğine erişilemedi; {url} adresinden indiriliyor]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AssetCacheMissBlockOrigin" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Asset cache miss for {path} and downloads are blocked by x-block-origin.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{path} için varlık önbelleğine erişilemedi ve indirmeler x blok kaynağı tarafından engellendi.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";AssetCacheProviderAcceptsNoArguments" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[unexpected arguments: '{value}' does not accept arguments]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[beklenmeyen bağımsız değişkenler: '{value}', bağımsız değişkenleri kabul etmiyor]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AssetCacheSuccesfullyStored" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Successfully stored {path} to {url}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{path} yolu {url} adresine başarıyla depolandı.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1443,15 +1425,6 @@
           <Val><![CDATA[Assuming '${p0}' is correct; supply a hash in the artifact metadata to suppress this message.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA['${p0}' doğru varsayılıyor; bu iletiyi gizlemek için yapıt meta verilerinde bir karma belirtin.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";AttemptingToFetchPackagesFromVendor" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Attempting to fetch {count} package(s) from {vendor}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{count} paket {vendor} tarafından getirilmeye çalışılıyor]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1537,15 +1510,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";BaselineFileNoDefaultField" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The baseline file at commit {commit_sha} was invalid (no "default" field).]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[İşleme sırasındaki temel {commit_sha} geçersizdi ("varsayılan" alan yok).]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";BaselineGitShowFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[while checking out baseline from commit '{commit_sha}', failed to `git show` versions/baseline.json. This may be fixed by fetching commits with `git fetch`.]]></Val>
@@ -1557,18 +1521,21 @@
       </Item>
       <Item ItemId=";BaselineMissing" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Baseline version not found. Run:]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit -m "Update version database"]A;to set {version} as the baseline version.]]></Val>
+          <Val><![CDATA[{package_name} is not assigned a version]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Temel sürüm bulunamadı. Çalıştır:]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit -m "Update version database"]A;yazarak {version} sürümünü temel sürüm olarak ayarlayın.]]></Val>
+            <Val><![CDATA[{package_name}'e bir sürüm atanmadı]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Baseline version not found. Run:]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit -m "Update version database"]A;to set {version} as the baseline version.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";BinaryCacheVendorHTTP" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";BinariesRelativeToThePackageDirectoryHere" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[HTTP servers]]></Val>
+          <Val><![CDATA[the binaries are relative to ${{CURRENT_PACKAGES_DIR}} here]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[HTTP sunucuları]]></Val>
+            <Val><![CDATA[ikililer burada ${{CURRENT_PACKAGES_DIR}} ile görelidir]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1587,10 +1554,13 @@
       </Item>
       <Item ItemId=";BinaryWithInvalidArchitecture" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[{path}]A; Expected: {expected}, but was {actual}]]></Val>
+          <Val><![CDATA[{path} is built for {arch}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{path}]A; Beklenen: {expected}, ancak bulunan: {actual}]]></Val>
+            <Val><![CDATA[{arch} için {path} oluşturuldu]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[{path}]A; Expected: {expected}, but was {actual}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -1756,18 +1726,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";BuildTroubleshootingMessage4" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Please use the prefilled template from {path} when reporting your issue.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Lütfen sorununuzu bildirirken {path} adresindeki önceden doldurulmuş şablonu kullanın.]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[You can also use the prefilled template from {path}.]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";BuildTroubleshootingMessageGH" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[You can also submit an issue by running (GitHub CLI must be installed):]]></Val>
@@ -1828,21 +1786,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";BuiltWithIncorrectArchitecture" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";BuiltWithIncorrectArchitecture" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The following files were built for an incorrect architecture:]]></Val>
+          <Val><![CDATA[The triplet requests that binaries are built for {arch}, but the following binaries were built for a different architecture. This usually means toolchain information is incorrectly conveyed to the binaries' build system. To suppress this message, add set(VCPKG_POLICY_SKIP_ARCHITECTURE_CHECK enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Aşağıdaki dosyalar yanlış bir mimari için oluşturulmuş:]]></Val>
+            <Val><![CDATA[Üçlü öğe, ikililerin {arch} için oluşturulmasını istiyor ancak aşağıdaki ikililer farklı bir mimari için oluşturulmuş. Bu genellikle araç zinciri bilgilerinin ikililerin derleme sistemine yanlış iletildiği anlamına gelir. Bu iletiyi gizlemek için set(VCPKG_POLICY_SKIP_ARCHITECTURE_CHECK enabled) ekleyin]]></Val>
           </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CISettingsExclude" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Comma-separated list of ports to skip]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Atlanacak bağlantı noktalarının virgülle ayrılmış listesi]]></Val>
-          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The following files were built for an incorrect architecture:]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -1896,15 +1848,6 @@
           <Val><![CDATA[File to read package hashes for a parent CI state, to reduce the set of changed packages]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Değiştirilen paket kümesini azaltmak üzere üst CI durumu için paket karmalarının okunacağı dosya]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CISettingsOptSkippedCascadeCount" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Asserts that the number of --exclude and supports skips exactly equal this number]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[--exclude ve supports atlamaları sayısının tam olarak bu sayıya eşit olduğunu onaylar]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2076,24 +2019,6 @@
           <Val><![CDATA[Cannot rename files across filesystems]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Dosyalar dosya sistemleri arasında yeniden adlandırılamaz]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CheckedOutGitSha" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Checked out Git SHA: {commit_sha}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Git SHA kullanıma alındı: {commit_sha}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CheckedOutObjectMissingManifest" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The checked-out object does not contain a CONTROL file or vcpkg.json file.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Kullanıma alınmış nesne DENETİM dosyası ya da vcpkg.json dosyası içermiyor.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2440,24 +2365,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CmdCacheExample1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[vcpkg cache <search substring>]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[vcpkg cache <arama alt dizesi>]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CmdCacheSynopsis" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[List specs of packages]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Paketlerin belirtimlerini listeler]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";CmdCheckSupportExample1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[vcpkg x-check-support <port name>]]></Val>
@@ -2499,15 +2406,6 @@
           <Val><![CDATA[Checks integrity of the version database]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Sürüm veritabanının bütünlüğünü denetler]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CmdContactOptSurvey" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Launch default browser to the current vcpkg survey]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Varsayılan tarayıcıyı geçerli vcpkg anketinde başlat]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2736,10 +2634,13 @@
       </Item>
       <Item ItemId=";CmdExportExample1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[vcpkg export <port names> [--nuget]5D; [--directory=out_dir]5D;]]></Val>
+          <Val><![CDATA[vcpkg export <port names> [--nuget]5D; [--output-dir=out_dir]5D;]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[vcpkg export <bağlantı noktası adları> [--nuget]5D; [--directory=out_dir]5D;]]></Val>
+            <Val><![CDATA[vcpkg export <bağlantı noktası adları> [--nuget]5D; [--output-dir=out_dir]5D;]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[vcpkg export <port names> [--nuget]5D; [--directory=out_dir]5D;]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -3891,13 +3792,22 @@
       </Item>
       <Item ItemId=";CommandFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[command:]A;{command_line}]A;failed with the following results:]]></Val>
+          <Val><![CDATA[command:]A;{command_line}]A;failed with the following output:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[command:]A;{command_line}]A; komutu aşağıdaki sonuçlarla başarısız oldu:]]></Val>
+            <Val><![CDATA[komut:]A;{command_line}]A;komutu aşağıdaki çıkışla başarısız oldu:]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[command:]A;{command_line}]A;failed with the following results:]A;]]></Val>
+            <Val><![CDATA[command:]A;{command_line}]A;failed with the following results:]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CommandFailedCode" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[command:]A;{command_line}]A;failed with exit code {exit_code} and the following output:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[komut:]A;{command_line}]A;çıkış kodu {exit_code} ve aşağıdaki çıkış ile başarısız oldu:]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -3910,6 +3820,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[VCPKG community triplets:]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CompilerPath" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Compiler found: {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Derleyici bulundu: {path}]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -3988,15 +3907,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";ControlAndManifestFilesPresent" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Both a manifest file and a CONTROL file exist in port directory: {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Bağlantı noktası dizininde hem bildirim dosyası hem de KONTROL dosyası bulunur: {path}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";ControlCharacterInString" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Control character in string]]></Val>
@@ -4024,21 +3934,27 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CopyrightIsDir" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";CopyrightIsDir" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[`{path}` being a directory is deprecated.]]></Val>
+          <Val><![CDATA[this port sets ${{CURRENT_PACKAGES_DIR}}/share/${{PORT}}/copyright to a directory, but it should be a file. Consider combining separate copyright files into one using vcpkg_install_copyright. To suppress this message, add set(VCPKG_POLICY_SKIP_COPYRIGHT_CHECK enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA['{path}' bir dizin olarak kullanım dışı bırakıldı.]]></Val>
+            <Val><![CDATA[bu bağlantı noktası ${{CURRENT_PACKAGES_DIR}}/share/${{PORT}}/copyright'ı bir dizine ayarlar, ancak bunun bir dosya olması gerekir. Ayrı telif hakkı dosyalarını vcpkg_install_copyright kullanarak tek bir dosyada birleştirmeyi düşünün. Bu iletiyi gizlemek için set(VCPKG_POLICY_SKIP_COPYRIGHT_CHECK enabled) ekleyin]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[`{path}` being a directory is deprecated.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CorruptedDatabase" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Database corrupted.]]></Val>
+          <Val><![CDATA[vcpkg's installation database corrupted. This is either a bug in vcpkg or something else has modified the contents of the 'installed' directory in an unexpected way. You may be able to fix this by deleting the 'installed' directory and reinstalling what you want to use. If this problem happens consistently, please file a bug at https://github.com/microsoft/vcpkg .]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Veritabanı bozuk.]]></Val>
+            <Val><![CDATA[vcpkg'nin yükleme veritabanı bozuk. Bu ya vcpkg'de bir hatadır ya da başka bir şey, 'yüklenen' dizininin içeriğini beklenmeyen bir şekilde değiştirmiştir. 'Yüklenen' dizini silip kullanmak istediğinizi yeniden yükleyerek bu sorunu düzeltme imkanınız olabilir. Bu sorun sürekli oluşursa lütfen bu adresten bir hata bildirin: https://github.com/microsoft/vcpkg.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Database corrupted.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -4177,15 +4093,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CurlFailedToExecute" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[curl failed to execute with exit code {exit_code}.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[curl, {exit_code} çıkış koduyla yürütülemedi.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";CurlFailedToPut" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[curl failed to put file to {url} with exit code {exit_code}.]]></Val>
@@ -4204,23 +4111,20 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CurlReportedUnexpectedResults" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";CurlResponseTruncatedRetrying" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[curl has reported unexpected results to vcpkg and vcpkg cannot continue.]A;Please review the following text for sensitive information and open an issue on the Microsoft/vcpkg GitHub to help fix this problem!]A;cmd: {command_line}]A;=== curl output ===]A;{actual}]A;=== end curl output ===]]></Val>
+          <Val><![CDATA[curl returned a partial response; waiting {value} milliseconds and trying again]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[curl, vcpkg'ye beklenmeyen sonuçlar bildirdi ve vcpkg devam edemiyor.]A;Lütfen hassas bilgiler için aşağıdaki metni gözden geçirin ve bu sorunu gidermeye yardımcı olmak için Microsoft/vcpkg GitHub'da bir sorun açın!]A;cmd: {command_line}]A;=== curl output ===]A;{actual}]A;=== end curl output ===]]></Val>
+            <Val><![CDATA[curl kısmi bir yanıt döndürdü; {value} milisaniye beklenip yeniden denenecek]]></Val>
           </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[curl has reported unexpected results to vcpkg and vcpkg cannot continue.]A;Please review the following text for sensitive information and open an issue on the Microsoft/vcpkg GitHub to help fix this problem!]A;cmd: {command_line}]A;=== curl output ===]A;{actual}]A;=== end curl output ===]A;]]></Val>
-          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CurlReturnedUnexpectedResponseCodes" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";CurlTimeout" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[curl returned a different number of response codes than were expected for the request ({actual} vs expected {expected}).]]></Val>
+          <Val><![CDATA[curl was unable to perform all requested HTTP operations, even after timeout and retries. The last command line was: {command_line}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[curl returned a different number of response codes than were expected for the request ({actual} vs expected {expected}).]]></Val>
+            <Val><![CDATA[curl, zaman aşımı ve yeniden denemeler sonrasında bile istenen tüm HTTP işlemlerini gerçekleştiremedi. Son komut satırı: {command_line}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4242,15 +4146,6 @@
           <Val><![CDATA[cycle detected during {spec}:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{spec} işlemi sırasında algılanan döngü:]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";DateTableHeader" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Date]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Tarih]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4336,15 +4231,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";DefaultTripletChanged" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[In the September 2023 release, the default triplet for vcpkg libraries changed from x86-windows to the detected host triplet ({triplet}). For the old behavior, add --triplet x86-windows . To suppress this message, add --triplet {triplet} .]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Eylül 2023 sürümünden başlayarak, vcpkg kitaplıkları için varsayılan üçlü, x86-windows yerine algılanan ana bilgisayar üçlüsüne ({triplet}) olarak değiştirilecek. Eski davranış için --triplet x86-windows ekleyin. Bu mesajı kaldırmak için --triplet {triplet} ekleyin.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";DeleteVcpkgConfigFromManifest" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[-- Or remove "vcpkg-configuration" from the manifest file {path}.]]></Val>
@@ -4417,6 +4303,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";DependencyInFeature" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the dependency is in the feature named {feature}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[bağımlılık {feature} adlı özelliktedir]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DependencyNotInVersionDatabase" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the dependency {package_name} does not exist in the version database; does that port exist?]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{package_name} bağımlılığı sürüm veritabanında mevcut değil; o port var mı?]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";DeprecatedPrefabDebugOption" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[--prefab-debug is now deprecated.]]></Val>
@@ -4435,6 +4339,24 @@
           <Prev Cat="Text">
             <Val><![CDATA[Detecting compiler hash for triplet "{triplet}"...]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DirectoriesRelativeToThePackageDirectoryHere" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the directories are relative to ${{CURRENT_PACKAGES_DIR}} here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[dizinler burada ${{CURRENT_PACKAGES_DIR}} ile görelidir]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DllsRelativeToThePackageDirectoryHere" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the DLLs are relative to ${{CURRENT_PACKAGES_DIR}} here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[DLL’ler burada ${{CURRENT_PACKAGES_DIR}} ile görelidir]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -4545,19 +4467,13 @@
       </Item>
       <Item ItemId=";DownloadingPortableToolVersionX" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[A suitable version of {tool_name} was not found (required v{version}) Downloading portable {tool_name} {version}...]]></Val>
+          <Val><![CDATA[A suitable version of {tool_name} was not found (required v{version}).]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Uygun bir {tool_name} sürümü bulunamadı (gerekli v{version}) Taşınabilir {tool_name} {version} indiriliyor...]]></Val>
+            <Val><![CDATA[Uygun bir {tool_name} sürümü bulunamadı (v{version} gerekiyor).]]></Val>
           </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";DownloadingTool" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Downloading {tool_name}...]A;{url}->{path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{tool_name} indiriliyor...]A;{url}->{path}]]></Val>
-          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[A suitable version of {tool_name} was not found (required v{version}) Downloading portable {tool_name} {version}...]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -4701,15 +4617,6 @@
           <Val><![CDATA[Elapsed time to handle {spec}: {elapsed}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{spec} işlenmesi için geçen süre: {elapsed}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ElapsedInstallTime" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Total elapsed time: {count}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Geçen toplam süre: {count}.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -5032,15 +4939,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";ErrorsFound" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Found the following errors:]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Aşağıdaki hataları bulundu:]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";ExamplesHeader" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Examples:]]></Val>
@@ -5073,6 +4971,15 @@
           <Val><![CDATA[The following packages are excluded:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Aşağıdaki paketler hariç tutuldu:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ExecutablesRelativeToThePackageDirectoryHere" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the executables are relative to ${{CURRENT_PACKAGES_DIR}} here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[yürütülebilir dosyalar burada ${{CURRENT_PACKAGES_DIR}} ile görelidir]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -5167,15 +5074,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";ExpectedEof" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[expected eof]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[eof bekleniyor]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";ExpectedExplicitTriplet" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[expected an explicit triplet]]></Val>
@@ -5251,15 +5149,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";ExpectedPackageSpecifier" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[expected a package specifier]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[paket tanımlayıcısı bekleniyor]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";ExpectedPathToExist" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Expected {path} to exist after fetching]]></Val>
@@ -5325,15 +5214,6 @@
           <Val><![CDATA[export prefab requires an Android triplet.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[ihracat prefabrik bir Android üçlüsü gerektirir.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ExportUnsupportedInManifest" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[vcpkg export does not support manifest mode, in order to allow for future design considerations. You may use export in classic mode by running vcpkg outside of a manifest-based project.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[vcpkg dışa aktarma, gelecekteki tasarım konularına izin vermek için bildirim modunu desteklemez. Dışa aktarmayı, bildirim tabanlı bir projenin dışında vcpkg çalıştırarak klasik modda kullanabilirsiniz.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -5421,10 +5301,13 @@
       </Item>
       <Item ItemId=";FailedPostBuildChecks" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Found {count} post-build check problem(s). To submit these ports to curated catalogs, please first correct the portfile: {path}]]></Val>
+          <Val><![CDATA[Found {count} post-build check problem(s). These are usually caused by bugs in portfile.cmake or the upstream build system. Please correct these before submitting this port to the curated registry.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Derleme sonrası {count} denetim sorunu bulundu. Bu bağlantı noktalarını seçki olarak sunulan kataloglara göndermek için lütfen önce portfile’ı düzeltin: {path}]]></Val>
+            <Val><![CDATA[{count} derleme sonrası denetim sorunu bulundu. Bunlar genellikle portfile.cmake veya yukarı akış derleme sistemindeki hatalardan kaynaklanır. Bu bağlantı noktasını seçki olarak sunulan kayıt defterine göndermeden önce lütfen bu hataları düzeltin.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Found {count} post-build check problem(s). To submit these ports to curated catalogs, please first correct the portfile: {path}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -5473,29 +5356,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";FailedToDetermineArchitecture" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[unable to determine the architecture of {path}.]A;{command_line}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{path} mimarisi belirlenemiyor.]A; {command_line}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";FailedToDetermineCurrentCommit" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Failed to determine the current commit:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Geçerli commit belirlenemedi:]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";FailedToDownloadFromMirrorSet" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Failed to download from mirror set]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Ayna setinden indirilemedi]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -5587,15 +5452,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";FailedToObtainLocalPortGitSha" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Failed to obtain git SHAs for local ports.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Yerel bağlantı noktaları için git SHA'ları alınamadı.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";FailedToObtainPackageVersion" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Cannot find desired package version.]]></Val>
@@ -5644,27 +5500,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";FailedToParseControl" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Failed to parse CONTROL file: {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Denetim dosyası ayrıştırılamadı: {path}]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Failed to parse control file: {path}]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";FailedToParseManifest" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Failed to parse manifest file: {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Bildirim dosyası ayrıştırılamadı: {path}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";FailedToParseNoTopLevelObj" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Failed to parse {path}, expected a top-level object.]]></Val>
@@ -5692,50 +5527,20 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";FailedToParseVersionFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Failed to parse version file: {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Sürüm dosyası ayrıştırılamadı: {path}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";FailedToParseVersionXML" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Could not parse version for tool {tool_name}. Version string was: {version}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{tool_name} aracı için sürüm ayrıştırılamadı. Sürüm dizesi şuydu: {version}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";FailedToParseVersionsFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[failed to parse versions file {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{path} sürüm dosyası ayrıştırılamıyor]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";FailedToProvisionCe" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Failed to provision vcpkg-artifacts.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[vcpkg-artifacts sağlanamadı.]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Failed to provision vcpkg-ce.]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";FailedToReadParagraph" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Failed to read paragraphs from {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{path} yolundan paragraflar okunamadı]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";FailedToRemoveControl" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Failed to remove control file {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{path} denetim dosyası kaldırılamadı]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -5761,12 +5566,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";FailedToStoreBackToMirror" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";FailedToStoreBackToMirror" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[failed to store back to mirror:]]></Val>
+          <Val><![CDATA[Failed to store {path} to {url}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[yansıtmaya geri depolanamadı:]]></Val>
+            <Val><![CDATA[{path} yolu {url} adresine depolanamadı.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[failed to store back to mirror:]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -5791,15 +5599,6 @@
           <Prev Cat="Text">
             <Val><![CDATA[Failed to take the filesystem lock on {path}]]></Val>
           </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";FailedToWriteManifest" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Failed to write manifest file {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{path} manifest dosyası yazılamadı]]></Val>
-          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -5902,29 +5701,35 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";FileSystemOperationFailed" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Filesystem operation failed:]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Filesystem işlemi başarısız oldu:]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";FilesContainAbsolutePath1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[There should be no absolute paths, such as the following, in an installed package:]]></Val>
+          <Val><![CDATA[There should be no absolute paths, such as the following, in an installed package. To suppress this message, add set(VCPKG_POLICY_SKIP_ABSOLUTE_PATHS_CHECK enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Yüklü bir pakette aşağıdaki gibi mutlak yol olmamalıdır:]]></Val>
+            <Val><![CDATA[Yüklü bir pakette aşağıdaki gibi mutlak yol olmamalıdır. Bu iletiyi gizlemek için set(VCPKG_POLICY_SKIP_ABSOLUTE_PATHS_CHECK enabled) ekleyin]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[There should be no absolute paths, such as the following, in an installed package:]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";FilesContainAbsolutePath2" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Absolute paths were found in the following files:]]></Val>
+          <Val><![CDATA[absolute paths found here]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Aşağıdaki dosyalarda mutlak yollar bulundu:]]></Val>
+            <Val><![CDATA[mutlak yollar burada bulundu]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Absolute paths were found in the following files]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FilesContainAbsolutePathPkgconfigNote" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Adding a call to `vcpkg_fixup_pkgconfig()` may fix absolute paths in .pc files]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[`vcpkg_fixup_pkgconfig()` çağrısı eklemek .pc dosyalarındaki mutlak yolları düzeltebilir]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -5938,11 +5743,29 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";FindHelp" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";FilesRelativeToTheBuildDirectoryHere" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Searches for the indicated artifact or port. With no parameter after 'artifact' or 'port', displays everything.]]></Val>
+          <Val><![CDATA[the files are relative to the build directory here]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Belirtilen yapıtı veya bağlantı noktasını arar. 'artifact' veya 'port' sonrasında parametre yoksa, her şeyi görüntüler.]]></Val>
+            <Val><![CDATA[dosyalar burada derleme dizini ile göredir]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FilesRelativeToThePackageDirectoryHere" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the files are relative to ${{CURRENT_PACKAGES_DIR}} here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[dosyalar burada ${{CURRENT_PACKAGES_DIR}} ile görelidir]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FindCommandFirstArg" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The first argument to 'find' must be 'artifact' or 'port' .]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA['Find' için ilk bağımsız değişken 'artifact' veya 'port' olmalıdır.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -6112,6 +5935,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";GitCommitUpdateVersionDatabase" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[git commit -m "Update version database"]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[git commit -m "Sürüm veritabanını güncelle"]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";GitFailedToFetch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[failed to fetch ref {value} from repository {url}]]></Val>
@@ -6219,10 +6051,13 @@
       </Item>
       <Item ItemId=";HashPortManyFiles" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The {package_name} contains {count} files. Hashing these contents may take a long time when determining the ABI hash for binary caching. Consider reducing the number of files. Common causes of this are accidentally checking out source or build files into a port's directory.]]></Val>
+          <Val><![CDATA[{package_name} contains {count} files. Hashing these contents may take a long time when determining the ABI hash for binary caching. Consider reducing the number of files. Common causes of this are accidentally checking out source or build files into a port's directory.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{package_name}, {count} dosya içeriyor. İkili önbelleğe alma için ABI karmasını belirlerken bu içeriklerin karma hale getirilmesi uzun zaman alabilir. Dosya sayısını azaltmayı düşünün. Bunun yaygın nedenleri, yanlışlıkla kaynak veya derleme dosyalarını bir bağlantı noktasının dizinine teslim etmektir.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The {package_name} contains {count} files. Hashing these contents may take a long time when determining the ABI hash for binary caching. Consider reducing the number of files. Common causes of this are accidentally checking out source or build files into a port's directory.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -6523,24 +6358,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";HelpExportCommand" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Exports a package.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Paketi dışarı aktarır.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";HelpHashCommand" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Hash a file by specific algorithm, default SHA512.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Bir dosyayı belirli bir algoritmaya göre karma, varsayılan SHA512.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";HelpInstallCommand" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Installs a package]]></Val>
@@ -6549,18 +6366,6 @@
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Install a package.]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";HelpListCommand" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Lists installed packages]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Yüklü paketleri listeler]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[List installed packages.]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -7090,15 +6895,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";IncorrectPESignature" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Incorrect PE signature]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Yanlış PE imzası]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";InfoSetEnvVar" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[You can also set {env_var} to your editor of choice.]]></Val>
@@ -7258,15 +7054,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";InstallingFromLocation" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[-- Installing port from location: {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[-- Bağlantı noktası şu konumdan yükleniyor: {path}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";InstallingMavenFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[{path} installing Maven file]]></Val>
@@ -7276,6 +7063,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[{path} installing maven file]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InstallingOverlayPort" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[installing overlay port from here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[katman bağlantı noktası buradan yükleniyor]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -7639,11 +7435,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";InvalidCharacterInPackageName" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";InvalidCharacterInPortName" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[invalid character in package name (must be lowercase, digits, '-')]]></Val>
+          <Val><![CDATA[invalid character in port name (must be lowercase, digits, '-')]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[paket adında geçersiz karakter (küçük harf, rakam, '-' ya da '*' olmalıdır)]]></Val>
+            <Val><![CDATA[bağlantı noktası adında geçersiz karakter (küçük harf, rakam, '-' olmalıdır)]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -7816,15 +7612,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";InvalidNoVersions" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[File contains no versions.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Dosyada sürüm yok.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";InvalidOptionForRemove" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA['remove' accepts either libraries or '--outdated']]></Val>
@@ -7893,6 +7680,24 @@
           <Val><![CDATA[unable to parse uri: {value}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{value} URI’si ayrıştırılamıyor]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidValueHashAdditionalFiles" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Variable VCPKG_HASH_ADDITIONAL_FILES contains invalid file path: '{path}'. The value must be an absolute path to an existent file.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Değişken VCPKG_HASH_ADDITIONAL_FILES geçersiz dosya yolu içeriyor: '{path}'. Değer, var olan bir dosyanın mutlak yolu olmalıdır.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidValuePostPortfileIncludes" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Variable VCPKG_POST_PORTFILE_INCLUDES contains invalid file path: '{path}'. The value must be an absolute path to an existent cmake file.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[VCPKG_POST_PORTFILE_INCLUDES değişkeni geçersiz dosya yolu içeriyor: '{path}'. Değer, var olan bir cmake dosyasının mutlak yolu olmalıdır.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -8221,11 +8026,20 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";LoadingCommunityTriplet" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";LoadedCommunityTriplet" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[-- [COMMUNITY]5D; Loading triplet configuration from: {path}]]></Val>
+          <Val><![CDATA[loaded community triplet from here. Community triplets are not built in the curated registry and are thus less likely to succeed.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[-- [COMMUNITY]5D; Üçlü yapılandırma şuradan yükleniyor: {path}]]></Val>
+            <Val><![CDATA[buradan topluluk üçlüsü yükledi. Topluluk üçlüleri, seçki olarak sunulan kayıt defterinde yerleşik olmadığından başarılı olma olasılığı daha düşüktür.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";LoadedOverlayTriplet" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[loaded overlay triplet from here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[katman üçlüsü buradan yüklendi]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -8239,29 +8053,23 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";LoadingOverlayTriplet" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[-- [OVERLAY]5D; Loading triplet configuration from: {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[-- [OVERLAY]5D; Üçlü yapılandırma şuradan yükleniyor: {path}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";LocalPortfileVersion" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Using local portfile versions. To update the local portfiles, use `git pull`.]]></Val>
+          <Val><![CDATA[Using local port versions. To update the local ports, use `git pull`.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Yerel bağlantı noktası dosyası sürümleri kullanılıyor. Yerel bağlantı noktası dosyalarını güncelleştirmek için `git pull` kullanın.]]></Val>
+            <Val><![CDATA[Yerel bağlantı noktası sürümleri kullanılıyor. Yerel bağlantı noktalarını güncelleştirmek için `git pull` kullanın.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Using local portfile versions. To update the local portfiles, use `git pull`.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";ManifestConflict" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";ManifestConflict2" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Found both a manifest and CONTROL files in port "{path}"; please rename one or the other]]></Val>
+          <Val><![CDATA[Found both a manifest and CONTROL files; please rename one or the other]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Hem bildirim hem de KONTROL dosyaları bağlantı noktasında “{path}” bulundu. Lütfen birini yeniden adlandırın]]></Val>
+            <Val><![CDATA[Hem bildirim hem de KONTROL dosyaları bulundu; lütfen birini veya diğerini yeniden adlandırın]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -8374,6 +8182,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";MissingAssetBlockOrigin" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Missing {path} and downloads are blocked by x-block-origin.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Eksik {path} ve indirmeler x blok kaynağı tarafından engellendi.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";MissingClosingParen" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[missing closing )]]></Val>
@@ -8458,6 +8275,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";MissingShaVariable" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The {{sha}} variable must be used in the template if other variables are used.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Başka değişkenler kullanılırsa şablonda {{sha}} değişkeni kullanılmalıdır.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";MissingVersion$" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Missing version '${p0}']]></Val>
@@ -8482,18 +8308,6 @@
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Bunun nedeni, eksik bir Mono yüklemesi olabilir. Bazı sistemlerde `sudo apt install mono-complete` aracılığıyla tam Mono yüklemesi yapılabilir. Ubuntu 18.04 kullanıcıları https://www.mono-project.com/download/stable/ adresinde kullanıma sunulan daha yeni bir Mono sürümüne gerek duyabilir]]></Val>
           </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";MsiexecFailedToExtract" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[msiexec failed while extracting "{path}" with launch or exit code {exit_code} and message:]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[“{path}” ayıklanırken msiexec başlatma veya {exit_code} çıkış kodu ve iletisi ile başarısız oldu:]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[msiexec failed while extracting '{path}' with launch or exit code {exit_code} and message:]]></Val>
-          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -8590,15 +8404,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";NoArgumentsForOption" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The option --{option} does not accept an argument.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[--{option} seçeneği bir bağımsız değişken kabul etmez.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";NoArtifactsAreAcquired" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[No artifacts are acquired]]></Val>
@@ -8650,18 +8455,6 @@
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Yüklü paket yok. "Ara" mı demek istiyorsunuz?]]></Val>
           </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";NoLocalizationForMessages" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[No localized messages for the following: ]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Şunlar için yerelleştirilmiş ileti yok: ]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[No localization for the following messages:]]></Val>
-          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -9043,15 +8836,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";PackagesToInstallDirectly" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The following packages will be directly installed:]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Aşağıdaki paketler doğrudan yüklenecektir:]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";PackagesToModify" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Additional packages (*) will be modified to complete this operation.]]></Val>
@@ -9223,6 +9007,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ParsePackageNameNotEof" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[expected the end of input parsing a package name; this usually means the indicated character is not allowed to be in a port name. Port names are all lowercase alphanumeric+hypens and not reserved (see {url} for more information).]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[bir paket adı ayrıştıran giriş sonu bekleniyordu; bu genellikle belirtilen karakterin, bağlantı noktası adında bulunamayacağı anlamına gelir. Bağlantı noktası adları küçük alfasayısal+kısa çizgi şeklinde ve ayrılmamış olmalıdır (daha fazla bilgi için {url} adresine gidin).]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ParsePackagePatternError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA["{package_name}" is not a valid package pattern. Package patterns must use only one wildcard character (*) and it must be the last character in the pattern (see {url} for more information).]]></Val>
@@ -9232,6 +9025,24 @@
           <Prev Cat="Text">
             <Val><![CDATA["{package_name}" is not a valid package pattern. Package patterns must use only one wildcard character (*) and it must be the last character in the pattern (see {url} for more information)]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ParseQualifiedSpecifierNotEof" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[expected the end of input parsing a package spec; this usually means the indicated character is not allowed to be in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hypens.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[bir paket belirtimi ayrıştıran giriş sonu bekleniyordu; bu genellikle belirtilen karakterin, paket belirtiminde bulunamayacağı anlamına gelir. Bağlantı noktası, üçlü ve özellik adlarının tümü küçük alfasayısal+kısa çizgilerdir.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ParseQualifiedSpecifierNotEofSquareBracket" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[expected the end of input parsing a package spec; did you mean {version_spec} instead?]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[bir paket belirtimini ayrıştıran giriş sonu bekleniyordu; Aslında şunu mu demek istediniz: {version_spec}?]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -9246,231 +9057,273 @@
       </Item>
       <Item ItemId=";PerformingPostBuildValidation" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[-- Performing post-build validation]]></Val>
+          <Val><![CDATA[Performing post-build validation]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[-- Derleme sonrası doğrulama gerçekleştiriyor]]></Val>
+            <Val><![CDATA[Derleme sonrası doğrulama gerçekleştiriyor]]></Val>
           </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";PortBugAllowRestrictedHeaders" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[In exceptional circumstances, this policy can be disabled via {env_var}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Bu ilke, olağanüstü durumlarda {env_var} yoluyla devre dışı bırakılabilir]]></Val>
-          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[-- Performing post-build validation]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";PortBugBinDirExists" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[There should be no bin\ directory in a static build, but {path} is present.]]></Val>
+          <Val><![CDATA[${{CURRENT_PACKAGES_DIR}}/{path} exists but should not in a static build. To suppress this message, add set(VCPKG_POLICY_DLLS_IN_STATIC_LIBRARY enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Statik derlemede bin\ dizini olmamalıdır, ancak {path} var.]]></Val>
+            <Val><![CDATA[${{CURRENT_PACKAGES_DIR}}/{path} var, ancak statik derlemede olmamalıdır. Bu iletiyi gizlemek için set(VCPKG_POLICY_DLLS_IN_STATIC_LIBRARY enabled) ekleyin]]></Val>
           </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";PortBugDebugBinDirExists" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[There should be no debug\bin\ directory in a static build, but {path} is present.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Statik derlemede debug\bin\ dizini olmamalıdır, ancak {path} var.]]></Val>
-          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[There should be no bin\ directory in a static build, but {path} is present.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";PortBugDebugShareDir" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[/debug/share should not exist. Please reorganize any important files, then use]A;file(REMOVE_RECURSE "${{CURRENT_PACKAGES_DIR}}/debug/share")]]></Val>
+          <Val><![CDATA[${{CURRENT_PACKAGES_DIR}}/debug/share should not exist. Please reorganize any important files, then delete any remaining by adding `file(REMOVE_RECURSE "${{CURRENT_PACKAGES_DIR}}/debug/share")`. To suppress this message, add set(VCPKG_POLICY_ALLOW_DEBUG_SHARE enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[/debug/share bulunmamalıdır. Lütfen önemli dosyaları yeniden düzenleyip]A;file(REMOVE_RECURSE "${{CURRENT_PACKAGES_DIR}}/debug/share") kullanın]]></Val>
+            <Val><![CDATA[${{CURRENT_PACKAGES_DIR}}/debug/share mevcut olmamalıdır. Lütfen önemli dosyaları yeniden düzenleyin ve kalan dosyaları `file(REMOVE_RECURSE "${{CURRENT_PACKAGES_DIR}}/debug/share")` ekleyerek kaldırın. Bu iletiyi gizlemek için set(VCPKG_POLICY_ALLOW_DEBUG_SHARE enabled) ekleyin]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[/debug/share should not exist. Please reorganize any important files, then use]A;file(REMOVE_RECURSE "${{CURRENT_PACKAGES_DIR}}/debug/share")]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";PortBugDllAppContainerBitNotSet" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The App Container bit must be set for Windows Store apps. The following DLLs do not have the App Container bit set:]]></Val>
+          <Val><![CDATA[The App Container bit must be set for all DLLs in Windows Store apps, and the triplet requests targeting the Windows Store, but the following DLLs were not built with the bit set. This usually means that toolchain linker flags are not being properly propagated, or the linker in use does not support the /APPCONTAINER switch. To suppress this message, add set(VCPKG_POLICY_SKIP_APPCONTAINER_CHECK enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Uygulama Kapsayıcısı biti, Windows Mağazası uygulamaları için ayarlanmalıdır. Aşağıdaki DLL'lerde Uygulama Kapsayıcısı bit kümesi yok:]]></Val>
+            <Val><![CDATA[Uygulama Kapsayıcısı biti, Windows Mağazası uygulamalarındaki tüm DLL’ler ve Windows Mağazası’nı hedef alan üçlü istekler için ayarlanmalıdır, ancak aşağıdaki DLL’ler bit kümesiyle derlenemedi. Bu genellikle araç zinciri bağlayıcı bayraklarının düzgün şekilde yayılmadığı veya kullanımda olan bağlayıcının /APPCONTAINER anahtarını desteklemediği anlamına gelir. Bu iletiyi gizlemek için set(VCPKG_POLICY_SKIP_APPCONTAINER_CHECK enabled) ekleyin]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The App Container bit must be set for Windows Store apps. The following DLLs do not have the App Container bit set:]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";PortBugDllInLibDir" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The following dlls were found in /lib or /debug/lib. Please move them to /bin or /debug/bin, respectively.]]></Val>
+          <Val><![CDATA[The following dlls were found in ${{CURRENT_PACKAGES_DIR}}/lib or ${{CURRENT_PACKAGES_DIR}}/debug/lib. Please move them to ${{CURRENT_PACKAGES_DIR}}/bin or ${{CURRENT_PACKAGES_DIR}}/debug/bin, respectively.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[/lib veya /debug/lib içinde aşağıdaki DLL'ler bulundu. Lütfen bunları sırasıyla /bin veya /debug/bin'e taşıyın.]]></Val>
+            <Val><![CDATA[${{CURRENT_PACKAGES_DIR}}/lib veya ${{CURRENT_PACKAGES_DIR}}/debug/lib içinde aşağıdaki DLL’ler bulundu. Lütfen bunları sırasıyla ${{CURRENT_PACKAGES_DIR}}/bin veya ${{CURRENT_PACKAGES_DIR}}/debug/bin'e taşıyın.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The following dlls were found in /lib or /debug/lib. Please move them to /bin or /debug/bin, respectively.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";PortBugDuplicateIncludeFiles" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Include files should not be duplicated into the /debug/include directory. If this cannot be disabled in the project cmake, use]A;file(REMOVE_RECURSE "${{CURRENT_PACKAGES_DIR}}/debug/include")]]></Val>
+          <Val><![CDATA[${{CURRENT_PACKAGES_DIR}}/debug/include should not exist. To suppress this message, add set(VCPKG_POLICY_ALLOW_DEBUG_INCLUDE enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Ekleme dosyaları /debug/include dizininde çoğaltılamaz. Bu proje CMake içinde devre dışı bırakılamazsa,]A;file(REMOVE_RECURSE "${{CURRENT_PACKAGES_DIR}}/debug/include") kullanın]]></Val>
+            <Val><![CDATA[${{CURRENT_PACKAGES_DIR}}/debug/include mevcut olmamalıdır. Bu iletiyi gizlemek için set(VCPKG_POLICY_ALLOW_DEBUG_INCLUDE enabled) ekleyin]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Include files should not be duplicated into the /debug/include directory. If this cannot be disabled in the project cmake, use]A;file(REMOVE_RECURSE "${{CURRENT_PACKAGES_DIR}}/debug/include")]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PortBugDuplicateIncludeFilesFixIt" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[If this directory was created by a build system that does not allow installing headers in debug to be disabled, delete the duplicate directory with file(REMOVE_RECURSE "${{CURRENT_PACKAGES_DIR}}/debug/include")]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Bu dizin, hata ayıklamada üst bilgi yüklemenin devre dışı bırakılmasına izin vermeyen bir derleme sistemi tarafından oluşturulmuşsa, yinelenen dizini file(REMOVE_RECURSE "${{CURRENT_PACKAGES_DIR}}/debug/include") ile silin]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";PortBugFoundCopyrightFiles" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The following files are potential copyright files:]]></Val>
+          <Val><![CDATA[the following files are potential copyright files]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Aşağıdaki dosyalar olası telif hakkı dosyalarıdır:]]></Val>
+            <Val><![CDATA[aşağıdaki dosyalar olası telif hakkı dosyalarıdır]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The following files are potential copyright files:]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";PortBugFoundDebugBinaries" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";PortBugFoundDebugBinaries" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Found {count} debug binaries:]]></Val>
+          <Val><![CDATA[The following are debug binaries:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{count} hata ayıklama ikili dosyası bulundu:]]></Val>
+            <Val><![CDATA[Aşağıdakiler hata ayıklama ikilileridir:]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Found {count} debug binaries:]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";PortBugFoundDllInStaticBuild" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[DLLs should not be present in a static build, but the following DLLs were found:]]></Val>
+          <Val><![CDATA[DLLs should not be present in a static build, but the following DLLs were found. To suppress this message, add set(VCPKG_POLICY_DLLS_IN_STATIC_LIBRARY enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[DLL'ler statik bir derlemede mevcut olmamalıdır ancak aşağıdaki DLL'ler bulundu:]]></Val>
+            <Val><![CDATA[DLL’ler statik bir derlemede mevcut olmamalıdır ancak aşağıdaki DLL’ler bulundu. Bu iletiyi gizlemek için set(VCPKG_POLICY_DLLS_IN_STATIC_LIBRARY enabled) ekleyin]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[DLLs should not be present in a static build, but the following DLLs were found:]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";PortBugFoundEmptyDirectories" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";PortBugFoundEmptyDirectories" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[There should be no empty directories in {path}. The following empty directories were found:]]></Val>
+          <Val><![CDATA[There should be no installed empty directories. Empty directories are not representable to several binary cache providers, git repositories, and are not considered semantic build outputs. You should either create a regular file inside each empty directory, or delete them with the following CMake. To suppress this message, add set(VCPKG_POLICY_ALLOW_EMPTY_FOLDERS enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{path} yolunda boş dizin olmamalıdır. Aşağıdaki boş dizinler bulundu:]]></Val>
+            <Val><![CDATA[Yüklü boş dizin olmamalıdır. Boş dizinler birkaç ikili önbellek sağlayıcısı ve git deposu için gösterilemez ve anlamsal derleme çıkışları olarak değerlendirilmez. Her boş dizin içinde normal bir dosya oluşturun veya boş dizinleri aşağıdaki CMake ile silin. Bu iletiyi gizlemek için set(VCPKG_POLICY_ALLOW_EMPTY_FOLDERS enabled) ekleyin]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[There should be no empty directories in {path}. The following empty directories were found:]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";PortBugFoundExeInBinDir" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The following EXEs were found in /bin or /debug/bin. EXEs are not valid distribution targets.]]></Val>
+          <Val><![CDATA[The following executables were found in ${{CURRENT_PACKAGES_DIR}}/bin or ${{CURRENT_PACKAGES_DIR}}/debug/bin. Executables are not valid distribution targets. If these executables are build tools, consider using `vcpkg_copy_tools`. To suppress this message, add set(VCPKG_POLICY_ALLOW_EXES_IN_BIN enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[/bin veya /debug/bin içinde aşağıdaki EXE’ler bulundu. EXE'ler geçerli dağıtım hedefi değil.]]></Val>
+            <Val><![CDATA[Aşağıdaki yürütülebilir dosyalar ${{CURRENT_PACKAGES_DIR}}/bin veya ${{CURRENT_PACKAGES_DIR}}/debug/bin içinde bulundu. Yürütülebilir dosyalar geçerli dağıtım hedefleri değildir. Bu yürütülebilir dosyalar derleme araçlarıysa `vcpkg_copy_tools` kullanmayı düşünün. Bu iletiyi gizlemek için set(VCPKG_POLICY_ALLOW_EXES_IN_BIN enabled) ekleyin]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The following EXEs were found in /bin or /debug/bin. EXEs are not valid distribution targets.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";PortBugFoundReleaseBinaries" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";PortBugFoundReleaseBinaries" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Found {count} release binaries:]]></Val>
+          <Val><![CDATA[The following are release binaries:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{count} yayın ikili dosyaları bulundu:]]></Val>
+            <Val><![CDATA[Aşağıdakiler sürüm ikilileridir:]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Found {count} release binaries:]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";PortBugIncludeDirInCMakeHelperPort" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The folder /include exists in a cmake helper port; this is incorrect, since only cmake files should be installed]]></Val>
+          <Val><![CDATA[The folder ${{CURRENT_PACKAGES_DIR}}/include exists in a CMake helper port; this is incorrect, since only CMake files should be installed. To suppress this message, remove set(VCPKG_POLICY_CMAKE_HELPER_PORT enabled).]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[/include klasörü bir CMake yardımcı bağlantı noktasında var; bu doğru değil çünkü yalnızca CMake dosyaları yüklenmelidir]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";PortBugInspectFiles" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[To inspect the {extension} files, use:]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{extension} dosyalarını incelemek için şu komutu kullanın:]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";PortBugInvalidCrtLinkage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The following binaries should use the {expected} CRT.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Aşağıdaki ikili dosyalar {expected} CRT'yi kullanmalıdır.]]></Val>
+            <Val><![CDATA[${{CURRENT_PACKAGES_DIR}}/include klasörü bir CMake yardımcı bağlantı noktasında var; yalnızca CMake dosyalarının yüklenmesi gerektiğinden bu yanlıştır. Bu iletiyi gizlemek için set(VCPKG_POLICY_CMAKE_HELPER_PORT enabled) öğesini kaldırın.]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[Invalid crt linkage. Expected {expected}, but the following libs had:]]></Val>
+            <Val><![CDATA[The folder /include exists in a cmake helper port; this is incorrect, since only cmake files should be installed]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PortBugInvalidCrtLinkageCrtGroup" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The following binaries should link with only: {expected}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Aşağıdaki ikililer yalnızca şunlarla bağlantı oluşturmalıdır: {expected}]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";PortBugInvalidCrtLinkageEntry" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[{path} links with:]]></Val>
+          <Val><![CDATA[{path} links with: {actual}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Şunları barındıran {path} bağlantıları:]]></Val>
+            <Val><![CDATA[Şunu içeren {path} bağlantıları: {actual}]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[{path} links with:]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PortBugInvalidCrtLinkageHeader" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[binaries built by this port link with C RunTimes ("CRTs") inconsistent with those requested by the triplet and deployment structure. If the triplet is intended to only use the release CRT, you should add set(VCPKG_POLICY_ONLY_RELEASE_CRT enabled) to the triplet .cmake file. To suppress this check entirely, add set(VCPKG_POLICY_SKIP_CRT_LINKAGE_CHECK enabled) to the triplet .cmake if this is triplet-wide, or to portfile.cmake if this is specific to the port. You can inspect the binaries with: dumpbin.exe /directives mylibfile.lib]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[C RunTimes ("CRT") ile bu bağlantı noktası bağlantısı tarafından oluşturulan ikili dosyalar, üçlü ve dağıtım yapısı tarafından istenenlerle tutarsız. Üçlü öğenin yalnızca yayın CRT’sini kullanması amaçlanıyorsa, üçlü .cmake dosyasına set(VCPKG_POLICY_ONLY_RELEASE_CRT enabled) eklemeniz gerekir. Bu denetimi tamamen gizlemek için, bu üçlü genelinde geçerliyse üçlü .cmake dosyasına veya bağlantı noktasına özelse portfile.cmake dosyasına set(VCPKG_POLICY_SKIP_CRT_LINKAGE_CHECK enabled) ekleyin. İkili dosyaları şu şekilde inceleyebilirsiniz: dumpbin.exe /directives mylibfile.lib]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";PortBugKernel32FromXbox" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The selected triplet targets Xbox, but the following DLLs link with kernel32. These DLLs cannot be loaded on Xbox, where kernel32 is not present. This is typically caused by linking with kernel32.lib rather than a suitable umbrella library, such as onecore_apiset.lib or xgameplatform.lib.]]></Val>
+          <Val><![CDATA[The selected triplet targets Xbox, but the following DLLs link with kernel32. These DLLs cannot be loaded on Xbox, where kernel32 is not present. This is typically caused by linking with kernel32.lib rather than a suitable umbrella library, such as onecore_apiset.lib or xgameplatform.lib. You can inspect a DLL's dependencies with `dumpbin.exe /dependents mylibfile.dll`. To suppress this message, add set(VCPKG_POLICY_ALLOW_KERNEL32_FROM_XBOX enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Seçilen üçlü Xbox'ı hedefler, ancak aşağıdaki DLL'ler kernel32 ile bağlantılıdır. Bu DLL'ler, kernel32'nin bulunmadığı Xbox'a yüklenemez. Bu genellikle onecore_apiset.lib veya xgameplatform.lib gibi uygun bir şemsiye kitaplık yerine kernel32.lib ile bağlantı kurulmasından kaynaklanır.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";PortBugMergeLibCMakeDir" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The /lib/cmake folder should be merged with /debug/lib/cmake and moved to /share/{package_name}/cmake. Please use the helper function `vcpkg_cmake_config_fixup()` from the port vcpkg-cmake-config.`]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[/lib/cmake klasörü /debug/lib/cmake ile birleştirilmeli ve /share/{package_name}/cmake konumuna taşınmalıdır. Lütfen vcpkg-cmake-config bağlantı noktasından 'vcpkg_cmake_config_fixup()' yardımcı işlevini kullanın.]]></Val>
+            <Val><![CDATA[Seçilen üçlü Xbox’ı hedefliyor, ancak aşağıdaki DLL’ler kernel32 ile bağlantılı. Bu DLL’ler, kernel32’nin mevcut olmadığı Xbox’a yüklenemiyor. Bu genellikle, onecore_apiset.lib veya xgameplatform.lib gibi uygun bir şemsiye kitaplığı yerine kernel32.lib ile bağlantı yapılmasından kaynaklanır. `dumpbin.exe /dependents mylibfile.dll` ile DLL bağımlılıklarını inceleyebilirsiniz. Bu iletiyi gizlemek için set(VCPKG_POLICY_ALLOW_KERNEL32_FROM_XBOX enabled) ekleyin]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[The /lib/cmake folder should be merged with /debug/lib/cmake and moved to /share/{spec}/cmake. Please use the helper function `vcpkg_cmake_config_fixup()` from the port vcpkg-cmake-config.`]]></Val>
+            <Val><![CDATA[The selected triplet targets Xbox, but the following DLLs link with kernel32. These DLLs cannot be loaded on Xbox, where kernel32 is not present. This is typically caused by linking with kernel32.lib rather than a suitable umbrella library, such as onecore_apiset.lib or xgameplatform.lib.]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";PortBugMismatchedNumberOfBinaries" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";PortBugMergeLibCMakeDir" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Mismatching number of debug and release binaries.]]></Val>
+          <Val><![CDATA[This port creates ${{CURRENT_PACKAGES_DIR}}/lib/cmake and/or ${{CURRENT_PACKAGES_DIR}}/debug/lib/cmake, which should be merged and moved to ${{CURRENT_PACKAGES_DIR}}/share/${{PORT}}/cmake. Please use the helper function vcpkg_cmake_config_fixup() from the port vcpkg-cmake-config. To suppress this message, add set(VCPKG_POLICY_SKIP_LIB_CMAKE_MERGE_CHECK enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Hata ayıklama ve yayın ikili dosyalarının sayısı eşleşmiyor.]]></Val>
+            <Val><![CDATA[Bu bağlantı noktası ${{CURRENT_PACKAGES_DIR}}/lib/cmake ve/veya ${{CURRENT_PACKAGES_DIR}}/debug/lib/cmake oluşturur, bunun birleştirilip ${{CURRENT_PACKAGES_DIR}}/share/${{PORT}}/cmake’e taşınması gerekir. Lütfen vcpkg-cmake-config bağlantı noktasından vcpkg_cmake_config_fixup() yardımcı işlevini kullanın. Bu iletiyi gizlemek için set(VCPKG_POLICY_SKIP_LIB_CMAKE_MERGE_CHECK enabled) ekleyin]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The /lib/cmake folder should be merged with /debug/lib/cmake and moved to /share/{package_name}/cmake. Please use the helper function `vcpkg_cmake_config_fixup()` from the port vcpkg-cmake-config.`]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PortBugMismatchingNumberOfBinaries" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[mismatching number of debug and release binaries. This often indicates incorrect handling of debug or release in portfile.cmake or the build system. If the intent is to only ever produce release components for this triplet, the triplet should have set(VCPKG_BUILD_TYPE release) added to its .cmake file. To suppress this message, add set(VCPKG_POLICY_MISMATCHED_NUMBER_OF_BINARIES enabled)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[hata ayıklama ve yayın ikili dosyalarının sayısı eşleşmiyor. Bu genellikle portfile.cmake veya derleme sistemindeki hata ayıklama veya yayının hatalı işlendiğini gösterir. Yalnızca bu üçlü için yayın bileşenleri oluşturmayı hedefliyorsanız, üçlü öğenin .cmake dosyasına set(VCPKG_BUILD_TYPE release) eklenmelidir. Bu iletiyi gizlemek için set(VCPKG_POLICY_MISMATCHED_NUMBER_OF_BINARIES enabled) ekleyin]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";PortBugMisplacedCMakeFiles" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";PortBugMisplacedCMakeFiles" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The following cmake files were found outside /share/{spec}. Please place cmake files in /share/{spec}.]]></Val>
+          <Val><![CDATA[This port installs the following CMake files in places CMake files are not expected. CMake files should be installed in ${{CURRENT_PACKAGES_DIR}}/share/${{PORT}}. To suppress this message, add set(VCPKG_POLICY_SKIP_MISPLACED_CMAKE_FILES_CHECK enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Aşağıdaki CMake dosyaları /share/{spec} dışında bulundu. Lütfen CMake dosyalarını /share/{spec} dosyasına yerleştirin.]]></Val>
+            <Val><![CDATA[Bu bağlantı noktası aşağıdaki CMake dosyalarını CMake dosyalarının beklenmediği konumlara yüklüyor. CMake dosyaları ${{CURRENT_PACKAGES_DIR}}/share/${{PORT}} konumuna yüklenmelidir. Bu iletiyi gizlemek için set(VCPKG_POLICY_SKIP_MISPLACED_CMAKE_FILES_CHECK enabled) ekleyin]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The following cmake files were found outside /share/{spec}. Please place cmake files in /share/{spec}.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";PortBugMisplacedFiles" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";PortBugMisplacedFiles" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The following files are placed in {path}:]]></Val>
+          <Val><![CDATA[The following regular files are installed to location(s) where regular files may not be installed. These should be installed in a subdirectory. To suppress this message, add set(VCPKG_POLICY_SKIP_MISPLACED_REGULAR_FILES_CHECK enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Şu dosyalar {path} yoluna yerleştirilir:]]></Val>
+            <Val><![CDATA[Aşağıdaki normal dosyalar, normal dosyaların yüklenemeyeceği konumlara yüklenmiş. Bunlar bir alt dizine yüklenmelidir. Bu iletiyi gizlemek için set(VCPKG_POLICY_SKIP_MISPLACED_REGULAR_FILES_CHECK enabled) ekleyin]]></Val>
           </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";PortBugMisplacedFilesCont" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Files cannot be present in those directories.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Dosyalar bu dizinlerde bulunamaz.]]></Val>
-          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The following files are placed in {path}:]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";PortBugMisplacedPkgConfigFiles" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[pkgconfig directories should be one of share/pkgconfig (for header only libraries only), lib/pkgconfig, or lib/debug/pkgconfig. The following misplaced pkgconfig files were found:]]></Val>
+          <Val><![CDATA[The following misplaced pkgconfig directories were installed. Misplaced pkgconfig files will not be found correctly by pkgconf or pkg-config. pkgconfig directories should be ${{CURRENT_PACKAGES_DIR}}/share/pkgconfig (for architecture agnostic / header only libraries only), ${{CURRENT_PACKAGES_DIR}}/lib/pkgconfig (for release dependencies), or ${{CURRENT_PACKAGES_DIR}}/debug/lib/pkgconfig (for debug dependencies). To suppress this message, add set(VCPKG_POLICY_SKIP_PKGCONFIG_CHECK enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[pkgconfig dizinleri, share/pkgconfig (yalnızca üst bilgi kitaplıkları için), lib/pkgconfig veya lib/debug/pkgconfig'den biri olmalıdır. Aşağıdaki yanlış yerleştirilmiş pkgconfig dosyaları bulundu:]]></Val>
+            <Val><![CDATA[Aşağıdaki yanlış yerleştirilmiş pkgconfig dizinleri yüklendi. Yanlış yerleştirilmiş pkgconfig dosyaları pkgconf veya pkg-config tarafından doğru bulunamaz. pkgconfig dizinleri ${{CURRENT_PACKAGES_DIR}}/share/pkgconfig (mimariden bağımsız / yalnızca üst bilgi kitaplıkları için), ${{CURRENT_PACKAGES_DIR}}/lib/pkgconfig (yayın bağımlılıkları için) veya ${{CURRENT_PACKAGES_DIR}}/debug/lib/pkgconfig (hata ayıklama bağımlılıkları için) olmalıdır. Bu iletiyi gizlemek için set(VCPKG_POLICY_SKIP_PKGCONFIG_CHECK enabled) ekleyin]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[pkgconfig directories should be one of share/pkgconfig (for header only libraries only), lib/pkgconfig, or lib/debug/pkgconfig. The following misplaced pkgconfig files were found:]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PortBugMissingCMakeHelperPortFile" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The ${{CURRENT_PACKAGES_DIR}}/share/${{PORT}}/vcpkg-port-config.cmake file does not exist. This file must exist for CMake helper ports. To suppress this message, remove set(VCPKG_POLICY_CMAKE_HELPER_PORT enabled)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[${{CURRENT_PACKAGES_DIR}}/share/${{PORT}}/vcpkg-port-config.cmake dosyası yok. CMake yardımcı bağlantı noktaları için bu dosya bulunmalıdır. Bu iletiyi gizlemek için set(VCPKG_POLICY_CMAKE_HELPER_PORT enabled) öğesini kaldırın]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -9484,51 +9337,60 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";PortBugMissingFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";PortBugMissingImportedLibs" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The /{path} file does not exist. This file must exist for CMake helper ports.]]></Val>
+          <Val><![CDATA[Import libraries for installed DLLs appear to be missing. If this is intended, add set(VCPKG_POLICY_DLLS_WITHOUT_LIBS enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[/{path} dosyası yok. CMake yardımcı bağlantı noktaları için bu dosya bulunmalıdır.]]></Val>
+            <Val><![CDATA[Yüklü DLL’ler için içeri aktarma kitaplıkları eksik gibi görünüyor. Bu amaçlandıysa set(VCPKG_POLICY_DLLS_WITHOUT_LIBS enabled) ekleyin]]></Val>
           </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";PortBugMissingImportedLibs" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Import libraries were not present in {path}.]A;If this is intended, add the following line in the portfile:]A;set(VCPKG_POLICY_DLLS_WITHOUT_LIBS enabled)]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[İçeri aktarma kitaplıkları {path} yolunda yoktu.]A; Bu amaçlandıysa, portfile’da:]A;set(VCPKG_POLICY_DLLS_WITHOUT_LIBS etkin) satırı ekleyin]]></Val>
-          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Import libraries were not present in {path}.]A;If this is intended, add the following line in the portfile:]A;set(VCPKG_POLICY_DLLS_WITHOUT_LIBS enabled)]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";PortBugMissingIncludeDir" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The folder /include is empty or not present. This indicates the library was not correctly installed.]]></Val>
+          <Val><![CDATA[The folder ${{CURRENT_PACKAGES_DIR}}/include is empty or not present. This usually means that headers are not correctly installed. If this is a CMake helper port, add set(VCPKG_POLICY_CMAKE_HELPER_PORT enabled). If this is not a CMake helper port but this is otherwise intentional, add set(VCPKG_POLICY_EMPTY_INCLUDE_FOLDER enabled) to suppress this message.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[/include klasörü boş veya yok. Bu, kitaplığın düzgün yüklenmemiş olduğunu gösterir.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";PortBugMissingLicense" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The software license must be available at ${{CURRENT_PACKAGES_DIR}}/share/{package_name}/copyright]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Yazılım lisansı ${{CURRENT_PACKAGES_DIR}}/share/{package_name}/copyright adresinde kullanıma sunulmalıdır]]></Val>
+            <Val><![CDATA[${{CURRENT_PACKAGES_DIR}}/include klasörü boş veya yok. Bu genellikle üst bilgilerin düzgün yüklenmemiş olduğu anlamına gelir. Bu bir CMake yardımcı bağlantı noktasıysa set(VCPKG_POLICY_CMAKE_HELPER_PORT enabled) ekleyin. Bu bir CMake yardımcı bağlantı noktası değilse ancak bu bilerek yapılmışsa, bu iletiyi gizlemek için set(VCPKG_POLICY_EMPTY_INCLUDE_FOLDER enabled) ekleyin.]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[The software license must be available at ${{CURRENT_PACKAGES_DIR}}/share/{spec}/copyright]]></Val>
+            <Val><![CDATA[The folder /include is empty or not present. This indicates the library was not correctly installed.]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";PortBugMissingProvidedUsage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";PortBugMissingLicense" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The port provided "usage" but forgot to install to /share/{package_name}/usage, add the following linein the portfile:]]></Val>
+          <Val><![CDATA[the license is not installed to ${{CURRENT_PACKAGES_DIR}}/share/${{PORT}}/copyright . This can be fixed by adding a call to vcpkg_install_copyright. To suppress this message, add set(VCPKG_POLICY_SKIP_COPYRIGHT_CHECK enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Bağlantı noktası "usage" sağladı ancak /share/{package_name}/usage içine yüklemeyi unuttu, portfile içine aşağıdaki satırı ekleyin:]]></Val>
+            <Val><![CDATA[lisans ${{CURRENT_PACKAGES_DIR}}/share/${{PORT}}/copyright konumuna yüklenmedi. Bu sorun, vcpkg_install_copyright’a bir çağrı eklenerek düzeltilebilir. Bu iletiyi gizlemek için set(VCPKG_POLICY_SKIP_COPYRIGHT_CHECK enabled) ekleyin]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The software license must be available at ${{CURRENT_PACKAGES_DIR}}/share/{package_name}/copyright]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PortBugMissingLicenseFixIt" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Consider adding: {value}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Şunu eklemeyi düşünün: {value}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PortBugMissingProvidedUsage" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[this port contains a file named "usage" but didn't install it to ${{CURRENT_PACKAGES_DIR}}/share/${{PORT}}/usage . If this file is not intended to be usage text, consider choosing another name; otherwise, install it. To suppress this message, add set(VCPKG_POLICY_SKIP_USAGE_INSTALL_CHECK enabled)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[bu bağlantı noktası "usage" adlı bir dosya içeriyor ancak bunu ${{CURRENT_PACKAGES_DIR}}/share/${{PORT}}/usage konumuna yüklemedi. Bu dosyanın kullanım metni olması amaçlanmadıysa, başka bir ad seçmeyi düşünün; aksi halde yükleyin. Bu iletiyi gizlemek için set(VCPKG_POLICY_SKIP_USAGE_INSTALL_CHECK enabled) ekleyin]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The port provided "usage" but forgot to install to /share/{package_name}/usage, add the following linein the portfile:]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -9552,28 +9414,25 @@
       </Item>
       <Item ItemId=";PortBugOutdatedCRT" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Detected outdated dynamic CRT in the following files:]]></Val>
+          <Val><![CDATA[DLLs that link with obsolete C RunTime ("CRT") DLLs were installed. Installed DLLs should link with an in-support CRT. You can inspect the dependencies of a DLL with `dumpbin.exe /dependents mylibfile.dll`. If you're using a custom triplet targeting an old CRT, add set(VCPKG_POLICY_ALLOW_OBSOLETE_MSVCRT enabled) to the triplet's .cmake file. To suppress this message for this port, add set(VCPKG_POLICY_ALLOW_OBSOLETE_MSVCRT enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Aşağıdaki dosyalarda süresi geçmiş dinamik CRT algılandı:]]></Val>
+            <Val><![CDATA[Artık kullanılmayan C RunTime ("CRT") DLL’leri ile bağlantılı olan DLL’ler yüklendi. Yüklü DLL’lerin desteklenen bir CRT ile bağlanması gerekir. `dumpbin.exe /dependents mylibfile.dll` ile DLL bağımlılıklarını inceleyebilirsiniz. Eski bir CRT’yi hedefleyen özel bir üçlü kullanıyorsanız, üçlü .cmake dosyasına set(VCPKG_POLICY_ALLOW_OBSOLETE_MSVCRT enabled) ekleyin. Bu iletiyi bu bağlantı noktası için gizlemek için set(VCPKG_POLICY_ALLOW_OBSOLETE_MSVCRT enabled) ekleyin]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Detected outdated dynamic CRT in the following files:]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";PortBugRemoveBinDir" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[If the creation of bin\ and/or debug\bin\ cannot be disabled, use this in the portfile to remove them]]></Val>
+          <Val><![CDATA[if creation of these directories cannot be disabled, you can add the following in portfile.cmake to remove them]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[bin\ ve/veya debug\bin\ oluşturma devre dışı bırakılamıyorsa, bunları kaldırmak için bunu portfile’da kullanın]]></Val>
+            <Val><![CDATA[bu dizinlerin oluşturulması devre dışı bırakılamıyorsa, bunları kaldırmak için portfile.cmake’e aşağıdakini ekleyebilirsiniz]]></Val>
           </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";PortBugRemoveEmptyDirectories" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[If a directory should be populated but is not, this might indicate an error in the portfile.]A;If the directories are not needed and their creation cannot be disabled, use something like this in the portfile to remove them:]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Doldurulması gereken bir dizin doldurulmamışsa bu, portfile’da bir hata olabileceğini gösterir.]A;Dizinlere gerek yoksa ve oluşturmaları devre dışı bırakılamıyorsa bunları kaldırmak için portfile’da buna benzer bir özellik kullanın:]]></Val>
-          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[If the creation of bin\ and/or debug\bin\ cannot be disabled, use this in the portfile to remove them]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -9589,23 +9448,44 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";PortBugRestrictedHeaderPaths" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";PortBugRestrictedHeaderPaths" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The following restricted headers can prevent the core C++ runtime and other packages from compiling correctly. In exceptional circumstances, this policy can be disabled by setting CMake variable VCPKG_POLICY_ALLOW_RESTRICTED_HEADERS in portfile.cmake.]]></Val>
+          <Val><![CDATA[Taking the following restricted headers can prevent the core C++ runtime and other packages from compiling correctly. These should be renamed or stored in a subdirectory instead. In exceptional circumstances, this warning can be suppressed by adding set(VCPKG_POLICY_ALLOW_RESTRICTED_HEADERS enabled)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Aşağıdaki kısıtlanmış üst bilgiler çekirdek C++ çalışma zamanının ve diğer paketlerin düzgün bir şekilde derlenmesini önleyebilir. Bu ilke, olağanüstü durumlarda CMake değişkenini portfile.cmake üzerinde VCPKG_POLICY_ALLOW_RESTRICTED_HEADERS olarak ayarlayarak devre dışı bırakılabilir.]]></Val>
+            <Val><![CDATA[Aşağıdaki kısıtlanmış üst bilgiler çekirdek C++ çalışma zamanının ve diğer paketlerin düzgün bir şekilde derlenmesini önleyebilir. Bunlar yeniden adlandırılmalı veya bir alt dizinde depolanmalıdır. Sıra dışı durumlarda, bu uyarı set(VCPKG_POLICY_ALLOW_RESTRICTED_HEADERS enabled) eklenerek gizlenebilir]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[The following restricted headers can prevent the core C++ runtime and other packages from compiling correctly. In exceptional circumstances, this policy can be disabled via {env_var}.]]></Val>
+            <Val><![CDATA[The following restricted headers can prevent the core C++ runtime and other packages from compiling correctly. In exceptional circumstances, this policy can be disabled by setting CMake variable VCPKG_POLICY_ALLOW_RESTRICTED_HEADERS in portfile.cmake.]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";PortBugSetDllsWithoutExports" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";PortBugRestrictedHeaderPathsNote" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[DLLs without any exports are likely a bug in the build script. If this is intended, add the following line in the portfile:]A;set(VCPKG_POLICY_DLLS_WITHOUT_EXPORTS enabled)]A;The following DLLs have no exports:]]></Val>
+          <Val><![CDATA[the headers are relative to ${{CURRENT_PACKAGES_DIR}}/include here]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Dışarı aktarma içermeyen DLL'ler büyük olasılıkla derleme betiğinde bir hatadır. Bu amaçlandıysa, portfile’da şu satırı ekleyin:]A;set(VCPKG_POLICY_DLLS_WITHOUT_EXPORTS etkin)]A;Aşağıdaki DLL'lerde dışarı aktarma yok:]]></Val>
+            <Val><![CDATA[üst bilgiler burada ${{CURRENT_PACKAGES_DIR}}/include ile görelidir]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PortBugSetDllsWithoutExports" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the following DLLs were built without any exports. DLLs without exports are likely bugs in the build script. If this is intended, add set(VCPKG_POLICY_DLLS_WITHOUT_EXPORTS enabled)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[aşağıdaki DLL’ler dışarı aktarma olmadan oluşturuldu. Dışarı aktarma içermeyen DLL’ler büyük olasılıkla derleme betiğindeki hatalardır. Bu amaçlandıysa set(VCPKG_POLICY_DLLS_WITHOUT_EXPORTS enabled) ekleyin]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[DLLs without any exports are likely a bug in the build script. If this is intended, add the following line in the portfile:]A;set(VCPKG_POLICY_DLLS_WITHOUT_EXPORTS enabled)]A;The following DLLs have no exports:]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PortDeclaredHere" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{package_name} is declared here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{package_name} burada bildirildi]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -9690,15 +9570,6 @@
           <Val><![CDATA[The following {count} ports were added:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Aşağıdaki {count} bağlantı noktası eklendi:]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";PortsDiffHelp" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The argument should be a branch/tag/hash to checkout.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Bağımsız değişken, sonuçlandırma için bir dal/etiket/karma olmalıdır.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -9970,11 +9841,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";RunvcpkgActivateToApplyToTheCurrentTerminal" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";RunvcpkgshellActivateToApplyToTheCurrentTerminal" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Run \`vcpkg activate\` to apply to the current terminal]]></Val>
+          <Val><![CDATA[Run \`vcpkg-shell activate\` to apply to the current terminal]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Geçerli terminale uygulamak için \`vcpkg activate\` komutunu çalıştırın]]></Val>
+            <Val><![CDATA[Geçerli terminale uygulamak için \`vcpkg-shell activate\` komutunu çalıştırın]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -9984,15 +9855,6 @@
           <Val><![CDATA[expected arguments: asset config 'x-script' requires exactly the exec template as an argument]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[beklenen bağımsız değişkenler: varlık yapılandırması 'x-script', bağımsız değişken olarak tam olarak exec şablonunu gerektirir]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";SearchHelp" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The argument should be a substring to search for, or no argument to display all libraries.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Bağımsız değişken aranılacak bir alt dize olmalıdır ya da tüm kitaplıkları görüntülemek için bağımsız değişken olmamalıdır.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10065,6 +9927,15 @@
           <Val><![CDATA[Skipping clearing contents of {path} because it was not a directory.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{path} bir dizin olmadığından, {path} içeriğinin temizlenmesi atlanıyor.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";SkippingPostBuildValidationDueTo" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Skipping post-build validation due to {cmake_var}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{cmake_var} nedeniyle derleme sonrası doğrulama atlanıyor]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10153,18 +10024,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";StoredBinaryCache" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Stored binary cache: "{path}"]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[İkili önbellek depolandı: "{path}"]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Stored binary cache: '{path}']]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";SuccessfulyExported" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Exported {package_name} to {path}]]></Val>
@@ -10179,15 +10038,6 @@
           <Val><![CDATA[The result may be outdated. Run `git pull` to get the latest results.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Sonuç eski olabilir. En son sonuçları almak için `git pull` komutunu çalıştırın.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";SuggestResolution" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[To attempt to resolve all errors at once, run:]A;vcpkg {command_name} --{option}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Tüm hataları bir kerede çözmeyi denemek için şunu çalıştırın:]A;vcpkg {command_name} --{option}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10546,7 +10396,7 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";UnexpectedAssetCacheProvider" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";UnexpectedAssetCacheProvider" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[unknown asset provider type: valid source types are 'x-azurl', 'x-script', 'x-block-origin', and 'clear']]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
@@ -10578,15 +10428,6 @@
           <Val><![CDATA[Unexpected character; expected colon]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Beklenmeyen karakter; beklenen kolon]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";UnexpectedCharExpectedComma" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Unexpected character; expected comma or close brace]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Beklenmeyen karakter; beklenen virgül veya yakın ayraç]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10762,38 +10603,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";UnexpectedErrorDuringBulkDownload" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[an unexpected error occurred during bulk download.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[toplu indirme sırasında beklenmeyen bir hata oluştu.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";UnexpectedEscapeSequence" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Unexpected escape sequence continuation]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Beklenmeyen kaçış dizisi devamı]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";UnexpectedExtension" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Unexpected archive extension: '{extension}'.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Beklenmeyen arşiv uzantısı: '{extension}'.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";UnexpectedFeatureList" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[unexpected list of features]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[beklenmeyen özellikler listesi]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10830,15 +10644,6 @@
           <Val><![CDATA[unexpected option: {option}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[beklenmeyen seçenek: {option}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";UnexpectedPlatformExpression" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[unexpected platform expression]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[beklenmeyen platform ifadesi]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10902,12 +10707,12 @@
       </Item>
       <Item ItemId=";UnknownBinaryProviderType" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[unknown binary provider type: valid providers are 'clear', 'default', 'nuget', 'nugetconfig','nugettimeout', 'interactive', 'x-azblob', 'x-gcs', 'x-aws', 'x-aws-config', 'http', and 'files']]></Val>
+          <Val><![CDATA[unknown binary provider type: valid providers are 'clear', 'default', 'nuget', 'nugetconfig', 'nugettimeout', 'interactive', 'x-azblob', 'x-gcs', 'x-aws', 'x-aws-config', 'http', and 'files']]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[bilinmeyen ikili sağlayıcı türü: geçerli sağlayıcılar: 'clear', 'default', 'nuget', 'nugetconfig','nugettimeout', 'interactive', 'x-azblob', 'x-gcs', 'x-aws', 'x-aws-config', 'http' ve 'files]]></Val>
+            <Val><![CDATA[bilinmeyen ikili sağlayıcı türü: geçerli sağlayıcılar: 'clear', 'default', 'nuget', 'nugetconfig', 'nugettimeout', 'interactive', 'x-azblob', 'x-gcs', 'x-aws', 'x-aws-config', 'http', ve 'files']]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[unknown binary provider type: valid providers are 'clear', 'default', 'nuget', 'nugetconfig', 'interactive', and 'files']]></Val>
+            <Val><![CDATA[unknown binary provider type: valid providers are 'clear', 'default', 'nuget', 'nugetconfig','nugettimeout', 'interactive', 'x-azblob', 'x-gcs', 'x-aws', 'x-aws-config', 'http', and 'files']]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -10930,15 +10735,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";UnknownOptions" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Unknown option(s) for command '{command_name}':]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA['{command_name}' komutu için bilinmeyen seçenek(ler):]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";UnknownParameterForIntegrate" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Unknown parameter '{value}' for integrate.]]></Val>
@@ -10950,10 +10746,13 @@
       </Item>
       <Item ItemId=";UnknownPolicySetting" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Unknown setting for policy '{value}': {option}]]></Val>
+          <Val><![CDATA[Unknown setting of {cmake_var}: {value}. Valid policy values are '', 'disabled', and 'enabled'.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA['{value}' ilkesi için bilinmeyen ayar: {option}]]></Val>
+            <Val><![CDATA[Bilinmeyen {cmake_var} ayarı: {value}. Geçerli ilke değerleri: '', 'disabled' ve 'enabled'.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Unknown setting for policy '{value}': {option}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -11088,15 +10887,6 @@
           <Val><![CDATA[Unsupported registry scheme '${p0}']]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Desteklenmeyen kayıt defteri düzeni '${p0}']]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";UnsupportedShortOptions" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[short options are not supported: '{value}']]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[kısa seçenekler desteklenmiyor: '{value}']]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -11257,27 +11047,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";UploadedBinaries" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Uploaded binaries to {count} {vendor}.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[İkili dosyalar şuraya yüklendi: {count} {vendor}.]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Uploaded binaries to '{count}' '{vendor}'.]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";UploadedPackagesToVendor" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Uploaded {count} package(s) to {vendor} in {elapsed}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{count} paket {vendor} tarafına {elapsed} içinde yüklendi]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";UploadingBinariesToVendor" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Uploading binaries for '{spec}' to '{vendor}' source "{path}".]]></Val>
@@ -11290,23 +11059,29 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";UploadingBinariesUsingVendor" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Uploading binaries for '{spec}' using '{vendor}' "{path}".]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA['{spec}' için ikili dosyalar '{vendor}' "{path}" kullanılarak karşıya yükleniyor.]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Uploading binaries for '{spec}' using '{vendor}' '{path}'.]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";UriMayNotBeEmpty" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Uri may not be empty]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Uri boş olamaz]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UsageInstallInstructions" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[you can install the usage file with the following CMake]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[kullanım dosyasını aşağıdaki CMake ile yükleyebilirsiniz]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UsageTextHere" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the usage file is here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[kullanım dosyası burada]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -11334,15 +11109,6 @@
           <Val><![CDATA[User-wide integration was removed.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Kullanıcı genelinde integral alma kaldırıldı.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";UsingCommunityTriplet" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[-- Using community triplet {triplet}. This triplet configuration is not guaranteed to succeed.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[-- Topluluk üçlü {triplet} kullanılıyor. Bu üçlü yapılandırmanın başarılı olması garanti değildir.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -11419,15 +11185,6 @@
           <Prev Cat="Text">
             <Val><![CDATA[vcpkg-ce ('configure environment') is experimental and may change at any time.]]></Val>
           </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";VcpkgCommitTableHeader" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[VCPKG Commit]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[VCPKG İşlemesi]]></Val>
-          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -11560,12 +11317,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";VersionBaselineMatch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{version_spec} matches the current baseline]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{version_spec} mevcut taban çizgisiyle eşleşiyor]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";VersionBaselineMismatch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The latest version is {expected}, but the baseline file contains {actual}.]A;Run:]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit -m "Update version database"]A;to update the baseline version.]]></Val>
+          <Val><![CDATA[{package_name} is assigned {actual}, but the local port is {expected}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[En son sürüm {expected}, ancak temel dosya {actual} içeriyor.]A;Çalıştır:]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit -m "Update version database"]A;yazarak temel sürümü güncelleştirin.]]></Val>
+            <Val><![CDATA[{package_name}, {actual} olarak atandı, ancak yerel bağlantı noktası {expected}]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The latest version is {expected}, but the baseline file contains {actual}.]A;Run:]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit -m "Update version database"]A;to update the baseline version.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -11596,6 +11365,33 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";VersionConstraintNotInDatabase1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the "version>=" constraint to {package_name} names version {version} which does not exist in the version database. All versions must exist in the version database to be interpreted by vcpkg.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{package_name}'in geçersiz kılınması, sürüm veritabanında mevcut olmayan {version} sürümünü adlandırır. Tüm sürümlerin vcpkg tarafından yorumlanabilmesi için sürüm veritabanında mevcut olması gerekir.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionConstraintNotInDatabase2" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[consider removing the version constraint or choosing a value declared here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[sürüm kısıtlamasını kaldırmayı veya burada bildirilen bir değeri seçmeyi düşünün]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionConstraintOk" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[all version constraints are consistent with the version database]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[tüm sürüm kısıtlamaları sürüm veritabanıyla tutarlıdır]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";VersionConstraintPortVersionMustBePositiveInteger" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[port-version (after the '#') in "version>=" must be a non-negative integer]]></Val>
@@ -11605,15 +11401,6 @@
           <Prev Cat="Text">
             <Val><![CDATA[port-version (after the '#') in "version>=" must be a positive integer]]></Val>
           </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";VersionConstraintUnresolvable" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Cannot resolve a minimum constraint for dependency {package_name} from {spec}.]A;The dependency was not found in the baseline, indicating that the package did not exist at that time. This may be fixed by providing an explicit override version via the "overrides" field or by updating the baseline.]A;See `vcpkg help versioning` for more information.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{spec} öğesinden {package_name} bağımlılığı için minimum kısıtlama çözümlenemiyor.]A;Bağımlılık, paketin o anda var olmadığını gösteren temelde bulunamadı. Bu, "geçersiz kılmalar" alanı aracılığıyla ya da temelin güncelleştirilmesi yoluyla açık bir geçersiz kılma sürümü sağlanarak düzeltilebilir.]A;Daha fazla bilgi için 'vcpkg yardım sürümü oluşturma' bölümüne bakın.]]></Val>
-          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -11635,11 +11422,32 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";VersionDatabaseFileMissing" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";VersionDatabaseFileMissing" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[{package_name} is missing a version database file at {path}]A;Run:]A;vcpkg x-add-version {package_name}]A;to create the versions file.]]></Val>
+          <Val><![CDATA[this port is not in the version database]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{path} öğesinde {package_name} sürüm veritabanı dosyası eksik]A;Çalıştır:]A;vcpkg x-add-version {package_name}]A;yazarak sürümler dosyasını oluşturun.]]></Val>
+            <Val><![CDATA[bu bağlantı noktası sürüm veritabanında değil]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[{package_name} is missing a version database file at {path}]A;Run:]A;vcpkg x-add-version {package_name}]A;to create the versions file.]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionDatabaseFileMissing2" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the version database file should be here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[sürüm veritabanı dosyası burada olmalıdır]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionDatabaseFileMissing3" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[run '{command_line}' to create the version database file]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[sürüm veritabanı dosyasını oluşturmak için '{command_line}' komutunu çalıştırın]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -11655,10 +11463,13 @@
       </Item>
       <Item ItemId=";VersionInDeclarationDoesNotMatch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The version declared in file does not match checked-out version: {version}]]></Val>
+          <Val><![CDATA[{git_tree_sha} is declared to contain {expected}, but appears to contain {actual}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Dosyada tanımlanan sürüm kullanıma alınan sürümle eşleşmiyor: {version}]]></Val>
+            <Val><![CDATA[{git_tree_sha}'nın {expected} içerdiği bildirildi ancak {actual} içerdiği görülüyor]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The version declared in file does not match checked-out version: {version}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -11785,15 +11596,66 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";VersionNotFoundInVersionsFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";VersionNotFoundInVersionsFile2" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Version {version} was not found in versions file for {package_name}.]A;Run:]A;vcpkg x-add-version {package_name}]A;to add the new port version.]]></Val>
+          <Val><![CDATA[{version_spec} was not found in versions database]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{version} sürümü, {package_name} adlı paketin sürüm dosyasında bulunamadı.]A;Çalıştır:]A;vcpkg x-add-version {package_name}]A;yazarak yeni bağlantı noktası sürümünü ekleyin.]]></Val>
+            <Val><![CDATA[{version_spec} sürüm veritabanında bulunamadı]]></Val>
           </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Version {version} was not found in versions file.]A;Run:]A;vcpkg x-add-version {package_name}]A;to add the new port version.]]></Val>
-          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionNotFoundInVersionsFile3" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the version should be in this file]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[sürüm bu dosyada olmalı]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionNotFoundInVersionsFile4" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[run '{command_line}' to add the new port version]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[yeni bağlantı noktası sürümünü eklemek için '{command_line}' komutunu çalıştırın]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionOverrideNotInVersionDatabase" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the version override {package_name} does not exist in the version database; does that port exist?]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[sürüm geçersiz kılma {package_name} sürüm veritabanında mevcut değil; o port mevcut mu?]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionOverrideVersionNotInVersionDatabase1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the override of {package_name} names version {version} which does not exist in the version database. Installing this port at the top level will fail as that version will be unresolvable.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{package_name}'in geçersiz kılınması, sürüm veritabanında mevcut olmayan {version} sürümünü adlandırır. Bu bağlantı noktasının en üst düzeye yüklenmesi, söz konusu sürüm çözümlenemeyeceğinden başarısız olacaktır.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionOverrideVersionNotInVersionDatabase2" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[consider removing the version override or choosing a value declared here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Sürüm geçersiz kılmayı kaldırmayı veya burada bildirilen bir değeri seçmeyi düşünün]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionOverwriteVersion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[you can overwrite {version_spec} with correct local values by running:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[şunu çalıştırarak doğru yerel değerleri {version_spec} üzerine yazabilirsiniz:]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -11815,29 +11677,101 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";VersionSchemeMismatch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";VersionSchemeMismatch1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The version database declares {version} as {expected}, but {path} declares it as {actual}. Versions must be unique, even if they are declared with different schemes.]A;Run:]A;vcpkg x-add-version {package_name} --overwrite-version]A;to overwrite the scheme declared in the version database with that declared in the port.]]></Val>
+          <Val><![CDATA[{version} is declared {expected}, but {package_name} is declared with {actual}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Sürüm veritabanı, {version} öğesini {expected} olarak tanımlıyor, ancak {path} bunu bir {actual} olarak tanımlıyor. Farklı düzenlerle tanımlanmış olsalar bile sürümler benzersiz olmalıdır.]A;Çalıştır:]A;vcpkg x-add-version {package_name} --overwrite-version]A;yazarak sürüm veritabanında tanımlanan düzeni bağlantı noktasında tanımlanan düzenin üzerine yazın.]]></Val>
+            <Val><![CDATA[{version}, {expected} olarak bildirildi, ancak {package_name}, {actual} ile bildirildi]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";VersionShaMismatch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";VersionSchemeMismatch1Old" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[{version} is declared with {expected}, but the local port has a different SHA {actual}.]A;Please update the port's version fields and then run:]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit -m "Update version database"]A;to add the new version.]]></Val>
+          <Val><![CDATA[{version} is declared {expected}, but {package_name}@{git_tree_sha} is declared with {actual}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{version}, {expected} ile tanımlanmış, ancak yerel bağlantı noktasında farklı bir SHA {actual} mevcut.]A;Lütfen bağlantı noktasının sürüm alanlarını güncelleştirin ve sonra şu komutu çalıştırın:]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit -m "Update version database"]A;ve yeni sürümü ekleyin.]]></Val>
+            <Val><![CDATA[{version}, {expected} olarak bildirildi, ancak {package_name}@{git_tree_sha}, {actual} ile bildirildi]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";VersionShaMissing" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";VersionSchemeMismatch2" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[while validating {package_name}, missing Git SHA.]A;Run:]A;git add "{path}"]A;git commit -m "wip"]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit --amend -m "[{package_name}]5D; Add new port"]A;to commit the new port and create its version file.]]></Val>
+          <Val><![CDATA[versions must be unique, even if they are declared with different schemes]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{package_name} doğrulanırken, Git SHA eksik.]A;Çalıştır:]A;git add "{path}"]A;git commit -m "wip"]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit --amend -m "[{package_name}]5D; Add new port"]A;yazarak yeni bağlantı noktasını yürütün ve bu bağlantı noktasının sürüm dosyasını oluşturun.]]></Val>
+            <Val><![CDATA[farklı şemalarla bildirilseler bile sürümlerin benzersiz olması gerekir]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionShaMismatch1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{version_spec} git tree {git_tree_sha} does not match the port directory]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{version_spec} git ağacı {git_tree_sha} bağlantı noktası diziniyle eşleşmiyor]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionShaMismatch2" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the port directory has git tree {git_tree_sha}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[bağlantı noktası dizininde git ağacı {git_tree_sha} var]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionShaMismatch3" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[if {version_spec} is already published, update this file with a new version or port-version, commit it, then add the new version by running:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{version_spec} zaten yayınlanmışsa, bu dosyayı yeni bir sürümle veya bağlantı noktası sürümüyle güncelleştirin, kaydedin ve ardından aşağıdakileri çalıştırarak yeni sürümü ekleyin:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionShaMismatch4" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[if {version_spec} is not yet published, overwrite the previous git tree by running:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{version_spec} henüz yayınlanmadıysa aşağıdaki komutu çalıştırarak önceki git ağacının üzerine yazın:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionShaMissing1" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the git tree of the port directory could not be determined. This is usually caused by uncommitted changes.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[bağlantı noktası dizininin git ağacı belirlenemedi. Bu genellikle taahhüt edilmemiş değişikliklerden kaynaklanır.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionShaMissing2" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[you can commit your changes and add them to the version database by running:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[aşağıdakileri çalıştırarak değişikliklerinizi uygulayabilir ve bunları sürüm veritabanına ekleyebilirsiniz:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionShaMissing3" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[wip]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[wip]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionShaMissing4" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[[{package_name}]5D; Add new port]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[[{package_name}]5D; Yeni bağlantı noktası ekle]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -11869,15 +11803,6 @@
           <Prev Cat="Text">
             <Val><![CDATA[error: Failed to load port because version specs did not match]A;    Path: {path}]A;    Expected: {expected_version}]A;    Actual: {actual_version}]]></Val>
           </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";VersionTableHeader" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Version]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Sürüm]]></Val>
-          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -11959,20 +11884,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";WhileLoadingLocalPort" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";WhileLoadingBaselineVersionForPort" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[while attempting to load local port {package_name}]]></Val>
+          <Val><![CDATA[while loading baseline version for {package_name}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{package_name} yerel bağlantı noktası yüklenmeye çalışılırken]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";WhileLoadingPortFromGitTree" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[while trying to load port from: {commit_sha}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{commit_sha} öğesinden bağlantı noktası yüklenmeye çalışılırken]]></Val>
+            <Val><![CDATA[{package_name} için temel sürüm yüklenirken]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -12169,11 +12085,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";noPostscriptFileRerunWithTheVcpkgShellFunctionRatherThanExecutable" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";noPostscriptFileRunVcpkgshellWithTheSameArguments" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[no postscript file: rerun with the vcpkg shell function rather than executable]]></Val>
+          <Val><![CDATA[no postscript file: run vcpkg-shell with the same arguments]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[postscript dosyası yok: yürütülebilir dosya yerine vcpkg kabuk işleviyle yeniden çalıştırın]]></Val>
+            <Val><![CDATA[postscript dosyası yok: vcpkg-shell'i aynı bağımsız değişkenlerle çalıştırın]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />

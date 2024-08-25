@@ -1,8 +1,11 @@
 . $PSScriptRoot/../end-to-end-tests-prelude.ps1
 
-[string]$out = Run-VcpkgAndCaptureOutput -TestArgs @("--overlay-triplets=$PSScriptRoot/../e2e_ports/hash-additional", "--overlay-ports=$PSScriptRoot/../e2e_ports/hash-additional", "x-set-installed", "vcpkg-test-hash-additional", "--triplet", "hash-additional-e2e", "--debug")
+Run-Vcpkg @directoryArgs "--overlay-triplets=$PSScriptRoot/../e2e-ports/hash-additional" "--overlay-ports=$PSScriptRoot/../e2e-ports/hash-additional" x-set-installed vcpkg-test-hash-additional --triplet hash-additional-e2e --binarysource=clear
 Throw-IfFailed
-if (-Not ($out.Contains("additional_file_0|61ba0c7fc1f696e28c1b7aa9460980a571025ff8c97bb90a57e990463aa25660")))
+
+$output = Run-VcpkgAndCaptureOutput @directoryArgs "--overlay-triplets=$PSScriptRoot/../e2e-ports/hash-additional-fail" "--overlay-ports=$PSScriptRoot/../e2e-ports/hash-additional-fail" x-set-installed vcpkg-test-hash-additional --triplet hash-additional-e2e --binarysource=clear
+Throw-IfNotFailed
+if ($output -notmatch "Variable VCPKG_HASH_ADDITIONAL_FILES contains invalid file path")
 {
-    throw "Additional file hash not found in output"
+    throw "Expected to fail since VCPKG_HASH_ADDITIONAL_FILES is set to a relative path"
 }

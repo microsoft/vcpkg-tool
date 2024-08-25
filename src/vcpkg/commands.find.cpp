@@ -7,6 +7,7 @@
 
 #include <vcpkg/commands.find.h>
 #include <vcpkg/configure-environment.h>
+#include <vcpkg/documentation.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/registries.h>
@@ -137,7 +138,7 @@ namespace vcpkg
         Checks::check_exit(VCPKG_LINE_INFO, msg::default_output_stream == OutputStream::StdErr);
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();
-        PathsPortFileProvider provider(fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, overlay_ports));
+        PathsPortFileProvider provider(*registry_set, make_overlay_provider(fs, paths.original_cwd, overlay_ports));
         auto source_paragraphs =
             Util::fmap(provider.load_all_control_files(),
                        [](auto&& port) -> const SourceControlFile* { return port->source_control_file.get(); });
@@ -285,6 +286,8 @@ namespace vcpkg
             perform_find_port_and_exit(paths, full_description, enable_json, filter, paths.overlay_ports);
         }
 
-        Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgAddCommandFirstArg);
+        Checks::msg_exit_with_error(
+            VCPKG_LINE_INFO,
+            msg::format(msgFindCommandFirstArg).append_raw('\n').append(msgSeeURL, msg::url = docs::add_command_url));
     }
 } // namespace vcpkg

@@ -1,5 +1,6 @@
 #include <vcpkg/base/fwd/message_sinks.h>
 
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/files.h>
@@ -653,9 +654,13 @@ namespace vcpkg
         , community_triplets(filesystem.almost_canonical(triplets / "community", VCPKG_LINE_INFO))
     {
         Debug::print("Using vcpkg-root: ", root, '\n');
-        Debug::print("Using scripts-root: ", scripts, '\n');
         Debug::print("Using builtin-registry: ", builtin_registry_versions, '\n');
         Debug::print("Using downloads-root: ", downloads, '\n');
+        m_pimpl->m_download_manager->get_block_origin()
+            ? Debug::println("External asset downloads are blocked (x-block-origin is enabled)..")
+            : Debug::println("External asset downloads are allowed (x-block-origin is disabled)...");
+        m_pimpl->m_download_manager->asset_cache_configured() ? Debug::println("Asset caching is enabled.")
+                                                              : Debug::println("Asset cache is not configured.");
 
         {
             const auto config_path = m_pimpl->m_config_dir / "vcpkg-configuration.json";
@@ -763,7 +768,10 @@ namespace vcpkg
             return *i;
         }
 
-        Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgVcpkgDisallowedClassicMode);
+        Checks::msg_exit_with_error(VCPKG_LINE_INFO,
+                                    msg::format(msgVcpkgDisallowedClassicMode)
+                                        .append_raw('\n')
+                                        .append(msgSeeURL, msg::url = docs::troubleshoot_build_failures_url));
     }
 
     const Path& VcpkgPaths::buildtrees() const
@@ -773,7 +781,10 @@ namespace vcpkg
             return *i;
         }
 
-        Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgVcpkgDisallowedClassicMode);
+        Checks::msg_exit_with_error(VCPKG_LINE_INFO,
+                                    msg::format(msgVcpkgDisallowedClassicMode)
+                                        .append_raw('\n')
+                                        .append(msgSeeURL, msg::url = docs::troubleshoot_build_failures_url));
     }
 
     const Path& VcpkgPaths::packages() const
@@ -783,7 +794,10 @@ namespace vcpkg
             return *i;
         }
 
-        Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgVcpkgDisallowedClassicMode);
+        Checks::msg_exit_with_error(VCPKG_LINE_INFO,
+                                    msg::format(msgVcpkgDisallowedClassicMode)
+                                        .append_raw('\n')
+                                        .append(msgSeeURL, msg::url = docs::troubleshoot_build_failures_url));
     }
 
     Path VcpkgPaths::baselines_output() const { return buildtrees() / "versioning_" / "baselines"; }
@@ -949,14 +963,14 @@ namespace vcpkg
 
     ExpectedL<std::map<std::string, std::string, std::less<>>> VcpkgPaths::git_get_local_port_treeish_map() const
     {
-        const auto local_repo = this->root / ".git";
-        auto cmd = git_cmd_builder({}, {})
-                       .string_arg("-C")
-                       .string_arg(this->builtin_ports_directory())
-                       .string_arg("ls-tree")
-                       .string_arg("-d")
-                       .string_arg("HEAD")
-                       .string_arg("--");
+        const auto cmd = git_cmd_builder({}, {})
+                             .string_arg("-C")
+                             .string_arg(this->builtin_ports_directory())
+                             .string_arg("ls-tree")
+                             .string_arg("-d")
+                             .string_arg("HEAD")
+                             .string_arg("--");
+
         auto maybe_output = flatten_out(cmd_execute_and_capture_output(cmd), Tools::GIT);
         if (const auto output = maybe_output.get())
         {

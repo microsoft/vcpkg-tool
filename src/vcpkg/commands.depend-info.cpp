@@ -165,6 +165,18 @@ namespace
 
 namespace vcpkg
 {
+    namespace
+    {
+        const char* get_dot_element_style(const std::string& label)
+        {
+            if (!Strings::contains(label, ':')) return "";
+
+            if (Strings::ends_with(label, ":host")) return " [color=gray51 fontcolor=gray51]";
+
+            return " [color=blue fontcolor=blue]";
+        }
+    }
+
     std::string create_dot_as_string(const std::vector<PackageDependInfo>& depend_info)
     {
         int empty_node_count = 0;
@@ -173,7 +185,8 @@ namespace vcpkg
 
         for (const auto& package : depend_info)
         {
-            fmt::format_to(std::back_inserter(s), "\"{}\";\n", package.package);
+            fmt::format_to(
+                std::back_inserter(s), "\"{}\"{};\n", package.package, get_dot_element_style(package.package));
             if (package.dependencies.empty())
             {
                 empty_node_count++;
@@ -182,7 +195,8 @@ namespace vcpkg
 
             for (const auto& d : package.dependencies)
             {
-                fmt::format_to(std::back_inserter(s), "\"{}\" -> \"{}\";\n", package.package, d);
+                fmt::format_to(
+                    std::back_inserter(s), "\"{}\" -> \"{}\"{};\n", package.package, d, get_dot_element_style(d));
             }
         }
 
@@ -395,8 +409,8 @@ namespace vcpkg
 
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();
-        PathsPortFileProvider provider(
-            fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
+        PathsPortFileProvider provider(*registry_set,
+                                       make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
 
@@ -404,7 +418,11 @@ namespace vcpkg
         // All actions in the plan should be install actions, as there's no installed packages to remove.
         StatusParagraphs status_db;
         auto action_plan = create_feature_install_plan(
-            provider, var_provider, specs, status_db, {host_triplet, paths.packages(), UnsupportedPortAction::Warn});
+            provider,
+            var_provider,
+            specs,
+            status_db,
+            {nullptr, host_triplet, paths.packages(), UnsupportedPortAction::Warn, UseHeadVersion::No, Editable::No});
         action_plan.print_unsupported_warnings();
 
         if (!action_plan.remove_actions.empty())

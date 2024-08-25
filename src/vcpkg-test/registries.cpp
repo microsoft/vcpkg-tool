@@ -4,6 +4,7 @@
 #include <vcpkg/base/strings.h>
 
 #include <vcpkg/configuration.h>
+#include <vcpkg/documentation.h>
 #include <vcpkg/registries.h>
 
 using namespace vcpkg;
@@ -120,11 +121,15 @@ TEST_CASE ("check valid package patterns", "[registries]")
     CHECK(ID::is_ident("rapidjson"));
     CHECK(ID::is_ident("boost-tuple"));
     CHECK(ID::is_ident("vcpkg-boost-helper"));
+    CHECK(ID::is_ident("lpt"));
+    CHECK(ID::is_ident("com"));
 
     // reject invalid characters
     CHECK(!ID::is_ident(""));
+    CHECK(!ID::is_ident(" "));
     CHECK(!ID::is_ident("boost_tuple"));
     CHECK(!ID::is_ident("boost.tuple"));
+    CHECK(!ID::is_ident("boost."));
     CHECK(!ID::is_ident("boost@1"));
     CHECK(!ID::is_ident("boost#1"));
     CHECK(!ID::is_ident("boost:x64-windows"));
@@ -139,8 +144,10 @@ TEST_CASE ("check valid package patterns", "[registries]")
     CHECK(!ID::is_ident("con"));
     CHECK(!ID::is_ident("core"));
     CHECK(!ID::is_ident("default"));
-    CHECK(!ID::is_ident("lpt1"));
-    CHECK(!ID::is_ident("com1"));
+    CHECK(!ID::is_ident("lpt0"));
+    CHECK(!ID::is_ident("lpt9"));
+    CHECK(!ID::is_ident("com0"));
+    CHECK(!ID::is_ident("com9"));
 
     // reject incomplete segments
     CHECK(!ID::is_ident("-a"));
@@ -153,11 +160,17 @@ TEST_CASE ("check valid package patterns", "[registries]")
     CHECK(is_package_pattern("b*"));
     CHECK(is_package_pattern("boost*"));
     CHECK(is_package_pattern("boost-*"));
+    CHECK(is_package_pattern("boost-multi-*"));
 
     // reject invalid patterns
+    CHECK(!is_package_pattern(""));
+    CHECK(!is_package_pattern(" "));
     CHECK(!is_package_pattern("*a"));
     CHECK(!is_package_pattern("a*a"));
     CHECK(!is_package_pattern("a**"));
+    CHECK(!is_package_pattern("a-**"));
+    CHECK(!is_package_pattern("a--*"));
+    CHECK(!is_package_pattern("a-*-*"));
     CHECK(!is_package_pattern("a+"));
     CHECK(!is_package_pattern("a?"));
 }
@@ -421,16 +434,18 @@ TEST_CASE ("registries report pattern errors", "[registries]")
     REQUIRE(errors.size() == 3);
     CHECK(errors[0] == "test: error: $.registries[0].packages[1] (a package pattern): \"\" is not a valid package "
                        "pattern. Package patterns must "
-                       "use only one wildcard character (*) and it must be the last character in the pattern (see "
-                       "https://learn.microsoft.com/vcpkg/users/registries for more information).");
-    CHECK(errors[1] == "test: error: $.registries[0].packages[2] (a package pattern): \"a*a\" is not a valid package "
-                       "pattern. Package patterns "
-                       "must use only one wildcard character (*) and it must be the last character in the pattern (see "
-                       "https://learn.microsoft.com/vcpkg/users/registries for more information).");
-    CHECK(errors[2] == "test: error: $.registries[0].packages[3] (a package pattern): \"*a\" is not a valid package "
-                       "pattern. Package patterns "
-                       "must use only one wildcard character (*) and it must be the last character in the pattern (see "
-                       "https://learn.microsoft.com/vcpkg/users/registries for more information).");
+                       "use only one wildcard character (*) and it must be the last character in the pattern (see " +
+                           docs::registries_url + " for more information).");
+    CHECK(errors[1] ==
+          "test: error: $.registries[0].packages[2] (a package pattern): \"a*a\" is not a valid package "
+          "pattern. Package patterns "
+          "must use only one wildcard character (*) and it must be the last character in the pattern (see " +
+              docs::registries_url + " for more information).");
+    CHECK(errors[2] ==
+          "test: error: $.registries[0].packages[3] (a package pattern): \"*a\" is not a valid package "
+          "pattern. Package patterns "
+          "must use only one wildcard character (*) and it must be the last character in the pattern (see " +
+              docs::registries_url + " for more information).");
 }
 
 TEST_CASE ("registries ignored patterns warning", "[registries]")

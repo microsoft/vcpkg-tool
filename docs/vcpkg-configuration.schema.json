@@ -1,5 +1,6 @@
 {
-  "$id": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/master/docs/vcpkg-configuration.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg-configuration.schema.json",
   "type": "object",
   "properties": {
     "default-registry": {

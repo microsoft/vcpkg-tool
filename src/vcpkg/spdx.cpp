@@ -158,7 +158,7 @@ std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
     {
         auto& cinfo = doc.insert(SpdxCreationInfo, Json::Object());
         auto& creators = cinfo.insert(JsonIdCreators, Json::Array());
-        creators.push_back(Strings::concat("Tool: vcpkg-", VCPKG_VERSION_AS_STRING));
+        creators.push_back(Strings::concat("Tool: vcpkg-", VCPKG_BASE_VERSION_AS_STRING, '-', VCPKG_VERSION_AS_STRING));
         cinfo.insert(JsonIdCreated, std::move(created_time));
     }
 

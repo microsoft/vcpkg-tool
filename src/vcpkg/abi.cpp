@@ -99,6 +99,19 @@ namespace vcpkg
             }
         }
 
+        for (size_t i = 0; i < pre_build_info.post_portfile_includes.size(); ++i)
+        {
+            auto& file = pre_build_info.post_portfile_includes[i];
+            if (file.is_relative() || !fs.is_regular_file(file) || file.extension() != ".cmake")
+            {
+                Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgInvalidValuePostPortfileIncludes, msg::path = file);
+            }
+
+            abi_tag_entries.emplace_back(
+                fmt::format("post_portfile_include_{}", i),
+                Hash::get_file_hash(fs, file, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO));
+        }
+
         if (pre_build_info.target_is_xbox)
         {
             abi_tag_entries.emplace_back("grdk.h", grdk_hash(fs, pre_build_info));
@@ -126,7 +139,7 @@ namespace vcpkg
     static AbiEntries get_cmake_script_hashes(const Filesystem& fs, const Path& scripts_dir)
     {
         auto files = fs.get_regular_files_non_recursive(scripts_dir / "cmake", VCPKG_LINE_INFO);
-        Util::erase_remove_if(files, [](const Path& file) { return file.filename() == ".DS_Store"; });
+        Util::erase_remove_if(files, [](const Path& file) { return file.filename() == FileDotDsStore; });
 
         AbiEntries helpers(files.size());
 
@@ -247,12 +260,12 @@ namespace vcpkg
         abi_info.toolset.emplace(toolset);
 
         // return when using editable or head flags
-        if (action.build_options.use_head_version == UseHeadVersion::Yes)
+        if (action.use_head_version == UseHeadVersion::Yes)
         {
             Debug::print("Binary caching for package ", action.spec, " is disabled due to --head\n");
             return;
         }
-        if (action.build_options.editable == Editable::Yes)
+        if (action.editable == Editable::Yes)
         {
             Debug::print("Binary caching for package ", action.spec, " is disabled due to --editable\n");
             return;
@@ -288,8 +301,8 @@ namespace vcpkg
                                                 View<AbiEntry> common_abi,
                                                 View<AbiEntry> cmake_script_hashes)
     {
-        if (action.build_options.use_head_version == UseHeadVersion::Yes ||
-            action.build_options.editable == Editable::Yes)
+        if (action.use_head_version == UseHeadVersion::Yes ||
+            action.editable == Editable::Yes)
         {
             return nullopt;
         }
@@ -300,7 +313,7 @@ namespace vcpkg
 
         // portfile hashes/contents
         auto&& [port_files_abi, cmake_contents] = get_port_files(fs, scfl);
-        Util::Vectors::append(&abi_entries, port_files_abi);
+        Util::Vectors::append(abi_entries, port_files_abi);
 
         // cmake helpers
         for (auto&& helper : cmake_script_hashes)
@@ -346,7 +359,7 @@ namespace vcpkg
         auto& fs = paths.get_filesystem();
         auto& abi_info = *action.abi_info.get();
         auto abi_tag_entries = std::move(private_abi.abi_entries);
-        Util::Vectors::append(&abi_tag_entries, dependency_abis);
+        Util::Vectors::append(abi_tag_entries, std::move(dependency_abis));
 
         abi_tag_entries.emplace_back("triplet_abi", *abi_info.triplet_abi.get());
 
@@ -462,13 +475,10 @@ namespace vcpkg
             }
 
             AbiEntries dependency_abis;
-            if (!Util::Enum::to_bool(action.build_options.only_downloads))
+            dependency_abis = get_dependency_abis(action_plan.install_actions.begin(), it, status_db);
+            if (!check_dependency_hashes(dependency_abis, action.spec))
             {
-                dependency_abis = get_dependency_abis(action_plan.install_actions.begin(), it, status_db);
-                if (!check_dependency_hashes(dependency_abis, action.spec))
-                {
-                    continue;
-                }
+                continue;
             }
 
             make_abi_tag(paths, action, std::move(dependency_abis), std::move(*private_abis[i].get()));

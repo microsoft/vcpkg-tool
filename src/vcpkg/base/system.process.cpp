@@ -474,6 +474,67 @@ namespace vcpkg
         return *this;
     }
 
+    Command& Command::raw_arg(StringView s) &
+    {
+        if (!buf.empty())
+        {
+            buf.push_back(' ');
+        }
+
+        buf.append(s.data(), s.size());
+        return *this;
+    }
+
+    Command& Command::forwarded_args(View<std::string> args) &
+    {
+        for (auto&& arg : args)
+        {
+            string_arg(arg);
+        }
+
+        return *this;
+    }
+
+    bool Command::try_append(const Command& other)
+    {
+        if (buf.size() > maximum_allowed)
+        {
+            return false;
+        }
+
+        if (other.buf.empty())
+        {
+            return true;
+        }
+
+        if (buf.empty())
+        {
+            if (other.buf.size() > maximum_allowed)
+            {
+                return false;
+            }
+
+            buf = other.buf;
+            return true;
+        }
+
+        size_t leftover = maximum_allowed - buf.size();
+        if (leftover == 0)
+        {
+            return false;
+        }
+
+        --leftover; // for the space
+        if (other.buf.size() > leftover)
+        {
+            return false;
+        }
+
+        buf.push_back(' ');
+        buf.append(other.buf);
+        return true;
+    }
+
 #if defined(_WIN32)
     Environment get_modified_clean_environment(const std::unordered_map<std::string, std::string>& extra_env,
                                                StringView prepend_to_path)
@@ -1824,9 +1885,7 @@ namespace vcpkg
     {
         std::string output;
         return cmd_execute_and_stream_data(cmd, settings, [&](StringView sv) { Strings::append(output, sv); })
-            .map([&](int exit_code) {
-                return ExitCodeAndOutput{exit_code, std::move(output)};
-            });
+            .map([&](int exit_code) { return ExitCodeAndOutput{exit_code, std::move(output)}; });
     }
 
     uint64_t get_subproccess_stats() { return g_subprocess_stats.load(); }

@@ -4,7 +4,7 @@
 # Licensed under the MIT License.
 
 # wrapper script for vcpkg
-# this is intended to be dot-sourced and then you can use the vcpkg() function.
+# this is intended to be dot-sourced and then you can use the vcpkg-shell() function.
 
 # check to see if we've been dot-sourced (should work for most POSIX shells)
 sourced=0
@@ -82,7 +82,7 @@ if [ $? -eq 1 ]; then
 fi
 
 # So, we're the real script then.
-vcpkg() {
+vcpkg-shell() {
   # set the response file
   # Generate 32 bits of randomness, to avoid clashing with concurrent executions.
   export Z_VCPKG_POSTSCRIPT="$(mktemp).sh"
@@ -104,7 +104,7 @@ vcpkg() {
 
 # did they dotsource and have args go ahead and run it then!
 if [ "$#" -gt "0" ]; then
-  vcpkg $@
+  vcpkg-shell $@
 fi
 
 Z_VCPKG_cleanup

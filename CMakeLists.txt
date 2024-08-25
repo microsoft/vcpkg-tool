@@ -444,14 +444,14 @@ endif()
 # === Target: vcpkg-ps1 ===
 add_custom_command(
     OUTPUT
-        "${CMAKE_CURRENT_BINARY_DIR}/vcpkg.ps1"
+        "${CMAKE_CURRENT_BINARY_DIR}/vcpkg-shell.ps1"
     COMMAND
-        "${CMAKE_COMMAND}" ARGS -E copy "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg-in-development.ps1" "${CMAKE_CURRENT_BINARY_DIR}/vcpkg.ps1"
+        "${CMAKE_COMMAND}" ARGS -E copy "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg-in-development.ps1" "${CMAKE_CURRENT_BINARY_DIR}/vcpkg-shell.ps1"
     DEPENDS
         "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg-in-development.ps1"
     VERBATIM
 )
-add_custom_target(vcpkg-ps1 ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/vcpkg.ps1")
+add_custom_target(vcpkg-ps1 ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/vcpkg-shell.ps1")
 
 # === Target: vcpkg ===
 
@@ -559,6 +559,13 @@ set_property(TARGET test-editor PROPERTY PDB_NAME "test-editor${VCPKG_PDB_SUFFIX
 add_executable(test-script-asset-cache ${TEST_SCRIPT_ASSET_CACHE_SOURCES} "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg.manifest")
 set_property(TARGET test-script-asset-cache PROPERTY PDB_NAME "test-script-asset-cache${VCPKG_PDB_SUFFIX}")
 endif()
+
+# === Target: verify_messages ===
+add_custom_target(
+    verify-messages
+    COMMAND pwsh -File "${CMAKE_CURRENT_SOURCE_DIR}/scripts/verifyMessages.ps1"
+    COMMENT "Running PowerShell script to verify message usage..."
+)
 
 # === Target: format ===
 
