@@ -1124,6 +1124,7 @@ namespace vcpkg
         auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
         ExtendedBuildResult result = do_build_package_and_clean_buildtrees(
             args, paths, host_triplet, build_options, action, all_dependencies_satisfied);
+
         if (abi_info.abi_tag_complete())
         {
             build_logs_recorder.record_build_result(paths, spec, result.code);
