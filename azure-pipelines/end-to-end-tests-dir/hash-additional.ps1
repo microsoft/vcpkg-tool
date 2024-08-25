@@ -1,6 +1,6 @@
 . $PSScriptRoot/../end-to-end-tests-prelude.ps1
 
-Run-Vcpkg "--overlay-triplets=$PSScriptRoot/../e2e-ports/hash-additional" "--overlay-ports=$PSScriptRoot/../e2e-ports/hash-additional" install vcpkg-test-hash-additional --triplet hash-additional-e2e 
+Run-Vcpkg @directoryArgs "--overlay-triplets=$PSScriptRoot/../e2e-ports/hash-additional" "--overlay-ports=$PSScriptRoot/../e2e-ports/hash-additional" x-set-installed vcpkg-test-hash-additional --triplet hash-additional-e2e --binarysource=clear
 Throw-IfFailed
 
 $output = Run-VcpkgAndCaptureOutput @directoryArgs "--overlay-triplets=$PSScriptRoot/../e2e-ports/hash-additional-fail" "--overlay-ports=$PSScriptRoot/../e2e-ports/hash-additional-fail" x-set-installed vcpkg-test-hash-additional --triplet hash-additional-e2e --binarysource=clear
