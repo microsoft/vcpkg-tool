@@ -301,8 +301,7 @@ namespace vcpkg
                                                 View<AbiEntry> common_abi,
                                                 View<AbiEntry> cmake_script_hashes)
     {
-        if (action.use_head_version == UseHeadVersion::Yes ||
-            action.editable == Editable::Yes)
+        if (action.use_head_version == UseHeadVersion::Yes || action.editable == Editable::Yes)
         {
             return nullopt;
         }
