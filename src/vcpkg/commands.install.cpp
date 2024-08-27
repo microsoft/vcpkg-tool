@@ -236,20 +236,20 @@ namespace vcpkg
 #if _MSC_VER <= 1910
             bool operator()(const std::string& lhs, const std::string& rhs) const
             {
-                return Strings::ascii_to_lowercase(lhs) < Strings::ascii_to_lowercase(rhs);
+                return Strings::case_insensitive_ascii_less(lhs, rhs);
             }
             bool operator()(const file_pack& lhs, const file_pack& rhs) const
             {
-                return Strings::ascii_to_lowercase(lhs.first) < Strings::ascii_to_lowercase(rhs.first);
+                return Strings::case_insensitive_ascii_less(lhs.first, rhs.first);
             }
 #endif
             bool operator()(const std::string& lhs, const file_pack& rhs) const
             {
-                return Strings::ascii_to_lowercase(lhs) < Strings::ascii_to_lowercase(rhs.first);
+                return Strings::case_insensitive_ascii_less(lhs, rhs.first);
             }
             bool operator()(const file_pack& lhs, const std::string& rhs) const
             {
-                return Strings::ascii_to_lowercase(lhs.first) < Strings::ascii_to_lowercase(rhs);
+                return Strings::case_insensitive_ascii_less(lhs.first, rhs);
             }
         };
 
