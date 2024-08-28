@@ -9,9 +9,9 @@
 
 namespace vcpkg
 {
-    // To ensure consistency, the uuid must follow the format specified below.
+    // To ensure consistency, the device ID must follow the format specified below.
     // - The value follows the 8-4-4-4-12 format(xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
-    // - The value shall be all lowercase and only contain hyphens. No braces or brackets.
+    // - The value is all lowercase and only contain hyphens. No braces or brackets.
     bool validate_device_id(StringView uuid)
     {
         static constexpr size_t UUID_LENGTH = 36;
@@ -26,12 +26,11 @@ namespace vcpkg
     }
 
 #if defined(_WIN32)
-    // Returns a shared DevDeviceID for telemetry.
-    std::string get_device_id()
+    std::string get_device_id(const vcpkg::Filesystem&)
     {
         // The value is cached in the 64-bit Windows Registry under HKeyCurrentUser\SOFTWARE\Microsoft\DeveloperTools.
-        //  The key should be named 'deviceid' and should be of type REG_SZ(String value).
-        // The value should be stored in plain text.
+        // The key is named 'deviceid' and its type REG_SZ(String value).
+        // The value is stored in plain text.
         auto maybe_registry_value =
             get_registry_string(HKEY_CURRENT_USER, "SOFTWARE\\Microsoft\\DeveloperTools", "deviceid");
         if (auto registry_value = maybe_registry_value.get())
@@ -55,15 +54,16 @@ namespace vcpkg
     std::string get_device_id(const vcpkg::Filesystem& fs)
     {
         /* On Linux:
-         * - The folder subpath will be /Microsoft/DeveloperTools
-         * - Use $XDG_CACHE_HOME if it is set and not empty, else use $HOME/.cache.
-         * - The file will be called 'deviceid'. The value should be stored in plain text, UTF-8.
+         * - Use $XDG_CACHE_HOME if it is set and not empty, else use $HOME/.cache
+         * - The folder subpath is "/Microsoft/DeveloperTools"
+         * - The file is named 'deviceid'
+         * - The value is stored in UTF-8 plain text
          *
          * On MacOS:
-         * - The folder path will be $HOME\Library\Application Support\Microsoft\DeveloperTools where $HOME is the
-         * user's home directory.
-         * - The file will be called 'deviceid'.
-         * - The value should be stored in plain text, UTF-8.
+         * - Store the device id in the user's home directory ($HOME).
+         * - The folder subpath is "$HOME\Library\Application Support\Microsoft\DeveloperTools"
+         * - The file is named 'deviceid'
+         * - The value is stored in UTF-8 plain text
          */
         const auto maybe_home_path = vcpkg::get_platform_cache_root();
         if (!maybe_home_path)
@@ -98,7 +98,6 @@ namespace vcpkg
             return contents;
         }
 
-        // vcpkg::generate_random_UUID() generates a compliant UUID
         auto new_device_id = Strings::ascii_to_lowercase(vcpkg::generate_random_UUID());
         fs.create_directories(container_path, ec);
         if (ec)

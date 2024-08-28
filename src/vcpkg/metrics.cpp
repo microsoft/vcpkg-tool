@@ -581,13 +581,7 @@ namespace vcpkg
 
         auto submission = get_global_metrics_collector().get_submission();
 
-        auto deviceid =
-#if defined(_WIN32)
-            get_device_id()
-#else
-            get_device_id(fs)
-#endif
-            ;
+        auto deviceid = get_device_id(fs);
         submission.track_string(StringMetric::DevDeviceId, deviceid);
 
         const std::string payload = format_metrics_payload(user, session, submission);
