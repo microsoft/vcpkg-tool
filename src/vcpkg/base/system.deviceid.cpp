@@ -36,11 +36,10 @@ namespace vcpkg
             get_registry_string(HKEY_CURRENT_USER, "SOFTWARE\\Microsoft\\DeveloperTools", "deviceid");
         if (auto registry_value = maybe_registry_value.get())
         {
-            auto device_id = *registry_value;
+            auto& device_id = *registry_value;
             return validate_device_id(device_id) ? device_id : std::string{};
         }
 
-        // vcpkg::generate_random_UUID() generates a compliant UUID
         auto new_device_id = Strings::ascii_to_lowercase(vcpkg::generate_random_UUID());
         const auto as_utf16 = Strings::to_utf16(new_device_id);
 

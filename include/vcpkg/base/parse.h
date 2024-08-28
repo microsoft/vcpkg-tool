@@ -61,7 +61,7 @@ namespace vcpkg
 
         static constexpr bool is_hex_digit(char32_t ch)
         {
-            return is_ascii_digit(ch) || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F');
+            return is_hex_digit_lower(ch) || (ch >= 'A' && ch <= 'F');
         }
         static constexpr bool is_word_char(char32_t ch) { return is_alphanum(ch) || ch == '_'; }
 
