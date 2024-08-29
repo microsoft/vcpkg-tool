@@ -169,7 +169,6 @@ namespace vcpkg
                 {
                     msg::println(Color::none, LocalizedString().append_indent().append_raw(spec.to_string()));
                 }
-                Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
             if (!no_control_file.empty())
@@ -179,10 +178,16 @@ namespace vcpkg
                 {
                     msg::println(Color::none, LocalizedString().append_indent().append_raw(spec.to_string()));
                 }
-                Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
-            if (to_upgrade.empty()) Checks::exit_success(VCPKG_LINE_INFO);
+            if (!not_installed.empty() || !no_control_file.empty())
+            {
+                Checks::exit_fail(VCPKG_LINE_INFO);
+            }
+            else if (to_upgrade.empty())
+            {
+                Checks::exit_success(VCPKG_LINE_INFO);
+            }
 
             action_plan =
                 create_upgrade_plan(provider, var_provider, to_upgrade, status_db, create_upgrade_plan_options);
