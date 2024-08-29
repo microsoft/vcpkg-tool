@@ -237,35 +237,38 @@ namespace vcpkg
                 for (auto&& ports_dir : m_overlay_ports)
                 {
                     // Try loading individual port
-                    if (Paragraphs::is_port_directory(m_fs, ports_dir))
+                    auto maybe_scfl = Paragraphs::try_load_port(m_fs, PortLocation{ports_dir}).maybe_scfl;
+                    if (auto scfl = maybe_scfl.get())
                     {
-                        auto maybe_scfl =
-                            Paragraphs::try_load_port_required(m_fs, port_name, PortLocation{ports_dir}).maybe_scfl;
-                        if (auto scfl = maybe_scfl.get())
+                        auto maybe_source_control_file = scfl->source_control_file.get();
+                        if (maybe_source_control_file)
                         {
-                            if (scfl->to_name() == port_name)
+                            if (maybe_source_control_file->to_name() == port_name)
                             {
                                 return std::move(*scfl);
                             }
-                        }
-                        else
-                        {
-                            print_error_message(maybe_scfl.error());
-                            msg::println();
-                            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
+
+                            // the directory is a port, but not the one we're looking for
+                            continue;
                         }
 
-                        continue;
+                        // the directory was not a port in the first place
+                    }
+                    else
+                    {
+                        print_error_message(maybe_scfl.error());
+                        msg::println();
+                        Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
                     }
 
                     auto ports_spec = ports_dir / port_name;
-                    if (Paragraphs::is_port_directory(m_fs, ports_spec))
+                    auto found_scfl = Paragraphs::try_load_port(m_fs, PortLocation{ports_spec}).maybe_scfl;
+                    if (auto scfl = found_scfl.get())
                     {
-                        auto found_scfl =
-                            Paragraphs::try_load_port_required(m_fs, port_name, PortLocation{ports_spec}).maybe_scfl;
-                        if (auto scfl = found_scfl.get())
+                        auto maybe_source_control_file = scfl->source_control_file.get();
+                        if (maybe_source_control_file)
                         {
-                            auto& scfl_name = scfl->to_name();
+                            auto& scfl_name = maybe_source_control_file->to_name();
                             if (scfl_name == port_name)
                             {
                                 return std::move(*scfl);
@@ -279,12 +282,12 @@ namespace vcpkg
                                                                        msg::package_name = port_name,
                                                                        msg::actual = scfl_name));
                         }
-                        else
-                        {
-                            print_error_message(found_scfl.error());
-                            msg::println();
-                            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
-                        }
+                    }
+                    else
+                    {
+                        print_error_message(found_scfl.error());
+                        msg::println();
+                        Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
                     }
                 }
                 return nullopt;
@@ -309,27 +312,29 @@ namespace vcpkg
                 {
                     auto&& ports_dir = *first;
                     // Try loading individual port
-                    if (Paragraphs::is_port_directory(m_fs, ports_dir))
+                    auto maybe_scfl =
+                        Paragraphs::try_load_port(m_fs, PortLocation{ports_dir}).maybe_scfl;
+                    if (auto scfl = maybe_scfl.get())
                     {
-                        auto maybe_scfl =
-                            Paragraphs::try_load_port_required(m_fs, ports_dir.filename(), PortLocation{ports_dir})
-                                .maybe_scfl;
-                        if (auto scfl = maybe_scfl.get())
+                        auto maybe_source_control_file = scfl->source_control_file.get();
+                        if (maybe_source_control_file)
                         {
-                            // copy name before moving *scfl
-                            auto name = scfl->to_name();
+                            // copy name before moving *scfl. Note that this doesn't attempt to check that the name
+                            // matches the directory name because load_port does not do that above
+                            auto name = maybe_source_control_file->to_name();
                             auto it = m_overlay_cache.emplace(std::move(name), std::move(*scfl)).first;
                             Checks::check_exit(VCPKG_LINE_INFO, it->second.get());
                             out.emplace(it->first, it->second.get());
-                        }
-                        else
-                        {
-                            print_error_message(maybe_scfl.error());
-                            msg::println();
-                            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
+                            continue;
                         }
 
-                        continue;
+                        // ports_dir wasn't a port, try to treat it as a directory of ports, below
+                    }
+                    else
+                    {
+                        print_error_message(maybe_scfl.error());
+                        msg::println();
+                        Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
                     }
 
                     // Try loading all ports inside ports_dir

@@ -24,8 +24,6 @@ namespace vcpkg::Paragraphs
 
     ExpectedL<std::vector<Paragraph>> parse_paragraphs(StringView str, StringView origin);
 
-    bool is_port_directory(const ReadOnlyFilesystem& fs, const Path& maybe_directory);
-
     struct PortLoadResult
     {
         ExpectedL<SourceControlFileAndLocation> maybe_scfl;
@@ -35,7 +33,7 @@ namespace vcpkg::Paragraphs
     // If an error occurs, the Expected will be in the error state.
     // Otherwise, if the port is known, the maybe_scfl.get()->source_control_file contains the loaded port information.
     // Otherwise, maybe_scfl.get()->source_control_file is nullptr.
-    PortLoadResult try_load_port(const ReadOnlyFilesystem& fs, StringView port_name, const PortLocation& port_location);
+    PortLoadResult try_load_port(const ReadOnlyFilesystem& fs, const PortLocation& port_location);
     // Identical to try_load_port, but the port unknown condition is mapped to an error.
     PortLoadResult try_load_port_required(const ReadOnlyFilesystem& fs,
                                           StringView port_name,

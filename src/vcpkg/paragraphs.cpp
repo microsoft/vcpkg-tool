@@ -352,12 +352,6 @@ namespace vcpkg::Paragraphs
         return PghParser(str, origin).get_paragraphs();
     }
 
-    bool is_port_directory(const ReadOnlyFilesystem& fs, const Path& maybe_directory)
-    {
-        return fs.exists(maybe_directory / "CONTROL", IgnoreErrors{}) ||
-               fs.exists(maybe_directory / "vcpkg.json", IgnoreErrors{});
-    }
-
     ExpectedL<std::unique_ptr<SourceControlFile>> try_load_project_manifest_text(StringView text,
                                                                                  StringView control_path,
                                                                                  MessageSink& warning_sink)
@@ -386,7 +380,7 @@ namespace vcpkg::Paragraphs
         });
     }
 
-    PortLoadResult try_load_port(const ReadOnlyFilesystem& fs, StringView port_name, const PortLocation& port_location)
+    PortLoadResult try_load_port(const ReadOnlyFilesystem& fs, const PortLocation& port_location)
     {
         StatsTimer timer(g_load_ports_stats);
 
@@ -441,34 +435,34 @@ namespace vcpkg::Paragraphs
                                   std::string{}};
         }
 
-        if (fs.exists(port_location.port_directory, IgnoreErrors{}))
-        {
-            return PortLoadResult{LocalizedString::from_raw(port_location.port_directory)
-                                      .append_raw(": ")
-                                      .append_raw(ErrorPrefix)
-                                      .append(msgPortMissingManifest2, msg::package_name = port_name),
-                                  std::string{}};
-        }
-
-        return PortLoadResult{LocalizedString::from_raw(port_location.port_directory)
-                                  .append_raw(": ")
-                                  .append_raw(ErrorPrefix)
-                                  .append(msgPortDoesNotExist, msg::package_name = port_name),
-                              std::string{}};
+        return PortLoadResult{SourceControlFileAndLocation{}, std::string{}};
     }
 
     PortLoadResult try_load_port_required(const ReadOnlyFilesystem& fs,
                                           StringView port_name,
                                           const PortLocation& port_location)
     {
-        auto load_result = try_load_port(fs, port_name, port_location);
+        auto load_result = try_load_port(fs, port_location);
         auto maybe_res = load_result.maybe_scfl.get();
         if (maybe_res)
         {
             auto res = maybe_res->source_control_file.get();
             if (!res)
             {
-                load_result.maybe_scfl = msg::format_error(msgPortDoesNotExist, msg::package_name = port_name);
+                if (fs.exists(port_location.port_directory, IgnoreErrors{}))
+                {
+                    load_result.maybe_scfl = LocalizedString::from_raw(port_location.port_directory)
+                                                 .append_raw(": ")
+                                                 .append_raw(ErrorPrefix)
+                                                 .append(msgPortMissingManifest2, msg::package_name = port_name);
+                }
+                else
+                {
+                    load_result.maybe_scfl = LocalizedString::from_raw(port_location.port_directory)
+                                                 .append_raw(": ")
+                                                 .append_raw(ErrorPrefix)
+                                                 .append(msgPortDoesNotExist, msg::package_name = port_name);
+                }
             }
         }
 
