@@ -149,7 +149,7 @@ namespace vcpkg
                         return msg::format_error(msgPortDoesNotExist, msg::package_name = version_spec.port_name);
                     }
 
-                    auto maybe_scfl = ent->get()->try_load_port(version_spec.version);
+                    auto maybe_scfl = ent->get()->try_load_port_required(version_spec.version);
                     if (auto scfl = maybe_scfl.get())
                     {
                         auto scf_vspec = scfl->to_version_spec();

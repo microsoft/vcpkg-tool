@@ -530,7 +530,7 @@ namespace vcpkg::Paragraphs
             const auto port_entry = maybe_port_entry.get();
             if (!port_entry) continue;  // port is attributed to this registry, but loading it failed
             if (!*port_entry) continue; // port is attributed to this registry, but doesn't exist in this registry
-            auto maybe_scfl = (*port_entry)->try_load_port(*baseline_version);
+            auto maybe_scfl = (*port_entry)->try_load_port_required(*baseline_version);
             if (const auto scfl = maybe_scfl.get())
             {
                 ret.paragraphs.push_back(std::move(*scfl));
