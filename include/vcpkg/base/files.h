@@ -169,6 +169,11 @@ namespace vcpkg
         std::vector<Path> get_directories_recursive(const Path& dir, LineInfo li) const;
         ExpectedL<std::vector<Path>> try_get_directories_recursive(const Path& dir) const;
 
+        virtual std::vector<Path> get_directories_recursive_lexically_proximate(const Path& dir,
+                                                                                std::error_code& ec) const = 0;
+        std::vector<Path> get_directories_recursive_lexically_proximate(const Path& dir, LineInfo li) const;
+        ExpectedL<std::vector<Path>> try_get_directories_recursive_lexically_proximate(const Path& dir) const;
+
         virtual std::vector<Path> get_directories_non_recursive(const Path& dir, std::error_code& ec) const = 0;
         std::vector<Path> get_directories_non_recursive(const Path& dir, LineInfo li) const;
         ExpectedL<std::vector<Path>> try_get_directories_non_recursive(const Path& dir) const;
@@ -363,19 +368,19 @@ namespace vcpkg
 
     struct NotExtensionCaseSensitive
     {
-        StringView ext;
+        StringLiteral ext;
         bool operator()(const Path& target) const;
     };
 
     struct NotExtensionCaseInsensitive
     {
-        StringView ext;
+        StringLiteral ext;
         bool operator()(const Path& target) const;
     };
 
     struct NotExtensionsCaseInsensitive
     {
-        std::vector<std::string> exts;
+        View<StringLiteral> exts;
         bool operator()(const Path& target) const;
     };
 

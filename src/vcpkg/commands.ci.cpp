@@ -226,7 +226,6 @@ namespace
                 }
                 else
                 {
-                    it->build_options = backcompat_prohibiting_package_options;
                     to_keep.insert(it->package_dependencies.begin(), it->package_dependencies.end());
                 }
             }
@@ -249,7 +248,7 @@ namespace
                                   : SortedVector<std::string>(Strings::split(it_exclusions->second, ',')));
     }
 
-    void print_regressions(const std::vector<SpecSummary>& results,
+    bool print_regressions(const std::vector<SpecSummary>& results,
                            const std::map<PackageSpec, BuildResult>& known,
                            const CiBaselineData& cidata,
                            const std::string& ci_baseline_file_name,
@@ -286,12 +285,12 @@ namespace
             }
         }
 
-        if (!has_error)
+        if (has_error)
         {
-            return;
+            msg::write_unlocalized_text_to_stderr(Color::none, output);
         }
-        auto output_data = output.extract_data();
-        fwrite(output_data.data(), 1, output_data.size(), stderr);
+
+        return has_error;
     }
 
 } // unnamed namespace
@@ -318,6 +317,19 @@ namespace vcpkg
         msg::println_warning(msgInternalCICommand);
         const ParsedArguments options = args.parse_arguments(CommandCiMetadata);
         const auto& settings = options.settings;
+
+        static constexpr BuildPackageOptions build_options{
+            BuildMissing::Yes,
+            AllowDownloads::Yes,
+            OnlyDownloads::No,
+            CleanBuildtrees::Yes,
+            CleanPackages::Yes,
+            CleanDownloads::No,
+            DownloadTool::Builtin,
+            BackcompatFeatures::Prohibit,
+            PrintUsage::Yes,
+            KeepGoing::Yes,
+        };
 
         ExclusionsMap exclusions_map;
         parse_exclusions(settings, SwitchExclude, target_triplet, exclusions_map);
@@ -364,8 +376,8 @@ namespace vcpkg
             build_logs_recorder_storage ? *(build_logs_recorder_storage.get()) : null_build_logs_recorder();
 
         auto registry_set = paths.make_registry_set();
-        PathsPortFileProvider provider(
-            filesystem, *registry_set, make_overlay_provider(filesystem, paths.original_cwd, paths.overlay_ports));
+        PathsPortFileProvider provider(*registry_set,
+                                       make_overlay_provider(filesystem, paths.original_cwd, paths.overlay_ports));
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
 
@@ -379,8 +391,6 @@ namespace vcpkg
                 InternalFeatureSet{FeatureNameCore.to_string(), FeatureNameDefault.to_string()});
         }
 
-        CreateInstallPlanOptions serialize_options(host_triplet, paths.packages(), UnsupportedPortAction::Warn);
-
         struct RandomizerInstance : GraphRandomizer
         {
             virtual int random(int i) override
@@ -392,17 +402,20 @@ namespace vcpkg
 
             std::random_device e;
         } randomizer_instance;
-
+        GraphRandomizer* randomizer = nullptr;
         if (Util::Sets::contains(options.switches, SwitchXRandomize))
         {
-            serialize_options.randomizer = &randomizer_instance;
+            randomizer = &randomizer_instance;
         }
 
-        auto action_plan = compute_full_plan(paths, provider, var_provider, all_default_full_specs, serialize_options);
+        CreateInstallPlanOptions create_install_plan_options(
+            randomizer, host_triplet, paths.packages(), UnsupportedPortAction::Warn, UseHeadVersion::No, Editable::No);
+        auto action_plan =
+            compute_full_plan(paths, provider, var_provider, all_default_full_specs, create_install_plan_options);
         auto binary_cache = BinaryCache::make(args, paths, out_sink).value_or_exit(VCPKG_LINE_INFO);
         const auto precheck_results = binary_cache.precheck(action_plan.install_actions);
         auto split_specs = compute_action_statuses(ExclusionPredicate{&exclusions_map}, precheck_results, action_plan);
-        LocalizedString regressions;
+        LocalizedString not_supported_regressions;
         {
             std::string msg;
             for (const auto& spec : all_default_full_specs)
@@ -416,7 +429,7 @@ namespace vcpkg
 
                     if (cidata.expected_failures.contains(spec.package_spec))
                     {
-                        regressions
+                        not_supported_regressions
                             .append(supp ? msgCiBaselineUnexpectedFailCascade : msgCiBaselineUnexpectedFail,
                                     msg::spec = spec.package_spec,
                                     msg::triplet = spec.package_spec.triplet())
@@ -478,11 +491,13 @@ namespace vcpkg
 
         if (is_dry_run)
         {
-            print_plan(action_plan, true, paths.builtin_ports_directory());
-            if (!regressions.empty())
+            print_plan(action_plan, paths.builtin_ports_directory());
+            if (!not_supported_regressions.empty())
             {
-                msg::println(Color::error, msgCiBaselineRegressionHeader);
-                msg::print(Color::error, regressions);
+                msg::write_unlocalized_text_to_stderr(
+                    Color::error,
+                    msg::format(msgCiBaselineRegressionHeader).append_raw('\n').append_raw(not_supported_regressions));
+                Checks::exit_fail(VCPKG_LINE_INFO);
             }
         }
         else
@@ -503,8 +518,9 @@ namespace vcpkg
 
             install_preclear_packages(paths, action_plan);
             binary_cache.fetch(action_plan.install_actions);
+
             auto summary = install_execute_plan(
-                args, action_plan, KeepGoing::YES, paths, status_db, binary_cache, build_logs_recorder);
+                args, paths, host_triplet, build_options, action_plan, status_db, binary_cache, build_logs_recorder);
 
             for (auto&& result : summary.results)
             {
@@ -515,14 +531,14 @@ namespace vcpkg
                            .append(msgTripletLabel)
                            .append_raw(' ')
                            .append_raw(target_triplet)
-                           .append_raw('\n'));
-            summary.print();
-            print_regressions(summary.results,
-                              split_specs->known,
-                              cidata,
-                              baseline_iter->second,
-                              regressions,
-                              allow_unexpected_passing);
+                           .append_raw('\n')
+                           .append(summary.format()));
+            const bool any_regressions = print_regressions(summary.results,
+                                                           split_specs->known,
+                                                           cidata,
+                                                           baseline_iter->second,
+                                                           not_supported_regressions,
+                                                           allow_unexpected_passing);
 
             auto it_xunit = settings.find(SwitchXXUnit);
             if (it_xunit != settings.end())
@@ -557,6 +573,11 @@ namespace vcpkg
 
                 filesystem.write_contents(
                     it_xunit->second, xunitTestResults.build_xml(target_triplet), VCPKG_LINE_INFO);
+            }
+
+            if (any_regressions)
+            {
+                Checks::exit_fail(VCPKG_LINE_INFO);
             }
         }
 

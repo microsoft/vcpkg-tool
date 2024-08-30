@@ -8,6 +8,8 @@
 
 #include <vcpkg/documentation.h>
 
+#include <math.h>
+
 #include <atomic>
 #include <type_traits>
 
@@ -1093,12 +1095,13 @@ namespace vcpkg::Json
 
         if (sv.size() < 5)
         {
+            // see https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file#naming-conventions
             if (sv == "prn" || sv == "aux" || sv == "nul" || sv == "con" || sv == FeatureNameCore)
             {
                 return false; // we're a reserved identifier
             }
             if (sv.size() == 4 && (Strings::starts_with(sv, "lpt") || Strings::starts_with(sv, "com")) &&
-                sv[3] >= '1' && sv[3] <= '9')
+                sv[3] >= '0' && sv[3] <= '9')
             {
                 return false; // we're a reserved identifier
             }
@@ -1492,6 +1495,22 @@ namespace vcpkg::Json
                                  .append(type)
                                  .append_raw("): ")
                                  .append_raw(msg));
+    }
+
+    LocalizedString Reader::join() const
+    {
+        LocalizedString res;
+        for (const auto& e : m_errors)
+        {
+            if (!res.empty()) res.append_raw("\n");
+            res.append(e);
+        }
+        for (const auto& w : m_warnings)
+        {
+            if (!res.empty()) res.append_raw("\n");
+            res.append(w);
+        }
+        return res;
     }
 
     std::string Reader::path() const noexcept

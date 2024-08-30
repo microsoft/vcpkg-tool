@@ -236,6 +236,26 @@ TEST_CASE ("api_stable_format(sv,append_f)", "[strings]")
     REQUIRE(*res.get() == "123hello456");
 }
 
+TEST_CASE ("lex compare less", "[strings]")
+{
+    REQUIRE(Strings::case_insensitive_ascii_less("a", "b"));
+    REQUIRE(Strings::case_insensitive_ascii_less("a", "B"));
+    REQUIRE(Strings::case_insensitive_ascii_less("A", "b"));
+    REQUIRE(Strings::case_insensitive_ascii_less("A", "B"));
+
+    REQUIRE_FALSE(Strings::case_insensitive_ascii_less("b", "a"));
+    REQUIRE_FALSE(Strings::case_insensitive_ascii_less("B", "a"));
+    REQUIRE_FALSE(Strings::case_insensitive_ascii_less("b", "A"));
+    REQUIRE_FALSE(Strings::case_insensitive_ascii_less("B", "A"));
+
+    REQUIRE_FALSE(Strings::case_insensitive_ascii_less("b", "b"));
+    REQUIRE_FALSE(Strings::case_insensitive_ascii_less("b", "B"));
+    REQUIRE_FALSE(Strings::case_insensitive_ascii_less("B", "b"));
+
+    REQUIRE(Strings::case_insensitive_ascii_less("a", "aa"));
+    REQUIRE_FALSE(Strings::case_insensitive_ascii_less("aa", "a"));
+}
+
 #if defined(_WIN32)
 TEST_CASE ("ascii to utf16", "[utf16]")
 {

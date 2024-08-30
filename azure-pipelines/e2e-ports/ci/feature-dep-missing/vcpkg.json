@@ -1,0 +1,12 @@
+{
+  "name": "feature-dep-missing",
+  "version": "1",
+  "features": {
+    "dep-missing": {
+      "description": "dependency does not exist",
+      "dependencies": [
+        "this-dependency-does-not-exist"
+      ]
+    }
+  }
+}

@@ -37,7 +37,7 @@ namespace vcpkg
         VcpkgDefaultBinaryCache,
         VcpkgNugetRepository,
         VersioningErrorBaseline,
-        VersioningErrorVersion,
+        VersioningErrorVersion, // no longer used
         X_VcpkgRegistriesCache,
         X_WriteNugetPackagesConfig,
         COUNT // always keep COUNT last

@@ -73,7 +73,7 @@ if ([string]::IsNullOrEmpty($VcpkgExe))
 
 $VcpkgItem = Get-Item $VcpkgExe
 $VcpkgExe = $VcpkgItem.FullName
-$VcpkgPs1 = Join-Path $VcpkgItem.Directory "vcpkg.ps1"
+$VcpkgPs1 = Join-Path $VcpkgItem.Directory "vcpkg-shell.ps1"
 $TestScriptAssetCacheExe = Join-Path $VcpkgItem.Directory "test-script-asset-cache"
 
 [Array]$AllTests = Get-ChildItem $PSScriptRoot/end-to-end-tests-dir/*.ps1
@@ -97,7 +97,7 @@ $envvars_clear = @(
     'VCPKG_ROOT',
     'X_VCPKG_ASSET_SOURCES'
 )
-$envvars = $envvars_clear + @("VCPKG_DOWNLOADS", "X_VCPKG_REGISTRIES_CACHE", "PATH")
+$envvars = $envvars_clear + @("VCPKG_DOWNLOADS", "X_VCPKG_REGISTRIES_CACHE", "PATH", "GITHUB_ACTIONS")
 
 foreach ($Test in $AllTests)
 {
