@@ -46,8 +46,19 @@ namespace vcpkg
         auto maybe_scfl = m_overlay->get_control_file(spec);
         if (auto scfl = maybe_scfl.get())
         {
-            return *scfl;
+            if (scfl->source_control_file)
+            {
+                // overlay port match
+                return *scfl;
+            }
+
+            // use non overlay path below
         }
+        else
+        {
+            return std::move(maybe_scfl);
+        }
+
         auto maybe_baseline = m_baseline->get_baseline_version(spec);
         if (auto baseline = maybe_baseline.get())
         {
@@ -231,7 +242,7 @@ namespace vcpkg
             OverlayProviderImpl(const OverlayProviderImpl&) = delete;
             OverlayProviderImpl& operator=(const OverlayProviderImpl&) = delete;
 
-            Optional<SourceControlFileAndLocation> load_port(StringView port_name) const
+            ExpectedL<SourceControlFileAndLocation> load_port(StringView port_name) const
             {
                 auto s_port_name = port_name.to_string();
 
@@ -257,9 +268,7 @@ namespace vcpkg
                     }
                     else
                     {
-                        print_error_message(maybe_scfl.error());
-                        msg::println();
-                        Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
+                        return std::move(maybe_scfl);
                     }
 
                     auto ports_spec = ports_dir / port_name;
@@ -275,33 +284,33 @@ namespace vcpkg
                                 return std::move(*scfl);
                             }
 
-                            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                                           LocalizedString::from_raw(ports_spec)
-                                                               .append_raw(": ")
-                                                               .append_raw(ErrorPrefix)
-                                                               .append(msgMismatchedNames,
-                                                                       msg::package_name = port_name,
-                                                                       msg::actual = scfl_name));
+                            return LocalizedString::from_raw(ports_spec)
+                                .append_raw(": ")
+                                .append_raw(ErrorPrefix)
+                                .append(msgMismatchedNames, msg::package_name = port_name, msg::actual = scfl_name);
                         }
                     }
                     else
                     {
-                        print_error_message(found_scfl.error());
-                        msg::println();
-                        Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
+                        return std::move(found_scfl);
                     }
                 }
-                return nullopt;
+
+                return SourceControlFileAndLocation{nullptr, Path{}, std::string{}};
             }
 
-            virtual Optional<const SourceControlFileAndLocation&> get_control_file(StringView port_name) const override
+            virtual ExpectedL<const SourceControlFileAndLocation&> get_control_file(StringView port_name) const override
             {
                 auto it = m_overlay_cache.find(port_name);
                 if (it == m_overlay_cache.end())
                 {
                     it = m_overlay_cache.emplace(port_name.to_string(), load_port(port_name)).first;
                 }
-                return it->second;
+
+                return it->second.map(
+                    [](const SourceControlFileAndLocation& scfl) -> const SourceControlFileAndLocation& {
+                        return scfl;
+                    });
             }
 
             virtual void load_all_control_files(
@@ -313,8 +322,7 @@ namespace vcpkg
                 {
                     auto&& ports_dir = *first;
                     // Try loading individual port
-                    auto maybe_scfl =
-                        Paragraphs::try_load_port(m_fs, PortLocation{ports_dir}).maybe_scfl;
+                    auto maybe_scfl = Paragraphs::try_load_port(m_fs, PortLocation{ports_dir}).maybe_scfl;
                     if (auto scfl = maybe_scfl.get())
                     {
                         auto maybe_source_control_file = scfl->source_control_file.get();
@@ -364,7 +372,7 @@ namespace vcpkg
         private:
             const ReadOnlyFilesystem& m_fs;
             const std::vector<Path> m_overlay_ports;
-            mutable std::map<std::string, Optional<SourceControlFileAndLocation>, std::less<>> m_overlay_cache;
+            mutable std::map<std::string, ExpectedL<SourceControlFileAndLocation>, std::less<>> m_overlay_cache;
         };
 
         struct ManifestProviderImpl : IFullOverlayProvider
@@ -379,7 +387,7 @@ namespace vcpkg
             {
             }
 
-            virtual Optional<const SourceControlFileAndLocation&> get_control_file(StringView port_name) const override
+            virtual ExpectedL<const SourceControlFileAndLocation&> get_control_file(StringView port_name) const override
             {
                 if (port_name == m_manifest_scf_and_location.to_name())
                 {

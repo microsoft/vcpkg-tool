@@ -171,12 +171,12 @@ struct MockOverlayProvider : IOverlayProvider
     MockOverlayProvider(const MockOverlayProvider&) = delete;
     MockOverlayProvider& operator=(const MockOverlayProvider&) = delete;
 
-    virtual Optional<const SourceControlFileAndLocation&> get_control_file(StringView name) const override
+    virtual ExpectedL<const SourceControlFileAndLocation&> get_control_file(StringView name) const override
     {
         auto it = mappings.find(name);
         if (it == mappings.end())
         {
-            return nullopt;
+            return empty;
         }
 
         return it->second;
@@ -203,6 +203,7 @@ struct MockOverlayProvider : IOverlayProvider
     SourceControlFileAndLocation& emplace(const std::string& name) { return emplace(name, {"1", 0}); }
 
 private:
+    const SourceControlFileAndLocation empty;
     std::map<std::string, SourceControlFileAndLocation, std::less<>> mappings;
 };
 

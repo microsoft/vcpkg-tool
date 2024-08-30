@@ -1640,12 +1640,12 @@ namespace vcpkg
                 return nullopt;
             }
 
-            const auto maybe_overlay = m_o_provider.get_control_file(spec.name());
-            if (auto p_overlay = maybe_overlay.get())
+            const auto& maybe_overlay = m_o_provider.get_control_file(spec.name()).value_or_exit(VCPKG_LINE_INFO);
+            if (maybe_overlay.source_control_file)
             {
                 it = m_graph.emplace(spec, PackageNodeData{}).first;
                 it->second.overlay_or_override = true;
-                it->second.scfl = p_overlay;
+                it->second.scfl = &maybe_overlay;
             }
             else
             {

@@ -55,7 +55,13 @@ namespace vcpkg
     struct IOverlayProvider
     {
         virtual ~IOverlayProvider() = default;
-        virtual Optional<const SourceControlFileAndLocation&> get_control_file(StringView port_name) const = 0;
+
+        // If an error occurs, the Expected will be in the error state.
+        // Otherwise, if the port is unknown, the reference will refer to a SourceControlFileAndLocation with a nullptr
+        // source_control_file.
+        // Otherwise, the reference will refer to a SourceControlFileAndLocation with the loaded
+        // port information.
+        virtual ExpectedL<const SourceControlFileAndLocation&> get_control_file(StringView port_name) const = 0;
     };
 
     struct IFullOverlayProvider : IOverlayProvider
