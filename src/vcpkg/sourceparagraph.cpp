@@ -1339,6 +1339,8 @@ namespace vcpkg
         {
             ret.feature_paragraphs.push_back(std::make_unique<FeatureParagraph>(*feat_ptr));
         }
+
+        ret.extra_features_info = extra_features_info;
         return ret;
     }
 

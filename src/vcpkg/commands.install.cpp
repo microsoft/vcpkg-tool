@@ -54,7 +54,7 @@ namespace vcpkg
                            fs.exists(source_dir, IgnoreErrors{}),
                            Strings::concat("Source directory ", source_dir, "does not exist"));
         auto files = fs.get_files_recursive(source_dir, VCPKG_LINE_INFO);
-        Util::erase_remove_if(files, [](Path& path) { return path.filename() == ".DS_Store"; });
+        Util::erase_remove_if(files, [](Path& path) { return path.filename() == FileDotDsStore; });
         install_files_and_write_listfile(fs, source_dir, files, destination_dir);
     }
     void install_files_and_write_listfile(const Filesystem& fs,
@@ -198,7 +198,7 @@ namespace vcpkg
     static SortedVector<std::string> build_list_of_package_files(const ReadOnlyFilesystem& fs, const Path& package_dir)
     {
         std::vector<Path> package_file_paths = fs.get_files_recursive(package_dir, IgnoreErrors{});
-        Util::erase_remove_if(package_file_paths, [](Path& path) { return path.filename() == ".DS_Store"; });
+        Util::erase_remove_if(package_file_paths, [](Path& path) { return path.filename() == FileDotDsStore; });
         const size_t package_remove_char_count = package_dir.native().size() + 1; // +1 for the slash
         auto package_files = Util::fmap(package_file_paths, [package_remove_char_count](const Path& target) {
             return std::string(target.generic_u8string(), package_remove_char_count);
@@ -231,14 +231,14 @@ namespace vcpkg
 
         struct intersection_compare
         {
-            // The VS2015 standard library requires comparison operators of T and U
-            // to also support comparison of T and T, and of U and U, due to debug checks.
-#if _MSC_VER <= 1910
-            bool operator()(const std::string& lhs, const std::string& rhs) const { return lhs < rhs; }
-            bool operator()(const file_pack& lhs, const file_pack& rhs) const { return lhs.first < rhs.first; }
-#endif
-            bool operator()(const std::string& lhs, const file_pack& rhs) const { return lhs < rhs.first; }
-            bool operator()(const file_pack& lhs, const std::string& rhs) const { return lhs.first < rhs; }
+            bool operator()(const std::string& lhs, const file_pack& rhs) const
+            {
+                return Strings::case_insensitive_ascii_less(lhs, rhs.first);
+            }
+            bool operator()(const file_pack& lhs, const std::string& rhs) const
+            {
+                return Strings::case_insensitive_ascii_less(lhs.first, rhs);
+            }
         };
 
         std::vector<file_pack> intersection;
@@ -437,14 +437,16 @@ namespace vcpkg
             .append_raw(result.timing.to_string());
     }
 
-    void InstallSummary::print() const
+    LocalizedString InstallSummary::format() const
     {
-        msg::println(msgResultsHeader);
+        LocalizedString to_print;
+        to_print.append(msgResultsHeader).append_raw('\n');
 
         for (const SpecSummary& result : this->results)
         {
-            msg::println(format_result_row(result));
+            to_print.append(format_result_row(result)).append_raw('\n');
         }
+        to_print.append_raw('\n');
 
         std::map<Triplet, BuildResultCounts> summary;
         for (const SpecSummary& r : this->results)
@@ -452,27 +454,27 @@ namespace vcpkg
             summary[r.get_spec().triplet()].increment(r.build_result.value_or_exit(VCPKG_LINE_INFO).code);
         }
 
-        msg::println();
-
         for (auto&& entry : summary)
         {
-            entry.second.println(entry.first);
+            to_print.append(entry.second.format(entry.first));
         }
+        return to_print;
     }
 
     void InstallSummary::print_failed() const
     {
-        msg::println();
-        msg::println(msgResultsHeader);
+        auto output = LocalizedString::from_raw("\n");
+        output.append(msgResultsHeader).append_raw('\n');
 
         for (const SpecSummary& result : this->results)
         {
             if (result.build_result.value_or_exit(VCPKG_LINE_INFO).code != BuildResult::Succeeded)
             {
-                msg::println(format_result_row(result));
+                output.append(format_result_row(result)).append_raw('\n');
             }
         }
-        msg::println();
+        output.append_raw('\n');
+        msg::print(output);
     }
 
     bool InstallSummary::failed() const
@@ -1150,9 +1152,13 @@ namespace vcpkg
                 SourceControlFile::parse_project_manifest_object(manifest->path, manifest->manifest, out_sink);
             if (!maybe_manifest_scf)
             {
-                print_error_message(maybe_manifest_scf.error());
-                msg::println();
-                msg::println(msgExtendedDocumentationAtUrl, msg::url = docs::manifests_url);
+                msg::println(Color::error,
+                             std::move(maybe_manifest_scf)
+                                 .error()
+                                 .append_raw('\n')
+                                 .append_raw(NotePrefix)
+                                 .append(msgExtendedDocumentationAtUrl, msg::url = docs::manifests_url)
+                                 .append_raw('\n'));
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
@@ -1231,7 +1237,7 @@ namespace vcpkg
 
             const bool add_builtin_ports_directory_as_overlay =
                 registry_set->is_default_builtin_registry() && !paths.use_git_default_registry();
-            auto verprovider = make_versioned_portfile_provider(fs, *registry_set);
+            auto verprovider = make_versioned_portfile_provider(*registry_set);
             auto baseprovider = make_baseline_provider(*registry_set);
 
             std::vector<std::string> extended_overlay_ports;
@@ -1272,8 +1278,8 @@ namespace vcpkg
         }
 
         auto registry_set = paths.make_registry_set();
-        PathsPortFileProvider provider(
-            fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
+        PathsPortFileProvider provider(*registry_set,
+                                       make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
 
         const std::vector<FullPackageSpec> specs = Util::fmap(options.command_arguments, [&](const std::string& arg) {
             return check_and_get_full_package_spec(arg, default_triplet, paths.get_triplet_db())
@@ -1322,7 +1328,12 @@ namespace vcpkg
         }
 #endif // defined(_WIN32)
 
-        print_plan(action_plan, is_recursive, paths.builtin_ports_directory());
+        const auto formatted = print_plan(action_plan, paths.builtin_ports_directory());
+        if (!is_recursive && formatted.has_removals)
+        {
+            msg::println_warning(msgPackagesToRebuildSuggestRecurse);
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
 
         auto it_pkgsconfig = options.settings.find(SwitchXWriteNuGetPackagesConfig);
         if (it_pkgsconfig != options.settings.end())
@@ -1364,7 +1375,7 @@ namespace vcpkg
 
         if (keep_going == KeepGoing::Yes)
         {
-            summary.print();
+            msg::print(summary.format());
         }
 
         auto it_xunit = options.settings.find(SwitchXXUnit);

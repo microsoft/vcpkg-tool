@@ -13,19 +13,16 @@ using namespace vcpkg;
 
 namespace
 {
-    void print_name_only(StringView name)
+    std::string format_name_only(StringView name) { return fmt::format("\t- {:<15}\n", name); }
+
+    std::string format_name_and_version(StringView name, const Version& version)
     {
-        msg::write_unlocalized_text(Color::none, fmt::format("\t- {:<15}\n", name));
+        return fmt::format("\t- {:<15} {:<}\n", name, version);
     }
 
-    void print_name_and_version(StringView name, const Version& version)
+    std::string format_name_and_version_diff(StringView name, const VersionDiff& version_diff)
     {
-        msg::write_unlocalized_text(Color::none, fmt::format("\t- {:<15}{:<}\n", name, version));
-    }
-
-    void print_name_and_version_diff(StringView name, const VersionDiff& version_diff)
-    {
-        msg::write_unlocalized_text(Color::none, fmt::format("\t- {:<15}{:<}\n", name, version_diff));
+        return fmt::format("\t- {:<15} {:<}\n", name, version_diff);
     }
 
     std::vector<VersionSpec> read_ports_from_commit(const VcpkgPaths& paths, StringView git_commit_id)
@@ -181,46 +178,50 @@ namespace vcpkg
         const auto portsdiff =
             find_portsdiff(paths, git_commit_id_for_previous_snapshot, git_commit_id_for_current_snapshot);
         const auto& added_ports = portsdiff.added_ports;
+
+        LocalizedString print_msg;
+
         if (!added_ports.empty())
         {
-            msg::println(msgPortsAdded, msg::count = added_ports.size());
+            print_msg.append(msgPortsAdded, msg::count = added_ports.size()).append_raw('\n');
             for (auto&& added_port : added_ports)
             {
-                print_name_and_version(added_port.port_name, added_port.version);
+                print_msg.append_raw(format_name_and_version(added_port.port_name, added_port.version));
             }
 
-            msg::println();
+            print_msg.append_raw('\n');
         }
 
         const auto& removed_ports = portsdiff.removed_ports;
         if (!removed_ports.empty())
         {
-            msg::println(msgPortsRemoved, msg::count = removed_ports.size());
+            print_msg.append(msgPortsRemoved, msg::count = removed_ports.size()).append_raw('\n');
             for (auto&& removed_port : removed_ports)
             {
-                print_name_only(removed_port);
+                print_msg.append_raw(format_name_only(removed_port));
             }
 
-            msg::println();
+            print_msg.append_raw('\n');
         }
 
         const auto& updated_ports = portsdiff.updated_ports;
         if (!updated_ports.empty())
         {
-            msg::println(msgPortsUpdated, msg::count = updated_ports.size());
+            print_msg.append(msgPortsUpdated, msg::count = updated_ports.size()).append_raw('\n');
             for (auto&& updated_port : updated_ports)
             {
-                print_name_and_version_diff(updated_port.port_name, updated_port.version_diff);
+                print_msg.append_raw(format_name_and_version_diff(updated_port.port_name, updated_port.version_diff));
             }
 
-            msg::println();
+            print_msg.append_raw('\n');
         }
 
         if (added_ports.empty() && removed_ports.empty() && updated_ports.empty())
         {
-            msg::println(msgPortsNoDiff);
+            print_msg.append(msgPortsNoDiff).append_raw('\n');
         }
 
+        msg::print(print_msg);
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 } // namespace vcpkg

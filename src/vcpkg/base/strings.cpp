@@ -14,8 +14,6 @@
 #include <string>
 #include <vector>
 
-#include <fmt/compile.h>
-
 using namespace vcpkg;
 
 namespace vcpkg::Strings::details
@@ -106,6 +104,11 @@ namespace
         bool operator()(char a, char b) const noexcept { return tolower_char(a) == tolower_char(b); }
     } icase_eq;
 
+    constexpr struct
+    {
+        bool operator()(char a, char b) const noexcept { return tolower_char(a) < tolower_char(b); }
+    } icase_less;
+
 }
 
 #if defined(_WIN32)
@@ -173,6 +176,11 @@ bool Strings::case_insensitive_ascii_contains(StringView s, StringView pattern)
 bool Strings::case_insensitive_ascii_equals(StringView left, StringView right)
 {
     return std::equal(left.begin(), left.end(), right.begin(), right.end(), icase_eq);
+}
+
+bool Strings::case_insensitive_ascii_less(StringView left, StringView right)
+{
+    return std::lexicographical_compare(left.begin(), left.end(), right.begin(), right.end(), icase_less);
 }
 
 void Strings::inplace_ascii_to_lowercase(char* first, char* last) { std::transform(first, last, first, tolower_char); }

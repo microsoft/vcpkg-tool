@@ -19,16 +19,16 @@ namespace vcpkg::Util
     namespace Vectors
     {
         template<class Container, class T>
-        void append(std::vector<T>* augend, Container&& addend)
+        void append(std::vector<T>& augend, Container&& addend)
         {
             if constexpr (std::is_lvalue_reference_v<Container> || std::is_const_v<Container>)
             {
-                augend->insert(augend->end(), addend.begin(), addend.end());
+                augend.insert(augend.end(), addend.begin(), addend.end());
             }
             else
             {
-                augend->insert(
-                    augend->end(), std::make_move_iterator(addend.begin()), std::make_move_iterator(addend.end()));
+                augend.insert(
+                    augend.end(), std::make_move_iterator(addend.begin()), std::make_move_iterator(addend.end()));
             }
         }
         template<class Vec, class Key, class KeyEqual>
@@ -47,7 +47,11 @@ namespace vcpkg::Util
         template<class Vec, class Key>
         bool contains(const Vec& container, const Key& item)
         {
-            return std::find(container.begin(), container.end(), item) != container.end();
+            using std::begin;
+            using std::end;
+            const auto first = begin(container);
+            const auto last = end(container);
+            return std::find(first, last, item) != last;
         }
         template<class T>
         std::vector<T> concat(View<T> r1, View<T> r2)
@@ -213,7 +217,9 @@ namespace vcpkg::Util
     template<class Range, class Func>
     using FmapOut = std::decay_t<FmapRefOut<Range, Func>>;
 
-    template<class Range, class Func>
+    template<class Range,
+             class Func,
+             std::enable_if_t<std::is_lvalue_reference_v<Range> || std::is_const_v<Range>, int> = 0>
     std::vector<FmapOut<Range, Func>> fmap(Range&& xs, Func&& f)
     {
         std::vector<FmapOut<Range, Func>> ret;
@@ -222,6 +228,28 @@ namespace vcpkg::Util
         for (auto&& x : xs)
         {
             ret.emplace_back(f(x));
+        }
+
+        return ret;
+    }
+
+    template<class Range, class Func>
+    using FmapRefMovedOut = decltype(std::declval<Func&>()(std::move(*std::declval<Range>().begin())));
+
+    template<class Range, class Func>
+    using FmapMovedOut = std::decay_t<FmapRefMovedOut<Range, Func>>;
+
+    template<class Range,
+             class Func,
+             std::enable_if_t<!(std::is_lvalue_reference_v<Range> || std::is_const_v<Range>), int> = 0>
+    std::vector<FmapMovedOut<Range, Func>> fmap(Range&& xs, Func&& f)
+    {
+        std::vector<FmapMovedOut<Range, Func>> ret;
+        ret.reserve(xs.size());
+
+        for (auto&& x : xs)
+        {
+            ret.emplace_back(f(std::move(x)));
         }
 
         return ret;
@@ -343,7 +371,7 @@ namespace vcpkg::Util
     template<class ForwardIt1, class ForwardRange2>
     void search(ForwardIt1 first, ForwardIt1 last, const char*) = delete;
 
-    // 0th is the first occurence
+    // 0th is the first occurrence
     // so find_nth({1, 2, 1, 3, 1, 4}, 1, 2)
     // returns the 1 before the 4
     template<class InputIt, class V>
@@ -367,7 +395,7 @@ namespace vcpkg::Util
         return find_nth(begin(r), end(r), v, n);
     }
 
-    // 0th is the last occurence
+    // 0th is the last occurrence
     // so find_nth({1, 2, 1, 3, 1, 4}, 1, 2)
     // returns the 1 before the 2
     template<class R, class V>
@@ -458,6 +486,12 @@ namespace vcpkg::Util
     bool all_of(Range&& rng, Pred pred)
     {
         return std::all_of(rng.begin(), rng.end(), std::move(pred));
+    }
+
+    template<class Range, class Pred>
+    bool none_of(Range&& rng, Pred pred)
+    {
+        return std::none_of(rng.begin(), rng.end(), std::move(pred));
     }
 
     template<class Range, class Comp = std::less<>>

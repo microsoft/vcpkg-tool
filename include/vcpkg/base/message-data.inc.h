@@ -14,10 +14,6 @@ DECLARE_MESSAGE(AString, (), "", "a string")
 DECLARE_MESSAGE(ADateVersionString, (), "", "a date version string")
 DECLARE_MESSAGE(AddArtifactOnlyOne, (msg::command_line), "", "'{command_line}' can only add one artifact at a time.")
 DECLARE_MESSAGE(AddCommandFirstArg, (), "", "The first parameter to add must be 'artifact' or 'port'.")
-DECLARE_MESSAGE(AddFirstArgument,
-                (msg::command_line),
-                "",
-                "The first argument to '{command_line}' must be 'artifact' or 'port'.")
 DECLARE_MESSAGE(AddingCompletionEntry, (msg::path), "", "Adding vcpkg completion entry to {path}.")
 DECLARE_MESSAGE(AdditionalPackagesToExport,
                 (),
@@ -45,7 +41,6 @@ DECLARE_MESSAGE(AddVersionArtifactsOnly,
                 "--version is artifacts only and can't be used with vcpkg add port")
 DECLARE_MESSAGE(AddVersionAddedVersionToFile, (msg::version, msg::path), "", "added version {version} to {path}")
 DECLARE_MESSAGE(AddVersionCommitChangesReminder, (), "", "Did you remember to commit your changes?")
-DECLARE_MESSAGE(AddVersionCommitResultReminder, (), "", "Don't forget to commit the result!")
 DECLARE_MESSAGE(AddVersionDetectLocalChangesError,
                 (),
                 "",
@@ -56,7 +51,10 @@ DECLARE_MESSAGE(AddVersionIgnoringOptionAll,
                 (msg::option),
                 "The -- before {option} must be preserved as they're part of the help message for the user.",
                 "ignoring --{option} since a port name argument was provided")
-DECLARE_MESSAGE(AddVersionLoadPortFailed, (msg::package_name), "", "can't load port {package_name}")
+DECLARE_MESSAGE(AddVersionInstructions,
+                (msg::package_name),
+                "",
+                "you can run the following commands to add the current version of {package_name} automatically:")
 DECLARE_MESSAGE(AddVersionNewFile, (), "", "(new file)")
 DECLARE_MESSAGE(AddVersionNewShaIs, (msg::commit_sha), "", "new SHA: {commit_sha}")
 DECLARE_MESSAGE(AddVersionNoFilesUpdated, (), "", "No files were updated")
@@ -99,7 +97,6 @@ DECLARE_MESSAGE(
     "actually semantic parts do not apply.\n"
     "If versions for this port are not ordered by these rules, disable this check by rerunning this command and adding "
     "--skip-version-format-check .")
-DECLARE_MESSAGE(AddVersionUnableToParseVersionsFile, (msg::path), "", "unable to parse versions file {path}")
 DECLARE_MESSAGE(AddVersionUncommittedChanges,
                 (msg::package_name),
                 "",
@@ -128,7 +125,7 @@ DECLARE_MESSAGE(AllFormatArgsUnbalancedBraces,
                 (msg::value),
                 "example of {value} is 'foo bar {'",
                 "unbalanced brace in format string \"{value}\"")
-DECLARE_MESSAGE(AllPackagesAreUpdated, (), "", "All installed packages are up-to-date with the local portfile.")
+DECLARE_MESSAGE(AllPackagesAreUpdated, (), "", "All installed packages are up-to-date.")
 DECLARE_MESSAGE(AlreadyInstalled, (msg::spec), "", "{spec} is already installed")
 DECLARE_MESSAGE(AlreadyInstalledNotHead,
                 (msg::spec),
@@ -237,10 +234,14 @@ DECLARE_MESSAGE(ArtifactsSwitchOsx, (), "", "Forces host detection to MacOS when
 DECLARE_MESSAGE(ArtifactsSwitchX64, (), "", "Forces host detection to x64 when acquiring artifacts")
 DECLARE_MESSAGE(ArtifactsSwitchX86, (), "", "Forces host detection to x86 when acquiring artifacts")
 DECLARE_MESSAGE(ArtifactsSwitchWindows, (), "", "Forces host detection to Windows when acquiring artifacts")
+DECLARE_MESSAGE(AssetCacheHit, (msg::path, msg::url), "", "Asset cache hit for {path}; downloaded from: {url}")
+DECLARE_MESSAGE(AssetCacheMiss, (msg::url), "", "Asset cache miss; downloading from {url}")
+DECLARE_MESSAGE(DownloadingUrl, (msg::url), "", "Downloading {url}")
 DECLARE_MESSAGE(AssetCacheProviderAcceptsNoArguments,
                 (msg::value),
                 "{value} is a asset caching provider name such as azurl, clear, or x-block-origin",
                 "unexpected arguments: '{value}' does not accept arguments")
+DECLARE_MESSAGE(AssetCacheSuccesfullyStored, (msg::path, msg::url), "", "Successfully stored {path} to {url}.")
 DECLARE_MESSAGE(AssetSourcesArg, (), "", "Asset caching sources. See 'vcpkg help assetcaching'")
 DECLARE_MESSAGE(ASemanticVersionString, (), "", "a semantic version string")
 DECLARE_MESSAGE(ASetOfFeatures, (), "", "a set of features")
@@ -296,14 +297,11 @@ DECLARE_MESSAGE(BaselineGitShowFailed,
                 "",
                 "while checking out baseline from commit '{commit_sha}', failed to `git show` "
                 "versions/baseline.json. This may be fixed by fetching commits with `git fetch`.")
-DECLARE_MESSAGE(BaselineMissing,
-                (msg::package_name, msg::version),
+DECLARE_MESSAGE(BaselineMissing, (msg::package_name), "", "{package_name} is not assigned a version")
+DECLARE_MESSAGE(BinariesRelativeToThePackageDirectoryHere,
+                (),
                 "",
-                "Baseline version not found. Run:\n"
-                "vcpkg x-add-version {package_name}\n"
-                "git add versions\n"
-                "git commit -m \"Update version database\"\n"
-                "to set {version} as the baseline version.")
+                "the binaries are relative to ${{CURRENT_PACKAGES_DIR}} here")
 DECLARE_MESSAGE(BaselineOnlyPlatformExpressionOrTriplet,
                 (),
                 "",
@@ -312,10 +310,7 @@ DECLARE_MESSAGE(BinarySourcesArg,
                 (),
                 "'vcpkg help binarycaching' is a command line and should not be localized",
                 "Binary caching sources. See 'vcpkg help binarycaching'")
-DECLARE_MESSAGE(BinaryWithInvalidArchitecture,
-                (msg::path, msg::expected, msg::actual),
-                "{expected} and {actual} are architectures",
-                "{path}\n Expected: {expected}, but was {actual}")
+DECLARE_MESSAGE(BinaryWithInvalidArchitecture, (msg::path, msg::arch), "", "{path} is built for {arch}")
 DECLARE_MESSAGE(BuildAlreadyInstalled,
                 (msg::spec),
                 "",
@@ -414,12 +409,13 @@ DECLARE_MESSAGE(
     "Include '[{package_name}] Build error' in your bug report title, the following version information in your "
     "bug description, and attach any relevant failure logs from above.")
 DECLARE_MESSAGE(BuiltInTriplets, (), "", "Built-in Triplets:")
-DECLARE_MESSAGE(BuiltWithIncorrectArchitecture, (), "", "The following files were built for an incorrect architecture:")
-DECLARE_MESSAGE(CheckedOutGitSha, (msg::commit_sha), "", "Checked out Git SHA: {commit_sha}")
-DECLARE_MESSAGE(CheckedOutObjectMissingManifest,
-                (),
-                "",
-                "The checked-out object does not contain a CONTROL file or vcpkg.json file.")
+DECLARE_MESSAGE(
+    BuiltWithIncorrectArchitecture,
+    (msg::arch),
+    "",
+    "The triplet requests that binaries are built for {arch}, but the following binaries were built for a "
+    "different architecture. This usually means toolchain information is incorrectly conveyed to the binaries' "
+    "build system. To suppress this message, add set(VCPKG_POLICY_SKIP_ARCHITECTURE_CHECK enabled)")
 DECLARE_MESSAGE(ChecksFailedCheck, (), "", "vcpkg has crashed; no additional details are available.")
 DECLARE_MESSAGE(ChecksUnreachableCode, (), "", "unreachable code was reached")
 DECLARE_MESSAGE(ChecksUpdateVcpkg, (), "", "updating vcpkg by rerunning bootstrap-vcpkg may resolve this failure.")
@@ -455,7 +451,6 @@ DECLARE_MESSAGE(CiBaselineUnexpectedPass,
                 (msg::spec, msg::path),
                 "",
                 "PASSING, REMOVE FROM FAIL LIST: {spec} ({path}).")
-DECLARE_MESSAGE(CISettingsExclude, (), "", "Comma-separated list of ports to skip")
 DECLARE_MESSAGE(CISettingsOptCIBase,
                 (),
                 "",
@@ -623,7 +618,7 @@ DECLARE_MESSAGE(CmdExportEmptyPlan,
 DECLARE_MESSAGE(CmdExportExample1,
                 (),
                 "This is a command line, only <port names> and the out_dir part should be localized",
-                "vcpkg export <port names> [--nuget] [--directory=out_dir]")
+                "vcpkg export <port names> [--nuget] [--output-dir=out_dir]")
 DECLARE_MESSAGE(CmdExportOpt7Zip, (), "", "Exports to a 7zip (.7z) file")
 DECLARE_MESSAGE(CmdExportOptChocolatey, (), "", "Exports a Chocolatey package (experimental)")
 DECLARE_MESSAGE(CmdExportOptDebug, (), "", "Enables prefab debug")
@@ -901,13 +896,14 @@ DECLARE_MESSAGE(ConsideredVersions,
                 "requirement of {version}:")
 DECLARE_MESSAGE(ConstraintViolation, (), "", "Found a constraint violation:")
 DECLARE_MESSAGE(ContinueCodeUnitInStart, (), "", "found continue code unit in start position")
-DECLARE_MESSAGE(ControlAndManifestFilesPresent,
-                (msg::path),
-                "",
-                "Both a manifest file and a CONTROL file exist in port directory: {path}")
 DECLARE_MESSAGE(ControlCharacterInString, (), "", "Control character in string")
 DECLARE_MESSAGE(ControlSupportsMustBeAPlatformExpression, (), "", "\"Supports\" must be a platform expression")
-DECLARE_MESSAGE(CopyrightIsDir, (msg::path), "", "`{path}` being a directory is deprecated.")
+DECLARE_MESSAGE(CopyrightIsDir,
+                (),
+                "",
+                "this port sets ${{CURRENT_PACKAGES_DIR}}/share/${{PORT}}/copyright to a directory, but it should be a "
+                "file. Consider combining separate copyright files into one using vcpkg_install_copyright. To suppress "
+                "this message, add set(VCPKG_POLICY_SKIP_COPYRIGHT_CHECK enabled)")
 DECLARE_MESSAGE(CorruptedDatabase,
                 (),
                 "",
@@ -1006,12 +1002,25 @@ DECLARE_MESSAGE(
 DECLARE_MESSAGE(DependencyGraphCalculation, (), "", "Dependency graph submission enabled.")
 DECLARE_MESSAGE(DependencyGraphFailure, (), "", "Dependency graph submission failed.")
 DECLARE_MESSAGE(DependencyGraphSuccess, (), "", "Dependency graph submission successful.")
+DECLARE_MESSAGE(DependencyInFeature, (msg::feature), "", "the dependency is in the feature named {feature}")
+DECLARE_MESSAGE(DependencyNotInVersionDatabase,
+                (msg::package_name),
+                "",
+                "the dependency {package_name} does not exist in the version database; does that port exist?")
 DECLARE_MESSAGE(DependencyWillFail,
                 (msg::feature_spec),
                 "'cascade' is a keyword and should not be translated",
                 "Dependency {feature_spec} will not build => cascade")
 DECLARE_MESSAGE(DeprecatedPrefabDebugOption, (), "", "--prefab-debug is now deprecated.")
 DECLARE_MESSAGE(DetectCompilerHash, (msg::triplet), "", "Detecting compiler hash for triplet {triplet}...")
+DECLARE_MESSAGE(DirectoriesRelativeToThePackageDirectoryHere,
+                (),
+                "",
+                "the directories are relative to ${{CURRENT_PACKAGES_DIR}} here")
+DECLARE_MESSAGE(DllsRelativeToThePackageDirectoryHere,
+                (),
+                "",
+                "the DLLs are relative to ${{CURRENT_PACKAGES_DIR}} here")
 DECLARE_MESSAGE(DocumentedFieldsSuggestUpdate,
                 (),
                 "",
@@ -1044,10 +1053,7 @@ DECLARE_MESSAGE(DownloadFailedStatusCode,
 DECLARE_MESSAGE(DownloadingPortableToolVersionX,
                 (msg::tool_name, msg::version),
                 "",
-                "A suitable version of {tool_name} was not found (required v{version}) Downloading "
-                "portable {tool_name} {version}...")
-DECLARE_MESSAGE(DownloadingTool, (msg::tool_name, msg::url, msg::path), "", "Downloading {tool_name}...\n{url}->{path}")
-DECLARE_MESSAGE(DownloadingUrl, (msg::url), "", "Downloading {url}")
+                "A suitable version of {tool_name} was not found (required v{version}).")
 DECLARE_MESSAGE(DownloadWinHttpError,
                 (msg::system_api, msg::exit_code, msg::url),
                 "",
@@ -1125,7 +1131,6 @@ DECLARE_MESSAGE(ErrorInvalidExtractOption,
                 (msg::option, msg::value),
                 "The keyword 'AUTO' should not be localized",
                 "--{option} must be set to a nonnegative integer or 'AUTO'.")
-DECLARE_MESSAGE(ErrorsFound, (), "", "Found the following errors:")
 DECLARE_MESSAGE(ErrorUnableToDetectCompilerInfo,
                 (),
                 "failure output will be displayed at the top of this",
@@ -1151,6 +1156,10 @@ DECLARE_MESSAGE(ExamplesHeader, (), "Printed before a list of example command li
 DECLARE_MESSAGE(ExceededRecursionDepth, (), "", "Recursion depth exceeded.")
 DECLARE_MESSAGE(ExcludedPackage, (msg::spec), "", "Excluded {spec}")
 DECLARE_MESSAGE(ExcludedPackages, (), "", "The following packages are excluded:")
+DECLARE_MESSAGE(ExecutablesRelativeToThePackageDirectoryHere,
+                (),
+                "",
+                "the executables are relative to ${{CURRENT_PACKAGES_DIR}} here")
 DECLARE_MESSAGE(ExpectedAnObject, (), "", "expected an object")
 DECLARE_MESSAGE(ExpectedAtMostOneSetOfTags,
                 (msg::count, msg::old_value, msg::new_value, msg::value),
@@ -1192,10 +1201,10 @@ DECLARE_MESSAGE(ExtendedDocumentationAtUrl, (msg::url), "", "Extended documentat
 DECLARE_MESSAGE(ExtractHelp, (), "", "Extracts an archive.")
 DECLARE_MESSAGE(ExtractingTool, (msg::tool_name), "", "Extracting {tool_name}...")
 DECLARE_MESSAGE(FailedPostBuildChecks,
-                (msg::count, msg::path),
+                (msg::count),
                 "",
-                "Found {count} post-build check problem(s). To submit these ports to curated catalogs, please "
-                "first correct the portfile: {path}")
+                "Found {count} post-build check problem(s). These are usually caused by bugs in portfile.cmake or the "
+                "upstream build system. Please correct these before submitting this port to the curated registry.")
 DECLARE_MESSAGE(FailedToAcquireMutant,
                 (msg::path),
                 "'mutant' is the Windows kernel object returned by CreateMutexW",
@@ -1215,7 +1224,18 @@ DECLARE_MESSAGE(FailedToDeleteInsideDueToFile,
                 "printed after this",
                 "failed to remove_all_inside({value}) due to {path}: ")
 DECLARE_MESSAGE(FailedToDetermineCurrentCommit, (), "", "Failed to determine the current commit:")
-DECLARE_MESSAGE(FailedToDownloadFromMirrorSet, (), "", "Failed to download from mirror set")
+DECLARE_MESSAGE(MissingAssetBlockOrigin,
+                (msg::path),
+                "x-block-origin is a vcpkg term. Do not translate",
+                "Missing {path} and downloads are blocked by x-block-origin.")
+DECLARE_MESSAGE(MissingShaVariable,
+                (),
+                "{{sha}} should not be translated",
+                "The {{sha}} variable must be used in the template if other variables are used.")
+DECLARE_MESSAGE(AssetCacheMissBlockOrigin,
+                (msg::path),
+                "x-block-origin is a vcpkg term. Do not translate",
+                "Asset cache miss for {path} and downloads are blocked by x-block-origin.")
 DECLARE_MESSAGE(FailedToExtract, (msg::path), "", "Failed to extract \"{path}\":")
 DECLARE_MESSAGE(FailedToFetchRepo, (msg::url), "", "Failed to fetch {url}.")
 DECLARE_MESSAGE(FailedToFindPortFeature,
@@ -1235,7 +1255,6 @@ DECLARE_MESSAGE(
 DECLARE_MESSAGE(FailedToLoadManifest, (msg::path), "", "Failed to load manifest from directory {path}")
 DECLARE_MESSAGE(FailedToLocateSpec, (msg::spec), "", "Failed to locate spec in graph: {spec}")
 DECLARE_MESSAGE(FailedToObtainDependencyVersion, (), "", "Cannot find desired dependency version.")
-DECLARE_MESSAGE(FailedToObtainLocalPortGitSha, (), "", "Failed to obtain git SHAs for local ports.")
 DECLARE_MESSAGE(FailedToObtainPackageVersion, (), "", "Cannot find desired package version.")
 DECLARE_MESSAGE(FailedToOpenAlgorithm,
                 (msg::value),
@@ -1247,8 +1266,7 @@ DECLARE_MESSAGE(FailedToParseCMakeConsoleOut,
                 "Failed to parse CMake console output to locate block start/end markers.")
 DECLARE_MESSAGE(FailedToParseBaseline, (msg::path), "", "Failed to parse baseline: {path}")
 DECLARE_MESSAGE(FailedToParseConfig, (msg::path), "", "Failed to parse configuration: {path}")
-DECLARE_MESSAGE(FailedToParseControl, (msg::path), "", "Failed to parse CONTROL file: {path}")
-DECLARE_MESSAGE(FailedToParseManifest, (msg::path), "", "Failed to parse manifest file: {path}")
+DECLARE_MESSAGE(FailedToParseVersionFile, (msg::path), "", "Failed to parse version file: {path}")
 DECLARE_MESSAGE(FailedToParseNoTopLevelObj, (msg::path), "", "Failed to parse {path}, expected a top-level object.")
 DECLARE_MESSAGE(FailedToParseNoVersionsArray, (msg::path), "", "Failed to parse {path}, expected a 'versions' array.")
 DECLARE_MESSAGE(FailedToParseSerializedBinParagraph,
@@ -1257,22 +1275,18 @@ DECLARE_MESSAGE(FailedToParseSerializedBinParagraph,
                 "[sanity check] Failed to parse a serialized binary paragraph.\nPlease open an issue at "
                 "https://github.com/microsoft/vcpkg, "
                 "with the following output:\n{error_msg}\nSerialized Binary Paragraph:")
-DECLARE_MESSAGE(FailedToParseVersionsFile, (msg::path), "", "failed to parse versions file {path}")
 DECLARE_MESSAGE(FailedToParseVersionXML,
                 (msg::tool_name, msg::version),
                 "",
                 "Could not parse version for tool {tool_name}. Version string was: {version}")
-DECLARE_MESSAGE(FailedToReadParagraph, (msg::path), "", "Failed to read paragraphs from {path}")
-DECLARE_MESSAGE(FailedToRemoveControl, (msg::path), "", "Failed to remove control file {path}")
 DECLARE_MESSAGE(FailedToRunToolToDetermineVersion,
                 (msg::tool_name, msg::path),
                 "Additional information, such as the command line output, if any, will be appended on "
                 "the line after this message",
                 "Failed to run \"{path}\" to determine the {tool_name} version.")
-DECLARE_MESSAGE(FailedToStoreBackToMirror, (), "", "failed to store back to mirror:")
+DECLARE_MESSAGE(FailedToStoreBackToMirror, (msg::path, msg::url), "", "Failed to store {path} to {url}.")
 DECLARE_MESSAGE(FailedToStoreBinaryCache, (msg::path), "", "Failed to store binary cache {path}")
 DECLARE_MESSAGE(FailedToTakeFileSystemLock, (), "", "Failed to take the filesystem lock")
-DECLARE_MESSAGE(FailedToWriteManifest, (msg::path), "", "Failed to write manifest file {path}")
 DECLARE_MESSAGE(FailedVendorAuthentication,
                 (msg::vendor, msg::url),
                 "",
@@ -1289,12 +1303,22 @@ DECLARE_MESSAGE(FeatureBaselineExpectedFeatures,
 DECLARE_MESSAGE(FeatureBaselineFormatted, (), "", "Succeeded in formatting the feature baseline file.")
 DECLARE_MESSAGE(FeatureBaselineNoFeaturesForFail, (), "", "When using '= fail' no list of features is allowed.")
 DECLARE_MESSAGE(FileIsNotExecutable, (), "", "this file does not appear to be executable")
+DECLARE_MESSAGE(FilesRelativeToTheBuildDirectoryHere, (), "", "the files are relative to the build directory here")
+DECLARE_MESSAGE(FilesRelativeToThePackageDirectoryHere,
+                (),
+                "",
+                "the files are relative to ${{CURRENT_PACKAGES_DIR}} here")
 DECLARE_MESSAGE(FilesContainAbsolutePath1,
                 (),
                 "This message is printed before a list of found absolute paths, followed by FilesContainAbsolutePath2, "
                 "followed by a list of found files.",
-                "There should be no absolute paths, such as the following, in an installed package:")
-DECLARE_MESSAGE(FilesContainAbsolutePath2, (), "", "Absolute paths were found in the following files:")
+                "There should be no absolute paths, such as the following, in an installed package. To suppress this "
+                "message, add set(VCPKG_POLICY_SKIP_ABSOLUTE_PATHS_CHECK enabled)")
+DECLARE_MESSAGE(FilesContainAbsolutePath2, (), "", "absolute paths found here")
+DECLARE_MESSAGE(FilesContainAbsolutePathPkgconfigNote,
+                (),
+                "",
+                "Adding a call to `vcpkg_fixup_pkgconfig()` may fix absolute paths in .pc files")
 DECLARE_MESSAGE(FindVersionArtifactsOnly,
                 (),
                 "'--version', 'vcpkg search', and 'vcpkg find port' are command lines that must not be localized",
@@ -1319,6 +1343,10 @@ DECLARE_MESSAGE(FileSeekFailed,
                 "",
                 "Failed to seek to position {byte_offset} in {path}.")
 DECLARE_MESSAGE(FilesExported, (msg::path), "", "Files exported at: {path}")
+DECLARE_MESSAGE(FindCommandFirstArg,
+                (),
+                "'find', 'artifact', and 'port' are vcpkg specific terms and should not be translated.",
+                "The first argument to 'find' must be 'artifact' or 'port' .")
 DECLARE_MESSAGE(FishCompletion, (msg::path), "", "vcpkg fish completion is already added at \"{path}\".")
 DECLARE_MESSAGE(FloatingPointConstTooBig, (msg::count), "", "Floating point constant too big: {count}")
 DECLARE_MESSAGE(FollowingPackagesMissingControl,
@@ -1349,6 +1377,10 @@ DECLARE_MESSAGE(GHAParametersMissing,
                 "The GHA binary source requires the ACTIONS_RUNTIME_TOKEN and ACTIONS_CACHE_URL environment variables "
                 "to be set. See {url} for details.")
 DECLARE_MESSAGE(GitCommandFailed, (msg::command_line), "", "failed to execute: {command_line}")
+DECLARE_MESSAGE(GitCommitUpdateVersionDatabase,
+                (),
+                "This is a command line; only the 'update version database' part should be localized",
+                "git commit -m \"Update version database\"")
 DECLARE_MESSAGE(GitFailedToFetch,
                 (msg::value, msg::url),
                 "{value} is a git ref like 'origin/main'",
@@ -1382,7 +1414,7 @@ DECLARE_MESSAGE(HashFileFailureToRead,
 DECLARE_MESSAGE(HashPortManyFiles,
                 (msg::package_name, msg::count),
                 "",
-                "The {package_name} contains {count} files. Hashing these contents may take a long time when "
+                "{package_name} contains {count} files. Hashing these contents may take a long time when "
                 "determining the ABI hash for binary caching. Consider reducing the number of files. Common causes of "
                 "this are accidentally checking out source or build files into a port's directory.")
 DECLARE_MESSAGE(HeaderOnlyUsage,
@@ -1891,7 +1923,6 @@ DECLARE_MESSAGE(
     "Invalid {system_name} linkage type: [{value}]")
 DECLARE_MESSAGE(InvalidLogicExpressionUnexpectedCharacter, (), "", "invalid logic expression, unexpected character")
 DECLARE_MESSAGE(InvalidLogicExpressionUsePipe, (), "", "invalid logic expression, use '|' rather than 'or'")
-DECLARE_MESSAGE(InvalidNoVersions, (), "", "File contains no versions.")
 DECLARE_MESSAGE(InvalidOptionForRemove,
                 (),
                 "'remove' is a command that should not be changed.",
@@ -1909,6 +1940,11 @@ DECLARE_MESSAGE(InvalidValueHashAdditionalFiles,
                 "",
                 "Variable VCPKG_HASH_ADDITIONAL_FILES contains invalid file path: '{path}'. The value must be "
                 "an absolute path to an existent file.")
+DECLARE_MESSAGE(InvalidValuePostPortfileIncludes,
+                (msg::path),
+                "",
+                "Variable VCPKG_POST_PORTFILE_INCLUDES contains invalid file path: '{path}'. The value must be "
+                "an absolute path to an existent cmake file.")
 DECLARE_MESSAGE(IrregularFile, (msg::path), "", "path was not a regular file: {path}")
 DECLARE_MESSAGE(JsonErrorMustBeAnObject, (msg::path), "", "Expected \"{path}\" to be an object.")
 DECLARE_MESSAGE(JsonFieldNotObject, (msg::json_field), "", "value of [\"{json_field}\"] must be an object")
@@ -2009,14 +2045,8 @@ DECLARE_MESSAGE(LoadingDependencyInformation,
                 (msg::count),
                 "",
                 "Loading dependency information for {count} packages...")
-DECLARE_MESSAGE(LocalPortfileVersion,
-                (),
-                "",
-                "Using local portfile versions. To update the local portfiles, use `git pull`.")
-DECLARE_MESSAGE(ManifestConflict,
-                (msg::path),
-                "",
-                "Found both a manifest and CONTROL files in port \"{path}\"; please rename one or the other")
+DECLARE_MESSAGE(LocalPortfileVersion, (), "", "Using local port versions. To update the local ports, use `git pull`.")
+DECLARE_MESSAGE(ManifestConflict2, (), "", "Found both a manifest and CONTROL files; please rename one or the other")
 DECLARE_MESSAGE(ManifestFormatCompleted, (), "", "Succeeded in formatting the manifest files.")
 DECLARE_MESSAGE(MismatchedBinParagraphs,
                 (),
@@ -2272,161 +2302,234 @@ DECLARE_MESSAGE(PERvaNotFound,
                 "{value:#X} is the Relative Virtual Address sought. Portable executable is a term-of-art, see "
                 "https://learn.microsoft.com/windows/win32/debug/pe-format",
                 "While parsing Portable Executable {path}, could not find RVA {value:#X}.")
-DECLARE_MESSAGE(PerformingPostBuildValidation, (), "", "-- Performing post-build validation")
+DECLARE_MESSAGE(PerformingPostBuildValidation, (), "", "Performing post-build validation")
 DECLARE_MESSAGE(PortBugBinDirExists,
                 (msg::path),
                 "",
-                "There should be no bin\\ directory in a static build, but {path} is present.")
-DECLARE_MESSAGE(PortBugDebugBinDirExists,
-                (msg::path),
-                "",
-                "There should be no debug\\bin\\ directory in a static build, but {path} is present.")
+                "${{CURRENT_PACKAGES_DIR}}/{path} exists but should not in a static build. To suppress this message, "
+                "add set(VCPKG_POLICY_DLLS_IN_STATIC_LIBRARY enabled)")
 DECLARE_MESSAGE(PortBugDebugShareDir,
                 (),
                 "",
-                "/debug/share should not exist. Please reorganize any important files, then use\n"
-                "file(REMOVE_RECURSE \"${{CURRENT_PACKAGES_DIR}}/debug/share\")")
-DECLARE_MESSAGE(PortBugDllAppContainerBitNotSet,
-                (),
-                "",
-                "The App Container bit must be set for Windows Store apps. The following DLLs do not have the App "
-                "Container bit set:")
-DECLARE_MESSAGE(PortBugDllInLibDir,
-                (),
-                "",
-                "The following dlls were found in /lib or /debug/lib. Please move them to /bin or "
-                "/debug/bin, respectively.")
+                "${{CURRENT_PACKAGES_DIR}}/debug/share should not exist. Please reorganize any important files, then "
+                "delete any remaining by adding `file(REMOVE_RECURSE \"${{CURRENT_PACKAGES_DIR}}/debug/share\")`. To "
+                "suppress this message, add set(VCPKG_POLICY_ALLOW_DEBUG_SHARE enabled)")
+DECLARE_MESSAGE(
+    PortBugDllAppContainerBitNotSet,
+    (),
+    "",
+    "The App Container bit must be set for all DLLs in Windows Store apps, and the triplet requests targeting the "
+    "Windows Store, but the following DLLs were not built with the bit set. This usually means that toolchain linker "
+    "flags are not being properly propagated, or the linker in use does not support the /APPCONTAINER switch. To "
+    "suppress this message, add set(VCPKG_POLICY_SKIP_APPCONTAINER_CHECK enabled)")
+DECLARE_MESSAGE(
+    PortBugDllInLibDir,
+    (),
+    "",
+    "The following dlls were found in ${{CURRENT_PACKAGES_DIR}}/lib or ${{CURRENT_PACKAGES_DIR}}/debug/lib. Please "
+    "move them to ${{CURRENT_PACKAGES_DIR}}/bin or ${{CURRENT_PACKAGES_DIR}}/debug/bin, respectively.")
 DECLARE_MESSAGE(PortBugDuplicateIncludeFiles,
                 (),
                 "",
-                "Include files should not be duplicated into the /debug/include directory. If this cannot "
-                "be disabled in the project cmake, use\n"
-                "file(REMOVE_RECURSE \"${{CURRENT_PACKAGES_DIR}}/debug/include\")")
-DECLARE_MESSAGE(PortBugFoundCopyrightFiles, (), "", "The following files are potential copyright files:")
-DECLARE_MESSAGE(PortBugFoundDebugBinaries, (msg::count), "", "Found {count} debug binaries:")
+                "${{CURRENT_PACKAGES_DIR}}/debug/include should not exist. To suppress this message, add "
+                "set(VCPKG_POLICY_ALLOW_DEBUG_INCLUDE enabled)")
+DECLARE_MESSAGE(
+    PortBugDuplicateIncludeFilesFixIt,
+    (),
+    "",
+    "If this directory was created by a build system that does not allow installing headers in debug to be "
+    "disabled, delete the duplicate directory with file(REMOVE_RECURSE \"${{CURRENT_PACKAGES_DIR}}/debug/include\")")
+DECLARE_MESSAGE(PortBugFoundCopyrightFiles, (), "", "the following files are potential copyright files")
+DECLARE_MESSAGE(PortBugFoundDebugBinaries, (), "", "The following are debug binaries:")
 DECLARE_MESSAGE(PortBugFoundDllInStaticBuild,
                 (),
                 "",
-                "DLLs should not be present in a static build, but the following DLLs were found:")
+                "DLLs should not be present in a static build, but the following DLLs were found. To suppress this "
+                "message, add set(VCPKG_POLICY_DLLS_IN_STATIC_LIBRARY enabled)")
 DECLARE_MESSAGE(PortBugFoundEmptyDirectories,
-                (msg::path),
-                "",
-                "There should be no empty directories in {path}. The following empty directories were found:")
-DECLARE_MESSAGE(PortBugFoundExeInBinDir,
                 (),
                 "",
-                "The following EXEs were found in /bin or /debug/bin. EXEs are not valid distribution targets.")
-DECLARE_MESSAGE(PortBugFoundReleaseBinaries, (msg::count), "", "Found {count} release binaries:")
+                "There should be no installed empty directories. Empty directories are not representable to several "
+                "binary cache providers, git repositories, and are not considered semantic build outputs. You should "
+                "either create a regular file inside each empty directory, or delete them with the following CMake. To "
+                "suppress this message, add set(VCPKG_POLICY_ALLOW_EMPTY_FOLDERS enabled)")
+DECLARE_MESSAGE(
+    PortBugFoundExeInBinDir,
+    (),
+    "",
+    "The following executables were found in ${{CURRENT_PACKAGES_DIR}}/bin or ${{CURRENT_PACKAGES_DIR}}/debug/bin. "
+    "Executables are not valid distribution targets. If these executables are build tools, consider using "
+    "`vcpkg_copy_tools`. To suppress this message, add set(VCPKG_POLICY_ALLOW_EXES_IN_BIN enabled)")
+DECLARE_MESSAGE(PortBugFoundReleaseBinaries, (), "", "The following are release binaries:")
 DECLARE_MESSAGE(PortBugIncludeDirInCMakeHelperPort,
                 (),
                 "",
-                "The folder /include exists in a cmake helper port; this is incorrect, since only cmake "
-                "files should be installed")
-DECLARE_MESSAGE(PortBugInspectFiles, (msg::extension), "", "To inspect the {extension} files, use:")
+                "The folder ${{CURRENT_PACKAGES_DIR}}/include exists in a CMake helper port; this is incorrect, since "
+                "only CMake files should be installed. To suppress this message, remove "
+                "set(VCPKG_POLICY_CMAKE_HELPER_PORT enabled).")
 DECLARE_MESSAGE(
-    PortBugInvalidCrtLinkage,
-    (msg::expected),
-    "{expected} is one of LinkageDynamicDebug/LinkageDynamicRelease/LinkageStaticDebug/LinkageStaticRelease. "
-    "Immediately after this message is a file by file list with what linkages they contain. 'CRT' is an acronym "
+    PortBugInvalidCrtLinkageHeader,
+    (),
+    "This is combined with PortBugInvalidCrtLinkageCrtGroup and PortBugInvalidCrtLinkageEntry. 'CRT' is an acronym "
     "meaning C Runtime. See also: "
-    "https://learn.microsoft.com/cpp/build/reference/md-mt-ld-use-run-time-library?view=msvc-170. This is "
-    "complicated because a binary can link with more than one CRT.\n"
+    "https://learn.microsoft.com/cpp/build/reference/md-mt-ld-use-run-time-library?view=msvc-170. This is complicated "
+    "because a binary can link with more than one CRT.\n"
     "Example fully formatted message:\n"
-    "The following binaries should use the Dynamic Debug (/MDd) CRT.\n"
-    "    C:\\some\\path\\to\\sane\\lib links with: Dynamic Release (/MD)\n"
-    "    C:\\some\\path\\to\\lib links with:\n"
-    "        Static Debug (/MTd)\n"
-    "        Dynamic Release (/MD)\n"
-    "    C:\\some\\different\\path\\to\\a\\dll links with:\n"
-    "        Static Debug (/MTd)\n"
-    "        Dynamic Debug (/MDd)\n",
-    "The following binaries should use the {expected} CRT.")
+    "D:\\vcpkg\\ports\\wrong-crt\\portfile.cmake: warning: binaries built by this port link with C RunTimes (\"CRTs\") "
+    "inconsistent with those requested by the triplet and deployment structure. If the triplet is intended to only use "
+    "the release CRT, you should add set(VCPKG_POLICY_ONLY_RELEASE_CRT enabled) to the triplet .cmake file. To "
+    "suppress this check entirely, add set(VCPKG_POLICY_SKIP_CRT_LINKAGE_CHECK enabled) to the triplet .cmake if this "
+    "is triplet-wide, or to portfile.cmake if this is specific to the port. You can inspect the binaries with: "
+    "dumpbin.exe /directives mylibfile.lib\n"
+    "D:\\vcpkg\\packages\\wrong-crt_x86-windows-static: note: the binaries are relative to ${{CURRENT_PACKAGES_DIR}} "
+    "here\n"
+    "note: The following binaries should link with only: Static Debug (/MTd)\n"
+    "note: debug/lib/both_lib.lib links with: Dynamic Debug (/MDd)\n"
+    "note: debug/lib/both_lib.lib links with: Dynamic Release (/MD)\n"
+    "note: debug/lib/test_lib.lib links with: Dynamic Debug (/MDd)\n"
+    "note: The following binaries should link with only: Static Release (/MT)\n"
+    "note: lib/both_lib.lib links with: Dynamic Debug (/MDd)\n"
+    "note: lib/both_lib.lib links with: Dynamic Debug (/MDd)\n"
+    "note: test_lib.lib links with: Dynamic Release (/MD)",
+    "binaries built by this port link with C RunTimes (\"CRTs\") inconsistent with those requested by the "
+    "triplet and deployment structure. If the triplet is intended to only use the release CRT, you should "
+    "add set(VCPKG_POLICY_ONLY_RELEASE_CRT enabled) to the triplet .cmake file. To suppress this check "
+    "entirely, add set(VCPKG_POLICY_SKIP_CRT_LINKAGE_CHECK enabled) to the triplet .cmake if this is "
+    "triplet-wide, or to portfile.cmake if this is specific to the port. You can inspect the binaries "
+    "with: dumpbin.exe /directives mylibfile.lib")
+DECLARE_MESSAGE(PortBugInvalidCrtLinkageCrtGroup,
+                (msg::expected),
+                "See PortBugInvalidCrtLinkageHeader. {expected} is one of "
+                "LinkageDynamicDebug/LinkageDynamicRelease/LinkageStaticDebug/LinkageStaticRelease.",
+                "The following binaries should link with only: {expected}")
 DECLARE_MESSAGE(PortBugInvalidCrtLinkageEntry,
-                (msg::path),
-                "See explanation in PortBugInvalidCrtLinkage",
-                "{path} links with:")
-DECLARE_MESSAGE(PortBugKernel32FromXbox,
-                (),
-                "",
-                "The selected triplet targets Xbox, but the following DLLs link with kernel32. These DLLs cannot be "
-                "loaded on Xbox, where kernel32 is not present. This is typically caused by linking with kernel32.lib "
-                "rather than a suitable umbrella library, such as onecore_apiset.lib or xgameplatform.lib.")
+                (msg::path, msg::actual),
+                "See explanation in PortBugInvalidCrtLinkageHeader. {actual} is one or more of "
+                "LinkageDynamicDebug/LinkageDynamicRelease/LinkageStaticDebug/LinkageStaticRelease , separated by "
+                "commas. (The vast vast vast majority of the time there will only be one and we're accepting that the "
+                "localized result may look a bit strange if there is more than one)",
+                "{path} links with: {actual}")
+DECLARE_MESSAGE(
+    PortBugKernel32FromXbox,
+    (),
+    "",
+    "The selected triplet targets Xbox, but the following DLLs link with kernel32. These DLLs cannot be loaded on "
+    "Xbox, where kernel32 is not present. This is typically caused by linking with kernel32.lib rather than a suitable "
+    "umbrella library, such as onecore_apiset.lib or xgameplatform.lib. You can inspect a DLL's dependencies with "
+    "`dumpbin.exe /dependents mylibfile.dll`. To suppress this message, add set(VCPKG_POLICY_ALLOW_KERNEL32_FROM_XBOX "
+    "enabled)")
 DECLARE_MESSAGE(
     PortBugMergeLibCMakeDir,
-    (msg::package_name),
+    (),
     "",
-    "The /lib/cmake folder should be merged with /debug/lib/cmake and moved to /share/{package_name}/cmake. "
-    "Please use the helper function `vcpkg_cmake_config_fixup()` from the port vcpkg-cmake-config.`")
-DECLARE_MESSAGE(PortBugMismatchedNumberOfBinaries, (), "", "Mismatching number of debug and release binaries.")
-DECLARE_MESSAGE(
-    PortBugMisplacedCMakeFiles,
-    (msg::spec),
-    "",
-    "The following cmake files were found outside /share/{spec}. Please place cmake files in /share/{spec}.")
-DECLARE_MESSAGE(PortBugMisplacedFiles, (msg::path), "", "The following files are placed in {path}:")
-DECLARE_MESSAGE(PortBugMisplacedFilesCont, (), "", "Files cannot be present in those directories.")
-DECLARE_MESSAGE(PortBugMisplacedPkgConfigFiles,
+    "This port creates ${{CURRENT_PACKAGES_DIR}}/lib/cmake and/or ${{CURRENT_PACKAGES_DIR}}/debug/lib/cmake, which "
+    "should be merged and moved to ${{CURRENT_PACKAGES_DIR}}/share/${{PORT}}/cmake. Please use the helper "
+    "function vcpkg_cmake_config_fixup() from the port vcpkg-cmake-config. To suppress this message, add "
+    "set(VCPKG_POLICY_SKIP_LIB_CMAKE_MERGE_CHECK enabled)")
+DECLARE_MESSAGE(PortBugMismatchingNumberOfBinaries,
                 (),
                 "",
-                "pkgconfig directories should be one of share/pkgconfig (for header only libraries only), "
-                "lib/pkgconfig, or lib/debug/pkgconfig. The following misplaced pkgconfig files were found:")
-DECLARE_MESSAGE(PortBugMissingDebugBinaries, (), "", "Debug binaries were not found.")
-DECLARE_MESSAGE(PortBugMissingFile,
-                (msg::path),
+                "mismatching number of debug and release binaries. This often indicates incorrect handling of debug or "
+                "release in portfile.cmake or the build system. If the intent is to only ever produce release "
+                "components for this triplet, the triplet should have set(VCPKG_BUILD_TYPE release) added to its "
+                ".cmake file. To suppress this message, add set(VCPKG_POLICY_MISMATCHED_NUMBER_OF_BINARIES enabled)")
+DECLARE_MESSAGE(PortBugMisplacedCMakeFiles,
+                (),
                 "",
-                "The /{path} file does not exist. This file must exist for CMake helper ports.")
+                "This port installs the following CMake files in places CMake files are not expected. CMake files "
+                "should be installed in ${{CURRENT_PACKAGES_DIR}}/share/${{PORT}}. To suppress this message, add "
+                "set(VCPKG_POLICY_SKIP_MISPLACED_CMAKE_FILES_CHECK enabled)")
+DECLARE_MESSAGE(PortBugMisplacedFiles,
+                (),
+                "",
+                "The following regular files are installed to location(s) where regular files may not be installed. "
+                "These should be installed in a subdirectory. To suppress this message, add "
+                "set(VCPKG_POLICY_SKIP_MISPLACED_REGULAR_FILES_CHECK enabled)")
 DECLARE_MESSAGE(
-    PortBugMissingProvidedUsage,
-    (msg::package_name),
+    PortBugMisplacedPkgConfigFiles,
+    (),
     "",
-    "The port provided \"usage\" but forgot to install to /share/{package_name}/usage, add the following line"
-    "in the portfile:")
-DECLARE_MESSAGE(PortBugMissingImportedLibs,
-                (msg::path),
+    "The following misplaced pkgconfig directories were installed. Misplaced pkgconfig files will not be found "
+    "correctly by pkgconf or pkg-config. pkgconfig directories should be ${{CURRENT_PACKAGES_DIR}}/share/pkgconfig "
+    "(for architecture agnostic / header only libraries only), ${{CURRENT_PACKAGES_DIR}}/lib/pkgconfig (for release "
+    "dependencies), or ${{CURRENT_PACKAGES_DIR}}/debug/lib/pkgconfig (for debug dependencies). To suppress this "
+    "message, add set(VCPKG_POLICY_SKIP_PKGCONFIG_CHECK enabled)")
+DECLARE_MESSAGE(PortBugMissingDebugBinaries, (), "", "Debug binaries were not found.")
+DECLARE_MESSAGE(
+    PortBugMissingCMakeHelperPortFile,
+    (),
+    "",
+    "The ${{CURRENT_PACKAGES_DIR}}/share/${{PORT}}/vcpkg-port-config.cmake file does not exist. This file must exist "
+    "for CMake helper ports. To suppress this message, remove set(VCPKG_POLICY_CMAKE_HELPER_PORT enabled)")
+DECLARE_MESSAGE(PortBugMissingProvidedUsage,
+                (),
                 "",
-                "Import libraries were not present in {path}.\nIf this is intended, add the following line in the "
-                "portfile:\nset(VCPKG_POLICY_DLLS_WITHOUT_LIBS enabled)")
+                "this port contains a file named \"usage\" but didn't install it to "
+                "${{CURRENT_PACKAGES_DIR}}/share/${{PORT}}/usage . If this file is not intended to be usage text, "
+                "consider choosing another name; otherwise, install it. To suppress this message, add "
+                "set(VCPKG_POLICY_SKIP_USAGE_INSTALL_CHECK enabled)")
+DECLARE_MESSAGE(PortBugMissingImportedLibs,
+                (),
+                "",
+                "Import libraries for installed DLLs appear to be missing. If this is intended, add "
+                "set(VCPKG_POLICY_DLLS_WITHOUT_LIBS enabled)")
 DECLARE_MESSAGE(PortBugMissingIncludeDir,
                 (),
                 "",
-                "The folder /include is empty or not present. This indicates the library was not correctly "
-                "installed.")
-DECLARE_MESSAGE(PortBugMissingLicense,
-                (msg::package_name),
-                "",
-                "The software license must be available at ${{CURRENT_PACKAGES_DIR}}/share/{package_name}/copyright")
+                "The folder ${{CURRENT_PACKAGES_DIR}}/include is empty or not present. This usually means that headers "
+                "are not correctly installed. If this is a CMake helper port, add set(VCPKG_POLICY_CMAKE_HELPER_PORT "
+                "enabled). If this is not a CMake helper port but this is otherwise intentional, add "
+                "set(VCPKG_POLICY_EMPTY_INCLUDE_FOLDER enabled) to suppress this message.")
+DECLARE_MESSAGE(
+    PortBugMissingLicense,
+    (),
+    "",
+    "the license is not installed to ${{CURRENT_PACKAGES_DIR}}/share/${{PORT}}/copyright . This can be fixed by adding "
+    "a call to vcpkg_install_copyright. To suppress this message, add set(VCPKG_POLICY_SKIP_COPYRIGHT_CHECK enabled)")
+DECLARE_MESSAGE(PortBugMissingLicenseFixIt,
+                (msg ::value),
+                "{value} is a CMake function call for the user to paste into their file, for example: "
+                "vcpkg_install_copyright(FILE_LIST ${{SOURCE_PATH}}/COPYING ${{SOURCE_PATH}}/LICENSE.txt)",
+                "Consider adding: {value}")
 DECLARE_MESSAGE(PortBugMissingReleaseBinaries, (), "", "Release binaries were not found.")
 DECLARE_MESSAGE(PortBugMovePkgConfigFiles, (), "", "You can move the pkgconfig files with commands similar to:")
-DECLARE_MESSAGE(PortBugOutdatedCRT, (), "", "Detected outdated dynamic CRT in the following files:")
+DECLARE_MESSAGE(
+    PortBugOutdatedCRT,
+    (),
+    "",
+    "DLLs that link with obsolete C RunTime (\"CRT\") DLLs were installed. Installed DLLs should link with an "
+    "in-support CRT. You can inspect the dependencies of a DLL with `dumpbin.exe /dependents mylibfile.dll`. If you're "
+    "using a custom triplet targeting an old CRT, add set(VCPKG_POLICY_ALLOW_OBSOLETE_MSVCRT enabled) to the triplet's "
+    ".cmake file. To suppress this message for this port, add set(VCPKG_POLICY_ALLOW_OBSOLETE_MSVCRT enabled)")
 DECLARE_MESSAGE(
     PortBugRemoveBinDir,
     (),
     "",
-    "If the creation of bin\\ and/or debug\\bin\\ cannot be disabled, use this in the portfile to remove them")
-DECLARE_MESSAGE(PortBugRemoveEmptyDirectories,
-                (),
-                "",
-                "If a directory should be populated but is not, this might indicate an error in the portfile.\n"
-                "If the directories are not needed and their creation cannot be disabled, use something like this in "
-                "the portfile to remove them:")
+    "if creation of these directories cannot be disabled, you can add the following in portfile.cmake to remove them")
 DECLARE_MESSAGE(PortBugRemoveEmptyDirs,
                 (),
                 "Only the 'empty directories left by the above renames' part should be translated",
                 "file(REMOVE_RECURSE empty directories left by the above renames)")
-DECLARE_MESSAGE(PortBugRestrictedHeaderPaths,
+DECLARE_MESSAGE(
+    PortBugRestrictedHeaderPaths,
+    (),
+    "",
+    "Taking the following restricted headers can prevent the core C++ runtime and other packages from compiling "
+    "correctly. These should be renamed or stored in a subdirectory instead. In exceptional circumstances, this "
+    "warning can be suppressed by adding set(VCPKG_POLICY_ALLOW_RESTRICTED_HEADERS enabled)")
+DECLARE_MESSAGE(PortBugRestrictedHeaderPathsNote,
                 (),
-                "A list of restricted headers is printed after this message, one per line. ",
-                "The following restricted headers can prevent the core C++ runtime and other packages from "
-                "compiling correctly. In exceptional circumstances, this policy can be disabled by setting CMake "
-                "variable VCPKG_POLICY_ALLOW_RESTRICTED_HEADERS in portfile.cmake.")
+                "",
+                "the headers are relative to ${{CURRENT_PACKAGES_DIR}}/include here")
 DECLARE_MESSAGE(PortBugSetDllsWithoutExports,
                 (),
-                "'exports' means an entry in a DLL's export table. After this message, one file path per line is "
-                "printed listing each DLL with an empty export table.",
-                "DLLs without any exports are likely a bug in the build script. If this is intended, add the "
-                "following line in the portfile:\n"
-                "set(VCPKG_POLICY_DLLS_WITHOUT_EXPORTS enabled)\n"
-                "The following DLLs have no exports:")
+                "",
+                "the following DLLs were built without any exports. DLLs without exports are likely bugs in the build "
+                "script. If this is intended, add set(VCPKG_POLICY_DLLS_WITHOUT_EXPORTS enabled)")
+DECLARE_MESSAGE(PortDeclaredHere,
+                (msg::package_name),
+                "This is printed after NoteMessage to tell the user the path on disk of a related port",
+                "{package_name} is declared here")
 DECLARE_MESSAGE(PortDependencyConflict,
                 (msg::package_name),
                 "",
@@ -2547,6 +2650,10 @@ DECLARE_MESSAGE(SkipClearingInvalidDir,
                 (msg::path),
                 "",
                 "Skipping clearing contents of {path} because it was not a directory.")
+DECLARE_MESSAGE(SkippingPostBuildValidationDueTo,
+                (msg::cmake_var),
+                "",
+                "Skipping post-build validation due to {cmake_var}")
 DECLARE_MESSAGE(SkipTestingOfPort,
                 (msg::feature_spec, msg::triplet),
                 "",
@@ -2577,10 +2684,6 @@ DECLARE_MESSAGE(StoredBinariesToDestinations,
 DECLARE_MESSAGE(StoreOptionMissingSha, (), "", "--store option is invalid without a sha512")
 DECLARE_MESSAGE(SuccessfulyExported, (msg::package_name, msg::path), "", "Exported {package_name} to {path}")
 DECLARE_MESSAGE(SuggestGitPull, (), "", "The result may be outdated. Run `git pull` to get the latest results.")
-DECLARE_MESSAGE(SuggestResolution,
-                (msg::command_name, msg::option),
-                "",
-                "To attempt to resolve all errors at once, run:\nvcpkg {command_name} --{option}")
 DECLARE_MESSAGE(SuggestStartingBashShell,
                 (),
                 "",
@@ -2636,7 +2739,7 @@ DECLARE_MESSAGE(UnexpectedArgument,
 DECLARE_MESSAGE(
     UnexpectedAssetCacheProvider,
     (),
-    "",
+    "'x-azurl', 'x-script', 'clear' are valid source types. Do not translate",
     "unknown asset provider type: valid source types are 'x-azurl', 'x-script', 'x-block-origin', and 'clear'")
 DECLARE_MESSAGE(UnexpectedByteSize,
                 (msg::expected, msg::actual),
@@ -2726,11 +2829,10 @@ DECLARE_MESSAGE(UnknownParameterForIntegrate,
                 "{value} would be frobinate.",
                 "Unknown parameter '{value}' for integrate.")
 DECLARE_MESSAGE(UnknownPolicySetting,
-                (msg::option, msg::value),
-                "'{value}' is the policy in question. These are unlocalized names that ports use to control post "
-                "build checks. Some examples are VCPKG_POLICY_DLLS_WITHOUT_EXPORTS, "
-                "VCPKG_POLICY_MISMATCHED_NUMBER_OF_BINARIES, or VCPKG_POLICY_ALLOW_OBSOLETE_MSVCRT",
-                "Unknown setting for policy '{value}': {option}")
+                (msg::value, msg::cmake_var),
+                "{value} is to what the user set the variable we don't understand. The names 'enabled' and 'disabled' "
+                "must not be localized.",
+                "Unknown setting of {cmake_var}: {value}. Valid policy values are '', 'disabled', and 'enabled'.")
 DECLARE_MESSAGE(UnknownSettingForBuildType,
                 (msg::option),
                 "",
@@ -2830,6 +2932,8 @@ DECLARE_MESSAGE(UploadingBinariesToVendor,
                 (msg::spec, msg::vendor, msg::path),
                 "",
                 "Uploading binaries for '{spec}' to '{vendor}' source \"{path}\".")
+DECLARE_MESSAGE(UsageTextHere, (), "", "the usage file is here")
+DECLARE_MESSAGE(UsageInstallInstructions, (), "", "you can install the usage file with the following CMake")
 DECLARE_MESSAGE(UseEnvVar,
                 (msg::env_var),
                 "An example of env_var is \"HTTP(S)_PROXY\""
@@ -2884,15 +2988,16 @@ DECLARE_MESSAGE(VcvarsRunFailedExitCode,
                 (msg::exit_code),
                 "",
                 "while trying to get a Visual Studio environment, vcvarsall.bat returned {exit_code}")
+DECLARE_MESSAGE(VersionBaselineMatch, (msg::version_spec), "", "{version_spec} matches the current baseline")
 DECLARE_MESSAGE(VersionBaselineMismatch,
                 (msg::expected, msg::actual, msg::package_name),
-                "{expected} and {actual} are versions",
-                "The latest version is {expected}, but the baseline file contains {actual}.\n"
-                "Run:\n"
-                "vcpkg x-add-version {package_name}\n"
-                "git add versions\n"
-                "git commit -m \"Update version database\"\n"
-                "to update the baseline version.")
+                "{actual} and {expected} are versions",
+                "{package_name} is assigned {actual}, but the local port is {expected}")
+DECLARE_MESSAGE(VersionBuiltinPortTreeEntryMissing,
+                (msg::package_name, msg::expected, msg::actual),
+                "{expected} and {actual} are versions like 1.0.",
+                "no version database entry for {package_name} at {expected}; using the checked out ports tree "
+                "version ({actual}).")
 DECLARE_MESSAGE(VersionCommandHeader,
                 (msg::version),
                 "",
@@ -2902,6 +3007,16 @@ DECLARE_MESSAGE(
     (msg::path, msg::expected_version, msg::actual_version),
     "",
     "Expected {path} version: [{expected_version}], but was [{actual_version}]. Please re-run bootstrap-vcpkg.")
+DECLARE_MESSAGE(VersionConstraintNotInDatabase1,
+                (msg::package_name, msg::version),
+                "",
+                "the \"version>=\" constraint to {package_name} names version {version} which does not exist in the "
+                "version database. All versions must exist in the version database to be interpreted by vcpkg.")
+DECLARE_MESSAGE(VersionConstraintNotInDatabase2,
+                (),
+                "",
+                "consider removing the version constraint or choosing a value declared here")
+DECLARE_MESSAGE(VersionConstraintOk, (), "", "all version constraints are consistent with the version database")
 DECLARE_MESSAGE(VersionConstraintPortVersionMustBePositiveInteger,
                 (),
                 "",
@@ -2911,18 +3026,12 @@ DECLARE_MESSAGE(VersionConstraintViolated,
                 "",
                 "dependency {spec} was expected to be at least version "
                 "{expected_version}, but is currently {actual_version}.")
-DECLARE_MESSAGE(VersionDatabaseFileMissing,
-                (msg::package_name, msg::path),
+DECLARE_MESSAGE(VersionDatabaseFileMissing, (), "", "this port is not in the version database")
+DECLARE_MESSAGE(VersionDatabaseFileMissing2, (), "", "the version database file should be here")
+DECLARE_MESSAGE(VersionDatabaseFileMissing3,
+                (msg::command_line),
                 "",
-                "{package_name} is missing a version database file at {path}\n"
-                "Run:\n"
-                "vcpkg x-add-version {package_name}\n"
-                "to create the versions file.")
-DECLARE_MESSAGE(VersionBuiltinPortTreeEntryMissing,
-                (msg::package_name, msg::expected, msg::actual),
-                "{expected} and {actual} are versions like 1.0.",
-                "no version database entry for {package_name} at {expected}; using the checked out ports tree "
-                "version ({actual}).")
+                "run '{command_line}' to create the version database file")
 DECLARE_MESSAGE(VersionDatabaseEntryMissing,
                 (msg::package_name, msg::version),
                 "",
@@ -2948,9 +3057,9 @@ DECLARE_MESSAGE(VersionIncomparable3,
                 "This can be resolved by adding an explicit override to the preferred version. For example:")
 DECLARE_MESSAGE(VersionIncomparable4, (msg::url), "", "See `vcpkg help versioning` or {url} for more information.")
 DECLARE_MESSAGE(VersionInDeclarationDoesNotMatch,
-                (msg::version),
-                "",
-                "The version declared in file does not match checked-out version: {version}")
+                (msg::git_tree_sha, msg::expected, msg::actual),
+                "{expected} and {actual} are version specs",
+                "{git_tree_sha} is declared to contain {expected}, but appears to contain {actual}")
 DECLARE_MESSAGE(
     VersionInvalidDate,
     (msg::version),
@@ -2974,17 +3083,33 @@ DECLARE_MESSAGE(VersionMissingRequiredFeature,
                 (msg::version_spec, msg::feature, msg::constraint_origin),
                 "",
                 "{version_spec} does not have required feature {feature} needed by {constraint_origin}")
-DECLARE_MESSAGE(VersionNotFound,
-                (msg::expected, msg::actual),
-                "{expected} and {actual} are versions",
-                "{expected} not available, only {actual} is available")
-DECLARE_MESSAGE(VersionNotFoundInVersionsFile,
-                (msg::version, msg::package_name),
+DECLARE_MESSAGE(VersionNotFoundInVersionsFile2,
+                (msg::version_spec),
                 "",
-                "Version {version} was not found in versions file for {package_name}.\n"
-                "Run:\n"
-                "vcpkg x-add-version {package_name}\n"
-                "to add the new port version.")
+                "{version_spec} was not found in versions database")
+DECLARE_MESSAGE(VersionNotFoundInVersionsFile3, (), "", "the version should be in this file")
+DECLARE_MESSAGE(VersionNotFoundInVersionsFile4,
+                (msg::command_line),
+                "",
+                "run '{command_line}' to add the new port version")
+DECLARE_MESSAGE(VersionOverrideNotInVersionDatabase,
+                (msg::package_name),
+                "",
+                "the version override {package_name} does not exist in the version database; does that port exist?")
+DECLARE_MESSAGE(
+    VersionOverrideVersionNotInVersionDatabase1,
+    (msg::package_name, msg::version),
+    "",
+    "the override of {package_name} names version {version} which does not exist in the "
+    "version database. Installing this port at the top level will fail as that version will be unresolvable.")
+DECLARE_MESSAGE(VersionOverrideVersionNotInVersionDatabase2,
+                (),
+                "",
+                "consider removing the version override or choosing a value declared here")
+DECLARE_MESSAGE(VersionOverwriteVersion,
+                (msg::version_spec),
+                "",
+                "you can overwrite {version_spec} with correct local values by running:")
 DECLARE_MESSAGE(VersionRejectedDueToBaselineMissing,
                 (msg::path, msg::json_field),
                 "",
@@ -2997,34 +3122,46 @@ DECLARE_MESSAGE(VersionRejectedDueToFeatureFlagOff,
                 "{path} was rejected because it uses \"{json_field}\" and the `versions` feature flag is disabled. "
                 "This can be fixed by removing \"{json_field}\" or enabling the `versions` feature flag.\nSee "
                 "`vcpkg help versioning` for more information.")
-DECLARE_MESSAGE(VersionSchemeMismatch,
-                (msg::version, msg::expected, msg::actual, msg::path, msg::package_name),
-                "{expected} and {actual} are version schemes; it here refers to the {version}",
-                "The version database declares {version} as {expected}, but {path} declares it as {actual}. "
-                "Versions must be unique, even if they are declared with different schemes.\n"
-                "Run:\n"
-                "vcpkg x-add-version {package_name} --overwrite-version\n"
-                "to overwrite the scheme declared in the version database with that declared in the port.")
-DECLARE_MESSAGE(VersionShaMismatch,
+DECLARE_MESSAGE(VersionSchemeMismatch1,
                 (msg::version, msg::expected, msg::actual, msg::package_name),
-                "{expected} and {actual} are git commit SHAs",
-                "{version} is declared with {expected}, but the local port has a different SHA {actual}.\n"
-                "Please update the port's version fields and then run:\n"
-                "vcpkg x-add-version {package_name}\n"
-                "git add versions\n"
-                "git commit -m \"Update version database\"\n"
-                "to add the new version.")
-DECLARE_MESSAGE(VersionShaMissing,
-                (msg::package_name, msg::path),
+                "{expected} and {actual} are version schemes; it here refers to the {version}",
+                "{version} is declared {expected}, but {package_name} is declared with {actual}")
+DECLARE_MESSAGE(VersionSchemeMismatch1Old,
+                (msg::version, msg::expected, msg::actual, msg::package_name, msg::git_tree_sha),
+                "{expected} and {actual} are version schemes; it here refers to the {version}",
+                "{version} is declared {expected}, but {package_name}@{git_tree_sha} is declared with {actual}")
+DECLARE_MESSAGE(VersionSchemeMismatch2,
+                (),
                 "",
-                "while validating {package_name}, missing Git SHA.\n"
-                "Run:\n"
-                "git add \"{path}\"\n"
-                "git commit -m \"wip\"\n"
-                "vcpkg x-add-version {package_name}\n"
-                "git add versions\n"
-                "git commit --amend -m \"[{package_name}] Add new port\"\n"
-                "to commit the new port and create its version file.")
+                "versions must be unique, even if they are declared with different schemes")
+DECLARE_MESSAGE(VersionShaMismatch1,
+                (msg::version_spec, msg::git_tree_sha),
+                "'git tree' is ",
+                "{version_spec} git tree {git_tree_sha} does not match the port directory")
+DECLARE_MESSAGE(VersionShaMismatch2, (msg::git_tree_sha), "", "the port directory has git tree {git_tree_sha}")
+DECLARE_MESSAGE(VersionShaMismatch3,
+                (msg::version_spec),
+                "",
+                "if {version_spec} is already published, update this file with a new version or port-version, commit "
+                "it, then add the new version by running:")
+DECLARE_MESSAGE(VersionShaMismatch4,
+                (msg::version_spec),
+                "",
+                "if {version_spec} is not yet published, overwrite the previous git tree by running:")
+DECLARE_MESSAGE(
+    VersionShaMissing1,
+    (),
+    "",
+    "the git tree of the port directory could not be determined. This is usually caused by uncommitted changes.")
+DECLARE_MESSAGE(VersionShaMissing2,
+                (),
+                "",
+                "you can commit your changes and add them to the version database by running:")
+DECLARE_MESSAGE(VersionShaMissing3,
+                (),
+                "This is short for 'work in progress' and must be enclosed in \" quotes if it is more than 1 word",
+                "wip")
+DECLARE_MESSAGE(VersionShaMissing4, (msg::package_name), "", "[{package_name}] Add new port")
 DECLARE_MESSAGE(VersionSharpMustBeFollowedByPortVersion,
                 (),
                 "",
@@ -3055,9 +3192,11 @@ DECLARE_MESSAGE(WhileCheckingOutPortTreeIsh,
                 "",
                 "while checking out port {package_name} with git tree {git_tree_sha}")
 DECLARE_MESSAGE(WhileGettingLocalTreeIshObjectsForPorts, (), "", "while getting local treeish objects for ports")
-DECLARE_MESSAGE(WhileLoadingLocalPort, (msg::package_name), "", "while attempting to load local port {package_name}")
-DECLARE_MESSAGE(WhileLoadingPortFromGitTree, (msg::commit_sha), "", "while trying to load port from: {commit_sha}")
 DECLARE_MESSAGE(WhileLookingForSpec, (msg::spec), "", "while looking for {spec}:")
+DECLARE_MESSAGE(WhileLoadingBaselineVersionForPort,
+                (msg::package_name),
+                "",
+                "while loading baseline version for {package_name}")
 DECLARE_MESSAGE(WhileLoadingPortVersion, (msg::version_spec), "", "while loading {version_spec}")
 DECLARE_MESSAGE(WhileParsingVersionsForPort,
                 (msg::package_name, msg::path),

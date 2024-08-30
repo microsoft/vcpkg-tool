@@ -180,16 +180,16 @@ namespace vcpkg
         }
 
         auto registry_set = paths.make_registry_set();
-        PathsPortFileProvider provider(
-            filesystem, *registry_set, make_overlay_provider(filesystem, paths.original_cwd, paths.overlay_ports));
+        PathsPortFileProvider provider(*registry_set,
+                                       make_overlay_provider(filesystem, paths.original_cwd, paths.overlay_ports));
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
 
         std::vector<SourceControlFile*> feature_test_ports;
         if (all_ports)
         {
-            feature_test_ports = Util::fmap(provider.load_all_control_files(),
-                                            [](auto& scfl) { return scfl->source_control_file.get(); });
+            const auto files = provider.load_all_control_files();
+            feature_test_ports = Util::fmap(files, [](auto& scfl) { return scfl->source_control_file.get(); });
         }
         else
         {

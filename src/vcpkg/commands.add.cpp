@@ -69,7 +69,10 @@ namespace vcpkg
             if (!manifest)
             {
                 Checks::msg_exit_with_message(
-                    VCPKG_LINE_INFO, msgAddPortRequiresManifest, msg::command_line = "vcpkg add port");
+                    VCPKG_LINE_INFO,
+                    msg::format(msgAddPortRequiresManifest, msg::command_line = "vcpkg add port")
+                        .append_raw('\n')
+                        .append(msgSeeURL, msg::url = docs::add_command_url));
             }
 
             if (Util::Maps::contains(parsed.settings, SwitchVersion))
@@ -93,8 +96,13 @@ namespace vcpkg
             auto pmanifest_scf = maybe_manifest_scf.get();
             if (!pmanifest_scf)
             {
-                print_error_message(maybe_manifest_scf.error());
-                msg::println(Color::error, msgSeeURL, msg::url = docs::manifests_url);
+                msg::print(Color::error,
+                           std::move(maybe_manifest_scf)
+                               .error()
+                               .append_raw('\n')
+                               .append_raw(NotePrefix)
+                               .append(msgSeeURL, msg::url = docs::manifests_url)
+                               .append_raw('\n'));
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
@@ -159,6 +167,8 @@ namespace vcpkg
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 
-        Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgAddFirstArgument, msg::command_line = "vcpkg add");
+        Checks::msg_exit_with_message(
+            VCPKG_LINE_INFO,
+            msg::format(msgAddCommandFirstArg).append_raw('\n').append(msgSeeURL, msg::url = docs::add_command_url));
     }
 }

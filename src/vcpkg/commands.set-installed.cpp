@@ -210,7 +210,7 @@ namespace vcpkg
         auto status_db = database_load_check(fs, paths.installed());
         adjust_action_plan_to_status_db(action_plan, status_db);
 
-        print_plan(action_plan, true, paths.builtin_ports_directory());
+        print_plan(action_plan, paths.builtin_ports_directory());
 
         if (auto p_pkgsconfig = maybe_pkgconfig.get())
         {
@@ -314,8 +314,8 @@ namespace vcpkg
 
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();
-        PathsPortFileProvider provider(
-            fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
+        PathsPortFileProvider provider(*registry_set,
+                                       make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
         auto cmake_vars = CMakeVars::make_triplet_cmake_var_provider(paths);
 
         Optional<Path> pkgsconfig;

@@ -81,8 +81,8 @@ namespace vcpkg
         // Load ports from ports dirs
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();
-        PathsPortFileProvider provider(
-            fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
+        PathsPortFileProvider provider(*registry_set,
+                                       make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
 
@@ -180,9 +180,14 @@ namespace vcpkg
                 }
             }
 
-            Checks::check_exit(VCPKG_LINE_INFO, not_installed.empty() && no_control_file.empty());
-
-            if (to_upgrade.empty()) Checks::exit_success(VCPKG_LINE_INFO);
+            if (!not_installed.empty() || !no_control_file.empty())
+            {
+                Checks::exit_fail(VCPKG_LINE_INFO);
+            }
+            else if (to_upgrade.empty())
+            {
+                Checks::exit_success(VCPKG_LINE_INFO);
+            }
 
             action_plan =
                 create_upgrade_plan(provider, var_provider, to_upgrade, status_db, create_upgrade_plan_options);
@@ -190,7 +195,7 @@ namespace vcpkg
 
         Checks::check_exit(VCPKG_LINE_INFO, !action_plan.empty());
         action_plan.print_unsupported_warnings();
-        print_plan(action_plan, true, paths.builtin_ports_directory());
+        print_plan(action_plan, paths.builtin_ports_directory());
 
         if (!no_dry_run)
         {
@@ -208,7 +213,7 @@ namespace vcpkg
 
         if (keep_going == KeepGoing::Yes)
         {
-            summary.print();
+            msg::print(summary.format());
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);

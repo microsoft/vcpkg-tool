@@ -23,7 +23,6 @@
 #include <vcpkg/triplet.h>
 #include <vcpkg/vcpkgpaths.h>
 
-#include <array>
 #include <map>
 #include <set>
 #include <vector>
@@ -90,7 +89,7 @@ namespace vcpkg
         int removed = 0;
 
         void increment(const BuildResult build_result);
-        void println(const Triplet& triplet) const;
+        LocalizedString format(const Triplet& triplet) const;
     };
 
     StringLiteral to_string_locale_invariant(const BuildResult build_result);
@@ -133,6 +132,7 @@ namespace vcpkg
         std::vector<std::string> passthrough_env_vars;
         std::vector<std::string> passthrough_env_vars_tracked;
         std::vector<Path> hash_additional_files;
+        std::vector<Path> post_portfile_includes;
         Optional<Path> gamedk_latest_path;
 
         Path toolchain_file() const;
@@ -176,9 +176,6 @@ namespace vcpkg
                                       const InstallPlanAction& config,
                                       const IBuildLogsRecorder& build_logs_recorder,
                                       const StatusParagraphs& status_db);
-
-    // could be constexpr, but we want to generate this and that's not constexpr in C++14
-    extern const std::array<BuildPolicy, size_t(BuildPolicy::COUNT)> ALL_POLICIES;
 
     StringLiteral to_string_view(BuildPolicy policy);
     std::string to_string(BuildPolicy policy);
