@@ -228,6 +228,7 @@ namespace vcpkg
     inline constexpr StringLiteral SwitchInstallRoot = "install-root";
     inline constexpr StringLiteral SwitchJson = "json";
     inline constexpr StringLiteral SwitchKeepGoing = "keep-going";
+    inline constexpr StringLiteral SwitchKnownFailuresFrom = "known-failures-from";
     inline constexpr StringLiteral SwitchLinux = "linux";
     inline constexpr StringLiteral SwitchManifestRoot = "manifest-root";
     inline constexpr StringLiteral SwitchMaxRecurse = "max-recurse";

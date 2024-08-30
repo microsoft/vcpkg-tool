@@ -37,6 +37,7 @@ namespace vcpkg
         void mark_unavailable(const IReadBinaryProvider* sender);
         void mark_available(const IReadBinaryProvider* sender) noexcept;
         void mark_restored() noexcept;
+        void mark_unrestored() noexcept;
 
     private:
         CacheStatusState m_status = CacheStatusState::unknown;
@@ -187,7 +188,9 @@ namespace vcpkg
         /// Checks whether the `actions` are present in the cache, without restoring them. Used by CI to determine
         /// missing packages.
         /// Returns a vector where each index corresponds to the matching index in `actions`.
-        std::vector<CacheAvailability> precheck(View<InstallPlanAction> actions);
+        std::vector<CacheAvailability> precheck(View<const InstallPlanAction*> actions);
+
+        void clear_cache();
 
     protected:
         BinaryProviders m_config;

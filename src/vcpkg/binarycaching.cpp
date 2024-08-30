@@ -2159,11 +2159,20 @@ namespace vcpkg
         return false;
     }
 
-    std::vector<CacheAvailability> ReadOnlyBinaryCache::precheck(View<InstallPlanAction> actions)
+    void ReadOnlyBinaryCache::clear_cache()
+    {
+        for (auto& entry : m_status)
+        {
+            entry.second.mark_unrestored();
+        }
+    }
+
+    std::vector<CacheAvailability> ReadOnlyBinaryCache::precheck(View<const InstallPlanAction*> actions)
     {
         std::vector<CacheStatus*> statuses = Util::fmap(actions, [this](const auto& action) {
-            if (!action.package_abi()) Checks::unreachable(VCPKG_LINE_INFO);
-            return &m_status[*action.package_abi().get()];
+            Checks::check_exit(VCPKG_LINE_INFO, action && action->package_abi());
+            ASSUME(action);
+            return &m_status[*action->package_abi().get()];
         });
 
         std::vector<const InstallPlanAction*> action_ptrs;
@@ -2178,7 +2187,7 @@ namespace vcpkg
             {
                 if (statuses[i]->should_attempt_precheck(provider.get()))
                 {
-                    action_ptrs.push_back(&actions[i]);
+                    action_ptrs.push_back(actions[i]);
                     cache_result.push_back(CacheAvailability::unknown);
                     indexes.push_back(i);
                 }
@@ -2353,6 +2362,14 @@ namespace vcpkg
             case CacheStatusState::available: m_status = CacheStatusState::restored; break;
             case CacheStatusState::restored: break;
             default: Checks::unreachable(VCPKG_LINE_INFO);
+        }
+    }
+
+    void CacheStatus::mark_unrestored() noexcept
+    {
+        if (m_status == CacheStatusState::restored)
+        {
+            m_status = CacheStatusState::available;
         }
     }
 
