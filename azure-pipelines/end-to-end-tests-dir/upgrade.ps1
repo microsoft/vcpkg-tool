@@ -73,3 +73,12 @@ if (-Not ($output -match 'upgrade-test-port:[^:]+: SUCCEEDED:'))
 {
     throw "Upgrade didn't install"
 }
+
+# Also test providing a nonexistent name
+
+$output = Run-VcpkgAndCaptureStdErr upgrade nonexistent "--x-builtin-ports-root=$portsRoot" @commonArgs
+Throw-IfNotFailed
+if ($output -match 'internal error:')
+{
+    throw "Upgrade with a nonexistent name crashed"
+}
