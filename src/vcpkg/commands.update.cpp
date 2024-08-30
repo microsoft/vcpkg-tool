@@ -24,7 +24,7 @@ namespace vcpkg
         for (auto&& ipv : installed_packages)
         {
             const auto& pgh = ipv.core;
-            auto maybe_scfl = provider.get_control_file(pgh->package.spec.name());
+            auto maybe_scfl = provider.get_control_file_required(pgh->package.spec.name());
             if (auto p_scfl = maybe_scfl.get())
             {
                 const auto& latest_version = p_scfl->to_version();

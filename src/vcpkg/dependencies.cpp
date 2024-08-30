@@ -379,7 +379,7 @@ namespace vcpkg
                 auto it = m_graph.find(spec);
                 if (it == m_graph.end())
                 {
-                    auto maybe_scfl = m_port_provider.get_control_file(spec.name());
+                    auto maybe_scfl = m_port_provider.get_control_file_required(spec.name());
                     if (auto scfl = maybe_scfl.get())
                     {
                         it = m_graph
@@ -403,7 +403,7 @@ namespace vcpkg
             Cluster& insert(const InstalledPackageView& ipv)
             {
                 ExpectedL<const SourceControlFileAndLocation&> maybe_scfl =
-                    m_port_provider.get_control_file(ipv.spec().name());
+                    m_port_provider.get_control_file_required(ipv.spec().name());
 
                 return m_graph
                     .emplace(std::piecewise_construct,

@@ -117,7 +117,7 @@ namespace
                                const PortFileProvider& provider,
                                PackageSpec spec)
     {
-        auto&& scf = provider.get_control_file(spec.name()).value_or_exit(VCPKG_LINE_INFO).source_control_file;
+        auto&& scf = provider.get_control_file_required(spec.name()).value_or_exit(VCPKG_LINE_INFO).source_control_file;
         return supported_for_triplet(var_provider, *scf, spec);
     }
 
@@ -130,7 +130,7 @@ namespace
         std::vector<PackageSpec> packages_with_qualified_deps;
         for (auto&& spec : specs)
         {
-            auto&& scfl = provider.get_control_file(spec.package_spec.name()).value_or_exit(VCPKG_LINE_INFO);
+            auto&& scfl = provider.get_control_file_required(spec.package_spec.name()).value_or_exit(VCPKG_LINE_INFO);
             if (scfl.source_control_file->has_qualified_dependencies() ||
                 !scfl.source_control_file->core_paragraph->supports_expression.is_empty())
             {

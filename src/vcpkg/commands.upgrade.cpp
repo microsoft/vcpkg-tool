@@ -128,7 +128,7 @@ namespace vcpkg
                     skip_version_check = true;
                 }
 
-                auto maybe_control_file = provider.get_control_file(spec.name());
+                auto maybe_control_file = provider.get_control_file_required(spec.name());
                 if (!maybe_control_file)
                 {
                     no_control_file.push_back(spec);

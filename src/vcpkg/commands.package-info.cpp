@@ -122,7 +122,7 @@ namespace vcpkg
 
                 if (results.contains(pkg)) continue;
 
-                auto maybe_scfl = provider.get_control_file(pkg);
+                auto maybe_scfl = provider.get_control_file_required(pkg);
 
                 Json::Object obj;
                 if (auto pscfl = maybe_scfl.get())

@@ -19,7 +19,8 @@ namespace vcpkg
     {
     }
 
-    ExpectedL<const SourceControlFileAndLocation&> MapPortFileProvider::get_control_file(const std::string& spec) const
+    ExpectedL<const SourceControlFileAndLocation&> MapPortFileProvider::get_control_file_required(
+        const std::string& spec) const
     {
         auto scf = ports.find(spec);
         if (scf == ports.end()) return msg::format(msgPortDoesNotExist, msg::package_name = spec);
@@ -39,7 +40,7 @@ namespace vcpkg
     {
     }
 
-    ExpectedL<const SourceControlFileAndLocation&> PathsPortFileProvider::get_control_file(
+    ExpectedL<const SourceControlFileAndLocation&> PathsPortFileProvider::get_control_file_required(
         const std::string& spec) const
     {
         auto maybe_scfl = m_overlay->get_control_file(spec);
