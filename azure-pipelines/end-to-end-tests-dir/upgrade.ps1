@@ -1,48 +1,75 @@
 . "$PSScriptRoot/../end-to-end-tests-prelude.ps1"
 
-git clone $VcpkgRoot "$TestingRoot/temp-repo" --local
-try
+Refresh-TestRoot
+
+$portsRoot = Join-Path $TestingRoot 'ports'
+New-Item -ItemType Directory -Force $portsRoot | Out-Null
+Set-EmptyTestPort -Name 'upgrade-test-port' -Version '0' -PortsRoot $portsRoot
+$output = Run-VcpkgAndCaptureOutput install upgrade-test-port "--x-builtin-ports-root=$portsRoot" @commonArgs
+Throw-IfFailed
+if (-Not ($output -match 'upgrade-test-port:[^ ]+@0'))
 {
-    $env:VCPKG_ROOT = "$TestingRoot/temp-repo"
-    git -C "$TestingRoot/temp-repo" switch -d e1934f4a2a0c58bb75099d89ed980832379907fa # vcpkg-cmake @ 2022-12-22
-    $output = Run-VcpkgAndCaptureOutput install vcpkg-cmake
-    Throw-IfFailed
-    if (-Not ($output -match 'vcpkg-cmake:[^ ]+@2022-12-22'))
-    {
-        throw 'Unexpected vcpkg-cmake install'
-    }
-
-    git -C "$TestingRoot/temp-repo" switch -d f6a5d4e8eb7476b8d7fc12a56dff300c1c986131 # vcpkg-cmake @ 2023-05-04
-    $output = Run-VcpkgAndCaptureOutput upgrade
-    Throw-IfNotFailed
-    if (-Not ($output -match 'If you are sure you want to rebuild the above packages, run this command with the --no-dry-run option.'))
-    {
-        throw "Upgrade didn't handle dry-run correctly"
-    }
-
-    if (-Not ($output -match '\* vcpkg-cmake:[^ ]+@2023-05-04'))
-    {
-        throw "Upgrade didn't choose expected version"
-    }
-
-    $output = Run-VcpkgAndCaptureOutput upgrade --no-dry-run
-    Throw-IfFailed
-    if (-Not ($output -match '\* vcpkg-cmake:[^ ]+@2023-05-04'))
-    {
-        throw "Upgrade didn't choose expected version"
-    }
-
-    if (-Not ($output -match 'vcpkg-cmake:[^:]+: REMOVED:'))
-    {
-        throw "Upgrade didn't remove"
-    }
-
-    if (-Not ($output -match 'vcpkg-cmake:[^:]+: SUCCEEDED:'))
-    {
-        throw "Upgrade didn't install"
-    }
+    throw 'Unexpected upgrade-test-port install'
 }
-finally
+
+Set-EmptyTestPort -Name 'upgrade-test-port' -Version '1' -PortsRoot $portsRoot
+$output = Run-VcpkgAndCaptureOutput upgrade "--x-builtin-ports-root=$portsRoot" @commonArgs
+Throw-IfNotFailed
+if (-Not ($output -match 'If you are sure you want to rebuild the above packages, run this command with the --no-dry-run option.'))
 {
-    $env:VCPKG_ROOT = $VcpkgRoot
+    throw "Upgrade didn't handle dry-run correctly"
+}
+
+if (-Not ($output -match '\* upgrade-test-port:[^ ]+@1'))
+{
+    throw "Upgrade didn't choose expected version"
+}
+
+$output = Run-VcpkgAndCaptureOutput upgrade --no-dry-run "--x-builtin-ports-root=$portsRoot" @commonArgs
+Throw-IfFailed
+if (-Not ($output -match '\* upgrade-test-port:[^ ]+@1'))
+{
+    throw "Upgrade didn't choose expected version"
+}
+
+if (-Not ($output -match 'upgrade-test-port:[^:]+: REMOVED:'))
+{
+    throw "Upgrade didn't remove"
+}
+
+if (-Not ($output -match 'upgrade-test-port:[^:]+: SUCCEEDED:'))
+{
+    throw "Upgrade didn't install"
+}
+
+# Also test explicitly providing the name
+
+Set-EmptyTestPort -Name 'upgrade-test-port' -Version '2' -PortsRoot $portsRoot
+$output = Run-VcpkgAndCaptureOutput upgrade upgrade-test-port "--x-builtin-ports-root=$portsRoot" @commonArgs
+Throw-IfNotFailed
+if (-Not ($output -match 'If you are sure you want to rebuild the above packages, run this command with the --no-dry-run option.'))
+{
+    throw "Upgrade didn't handle dry-run correctly"
+}
+
+if (-Not ($output -match '\* upgrade-test-port:[^ ]+@2'))
+{
+    throw "Upgrade didn't choose expected version"
+}
+
+$output = Run-VcpkgAndCaptureOutput upgrade upgrade-test-port --no-dry-run "--x-builtin-ports-root=$portsRoot" @commonArgs
+Throw-IfFailed
+if (-Not ($output -match '\* upgrade-test-port:[^ ]+@2'))
+{
+    throw "Upgrade didn't choose expected version"
+}
+
+if (-Not ($output -match 'upgrade-test-port:[^:]+: REMOVED:'))
+{
+    throw "Upgrade didn't remove"
+}
+
+if (-Not ($output -match 'upgrade-test-port:[^:]+: SUCCEEDED:'))
+{
+    throw "Upgrade didn't install"
 }
