@@ -367,9 +367,9 @@ namespace vcpkg
 #endif
     }
 
-    std::string get_environment_variables()
+    std::vector<std::string> get_environment_variables()
     {
-        std::string result;
+        std::vector<std::string> result;
 #if defined(_WIN32)
         const struct EnvironmentStringsW
         {
@@ -382,12 +382,12 @@ namespace vcpkg
         for (LPWCH i = env_block.strings; *i; i += len + 1)
         {
             len = wcslen(i);
-            result.append(Strings::to_utf8(i, len)).push_back('\n');
+            result.emplace_back(Strings::to_utf8(i, len));
         }
 #else
         for (char** s = environ; *s; s++)
         {
-            result.append(*s).push_back('\n');
+            result.emplace_back(*s);
         }
 #endif
         return result;
