@@ -42,7 +42,7 @@ namespace vcpkg
 
     struct IFullVersionedPortfileProvider : IVersionedPortfileProvider
     {
-        virtual View<Version> get_port_versions(StringView port_name) const = 0;
+        virtual View<Version> get_port_versions_required(StringView port_name) const = 0;
         virtual void load_all_control_files(std::map<std::string, const SourceControlFileAndLocation*>& out) const = 0;
     };
 

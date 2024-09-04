@@ -143,7 +143,7 @@ namespace vcpkg
                 return entry_it->second;
             }
 
-            virtual View<Version> get_port_versions(StringView port_name) const override
+            virtual View<Version> get_port_versions_required(StringView port_name) const override
             {
                 return entry(port_name)
                     .value_or_exit(VCPKG_LINE_INFO)
