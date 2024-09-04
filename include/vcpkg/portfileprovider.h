@@ -14,6 +14,13 @@ namespace vcpkg
     struct PortFileProvider
     {
         virtual ~PortFileProvider() = default;
+        // If an error occurs, the Expected will be in the error state.
+        // Otherwise, if the port is unknown, the reference will refer to a SourceControlFileAndLocation with a nullptr
+        // source_control_file.
+        // Otherwise, the reference will refer to a SourceControlFileAndLocation with the loaded
+        // port information.
+        virtual ExpectedL<const SourceControlFileAndLocation&> get_control_file(const std::string& port_name) const = 0;
+        // Identical to get_control_file but the port unknown condition is mapped to an error.
         virtual ExpectedL<const SourceControlFileAndLocation&> get_control_file_required(
             const std::string& port_name) const = 0;
         virtual std::vector<const SourceControlFileAndLocation*> load_all_control_files() const = 0;
@@ -24,6 +31,8 @@ namespace vcpkg
         explicit MapPortFileProvider(const std::unordered_map<std::string, SourceControlFileAndLocation>& map);
         MapPortFileProvider(const MapPortFileProvider&) = delete;
         MapPortFileProvider& operator=(const MapPortFileProvider&) = delete;
+
+        ExpectedL<const SourceControlFileAndLocation&> get_control_file(const std::string& port_name) const override;
         ExpectedL<const SourceControlFileAndLocation&> get_control_file_required(
             const std::string& port_name) const override;
         std::vector<const SourceControlFileAndLocation*> load_all_control_files() const override;
@@ -48,6 +57,7 @@ namespace vcpkg
 
     struct IBaselineProvider
     {
+        virtual ExpectedL<Optional<Version>> get_baseline_version(StringView port_name) const = 0;
         virtual ExpectedL<Version> get_baseline_version_required(StringView port_name) const = 0;
         virtual ~IBaselineProvider() = default;
     };
@@ -73,6 +83,7 @@ namespace vcpkg
     {
         explicit PathsPortFileProvider(const RegistrySet& registry_set,
                                        std::unique_ptr<IFullOverlayProvider>&& overlay);
+        ExpectedL<const SourceControlFileAndLocation&> get_control_file(const std::string& port_name) const override;
         ExpectedL<const SourceControlFileAndLocation&> get_control_file_required(
             const std::string& port_name) const override;
         std::vector<const SourceControlFileAndLocation*> load_all_control_files() const override;

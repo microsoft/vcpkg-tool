@@ -26,11 +26,25 @@ struct MockBaselineProvider : IBaselineProvider
 {
     mutable std::map<std::string, Version, std::less<>> v;
 
+    ExpectedL<Optional<Version>> get_baseline_version(StringView name) const override
+    {
+        auto it = v.find(name);
+        if (it == v.end())
+        {
+            return Optional<Version>{};
+        }
+
+        return it->second;
+    }
+
     ExpectedL<Version> get_baseline_version_required(StringView name) const override
     {
         auto it = v.find(name);
         if (it == v.end())
+        {
             return LocalizedString::from_raw("MockBaselineProvider::get_baseline_version(" + name.to_string() + ")");
+        }
+
         return it->second;
     }
 };
