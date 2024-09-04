@@ -34,7 +34,6 @@ namespace vcpkg
 
     struct IVersionedPortfileProvider
     {
-        virtual View<Version> get_port_versions(StringView port_name) const = 0;
         virtual ~IVersionedPortfileProvider() = default;
 
         virtual ExpectedL<const SourceControlFileAndLocation&> get_control_file_required(
@@ -43,6 +42,7 @@ namespace vcpkg
 
     struct IFullVersionedPortfileProvider : IVersionedPortfileProvider
     {
+        virtual View<Version> get_port_versions(StringView port_name) const = 0;
         virtual void load_all_control_files(std::map<std::string, const SourceControlFileAndLocation*>& out) const = 0;
     };
 
