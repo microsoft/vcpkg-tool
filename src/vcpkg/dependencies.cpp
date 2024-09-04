@@ -1504,7 +1504,7 @@ namespace vcpkg
                         const auto maybe_dep_ver = dep.constraint.try_get_minimum_version();
                         if (auto dep_ver = maybe_dep_ver.get())
                         {
-                            auto maybe_scfl = m_ver_provider.get_control_file({dep.name, *dep_ver});
+                            auto maybe_scfl = m_ver_provider.get_control_file_required({dep.name, *dep_ver});
                             if (auto p_scfl = maybe_scfl.get())
                             {
                                 const auto sver = p_scfl->schemed_version();
@@ -1652,7 +1652,7 @@ namespace vcpkg
                 Version ver;
                 if (const auto over_it = m_overrides.find(spec.name()); over_it != m_overrides.end())
                 {
-                    auto maybe_scfl = m_ver_provider.get_control_file({spec.name(), over_it->second});
+                    auto maybe_scfl = m_ver_provider.get_control_file_required({spec.name(), over_it->second});
                     if (auto p_scfl = maybe_scfl.get())
                     {
                         it = m_graph.emplace(spec, PackageNodeData{}).first;
@@ -1669,7 +1669,7 @@ namespace vcpkg
                 else
                 {
                     auto maybe_scfl = m_base_provider.get_baseline_version(spec.name()).then([&](const Version& ver) {
-                        return m_ver_provider.get_control_file({spec.name(), ver});
+                        return m_ver_provider.get_control_file_required({spec.name(), ver});
                     });
                     if (auto p_scfl = maybe_scfl.get())
                     {
@@ -1867,7 +1867,7 @@ namespace vcpkg
                 if (!node.second.overlay_or_override && maybe_min)
                 {
                     // Dependency resolution should have already logged any errors retrieving the scfl
-                    const auto& dep_scfl = m_ver_provider.get_control_file({dep.spec.name(), *maybe_min.get()})
+                    const auto& dep_scfl = m_ver_provider.get_control_file_required({dep.spec.name(), *maybe_min.get()})
                                                .value_or_exit(VCPKG_LINE_INFO);
                     const auto constraint_sver = dep_scfl.schemed_version();
                     const auto selected_sver = node.second.scfl->schemed_version();

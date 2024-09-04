@@ -37,7 +37,7 @@ namespace vcpkg
         virtual View<Version> get_port_versions(StringView port_name) const = 0;
         virtual ~IVersionedPortfileProvider() = default;
 
-        virtual ExpectedL<const SourceControlFileAndLocation&> get_control_file(
+        virtual ExpectedL<const SourceControlFileAndLocation&> get_control_file_required(
             const VersionSpec& version_spec) const = 0;
     };
 

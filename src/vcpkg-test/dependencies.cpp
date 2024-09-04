@@ -39,18 +39,12 @@ struct MockVersionedPortfileProvider : IVersionedPortfileProvider
 {
     mutable std::map<std::string, std::map<Version, SourceControlFileAndLocation, VersionMapLess>> v;
 
-    ExpectedL<const SourceControlFileAndLocation&> get_control_file(
+    ExpectedL<const SourceControlFileAndLocation&> get_control_file_required(
         const vcpkg::VersionSpec& versionspec) const override
     {
-        return get_control_file(versionspec.port_name, versionspec.version);
-    }
-
-    ExpectedL<const SourceControlFileAndLocation&> get_control_file(const std::string& name,
-                                                                    const vcpkg::Version& version) const
-    {
-        auto it = v.find(name);
+        auto it = v.find(versionspec.port_name);
         if (it == v.end()) return LocalizedString::from_raw("Unknown port name");
-        auto it2 = it->second.find(version);
+        auto it2 = it->second.find(versionspec.version);
         if (it2 == it->second.end()) return LocalizedString::from_raw("Unknown port version");
         return it2->second;
     }

@@ -190,7 +190,7 @@ namespace vcpkg
                 return maybe_ent.error();
             }
 
-            virtual ExpectedL<const SourceControlFileAndLocation&> get_control_file(
+            virtual ExpectedL<const SourceControlFileAndLocation&> get_control_file_required(
                 const VersionSpec& version_spec) const override
             {
                 auto it = m_control_cache.find(version_spec);
