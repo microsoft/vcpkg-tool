@@ -62,7 +62,7 @@ namespace vcpkg
         auto maybe_baseline = m_baseline->get_baseline_version_required(port_name);
         if (auto baseline = maybe_baseline.get())
         {
-            return m_versioned->get_control_file({port_name, *baseline});
+            return m_versioned->get_control_file_required({port_name, *baseline});
         }
         else
         {
@@ -151,7 +151,7 @@ namespace vcpkg
                     .value_or_exit(VCPKG_LINE_INFO);
             }
 
-            ExpectedL<SourceControlFileAndLocation> load_control_file(const VersionSpec& version_spec) const
+            ExpectedL<SourceControlFileAndLocation> load_control_file_required(const VersionSpec& version_spec) const
             {
                 const auto& maybe_ent = entry(version_spec.port_name);
                 if (auto ent = maybe_ent.get())
@@ -196,7 +196,7 @@ namespace vcpkg
                 auto it = m_control_cache.find(version_spec);
                 if (it == m_control_cache.end())
                 {
-                    it = m_control_cache.emplace(version_spec, load_control_file(version_spec)).first;
+                    it = m_control_cache.emplace(version_spec, load_control_file_required(version_spec)).first;
                 }
 
                 return it->second.map(
