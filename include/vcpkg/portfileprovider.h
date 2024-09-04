@@ -15,7 +15,7 @@ namespace vcpkg
     {
         virtual ~PortFileProvider() = default;
         virtual ExpectedL<const SourceControlFileAndLocation&> get_control_file_required(
-            const std::string& src_name) const = 0;
+            const std::string& port_name) const = 0;
         virtual std::vector<const SourceControlFileAndLocation*> load_all_control_files() const = 0;
     };
 
@@ -25,7 +25,7 @@ namespace vcpkg
         MapPortFileProvider(const MapPortFileProvider&) = delete;
         MapPortFileProvider& operator=(const MapPortFileProvider&) = delete;
         ExpectedL<const SourceControlFileAndLocation&> get_control_file_required(
-            const std::string& src_name) const override;
+            const std::string& port_name) const override;
         std::vector<const SourceControlFileAndLocation*> load_all_control_files() const override;
 
     private:
@@ -74,7 +74,7 @@ namespace vcpkg
         explicit PathsPortFileProvider(const RegistrySet& registry_set,
                                        std::unique_ptr<IFullOverlayProvider>&& overlay);
         ExpectedL<const SourceControlFileAndLocation&> get_control_file_required(
-            const std::string& src_name) const override;
+            const std::string& port_name) const override;
         std::vector<const SourceControlFileAndLocation*> load_all_control_files() const override;
 
     private:
