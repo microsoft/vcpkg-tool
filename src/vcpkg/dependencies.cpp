@@ -1668,9 +1668,10 @@ namespace vcpkg
                 }
                 else
                 {
-                    auto maybe_scfl = m_base_provider.get_baseline_version(spec.name()).then([&](const Version& ver) {
-                        return m_ver_provider.get_control_file_required({spec.name(), ver});
-                    });
+                    auto maybe_scfl =
+                        m_base_provider.get_baseline_version_required(spec.name()).then([&](const Version& ver) {
+                            return m_ver_provider.get_control_file_required({spec.name(), ver});
+                        });
                     if (auto p_scfl = maybe_scfl.get())
                     {
                         it = m_graph.emplace(spec, PackageNodeData{}).first;

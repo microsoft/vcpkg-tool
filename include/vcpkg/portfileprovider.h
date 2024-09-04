@@ -48,7 +48,7 @@ namespace vcpkg
 
     struct IBaselineProvider
     {
-        virtual ExpectedL<Version> get_baseline_version(StringView port_name) const = 0;
+        virtual ExpectedL<Version> get_baseline_version_required(StringView port_name) const = 0;
         virtual ~IBaselineProvider() = default;
     };
 

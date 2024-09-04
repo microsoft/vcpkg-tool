@@ -26,7 +26,7 @@ struct MockBaselineProvider : IBaselineProvider
 {
     mutable std::map<std::string, Version, std::less<>> v;
 
-    ExpectedL<Version> get_baseline_version(StringView name) const override
+    ExpectedL<Version> get_baseline_version_required(StringView name) const override
     {
         auto it = v.find(name);
         if (it == v.end())

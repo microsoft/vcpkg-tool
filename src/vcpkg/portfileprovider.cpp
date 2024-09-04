@@ -59,10 +59,10 @@ namespace vcpkg
             return std::move(maybe_scfl);
         }
 
-        auto maybe_baseline = m_baseline->get_baseline_version(spec);
+        auto maybe_baseline = m_baseline->get_baseline_version_required(port_name);
         if (auto baseline = maybe_baseline.get())
         {
-            return m_versioned->get_control_file({spec, *baseline});
+            return m_versioned->get_control_file({port_name, *baseline});
         }
         else
         {
@@ -86,7 +86,7 @@ namespace vcpkg
             BaselineProviderImpl(const BaselineProviderImpl&) = delete;
             BaselineProviderImpl& operator=(const BaselineProviderImpl&) = delete;
 
-            virtual ExpectedL<Version> get_baseline_version(StringView port_name) const override
+            virtual ExpectedL<Version> get_baseline_version_required(StringView port_name) const override
             {
                 return m_baseline_cache.get_lazy(port_name, [this, port_name]() -> ExpectedL<Version> {
                     return registry_set.baseline_for_port(port_name).then(
