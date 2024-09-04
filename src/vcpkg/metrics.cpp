@@ -279,12 +279,7 @@ namespace vcpkg
                        last_completed_survey);
     }
 
-    std::string MetricsUserConfig::to_string() const
-    {
-        std::string ret;
-        to_string(ret);
-        return ret;
-    }
+    std::string MetricsUserConfig::to_string() const { return adapt_to_string(*this); }
 
     void MetricsUserConfig::try_write(const Filesystem& fs) const
     {

@@ -1490,6 +1490,8 @@ namespace vcpkg
         return Strings::starts_with(sv, "Error") || Strings::starts_with(sv, "error: ");
     }
 
+    const SourceControlFileAndLocation SourceControlFileAndLocation::empty{};
+
     void print_error_message(const LocalizedString& message)
     {
         // To preserve previous behavior, each line starting with "Error" should be error-colored. All other lines

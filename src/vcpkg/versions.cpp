@@ -18,12 +18,7 @@ namespace vcpkg
     {
     }
 
-    std::string Version::to_string() const
-    {
-        std::string result;
-        to_string(result);
-        return result;
-    }
+    std::string Version::to_string() const { return adapt_to_string(*this); }
 
     void Version::to_string(std::string& out) const
     {
@@ -81,9 +76,17 @@ namespace vcpkg
     VersionDiff::VersionDiff() noexcept : left(), right() { }
     VersionDiff::VersionDiff(const Version& left, const Version& right) : left(left), right(right) { }
 
-    std::string VersionDiff::to_string() const { return fmt::format("{} -> {}", left, right); }
+    std::string VersionDiff::to_string() const { return adapt_to_string(*this); }
+    void VersionDiff::to_string(std::string& out) const
+    {
+        fmt::format_to(std::back_inserter(out), "{} -> {}", left, right);
+    }
 
-    std::string VersionSpec::to_string() const { return fmt::format("{}@{}", port_name, version); }
+    std::string VersionSpec::to_string() const { return adapt_to_string(*this); }
+    void VersionSpec::to_string(std::string& out) const
+    {
+        fmt::format_to(std::back_inserter(out), "{}@{}", port_name, version);
+    }
 
     namespace
     {
@@ -125,6 +128,12 @@ namespace vcpkg
         using std::string;
 
         return hash<string>()(key.port_name) ^ (hash<string>()(key.version.to_string()) >> 1);
+    }
+
+    std::string VersionedPackageSpec::to_string() const { return adapt_to_string(*this); }
+    void VersionedPackageSpec::to_string(std::string& out) const
+    {
+        fmt::format_to(std::back_inserter(out), "{}:{}@{}", m_name, m_triplet, m_version);
     }
 
     // 0|[1-9][0-9]*

@@ -29,9 +29,9 @@ namespace vcpkg
         PackageSpec(const std::string& name, Triplet triplet) : m_name(name), m_triplet(triplet) { }
         PackageSpec(std::string&& name, Triplet triplet) : m_name(std::move(name)), m_triplet(triplet) { }
 
-        const std::string& name() const;
+        const std::string& name() const noexcept { return m_name; }
 
-        Triplet triplet() const;
+        Triplet triplet() const noexcept { return m_triplet; }
 
         std::string dir() const;
 

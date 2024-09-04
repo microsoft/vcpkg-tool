@@ -168,7 +168,7 @@ struct MockOverlayProvider : IOverlayProvider
         auto it = mappings.find(name);
         if (it == mappings.end())
         {
-            return empty;
+            return SourceControlFileAndLocation::empty;
         }
 
         return it->second;
@@ -195,7 +195,6 @@ struct MockOverlayProvider : IOverlayProvider
     SourceControlFileAndLocation& emplace(const std::string& name) { return emplace(name, {"1", 0}); }
 
 private:
-    const SourceControlFileAndLocation empty;
     std::map<std::string, SourceControlFileAndLocation, std::less<>> mappings;
 };
 

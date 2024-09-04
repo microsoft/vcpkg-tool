@@ -9,6 +9,8 @@
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/optional.h>
 
+#include <vcpkg/triplet.h>
+
 namespace vcpkg
 {
     struct Version
@@ -48,6 +50,7 @@ namespace vcpkg
         VersionDiff(const Version& left, const Version& right);
 
         std::string to_string() const;
+        void to_string(std::string& out) const;
     };
 
     struct VersionMapLess
@@ -85,6 +88,7 @@ namespace vcpkg
         VersionSpec(const std::string& port_name, const std::string& version_string, int port_version);
 
         std::string to_string() const;
+        void to_string(std::string& out) const;
 
         friend bool operator==(const VersionSpec& lhs, const VersionSpec& rhs);
         friend bool operator!=(const VersionSpec& lhs, const VersionSpec& rhs);
@@ -95,9 +99,42 @@ namespace vcpkg
         std::size_t operator()(const VersionSpec& key) const;
     };
 
+    struct VersionedPackageSpec
+    {
+        VersionedPackageSpec() = default;
+        VersionedPackageSpec(const std::string& name, Triplet triplet, const Version& version)
+            : m_name(name), m_triplet(triplet), m_version(version)
+        {
+        }
+        VersionedPackageSpec(std::string&& name, Triplet triplet, const Version& version)
+            : m_name(std::move(name)), m_triplet(triplet), m_version(version)
+        {
+        }
+        VersionedPackageSpec(const std::string& name, Triplet triplet, Version&& version)
+            : m_name(name), m_triplet(triplet), m_version(std::move(version))
+        {
+        }
+        VersionedPackageSpec(std::string&& name, Triplet triplet, Version&& version)
+            : m_name(std::move(name)), m_triplet(triplet), m_version(std::move(version))
+        {
+        }
+
+        const std::string& name() const noexcept { return m_name; }
+
+        Triplet triplet() const noexcept { return m_triplet; }
+
+        std::string to_string() const;
+        void to_string(std::string& out) const;
+
+    private:
+        std::string m_name;
+        Triplet m_triplet;
+        Version m_version;
+    };
+
     struct DotVersion
     {
-        DotVersion() { } // intentionally disable making this type an aggregate
+        DotVersion() noexcept { } // intentionally disable making this type an aggregate
 
         std::string original_string;
         std::string version_string;
@@ -122,7 +159,7 @@ namespace vcpkg
 
     struct DateVersion
     {
-        DateVersion() { } // intentionally disable making this type an aggregate
+        DateVersion() noexcept { } // intentionally disable making this type an aggregate
 
         std::string original_string;
         std::string version_string;
@@ -171,3 +208,4 @@ VCPKG_FORMAT_WITH_TO_STRING(vcpkg::Version);
 VCPKG_FORMAT_WITH_TO_STRING(vcpkg::VersionDiff);
 VCPKG_FORMAT_WITH_TO_STRING_LITERAL_NONMEMBER(vcpkg::VersionScheme);
 VCPKG_FORMAT_WITH_TO_STRING(vcpkg::VersionSpec);
+VCPKG_FORMAT_WITH_TO_STRING(vcpkg::VersionedPackageSpec);
