@@ -25,6 +25,14 @@ namespace
         {SwitchNoKeepGoing, msgCmdUpgradeOptNoKeepGoing},
         {SwitchAllowUnsupported, msgHelpTxtOptAllowUnsupportedPort},
     };
+
+    void print_versioned_package_spec_list(View<VersionedPackageSpec> specs)
+    {
+        for (const VersionedPackageSpec& spec : specs)
+        {
+            msg::println(Color::none, LocalizedString().append_indent().append_raw(spec.to_string()));
+        }
+    }
 } // unnamed namespace
 
 namespace vcpkg
@@ -87,111 +95,108 @@ namespace vcpkg
         auto& var_provider = *var_provider_storage;
 
         ActionPlan action_plan;
+        std::vector<PackageSpec> not_installed;
+        std::vector<VersionedPackageSpec> attempt_upgrade_specs;
         if (options.command_arguments.empty())
         {
             // If no packages specified, upgrade all outdated packages.
-            auto outdated_packages = find_outdated_packages(provider, status_db);
-
-            if (outdated_packages.empty())
-            {
-                msg::println(msgAllPackagesAreUpdated);
-                Checks::exit_success(VCPKG_LINE_INFO);
-            }
-
-            action_plan = create_upgrade_plan(
-                provider,
-                var_provider,
-                Util::fmap(outdated_packages, [](const OutdatedPackage& package) { return package.spec; }),
-                status_db,
-                create_upgrade_plan_options);
+            attempt_upgrade_specs = get_installed_port_version_specs(status_db);
         }
         else
         {
+            auto installed_ports = get_installed_ports(status_db);
+
             // input sanitization
             const std::vector<PackageSpec> specs = Util::fmap(options.command_arguments, [&](const std::string& arg) {
                 return check_and_get_package_spec(arg, default_triplet, paths.get_triplet_db())
                     .value_or_exit(VCPKG_LINE_INFO);
             });
 
-            std::vector<PackageSpec> not_installed;
-            std::vector<PackageSpec> no_control_file;
-            std::vector<PackageSpec> to_upgrade;
-            std::vector<PackageSpec> up_to_date;
-
-            for (auto&& spec : specs)
+            for (auto&& requested_spec : specs)
             {
-                bool skip_version_check = false;
-                auto installed_status = status_db.find_installed(spec);
-                if (installed_status == status_db.end())
+                auto installed = installed_ports.find(requested_spec);
+                if (installed == installed_ports.end())
                 {
-                    not_installed.push_back(spec);
-                    skip_version_check = true;
-                }
-
-                auto maybe_control_file = provider.get_control_file_required(spec.name());
-                if (!maybe_control_file)
-                {
-                    no_control_file.push_back(spec);
-                    skip_version_check = true;
-                }
-
-                if (skip_version_check) continue;
-
-                const auto& control_file = maybe_control_file.value_or_exit(VCPKG_LINE_INFO);
-                if (control_file.to_version() == (*installed_status)->package.version)
-                {
-                    up_to_date.push_back(spec);
+                    not_installed.push_back(requested_spec);
                 }
                 else
                 {
-                    to_upgrade.push_back(spec);
+                    attempt_upgrade_specs.push_back(VersionedPackageSpec{
+                        requested_spec.name(), requested_spec.triplet(), installed->second.version()});
                 }
             }
-
-            Util::sort(not_installed);
-            Util::sort(no_control_file);
-            Util::sort(up_to_date);
-            Util::sort(to_upgrade);
-
-            if (!up_to_date.empty())
-            {
-                msg::println(Color::success, msgFollowingPackagesUpgraded);
-                for (const PackageSpec& spec : up_to_date)
-                {
-                    msg::println(Color::none, LocalizedString().append_indent().append_raw(spec.to_string()));
-                }
-            }
-
-            if (!not_installed.empty())
-            {
-                msg::println_error(msgFollowingPackagesNotInstalled);
-                for (const PackageSpec& spec : not_installed)
-                {
-                    msg::println(Color::none, LocalizedString().append_indent().append_raw(spec.to_string()));
-                }
-            }
-
-            if (!no_control_file.empty())
-            {
-                msg::println_error(msgFollowingPackagesMissingControl);
-                for (const PackageSpec& spec : no_control_file)
-                {
-                    msg::println(Color::none, LocalizedString().append_indent().append_raw(spec.to_string()));
-                }
-            }
-
-            if (!not_installed.empty() || !no_control_file.empty())
-            {
-                Checks::exit_fail(VCPKG_LINE_INFO);
-            }
-            else if (to_upgrade.empty())
-            {
-                Checks::exit_success(VCPKG_LINE_INFO);
-            }
-
-            action_plan =
-                create_upgrade_plan(provider, var_provider, to_upgrade, status_db, create_upgrade_plan_options);
         }
+
+        auto outdated_report = build_outdated_report(provider, attempt_upgrade_specs);
+        if (options.command_arguments.empty())
+        {
+            if (!outdated_report.parse_errors.empty())
+            {
+                if (keep_going == KeepGoing::No)
+                {
+                    msg::println_error(msgUpgradeParseError);
+                }
+                else
+                {
+                    msg::println_warning(msgUpgradeParseWarning);
+                }
+
+                for (auto&& parse_error : outdated_report.parse_errors)
+                {
+                    msg::println(parse_error);
+                }
+
+                if (keep_going == KeepGoing::No)
+                {
+                    Checks::exit_fail(VCPKG_LINE_INFO);
+                }
+            }
+        }
+        else if (!outdated_report.parse_errors.empty())
+        {
+            for (auto&& parse_error : outdated_report.parse_errors)
+            {
+                msg::println(parse_error);
+            }
+
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
+
+        if (!outdated_report.up_to_date_packages.empty())
+        {
+            msg::println(Color::success, msgFollowingPackagesUpgraded);
+            print_versioned_package_spec_list(outdated_report.up_to_date_packages);
+        }
+
+        if (!outdated_report.missing_packages.empty())
+        {
+            msg::println(Color::none, msgUpgradeInstalledMissing);
+            print_versioned_package_spec_list(outdated_report.missing_packages);
+        }
+
+        if (!not_installed.empty())
+        {
+            msg::println_error(msgFollowingPackagesNotInstalled);
+            for (const PackageSpec& spec : not_installed)
+            {
+                msg::println(Color::none, LocalizedString().append_indent().append_raw(spec.to_string()));
+            }
+
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
+
+        if (outdated_report.outdated_packages.empty())
+        {
+            msg::println(msgAllPackagesAreUpdated);
+            Checks::exit_success(VCPKG_LINE_INFO);
+        }
+
+        action_plan = create_upgrade_plan(
+            provider,
+            var_provider,
+            Util::fmap(outdated_report.outdated_packages, [](const OutdatedPackage& package) { return package.spec; }),
+            status_db,
+            create_upgrade_plan_options);
 
         Checks::check_exit(VCPKG_LINE_INFO, !action_plan.empty());
         action_plan.print_unsupported_warnings();
@@ -211,6 +216,8 @@ namespace vcpkg
         const InstallSummary summary = install_execute_plan(
             args, paths, host_triplet, build_options, action_plan, status_db, binary_cache, null_build_logs_recorder());
 
+        // Skip printing the summary without --keep-going because the status without it is 'obvious': everything was a
+        // success.
         if (keep_going == KeepGoing::Yes)
         {
             msg::print(summary.format());

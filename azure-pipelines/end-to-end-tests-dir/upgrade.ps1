@@ -82,3 +82,41 @@ if ($output -match 'internal error:')
 {
     throw "Upgrade with a nonexistent name crashed"
 }
+
+# Also test named malformed fails
+
+Set-EmptyTestPort -Name 'upgrade-test-port' -Version '3' -PortsRoot $portsRoot -Malformed
+$output = Run-VcpkgAndCaptureOutput upgrade upgrade-test-port "--x-builtin-ports-root=$portsRoot" @commonArgs
+Throw-IfNotFailed
+if (-not ($output.Replace("`r`n", "`n").Contains(@"
+vcpkg.json:3:17: error: Trailing comma in an object
+  on expression:   "version": "3",
+                                 ^
+"@)))
+{
+    throw "Upgrade with a malformed named port didn't print the failure"
+}
+
+# Also test unnamed malformed fails
+
+$output = Run-VcpkgAndCaptureOutput upgrade "--x-builtin-ports-root=$portsRoot" --no-keep-going @commonArgs
+Throw-IfNotFailed
+if (-not ($output.Replace("`r`n", "`n").Contains(@"
+vcpkg.json:3:17: error: Trailing comma in an object
+  on expression:   "version": "3",
+                                 ^
+"@)))
+{
+    throw "Upgrade with a malformed named port didn't print the failure"
+}
+
+$output = Run-VcpkgAndCaptureOutput upgrade "--x-builtin-ports-root=$portsRoot" @commonArgs
+Throw-IfFailed
+if (-not ($output.Replace("`r`n", "`n").Contains(@"
+vcpkg.json:3:17: error: Trailing comma in an object
+  on expression:   "version": "3",
+                                 ^
+"@)))
+{
+    throw "Upgrade with a malformed named port didn't print the failure"
+}

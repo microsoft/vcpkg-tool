@@ -163,7 +163,7 @@ namespace vcpkg
         fs.rename(updated_listfile_path, listfile_path, VCPKG_LINE_INFO);
     }
 
-    std::vector<InstalledPackageView> get_installed_ports(const StatusParagraphs& status_db)
+    std::map<PackageSpec, InstalledPackageView> get_installed_ports(const StatusParagraphs& status_db)
     {
         std::map<PackageSpec, InstalledPackageView> ipv_map;
 
@@ -186,7 +186,22 @@ namespace vcpkg
             Checks::msg_check_maybe_upgrade(VCPKG_LINE_INFO, ipv.second.core != nullptr, msgCorruptedDatabase);
         }
 
-        return Util::fmap(ipv_map, [](auto&& p) -> InstalledPackageView { return std::move(p.second); });
+        return ipv_map;
+    }
+
+    std::vector<VersionedPackageSpec> get_installed_port_version_specs(const StatusParagraphs& status_db)
+    {
+        return convert_installed_ports_to_versioned_specs(get_installed_ports(status_db));
+    }
+
+    std::vector<VersionedPackageSpec> convert_installed_ports_to_versioned_specs(
+        std::map<PackageSpec, InstalledPackageView>&& installed_ports)
+    {
+        // Note that this map ends up sorting by spec
+        return Util::fmap(std::move(installed_ports), [](std::pair<const PackageSpec, InstalledPackageView>&& p) {
+            auto&& ipv_package = p.second.core->package;
+            return VersionedPackageSpec{ipv_package.spec, ipv_package.version};
+        });
     }
 
     std::vector<StatusParagraphAndAssociatedFiles> get_installed_files(const Filesystem& fs,

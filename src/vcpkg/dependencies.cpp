@@ -687,10 +687,10 @@ namespace vcpkg
         RemoveAdjacencyProvider p;
         for (auto&& a : get_installed_ports(status_db))
         {
-            p.rev_edges.emplace(a.spec(), std::initializer_list<PackageSpec>{});
-            for (auto&& b : a.dependencies())
+            p.rev_edges.emplace(a.first, std::initializer_list<PackageSpec>{});
+            for (auto&& b : a.second.dependencies())
             {
-                p.rev_edges[b].push_back(a.spec());
+                p.rev_edges[b].push_back(a.first);
             }
         }
         auto remove_order = topological_sort(specs, p, nullptr);
@@ -1169,15 +1169,15 @@ namespace vcpkg
 
         auto installed_ports = get_installed_ports(status_db);
 
-        for (auto&& ipv : installed_ports)
+        for (auto&& installed_port : installed_ports)
         {
-            graph->insert(ipv);
+            graph->insert(installed_port.second);
         }
 
         // Populate the graph with "remove edges", which are the reverse of the Build-Depends edges.
-        for (auto&& ipv : installed_ports)
+        for (auto&& installed_port : installed_ports)
         {
-            auto deps = ipv.dependencies();
+            auto deps = installed_port.second.dependencies();
 
             for (auto&& dep : deps)
             {
@@ -1188,10 +1188,10 @@ namespace vcpkg
                         VCPKG_LINE_INFO,
                         msg::format(msgCorruptedDatabase)
                             .append_raw('\n')
-                            .append(msgMissingDependency, msg::spec = ipv.spec(), msg::package_name = dep));
+                            .append(msgMissingDependency, msg::spec = installed_port.first, msg::package_name = dep));
                 }
 
-                p_installed->remove_edges.emplace(ipv.spec());
+                p_installed->remove_edges.emplace(installed_port.first);
             }
         }
         return graph;

@@ -115,9 +115,12 @@ namespace vcpkg
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 
-        auto installed_packages = Util::fmap(installed_ipv, [](const InstalledPackageView& ipv) { return ipv.core; });
+        auto installed_packages = Util::fmap(
+            installed_ipv, [](const std::pair<const PackageSpec, InstalledPackageView>& p) { return p.second.core; });
         auto installed_features =
-            Util::fmap_flatten(installed_ipv, [](const InstalledPackageView& ipv) { return ipv.features; });
+            Util::fmap_flatten(installed_ipv, [](const std::pair<const PackageSpec, InstalledPackageView>& p) {
+                return p.second.features;
+            });
         installed_packages.insert(installed_packages.end(), installed_features.begin(), installed_features.end());
 
         std::sort(installed_packages.begin(),

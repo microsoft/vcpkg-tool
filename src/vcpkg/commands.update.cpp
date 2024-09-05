@@ -1,4 +1,5 @@
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.update.h>
 #include <vcpkg/portfileprovider.h>
@@ -10,36 +11,43 @@
 
 namespace vcpkg
 {
-    bool OutdatedPackage::compare_by_name(const OutdatedPackage& left, const OutdatedPackage& right)
+    OutdatedReport build_outdated_report(const PortFileProvider& provider,
+                                         View<VersionedPackageSpec> candidates_for_upgrade)
     {
-        return left.spec.name() < right.spec.name();
-    }
-
-    std::vector<OutdatedPackage> find_outdated_packages(const PortFileProvider& provider,
-                                                        const StatusParagraphs& status_db)
-    {
-        auto installed_packages = get_installed_ports(status_db);
-
-        std::vector<OutdatedPackage> output;
-        for (auto&& ipv : installed_packages)
+        OutdatedReport results;
+        for (auto&& candidate : candidates_for_upgrade)
         {
-            const auto& pgh = ipv.core;
-            auto maybe_scfl = provider.get_control_file_required(pgh->package.spec.name());
-            if (auto p_scfl = maybe_scfl.get())
+            auto maybe_scfl = provider.get_control_file(candidate.name());
+            if (auto scfl = maybe_scfl.get())
             {
-                const auto& latest_version = p_scfl->to_version();
-                if (latest_version != pgh->package.version)
+                if (auto scf = scfl->source_control_file.get())
                 {
-                    output.push_back({pgh->package.spec, VersionDiff(pgh->package.version, latest_version)});
+                    const auto& installed_version = candidate.version();
+                    const auto& latest_version = scfl->to_version();
+                    if (candidate.version() == latest_version)
+                    {
+                        results.up_to_date_packages.push_back(candidate);
+                        continue;
+                    }
+
+                    results.outdated_packages.push_back({PackageSpec(candidate.name(), candidate.triplet()),
+                                                         VersionDiff(installed_version, latest_version)});
+                    continue;
                 }
+
+                results.missing_packages.push_back(candidate);
+                continue;
             }
-            else
-            {
-                // No portfile available
-            }
+
+            results.parse_errors.push_back(std::move(maybe_scfl).error());
         }
 
-        return output;
+        return results;
+    }
+
+    OutdatedReport build_outdated_report(const PortFileProvider& provider, const StatusParagraphs& status_db)
+    {
+        return build_outdated_report(provider, get_installed_port_version_specs(status_db));
     }
 
     constexpr CommandMetadata CommandUpdateMetadata{
@@ -71,20 +79,18 @@ namespace vcpkg
         PathsPortFileProvider provider(*registry_set,
                                        make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
 
-        const auto outdated_packages = SortedVector<OutdatedPackage, decltype(&OutdatedPackage::compare_by_name)>(
-            find_outdated_packages(provider, status_db), &OutdatedPackage::compare_by_name);
-
-        if (outdated_packages.empty())
+        const auto outdated_report = build_outdated_report(provider, status_db);
+        if (outdated_report.outdated_packages.empty())
         {
             msg::println(msgPackagesUpToDate);
         }
         else
         {
             msg::println(msgPortVersionConflict);
-            for (auto&& package : outdated_packages)
+            for (auto&& package : outdated_report.outdated_packages)
             {
-                msg::write_unlocalized_text(
-                    Color::none, fmt::format("\t{:<32} {}\n", package.spec, package.version_diff.to_string()));
+                msg::write_unlocalized_text(Color::none,
+                                            fmt::format("\t{:<32} {}\n", package.spec, package.version_diff));
             }
 
 #if defined(_WIN32)

@@ -9,7 +9,7 @@
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/optional.h>
 
-#include <vcpkg/triplet.h>
+#include <vcpkg/packagespec.h>
 
 namespace vcpkg
 {
@@ -102,12 +102,28 @@ namespace vcpkg
     struct VersionedPackageSpec
     {
         VersionedPackageSpec() = default;
+        VersionedPackageSpec(const PackageSpec& spec, const Version& version)
+            : m_name(spec.name()), m_triplet(spec.triplet()), m_version(version)
+        {
+        }
+        VersionedPackageSpec(PackageSpec&& spec, const Version& version)
+            : m_name(std::move(spec).name()), m_triplet(spec.triplet()), m_version(version)
+        {
+        }
         VersionedPackageSpec(const std::string& name, Triplet triplet, const Version& version)
             : m_name(name), m_triplet(triplet), m_version(version)
         {
         }
         VersionedPackageSpec(std::string&& name, Triplet triplet, const Version& version)
             : m_name(std::move(name)), m_triplet(triplet), m_version(version)
+        {
+        }
+        VersionedPackageSpec(const PackageSpec& spec, Version&& version)
+            : m_name(spec.name()), m_triplet(spec.triplet()), m_version(std::move(version))
+        {
+        }
+        VersionedPackageSpec(PackageSpec&& spec, Version&& version)
+            : m_name(std::move(spec).name()), m_triplet(spec.triplet()), m_version(std::move(version))
         {
         }
         VersionedPackageSpec(const std::string& name, Triplet triplet, Version&& version)
@@ -122,6 +138,9 @@ namespace vcpkg
         const std::string& name() const noexcept { return m_name; }
 
         Triplet triplet() const noexcept { return m_triplet; }
+
+        const Version& version() const& noexcept { return m_version; }
+        Version&& version() && noexcept { return std::move(m_version); }
 
         std::string to_string() const;
         void to_string(std::string& out) const;

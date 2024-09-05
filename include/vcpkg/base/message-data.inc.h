@@ -1322,11 +1322,10 @@ DECLARE_MESSAGE(FindCommandFirstArg,
                 "The first argument to 'find' must be 'artifact' or 'port' .")
 DECLARE_MESSAGE(FishCompletion, (msg::path), "", "vcpkg fish completion is already added at \"{path}\".")
 DECLARE_MESSAGE(FloatingPointConstTooBig, (msg::count), "", "Floating point constant too big: {count}")
-DECLARE_MESSAGE(FollowingPackagesMissingControl,
+DECLARE_MESSAGE(FollowingPackagesNotInstalled,
                 (),
                 "",
-                "The following packages do not have a valid CONTROL or vcpkg.json:")
-DECLARE_MESSAGE(FollowingPackagesNotInstalled, (), "", "The following packages are not installed:")
+                "The following explicitly requested upgrades are for packages that are not installed.")
 DECLARE_MESSAGE(FollowingPackagesUpgraded, (), "", "The following packages are up-to-date:")
 DECLARE_MESSAGE(
     ForceSystemBinariesOnWeirdPlatforms,
@@ -2513,7 +2512,7 @@ DECLARE_MESSAGE(PortsNoDiff, (), "", "There were no changes in the ports between
 DECLARE_MESSAGE(PortsRemoved, (msg::count), "", "The following {count} ports were removed:")
 DECLARE_MESSAGE(PortsUpdated, (msg::count), "", "The following {count} ports were updated:")
 DECLARE_MESSAGE(PortSupportsField, (msg::supports_expression), "", "(supports: \"{supports_expression}\")")
-DECLARE_MESSAGE(PortVersionConflict, (), "", "The following packages differ from their port versions:")
+DECLARE_MESSAGE(PortVersionConflict, (), "", "The following installed packages differ from their port versions:")
 DECLARE_MESSAGE(PortVersionMultipleSpecification,
                 (),
                 "",
@@ -2546,6 +2545,11 @@ DECLARE_MESSAGE(RemovePackageConflict,
                 "",
                 "{spec} is not installed, but {package_name} is installed for {triplet}. Did you mean "
                 "{package_name}:{triplet}?")
+DECLARE_MESSAGE(RemoveParseError,
+                (),
+                "",
+                "The following parse errors occurred while determining which outdated packages to remove. Packages "
+                "experiencing parse errors can't be shown to be out of date, so they won't be removed.")
 DECLARE_MESSAGE(RemovingPackage,
                 (msg::action_index, msg::count, msg::spec),
                 "",
@@ -2867,12 +2871,33 @@ DECLARE_MESSAGE(UpdateBaselineUpdatedBaseline,
                 (msg::url, msg::old_value, msg::new_value),
                 "example of {old_value}, {new_value} is '5507daa796359fe8d45418e694328e878ac2b82f'",
                 "updated registry '{url}': baseline '{old_value}' -> '{new_value}'")
+DECLARE_MESSAGE(UpdateParseError,
+                (),
+                "",
+                "The following parse errors occurred while determining which packages are up to date. Ports "
+                "experiencing parse errors can't be shown to be out of date.")
 DECLARE_MESSAGE(
     UpgradeInManifest,
     (),
     "'vcpkg x-update-baseline' and 'vcpkg install' are command lines and should not be localized.",
     "Upgrade upgrades a classic mode installation and thus does not support manifest mode. Consider updating your "
     "dependencies by updating your baseline to a current value with vcpkg x-update-baseline and running vcpkg install.")
+DECLARE_MESSAGE(UpgradeInstalledMissing,
+                (),
+                "",
+                "The following packages are installed, but their corresponding ports are missing. They will be left at "
+                "their existing installed versions.")
+DECLARE_MESSAGE(UpgradeParseError,
+                (),
+                "",
+                "While determining which ports to upgrade, the following parse errors were encountered. To try to "
+                "treat these as warnings, rerun `vcpkg upgrade` without `--no-keep-going`.")
+DECLARE_MESSAGE(UpgradeParseWarning,
+                (),
+                "",
+                "While determining which ports to upgrade, the following parse errors were encountered. Ports with "
+                "parse errors won't be considered out of date and thus won't be upgraded. To consider these errors in "
+                "the future, run `vcpkg upgrade` with --`no-keep-going`.")
 DECLARE_MESSAGE(
     UpgradeRunWithNoDryRun,
     (),

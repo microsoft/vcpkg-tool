@@ -153,7 +153,10 @@ namespace
         const StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
         auto installed_packages = get_installed_ports(status_db);
 
-        return Util::fmap(installed_packages, [](auto&& pgh) -> std::string { return pgh.spec().to_string(); });
+        return Util::fmap(installed_packages,
+                          [](const std::pair<const PackageSpec, InstalledPackageView>& p) -> std::string {
+                              return p.first.to_string();
+                          });
     }
 } // unnamed namespace
 
@@ -199,9 +202,18 @@ namespace vcpkg
             PathsPortFileProvider provider(*registry_set,
                                            make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
 
-            specs =
-                Util::fmap(find_outdated_packages(provider, status_db), [](auto&& outdated) { return outdated.spec; });
+            auto outdated_report = build_outdated_report(provider, status_db);
+            if (!outdated_report.parse_errors.empty())
+            {
+                msg::println_warning(msgRemoveParseError);
+                for (auto&& parse_error : outdated_report.parse_errors)
+                {
+                    msg::println(parse_error);
+                }
+            }
 
+            specs = Util::fmap(std::move(outdated_report).outdated_packages,
+                               [](OutdatedPackage&& outdated) -> PackageSpec&& { return std::move(outdated).spec; });
             if (specs.empty())
             {
                 msg::println(Color::success, msgNoOutdatedPackages);

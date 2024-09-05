@@ -1,7 +1,5 @@
 #include <vcpkg-test/util.h>
 
-#include <vcpkg/base/sortedvector.h>
-
 #include <vcpkg/commands.update.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/statusparagraphs.h>
@@ -24,12 +22,15 @@ TEST_CASE ("find outdated packages basic", "[update]")
     map.emplace("a", SourceControlFileAndLocation{std::move(scf), ""});
     MapPortFileProvider provider(map);
 
-    auto pkgs = SortedVector<OutdatedPackage, decltype(&OutdatedPackage::compare_by_name)>(
-        find_outdated_packages(provider, status_db), &OutdatedPackage::compare_by_name);
-
+    auto outdated_report = build_outdated_report(provider, status_db);
+    REQUIRE(outdated_report.up_to_date_packages.empty());
+    auto& pkgs = outdated_report.outdated_packages;
     REQUIRE(pkgs.size() == 1);
+    REQUIRE(pkgs[0].spec.to_string() == "a:x86-windows");
     REQUIRE(pkgs[0].version_diff.left.to_string() == "2");
     REQUIRE(pkgs[0].version_diff.right.to_string() == "0");
+    REQUIRE(outdated_report.missing_packages.empty());
+    REQUIRE(outdated_report.parse_errors.empty());
 }
 
 TEST_CASE ("find outdated packages features", "[update]")
@@ -48,12 +49,15 @@ TEST_CASE ("find outdated packages features", "[update]")
     map.emplace("a", SourceControlFileAndLocation{std::move(scf), ""});
     MapPortFileProvider provider(map);
 
-    auto pkgs = SortedVector<OutdatedPackage, decltype(&OutdatedPackage::compare_by_name)>(
-        find_outdated_packages(provider, status_db), &OutdatedPackage::compare_by_name);
-
+    auto outdated_report = build_outdated_report(provider, status_db);
+    REQUIRE(outdated_report.up_to_date_packages.empty());
+    auto& pkgs = outdated_report.outdated_packages;
     REQUIRE(pkgs.size() == 1);
+    REQUIRE(pkgs[0].spec.to_string() == "a:x86-windows");
     REQUIRE(pkgs[0].version_diff.left.to_string() == "2");
     REQUIRE(pkgs[0].version_diff.right.to_string() == "0");
+    REQUIRE(outdated_report.missing_packages.empty());
+    REQUIRE(outdated_report.parse_errors.empty());
 }
 
 TEST_CASE ("find outdated packages features 2", "[update]")
@@ -74,19 +78,24 @@ TEST_CASE ("find outdated packages features 2", "[update]")
     map.emplace("a", SourceControlFileAndLocation{std::move(scf), ""});
     MapPortFileProvider provider(map);
 
-    auto pkgs = SortedVector<OutdatedPackage, decltype(&OutdatedPackage::compare_by_name)>(
-        find_outdated_packages(provider, status_db), &OutdatedPackage::compare_by_name);
-
+    auto outdated_report = build_outdated_report(provider, status_db);
+    REQUIRE(outdated_report.up_to_date_packages.empty());
+    auto& pkgs = outdated_report.outdated_packages;
     REQUIRE(pkgs.size() == 1);
+    REQUIRE(pkgs[0].spec.to_string() == "a:x86-windows");
     REQUIRE(pkgs[0].version_diff.left.to_string() == "2");
     REQUIRE(pkgs[0].version_diff.right.to_string() == "0");
+    REQUIRE(outdated_report.missing_packages.empty());
+    REQUIRE(outdated_report.parse_errors.empty());
 }
 
-TEST_CASE ("find outdated packages none", "[update]")
+TEST_CASE ("find outdated packages missing and none", "[update]")
 {
     std::vector<std::unique_ptr<StatusParagraph>> status_paragraphs;
     status_paragraphs.push_back(make_status_pgh("a"));
     status_paragraphs.back()->package.version = Version{"2", 0};
+    status_paragraphs.push_back(make_status_pgh("b"));
+    status_paragraphs.back()->package.version = Version{"6", 0};
 
     StatusParagraphs status_db(std::move(status_paragraphs));
 
@@ -95,8 +104,11 @@ TEST_CASE ("find outdated packages none", "[update]")
     map.emplace("a", SourceControlFileAndLocation{std::move(scf), ""});
     MapPortFileProvider provider(map);
 
-    auto pkgs = SortedVector<OutdatedPackage, decltype(&OutdatedPackage::compare_by_name)>(
-        find_outdated_packages(provider, status_db), &OutdatedPackage::compare_by_name);
-
-    REQUIRE(pkgs.size() == 0);
+    auto outdated_report = build_outdated_report(provider, status_db);
+    REQUIRE(outdated_report.up_to_date_packages.size() == 1);
+    REQUIRE(outdated_report.up_to_date_packages[0].to_string() == "a:x86-windows@2");
+    REQUIRE(outdated_report.outdated_packages.empty());
+    REQUIRE(outdated_report.missing_packages.size() == 1);
+    REQUIRE(outdated_report.missing_packages[0].to_string() == "b:x86-windows@6");
+    REQUIRE(outdated_report.parse_errors.empty());
 }

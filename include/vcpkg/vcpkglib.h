@@ -23,7 +23,12 @@ namespace vcpkg
         SortedVector<std::string> files;
     };
 
-    std::vector<InstalledPackageView> get_installed_ports(const StatusParagraphs& status_db);
+    std::map<PackageSpec, InstalledPackageView> get_installed_ports(const StatusParagraphs& status_db);
+    // Create a vector of versioned package specs of packages installed according to `status_db`, sorted by package
+    // spec.
+    std::vector<VersionedPackageSpec> get_installed_port_version_specs(const StatusParagraphs& status_db);
+    std::vector<VersionedPackageSpec> convert_installed_ports_to_versioned_specs(
+        std::map<PackageSpec, InstalledPackageView>&& installed_ports);
     std::vector<StatusParagraphAndAssociatedFiles> get_installed_files(const Filesystem& fs,
                                                                        const InstalledPaths& installed,
                                                                        const StatusParagraphs& status_db);

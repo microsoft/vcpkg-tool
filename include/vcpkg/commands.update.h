@@ -14,14 +14,21 @@ namespace vcpkg
 {
     struct OutdatedPackage
     {
-        static bool compare_by_name(const OutdatedPackage& left, const OutdatedPackage& right);
-
         PackageSpec spec;
         VersionDiff version_diff;
     };
 
-    std::vector<OutdatedPackage> find_outdated_packages(const PortFileProvider& provider,
-                                                        const StatusParagraphs& status_db);
+    struct OutdatedReport
+    {
+        std::vector<VersionedPackageSpec> up_to_date_packages;
+        std::vector<OutdatedPackage> outdated_packages;
+        std::vector<VersionedPackageSpec> missing_packages;
+        std::vector<LocalizedString> parse_errors;
+    };
+
+    OutdatedReport build_outdated_report(const PortFileProvider& provider,
+                                         View<VersionedPackageSpec> candidates_for_upgrade);
+    OutdatedReport build_outdated_report(const PortFileProvider& provider, const StatusParagraphs& status_db);
 
     extern const CommandMetadata CommandUpdateMetadata;
     void command_update_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths);

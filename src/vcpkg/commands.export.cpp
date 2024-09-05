@@ -362,7 +362,7 @@ namespace
             std::transform(installed_ipv.begin(),
                            installed_ipv.end(),
                            std::back_inserter(ret.specs),
-                           [](const auto& ipv) { return ipv.spec(); });
+                           [](const auto& ipv) { return ipv.second.spec(); });
         }
         else
         {
