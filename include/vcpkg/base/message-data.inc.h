@@ -124,7 +124,7 @@ DECLARE_MESSAGE(AllFormatArgsUnbalancedBraces,
                 (msg::value),
                 "example of {value} is 'foo bar {'",
                 "unbalanced brace in format string \"{value}\"")
-DECLARE_MESSAGE(AllPackagesAreUpdated, (), "", "All installed packages are up-to-date.")
+DECLARE_MESSAGE(AllPackagesAreUpdated, (), "", "All considered packages are up-to-date.")
 DECLARE_MESSAGE(AlreadyInstalled, (msg::spec), "", "{spec} is already installed")
 DECLARE_MESSAGE(AlreadyInstalledNotHead,
                 (msg::spec),
@@ -2897,7 +2897,7 @@ DECLARE_MESSAGE(UpgradeParseWarning,
                 "",
                 "While determining which ports to upgrade, the following parse errors were encountered. Ports with "
                 "parse errors won't be considered out of date and thus won't be upgraded. To consider these errors in "
-                "the future, run `vcpkg upgrade` with --`no-keep-going`.")
+                "the future, run `vcpkg upgrade` with `--no-keep-going`.")
 DECLARE_MESSAGE(
     UpgradeRunWithNoDryRun,
     (),

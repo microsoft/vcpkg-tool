@@ -497,8 +497,7 @@ namespace
             return m_scfls.get_lazy(path, [&, this]() {
                 std::string spdx_location = "git+https://github.com/Microsoft/vcpkg#ports/";
                 spdx_location.append(port_name.data(), port_name.size());
-                return Paragraphs::try_load_port_required(m_fs, port_name, PortLocation{path, std::move(spdx_location)})
-                    .maybe_scfl;
+                return Paragraphs::try_load_port(m_fs, PortLocation{path, std::move(spdx_location)}).maybe_scfl;
             });
         }
 

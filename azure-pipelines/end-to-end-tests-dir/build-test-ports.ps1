@@ -28,20 +28,20 @@ Throw-IfFailed
 Run-Vcpkg @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports" --overlay-ports="$PSScriptRoot/../e2e-ports/broken-manifests" install control-file
 Throw-IfFailed
 
-$output = Run-VcpkgAndCaptureOutput @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports/broken-manifests" install broken-no-name
+$output = Run-VcpkgAndCaptureStdErr @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports/broken-manifests" install broken-no-name
 Throw-IfNotFailed
 if ($output -notmatch "missing required field 'name'") {
     throw 'Did not detect missing field'
 }
 
-$output = Run-VcpkgAndCaptureOutput @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports/broken-manifests" install broken-no-version
+$output = Run-VcpkgAndCaptureStdErr @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports/broken-manifests" install broken-no-version
 Throw-IfNotFailed
 if ($output -notmatch 'expected a versioning field') {
     throw 'Did not detect missing field'
 }
 
 Remove-Problem-Matchers
-$output = Run-VcpkgAndCaptureOutput @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports/broken-manifests" install malformed
+$output = Run-VcpkgAndCaptureStdErr @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports/broken-manifests" install malformed
 Restore-Problem-Matchers
 Throw-IfNotFailed
 if ($output -notmatch 'Trailing comma') {

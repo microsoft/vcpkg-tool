@@ -120,3 +120,21 @@ vcpkg.json:3:17: error: Trailing comma in an object
 {
     throw "Upgrade with a malformed named port didn't print the failure"
 }
+
+# Test removed ports
+
+Refresh-TestRoot
+Set-EmptyTestPort -Name 'upgrade-test-port' -Version '1' -PortsRoot $portsRoot
+Run-Vcpkg install upgrade-test-port "--x-builtin-ports-root=$portsRoot" @commonArgs
+Throw-IfFailed
+Remove-Item -Recurse -Force (Join-Path $portsRoot 'upgrade-test-port')
+$output = Run-VcpkgAndCaptureOutput upgrade "--x-builtin-ports-root=$portsRoot" @commonArgs
+Throw-IfFailed
+if (-not ($output -match 'The following packages are installed, but their corresponding ports are missing\. They will be left at their existing installed versions\.\r?\n  upgrade-test-port:[^@]+@1\r?\nAll considered packages are up-to-date\.'))
+{
+    throw "Upgrade didn't explain missing port."
+}
+if ($output -match 'error: upgrade-test-port does not exist')
+{
+    throw 'Upgrade treated nonexistent port as an error'
+}
