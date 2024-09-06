@@ -13,7 +13,8 @@
 
 namespace vcpkg
 {
-    StatusParagraphs database_load_check(const Filesystem& fs, const InstalledPaths& installed);
+    StatusParagraphs database_load(const ReadOnlyFilesystem& fs, const InstalledPaths& installed);
+    StatusParagraphs database_load_collapse(const Filesystem& fs, const InstalledPaths& installed);
 
     void write_update(const Filesystem& fs, const InstalledPaths& installed, const StatusParagraph& p);
 
@@ -24,9 +25,12 @@ namespace vcpkg
     };
 
     std::vector<InstalledPackageView> get_installed_ports(const StatusParagraphs& status_db);
-    std::vector<StatusParagraphAndAssociatedFiles> get_installed_files(const Filesystem& fs,
+    std::vector<StatusParagraphAndAssociatedFiles> get_installed_files(const ReadOnlyFilesystem& fs,
                                                                        const InstalledPaths& installed,
                                                                        const StatusParagraphs& status_db);
+    std::vector<StatusParagraphAndAssociatedFiles> get_installed_files_and_upgrade(const Filesystem& fs,
+                                                                                   const InstalledPaths& installed,
+                                                                                   const StatusParagraphs& status_db);
 
     std::string shorten_text(StringView desc, const size_t length);
 } // namespace vcpkg
