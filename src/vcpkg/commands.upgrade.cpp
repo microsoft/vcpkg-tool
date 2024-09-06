@@ -211,6 +211,8 @@ namespace vcpkg
         const InstallSummary summary = install_execute_plan(
             args, paths, host_triplet, build_options, action_plan, status_db, binary_cache, null_build_logs_recorder());
 
+        // Skip printing the summary without --keep-going because the status without it is 'obvious': everything was a
+        // success.
         if (keep_going == KeepGoing::Yes)
         {
             msg::print(summary.format());
