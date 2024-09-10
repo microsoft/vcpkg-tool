@@ -182,7 +182,7 @@ namespace vcpkg
                 win32_extract_with_seven_zip(tools.get_tool_path(Tools::SEVEN_ZIP_R, status_sink), archive, to_path);
                 break;
             case ExtractionType::Zip:
-                win32_extract_with_seven_zip(tools.get_tool_path(Tools::SEVEN_ZIP, status_sink), archive, to_path);
+                win32_extract_with_seven_zip(tools.get_tool_path(Tools::SEVEN_ZIP_R, status_sink), archive, to_path);
                 break;
             case ExtractionType::Tar:
                 win32_extract_with_seven_zip(tools.get_tool_path(Tools::SEVEN_ZIP, status_sink), archive, to_path);
