@@ -258,7 +258,7 @@ namespace vcpkg
                                    .append(msgMissing7zHeader));
 
         contents = contents.substr(pos);
-        fs.rename_with_retry(to_path, contents, VCPKG_LINE_INFO);
+        fs.write_contents(to_path, contents, VCPKG_LINE_INFO);
     }
 #endif
 
