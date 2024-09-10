@@ -1,5 +1,7 @@
 #include <vcpkg-test/util.h>
 
+#include <vcpkg/base/system.deviceid.h>
+
 #include <vcpkg/metrics.h>
 
 #include <set>
@@ -86,6 +88,22 @@ TEST_CASE ("user config parses multiple paragraphs ", "[metrics]")
     CHECK(result.user_time == "there");
     CHECK(result.user_mac == "world");
     CHECK(result.last_completed_survey == "survey");
+}
+
+TEST_CASE ("device id", "[metrics]")
+{
+    CHECK(validate_device_id("c5337d65-1e69-46e1-af76-bffc7b9ff40a"));
+
+    CHECK_FALSE(validate_device_id(""));
+    CHECK_FALSE(validate_device_id("nope"));
+    CHECK_FALSE(validate_device_id("xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"));
+    CHECK_FALSE(validate_device_id("c5337d65-1e69-46e1-af76-bffc7b9ff40a "));
+    CHECK_FALSE(validate_device_id("c5337d6--1e6--46e--af76--ffc7b9ff40a"));
+    CHECK_FALSE(validate_device_id("c5337d65-1e69-46e1-af76-bffc7b9ff4\r\n"));
+    CHECK_FALSE(validate_device_id("c5337d65-1e69-46e1-af76-bffc7b9ff4\0"));
+    CHECK_FALSE(validate_device_id("C5337D65-1E69-46E1-AF76-BFFC7b9ff40A"));
+    CHECK_FALSE(validate_device_id("{c5337d65-1e69-46e1-af76-bffc7b9ff40a}"));
+    CHECK_FALSE(validate_device_id("c5337d65:1e69:46e1:af76:bffc7b9ff40a"));
 }
 
 TEST_CASE ("user config to string", "[metrics]")
