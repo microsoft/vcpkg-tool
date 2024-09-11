@@ -1422,9 +1422,8 @@ namespace vcpkg
             return std::move(process_create).error();
         }
 
-        auto long_exit_code = process_info.wait();
-        if (long_exit_code > INT_MAX) long_exit_code = INT_MAX;
-        return static_cast<int>(long_exit_code);
+        auto uint_exit_code = process_info.wait();
+        return static_cast<int>(uint_exit_code);
 #else
         Command real_command_line_builder;
         if (const auto wd = settings.working_directory.get())
