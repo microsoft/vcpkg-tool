@@ -177,6 +177,7 @@ file(GLOB VCPKG_TEST_INCLUDES CONFIGURE_DEPENDS "include/vcpkg-test/*.h")
 
 set(VCPKG_FUZZ_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg-fuzz/main.cpp")
 set(TLS12_DOWNLOAD_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/tls12-download.c")
+set(CLOSES_EXIT_MINUS_ONE_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/closes-exit-minus-one.c")
 set(CLOSES_STDIN_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/closes-stdin.c")
 set(CLOSES_STDOUT_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/closes-stdout.c")
 set(READS_STDIN_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/reads-stdin.c")
@@ -500,7 +501,7 @@ if (BUILD_TESTING)
         target_link_libraries(vcpkg-test PRIVATE log)
     endif()
 
-    add_dependencies(vcpkg-test reads-stdin closes-stdin closes-stdout test-editor)
+    add_dependencies(vcpkg-test reads-stdin closes-exit-minus-one closes-stdin closes-stdout test-editor)
 
     if(CMAKE_VERSION GREATER_EQUAL "3.16")
         target_precompile_headers(vcpkg-test REUSE_FROM vcpkglib)
@@ -534,6 +535,11 @@ if(VCPKG_BUILD_TLS12_DOWNLOADER)
 endif()
 
 if (BUILD_TESTING)
+# === Target: closes-exit-minus-one ===
+
+add_executable(closes-exit-minus-one ${CLOSES_EXIT_MINUS_ONE_SOURCES} "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg.manifest")
+set_property(TARGET closes-exit-minus-one PROPERTY PDB_NAME "closes-exit-minus-one${VCPKG_PDB_SUFFIX}")
+
 # === Target: closes-stdin ===
 
 add_executable(closes-stdin ${CLOSES_STDIN_SOURCES} "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg.manifest")
@@ -585,7 +591,7 @@ if(CLANG_FORMAT)
         COMMAND "${CLANG_FORMAT}" -i -verbose ${VCPKG_TEST_INCLUDES}
 
         COMMAND "${CLANG_FORMAT}" -i -verbose ${VCPKG_FUZZ_SOURCES} ${TLS12_DOWNLOAD_SOURCES}
-            ${CLOSES_STDIN_SOURCES} ${CLOSES_STDOUT_SOURCES} ${READS_STDIN_SOURCES}
+            ${CLOSES_STDIN_SOURCES} ${CLOSES_STDOUT_SOURCES} ${READS_STDIN_SOURCES} ${CLOSES_EXIT_MINUS_ONE_SOURCES}
             ${TEST_EDITOR_SOURCES} ${TEST_SCRIPT_ASSET_CACHE_SOURCES}
     )
 endif()
