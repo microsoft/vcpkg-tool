@@ -561,7 +561,6 @@ namespace vcpkg
             , m_tool_cache(get_tool_cache(fs,
                                           m_download_manager,
                                           downloads,
-                                          scripts / "vcpkgTools.xml",
                                           tools,
                                           args.exact_abi_tools_versions.value_or(false) ? RequireExactVersions::YES
                                                                                         : RequireExactVersions::NO))
