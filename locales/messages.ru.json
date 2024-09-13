@@ -664,7 +664,7 @@
   "InstalledBy": "Установлено посредством {path}",
   "InstalledPackages": "Следующие пакеты уже установлены:",
   "InstalledRequestedPackages": "Все запрашиваемые пакеты сейчас установлены.",
-  "InstallingMavenFile": "{path}: установка файла Maven",
+  "InstallingMavenFileFailure": "{path} installing Maven file, {command_line} failed with {exit_code}",
   "InstallingOverlayPort": "производится установка порта наложения отсюда",
   "InstallingPackage": "Выполняется установка {action_index}/{count} {spec}…",
   "IntegrateBashHelp": "Включить завершение табуляции bash. Только для систем, отличных от Windows",

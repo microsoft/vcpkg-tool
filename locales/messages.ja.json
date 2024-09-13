@@ -664,7 +664,7 @@
   "InstalledBy": "{path} でインストール済み",
   "InstalledPackages": "次のパッケージは既にインストールされています。",
   "InstalledRequestedPackages": "要求されたすべてのパッケージが現時点でインストール済みです。",
-  "InstallingMavenFile": "Maven ファイルをインストールしています {path}",
+  "InstallingMavenFileFailure": "{path} installing Maven file, {command_line} failed with {exit_code}",
   "InstallingOverlayPort": "ここからオーバーレイ ポートをインストールしています",
   "InstallingPackage": "{action_index}/{count} {spec} をインストールしています...",
   "IntegrateBashHelp": "bash タブ補完を有効にします。Windows 以外のみ",

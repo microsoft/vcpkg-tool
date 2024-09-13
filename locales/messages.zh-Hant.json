@@ -664,7 +664,7 @@
   "InstalledBy": "由 {path} 安裝",
   "InstalledPackages": "已安装下列套件:",
   "InstalledRequestedPackages": "目前已安装所有要求的套件。",
-  "InstallingMavenFile": "{path} 安裝 Maven 檔案",
+  "InstallingMavenFileFailure": "{path} installing Maven file, {command_line} failed with {exit_code}",
   "InstallingOverlayPort": "正在從這裡安裝重疊連接埠",
   "InstallingPackage": "正在安裝 {action_index}/{count} {spec}...",
   "IntegrateBashHelp": "啟用 bash Tab 鍵自動完成。僅限非 Windows",

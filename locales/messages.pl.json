@@ -664,7 +664,7 @@
   "InstalledBy": "Zainstalowane przez {path}",
   "InstalledPackages": "Następujące pakiety są już zainstalowane:",
   "InstalledRequestedPackages": "Wszystkie żądane pakiety są obecnie zainstalowane.",
-  "InstallingMavenFile": "{path} instaluje plik narzędzia Maven",
+  "InstallingMavenFileFailure": "{path} installing Maven file, {command_line} failed with {exit_code}",
   "InstallingOverlayPort": "instalowanie portu nakładki z tego miejsca",
   "InstallingPackage": "Instalowanie {action_index}/{count} {spec}...",
   "IntegrateBashHelp": "Włącz bash tab-completion. Dotyczy systemu innego niż Windows",
