@@ -25,4 +25,11 @@ namespace vcpkg
     struct CommandLess;
     struct ExitCodeAndOutput;
     struct Environment;
+
+    // The integral type the operating system uses to represent exit codes.
+#if defined(_WIN32)
+    using ExitCodeIntegral = unsigned long; // DWORD
+#else
+    using ExitCodeIntegral = int;
+#endif // ^^^ !_WIN32
 }

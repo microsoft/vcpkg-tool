@@ -707,39 +707,38 @@ namespace vcpkg
         CompilerInfo compiler_info;
         std::string buf;
 
-        ExpectedL<int> rc = LocalizedString();
-        {
-            const auto out_file = fs.open_for_write(stdoutlog, VCPKG_LINE_INFO);
-            rc = cmd_execute_and_stream_lines(cmd, settings, [&](StringView s) {
-                if (Strings::starts_with(s, MarkerCompilerHash))
-                {
-                    compiler_info.hash = s.substr(MarkerCompilerHash.size()).to_string();
-                }
-                if (Strings::starts_with(s, MarkerCompilerCxxVersion))
-                {
-                    compiler_info.version = s.substr(MarkerCompilerCxxVersion.size()).to_string();
-                }
-                if (Strings::starts_with(s, MarkerCompilerCxxId))
-                {
-                    compiler_info.id = s.substr(MarkerCompilerCxxId.size()).to_string();
-                }
-                static constexpr StringLiteral s_path_marker = "#COMPILER_CXX_PATH#";
-                if (Strings::starts_with(s, s_path_marker))
-                {
-                    const auto compiler_cxx_path = s.substr(s_path_marker.size());
-                    compiler_info.path.assign(compiler_cxx_path.data(), compiler_cxx_path.size());
-                }
-                Debug::println(s);
-                const auto old_buf_size = buf.size();
-                Strings::append(buf, s, '\n');
-                const auto write_size = buf.size() - old_buf_size;
-                Checks::msg_check_exit(VCPKG_LINE_INFO,
-                                       out_file.write(buf.c_str() + old_buf_size, 1, write_size) == write_size,
-                                       msgErrorWhileWriting,
-                                       msg::path = stdoutlog);
-            });
-        } // close out_file
+        Optional<WriteFilePointer> out_file_storage = fs.open_for_write(stdoutlog, VCPKG_LINE_INFO);
+        auto& out_file = out_file_storage.value_or_exit(VCPKG_LINE_INFO);
+        auto rc = cmd_execute_and_stream_lines(cmd, settings, [&](StringView s) {
+            if (Strings::starts_with(s, MarkerCompilerHash))
+            {
+                compiler_info.hash = s.substr(MarkerCompilerHash.size()).to_string();
+            }
+            if (Strings::starts_with(s, MarkerCompilerCxxVersion))
+            {
+                compiler_info.version = s.substr(MarkerCompilerCxxVersion.size()).to_string();
+            }
+            if (Strings::starts_with(s, MarkerCompilerCxxId))
+            {
+                compiler_info.id = s.substr(MarkerCompilerCxxId.size()).to_string();
+            }
+            static constexpr StringLiteral s_path_marker = "#COMPILER_CXX_PATH#";
+            if (Strings::starts_with(s, s_path_marker))
+            {
+                const auto compiler_cxx_path = s.substr(s_path_marker.size());
+                compiler_info.path.assign(compiler_cxx_path.data(), compiler_cxx_path.size());
+            }
+            Debug::println(s);
+            const auto old_buf_size = buf.size();
+            Strings::append(buf, s, '\n');
+            const auto write_size = buf.size() - old_buf_size;
+            Checks::msg_check_exit(VCPKG_LINE_INFO,
+                                   out_file.write(buf.c_str() + old_buf_size, 1, write_size) == write_size,
+                                   msgErrorWhileWriting,
+                                   msg::path = stdoutlog);
+        });
 
+        out_file_storage.clear();
         if (compiler_info.hash.empty() || !succeeded(rc))
         {
             Debug::println("Compiler information tracking can be disabled by passing --",
@@ -1006,18 +1005,17 @@ namespace vcpkg
         fs.create_directory(buildpath, VCPKG_LINE_INFO);
         env.add_entry(EnvironmentVariableGitCeilingDirectories, fs.absolute(buildpath.parent_path(), VCPKG_LINE_INFO));
         auto stdoutlog = buildpath / ("stdout-" + action.spec.triplet().canonical_name() + ".log");
-        ExpectedL<int> return_code = LocalizedString();
-        {
-            auto out_file = fs.open_for_write(stdoutlog, VCPKG_LINE_INFO);
-            return_code = cmd_execute_and_stream_data(cmd, settings, [&](StringView sv) {
-                msg::write_unlocalized_text(Color::none, sv);
-                Checks::msg_check_exit(VCPKG_LINE_INFO,
-                                       out_file.write(sv.data(), 1, sv.size()) == sv.size(),
-                                       msgErrorWhileWriting,
-                                       msg::path = stdoutlog);
-            });
-        } // close out_file
+        Optional<WriteFilePointer> out_file_storage = fs.open_for_write(stdoutlog, VCPKG_LINE_INFO);
+        auto& out_file = out_file_storage.value_or_exit(VCPKG_LINE_INFO);
+        auto return_code = cmd_execute_and_stream_data(cmd, settings, [&](StringView sv) {
+            msg::write_unlocalized_text(Color::none, sv);
+            Checks::msg_check_exit(VCPKG_LINE_INFO,
+                                   out_file.write(sv.data(), 1, sv.size()) == sv.size(),
+                                   msgErrorWhileWriting,
+                                   msg::path = stdoutlog);
+        });
 
+        out_file_storage.clear();
         const auto buildtimeus = timer.microseconds();
         const auto spec_string = action.spec.to_string();
         const bool build_failed = !succeeded(return_code);
