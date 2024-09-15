@@ -1255,6 +1255,160 @@ namespace
         Path m_tool;
     };
 
+    struct AzureUpkgTool
+    {
+        AzureUpkgTool(const ToolCache& cache, MessageSink& sink) { az_cli = cache.get_tool_path(Tools::AZCLI, sink); }
+
+        Command base_cmd(const AzureUpkgSource& src,
+                         StringView package_name,
+                         StringView package_version,
+                         StringView az_cmd) const
+        {
+            Command cmd{az_cli};
+            cmd.string_arg("artifacts").string_arg("universal").string_arg(az_cmd);
+            cmd.string_arg("--organization").string_arg(src.organization);
+            cmd.string_arg("--feed").string_arg(src.feed);
+            cmd.string_arg("--name").string_arg(package_name);
+            cmd.string_arg("--version").string_arg(package_version);
+            if (!src.project.empty())
+            {
+                cmd.string_arg("--project").string_arg(src.project);
+                cmd.string_arg("--scope").string_arg("project");
+            }
+            return cmd;
+        }
+
+        ExpectedL<Unit> download(const AzureUpkgSource& src,
+                                 StringView package_name,
+                                 StringView package_version,
+                                 const Path& download_path,
+                                 MessageSink& sink) const
+        {
+            Command cmd = base_cmd(src, package_name, package_version, "download");
+            cmd.string_arg("--path").string_arg(download_path);
+            return run_az_artifacts_cmd(cmd, sink);
+        }
+
+        ExpectedL<Unit> publish(const AzureUpkgSource& src,
+                                StringView package_name,
+                                StringView package_version,
+                                const Path& package_dir,
+                                StringView description,
+                                MessageSink& sink) const
+        {
+            Command cmd = base_cmd(src, package_name, package_version, "publish");
+            cmd.string_arg("--description").string_arg(description);
+            cmd.string_arg("--path").string_arg(package_dir);
+            return run_az_artifacts_cmd(cmd, sink);
+        }
+
+        ExpectedL<Unit> run_az_artifacts_cmd(const Command& cmd, MessageSink& sink) const
+        {
+            RedirectedProcessLaunchSettings show_in_debug_settings;
+            show_in_debug_settings.echo_in_debug = EchoInDebug::Show;
+            return cmd_execute_and_capture_output(cmd, show_in_debug_settings)
+                .then([&](ExitCodeAndOutput&& res) -> ExpectedL<Unit> {
+                    if (res.exit_code == 0)
+                    {
+                        return {Unit{}};
+                    }
+                    if (res.output.find("you need to run the login command") != std::string::npos)
+                    {
+                        sink.println(Color::warning,
+                                     msgFailedVendorAuthentication,
+                                     msg::vendor = "Universal Packages",
+                                     msg::url = docs::troubleshoot_binary_cache_url);
+                    }
+                    return LocalizedString::from_raw(std::move(res).output);
+                });
+        }
+        Path az_cli;
+    };
+
+    struct AzureUpkgPutBinaryProvider : public IWriteBinaryProvider
+    {
+        AzureUpkgPutBinaryProvider(const ToolCache& cache, MessageSink& sink, std::vector<AzureUpkgSource>&& sources)
+            : m_azure_tool(cache, sink), m_sink(sink), m_sources(sources)
+        {
+        }
+
+        size_t push_success(const BinaryPackageWriteInfo& request, MessageSink& msg_sink) override
+        {
+            size_t count_stored = 0;
+
+            auto package_version = format_version_for_nugetref(request.version.text, request.package_abi);
+            std::string package_name = fmt::format("{}-{}", request.spec.name(), request.spec.triplet());
+            std::string package_description = "Cached package for " + package_name;
+
+            for (auto&& write_src : m_sources)
+            {
+                auto res = m_azure_tool.publish(
+                    write_src, package_name, package_version, request.package_dir, package_description, msg_sink);
+                if (res)
+                {
+                    count_stored++;
+                }
+                else
+                {
+                    msg::println(res.error());
+                }
+            }
+
+            return count_stored;
+        }
+
+        bool needs_nuspec_data() const override { return false; }
+        bool needs_zip_file() const override { return true; }
+
+    private:
+        AzureUpkgTool m_azure_tool;
+        MessageSink& m_sink;
+        std::vector<AzureUpkgSource> m_sources;
+    };
+
+    struct AzureUpkgGetBinaryProvider : public IReadBinaryProvider
+    {
+        AzureUpkgGetBinaryProvider(const ToolCache& cache, MessageSink& sink, AzureUpkgSource source)
+            : m_azure_tool(cache, sink), m_sink(sink), m_source(source)
+        {
+        }
+
+        // Prechecking doesn't exist with universal packages so it's not implemented
+        void precheck(View<const InstallPlanAction*>, Span<CacheAvailability>) const override { }
+
+        LocalizedString restored_message(size_t count,
+                                         std::chrono::high_resolution_clock::duration elapsed) const override
+        {
+            return msg::format(msgRestoredPackagesFromAZUPKG, msg::count = count, msg::elapsed = ElapsedTime(elapsed));
+        }
+
+        void fetch(View<const InstallPlanAction*> actions, Span<RestoreResult> out_status) const override
+        {
+            for (size_t i = 0; i < actions.size(); ++i)
+            {
+                auto info = BinaryPackageReadInfo{*actions[i]};
+                auto package_version = format_version_for_nugetref(info.version.text, info.package_abi);
+                std::string package_name = fmt::format("{}-{}", info.spec.name(), info.spec.triplet());
+
+                auto res = m_azure_tool.download(m_source, package_name, package_version, info.package_dir, m_sink);
+
+                if (res)
+                {
+                    out_status[i] = RestoreResult::restored;
+                }
+                else
+                {
+                    out_status[i] = RestoreResult::unavailable;
+                }
+            }
+        }
+
+    private:
+        AzureUpkgTool m_azure_tool;
+        MessageSink& m_sink;
+        AzureUpkgSource m_source;
+    };
+
     ExpectedL<Path> default_cache_path_impl()
     {
         auto maybe_cachepath = get_environment_variable(EnvironmentVariableVcpkgDefaultBinaryCache);
@@ -1701,6 +1855,24 @@ namespace
                     state->url_templates_to_get, state->url_templates_to_put, std::move(url_template), segments, 2);
                 state->binary_cache_providers.insert("http");
             }
+            else if (segments[0].second == "x-upkg")
+            {
+                // Scheme: x-upkg,<organization>,<project>,<feed>[,<readwrite>]
+                if (segments.size() != 4)
+                {
+                    return add_error(msg::format(msgInvalidArgumentRequiresFourArguments,
+                                                 msg::binary_source = "Azure Universal Packages"));
+                }
+                AzureUpkgSource upkg_template{
+                    segments[1].second,
+                    segments[2].second,
+                    segments[3].second,
+                };
+
+                state->binary_cache_providers.insert("upkg");
+                handle_readwrite(
+                    state->upkg_templates_to_get, state->upkg_templates_to_put, std::move(upkg_template), segments, 4);
+            }
             else
             {
                 return add_error(msg::format(msgUnknownBinaryProviderType), segments[0].first);
@@ -1954,6 +2126,7 @@ namespace vcpkg
                 {"gcs", DefineMetric::BinaryCachingGcs},
                 {"http", DefineMetric::BinaryCachingHttp},
                 {"nuget", DefineMetric::BinaryCachingNuget},
+                {"upkg", DefineMetric::BinaryCachingUpkg},
             };
 
             MetricsSubmission metrics;
@@ -2097,6 +2270,19 @@ namespace vcpkg
                     ret.write.push_back(std::make_unique<NugetBinaryPushProvider>(
                         nuget_base, std::move(s.sources_to_write), std::move(s.configs_to_write)));
                 }
+            }
+
+            if (!s.upkg_templates_to_get.empty())
+            {
+                for (auto&& src : s.upkg_templates_to_get)
+                {
+                    ret.read.push_back(std::make_unique<AzureUpkgGetBinaryProvider>(tools, out_sink, std::move(src)));
+                }
+            }
+            if (!s.upkg_templates_to_put.empty())
+            {
+                ret.write.push_back(
+                    std::make_unique<AzureUpkgPutBinaryProvider>(tools, out_sink, std::move(s.upkg_templates_to_put)));
             }
         }
         return std::move(ret);
@@ -2608,6 +2794,7 @@ LocalizedString vcpkg::format_help_topic_binary_caching()
     table.format("x-azblob,<url>,<sas>[,<rw>]", msg::format(msgHelpBinaryCachingAzBlob));
     table.format("x-gcs,<prefix>[,<rw>]", msg::format(msgHelpBinaryCachingGcs));
     table.format("x-cos,<prefix>[,<rw>]", msg::format(msgHelpBinaryCachingCos));
+    table.format("x-upkg,<organization>,<project>,<feed>[,<rw>]", msg::format(msgHelpBinaryCachingAzUpkg));
     table.blank();
 
     // NuGet sources:

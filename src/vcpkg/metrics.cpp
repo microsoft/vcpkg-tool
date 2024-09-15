@@ -97,6 +97,7 @@ namespace vcpkg
         {DefineMetric::BinaryCachingHttp, "binarycaching_http"},
         {DefineMetric::BinaryCachingNuget, "binarycaching_nuget"},
         {DefineMetric::BinaryCachingSource, "binarycaching-source"},
+        {DefineMetric::BinaryCachingUpkg, "binarycaching_upkg"},
         {DefineMetric::ErrorVersioningDisabled, "error-versioning-disabled"},
         {DefineMetric::ErrorVersioningNoBaseline, "error-versioning-no-baseline"},
         {DefineMetric::GitHubRepository, "GITHUB_REPOSITORY"},
