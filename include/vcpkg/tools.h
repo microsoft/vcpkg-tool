@@ -47,6 +47,11 @@ namespace vcpkg
         virtual const std::string& get_tool_version(StringView tool, MessageSink& status_sink) const = 0;
     };
 
+    ExpectedL<std::string> extract_prefixed_nonquote(StringLiteral prefix,
+                                                     StringLiteral tool_name,
+                                                     std::string&& output,
+                                                     const Path& exe_path);
+
     ExpectedL<std::string> extract_prefixed_nonwhitespace(StringLiteral prefix,
                                                           StringLiteral tool_name,
                                                           std::string&& output,
