@@ -430,7 +430,8 @@ namespace vcpkg
                 "node-v16.15.1-darwin-x64.tar.gz",
             }};
 
-        int default_tool = -1;
+        size_t default_tool = 0;
+        bool existsDefaultTool = false;
         for (std::size_t i = 0; i < tool_data.size(); i++)
         {
             ArchToolData& d = tool_data[i];
@@ -441,9 +442,10 @@ namespace vcpkg
             else if (d.tool == toolname && d.os == os && !d.arch.has_value())
             {
                 default_tool = i;
+                existsDefaultTool = true;
             }
         }
-        if (default_tool >= 0)
+        if (existsDefaultTool)
         {
             return tool_data[default_tool];
         }
