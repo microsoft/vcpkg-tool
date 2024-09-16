@@ -911,10 +911,6 @@ DECLARE_MESSAGE(CouldNotFindGitTreeAtCommit,
                 (msg::package_name, msg::commit_sha),
                 "",
                 "could not find the git tree for `versions` in repo {package_name} at commit {commit_sha}")
-DECLARE_MESSAGE(CouldNotFindToolVersion,
-                (msg::version, msg::path),
-                "",
-                "Could not find <tools version=\"{version}\"> in {path}")
 DECLARE_MESSAGE(CouldNotFindVersionDatabaseFile, (msg::path), "", "Couldn't find the versions database file: {path}")
 DECLARE_MESSAGE(CreatedNuGetPackage, (msg::path), "", "Created nupkg: {path}")
 DECLARE_MESSAGE(CreateFailureLogsDir, (msg::path), "", "Creating failure logs output directory {path}.")
@@ -2952,11 +2948,6 @@ DECLARE_MESSAGE(VersionCommandHeader,
                 (msg::version),
                 "",
                 "vcpkg package management program version {version}\n\nSee LICENSE.txt for license information.")
-DECLARE_MESSAGE(
-    VersionConflictXML,
-    (msg::path, msg::expected_version, msg::actual_version),
-    "",
-    "Expected {path} version: [{expected_version}], but was [{actual_version}]. Please re-run bootstrap-vcpkg.")
 DECLARE_MESSAGE(VersionConstraintNotInDatabase1,
                 (msg::package_name, msg::version),
                 "",
