@@ -1328,7 +1328,7 @@ namespace
     struct AzureUpkgPutBinaryProvider : public IWriteBinaryProvider
     {
         AzureUpkgPutBinaryProvider(const ToolCache& cache, MessageSink& sink, std::vector<AzureUpkgSource>&& sources)
-            : m_azure_tool(cache, sink), m_sink(sink), m_sources(sources)
+            : m_azure_tool(cache, sink), m_sources(sources)
         {
         }
 
@@ -1358,11 +1358,10 @@ namespace
         }
 
         bool needs_nuspec_data() const override { return false; }
-        bool needs_zip_file() const override { return true; }
+        bool needs_zip_file() const override { return false; }
 
     private:
         AzureUpkgTool m_azure_tool;
-        MessageSink& m_sink;
         std::vector<AzureUpkgSource> m_sources;
     };
 
