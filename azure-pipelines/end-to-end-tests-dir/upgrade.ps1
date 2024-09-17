@@ -5,6 +5,7 @@ try
 {
     $env:VCPKG_ROOT = "$TestingRoot/temp-repo"
     git -C "$TestingRoot/temp-repo" switch -d e1934f4a2a0c58bb75099d89ed980832379907fa # vcpkg-cmake @ 2022-12-22
+    Copy-Item "$VcpkgRoot/scripts/vcpkgTools.xml" "$TestingRoot/temp-repo/scripts/vcpkgTools.xml" -Force
     $output = Run-VcpkgAndCaptureOutput install vcpkg-cmake
     Throw-IfFailed
     if (-Not ($output -match 'vcpkg-cmake:[^ ]+@2022-12-22'))
@@ -12,7 +13,9 @@ try
         throw 'Unexpected vcpkg-cmake install'
     }
 
+    git -C "$TestingRoot/temp-repo" checkout -- 'scripts/vcpkgTools.xml'
     git -C "$TestingRoot/temp-repo" switch -d f6a5d4e8eb7476b8d7fc12a56dff300c1c986131 # vcpkg-cmake @ 2023-05-04
+    Copy-Item "$VcpkgRoot/scripts/vcpkgTools.xml" "$TestingRoot/temp-repo/scripts/vcpkgTools.xml" -Force
     $output = Run-VcpkgAndCaptureOutput upgrade
     Throw-IfNotFailed
     if (-Not ($output -match 'If you are sure you want to rebuild the above packages, run this command with the --no-dry-run option.'))
