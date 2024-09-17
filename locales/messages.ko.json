@@ -664,7 +664,7 @@
   "InstalledBy": "{path}에 의해 설치됨",
   "InstalledPackages": "이미 설치되어 있는 패키지:",
   "InstalledRequestedPackages": "요청된 모든 패키지가 현재 설치되어 있습니다.",
-  "InstallingMavenFile": "Maven 파일을 설치하는 {path}",
+  "InstallingMavenFileFailure": "{path} installing Maven file, {command_line} failed with {exit_code}",
   "InstallingOverlayPort": "여기에서 오버레이 포트 설치",
   "InstallingPackage": "{action_index}/{count} {spec}을(를) 설치하는 중...",
   "IntegrateBashHelp": "bash 탭 완성을 사용합니다. 비 Windows 전용입니다.",

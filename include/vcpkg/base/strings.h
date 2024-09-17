@@ -123,6 +123,7 @@ namespace vcpkg::Strings
     const char* case_insensitive_ascii_search(StringView s, StringView pattern);
     bool case_insensitive_ascii_contains(StringView s, StringView pattern);
     bool case_insensitive_ascii_equals(StringView left, StringView right);
+    bool case_insensitive_ascii_less(StringView left, StringView right);
 
     void inplace_ascii_to_lowercase(char* first, char* last);
     void inplace_ascii_to_lowercase(std::string& s);

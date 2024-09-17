@@ -664,7 +664,7 @@
   "InstalledBy": "Nainstalováno pomocí {path}",
   "InstalledPackages": "Následující balíčky jsou již nainstalovány:",
   "InstalledRequestedPackages": "Všechny požadované balíčky jsou aktuálně nainstalovány.",
-  "InstallingMavenFile": "{path} instaluje soubor Maven",
+  "InstallingMavenFileFailure": "{path} installing Maven file, {command_line} failed with {exit_code}",
   "InstallingOverlayPort": "překryvný port se instaluje odsud",
   "InstallingPackage": "Instaluje se {action_index}/{count} {spec}...",
   "IntegrateBashHelp": "Povolit dokončování karet bash. Pouze jiný systém než Windows",

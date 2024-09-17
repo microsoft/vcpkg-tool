@@ -289,7 +289,7 @@ int main(const int argc, const char* const* const argv)
     {
         msg::write_unlocalized_text(Color::none,
                                     "[DEBUG] The following environment variables are currently set:\n" +
-                                        get_environment_variables() + '\n');
+                                        Strings::join("\n", get_environment_variables()) + '\n');
     }
     else if (Debug::g_debugging)
     {

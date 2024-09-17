@@ -43,13 +43,7 @@ namespace
 {
     using namespace vcpkg;
 
-#if defined(_WIN32)
-    using error_value_type = unsigned long;
-#else  // ^^^ _WIN32 // !_WIN32 vvv
-    using error_value_type = int;
-#endif // ^^^ !_WIN32
-
-    LocalizedString format_system_error_message(StringLiteral api_name, error_value_type error_value)
+    LocalizedString format_system_error_message(StringLiteral api_name, ExitCodeIntegral error_value)
     {
         return msg::format_error(msgSystemApiErrorMessage,
                                  msg::system_api = api_name,
@@ -230,7 +224,7 @@ namespace vcpkg
     {
 #if defined(_WIN32)
         wchar_t buf[_MAX_PATH];
-        const int bytes = GetModuleFileNameW(nullptr, buf, _MAX_PATH);
+        const DWORD bytes = GetModuleFileNameW(nullptr, buf, _MAX_PATH);
         if (bytes == 0) std::abort();
         return Strings::to_utf8(buf, bytes);
 #elif defined(__APPLE__)
@@ -561,7 +555,7 @@ namespace vcpkg
                         system32_env,
                         "\\WindowsPowerShell\\v1.0\\");
 
-        std::vector<std::string> env_strings = {
+        std::unordered_set<std::string> env_strings = {
             "ALLUSERSPROFILE",
             "APPDATA",
             "CommonProgramFiles",
@@ -610,15 +604,6 @@ namespace vcpkg
             "SSH_AUTH_SOCK",
             "SSH_AGENT_PID",
             // Enables find_package(CUDA) and enable_language(CUDA) in CMake
-            "CUDA_PATH",
-            "CUDA_PATH_V9_0",
-            "CUDA_PATH_V9_1",
-            "CUDA_PATH_V10_0",
-            "CUDA_PATH_V10_1",
-            "CUDA_PATH_V10_2",
-            "CUDA_PATH_V11_0",
-            "CUDA_PATH_V11_1",
-            "CUDA_PATH_V11_2",
             "CUDA_TOOLKIT_ROOT_DIR",
             // Environment variable generated automatically by CUDA after installation
             "NVCUDASAMPLES_ROOT",
@@ -643,6 +628,11 @@ namespace vcpkg
             "GXDKLatest",
         };
 
+        std::vector<std::string> env_prefix_string = {
+            // Enables find_package(CUDA) and enable_language(CUDA) in CMake
+            "CUDA_PATH",
+        };
+
         const Optional<std::string> keep_vars = get_environment_variable(EnvironmentVariableVcpkgKeepEnvVars);
         const auto k = keep_vars.get();
 
@@ -660,20 +650,23 @@ namespace vcpkg
                 }
                 else
                 {
-                    env_strings.push_back(std::move(var));
+                    env_strings.emplace(std::move(var));
                 }
             }
         }
 
         Environment env;
 
-        for (auto&& env_string : env_strings)
+        for (auto&& env_var : get_environment_variables())
         {
-            const Optional<std::string> value = get_environment_variable(env_string);
-            const auto v = value.get();
-            if (!v || v->empty()) continue;
-
-            env.add_entry(env_string, *v);
+            auto pos = env_var.find('=');
+            auto key = env_var.substr(0, pos);
+            if (Util::Sets::contains(env_strings, key) ||
+                Util::any_of(env_prefix_string, [&](auto&& group) { return Strings::starts_with(key, group); }))
+            {
+                auto value = pos == std::string::npos ? "" : env_var.substr(pos + 1);
+                env.add_entry(key, value);
+            }
         }
 
         const auto path_iter = extra_env.find(EnvironmentVariablePath.to_string());
@@ -779,7 +772,7 @@ namespace
             close_handle_mark_invalid(hProcess);
         }
 
-        unsigned int wait()
+        unsigned long wait()
         {
             close_handle_mark_invalid(hThread);
             const DWORD result = WaitForSingleObject(hProcess, INFINITE);
@@ -1030,10 +1023,10 @@ namespace
         ~RedirectedProcessInfo() = default;
 
         VCPKG_MSVC_WARNING(suppress : 6262) // function uses 32k of stack
-        int wait_and_stream_output(int32_t debug_id,
-                                   const char* input,
-                                   DWORD input_size,
-                                   const std::function<void(char*, size_t)>& raw_cb)
+        unsigned long wait_and_stream_output(int32_t debug_id,
+                                             const char* input,
+                                             DWORD input_size,
+                                             const std::function<void(char*, size_t)>& raw_cb)
         {
             static const auto stdin_completion_routine =
                 [](DWORD dwErrorCode, DWORD dwNumberOfBytesTransferred, LPOVERLAPPED pOverlapped) {
@@ -1375,9 +1368,9 @@ namespace vcpkg
 #endif // ^^^ !_WIN32
     }
 
-    static ExpectedL<int> cmd_execute_impl(const Command& cmd,
-                                           const ProcessLaunchSettings& settings,
-                                           const int32_t debug_id)
+    static ExpectedL<ExitCodeIntegral> cmd_execute_impl(const Command& cmd,
+                                                        const ProcessLaunchSettings& settings,
+                                                        const int32_t debug_id)
     {
 #if defined(_WIN32)
         STARTUPINFOEXW startup_info_ex;
@@ -1423,9 +1416,7 @@ namespace vcpkg
             return std::move(process_create).error();
         }
 
-        auto long_exit_code = process_info.wait();
-        if (long_exit_code > INT_MAX) long_exit_code = INT_MAX;
-        return static_cast<int>(long_exit_code);
+        return process_info.wait();
 #else
         Command real_command_line_builder;
         if (const auto wd = settings.working_directory.get())
@@ -1450,13 +1441,13 @@ namespace vcpkg
 #endif
     }
 
-    ExpectedL<int> cmd_execute(const Command& cmd)
+    ExpectedL<ExitCodeIntegral> cmd_execute(const Command& cmd)
     {
         ProcessLaunchSettings default_process_launch_settings;
         return cmd_execute(cmd, default_process_launch_settings);
     }
 
-    ExpectedL<int> cmd_execute(const Command& cmd, const ProcessLaunchSettings& settings)
+    ExpectedL<ExitCodeIntegral> cmd_execute(const Command& cmd, const ProcessLaunchSettings& settings)
     {
         const ElapsedTimer timer;
         const auto debug_id = debug_id_counter.fetch_add(1, std::memory_order_relaxed);
@@ -1476,15 +1467,16 @@ namespace vcpkg
         return maybe_result;
     }
 
-    ExpectedL<int> cmd_execute_and_stream_lines(const Command& cmd, const std::function<void(StringView)>& per_line_cb)
+    ExpectedL<ExitCodeIntegral> cmd_execute_and_stream_lines(const Command& cmd,
+                                                             const std::function<void(StringView)>& per_line_cb)
     {
         RedirectedProcessLaunchSettings default_redirected_process_launch_settings;
         return cmd_execute_and_stream_lines(cmd, default_redirected_process_launch_settings, per_line_cb);
     }
 
-    ExpectedL<int> cmd_execute_and_stream_lines(const Command& cmd,
-                                                const RedirectedProcessLaunchSettings& settings,
-                                                const std::function<void(StringView)>& per_line_cb)
+    ExpectedL<ExitCodeIntegral> cmd_execute_and_stream_lines(const Command& cmd,
+                                                             const RedirectedProcessLaunchSettings& settings,
+                                                             const std::function<void(StringView)>& per_line_cb)
     {
         Strings::LinesStream lines;
         auto rc =
@@ -1527,10 +1519,10 @@ namespace
     };
 #endif // ^^^ !_WIN32
 
-    ExpectedL<int> cmd_execute_and_stream_data_impl(const Command& cmd,
-                                                    const RedirectedProcessLaunchSettings& settings,
-                                                    const std::function<void(StringView)>& data_cb,
-                                                    uint32_t debug_id)
+    ExpectedL<ExitCodeIntegral> cmd_execute_and_stream_data_impl(const Command& cmd,
+                                                                 const RedirectedProcessLaunchSettings& settings,
+                                                                 const std::function<void(StringView)>& data_cb,
+                                                                 uint32_t debug_id)
     {
 #if defined(_WIN32)
         std::wstring as_utf16;
@@ -1848,15 +1840,16 @@ namespace
 
 namespace vcpkg
 {
-    ExpectedL<int> cmd_execute_and_stream_data(const Command& cmd, const std::function<void(StringView)>& data_cb)
+    ExpectedL<ExitCodeIntegral> cmd_execute_and_stream_data(const Command& cmd,
+                                                            const std::function<void(StringView)>& data_cb)
     {
         RedirectedProcessLaunchSettings default_redirected_process_launch_settings;
         return cmd_execute_and_stream_data(cmd, default_redirected_process_launch_settings, data_cb);
     }
 
-    ExpectedL<int> cmd_execute_and_stream_data(const Command& cmd,
-                                               const RedirectedProcessLaunchSettings& settings,
-                                               const std::function<void(StringView)>& data_cb)
+    ExpectedL<ExitCodeIntegral> cmd_execute_and_stream_data(const Command& cmd,
+                                                            const RedirectedProcessLaunchSettings& settings,
+                                                            const std::function<void(StringView)>& data_cb)
     {
         const ElapsedTimer timer;
         const auto debug_id = debug_id_counter.fetch_add(1, std::memory_order_relaxed);
@@ -1885,7 +1878,7 @@ namespace vcpkg
     {
         std::string output;
         return cmd_execute_and_stream_data(cmd, settings, [&](StringView sv) { Strings::append(output, sv); })
-            .map([&](int exit_code) { return ExitCodeAndOutput{exit_code, std::move(output)}; });
+            .map([&](ExitCodeIntegral exit_code) { return ExitCodeAndOutput{exit_code, std::move(output)}; });
     }
 
     uint64_t get_subproccess_stats() { return g_subprocess_stats.load(); }
@@ -1908,7 +1901,7 @@ namespace vcpkg
     void register_console_ctrl_handler() { }
 #endif
 
-    bool succeeded(const ExpectedL<int>& maybe_exit) noexcept
+    bool succeeded(const ExpectedL<ExitCodeIntegral>& maybe_exit) noexcept
     {
         if (const auto exit = maybe_exit.get())
         {

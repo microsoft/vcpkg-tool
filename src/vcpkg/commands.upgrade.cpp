@@ -180,9 +180,14 @@ namespace vcpkg
                 }
             }
 
-            Checks::check_exit(VCPKG_LINE_INFO, not_installed.empty() && no_control_file.empty());
-
-            if (to_upgrade.empty()) Checks::exit_success(VCPKG_LINE_INFO);
+            if (!not_installed.empty() || !no_control_file.empty())
+            {
+                Checks::exit_fail(VCPKG_LINE_INFO);
+            }
+            else if (to_upgrade.empty())
+            {
+                Checks::exit_success(VCPKG_LINE_INFO);
+            }
 
             action_plan =
                 create_upgrade_plan(provider, var_provider, to_upgrade, status_db, create_upgrade_plan_options);

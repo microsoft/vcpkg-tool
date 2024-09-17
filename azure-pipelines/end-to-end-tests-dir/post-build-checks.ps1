@@ -5,6 +5,14 @@ if ($IsWindows) {
     $NativeSlash = '\'
 }
 
+# Fail if installed files exist
+Refresh-TestRoot
+[string]$dupOutput = Run-VcpkgAndCaptureOutput install @commonArgs "--overlay-ports=$PSScriptRoot/../e2e-ports" duplicate-file-a duplicate-file-b
+Throw-IfNotFailed
+if (-not $dupOutput.Contains('The following files are already installed')) {
+    throw ('Incorrect error message for due to duplicate files; output was ' + $dupOutput)
+}
+
 # Empty package / disable all checks
 Refresh-TestRoot
 [string]$buildOutput = Run-VcpkgAndCaptureStderr install @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports" vcpkg-policy-set-incorrectly
