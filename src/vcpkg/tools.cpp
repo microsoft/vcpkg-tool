@@ -64,19 +64,20 @@ namespace vcpkg
 
     struct ArchToolData
     {
-        StringView tool;
-        StringView os;
+        StringLiteral tool;
+        StringLiteral os;
         Optional<CPUArchitecture> arch;
-        StringView version;
-        StringView exeRelativePath;
-        StringView url;
-        StringView sha512;
-        StringView archiveName;
+        StringLiteral version;
+        StringLiteral exeRelativePath;
+        StringLiteral url;
+        StringLiteral sha512;
+        StringLiteral archiveName;
     };
 
-    static Optional<ArchToolData&> get_raw_tool_data(StringView toolname, CPUArchitecture arch, StringView os)
+    static Optional<ArchToolData> get_raw_tool_data(StringView toolname, CPUArchitecture arch, StringView os)
     {
-        static std::vector<ArchToolData> tool_data = {
+        const std::size_t NUM_TOOLS = 33;
+        ArchToolData tool_data[NUM_TOOLS] = {
             {
                 "python3",
                 "windows",
@@ -163,6 +164,7 @@ namespace vcpkg
                 "",
                 "",
                 "",
+                "",
             },
             {
                 "git",
@@ -172,12 +174,14 @@ namespace vcpkg
                 "",
                 "",
                 "",
+                "",
             },
             {
                 "git",
                 "freebsd",
                 nullopt,
                 "2.7.4",
+                "",
                 "",
                 "",
                 "",
@@ -225,6 +229,7 @@ namespace vcpkg
                 "https://github.com/microsoft/vswhere/releases/download/3.1.7/vswhere.exe",
                 "40c534eb27f079c15c9782f53f82c12dabfede4d3d85f0edf8a855c2b0d5e12921a96506b37c210beab3c33220f8ff098447ad"
                 "054e82d8c2603964975fc12076",
+                "",
             },
             {
                 "nuget",
@@ -235,6 +240,7 @@ namespace vcpkg
                 "https://dist.nuget.org/win-x86-commandline/v6.10.0/nuget.exe",
                 "71d7307bb89de2df3811419c561efa00618a4c68e6ce481b0bdfc94c7c6c6d126a54eb26a0015686fabf99f109744ca41fead9"
                 "9e97139cdc86dde16a5ec3e7cf",
+                "",
             },
             {
                 "nuget",
@@ -245,6 +251,7 @@ namespace vcpkg
                 "https://dist.nuget.org/win-x86-commandline/v6.10.0/nuget.exe",
                 "71d7307bb89de2df3811419c561efa00618a4c68e6ce481b0bdfc94c7c6c6d126a54eb26a0015686fabf99f109744ca41fead9"
                 "9e97139cdc86dde16a5ec3e7cf",
+                "",
             },
             {
                 "nuget",
@@ -255,6 +262,7 @@ namespace vcpkg
                 "https://dist.nuget.org/win-x86-commandline/v6.10.0/nuget.exe",
                 "71d7307bb89de2df3811419c561efa00618a4c68e6ce481b0bdfc94c7c6c6d126a54eb26a0015686fabf99f109744ca41fead9"
                 "9e97139cdc86dde16a5ec3e7cf",
+                "",
             },
             {
                 "coscli",
@@ -265,6 +273,7 @@ namespace vcpkg
                 "https://github.com/tencentyun/coscli/releases/download/v0.11.0-beta/coscli-windows.exe",
                 "38a521ec80cdb6944124f4233d7e71eed8cc9f9be2c0c736269915d21c3718ea8131e4516bb6eeada6df331f5fa8f47a299907"
                 "e50ee9edbe0114444520974d06",
+                "",
             },
             {
                 "coscli",
@@ -275,6 +284,7 @@ namespace vcpkg
                 "https://github.com/tencentyun/coscli/releases/download/v0.11.0-beta/coscli-linux",
                 "9c930a1d308e9581a0e2fdfe3751ea7fe13d6068df90ca6465740ec3eda034202ef71ec54c99e90015ff81aa68aa1489567db5"
                 "e411e222eb7258704bdac7e924",
+                "",
             },
             {
                 "coscli",
@@ -285,6 +295,7 @@ namespace vcpkg
                 "https://github.com/tencentyun/coscli/releases/download/v0.11.0-beta/coscli-mac",
                 "9556335bfc8bc14bace6dfced45fa77fb07c80f08aa975e047a54efda1d19852aae0ea68a5bc7f04fbd88e3edce5a73512a612"
                 "16b1c5ff4cade224de4a9ab8db",
+                "",
             },
             {
                 "installerbase",
@@ -329,6 +340,7 @@ namespace vcpkg
                 "https://github.com/ip7z/7zip/releases/download/24.08/7zr.exe",
                 "424196f2acf5b89807f4038683acc50e7604223fc630245af6bab0e0df923f8b1c49cb09ac709086568c214c3f53dcb7d6c32e"
                 "8a54af222a3ff78cfab9c51670",
+                "",
             },
             {
                 "aria2",
@@ -432,9 +444,9 @@ namespace vcpkg
 
         size_t default_tool = 0;
         bool existsDefaultTool = false;
-        for (std::size_t i = 0; i < tool_data.size(); i++)
+        for (std::size_t i = 0; i < NUM_TOOLS; i++)
         {
-            ArchToolData& d = tool_data[i];
+            const ArchToolData& d = tool_data[i];
             if (d.tool == toolname && d.arch.has_value() && d.arch.value_or_exit(VCPKG_LINE_INFO) == arch && d.os == os)
             {
                 return d;
@@ -489,7 +501,7 @@ namespace vcpkg
         }
         else if (!d.exeRelativePath.empty())
         {
-            download_subpath = Strings::concat(d.sha512.substr(0, 8), '-', d.exeRelativePath);
+            download_subpath = Strings::concat(StringView{d.sha512}.substr(0, 8), '-', d.exeRelativePath);
         }
 
         return ToolData{tool.to_string(),
