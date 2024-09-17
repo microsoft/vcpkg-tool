@@ -446,6 +446,9 @@ namespace vcpkg
         bool existsDefaultTool = false;
         for (std::size_t i = 0; i < NUM_TOOLS; i++)
         {
+            // if possible, find a tool with matching tool name, architecture, and os
+            // otherwise, choose a tool with only matching name and os and nullopt
+            // as architecture (this is the default tool)
             const ArchToolData& d = tool_data[i];
             if (d.tool == toolname && d.arch.has_value() && d.arch.value_or_exit(VCPKG_LINE_INFO) == arch && d.os == os)
             {
