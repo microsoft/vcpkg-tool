@@ -188,7 +188,7 @@ namespace
 
     FeedReference make_feedref(const PackageSpec& spec, const Version& version, StringView abi_tag, StringView prefix)
     {
-        return {Strings::concat(prefix, spec.dir()), format_version_for_nugetref(version.text, abi_tag)};
+        return {Strings::concat(prefix, spec.dir()), format_version_for_feedref(version.text, abi_tag)};
     }
     FeedReference make_feedref(const BinaryPackageReadInfo& info, StringView prefix)
     {
@@ -1391,10 +1391,8 @@ namespace
             for (size_t i = 0; i < actions.size(); ++i)
             {
                 auto info = BinaryPackageReadInfo{*actions[i]};
-                auto package_version = format_version_for_nugetref(info.version.text, info.package_abi);
-                std::string package_name = fmt::format("{}-{}", info.spec.name(), info.spec.triplet());
-
-                auto res = m_azure_tool.download(m_source, package_name, package_version, info.package_dir, m_sink);
+                auto ref = make_feedref(info, "");
+                auto res = m_azure_tool.download(m_source, ref.id, ref.version, info.package_dir, m_sink);
 
                 if (res)
                 {
@@ -2660,7 +2658,7 @@ ExpectedL<BinaryConfigParserState> vcpkg::parse_binary_provider_configs(const st
     return s;
 }
 
-std::string vcpkg::format_version_for_nugetref(StringView version_text, StringView abi_tag)
+std::string vcpkg::format_version_for_feedref(StringView version_text, StringView abi_tag)
 {
     // this cannot use DotVersion::try_parse or DateVersion::try_parse,
     // since this is a subtly different algorithm

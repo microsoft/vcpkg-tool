@@ -166,30 +166,30 @@ TEST_CASE ("CacheStatus operations", "[BinaryCache]")
     REQUIRE(assignee.is_restored());
 }
 
-TEST_CASE ("format_version_for_nugetref semver-ish", "[format_version_for_nugetref]")
+TEST_CASE ("format_version_for_feedref semver-ish", "[format_version_for_feedref]")
 {
-    REQUIRE(format_version_for_nugetref("0.0.0", "abitag") == "0.0.0-vcpkgabitag");
-    REQUIRE(format_version_for_nugetref("1.0.1", "abitag") == "1.0.1-vcpkgabitag");
-    REQUIRE(format_version_for_nugetref("1.01.000", "abitag") == "1.1.0-vcpkgabitag");
-    REQUIRE(format_version_for_nugetref("1.2", "abitag") == "1.2.0-vcpkgabitag");
-    REQUIRE(format_version_for_nugetref("v52", "abitag") == "52.0.0-vcpkgabitag");
-    REQUIRE(format_version_for_nugetref("v09.01.02", "abitag") == "9.1.2-vcpkgabitag");
-    REQUIRE(format_version_for_nugetref("1.1.1q", "abitag") == "1.1.1-vcpkgabitag");
-    REQUIRE(format_version_for_nugetref("1", "abitag") == "1.0.0-vcpkgabitag");
+    REQUIRE(format_version_for_feedref("0.0.0", "abitag") == "0.0.0-vcpkgabitag");
+    REQUIRE(format_version_for_feedref("1.0.1", "abitag") == "1.0.1-vcpkgabitag");
+    REQUIRE(format_version_for_feedref("1.01.000", "abitag") == "1.1.0-vcpkgabitag");
+    REQUIRE(format_version_for_feedref("1.2", "abitag") == "1.2.0-vcpkgabitag");
+    REQUIRE(format_version_for_feedref("v52", "abitag") == "52.0.0-vcpkgabitag");
+    REQUIRE(format_version_for_feedref("v09.01.02", "abitag") == "9.1.2-vcpkgabitag");
+    REQUIRE(format_version_for_feedref("1.1.1q", "abitag") == "1.1.1-vcpkgabitag");
+    REQUIRE(format_version_for_feedref("1", "abitag") == "1.0.0-vcpkgabitag");
 }
 
-TEST_CASE ("format_version_for_nugetref date", "[format_version_for_nugetref]")
+TEST_CASE ("format_version_for_feedref date", "[format_version_for_feedref]")
 {
-    REQUIRE(format_version_for_nugetref("2020-06-26", "abitag") == "2020.6.26-vcpkgabitag");
-    REQUIRE(format_version_for_nugetref("20-06-26", "abitag") == "0.0.0-vcpkgabitag");
-    REQUIRE(format_version_for_nugetref("2020-06-26-release", "abitag") == "2020.6.26-vcpkgabitag");
-    REQUIRE(format_version_for_nugetref("2020-06-26000", "abitag") == "2020.6.26-vcpkgabitag");
+    REQUIRE(format_version_for_feedref("2020-06-26", "abitag") == "2020.6.26-vcpkgabitag");
+    REQUIRE(format_version_for_feedref("20-06-26", "abitag") == "0.0.0-vcpkgabitag");
+    REQUIRE(format_version_for_feedref("2020-06-26-release", "abitag") == "2020.6.26-vcpkgabitag");
+    REQUIRE(format_version_for_feedref("2020-06-26000", "abitag") == "2020.6.26-vcpkgabitag");
 }
 
-TEST_CASE ("format_version_for_nugetref generic", "[format_version_for_nugetref]")
+TEST_CASE ("format_version_for_feedref generic", "[format_version_for_feedref]")
 {
-    REQUIRE(format_version_for_nugetref("apr", "abitag") == "0.0.0-vcpkgabitag");
-    REQUIRE(format_version_for_nugetref("", "abitag") == "0.0.0-vcpkgabitag");
+    REQUIRE(format_version_for_feedref("apr", "abitag") == "0.0.0-vcpkgabitag");
+    REQUIRE(format_version_for_feedref("", "abitag") == "0.0.0-vcpkgabitag");
 }
 
 TEST_CASE ("generate_nuspec", "[generate_nuspec]")
