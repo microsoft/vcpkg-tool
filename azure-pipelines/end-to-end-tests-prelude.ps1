@@ -168,7 +168,6 @@ function Run-Vcpkg {
     Run-VcpkgAndCaptureOutput -ForceExe:$ForceExe @TestArgs | Out-Null
 }
 
-
 # https://github.com/actions/toolkit/blob/main/docs/commands.md#problem-matchers
 # .github/workflows/matchers.json
 function Remove-Problem-Matchers {
@@ -176,9 +175,44 @@ function Remove-Problem-Matchers {
     Write-Host "::remove-matcher owner=vcpkg-gcc::"
     Write-Host "::remove-matcher owner=vcpkg-catch::"
 }
+
 function Restore-Problem-Matchers {
     Write-Host "::add-matcher::.github/workflows/matchers.json"
 }
 
+function Set-EmptyTestPort {
+    Param(
+        [Parameter(Mandatory)][ValidateNotNullOrWhitespace()]
+        [string]$Name,
+        [Parameter(Mandatory)][ValidateNotNullOrWhitespace()]
+        [string]$Version,
+        [Parameter(Mandatory)][ValidateNotNullOrWhitespace()]
+        [string]$PortsRoot,
+        [switch]$Malformed
+    )
+
+    $portDir = Join-Path $PortsRoot $Name
+
+    New-Item -ItemType Directory -Force -Path $portDir | Out-Null
+    Set-Content -Value "set(VCPKG_POLICY_EMPTY_PACKAGE enabled)" -LiteralPath (Join-Path $portDir 'portfile.cmake') -Encoding Ascii
+
+    if ($Malformed) {
+        # Add bad trailing comma
+        $json = @"
+{
+  "name": "$Name",
+  "version": "$Version",
+}
+"@
+    } else {
+        $json = @"
+{
+  "name": "$Name",
+  "version": "$Version"
+}
+"@
+    }
+    Set-Content -Value $json -LiteralPath (Join-Path $portDir 'vcpkg.json') -Encoding Ascii
+}
 
 Refresh-TestRoot
