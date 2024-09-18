@@ -201,6 +201,7 @@ namespace vcpkg
             "Makefile.am",
             "Makefile.in",
             "Makefile",
+            "module.modulemap",
         };
         static constexpr Span<const StringLiteral> restricted_lists[] = {
             restricted_sys_filenames, restricted_crt_filenames, restricted_general_filenames};
