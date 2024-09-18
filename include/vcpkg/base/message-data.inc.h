@@ -1481,7 +1481,8 @@ DECLARE_MESSAGE(HelpBinaryCachingAzUpkg,
                 (),
                 "Printed as the 'definition' for 'x-upkg,<organization>,<project>,<feed>[,<rw>]'.",
                 "**Experimental: will change or be removed without warning**\n"
-                "Adds a Azure Universal Package source. Uses the Azure CLI (az artifacts) for uploads and downloads.")
+                "Adds a Universal Package Azure Artifacts source. Uses the Azure CLI "
+                "(az artifacts) for uploads and downloads.")
 DECLARE_MESSAGE(HelpBinaryCachingCos,
                 (),
                 "Printed as the 'definition' for 'x-cos,<prefix>[,<rw>]'.",
@@ -1803,10 +1804,10 @@ DECLARE_MESSAGE(InvalidArgumentRequiresBaseUrlAndToken,
                 (msg::binary_source),
                 "",
                 "invalid argument: binary config '{binary_source}' requires at least a base-url and a SAS token")
-DECLARE_MESSAGE(InvalidArgumentRequiresFourArguments,
+DECLARE_MESSAGE(InvalidArgumentRequiresFourOrFiveArguments,
                 (msg::binary_source),
                 "",
-                "invalid argument: binary config '{binary_source}' requires 4 arguments")
+                "invalid argument: binary config '{binary_source}' requires 4 or 5 arguments")
 DECLARE_MESSAGE(InvalidArgumentRequiresNoneArguments,
                 (msg::binary_source),
                 "",
@@ -2571,7 +2572,7 @@ DECLARE_MESSAGE(RestoredPackagesFromAWS,
 DECLARE_MESSAGE(RestoredPackagesFromAZUPKG,
                 (msg::count, msg::elapsed),
                 "",
-                "Restored {count} package(s) from Azure Universal Packages in {elapsed}. "
+                "Restored {count} package(s) from Universal Packages in {elapsed}. "
                 "Use --debug to see more details.")
 DECLARE_MESSAGE(RestoredPackagesFromCOS,
                 (msg::count, msg::elapsed),

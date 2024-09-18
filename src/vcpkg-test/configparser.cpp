@@ -560,6 +560,41 @@ TEST_CASE ("BinaryConfigParser HTTP provider", "[binaryconfigparser]")
     }
 }
 
+TEST_CASE ("BinaryConfigParser Universal Packages provider", "[binaryconfigparser]")
+{
+    // Scheme: x-upkg,<organization>,<project>,<feed>[,<readwrite>]
+    {
+        auto parsed = parse_binary_provider_configs("x-upkg,test_organization,test_project_name,test_feed,read", {});
+        auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
+        REQUIRE(state.upkg_templates_to_get.size() == 1);
+        REQUIRE(state.upkg_templates_to_get[0].feed == "test_feed");
+        REQUIRE(state.upkg_templates_to_get[0].organization == "test_organization");
+        REQUIRE(state.upkg_templates_to_get[0].project == "test_project_name");
+    }
+    {
+        auto parsed =
+            parse_binary_provider_configs("x-upkg,test_organization,test_project_name,test_feed,readwrite", {});
+        auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
+        REQUIRE(state.upkg_templates_to_get.size() == 1);
+        REQUIRE(state.upkg_templates_to_put.size() == 1);
+        REQUIRE(state.upkg_templates_to_get[0].feed == "test_feed");
+        REQUIRE(state.upkg_templates_to_get[0].organization == "test_organization");
+        REQUIRE(state.upkg_templates_to_get[0].project == "test_project_name");
+        REQUIRE(state.upkg_templates_to_put[0].feed == "test_feed");
+        REQUIRE(state.upkg_templates_to_put[0].organization == "test_organization");
+        REQUIRE(state.upkg_templates_to_put[0].project == "test_project_name");
+    }
+    {
+        auto parsed = parse_binary_provider_configs(
+            "x-upkg,test_organization,test_project_name,test_feed,extra_argument,readwrite", {});
+        REQUIRE(!parsed.has_value());
+    }
+    {
+        auto parsed = parse_binary_provider_configs("x-upkg,missing_args,read", {});
+        REQUIRE(!parsed.has_value());
+    }
+}
+
 TEST_CASE ("AssetConfigParser azurl provider", "[assetconfigparser]")
 {
     CHECK(parse_download_configuration({}));

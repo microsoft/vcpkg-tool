@@ -157,6 +157,16 @@ namespace vcpkg
             });
     }
 
+    // set target to the subrange [begin_idx, end_idx)
+    static void set_string_to_subrange(std::string& target, size_t begin_idx, size_t end_idx)
+    {
+        if (end_idx != std::string::npos)
+        {
+            target.resize(end_idx);
+        }
+        target.erase(0, begin_idx);
+    }
+
     ExpectedL<std::string> extract_prefixed_nonquote(StringLiteral prefix,
                                                      StringLiteral tool_name,
                                                      std::string&& output,
@@ -166,13 +176,8 @@ namespace vcpkg
         if (idx != std::string::npos)
         {
             idx += prefix.size();
-            const auto end_idx = output.find_first_of("\"", idx);
-            if (end_idx != std::string::npos)
-            {
-                output.resize(end_idx);
-            }
-
-            output.erase(0, idx);
+            const auto end_idx = output.find('"', idx);
+            set_string_to_subrange(output, idx, end_idx);
             return {std::move(output), expected_left_tag};
         }
 
@@ -191,12 +196,7 @@ namespace vcpkg
         {
             idx += prefix.size();
             const auto end_idx = output.find_first_of(" \r\n", idx, 3);
-            if (end_idx != std::string::npos)
-            {
-                output.resize(end_idx);
-            }
-
-            output.erase(0, idx);
+            set_string_to_subrange(output, idx, end_idx);
             return {std::move(output), expected_left_tag};
         }
 

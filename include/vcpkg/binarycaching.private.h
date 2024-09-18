@@ -21,9 +21,9 @@ namespace vcpkg
     // - anything else -> 0.0.0-vcpkg<abitag>
     std::string format_version_for_nugetref(StringView version_text, StringView abi_tag);
 
-    struct NugetReference
+    struct FeedReference
     {
-        NugetReference(std::string id, std::string version) : id(std::move(id)), version(std::move(version)) { }
+        FeedReference(std::string id, std::string version) : id(std::move(id)), version(std::move(version)) { }
 
         std::string id;
         std::string version;
@@ -31,7 +31,7 @@ namespace vcpkg
         std::string nupkg_filename() const { return Strings::concat(id, '.', version, ".nupkg"); }
     };
 
-    NugetReference make_nugetref(const InstallPlanAction& action, StringView prefix);
+    FeedReference make_nugetref(const InstallPlanAction& action, StringView prefix);
 
     std::string generate_nuspec(const Path& package_dir,
                                 const InstallPlanAction& action,

@@ -186,13 +186,13 @@ namespace
         return ret;
     }
 
-    NugetReference make_nugetref(const PackageSpec& spec, const Version& version, StringView abi_tag, StringView prefix)
+    FeedReference make_feedref(const PackageSpec& spec, const Version& version, StringView abi_tag, StringView prefix)
     {
         return {Strings::concat(prefix, spec.dir()), format_version_for_nugetref(version.text, abi_tag)};
     }
-    NugetReference make_nugetref(const BinaryPackageReadInfo& info, StringView prefix)
+    FeedReference make_feedref(const BinaryPackageReadInfo& info, StringView prefix)
     {
-        return make_nugetref(info.spec, info.version, info.package_abi, prefix);
+        return make_feedref(info.spec, info.version, info.package_abi, prefix);
     }
 
     void clean_prepare_dir(const Filesystem& fs, const Path& dir)
@@ -650,7 +650,7 @@ namespace
 
         NuGetSource m_src;
 
-        static std::string generate_packages_config(View<NugetReference> refs)
+        static std::string generate_packages_config(View<FeedReference> refs)
         {
             XmlSerializer xml;
             xml.emit_declaration().line_break();
@@ -743,7 +743,7 @@ namespace
             }
 
             size_t count_stored = 0;
-            auto nupkg_path = m_buildtrees / make_nugetref(request, m_nuget_prefix).nupkg_filename();
+            auto nupkg_path = m_buildtrees / make_feedref(request, m_nuget_prefix).nupkg_filename();
             for (auto&& write_src : m_sources)
             {
                 msg_sink.println(
@@ -1262,18 +1262,23 @@ namespace
         Command base_cmd(const AzureUpkgSource& src,
                          StringView package_name,
                          StringView package_version,
-                         StringView az_cmd) const
+                         StringView verb) const
         {
             Command cmd{az_cli};
-            cmd.string_arg("artifacts").string_arg("universal").string_arg(az_cmd);
-            cmd.string_arg("--organization").string_arg(src.organization);
-            cmd.string_arg("--feed").string_arg(src.feed);
-            cmd.string_arg("--name").string_arg(package_name);
-            cmd.string_arg("--version").string_arg(package_version);
+            cmd.string_arg("artifacts")
+                .string_arg("universal")
+                .string_arg(verb)
+                .string_arg("--organization")
+                .string_arg(src.organization)
+                .string_arg("--feed")
+                .string_arg(src.feed)
+                .string_arg("--name")
+                .string_arg(package_name)
+                .string_arg("--version")
+                .string_arg(package_version);
             if (!src.project.empty())
             {
-                cmd.string_arg("--project").string_arg(src.project);
-                cmd.string_arg("--scope").string_arg("project");
+                cmd.string_arg("--project").string_arg(src.project).string_arg("--scope").string_arg("project");
             }
             return cmd;
         }
@@ -1297,8 +1302,7 @@ namespace
                                 MessageSink& sink) const
         {
             Command cmd = base_cmd(src, package_name, package_version, "publish");
-            cmd.string_arg("--description").string_arg(description);
-            cmd.string_arg("--path").string_arg(package_dir);
+            cmd.string_arg("--description").string_arg(description).string_arg("--path").string_arg(package_dir);
             return run_az_artifacts_cmd(cmd, sink);
         }
 
@@ -1312,12 +1316,16 @@ namespace
                     {
                         return {Unit{}};
                     }
+
+                    // az command line error message: Before you can run Azure DevOps commands, you need to
+                    // run the login command(az login if using AAD/MSA identity else az devops login if using PAT token)
+                    // to setup credentials.
                     if (res.output.find("you need to run the login command") != std::string::npos)
                     {
                         sink.println(Color::warning,
                                      msgFailedVendorAuthentication,
                                      msg::vendor = "Universal Packages",
-                                     msg::url = docs::troubleshoot_binary_cache_url);
+                                     msg::url = "https://learn.microsoft.com/cli/azure/authenticate-azure-cli");
                     }
                     return LocalizedString::from_raw(std::move(res).output);
                 });
@@ -1335,15 +1343,12 @@ namespace
         size_t push_success(const BinaryPackageWriteInfo& request, MessageSink& msg_sink) override
         {
             size_t count_stored = 0;
-
-            auto package_version = format_version_for_nugetref(request.version.text, request.package_abi);
-            std::string package_name = fmt::format("{}-{}", request.spec.name(), request.spec.triplet());
-            std::string package_description = "Cached package for " + package_name;
-
+            auto ref = make_feedref(request, "");
+            std::string package_description = "Cached package for " + ref.id;
             for (auto&& write_src : m_sources)
             {
                 auto res = m_azure_tool.publish(
-                    write_src, package_name, package_version, request.package_dir, package_description, msg_sink);
+                    write_src, ref.id, ref.version, request.package_dir, package_description, msg_sink);
                 if (res)
                 {
                     count_stored++;
@@ -1857,10 +1862,10 @@ namespace
             else if (segments[0].second == "x-upkg")
             {
                 // Scheme: x-upkg,<organization>,<project>,<feed>[,<readwrite>]
-                if (segments.size() != 4)
+                if (segments.size() < 4 || segments.size() > 5)
                 {
-                    return add_error(msg::format(msgInvalidArgumentRequiresFourArguments,
-                                                 msg::binary_source = "Azure Universal Packages"));
+                    return add_error(msg::format(msgInvalidArgumentRequiresFourOrFiveArguments,
+                                                 msg::binary_source = "Universal Packages"));
                 }
                 AzureUpkgSource upkg_template{
                     segments[1].second,
@@ -2843,8 +2848,8 @@ std::string vcpkg::generate_nuget_packages_config(const ActionPlan& plan, String
     return std::move(xml.buf);
 }
 
-NugetReference vcpkg::make_nugetref(const InstallPlanAction& action, StringView prefix)
+FeedReference vcpkg::make_nugetref(const InstallPlanAction& action, StringView prefix)
 {
-    return ::make_nugetref(
+    return ::make_feedref(
         action.spec, action.version(), action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi, prefix);
 }
