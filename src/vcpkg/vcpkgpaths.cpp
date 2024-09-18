@@ -489,30 +489,22 @@ namespace
     {
         vcpkg::LockFile ret;
         std::error_code ec;
-        auto maybe_lock_contents = Json::parse_file(fs, p, ec);
+        auto lockfile_disk_contents = fs.read_contents(p, ec);
         if (ec)
         {
             Debug::print("Failed to load lockfile: ", ec.message(), "\n");
             return ret;
         }
-        else if (auto lock_contents = maybe_lock_contents.get())
+
+        auto maybe_lock_data = Json::parse_object(lockfile_disk_contents, p);
+        if (auto lock_data = maybe_lock_data.get())
         {
-            auto& doc = lock_contents->value;
-            if (!doc.is_object())
-            {
-                Debug::print("Lockfile was not an object\n");
-                return ret;
-            }
-
-            ret.lockdata = lockdata_from_json_object(doc.object(VCPKG_LINE_INFO));
-
+            ret.lockdata = lockdata_from_json_object(*lock_data);
             return ret;
         }
-        else
-        {
-            Debug::print("Failed to load lockfile:\n", maybe_lock_contents.error());
-            return ret;
-        }
+
+        Debug::print("Failed to load lockfile:\n", maybe_lock_data.error());
+        return ret;
     }
 } // unnamed namespace
 
