@@ -313,7 +313,7 @@ namespace vcpkg
         Undocumented,
         AutocompletePriority::Public,
         0,
-        1,
+        SIZE_MAX,
         {AddVersionSwitches},
         nullptr,
     };
@@ -335,15 +335,7 @@ namespace vcpkg
         }
 
         std::vector<std::string> port_names;
-        if (!parsed_args.command_arguments.empty())
-        {
-            if (add_all)
-            {
-                msg::println_warning(msgAddVersionIgnoringOptionAll, msg::option = SwitchAll);
-            }
-            port_names.emplace_back(parsed_args.command_arguments[0]);
-        }
-        else
+        if (parsed_args.command_arguments.empty())
         {
             Checks::msg_check_exit(
                 VCPKG_LINE_INFO,
@@ -356,6 +348,15 @@ namespace vcpkg
             {
                 port_names.emplace_back(port_dir.stem().to_string());
             }
+        }
+        else
+        {
+            if (add_all)
+            {
+                msg::println_warning(msgAddVersionIgnoringOptionAll, msg::option = SwitchAll);
+            }
+
+            port_names = std::move(parsed_args.command_arguments);
         }
 
         auto baseline_map = [&]() -> std::map<std::string, vcpkg::Version, std::less<>> {
