@@ -389,10 +389,9 @@ namespace vcpkg
         for (auto&& port_name : port_names)
         {
             auto port_dir = paths.builtin_ports_directory() / port_name;
-
-            auto maybe_scfl = Paragraphs::try_load_port_required(
-                                  fs, port_name, PortLocation{paths.builtin_ports_directory() / port_name})
-                                  .maybe_scfl;
+            auto load_result = Paragraphs::try_load_port_required(
+                fs, port_name, PortLocation{paths.builtin_ports_directory() / port_name});
+            auto& maybe_scfl = load_result.maybe_scfl;
             auto scfl = maybe_scfl.get();
             if (!scfl)
             {
@@ -407,10 +406,9 @@ namespace vcpkg
 
                 if (scfl->control_path.filename() == FileVcpkgDotJson)
                 {
-                    const auto current_file_content = fs.read_contents(scfl->control_path, VCPKG_LINE_INFO);
                     const auto json = serialize_manifest(*scfl->source_control_file);
                     const auto formatted_content = Json::stringify(json);
-                    if (current_file_content != formatted_content)
+                    if (load_result.on_disk_contents != formatted_content)
                     {
                         std::string command_line = "vcpkg format-manifest ";
                         append_shell_escaped(command_line, scfl->control_path);
