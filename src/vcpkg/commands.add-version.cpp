@@ -54,6 +54,7 @@ namespace
         {
             return insert_version_to_json_object(obj, version.version, JsonIdVersionString);
         }
+
         Checks::unreachable(VCPKG_LINE_INFO);
     }
 
@@ -69,6 +70,7 @@ namespace
                         .append_raw("\n")
                         .append(msgSeeURL, msg::url = docs::version_schemes));
             }
+
             if (DotVersion::try_parse_relaxed(version.version.text))
             {
                 Checks::msg_exit_with_message(
@@ -111,24 +113,19 @@ namespace
         return output_object;
     }
 
-    void write_baseline_file(const Filesystem& fs,
-                             const std::map<std::string, Version, std::less<>>& baseline_map,
-                             const Path& output_path)
+    static void write_json_file(const Filesystem& fs, const Json::Object& obj, const Path& output_path)
     {
         auto new_path = output_path + ".tmp";
         fs.create_directories(output_path.parent_path(), VCPKG_LINE_INFO);
-        fs.write_contents(new_path, Json::stringify(serialize_baseline(baseline_map)), VCPKG_LINE_INFO);
+        fs.write_contents(new_path, Json::stringify(obj), VCPKG_LINE_INFO);
         fs.rename(new_path, output_path, VCPKG_LINE_INFO);
     }
 
-    void write_versions_file(const Filesystem& fs,
-                             const std::vector<GitVersionDbEntry>& versions,
-                             const Path& output_path)
+    static void write_versions_file(const Filesystem& fs,
+                                    const std::vector<GitVersionDbEntry>& versions,
+                                    const Path& output_path)
     {
-        auto new_path = output_path + ".tmp";
-        fs.create_directories(output_path.parent_path(), VCPKG_LINE_INFO);
-        fs.write_contents(new_path, Json::stringify(serialize_versions(versions)), VCPKG_LINE_INFO);
-        fs.rename(new_path, output_path, VCPKG_LINE_INFO);
+        write_json_file(fs, serialize_versions(versions), output_path);
     }
 
     UpdateResult update_baseline_version(const VcpkgPaths& paths,
@@ -153,8 +150,10 @@ namespace
                                  msg::version = version,
                                  msg::path = baseline_path);
                 }
+
                 return UpdateResult::NotUpdated;
             }
+
             baseline_version = version;
         }
         else
@@ -162,12 +161,13 @@ namespace
             baseline_map.emplace(port_name, version);
         }
 
-        write_baseline_file(fs, baseline_map, baseline_path);
+        write_json_file(fs, serialize_baseline(baseline_map), baseline_path);
         if (print_success)
         {
             msg::println(
                 Color::success, msgAddVersionAddedVersionToFile, msg::version = version, msg::path = baseline_path);
         }
+
         return UpdateResult::Updated;
     }
 
@@ -196,6 +196,7 @@ namespace
             {
                 check_used_version_scheme(port_version, port_name);
             }
+
             std::vector<GitVersionDbEntry> new_entry{{port_version, git_tree}};
             write_versions_file(fs, new_entry, maybe_maybe_versions.versions_file_path);
             if (print_success)
@@ -207,6 +208,7 @@ namespace
                                  .append_raw(' ')
                                  .append(msgAddVersionNewFile));
             }
+
             return UpdateResult::Updated;
         }
 
@@ -224,8 +226,10 @@ namespace
                                  msg::version = port_version.version,
                                  msg::path = maybe_maybe_versions.versions_file_path);
                 }
+
                 return UpdateResult::NotUpdated;
             }
+
             msg::println_warning(msg::format(msgAddVersionPortFilesShaUnchanged,
                                              msg::package_name = port_name,
                                              msg::version = found_same_sha->version.version)
@@ -238,7 +242,11 @@ namespace
                                      .append_raw("\n*** ")
                                      .append(msgSeeURL, msg::url = docs::add_version_command_url)
                                      .append_raw("\n***"));
-            if (keep_going) return UpdateResult::NotUpdated;
+            if (keep_going)
+            {
+                return UpdateResult::NotUpdated;
+            }
+
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
@@ -246,7 +254,11 @@ namespace
             return entry.version.version == port_version.version;
         });
 
-        if (it != versions_end)
+        if (it == versions_end)
+        {
+            versions->insert(versions->begin(), GitVersionDbEntry{port_version, git_tree});
+        }
+        else
         {
             if (!overwrite_version)
             {
@@ -274,10 +286,6 @@ namespace
             it->version = port_version;
             it->git_tree = git_tree;
         }
-        else
-        {
-            versions->insert(versions->begin(), GitVersionDbEntry{port_version, git_tree});
-        }
 
         if (!skip_version_format_check)
         {
@@ -292,6 +300,7 @@ namespace
                          msg::version = port_version.version,
                          msg::path = maybe_maybe_versions.versions_file_path);
         }
+
         return UpdateResult::Updated;
     }
 
@@ -365,6 +374,7 @@ namespace vcpkg
                 std::map<std::string, vcpkg::Version, std::less<>> ret;
                 return ret;
             }
+
             auto maybe_baseline_map = vcpkg::get_builtin_baseline(paths);
             return maybe_baseline_map.value_or_exit(VCPKG_LINE_INFO);
         }();
@@ -448,6 +458,7 @@ namespace vcpkg
                 if (add_all) continue;
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
+
             const auto& git_tree = git_tree_it->second;
             auto updated_versions_file = update_version_db_file(paths,
                                                                 port_name,
@@ -465,6 +476,7 @@ namespace vcpkg
                 msg::println(msgAddVersionNoFilesUpdatedForPort, msg::package_name = port_name);
             }
         }
+
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 } // namespace vcpkg
