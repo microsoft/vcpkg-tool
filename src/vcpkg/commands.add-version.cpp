@@ -203,6 +203,19 @@ namespace
 
                     Checks::exit_fail(VCPKG_LINE_INFO);
                 }
+
+                if (port_version.version.port_version != 0)
+                {
+                    msg::println_warning(msgAddVersionPortVersionShouldBeGone,
+                                         msg::package_name = port_name,
+                                         msg::version = port_version.version.text);
+                    if (keep_going)
+                    {
+                        return UpdateResult::NotUpdated;
+                    }
+
+                    Checks::exit_fail(VCPKG_LINE_INFO);
+                }
             }
 
             std::vector<GitVersionDbEntry> new_entry{{port_version, git_tree}};
@@ -316,7 +329,7 @@ namespace
         {
             msg::println_warning(msgAddVersionPortVersionShouldBeGone,
                                  msg::package_name = port_name,
-                                 msg::version = port_version.version);
+                                 msg::version = port_version.version.text);
             if (keep_going)
             {
                 return UpdateResult::NotUpdated;
@@ -330,7 +343,7 @@ namespace
         {
             msg::println_warning(msgAddVersionPortVersionShouldBeOneMore,
                                  msg::package_name = port_name,
-                                 msg::version = port_version.version,
+                                 msg::version = port_version.version.text,
                                  msg::count = highest_matching_version_entry->version.version.port_version,
                                  msg::expected_version =
                                      highest_matching_version_entry->version.version.port_version + 1,

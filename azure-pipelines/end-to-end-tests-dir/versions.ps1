@@ -79,6 +79,56 @@ Throw-IfFailed
 Run-Vcpkg @portsRedirectArgsIncomplete x-ci-verify-versions --verbose
 Throw-IfFailed
 
+# Validate port-version
+$CurrentTest = "x-add-version octopus"
+Set-EmptyTestPort -Name octopus -Version 1.0 -PortVersion "1" -PortsRoot "$versionFilesPath/ports"
+git -C $versionFilesPath @gitConfigOptions add -A
+git -C $versionFilesPath @gitConfigOptions commit -m "add octopus 1.0#1"
+$output = Run-VcpkgAndCaptureOutput @portsRedirectArgsOK x-add-version octopus
+Throw-IfNotFailed
+if ($output.Replace("`r`n", "`n") -notmatch @"
+warning: In octopus, 1.0 is completely new version, so the "port-version" field should be removed. Remove "port-version", commit that change, and try again. To skip this check, rerun with --skip-version-format-check .
+"@) {
+    throw "Expected detecting present port-version when a new version is added as bad"
+}
+
+Run-Vcpkg @portsRedirectArgsOK x-add-version octopus --skip-version-format-check
+Throw-IfFailed
+git -C $versionFilesPath @gitConfigOptions add -A
+git -C $versionFilesPath @gitConfigOptions commit -m "add octopus 1.0#1 to version database"
+
+Set-EmptyTestPort -Name octopus -Version 2.0 -PortVersion "1" -PortsRoot "$versionFilesPath/ports"
+git -C $versionFilesPath @gitConfigOptions add -A
+git -C $versionFilesPath @gitConfigOptions commit -m "add octopus 2.0#1"
+$output = Run-VcpkgAndCaptureOutput @portsRedirectArgsOK x-add-version octopus
+Throw-IfNotFailed
+if ($output.Replace("`r`n", "`n") -notmatch @"
+warning: In octopus, 2.0 is completely new version, so the "port-version" field should be removed. Remove "port-version", commit that change, and try again. To skip this check, rerun with --skip-version-format-check .
+"@) {
+    throw "Expected detecting present port-version when a new version is added as bad"
+}
+
+Run-Vcpkg @portsRedirectArgsOK x-add-version octopus --skip-version-format-check
+Throw-IfFailed
+git -C $versionFilesPath @gitConfigOptions add -A
+git -C $versionFilesPath @gitConfigOptions commit -m "add octopus 2.0#1 to version database"
+
+Set-EmptyTestPort -Name octopus -Version 2.0 -PortVersion "3" -PortsRoot "$versionFilesPath/ports"
+git -C $versionFilesPath @gitConfigOptions add -A
+git -C $versionFilesPath @gitConfigOptions commit -m "add octopus 2.0#3"
+$output = Run-VcpkgAndCaptureOutput @portsRedirectArgsOK x-add-version octopus
+Throw-IfNotFailed
+if ($output.Replace("`r`n", "`n") -notmatch @"
+warning: In octopus, the current "port-version" for 2.0 is 1, so the next added "port-version" should be 2, but the port declares "port-version" 3. Change "port-version" to 2, commit that change, and try again. To skip this check, rerun with --skip-version-format-check .
+"@) {
+    throw "Expected detecting present port-version when a new version is added as bad"
+}
+
+Run-Vcpkg @portsRedirectArgsOK x-add-version octopus --skip-version-format-check
+Throw-IfFailed
+git -C $versionFilesPath @gitConfigOptions add -A
+git -C $versionFilesPath @gitConfigOptions commit -m "add octopus 2.0#3 to version database"
+
 $CurrentTest = "default baseline"
 $out = Run-VcpkgAndCaptureOutput @commonArgs "--feature-flags=versions" install --x-manifest-root=$versionFilesPath/default-baseline-1
 Throw-IfNotFailed

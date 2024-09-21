@@ -186,6 +186,7 @@ function Set-EmptyTestPort {
         [string]$Name,
         [Parameter(Mandatory)][ValidateNotNullOrWhitespace()]
         [string]$Version,
+        [string]$PortVersion,
         [Parameter(Mandatory)][ValidateNotNullOrWhitespace()]
         [string]$PortsRoot,
         [switch]$Malformed
@@ -196,23 +197,25 @@ function Set-EmptyTestPort {
     New-Item -ItemType Directory -Force -Path $portDir | Out-Null
     Set-Content -Value "set(VCPKG_POLICY_EMPTY_PACKAGE enabled)" -LiteralPath (Join-Path $portDir 'portfile.cmake') -Encoding Ascii
 
-    if ($Malformed) {
-        # Add bad trailing comma
-        $json = @"
-{
-  "name": "$Name",
-  "version": "$Version",
-}
-"@
-    } else {
-        $json = @"
+    $json = @"
 {
   "name": "$Name",
   "version": "$Version"
-}
 "@
+
+    $json = $json.Replace("`r`n", "`n")
+    if (-not $null -eq $PortVersion)
+    {
+        $json += ",`n  `"port-version`": $PortVersion"
     }
-    Set-Content -Value $json -LiteralPath (Join-Path $portDir 'vcpkg.json') -Encoding Ascii
+
+    if ($Malformed) {
+        $json += ','
+    }
+
+    $json += "`n}`n"
+
+    Set-Content -Value $json -LiteralPath (Join-Path $portDir 'vcpkg.json') -Encoding Ascii -NoNewline
 }
 
 Refresh-TestRoot
