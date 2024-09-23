@@ -297,7 +297,7 @@ namespace vcpkg::Hash
 
             ShaAlgorithm m_impl{};
 
-            std::array<uchar, chunk_size> m_chunk{};
+            uchar m_chunk[chunk_size] = {};
             std::size_t m_current_chunk_size = 0;
             message_length_type m_message_length = 0;
         };
@@ -327,7 +327,7 @@ namespace vcpkg::Hash
 
             Sha256Algorithm() noexcept { clear(); }
 
-            void process_full_chunk(const std::array<uchar, chunk_size>& chunk) noexcept
+            void process_full_chunk(const uchar (&chunk)[chunk_size]) noexcept
             {
                 std::uint32_t words[64];
 
@@ -387,7 +387,7 @@ namespace vcpkg::Hash
                 m_digest[7] = 0x5be0cd19;
             }
 
-            constexpr static std::array<std::uint32_t, number_of_rounds> round_constants = {
+            constexpr static std::uint32_t round_constants[number_of_rounds] = {
                 0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
                 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
                 0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
@@ -413,7 +413,7 @@ namespace vcpkg::Hash
 
             Sha512Algorithm() noexcept { clear(); }
 
-            void process_full_chunk(const std::array<uchar, chunk_size>& chunk) noexcept
+            void process_full_chunk(const uchar (&chunk)[chunk_size]) noexcept
             {
                 std::uint64_t words[80];
 
@@ -473,7 +473,7 @@ namespace vcpkg::Hash
                 m_digest[7] = 0x5be0cd19137e2179;
             }
 
-            constexpr static std::array<std::uint64_t, number_of_rounds> round_constants = {
+            constexpr static std::uint64_t round_constants[number_of_rounds] = {
                 0x428a2f98d728ae22, 0x7137449123ef65cd, 0xb5c0fbcfec4d3b2f, 0xe9b5dba58189dbbc, 0x3956c25bf348b538,
                 0x59f111f1b605d019, 0x923f82a4af194f9b, 0xab1c5ed5da6d8118, 0xd807aa98a3030242, 0x12835b0145706fbe,
                 0x243185be4ee4b28c, 0x550c7dc3d5ffb4e2, 0x72be5d74f27b896f, 0x80deb1fe3b1696b1, 0x9bdc06a725c71235,
@@ -496,10 +496,6 @@ namespace vcpkg::Hash
 
             std::uint64_t m_digest[8];
         };
-
-        // This is required on older compilers, since it was required in C++14
-        constexpr std::array<std::uint32_t, Sha256Algorithm::number_of_rounds> Sha256Algorithm::round_constants;
-        constexpr std::array<std::uint64_t, Sha512Algorithm::number_of_rounds> Sha512Algorithm::round_constants;
 #endif
     }
 
