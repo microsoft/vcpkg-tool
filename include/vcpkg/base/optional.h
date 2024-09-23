@@ -23,205 +23,244 @@ namespace vcpkg
 
     namespace details
     {
-        template<class T, bool B = std::is_copy_constructible_v<T>>
-        struct OptionalStorage
+        struct EngageTag
         {
-            constexpr OptionalStorage() noexcept : m_is_present(false), m_inactive() { }
+        };
+
+        template<class T, bool IsTrivallyDestructible = std::is_trivially_destructible_v<T>>
+        struct OptionalStorageDtor
+        {
+            bool m_is_present;
+            union
+            {
+                char m_inactive;
+                T m_t;
+            };
+
+            constexpr OptionalStorageDtor() : m_is_present(false), m_inactive() { }
+            template<class... Args>
+            constexpr OptionalStorageDtor(EngageTag, Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...>)
+                : m_is_present(false), m_t(std::forward<Args>(args)...)
+            {
+            }
+        };
+
+        template<class T>
+        struct OptionalStorageDtor<T, false>
+        {
+            bool m_is_present;
+            union
+            {
+                char m_inactive;
+                T m_t;
+            };
+
+            constexpr OptionalStorageDtor() : m_is_present(false), m_inactive() { }
+            template<class... Args>
+            constexpr OptionalStorageDtor(EngageTag, Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...>)
+                : m_is_present(false), m_t(std::forward<Args>(args)...)
+            {
+            }
+
+            ~OptionalStorageDtor()
+            {
+                if (m_is_present)
+                {
+                    m_t.~T();
+                }
+            }
+        };
+
+        template<class T, bool B = std::is_copy_constructible_v<T>>
+        struct OptionalStorage : OptionalStorageDtor<T>
+        {
+            OptionalStorage() = default;
             constexpr OptionalStorage(const T& t) noexcept(std::is_nothrow_copy_constructible_v<T>)
-                : m_is_present(true), m_t(t)
+                : OptionalStorageDtor<T>(EngageTag{}, t)
             {
             }
             constexpr OptionalStorage(T&& t) noexcept(std::is_nothrow_move_constructible_v<T>)
-                : m_is_present(true), m_t(std::move(t))
+                : OptionalStorageDtor<T>(EngageTag{}, std::move(t))
             {
             }
             template<class U, class = std::enable_if_t<!std::is_reference_v<U>>>
             explicit OptionalStorage(Optional<U>&& t) noexcept(std::is_nothrow_constructible_v<T, U>)
-                : m_is_present(false), m_inactive()
+                : OptionalStorageDtor<T>()
             {
                 if (auto p = t.get())
                 {
-                    m_is_present = true;
-                    new (&m_t) T(std::move(*p));
+                    this->m_is_present = true;
+                    new (&this->m_t) T(std::move(*p));
                 }
             }
             template<class U>
             explicit OptionalStorage(const Optional<U>& t) noexcept(std::is_nothrow_constructible_v<T, const U&>)
-                : m_is_present(false), m_inactive()
+                : OptionalStorageDtor<T>()
             {
                 if (auto p = t.get())
                 {
-                    m_is_present = true;
-                    new (&m_t) T(*p);
+                    this->m_is_present = true;
+                    new (&this->m_t) T(*p);
                 }
             }
 
-            ~OptionalStorage()
-            {
-                if (m_is_present) m_t.~T();
-            }
-
             OptionalStorage(const OptionalStorage& o) noexcept(std::is_nothrow_copy_constructible_v<T>)
-                : m_is_present(o.m_is_present), m_inactive()
+                : OptionalStorageDtor<T>()
             {
-                if (m_is_present) new (&m_t) T(o.m_t);
+                if (o.m_is_present)
+                {
+                    this->m_is_present = true;
+                    new (&this->m_t) T(o.m_t);
+                }
             }
 
             OptionalStorage(OptionalStorage&& o) noexcept(std::is_nothrow_move_constructible_v<T>)
-                : m_is_present(o.m_is_present), m_inactive()
+                : OptionalStorageDtor<T>()
             {
-                if (m_is_present)
+                if (o.m_is_present)
                 {
-                    new (&m_t) T(std::move(o.m_t));
+                    this->m_is_present = true;
+                    new (&this->m_t) T(std::move(o.m_t));
                 }
             }
 
             OptionalStorage& operator=(const OptionalStorage& o) noexcept(std::is_nothrow_copy_constructible_v<T> &&
                                                                           std::is_nothrow_copy_assignable_v<T>)
             {
-                if (m_is_present && o.m_is_present)
+                if (this->m_is_present && o.m_is_present)
                 {
-                    m_t = o.m_t;
+                    this->m_t = o.m_t;
                 }
-                else if (!m_is_present && o.m_is_present)
+                else if (!this->m_is_present && o.m_is_present)
                 {
-                    new (&m_t) T(o.m_t);
-                    m_is_present = true;
+                    new (&this->m_t) T(o.m_t);
+                    this->m_is_present = true;
                 }
-                else if (m_is_present && !o.m_is_present)
+                else if (this->m_is_present && !o.m_is_present)
                 {
                     destroy();
                 }
+
                 return *this;
             }
 
             OptionalStorage& operator=(OptionalStorage&& o) noexcept // enforces termination
             {
-                if (m_is_present && o.m_is_present)
+                if (this->m_is_present && o.m_is_present)
                 {
-                    m_t = std::move(o.m_t);
+                    this->m_t = std::move(o.m_t);
                 }
-                else if (!m_is_present && o.m_is_present)
+                else if (!this->m_is_present && o.m_is_present)
                 {
-                    new (&m_t) T(std::move(o.m_t));
-                    m_is_present = true;
+                    new (&this->m_t) T(std::move(o.m_t));
+                    this->m_is_present = true;
                 }
-                else if (m_is_present && !o.m_is_present)
+                else if (this->m_is_present && !o.m_is_present)
                 {
                     destroy();
                 }
                 return *this;
             }
 
-            constexpr bool has_value() const noexcept { return m_is_present; }
+            constexpr bool has_value() const noexcept { return this->m_is_present; }
 
             const T& value() const noexcept { return this->m_t; }
             T& value() noexcept { return this->m_t; }
 
-            const T* get() const& noexcept { return m_is_present ? &m_t : nullptr; }
-            T* get() & noexcept { return m_is_present ? &m_t : nullptr; }
+            const T* get() const& noexcept { return this->m_is_present ? &this->m_t : nullptr; }
+            T* get() & noexcept { return this->m_is_present ? &this->m_t : nullptr; }
             const T* get() const&& = delete;
             T* get() && = delete;
 
             void destroy() noexcept // enforces termination
             {
-                m_is_present = false;
-                m_t.~T();
-                m_inactive = '\0';
+                this->m_is_present = false;
+                this->m_t.~T();
+                this->m_inactive = '\0';
             }
 
             template<class... Args>
             T& emplace(Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...>)
             {
-                if (m_is_present) destroy();
-                new (&m_t) T(static_cast<Args&&>(args)...);
-                m_is_present = true;
-                return m_t;
+                if (this->m_is_present) destroy();
+                new (&this->m_t) T(static_cast<Args&&>(args)...);
+                this->m_is_present = true;
+                return this->m_t;
             }
-
-        private:
-            bool m_is_present;
-            union
-            {
-                char m_inactive;
-                T m_t;
-            };
         };
 
         template<class T>
-        struct OptionalStorage<T, false>
+        struct OptionalStorage<T, false> : OptionalStorageDtor<T>
         {
-            constexpr OptionalStorage() noexcept : m_is_present(false), m_inactive() { }
+            OptionalStorage() = default;
             constexpr OptionalStorage(T&& t) noexcept(std::is_nothrow_move_constructible_v<T>)
-                : m_is_present(true), m_t(std::move(t))
+                : OptionalStorageDtor<T>(EngageTag{}, std::move(t))
             {
             }
-
-            ~OptionalStorage()
+            template<class U, class = std::enable_if_t<!std::is_reference_v<U>>>
+            explicit OptionalStorage(Optional<U>&& t) noexcept(std::is_nothrow_constructible_v<T, U>)
+                : OptionalStorageDtor<T>()
             {
-                if (m_is_present) m_t.~T();
-            }
-
-            OptionalStorage(OptionalStorage&& o) noexcept(std::is_nothrow_move_constructible_v<T>)
-                : m_is_present(o.m_is_present), m_inactive()
-            {
-                if (m_is_present)
+                if (auto p = t.get())
                 {
-                    new (&m_t) T(std::move(o.m_t));
+                    this->m_is_present = true;
+                    new (&this->m_t) T(std::move(*p));
+                }
+            }
+            OptionalStorage(OptionalStorage&& o) noexcept(std::is_nothrow_move_constructible_v<T>)
+                : OptionalStorageDtor<T>()
+            {
+                if (o.m_is_present)
+                {
+                    this->m_is_present = true;
+                    new (&this->m_t) T(std::move(o.m_t));
                 }
             }
 
             OptionalStorage& operator=(OptionalStorage&& o) noexcept // enforces termination
             {
-                if (m_is_present && o.m_is_present)
+                if (this->m_is_present && o.m_is_present)
                 {
-                    m_t = std::move(o.m_t);
+                    this->m_t = std::move(o.m_t);
                 }
-                else if (!m_is_present && o.m_is_present)
+                else if (!this->m_is_present && o.m_is_present)
                 {
-                    m_is_present = true;
-                    new (&m_t) T(std::move(o.m_t));
+                    this->m_is_present = true;
+                    new (&this->m_t) T(std::move(o.m_t));
                 }
-                else if (m_is_present && !o.m_is_present)
+                else if (this->m_is_present && !o.m_is_present)
                 {
                     destroy();
                 }
+
                 return *this;
             }
 
-            constexpr bool has_value() const noexcept { return m_is_present; }
+            constexpr bool has_value() const noexcept { return this->m_is_present; }
 
             const T& value() const noexcept { return this->m_t; }
             T& value() noexcept { return this->m_t; }
 
-            const T* get() const& noexcept { return m_is_present ? &m_t : nullptr; }
-            T* get() & noexcept { return m_is_present ? &m_t : nullptr; }
+            const T* get() const& noexcept { return this->m_is_present ? &this->m_t : nullptr; }
+            T* get() & noexcept { return this->m_is_present ? &this->m_t : nullptr; }
             const T* get() const&& = delete;
             T* get() && = delete;
 
             template<class... Args>
             T& emplace(Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...>)
             {
-                if (m_is_present) destroy();
-                new (&m_t) T(static_cast<Args&&>(args)...);
-                m_is_present = true;
-                return m_t;
+                if (this->m_is_present) destroy();
+                new (&this->m_t) T(static_cast<Args&&>(args)...);
+                this->m_is_present = true;
+                return this->m_t;
             }
 
             void destroy() noexcept
             {
-                m_is_present = false;
-                m_t.~T();
-                m_inactive = '\0';
+                this->m_is_present = false;
+                this->m_t.~T();
+                this->m_inactive = '\0';
             }
-
-        private:
-            bool m_is_present;
-            union
-            {
-                char m_inactive;
-                T m_t;
-            };
         };
 
         template<class T, bool B>
