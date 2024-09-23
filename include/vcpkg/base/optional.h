@@ -39,7 +39,8 @@ namespace vcpkg
 
             constexpr OptionalStorageDtor() : m_is_present(false), m_inactive() { }
             template<class... Args>
-            constexpr OptionalStorageDtor(EngageTag, Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...>)
+            constexpr OptionalStorageDtor(EngageTag,
+                                          Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...>)
                 : m_is_present(true), m_t(std::forward<Args>(args)...)
             {
             }
@@ -57,7 +58,8 @@ namespace vcpkg
 
             constexpr OptionalStorageDtor() : m_is_present(false), m_inactive() { }
             template<class... Args>
-            constexpr OptionalStorageDtor(EngageTag, Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...>)
+            constexpr OptionalStorageDtor(EngageTag,
+                                          Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...>)
                 : m_is_present(true), m_t(std::forward<Args>(args)...)
             {
             }
