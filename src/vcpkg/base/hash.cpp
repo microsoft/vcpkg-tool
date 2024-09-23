@@ -267,18 +267,19 @@ namespace vcpkg::Hash
                     add_to_unprocessed(&temp, &temp + 1);
                 }
 
+                const auto chunk_end = m_chunk + chunk_size;
                 // append 0 to the message so that the resulting length is just enough
                 // to add the message length
                 if (chunk_size - m_current_chunk_size < sizeof(m_message_length))
                 {
                     // not enough space to add the message length
                     // just resize and process full chunk
-                    std::fill(chunk_begin(), m_chunk.end(), static_cast<uchar>(0));
+                    std::fill(chunk_begin(), chunk_end, static_cast<uchar>(0));
                     m_impl.process_full_chunk(m_chunk);
                     m_current_chunk_size = 0;
                 }
 
-                const auto before_length = m_chunk.end() - sizeof(m_message_length);
+                const auto before_length = chunk_end - sizeof(m_message_length);
                 std::fill(chunk_begin(), before_length, static_cast<uchar>(0));
                 std::generate(before_length, m_chunk.end(), [length = message_length]() mutable {
                     const auto result = top_bits(length);
@@ -289,7 +290,7 @@ namespace vcpkg::Hash
                 m_impl.process_full_chunk(m_chunk);
             }
 
-            auto chunk_begin() { return m_chunk.begin() + m_current_chunk_size; }
+            auto chunk_begin() { return m_chunk + m_current_chunk_size; }
 
             using underlying_type = typename ShaAlgorithm::underlying_type;
             using message_length_type = typename ShaAlgorithm::message_length_type;
