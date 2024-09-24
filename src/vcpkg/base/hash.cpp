@@ -281,7 +281,7 @@ namespace vcpkg::Hash
 
                 const auto before_length = chunk_end - sizeof(m_message_length);
                 std::fill(chunk_begin(), before_length, static_cast<uchar>(0));
-                std::generate(before_length, m_chunk.end(), [length = message_length]() mutable {
+                std::generate(before_length, chunk_end, [length = message_length]() mutable {
                     const auto result = top_bits(length);
                     length <<= 8;
                     return result;
