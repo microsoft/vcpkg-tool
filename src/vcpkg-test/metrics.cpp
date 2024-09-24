@@ -9,7 +9,7 @@
 using namespace vcpkg;
 
 template<typename MetricEntry, size_t Size>
-void validate_enum_values_and_names(const std::array<MetricEntry, Size>& entries)
+void validate_enum_values_and_names(const MetricEntry (&entries)[Size])
 {
     static_assert(static_cast<size_t>(decltype(entries[0].metric)::COUNT) == Size,
                   "COUNT must be the last enum entry.");

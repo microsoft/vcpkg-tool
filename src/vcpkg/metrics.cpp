@@ -30,10 +30,10 @@ namespace
     using namespace vcpkg;
 
     template<typename T, typename MetricEntry, size_t Size>
-    constexpr StringLiteral get_metric_name(const T metric, const std::array<MetricEntry, Size>& entries) noexcept
+    constexpr StringLiteral get_metric_name(const T metric, const MetricEntry (&entries)[Size]) noexcept
     {
         auto metric_index = static_cast<size_t>(metric);
-        if (metric_index < entries.size())
+        if (metric_index < Size)
         {
             return entries[metric_index].name;
         }
@@ -87,7 +87,7 @@ namespace
 
 namespace vcpkg
 {
-    const constexpr std::array<DefineMetricEntry, static_cast<size_t>(DefineMetric::COUNT)> all_define_metrics{{
+    const constexpr DefineMetricEntry all_define_metrics[static_cast<size_t>(DefineMetric::COUNT)] = {
         {DefineMetric::AssetSource, "asset-source"},
         {DefineMetric::BinaryCachingAws, "binarycaching_aws"},
         {DefineMetric::BinaryCachingAzBlob, "binarycaching_azblob"},
@@ -113,7 +113,7 @@ namespace vcpkg
         {DefineMetric::VersioningErrorVersion, "versioning-error-version"},
         {DefineMetric::X_VcpkgRegistriesCache, "X_VCPKG_REGISTRIES_CACHE"},
         {DefineMetric::X_WriteNugetPackagesConfig, "x-write-nuget-packages-config"},
-    }};
+    };
 
     // SHA256s separated by colons, separated by commas
     static constexpr char plan_example[] = "0000000011111111aaaaaaaabbbbbbbbccccccccddddddddeeeeeeeeffffffff:"
@@ -123,7 +123,7 @@ namespace vcpkg
                                            "0000000011111111aaaaaaaabbbbbbbbccccccccddddddddeeeeeeeeffffffff:"
                                            "0000000011111111aaaaaaaabbbbbbbbccccccccddddddddeeeeeeeeffffffff";
 
-    const constexpr std::array<StringMetricEntry, static_cast<size_t>(StringMetric::COUNT)> all_string_metrics{{
+    const constexpr StringMetricEntry all_string_metrics[static_cast<size_t>(StringMetric::COUNT)] = {
         // registryUri:id:version,...
         {StringMetric::AcquiredArtifacts, "acquired_artifacts", plan_example},
         {StringMetric::ActivatedArtifacts, "activated_artifacts", plan_example},
@@ -146,9 +146,9 @@ namespace vcpkg
         {StringMetric::UserMac, "user_mac", "0"},
         {StringMetric::VcpkgVersion, "vcpkg_version", "2999-12-31-unknownhash"},
         {StringMetric::Warning, "warning", "warning"},
-    }};
+    };
 
-    const constexpr std::array<BoolMetricEntry, static_cast<size_t>(BoolMetric::COUNT)> all_bool_metrics{{
+    const constexpr BoolMetricEntry all_bool_metrics[static_cast<size_t>(BoolMetric::COUNT)] = {
         {BoolMetric::DetectedContainer, "detected_container"},
         {BoolMetric::DependencyGraphSuccess, "dependency-graph-success"},
         {BoolMetric::FeatureFlagBinaryCaching, "feature-flag-binarycaching"},
@@ -159,7 +159,7 @@ namespace vcpkg
         {BoolMetric::FeatureFlagVersions, "feature-flag-versions"},
         {BoolMetric::InstallManifestMode, "install_manifest_mode"},
         {BoolMetric::OptionOverlayPorts, "option_overlay_ports"},
-    }};
+    };
 
     void MetricsSubmission::track_elapsed_us(double value)
     {
