@@ -487,7 +487,11 @@ namespace vcpkg
             if (!scfl)
             {
                 msg::println(Color::error, maybe_scfl.error());
-                Checks::check_exit(VCPKG_LINE_INFO, !add_all);
+                if (!add_all)
+                {
+                    Checks::exit_fail(VCPKG_LINE_INFO);
+                }
+
                 continue;
             }
 
@@ -509,7 +513,11 @@ namespace vcpkg
                                 .append(msgAddVersionFormatPortSuggestion, msg::command_line = command_line)
                                 .append_raw('\n')
                                 .append(msgSeeURL, msg::url = docs::format_manifest_command_url));
-                        Checks::check_exit(VCPKG_LINE_INFO, !add_all);
+                        if (!add_all)
+                        {
+                            Checks::exit_fail(VCPKG_LINE_INFO);
+                        }
+
                         continue;
                     }
                 }
