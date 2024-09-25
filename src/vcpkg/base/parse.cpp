@@ -43,7 +43,7 @@ namespace vcpkg
 
         std::string caret_string;
         caret_string.append(line_prefix_space, ' ');
-        // note *it is excluded because it is where the ^ goes
+        // note *cursor is excluded because it is where the ^ goes
         for (auto it = start_of_line; it != cursor; ++it)
         {
             if (*it == '\t')
