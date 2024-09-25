@@ -1834,7 +1834,7 @@ namespace vcpkg
     {
         std::vector<std::string> invalid_keys;
         auto result = api_stable_format(url_template, [&](std::string&, StringView key) {
-            static constexpr std::array<StringLiteral, 4> valid_keys = {"name", "version", "sha", "triplet"};
+            static constexpr StringLiteral valid_keys[] = {"name", "version", "sha", "triplet"};
             if (!Util::Vectors::contains(valid_keys, key))
             {
                 invalid_keys.push_back(key.to_string());

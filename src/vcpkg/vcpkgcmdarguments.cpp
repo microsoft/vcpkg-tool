@@ -66,7 +66,7 @@ namespace
         {EnvironmentVariableBuildNumber, "Generic"},
     };
 
-    constexpr std::array<StringLiteral, 3> KNOWN_CI_REPOSITORY_IDENTIFIERS{
+    constexpr StringLiteral KNOWN_CI_REPOSITORY_IDENTIFIERS[] = {
         // Azure Pipelines
         // https://learn.microsoft.com/azure/devops/pipelines/build/variables?view=azure-devops&tabs=yaml#build-variables-devops-services
         EnvironmentVariableBuildRepositoryId,

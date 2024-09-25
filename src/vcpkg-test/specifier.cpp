@@ -22,13 +22,13 @@ TEST_CASE ("specifier conversion", "[specifier]")
         Util::sort(fspecs);
         REQUIRE(fspecs.size() == SPEC_SIZE);
 
-        std::array<const char*, SPEC_SIZE> features = {"0", "1", "2", "3"};
-        std::array<PackageSpec*, SPEC_SIZE> specs = {&a_spec, &a_spec, &b_spec, &b_spec};
+        constexpr const char* features[SPEC_SIZE] = {"0", "1", "2", "3"};
+        PackageSpec* specs[SPEC_SIZE] = {&a_spec, &a_spec, &b_spec, &b_spec};
 
         for (std::size_t i = 0; i < SPEC_SIZE; ++i)
         {
-            REQUIRE(features.at(i) == fspecs.at(i).feature());
-            REQUIRE(*specs.at(i) == fspecs.at(i).spec());
+            REQUIRE(features[i] == fspecs[i].feature());
+            REQUIRE(*specs[i] == fspecs[i].spec());
         }
     }
 }
