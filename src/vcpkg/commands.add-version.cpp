@@ -508,10 +508,7 @@ namespace vcpkg
                                 .append_raw('\n')
                                 .append(msgAddVersionFormatPortSuggestion, msg::command_line = command_line)
                                 .append_raw('\n')
-                                .append(msgSeeURL, msg::url = docs::format_manifest_command_url)
-                                .append(msgAddVersionCommitChangesReminder)
-                                .append_raw('\n')
-                                .append(msgSeeURL, msg::url = docs::add_version_command_url));
+                                .append(msgSeeURL, msg::url = docs::format_manifest_command_url));
                         Checks::check_exit(VCPKG_LINE_INFO, !add_all);
                         continue;
                     }
