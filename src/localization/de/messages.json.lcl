@@ -7054,15 +7054,12 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";InstallingMavenFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";InstallingMavenFileFailure" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[{path} installing Maven file]]></Val>
+          <Val><![CDATA[{path} installing Maven file, {command_line} failed with {exit_code}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{path}-Installation der Maven-Datei]]></Val>
+            <Val><![CDATA[{path} Beim Installieren der Maven-Datei ist {command_line} mit {exit_code} fehlgeschlagen.]]></Val>
           </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[{path} installing maven file]]></Val>
-          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -11581,15 +11578,6 @@
           <Prev Cat="Text">
             <Val><![CDATA[{spec}@{version} does not have required feature {feature}]]></Val>
           </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";VersionNotFound" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[{expected} not available, only {actual} is available]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{expected} nicht verfügbar. Es ist nur {actual} verfügbar.]]></Val>
-          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
