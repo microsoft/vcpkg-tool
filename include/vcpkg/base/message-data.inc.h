@@ -2207,25 +2207,25 @@ DECLARE_MESSAGE(
     (msg::package_name, msg::url),
     "",
     "\"{package_name}\" is not a valid feature name. "
-    "Feature names must be lowercase alphanumeric+hypens and not reserved (see {url} for more information).")
+    "Feature names must be lowercase alphanumeric+hyphens and not reserved (see {url} for more information).")
 DECLARE_MESSAGE(ParseIdentifierError,
                 (msg::value, msg::url),
                 "{value} is a lowercase identifier like 'boost'",
                 "\"{value}\" is not a valid identifier. "
-                "Identifiers must be lowercase alphanumeric+hypens and not reserved (see {url} for more information).")
+                "Identifiers must be lowercase alphanumeric+hyphens and not reserved (see {url} for more information).")
 DECLARE_MESSAGE(
     ParsePackageNameNotEof,
     (msg::url),
     "",
     "expected the end of input parsing a package name; this usually means the indicated character is not allowed to be "
-    "in a port name. Port names are all lowercase alphanumeric+hypens and not reserved (see {url} for more "
+    "in a port name. Port names are all lowercase alphanumeric+hyphens and not reserved (see {url} for more "
     "information).")
 DECLARE_MESSAGE(
     ParsePackageNameError,
     (msg::package_name, msg::url),
     "",
     "\"{package_name}\" is not a valid package name. "
-    "Package names must be lowercase alphanumeric+hypens and not reserved (see {url} for more information).")
+    "Package names must be lowercase alphanumeric+hyphens and not reserved (see {url} for more information).")
 DECLARE_MESSAGE(ParsePackagePatternError,
                 (msg::package_name, msg::url),
                 "",
@@ -2237,11 +2237,15 @@ DECLARE_MESSAGE(
     (),
     "",
     "expected the end of input parsing a package spec; this usually means the indicated character is not allowed to be "
-    "in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hypens.")
+    "in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hyphens.")
 DECLARE_MESSAGE(ParseQualifiedSpecifierNotEofSquareBracket,
                 (msg::version_spec),
                 "",
                 "expected the end of input parsing a package spec; did you mean {version_spec} instead?")
+DECLARE_MESSAGE(ParseTripletNotEof,
+                (),
+                "",
+                "Invalid triplet name. Triplet names are all lowercase alphanumeric+hyphens.")
 DECLARE_MESSAGE(PathMustBeAbsolute,
                 (msg::path),
                 "",
