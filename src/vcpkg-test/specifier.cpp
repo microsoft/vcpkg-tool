@@ -98,7 +98,7 @@ TEST_CASE ("specifier parsing", "[specifier]")
             REQUIRE(
                 s.error() ==
                 LocalizedString::from_raw(
-                    R"(error: expected the end of input parsing a package spec; this usually means the indicated character is not allowed to be in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hypens.
+                    R"(error: expected the end of input parsing a package spec; this usually means the indicated character is not allowed to be in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hyphens.
   on expression: zlib:x86-uwp:
                              ^)"));
         }
@@ -119,7 +119,7 @@ TEST_CASE ("specifier parsing", "[specifier]")
             REQUIRE(
                 s.error() ==
                 LocalizedString::from_raw(
-                    R"(error: expected the end of input parsing a package name; this usually means the indicated character is not allowed to be in a port name. Port names are all lowercase alphanumeric+hypens and not reserved (see )" +
+                    R"(error: expected the end of input parsing a package name; this usually means the indicated character is not allowed to be in a port name. Port names are all lowercase alphanumeric+hyphens and not reserved (see )" +
                     docs::vcpkg_json_ref_name + R"( for more information).
   on expression: zlib#
                      ^)"));
@@ -139,7 +139,7 @@ TEST_CASE ("specifier parsing", "[specifier]")
             REQUIRE(
                 s.error() ==
                 LocalizedString::from_raw(
-                    R"(error: expected the end of input parsing a package spec; this usually means the indicated character is not allowed to be in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hypens.
+                    R"(error: expected the end of input parsing a package spec; this usually means the indicated character is not allowed to be in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hyphens.
   on expression: zlib#
                      ^)"));
         }
@@ -158,7 +158,7 @@ TEST_CASE ("specifier parsing", "[specifier]")
             REQUIRE(
                 s.error() ==
                 LocalizedString::from_raw(
-                    R"(error: expected the end of input parsing a package spec; this usually means the indicated character is not allowed to be in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hypens.
+                    R"(error: expected the end of input parsing a package spec; this usually means the indicated character is not allowed to be in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hyphens.
   on expression: zlib:x86-uwp:
                              ^)"));
         }
@@ -196,7 +196,7 @@ TEST_CASE ("specifier parsing", "[specifier]")
             REQUIRE(
                 s.error() ==
                 LocalizedString::from_raw(
-                    R"(error: expected the end of input parsing a package spec; this usually means the indicated character is not allowed to be in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hypens.
+                    R"(error: expected the end of input parsing a package spec; this usually means the indicated character is not allowed to be in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hyphens.
   on expression: zlib(windows)[co,  re]
                               ^)"));
         }
@@ -215,7 +215,7 @@ TEST_CASE ("specifier parsing", "[specifier]")
             REQUIRE(
                 s.error() ==
                 LocalizedString::from_raw(
-                    R"(error: expected the end of input parsing a package spec; this usually means the indicated character is not allowed to be in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hypens.
+                    R"(error: expected the end of input parsing a package spec; this usually means the indicated character is not allowed to be in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hyphens.
   on expression: zlib:x86-uwp (windows)[co,  re]
                                        ^)"));
         }
@@ -238,7 +238,7 @@ TEST_CASE ("specifier parsing", "[specifier]")
             REQUIRE(
                 s.error() ==
                 LocalizedString::from_raw(
-                    R"(error: expected the end of input parsing a package spec; this usually means the indicated character is not allowed to be in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hypens.
+                    R"(error: expected the end of input parsing a package spec; this usually means the indicated character is not allowed to be in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hyphens.
   on expression: zlib:x64-windows[no-ending-square-bracket
                                  ^)"));
         }
@@ -257,7 +257,7 @@ TEST_CASE ("specifier parsing", "[specifier]")
             REQUIRE(
                 s.error() ==
                 LocalizedString::from_raw(
-                    R"(error: expected the end of input parsing a package spec; this usually means the indicated character is not allowed to be in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hypens.
+                    R"(error: expected the end of input parsing a package spec; this usually means the indicated character is not allowed to be in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hyphens.
   on expression: zlib:x64-windows[feature]suffix
                                  ^)"));
         }
