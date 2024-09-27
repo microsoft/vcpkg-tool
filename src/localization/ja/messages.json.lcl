@@ -7054,15 +7054,12 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";InstallingMavenFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";InstallingMavenFileFailure" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[{path} installing Maven file]]></Val>
+          <Val><![CDATA[{path} installing Maven file, {command_line} failed with {exit_code}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Maven ファイルをインストールしています {path}]]></Val>
+            <Val><![CDATA[Maven ファイルをインストールする {path}、{command_line} が {exit_code} で失敗しました]]></Val>
           </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[{path} installing maven file]]></Val>
-          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -11584,15 +11581,6 @@
           <Prev Cat="Text">
             <Val><![CDATA[{spec}@{version} does not have required feature {feature}]]></Val>
           </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";VersionNotFound" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[{expected} not available, only {actual} is available]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{expected} は利用できません。使用できるのは {actual} のみです]]></Val>
-          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
