@@ -664,7 +664,7 @@
   "InstalledBy": "{path} tarafından yüklendi",
   "InstalledPackages": "Aşağıdaki paketler zaten yüklü:",
   "InstalledRequestedPackages": "İstenen tüm paketler şu anda yüklü.",
-  "InstallingMavenFileFailure": "{path} installing Maven file, {command_line} failed with {exit_code}",
+  "InstallingMavenFileFailure": "{path} Maven dosyası yükleme, {command_line} {exit_code} ile başarısız oldu",
   "InstallingOverlayPort": "katman bağlantı noktası buradan yükleniyor",
   "InstallingPackage": "{action_index}/{count} {spec} yükleniyor...",
   "IntegrateBashHelp": "bash sekme tamamlamayı etkinleştirir. Yalnızca Windows olmayanlarda yapılabilir.",

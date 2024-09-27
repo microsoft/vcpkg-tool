@@ -664,7 +664,7 @@
   "InstalledBy": "Installato da {path}",
   "InstalledPackages": "I pacchetti seguenti sono già installati:",
   "InstalledRequestedPackages": "Tutti i pacchetti richiesti sono attualmente installati.",
-  "InstallingMavenFileFailure": "{path} installing Maven file, {command_line} failed with {exit_code}",
+  "InstallingMavenFileFailure": "{path} l'installazione del file Maven, {command_line} non è riuscita con {exit_code}",
   "InstallingOverlayPort": "installazione della porta di sovrimpressione da qui",
   "InstallingPackage": "Installing {action_index}/{count} {spec}...",
   "IntegrateBashHelp": "Abilitare il completamento tramite tabulazione bash. Solo non Windows",
