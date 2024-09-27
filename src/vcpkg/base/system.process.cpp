@@ -661,8 +661,9 @@ namespace vcpkg
         {
             auto pos = env_var.find('=');
             auto key = env_var.substr(0, pos);
-            if (Util::Sets::contains(env_strings, key) ||
-                Util::any_of(env_prefix_string, [&](auto&& group) { return Strings::starts_with(key, group); }))
+            if (Util::Sets::contains(env_strings, key) || Util::any_of(env_prefix_string, [&](auto&& group) {
+                    return Strings::case_insensitive_ascii_starts_with(key, group);
+                }))
             {
                 auto value = pos == std::string::npos ? "" : env_var.substr(pos + 1);
                 env.add_entry(key, value);
