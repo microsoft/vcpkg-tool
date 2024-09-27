@@ -555,7 +555,7 @@ namespace vcpkg
                         system32_env,
                         "\\WindowsPowerShell\\v1.0\\");
 
-        std::unordered_set<std::string> env_strings = {
+        std::vector<std::string> env_strings = {
             "ALLUSERSPROFILE",
             "APPDATA",
             "CommonProgramFiles",
@@ -650,20 +650,25 @@ namespace vcpkg
                 }
                 else
                 {
-                    env_strings.emplace(std::move(var));
+                    env_strings.emplace_back(std::move(var));
                 }
             }
         }
 
         Environment env;
+        std::unordered_set<std::string> env_strings_uppercase;
+        for (auto&& env_var : env_strings)
+        {
+            env_strings_uppercase.emplace(Strings::ascii_to_uppercase(env_var));
+        }
 
         for (auto&& env_var : get_environment_variables())
         {
             auto pos = env_var.find('=');
             auto key = env_var.substr(0, pos);
-            if (Util::Sets::contains(env_strings, key) || Util::any_of(env_prefix_string, [&](auto&& group) {
-                    return Strings::case_insensitive_ascii_starts_with(key, group);
-                }))
+            if (Util::Sets::contains(env_strings_uppercase, Strings::ascii_to_uppercase(key)) ||
+                Util::any_of(env_prefix_string,
+                             [&](auto&& group) { return Strings::case_insensitive_ascii_starts_with(key, group); }))
             {
                 auto value = pos == std::string::npos ? "" : env_var.substr(pos + 1);
                 env.add_entry(key, value);
