@@ -50,8 +50,12 @@ namespace vcpkg
     Optional<Json::Object> create_dependency_graph_snapshot(const VcpkgCmdArguments& args,
                                                             const ActionPlan& action_plan)
     {
-        if (args.github_ref.has_value() && args.github_sha.has_value() && args.github_job.has_value() &&
-            args.github_workflow.has_value() && args.github_run_id.has_value())
+        const auto github_ref = args.github_ref.get();
+        const auto github_sha = args.github_sha.get();
+        const auto github_job = args.github_job.get();
+        const auto github_workflow = args.github_workflow.get();
+        const auto github_run_id = args.github_run_id.get();
+        if (github_ref && github_sha && github_job && github_workflow && github_run_id)
         {
             Json::Object detector;
             detector.insert(JsonIdName, Json::Value::string("vcpkg"));
@@ -59,15 +63,14 @@ namespace vcpkg
             detector.insert(JsonIdVersion, Json::Value::string("1.0.0"));
 
             Json::Object job;
-            job.insert(JsonIdId, Json::Value::string(*args.github_run_id.get()));
-            job.insert(JsonIdCorrelator,
-                       Json::Value::string(*args.github_workflow.get() + "-" + *args.github_job.get()));
+            job.insert(JsonIdId, Json::Value::string(*github_run_id));
+            job.insert(JsonIdCorrelator, Json::Value::string(fmt::format("{}-{}", *github_workflow, *github_run_id)));
 
             Json::Object snapshot;
             snapshot.insert(JsonIdJob, job);
             snapshot.insert(JsonIdVersion, Json::Value::integer(0));
-            snapshot.insert(JsonIdSha, Json::Value::string(*args.github_sha.get()));
-            snapshot.insert(JsonIdRef, Json::Value::string(*args.github_ref.get()));
+            snapshot.insert(JsonIdSha, Json::Value::string(*github_sha));
+            snapshot.insert(JsonIdRef, Json::Value::string(*github_ref));
             snapshot.insert(JsonIdScanned, Json::Value::string(CTime::now_string()));
             snapshot.insert(JsonIdDetector, detector);
 
