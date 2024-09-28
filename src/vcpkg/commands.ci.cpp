@@ -52,11 +52,11 @@ namespace
             (void)filesystem.create_directory(target_path, VCPKG_LINE_INFO);
             if (children.empty())
             {
-                std::string message =
-                    "There are no build logs for " + spec.to_string() +
-                    " build.\n"
-                    "This is usually because the build failed early and outside of a task that is logged.\n"
-                    "See the console output logs from vcpkg for more information on the failure.\n";
+                auto message =
+                    fmt::format("There are no build logs for {} build.\n"
+                                "This is usually because the build failed early and outside of a task that is logged.\n"
+                                "See the console output logs from vcpkg for more information on the failure.\n",
+                                spec);
                 filesystem.write_contents(std::move(target_path) / "readme.log", message, VCPKG_LINE_INFO);
             }
             else

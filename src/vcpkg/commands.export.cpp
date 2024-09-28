@@ -472,8 +472,7 @@ namespace
                     Checks::unreachable(VCPKG_LINE_INFO);
                 }
 
-                const std::string display_name = action.spec.to_string();
-                msg::println(msgExportingPackage, msg::package_name = display_name);
+                msg::println(msgExportingPackage, msg::package_name = action.spec);
 
                 const BinaryParagraph& binary_paragraph = action.core_paragraph().value_or_exit(VCPKG_LINE_INFO);
 
