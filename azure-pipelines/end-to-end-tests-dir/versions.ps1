@@ -9,7 +9,6 @@ function Refresh-VersionFiles() {
     git -C $versionFilesPath @gitConfigOptions init
     git -C $versionFilesPath @gitConfigOptions add -A
     git -C $versionFilesPath @gitConfigOptions commit -m testing
-    git -C $versionFilesPath fetch https://github.com/vicroms/test-registries
 }
 
 Refresh-VersionFiles
@@ -23,7 +22,7 @@ Throw-IfFailed
 
 # Test verify versions
 mkdir $VersionFilesRoot | Out-Null
-Copy-Item -Recurse "$versionFilesPath/versions_incomplete" $VersionFilesRoot
+Copy-Item -Recurse "$versionFilesPath/versions-incomplete" $VersionFilesRoot
 $portsRedirectArgsOK = @(
     "--feature-flags=versions",
     "--x-builtin-ports-root=$versionFilesPath/ports",
@@ -31,8 +30,8 @@ $portsRedirectArgsOK = @(
 )
 $portsRedirectArgsIncomplete = @(
     "--feature-flags=versions",
-    "--x-builtin-ports-root=$versionFilesPath/ports_incomplete",
-    "--x-builtin-registry-versions-dir=$VersionFilesRoot/versions_incomplete"
+    "--x-builtin-ports-root=$versionFilesPath/ports-incomplete",
+    "--x-builtin-registry-versions-dir=$VersionFilesRoot/versions-incomplete"
 )
 $CurrentTest = "x-verify-ci-versions (All files OK)"
 Write-Host $CurrentTest
@@ -75,9 +74,60 @@ $CurrentTest = "x-add-version mouse"
 # Missing baseline entry
 Run-Vcpkg @portsRedirectArgsIncomplete x-add-version mouse
 Throw-IfFailed
+
 # Validate changes
 Run-Vcpkg @portsRedirectArgsIncomplete x-ci-verify-versions --verbose
 Throw-IfFailed
+
+# Validate port-version
+$CurrentTest = "x-add-version octopus"
+Set-EmptyTestPort -Name octopus -Version 1.0 -PortVersion "1" -PortsRoot "$versionFilesPath/ports"
+git -C $versionFilesPath @gitConfigOptions add -A
+git -C $versionFilesPath @gitConfigOptions commit -m "add octopus 1.0#1"
+$output = Run-VcpkgAndCaptureOutput @portsRedirectArgsOK x-add-version octopus
+Throw-IfNotFailed
+if ($output.Replace("`r`n", "`n") -notmatch @"
+warning: In octopus, 1.0 is completely new version, so the "port-version" field should be removed. Remove "port-version", commit that change, and try again. To skip this check, rerun with --skip-version-format-check .
+"@) {
+    throw "Expected detecting present port-version when a new version is added as bad"
+}
+
+Run-Vcpkg @portsRedirectArgsOK x-add-version octopus --skip-version-format-check
+Throw-IfFailed
+git -C $versionFilesPath @gitConfigOptions add -A
+git -C $versionFilesPath @gitConfigOptions commit -m "add octopus 1.0#1 to version database"
+
+Set-EmptyTestPort -Name octopus -Version 2.0 -PortVersion "1" -PortsRoot "$versionFilesPath/ports"
+git -C $versionFilesPath @gitConfigOptions add -A
+git -C $versionFilesPath @gitConfigOptions commit -m "add octopus 2.0#1"
+$output = Run-VcpkgAndCaptureOutput @portsRedirectArgsOK x-add-version octopus
+Throw-IfNotFailed
+if ($output.Replace("`r`n", "`n") -notmatch @"
+warning: In octopus, 2.0 is completely new version, so the "port-version" field should be removed. Remove "port-version", commit that change, and try again. To skip this check, rerun with --skip-version-format-check .
+"@) {
+    throw "Expected detecting present port-version when a new version is added as bad"
+}
+
+Run-Vcpkg @portsRedirectArgsOK x-add-version octopus --skip-version-format-check
+Throw-IfFailed
+git -C $versionFilesPath @gitConfigOptions add -A
+git -C $versionFilesPath @gitConfigOptions commit -m "add octopus 2.0#1 to version database"
+
+Set-EmptyTestPort -Name octopus -Version 2.0 -PortVersion "3" -PortsRoot "$versionFilesPath/ports"
+git -C $versionFilesPath @gitConfigOptions add -A
+git -C $versionFilesPath @gitConfigOptions commit -m "add octopus 2.0#3"
+$output = Run-VcpkgAndCaptureOutput @portsRedirectArgsOK x-add-version octopus
+Throw-IfNotFailed
+if ($output.Replace("`r`n", "`n") -notmatch @"
+warning: In octopus, the current "port-version" for 2.0 is 1, so the next added "port-version" should be 2, but the port declares "port-version" 3. Change "port-version" to 2, commit that change, and try again. To skip this check, rerun with --skip-version-format-check .
+"@) {
+    throw "Expected detecting present port-version when a new version is added as bad"
+}
+
+Run-Vcpkg @portsRedirectArgsOK x-add-version octopus --skip-version-format-check
+Throw-IfFailed
+git -C $versionFilesPath @gitConfigOptions add -A
+git -C $versionFilesPath @gitConfigOptions commit -m "add octopus 2.0#3 to version database"
 
 $CurrentTest = "default baseline"
 $out = Run-VcpkgAndCaptureOutput @commonArgs "--feature-flags=versions" install --x-manifest-root=$versionFilesPath/default-baseline-1
@@ -97,31 +147,63 @@ if (($out -notmatch ".*error: Failed to load port because versions are inconsist
     throw "Expected to fail due to mismatched versions between portfile and the version database"
 }
 
-foreach ($opt_registries in @("",",registries"))
+Write-Trace "testing baselines"
+Copy-Item -Recurse "$versionFilesPath/old-ports/zlib-1.2.11-8" "$versionFilesPath/ports/zlib"
+git -C $versionFilesPath @gitConfigOptions add -A
+git -C $versionFilesPath @gitConfigOptions commit -m "set zlib-1.2.11-8"
+Run-Vcpkg @portsRedirectArgsOK x-add-version zlib
+Throw-IfFailed
+git -C $versionFilesPath @gitConfigOptions add -A
+git -C $versionFilesPath @gitConfigOptions commit -m "add zlib-1.2.11-8 to version database"
+$baselineSha = git -C $versionFilesPath @gitConfigOptions rev-parse HEAD
+Remove-Item -Recurse -Force -LiteralPath "$versionFilesPath/ports/zlib"
+Copy-Item -Recurse "$versionFilesPath/old-ports/zlib-1.2.11-9" "$versionFilesPath/ports/zlib"
+git -C $versionFilesPath @gitConfigOptions add -A
+git -C $versionFilesPath @gitConfigOptions commit -m "set zlib-1.2.11-9"
+Run-Vcpkg @portsRedirectArgsOK x-add-version zlib
+Throw-IfFailed
+git -C $versionFilesPath @gitConfigOptions add -A
+git -C $versionFilesPath @gitConfigOptions commit -m "add zlib-1.2.11-9 to version database"
+
+$CurrentTest = "without default baseline 2 -- enabling versions should not change behavior"
+Remove-Item -Recurse $buildtreesRoot/versioning_ -ErrorAction SilentlyContinue
+Run-Vcpkg @commonArgs "--feature-flags=versions" install `
+    "--dry-run" `
+    "--x-manifest-root=$versionFilesPath/without-default-baseline-2" `
+    "--x-builtin-registry-versions-dir=$versionFilesPath/versions"
+Throw-IfFailed
+Require-FileNotExists $buildtreesRoot/versioning_
+
+$CurrentTest = "default baseline 2"
+$baselinedVcpkgJson = @"
 {
-    Write-Trace "testing baselines: $opt_registries"
-    Refresh-VersionFiles
-    $CurrentTest = "without default baseline 2 -- enabling versions should not change behavior"
-    Remove-Item -Recurse $buildtreesRoot/versioning_ -ErrorAction SilentlyContinue
-    Run-Vcpkg @commonArgs "--feature-flags=versions$opt_registries" install `
-        "--dry-run" `
-        "--x-manifest-root=$versionFilesPath/without-default-baseline-2" `
-        "--x-builtin-registry-versions-dir=$versionFilesPath/default-baseline-2/versions"
-    Throw-IfFailed
-    Require-FileNotExists $buildtreesRoot/versioning_
-
-    $CurrentTest = "default baseline 2"
-    Run-Vcpkg @commonArgs "--feature-flags=versions$opt_registries" install `
-        "--dry-run" `
-        "--x-manifest-root=$versionFilesPath/default-baseline-2" `
-        "--x-builtin-registry-versions-dir=$versionFilesPath/default-baseline-2/versions"
-    Throw-IfFailed
-    Require-FileExists $buildtreesRoot/versioning_
-
-    $CurrentTest = "using version features fails without flag"
-    Run-Vcpkg @commonArgs "--feature-flags=-versions$opt_registries" install `
-        "--dry-run" `
-        "--x-manifest-root=$versionFilesPath/default-baseline-2" `
-        "--x-builtin-registry-versions-dir=$versionFilesPath/default-baseline-2/versions"
-    Throw-IfNotFailed
+  "name": "default-baseline-test-2",
+  "version-string": "0",
+  "builtin-baseline": "$baselineSha",
+  "dependencies": [
+    "zlib"
+  ]
 }
+"@
+
+$defaultBaseline2 = "$TestingRoot/default-baseline-2"
+if (Test-Path $defaultBaseline2) {
+    Remove-Item -Recurse -Force -LiteralPath $defaultBaseline2 | Out-Null
+}
+
+New-Item -ItemType Directory -Force $defaultBaseline2 | Out-Null
+Set-Content -LiteralPath "$defaultBaseline2/vcpkg.json" -Value $baselinedVcpkgJson -NoNewline -Encoding Ascii
+
+Run-Vcpkg @commonArgs "--feature-flags=versions" install `
+    "--dry-run" `
+    "--x-manifest-root=$defaultBaseline2" `
+    "--x-builtin-registry-versions-dir=$versionFilesPath/versions"
+Throw-IfFailed
+Require-FileExists $buildtreesRoot/versioning_
+
+$CurrentTest = "using version features fails without flag"
+Run-Vcpkg @commonArgs "--feature-flags=-versions" install `
+    "--dry-run" `
+    "--x-manifest-root=$defaultBaseline2" `
+    "--x-builtin-registry-versions-dir=$versionFilesPath/versions"
+Throw-IfNotFailed

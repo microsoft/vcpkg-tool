@@ -74,6 +74,19 @@ DECLARE_MESSAGE(AddVersionPortFilesShaUnchanged,
                 "",
                 "checked-in files for {package_name} are unchanged from version {version}")
 DECLARE_MESSAGE(AddVersionPortHasImproperFormat, (msg::package_name), "", "{package_name} is not properly formatted")
+DECLARE_MESSAGE(
+    AddVersionPortVersionShouldBeGone,
+    (msg::package_name, msg::version),
+    "",
+    "In {package_name}, {version} is completely new version, so the \"port-version\" field should be removed. Remove "
+    "\"port-version\", commit that change, and try again. To skip this check, rerun with --skip-version-format-check .")
+DECLARE_MESSAGE(AddVersionPortVersionShouldBeOneMore,
+                (msg::package_name, msg::version, msg::count, msg::expected_version, msg::actual_version),
+                "",
+                "In {package_name}, the current \"port-version\" for {version} is {count}, so the next added "
+                "\"port-version\" should be {expected_version}, but the port declares \"port-version\" "
+                "{actual_version}. Change \"port-version\" to {expected_version}, commit that change, and try again. "
+                "To skip this check, rerun with --skip-version-format-check .")
 DECLARE_MESSAGE(AddVersionSuggestVersionDate,
                 (msg::package_name),
                 "\"version-string\" and \"version-date\" are JSON keys, and --skip-version-format-check is a command "
