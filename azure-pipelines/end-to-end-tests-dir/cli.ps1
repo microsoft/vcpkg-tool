@@ -50,7 +50,7 @@ $out = Run-VcpkgAndCaptureOutput -TestArgs @('install', 'this-is-super-not-a-#po
 Throw-IfNotFailed
 
 [string]$expected = @"
-error: expected the end of input parsing a package spec; this usually means the indicated character is not allowed to be in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hypens.
+error: expected the end of input parsing a package spec; this usually means the indicated character is not allowed to be in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hyphens.
   on expression: this-is-super-not-a-#port
                                      ^
 
@@ -74,6 +74,21 @@ error: unknown binary provider type: valid providers are 'clear', 'default', 'nu
 if (-Not ($out.Replace("`r`n", "`n").EndsWith($expected)))
 {
     throw 'Bad malformed --binarysource output; it was: ' + $out
+}
+
+$out = Run-VcpkgAndCaptureOutput -TestArgs @('install', 'zlib', '--triplet', 'ARM-windows')
+Throw-IfNotFailed
+
+$expected = @"
+error: Invalid triplet name. Triplet names are all lowercase alphanumeric+hyphens.
+  on expression: ARM-windows
+                 ^
+Built-in Triplets:
+"@
+
+if (-Not ($out.Replace("`r`n", "`n").StartsWith($expected)))
+{
+    throw 'Bad malformed triplet output. It was: ' + $out
 }
 
 $out = Run-VcpkgAndCaptureStdErr -TestArgs @('x-package-info', 'zlib#notaport', '--x-json', '--x-installed')

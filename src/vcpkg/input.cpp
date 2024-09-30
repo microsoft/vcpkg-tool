@@ -24,17 +24,22 @@ namespace vcpkg
 
     [[nodiscard]] ExpectedL<Unit> check_triplet(StringView name, const TripletDatabase& database)
     {
-        // Intentionally show the lowercased string
-        auto as_lower = Strings::ascii_to_lowercase(name);
-
-        if (std::find_if_not(name.begin(), name.end(), ParserBase::is_package_name_char) != name.end())
+        Unicode::Utf8Decoder start_of_line{name};
+        for (auto cursor = start_of_line; !cursor.is_eof(); ++cursor)
         {
-            return msg::format_error(msgParseQualifiedSpecifierNotEof);
+            if (!ParserBase::is_package_name_char(*cursor))
+            {
+                auto result = msg::format_error(msgParseTripletNotEof).append_raw('\n');
+                append_caret_line(result, cursor, start_of_line);
+                result.append_raw('\n');
+                append_help_topic_valid_triplet(result, database);
+                return result;
+            }
         }
 
-        if (!database.is_valid_triplet_canonical_name(as_lower))
+        if (!database.is_valid_triplet_canonical_name(name))
         {
-            LocalizedString result = msg::format_error(msgInvalidTriplet, msg::triplet = as_lower);
+            LocalizedString result = msg::format_error(msgInvalidTriplet, msg::triplet = name);
             result.append_raw('\n');
             append_help_topic_valid_triplet(result, database);
             return result;

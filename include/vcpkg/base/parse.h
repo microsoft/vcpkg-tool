@@ -21,6 +21,10 @@ namespace vcpkg
         int column;
     };
 
+    void append_caret_line(LocalizedString& res,
+                           const Unicode::Utf8Decoder& it,
+                           const Unicode::Utf8Decoder& start_of_line);
+
     struct ParseMessage
     {
         SourceLoc location = {};
