@@ -922,7 +922,7 @@ namespace vcpkg
 
     static void write_sbom(const VcpkgPaths& paths,
                            const InstallPlanAction& action,
-                           std::vector<Json::Value> heuristic_resources)
+                           std::vector<Json::Object> heuristic_resources)
     {
         auto& fs = paths.get_filesystem();
         const auto& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
