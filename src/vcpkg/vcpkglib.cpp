@@ -34,7 +34,7 @@ namespace vcpkg
         {
             for (auto&& file : update_files)
             {
-                if (file.filename() == "incomplete") continue;
+                if (file.filename() == FileIncomplete) continue;
 
                 auto pghs = Paragraphs::get_paragraphs(fs, file).value_or_exit(VCPKG_LINE_INFO);
                 for (auto&& p : pghs)
@@ -46,7 +46,7 @@ namespace vcpkg
 
         return update_files;
     }
-    
+
     static void apply_database_updates_on_disk(const Filesystem& fs,
                                                const InstalledPaths& installed,
                                                StatusParagraphs& current_status_db)
@@ -55,7 +55,7 @@ namespace vcpkg
         if (!update_files.empty())
         {
             const auto status_file = installed.vcpkg_dir_status_file();
-            const auto status_file_new = Path(status_file.parent_path()) / "status-new";
+            const auto status_file_new = Path(status_file.parent_path()) / FileStatusNew;
             fs.write_contents(status_file_new, Strings::serialize(current_status_db), VCPKG_LINE_INFO);
 
             fs.rename(status_file_new, status_file, VCPKG_LINE_INFO);
@@ -71,7 +71,7 @@ namespace vcpkg
     {
         const auto maybe_status_file = installed.vcpkg_dir_status_file();
         const auto status_parent = Path(maybe_status_file.parent_path());
-        const auto status_file_old = status_parent / "status-old";
+        const auto status_file_old = status_parent / FileStatusOld;
 
         auto status_file = &maybe_status_file;
 
@@ -104,7 +104,7 @@ namespace vcpkg
 
         const auto status_file = installed.vcpkg_dir_status_file();
         const auto status_parent = Path(status_file.parent_path());
-        const auto status_file_old = status_parent / "status-old";
+        const auto status_file_old = status_parent / FileStatusOld;
 
         if (!fs.exists(status_file, IgnoreErrors{}))
         {
@@ -131,7 +131,7 @@ namespace vcpkg
         const auto my_update_id = update_id++;
         const auto update_path = installed.vcpkg_dir_updates() / fmt::format("{:010}", my_update_id);
 
-        fs.write_rename_contents(update_path, "incomplete", Strings::serialize(p), VCPKG_LINE_INFO);
+        fs.write_rename_contents(update_path, FileIncomplete, Strings::serialize(p), VCPKG_LINE_INFO);
     }
 
     static bool upgrade_to_slash_terminated_sorted_format(std::vector<std::string>& lines)
