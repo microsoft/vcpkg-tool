@@ -730,6 +730,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";AddVersionPortVersionShouldBeGone" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[In {package_name}, {version} is completely new version, so the "port-version" field should be removed. Remove "port-version", commit that change, and try again. To skip this check, rerun with --skip-version-format-check .]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[In {package_name} ist {version} eine völlig neue Version, daher sollte das Feld „port-version“ entfernt werden. Entfernen Sie „port-version“, committen Sie diese Änderung, und versuchen Sie es noch mal. Führen Sie zum Überspringen dieser Überprüfung erneut „--skip-version-format-check“ aus.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AddVersionPortVersionShouldBeOneMore" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[In {package_name}, the current "port-version" for {version} is {count}, so the next added "port-version" should be {expected_version}, but the port declares "port-version" {actual_version}. Change "port-version" to {expected_version}, commit that change, and try again. To skip this check, rerun with --skip-version-format-check .]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[In {package_name} ist die aktuelle „Portversion“ für {version} {count}, daher sollte die nächste hinzugefügte „port-version“ {expected_version} sein, aber der Port deklariert „port-version“ {actual_version}. Ändern Sie „port-version“ in {expected_version}, committen Sie diese Änderung, und versuchen Sie es noch mal. Führen Sie zum Überspringen dieser Überprüfung erneut „--skip-version-format-check“ aus.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";AddVersionSuggestVersionDate" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[The version format of "{package_name}" uses "version-string", but the format is acceptable as a "version-date". If this format is actually intended to be an ISO 8601 date, change the format to "version-date", and rerun this command. Otherwise, disable this check by rerunning this command and adding --skip-version-format-check .]]></Val>
@@ -8970,43 +8988,49 @@
       </Item>
       <Item ItemId=";ParseFeatureNameError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA["{package_name}" is not a valid feature name. Feature names must be lowercase alphanumeric+hypens and not reserved (see {url} for more information).]]></Val>
+          <Val><![CDATA["{package_name}" is not a valid feature name. Feature names must be lowercase alphanumeric+hyphens and not reserved (see {url} for more information).]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA["{package_name}" ist kein gültiger Featurename. Featurenamen müssen aus alphanumerischen Kleinbuchstaben+Bindestrichen bestehen und dürfen nicht reserviert sein (weitere Informationen finden Sie unter {url}).]]></Val>
+            <Val><![CDATA[„{package_name}“ ist kein gültiger Featurename. Featurenamen müssen alphanumerisch+Bindestriche in Kleinbuchstaben sein und dürfen nicht reserviert sein (weitere Informationen finden Sie unter {url}).]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA["{package_name}" is not a valid feature name. Feature names must be lowercase alphanumeric+hypens and not reserved (see {url} for more information).]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ParseIdentifierError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA["{value}" is not a valid identifier. Identifiers must be lowercase alphanumeric+hypens and not reserved (see {url} for more information).]]></Val>
+          <Val><![CDATA["{value}" is not a valid identifier. Identifiers must be lowercase alphanumeric+hyphens and not reserved (see {url} for more information).]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[„{value}“ ist kein gültiger Bezeichner. Bezeichner müssen aus alphanumerischen Kleinbuchstaben+Bindestrichen bestehen und dürfen nicht reserviert sein (weitere Informationen finden Sie unter {url}).]]></Val>
+            <Val><![CDATA[„{value}“ ist kein gültiger Bezeichner. Bezeichner müssen alphanumerisch+Bindestriche in Kleinbuchstaben sein und dürfen nicht reserviert sein (weitere Informationen finden Sie unter {url}).]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA["{value}" is not a valid identifier. Identifiers must be lowercase alphanumeric+hypens and not reserved (see {url} for more information)]]></Val>
+            <Val><![CDATA["{value}" is not a valid identifier. Identifiers must be lowercase alphanumeric+hypens and not reserved (see {url} for more information).]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ParsePackageNameError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA["{package_name}" is not a valid package name. Package names must be lowercase alphanumeric+hypens and not reserved (see {url} for more information).]]></Val>
+          <Val><![CDATA["{package_name}" is not a valid package name. Package names must be lowercase alphanumeric+hyphens and not reserved (see {url} for more information).]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[„{package_name}“ ist kein gültiger Paketname. Paketnamen müssen aus alphanumerischen Kleinbuchstaben+Bindestrichen bestehen und dürfen nicht reserviert sein (weitere Informationen finden Sie unter {url}).]]></Val>
+            <Val><![CDATA[„{package_name}“ ist kein gültiger Paketname. Paketnamen müssen alphanumerisch+Bindestriche in Kleinbuchstaben sein und dürfen nicht reserviert sein (weitere Informationen finden Sie unter {url}).]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA["{package_name}" is not a valid package name. Package names must be lowercase alphanumeric+hypens and not reserved (see {url} for more information)]]></Val>
+            <Val><![CDATA["{package_name}" is not a valid package name. Package names must be lowercase alphanumeric+hypens and not reserved (see {url} for more information).]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ParsePackageNameNotEof" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[expected the end of input parsing a package name; this usually means the indicated character is not allowed to be in a port name. Port names are all lowercase alphanumeric+hypens and not reserved (see {url} for more information).]]></Val>
+          <Val><![CDATA[expected the end of input parsing a package name; this usually means the indicated character is not allowed to be in a port name. Port names are all lowercase alphanumeric+hyphens and not reserved (see {url} for more information).]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Es wurde das Ende der Eingabeanalyse eines Paketnamens erwartet. Dies bedeutet in der Regel, dass das angegebene Zeichen nicht in einem Portnamen enthalten sein darf. Portnamen sind alphanumerische Kleinbuchstaben+Bindestriche und dürfen nicht reserviert sein (weitere Informationen finden Sie unter {url}).]]></Val>
+            <Val><![CDATA[Es wurde das Ende der Eingabeanalyse eines Paketnamens erwartet. Dies bedeutet in der Regel, dass das angegebene Zeichen nicht in einem Portnamen enthalten sein darf. Portnamen müssen alphanumerisch+Bindestriche in Kleinbuchstaben sein und dürfen nicht reserviert sein (weitere Informationen finden Sie unter {url}).]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[expected the end of input parsing a package name; this usually means the indicated character is not allowed to be in a port name. Port names are all lowercase alphanumeric+hypens and not reserved (see {url} for more information).]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -9024,10 +9048,13 @@
       </Item>
       <Item ItemId=";ParseQualifiedSpecifierNotEof" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[expected the end of input parsing a package spec; this usually means the indicated character is not allowed to be in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hypens.]]></Val>
+          <Val><![CDATA[expected the end of input parsing a package spec; this usually means the indicated character is not allowed to be in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hyphens.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Es wurde das Ende der Eingabeanalyse einer Paketspezifikation erwartet. Dies bedeutet in der Regel, dass das angegebene Zeichen nicht in einer Paketspezifikation enthalten sein darf. Port-, Triplet- und Featurenamen sind alle Kleinbuchstaben, alphanumerische Zeichen und Bindestriche.]]></Val>
+            <Val><![CDATA[Es wurde das Ende der Eingabeanalyse einer Paketspezifikation erwartet. Dies bedeutet in der Regel, dass das angegebene Zeichen nicht in einer Paketspezifikation enthalten sein darf. Port-, Triplet- und Featurenamen müssen alphanumerisch+Bindestriche in Kleinbuchstaben sein.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[expected the end of input parsing a package spec; this usually means the indicated character is not allowed to be in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hypens.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -9036,6 +9063,15 @@
           <Val><![CDATA[expected the end of input parsing a package spec; did you mean {version_spec} instead?]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Es wurde das Ende der Eingabeanalyse einer Paketspezifikation erwartet. Meinten Sie stattdessen {version_spec}?]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ParseTripletNotEof" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Invalid triplet name. Triplet names are all lowercase alphanumeric+hyphens.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Ungültiger Tripletname. Tripletnamen müssen alphanumerisch+Bindestriche in Kleinbuchstaben sein.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
