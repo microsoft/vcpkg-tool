@@ -10,6 +10,7 @@ if (-not $IsMacOS -and -not $IsLinux) {
     $ninja_version = "1.11.1"
 
     $env:VCPKG_DOWNLOADS = Join-Path $TestingRoot 'down loads'
+    $env:VCPKG_FORCE_DOWNLOADED_BINARIES = "1"
     Run-Vcpkg -TestArgs ($commonArgs + @("fetch", "7zip", "--vcpkg-root=$TestingRoot"))
     Throw-IfFailed
     Require-FileExists "$TestingRoot/down loads/tools/7zip-${7zip_version}-windows/7za.exe"
@@ -21,6 +22,7 @@ if (-not $IsMacOS -and -not $IsLinux) {
     mkdir "$TestingRoot/down loads/tools/ninja-testing-${ninja_version}-windows" | Out-Null
     Move-Item -Path "$TestingRoot/down loads/tools/ninja-${ninja_version}-windows/ninja.exe" -Destination "$TestingRoot/down loads/tools/ninja-testing-${ninja_version}-windows/ninja.exe"
     $path = $env:PATH
+    Remove-Item env:VCPKG_FORCE_DOWNLOADED_BINARIES
 
     $env:PATH = "$path;$TestingRoot/down loads/tools/ninja-testing-${ninja_version}-windows"
     Run-Vcpkg -TestArgs ($commonArgs + @("fetch", "ninja", "--vcpkg-root=$TestingRoot"))
