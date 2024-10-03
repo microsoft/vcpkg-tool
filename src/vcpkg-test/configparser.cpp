@@ -562,9 +562,10 @@ TEST_CASE ("BinaryConfigParser HTTP provider", "[binaryconfigparser]")
 
 TEST_CASE ("BinaryConfigParser Universal Packages provider", "[binaryconfigparser]")
 {
-    // Scheme: x-upkg,<organization>,<project>,<feed>[,<readwrite>]
+    // Scheme: x-az-universal,<organization>,<project>,<feed>[,<readwrite>]
     {
-        auto parsed = parse_binary_provider_configs("x-upkg,test_organization,test_project_name,test_feed,read", {});
+        auto parsed =
+            parse_binary_provider_configs("x-az-universal,test_organization,test_project_name,test_feed,read", {});
         auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
         REQUIRE(state.upkg_templates_to_get.size() == 1);
         REQUIRE(state.upkg_templates_to_get[0].feed == "test_feed");
@@ -573,7 +574,7 @@ TEST_CASE ("BinaryConfigParser Universal Packages provider", "[binaryconfigparse
     }
     {
         auto parsed =
-            parse_binary_provider_configs("x-upkg,test_organization,test_project_name,test_feed,readwrite", {});
+            parse_binary_provider_configs("x-az-universal,test_organization,test_project_name,test_feed,readwrite", {});
         auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
         REQUIRE(state.upkg_templates_to_get.size() == 1);
         REQUIRE(state.upkg_templates_to_put.size() == 1);
@@ -586,11 +587,11 @@ TEST_CASE ("BinaryConfigParser Universal Packages provider", "[binaryconfigparse
     }
     {
         auto parsed = parse_binary_provider_configs(
-            "x-upkg,test_organization,test_project_name,test_feed,extra_argument,readwrite", {});
+            "x-az-universal,test_organization,test_project_name,test_feed,extra_argument,readwrite", {});
         REQUIRE(!parsed.has_value());
     }
     {
-        auto parsed = parse_binary_provider_configs("x-upkg,missing_args,read", {});
+        auto parsed = parse_binary_provider_configs("x-az-universal,missing_args,read", {});
         REQUIRE(!parsed.has_value());
     }
 }

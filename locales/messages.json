@@ -855,7 +855,7 @@
   "HelpBinaryCachingAzBlob": "**Experimental: will change or be removed without warning**\nAdds an Azure Blob Storage source. Uses Shared Access Signature validation. <url> should include the container path. <sas> must be be prefixed with a \"?\".",
   "_HelpBinaryCachingAzBlob.comment": "Printed as the 'definition' for 'x-azblob,<url>,<sas>[,<rw>]'.",
   "HelpBinaryCachingAzUpkg": "**Experimental: will change or be removed without warning**\nAdds a Universal Package Azure Artifacts source. Uses the Azure CLI (az artifacts) for uploads and downloads.",
-  "_HelpBinaryCachingAzUpkg.comment": "Printed as the 'definition' for 'x-upkg,<organization>,<project>,<feed>[,<rw>]'.",
+  "_HelpBinaryCachingAzUpkg.comment": "Printed as the 'definition' for 'x-az-universal,<organization>,<project>,<feed>[,<rw>]'.",
   "HelpBinaryCachingCos": "**Experimental: will change or be removed without warning**\nAdds an COS source. Uses the cos CLI for uploads and downloads. <prefix> should include the scheme 'cos://' and be suffixed with a \"/\".",
   "_HelpBinaryCachingCos.comment": "Printed as the 'definition' for 'x-cos,<prefix>[,<rw>]'.",
   "HelpBinaryCachingDefaults": "Adds the default file-based location. Based on your system settings, the default path to store binaries is \"{path}\". This consults %LOCALAPPDATA%/%APPDATA% on Windows and $XDG_CACHE_HOME or $HOME on other platforms.",

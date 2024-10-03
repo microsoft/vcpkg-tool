@@ -1857,9 +1857,9 @@ namespace
                     state->url_templates_to_get, state->url_templates_to_put, std::move(url_template), segments, 2);
                 state->binary_cache_providers.insert("http");
             }
-            else if (segments[0].second == "x-upkg")
+            else if (segments[0].second == "x-az-universal")
             {
-                // Scheme: x-upkg,<organization>,<project>,<feed>[,<readwrite>]
+                // Scheme: x-az-universal,<organization>,<project>,<feed>[,<readwrite>]
                 if (segments.size() < 4 || segments.size() > 5)
                 {
                     return add_error(msg::format(msgInvalidArgumentRequiresFourOrFiveArguments,
@@ -2796,7 +2796,7 @@ LocalizedString vcpkg::format_help_topic_binary_caching()
     table.format("x-azblob,<url>,<sas>[,<rw>]", msg::format(msgHelpBinaryCachingAzBlob));
     table.format("x-gcs,<prefix>[,<rw>]", msg::format(msgHelpBinaryCachingGcs));
     table.format("x-cos,<prefix>[,<rw>]", msg::format(msgHelpBinaryCachingCos));
-    table.format("x-upkg,<organization>,<project>,<feed>[,<rw>]", msg::format(msgHelpBinaryCachingAzUpkg));
+    table.format("x-az-universal,<organization>,<project>,<feed>[,<rw>]", msg::format(msgHelpBinaryCachingAzUpkg));
     table.blank();
 
     // NuGet sources:

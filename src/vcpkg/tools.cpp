@@ -492,7 +492,7 @@ namespace vcpkg
         virtual bool is_abi_sensitive() const override { return false; }
         virtual StringView tool_data_name() const override { return Tools::AZCLI; }
         virtual std::vector<StringView> system_exe_stems() const override { return {Tools::AZCLI}; }
-        virtual std::array<int, 3> default_min_version() const override { return {2, 30, 0}; }
+        virtual std::array<int, 3> default_min_version() const override { return {2, 64, 0}; }
 
         virtual ExpectedL<std::string> get_version(const ToolCache&, MessageSink&, const Path& exe_path) const override
         {

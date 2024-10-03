@@ -1479,7 +1479,7 @@ DECLARE_MESSAGE(HelpBinaryCachingAzBlob,
                 "the container path. <sas> must be be prefixed with a \"?\".")
 DECLARE_MESSAGE(HelpBinaryCachingAzUpkg,
                 (),
-                "Printed as the 'definition' for 'x-upkg,<organization>,<project>,<feed>[,<rw>]'.",
+                "Printed as the 'definition' for 'x-az-universal,<organization>,<project>,<feed>[,<rw>]'.",
                 "**Experimental: will change or be removed without warning**\n"
                 "Adds a Universal Package Azure Artifacts source. Uses the Azure CLI "
                 "(az artifacts) for uploads and downloads.")
