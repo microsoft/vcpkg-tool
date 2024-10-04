@@ -52,8 +52,10 @@ namespace vcpkg::Json
         void add_expected_type_error(const LocalizedString& expected_type);
         void add_extra_field_error(const LocalizedString& type, StringView fields, StringView suggestion = {});
         void add_generic_error(const LocalizedString& type, StringView message);
+        void add_diagnostic_error(const LocalizedString& type, const DiagnosticLine& line);
 
-        void add_warning(LocalizedString type, StringView msg);
+        void add_warning(const LocalizedString& type, StringView msg);
+        void add_diagnostic_warning(const LocalizedString& type, const DiagnosticLine& warning);
 
         const std::vector<LocalizedString>& warnings() const { return m_warnings; }
 

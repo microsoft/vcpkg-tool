@@ -323,7 +323,7 @@ namespace vcpkg
         if (build_depends_field && !build_depends_field->first.empty())
         {
             auto maybe_dependencies =
-                parse_dependencies_list(std::move(build_depends_field->first), origin, build_depends_field->second);
+                parse_dependencies_list(std::move(build_depends_field->first), origin, build_depends_field->second.row);
             if (const auto dependencies = maybe_dependencies.get())
             {
                 spgh->dependencies = *dependencies;
@@ -339,7 +339,7 @@ namespace vcpkg
         if (default_features_field && !default_features_field->first.empty())
         {
             auto maybe_default_features = parse_default_features_list(
-                std::move(default_features_field->first), origin, default_features_field->second);
+                std::move(default_features_field->first), origin, default_features_field->second.row);
             if (const auto default_features = maybe_default_features.get())
             {
                 for (auto&& default_feature : *default_features)
@@ -414,7 +414,7 @@ namespace vcpkg
         if (dependencies_field && !dependencies_field->first.empty())
         {
             auto maybe_dependencies =
-                parse_dependencies_list(std::move(dependencies_field->first), origin, dependencies_field->second);
+                parse_dependencies_list(std::move(dependencies_field->first), origin, dependencies_field->second.row);
             if (auto dependencies = maybe_dependencies.get())
             {
                 fpgh->dependencies = std::move(*dependencies);
@@ -753,7 +753,7 @@ namespace vcpkg
     // * `null`, for when the license of the package cannot be described by an SPDX expression
     struct SpdxLicenseExpressionParser : ParserBase
     {
-        SpdxLicenseExpressionParser(StringView sv, StringView origin) : ParserBase(sv, origin) { }
+        using ParserBase::ParserBase;
 
         static const StringLiteral* case_insensitive_find(View<StringLiteral> lst, StringView id)
         {
@@ -865,16 +865,18 @@ namespace vcpkg
             }
         }
 
-        std::string parse()
+        Optional<std::string> parse()
         {
+            Optional<std::string> result;
+            auto& parsed_string = result.emplace();
             if (cur() == Unicode::end_of_file)
             {
                 add_error(msg::format(msgEmptyLicenseExpression));
-                return {};
+                result.clear();
+                return result;
             }
 
             Expecting expecting = Expecting::License;
-            std::string result;
 
             size_t open_parens = 0;
             while (!at_eof())
@@ -891,7 +893,7 @@ namespace vcpkg
                         {
                             add_error(msg::format(msgLicenseExpressionExpectExceptionFoundParen));
                         }
-                        result.push_back('(');
+                        parsed_string.push_back('(');
                         expecting = Expecting::License;
                         ++open_parens;
                         next();
@@ -909,7 +911,7 @@ namespace vcpkg
                         {
                             add_error(msg::format(msgLicenseExpressionImbalancedParens));
                         }
-                        result.push_back(')');
+                        parsed_string.push_back(')');
                         expecting = Expecting::Compound;
                         --open_parens;
                         next();
@@ -937,7 +939,7 @@ namespace vcpkg
                             next();
                             break;
                         }
-                        eat_idstring(result, expecting);
+                        eat_idstring(parsed_string, expecting);
                         break;
                 }
             }
@@ -951,16 +953,20 @@ namespace vcpkg
                 add_error(msg::format(msgLicenseExpressionExpectExceptionFoundEof));
             }
 
+            if (any_errors())
+            {
+                result.clear();
+            }
+
             return result;
         }
     };
 
-    std::string parse_spdx_license_expression(StringView sv, ParseMessages& messages)
+    Optional<std::string> parse_spdx_license_expression(DiagnosticContext& context, StringView sv)
     {
         auto license_string = msg::format(msgLicenseExpressionString); // must live through parse
-        auto parser = SpdxLicenseExpressionParser(sv, license_string);
+        auto parser = SpdxLicenseExpressionParser(context, sv, license_string, 0);
         auto result = parser.parse();
-        messages = parser.extract_messages();
         return result;
     }
 
@@ -974,17 +980,19 @@ namespace vcpkg
         // but with whitespace normalized
         virtual Optional<std::string> visit_string(Json::Reader& r, StringView sv) const override
         {
-            auto parser = SpdxLicenseExpressionParser(sv, r.origin());
+            BufferedDiagnosticContext bdc;
+            auto parser = SpdxLicenseExpressionParser(bdc, sv, r.origin(), 0);
             auto res = parser.parse();
-
-            for (const auto& warning : parser.messages().warnings)
+            for (auto&& diagnostic_line : bdc.lines)
             {
-                r.add_warning(type_name(), warning.format("", MessageKind::Warning));
-            }
-            if (auto err = parser.get_error())
-            {
-                r.add_generic_error(type_name(), LocalizedString::from_raw(err->to_string()));
-                return std::string();
+                if (diagnostic_line.kind() == DiagKind::Error)
+                {
+                    r.add_diagnostic_error(type_name(), diagnostic_line);
+                }
+                else
+                {
+                    r.add_diagnostic_warning(type_name(), diagnostic_line);
+                }
             }
 
             return res;
