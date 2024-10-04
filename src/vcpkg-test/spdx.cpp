@@ -1,5 +1,6 @@
 #include <vcpkg-test/util.h>
 
+#include <vcpkg/abi.h>
 #include <vcpkg/dependencies.h>
 #include <vcpkg/spdx.h>
 
@@ -25,13 +26,11 @@ TEST_CASE ("spdx maximum serialization", "[spdx]")
     auto& abi = *(ipa.abi_info = AbiInfo{}).get();
     abi.package_abi = "ABIHASH";
 
-    const auto sbom =
-        create_spdx_sbom(ipa,
-                         std::vector<Path>{"vcpkg.json", "portfile.cmake", "patches/patch1.diff"},
-                         std::vector<std::string>{"vcpkg.json-hash", "portfile.cmake-hash", "patch1.diff-hash"},
-                         "now",
-                         "https://test-document-namespace",
-                         {});
+    std::vector<AbiEntry> port_abi{{"vcpkg.json", "vcpkg.json-hash"},
+                                   {"portfile.cmake", "portfile.cmake-hash"},
+                                   {"patches/patch1.diff", "patch1.diff-hash"}};
+
+    const auto sbom = create_spdx_sbom(ipa, port_abi, "now", "https://test-document-namespace", {});
 
     auto expected = Json::parse(R"json(
 {
@@ -179,13 +178,9 @@ TEST_CASE ("spdx minimum serialization", "[spdx]")
         spec, scfl, "test_packages_root", RequestType::USER_REQUESTED, UseHeadVersion::No, Editable::No, {}, {}, {});
     auto& abi = *(ipa.abi_info = AbiInfo{}).get();
     abi.package_abi = "deadbeef";
+    std::vector<AbiEntry> port_abi{{"vcpkg.json", "hash-vcpkg.json"}, {"portfile.cmake", "hash-portfile.cmake"}};
 
-    const auto sbom = create_spdx_sbom(ipa,
-                                       std::vector<Path>{"vcpkg.json", "portfile.cmake"},
-                                       std::vector<std::string>{"hash-vcpkg.json", "hash-portfile.cmake"},
-                                       "now+1",
-                                       "https://test-document-namespace-2",
-                                       {});
+    const auto sbom = create_spdx_sbom(ipa, port_abi, "now+1", "https://test-document-namespace-2", {});
 
     auto expected = Json::parse(R"json(
 {
@@ -326,7 +321,7 @@ TEST_CASE ("spdx concat resources", "[spdx]")
                     .value(VCPKG_LINE_INFO)
                     .value;
 
-    const auto sbom = create_spdx_sbom(ipa, {}, {}, "now+1", "ns", {std::move(doc1), std::move(doc2)});
+    const auto sbom = create_spdx_sbom(ipa, {}, "now+1", "ns", {std::move(doc1), std::move(doc2)});
 
     auto expected = Json::parse(R"json(
 {
