@@ -242,7 +242,7 @@ namespace vcpkg
 #ifdef _WIN32
     void win32_extract_self_extracting_7z(const Filesystem& fs, const Path& archive, const Path& to_path)
     {
-        constexpr static const char header_7z[] = "7z\xBC\xAF\x27\x1C";
+        static constexpr StringLiteral header_7z = "7z\xBC\xAF\x27\x1C";
         const Path stem = archive.stem();
         const auto subext = stem.extension();
         Checks::msg_check_exit(VCPKG_LINE_INFO,
@@ -251,14 +251,24 @@ namespace vcpkg
                                    .append(msgMissingExtension, msg::extension = ".7.exe"));
 
         auto contents = fs.read_contents(archive, VCPKG_LINE_INFO);
-        const auto pos = contents.find(header_7z);
+
+        // try to chop off the beginning of the self extractor before the embedded 7z archive
+        // some 7z self extractors, such as PortableGit-2.43.0-32-bit.7z.exe have 1 header
+        // some 7z self extractors, such as 7z2408-x64.exe, have 2 headers
+        auto pos = contents.find(header_7z.data(), 0, header_7z.size());
         Checks::msg_check_exit(VCPKG_LINE_INFO,
                                pos != std::string::npos,
                                msg::format(msgPackageFailedtWhileExtracting, msg::value = "7zip", msg::path = archive)
                                    .append(msgMissing7zHeader));
+        // no bounds check necessary because header_7z is nonempty:
+        auto pos2 = contents.find(header_7z.data(), pos + 1, header_7z.size());
+        if (pos2 != std::string::npos)
+        {
+            pos = pos2;
+        }
 
-        contents = contents.substr(pos);
-        fs.write_contents(to_path, contents, VCPKG_LINE_INFO);
+        StringView contents_sv = contents;
+        fs.write_contents(to_path, contents_sv.substr(pos), VCPKG_LINE_INFO);
     }
 #endif
 
