@@ -918,11 +918,10 @@ namespace
                     m_token_header,
                     m_accept_header.to_string(),
                     "Content-Type: application/octet-stream",
-                    "Content-Range: bytes 0-" + std::to_string(cache_size) + "/*",
                 };
+                auto url = m_url + "/" + std::to_string(*cacheId.get());
 
-                const auto url = m_url + "/" + std::to_string(*cacheId.get());
-                if (put_file(m_fs, url, {}, custom_headers, zip_path, "PATCH"))
+                if (patch_file(m_fs, url, custom_headers, zip_path, cache_size))
                 {
                     Json::Object commit;
                     commit.insert("size", std::to_string(cache_size));
