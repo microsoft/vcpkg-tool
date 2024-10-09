@@ -168,12 +168,12 @@ namespace vcpkg::Test
         std::set<std::string> keys_l;
         for (auto&& kv : l)
         {
-            keys_l.insert(kv.first.to_string());
+            keys_l.insert(kv.key);
         }
         std::set<std::string> keys_r;
         for (auto&& kv : r)
         {
-            keys_r.insert(kv.first.to_string());
+            keys_r.insert(kv.key);
         }
         {
             INFO(path)
@@ -186,10 +186,10 @@ namespace vcpkg::Test
                 size_t index = 0;
                 for (auto i_l = l.begin(), i_r = r.begin(); i_l != l.end() && i_r != r.end(); ++i_l, ++i_r)
                 {
-                    if ((*i_l).first != (*i_r).first)
+                    if ((*i_l).key != (*i_r).key)
                     {
                         INFO("index = " << index);
-                        CHECK((*i_l).first.to_string() == (*i_r).first.to_string());
+                        CHECK((*i_l).key == (*i_r).key);
                     }
                     ++index;
                 }

@@ -171,7 +171,7 @@ DECLARE_MESSAGE(AnIdentifer, (), "", "an identifier")
 DECLARE_MESSAGE(AnObjectContainingVcpkgArtifactsMetadata,
                 (),
                 "'vcpkg-artifacts' is the name of the product feature and should not be localized",
-                "an object containing vcpkg-artifacts metadata")
+                "a vcpkg-artifacts metadata object")
 DECLARE_MESSAGE(AnOverlayPath, (), "", "an overlay path")
 DECLARE_MESSAGE(AnOverlayTripletsPath, (), "", "a triplet path")
 DECLARE_MESSAGE(AnOverride, (), "", "an override")
@@ -881,10 +881,6 @@ DECLARE_MESSAGE(ConfigurationErrorRegistriesWithoutBaseline,
                 "Using registries requires that a baseline is set for the default registry or that the default "
                 "registry is null.\n\n"
                 "See {url} for more details.")
-DECLARE_MESSAGE(ConfigurationNestedDemands,
-                (msg::json_field),
-                "",
-                "[\"{json_field}\"] contains a nested `demands` object (nested `demands` have no effect)")
 DECLARE_MESSAGE(ConflictingFiles,
                 (msg::path, msg::spec),
                 "",
@@ -1156,7 +1152,6 @@ DECLARE_MESSAGE(ExecutablesRelativeToThePackageDirectoryHere,
                 (),
                 "",
                 "the executables are relative to ${{CURRENT_PACKAGES_DIR}} here")
-DECLARE_MESSAGE(ExpectedAnObject, (), "", "expected an object")
 DECLARE_MESSAGE(ExpectedAtMostOneSetOfTags,
                 (msg::count, msg::old_value, msg::new_value, msg::value),
                 "{old_value} is a left tag and {new_value} is the right tag. {value} is the input.",
@@ -1933,8 +1928,6 @@ DECLARE_MESSAGE(InvalidValuePostPortfileIncludes,
                 "an absolute path to an existent cmake file.")
 DECLARE_MESSAGE(IrregularFile, (msg::path), "", "path was not a regular file: {path}")
 DECLARE_MESSAGE(JsonErrorMustBeAnObject, (msg::path), "", "Expected \"{path}\" to be an object.")
-DECLARE_MESSAGE(JsonFieldNotObject, (msg::json_field), "", "value of [\"{json_field}\"] must be an object")
-DECLARE_MESSAGE(JsonFieldNotString, (msg::json_field), "", "value of [\"{json_field}\"] must be a string")
 DECLARE_MESSAGE(JsonFileMissingExtension,
                 (msg::path),
                 "",
