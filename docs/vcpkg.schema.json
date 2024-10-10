@@ -80,6 +80,11 @@
             }
           }
         },
+        "depend-defaults": {
+          "description": "The default value for the default-features field of a dependency",
+          "type": "boolean",
+          "default": true
+        },
         "default-features": {
           "description": "Features enabled by default with the package.",
           "type": "array",
