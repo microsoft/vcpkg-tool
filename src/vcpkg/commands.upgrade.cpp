@@ -214,9 +214,10 @@ namespace vcpkg
         // success.
         if (keep_going == KeepGoing::Yes)
         {
-            msg::print(summary.format());
+            msg::print(summary.format_results());
         }
 
+        summary.print_complete_message();
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 } // namespace vcpkg
