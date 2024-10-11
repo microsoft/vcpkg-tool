@@ -315,6 +315,27 @@ namespace vcpkg
         return InstallResult::SUCCESS;
     }
 
+    void LicenseReport::print_license_report(const msg::MessageT<>& named_license_heading) const
+    {
+        if (any_unknown_licenses || !named_licenses.empty())
+        {
+            msg::println(msgPackageLicenseWarning);
+            if (any_unknown_licenses)
+            {
+                msg::println(msgPackageLicenseUnknown);
+            }
+
+            if (!named_licenses.empty())
+            {
+                msg::println(named_license_heading);
+                for (auto&& license : named_licenses)
+                {
+                    msg::print(LocalizedString::from_raw(license).append_raw('\n'));
+                }
+            }
+        }
+    }
+
     static ExtendedBuildResult perform_install_plan_action(const VcpkgCmdArguments& args,
                                                            const VcpkgPaths& paths,
                                                            Triplet host_triplet,
@@ -588,6 +609,17 @@ namespace vcpkg
                 args, paths, host_triplet, build_options, action, status_db, binary_cache, build_logs_recorder);
             if (result.code == BuildResult::Succeeded)
             {
+                if (auto scfl = action.source_control_file_and_location.get())
+                {
+                    if (auto license = scfl->source_control_file->core_paragraph->license.get())
+                    {
+                        summary.license_report.named_licenses.insert(*license);
+                    }
+                    else
+                    {
+                        summary.license_report.any_unknown_licenses = true;
+                    }
+                }
             }
             else
             {
@@ -1402,6 +1434,8 @@ namespace vcpkg
 
             fs.write_contents(it_xunit->second, xwriter.build_xml(default_triplet), VCPKG_LINE_INFO);
         }
+
+        summary.license_report.print_license_report(msgPackageLicenseSpdxThisInstall);
 
         if (print_cmake_usage)
         {
