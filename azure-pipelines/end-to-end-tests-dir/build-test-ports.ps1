@@ -21,7 +21,7 @@ if ($output -match 'vcpkg-internal-e2e-test-port3') {
 }
 
 # Note that broken-manifests contains ports that must not be 'visited' while trying to install these
-Run-Vcpkg @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports/overlays" --overlay-ports="$PSScriptRoot/../e2e-ports/broken-manifests" install vcpkg-empty-port
+Run-Vcpkg @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports" --overlay-ports="$PSScriptRoot/../e2e-ports/broken-manifests" install vcpkg-empty-port
 Throw-IfFailed
 Run-Vcpkg @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports" --overlay-ports="$PSScriptRoot/../e2e-ports/broken-manifests" install vcpkg-internal-e2e-test-port
 Throw-IfFailed

@@ -11,10 +11,9 @@ if ($IsLinux) {
     return
 }
 
-
 Write-Trace "test native qualified dependencies"
 
-$commonArgs += @("--overlay-triplets=$PSScriptRoot/../overlay-triplets")
+$commonArgs += @("--x-builtin-ports-root=$PSScriptRoot/../e2e-ports", "--overlay-triplets=$PSScriptRoot/../overlay-triplets")
 
 Run-Vcpkg install @commonArgs --host-triplet $Triplet vcpkg-native-dependency:$Triplet
 Throw-IfFailed

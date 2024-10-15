@@ -3,6 +3,7 @@
 Write-Trace "test manifest features"
 $manifestDir = "$TestingRoot/manifest-dir"
 
+$commonArgs += @("--x-builtin-ports-root=$PSScriptRoot/../e2e-ports")
 $manifestDirArgs = $commonArgs + @("--x-manifest-root=$manifestDir")
 $noDefaultFeatureArgs = $manifestDirArgs + @('--x-no-default-features')
 

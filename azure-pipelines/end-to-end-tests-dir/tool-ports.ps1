@@ -1,6 +1,6 @@
 . $PSScriptRoot/../end-to-end-tests-prelude.ps1
 
-$commonArgs += @("--x-binarysource=clear", "--overlay-triplets=$PSScriptRoot/../overlay-triplets")
+$commonArgs += @("--x-binarysource=clear", "--overlay-ports=$PSScriptRoot/../e2e-ports", "--overlay-triplets=$PSScriptRoot/../overlay-triplets")
 
 $hostTriplet = "$Triplet"
 $env:VCPKG_DEFAULT_HOST_TRIPLET = "$hostTriplet"
