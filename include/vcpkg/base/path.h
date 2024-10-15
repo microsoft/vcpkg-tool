@@ -21,7 +21,8 @@ namespace vcpkg
 
         const char* c_str() const noexcept;
 
-        std::string generic_u8string() const;
+        std::string generic_u8string() const&;
+        std::string generic_u8string() &&;
 
         bool empty() const noexcept;
 
