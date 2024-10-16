@@ -55,7 +55,8 @@ vcpkg-header-only is header-only and can be used from CMake via:
     'vcpkg-header-only',
     'vcpkg-hello-world-1',
     'vcpkg-hello-world-2',
-    'wrong-pkgconfig[header-only-good]'
+    'wrong-pkgconfig[header-only-good]',
+    "--overlay-ports=$PSScriptRoot/../e2e-ports"
 ))
 
 $usage = $usage.Replace("`r`n", "`n")

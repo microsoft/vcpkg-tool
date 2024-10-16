@@ -2,7 +2,7 @@
 
 $CurrentTest = "No absolute paths"
 
-$commonArgs += @("--enforce-port-checks", "--binarysource=clear")
+$commonArgs += @("--enforce-port-checks", "--binarysource=clear", "--x-builtin-ports-root=$PSScriptRoot/../e2e-ports")
 
 Run-Vcpkg @commonArgs install "absolute-paths[hash]"
 Throw-IfNotFailed

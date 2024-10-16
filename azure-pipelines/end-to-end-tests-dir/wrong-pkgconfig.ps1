@@ -2,7 +2,7 @@
 
 $CurrentTest = "Test pkgconfig locations"
 
-$commonArgs += @("--enforce-port-checks", "--binarysource=clear")
+$commonArgs += @("--enforce-port-checks", "--binarysource=clear", "--x-builtin-ports-root=$PSScriptRoot/../e2e-ports")
 
 Run-Vcpkg @commonArgs install "wrong-pkgconfig[header-only-good]"
 Throw-IfFailed
