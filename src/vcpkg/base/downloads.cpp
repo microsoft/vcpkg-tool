@@ -1012,11 +1012,6 @@ namespace vcpkg
                 }
             }
         }
-        // Asset cache is not configured and x-block-origin enabled
-        if (m_config.m_read_url_template.has_value())
-        {
-            msg::println(msgAssetCacheMissBlockOrigin, msg::path = download_path.filename());
-        }
         else
         {
             msg::println_error(msgMissingAssetBlockOrigin, msg::path = download_path.filename());
