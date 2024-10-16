@@ -175,8 +175,6 @@
   "_AssetCacheHit.comment": "An example of {path} is /foo/bar. An example of {url} is https://github.com/microsoft/vcpkg.",
   "AssetCacheMiss": "Asset cache miss; downloading from {url}",
   "_AssetCacheMiss.comment": "An example of {url} is https://github.com/microsoft/vcpkg.",
-  "AssetCacheMissBlockOrigin": "Asset cache miss for {path} and downloads are blocked by x-block-origin.",
-  "_AssetCacheMissBlockOrigin.comment": "x-block-origin is a vcpkg term. Do not translate An example of {path} is /foo/bar.",
   "AssetCacheProviderAcceptsNoArguments": "unexpected arguments: '{value}' does not accept arguments",
   "_AssetCacheProviderAcceptsNoArguments.comment": "{value} is a asset caching provider name such as azurl, clear, or x-block-origin",
   "AssetCacheSuccesfullyStored": "Successfully stored {path} to {url}.",
