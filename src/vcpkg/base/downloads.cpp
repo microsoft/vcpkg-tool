@@ -938,7 +938,7 @@ namespace vcpkg
                 }
                 else
                 {
-                    msg::println(msgAssetCacheMissBlockOrigin,msg::path = download_path.filename());
+                    msg::println(msgAssetCacheMissBlockOrigin, msg::path = download_path.filename());
                 }
             }
             else if (auto script = m_config.m_script.get())
