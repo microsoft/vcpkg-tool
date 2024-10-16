@@ -55,7 +55,6 @@ $actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("install", "vcpkg
 $actual = $actual -replace "`r`n", "`n"
 
 $expected = @(
-"A suitable version of .* was not found \(required v[0-9\.]+\)."
 "Asset cache miss; downloading from .*"
 "Successfully stored .* to .*."
 ) -join "`n"

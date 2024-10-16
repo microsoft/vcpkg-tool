@@ -936,6 +936,11 @@ namespace vcpkg
                                  msg::url = replace_secrets(read_url, m_config.m_secrets));
                     return read_url;
                 }
+                else
+                {
+                    msg::println(msgAssetCacheMissBlockOrigin,
+                                 msg::path = download_path.filename());
+                }
             }
             else if (auto script = m_config.m_script.get())
             {

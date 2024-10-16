@@ -248,6 +248,10 @@ DECLARE_MESSAGE(ArtifactsSwitchX86, (), "", "Forces host detection to x86 when a
 DECLARE_MESSAGE(ArtifactsSwitchWindows, (), "", "Forces host detection to Windows when acquiring artifacts")
 DECLARE_MESSAGE(AssetCacheHit, (msg::path, msg::url), "", "Asset cache hit for {path}; downloaded from: {url}")
 DECLARE_MESSAGE(AssetCacheMiss, (msg::url), "", "Asset cache miss; downloading from {url}")
+DECLARE_MESSAGE(AssetCacheMissBlockOrigin,
+                (msg::path),
+                "x-block-origin is a vcpkg term. Do not translate",
+                "Asset cache miss for {path} and downloads are blocked by x-block-origin.")
 DECLARE_MESSAGE(DownloadingUrl, (msg::url), "", "Downloading {url}")
 DECLARE_MESSAGE(AssetCacheProviderAcceptsNoArguments,
                 (msg::value),
