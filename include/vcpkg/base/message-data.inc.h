@@ -1228,10 +1228,6 @@ DECLARE_MESSAGE(MissingShaVariable,
                 (),
                 "{{sha}} should not be translated",
                 "The {{sha}} variable must be used in the template if other variables are used.")
-DECLARE_MESSAGE(AssetCacheMissBlockOrigin,
-                (msg::path),
-                "x-block-origin is a vcpkg term. Do not translate",
-                "Asset cache miss for {path} and downloads are blocked by x-block-origin.")
 DECLARE_MESSAGE(FailedToExtract, (msg::path), "", "Failed to extract \"{path}\":")
 DECLARE_MESSAGE(FailedToFetchRepo, (msg::url), "", "Failed to fetch {url}.")
 DECLARE_MESSAGE(FailedToFindPortFeature,
