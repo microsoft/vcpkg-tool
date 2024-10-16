@@ -80,6 +80,6 @@ if ($firstMatch -lt 0) {
 Refresh-TestRoot
 $output = Run-VcpkgAndCaptureOutput @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports/overlays" install vcpkg-hello-world-1:x64-no-vcvars
 Throw-IfNotFailed
-if ($output -notmatch 'detecting compiler information') {
+if ($output -notmatch 'Error code: 1') {
     throw 'VCPKG_LOAD_VCVARS_ENV disables calling vcvars'
 }
