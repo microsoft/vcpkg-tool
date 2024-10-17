@@ -24,6 +24,7 @@ namespace vcpkg
         BinaryCachingHttp,
         BinaryCachingNuget,
         BinaryCachingSource,
+        BinaryCachingUpkg,
         ErrorVersioningDisabled,
         ErrorVersioningNoBaseline,
         GitHubRepository,
