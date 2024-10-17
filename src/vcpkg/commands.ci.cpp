@@ -52,11 +52,11 @@ namespace
             (void)filesystem.create_directory(target_path, VCPKG_LINE_INFO);
             if (children.empty())
             {
-                std::string message =
-                    "There are no build logs for " + spec.to_string() +
-                    " build.\n"
-                    "This is usually because the build failed early and outside of a task that is logged.\n"
-                    "See the console output logs from vcpkg for more information on the failure.\n";
+                auto message =
+                    fmt::format("There are no build logs for {} build.\n"
+                                "This is usually because the build failed early and outside of a task that is logged.\n"
+                                "See the console output logs from vcpkg for more information on the failure.\n",
+                                spec);
                 filesystem.write_contents(std::move(target_path) / "readme.log", message, VCPKG_LINE_INFO);
             }
             else
@@ -327,7 +327,6 @@ namespace vcpkg
             CleanDownloads::No,
             DownloadTool::Builtin,
             BackcompatFeatures::Prohibit,
-            PrintUsage::Yes,
             KeepGoing::Yes,
         };
 
@@ -502,7 +501,7 @@ namespace vcpkg
         }
         else
         {
-            StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
+            StatusParagraphs status_db = database_load_collapse(paths.get_filesystem(), paths.installed());
             auto already_installed = adjust_action_plan_to_status_db(action_plan, status_db);
             Util::erase_if(already_installed,
                            [&](auto& spec) { return Util::Sets::contains(split_specs->known, spec); });
@@ -532,7 +531,7 @@ namespace vcpkg
                            .append_raw(' ')
                            .append_raw(target_triplet)
                            .append_raw('\n')
-                           .append(summary.format()));
+                           .append(summary.format_results()));
             const bool any_regressions = print_regressions(summary.results,
                                                            split_specs->known,
                                                            cidata,

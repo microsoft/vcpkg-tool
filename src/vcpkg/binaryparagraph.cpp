@@ -7,9 +7,12 @@
 #include <vcpkg/paragraphparser.h>
 #include <vcpkg/paragraphs.h>
 
+using namespace vcpkg::Paragraphs;
+
 namespace vcpkg
 {
     BinaryParagraph::BinaryParagraph(StringView origin, Paragraph&& fields)
+        : spec(), version(), description(), maintainers(), feature(), default_features(), dependencies(), abi()
     {
         ParagraphParser parser(origin, std::move(fields));
         this->spec = PackageSpec(parser.required_field(ParagraphIdPackage),
@@ -177,15 +180,6 @@ namespace vcpkg
 
     bool operator!=(const BinaryParagraph& lhs, const BinaryParagraph& rhs) { return !(lhs == rhs); }
 
-    static void serialize_string(StringView name, const std::string& field, std::string& out_str)
-    {
-        if (field.empty())
-        {
-            return;
-        }
-
-        out_str.append(name.data(), name.size()).append(": ").append(field).push_back('\n');
-    }
     static void serialize_array(StringView name,
                                 const std::vector<std::string>& array,
                                 std::string& out_str,
@@ -223,9 +217,8 @@ namespace vcpkg
     {
         const size_t initial_end = out_str.size();
 
-        serialize_string(ParagraphIdPackage, pgh.spec.name(), out_str);
-
-        serialize_string(ParagraphIdVersion, pgh.version.text, out_str);
+        append_paragraph_field(ParagraphIdPackage, pgh.spec.name(), out_str);
+        append_paragraph_field(ParagraphIdVersion, pgh.version.text, out_str);
         if (pgh.version.port_version != 0)
         {
             fmt::format_to(std::back_inserter(out_str), "{}: {}\n", ParagraphIdPortVersion, pgh.version.port_version);
@@ -233,23 +226,20 @@ namespace vcpkg
 
         if (pgh.is_feature())
         {
-            serialize_string(ParagraphIdFeature, pgh.feature, out_str);
+            append_paragraph_field(ParagraphIdFeature, pgh.feature, out_str);
         }
 
         if (!pgh.dependencies.empty())
         {
-            serialize_string(ParagraphIdDepends, serialize_deps_list(pgh.dependencies, pgh.spec.triplet()), out_str);
+            append_paragraph_field(
+                ParagraphIdDepends, serialize_deps_list(pgh.dependencies, pgh.spec.triplet()), out_str);
         }
 
-        serialize_string(ParagraphIdArchitecture, pgh.spec.triplet().to_string(), out_str);
-        serialize_string(ParagraphIdMultiArch, "same", out_str);
-
+        append_paragraph_field(ParagraphIdArchitecture, pgh.spec.triplet().to_string(), out_str);
+        append_paragraph_field(ParagraphIdMultiArch, "same", out_str);
         serialize_paragraph(ParagraphIdMaintainer, pgh.maintainers, out_str);
-
-        serialize_string(ParagraphIdAbi, pgh.abi, out_str);
-
+        append_paragraph_field(ParagraphIdAbi, pgh.abi, out_str);
         serialize_paragraph(ParagraphIdDescription, pgh.description, out_str);
-
         serialize_array(ParagraphIdDefaultFeatures, pgh.default_features, out_str);
 
         // sanity check the serialized data
@@ -284,7 +274,7 @@ namespace vcpkg
         return fmt::format(
             "\nspec: \"{}\"\nversion: \"{}\"\nport_version: {}\ndescription: [\"{}\"]\nmaintainers: [\"{}\"]\nfeature: "
             "\"{}\"\ndefault_features: [\"{}\"]\ndependencies: [\"{}\"]\nabi: \"{}\"",
-            paragraph.spec.to_string(),
+            paragraph.spec,
             paragraph.version.text,
             paragraph.version.port_version,
             Strings::join(join_str, paragraph.description),

@@ -209,7 +209,10 @@ namespace vcpkg
     struct FormattedPlan
     {
         bool has_removals = false;
-        LocalizedString text;
+        LocalizedString warning_text;
+        LocalizedString normal_text;
+
+        LocalizedString all_text() const;
     };
 
     FormattedPlan format_plan(const ActionPlan& action_plan, const Path& builtin_ports_dir);
