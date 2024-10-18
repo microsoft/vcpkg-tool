@@ -51,20 +51,25 @@ if ($output -notmatch 'Trailing comma') {
 # Check for msgAlreadyInstalled vs. msgAlreadyInstalledNotHead
 $output = Run-VcpkgAndCaptureOutput @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports" install vcpkg-internal-e2e-test-port3
 Throw-IfFailed
-if ($output -notmatch 'vcpkg-internal-e2e-test-port3:[^ ]+ is already installed') {
+if (-not $output -contains @"
+The following packages are already installed:
+    vcpkg-internal-e2e-test-port3:
+"@) {
     throw 'Wrong already installed message'
 }
 
 $output = Run-VcpkgAndCaptureOutput @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports" install vcpkg-internal-e2e-test-port3 --head
 Throw-IfFailed
-if ($output -notmatch 'vcpkg-internal-e2e-test-port3:[^ ]+ is already installed -- not building from HEAD') {
+if (-not $output -contains @"
+The following packages are already installed, but were requested at --head version. Their installed contents will not be changed. To get updated versions, remove these packages first:
+    vcpkg-internal-e2e-test-port3:
+"@) {
     throw 'Wrong already installed message for --head'
 }
 
 Refresh-TestRoot
 $output = Run-VcpkgAndCaptureOutput @commonArgs --x-builtin-ports-root="$PSScriptRoot/../e2e-ports" install vcpkg-bad-spdx-license
 Throw-IfFailed
-$output = $output.Replace("`r`n", "`n")
 $expected = @"
 vcpkg.json: warning: $.license (an SPDX license expression): warning: Unknown license identifier 'BSD-new'. Known values are listed at https://spdx.org/licenses/
   on expression: BSD-new

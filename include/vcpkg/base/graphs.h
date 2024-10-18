@@ -16,7 +16,6 @@ namespace vcpkg
     struct AdjacencyProvider
     {
         virtual std::vector<V> adjacency_list(const U& vertex) const = 0;
-        virtual std::string to_string(const V& vertex) const = 0;
         virtual U load_vertex_data(const V& vertex) const = 0;
     };
 

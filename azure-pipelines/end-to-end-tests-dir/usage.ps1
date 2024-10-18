@@ -59,8 +59,6 @@ vcpkg-header-only is header-only and can be used from CMake via:
     "--overlay-ports=$PSScriptRoot/../e2e-ports"
 ))
 
-$usage = $usage.Replace("`r`n", "`n")
-
 foreach ($requiredUsage in $requiredUsages) {
     if (-Not $usage.Contains($requiredUsage)) {
         throw "The usage text didn't contain the required entry:`n$requiredUsage"

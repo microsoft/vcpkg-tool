@@ -812,10 +812,12 @@ namespace
                 auto maybe_json = Json::parse_object(*p, m_url);
                 if (auto json = maybe_json.get())
                 {
-                    auto archive_location = json->get(JsonIdArchiveCapitalLocation);
-                    if (archive_location && archive_location->is_string())
+                    if (auto archive_location = json->get(JsonIdArchiveCapitalLocation))
                     {
-                        return archive_location->string(VCPKG_LINE_INFO).to_string();
+                        if (auto archive_location_string = archive_location->maybe_string())
+                        {
+                            return *archive_location_string;
+                        }
                     }
                 }
             }

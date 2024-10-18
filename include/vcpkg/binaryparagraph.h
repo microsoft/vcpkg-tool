@@ -8,9 +8,7 @@
 
 namespace vcpkg
 {
-    /// <summary>
-    /// Built package metadata
-    /// </summary>
+    // metadata for a package in the 'packages' tree
     struct BinaryParagraph
     {
         BinaryParagraph() = default;
