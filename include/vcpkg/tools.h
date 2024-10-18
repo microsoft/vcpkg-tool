@@ -23,6 +23,7 @@ namespace vcpkg
         static constexpr StringLiteral GIT = "git";
         static constexpr StringLiteral GSUTIL = "gsutil";
         static constexpr StringLiteral AWSCLI = "aws";
+        static constexpr StringLiteral AZCLI = "az";
         static constexpr StringLiteral COSCLI = "coscli";
         static constexpr StringLiteral MONO = "mono";
         static constexpr StringLiteral NINJA = "ninja";
@@ -44,6 +45,11 @@ namespace vcpkg
         virtual const Path& get_tool_path(StringView tool, MessageSink& status_sink) const = 0;
         virtual const std::string& get_tool_version(StringView tool, MessageSink& status_sink) const = 0;
     };
+
+    ExpectedL<std::string> extract_prefixed_nonquote(StringLiteral prefix,
+                                                     StringLiteral tool_name,
+                                                     std::string&& output,
+                                                     const Path& exe_path);
 
     ExpectedL<std::string> extract_prefixed_nonwhitespace(StringLiteral prefix,
                                                           StringLiteral tool_name,
