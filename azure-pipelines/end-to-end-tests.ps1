@@ -77,8 +77,9 @@ $VcpkgItem = Get-Item $VcpkgExe
 $VcpkgExe = $VcpkgItem.FullName
 $VcpkgPs1 = Join-Path $VcpkgItem.Directory "vcpkg-shell.ps1"
 $TestScriptAssetCacheExe = Join-Path $VcpkgItem.Directory "test-script-asset-cache"
+$TestSuitesDir = Join-Path $PSScriptRoot "end-to-end-tests-dir"
 
-[Array]$AllTests = Get-ChildItem -LiteralPath "$PSScriptRoot/end-to-end-tests-dir" -Filter "*.ps1" | Sort-Object -Property Name
+[System.IO.FileInfo[]]$AllTests = Get-ChildItem -LiteralPath $TestSuitesDir -File -Filter "*.ps1" | Sort-Object -Property Name
 if ($Filter -ne $null) {
     $AllTests = $AllTests | ? { $_.Name -match $Filter }
 }
@@ -109,7 +110,8 @@ for ($n = 1; $n -le $allTestsCount; $n++)
         if ($StartAt.Equals($TestName, [System.StringComparison]::OrdinalIgnoreCase)) {
             $StartAt = [string]::Empty
         } else {
-            Write-Host -ForegroundColor Green "[end-to-end-tests.ps1] [$n/$allTestsCount] Suite $Test skipped by -StartAt"
+            $testDisplayName = [System.IO.Path]::GetRelativePath($TestSuitesDir, $Test.FullName)
+            Write-Host -ForegroundColor Green "[end-to-end-tests.ps1] [$n/$allTestsCount] Suite $testDisplayName skipped by -StartAt"
             continue
         }
     }
@@ -126,6 +128,7 @@ for ($n = 1; $n -le $allTestsCount; $n++)
         $envbackup[$var] = [System.Environment]::GetEnvironmentVariable($var)
     }
 
+    $lastTestStatus = $null
     try
     {
         foreach ($var in $envvars_clear)
@@ -136,7 +139,16 @@ for ($n = 1; $n -le $allTestsCount; $n++)
             }
         }
         $env:VCPKG_ROOT = $VcpkgRoot
-        & $Test
+        if ($Test.Name -match '.+\.Test\.ps1$') {
+            Invoke-Pester -Output:Detailed -Path $Test
+        }
+        else {
+            & $Test
+        }
+        $lastTestStatus = $?
+    }
+    catch {
+        throw $_
     }
     finally
     {
@@ -158,7 +170,12 @@ for ($n = 1; $n -le $allTestsCount; $n++)
     if ($env:GITHUB_ACTIONS) {
         Write-Host "::endgroup::"
     }
+
+    if ($lastTestStatus -ne $true)
+    {
+        Write-Host -ForegroundColor Red "[end-to-end-tests.ps1] Suite failed: $Test"
+        throw 'Test failed'
+    }
 }
 
 Write-Host -ForegroundColor Green "[end-to-end-tests.ps1] All tests passed."
-$global:LASTEXITCODE = 0
