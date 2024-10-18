@@ -2148,6 +2148,10 @@ DECLARE_MESSAGE(NonRangeArgs,
                 "{actual} is an integer",
                 "the command '{command_name}' requires between {lower} and {upper} arguments, inclusive, but {actual} "
                 "were provided")
+DECLARE_MESSAGE(NonRangeArgsGreater,
+                (msg::command_name, msg::lower, msg::actual),
+                "{actual} is an integer",
+                "the command '{command_name}' requires at least {lower} arguments, but {actual} were provided")
 DECLARE_MESSAGE(NonZeroOrOneRemainingArgs,
                 (msg::command_name),
                 "",
