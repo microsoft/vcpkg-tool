@@ -727,7 +727,7 @@ TEST_CASE ("spdx license parse edge cases", "[spdx]")
   ]
 })json";
 
-    CHECK(!read_spdx_license(wrong_packages_type, "test").has_value());
+    CHECK(!read_spdx_license(wrong_packages_zero_type, "test").has_value());
 
     static constexpr StringLiteral missing_license_block = R"json(
 {
