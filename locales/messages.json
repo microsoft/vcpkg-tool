@@ -1187,6 +1187,8 @@
   "_NonOneRemainingArgs.comment": "An example of {command_name} is install.",
   "NonRangeArgs": "the command '{command_name}' requires between {lower} and {upper} arguments, inclusive, but {actual} were provided",
   "_NonRangeArgs.comment": "{actual} is an integer An example of {command_name} is install. An example of {lower} is 42. An example of {upper} is 42.",
+  "NonRangeArgsGreater": "the command '{command_name}' requires at least {lower} arguments, but {actual} were provided",
+  "_NonRangeArgsGreater.comment": "{actual} is an integer An example of {command_name} is install. An example of {lower} is 42.",
   "NonZeroOrOneRemainingArgs": "the command '{command_name}' requires zero or one arguments",
   "_NonZeroOrOneRemainingArgs.comment": "An example of {command_name} is install.",
   "NonZeroRemainingArgs": "the command '{command_name}' does not accept any additional arguments",
