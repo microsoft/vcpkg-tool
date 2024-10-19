@@ -97,6 +97,7 @@ TEST_CASE ("manifest construct minimum", "[manifests]")
     REQUIRE(pgh.to_name() == "zlib");
     REQUIRE(pgh.to_version_scheme() == VersionScheme::String);
     REQUIRE(pgh.to_version() == Version{"1.2.8", 0});
+    REQUIRE(pgh.core_paragraph->depend_defaults == true);
     REQUIRE(pgh.core_paragraph->maintainers.empty());
     REQUIRE(pgh.core_paragraph->contacts.is_empty());
     REQUIRE(pgh.core_paragraph->summary.empty());
@@ -1058,6 +1059,68 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
     REQUIRE(*pgh.feature_paragraphs[1]->license.get() == "MIT");
 
     check_json_eq_ordered(serialize_manifest(pgh), object);
+}
+
+TEST_CASE ("SourceParagraph manifest depend-default", "[manifests]")
+{
+    auto json = parse_json_object(R"json({
+        "name": "zlib",
+        "version-string": "1.2.8",
+        "depend-defaults": false,
+        "dependencies": [
+            "y",
+            {"name": "z", "host": true},
+            {"name": "z2", "host": true, "default-features": true}
+        ],
+        "features": {
+            "t": {
+                "description": "",
+                "dependencies": ["z"]
+            }
+        }
+    })json");
+    SECTION ("depend-defaults: false")
+    {
+        auto m_pgh = test_parse_port_manifest(json);
+        REQUIRE(m_pgh.has_value());
+        auto& pgh = **m_pgh.get();
+        REQUIRE(pgh.core_paragraph->depend_defaults == false);
+        REQUIRE(pgh.core_paragraph->dependencies.size() == 3);
+        REQUIRE(pgh.core_paragraph->dependencies[0].name == "y");
+        REQUIRE(pgh.core_paragraph->dependencies[0].default_features == false);
+        REQUIRE(pgh.core_paragraph->dependencies[1].name == "z");
+        REQUIRE(pgh.core_paragraph->dependencies[1].default_features == false);
+        REQUIRE(pgh.core_paragraph->dependencies[2].name == "z2");
+        REQUIRE(pgh.core_paragraph->dependencies[2].default_features == true);
+
+        REQUIRE(pgh.feature_paragraphs.size() == 1);
+        REQUIRE(pgh.feature_paragraphs[0]->dependencies[0].name == "z");
+        REQUIRE(pgh.feature_paragraphs[0]->dependencies[0].default_features == false);
+        check_json_eq_ordered(serialize_manifest(pgh), json);
+    }
+    SECTION ("depend-defaults: true")
+    {
+        json.remove("depend-defaults");
+        json["dependencies"].array(VCPKG_LINE_INFO)[2].object(VCPKG_LINE_INFO)["default-features"] =
+            Json::Value::boolean(false);
+        auto m_pgh = test_parse_port_manifest(json);
+        REQUIRE(m_pgh.has_value());
+        auto& pgh = **m_pgh.get();
+
+        REQUIRE(pgh.core_paragraph->depend_defaults == true);
+        REQUIRE(pgh.core_paragraph->dependencies.size() == 3);
+        REQUIRE(pgh.core_paragraph->dependencies[0].name == "y");
+        REQUIRE(pgh.core_paragraph->dependencies[0].default_features == true);
+        REQUIRE(pgh.core_paragraph->dependencies[1].name == "z");
+        REQUIRE(pgh.core_paragraph->dependencies[1].default_features == true);
+        REQUIRE(pgh.core_paragraph->dependencies[2].name == "z2");
+        REQUIRE(pgh.core_paragraph->dependencies[2].default_features == false);
+
+        REQUIRE(pgh.feature_paragraphs.size() == 1);
+        REQUIRE(pgh.feature_paragraphs[0]->dependencies[0].name == "z");
+        REQUIRE(pgh.feature_paragraphs[0]->dependencies[0].default_features == true);
+        check_json_eq_ordered(serialize_manifest(pgh), json);
+    }
 }
 
 TEST_CASE ("SourceParagraph manifest two dependencies", "[manifests]")
