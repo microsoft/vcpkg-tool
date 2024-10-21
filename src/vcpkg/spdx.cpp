@@ -24,9 +24,9 @@ static void append_move_if_exists_and_array(Json::Array& out, Json::Object& obj,
 {
     if (auto p = obj.get(property))
     {
-        if (p->is_array())
+        if (auto arr = p->maybe_array())
         {
-            for (auto& e : p->array(VCPKG_LINE_INFO))
+            for (auto& e : *arr)
             {
                 out.push_back(std::move(e));
             }

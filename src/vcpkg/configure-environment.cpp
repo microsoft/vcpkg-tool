@@ -42,30 +42,32 @@ namespace
             return;
         }
 
-        auto acquired_artifacts = pparsed->get(JsonIdAcquiredArtifacts);
-        if (acquired_artifacts)
+        if (auto acquired_artifacts = pparsed->get(JsonIdAcquiredArtifacts))
         {
-            if (acquired_artifacts->is_string())
+            if (auto maybe_acquired_string = acquired_artifacts->maybe_string())
             {
-                get_global_metrics_collector().track_string(StringMetric::AcquiredArtifacts,
-                                                            acquired_artifacts->string(VCPKG_LINE_INFO));
+                get_global_metrics_collector().track_string(StringMetric::AcquiredArtifacts, *maybe_acquired_string);
             }
-            Debug::println("Acquired artifacts was not a string.");
+            else
+            {
+                Debug::println("Acquired artifacts was not a string.");
+            }
         }
         else
         {
             Debug::println("No artifacts acquired.");
         }
 
-        auto activated_artifacts = pparsed->get(JsonIdActivatedArtifacts);
-        if (activated_artifacts)
+        if (auto activated_artifacts = pparsed->get(JsonIdActivatedArtifacts))
         {
-            if (activated_artifacts->is_string())
+            if (auto maybe_activated_string = activated_artifacts->maybe_string())
             {
-                get_global_metrics_collector().track_string(StringMetric::ActivatedArtifacts,
-                                                            activated_artifacts->string(VCPKG_LINE_INFO));
+                get_global_metrics_collector().track_string(StringMetric::ActivatedArtifacts, *maybe_activated_string);
             }
-            Debug::println("Activated artifacts was not a string.");
+            else
+            {
+                Debug::println("Activated artifacts was not a string.");
+            }
         }
         else
         {

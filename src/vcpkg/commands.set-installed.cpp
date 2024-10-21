@@ -50,8 +50,12 @@ namespace vcpkg
     Optional<Json::Object> create_dependency_graph_snapshot(const VcpkgCmdArguments& args,
                                                             const ActionPlan& action_plan)
     {
-        if (args.github_ref.has_value() && args.github_sha.has_value() && args.github_job.has_value() &&
-            args.github_workflow.has_value() && args.github_run_id.has_value())
+        const auto github_ref = args.github_ref.get();
+        const auto github_sha = args.github_sha.get();
+        const auto github_job = args.github_job.get();
+        const auto github_workflow = args.github_workflow.get();
+        const auto github_run_id = args.github_run_id.get();
+        if (github_ref && github_sha && github_job && github_workflow && github_run_id)
         {
             Json::Object detector;
             detector.insert(JsonIdName, Json::Value::string("vcpkg"));
@@ -59,15 +63,14 @@ namespace vcpkg
             detector.insert(JsonIdVersion, Json::Value::string("1.0.0"));
 
             Json::Object job;
-            job.insert(JsonIdId, Json::Value::string(*args.github_run_id.get()));
-            job.insert(JsonIdCorrelator,
-                       Json::Value::string(*args.github_workflow.get() + "-" + *args.github_job.get()));
+            job.insert(JsonIdId, Json::Value::string(*github_run_id));
+            job.insert(JsonIdCorrelator, Json::Value::string(fmt::format("{}-{}", *github_workflow, *github_run_id)));
 
             Json::Object snapshot;
             snapshot.insert(JsonIdJob, job);
             snapshot.insert(JsonIdVersion, Json::Value::integer(0));
-            snapshot.insert(JsonIdSha, Json::Value::string(*args.github_sha.get()));
-            snapshot.insert(JsonIdRef, Json::Value::string(*args.github_ref.get()));
+            snapshot.insert(JsonIdSha, Json::Value::string(*github_sha));
+            snapshot.insert(JsonIdRef, Json::Value::string(*github_ref));
             snapshot.insert(JsonIdScanned, Json::Value::string(CTime::now_string()));
             snapshot.insert(JsonIdDetector, detector);
 
@@ -77,44 +80,45 @@ namespace vcpkg
             std::unordered_map<std::string, std::string> map;
             for (auto&& action : action_plan.install_actions)
             {
-                if (!action.source_control_file_and_location.has_value())
+                const auto scfl = action.source_control_file_and_location.get();
+                if (!scfl)
                 {
                     return nullopt;
                 }
-                const auto& scf = *action.source_control_file_and_location.get();
-                auto version = scf.to_version().to_string();
-                auto s = action.spec.to_string();
-                auto pkg_url = Strings::concat("pkg:github/vcpkg/", s, "@", version);
-                map.insert({s, pkg_url});
+                auto spec = action.spec.to_string();
+                map.insert(
+                    {spec, fmt::format("pkg:github/vcpkg/{}@{}", spec, scfl->source_control_file->to_version())});
             }
 
             Json::Object resolved;
             for (auto&& action : action_plan.install_actions)
             {
                 Json::Object resolved_item;
-                if (map.find(action.spec.to_string()) != map.end())
+                auto spec = action.spec.to_string();
+                const auto found = map.find(spec);
+                if (found != map.end())
                 {
-                    auto pkg_url = map.at(action.spec.to_string());
+                    const auto& pkg_url = found->second;
                     resolved_item.insert(JsonIdPackageUnderscoreUrl, pkg_url);
                     resolved_item.insert(JsonIdRelationship, Json::Value::string(JsonIdDirect));
                     Json::Array deps_list;
                     for (auto&& dep : action.package_dependencies)
                     {
-                        if (map.find(dep.to_string()) != map.end())
+                        const auto found_dep = map.find(dep.to_string());
+                        if (found_dep != map.end())
                         {
-                            auto dep_pkg_url = map.at(dep.to_string());
-                            deps_list.push_back(dep_pkg_url);
+                            deps_list.push_back(found_dep->second);
                         }
                     }
                     resolved_item.insert(JsonIdDependencies, deps_list);
                     resolved.insert(pkg_url, resolved_item);
                 }
             }
+
             manifest.insert(JsonIdResolved, resolved);
             Json::Object manifests;
             manifests.insert(JsonIdVcpkgDotJson, manifest);
             snapshot.insert(JsonIdManifests, manifests);
-
             Debug::print(Json::stringify(snapshot));
             return snapshot;
         }
