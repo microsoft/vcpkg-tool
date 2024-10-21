@@ -381,12 +381,12 @@ TEST_CASE ("metadata dictionaries", "[ce-metadata]")
     }
 })json";
         check_errors(invalid_raw, R"(
-test: error: $ (settings): expected an object
-test: error: $.requires (a "string": "string" dictionary): value of ["fruits/a/apple"] must be a string
-test: error: $.requires (a "string": "string" dictionary): value of ["fruits/a/avocado"] must be a string
-test: error: $.demands (settings): expected an object
-test: error: $.demands.requires (a "string": "string" dictionary): value of ["fruits/a/apple"] must be a string
-test: error: $.demands.requires (a "string": "string" dictionary): value of ["fruits/a/avocado"] must be a string
+test: error: $.settings: mismatched type: expected a vcpkg-artifacts metadata object
+test: error: $.requires.fruits/a/apple: mismatched type: expected a string
+test: error: $.requires.fruits/a/avocado: mismatched type: expected a string
+test: error: $.demands.nested.settings: mismatched type: expected a vcpkg-artifacts metadata object
+test: error: $.demands.nested.requires.fruits/a/apple: mismatched type: expected a string
+test: error: $.demands.nested.requires.fruits/a/avocado: mismatched type: expected a string
 )");
     }
 }
@@ -454,12 +454,12 @@ TEST_CASE ("metadata demands", "[ce-metadata]")
     }
 })json";
         check_errors(invalid_raw, R"(
-test: error: $.demands (a demand object): value of ["a"] must be an object
-test: error: $.demands (a demand object): value of ["b"] must be an object
-test: error: $.demands (a demand object): value of ["c"] must be an object
-test: error: $.demands (a demand object): value of ["d"] must be an object
-test: error: $.demands (a demand object): value of ["e"] must be an object
-test: error: $.demands (a demand object): ["f"] contains a nested `demands` object (nested `demands` have no effect)
+test: error: $.demands.a: mismatched type: expected a vcpkg-artifacts metadata object
+test: error: $.demands.b: mismatched type: expected a vcpkg-artifacts metadata object
+test: error: $.demands.c: mismatched type: expected a vcpkg-artifacts metadata object
+test: error: $.demands.d: mismatched type: expected a vcpkg-artifacts metadata object
+test: error: $.demands.e: mismatched type: expected a vcpkg-artifacts metadata object
+test: error: $.demands.f (a vcpkg-artifacts metadata object): unexpected field 'demands'
 )");
     }
 }
