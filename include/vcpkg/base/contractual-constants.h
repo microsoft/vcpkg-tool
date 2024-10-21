@@ -558,4 +558,14 @@ namespace vcpkg
     inline constexpr StringLiteral AbiTagPostBuildChecks = "post_build_checks";
     inline constexpr StringLiteral AbiTagPowershell = "powershell";
     inline constexpr StringLiteral AbiTagPublicAbiOverride = "public_abi_override";
+
+    inline constexpr StringLiteral StatusDeinstall = "deinstall";
+    inline constexpr StringLiteral StatusError = "error";
+    inline constexpr StringLiteral StatusHalfInstalled = "half-installed";
+    inline constexpr StringLiteral StatusHold = "hold";
+    inline constexpr StringLiteral StatusInstall = "install";
+    inline constexpr StringLiteral StatusInstalled = "installed";
+    inline constexpr StringLiteral StatusNotInstalled = "not-installed";
+    inline constexpr StringLiteral StatusPurge = "purge";
+    inline constexpr StringLiteral StatusUnknown = "unknown";
 }

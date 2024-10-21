@@ -9,11 +9,13 @@ namespace vcpkg
 
     void serialize(const StatusParagraph& pgh, std::string& out_str)
     {
+        auto want_literal = to_string_literal(pgh.want);
+        auto state_literal = to_string_literal(pgh.state);
         serialize(pgh.package, out_str);
         out_str.append("Status: ")
-            .append(to_string(pgh.want))
+            .append(want_literal.data(), want_literal.size())
             .append(" ok ")
-            .append(to_string(pgh.state))
+            .append(state_literal.data(), state_literal.size())
             .push_back('\n');
     }
 
@@ -36,11 +38,11 @@ namespace vcpkg
             ++b;
 
         want = [](const std::string& text) {
-            if (text == "unknown") return Want::UNKNOWN;
-            if (text == "install") return Want::INSTALL;
-            if (text == "hold") return Want::HOLD;
-            if (text == "deinstall") return Want::DEINSTALL;
-            if (text == "purge") return Want::PURGE;
+            if (text == StatusUnknown) return Want::UNKNOWN;
+            if (text == StatusInstall) return Want::INSTALL;
+            if (text == StatusHold) return Want::HOLD;
+            if (text == StatusDeinstall) return Want::DEINSTALL;
+            if (text == StatusPurge) return Want::PURGE;
             return Want::ERROR_STATE;
         }(std::string(mark, b));
 
@@ -48,47 +50,47 @@ namespace vcpkg
         b += 4;
 
         state = [](const std::string& text) {
-            if (text == "not-installed") return InstallState::NOT_INSTALLED;
-            if (text == "installed") return InstallState::INSTALLED;
-            if (text == "half-installed") return InstallState::HALF_INSTALLED;
+            if (text == StatusNotInstalled) return InstallState::NOT_INSTALLED;
+            if (text == StatusInstalled) return InstallState::INSTALLED;
+            if (text == StatusHalfInstalled) return InstallState::HALF_INSTALLED;
             return InstallState::ERROR_STATE;
         }(std::string(b, e));
     }
 
-    std::string to_string(InstallState f)
+    StringLiteral to_string_literal(InstallState f)
     {
         switch (f)
         {
-            case InstallState::HALF_INSTALLED: return "half-installed";
-            case InstallState::INSTALLED: return "installed";
-            case InstallState::NOT_INSTALLED: return "not-installed";
-            default: return "error";
+            case InstallState::HALF_INSTALLED: return StatusHalfInstalled;
+            case InstallState::INSTALLED: return StatusInstalled;
+            case InstallState::NOT_INSTALLED: return StatusNotInstalled;
+            default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
 
-    std::string to_string(Want f)
+    StringLiteral to_string_literal(Want f)
     {
         switch (f)
         {
-            case Want::DEINSTALL: return "deinstall";
-            case Want::HOLD: return "hold";
-            case Want::INSTALL: return "install";
-            case Want::PURGE: return "purge";
-            case Want::UNKNOWN: return "unknown";
-            default: return "error";
+            case Want::DEINSTALL: return StatusDeinstall;
+            case Want::HOLD: return StatusHold;
+            case Want::INSTALL: return StatusInstall;
+            case Want::PURGE: return StatusPurge;
+            case Want::UNKNOWN: return StatusUnknown;
+            default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
 
     std::map<std::string, std::vector<FeatureSpec>> InstalledPackageView::feature_dependencies() const
     {
-        auto extract_deps = [&](const PackageSpec& spec) { return FeatureSpec{spec, FeatureNameCore.to_string()}; };
+        auto extract_deps = [](const PackageSpec& spec) { return FeatureSpec{spec, FeatureNameCore}; };
 
         std::map<std::string, std::vector<FeatureSpec>> deps;
-
         deps.emplace(FeatureNameCore, Util::fmap(core->package.dependencies, extract_deps));
-
-        for (const StatusParagraph* const& feature : features)
+        for (const StatusParagraph* feature : features)
+        {
             deps.emplace(feature->package.feature, Util::fmap(feature->package.dependencies, extract_deps));
+        }
 
         return deps;
     }
@@ -97,10 +99,11 @@ namespace vcpkg
     {
         InternalFeatureSet ret;
         ret.emplace_back(FeatureNameCore);
-        for (const auto& f : features)
+        for (const StatusParagraph* f : features)
         {
             ret.emplace_back(f->package.feature);
         }
+
         return ret;
     }
 
@@ -111,18 +114,23 @@ namespace vcpkg
         // accumulate all features in installed dependencies
         // Todo: make this unneeded by collapsing all package dependencies into the core package
         std::vector<PackageSpec> deps;
-        for (auto&& feature : features)
+        for (const StatusParagraph* feature : features)
+        {
             for (auto&& dep : feature->package.dependencies)
+            {
                 deps.push_back(dep);
+            }
+        }
 
         // Add the core paragraph dependencies to the list
         for (auto&& dep : core->package.dependencies)
+        {
             deps.push_back(dep);
+        }
 
-        auto this_spec = this->spec();
+        const auto& this_spec = this->spec();
         Util::erase_remove_if(deps, [this_spec](const PackageSpec& pspec) { return pspec == this_spec; });
         Util::sort_unique_erase(deps);
-
         return deps;
     }
 

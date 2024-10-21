@@ -59,11 +59,11 @@ static StringView extract_cmake_invocation_argument(StringView command, StringVi
 }
 
 static Json::Object make_resource(
-    std::string spdxid, std::string name, std::string downloadLocation, StringView sha512, StringView filename)
+    std::string spdxid, StringView name, std::string downloadLocation, StringView sha512, StringView filename)
 {
     Json::Object obj;
     obj.insert(SpdxSpdxId, std::move(spdxid));
-    obj.insert(JsonIdName, std::move(name));
+    obj.insert(JsonIdName, name.to_string());
     if (!filename.empty())
     {
         obj.insert(SpdxPackageFileName, filename);
@@ -97,7 +97,7 @@ Json::Value vcpkg::run_resource_heuristics(StringView contents, StringView versi
         auto sha = extract_cmake_invocation_argument(github, CMakeVariableSHA512);
 
         packages.push_back(make_resource(fmt::format("SPDXRef-resource-{}", ++n),
-                                         repo.to_string(),
+                                         repo,
                                          fmt::format("git+https://github.com/{}@{}", repo, ref),
                                          sha,
                                          {}));
@@ -107,8 +107,8 @@ Json::Value vcpkg::run_resource_heuristics(StringView contents, StringView versi
     {
         auto url = extract_cmake_invocation_argument(github, CMakeVariableUrl);
         auto ref = fix_ref_version(extract_cmake_invocation_argument(github, CMakeVariableRef), version_text);
-        packages.push_back(make_resource(
-            fmt::format("SPDXRef-resource-{}", ++n), url.to_string(), fmt::format("git+{}@{}", url, ref), {}, {}));
+        packages.push_back(
+            make_resource(fmt::format("SPDXRef-resource-{}", ++n), url, fmt::format("git+{}@{}", url, ref), {}, {}));
     }
     auto distfile = find_cmake_invocation(contents, "vcpkg_download_distfile");
     if (!distfile.empty())
@@ -116,8 +116,8 @@ Json::Value vcpkg::run_resource_heuristics(StringView contents, StringView versi
         auto url = extract_cmake_invocation_argument(distfile, CMakeVariableUrls);
         auto filename = extract_cmake_invocation_argument(distfile, CMakeVariableFilename);
         auto sha = extract_cmake_invocation_argument(distfile, CMakeVariableSHA512);
-        packages.push_back(make_resource(
-            fmt::format("SPDXRef-resource-{}", ++n), filename.to_string(), url.to_string(), sha, filename));
+        packages.push_back(
+            make_resource(fmt::format("SPDXRef-resource-{}", ++n), filename, url.to_string(), sha, filename));
     }
     auto sfg = find_cmake_invocation(contents, "vcpkg_from_sourceforge");
     if (!sfg.empty())
@@ -126,9 +126,9 @@ Json::Value vcpkg::run_resource_heuristics(StringView contents, StringView versi
         auto ref = fix_ref_version(extract_cmake_invocation_argument(sfg, CMakeVariableRef), version_text);
         auto filename = extract_cmake_invocation_argument(sfg, CMakeVariableFilename);
         auto sha = extract_cmake_invocation_argument(sfg, CMakeVariableSHA512);
-        auto url = Strings::concat("https://sourceforge.net/projects/", repo, "/files/", ref, '/', filename);
-        packages.push_back(make_resource(
-            fmt::format("SPDXRef-resource-{}", ++n), filename.to_string(), std::move(url), sha, filename));
+        auto url = fmt::format("https://sourceforge.net/projects/{}/files/{}/{}", repo, ref, filename);
+        packages.push_back(
+            make_resource(fmt::format("SPDXRef-resource-{}", ++n), filename, std::move(url), sha, filename));
     }
     return Json::Value::object(std::move(ret));
 }
@@ -156,7 +156,7 @@ std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
     doc.insert(SpdxDataLicense, SpdxCCZero);
     doc.insert(SpdxSpdxId, SpdxRefDocument);
     doc.insert(SpdxDocumentNamespace, std::move(document_namespace));
-    doc.insert(JsonIdName, Strings::concat(action.spec.to_string(), '@', cpgh.version.to_string(), ' ', abi));
+    doc.insert(JsonIdName, fmt::format("{}@{} {}", action.spec, cpgh.version, abi));
     {
         auto& cinfo = doc.insert(SpdxCreationInfo, Json::Object());
         auto& creators = cinfo.insert(JsonIdCreators, Json::Array());
