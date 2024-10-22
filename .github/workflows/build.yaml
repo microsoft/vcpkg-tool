@@ -18,6 +18,10 @@ jobs:
             preset: linux-ci
           - os: macos-12
             preset: macos-ci
+          - os: macos-14-large
+            preset: macos-ci # x86_64
+          - os: macos-14
+            preset: macos-ci # arm64
     runs-on: ${{ matrix.os }}
     timeout-minutes: 120
     steps:
