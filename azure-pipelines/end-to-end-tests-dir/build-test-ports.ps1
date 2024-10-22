@@ -51,19 +51,14 @@ if ($output -notmatch 'Trailing comma') {
 # Check for msgAlreadyInstalled vs. msgAlreadyInstalledNotHead
 $output = Run-VcpkgAndCaptureOutput @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports" install vcpkg-internal-e2e-test-port3
 Throw-IfFailed
-if (-not $output -contains @"
+Throw-IfNonContains -Actual $output -Expected @"
 The following packages are already installed:
     vcpkg-internal-e2e-test-port3:
-"@) {
-    throw 'Wrong already installed message'
-}
+"@
 
 $output = Run-VcpkgAndCaptureOutput @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports" install vcpkg-internal-e2e-test-port3 --head
 Throw-IfFailed
-if (-not $output -contains @"
-The following packages are already installed, but were requested at --head version. Their installed contents will not be changed. To get updated versions, remove these packages first:
-    vcpkg-internal-e2e-test-port3:
-"@) {
+if ($output -notmatch 'vcpkg-internal-e2e-test-port3:[^ ]+ is already installed -- not building from HEAD') {
     throw 'Wrong already installed message for --head'
 }
 
