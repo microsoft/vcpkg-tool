@@ -906,7 +906,7 @@ namespace vcpkg
     {
         std::vector<LocalizedString> errors;
         bool block_origin_enabled = m_config.m_block_origin;
-        
+
         if (urls.size() == 0)
         {
             if (auto hash = sha512.get())
@@ -938,7 +938,7 @@ namespace vcpkg
                                  msg::url = replace_secrets(read_url, m_config.m_secrets));
                     return read_url;
                 }
-                else if(block_origin_enabled)
+                else if (block_origin_enabled)
                 {
                     msg::println(msgAssetCacheMissBlockOrigin, msg::path = download_path.filename());
                 }
