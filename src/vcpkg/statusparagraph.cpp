@@ -116,17 +116,11 @@ namespace vcpkg
         std::vector<PackageSpec> deps;
         for (const StatusParagraph* feature : features)
         {
-            for (auto&& dep : feature->package.dependencies)
-            {
-                deps.push_back(dep);
-            }
+            Util::Vectors::append(deps, feature->package.dependencies);
         }
 
         // Add the core paragraph dependencies to the list
-        for (auto&& dep : core->package.dependencies)
-        {
-            deps.push_back(dep);
-        }
+        Util::Vectors::append(deps, core->package.dependencies);
 
         const auto& this_spec = this->spec();
         Util::erase_remove_if(deps, [this_spec](const PackageSpec& pspec) { return pspec == this_spec; });
