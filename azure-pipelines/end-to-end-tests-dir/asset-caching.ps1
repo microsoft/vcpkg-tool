@@ -59,7 +59,7 @@ $expected = @(
 ) -join "`n"
 
 if (-not ($actual -match $expected)) {
-    throw "Failure: expected: $expected,\n actual: $actual"
+    throw "Failure: asset cache miss (configured) + x-block-origin disabled"
 }
 
 # Testing asset cache hit
