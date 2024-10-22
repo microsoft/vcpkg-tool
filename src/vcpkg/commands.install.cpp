@@ -1240,16 +1240,16 @@ namespace vcpkg
             auto verprovider = make_versioned_portfile_provider(*registry_set);
             auto baseprovider = make_baseline_provider(*registry_set);
 
-            std::vector<std::string> extended_overlay_ports;
+            std::vector<Path> extended_overlay_ports;
             extended_overlay_ports.reserve(paths.overlay_ports.size() + add_builtin_ports_directory_as_overlay);
             extended_overlay_ports = paths.overlay_ports;
             if (add_builtin_ports_directory_as_overlay)
             {
-                extended_overlay_ports.emplace_back(paths.builtin_ports_directory().native());
+                extended_overlay_ports.emplace_back(paths.builtin_ports_directory());
             }
 
-            auto oprovider = make_manifest_provider(
-                fs, paths.original_cwd, extended_overlay_ports, manifest->path, std::move(manifest_scf));
+            auto oprovider =
+                make_manifest_provider(fs, extended_overlay_ports, manifest->path, std::move(manifest_scf));
             auto install_plan = create_versioned_install_plan(*verprovider,
                                                               *baseprovider,
                                                               *oprovider,
@@ -1278,8 +1278,7 @@ namespace vcpkg
         }
 
         auto registry_set = paths.make_registry_set();
-        PathsPortFileProvider provider(*registry_set,
-                                       make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
+        PathsPortFileProvider provider(*registry_set, make_overlay_provider(fs, paths.overlay_ports));
 
         const std::vector<FullPackageSpec> specs = Util::fmap(options.command_arguments, [&](const std::string& arg) {
             return check_and_get_full_package_spec(arg, default_triplet, paths.get_triplet_db())
