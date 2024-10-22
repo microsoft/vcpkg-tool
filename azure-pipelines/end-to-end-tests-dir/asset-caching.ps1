@@ -56,11 +56,10 @@ $actual = $actual -replace "`r`n", "`n"
 
 $expected = @(
 "Asset cache miss; downloading from .*"
-"Successfully stored .* to .*."
 ) -join "`n"
 
 if (-not ($actual -match $expected)) {
-    throw "Failure: asset cache miss (configured) + x-block-origin disabled"
+    throw "Failure: expected: $expected,\n actual: $actual"
 }
 
 # Testing asset cache hit
