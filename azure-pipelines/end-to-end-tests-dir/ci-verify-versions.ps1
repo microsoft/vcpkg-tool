@@ -153,7 +153,9 @@ $buildtreesRoot/versioning_/versions/version-scheme-mismatch/89c88798a9fa17ea675
 note: versions must be unique, even if they are declared with different schemes
 "@
 
+Remove-Problem-Matchers
 $actual = Run-VcpkgAndCaptureOutput x-ci-verify-versions @directoryArgs "--x-builtin-ports-root=$TestingRoot/ci-verify-versions-registry/ports" "--x-builtin-registry-versions-dir=$TestingRoot/ci-verify-versions-registry/versions" --verbose --verify-git-trees
+Restore-Problem-Matchers
 Throw-IfNotFailed
 
 function Sanitize() {
