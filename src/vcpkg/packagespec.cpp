@@ -171,13 +171,14 @@ namespace vcpkg
         return PackageSpec{name, resolve_triplet(triplet, default_triplet)};
     }
 
-    ExpectedL<ParsedQualifiedSpecifier> parse_qualified_specifier(StringView input,
-                                                                  AllowFeatures allow_features,
-                                                                  ParseExplicitTriplet parse_explicit_triplet,
-                                                                  AllowPlatformSpec allow_platform_spec)
+    Optional<ParsedQualifiedSpecifier> parse_qualified_specifier(DiagnosticContext& context,
+                                                                 StringView input,
+                                                                 AllowFeatures allow_features,
+                                                                 ParseExplicitTriplet parse_explicit_triplet,
+                                                                 AllowPlatformSpec allow_platform_spec)
     {
         // there is no origin because this function is used for user inputs
-        auto parser = ParserBase(input, nullopt);
+        auto parser = ParserBase(context, input, nullopt, 0);
         auto maybe_pqs = parse_qualified_specifier(parser, allow_features, parse_explicit_triplet, allow_platform_spec);
         if (!parser.at_eof())
         {
@@ -193,7 +194,7 @@ namespace vcpkg
                 auto triplet = pqs ? pqs->triplet.get() : nullptr;
                 if (pqs && triplet && !pqs->platform.has_value() && parser.cur() == '[')
                 {
-                    auto speculative_parser_copy = parser;
+                    auto speculative_parser_copy = parser.clone_with_context(null_diagnostic_context);
                     char32_t ch = '[';
                     if (parse_features(ch, *pqs, speculative_parser_copy) && speculative_parser_copy.at_eof())
                     {
@@ -217,12 +218,27 @@ namespace vcpkg
             }
         }
 
-        if (auto e = parser.get_error())
+        if (parser.any_errors())
         {
-            return LocalizedString::from_raw(e->to_string());
+            maybe_pqs.clear();
         }
 
-        return std::move(maybe_pqs).value_or_exit(VCPKG_LINE_INFO);
+        return maybe_pqs;
+    }
+
+    ExpectedL<ParsedQualifiedSpecifier> parse_qualified_specifier(StringView input,
+                                                                  AllowFeatures allow_features,
+                                                                  ParseExplicitTriplet parse_explicit_triplet,
+                                                                  AllowPlatformSpec allow_platform_spec)
+    {
+        return adapt_context_to_expected(
+            static_cast<Optional<ParsedQualifiedSpecifier> (*)(
+                DiagnosticContext&, StringView, AllowFeatures, ParseExplicitTriplet, AllowPlatformSpec)>(
+                parse_qualified_specifier),
+            input,
+            allow_features,
+            parse_explicit_triplet,
+            allow_platform_spec);
     }
 
     Optional<std::string> parse_feature_name(ParserBase& parser)

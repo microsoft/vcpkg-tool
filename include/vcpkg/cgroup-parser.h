@@ -16,7 +16,7 @@ namespace vcpkg
         ControlGroup(long id, StringView s, StringView c);
     };
 
-    std::vector<ControlGroup> parse_cgroup_file(StringView text, StringView origin);
+    std::vector<ControlGroup> parse_cgroup_file(StringView text, StringView origin, int init_row);
 
-    bool detect_docker_in_cgroup_file(StringView text, StringView origin);
+    bool detect_docker_in_cgroup_file(StringView text, StringView origin, int init_row);
 }

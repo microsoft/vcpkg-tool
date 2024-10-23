@@ -131,13 +131,12 @@ namespace vcpkg
 
             if (path.filename() == "CONTROL")
             {
-                auto maybe_control = Paragraphs::try_load_control_file_text(contents->content, contents->origin);
+                auto maybe_control = Paragraphs::try_load_control_file_text(contents->content, contents->origin, 1);
                 if (auto control = maybe_control.get())
                 {
-                    to_write.push_back(ToWrite{contents->content,
-                                               std::move(*control),
-                                               std::move(path),
-                                               Path(path.parent_path()) / "vcpkg.json"});
+                    auto vcpkg_json = Path(path.parent_path()) / "vcpkg.json";
+                    to_write.push_back(
+                        ToWrite{contents->content, std::move(*control), std::move(path), std::move(vcpkg_json)});
                 }
                 else
                 {
