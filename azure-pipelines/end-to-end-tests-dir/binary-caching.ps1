@@ -2,7 +2,8 @@
 
 $commonArgs += @(
     "--host-triplet",
-    $Triplet
+    $Triplet,
+    "--overlay-ports=$PSScriptRoot/../e2e-ports"
 )
 
 # Test simple installation

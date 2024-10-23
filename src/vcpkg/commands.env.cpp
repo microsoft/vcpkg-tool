@@ -144,7 +144,7 @@ namespace vcpkg
         enter_interactive_subprocess();
         auto rc = cmd_execute(cmd, settings);
         exit_interactive_subprocess();
-        Checks::exit_with_code(VCPKG_LINE_INFO, rc.value_or_exit(VCPKG_LINE_INFO));
+        Checks::exit_with_code(VCPKG_LINE_INFO, static_cast<int>(rc.value_or_exit(VCPKG_LINE_INFO)));
 #else  // ^^^ _WIN32 / !_WIN32 vvv
         Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgEnvPlatformNotSupported);
 #endif // ^^^ !_WIN32

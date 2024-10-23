@@ -1,10 +1,12 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/expected.h>
+#include <vcpkg/base/files.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/path.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
+#include <vcpkg/base/uuid.h>
 
 #if defined(__APPLE__)
 #include <sys/sysctl.h>
@@ -504,15 +506,21 @@ namespace vcpkg
     }
 #endif
 
-    const ExpectedL<Path>& get_platform_cache_vcpkg() noexcept
+    const ExpectedL<Path>& get_platform_cache_root() noexcept
     {
-        static ExpectedL<Path> s_vcpkg =
-#ifdef _WIN32
+        static ExpectedL<Path> s_home =
+#if defined(_WIN32)
             get_appdata_local()
 #else
             get_xdg_cache_home()
 #endif
-                .map([](const Path& p) { return p / "vcpkg"; });
+            ;
+        return s_home;
+    }
+
+    const ExpectedL<Path>& get_platform_cache_vcpkg() noexcept
+    {
+        static ExpectedL<Path> s_vcpkg = get_platform_cache_root().map([](const Path& p) { return p / "vcpkg"; });
         return s_vcpkg;
     }
 
@@ -555,17 +563,16 @@ namespace vcpkg
                 {
                     case REG_SZ:
                     case REG_EXPAND_SZ:
-                        // remove trailing nulls
-                        while (!value->data.empty() && !value->data.back())
+                    {
+                        auto length_in_wchar_ts = value->data.size() >> 1;
+                        auto as_utf8 =
+                            Strings::to_utf8(reinterpret_cast<const wchar_t*>(value->data.data()), length_in_wchar_ts);
+                        while (!as_utf8.empty() && as_utf8.back() == 0)
                         {
-                            value->data.pop_back();
+                            as_utf8.pop_back();
                         }
-
-                        {
-                            auto length_in_wchar_ts = value->data.size() >> 1;
-                            return Strings::to_utf8(reinterpret_cast<const wchar_t*>(value->data.data()),
-                                                    length_in_wchar_ts);
-                        }
+                        return as_utf8;
+                    }
                     default:
                         return msg::format_error(msgRegistryValueWrongType,
                                                  msg::path = format_registry_value_name(base_hkey, sub_key, valuename));

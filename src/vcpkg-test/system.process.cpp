@@ -2,6 +2,10 @@
 
 #include <vcpkg/base/system.process.h>
 
+#ifndef _WIN32
+#include <sys/wait.h>
+#endif
+
 using namespace vcpkg;
 
 TEST_CASE ("captures-output", "[system.process]")
@@ -39,6 +43,38 @@ TEST_CASE ("captures-output", "[system.process]")
     auto run = cmd_execute_and_capture_output(cmd, settings).value_or_exit(VCPKG_LINE_INFO);
     REQUIRE(run.exit_code == 0);
     REQUIRE(run.output == expected);
+}
+
+TEST_CASE ("closes-exit-minus-one cmd_execute", "[system.process]")
+{
+    auto test_program = Path(get_exe_path_of_current_process().parent_path()) / "closes-exit-minus-one";
+    ProcessLaunchSettings settings;
+    auto return_value = cmd_execute(Command{test_program}, settings).value_or_exit(VCPKG_LINE_INFO);
+#ifdef _WIN32
+    REQUIRE(return_value == 0xFFFFFFFFul);
+#else  // ^^^ _WIN32 / !_WIN32 vvv
+    if (WIFEXITED(return_value))
+    {
+        REQUIRE(WEXITSTATUS(return_value) == 0x000000FFul);
+    }
+    else
+    {
+        FAIL();
+    }
+#endif // ^^^ _WIN32
+}
+
+TEST_CASE ("closes-exit-minus-one cmd_execute_and_capture_output", "[system.process]")
+{
+    auto test_program = Path(get_exe_path_of_current_process().parent_path()) / "closes-exit-minus-one";
+    RedirectedProcessLaunchSettings settings;
+    settings.stdin_content = "this is some input that will be intentionally not read";
+    auto run = cmd_execute_and_capture_output(Command{test_program}, settings).value_or_exit(VCPKG_LINE_INFO);
+#ifdef _WIN32
+    REQUIRE(run.exit_code == 0xFFFFFFFFul);
+#else  // ^^^ _WIN32 / !_WIN32 vvv
+    REQUIRE(run.exit_code == 0x000000FFul);
+#endif // ^^^ _WIN32
 }
 
 TEST_CASE ("no closes-stdin crash", "[system.process]")

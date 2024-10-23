@@ -74,6 +74,19 @@ DECLARE_MESSAGE(AddVersionPortFilesShaUnchanged,
                 "",
                 "checked-in files for {package_name} are unchanged from version {version}")
 DECLARE_MESSAGE(AddVersionPortHasImproperFormat, (msg::package_name), "", "{package_name} is not properly formatted")
+DECLARE_MESSAGE(
+    AddVersionPortVersionShouldBeGone,
+    (msg::package_name, msg::version),
+    "",
+    "In {package_name}, {version} is completely new version, so the \"port-version\" field should be removed. Remove "
+    "\"port-version\", commit that change, and try again. To skip this check, rerun with --skip-version-format-check .")
+DECLARE_MESSAGE(AddVersionPortVersionShouldBeOneMore,
+                (msg::package_name, msg::version, msg::count, msg::expected_version, msg::actual_version),
+                "",
+                "In {package_name}, the current \"port-version\" for {version} is {count}, so the next added "
+                "\"port-version\" should be {expected_version}, but the port declares \"port-version\" "
+                "{actual_version}. Change \"port-version\" to {expected_version}, commit that change, and try again. "
+                "To skip this check, rerun with --skip-version-format-check .")
 DECLARE_MESSAGE(AddVersionSuggestVersionDate,
                 (msg::package_name),
                 "\"version-string\" and \"version-date\" are JSON keys, and --skip-version-format-check is a command "
@@ -1473,6 +1486,12 @@ DECLARE_MESSAGE(HelpBinaryCachingAzBlob,
                 "**Experimental: will change or be removed without warning**\n"
                 "Adds an Azure Blob Storage source. Uses Shared Access Signature validation. <url> should include "
                 "the container path. <sas> must be be prefixed with a \"?\".")
+DECLARE_MESSAGE(HelpBinaryCachingAzUpkg,
+                (),
+                "Printed as the 'definition' for 'x-az-universal,<organization>,<project>,<feed>[,<rw>]'.",
+                "**Experimental: will change or be removed without warning**\n"
+                "Adds a Universal Package Azure Artifacts source. Uses the Azure CLI "
+                "(az artifacts) for uploads and downloads.")
 DECLARE_MESSAGE(HelpBinaryCachingCos,
                 (),
                 "Printed as the 'definition' for 'x-cos,<prefix>[,<rw>]'.",
@@ -1701,10 +1720,10 @@ DECLARE_MESSAGE(InstalledBy, (msg::path), "", "Installed by {path}")
 DECLARE_MESSAGE(InstalledPackages, (), "", "The following packages are already installed:")
 DECLARE_MESSAGE(InstalledRequestedPackages, (), "", "All requested packages are currently installed.")
 DECLARE_MESSAGE(InstallFailed, (msg::path, msg::error_msg), "", "failed: {path}: {error_msg}")
-DECLARE_MESSAGE(InstallingMavenFile,
-                (msg::path),
-                "Printed after a filesystem operation error",
-                "{path} installing Maven file")
+DECLARE_MESSAGE(InstallingMavenFileFailure,
+                (msg::path, msg::command_line, msg::exit_code),
+                "Printed after a maven install command fails",
+                "{path} installing Maven file, {command_line} failed with {exit_code}")
 DECLARE_MESSAGE(InstallingOverlayPort, (), "", "installing overlay port from here")
 DECLARE_MESSAGE(InstallingPackage,
                 (msg::action_index, msg::count, msg::spec),
@@ -1794,6 +1813,10 @@ DECLARE_MESSAGE(InvalidArgumentRequiresBaseUrlAndToken,
                 (msg::binary_source),
                 "",
                 "invalid argument: binary config '{binary_source}' requires at least a base-url and a SAS token")
+DECLARE_MESSAGE(InvalidArgumentRequiresFourOrFiveArguments,
+                (msg::binary_source),
+                "",
+                "invalid argument: binary config '{binary_source}' requires 4 or 5 arguments")
 DECLARE_MESSAGE(InvalidArgumentRequiresNoneArguments,
                 (msg::binary_source),
                 "",
@@ -2121,6 +2144,10 @@ DECLARE_MESSAGE(NonRangeArgs,
                 "{actual} is an integer",
                 "the command '{command_name}' requires between {lower} and {upper} arguments, inclusive, but {actual} "
                 "were provided")
+DECLARE_MESSAGE(NonRangeArgsGreater,
+                (msg::command_name, msg::lower, msg::actual),
+                "{actual} is an integer",
+                "the command '{command_name}' requires at least {lower} arguments, but {actual} were provided")
 DECLARE_MESSAGE(NonZeroOrOneRemainingArgs,
                 (msg::command_name),
                 "",
@@ -2203,25 +2230,25 @@ DECLARE_MESSAGE(
     (msg::package_name, msg::url),
     "",
     "\"{package_name}\" is not a valid feature name. "
-    "Feature names must be lowercase alphanumeric+hypens and not reserved (see {url} for more information).")
+    "Feature names must be lowercase alphanumeric+hyphens and not reserved (see {url} for more information).")
 DECLARE_MESSAGE(ParseIdentifierError,
                 (msg::value, msg::url),
                 "{value} is a lowercase identifier like 'boost'",
                 "\"{value}\" is not a valid identifier. "
-                "Identifiers must be lowercase alphanumeric+hypens and not reserved (see {url} for more information).")
+                "Identifiers must be lowercase alphanumeric+hyphens and not reserved (see {url} for more information).")
 DECLARE_MESSAGE(
     ParsePackageNameNotEof,
     (msg::url),
     "",
     "expected the end of input parsing a package name; this usually means the indicated character is not allowed to be "
-    "in a port name. Port names are all lowercase alphanumeric+hypens and not reserved (see {url} for more "
+    "in a port name. Port names are all lowercase alphanumeric+hyphens and not reserved (see {url} for more "
     "information).")
 DECLARE_MESSAGE(
     ParsePackageNameError,
     (msg::package_name, msg::url),
     "",
     "\"{package_name}\" is not a valid package name. "
-    "Package names must be lowercase alphanumeric+hypens and not reserved (see {url} for more information).")
+    "Package names must be lowercase alphanumeric+hyphens and not reserved (see {url} for more information).")
 DECLARE_MESSAGE(ParsePackagePatternError,
                 (msg::package_name, msg::url),
                 "",
@@ -2233,11 +2260,15 @@ DECLARE_MESSAGE(
     (),
     "",
     "expected the end of input parsing a package spec; this usually means the indicated character is not allowed to be "
-    "in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hypens.")
+    "in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hyphens.")
 DECLARE_MESSAGE(ParseQualifiedSpecifierNotEofSquareBracket,
                 (msg::version_spec),
                 "",
                 "expected the end of input parsing a package spec; did you mean {version_spec} instead?")
+DECLARE_MESSAGE(ParseTripletNotEof,
+                (),
+                "",
+                "Invalid triplet name. Triplet names are all lowercase alphanumeric+hyphens.")
 DECLARE_MESSAGE(PathMustBeAbsolute,
                 (msg::path),
                 "",
@@ -2555,6 +2586,11 @@ DECLARE_MESSAGE(RestoredPackagesFromAWS,
                 (msg::count, msg::elapsed),
                 "",
                 "Restored {count} package(s) from AWS in {elapsed}. Use --debug to see more details.")
+DECLARE_MESSAGE(RestoredPackagesFromAZUPKG,
+                (msg::count, msg::elapsed),
+                "",
+                "Restored {count} package(s) from Universal Packages in {elapsed}. "
+                "Use --debug to see more details.")
 DECLARE_MESSAGE(RestoredPackagesFromCOS,
                 (msg::count, msg::elapsed),
                 "",

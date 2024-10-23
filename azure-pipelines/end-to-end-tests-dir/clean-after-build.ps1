@@ -10,7 +10,7 @@ $PackageRoot = Join-Path $packagesRoot "vcpkg-clean-after-build-test-port_$Tripl
 $PackageSrc = Join-Path $buildtreesRoot "vcpkg-clean-after-build-test-port/src"
 
 $installTestPortArgs = `
-  @("install", "vcpkg-clean-after-build-test-port", "--no-binarycaching", "--downloads-root=$downloadsRoot")
+  @("install", "vcpkg-clean-after-build-test-port", "--no-binarycaching", "--downloads-root=$downloadsRoot", "--x-builtin-ports-root=$PSScriptRoot/../e2e-ports")
 
 Refresh-TestRoot
 Run-Vcpkg -TestArgs ($commonArgs + $installTestPortArgs)

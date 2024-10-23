@@ -2,6 +2,8 @@
 
 $CurrentTest = "Build Missing tests"
 
+$commonArgs += @("--overlay-ports=$PSScriptRoot/../e2e-ports")
+
 Run-Vcpkg -TestArgs ($commonArgs + @("install", "vcpkg-hello-world-1", "--only-binarycaching","--x-binarysource=clear;files,$ArchiveRoot,read"))
 Throw-IfNotFailed
 Require-FileNotExists "$installRoot/$Triplet/include/hello-1.h"

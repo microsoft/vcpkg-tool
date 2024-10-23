@@ -223,19 +223,26 @@ namespace vcpkg
 
         ProcessLaunchSettings settings;
         settings.working_directory = paths.original_cwd;
-        auto result = cmd_execute(cmd, settings).value_or_exit(VCPKG_LINE_INFO);
+        const auto node_result = cmd_execute(cmd, settings).value_or_exit(VCPKG_LINE_INFO);
         if (auto telemetry_file_path = maybe_telemetry_file_path.get())
         {
             track_telemetry(fs, *telemetry_file_path);
         }
 
-        // workaround some systems which only keep the lower 7 bits
-        if (result < 0 || result > 127)
+        if constexpr (std::is_signed_v<decltype(node_result)>)
         {
-            result = 1;
-        }
+            // workaround some systems which only keep the lower 7 bits
+            if (node_result < 0 || node_result > 127)
+            {
+                return 1;
+            }
 
-        return result;
+            return node_result;
+        }
+        else
+        {
+            return static_cast<int>(node_result);
+        }
     }
 
     void forward_common_artifacts_arguments(std::vector<std::string>& appended_to, const ParsedArguments& parsed)

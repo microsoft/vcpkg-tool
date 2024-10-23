@@ -583,7 +583,7 @@ namespace vcpkg
         msg::println(msgAssetCacheSuccesfullyStored,
                      msg::path = file.filename(),
                      msg::url = replace_secrets(url.to_string(), secrets));
-        return res;
+        return 0;
     }
 
     std::string format_url_query(StringView base_url, View<std::string> query_params)
