@@ -311,10 +311,10 @@ namespace vcpkg
     }
 
 #if defined(_WIN32)
-    static ZStringView to_vcvarsall_target(StringView cmake_system_name)
+    static ZStringView to_vcvarsall_target(StringView cmake_system_name, StringView cmake_system_version)
     {
-        if (cmake_system_name.empty()) return "";
-        if (cmake_system_name == "Windows") return "";
+        if (cmake_system_name.empty()) return { cmake_system_version.data(), cmake_system_version.size() };
+        if (cmake_system_name == "Windows") return { cmake_system_version.data(), cmake_system_version.size()};
         if (cmake_system_name == "WindowsStore") return "store";
 
         Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgUnsupportedSystemName, msg::system_name = cmake_system_name);
@@ -597,7 +597,7 @@ namespace vcpkg
         }
 
         const auto arch = to_vcvarsall_toolchain(pre_build_info.target_architecture, toolset, pre_build_info.triplet);
-        const auto target = to_vcvarsall_target(pre_build_info.cmake_system_name);
+        const auto target = to_vcvarsall_target(pre_build_info.cmake_system_name, pre_build_info.cmake_system_version);
 
         return vcpkg::Command{"cmd"}.string_arg("/d").string_arg("/c").raw_arg(
             fmt::format(R"("{}" {} {} {} {} 2>&1 <NUL)",
