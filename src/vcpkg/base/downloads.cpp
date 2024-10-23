@@ -527,8 +527,7 @@ namespace vcpkg
                             StringView url,
                             const std::vector<std::string>& secrets,
                             View<std::string> headers,
-                            const Path& file,
-                            StringView method)
+                            const Path& file)
     {
         static constexpr StringLiteral guid_marker = "9a1db05f-a65d-419b-aa72-037fb4d0672e";
 
@@ -555,7 +554,7 @@ namespace vcpkg
             return std::move(maybe_res).error();
         }
 
-        auto http_cmd = Command{"curl"}.string_arg("-X").string_arg(method);
+        auto http_cmd = Command{"curl"}.string_arg("-X").string_arg("PUT");
         for (auto&& header : headers)
         {
             http_cmd.string_arg("-H").string_arg(header);
@@ -584,6 +583,61 @@ namespace vcpkg
                      msg::path = file.filename(),
                      msg::url = replace_secrets(url.to_string(), secrets));
         return 0;
+    }
+
+    ExpectedL<Unit> patch_file(const Filesystem& fs,
+                               StringView url,
+                               View<std::string> headers,
+                               const Path& file,
+                               std::size_t file_size,
+                               std::size_t chunk_size)
+    {
+        static constexpr StringLiteral guid_marker = "9a1db05f-a65d-419b-aa72-037fb4d0672e";
+
+        Command base_cmd;
+        base_cmd.string_arg("curl").string_arg("-X").string_arg("PATCH").string_arg("-w").string_arg(
+            "\\n" + guid_marker.to_string() + "%{http_code}\n");
+        for (auto&& header : headers)
+        {
+            base_cmd.string_arg("-H").string_arg(header);
+        }
+        base_cmd.string_arg(url);
+
+        auto file_ptr = fs.open_for_read(file, VCPKG_LINE_INFO);
+        std::vector<char> buffer(chunk_size);
+        std::size_t bytes_read = 0;
+        for (std::size_t i = 0; i < file_size; i += bytes_read)
+        {
+            bytes_read = file_ptr.read(buffer.data(), sizeof(decltype(buffer)::value_type), chunk_size);
+            if (!bytes_read)
+            {
+                return msg::format_error(
+                    msgFileReadFailed, msg::path = file, msg::byte_offset = i, msg::count = chunk_size);
+            }
+
+            auto cmd = base_cmd;
+            cmd.string_arg("-H")
+                .string_arg(fmt::format("Content-Range: bytes {}-{}/{}", i, i + bytes_read - 1, file_size))
+                .string_arg("--data-binary")
+                .string_arg("@-");
+
+            int code = 0;
+            RedirectedProcessLaunchSettings launch_settings;
+            launch_settings.stdin_content = {buffer.data(), bytes_read};
+            auto res = cmd_execute_and_stream_lines(cmd, launch_settings, [&code](StringView line) {
+                if (Strings::starts_with(line, guid_marker))
+                {
+                    code = std::strtol(line.data() + guid_marker.size(), nullptr, 10);
+                }
+            });
+            if (!res.get() || *res.get() != 0 || (code >= 100 && code < 200) || code >= 300)
+            {
+                return msg::format_error(
+                    msgCurlFailedToPutHttp, msg::exit_code = res.value_or(-1), msg::url = url, msg::value = code);
+            }
+        }
+
+        return Unit{};
     }
 
     std::string format_url_query(StringView base_url, View<std::string> query_params)
