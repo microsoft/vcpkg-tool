@@ -891,6 +891,15 @@ TEST_CASE ("Consume remaining args", "[cmd_parser]")
         CHECK(uut.get_errors() == expected_errors);
         CHECK(uut.get_remaining_args().empty());
     }
+
+    {
+        CmdParser uut{std::vector<std::string>{"first-arg", "second-arg"}};
+        CHECK(uut.consume_remaining_args("command", 3, SIZE_MAX) == std::vector<std::string>{});
+        const auto expected_errors =
+            localized({"error: the command 'command' requires at least 3 arguments, but 2 were provided"});
+        CHECK(uut.get_errors() == expected_errors);
+        CHECK(uut.get_remaining_args().empty());
+    }
 }
 
 TEST_CASE ("delistify_conjoined_value", "[cmd_parser]")
