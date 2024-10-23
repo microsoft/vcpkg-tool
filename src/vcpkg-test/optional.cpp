@@ -65,6 +65,7 @@ TEST_CASE ("value conversion", "[optional]")
 
     Optional<long> j = 1;
     Optional<int> i = j;
+    (void)i;
     Optional<const char*> cstr = "hello, world!";
     Optional<std::string> cppstr = cstr;
 
@@ -89,9 +90,12 @@ TEST_CASE ("optional.map", "[optional]")
     const Optional<std::unique_ptr<int>> move_only;
 
     Optional<int*> m = move_only.map([](auto&& p) { return p.get(); });
+    (void)m;
     Optional<Optional<int*>> n =
         move_only.map([](auto&& p) -> Optional<int*> { return p ? Optional<int*>{p.get()} : nullopt; });
+    (void)n;
     Optional<NullOpt> o = move_only.map([](auto&&) { return nullopt; });
+    (void)o;
 
     Optional<int> five = 5;
 
