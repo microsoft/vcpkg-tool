@@ -467,7 +467,7 @@ namespace vcpkg
                                                const Path& portfile_cmake,
                                                MessageSink& msg_sink)
     {
-        static constexpr StringLiteral copyright_filenames[] = {"COPYING", FileLicense, "LICENSE.txt"};
+        static constexpr StringLiteral copyright_filenames[] = {FileCopying, FileLicense, FileLicenseDotTxt};
         const auto copyright_file = package_dir / FileShare / spec_name / FileCopyright;
 
         switch (fs.status(copyright_file, IgnoreErrors{}))

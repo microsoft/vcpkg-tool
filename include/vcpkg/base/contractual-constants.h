@@ -330,15 +330,17 @@ namespace vcpkg
     // File names
     inline constexpr StringLiteral FileBaselineDotJson = "baseline.json";
     inline constexpr StringLiteral FileBin = "bin";
-    inline constexpr StringLiteral FileCopyright = "copyright";
-    inline constexpr StringLiteral FileLicense = "LICENSE";
     inline constexpr StringLiteral FileControl = "CONTROL";
+    inline constexpr StringLiteral FileCopying = "COPYING";
+    inline constexpr StringLiteral FileCopyright = "copyright";
     inline constexpr StringLiteral FileDebug = "debug";
     inline constexpr StringLiteral FileDetectCompiler = "detect_compiler";
     inline constexpr StringLiteral FileDotDsStore = ".DS_Store";
     inline constexpr StringLiteral FileInclude = "include";
     inline constexpr StringLiteral FileIncomplete = "incomplete";
     inline constexpr StringLiteral FileInfo = "info";
+    inline constexpr StringLiteral FileLicense = "LICENSE";
+    inline constexpr StringLiteral FileLicenseDotTxt = "LICENSE.txt";
     inline constexpr StringLiteral FilePortfileDotCMake = "portfile.cmake";
     inline constexpr StringLiteral FileShare = "share";
     inline constexpr StringLiteral FileStatus = "status";
@@ -581,5 +583,4 @@ namespace vcpkg
     inline constexpr StringLiteral StatusInstalled = "installed";
     inline constexpr StringLiteral StatusNotInstalled = "not-installed";
     inline constexpr StringLiteral StatusPurge = "purge";
-    inline constexpr StringLiteral StatusUnknown = "unknown";
 }
