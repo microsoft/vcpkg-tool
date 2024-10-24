@@ -246,7 +246,7 @@ namespace vcpkg
         Optional<Path> abi_tag_file;
         std::vector<Path> relative_port_files;
         std::vector<std::string> relative_port_hashes;
-        std::vector<Json::Value> heuristic_resources;
+        std::vector<Json::Object> heuristic_resources;
     };
 
     void compute_all_abis(const VcpkgPaths& paths,
