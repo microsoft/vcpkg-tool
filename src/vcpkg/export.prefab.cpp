@@ -36,12 +36,7 @@ namespace vcpkg::Prefab
         return paths;
     }
 
-    std::string NdkVersion::to_string() const
-    {
-        std::string ret;
-        this->to_string(ret);
-        return ret;
-    }
+    std::string NdkVersion::to_string() const { return adapt_to_string(*this); }
     void NdkVersion::to_string(std::string& out) const
     {
         out.append("NdkVersion{major=")

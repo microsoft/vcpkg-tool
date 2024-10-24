@@ -284,7 +284,7 @@ namespace vcpkg
         return fmt::format(
             "\nspec: \"{}\"\nversion: \"{}\"\nport_version: {}\ndescription: [\"{}\"]\nmaintainers: [\"{}\"]\nfeature: "
             "\"{}\"\ndefault_features: [\"{}\"]\ndependencies: [\"{}\"]\nabi: \"{}\"",
-            paragraph.spec.to_string(),
+            paragraph.spec,
             paragraph.version.text,
             paragraph.version.port_version,
             Strings::join(join_str, paragraph.description),

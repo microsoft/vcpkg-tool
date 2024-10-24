@@ -13,9 +13,8 @@
 
 namespace vcpkg
 {
-    /// <summary>
-    /// Installed package metadata
-    /// </summary>
+
+    // metadata for a package's representation in the 'installed' tree
     struct StatusParagraph
     {
         StatusParagraph() noexcept;
@@ -30,14 +29,12 @@ namespace vcpkg
 
     void serialize(const StatusParagraph& pgh, std::string& out_str);
 
-    std::string to_string(InstallState f);
-
-    std::string to_string(Want f);
+    StringLiteral to_string_literal(InstallState f);
+    StringLiteral to_string_literal(Want f);
 
     struct InstalledPackageView
     {
-        InstalledPackageView() noexcept : core(nullptr) { }
-
+        InstalledPackageView() = default;
         InstalledPackageView(const StatusParagraph* c, std::vector<const StatusParagraph*>&& fs)
             : core(c), features(std::move(fs))
         {
@@ -51,7 +48,7 @@ namespace vcpkg
 
         std::vector<StatusParagraph> all_status_paragraphs() const;
 
-        const StatusParagraph* core;
+        const StatusParagraph* core = nullptr;
         std::vector<const StatusParagraph*> features;
     };
 
@@ -59,3 +56,6 @@ namespace vcpkg
                               const InstalledPaths& installed,
                               const ReadOnlyFilesystem& fs);
 }
+
+VCPKG_FORMAT_WITH_TO_STRING_LITERAL_NONMEMBER(vcpkg::InstallState);
+VCPKG_FORMAT_WITH_TO_STRING_LITERAL_NONMEMBER(vcpkg::Want);
