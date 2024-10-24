@@ -58,9 +58,10 @@ The following packages are already installed:
 
 $output = Run-VcpkgAndCaptureOutput @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports" install vcpkg-internal-e2e-test-port3 --head
 Throw-IfFailed
-if ($output -notmatch 'vcpkg-internal-e2e-test-port3:[^ ]+ is already installed -- not building from HEAD') {
-    throw 'Wrong already installed message for --head'
-}
+Throw-IfNonContains -Actual $output -Expected @"
+The following packages are already installed, but were requested at --head version. Their installed contents will not be changed. To get updated versions, remove these packages first:
+    vcpkg-internal-e2e-test-port3:
+"@
 
 Refresh-TestRoot
 $output = Run-VcpkgAndCaptureOutput @commonArgs --x-builtin-ports-root="$PSScriptRoot/../e2e-ports" install vcpkg-bad-spdx-license

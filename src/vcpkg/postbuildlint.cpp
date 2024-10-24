@@ -282,7 +282,7 @@ namespace vcpkg
                                                                const Path& portfile_cmake,
                                                                MessageSink& msg_sink)
     {
-        const auto debug_share = package_dir / "debug" VCPKG_PREFERRED_SEPARATOR "share";
+        const auto debug_share = package_dir / FileDebug / FileShare;
         if (fs.exists(debug_share, IgnoreErrors{}))
         {
             msg_sink.print(Color::warning,
@@ -303,7 +303,7 @@ namespace vcpkg
                                                                        const Path& portfile_cmake,
                                                                        MessageSink& msg_sink)
     {
-        if (!fs.exists(package_dir / "share" / package_name / "vcpkg-port-config.cmake", IgnoreErrors{}))
+        if (!fs.exists(package_dir / FileShare / package_name / FileVcpkgPortConfig, IgnoreErrors{}))
         {
             msg_sink.print(Color::warning,
                            LocalizedString::from_raw(portfile_cmake)
@@ -327,8 +327,8 @@ namespace vcpkg
         static constexpr StringLiteral STANDARD_INSTALL_USAGE =
             R"###(file(INSTALL "${CMAKE_CURRENT_LIST_DIR}/usage" DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}"))###";
 
-        auto usage_path_from = port_dir / "usage";
-        auto usage_path_to = package_dir / "share" / package_name / "usage";
+        auto usage_path_from = port_dir / FileUsage;
+        auto usage_path_to = package_dir / FileShare / package_name / FileUsage;
 
         if (fs.is_regular_file(usage_path_from) && !fs.is_regular_file(usage_path_to))
         {
@@ -467,8 +467,8 @@ namespace vcpkg
                                                const Path& portfile_cmake,
                                                MessageSink& msg_sink)
     {
-        static constexpr StringLiteral copyright_filenames[] = {"COPYING", "LICENSE", "LICENSE.txt"};
-        const auto copyright_file = package_dir / "share" / spec_name / "copyright";
+        static constexpr StringLiteral copyright_filenames[] = {FileCopying, FileLicense, FileLicenseDotTxt};
+        const auto copyright_file = package_dir / FileShare / spec_name / FileCopyright;
 
         switch (fs.status(copyright_file, IgnoreErrors{}))
         {

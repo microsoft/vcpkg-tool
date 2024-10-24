@@ -14,10 +14,17 @@ static std::string fix_ref_version(StringView ref, StringView version)
     return Strings::replace_all(ref, "${VERSION}", version);
 }
 
-static std::string conclude_license(const std::string& license)
+static StringView conclude_license(const Optional<std::string>& maybe_license)
 {
-    if (license.empty()) return SpdxNoAssertion.to_string();
-    return license;
+    if (auto license = maybe_license.get())
+    {
+        if (!license->empty())
+        {
+            return *license;
+        }
+    }
+
+    return SpdxNoAssertion;
 }
 
 static void append_move_if_exists_and_array(Json::Array& out, Json::Object& obj, StringView property)
@@ -82,179 +89,232 @@ static Json::Object make_resource(
     return obj;
 }
 
-Json::Value vcpkg::run_resource_heuristics(StringView contents, StringView version_text)
+namespace vcpkg
 {
-    // These are a sequence of heuristics to enable proof-of-concept extraction of remote resources for SPDX SBOM
-    // inclusion
-    size_t n = 0;
-    Json::Object ret;
-    auto& packages = ret.insert(JsonIdPackages, Json::Array{});
-    auto github = find_cmake_invocation(contents, "vcpkg_from_github");
-    if (!github.empty())
+    Json::Object run_resource_heuristics(StringView contents, StringView version_text)
     {
-        auto repo = extract_cmake_invocation_argument(github, CMakeVariableRepo);
-        auto ref = fix_ref_version(extract_cmake_invocation_argument(github, CMakeVariableRef), version_text);
-        auto sha = extract_cmake_invocation_argument(github, CMakeVariableSHA512);
-
-        packages.push_back(make_resource(fmt::format("SPDXRef-resource-{}", ++n),
-                                         repo,
-                                         fmt::format("git+https://github.com/{}@{}", repo, ref),
-                                         sha,
-                                         {}));
-    }
-    auto git = find_cmake_invocation(contents, "vcpkg_from_git");
-    if (!git.empty())
-    {
-        auto url = extract_cmake_invocation_argument(github, CMakeVariableUrl);
-        auto ref = fix_ref_version(extract_cmake_invocation_argument(github, CMakeVariableRef), version_text);
-        packages.push_back(
-            make_resource(fmt::format("SPDXRef-resource-{}", ++n), url, fmt::format("git+{}@{}", url, ref), {}, {}));
-    }
-    auto distfile = find_cmake_invocation(contents, "vcpkg_download_distfile");
-    if (!distfile.empty())
-    {
-        auto url = extract_cmake_invocation_argument(distfile, CMakeVariableUrls);
-        auto filename = extract_cmake_invocation_argument(distfile, CMakeVariableFilename);
-        auto sha = extract_cmake_invocation_argument(distfile, CMakeVariableSHA512);
-        packages.push_back(
-            make_resource(fmt::format("SPDXRef-resource-{}", ++n), filename, url.to_string(), sha, filename));
-    }
-    auto sfg = find_cmake_invocation(contents, "vcpkg_from_sourceforge");
-    if (!sfg.empty())
-    {
-        auto repo = extract_cmake_invocation_argument(sfg, CMakeVariableRepo);
-        auto ref = fix_ref_version(extract_cmake_invocation_argument(sfg, CMakeVariableRef), version_text);
-        auto filename = extract_cmake_invocation_argument(sfg, CMakeVariableFilename);
-        auto sha = extract_cmake_invocation_argument(sfg, CMakeVariableSHA512);
-        auto url = fmt::format("https://sourceforge.net/projects/{}/files/{}/{}", repo, ref, filename);
-        packages.push_back(
-            make_resource(fmt::format("SPDXRef-resource-{}", ++n), filename, std::move(url), sha, filename));
-    }
-    return Json::Value::object(std::move(ret));
-}
-
-std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
-                                    View<Path> relative_paths,
-                                    View<std::string> hashes,
-                                    std::string created_time,
-                                    std::string document_namespace,
-                                    std::vector<Json::Value>&& resource_docs)
-{
-    Checks::check_exit(VCPKG_LINE_INFO, relative_paths.size() == hashes.size());
-
-    const auto& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
-    const auto& cpgh = *scfl.source_control_file->core_paragraph;
-    StringView abi{SpdxNone};
-    if (auto package_abi = action.package_abi().get())
-    {
-        abi = *package_abi;
-    }
-
-    Json::Object doc;
-    doc.insert(JsonIdDollarSchema, "https://raw.githubusercontent.com/spdx/spdx-spec/v2.2.1/schemas/spdx-schema.json");
-    doc.insert(SpdxVersion, SpdxTwoTwo);
-    doc.insert(SpdxDataLicense, SpdxCCZero);
-    doc.insert(SpdxSpdxId, SpdxRefDocument);
-    doc.insert(SpdxDocumentNamespace, std::move(document_namespace));
-    doc.insert(JsonIdName, fmt::format("{}@{} {}", action.spec, cpgh.version, abi));
-    {
-        auto& cinfo = doc.insert(SpdxCreationInfo, Json::Object());
-        auto& creators = cinfo.insert(JsonIdCreators, Json::Array());
-        creators.push_back(Strings::concat("Tool: vcpkg-", VCPKG_BASE_VERSION_AS_STRING, '-', VCPKG_VERSION_AS_STRING));
-        cinfo.insert(JsonIdCreated, std::move(created_time));
-    }
-
-    auto& rels = doc.insert(JsonIdRelationships, Json::Array());
-    auto& packages = doc.insert(JsonIdPackages, Json::Array());
-    {
-        auto& obj = packages.push_back(Json::Object());
-        obj.insert(JsonIdName, action.spec.name());
-        obj.insert(SpdxSpdxId, SpdxRefPort);
-        obj.insert(SpdxVersionInfo, cpgh.version.to_string());
-        obj.insert(SpdxDownloadLocation, scfl.spdx_location.empty() ? StringView{SpdxNoAssertion} : scfl.spdx_location);
-        if (!cpgh.homepage.empty())
+        // These are a sequence of heuristics to enable proof-of-concept extraction of remote resources for SPDX SBOM
+        // inclusion
+        size_t n = 0;
+        Json::Object ret;
+        auto& packages = ret.insert(JsonIdPackages, Json::Array{});
+        auto github = find_cmake_invocation(contents, "vcpkg_from_github");
+        if (!github.empty())
         {
-            obj.insert(JsonIdHomepage, cpgh.homepage);
+            auto repo = extract_cmake_invocation_argument(github, CMakeVariableRepo);
+            auto ref = fix_ref_version(extract_cmake_invocation_argument(github, CMakeVariableRef), version_text);
+            auto sha = extract_cmake_invocation_argument(github, CMakeVariableSHA512);
+
+            packages.push_back(make_resource(fmt::format("SPDXRef-resource-{}", ++n),
+                                             repo,
+                                             fmt::format("git+https://github.com/{}@{}", repo, ref),
+                                             sha,
+                                             {}));
         }
-        obj.insert(SpdxLicenseConcluded, conclude_license(cpgh.license.value_or("")));
-        obj.insert(SpdxLicenseDeclared, SpdxNoAssertion);
-        obj.insert(SpdxCopyrightText, SpdxNoAssertion);
-        if (!cpgh.summary.empty()) obj.insert(JsonIdSummary, Strings::join("\n", cpgh.summary));
-        if (!cpgh.description.empty()) obj.insert(JsonIdDescription, Strings::join("\n", cpgh.description));
-        obj.insert(JsonIdComment, "This is the port (recipe) consumed by vcpkg.");
+        auto git = find_cmake_invocation(contents, "vcpkg_from_git");
+        if (!git.empty())
         {
-            auto& rel = rels.push_back(Json::Object());
-            rel.insert(SpdxElementId, SpdxRefPort);
-            rel.insert(SpdxRelationshipType, SpdxGenerates);
-            rel.insert(SpdxRelatedSpdxElement, SpdxRefBinary);
+            auto url = extract_cmake_invocation_argument(github, CMakeVariableUrl);
+            auto ref = fix_ref_version(extract_cmake_invocation_argument(github, CMakeVariableRef), version_text);
+            packages.push_back(make_resource(
+                fmt::format("SPDXRef-resource-{}", ++n), url, fmt::format("git+{}@{}", url, ref), {}, {}));
         }
-        for (size_t i = 0; i < relative_paths.size(); ++i)
+        auto distfile = find_cmake_invocation(contents, "vcpkg_download_distfile");
+        if (!distfile.empty())
         {
-            auto& rel = rels.push_back(Json::Object());
-            rel.insert(SpdxElementId, SpdxRefPort);
-            rel.insert(SpdxRelationshipType, SpdxContains);
-            rel.insert(SpdxRelatedSpdxElement, fmt::format("SPDXRef-file-{}", i));
+            auto url = extract_cmake_invocation_argument(distfile, CMakeVariableUrls);
+            auto filename = extract_cmake_invocation_argument(distfile, CMakeVariableFilename);
+            auto sha = extract_cmake_invocation_argument(distfile, CMakeVariableSHA512);
+            packages.push_back(
+                make_resource(fmt::format("SPDXRef-resource-{}", ++n), filename, url.to_string(), sha, filename));
         }
-    }
-    {
-        auto& obj = packages.push_back(Json::Object());
-        obj.insert(JsonIdName, action.spec.to_string());
-        obj.insert(SpdxSpdxId, SpdxRefBinary);
-        obj.insert(SpdxVersionInfo, abi);
-        obj.insert(SpdxDownloadLocation, SpdxNone);
-        obj.insert(SpdxLicenseConcluded, conclude_license(cpgh.license.value_or("")));
-        obj.insert(SpdxLicenseDeclared, SpdxNoAssertion);
-        obj.insert(SpdxCopyrightText, SpdxNoAssertion);
-        obj.insert(JsonIdComment, "This is a binary package built by vcpkg.");
+        auto sfg = find_cmake_invocation(contents, "vcpkg_from_sourceforge");
+        if (!sfg.empty())
         {
-            auto& rel = rels.push_back(Json::Object());
-            rel.insert(SpdxElementId, SpdxRefBinary);
-            rel.insert(SpdxRelationshipType, SpdxGeneratedFrom);
-            rel.insert(SpdxRelatedSpdxElement, SpdxRefPort);
+            auto repo = extract_cmake_invocation_argument(sfg, CMakeVariableRepo);
+            auto ref = fix_ref_version(extract_cmake_invocation_argument(sfg, CMakeVariableRef), version_text);
+            auto filename = extract_cmake_invocation_argument(sfg, CMakeVariableFilename);
+            auto sha = extract_cmake_invocation_argument(sfg, CMakeVariableSHA512);
+            auto url = fmt::format("https://sourceforge.net/projects/{}/files/{}/{}", repo, ref, filename);
+            packages.push_back(
+                make_resource(fmt::format("SPDXRef-resource-{}", ++n), filename, std::move(url), sha, filename));
         }
+
+        return ret;
     }
 
-    auto& files = doc.insert(JsonIdFiles, Json::Array());
+    std::string create_spdx_sbom(const InstallPlanAction& action,
+                                 View<Path> relative_paths,
+                                 View<std::string> hashes,
+                                 std::string created_time,
+                                 std::string document_namespace,
+                                 std::vector<Json::Object>&& resource_docs)
     {
-        for (size_t i = 0; i < relative_paths.size(); ++i)
-        {
-            const auto& path = relative_paths[i];
-            const auto& hash = hashes[i];
+        Checks::check_exit(VCPKG_LINE_INFO, relative_paths.size() == hashes.size());
 
-            auto& obj = files.push_back(Json::Object());
-            obj.insert(SpdxFileName, "./" + path.generic_u8string());
-            const auto ref = fmt::format("SPDXRef-file-{}", i);
-            obj.insert(SpdxSpdxId, ref);
-            auto& checksum = obj.insert(JsonIdChecksums, Json::Array());
-            auto& checksum1 = checksum.push_back(Json::Object());
-            checksum1.insert(JsonIdAlgorithm, JsonIdAllCapsSHA256);
-            checksum1.insert(SpdxChecksumValue, hash);
-            obj.insert(SpdxLicenseConcluded, SpdxNoAssertion);
+        const auto& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
+        const auto& cpgh = *scfl.source_control_file->core_paragraph;
+        StringView abi{SpdxNone};
+        if (auto package_abi = action.package_abi().get())
+        {
+            abi = *package_abi;
+        }
+
+        Json::Object doc;
+        doc.insert(JsonIdDollarSchema,
+                   "https://raw.githubusercontent.com/spdx/spdx-spec/v2.2.1/schemas/spdx-schema.json");
+        doc.insert(SpdxVersion, SpdxTwoTwo);
+        doc.insert(SpdxDataLicense, SpdxCCZero);
+        doc.insert(SpdxSpdxId, SpdxRefDocument);
+        doc.insert(SpdxDocumentNamespace, std::move(document_namespace));
+        doc.insert(JsonIdName, fmt::format("{}@{} {}", action.spec, cpgh.version, abi));
+        {
+            auto& cinfo = doc.insert(SpdxCreationInfo, Json::Object());
+            auto& creators = cinfo.insert(JsonIdCreators, Json::Array());
+            creators.push_back(
+                Strings::concat("Tool: vcpkg-", VCPKG_BASE_VERSION_AS_STRING, '-', VCPKG_VERSION_AS_STRING));
+            cinfo.insert(JsonIdCreated, std::move(created_time));
+        }
+
+        auto& rels = doc.insert(JsonIdRelationships, Json::Array());
+        auto& packages = doc.insert(JsonIdPackages, Json::Array());
+        {
+            auto& obj = packages.push_back(Json::Object());
+            obj.insert(JsonIdName, action.spec.name());
+            obj.insert(SpdxSpdxId, SpdxRefPort);
+            obj.insert(SpdxVersionInfo, cpgh.version.to_string());
+            obj.insert(SpdxDownloadLocation,
+                       scfl.spdx_location.empty() ? StringView{SpdxNoAssertion} : scfl.spdx_location);
+            if (!cpgh.homepage.empty())
+            {
+                obj.insert(JsonIdHomepage, cpgh.homepage);
+            }
+            obj.insert(SpdxLicenseConcluded, conclude_license(cpgh.license));
+            obj.insert(SpdxLicenseDeclared, SpdxNoAssertion);
             obj.insert(SpdxCopyrightText, SpdxNoAssertion);
+            if (!cpgh.summary.empty()) obj.insert(JsonIdSummary, Strings::join("\n", cpgh.summary));
+            if (!cpgh.description.empty()) obj.insert(JsonIdDescription, Strings::join("\n", cpgh.description));
+            obj.insert(JsonIdComment, "This is the port (recipe) consumed by vcpkg.");
             {
                 auto& rel = rels.push_back(Json::Object());
-                rel.insert(SpdxElementId, ref);
-                rel.insert(SpdxRelationshipType, SpdxContainedBy);
-                rel.insert(SpdxRelatedSpdxElement, SpdxRefPort);
+                rel.insert(SpdxElementId, SpdxRefPort);
+                rel.insert(SpdxRelationshipType, SpdxGenerates);
+                rel.insert(SpdxRelatedSpdxElement, SpdxRefBinary);
             }
-            if (path == FileVcpkgDotJson)
+            for (size_t i = 0; i < relative_paths.size(); ++i)
             {
                 auto& rel = rels.push_back(Json::Object());
-                rel.insert(SpdxElementId, ref);
-                rel.insert(SpdxRelationshipType, SpdxDependencyManifestOf);
+                rel.insert(SpdxElementId, SpdxRefPort);
+                rel.insert(SpdxRelationshipType, SpdxContains);
+                rel.insert(SpdxRelatedSpdxElement, fmt::format("SPDXRef-file-{}", i));
+            }
+        }
+        {
+            auto& obj = packages.push_back(Json::Object());
+            obj.insert(JsonIdName, action.spec.to_string());
+            obj.insert(SpdxSpdxId, SpdxRefBinary);
+            obj.insert(SpdxVersionInfo, abi);
+            obj.insert(SpdxDownloadLocation, SpdxNone);
+            obj.insert(SpdxLicenseConcluded, conclude_license(cpgh.license));
+            obj.insert(SpdxLicenseDeclared, SpdxNoAssertion);
+            obj.insert(SpdxCopyrightText, SpdxNoAssertion);
+            obj.insert(JsonIdComment, "This is a binary package built by vcpkg.");
+            {
+                auto& rel = rels.push_back(Json::Object());
+                rel.insert(SpdxElementId, SpdxRefBinary);
+                rel.insert(SpdxRelationshipType, SpdxGeneratedFrom);
                 rel.insert(SpdxRelatedSpdxElement, SpdxRefPort);
             }
         }
+
+        auto& files = doc.insert(JsonIdFiles, Json::Array());
+        {
+            for (size_t i = 0; i < relative_paths.size(); ++i)
+            {
+                const auto& path = relative_paths[i];
+                const auto& hash = hashes[i];
+
+                auto& obj = files.push_back(Json::Object());
+                obj.insert(SpdxFileName, "./" + path.generic_u8string());
+                const auto ref = fmt::format("SPDXRef-file-{}", i);
+                obj.insert(SpdxSpdxId, ref);
+                auto& checksum = obj.insert(JsonIdChecksums, Json::Array());
+                auto& checksum1 = checksum.push_back(Json::Object());
+                checksum1.insert(JsonIdAlgorithm, JsonIdAllCapsSHA256);
+                checksum1.insert(SpdxChecksumValue, hash);
+                obj.insert(SpdxLicenseConcluded, SpdxNoAssertion);
+                obj.insert(SpdxCopyrightText, SpdxNoAssertion);
+                {
+                    auto& rel = rels.push_back(Json::Object());
+                    rel.insert(SpdxElementId, ref);
+                    rel.insert(SpdxRelationshipType, SpdxContainedBy);
+                    rel.insert(SpdxRelatedSpdxElement, SpdxRefPort);
+                }
+                if (path == FileVcpkgDotJson)
+                {
+                    auto& rel = rels.push_back(Json::Object());
+                    rel.insert(SpdxElementId, ref);
+                    rel.insert(SpdxRelationshipType, SpdxDependencyManifestOf);
+                    rel.insert(SpdxRelatedSpdxElement, SpdxRefPort);
+                }
+            }
+        }
+
+        for (auto&& rdoc : resource_docs)
+        {
+            append_move_if_exists_and_array(rels, rdoc, JsonIdRelationships);
+            append_move_if_exists_and_array(files, rdoc, JsonIdFiles);
+            append_move_if_exists_and_array(packages, rdoc, JsonIdPackages);
+        }
+
+        return Json::stringify(doc);
     }
 
-    for (auto&& rdoc : resource_docs)
+    Optional<std::string> read_spdx_license(StringView text, StringView origin)
     {
-        if (!rdoc.is_object()) continue;
-        auto robj = std::move(rdoc).object(VCPKG_LINE_INFO);
-        append_move_if_exists_and_array(rels, robj, JsonIdRelationships);
-        append_move_if_exists_and_array(files, robj, JsonIdFiles);
-        append_move_if_exists_and_array(packages, robj, JsonIdPackages);
-    }
+        // JsonIdPackages[0]/SpdxLicenseConcluded
+        auto maybe_parsed = Json::parse_object(text, origin);
+        auto parsed = maybe_parsed.get();
+        if (!parsed)
+        {
+            return nullopt;
+        }
 
-    return Json::stringify(doc);
+        auto maybe_packages_value = parsed->get(JsonIdPackages);
+        if (!maybe_packages_value)
+        {
+            return nullopt;
+        }
+
+        auto maybe_packages_array = maybe_packages_value->maybe_array();
+        if (!maybe_packages_array || maybe_packages_array->size() == 0)
+        {
+            return nullopt;
+        }
+
+        auto maybe_first_package_object = maybe_packages_array->operator[](0).maybe_object();
+        if (!maybe_first_package_object)
+        {
+            return nullopt;
+        }
+
+        auto maybe_license_concluded_value = maybe_first_package_object->get(SpdxLicenseConcluded);
+        if (!maybe_license_concluded_value)
+        {
+            return nullopt;
+        }
+
+        auto maybe_license_concluded = maybe_license_concluded_value->maybe_string();
+        if (!maybe_license_concluded)
+        {
+            return nullopt;
+        }
+
+        if (maybe_license_concluded->empty() || *maybe_license_concluded == SpdxNoAssertion)
+        {
+            return nullopt;
+        }
+
+        return std::move(*maybe_license_concluded);
+    }
 }

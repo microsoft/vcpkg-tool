@@ -159,9 +159,19 @@ namespace vcpkg
             specs_installed.erase(action.spec);
         }
 
-        Util::erase_remove_if(action_plan.install_actions, [&](const InstallPlanAction& ipa) {
-            return Util::Sets::contains(specs_installed, ipa.spec);
+        Util::erase_remove_if(action_plan.install_actions, [&](InstallPlanAction& ipa) {
+            if (Util::Sets::contains(specs_installed, ipa.spec))
+            {
+                // convert the 'to install' entry to an already installed entry
+                ipa.installed_package = status_db.get_installed_package_view(ipa.spec);
+                ipa.plan_type = InstallPlanType::ALREADY_INSTALLED;
+                action_plan.already_installed.push_back(std::move(ipa));
+                return true;
+            }
+
+            return false;
         });
+
         return specs_installed;
     }
 
@@ -172,6 +182,7 @@ namespace vcpkg
                                            const CMakeVars::CMakeVarProvider& cmake_vars,
                                            ActionPlan action_plan,
                                            DryRun dry_run,
+                                           PrintUsage print_usage,
                                            const Optional<Path>& maybe_pkgconfig,
                                            bool include_manifest_in_github_issue)
     {
@@ -211,7 +222,7 @@ namespace vcpkg
         }
 
         // currently (or once) installed specifications
-        auto status_db = database_load_check(fs, paths.installed());
+        auto status_db = database_load_collapse(fs, paths.installed());
         adjust_action_plan_to_status_db(action_plan, status_db);
 
         print_plan(action_plan, paths.builtin_ports_directory());
@@ -248,7 +259,7 @@ namespace vcpkg
                                                   null_build_logs_recorder(),
                                                   include_manifest_in_github_issue);
 
-        if (build_options.keep_going == KeepGoing::Yes && summary.failed())
+        if (build_options.keep_going == KeepGoing::Yes && summary.failed)
         {
             summary.print_failed();
             if (build_options.only_downloads == OnlyDownloads::No)
@@ -257,7 +268,9 @@ namespace vcpkg
             }
         }
 
-        if (build_options.print_usage == PrintUsage::Yes)
+        summary.license_report.print_license_report(msgPackageLicenseSpdxThisInstall);
+
+        if (print_usage == PrintUsage::Yes)
         {
             // Note that this differs from the behavior of `vcpkg install` in that it will print usage information for
             // packages named but not installed here
@@ -272,6 +285,7 @@ namespace vcpkg
             }
         }
 
+        summary.print_complete_message();
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 
@@ -287,15 +301,12 @@ namespace vcpkg
                 .value_or_exit(VCPKG_LINE_INFO);
         });
 
-        const bool dry_run = Util::Sets::contains(options.switches, SwitchDryRun);
         const auto only_downloads =
             Util::Sets::contains(options.switches, SwitchOnlyDownloads) ? OnlyDownloads::Yes : OnlyDownloads::No;
         const auto keep_going =
             Util::Sets::contains(options.switches, SwitchKeepGoing) || only_downloads == OnlyDownloads::Yes
                 ? KeepGoing::Yes
                 : KeepGoing::No;
-        const auto print_usage =
-            Util::Sets::contains(options.switches, SwitchNoPrintUsage) ? PrintUsage::No : PrintUsage::Yes;
         const auto unsupported_port_action = Util::Sets::contains(options.switches, SwitchAllowUnsupported)
                                                  ? UnsupportedPortAction::Warn
                                                  : UnsupportedPortAction::Error;
@@ -312,7 +323,6 @@ namespace vcpkg
             CleanDownloads::No,
             DownloadTool::Builtin,
             prohibit_backcompat_features,
-            print_usage,
             keep_going,
         };
 
@@ -339,14 +349,17 @@ namespace vcpkg
             specs,
             {},
             {nullptr, host_triplet, paths.packages(), unsupported_port_action, UseHeadVersion::No, Editable::No});
-        command_set_installed_and_exit_ex(args,
-                                          paths,
-                                          host_triplet,
-                                          build_options,
-                                          *cmake_vars,
-                                          std::move(action_plan),
-                                          dry_run ? DryRun::Yes : DryRun::No,
-                                          pkgsconfig,
-                                          false);
+
+        command_set_installed_and_exit_ex(
+            args,
+            paths,
+            host_triplet,
+            build_options,
+            *cmake_vars,
+            std::move(action_plan),
+            Util::Sets::contains(options.switches, SwitchDryRun) ? DryRun::Yes : DryRun::No,
+            Util::Sets::contains(options.switches, SwitchNoPrintUsage) ? PrintUsage::No : PrintUsage::Yes,
+            pkgsconfig,
+            false);
     }
 } // namespace vcpkg

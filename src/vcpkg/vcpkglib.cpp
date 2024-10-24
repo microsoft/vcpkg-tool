@@ -10,21 +10,8 @@
 
 namespace vcpkg
 {
-    static StatusParagraphs load_current_database(const Filesystem& fs,
-                                                  const Path& vcpkg_dir_status_file,
-                                                  const Path& vcpkg_dir_status_file_old)
+    static StatusParagraphs load_current_database(const ReadOnlyFilesystem& fs, const Path& vcpkg_dir_status_file)
     {
-        if (!fs.exists(vcpkg_dir_status_file, IgnoreErrors{}))
-        {
-            if (!fs.exists(vcpkg_dir_status_file_old, IgnoreErrors{}))
-            {
-                // no status file, use empty db
-                return StatusParagraphs();
-            }
-
-            fs.rename(vcpkg_dir_status_file_old, vcpkg_dir_status_file, VCPKG_LINE_INFO);
-        }
-
         auto pghs = Paragraphs::get_paragraphs(fs, vcpkg_dir_status_file).value_or_exit(VCPKG_LINE_INFO);
 
         std::vector<std::unique_ptr<StatusParagraph>> status_pghs;
@@ -37,7 +24,76 @@ namespace vcpkg
         return StatusParagraphs(std::move(status_pghs));
     }
 
-    StatusParagraphs database_load_check(const Filesystem& fs, const InstalledPaths& installed)
+    static std::vector<Path> apply_database_updates(const ReadOnlyFilesystem& fs,
+                                                    StatusParagraphs& current_status_db,
+                                                    const Path& updates_dir)
+    {
+        auto update_files = fs.get_regular_files_non_recursive(updates_dir, VCPKG_LINE_INFO);
+        Util::sort(update_files);
+        if (!update_files.empty())
+        {
+            for (auto&& file : update_files)
+            {
+                if (file.filename() == FileIncomplete) continue;
+
+                auto pghs = Paragraphs::get_paragraphs(fs, file).value_or_exit(VCPKG_LINE_INFO);
+                for (auto&& p : pghs)
+                {
+                    current_status_db.insert(std::make_unique<StatusParagraph>(file, std::move(p)));
+                }
+            }
+        }
+
+        return update_files;
+    }
+
+    static void apply_database_updates_on_disk(const Filesystem& fs,
+                                               const InstalledPaths& installed,
+                                               StatusParagraphs& current_status_db)
+    {
+        auto update_files = apply_database_updates(fs, current_status_db, installed.vcpkg_dir_updates());
+        if (!update_files.empty())
+        {
+            const auto status_file = installed.vcpkg_dir_status_file();
+            const auto status_file_new = Path(status_file.parent_path()) / FileStatusNew;
+            fs.write_contents(status_file_new, Strings::serialize(current_status_db), VCPKG_LINE_INFO);
+
+            fs.rename(status_file_new, status_file, VCPKG_LINE_INFO);
+
+            for (auto&& file : update_files)
+            {
+                fs.remove(file, VCPKG_LINE_INFO);
+            }
+        }
+    }
+
+    StatusParagraphs database_load(const ReadOnlyFilesystem& fs, const InstalledPaths& installed)
+    {
+        const auto maybe_status_file = installed.vcpkg_dir_status_file();
+        const auto status_parent = Path(maybe_status_file.parent_path());
+        const auto status_file_old = status_parent / FileStatusOld;
+
+        auto status_file = &maybe_status_file;
+
+        if (!fs.exists(maybe_status_file, IgnoreErrors{}))
+        {
+            if (!fs.exists(status_file_old, IgnoreErrors{}))
+            {
+                // no status file, use empty db
+                StatusParagraphs current_status_db;
+                (void)apply_database_updates(fs, current_status_db, installed.vcpkg_dir_updates());
+                return current_status_db;
+            }
+
+            status_file = &status_file_old;
+        }
+
+        StatusParagraphs current_status_db = load_current_database(fs, *status_file);
+        (void)apply_database_updates(fs, current_status_db, installed.vcpkg_dir_updates());
+        return current_status_db;
+    }
+
+    StatusParagraphs database_load_collapse(const Filesystem& fs, const InstalledPaths& installed)
     {
         const auto updates_dir = installed.vcpkg_dir_updates();
 
@@ -48,38 +104,23 @@ namespace vcpkg
 
         const auto status_file = installed.vcpkg_dir_status_file();
         const auto status_parent = Path(status_file.parent_path());
-        const auto status_file_old = status_parent / "status-old";
-        const auto status_file_new = status_parent / "status-new";
+        const auto status_file_old = status_parent / FileStatusOld;
 
-        StatusParagraphs current_status_db = load_current_database(fs, status_file, status_file_old);
-
-        auto update_files = fs.get_regular_files_non_recursive(updates_dir, VCPKG_LINE_INFO);
-        Util::sort(update_files);
-        if (update_files.empty())
+        if (!fs.exists(status_file, IgnoreErrors{}))
         {
-            // updates directory is empty, control file is up-to-date.
-            return current_status_db;
-        }
-        for (auto&& file : update_files)
-        {
-            if (file.filename() == "incomplete") continue;
-
-            auto pghs = Paragraphs::get_paragraphs(fs, file).value_or_exit(VCPKG_LINE_INFO);
-            for (auto&& p : pghs)
+            if (!fs.exists(status_file_old, IgnoreErrors{}))
             {
-                current_status_db.insert(std::make_unique<StatusParagraph>(file, std::move(p)));
+                // no status file, use empty db
+                StatusParagraphs current_status_db;
+                apply_database_updates_on_disk(fs, installed, current_status_db);
+                return current_status_db;
             }
+
+            fs.rename(status_file_old, status_file, VCPKG_LINE_INFO);
         }
 
-        fs.write_contents(status_file_new, Strings::serialize(current_status_db), VCPKG_LINE_INFO);
-
-        fs.rename(status_file_new, status_file, VCPKG_LINE_INFO);
-
-        for (auto&& file : update_files)
-        {
-            fs.remove(file, VCPKG_LINE_INFO);
-        }
-
+        StatusParagraphs current_status_db = load_current_database(fs, status_file);
+        apply_database_updates_on_disk(fs, installed, current_status_db);
         return current_status_db;
     }
 
@@ -90,28 +131,25 @@ namespace vcpkg
         const auto my_update_id = update_id++;
         const auto update_path = installed.vcpkg_dir_updates() / fmt::format("{:010}", my_update_id);
 
-        fs.write_rename_contents(update_path, "incomplete", Strings::serialize(p), VCPKG_LINE_INFO);
+        fs.write_rename_contents(update_path, FileIncomplete, Strings::serialize(p), VCPKG_LINE_INFO);
     }
 
-    static void upgrade_to_slash_terminated_sorted_format(const Filesystem& fs,
-                                                          std::vector<std::string>* lines,
-                                                          const Path& listfile_path)
+    static bool upgrade_to_slash_terminated_sorted_format(std::vector<std::string>& lines)
     {
-        static bool was_tracked = false;
+        static std::atomic<bool> was_tracked = false;
 
-        if (lines->empty())
+        if (lines.empty())
         {
-            return;
+            return false;
         }
 
-        if (lines->at(0).back() == '/')
+        if (lines.front().back() == '/')
         {
-            return; // File already in the new format
+            return false; // File already in the new format
         }
 
-        if (!was_tracked)
+        if (was_tracked.exchange(true))
         {
-            was_tracked = true;
             get_global_metrics_collector().track_string(StringMetric::ListFile, "update to new format");
         }
 
@@ -119,14 +157,15 @@ namespace vcpkg
         // (They are not necessarily sorted alphabetically, e.g. libflac)
         // Therefore we can detect the entries that represent directories by comparing every element with the next one
         // and checking if the next has a slash immediately after the current one's length
-        for (size_t i = 0; i < lines->size() - 1; i++)
+        const size_t end = lines.size() - 1;
+        for (size_t i = 0; i < end; i++)
         {
-            std::string& current_string = lines->at(i);
-            const std::string& next_string = lines->at(i + 1);
-
+            std::string& current_string = lines[i];
+            const std::string& next_string = lines[i + 1];
+            // check if the next line is the same as this one with a slash after; that indicates that this one
+            // represents a directory
             const size_t potential_slash_char_index = current_string.length();
-            // Make sure the index exists first
-            if (next_string.size() > potential_slash_char_index && next_string.at(potential_slash_char_index) == '/')
+            if (next_string.size() > potential_slash_char_index && next_string[potential_slash_char_index] == '/')
             {
                 current_string += '/'; // Mark as a directory
             }
@@ -155,12 +194,8 @@ namespace vcpkg
         */
         // Note that after sorting, the FLAC++/ group will be placed before the FLAC/ group
         // The new format is lexicographically sorted
-        std::sort(lines->begin(), lines->end());
-
-        // Replace the listfile on disk
-        const auto updated_listfile_path = listfile_path + "_updated";
-        fs.write_lines(updated_listfile_path, *lines, VCPKG_LINE_INFO);
-        fs.rename(updated_listfile_path, listfile_path, VCPKG_LINE_INFO);
+        Util::sort(lines);
+        return true;
     }
 
     std::vector<InstalledPackageView> get_installed_ports(const StatusParagraphs& status_db)
@@ -189,9 +224,10 @@ namespace vcpkg
         return Util::fmap(ipv_map, [](auto&& p) -> InstalledPackageView { return std::move(p.second); });
     }
 
-    std::vector<StatusParagraphAndAssociatedFiles> get_installed_files(const Filesystem& fs,
-                                                                       const InstalledPaths& installed,
-                                                                       const StatusParagraphs& status_db)
+    template<bool AndUpdate, class FilesystemLike>
+    static std::vector<StatusParagraphAndAssociatedFiles> get_installed_files_impl(const FilesystemLike& fs,
+                                                                                   const InstalledPaths& installed,
+                                                                                   const StatusParagraphs& status_db)
     {
         std::vector<StatusParagraphAndAssociatedFiles> installed_files;
 
@@ -206,7 +242,16 @@ namespace vcpkg
             std::vector<std::string> installed_files_of_current_pgh =
                 fs.read_lines(listfile_path).value_or_exit(VCPKG_LINE_INFO);
             Strings::inplace_trim_all_and_remove_whitespace_strings(installed_files_of_current_pgh);
-            upgrade_to_slash_terminated_sorted_format(fs, &installed_files_of_current_pgh, listfile_path);
+            if (upgrade_to_slash_terminated_sorted_format(installed_files_of_current_pgh))
+            {
+                if constexpr (AndUpdate)
+                {
+                    // Replace the listfile on disk
+                    const auto updated_listfile_path = listfile_path + "_updated";
+                    fs.write_lines(updated_listfile_path, installed_files_of_current_pgh, VCPKG_LINE_INFO);
+                    fs.rename(updated_listfile_path, listfile_path, VCPKG_LINE_INFO);
+                }
+            }
 
             // Remove the directories
             Util::erase_remove_if(installed_files_of_current_pgh,
@@ -218,6 +263,20 @@ namespace vcpkg
         }
 
         return installed_files;
+    }
+
+    std::vector<StatusParagraphAndAssociatedFiles> get_installed_files(const ReadOnlyFilesystem& fs,
+                                                                       const InstalledPaths& installed,
+                                                                       const StatusParagraphs& status_db)
+    {
+        return get_installed_files_impl<false>(fs, installed, status_db);
+    }
+
+    std::vector<StatusParagraphAndAssociatedFiles> get_installed_files_and_upgrade(const Filesystem& fs,
+                                                                                   const InstalledPaths& installed,
+                                                                                   const StatusParagraphs& status_db)
+    {
+        return get_installed_files_impl<true>(fs, installed, status_db);
     }
 
     std::string shorten_text(StringView desc, const size_t length)

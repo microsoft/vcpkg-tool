@@ -1,3 +1,5 @@
+#include <vcpkg/base/files.h>
+
 #include <vcpkg/commands.owns.h>
 #include <vcpkg/statusparagraphs.h>
 #include <vcpkg/vcpkgcmdarguments.h>
@@ -8,7 +10,7 @@ using namespace vcpkg;
 
 namespace
 {
-    void search_file(const Filesystem& fs,
+    void search_file(const ReadOnlyFilesystem& fs,
                      const InstalledPaths& installed,
                      const std::string& file_substr,
                      const StatusParagraphs& status_db)
@@ -46,7 +48,7 @@ namespace vcpkg
     void command_owns_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
         const auto parsed = args.parse_arguments(CommandOwnsMetadata);
-        const StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
+        const StatusParagraphs status_db = database_load(paths.get_filesystem(), paths.installed());
         search_file(paths.get_filesystem(), paths.installed(), parsed.command_arguments[0], status_db);
         Checks::exit_success(VCPKG_LINE_INFO);
     }
