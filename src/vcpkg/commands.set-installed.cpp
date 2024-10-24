@@ -172,6 +172,7 @@ namespace vcpkg
                                            const CMakeVars::CMakeVarProvider& cmake_vars,
                                            ActionPlan action_plan,
                                            DryRun dry_run,
+                                           PrintUsage print_usage,
                                            const Optional<Path>& maybe_pkgconfig,
                                            bool include_manifest_in_github_issue)
     {
@@ -257,7 +258,7 @@ namespace vcpkg
             }
         }
 
-        if (build_options.print_usage == PrintUsage::Yes)
+        if (print_usage == PrintUsage::Yes)
         {
             // Note that this differs from the behavior of `vcpkg install` in that it will print usage information for
             // packages named but not installed here
@@ -287,15 +288,12 @@ namespace vcpkg
                 .value_or_exit(VCPKG_LINE_INFO);
         });
 
-        const bool dry_run = Util::Sets::contains(options.switches, SwitchDryRun);
         const auto only_downloads =
             Util::Sets::contains(options.switches, SwitchOnlyDownloads) ? OnlyDownloads::Yes : OnlyDownloads::No;
         const auto keep_going =
             Util::Sets::contains(options.switches, SwitchKeepGoing) || only_downloads == OnlyDownloads::Yes
                 ? KeepGoing::Yes
                 : KeepGoing::No;
-        const auto print_usage =
-            Util::Sets::contains(options.switches, SwitchNoPrintUsage) ? PrintUsage::No : PrintUsage::Yes;
         const auto unsupported_port_action = Util::Sets::contains(options.switches, SwitchAllowUnsupported)
                                                  ? UnsupportedPortAction::Warn
                                                  : UnsupportedPortAction::Error;
@@ -312,7 +310,6 @@ namespace vcpkg
             CleanDownloads::No,
             DownloadTool::Builtin,
             prohibit_backcompat_features,
-            print_usage,
             keep_going,
         };
 
@@ -339,14 +336,17 @@ namespace vcpkg
             specs,
             {},
             {nullptr, host_triplet, paths.packages(), unsupported_port_action, UseHeadVersion::No, Editable::No});
-        command_set_installed_and_exit_ex(args,
-                                          paths,
-                                          host_triplet,
-                                          build_options,
-                                          *cmake_vars,
-                                          std::move(action_plan),
-                                          dry_run ? DryRun::Yes : DryRun::No,
-                                          pkgsconfig,
-                                          false);
+
+        command_set_installed_and_exit_ex(
+            args,
+            paths,
+            host_triplet,
+            build_options,
+            *cmake_vars,
+            std::move(action_plan),
+            Util::Sets::contains(options.switches, SwitchDryRun) ? DryRun::Yes : DryRun::No,
+            Util::Sets::contains(options.switches, SwitchNoPrintUsage) ? PrintUsage::No : PrintUsage::Yes,
+            pkgsconfig,
+            false);
     }
 } // namespace vcpkg

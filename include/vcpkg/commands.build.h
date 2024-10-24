@@ -72,7 +72,6 @@ namespace vcpkg
         CleanDownloads clean_downloads;
         DownloadTool download_tool;
         BackcompatFeatures backcompat_features;
-        PrintUsage print_usage;
         KeepGoing keep_going;
     };
 

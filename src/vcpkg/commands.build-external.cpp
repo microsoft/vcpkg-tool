@@ -36,7 +36,6 @@ namespace vcpkg
             CleanDownloads::No,
             DownloadTool::Builtin,
             BackcompatFeatures::Allow,
-            PrintUsage::Yes,
         };
 
         const FullPackageSpec spec =

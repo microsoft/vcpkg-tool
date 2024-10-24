@@ -1055,8 +1055,7 @@ namespace vcpkg
         const auto unsupported_port_action = Util::Sets::contains(options.switches, SwitchAllowUnsupported)
                                                  ? UnsupportedPortAction::Warn
                                                  : UnsupportedPortAction::Error;
-        const PrintUsage print_cmake_usage =
-            Util::Sets::contains(options.switches, SwitchNoPrintUsage) ? PrintUsage::No : PrintUsage::Yes;
+        const bool print_cmake_usage = !Util::Sets::contains(options.switches, SwitchNoPrintUsage);
 
         get_global_metrics_collector().track_bool(BoolMetric::InstallManifestMode, paths.manifest_mode_enabled());
 
@@ -1125,7 +1124,6 @@ namespace vcpkg
             Util::Enum::to_enum<CleanDownloads>(clean_after_build || clean_downloads_after_build),
             download_tool,
             prohibit_backcompat_features ? BackcompatFeatures::Prohibit : BackcompatFeatures::Allow,
-            print_cmake_usage,
             keep_going,
         };
 
@@ -1273,6 +1271,7 @@ namespace vcpkg
                                               var_provider,
                                               std::move(install_plan),
                                               dry_run ? DryRun::Yes : DryRun::No,
+                                              print_cmake_usage ? PrintUsage::No : PrintUsage::Yes,
                                               pkgsconfig,
                                               true);
         }
@@ -1373,6 +1372,8 @@ namespace vcpkg
                                                             binary_cache,
                                                             null_build_logs_recorder());
 
+        // Skip printing the summary without --keep-going because the status without it is 'obvious': everything was a
+        // success.
         if (keep_going == KeepGoing::Yes)
         {
             msg::print(summary.format());
@@ -1396,7 +1397,7 @@ namespace vcpkg
             fs.write_contents(it_xunit->second, xwriter.build_xml(default_triplet), VCPKG_LINE_INFO);
         }
 
-        if (build_package_options.print_usage == PrintUsage::Yes)
+        if (print_cmake_usage)
         {
             std::set<std::string> printed_usages;
             for (auto&& result : summary.results)
