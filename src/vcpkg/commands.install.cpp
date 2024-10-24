@@ -224,7 +224,7 @@ namespace vcpkg
         const auto package_dir = paths.package_dir(bcf.core_paragraph.spec);
         Triplet triplet = bcf.core_paragraph.spec.triplet();
         const std::vector<StatusParagraphAndAssociatedFiles> pgh_and_files =
-            get_installed_files(fs, installed, *status_db);
+            get_installed_files_and_upgrade(fs, installed, *status_db);
 
         const SortedVector<std::string> package_files = build_list_of_package_files(fs, package_dir);
         const SortedVector<file_pack> installed_files = build_list_of_installed_files(pgh_and_files, triplet);
@@ -619,6 +619,7 @@ namespace vcpkg
             this_install.current_summary.build_result.emplace(std::move(result));
         }
 
+        database_load_collapse(fs, paths.installed());
         msg::println(msgTotalInstallTime, msg::elapsed = timer.to_string());
         return InstallSummary{std::move(results)};
     }
@@ -1288,7 +1289,7 @@ namespace vcpkg
 
         // create the plan
         msg::println(msgComputingInstallPlan);
-        StatusParagraphs status_db = database_load_check(fs, paths.installed());
+        StatusParagraphs status_db = database_load_collapse(fs, paths.installed());
 
         // Note: action_plan will hold raw pointers to SourceControlFileLocations from this map
         auto action_plan = create_feature_install_plan(provider, var_provider, specs, status_db, create_options);

@@ -76,7 +76,7 @@ namespace vcpkg
         const CreateUpgradePlanOptions create_upgrade_plan_options{
             nullptr, host_triplet, paths.packages(), unsupported_port_action};
 
-        StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
+        StatusParagraphs status_db = database_load_collapse(paths.get_filesystem(), paths.installed());
 
         // Load ports from ports dirs
         auto& fs = paths.get_filesystem();

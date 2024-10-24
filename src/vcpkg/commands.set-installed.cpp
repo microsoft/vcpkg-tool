@@ -211,7 +211,7 @@ namespace vcpkg
         }
 
         // currently (or once) installed specifications
-        auto status_db = database_load_check(fs, paths.installed());
+        auto status_db = database_load_collapse(fs, paths.installed());
         adjust_action_plan_to_status_db(action_plan, status_db);
 
         print_plan(action_plan, paths.builtin_ports_directory());
