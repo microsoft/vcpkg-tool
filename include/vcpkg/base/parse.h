@@ -90,6 +90,7 @@ namespace vcpkg
         }
 
         bool require_character(char ch);
+        bool require_text(StringLiteral keyword);
 
         bool try_match_keyword(StringView keyword_content);
 

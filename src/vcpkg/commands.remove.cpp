@@ -30,8 +30,7 @@ namespace vcpkg
 
         for (auto&& spgh : spghs)
         {
-            spgh.want = Want::PURGE;
-            spgh.state = InstallState::HALF_INSTALLED;
+            spgh.status = {Want::PURGE, InstallState::HALF_INSTALLED};
             write_update(fs, installed, spgh);
         }
 
@@ -93,9 +92,8 @@ namespace vcpkg
 
         for (auto&& spgh : spghs)
         {
-            spgh.state = InstallState::NOT_INSTALLED;
+            spgh.status.state = InstallState::NOT_INSTALLED;
             write_update(fs, installed, spgh);
-
             status_db.insert(std::make_unique<StatusParagraph>(std::move(spgh)));
         }
     }

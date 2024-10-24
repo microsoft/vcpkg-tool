@@ -280,8 +280,7 @@ namespace vcpkg
 
         StatusParagraph source_paragraph;
         source_paragraph.package = bcf.core_paragraph;
-        source_paragraph.want = Want::INSTALL;
-        source_paragraph.state = InstallState::HALF_INSTALLED;
+        source_paragraph.status = StatusLine{Want::INSTALL, InstallState::HALF_INSTALLED};
 
         write_update(fs, installed, source_paragraph);
         status_db->insert(std::make_unique<StatusParagraph>(source_paragraph));
@@ -291,8 +290,7 @@ namespace vcpkg
         {
             StatusParagraph& feature_paragraph = features_spghs.emplace_back();
             feature_paragraph.package = feature;
-            feature_paragraph.want = Want::INSTALL;
-            feature_paragraph.state = InstallState::HALF_INSTALLED;
+            feature_paragraph.status = StatusLine{Want::INSTALL, InstallState::HALF_INSTALLED};
 
             write_update(fs, installed, feature_paragraph);
             status_db->insert(std::make_unique<StatusParagraph>(feature_paragraph));
@@ -303,13 +301,13 @@ namespace vcpkg
 
         install_package_and_write_listfile(fs, package_dir, install_dir);
 
-        source_paragraph.state = InstallState::INSTALLED;
+        source_paragraph.status.state = InstallState::INSTALLED;
         write_update(fs, installed, source_paragraph);
         status_db->insert(std::make_unique<StatusParagraph>(source_paragraph));
 
         for (auto&& feature_paragraph : features_spghs)
         {
-            feature_paragraph.state = InstallState::INSTALLED;
+            feature_paragraph.status.state = InstallState::INSTALLED;
             write_update(fs, installed, feature_paragraph);
             status_db->insert(std::make_unique<StatusParagraph>(feature_paragraph));
         }

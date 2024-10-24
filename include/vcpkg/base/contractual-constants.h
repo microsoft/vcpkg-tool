@@ -567,5 +567,4 @@ namespace vcpkg
     inline constexpr StringLiteral StatusInstalled = "installed";
     inline constexpr StringLiteral StatusNotInstalled = "not-installed";
     inline constexpr StringLiteral StatusPurge = "purge";
-    inline constexpr StringLiteral StatusUnknown = "unknown";
 }

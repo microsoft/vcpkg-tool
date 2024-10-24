@@ -64,8 +64,7 @@ TEST_CASE ("find outdated packages features 2", "[update]")
 
     status_paragraphs.push_back(make_status_feature_pgh("a", "b"));
     status_paragraphs.back()->package.version = Version{"0", 0};
-    status_paragraphs.back()->state = InstallState::NOT_INSTALLED;
-    status_paragraphs.back()->want = Want::PURGE;
+    status_paragraphs.back()->status = {Want::PURGE, InstallState::NOT_INSTALLED};
 
     StatusParagraphs status_db(std::move(status_paragraphs));
 
