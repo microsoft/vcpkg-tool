@@ -69,7 +69,6 @@ namespace vcpkg
             CleanDownloads::No,
             DownloadTool::Builtin,
             BackcompatFeatures::Allow,
-            PrintUsage::Yes,
             keep_going,
         };
 
