@@ -106,6 +106,7 @@ function Throw-IfNotFailed {
         Write-Stack
         throw "'$Script:CurrentTest' had a step with an unexpectedly zero exit code"
     }
+    $global:LASTEXITCODE = 0
 }
 
 function Write-Trace ([string]$text) {
