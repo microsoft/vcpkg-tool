@@ -133,12 +133,12 @@ namespace vcpkg
                                     bool full_description,
                                     bool enable_json,
                                     Optional<StringView> filter,
-                                    View<std::string> overlay_ports)
+                                    View<Path> overlay_ports)
     {
         Checks::check_exit(VCPKG_LINE_INFO, msg::default_output_stream == OutputStream::StdErr);
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();
-        PathsPortFileProvider provider(*registry_set, make_overlay_provider(fs, paths.original_cwd, overlay_ports));
+        PathsPortFileProvider provider(*registry_set, make_overlay_provider(fs, overlay_ports));
         auto source_paragraphs =
             Util::fmap(provider.load_all_control_files(),
                        [](auto&& port) -> const SourceControlFile* { return port->source_control_file.get(); });

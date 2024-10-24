@@ -211,10 +211,8 @@ namespace vcpkg
 
         struct OverlayProviderImpl : IFullOverlayProvider
         {
-            OverlayProviderImpl(const ReadOnlyFilesystem& fs, const Path& original_cwd, View<std::string> overlay_ports)
-                : m_fs(fs), m_overlay_ports(Util::fmap(overlay_ports, [&original_cwd](const std::string& s) -> Path {
-                    return original_cwd / s;
-                }))
+            OverlayProviderImpl(const ReadOnlyFilesystem& fs, View<Path> overlay_ports)
+                : m_fs(fs), m_overlay_ports(overlay_ports.begin(), overlay_ports.end())
             {
                 for (auto&& overlay : m_overlay_ports)
                 {
@@ -364,11 +362,10 @@ namespace vcpkg
         struct ManifestProviderImpl : IFullOverlayProvider
         {
             ManifestProviderImpl(const ReadOnlyFilesystem& fs,
-                                 const Path& original_cwd,
-                                 View<std::string> overlay_ports,
+                                 View<Path> overlay_ports,
                                  const Path& manifest_path,
                                  std::unique_ptr<SourceControlFile>&& manifest_scf)
-                : m_overlay_ports{fs, original_cwd, overlay_ports}
+                : m_overlay_ports{fs, overlay_ports}
                 , m_manifest_scf_and_location{std::move(manifest_scf), manifest_path}
             {
             }
@@ -407,21 +404,17 @@ namespace vcpkg
         return std::make_unique<VersionedPortfileProviderImpl>(registry_set);
     }
 
-    std::unique_ptr<IFullOverlayProvider> make_overlay_provider(const ReadOnlyFilesystem& fs,
-                                                                const Path& original_cwd,
-                                                                View<std::string> overlay_ports)
+    std::unique_ptr<IFullOverlayProvider> make_overlay_provider(const ReadOnlyFilesystem& fs, View<Path> overlay_ports)
     {
-        return std::make_unique<OverlayProviderImpl>(fs, original_cwd, overlay_ports);
+        return std::make_unique<OverlayProviderImpl>(fs, overlay_ports);
     }
 
     std::unique_ptr<IOverlayProvider> make_manifest_provider(const ReadOnlyFilesystem& fs,
-                                                             const Path& original_cwd,
-                                                             View<std::string> overlay_ports,
+                                                             View<Path> overlay_ports,
                                                              const Path& manifest_path,
                                                              std::unique_ptr<SourceControlFile>&& manifest_scf)
     {
-        return std::make_unique<ManifestProviderImpl>(
-            fs, original_cwd, overlay_ports, manifest_path, std::move(manifest_scf));
+        return std::make_unique<ManifestProviderImpl>(fs, overlay_ports, manifest_path, std::move(manifest_scf));
     }
 
 } // namespace vcpkg
