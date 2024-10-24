@@ -1862,14 +1862,6 @@ namespace vcpkg
         auto maybe_exit_code = cmd_execute_and_stream_data_impl(cmd, settings, data_cb, debug_id);
         const auto elapsed = timer.us_64();
         g_subprocess_stats += elapsed;
-        if (const auto exit_code = maybe_exit_code.get())
-        {
-            Debug::print(fmt::format("{}: cmd_execute_and_stream_data() returned {} after {:8} us\n",
-                                     debug_id,
-                                     *exit_code,
-                                     static_cast<unsigned long long>(elapsed)));
-        }
-
         return maybe_exit_code;
     }
 
