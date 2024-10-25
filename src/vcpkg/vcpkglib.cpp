@@ -148,7 +148,7 @@ namespace vcpkg
             return false; // File already in the new format
         }
 
-        if (was_tracked.exchange(true))
+        if (!was_tracked.exchange(true))
         {
             get_global_metrics_collector().track_string(StringMetric::ListFile, "update to new format");
         }
