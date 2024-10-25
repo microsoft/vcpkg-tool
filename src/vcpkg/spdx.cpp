@@ -1,3 +1,4 @@
+#include <vcpkg/base/chrono.h>
 #include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/strings.h>
@@ -134,14 +135,11 @@ Json::Value vcpkg::run_resource_heuristics(StringView contents, StringView versi
 }
 
 std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
-                                    View<Path> relative_paths,
-                                    View<std::string> hashes,
+                                    View<AbiEntry> port_files_abi,
                                     std::string created_time,
                                     std::string document_namespace,
                                     std::vector<Json::Value>&& resource_docs)
 {
-    Checks::check_exit(VCPKG_LINE_INFO, relative_paths.size() == hashes.size());
-
     const auto& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
     const auto& cpgh = *scfl.source_control_file->core_paragraph;
     StringView abi{SpdxNone};
@@ -188,7 +186,7 @@ std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
             rel.insert(SpdxRelationshipType, SpdxGenerates);
             rel.insert(SpdxRelatedSpdxElement, SpdxRefBinary);
         }
-        for (size_t i = 0; i < relative_paths.size(); ++i)
+        for (size_t i = 0; i < port_files_abi.size(); ++i)
         {
             auto& rel = rels.push_back(Json::Object());
             rel.insert(SpdxElementId, SpdxRefPort);
@@ -216,13 +214,13 @@ std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
 
     auto& files = doc.insert(JsonIdFiles, Json::Array());
     {
-        for (size_t i = 0; i < relative_paths.size(); ++i)
+        for (size_t i = 0; i < port_files_abi.size(); ++i)
         {
-            const auto& path = relative_paths[i];
-            const auto& hash = hashes[i];
+            const auto& path = port_files_abi[i].key;
+            const auto& hash = port_files_abi[i].value;
 
             auto& obj = files.push_back(Json::Object());
-            obj.insert(SpdxFileName, "./" + path.generic_u8string());
+            obj.insert(SpdxFileName, "./" + path);
             const auto ref = fmt::format("SPDXRef-file-{}", i);
             obj.insert(SpdxSpdxId, ref);
             auto& checksum = obj.insert(JsonIdChecksums, Json::Array());
@@ -257,4 +255,19 @@ std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
     }
 
     return Json::stringify(doc);
+}
+
+std::string vcpkg::write_sbom(const InstallPlanAction& action,
+                              std::vector<Json::Value>&& heuristic_resources,
+                              const std::vector<AbiEntry>& port_files_abi,
+                              StringView uuid)
+{
+    const auto& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
+    const auto& scf = *scfl.source_control_file;
+
+    auto doc_ns = Strings::concat(
+        "https://spdx.org/spdxdocs/", scf.to_name(), '-', action.spec.triplet(), '-', scf.to_version(), '-', uuid);
+
+    const auto now = CTime::now_string();
+    return create_spdx_sbom(action, port_files_abi, now, doc_ns, std::move(heuristic_resources));
 }

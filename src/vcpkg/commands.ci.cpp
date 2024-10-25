@@ -7,6 +7,7 @@
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/util.h>
 
+#include <vcpkg/abi.h>
 #include <vcpkg/binarycaching.h>
 #include <vcpkg/ci-baseline.h>
 #include <vcpkg/cmakevars.h>
