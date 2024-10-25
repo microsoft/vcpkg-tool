@@ -313,8 +313,8 @@ namespace vcpkg
 #if defined(_WIN32)
     static ZStringView to_vcvarsall_target(StringView cmake_system_name, StringView cmake_system_version)
     {
-        if (cmake_system_name.empty()) return { cmake_system_version.data(), cmake_system_version.size() };
-        if (cmake_system_name == "Windows") return { cmake_system_version.data(), cmake_system_version.size()};
+        if (cmake_system_name.empty()) return {cmake_system_version.data(), cmake_system_version.size()};
+        if (cmake_system_name == "Windows") return {cmake_system_version.data(), cmake_system_version.size()};
         if (cmake_system_name == "WindowsStore") return "store";
 
         Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgUnsupportedSystemName, msg::system_name = cmake_system_name);
