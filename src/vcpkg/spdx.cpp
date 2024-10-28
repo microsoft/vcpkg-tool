@@ -7,6 +7,8 @@
 #include <vcpkg/dependencies.h>
 #include <vcpkg/spdx.h>
 
+#include <regex>
+
 using namespace vcpkg;
 
 static std::string fix_ref_version(StringView ref, StringView version)
@@ -80,6 +82,30 @@ static Json::Object make_resource(
         chk512.insert(SpdxChecksumValue, Strings::ascii_to_lowercase(sha512));
     }
     return obj;
+}
+
+static std::string get_vendor(const PackageSpec& spec, const SourceParagraph& cpgh)
+{
+    // Unfortunately, the vendor of the upstream library is not known here, so we use the port name,
+    // or use the homepage domain name without the top level domain and prefixes
+    if (!cpgh.homepage.empty())
+    {
+        StringView homepage = cpgh.homepage;
+        const std::regex homepage_regex{R"###(\w+://.*\.(\w+)\.\w+)###"};
+        std::cmatch match_vendor;
+        const bool has_homepage_match =
+            std::regex_search(homepage.begin(), homepage.end(), match_vendor, homepage_regex);
+        if (has_homepage_match)
+        {
+            auto vendor = match_vendor[1].str();
+            if (vendor != "github" && vendor != "bitbucket" && vendor != "gitlab" && vendor != "sourceforge")
+            {
+                return vendor;
+            }
+        }
+    }
+
+    return spec.name();
 }
 
 Json::Value vcpkg::run_resource_heuristics(StringView contents, StringView version_text)
@@ -195,6 +221,25 @@ std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
             rel.insert(SpdxRelationshipType, SpdxContains);
             rel.insert(SpdxRelatedSpdxElement, fmt::format("SPDXRef-file-{}", i));
         }
+
+        auto& external_refs = obj.insert(SpdxExternalRefs, Json::Array());
+
+        // Insert Package URL (purl)
+        auto& purl = external_refs.push_back(Json::Object());
+        purl.insert(SpdxExternalReferenceCategory, SpdxExternalReferenceCategoryPackageManager);
+        purl.insert(SpdxExternalReferenceType, SpdxExternalReferenceTypePurl);
+        purl.insert(SpdxExternalReferenceLocator,
+                    Strings::concat("pkg:vcpkg/", action.spec.name(), '@', cpgh.version.text));
+
+        // Insert CPE
+        // See https://nvd.nist.gov/products/cpe/search?namingFormat=2.3&orderBy=CPEURI&keyword=zlib&status=FINAL
+        // for example entries for "zlib" in the NIST national vulnerability database
+        auto& cpe = external_refs.push_back(Json::Object());
+        cpe.insert(SpdxExternalReferenceCategory, SpdxExternalReferenceCategorySecurity);
+        cpe.insert(SpdxExternalReferenceType, SpdxExternalReferenceTypeCpe23);
+        auto vendor = get_vendor(action.spec, cpgh);
+        cpe.insert(SpdxExternalReferenceLocator,
+                   Strings::concat("cpe:2.3:a:", vendor, ':', action.spec.name(), ':', cpgh.version.text));
     }
     {
         auto& obj = packages.push_back(Json::Object());
