@@ -1271,7 +1271,7 @@ namespace vcpkg
                                               var_provider,
                                               std::move(install_plan),
                                               dry_run ? DryRun::Yes : DryRun::No,
-                                              print_cmake_usage ? PrintUsage::No : PrintUsage::Yes,
+                                              print_cmake_usage ? PrintUsage::Yes : PrintUsage::No,
                                               pkgsconfig,
                                               true);
         }
