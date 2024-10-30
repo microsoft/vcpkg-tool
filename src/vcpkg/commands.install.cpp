@@ -1238,16 +1238,14 @@ namespace vcpkg
             auto verprovider = make_versioned_portfile_provider(*registry_set);
             auto baseprovider = make_baseline_provider(*registry_set);
 
-            std::vector<Path> extended_overlay_ports;
-            extended_overlay_ports.reserve(paths.overlay_ports.size() + add_builtin_ports_directory_as_overlay);
-            extended_overlay_ports = paths.overlay_ports;
+            auto extended_overlay_port_directories = paths.overlay_ports;
             if (add_builtin_ports_directory_as_overlay)
             {
-                extended_overlay_ports.emplace_back(paths.builtin_ports_directory());
+                extended_overlay_port_directories.overlay_ports.emplace_back(paths.builtin_ports_directory());
             }
 
             auto oprovider =
-                make_manifest_provider(fs, extended_overlay_ports, manifest->path, std::move(manifest_scf));
+                make_manifest_provider(fs, extended_overlay_port_directories, manifest->path, std::move(manifest_scf));
             auto install_plan = create_versioned_install_plan(*verprovider,
                                                               *baseprovider,
                                                               *oprovider,

@@ -1,4 +1,5 @@
 #include <vcpkg/base/cache.h>
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/system.debug.h>
@@ -14,6 +15,8 @@ using namespace vcpkg;
 
 namespace vcpkg
 {
+    bool OverlayPortPaths::empty() const noexcept { return overlay_port_dirs.empty() && overlay_ports.empty(); }
+
     MapPortFileProvider::MapPortFileProvider(const std::unordered_map<std::string, SourceControlFileAndLocation>& map)
         : ports(map)
     {
@@ -211,10 +214,10 @@ namespace vcpkg
 
         struct OverlayProviderImpl : IFullOverlayProvider
         {
-            OverlayProviderImpl(const ReadOnlyFilesystem& fs, View<Path> overlay_ports)
-                : m_fs(fs), m_overlay_ports(overlay_ports.begin(), overlay_ports.end())
+            OverlayProviderImpl(const ReadOnlyFilesystem& fs, const OverlayPortPaths& overlay_port_paths)
+                : m_fs(fs), m_overlay_port_paths(overlay_port_paths)
             {
-                for (auto&& overlay : m_overlay_ports)
+                for (auto&& overlay : m_overlay_port_paths.overlay_ports)
                 {
                     Debug::println("Using overlay: ", overlay);
 
@@ -232,7 +235,7 @@ namespace vcpkg
             {
                 auto s_port_name = port_name.to_string();
 
-                for (auto&& ports_dir : m_overlay_ports)
+                for (auto&& ports_dir : m_overlay_port_paths.overlay_ports)
                 {
                     // Try loading individual port
                     if (Paragraphs::is_port_directory(m_fs, ports_dir))
@@ -301,8 +304,8 @@ namespace vcpkg
             virtual void load_all_control_files(
                 std::map<std::string, const SourceControlFileAndLocation*>& out) const override
             {
-                auto first = std::make_reverse_iterator(m_overlay_ports.end());
-                const auto last = std::make_reverse_iterator(m_overlay_ports.begin());
+                auto first = std::make_reverse_iterator(m_overlay_port_paths.overlay_ports.end());
+                const auto last = std::make_reverse_iterator(m_overlay_port_paths.overlay_ports.begin());
                 for (; first != last; ++first)
                 {
                     auto&& ports_dir = *first;
@@ -355,14 +358,14 @@ namespace vcpkg
 
         private:
             const ReadOnlyFilesystem& m_fs;
-            const std::vector<Path> m_overlay_ports;
+            const OverlayPortPaths m_overlay_port_paths;
             mutable std::map<std::string, Optional<SourceControlFileAndLocation>, std::less<>> m_overlay_cache;
         };
 
         struct ManifestProviderImpl : IFullOverlayProvider
         {
             ManifestProviderImpl(const ReadOnlyFilesystem& fs,
-                                 View<Path> overlay_ports,
+                                 const OverlayPortPaths& overlay_ports,
                                  const Path& manifest_path,
                                  std::unique_ptr<SourceControlFile>&& manifest_scf)
                 : m_overlay_ports{fs, overlay_ports}
@@ -404,13 +407,14 @@ namespace vcpkg
         return std::make_unique<VersionedPortfileProviderImpl>(registry_set);
     }
 
-    std::unique_ptr<IFullOverlayProvider> make_overlay_provider(const ReadOnlyFilesystem& fs, View<Path> overlay_ports)
+    std::unique_ptr<IFullOverlayProvider> make_overlay_provider(const ReadOnlyFilesystem& fs,
+                                                                const OverlayPortPaths& overlay_ports)
     {
         return std::make_unique<OverlayProviderImpl>(fs, overlay_ports);
     }
 
     std::unique_ptr<IOverlayProvider> make_manifest_provider(const ReadOnlyFilesystem& fs,
-                                                             View<Path> overlay_ports,
+                                                             const OverlayPortPaths& overlay_ports,
                                                              const Path& manifest_path,
                                                              std::unique_ptr<SourceControlFile>&& manifest_scf)
     {

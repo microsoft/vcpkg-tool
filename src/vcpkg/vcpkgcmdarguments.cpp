@@ -374,10 +374,16 @@ namespace vcpkg
         }
 
         args.parser.parse_multi_option(
+            SwitchOverlayPortDirs,
+            StabilityTag::Standard,
+            args.cli_overlay_port_dirs,
+            msg::format(msgOverlayPortDirsHelp,
+                        msg::env_var = format_environment_variable(EnvironmentVariableVcpkgOverlayPortDirs)));
+        args.parser.parse_multi_option(
             SwitchOverlayPorts,
             StabilityTag::Standard,
             args.cli_overlay_ports,
-            msg::format(msgOverlayPortsDirectoriesHelp,
+            msg::format(msgOverlayPortsHelp,
                         msg::env_var = format_environment_variable(EnvironmentVariableVcpkgOverlayPorts)));
         args.parser.parse_multi_option(
             SwitchOverlayTriplets,
@@ -603,7 +609,13 @@ namespace vcpkg
                 ignore_lock_failures = true;
             }
         }
-
+        {
+            const auto vcpkg_overlay_port_dirs_env = get_env(EnvironmentVariableVcpkgOverlayPortDirs);
+            if (const auto unpacked = vcpkg_overlay_port_dirs_env.get())
+            {
+                env_overlay_port_dirs = Strings::split_paths(*unpacked);
+            }
+        }
         {
             const auto vcpkg_overlay_ports_env = get_env(EnvironmentVariableVcpkgOverlayPorts);
             if (const auto unpacked = vcpkg_overlay_ports_env.get())

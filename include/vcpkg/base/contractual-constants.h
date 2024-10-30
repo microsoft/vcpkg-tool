@@ -69,6 +69,7 @@ namespace vcpkg
     inline constexpr StringLiteral JsonIdMicrosoft = "microsoft";
     inline constexpr StringLiteral JsonIdName = "name";
     inline constexpr StringLiteral JsonIdOverlayPorts = "overlay-ports";
+    inline constexpr StringLiteral JsonIdOverlayPortDirs = "overlay-port-dirs";
     inline constexpr StringLiteral JsonIdOverlayTriplets = "overlay-triplets";
     inline constexpr StringLiteral JsonIdOverrides = "overrides";
     inline constexpr StringLiteral JsonIdPackages = "packages";
@@ -250,6 +251,7 @@ namespace vcpkg
     inline constexpr StringLiteral SwitchOutput = "output";
     inline constexpr StringLiteral SwitchOutputDir = "output-dir";
     inline constexpr StringLiteral SwitchOutputHashes = "output-hashes";
+    inline constexpr StringLiteral SwitchOverlayPortDirs = "overlay-port-dirs";
     inline constexpr StringLiteral SwitchOverlayPorts = "overlay-ports";
     inline constexpr StringLiteral SwitchOverlayTriplets = "overlay-triplets";
     inline constexpr StringLiteral SwitchOverwriteVersion = "overwrite-version";
@@ -534,6 +536,7 @@ namespace vcpkg
     inline constexpr StringLiteral EnvironmentVariableVcpkgMaxConcurrency = "VCPKG_MAX_CONCURRENCY";
     inline constexpr StringLiteral EnvironmentVariableVcpkgNoCi = "VCPKG_NO_CI";
     inline constexpr StringLiteral EnvironmentVariableVcpkgNuGetRepository = "VCPKG_NUGET_REPOSITORY";
+    inline constexpr StringLiteral EnvironmentVariableVcpkgOverlayPortDirs = "VCPKG_OVERLAY_PORT_DIRS";
     inline constexpr StringLiteral EnvironmentVariableVcpkgOverlayPorts = "VCPKG_OVERLAY_PORTS";
     inline constexpr StringLiteral EnvironmentVariableVcpkgRoot = "VCPKG_ROOT";
     inline constexpr StringLiteral EnvironmentVariableVcpkgUseNuGetCache = "VCPKG_USE_NUGET_CACHE";

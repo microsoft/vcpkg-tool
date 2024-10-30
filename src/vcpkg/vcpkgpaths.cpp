@@ -685,11 +685,16 @@ namespace vcpkg
                                                    std::move(maybe_json_config),
                                                    m_pimpl->m_config_dir,
                                                    *this);
-        overlay_ports = merge_overlays(args.cli_overlay_ports,
-                                       args.env_overlay_ports,
-                                       original_cwd,
-                                       m_pimpl->m_config.config.overlay_ports,
-                                       m_pimpl->m_config.directory);
+        overlay_ports.overlay_port_dirs = merge_overlays(args.cli_overlay_port_dirs,
+                                                         args.env_overlay_port_dirs,
+                                                         original_cwd,
+                                                         m_pimpl->m_config.config.overlay_port_dirs,
+                                                         m_pimpl->m_config.directory);
+        overlay_ports.overlay_ports = merge_overlays(args.cli_overlay_ports,
+                                                     args.env_overlay_ports,
+                                                     original_cwd,
+                                                     m_pimpl->m_config.config.overlay_ports,
+                                                     m_pimpl->m_config.directory);
         overlay_triplets = merge_overlays(args.cli_overlay_triplets,
                                           args.env_overlay_triplets,
                                           original_cwd,

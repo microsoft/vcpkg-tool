@@ -2195,7 +2195,14 @@ DECLARE_MESSAGE(Options, (), "Printed just before a list of options for a comman
 DECLARE_MESSAGE(OriginalBinParagraphHeader, (), "", "\nOriginal Binary Paragraph")
 DECLARE_MESSAGE(OtherCommandsHeader, (), "", "Other")
 DECLARE_MESSAGE(OverlayPatchDir, (msg::path), "", "Overlay path \"{path}\" must exist and must be a directory.")
-DECLARE_MESSAGE(OverlayPortsDirectoriesHelp, (msg::env_var), "", "Directories of overlay ports (also: {env_var})")
+DECLARE_MESSAGE(OverlayPortDirsHelp,
+                (msg::env_var),
+                "",
+                "Directories containing overlay-port directories (also: {env_var})")
+DECLARE_MESSAGE(OverlayPortsHelp,
+                (msg::env_var),
+                "",
+                "Overlay-port directories, or directories containing overlay-port directories (also: {env_var})")
 DECLARE_MESSAGE(OverlayTripletDirectoriesHelp, (msg::env_var), "", "Directories of overlay triplets (also: {env_var})")
 DECLARE_MESSAGE(OverlayTriplets, (msg::path), "", "Overlay Triplets from \"{path}\":")
 DECLARE_MESSAGE(OverwritingFile, (msg::path), "", "File {path} was already present and will be overwritten")
