@@ -578,41 +578,5 @@ namespace vcpkg::Paragraphs
         return std::move(results.paragraphs);
     }
 
-    LoadResults try_load_overlay_ports(const ReadOnlyFilesystem& fs, const Path& directory)
-    {
-        LoadResults ret;
-
-        auto port_dirs = fs.get_directories_non_recursive(directory, VCPKG_LINE_INFO);
-        Util::sort(port_dirs);
-
-        Util::erase_remove_if(port_dirs,
-                              [&](auto&& port_dir_entry) { return port_dir_entry.filename() == FileDotDsStore; });
-
-        for (auto&& path : port_dirs)
-        {
-            auto port_name = path.filename();
-            auto maybe_spgh = try_load_port_required(fs, port_name, PortLocation{path}).maybe_scfl;
-            if (const auto spgh = maybe_spgh.get())
-            {
-                ret.paragraphs.push_back(std::move(*spgh));
-            }
-            else
-            {
-                ret.errors.emplace_back(std::piecewise_construct,
-                                        std::forward_as_tuple(port_name.data(), port_name.size()),
-                                        std::forward_as_tuple(std::move(maybe_spgh).error()));
-            }
-        }
-
-        return ret;
-    }
-
-    std::vector<SourceControlFileAndLocation> load_overlay_ports(const ReadOnlyFilesystem& fs, const Path& directory)
-    {
-        auto results = try_load_overlay_ports(fs, directory);
-        load_results_print_error(results);
-        return std::move(results.paragraphs);
-    }
-
     uint64_t get_load_ports_stats() { return g_load_ports_stats.load(); }
 }

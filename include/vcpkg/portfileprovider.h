@@ -25,6 +25,44 @@ namespace vcpkg
         bool empty() const noexcept;
     };
 
+    struct OverlayPortIndexEntry
+    {
+        OverlayPortIndexEntry(OverlayPortKind kind, const Path& directory);
+        OverlayPortIndexEntry(const OverlayPortIndexEntry&) = delete;
+        OverlayPortIndexEntry(OverlayPortIndexEntry&&);
+
+        const ExpectedL<SourceControlFileAndLocation>* try_load_port(const ReadOnlyFilesystem& fs,
+                                                                     StringView port_name);
+
+        ExpectedL<Unit> try_load_all_ports(const ReadOnlyFilesystem& fs,
+                                           std::map<std::string, const SourceControlFileAndLocation*>& out);
+
+    private:
+        OverlayPortKind m_kind;
+        Path m_directory;
+
+        using MapT = std::map<std::string, ExpectedL<SourceControlFileAndLocation>, std::less<>>;
+        // If kind == OverlayPortKind::Unknown, empty
+        // Otherwise, if kind == OverlayPortKind::Port,
+        //    upon load success, contains exactly one entry with the loaded name of the port
+        //    upon load failure, contains exactly one entry with a key of empty string, value being the load error
+        // Otherwise, if kind == OverlayPortKind::Directory, contains an entry for each loaded overlay-port in the
+        // directory
+        MapT m_loaded_ports;
+
+        OverlayPortKind determine_kind(const ReadOnlyFilesystem& fs);
+        const ExpectedL<SourceControlFileAndLocation>* try_load_port_cached_port(StringView port_name);
+
+        MapT::iterator try_load_port_subdirectory_uncached(MapT::iterator hint,
+                                                           const ReadOnlyFilesystem& fs,
+                                                           StringView port_name);
+
+        ExpectedL<Unit> load_all_port_subdirectories(const ReadOnlyFilesystem& fs);
+
+        const ExpectedL<SourceControlFileAndLocation>* try_load_port_subdirectory_with_cache(
+            const ReadOnlyFilesystem& fs, StringView port_name);
+    };
+
     struct PortFileProvider
     {
         virtual ~PortFileProvider() = default;

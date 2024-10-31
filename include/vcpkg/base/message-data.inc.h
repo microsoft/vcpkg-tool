@@ -2060,7 +2060,8 @@ DECLARE_MESSAGE(MismatchedManifestAfterReserialize,
 DECLARE_MESSAGE(MismatchedNames,
                 (msg::package_name, msg::actual),
                 "{actual} is the port name found",
-                "names did not match: '{package_name}' != '{actual}'")
+                "the port name declared in the metadata file did not match the directory. Expected the port to be "
+                "named {package_name}, but the file declares {actual}.")
 DECLARE_MESSAGE(MismatchedSpec,
                 (msg::path, msg::expected, msg::actual),
                 "{expected} and {actual} are package specs like 'zlib:x64-windows'",
@@ -2194,7 +2195,7 @@ DECLARE_MESSAGE(OptionRequiresOption,
 DECLARE_MESSAGE(Options, (), "Printed just before a list of options for a command", "Options")
 DECLARE_MESSAGE(OriginalBinParagraphHeader, (), "", "\nOriginal Binary Paragraph")
 DECLARE_MESSAGE(OtherCommandsHeader, (), "", "Other")
-DECLARE_MESSAGE(OverlayPatchDir, (msg::path), "", "Overlay path \"{path}\" must exist and must be a directory.")
+DECLARE_MESSAGE(OverlayPatchDir, (msg::path), "", "Overlay path \"{path}\" must be an existing directory.")
 DECLARE_MESSAGE(OverlayPortDirsHelp,
                 (msg::env_var),
                 "",
