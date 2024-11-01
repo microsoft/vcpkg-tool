@@ -82,7 +82,7 @@ static Json::Object make_resource(
     return obj;
 }
 
-Json::Value vcpkg::run_resource_heuristics(StringView contents, StringView version_text)
+Json::Object vcpkg::run_resource_heuristics(StringView contents, StringView version_text)
 {
     // These are a sequence of heuristics to enable proof-of-concept extraction of remote resources for SPDX SBOM
     // inclusion
@@ -130,7 +130,7 @@ Json::Value vcpkg::run_resource_heuristics(StringView contents, StringView versi
         packages.push_back(
             make_resource(fmt::format("SPDXRef-resource-{}", ++n), filename, std::move(url), sha, filename));
     }
-    return Json::Value::object(std::move(ret));
+    return ret;
 }
 
 std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
@@ -138,7 +138,7 @@ std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
                                     View<std::string> hashes,
                                     std::string created_time,
                                     std::string document_namespace,
-                                    std::vector<Json::Value>&& resource_docs)
+                                    std::vector<Json::Object>&& resource_docs)
 {
     Checks::check_exit(VCPKG_LINE_INFO, relative_paths.size() == hashes.size());
 
@@ -249,11 +249,9 @@ std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
 
     for (auto&& rdoc : resource_docs)
     {
-        if (!rdoc.is_object()) continue;
-        auto robj = std::move(rdoc).object(VCPKG_LINE_INFO);
-        append_move_if_exists_and_array(rels, robj, JsonIdRelationships);
-        append_move_if_exists_and_array(files, robj, JsonIdFiles);
-        append_move_if_exists_and_array(packages, robj, JsonIdPackages);
+        append_move_if_exists_and_array(rels, rdoc, JsonIdRelationships);
+        append_move_if_exists_and_array(files, rdoc, JsonIdFiles);
+        append_move_if_exists_and_array(packages, rdoc, JsonIdPackages);
     }
 
     return Json::stringify(doc);
