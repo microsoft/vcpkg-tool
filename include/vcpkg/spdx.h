@@ -27,7 +27,7 @@ namespace vcpkg
                                  View<std::string> hashes,
                                  std::string created_time,
                                  std::string document_namespace,
-                                 std::vector<Json::Value>&& resource_docs);
+                                 std::vector<Json::Object>&& resource_docs);
 
-    Json::Value run_resource_heuristics(StringView contents, StringView portRawVersion);
+    Json::Object run_resource_heuristics(StringView contents, StringView portRawVersion);
 }

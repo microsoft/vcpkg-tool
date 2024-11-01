@@ -98,16 +98,31 @@ namespace
         return nullopt;
     }
 
-    static std::vector<std::string> merge_overlays(const std::vector<std::string>& cli_overlays,
-                                                   const std::vector<std::string>& manifest_overlays,
-                                                   const std::vector<std::string>& env_overlays)
+    static void append_overlays(std::vector<Path>& result,
+                                const std::vector<std::string>& overlay_entries,
+                                const Path& relative_root)
     {
-        std::vector<std::string> ret = cli_overlays;
+        for (auto&& entry : overlay_entries)
+        {
+            result.push_back(relative_root / entry);
+        }
+    }
 
-        ret.insert(std::end(ret), std::begin(manifest_overlays), std::end(manifest_overlays));
-        ret.insert(std::end(ret), std::begin(env_overlays), std::end(env_overlays));
-
-        return ret;
+    // Merges overlay settings from the 3 major sources in the usual priority order, where command line wins first, then
+    // manifest, then environment. The parameter order is specifically chosen to group information that comes from the
+    // manifest together and make parameter order confusion less likely to compile.
+    static std::vector<Path> merge_overlays(const std::vector<std::string>& cli_overlays,
+                                            const std::vector<std::string>& env_overlays,
+                                            const Path& original_cwd,
+                                            const std::vector<std::string>& config_overlays,
+                                            const Path& config_directory)
+    {
+        std::vector<Path> result;
+        result.reserve(cli_overlays.size() + config_overlays.size() + env_overlays.size());
+        append_overlays(result, cli_overlays, original_cwd);
+        append_overlays(result, config_overlays, config_directory);
+        append_overlays(result, env_overlays, original_cwd);
+        return result;
     }
 
     ConfigurationAndSource merge_validate_configs(Optional<ManifestConfiguration>&& manifest_data,
@@ -658,43 +673,33 @@ namespace vcpkg
         m_pimpl->m_download_manager->asset_cache_configured() ? Debug::println("Asset caching is enabled.")
                                                               : Debug::println("Asset cache is not configured.");
 
-        {
-            const auto config_path = m_pimpl->m_config_dir / "vcpkg-configuration.json";
-            auto maybe_manifest_config = config_from_manifest(m_pimpl->m_manifest_doc);
-            auto maybe_json_config =
-                !filesystem.exists(config_path, IgnoreErrors{})
-                    ? nullopt
-                    : parse_configuration(filesystem.read_contents(config_path, IgnoreErrors{}), config_path, out_sink);
+        const auto config_path = m_pimpl->m_config_dir / "vcpkg-configuration.json";
+        auto maybe_manifest_config = config_from_manifest(m_pimpl->m_manifest_doc);
+        auto maybe_json_config =
+            filesystem.exists(config_path, IgnoreErrors{})
+                ? parse_configuration(filesystem.read_contents(config_path, IgnoreErrors{}), config_path, out_sink)
+                : nullopt;
 
-            m_pimpl->m_config = merge_validate_configs(std::move(maybe_manifest_config),
-                                                       m_pimpl->m_manifest_dir,
-                                                       std::move(maybe_json_config),
-                                                       m_pimpl->m_config_dir,
-                                                       *this);
-
-            auto resolve_relative_to_config = [&](const std::string& overlay_path) {
-                return (m_pimpl->m_config.directory / overlay_path).native();
-            };
-
-            std::vector<std::string> overlay_triplet_paths;
-            std::vector<std::string> overlay_port_paths;
-
-            if (!m_pimpl->m_config.directory.empty())
-            {
-                auto& config = m_pimpl->m_config.config;
-                overlay_triplet_paths = Util::fmap(config.overlay_triplets, resolve_relative_to_config);
-                overlay_port_paths = Util::fmap(config.overlay_ports, resolve_relative_to_config);
-            }
-
-            overlay_ports = merge_overlays(args.cli_overlay_ports, overlay_port_paths, args.env_overlay_ports);
-            overlay_triplets =
-                merge_overlays(args.cli_overlay_triplets, overlay_triplet_paths, args.env_overlay_triplets);
-        }
-
-        for (const std::string& triplet : this->overlay_triplets)
+        m_pimpl->m_config = merge_validate_configs(std::move(maybe_manifest_config),
+                                                   m_pimpl->m_manifest_dir,
+                                                   std::move(maybe_json_config),
+                                                   m_pimpl->m_config_dir,
+                                                   *this);
+        overlay_ports = merge_overlays(args.cli_overlay_ports,
+                                       args.env_overlay_ports,
+                                       original_cwd,
+                                       m_pimpl->m_config.config.overlay_ports,
+                                       m_pimpl->m_config.directory);
+        overlay_triplets = merge_overlays(args.cli_overlay_triplets,
+                                          args.env_overlay_triplets,
+                                          original_cwd,
+                                          m_pimpl->m_config.config.overlay_triplets,
+                                          m_pimpl->m_config.directory);
+        for (const auto& triplet : this->overlay_triplets)
         {
             m_pimpl->triplets_dirs.emplace_back(filesystem.almost_canonical(triplet, VCPKG_LINE_INFO));
         }
+
         m_pimpl->triplets_dirs.emplace_back(triplets);
         m_pimpl->triplets_dirs.emplace_back(community_triplets);
     }

@@ -69,7 +69,6 @@ namespace vcpkg
             CleanDownloads::No,
             DownloadTool::Builtin,
             BackcompatFeatures::Allow,
-            PrintUsage::Yes,
             keep_going,
         };
 
@@ -81,8 +80,7 @@ namespace vcpkg
         // Load ports from ports dirs
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();
-        PathsPortFileProvider provider(*registry_set,
-                                       make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
+        PathsPortFileProvider provider(*registry_set, make_overlay_provider(fs, paths.overlay_ports));
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
 
