@@ -1,0 +1,4 @@
+{
+  "$comment":  "'./a' in . should get loaded first, so we should never consider 'malformed/a'",
+  "overlay-port-dirs": [ ".", "malformed" ]
+}

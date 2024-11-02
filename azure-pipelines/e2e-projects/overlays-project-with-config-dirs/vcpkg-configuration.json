@@ -1,0 +1,4 @@
+{
+  "overlay-port-dirs": [ "./config-overlays" ],
+  "overlay-triplets": [ "./my-triplets" ]
+}

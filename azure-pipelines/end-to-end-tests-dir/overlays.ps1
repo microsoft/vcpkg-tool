@@ -2,9 +2,11 @@
 
 # Tests a simple project with overlay ports and triplets configured on a vcpkg-configuration.json file
 Copy-Item -Recurse -LiteralPath @(
-    "$PSScriptRoot/../e2e-projects/overlays-project-with-config",
+    "$PSScriptRoot/../e2e-projects/overlays-bad-paths",
+    "$PSScriptRoot/../e2e-projects/overlays-malformed-shadowing",
     "$PSScriptRoot/../e2e-projects/overlays-project-config-embedded",
-    "$PSScriptRoot/../e2e-projects/overlays-bad-paths"
+    "$PSScriptRoot/../e2e-projects/overlays-project-with-config",
+    "$PSScriptRoot/../e2e-projects/overlays-project-with-config-dirs"
     ) $TestingRoot
 
 $manifestRoot = "$TestingRoot/overlays-project-with-config"
@@ -16,6 +18,19 @@ Run-Vcpkg install --x-manifest-root=$manifestRoot `
     --x-install-root=$installRoot `
     --triplet fancy-triplet
 Throw-IfFailed
+
+# And also with overlay-port-dirs
+$manifestRoot = "$TestingRoot/overlays-project-with-config-dirs"
+Remove-Item env:VCPKG_OVERLAY_PORTS
+$env:VCPKG_OVERLAY_PORT_DIRS = "$manifestRoot/env-overlays"
+
+Run-Vcpkg install --x-manifest-root=$manifestRoot `
+    --overlay-port-dirs=$manifestRoot/cli-overlays `
+    --overlay-triplets=$manifestRoot/my-triplets `
+    --x-install-root=$installRoot `
+    --triplet fancy-triplet
+Throw-IfFailed
+Remove-Item env:VCPKG_OVERLAY_PORT_DIRS
 
 # Tests overlays configured in env and cli on a project with configuration embedded on the manifest file
 $manifestRoot = "$TestingRoot/overlays-project-config-embedded"
@@ -34,6 +49,12 @@ Run-Vcpkg install --x-manifest-root=$manifestRoot `
     --overlay-triplets=$manifestRoot/my-triplets `
     --x-install-root=$installRoot
 Throw-IfNotFailed
+Remove-Item env:VCPKG_OVERLAY_PORTS
+
+# Test that once an overlay port is loaded for a name, subsequent ports are not considered
+$manifestRoot = "$TestingRoot/overlays-malformed-shadowing"
+Run-Vcpkg install --x-manifest-root=$manifestRoot
+Throw-IfFailed
 
 # Test overlay_triplet paths remain relative to the manifest root after x-update-baseline
 $manifestRoot = "$TestingRoot/overlays-project-with-config"
@@ -47,11 +68,10 @@ $overlaysAfter = $configurationAfter."overlay-triplets"
 $notEqual = @(Compare-Object $overlaysBefore $overlaysAfter -SyncWindow 0).Length -ne 0
 
 if ($notEqual) {
-	Throw "Overlay triplets paths changed after x-update-baseline"
+    Throw "Overlay triplets paths changed after x-update-baseline"
 }
 
 # Test that removals can happen without the overlay triplets
-Remove-Item env:VCPKG_OVERLAY_PORTS
 Refresh-TestRoot
 Run-Vcpkg install another-vcpkg-empty-port:fancy-triplet `
     --overlay-ports=$PSScriptRoot/../e2e-projects/overlays-project-with-config/cli-overlays `
