@@ -57,7 +57,6 @@ namespace vcpkg
             else
             {
                 // it looked like a port but we failed to load it for some reason
-                // succeeded in loading it, so this must be a port
                 m_kind = OverlayPortKind::Port;
                 m_loaded_ports.emplace(std::string(), std::move(maybe_scfl));
             }
