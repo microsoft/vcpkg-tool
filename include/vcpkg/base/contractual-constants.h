@@ -187,6 +187,7 @@ namespace vcpkg
     inline constexpr StringLiteral SwitchBuiltinPortsRoot = "builtin-ports-root";
     inline constexpr StringLiteral SwitchBuiltinRegistryVersionsDir = "builtin-registry-versions-dir";
     inline constexpr StringLiteral SwitchCIBaseline = "ci-baseline";
+    inline constexpr StringLiteral SwitchClassic = "classic";
     inline constexpr StringLiteral SwitchCleanAfterBuild = "clean-after-build";
     inline constexpr StringLiteral SwitchCleanBuildtreesAfterBuild = "clean-buildtrees-after-build";
     inline constexpr StringLiteral SwitchCleanDownloadsAfterBuild = "clean-downloads-after-build";

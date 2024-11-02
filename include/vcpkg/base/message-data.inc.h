@@ -1346,6 +1346,7 @@ DECLARE_MESSAGE(
     (),
     "",
     "Environment variable VCPKG_FORCE_SYSTEM_BINARIES must be set on arm, s390x, ppc64le and riscv platforms.")
+DECLARE_MESSAGE(ForceClassicMode, (), "", "Force classic mode, even if a manifest could be found.")
 DECLARE_MESSAGE(FormattedParseMessageExpressionPrefix, (), "", "on expression:")
 DECLARE_MESSAGE(ForMoreHelp,
                 (),
