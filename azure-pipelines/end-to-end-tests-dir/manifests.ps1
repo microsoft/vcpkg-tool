@@ -187,7 +187,7 @@ Run-Vcpkg install @manifestDirArgs --x-feature=a "--overlay-ports=$manifestDir/m
 Throw-IfFailed
 
 Write-Trace "test manifest install with specific package names fails"
-$output = Run-VcpkgAndCaptureStderr install @manifestDirArgs vcpkg-empty-port
+$output = Run-VcpkgAndCaptureStdout install @manifestDirArgs vcpkg-empty-port
 Throw-IfNotFailed
 Throw-IfNonContains -Expected 'error: In manifest mode, ``vcpkg install`` does not support individual package arguments.' -Actual $output
 
