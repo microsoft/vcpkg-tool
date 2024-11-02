@@ -24,8 +24,6 @@ namespace vcpkg::Paragraphs
 
     ExpectedL<std::vector<Paragraph>> parse_paragraphs(StringView str, StringView origin);
 
-    bool is_port_directory(const ReadOnlyFilesystem& fs, const Path& maybe_directory);
-
     struct PortLoadResult
     {
         ExpectedL<SourceControlFileAndLocation> maybe_scfl;

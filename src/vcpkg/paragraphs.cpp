@@ -352,12 +352,6 @@ namespace vcpkg::Paragraphs
         return PghParser(str, origin).get_paragraphs();
     }
 
-    bool is_port_directory(const ReadOnlyFilesystem& fs, const Path& maybe_directory)
-    {
-        return fs.exists(maybe_directory / "CONTROL", IgnoreErrors{}) ||
-               fs.exists(maybe_directory / "vcpkg.json", IgnoreErrors{});
-    }
-
     ExpectedL<std::unique_ptr<SourceControlFile>> try_load_project_manifest_text(StringView text,
                                                                                  StringView control_path,
                                                                                  MessageSink& warning_sink)
