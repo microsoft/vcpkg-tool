@@ -170,10 +170,11 @@ Refresh-TestRoot
 $actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("x-download", "$downloadsRoot/example3.html", "--sha512", "d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73a", "--url", "https://localhost:1234/foobar.html", "--x-asset-sources=x-azurl,file://$AssetCache,,readwrite"))
 $actual = $actual -replace "`r`n", "`n"
 
+$AssetCacheSlash = $AssetCache -replace '\\', '/'
 $expected = @(
 "Asset cache miss; downloading from https://localhost:1234/foobar.html"
 "Downloading example3.html"
-"error: file://$AssetCache/.*: curl failed to download with exit code 37"
+"error: file://$AssetCacheSlash/.*: curl failed to download with exit code 37"
 ) -join "`n"
 
 if (-not ($actual -match $expected)) {
@@ -187,8 +188,9 @@ Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("x-download", "$downloadsRo
 $actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("x-download", "$downloadsRoot/example3.html", "--sha512", "d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73a", "--url", "https://example.com", "--x-asset-sources=x-azurl,file://$AssetCache,,readwrite"))
 $actual = $actual -replace "`r`n", "`n"
 
+$AssetCacheSlash = $AssetCache -replace '\\', '/'
 $expected = @(
-"Asset cache hit for example3.html; downloaded from: file://$AssetCache/.*"
+"Asset cache hit for example3.html; downloaded from: file://$AssetCacheSlash/.*"
 ) -join "`n"
 
 if (-not ($actual -match $expected)) {
@@ -201,10 +203,11 @@ Refresh-TestRoot
 $actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("x-download", "$downloadsRoot/example3.html", "--sha512", "d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73b", "--url", "https://example.com", "--x-asset-sources=x-azurl,file://$AssetCache,,readwrite"))
 $actual = $actual -replace "`r`n", "`n"
 
+$AssetCacheSlash = $AssetCache -replace '\\', '/'
 $expected = @(
 "Asset cache miss; downloading from https://example.com"
 "Downloading example3.html"
-"error: file://$AssetCache/.*: curl failed to download with exit code 37"
+"error: file://$AssetCacheSlash/.*: curl failed to download with exit code 37"
 ) -join "`n"
 
 if (-not ($actual -match $expected)) {
@@ -229,11 +232,12 @@ Refresh-TestRoot
 $actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("x-download", "$downloadsRoot/example3.html", "--sha512", "d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73a", "--url", "https://example.com", "--x-asset-sources=x-azurl,file://$AssetCache,,readwrite"))
 $actual = $actual -replace "`r`n", "`n"
 
+$AssetCacheSlash = $AssetCache -replace '\\', '/'
 $expected = @(
 "Asset cache miss; downloading from https://example.com"
 "Downloading example3.html"
 "Successfully downloaded example3.html."
-"Successfully stored example3.html to file://$AssetCache/.*."
+"Successfully stored example3.html to file://$AssetCacheSlash/.*."
 ) -join "`n"
 if (-not ($actual -match $expected)) {
     throw "Failure: azurl (yes), x-block-origin (no), asset-cache (miss), download (succeed)"
@@ -260,8 +264,9 @@ Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("x-download", "$downloadsRo
 $actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("x-download", "$downloadsRoot/example3.html", "--sha512", "d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73a", "--url", "https://example.com", "--x-asset-sources=x-azurl,file://$AssetCache,,readwrite;x-block-origin"))
 $actual = $actual -replace "`r`n", "`n"
 
+$AssetCacheSlash = $AssetCache -replace '\\', '/'
 $expected = @(
-"Asset cache hit for example3.html; downloaded from: file://$AssetCache/.*"
+"Asset cache hit for example3.html; downloaded from: file://$AssetCacheSlash/.*"
 ) -join "`n"
 if (-not ($actual -match $expected)) {
     throw "Failure: azurl (yes), x-block-origin (yes), asset-cache (hit), download (n/a)"
