@@ -352,6 +352,16 @@ namespace vcpkg::Paragraphs
         return PghParser(str, origin).get_paragraphs();
     }
 
+    void append_paragraph_field(StringView name, StringView field, std::string& out_str)
+    {
+        if (field.empty())
+        {
+            return;
+        }
+
+        out_str.append(name.data(), name.size()).append(": ").append(field.data(), field.size()).push_back('\n');
+    }
+
     bool is_port_directory(const ReadOnlyFilesystem& fs, const Path& maybe_directory)
     {
         return fs.exists(maybe_directory / "CONTROL", IgnoreErrors{}) ||
