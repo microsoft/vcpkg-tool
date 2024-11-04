@@ -944,7 +944,7 @@ namespace vcpkg
                 }
                 else
                 {
-                    msg::println(msgAssetCacheMiss, msg::url = download_path.filename());
+                    msg::println(msgAssetCacheMiss, msg::url = urls[0]);
                 }
             }
             else if (auto script = m_config.m_script.get())
@@ -999,11 +999,12 @@ namespace vcpkg
         {
             if (urls.size() != 0)
             {
+                msg::println(msgDownloadingUrl, msg::url = download_path.filename());
                 auto maybe_url = try_download_file(
                     fs, urls, headers, download_path, sha512, m_config.m_secrets, errors, progress_sink);
                 if (auto url = maybe_url.get())
                 {
-                    msg::println(msgDownloadingUrl, msg::url = urls[0]);
+                    msg::println(msgDownloadSuccesful, msg::path = download_path.filename());
 
                     if (auto hash = sha512.get())
                     {

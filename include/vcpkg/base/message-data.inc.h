@@ -252,6 +252,7 @@ DECLARE_MESSAGE(AssetCacheMissBlockOrigin,
                 (msg::path),
                 "x-block-origin is a vcpkg term. Do not translate",
                 "Asset cache miss for {path} and downloads are blocked by x-block-origin.")
+DECLARE_MESSAGE(DownloadSuccesful, (msg::path), "", "Successfully downloaded {path}.")
 DECLARE_MESSAGE(DownloadingUrl, (msg::url), "", "Downloading {url}")
 DECLARE_MESSAGE(AssetCacheProviderAcceptsNoArguments,
                 (msg::value),
