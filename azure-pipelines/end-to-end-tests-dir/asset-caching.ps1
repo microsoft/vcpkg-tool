@@ -57,6 +57,8 @@ $actual = $actual -replace "`r`n", "`n"
 $expected = @(
 "A suitable version of .* was not found \(required v[0-9\.]+\)."
 "Asset cache miss; downloading from .*"
+"Downloading .*"
+"Successfully downloaded .*."
 "Successfully stored .* to .*."
 ) -join "`n"
 
