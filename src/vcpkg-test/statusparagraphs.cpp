@@ -10,31 +10,34 @@ using namespace vcpkg::Paragraphs;
 using namespace vcpkg::Test;
 
 static constexpr StringLiteral test_origin = "test";
+static constexpr TextRowCol test_textrowcol = {42, 34};
 
 TEST_CASE ("parse status lines", "[statusparagraphs]")
 {
-    REQUIRE(parse_status_line("install ok installed", test_origin).value_or_exit(VCPKG_LINE_INFO) ==
+    REQUIRE(parse_status_line("install ok installed", test_origin, test_textrowcol).value_or_exit(VCPKG_LINE_INFO) ==
             StatusLine{Want::INSTALL, InstallState::INSTALLED});
-    REQUIRE(parse_status_line("hold ok installed", test_origin).value_or_exit(VCPKG_LINE_INFO) ==
+    REQUIRE(parse_status_line("hold ok installed", test_origin, test_textrowcol).value_or_exit(VCPKG_LINE_INFO) ==
             StatusLine{Want::HOLD, InstallState::INSTALLED});
-    REQUIRE(parse_status_line("deinstall ok installed", test_origin).value_or_exit(VCPKG_LINE_INFO) ==
+    REQUIRE(parse_status_line("deinstall ok installed", test_origin, test_textrowcol).value_or_exit(VCPKG_LINE_INFO) ==
             StatusLine{Want::DEINSTALL, InstallState::INSTALLED});
-    REQUIRE(parse_status_line("purge ok installed", test_origin).value_or_exit(VCPKG_LINE_INFO) ==
+    REQUIRE(parse_status_line("purge ok installed", test_origin, test_textrowcol).value_or_exit(VCPKG_LINE_INFO) ==
             StatusLine{Want::PURGE, InstallState::INSTALLED});
 
-    REQUIRE(parse_status_line("install ok not-installed", test_origin).value_or_exit(VCPKG_LINE_INFO) ==
-            StatusLine{Want::INSTALL, InstallState::NOT_INSTALLED});
-    REQUIRE(parse_status_line("install ok half-installed", test_origin).value_or_exit(VCPKG_LINE_INFO) ==
-            StatusLine{Want::INSTALL, InstallState::HALF_INSTALLED});
+    REQUIRE(
+        parse_status_line("install ok not-installed", test_origin, test_textrowcol).value_or_exit(VCPKG_LINE_INFO) ==
+        StatusLine{Want::INSTALL, InstallState::NOT_INSTALLED});
+    REQUIRE(
+        parse_status_line("install ok half-installed", test_origin, test_textrowcol).value_or_exit(VCPKG_LINE_INFO) ==
+        StatusLine{Want::INSTALL, InstallState::HALF_INSTALLED});
 
-    REQUIRE(parse_status_line("meow ok installed", test_origin).error() ==
-            LocalizedString::from_raw("test:1:1: error: expected one of 'install', 'hold', 'deinstall', or 'purge' "
+    REQUIRE(parse_status_line("meow ok installed", test_origin, test_textrowcol).error() ==
+            LocalizedString::from_raw("test:42:34: error: expected one of 'install', 'hold', 'deinstall', or 'purge' "
                                       "here\n  on expression: meow ok installed\n                 ^"));
-    REQUIRE(parse_status_line("install ko half-installed", test_origin).error() ==
-            LocalizedString::from_raw("test:1:8: error: expected ' ok ' here\n  on expression: install ko "
+    REQUIRE(parse_status_line("install ko half-installed", test_origin, test_textrowcol).error() ==
+            LocalizedString::from_raw("test:42:41: error: expected ' ok ' here\n  on expression: install ko "
                                       "half-installed\n                        ^"));
-    REQUIRE(parse_status_line("install ok meow", test_origin).error() ==
-            LocalizedString::from_raw("test:1:12: error: expected one of 'not-installed', 'half-installed', or "
+    REQUIRE(parse_status_line("install ok meow", test_origin, test_textrowcol).error() ==
+            LocalizedString::from_raw("test:42:45: error: expected one of 'not-installed', 'half-installed', or "
                                       "'installed'\n  on expression: install ok meow\n                            ^"));
 }
 

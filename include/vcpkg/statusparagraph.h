@@ -32,7 +32,7 @@ namespace vcpkg
         friend bool operator!=(const StatusLine& lhs, const StatusLine& rhs) { return !(lhs == rhs); }
     };
 
-    ExpectedL<StatusLine> parse_status_line(StringView text, Optional<StringView> origin);
+    ExpectedL<StatusLine> parse_status_line(StringView text, Optional<StringView> origin, TextRowCol init_rowcol);
 
     // metadata for a package's representation in the 'installed' tree
     struct StatusParagraph
