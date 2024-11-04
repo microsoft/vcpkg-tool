@@ -36,12 +36,7 @@ namespace vcpkg::Prefab
         return paths;
     }
 
-    std::string NdkVersion::to_string() const
-    {
-        std::string ret;
-        this->to_string(ret);
-        return ret;
-    }
+    std::string NdkVersion::to_string() const { return adapt_to_string(*this); }
     void NdkVersion::to_string(std::string& out) const
     {
         out.append("NdkVersion{major=")
@@ -438,8 +433,8 @@ namespace vcpkg::Prefab
 
             const auto share_root = paths.packages() / fmt::format("{}_{}", name, action.spec.triplet());
 
-            fs.copy_file(share_root / "share" / name / "copyright",
-                         meta_dir / "LICENSE",
+            fs.copy_file(share_root / FileShare / name / FileCopyright,
+                         meta_dir / FileLicense,
                          CopyOptions::overwrite_existing,
                          IgnoreErrors{});
 

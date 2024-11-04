@@ -1055,8 +1055,7 @@ namespace vcpkg
         const auto unsupported_port_action = Util::Sets::contains(options.switches, SwitchAllowUnsupported)
                                                  ? UnsupportedPortAction::Warn
                                                  : UnsupportedPortAction::Error;
-        const PrintUsage print_cmake_usage =
-            Util::Sets::contains(options.switches, SwitchNoPrintUsage) ? PrintUsage::No : PrintUsage::Yes;
+        const bool print_cmake_usage = !Util::Sets::contains(options.switches, SwitchNoPrintUsage);
 
         get_global_metrics_collector().track_bool(BoolMetric::InstallManifestMode, paths.manifest_mode_enabled());
 
@@ -1125,7 +1124,6 @@ namespace vcpkg
             Util::Enum::to_enum<CleanDownloads>(clean_after_build || clean_downloads_after_build),
             download_tool,
             prohibit_backcompat_features ? BackcompatFeatures::Prohibit : BackcompatFeatures::Allow,
-            print_cmake_usage,
             keep_going,
         };
 
@@ -1240,16 +1238,16 @@ namespace vcpkg
             auto verprovider = make_versioned_portfile_provider(*registry_set);
             auto baseprovider = make_baseline_provider(*registry_set);
 
-            std::vector<std::string> extended_overlay_ports;
+            std::vector<Path> extended_overlay_ports;
             extended_overlay_ports.reserve(paths.overlay_ports.size() + add_builtin_ports_directory_as_overlay);
             extended_overlay_ports = paths.overlay_ports;
             if (add_builtin_ports_directory_as_overlay)
             {
-                extended_overlay_ports.emplace_back(paths.builtin_ports_directory().native());
+                extended_overlay_ports.emplace_back(paths.builtin_ports_directory());
             }
 
-            auto oprovider = make_manifest_provider(
-                fs, paths.original_cwd, extended_overlay_ports, manifest->path, std::move(manifest_scf));
+            auto oprovider =
+                make_manifest_provider(fs, extended_overlay_ports, manifest->path, std::move(manifest_scf));
             auto install_plan = create_versioned_install_plan(*verprovider,
                                                               *baseprovider,
                                                               *oprovider,
@@ -1273,13 +1271,13 @@ namespace vcpkg
                                               var_provider,
                                               std::move(install_plan),
                                               dry_run ? DryRun::Yes : DryRun::No,
+                                              print_cmake_usage ? PrintUsage::Yes : PrintUsage::No,
                                               pkgsconfig,
                                               true);
         }
 
         auto registry_set = paths.make_registry_set();
-        PathsPortFileProvider provider(*registry_set,
-                                       make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
+        PathsPortFileProvider provider(*registry_set, make_overlay_provider(fs, paths.overlay_ports));
 
         const std::vector<FullPackageSpec> specs = Util::fmap(options.command_arguments, [&](const std::string& arg) {
             return check_and_get_full_package_spec(arg, default_triplet, paths.get_triplet_db())
@@ -1373,6 +1371,8 @@ namespace vcpkg
                                                             binary_cache,
                                                             null_build_logs_recorder());
 
+        // Skip printing the summary without --keep-going because the status without it is 'obvious': everything was a
+        // success.
         if (keep_going == KeepGoing::Yes)
         {
             msg::print(summary.format());
@@ -1396,7 +1396,7 @@ namespace vcpkg
             fs.write_contents(it_xunit->second, xwriter.build_xml(default_triplet), VCPKG_LINE_INFO);
         }
 
-        if (build_package_options.print_usage == PrintUsage::Yes)
+        if (print_cmake_usage)
         {
             std::set<std::string> printed_usages;
             for (auto&& result : summary.results)

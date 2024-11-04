@@ -2,6 +2,10 @@
 
 #include <vcpkg/base/system.process.h>
 
+#ifndef _WIN32
+#include <sys/wait.h>
+#endif
+
 using namespace vcpkg;
 
 TEST_CASE ("captures-output", "[system.process]")

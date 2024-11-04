@@ -157,6 +157,35 @@ namespace vcpkg
             });
     }
 
+    // set target to the subrange [begin_idx, end_idx)
+    static void set_string_to_subrange(std::string& target, size_t begin_idx, size_t end_idx)
+    {
+        if (end_idx != std::string::npos)
+        {
+            target.resize(end_idx);
+        }
+        target.erase(0, begin_idx);
+    }
+
+    ExpectedL<std::string> extract_prefixed_nonquote(StringLiteral prefix,
+                                                     StringLiteral tool_name,
+                                                     std::string&& output,
+                                                     const Path& exe_path)
+    {
+        auto idx = output.find(prefix.data(), 0, prefix.size());
+        if (idx != std::string::npos)
+        {
+            idx += prefix.size();
+            const auto end_idx = output.find('"', idx);
+            set_string_to_subrange(output, idx, end_idx);
+            return {std::move(output), expected_left_tag};
+        }
+
+        return std::move(msg::format_error(msgUnexpectedToolOutput, msg::tool_name = tool_name, msg::path = exe_path)
+                             .append_raw('\n')
+                             .append_raw(std::move(output)));
+    }
+
     ExpectedL<std::string> extract_prefixed_nonwhitespace(StringLiteral prefix,
                                                           StringLiteral tool_name,
                                                           std::string&& output,
@@ -167,12 +196,7 @@ namespace vcpkg
         {
             idx += prefix.size();
             const auto end_idx = output.find_first_of(" \r\n", idx, 3);
-            if (end_idx != std::string::npos)
-            {
-                output.resize(end_idx);
-            }
-
-            output.erase(0, idx);
+            set_string_to_subrange(output, idx, end_idx);
             return {std::move(output), expected_left_tag};
         }
 
@@ -459,6 +483,31 @@ namespace vcpkg
                 .then([&](std::string&& output) {
                     // Sample output: aws-cli/2.4.4 Python/3.8.8 Windows/10 exe/AMD64 prompt/off
                     return extract_prefixed_nonwhitespace("aws-cli/", Tools::AWSCLI, std::move(output), exe_path);
+                });
+        }
+    };
+
+    struct AzCliProvider : ToolProvider
+    {
+        virtual bool is_abi_sensitive() const override { return false; }
+        virtual StringView tool_data_name() const override { return Tools::AZCLI; }
+        virtual std::vector<StringView> system_exe_stems() const override { return {Tools::AZCLI}; }
+        virtual std::array<int, 3> default_min_version() const override { return {2, 64, 0}; }
+
+        virtual ExpectedL<std::string> get_version(const ToolCache&, MessageSink&, const Path& exe_path) const override
+        {
+            return run_to_extract_version(
+                       Tools::AZCLI,
+                       exe_path,
+                       Command(exe_path).string_arg("version").string_arg("--output").string_arg("json"))
+                .then([&](std::string&& output) {
+                    // {
+                    //    ...
+                    //   "azure-cli": "2.64.0",
+                    //    ...
+                    // }
+
+                    return extract_prefixed_nonquote("\"azure-cli\": \"", Tools::AZCLI, std::move(output), exe_path);
                 });
         }
     };
@@ -864,6 +913,7 @@ namespace vcpkg
                 if (tool == Tools::MONO) return get_path(MonoProvider(), status_sink);
                 if (tool == Tools::GSUTIL) return get_path(GsutilProvider(), status_sink);
                 if (tool == Tools::AWSCLI) return get_path(AwsCliProvider(), status_sink);
+                if (tool == Tools::AZCLI) return get_path(AzCliProvider(), status_sink);
                 if (tool == Tools::COSCLI) return get_path(CosCliProvider(), status_sink);
                 if (tool == Tools::PYTHON3) return get_path(Python3Provider(), status_sink);
                 if (tool == Tools::PYTHON3_WITH_VENV) return get_path(Python3WithVEnvProvider(), status_sink);
