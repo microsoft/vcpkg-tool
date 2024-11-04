@@ -601,6 +601,8 @@
   "_DownloadFailedStatusCode.comment": "{value} is an HTTP status code An example of {url} is https://github.com/microsoft/vcpkg.",
   "DownloadRootsDir": "Downloads directory (default: {env_var})",
   "_DownloadRootsDir.comment": "An example of {env_var} is VCPKG_DEFAULT_TRIPLET.",
+  "DownloadSuccesful": "Successfully downloaded {path}.",
+  "_DownloadSuccesful.comment": "An example of {path} is /foo/bar.",
   "DownloadWinHttpError": "{url}: {system_api} failed with exit code {exit_code}",
   "_DownloadWinHttpError.comment": "An example of {system_api} is CreateProcessW. An example of {exit_code} is 127. An example of {url} is https://github.com/microsoft/vcpkg.",
   "DownloadedSources": "Downloaded sources for {spec}",
