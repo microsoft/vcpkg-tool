@@ -57,9 +57,7 @@ namespace vcpkg
             const auto status_file = installed.vcpkg_dir_status_file();
             const auto status_file_new = Path(status_file.parent_path()) / FileStatusNew;
             fs.write_contents(status_file_new, Strings::serialize(current_status_db), VCPKG_LINE_INFO);
-
             fs.rename(status_file_new, status_file, VCPKG_LINE_INFO);
-
             for (auto&& file : update_files)
             {
                 fs.remove(file, VCPKG_LINE_INFO);
@@ -70,25 +68,15 @@ namespace vcpkg
     StatusParagraphs database_load(const ReadOnlyFilesystem& fs, const InstalledPaths& installed)
     {
         const auto maybe_status_file = installed.vcpkg_dir_status_file();
-        const auto status_parent = Path(maybe_status_file.parent_path());
-        const auto status_file_old = status_parent / FileStatusOld;
-
-        auto status_file = &maybe_status_file;
-
         if (!fs.exists(maybe_status_file, IgnoreErrors{}))
         {
-            if (!fs.exists(status_file_old, IgnoreErrors{}))
-            {
-                // no status file, use empty db
-                StatusParagraphs current_status_db;
-                (void)apply_database_updates(fs, current_status_db, installed.vcpkg_dir_updates());
-                return current_status_db;
-            }
-
-            status_file = &status_file_old;
+            // no status file, use empty db
+            StatusParagraphs current_status_db;
+            (void)apply_database_updates(fs, current_status_db, installed.vcpkg_dir_updates());
+            return current_status_db;
         }
 
-        StatusParagraphs current_status_db = load_current_database(fs, *status_file);
+        StatusParagraphs current_status_db = load_current_database(fs, maybe_status_file);
         (void)apply_database_updates(fs, current_status_db, installed.vcpkg_dir_updates());
         return current_status_db;
     }
@@ -103,20 +91,12 @@ namespace vcpkg
         fs.create_directory(updates_dir, VCPKG_LINE_INFO);
 
         const auto status_file = installed.vcpkg_dir_status_file();
-        const auto status_parent = Path(status_file.parent_path());
-        const auto status_file_old = status_parent / FileStatusOld;
-
         if (!fs.exists(status_file, IgnoreErrors{}))
         {
-            if (!fs.exists(status_file_old, IgnoreErrors{}))
-            {
-                // no status file, use empty db
-                StatusParagraphs current_status_db;
-                apply_database_updates_on_disk(fs, installed, current_status_db);
-                return current_status_db;
-            }
-
-            fs.rename(status_file_old, status_file, VCPKG_LINE_INFO);
+            // no status file, use empty db
+            StatusParagraphs current_status_db;
+            apply_database_updates_on_disk(fs, installed, current_status_db);
+            return current_status_db;
         }
 
         StatusParagraphs current_status_db = load_current_database(fs, status_file);
