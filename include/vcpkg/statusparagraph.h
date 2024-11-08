@@ -5,6 +5,8 @@
 #include <vcpkg/fwd/installedpaths.h>
 #include <vcpkg/fwd/statusparagraph.h>
 
+#include <vcpkg/base/fmt.h>
+
 #include <vcpkg/binaryparagraph.h>
 
 #include <map>
@@ -13,18 +15,35 @@
 
 namespace vcpkg
 {
+    struct StatusLine
+    {
+        Want want = Want::ERROR_STATE;
+        InstallState state = InstallState::ERROR_STATE;
+
+        bool is_installed() const noexcept { return want == Want::INSTALL && state == InstallState::INSTALLED; }
+        void to_string(std::string& out) const;
+        std::string to_string() const;
+
+        friend bool operator==(const StatusLine& lhs, const StatusLine& rhs)
+        {
+            return lhs.want == rhs.want && lhs.state == rhs.state;
+        }
+
+        friend bool operator!=(const StatusLine& lhs, const StatusLine& rhs) { return !(lhs == rhs); }
+    };
+
+    ExpectedL<StatusLine> parse_status_line(StringView text, Optional<StringView> origin, TextRowCol init_rowcol);
 
     // metadata for a package's representation in the 'installed' tree
     struct StatusParagraph
     {
-        StatusParagraph() noexcept;
+        StatusParagraph() = default;
         StatusParagraph(StringView origin, Paragraph&& fields);
 
-        bool is_installed() const { return want == Want::INSTALL && state == InstallState::INSTALLED; }
+        bool is_installed() const noexcept { return status.is_installed(); }
 
         BinaryParagraph package;
-        Want want;
-        InstallState state;
+        StatusLine status;
     };
 
     void serialize(const StatusParagraph& pgh, std::string& out_str);
@@ -59,3 +78,4 @@ namespace vcpkg
 
 VCPKG_FORMAT_WITH_TO_STRING_LITERAL_NONMEMBER(vcpkg::InstallState);
 VCPKG_FORMAT_WITH_TO_STRING_LITERAL_NONMEMBER(vcpkg::Want);
+VCPKG_FORMAT_WITH_TO_STRING(vcpkg::StatusLine);
