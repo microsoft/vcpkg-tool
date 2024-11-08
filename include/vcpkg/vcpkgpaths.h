@@ -98,10 +98,10 @@ namespace vcpkg
     private:
         const Path triplets;
         const Path community_triplets;
-        std::vector<std::string> overlay_triplets;
+        std::vector<Path> overlay_triplets;
 
     public:
-        std::vector<std::string> overlay_ports;
+        std::vector<Path> overlay_ports;
 
         std::string get_toolver_diagnostics() const;
 

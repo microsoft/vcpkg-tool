@@ -15,9 +15,9 @@ namespace vcpkg
 
     std::string StatusLine::to_string() const { return adapt_to_string(*this); }
 
-    ExpectedL<StatusLine> parse_status_line(StringView text, Optional<StringView> origin)
+    ExpectedL<StatusLine> parse_status_line(StringView text, Optional<StringView> origin, TextRowCol init_rowcol)
     {
-        ParserBase parser{text, origin};
+        ParserBase parser{text, origin, init_rowcol};
         StatusLine result;
         const auto want_start = parser.cur_loc();
         auto want_text = parser.match_until(ParserBase::is_whitespace);
@@ -87,7 +87,8 @@ namespace vcpkg
         auto status_field = std::move(status_it->second);
         fields.erase(status_it);
         this->package = BinaryParagraph(origin, std::move(fields));
-        this->status = parse_status_line(status_field.first, origin).value_or_exit(VCPKG_LINE_INFO);
+        this->status =
+            parse_status_line(status_field.first, origin, status_field.second).value_or_exit(VCPKG_LINE_INFO);
     }
 
     StringLiteral to_string_literal(InstallState f)
