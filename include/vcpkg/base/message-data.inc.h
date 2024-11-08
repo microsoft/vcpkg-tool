@@ -1172,6 +1172,10 @@ DECLARE_MESSAGE(ExpectedFailOrSkip, (), "", "expected 'fail', 'skip', or 'pass' 
 DECLARE_MESSAGE(ExpectedFeatureListTerminal, (), "", "expected ',' or ']' in feature list")
 DECLARE_MESSAGE(ExpectedFeatureName, (), "", "expected feature name (must be lowercase, digits, '-')")
 DECLARE_MESSAGE(ExpectedExplicitTriplet, (), "", "expected an explicit triplet")
+DECLARE_MESSAGE(ExpectedInstallStateField,
+                (),
+                "The values in ''s are locale-invariant",
+                "expected one of 'not-installed', 'half-installed', or 'installed'")
 DECLARE_MESSAGE(ExpectedOneSetOfTags,
                 (msg::count, msg::old_value, msg::new_value, msg::value),
                 "{old_value} is a left tag and {new_value} is the right tag. {value} is the input.",
@@ -1181,7 +1185,15 @@ DECLARE_MESSAGE(ExpectedPathToExist, (msg::path), "", "Expected {path} to exist 
 DECLARE_MESSAGE(ExpectedPortName, (), "", "expected a port name here (must be lowercase, digits, '-')")
 DECLARE_MESSAGE(ExpectedReadWriteReadWrite, (), "", "unexpected argument: expected 'read', readwrite', or 'write'")
 DECLARE_MESSAGE(ExpectedStatusField, (), "", "Expected 'status' field in status paragraph")
+DECLARE_MESSAGE(ExpectedTextHere,
+                (msg::expected),
+                "{expected} is a locale-invariant string a parser was searching for",
+                "expected '{expected}' here")
 DECLARE_MESSAGE(ExpectedTripletName, (), "", "expected a triplet name here (must be lowercase, digits, '-')")
+DECLARE_MESSAGE(ExpectedWantField,
+                (),
+                "The values in ''s are locale-invariant",
+                "expected one of 'install', 'hold', 'deinstall', or 'purge' here")
 DECLARE_MESSAGE(ExportArchitectureReq,
                 (),
                 "",

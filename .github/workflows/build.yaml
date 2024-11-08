@@ -16,7 +16,7 @@ jobs:
             preset: windows-ci
           - os: ubuntu-20.04
             preset: linux-ci
-          - os: macos-12
+          - os: macos-13
             preset: macos-ci
     runs-on: ${{ matrix.os }}
     timeout-minutes: 120
