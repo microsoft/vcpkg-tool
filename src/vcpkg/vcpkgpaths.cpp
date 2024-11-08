@@ -99,29 +99,46 @@ namespace
     }
 
     static void append_overlays(std::vector<Path>& result,
+                                const ReadOnlyFilesystem& fs,
                                 const std::vector<std::string>& overlay_entries,
-                                const Path& relative_root)
+                                const Path& relative_root,
+                                const Path& config_directory,
+                                bool forbid_dot)
     {
         for (auto&& entry : overlay_entries)
         {
-            result.push_back(relative_root / entry);
+            if (forbid_dot && entry == ".")
+            {
+                Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgErrorManifestMustDifferFromOverlayDot);
+            }
+
+            auto full_entry = fs.almost_canonical(relative_root / entry, VCPKG_LINE_INFO);
+            if (full_entry == config_directory)
+            {
+                Checks::msg_exit_with_error(
+                    VCPKG_LINE_INFO, msgErrorManifestMustDifferFromOverlay, msg::path = config_directory);
+            }
+
+            result.push_back(std::move(full_entry));
         }
     }
 
     // Merges overlay settings from the 3 major sources in the usual priority order, where command line wins first, then
     // manifest, then environment. The parameter order is specifically chosen to group information that comes from the
     // manifest together and make parameter order confusion less likely to compile.
-    static std::vector<Path> merge_overlays(const std::vector<std::string>& cli_overlays,
+    static std::vector<Path> merge_overlays(const ReadOnlyFilesystem& fs,
+                                            const std::vector<std::string>& cli_overlays,
                                             const std::vector<std::string>& env_overlays,
                                             const Path& original_cwd,
+                                            bool forbid_config_dot,
                                             const std::vector<std::string>& config_overlays,
                                             const Path& config_directory)
     {
         std::vector<Path> result;
         result.reserve(cli_overlays.size() + config_overlays.size() + env_overlays.size());
-        append_overlays(result, cli_overlays, original_cwd);
-        append_overlays(result, config_overlays, config_directory);
-        append_overlays(result, env_overlays, original_cwd);
+        append_overlays(result, fs, cli_overlays, original_cwd, config_directory, false);
+        append_overlays(result, fs, config_overlays, config_directory, config_directory, forbid_config_dot);
+        append_overlays(result, fs, env_overlays, original_cwd, config_directory, false);
         return result;
     }
 
@@ -685,19 +702,25 @@ namespace vcpkg
                                                    std::move(maybe_json_config),
                                                    m_pimpl->m_config_dir,
                                                    *this);
-        overlay_ports.overlay_port_dirs = merge_overlays(args.cli_overlay_port_dirs,
+        overlay_ports.overlay_port_dirs = merge_overlays(m_pimpl->m_fs,
+                                                         args.cli_overlay_port_dirs,
                                                          args.env_overlay_port_dirs,
                                                          original_cwd,
+                                                         true,
                                                          m_pimpl->m_config.config.overlay_port_dirs,
                                                          m_pimpl->m_config.directory);
-        overlay_ports.overlay_ports = merge_overlays(args.cli_overlay_ports,
+        overlay_ports.overlay_ports = merge_overlays(m_pimpl->m_fs,
+                                                     args.cli_overlay_ports,
                                                      args.env_overlay_ports,
                                                      original_cwd,
+                                                     true,
                                                      m_pimpl->m_config.config.overlay_ports,
                                                      m_pimpl->m_config.directory);
-        overlay_triplets = merge_overlays(args.cli_overlay_triplets,
+        overlay_triplets = merge_overlays(m_pimpl->m_fs,
+                                          args.cli_overlay_triplets,
                                           args.env_overlay_triplets,
                                           original_cwd,
+                                          false,
                                           m_pimpl->m_config.config.overlay_triplets,
                                           m_pimpl->m_config.directory);
         for (const auto& triplet : this->overlay_triplets)

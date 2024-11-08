@@ -1,4 +1,4 @@
 {
-  "$comment":  "'./a' in . should get loaded first, so we should never consider 'malformed/a'",
-  "overlay-port-dirs": [ ".", "malformed" ]
+  "$comment": "'config-overlays/a' in . should get loaded first, so we should never consider 'config-overlays/malformed/a'",
+  "overlay-port-dirs": [ "config-overlays", "config-overlays/malformed" ]
 }

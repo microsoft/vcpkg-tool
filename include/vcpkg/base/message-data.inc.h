@@ -1099,6 +1099,16 @@ DECLARE_MESSAGE(ErrorInvalidManifestModeOption,
                 (msg::option),
                 "",
                 "The option --{option} is not supported in manifest mode.")
+DECLARE_MESSAGE(ErrorManifestMustDifferFromOverlay,
+                (msg::path),
+                "",
+                "The manifest directory ({path}) cannot be the same as a directory configured as an overlay-port or "
+                "overlay-port-dir.")
+DECLARE_MESSAGE(ErrorManifestMustDifferFromOverlayDot,
+                (),
+                "",
+                "The manifest directory cannot be the same as a directory configured as an overlay-port or "
+                "overlay-port-dir, so \"overlay-ports\" and \"overlay-port-dir\" values cannot be \".\".")
 DECLARE_MESSAGE(
     ErrorMissingVcpkgRoot,
     (),
