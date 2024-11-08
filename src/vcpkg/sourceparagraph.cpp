@@ -1194,9 +1194,9 @@ namespace vcpkg
 
             if (auto configuration = obj.get(JsonIdVcpkgConfiguration))
             {
-                if (configuration->is_object())
+                if (auto configuration_object = configuration->maybe_object())
                 {
-                    spgh.vcpkg_configuration.emplace(configuration->object(VCPKG_LINE_INFO));
+                    spgh.vcpkg_configuration.emplace(*configuration_object);
                 }
                 else
                 {

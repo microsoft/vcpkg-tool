@@ -146,6 +146,27 @@ namespace vcpkg
         return true;
     }
 
+    bool ParserBase::require_text(StringLiteral text)
+    {
+        auto encoded = m_it;
+        // check that the encoded stream matches the keyword:
+        for (const char ch : text)
+        {
+            if (encoded.is_eof() || *encoded != static_cast<char32_t>(ch))
+            {
+                add_error(msg::format(msgExpectedTextHere, msg::expected = text));
+                return false;
+            }
+
+            ++encoded;
+        }
+
+        // success
+        m_it = encoded;
+        m_column += static_cast<int>(text.size());
+        return true;
+    }
+
     bool ParserBase::try_match_keyword(StringView keyword_content)
     {
         auto encoded = m_it;

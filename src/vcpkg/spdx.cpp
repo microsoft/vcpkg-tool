@@ -24,9 +24,9 @@ static void append_move_if_exists_and_array(Json::Array& out, Json::Object& obj,
 {
     if (auto p = obj.get(property))
     {
-        if (p->is_array())
+        if (auto arr = p->maybe_array())
         {
-            for (auto& e : p->array(VCPKG_LINE_INFO))
+            for (auto& e : *arr)
             {
                 out.push_back(std::move(e));
             }
@@ -59,11 +59,11 @@ static StringView extract_cmake_invocation_argument(StringView command, StringVi
 }
 
 static Json::Object make_resource(
-    std::string spdxid, std::string name, std::string downloadLocation, StringView sha512, StringView filename)
+    std::string spdxid, StringView name, std::string downloadLocation, StringView sha512, StringView filename)
 {
     Json::Object obj;
     obj.insert(SpdxSpdxId, std::move(spdxid));
-    obj.insert(JsonIdName, std::move(name));
+    obj.insert(JsonIdName, name.to_string());
     if (!filename.empty())
     {
         obj.insert(SpdxPackageFileName, filename);
@@ -82,7 +82,7 @@ static Json::Object make_resource(
     return obj;
 }
 
-Json::Value vcpkg::run_resource_heuristics(StringView contents, StringView version_text)
+Json::Object vcpkg::run_resource_heuristics(StringView contents, StringView version_text)
 {
     // These are a sequence of heuristics to enable proof-of-concept extraction of remote resources for SPDX SBOM
     // inclusion
@@ -97,7 +97,7 @@ Json::Value vcpkg::run_resource_heuristics(StringView contents, StringView versi
         auto sha = extract_cmake_invocation_argument(github, CMakeVariableSHA512);
 
         packages.push_back(make_resource(fmt::format("SPDXRef-resource-{}", ++n),
-                                         repo.to_string(),
+                                         repo,
                                          fmt::format("git+https://github.com/{}@{}", repo, ref),
                                          sha,
                                          {}));
@@ -107,8 +107,8 @@ Json::Value vcpkg::run_resource_heuristics(StringView contents, StringView versi
     {
         auto url = extract_cmake_invocation_argument(github, CMakeVariableUrl);
         auto ref = fix_ref_version(extract_cmake_invocation_argument(github, CMakeVariableRef), version_text);
-        packages.push_back(make_resource(
-            fmt::format("SPDXRef-resource-{}", ++n), url.to_string(), fmt::format("git+{}@{}", url, ref), {}, {}));
+        packages.push_back(
+            make_resource(fmt::format("SPDXRef-resource-{}", ++n), url, fmt::format("git+{}@{}", url, ref), {}, {}));
     }
     auto distfile = find_cmake_invocation(contents, "vcpkg_download_distfile");
     if (!distfile.empty())
@@ -116,8 +116,8 @@ Json::Value vcpkg::run_resource_heuristics(StringView contents, StringView versi
         auto url = extract_cmake_invocation_argument(distfile, CMakeVariableUrls);
         auto filename = extract_cmake_invocation_argument(distfile, CMakeVariableFilename);
         auto sha = extract_cmake_invocation_argument(distfile, CMakeVariableSHA512);
-        packages.push_back(make_resource(
-            fmt::format("SPDXRef-resource-{}", ++n), filename.to_string(), url.to_string(), sha, filename));
+        packages.push_back(
+            make_resource(fmt::format("SPDXRef-resource-{}", ++n), filename, url.to_string(), sha, filename));
     }
     auto sfg = find_cmake_invocation(contents, "vcpkg_from_sourceforge");
     if (!sfg.empty())
@@ -126,11 +126,11 @@ Json::Value vcpkg::run_resource_heuristics(StringView contents, StringView versi
         auto ref = fix_ref_version(extract_cmake_invocation_argument(sfg, CMakeVariableRef), version_text);
         auto filename = extract_cmake_invocation_argument(sfg, CMakeVariableFilename);
         auto sha = extract_cmake_invocation_argument(sfg, CMakeVariableSHA512);
-        auto url = Strings::concat("https://sourceforge.net/projects/", repo, "/files/", ref, '/', filename);
-        packages.push_back(make_resource(
-            fmt::format("SPDXRef-resource-{}", ++n), filename.to_string(), std::move(url), sha, filename));
+        auto url = fmt::format("https://sourceforge.net/projects/{}/files/{}/{}", repo, ref, filename);
+        packages.push_back(
+            make_resource(fmt::format("SPDXRef-resource-{}", ++n), filename, std::move(url), sha, filename));
     }
-    return Json::Value::object(std::move(ret));
+    return ret;
 }
 
 std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
@@ -138,7 +138,7 @@ std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
                                     View<std::string> hashes,
                                     std::string created_time,
                                     std::string document_namespace,
-                                    std::vector<Json::Value>&& resource_docs)
+                                    std::vector<Json::Object>&& resource_docs)
 {
     Checks::check_exit(VCPKG_LINE_INFO, relative_paths.size() == hashes.size());
 
@@ -156,7 +156,7 @@ std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
     doc.insert(SpdxDataLicense, SpdxCCZero);
     doc.insert(SpdxSpdxId, SpdxRefDocument);
     doc.insert(SpdxDocumentNamespace, std::move(document_namespace));
-    doc.insert(JsonIdName, Strings::concat(action.spec.to_string(), '@', cpgh.version.to_string(), ' ', abi));
+    doc.insert(JsonIdName, fmt::format("{}@{} {}", action.spec, cpgh.version, abi));
     {
         auto& cinfo = doc.insert(SpdxCreationInfo, Json::Object());
         auto& creators = cinfo.insert(JsonIdCreators, Json::Array());
@@ -249,11 +249,9 @@ std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
 
     for (auto&& rdoc : resource_docs)
     {
-        if (!rdoc.is_object()) continue;
-        auto robj = std::move(rdoc).object(VCPKG_LINE_INFO);
-        append_move_if_exists_and_array(rels, robj, JsonIdRelationships);
-        append_move_if_exists_and_array(files, robj, JsonIdFiles);
-        append_move_if_exists_and_array(packages, robj, JsonIdPackages);
+        append_move_if_exists_and_array(rels, rdoc, JsonIdRelationships);
+        append_move_if_exists_and_array(files, rdoc, JsonIdFiles);
+        append_move_if_exists_and_array(packages, rdoc, JsonIdPackages);
     }
 
     return Json::stringify(doc);
