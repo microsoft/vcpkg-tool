@@ -13,13 +13,13 @@ namespace vcpkg
     enum class Want
     {
         ERROR_STATE,
-        UNKNOWN,
         INSTALL,
         HOLD,
         DEINSTALL,
         PURGE
     };
 
+    struct StatusLine;
     struct StatusParagraph;
     struct InstalledPackageView;
 }
