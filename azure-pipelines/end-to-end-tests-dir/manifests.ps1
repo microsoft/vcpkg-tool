@@ -185,3 +185,17 @@ Throw-IfFailed
 Write-Trace "test manifest features: self-reference, features = [a], with overlay"
 Run-Vcpkg install @manifestDirArgs --x-feature=a "--overlay-ports=$manifestDir/manifest-test"
 Throw-IfFailed
+
+Write-Trace "test manifest install with specific package names fails"
+$output = Run-VcpkgAndCaptureOutput install @manifestDirArgs vcpkg-empty-port
+Throw-IfNotFailed
+Throw-IfNonContains -Expected 'error: In manifest mode, `vcpkg install` does not support individual package arguments.' -Actual $output
+
+Write-Trace "test manifest install with specific package names forced to classic mode succeeds"
+$output = Run-VcpkgAndCaptureOutput install @manifestDirArgs --classic vcpkg-empty-port
+Throw-IfFailed
+$expected = @"
+The following packages will be built and installed:
+    vcpkg-empty-port:
+"@
+Throw-IfNonContains -Expected $expected -Actual $output

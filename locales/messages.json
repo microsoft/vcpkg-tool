@@ -807,6 +807,7 @@
   "FollowingPackagesUpgraded": "The following packages are up-to-date:",
   "ForMoreHelp": "For More Help",
   "_ForMoreHelp.comment": "Printed before a suggestion for the user to run `vcpkg help <topic>`",
+  "ForceClassicMode": "Force classic mode, even if a manifest could be found.",
   "ForceSystemBinariesOnWeirdPlatforms": "Environment variable VCPKG_FORCE_SYSTEM_BINARIES must be set on arm, s390x, ppc64le and riscv platforms.",
   "FormattedParseMessageExpressionPrefix": "on expression:",
   "GHAParametersMissing": "The GHA binary source requires the ACTIONS_RUNTIME_TOKEN and ACTIONS_CACHE_URL environment variables to be set. See {url} for details.",
