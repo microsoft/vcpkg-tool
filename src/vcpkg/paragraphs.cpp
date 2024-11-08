@@ -352,6 +352,16 @@ namespace vcpkg::Paragraphs
         return PghParser(str, origin).get_paragraphs();
     }
 
+    void append_paragraph_field(StringView name, StringView field, std::string& out_str)
+    {
+        if (field.empty())
+        {
+            return;
+        }
+
+        out_str.append(name.data(), name.size()).append(": ").append(field.data(), field.size()).push_back('\n');
+    }
+
     ExpectedL<std::unique_ptr<SourceControlFile>> try_load_project_manifest_text(StringView text,
                                                                                  StringView control_path,
                                                                                  MessageSink& warning_sink)

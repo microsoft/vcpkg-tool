@@ -9,6 +9,7 @@
 
 #include <vcpkg/sourceparagraph.h>
 
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -23,6 +24,8 @@ namespace vcpkg::Paragraphs
     ExpectedL<std::vector<Paragraph>> get_paragraphs(const ReadOnlyFilesystem& fs, const Path& control_path);
 
     ExpectedL<std::vector<Paragraph>> parse_paragraphs(StringView str, StringView origin);
+
+    void append_paragraph_field(StringView name, StringView field, std::string& out_str);
 
     struct PortLoadResult
     {
