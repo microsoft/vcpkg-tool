@@ -112,8 +112,8 @@ namespace
                 Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgErrorManifestMustDifferFromOverlayDot);
             }
 
-            auto full_entry = fs.almost_canonical(relative_root / entry, VCPKG_LINE_INFO);
-            if (full_entry == config_directory)
+            auto full_entry = relative_root / entry;
+            if (fs.almost_canonical(full_entry, VCPKG_LINE_INFO) == config_directory)
             {
                 Checks::msg_exit_with_error(
                     VCPKG_LINE_INFO, msgErrorManifestMustDifferFromOverlay, msg::path = config_directory);
