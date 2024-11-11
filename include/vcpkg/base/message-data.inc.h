@@ -1054,16 +1054,16 @@ DECLARE_MESSAGE(DownloadFailedStatusCode,
 DECLARE_MESSAGE(DownloadFailedProxySettings,
                 (msg::path, msg::url),
                 "",
-                "Failed to download {}.\nIf you are using a proxy, please ensure your proxy settings are correct. Possible causes are:\n"
-                "1. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable\n"
-                "to `https//address:port`. This is not correct, because `https://` prefix\n"
-                "claims the proxy is an HTTPS proxy, while your proxy (v2ray, shadowsocksr\n, etc...) is an HTTP proxy. "
-                "Try setting `http://address:port` to both\nHTTP_PROXY and HTTPS_PROXY instead.\n"
-                "2. If you are using Windows, vcpkg will automatically use your Windows IE Proxy Settings\n"
+                "Failed to download {}.\nIf you are using a proxy, please ensure your proxy settings are correct.\nPossible causes are:\n"
+                "1. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable "
+                "to `https//address:port`.\nThis is not correct, because `https://` prefix "
+                "claims the proxy is an HTTPS proxy, while your proxy (v2ray, shadowsocksr, etc...) is an HTTP proxy.\n"
+                "Try setting `http://address:port` to both HTTP_PROXY and HTTPS_PROXY instead.\n"
+                "2. If you are using Windows, vcpkg will automatically use your Windows IE Proxy Settings "
                 "set by your proxy software. See, {url}\n"
                 "The value set by your proxy might be wrong, or have same `https://` prefix issue.\n"
                 "3. Your proxy's remote server is our of service.\n"
-                "If you've tried directly download the link, and believe this is not a temporay\ndownload server failure, please submit an issue at https://github.com/Microsoft/vcpkg/issues\n"
+                "If you've tried directly download the link, and believe this is not a temporay download server failure, please submit an issue at https://github.com/Microsoft/vcpkg/issues\n"
                 "to report this upstream download server failure.")
 DECLARE_MESSAGE(DownloadingPortableToolVersionX,
                 (msg::tool_name, msg::version),

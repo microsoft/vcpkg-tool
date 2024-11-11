@@ -1026,7 +1026,6 @@ namespace vcpkg
                 }
                 else
                 {
-                    // download failed, print proxy message
                     msg::println(msgDownloadFailedProxySettings, msg::path = download_path.filename(), msg::url = "https://github.com/microsoft/vcpkg-tool/pull/77");
                 }
             }
