@@ -1054,7 +1054,8 @@ DECLARE_MESSAGE(DownloadFailedStatusCode,
 DECLARE_MESSAGE(DownloadFailedProxySettings,
                 (msg::path, msg::url),
                 "",
-                "Failed to download {path}.\nIf you are using a proxy, please ensure your proxy settings are correct.\nPossible causes are:\n"
+                "Failed to download {path}.\nIf you are using a proxy, please ensure your proxy settings are "
+                "correct.\nPossible causes are:\n"
                 "1. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable "
                 "to `https//address:port`.\nThis is not correct, because `https://` prefix "
                 "claims the proxy is an HTTPS proxy, while your proxy (v2ray, shadowsocksr, etc...) is an HTTP proxy.\n"
@@ -1063,7 +1064,8 @@ DECLARE_MESSAGE(DownloadFailedProxySettings,
                 "set by your proxy software. See, {url}\n"
                 "The value set by your proxy might be wrong, or have same `https://` prefix issue.\n"
                 "3. Your proxy's remote server is our of service.\n"
-                "If you've tried directly download the link, and believe this is not a temporay download server failure, please submit an issue at https://github.com/Microsoft/vcpkg/issues\n"
+                "If you've tried directly download the link, and believe this is not a temporay download server "
+                "failure, please submit an issue at https://github.com/Microsoft/vcpkg/issues\n"
                 "to report this upstream download server failure.")
 DECLARE_MESSAGE(DownloadingPortableToolVersionX,
                 (msg::tool_name, msg::version),
